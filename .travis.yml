@@ -11,8 +11,9 @@ python:
   #- "pypy-5.3.1"
 # command to install dependencies
 install:
-  - pip install scikit-learn
+  - pip install scipy
   - pip install pandas
   - pip install numpy
+  - pip install scikit-learn
 # command to run tests
 #script: pytest
