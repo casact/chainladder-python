@@ -4,13 +4,11 @@ Created on Wed Jun 14 19:50:13 2017
 These are the unit tests to test the functionality of the package.
 @author: jboga
 """
-
-from Triangles import triangle
 import os.path
-import pandas as pd
+from pandas import read_pickle, Series, concat
 
-path = os.path.abspath('')[:-6] + 'data\\'
-df_list = [pd.read_pickle(path + item) for item in os.listdir(path)] 
+path = os.path.abspath('') + '\\data\\'
+df_list = [read_pickle(path + item) for item in os.listdir(path)] 
 
 def test_tri_to_table_convert(df):
     try:
@@ -58,10 +56,10 @@ def test_cum2incr_convertx2(df):
     except:
         return False
     
-test1 = pd.Series([item.shape != (0,0) for item in df_list], index=os.listdir(path), name='test1')
-test2 = pd.Series([test_tri_to_table_convert(item) for item in df_list], index=os.listdir(path), name='test2')
-test3 = pd.Series([test_cum2incr_convert(item) for item in df_list], index=os.listdir(path), name='test3')
-test4 = pd.Series([test_incr2cum_convert(item) for item in df_list], index=os.listdir(path), name='test4')
-test5 = pd.Series([test_cum2incr_convertx2(item) for item in df_list], index=os.listdir(path), name='test5')
-tests = pd.concat([test1, test2, test3, test4, test5],axis=1)
+test1 = Series([item.shape != (0,0) for item in df_list], index=os.listdir(path), name='test1')
+test2 = Series([test_tri_to_table_convert(item) for item in df_list], index=os.listdir(path), name='test2')
+test3 = Series([test_cum2incr_convert(item) for item in df_list], index=os.listdir(path), name='test3')
+test4 = Series([test_incr2cum_convert(item) for item in df_list], index=os.listdir(path), name='test4')
+test5 = Series([test_cum2incr_convertx2(item) for item in df_list], index=os.listdir(path), name='test5')
+tests = concat([test1, test2, test3, test4, test5],axis=1)
 
