@@ -47,6 +47,9 @@ class MackChainLadder:
             paramrisk = pd.concat([paramrisk, temp],axis=1)
         return paramrisk
     
+    def Mack_SE(self):
+        return  pd.DataFrame(np.sqrt(np.matrix(self.process_risk()**2 )+np.matrix(self.parameter_risk()**2)), index=self.fullTriangle.index)
+    
     def Fse(self):
         # This is sloppy, and I don't know that it works for all cases.  Need to
         # understand weights better.
