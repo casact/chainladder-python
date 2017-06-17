@@ -1,9 +1,9 @@
 language: python
 python:
-  - "2.6"
-  - "2.7"
-  - "3.2"
-  - "3.3"
+  #- "2.6"
+  #- "2.7"
+  #- "3.2"
+  #- "3.3"
   - "3.4"
   # PyPy versions
   #- "pypy"  # PyPy2 2.5.0
@@ -11,7 +11,7 @@ python:
   #- "pypy-5.3.1"
 # command to install dependencies
 install:
-  - pip install sklearn
+  - pip install scikit-learn
   - pip install pandas
   - pip install numpy
 # command to run tests
