@@ -115,6 +115,8 @@ class triangle:
             self.values = 'values'
         return 
 
+
+
 def plot(tri):
     # Need lattice (cascade) option
     plt.figure(figsize=(25,15))
