@@ -12,7 +12,8 @@ python:
 # command to install dependencies
 install:
   - pip install --upgrade pip setuptools wheel
-  - pip install --only-binary=numpy,scipy,pandas,matplotlib,seaborn numpy scipy pandas matplotlib seaborn
+  - pip install --only-binary=numpy,scipy,pandas,matplotlib numpy scipy pandas matplotlib
+  - pip install seaborn
 # command to run tests
 script: 
   - python main.py
