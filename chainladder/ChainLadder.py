@@ -45,23 +45,23 @@ class chainladder:
 def get_tail(tri):
     return Series([1], index = [tri.data.iloc[:,-1].name + '-Ult'])
 
-def get_ldf(tri, alpha=0, w=1):
+#def get_ldf(tri, alpha=0, w=1):
     ## Mack uses alpha between 0 and 2 to distinguish:
     ## alpha = 0 straight averages of LDFs
     ## alpha = 1 historical chain ladder Volume weighted age-to-age factors
     ## alpha = 2 ordinary regression with intercept 0
-    lm = LinearRegression(fit_intercept=False)
-    ldf = Series()
-    for i in range(0, len(tri.data.columns)-1):
-        data = tri.data.iloc[:,i:i+2].dropna()
-        X = data.iloc[:,0].values
-        y = data.iloc[:,1].values
-        lm.fit(X.reshape(-1, 1),y, sample_weight=w/X**(2-alpha))
-        ldf = ldf.append(Series(lm.coef_))
-    ldf.index = ata(tri).columns
-    ldf = ldf.append(get_tail(tri))
-    ldf.name = 'ldf'
-    return ldf
+    #lm = LinearRegression(fit_intercept=False)
+    #ldf = Series()
+    #for i in range(0, len(tri.data.columns)-1):
+    #    data = tri.data.iloc[:,i:i+2].dropna()
+    #    X = data.iloc[:,0].values
+    #    y = data.iloc[:,1].values
+    #3    lm.fit(X.reshape(-1, 1),y, sample_weight=w/X**(2-alpha))
+    #3    ldf = ldf.append(Series(lm.coef_))
+    #ldf.index = ata(tri).columns
+    #ldf = ldf.append(get_tail(tri))
+    #ldf.name = 'ldf'
+    #return ldf
 
    
 def get_cdf(tri, alpha=0):
