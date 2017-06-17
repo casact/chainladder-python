@@ -12,7 +12,7 @@ python:
 # command to install dependencies
 install:
   - pip install --upgrade pip setuptools wheel
-  - pip install --only-binary=numpy,scipy numpy scipy
+  - pip install --only-binary=numpy,scipy,pandas numpy scipy pandas
 # command to run tests
 script: 
   - python main.py
