@@ -4,6 +4,7 @@ Created on Fri Jun 16 09:24:42 2017
 
 @author: jboga
 """
+import pandas as pd
 
 class MackChainLadder:
     def __init__(self, tri,  weights=1,  alpha=1,  est_sigma="log-linear",  
@@ -36,6 +37,15 @@ class MackChainLadder:
             temp.columns = [self.fullTriangle.columns[i]]
             procrisk = pd.concat([procrisk, temp],axis=1)
         return procrisk
+
+    def parameter_risk(self):
+        paramrisk = pd.DataFrame([0 for item in range(len(self.fullTriangle))],index=self.fullTriangle.index, columns=[self.fullTriangle.columns[0]])
+        for i in range(1,len(self.fullTriangle.columns)):
+            print(i)
+            temp = pd.DataFrame(np.sqrt((self.fullTriangle.iloc[:,i-1]*self.fse[i-1])**2 + (self.f[i-1]*paramrisk.iloc[:,i-1])**2)*self.triangle.data.iloc[:,i].isnull())
+            temp.columns = [self.fullTriangle.columns[i]]
+            paramrisk = pd.concat([paramrisk, temp],axis=1)
+        return paramrisk
     
     def Fse(self):
         # This is sloppy, and I don't know that it works for all cases.  Need to
