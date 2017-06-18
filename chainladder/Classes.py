@@ -116,11 +116,41 @@ class Triangle:
             self.values = 'values'
         return 
     
-#   Weighted Regression Through Origin
 class WRTO:
+    """WRTO ; Weighted least squares regression through the origin
+
+    I could not find any decent Python package that does Weighted regression 
+    through origin that also produces summary statistics, so I wrote my own.
+    It is a fairly simple class that also keep package dependencies down.
+
+    Parameters:    
+        X : numpy.array or pandas.Series
+            An array representing the independent observations of the regression.
+        y : numpy.array or pandas.Series
+            An array representing the dependent observations of the regression.
+        w : numpy.array or pandas.Series
+            An array representing the weights of the observations of the regression.
+        
+    Attributes:
+        X : numpy.array or pandas.Series
+            An array representing the independent observations of the regression.
+        y : numpy.array or pandas.Series
+            An array representing the dependent observations of the regression.
+        w : numpy.array or pandas.Series
+            An array representing the weights of the observations of the regression.
+        coef : numpy.float64
+            Slope parameter of the regression.
+        WSSResidual : numpy.float64
+            Weighted residual sum of squares of the regression.
+        mse : numpy.float64
+            Mean square error of the regression.
+        se : numpy.float64
+            Standard error of the regression slope paramter.
+        sigma : numpy.float64
+            Square root of the mean square error of the regression. 
+        
+    """
     def __init__(self,X,y,w):
-        # I could not find any Python package that does Weighted regression through origin
-        # that also produces summary statistics, so I wrote my own...
         self.X = X
         self.y = y
         self.w = w
