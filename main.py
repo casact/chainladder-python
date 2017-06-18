@@ -6,6 +6,7 @@ This is a temporary script file.
 """
 import sys
 sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
+import os
 print(os.getcwd())
 import chainladder as cl
 
