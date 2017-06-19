@@ -15,7 +15,7 @@ One can use the :func:`Classes.Triangle.incr2cum` and
    
 """
 import numpy as np
-from pandas import DataFrame, concat
+from pandas import DataFrame, concat, Series
 
 class Triangle:
     """Triangle class is the basic data representation of an actuarial triangle.
@@ -79,6 +79,7 @@ class Triangle:
         self.values = values
         if values == None:
             self.__set_values() 
+        self.latest_values = Series([row.dropna().iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
           
     def dataAsTable(self, inplace=False):
         """Method to convert triangle form to tabular form.
@@ -428,8 +429,10 @@ class MackChainLadder:
         self.sigma = np.append(self.sigma,self.tail_sigma())
         self.Fse = self.Fse()
         self.total_process_risk = np.sqrt((self.process_risk()**2).sum())
-        # Need to define total_parameter_risk
-        # Need to define total_Mack_SE
+        self.total_parameter_risk = self.total_parameter_risk()
+        self.mack_se = np.sqrt(self.process_risk()**2 + self.parameter_risk()**2)
+        self.total_mack_se = np.sqrt(self.total_process_risk[-1]**2+self.total_parameter_risk[-1]**2)
+        
         
 
 
@@ -454,6 +457,16 @@ class MackChainLadder:
             paramrisk = concat([paramrisk, temp],axis=1)
         return paramrisk
     
+    def total_parameter_risk(self):
+        M = np.empty(0)
+        tpr = [0]
+        for i in range(len(self.fullTriangle.columns)):
+            M = np.append(M, np.array(sum(self.fullTriangle.iloc[:,i].iloc[-(i+1):])))
+        for i in range(len(self.fullTriangle.columns)-1):
+            tpr.append(np.sqrt((M[i]*self.fse[i])**2 + (tpr[-1]*self.f[i])**2))
+        return np.array(tpr)    
+            
+        
     def Mack_SE(self):
         return  DataFrame(np.sqrt(np.matrix(self.process_risk()**2 )+np.matrix(self.parameter_risk()**2)), index=self.fullTriangle.index)
     
@@ -491,10 +504,20 @@ class MackChainLadder:
         sigma = self.sigma
         sigma_reg = np.polyfit(dev, np.log(sigma),1)
         tailsigma = np.exp(time_pd*sigma_reg[0]+sigma_reg[1])
-        return tailsigma        
+        return tailsigma   
+    
+    def summary(self):
+        summary = DataFrame()
+        summary['Latest'] = Series([row.dropna().iloc[-1] for index, row in self.triangle.data.iterrows()], index=self.triangle.data.index)      
+        summary['Dev to Date'] = Series([row.dropna().iloc[-1] for index, row in self.triangle.data.iterrows()], index=self.triangle.data.index)/self.fullTriangle.iloc[:,-1]        
+        summary['Ultimate'] = self.fullTriangle.iloc[:,-1]  
+        summary['IBNR'] = summary['Ultimate']-summary['Latest']
+        summary['Mack S.E.'] = self.mack_se.iloc[:,-1]
+        summary['CV(IBNR)'] = summary['Mack S.E.']/summary['IBNR']
+        return summary
+    
         
         
         
-        
-        
-        
+
+      
