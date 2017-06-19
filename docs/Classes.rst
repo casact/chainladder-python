@@ -3,7 +3,7 @@ Classes
 
 This is Classes documentation.
 
-.. automodule:: Classes
+.. automodule:: classes
 
 .. toctree::
    :maxdepth: 2

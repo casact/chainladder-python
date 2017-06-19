@@ -3,7 +3,7 @@ Triangle
 
 This is the Triangle class documentation.
 
-.. module:: Classes
+.. module:: classes
 .. autoclass:: Triangle
    :members:
 

@@ -3,7 +3,7 @@ WRTO
 
 This is the WRTO class documentation.
 
-.. module:: Classes
+.. module:: classes
 .. autoclass:: WRTO
    :members:
 

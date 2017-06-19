@@ -12,11 +12,11 @@ import os
 
 
 print('Welcome to chainladder')
-__all__ = ['TestCases', 'Triangles', 'ChainLadder', 'MackChainLadderFunctions', 'ata']
+__all__ = ['Triangles', 'ChainLadder', 'MackChainLadderFunctions']
 
 sns.set_style("whitegrid")
 
-from chainladder.TestCases import df_list
-from chainladder.Classes import Triangle 
-from chainladder.Classes import ChainLadder 
-from chainladder.Classes import MackChainLadder
+#from chainladder.TestCases import df_list
+from chainladder.classes import Triangle 
+from chainladder.classes import ChainLadder 
+from chainladder.classes import MackChainLadder
