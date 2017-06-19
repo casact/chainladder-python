@@ -427,6 +427,10 @@ class MackChainLadder:
         self.sigma = np.array([item.sigma for item in cl.models])[:-1]
         self.sigma = np.append(self.sigma,self.tail_sigma())
         self.Fse = self.Fse()
+        self.total_process_risk = np.sqrt((mack.process_risk()**2).sum())
+        # Need to define total_parameter_risk
+        # Need to define total_Mack_SE
+        
 
 
     def process_risk(self):
@@ -466,6 +470,7 @@ class MackChainLadder:
         return Fse
     
     def tail_se(self):
+        # I cannot replicate R exactly!!!
         n = len(self.fullTriangle.columns)
         f = self.f[:-2]
         dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
@@ -477,6 +482,7 @@ class MackChainLadder:
         return tailse
     
     def tail_sigma(self):
+        # I cannot replicate R exactly!!!
         n = len(self.fullTriangle.columns)
         f = self.f[:-2]
         dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
