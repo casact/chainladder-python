@@ -19,8 +19,8 @@
 #
 import os
 import sys
-sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
-
+#sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
+sys.path.append(os.path.abspath('..\chainladder'))
 
 # -- General configuration ------------------------------------------------
 

@@ -16,7 +16,6 @@ This package is inspired by the `R package <https://github.com/mages/ChainLadder
    Classes.rst
 
 
-
 Indices and tables
 ==================
 
