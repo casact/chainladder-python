@@ -3,7 +3,7 @@ MackChainLadder
 
 This is the Mack Chainladder class documentation.
 
-.. module:: classes
+.. module:: chainladder.classes
 .. autoclass:: MackChainLadder
    :members:
 

@@ -3,7 +3,7 @@ Classes
 
 This is Classes documentation.
 
-.. automodule:: classes
+.. automodule:: chainladder.classes
 
 .. toctree::
    :maxdepth: 2

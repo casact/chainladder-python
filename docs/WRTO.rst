@@ -3,7 +3,7 @@ WRTO
 
 This is the WRTO class documentation.
 
-.. module:: classes
+.. module:: chainladder.classes
 .. autoclass:: WRTO
    :members:
 
