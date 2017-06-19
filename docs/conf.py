@@ -22,6 +22,8 @@ import sys
 #sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
 sys.path.append(os.path.abspath('..\chainladder'))
 
+print(sys.path)
+
 class Mock(object):
     def __init__(self, *args, **kwargs):
         pass
