@@ -3,7 +3,7 @@ ChainLadder
 
 This is the ChainLadder class documentation.
 
-.. module:: Classes
+.. automodule:: Classes
 .. autoclass:: ChainLadder
    :members:
 
