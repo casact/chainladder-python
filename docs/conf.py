@@ -20,10 +20,10 @@
 import os
 import sys
 #sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
-sys.path.append(os.path.abspath('..\chainladder'))
+sys.path.append(os.path.abspath('..'))
 sys.path.insert(0,os.path.abspath('..\chainladder'))
 
-print(sys.path)
+#print(sys.path)
 
 class Mock(object):
     def __init__(self, *args, **kwargs):
