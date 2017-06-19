@@ -6,4 +6,4 @@ Rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLad
 
 This code is currently under development and will not work...
 
-Please refer to the [Documentation](chainladder-python.readthedocs.io) for support.
+Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for support.
