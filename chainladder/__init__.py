@@ -17,6 +17,6 @@ __all__ = ['Triangles', 'ChainLadder', 'MackChainLadderFunctions']
 #sns.set_style("whitegrid")
 
 #from chainladder.TestCases import df_list
-from chainladder.classes import Triangle 
-from chainladder.classes import ChainLadder 
-from chainladder.classes import MackChainLadder
+#from chainladder.classes import Triangle 
+#from chainladder.classes import ChainLadder 
+#from chainladder.classes import MackChainLadder
