@@ -20,8 +20,9 @@
 import os
 import sys
 #sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
-sys.path.append(os.path.abspath('..'))
-sys.path.insert(0,os.path.abspath('..\chainladder'))
+#sys.path.append(os.path.abspath('..'))
+#sys.path.insert(0,os.path.abspath('..\chainladder'))
+sys.path.insert(0, os.path.join(os.path.dirname((os.path.abspath('.')), 'chainladder')
 
 #print(sys.path)
 
