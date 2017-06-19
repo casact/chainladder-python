@@ -1,13 +1,65 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Jun 17 17:34:23 2017
 
-@author: jboga
+"""The Classes module.
+
+The :mod:`Classes` module contains three classes:
+
+- :class:`Classes.Triangle`
+- :class:`Classes.ChainLadder`
+- :class:`Classes.WRTO`
+- :class:`Classes.MackChainLadder`
+
+One can use the :func:`Classes.Triangle.incr2cum` and
+:func:`Classes.Triangle.cum2incr` functions to accumulate and decumulate a triangle.
+
+   
 """
 import numpy as np
 from pandas import DataFrame, concat
 
 class Triangle:
+    """Triangle class is the basic data representation of an actuarial triangle.
+
+    Historical insurance data is often presented in form of a triangle structure, showing
+    the development of claims over time for each exposure (origin) period. An origin
+    period could be the year the policy was written or earned, or the loss occurrence
+    period. Of course the origin period doesn’t have to be yearly, e.g. quarterly or
+    6
+    monthly origin periods are also often used. The development period of an origin
+    period is also called age or lag. Data on the diagonals present payments in the
+    same calendar period. Note, data of individual policies is usually aggregated to
+    homogeneous lines of business, division levels or perils.
+    Most reserving methods of the ChainLadderpackage expect triangles as input data
+    sets with development periods along the columns and the origin period in rows. The
+    package comes with several example triangles. 
+    `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
+
+    Parameters:    
+        origin : numpy.array or pandas.Series
+            An array representing the origin period of the triangle.
+        dev : numpy.array or pandas.Series
+            An array representing the development period of the triangle. In triangle form,
+            the development periods must be the columns of the dataset
+        values : str
+            A string representing the column name of the triangle measure if the data is in
+            tabular form.  Otherwise it is ignored.
+        dataform : str
+            A string value that takes on one of two values ['triangle' and 'tabular']
+        
+    Attributes:
+        data : pandas.DataFrame
+            A DataFrame representing the triangle
+        origin : numpy.array or pandas.Series
+            Refer to parameter value.
+        dev : numpy.array or pandas.Series
+            Refer to parameter value.
+        values : str
+            Refer to parameter value.
+        dataform : str
+            Refer to parameter value.
+        
+    """
+    
     def __init__(self, data=None, origin = None, dev = None, values = None, dataform = 'triangle'):
         # Currently only support pandas dataframes as data
         if str(type(data)) != '<class \'pandas.core.frame.DataFrame\'>':
@@ -29,7 +81,15 @@ class Triangle:
             self.__set_values() 
           
     def dataAsTable(self, inplace=False):
-        # will need to create triangle class that has origin and dev
+        """Method to convert triangle form to tabular form.
+
+        Arguments:
+            inplace: bool
+                Set to True will update the instance data attribute inplace 
+
+        Returns:
+            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+        """
         lx = DataFrame()
         if self.dataform == 'triangle':
             for val in range(len(self.data.T.index)):
@@ -47,6 +107,15 @@ class Triangle:
         
 
     def dataAsTriangle(self, inplace=False):
+        """Method to convert tabular form to triangle form.
+
+        Arguments:
+            inplace: bool
+                Set to True will update the instance data attribute inplace 
+
+        Returns:
+            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+        """
         if self.dataform == 'tabular':
             tri = pivot_table(self.data,values=self.values,index=[self.origin], columns=[self.dev]).sort_index()
             tri.columns = [str(item) for item in tri.columns]
@@ -56,6 +125,19 @@ class Triangle:
         return tri
         
     def incr2cum(self, inplace=False):
+        """Method to convert an incremental triangle into a cumulative triangle.  Note,
+        the triangle must be in triangle form.
+
+        Arguments:
+            inplace: bool
+                Set to True will update the instance data attribute inplace 
+
+        Returns:
+            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+        
+        todo:
+            Need to error check dataform and convert it to triangle form before running method.
+        """
         incr = DataFrame(self.data.iloc[:,0])
         for val in range(1, len(self.data.T.index)):
             incr = concat([incr,self.data.iloc[:,val]+incr.iloc[:,-1]],axis=1)
@@ -66,6 +148,19 @@ class Triangle:
         return incr     
     
     def cum2incr(self, inplace=False):
+        """Method to convert an cumulative triangle into a incremental triangle.  Note,
+        the triangle must be in triangle form.
+
+        Arguments:
+            inplace: bool
+                Set to True will update the instance data attribute inplace 
+
+        Returns:
+            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+        
+        TODOs:
+            Need to error check dataform and convert it to triangle form before running method.
+        """
         incr = self.data.iloc[:,0]
         for val in range(1, len(self.data.T.index)):
             incr = concat([incr,self.data.iloc[:,val]-self.data.iloc[:,val-1]],axis=1)
@@ -76,7 +171,13 @@ class Triangle:
         return incr   
     
     def __set_origin(self):
-        ##### Identify Origin Profile ####
+        """Experimental hidden method. Purpose is to profile the data and autodetect the origin period
+        improving the user experience by not requiring the user to supply an explicit origin.
+        
+        TODOs:
+            1. Continually refine potential origin_names to a broader list
+            2. Need error handling
+        """
         origin_names = ['accyr', 'accyear', 'accident year', 'origin', 'accmo', 'accpd', 
                         'accident month']
         origin_in_col_bool = False
@@ -95,6 +196,13 @@ class Triangle:
         return origin_in_col_bool, origin_in_index_bool
 
     def __set_dev(self):
+        """Experimental hidden method. Purpose is to profile the data and autodetect the dev period
+        improving the user experience by not requiring the user to supply an explicit dev.
+        
+        TODOs:
+            1. Continually refine potential dev_names to a broader list
+            2. Need error handling
+        """
         ##### Identify dev Profile ####
         dev_names = ['devpd', 'dev', 'development month', 'devyr', 'devyear']
         dev_in_col_bool = False
@@ -107,6 +215,14 @@ class Triangle:
         return dev_in_col_bool
     
     def __set_values(self):
+        """Experimental hidden method. Purpose is to profile the data and autodetect the values parameter
+        improving the user experience by not requiring the user to supply an explicit values parameter.
+        This is onyl necessary when dataform is 'tabular'.
+        
+        TODOs:
+            1. Continually refine potential values_names to a broader list
+            2. Need error handling
+        """
         ##### Identify dev Profile ####
         value_names = ['incurred claims'] 
         values_match = [i for i in value_names if i in self.data.columns]
@@ -117,7 +233,7 @@ class Triangle:
         return 
     
 class WRTO:
-    """WRTO ; Weighted least squares regression through the origin
+    """Weighted least squares regression through the origin
 
     I could not find any decent Python package that does Weighted regression 
     through origin that also produces summary statistics, so I wrote my own.
@@ -156,12 +272,41 @@ class WRTO:
         self.w = w
         self.coef_ = sum(w*X*y)/sum(w*X*X)
         self.WSSResidual = sum(w*((y-self.coef_*X)**2))
-        self.mse = self.WSSResidual / (len(X)-1)
+        if len(X) == 1:
+            self.mse = np.nan
+        else:
+            self.mse = self.WSSResidual / (len(X)-1)
         self.se = np.sqrt(self.mse/sum(w*X*X))
         self.sigma = np.sqrt(self.mse)
         
 
 class ChainLadder:
+    """ ChainLadder class specifies the chainladder model.
+    
+    The classical chain-ladder is a deterministic algorithm to forecast claims based on
+    historical data. It assumes that the proportional developments of claims from one
+    development period to the next are the same for all origin years.
+    `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
+    
+    Parameters:    
+        tri : Triangle
+            A triangle object. Refer to :class:`Classes.Triangle`
+        weights : int
+            A value representing an input into the weights of the WRTO class.
+        delta : int
+            A value representing an input into the weights of the WRTO class.
+        
+    Attributes:
+        tri : Triangle
+            A triangle object on which the Chainladder model will be built.
+        weights : pandas.DataFrame
+            A value representing an input into the weights of the WRTO class.
+        delta : list
+            A set of values representing an input into the weights of the WRTO class.
+        models : list
+            A list of WTRO objects for of length (col-1)
+    
+    """
     def __init__(self, tri, weights=1, delta=1):
         self.triangle = tri
         weights = self.__checkWeights(weights)
@@ -172,9 +317,15 @@ class ChainLadder:
         
         
     def __checkWeights(self, weights):
+        """ Hidden method used to convert weights from a scalar into a matrix of the 
+        same shape as the triangle
+        """
+    
         return self.triangle.data*0 + weights
     
     def predict(self):
+        """ Method to 'square' the triangle based on the 'models' list.
+        """
         ldf = [item.coef_ for item in self.models]
         square = self.triangle.data.copy()
         for row in range(1,len(square)):
@@ -183,6 +334,8 @@ class ChainLadder:
         return square
     
     def fit(self):
+        """ Method to call the weighted regression trhough the origin fitting .
+        """
         models = []
         for i in range(0, len(self.triangle.data.columns)-1):
             #lm = LinearRegression(fit_intercept=False)
@@ -195,12 +348,72 @@ class ChainLadder:
             lm = WRTO(X,y,sample_weight)
             models.append(lm)   
         return models
+    
+    def ata(self, colname_sep = '-'):
+        """ Method to display an age-to-age triangle with a display of simple average
+        chainladder development factors and volume weighted average development factors.
+        
+        Parameters:    
+            colname_sep : str
+                text to join the names of two adjacent columns representing the age-to-age factor column name.
+        
+        Returns:
+            Pandas.DataFrame of the age-to-age triangle.
+        """
+        incr = DataFrame(self.triangle.data.iloc[:,1]/self.triangle.data.iloc[:,0])
+        for i in range(1, len(self.triangle.data.columns)-1):
+            incr = concat([incr,self.triangle.data.iloc[:,i+1]/self.triangle.data.iloc[:,i]],axis=1)
+        incr.columns = [item + colname_sep + self.triangle.data.columns.values[num+1] for num, item in enumerate(self.triangle.data.columns.values[:-1])]
+        incr = incr.iloc[:-1]
+        ldf = [item.coef_ for item in ChainLadder(self.triangle, delta=2).models]
+        incr.loc['smpl']=ldf
+        ldf = [item.coef_ for item in ChainLadder(self.triangle, delta=1).models]
+        incr.loc['vwtd']=ldf
+        return incr.round(3)
+    
 
 
 class MackChainLadder:
+    """ MackChainLadder class specifies the Mack chainladder model.
+    
+    Thomas Mack published in 1993 [Mac93] a method which estimates the standard
+    errors of the chain-ladder forecast without assuming a distribution under three
+    conditions.
+    `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
+    
+    Parameters:    
+        tri : Triangle
+            A triangle object. Refer to :class:`Classes.Triangle`
+        weights : int
+            A value representing an input into the weights of the WRTO class.
+        alpha : int
+            A value representing an input into the weights of the WRTO class.
+        tail : bool
+            Represent whether a tail factor should be applied to the data. Value of False
+            sets tail factor to 1.0
+        
+    Attributes:
+        tri : Triangle
+            A triangle object. Refer to :class:`Classes.Triangle`
+        weights : pandas.DataFrame
+            A value representing an input into the weights of the WRTO class.
+        fullTriangle : pandas.DataFrame
+            A completed triangle using Mack Chainladder assumptions.
+        f : numpy.array
+            An array representing the (col-1) loss development factors, f-notation borrowed from Mack
+        fse : numpy.array
+            An array representing the (col-1) standard errors of loss development factors.
+    
+    """
+    
     def __init__(self, tri,  weights=1,  alpha=1,  est_sigma="log-linear",  
                  tail=False,  tail_se=None,  tail_sigma=None,  mse_method = "Mack"):
         delta = 2-alpha
+        if tail == False:
+            self.tail_factor = 1.0
+        else:
+            self.tail_factor = 2.0
+            
         cl = ChainLadder(tri, weights=weights,  delta=delta)
         alpha = [2 - item for item in cl.delta]
         
@@ -208,16 +421,22 @@ class MackChainLadder:
         self.weights = cl.weights
         self.fullTriangle = cl.predict()
         self.alpha = alpha
-        self.f = np.array([item.coef_ for item in cl.models])
-        self.fse = np.array([item.se for item in cl.models])
-        self.sigma = np.array([item.sigma for item in cl.models])
+        self.f = np.append(np.array([item.coef_ for item in cl.models]), self.tail_factor)
+        self.fse = np.array([item.se for item in cl.models])[:-1]
+        self.fse = np.append(self.fse,self.tail_se())
+        self.sigma = np.array([item.sigma for item in cl.models])[:-1]
+        self.sigma = np.append(self.sigma,self.tail_sigma())
         self.Fse = self.Fse()
 
 
     def process_risk(self):
+        """ Method to return the process risk of the Mack Chainladder model.
+        
+        Returns:
+            
+        """
         procrisk = DataFrame([0 for item in range(len(self.fullTriangle))],index=self.fullTriangle.index, columns=[self.fullTriangle.columns[0]])
         for i in range(1,len(self.fullTriangle.columns)):
-            print(i)
             temp = DataFrame(np.sqrt((self.fullTriangle.iloc[:,i-1]*self.Fse.iloc[:,i-1])**2 + (self.f[i-1]*procrisk.iloc[:,i-1])**2)*self.triangle.data.iloc[:,i].isnull())
             temp.columns = [self.fullTriangle.columns[i]]
             procrisk = concat([procrisk, temp],axis=1)
@@ -226,7 +445,6 @@ class MackChainLadder:
     def parameter_risk(self):
         paramrisk = DataFrame([0 for item in range(len(self.fullTriangle))],index=self.fullTriangle.index, columns=[self.fullTriangle.columns[0]])
         for i in range(1,len(self.fullTriangle.columns)):
-            print(i)
             temp = DataFrame(np.sqrt((self.fullTriangle.iloc[:,i-1]*self.fse[i-1])**2 + (self.f[i-1]*paramrisk.iloc[:,i-1])**2)*self.triangle.data.iloc[:,i].isnull())
             temp.columns = [self.fullTriangle.columns[i]]
             paramrisk = concat([paramrisk, temp],axis=1)
@@ -241,8 +459,36 @@ class MackChainLadder:
         fulltriangleweightconst = self.weights.data.mode().T.mode().iloc[0,0]
         fulltriangleweight = self.fullTriangle*0 + fulltriangleweightconst
         Fse = DataFrame()
-        for i in range(self.fullTriangle.shape[1]-2):
+        for i in range(self.fullTriangle.shape[1]-1):
             Fse = concat([Fse, DataFrame(self.sigma[i]/np.sqrt(fulltriangleweight.iloc[:,i]*self.fullTriangle.iloc[:,i]**self.alpha[i]))],axis=1)
           
         Fse.set_index(self.fullTriangle.index, inplace = True)
         return Fse
+    
+    def tail_se(self):
+        n = len(self.fullTriangle.columns)
+        f = self.f[:-2]
+        dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
+        ldf_reg = np.polyfit(dev, np.log(f-1),1)
+        time_pd = (np.log(self.f[-2]-1)-ldf_reg[1])/ldf_reg[0]
+        fse = self.fse
+        fse_reg = np.polyfit(dev, np.log(fse),1)
+        tailse = np.exp(time_pd*fse_reg[0]+fse_reg[1])
+        return tailse
+    
+    def tail_sigma(self):
+        n = len(self.fullTriangle.columns)
+        f = self.f[:-2]
+        dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
+        ldf_reg = np.polyfit(dev, np.log(f-1),1)
+        time_pd = (np.log(self.f[-2]-1)-ldf_reg[1])/ldf_reg[0]
+        sigma = self.sigma
+        sigma_reg = np.polyfit(dev, np.log(sigma),1)
+        tailsigma = np.exp(time_pd*sigma_reg[0]+sigma_reg[1])
+        return tailsigma        
+        
+        
+        
+        
+        
+        

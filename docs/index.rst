@@ -6,14 +6,15 @@
 Welcome to ChainLadder's documentation!
 =======================================
 
-This package is inspired by the R package of the same name.
+This package is inspired by the `R package <https://github.com/mages/ChainLadder>`_ of the same name.  
+
 
 .. toctree::
+   :caption: Table of Contents:
    :maxdepth: 2
-   :caption: Contents:
 
-.. automodule:: Classes
-.. autoclass:: WRTO
+   Classes.rst
+
 
 
 Indices and tables
