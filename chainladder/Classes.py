@@ -427,7 +427,7 @@ class MackChainLadder:
         self.sigma = np.array([item.sigma for item in cl.models])[:-1]
         self.sigma = np.append(self.sigma,self.tail_sigma())
         self.Fse = self.Fse()
-        self.total_process_risk = np.sqrt((mack.process_risk()**2).sum())
+        self.total_process_risk = np.sqrt((self.process_risk()**2).sum())
         # Need to define total_parameter_risk
         # Need to define total_Mack_SE
         
