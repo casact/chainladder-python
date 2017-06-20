@@ -16,6 +16,7 @@ One can use the :func:`Classes.Triangle.incr2cum` and
 """
 import numpy as np
 from pandas import DataFrame, concat, Series, pivot_table
+from scipy import stats
 
 
 class Triangle:
@@ -347,7 +348,7 @@ class ChainLadder:
             w = self.weights.data.iloc[:,i].dropna().iloc[:-1]
             X = data.iloc[:,0].values
             y = data.iloc[:,1].values  
-            sample_weight=w/X**self.delta[i]
+            sample_weight=np.array(w).astype(float)/np.array(X).astype(float)**self.delta[i]
             #lm.fit(X.reshape(-1, 1),y, sample_weight=w/X**self.delta[i])
             lm = WRTO(X,y,sample_weight)
             models.append(lm)   
@@ -506,12 +507,14 @@ class MackChainLadder:
     def tail_sigma(self):
         if True:
             y = np.log(self.sigma)
-            x = np.array([i for i in range(len(self.sigma))])
-            model = np.polyfit(x,y,1)
+            x = np.array([i+1 for i in range(len(self.sigma))])
+            model = stats.linregress(x,y)
             tailsigma = np.exp((x[-1]+1)*model[0]+model[1])
-            #if self.est_sigma == 'Mack':
-            #    np.sqrt(abs(min((y[-1]**4/y[-2]**2),min(y[-2]**2, y[-1]**2))))
-                
+            print(y)
+            print(model[3])
+            if model[3] > 0.05: #p-vale of slope parameter
+                y = self.sigma
+                tailsigma = np.sqrt(abs(min((y[-1]**4/y[-2]**2),min(y[-2]**2, y[-1]**2))))
         else:
             # I cannot replicate R exactly!!!
             n = len(self.fullTriangle.columns)
@@ -533,8 +536,6 @@ class MackChainLadder:
         summary['Mack S.E.'] = self.mack_se.iloc[:,-1]
         summary['CV(IBNR)'] = summary['Mack S.E.']/summary['IBNR']
         return summary
-    
-        
         
         
 
