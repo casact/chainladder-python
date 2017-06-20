@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
+Created on Mon Jun 19 15:19:58 2017
 
-This is a temporary script file.
+@author: jboga
 """
-import sys
-sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
-import os
-print(os.getcwd())
+
+import pandas as pd
+import numpy as np
+
 import chainladder as cl
 
-RAA = cl.Triangle(cl.df_list[16])
-mack = cl.MackChainLadder(RAA, alpha=2)
+RAA = cl.datasets.load_dataset('RAA')
+ABC = cl.datasets.load_dataset('ABC')
+
+RAA_mack = cl.MackChainLadder(cl.Triangle(RAA), alpha=2)
+ABC_mack = cl.MackChainLadder(cl.Triangle(ABC), alpha=2)
+
+print(RAA_mack.summary().round(3))
+print(ABC_mack.summary().round(3))

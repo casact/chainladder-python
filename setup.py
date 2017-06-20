@@ -5,7 +5,7 @@ Created on Mon Jun 19 07:01:54 2017
 @author: jboga
 """
 
-descr = "Chainladder"
+descr = "Chainladder Package"
 
 from distutils.core import setup
 
@@ -18,6 +18,7 @@ setup(
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
     license='LICENSE',
+    include_package_data=True,
     description= descr,
     #long_description=open('README.rst').read(),
     install_requires=[

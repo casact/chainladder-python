@@ -1,0 +1,21 @@
+include chainladder/data/ABC
+include chainladder/data/M3IR5
+include chainladder/data/MCLincurred
+include chainladder/data/MCLpaid
+include chainladder/data/Mortgage
+include chainladder/data/MW2008
+include chainladder/data/MW2014
+include chainladder/data/qincurred
+include chainladder/data/qpaid
+include chainladder/data/RAA
+include chainladder/data/UKMotor
+include chainladder/data/USAAincurred
+include chainladder/data/USAApaid
+include chainladder/data/auto$CommercialAutoPaid
+include chainladder/data/auto$PersonalAutoIncurred
+include chainladder/data/auto$PersonalAutoPaid
+include chainladder/data/GenIns
+include chainladder/data/GenInsLong
+include chainladder/data/liab$AutoLiab
+include chainladder/data/liab$GeneralLiab
+

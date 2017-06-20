@@ -7,7 +7,7 @@ These are the unit tests to test the functionality of the package.
 import os.path
 from pandas import read_pickle, Series, concat
 
-path = os.path.abspath('.') 
+path = os.path.abspath('..') 
 df_list = [read_pickle(os.path.join(path,'data',item)) for item in os.listdir(os.path.join(path,'data',''))] 
 
 def test_tri_to_table_convert(df):
