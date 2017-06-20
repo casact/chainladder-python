@@ -4,6 +4,7 @@
 
 Rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLadder) in Python.
 
-This code is currently under development and will not work...
+This code is currently under development and only contains:
+  - Mack Chain Ladder Functionality
 
 Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for support.
