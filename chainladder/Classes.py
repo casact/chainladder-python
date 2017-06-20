@@ -15,7 +15,7 @@ One can use the :func:`Classes.Triangle.incr2cum` and
    
 """
 import numpy as np
-from pandas import DataFrame, concat, Series
+from pandas import DataFrame, concat, Series, pivot_table
 
 class Triangle:
     """Triangle class is the basic data representation of an actuarial triangle.
