@@ -17,6 +17,7 @@ One can use the :func:`Classes.Triangle.incr2cum` and
 import numpy as np
 from pandas import DataFrame, concat, Series, pivot_table
 
+
 class Triangle:
     """Triangle class is the basic data representation of an actuarial triangle.
 
@@ -102,9 +103,9 @@ class Triangle:
                 self.data= lx[['dev','values']]
                 self.dataform = 'tabular'
                 self.dev = 'dev'
-                return lx[['dev','values']]
+            return lx[['dev','values']]
         else:
-            return
+            return self.data
         
 
     def dataAsTriangle(self, inplace=False):
@@ -123,7 +124,9 @@ class Triangle:
             if inplace == True:
                 self.data = tri   
                 self.dataform = 'triangle'
-        return tri
+            return tri
+        else:
+            return self.data
         
     def incr2cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.  Note,
@@ -414,19 +417,20 @@ class MackChainLadder:
             self.tail_factor = 1.0
         else:
             self.tail_factor = 2.0
-            
-        cl = ChainLadder(tri, weights=weights,  delta=delta)
+        self.triangle = tri
+        self.triangle.dataAsTriangle(inplace=True)    
+        cl = ChainLadder(self.triangle, weights=weights,  delta=delta)
         alpha = [2 - item for item in cl.delta]
         
-        self.triangle = tri
+        
         self.weights = cl.weights
         self.fullTriangle = cl.predict()
         self.alpha = alpha
         self.f = np.append(np.array([item.coef_ for item in cl.models]), self.tail_factor)
         self.fse = np.array([item.se for item in cl.models])[:-1]
-        self.fse = np.append(self.fse,self.tail_se())
         self.sigma = np.array([item.sigma for item in cl.models])[:-1]
         self.sigma = np.append(self.sigma,self.tail_sigma())
+        self.fse = np.append(self.fse,self.tail_se())
         self.Fse = self.Fse()
         self.total_process_risk = np.sqrt((self.process_risk()**2).sum())
         self.total_parameter_risk = self.total_parameter_risk()
@@ -469,7 +473,7 @@ class MackChainLadder:
         
     def Mack_SE(self):
         return  DataFrame(np.sqrt(np.matrix(self.process_risk()**2 )+np.matrix(self.parameter_risk()**2)), index=self.fullTriangle.index)
-    
+
     def Fse(self):
         # This is sloppy, and I don't know that it works for all cases.  Need to
         # understand weights better.
@@ -477,33 +481,47 @@ class MackChainLadder:
         fulltriangleweight = self.fullTriangle*0 + fulltriangleweightconst
         Fse = DataFrame()
         for i in range(self.fullTriangle.shape[1]-1):
-            Fse = concat([Fse, DataFrame(self.sigma[i]/np.sqrt(fulltriangleweight.iloc[:,i]*self.fullTriangle.iloc[:,i]**self.alpha[i]))],axis=1)
-          
+            Fse = concat([Fse, DataFrame(self.sigma[i]/np.sqrt(np.array(fulltriangleweight.iloc[:,i]).astype(float)*np.array(self.fullTriangle.iloc[:,i]).astype(float)**self.alpha[i]))],axis=1)
+
         Fse.set_index(self.fullTriangle.index, inplace = True)
         return Fse
     
     def tail_se(self):
-        # I cannot replicate R exactly!!!
-        n = len(self.fullTriangle.columns)
-        f = self.f[:-2]
-        dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
-        ldf_reg = np.polyfit(dev, np.log(f-1),1)
-        time_pd = (np.log(self.f[-2]-1)-ldf_reg[1])/ldf_reg[0]
-        fse = self.fse
-        fse_reg = np.polyfit(dev, np.log(fse),1)
-        tailse = np.exp(time_pd*fse_reg[0]+fse_reg[1])
+        if True:
+            tailse = self.sigma[-1]/np.sqrt(self.fullTriangle.iloc[0,-2]**self.alpha[-1])
+            
+        else:
+            # I cannot replicate R exactly!!!
+            n = len(self.fullTriangle.columns)
+            f = self.f[:-2]
+            dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
+            ldf_reg = np.polyfit(dev, np.log(f-1),1)
+            time_pd = (np.log(self.f[-2]-1)-ldf_reg[1])/ldf_reg[0]
+            print(time_pd)
+            fse = self.fse
+            fse_reg = np.polyfit(dev, np.log(fse),1)
+            tailse = np.exp(time_pd*fse_reg[0]+fse_reg[1])
         return tailse
     
     def tail_sigma(self):
-        # I cannot replicate R exactly!!!
-        n = len(self.fullTriangle.columns)
-        f = self.f[:-2]
-        dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
-        ldf_reg = np.polyfit(dev, np.log(f-1),1)
-        time_pd = (np.log(self.f[-2]-1)-ldf_reg[1])/ldf_reg[0]
-        sigma = self.sigma
-        sigma_reg = np.polyfit(dev, np.log(sigma),1)
-        tailsigma = np.exp(time_pd*sigma_reg[0]+sigma_reg[1])
+        if True:
+            y = np.log(self.sigma)
+            x = np.array([i for i in range(len(self.sigma))])
+            model = np.polyfit(x,y,1)
+            tailsigma = np.exp((x[-1]+1)*model[0]+model[1])
+            #if self.est_sigma == 'Mack':
+            #    np.sqrt(abs(min((y[-1]**4/y[-2]**2),min(y[-2]**2, y[-1]**2))))
+                
+        else:
+            # I cannot replicate R exactly!!!
+            n = len(self.fullTriangle.columns)
+            f = self.f[:-2]
+            dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
+            ldf_reg = np.polyfit(dev, np.log(f-1),1)
+            time_pd = (np.log(self.f[-2]-1)-ldf_reg[1])/ldf_reg[0]
+            sigma = self.sigma
+            sigma_reg = np.polyfit(dev, np.log(sigma),1)
+            tailsigma = np.exp(time_pd*sigma_reg[0]+sigma_reg[1])
         return tailsigma   
     
     def summary(self):
