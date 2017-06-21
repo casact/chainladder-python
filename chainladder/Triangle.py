@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
-Created on Tue Jun 20 12:36:01 2017
-
-@author: jboga
+The Triangle Module
 """
 
 import numpy as np

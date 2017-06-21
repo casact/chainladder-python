@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 20 12:33:46 2017
-
-@author: jboga
+The Chainladder Module
 """
 
 import numpy as np

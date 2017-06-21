@@ -3,8 +3,9 @@ ChainLadder
 
 This is the ChainLadder class documentation.
 
-.. module:: chainladder.Classes
+.. automodule:: chainladder.Chainladder
 .. autoclass:: ChainLadder
    :members:
-
+.. autoclass:: WRTO
+   :members:
 

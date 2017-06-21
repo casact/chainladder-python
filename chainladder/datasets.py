@@ -1,3 +1,6 @@
+"""
+The datasets module
+"""
 from pandas import read_pickle
 import os
 

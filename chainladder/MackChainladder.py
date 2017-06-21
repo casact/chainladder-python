@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""The Mack Chainladder module.
+"""The MackChainladder module.
 
 The :mod:`Classes` module contains three classes:
 

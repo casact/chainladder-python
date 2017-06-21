@@ -1,9 +1,11 @@
 Triangle
-========
+=========
 
 This is the Triangle class documentation.
 
-.. module:: chainladder.Classes
+.. automodule:: chainladder.Triangle
 .. autoclass:: Triangle
    :members:
+
+
 

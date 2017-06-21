@@ -13,8 +13,9 @@ This package is inspired by the `R package <https://github.com/mages/ChainLadder
    :caption: Table of Contents:
    :maxdepth: 2
 
-   Classes.rst
-
+   Modules.rst
+   Datasets.rst
+   Examples.rst
 
 Indices and tables
 ==================
