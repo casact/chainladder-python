@@ -1,18 +1,8 @@
 # -*- coding: utf-8 -*-
 
-"""The MackChainladder module.
-
-The :mod:`Classes` module contains three classes:
-
-- :class:`Classes.Triangle`
-- :class:`Classes.ChainLadder`
-- :class:`Classes.WRTO`
-- :class:`Classes.MackChainLadder`
-
-One can use the :func:`Classes.Triangle.incr2cum` and
-:func:`Classes.Triangle.cum2incr` functions to accumulate and decumulate a triangle.
-
-   
+"""The MackChainladder module and class establishes the statistical framework
+of the chainladder method.  With MackChainLadder, various standard errors can
+be computed to ultimately develop confidence intervals on IBNR estimates.   
 """
 import numpy as np
 from pandas import DataFrame, concat, Series, pivot_table
@@ -24,8 +14,8 @@ class MackChainLadder:
     """ MackChainLadder class specifies the Mack chainladder model.
     
     Thomas Mack published in 1993 [Mac93] a method which estimates the standard
-    errors of the chain-ladder forecast without assuming a distribution under three
-    conditions.
+    errors of the chain-ladder forecast without assuming a distribution under 
+    three conditions.
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
     
     Parameters:    
@@ -36,8 +26,8 @@ class MackChainLadder:
         alpha : int
             A value representing an input into the weights of the WRTO class.
         tail : bool
-            Represent whether a tail factor should be applied to the data. Value of False
-            sets tail factor to 1.0
+            Represent whether a tail factor should be applied to the data. 
+            Value of False sets tail factor to 1.0
         
     Attributes:
         tri : Triangle
@@ -47,19 +37,21 @@ class MackChainLadder:
         fullTriangle : pandas.DataFrame
             A completed triangle using Mack Chainladder assumptions.
         f : numpy.array
-            An array representing the (col-1) loss development factors, f-notation borrowed from Mack
+            An array representing the (col-1) loss development factors, 
+            f-notation borrowed from Mack
         fse : numpy.array
-            An array representing the (col-1) standard errors of loss development factors.
+            An array representing the (col-1) standard errors of loss 
+            development factors.
     
     """
     
-    def __init__(self, tri,  weights=1,  alpha=1,  est_sigma="log-linear",  
-                 tail=False,  tail_se=None,  tail_sigma=None,  mse_method = "Mack"):
+    def __init__(self, tri,  weights=1,  alpha=1,    
+                 tail=False):
         delta = 2-alpha
         if tail == False:
             self.tail_factor = 1.0
         else:
-            self.tail_factor = 2.0
+            self.tail_factor = 2.0 # need to do more tail test cases
         self.triangle = tri
         self.triangle.dataAsTriangle(inplace=True)    
         cl = ChainLadder(self.triangle, weights=weights,  delta=delta)
@@ -79,16 +71,15 @@ class MackChainLadder:
         self.total_parameter_risk = self.total_parameter_risk()
         self.mack_se = np.sqrt(self.process_risk()**2 + self.parameter_risk()**2)
         self.total_mack_se = np.sqrt(self.total_process_risk[-1]**2+self.total_parameter_risk[-1]**2)
-        
-        
-
 
     def process_risk(self):
         """ Method to return the process risk of the Mack Chainladder model.
         
         Returns:
-            
+            This calculation is consistent with the R calculation 
+            MackChainLadder$Mack.ProcessRisk.
         """
+        
         procrisk = DataFrame([0 for item in range(len(self.fullTriangle))],index=self.fullTriangle.index, columns=[self.fullTriangle.columns[0]])
         for i in range(1,len(self.fullTriangle.columns)):
             temp = DataFrame(np.sqrt((self.fullTriangle.iloc[:,i-1]*self.Fse.iloc[:,i-1])**2 + (self.f[i-1]*procrisk.iloc[:,i-1])**2)*self.triangle.data.iloc[:,i].isnull())
@@ -97,6 +88,13 @@ class MackChainLadder:
         return procrisk
 
     def parameter_risk(self):
+        """ Method to return the parameter risk of the Mack Chainladder model.
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$Mack.ParameterRisk.
+        """
+        
         paramrisk = DataFrame([0 for item in range(len(self.fullTriangle))],index=self.fullTriangle.index, columns=[self.fullTriangle.columns[0]])
         for i in range(1,len(self.fullTriangle.columns)):
             temp = DataFrame(np.sqrt((self.fullTriangle.iloc[:,i-1]*self.fse[i-1])**2 + (self.f[i-1]*paramrisk.iloc[:,i-1])**2)*self.triangle.data.iloc[:,i].isnull())
@@ -105,6 +103,14 @@ class MackChainLadder:
         return paramrisk
     
     def total_parameter_risk(self):
+        """ Method to produce the parameter risk of the Mack Chainladder model
+        for each development column.
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$Total.ProcessRisk.
+            
+        """
         M = np.empty(0)
         tpr = [0]
         for i in range(len(self.fullTriangle.columns)):
@@ -115,26 +121,55 @@ class MackChainLadder:
             
         
     def Mack_SE(self):
-        return  DataFrame(np.sqrt(np.matrix(self.process_risk()**2 )+np.matrix(self.parameter_risk()**2)), index=self.fullTriangle.index)
+        """ Method to produce the Mack Standard Error of the Mack Chainladder 
+        model.
+        
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$Mack.S.E.
+        """
+            
+        return  DataFrame(np.sqrt(np.matrix(self.process_risk()**2 )
+                    +np.matrix(self.parameter_risk()**2)), index=self.fullTriangle.index)
 
     def Fse(self):
-        # This is sloppy, and I don't know that it works for all cases.  Need to
-        # understand weights better.
+        """ Method to produce the Full Triangle standard error of the Mack Chainladder 
+        model.
+        
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$F.se
+        """        
+        
+        # This is sloppy, and I don't know that it works for non-uniform weights.
         fulltriangleweightconst = self.weights.data.mode().T.mode().iloc[0,0]
         fulltriangleweight = self.fullTriangle*0 + fulltriangleweightconst
         Fse = DataFrame()
         for i in range(self.fullTriangle.shape[1]-1):
-            Fse = concat([Fse, DataFrame(self.sigma[i]/np.sqrt(np.array(fulltriangleweight.iloc[:,i]).astype(float)*np.array(self.fullTriangle.iloc[:,i]).astype(float)**self.alpha[i]))],axis=1)
+            Fse = concat([Fse, DataFrame(self.sigma[i]/
+                np.sqrt(np.array(fulltriangleweight.iloc[:,i]).astype(float)
+                *np.array(self.fullTriangle.iloc[:,i]).astype(float)**self.alpha[i]))],axis=1)
 
         Fse.set_index(self.fullTriangle.index, inplace = True)
         return Fse
     
     def tail_se(self):
+        """ Method to produce the standard error of the Mack Chainladder 
+        model tail factor
+        
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$tail.se
+        """     
         if True:
             tailse = self.sigma[-1]/np.sqrt(self.fullTriangle.iloc[0,-2]**self.alpha[-1])
             
         else:
-            # I cannot replicate R exactly!!!
+            # Need to do some further testing of tails to determine the
+            # usefulness of this code.
             n = len(self.fullTriangle.columns)
             f = self.f[:-2]
             dev = np.array(self.fullTriangle.columns[:-2]).astype(int)
@@ -146,6 +181,14 @@ class MackChainLadder:
         return tailse
     
     def tail_sigma(self):
+        """ Method to produce the sigma of the Mack Chainladder 
+        model tail factor
+        
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$tail.sigma
+        """  
         if True:
             y = np.log(self.sigma)
             x = np.array([i+1 for i in range(len(self.sigma))])
@@ -167,6 +210,14 @@ class MackChainLadder:
         return tailsigma   
     
     def summary(self):
+        """ Method to produce a summary table of of the Mack Chainladder 
+        model.
+        
+        
+        Returns:
+            This calculation is consistent with the R calculation 
+            MackChainLadder$summary
+        """  
         summary = DataFrame()
         summary['Latest'] = Series([row.dropna().iloc[-1] for index, row in self.triangle.data.iterrows()], index=self.triangle.data.index)      
         summary['Dev to Date'] = Series([row.dropna().iloc[-1] for index, row in self.triangle.data.iterrows()], index=self.triangle.data.index)/self.fullTriangle.iloc[:,-1]        

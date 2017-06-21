@@ -1,6 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 """
-The Triangle Module
+The Triangle Module includes the Triangle class.  This base structure of the
+class is a pandas.DataFrame.  
 """
 
 import numpy as np
@@ -24,7 +25,9 @@ class Triangle:
     package comes with several example triangles. 
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
 
-    Parameters:    
+    Parameters:   
+        data : pandas.DataFrame
+            A DataFrame representing the triangle
         origin : numpy.array or pandas.Series
             An array representing the origin period of the triangle.
         dev : numpy.array or pandas.Series
@@ -128,8 +131,6 @@ class Triangle:
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
         
-        todo:
-            Need to error check dataform and convert it to triangle form before running method.
         """
         incr = DataFrame(self.data.iloc[:,0])
         for val in range(1, len(self.data.T.index)):
@@ -151,8 +152,6 @@ class Triangle:
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
         
-        TODOs:
-            Need to error check dataform and convert it to triangle form before running method.
         """
         incr = self.data.iloc[:,0]
         for val in range(1, len(self.data.T.index)):
@@ -167,9 +166,6 @@ class Triangle:
         """Experimental hidden method. Purpose is to profile the data and autodetect the origin period
         improving the user experience by not requiring the user to supply an explicit origin.
         
-        TODOs:
-            1. Continually refine potential origin_names to a broader list
-            2. Need error handling
         """
         origin_names = ['accyr', 'accyear', 'accident year', 'origin', 'accmo', 'accpd', 
                         'accident month']
@@ -192,9 +188,6 @@ class Triangle:
         """Experimental hidden method. Purpose is to profile the data and autodetect the dev period
         improving the user experience by not requiring the user to supply an explicit dev.
         
-        TODOs:
-            1. Continually refine potential dev_names to a broader list
-            2. Need error handling
         """
         ##### Identify dev Profile ####
         dev_names = ['devpd', 'dev', 'development month', 'devyr', 'devyear']
@@ -212,9 +205,6 @@ class Triangle:
         improving the user experience by not requiring the user to supply an explicit values parameter.
         This is onyl necessary when dataform is 'tabular'.
         
-        TODOs:
-            1. Continually refine potential values_names to a broader list
-            2. Need error handling
         """
         ##### Identify dev Profile ####
         value_names = ['incurred claims'] 

@@ -1,5 +1,7 @@
 """
-The datasets module
+The datasets module has only one function.  It could probably be refactored
+into the Triangle class, but I like the notation of `chainladder.datasets`.
+
 """
 from pandas import read_pickle
 import os
