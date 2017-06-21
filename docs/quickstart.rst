@@ -1,14 +1,14 @@
 
-Welcome to the 'chainladder' quickstart guide
-=============================================
+Quickstart Guide
+================
 
-This tutorial will walk you through basic functionality of the
-**chainladder** package.
+Welcome to the **chainladder** quickstart guide. This tutorial will walk
+you through basic functionality of the **chainladder** package.
 
 Import the package just like any other. We will also include the popular
 pandas and numpy packages to complete this tutorial.
 
-.. code:: ipython3
+.. code:: python
 
     import chainladder as cl
     
@@ -26,11 +26,11 @@ the popular **pandas.DataFrame**. Data can be either tabular or already
 summarized in triangular form.
 
 The **chainladder** package comes pre-installed with a few generic
-datasets which we will access using the :func:``load_dataset`` function.
-For the complete list, you can find them here. We will be using the
-*Reinsurance Association of America* (RAA) triangle.
+datasets which we will access using the ``load_dataset`` function. For
+the complete list, you can find them `here <Datasets.html>`__. We will
+be using the *Reinsurance Association of America* (RAA) triangle.
 
-.. code:: ipython3
+.. code:: python
 
     RAA = cl.load_dataset('RAA')
     RAA.round(0)
@@ -230,7 +230,7 @@ or representing the data in tabular form.
 
 **Incremental triangle**
 
-.. code:: ipython3
+.. code:: python
 
     RAA_Triangle = cl.Triangle(RAA)
     RAA_Triangle.cum2incr()
@@ -420,9 +420,9 @@ or representing the data in tabular form.
 
 
 
-\*\* Triangle in tabular form\*\*
+**Triangle in tabular form**
 
-.. code:: ipython3
+.. code:: python
 
     RAA_Triangle.dataAsTable().head()
 
@@ -502,7 +502,7 @@ to supply a triangle object.
 From above, we will supply our RAA\_Triangle object, and look at a quick
 age-to-age summary using the ata() method.
 
-.. code:: ipython3
+.. code:: python
 
     RAA_CL = cl.ChainLadder(RAA_Triangle)
     RAA_CL.ata()
@@ -694,14 +694,14 @@ age-to-age summary using the ata() method.
 
 The ChainLadder class has a parameter delta. This is described by
 Barnett/Zenwirth, and the default value is 1 and corresponds to a
-volume-weighted loss development factor (LDFpick.
+volume-weighted loss development factor (LDF) pick.
 
 You can directly play with the chainladder model attributes to get
 things such as ldfs, cdfs, and complete triangles.
 
 **LDF**\ s
 
-.. code:: ipython3
+.. code:: python
 
     LDF = pd.Series([ldf.coef_ for ldf in RAA_CL.models], index=RAA_CL.ata().columns)
     LDF.round(4)
@@ -726,7 +726,7 @@ things such as ldfs, cdfs, and complete triangles.
 
 **CDF**\ s
 
-.. code:: ipython3
+.. code:: python
 
     CDF = LDF[::-1].cumprod()[::-1]
     CDF.round(4)
@@ -751,7 +751,7 @@ things such as ldfs, cdfs, and complete triangles.
 
 **Completed Triangle**
 
-.. code:: ipython3
+.. code:: python
 
     RAA_CL.predict().round(0)
 
