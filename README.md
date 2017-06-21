@@ -14,7 +14,7 @@ Package is coming soon to Pypi and Anaconda...
 Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for source code documentation
 
 ## Tutorials
- -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)
- -[Using Mack Chain Ladder](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)
- -[Plotting with chainladder package](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)
+ -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)  
+ -[Using Mack Chain Ladder](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)  
+ -[Plotting with chainladder package](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)  
 
