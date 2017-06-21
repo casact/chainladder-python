@@ -11,5 +11,3 @@ from chainladder.Chainladder import ChainLadder
 from chainladder.Triangle import Triangle
 from chainladder.MackChainladder import MackChainLadder
 from chainladder.Chainladder import WRTO
-
-
