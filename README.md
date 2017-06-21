@@ -15,6 +15,8 @@ Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) f
 
 ## Tutorials
 -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)
+
 -[Using Mack Chain Ladder](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)
+
 -[Plotting with chainladder package](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)
 
