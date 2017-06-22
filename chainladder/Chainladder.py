@@ -9,12 +9,11 @@ approach.
 """
 
 import numpy as np
-from pandas import DataFrame, concat, Series, pivot_table
-from scipy import stats
+from pandas import DataFrame, concat, pivot_table, Series
+from warnings import warn
 from chainladder.Triangle import Triangle
 
-
-class ChainLadder:
+class Chainladder():
     """ ChainLadder class specifies the chainladder model.
 
     The classical chain-ladder is a deterministic algorithm to forecast claims 
@@ -53,29 +52,28 @@ class ChainLadder:
 
     """
 
-    def __init__(self, tri, weights=1, delta=1):
-        self.triangle = tri
-        weights = self.__checkWeights(weights)
-        delta = [delta for item in range(len(self.triangle.data.columns) - 1)]
-        self.delta = delta
-        self.weights = Triangle(weights)
+    def __init__(self, tri, weights=1, delta=1, tail=False):
+        if type(tri) is Triangle:
+            self.triangle = tri 
+        else:
+            self.triangle = Triangle(tri)
+        self.delta = [delta for item in range(len(self.triangle.data.columns) )]
+        self.weights = Triangle(self.triangle.data * 0 + weights)
         self.models = self.fit()
-
-    def __checkWeights(self, weights):
-        """ Hidden method used to convert weights from a scalar into a matrix 
-        of the same shape as the triangle
-        """
-
-        return self.triangle.data * 0 + weights
+        self.tail = tail
+        self.LDF = self.get_LDF().append(self.get_tail_factor())
+        self.CDF = self.LDF[::-1].cumprod()[::-1]
+        self.full_triangle = self.predict()
 
     def predict(self):
         """ Method to 'square' the triangle based on the 'models' list.
         """
-        ldf = [item.coef_ for item in self.models]
+        ldf = [item.coefficient for item in self.models]
         square = self.triangle.data.copy()
         for row in range(1, len(square)):
             for col in range(row, 0, -1):
                 square.iloc[row, -col] = square.iloc[row, -col - 1] * ldf[-col]
+        square['Ult']=square.iloc[:,-1]*self.CDF[-1]
         return square
 
     def fit(self):
@@ -83,7 +81,6 @@ class ChainLadder:
         """
         models = []
         for i in range(0, len(self.triangle.data.columns) - 1):
-            #lm = LinearRegression(fit_intercept=False)
             data = self.triangle.data.iloc[:, i:i + 2].dropna()
             w = self.weights.data.iloc[:, i].dropna().iloc[:-1]
             X = data.iloc[:, 0].values
@@ -94,7 +91,7 @@ class ChainLadder:
             models.append(lm)
         return models
 
-    def ata(self, colname_sep='-'):
+    def age_to_age(self, colname_sep='-'):
         """ Method to display an age-to-age triangle with a display of simple 
         average chainladder development factors and volume weighted average 
         development factors.
@@ -116,16 +113,67 @@ class ChainLadder:
                         self.triangle.data.columns.values[num + 1] for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])]
         incr = incr.iloc[:-1]
-        ldf = [item.coef_ for item in ChainLadder(
-            self.triangle, delta=2).models]
-        incr.loc['smpl'] = ldf
-        ldf = [item.coef_ for item in ChainLadder(
-            self.triangle, delta=1).models]
-        incr.loc['vwtd'] = ldf
-        return incr.round(3)
+        incr[str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
+        ldf = Chainladder(self.triangle.data, delta=2, tail=self.tail).LDF
+        incr.loc['simple'] = ldf
+        ldf = Chainladder(self.triangle.data, delta=1, tail=self.tail).LDF
+        incr.loc['vol-wtd'] = ldf
+        incr.loc['Selected'] = ldf
+        ldf = self.LDF
+        return incr
+    
+    def get_LDF(self, colname_sep='-'):
+        """ Method to obtain the loss development factors (LDFs) from the
+        chainladder model.
+        
+        Parameters:    
+            colname_sep : str
+                text to join the names of two adjacent columns representing the
+                age-to-age factor column name.
 
+        Returns:
+            Pandas.Series of the LDFs.
+        
+        """
+        LDF = Series([ldf.coefficient for ldf in self.models], index=[item + colname_sep +
+                        self.triangle.data.columns.values[num + 1] for num,
+                        item in enumerate(self.triangle.data.columns.values[:-1])])
+        if len(LDF) >= len(self.triangle.data.columns)-1:
+            return LDF[:len(self.triangle.data.columns)-1]
+        else:
+            return LDF
+            
+         
+        
 
-class WRTO:
+    def get_tail_factor(self, colname_sep='-'):
+        """Estimate tail factor, idea from Thomas Mack:
+        THE STANDARD ERROR OF CHAIN LADDER RESERVE ESTIMATES:
+        RECURSIVE CALCULATION AND INCLUSION OF A TAIL FACTOR
+
+        Parameters:    
+            colname_sep : str
+                text to join the names of two adjacent columns representing the
+                age-to-age factor column name.
+
+        Returns:
+            Pandas.Series of the tail factor.        
+        """
+        LDF = self.get_LDF()[:len(self.triangle.data.columns)-1]
+        n = len(LDF)
+        if (LDF[-1] * LDF[-2] > 1.0001) and self.tail == True:
+            LDF_positive = np.array([item for item in LDF if item > 1])
+            n = np.max(np.where(LDF >= 1)[0])            
+            tail_model = np.polyfit(range(1,len(LDF_positive)+1),np.log(LDF_positive-1),1)
+            tail_factor = np.product(np.exp(tail_model[1] + np.array([i+2 for i in range(n,n+100)]) * tail_model[0]).astype(float) + 1)
+            if tail_factor > 2:
+                warn("The estimate tail factor was bigger than 2 and has been reset to 1.")
+                tail_factor = 1
+        else:
+            tail_factor = 1
+        return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
+    
+class WRTO():
     """Weighted least squares regression through the origin
 
     I could not find any decent Python package that does Weighted regression 
@@ -151,13 +199,13 @@ class WRTO:
         w : numpy.array or pandas.Series
             An array representing the weights of the observations of the 
             regression.
-        coef : numpy.float64
+        coefficient : numpy.float64
             Slope parameter of the regression.
         WSSResidual : numpy.float64
             Weighted residual sum of squares of the regression.
-        mse : numpy.float64
+        mean_square_error : numpy.float64
             Mean square error of the regression.
-        se : numpy.float64
+        standard_error : numpy.float64
             Standard error of the regression slope paramter.
         sigma : numpy.float64
             Square root of the mean square error of the regression. 
@@ -168,11 +216,11 @@ class WRTO:
         self.X = X
         self.y = y
         self.w = w
-        self.coef_ = sum(w * X * y) / sum(w * X * X)
-        self.WSSResidual = sum(w * ((y - self.coef_ * X)**2))
+        self.coefficient = sum(w * X * y) / sum(w * X * X)
+        self.WSSResidual = sum(w * ((y - self.coefficient * X)**2))
         if len(X) == 1:
-            self.mse = np.nan
+            self.mean_square_error = np.nan 
         else:
-            self.mse = self.WSSResidual / (len(X) - 1)
-        self.se = np.sqrt(self.mse / sum(w * X * X))
-        self.sigma = np.sqrt(self.mse)
+            self.mean_square_error = self.WSSResidual / (len(X) - 1)
+        self.standard_error = np.sqrt(self.mean_square_error / sum(w * X * X))
+        self.sigma = np.sqrt(self.mean_square_error)

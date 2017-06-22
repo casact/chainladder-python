@@ -9,7 +9,7 @@ from pandas import DataFrame, concat, Series, pivot_table
 from scipy import stats
 
 
-class Triangle:
+class Triangle():
     """Triangle class is the basic data representation of an actuarial triangle.
 
     Historical insurance data is often presented in form of a triangle structure, showing
@@ -56,10 +56,8 @@ class Triangle:
 
     def __init__(self, data=None, origin=None, dev=None, values=None, dataform='triangle'):
         # Currently only support pandas dataframes as data
-        if str(type(data)) != '<class \'pandas.core.frame.DataFrame\'>':
-            print('Data is not a proper triangle')
-            # Need to figure out how to destroy the object on init fail
-            return
+        if type(data) is not DataFrame:
+            raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
         self.data = data
         self.origin = origin
         if origin == None:
@@ -76,7 +74,7 @@ class Triangle:
         self.latest_values = Series(
             [row.dropna().iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
 
-    def dataAsTable(self, inplace=False):
+    def data_as_table(self, inplace=False):
         """Method to convert triangle form to tabular form.
 
         Arguments:
@@ -101,7 +99,7 @@ class Triangle:
         else:
             return self.data
 
-    def dataAsTriangle(self, inplace=False):
+    def data_as_triangle(self, inplace=False):
         """Method to convert tabular form to triangle form.
 
         Arguments:
@@ -122,7 +120,7 @@ class Triangle:
         else:
             return self.data
 
-    def incr2cum(self, inplace=False):
+    def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.  Note,
         the triangle must be in triangle form.
 
@@ -144,7 +142,7 @@ class Triangle:
             self.data = incr
         return incr
 
-    def cum2incr(self, inplace=False):
+    def cum_to_incr(self, inplace=False):
         """Method to convert an cumulative triangle into a incremental triangle.  Note,
         the triangle must be in triangle form.
 
