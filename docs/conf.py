@@ -43,7 +43,7 @@ class Mock(object):
         else:
             return Mock()
  
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'scipy.interpolate', 'seaborn','statsmodels']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'statsmodels.nonparametric.smoothers_lowess', 'seaborn','statsmodels', 'statsmodels.stats.outliers_influence', 'statsmodels.api']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
