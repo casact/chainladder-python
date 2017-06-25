@@ -98,17 +98,18 @@ class Triangle():
                 self.data = lx[['dev', 'values']]
                 self.dataform = 'tabular'
                 self.dev = 'dev'
+                self.values = 'values'
             return lx[['dev', 'values']]
         else:
             return self.data
 
     def data_as_triangle(self, inplace=False):
         """Method to convert tabular form to triangle form.
-
+    
         Arguments:
             inplace: bool
                 Set to True will update the instance data attribute inplace 
-
+    
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
         """

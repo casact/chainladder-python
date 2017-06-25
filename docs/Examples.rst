@@ -8,5 +8,6 @@ Examples landing page.
    :maxdepth: 2
 
    quickstart.rst
+   MackExample.rst
 
 

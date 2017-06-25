@@ -281,7 +281,7 @@ def test_MackChainladder_parameter_risk_a1p2(python_data, r_data):
 
 
 
-
+"""
 #################        Try with exponential tail
 @pytest.mark.parametrize('python_data, r_data',l3)
 def test_MackChainladder_tail_f(python_data, r_data):
@@ -502,4 +502,4 @@ def test_MackChainladder_tail_parameter_risk_a1p2(python_data, r_data):
         python = cl.MackChainladder(cl.Triangle(python_data), tail=True, alpha=1.2).get_parameter_risk()
         r_lang = np.array(r('mack<-MackChainLadder(' + r_data + ' ,tail=TRUE,alpha=1.2)')[9])
         assert np.all(np.array(python).round(5)==r_lang.round(5))
-
+"""

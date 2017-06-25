@@ -210,12 +210,17 @@ class MackChainladder:
         return tailsigma
 
     def get_tail_weighted_time_period(self):
-            n = len(self.triangle.data.columns)-1
-            y = self.f[:n]
-            x = np.array([i + 1 for i in range(len(y))]) 
-            ldf_reg = stats.linregress(x, np.log(y - 1))
-            time_pd = (np.log(self.f[n] - 1) - ldf_reg[1]) / ldf_reg[0]
-            return time_pd
+        """ Method to approximate the weighted-average development age assuming
+        exponential tail fit.
+        
+        Returns: float32
+        """
+        n = len(self.triangle.data.columns)-1
+        y = self.f[:n]
+        x = np.array([i + 1 for i in range(len(y))]) 
+        ldf_reg = stats.linregress(x, np.log(y - 1))
+        time_pd = (np.log(self.f[n] - 1) - ldf_reg[1]) / ldf_reg[0]
+        return time_pd
         
     def summary(self):
         """ Method to produce a summary table of of the Mack Chainladder 
@@ -237,9 +242,43 @@ class MackChainladder:
         return summary
     
     def age_to_age(self, colname_sep='-'):
+        """ Simple method that calls on the Chainladder class method of the 
+        same name.  See age_to_age() in Chainladder module.
+
+        Parameters:    
+            colname_sep : str
+                text to join the names of two adjacent columns representing the
+                age-to-age factor column name.
+
+        Returns:
+            Pandas.DataFrame of the age-to-age triangle.
+        """
         return self.chainladder.age_to_age(colname_sep='-')
     
     def is_exponential_tail_appropriate(self, tri,  weights,  alpha):
+        """ Method to determine whether an exponential tail fit is appropriate
+        based purely on the p-value of the slope parameter.  This method
+        currently uses scipy.stats, but this dependency can be removed as 
+        statsmodels.api has a more robust regression framework and is used
+        elsewhere in the package.
+        
+        Arguments:
+            tri: Triangle 
+                An object of the Triangle class that will be used to test the 
+                exponential tail fit.
+            weights: Triangle 
+                An object representing the weights of the exponential regression
+                model.
+            alpha: pandas.Series
+                An object representing the alpha parameter of the mackChainLadder
+                model.
+        
+        Returns:
+            Boolean value is returned as True if exponential tail is appropriate
+            otherwise a value of False is returned.
+                
+        
+        """
         y = Series(Chainladder(tri, weights=weights,  delta=2 - alpha).LDF)
         y.index = [i+1 for i in range(len(y))]
         y = y[y>1]
@@ -250,10 +289,20 @@ class MackChainladder:
         else:
             return True
     
-    def plot(self, plots=['bar', 'ultimate', 'resid1', 'resid2','resid3','resid4']):  
+    def plot(self, plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4']): 
+        """ Method, callable by end-user that renders the matplotlib plots 
+        based on the configurations in __get_plot_dict().
+        
+        Arguments:
+            plots: list[str]
+                A list of strings representing the charts the end user would like
+                to see.  Of ommitted, all plots are displayed.
+
+        Returns:
+            Renders the matplotlib plots.
+        """        
+        
         sns.set_style("whitegrid")
-        if plots is None:
-            plots = ['bar','ultimate', 'resid1', 'resid2']
         _ = plt.figure()
         grid_x = 1 if len(plots) == 1 else round(len(plots) / 2,0)
         grid_y = 1 if len(plots) == 1 else 2
@@ -263,6 +312,11 @@ class MackChainladder:
             self.dict_plot(plots[i]) 
 
     def dict_plot(self, chart):
+        """ Method that renders the matplotlib plots based on the configurations
+        in __get_plot_dict().  This method should probably be private and may be
+        so in a future release.
+        
+        """
         my_dict = self.__get_plot_dict()[chart]
         for i in range(len(my_dict['chart_type_dict']['type'])):
             if my_dict['chart_type_dict']['type'][i] == 'plot':
@@ -287,9 +341,16 @@ class MackChainladder:
             _ = plt.title(my_dict['Title'], fontsize=30)
 
     def __get_plot_dict(self):
+        """ Private method that is designed to configure the matplotlib graphs.
+        
+        Returns:
+            Returns a dictionary containing the configuration of the selected plot.
+        """
         resid_df = self.chainladder.get_residuals()  
+        # Jittering values so LOWESS can calculate
         xlabs = self.full_triangle.columns
         xvals = [i for i in range(len(self.full_triangle.columns))]
+        
         summary = self.summary()
         means = list(summary['Ultimate'])
         ci = list(zip(summary['Ultimate']+summary['Mack S.E.'], summary['Ultimate']-summary['Mack S.E.']))
@@ -298,8 +359,8 @@ class MackChainladder:
                              'XLabel':'Fitted Value',
                              'YLabel':'Studentized Residual',
                              'chart_type_dict':{'type':['plot','plot'],
-                                               'x':[resid_df['fitted_value'],lowess(resid_df['standard_residuals'],resid_df['fitted_value']).T[0]],
-                                               'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['fitted_value']).T[1]],
+                                               'x':[resid_df['fitted_value'],lowess(resid_df['standard_residuals'],resid_df['fitted_value'],frac=1 if len(np.unique(resid_df['fitted_value'].values))<=6 else 0.666).T[0]],
+                                               'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['fitted_value'],frac=1 if len(np.unique(resid_df['fitted_value'].values))<=6 else 0.666).T[1]],
                                                'marker':['o',''],
                                                'linestyle':['','-'],
                                                'color':['blue','red']
@@ -308,8 +369,8 @@ class MackChainladder:
                                      'XLabel':'Development Period',
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['plot','plot'],
-                                                       'x':[resid_df['dev'],lowess(resid_df['standard_residuals'],resid_df['dev']).T[0]],
-                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev']).T[1]],
+                                                       'x':[resid_df['dev'],lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[1]],
                                                        'marker':['o',''],
                                                        'linestyle':['','-'],
                                                        'color':['blue','red']
@@ -318,8 +379,8 @@ class MackChainladder:
                                      'XLabel':'Origin Period',
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['plot','plot'],
-                                                       'x':[resid_df.index,lowess(resid_df['standard_residuals'],resid_df.index).T[0]],
-                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df.index).T[1]],
+                                                       'x':[resid_df.index,lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[1]],
                                                        'marker':['o',''],
                                                        'linestyle':['','-'],
                                                        'color':['blue','red']
@@ -328,13 +389,13 @@ class MackChainladder:
                                      'XLabel':'Origin Period',
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['plot','plot'],
-                                                       'x':[resid_df['cal_period'],lowess(resid_df['standard_residuals'],resid_df['cal_period']).T[0]],
-                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['cal_period']).T[1]],
+                                                       'x':[resid_df['cal_period'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[1]],
                                                        'marker':['o',''],
                                                        'linestyle':['','-'],
                                                        'color':['blue','red']
                                                        }},      
-                    'bar':{'Title':'Ultimates by origin period +/- 1 std. err.',
+                    'summary':{'Title':'Ultimates by origin period +/- 1 std. err.',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Ultimates',
                                      'chart_type_dict':{'type':['bar','bar'],
@@ -343,7 +404,7 @@ class MackChainladder:
                                                        'bottom':[0,summary['Latest']],
                                                        'yerr':[0,y_r]
                                                        }},
-                    'ultimate':{'Title':'Fully Developed Triangle',
+                    'full_triangle':{'Title':'Fully Developed Triangle',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Values',
                                      'chart_type_dict':{'type':['line','line'],
@@ -355,7 +416,7 @@ class MackChainladder:
                                                        'alpha':[0.5, 1.0]
                                                        
                                                        }} ,
-                    'latest':{'Title':'Latest Triangle Data',
+                    'triangle':{'Title':'Latest Triangle Data',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Values',
                                      'chart_type_dict':{'type':['line'],

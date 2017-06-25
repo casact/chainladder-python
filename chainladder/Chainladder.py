@@ -40,6 +40,9 @@ class Chainladder():
             A value representing an input into the weights of the WRTO class.
         delta : int
             A value representing an input into the weights of the WRTO class.
+        tail : bool
+            A value representing whether the user would like an exponential tail
+            factor to be applied to the data.
 
     Attributes:
         tri : Triangle
@@ -51,6 +54,19 @@ class Chainladder():
             class.
         models : list
             A list of WTRO objects for of length (col-1)
+        tail : bool
+            A value representing whether the user would like an exponential tail
+            factor to be applied to the data.
+        LDF : pandas.Series
+            A series containing the LDFs of the chainladder model.  If tail=True
+            and tail fitting succeeds, an additional 'Age-Ult' factor is appended
+            the the end representing the tail CDF.
+        CDF : pandas.Series
+            A series representing the cumulative development factors of the
+            chainladder model.
+        full_triangle : Pandas.DataFrame
+            A table representing the raw triangle data as well as future
+            lags populated with the expectation from the chainladder fit.
 
     """
 
@@ -66,9 +82,16 @@ class Chainladder():
         self.LDF = self.get_LDF().append(self.get_tail_factor())
         self.CDF = self.LDF[::-1].cumprod()[::-1]
         self.full_triangle = self.predict()
-
+        
+    def __repr__(self):   
+        return str(self.age_to_age())
+    
     def predict(self):
-        """ Method to 'square' the triangle based on the 'models' list.
+        """ Method to 'square' the triangle based on the WRTO 'models' list.
+        
+        Returns:
+            pandas.DataFrame representing the raw triangle data as well as future
+            lags populated with the expectation from the chainladder fit.
         """
         ldf = [item.coefficient for item in self.models]
         square = self.triangle.data.copy()
@@ -79,7 +102,11 @@ class Chainladder():
         return square
 
     def fit(self):
-        """ Method to call the weighted regression trhough the origin fitting .
+        """ Method to call the weighted regression trhough the origin fitting.
+        
+        Returns:
+            list of statsmodel (Chainladder) models with a subset of properties 
+            that can be accessed later.  See WRTO class implementation.
         """
         models = []
         for i in range(0, len(self.triangle.data.columns) - 1):
@@ -150,8 +177,12 @@ class Chainladder():
 
     def get_tail_factor(self, colname_sep='-'):
         """Estimate tail factor, idea from Thomas Mack:
-        THE STANDARD ERROR OF CHAIN LADDER RESERVE ESTIMATES:
-        RECURSIVE CALCULATION AND INCLUSION OF A TAIL FACTOR
+        Returns a tail factor based off of an exponential fit to the LDFs.  This will
+        fail if the product of 2nd and 3rd to last LDF < 1.0001.  This also fails if
+        the estimated tail is larger than 2.0.  In other areas, exponential fit is
+        rejected if the slope parameter p-value >0.5.  This is currently representative
+        of the R implementation of this package, but may be enhanced in the future to be
+        p-value based.
 
         Parameters:    
             colname_sep : str
@@ -176,6 +207,13 @@ class Chainladder():
         return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
 
     def get_residuals(self):
+        """Generates a table of chainladder residuals along with other statistics.
+        These get used in the MackChainLadder.plot() method for residual plots.
+         
+        Returns:
+            Pandas.DataFrame of the residual table        
+        """
+
         Resid = DataFrame()
         for i in range(len(self.models)):
             resid = DataFrame()
@@ -191,7 +229,9 @@ class Chainladder():
 class WRTO():
     """Weighted least squares regression through the origin
 
-    Collecting the relevant variables from statsmodel
+    Collecting the relevant variables from statsmodel OLS/WLS. Note in
+    release 0.1.0 of chainladder, there is a deprecation warning with statsmodel
+    that will persist until statsmodel is upgraded.
 
     Parameters:    
         X : numpy.array or pandas.Series
@@ -218,10 +258,16 @@ class WRTO():
             Weighted residual sum of squares of the regression.
         mean_square_error : numpy.float64
             Mean square error of the regression.
+        residual : numpy.array
+            The difference between actual y value and the fitted/expected y value
         standard_error : numpy.float64
             Standard error of the regression slope paramter.
         sigma : numpy.float64
             Square root of the mean square error of the regression. 
+        std_resid : numpy.array
+            Represents internally studentized residuals which generally vary between
+            [-2,2].  Used in residual scatterplots and help determine the appropriateness
+            of the model on the data.
 
     """
 
@@ -231,6 +277,7 @@ class WRTO():
         self.w = w
         WLS = sm.WLS(y,x, w)
         OLS = sm.OLS(WLS.wendog,WLS.wexog).fit()
+        #if OLS.params[0] = 
         self.coefficient = OLS.params[0]
         self.WSSResidual = OLS.ssr
         self.fittedvalues = OLS.predict(x)

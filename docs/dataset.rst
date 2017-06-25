@@ -1,9 +1,7 @@
-datasets
-========
+UtilityFunctions
+================
 
-This is the datasets Module documentation.
-
-.. automodule:: chainladder.datasets
+.. automodule:: chainladder.UtilityFunctions
 .. autofunction:: load_dataset
 
 
