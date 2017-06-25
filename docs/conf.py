@@ -20,7 +20,6 @@
 import os
 import sys
 import chainladder
-#sys.path.append(r'C:\Users\jboga\OneDrive\Documents\GitHub\chainladder-python\chainladder')
 #sys.path.append(os.path.abspath('..'))
 #sys.path.insert(0,os.path.abspath('..\chainladder'))
 
@@ -43,7 +42,7 @@ class Mock(object):
         else:
             return Mock()
  
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'statsmodels', 'warnings', 'statsmodels.nonparametric.smoothers_lowess', 'seaborn', 'statsmodels.stats.outliers_influence', 'statsmodels.api']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'statsmodels', 'warnings',  'seaborn']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 

@@ -10,7 +10,7 @@ approach.
 
 import numpy as np
 from pandas import DataFrame, concat, Series
-import statsmodels.api as sm
+from statsmodels.api as WLS, OLS
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
 from chainladder.Triangle import Triangle
@@ -275,8 +275,8 @@ class WRTO():
         self.x = x
         self.y = y
         self.w = w
-        WLS = sm.WLS(y,x, w)
-        OLS = sm.OLS(WLS.wendog,WLS.wexog).fit()
+        WLS = WLS(y,x, w)
+        OLS = OLS(WLS.wendog,WLS.wexog).fit()
         #if OLS.params[0] = 
         self.coefficient = OLS.params[0]
         self.WSSResidual = OLS.ssr
