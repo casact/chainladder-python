@@ -10,7 +10,7 @@ approach.
 
 import numpy as np
 from pandas import DataFrame, concat, Series
-from statsmodels.api as WLS, OLS
+from statsmodels.api import WLS, OLS
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
 from chainladder.Triangle import Triangle
