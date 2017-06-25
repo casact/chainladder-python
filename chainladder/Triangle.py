@@ -4,9 +4,7 @@ The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.  
 """
 
-import numpy as np
-from pandas import DataFrame, concat, Series, pivot_table
-from scipy import stats
+from pandas import DataFrame, concat, pivot_table
 
 
 class Triangle():

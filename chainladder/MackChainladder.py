@@ -5,7 +5,7 @@ of the chainladder method.  With MackChainLadder, various standard errors can
 be computed to ultimately develop confidence intervals on IBNR estimates.   
 """
 import numpy as np
-from pandas import DataFrame, concat, Series, pivot_table
+from pandas import DataFrame, concat, Series
 from scipy import stats
 from chainladder.Chainladder import Chainladder
 from warnings import warn

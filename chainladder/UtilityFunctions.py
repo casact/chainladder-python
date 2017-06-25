@@ -3,15 +3,8 @@ The datasets module has only one function.  It could probably be refactored
 into the Triangle class, and may do so in the future.
 
 """
-from pandas import read_pickle, DataFrame
+from pandas import read_pickle
 import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-from chainladder.Triangle import Triangle
-from chainladder.Chainladder import Chainladder
-from chainladder.MackChainladder import MackChainladder
-from statsmodels.nonparametric.smoothers_lowess import lowess
-from warnings import warn
 
 
 def load_dataset(key):

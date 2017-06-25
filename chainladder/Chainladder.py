@@ -9,7 +9,7 @@ approach.
 """
 
 import numpy as np
-from pandas import DataFrame, concat, pivot_table, Series
+from pandas import DataFrame, concat, Series
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
