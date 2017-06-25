@@ -478,7 +478,7 @@ def test_MackChainladder_tail_Fse_a1p2(python_data, r_data):
     if r_data in ['qpaid', 'qincurred', 'GenInsLong']:
         assert True
     else:
-        python = cl.MackChainladder(cl.Triangle(python_data), tail=True, alpha=1.2).Fse
+        python = cl.MackChainladder(cl.Triangle(python_data), tail=True, alpha=1.2).Fse.iloc[:,:-1]
         r_lang = np.array(r('mack<-MackChainLadder(' + r_data + ' ,tail=TRUE,alpha=1.2)')[6])
         assert np.all(np.array(python).round(5)==r_lang.round(5))
 @pytest.mark.parametrize('python_data, r_data',l3)

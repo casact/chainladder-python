@@ -69,11 +69,14 @@ class Triangle():
         if dev_in_col_bool == True and origin_in_col_bool == True:
             self.dataform = 'tabular'
         self.values = values
-        if values == None:
+        if values == None and self.dataform == 'tabular':
             self.__set_values()
-        self.latest_values = Series(
-            [row.dropna().iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
-
+        #self.latest_values = Series(
+        #    [row.dropna().iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
+        
+    def __repr__(self):   
+        return str(self.data)
+    
     def data_as_table(self, inplace=False):
         """Method to convert triangle form to tabular form.
 
@@ -209,7 +212,7 @@ class Triangle():
         This is onyl necessary when dataform is 'tabular'.
 
         """
-        ##### Identify dev Profile ####
+        ##### Identify values Profile ####
         value_names = ['incurred claims']
         values_match = [i for i in value_names if i in self.data.columns]
         if len(values_match) == 1:

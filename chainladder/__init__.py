@@ -7,7 +7,7 @@ Created on Sat Jun 17 07:08:08 2017
 
 
 from chainladder.UtilityFunctions import load_dataset
-from chainladder.Chainladder import Chainladder
+from chainladder.Chainladder import Chainladder, WRTO
 from chainladder.Triangle import Triangle
 from chainladder.MackChainladder import MackChainladder
-from chainladder.Chainladder import WRTO
+

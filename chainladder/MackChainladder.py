@@ -7,8 +7,11 @@ be computed to ultimately develop confidence intervals on IBNR estimates.
 import numpy as np
 from pandas import DataFrame, concat, Series, pivot_table
 from scipy import stats
-from chainladder.Triangle import Triangle
 from chainladder.Chainladder import Chainladder
+from warnings import warn
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 class MackChainladder:
@@ -48,6 +51,10 @@ class MackChainladder:
 
     def __init__(self, tri,  weights=1,  alpha=1,
                  tail=False):
+        # Determine whether LDFs can eb extrapolated with exponential tail
+        if tail == True:
+            tail = self.is_exponential_tail_appropriate(tri,  weights,  alpha) 
+            
         self.chainladder = Chainladder(tri, weights=weights,  delta=2 - alpha, tail=tail)
         self.triangle = self.chainladder.triangle
         self.alpha = [2 - item for item in self.chainladder.delta]
@@ -66,6 +73,9 @@ class MackChainladder:
         self.total_mack_se = np.sqrt(
             self.total_process_risk[-1]**2 + self.total_parameter_risk[-1]**2)
 
+    def __repr__(self):   
+        return str(self.summary())
+    
     def get_process_risk(self):
         """ Method to return the process risk of the Mack Chainladder model.
 
@@ -162,7 +172,6 @@ class MackChainladder:
         
         tailse = np.array(self.sigma[-2] / \
             np.sqrt(self.full_triangle.iloc[0, -3]**self.alpha[-1]))
-        
         if self.chainladder.tail == True:
             time_pd = self.get_tail_weighted_time_period()
             fse = np.append(self.fse, tailse)
@@ -190,7 +199,7 @@ class MackChainladder:
             y = self.sigma
             tailsigma = np.sqrt(
                 abs(min((y[-1]**4 / y[-2]**2), min(y[-2]**2, y[-1]**2))))
-        if self.chainladder.tail == True:
+        if self.chainladder.tail == True: 
             time_pd = self.get_tail_weighted_time_period()
             y = np.log(np.append(self.sigma,tailsigma))
             x = np.array([i + 1 for i in range(len(y))])
@@ -203,7 +212,7 @@ class MackChainladder:
     def get_tail_weighted_time_period(self):
             n = len(self.triangle.data.columns)-1
             y = self.f[:n]
-            x = np.array([i + 1 for i in range(len(y))])
+            x = np.array([i + 1 for i in range(len(y))]) 
             ldf_reg = stats.linregress(x, np.log(y - 1))
             time_pd = (np.log(self.f[n] - 1) - ldf_reg[1]) / ldf_reg[0]
             return time_pd
@@ -229,4 +238,134 @@ class MackChainladder:
     
     def age_to_age(self, colname_sep='-'):
         return self.chainladder.age_to_age(colname_sep='-')
+    
+    def is_exponential_tail_appropriate(self, tri,  weights,  alpha):
+        y = Series(Chainladder(tri, weights=weights,  delta=2 - alpha).LDF)
+        y.index = [i+1 for i in range(len(y))]
+        y = y[y>1]
+        model = stats.linregress(y.index, np.log(y-1))
+        if model[3]>0.05:
+            warn('Unable to generate tail from LDFs, setting tail factor to 1.0')        
+            return False
+        else:
+            return True
+    
+    def plot(self, plots=['bar', 'ultimate', 'resid1', 'resid2','resid3','resid4']):  
+        sns.set_style("whitegrid")
+        if plots is None:
+            plots = ['bar','ultimate', 'resid1', 'resid2']
+        _ = plt.figure()
+        grid_x = 1 if len(plots) == 1 else round(len(plots) / 2,0)
+        grid_y = 1 if len(plots) == 1 else 2
+        fig, ax = plt.subplots(figsize=(grid_y*15, grid_x*10))
+        for i in range(len(plots)):
+            _ = plt.subplot(grid_x,grid_y,i+1)
+            self.dict_plot(plots[i]) 
+
+    def dict_plot(self, chart):
+        my_dict = self.__get_plot_dict()[chart]
+        for i in range(len(my_dict['chart_type_dict']['type'])):
+            if my_dict['chart_type_dict']['type'][i] == 'plot':
+                _ = plt.plot(my_dict['chart_type_dict']['x'][i], 
+                             my_dict['chart_type_dict']['y'][i],
+                             linestyle=my_dict['chart_type_dict']['linestyle'][i], 
+                             marker=my_dict['chart_type_dict']['marker'][i], 
+                             color=my_dict['chart_type_dict']['color'][i])
+            if my_dict['chart_type_dict']['type'][i] == 'bar':
+                _ =plt.bar(height = my_dict['chart_type_dict']['height'][i], 
+                           left = my_dict['chart_type_dict']['left'][i],
+                           yerr = my_dict['chart_type_dict']['yerr'][i], 
+                           bottom = my_dict['chart_type_dict']['bottom'][i])
+            if my_dict['chart_type_dict']['type'][i] == 'line':
+                _ = plt.gca().set_prop_cycle(None)
+                for j in range(my_dict['chart_type_dict']['rows'][i]):
+                    _ = plt.plot(my_dict['chart_type_dict']['x'][i], 
+                                 my_dict['chart_type_dict']['y'][i].iloc[j], 
+                                 linestyle=my_dict['chart_type_dict']['linestyle'][i], 
+                                 linewidth=my_dict['chart_type_dict']['linewidth'][i],
+                                 alpha=my_dict['chart_type_dict']['alpha'][i])
+            _ = plt.title(my_dict['Title'], fontsize=30)
+
+    def __get_plot_dict(self):
+        resid_df = self.chainladder.get_residuals()  
+        xlabs = self.full_triangle.columns
+        xvals = [i for i in range(len(self.full_triangle.columns))]
+        summary = self.summary()
+        means = list(summary['Ultimate'])
+        ci = list(zip(summary['Ultimate']+summary['Mack S.E.'], summary['Ultimate']-summary['Mack S.E.']))
+        y_r = [list(summary['Ultimate'])[i] - ci[i][1] for i in range(len(ci))]
+        plot_dict = {'resid1':{'Title':'Studentized Residuals by fitted Value',
+                             'XLabel':'Fitted Value',
+                             'YLabel':'Studentized Residual',
+                             'chart_type_dict':{'type':['plot','plot'],
+                                               'x':[resid_df['fitted_value'],lowess(resid_df['standard_residuals'],resid_df['fitted_value']).T[0]],
+                                               'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['fitted_value']).T[1]],
+                                               'marker':['o',''],
+                                               'linestyle':['','-'],
+                                               'color':['blue','red']
+                                               }},
+                    'resid4':{'Title':'Studentized Residuals by Development Period',
+                                     'XLabel':'Development Period',
+                                     'YLabel':'Studentized Residual',
+                                     'chart_type_dict':{'type':['plot','plot'],
+                                                       'x':[resid_df['dev'],lowess(resid_df['standard_residuals'],resid_df['dev']).T[0]],
+                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev']).T[1]],
+                                                       'marker':['o',''],
+                                                       'linestyle':['','-'],
+                                                       'color':['blue','red']
+                                                       }},
+                    'resid2':{'Title':'Studentized Residuals by Origin Period',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'Studentized Residual',
+                                     'chart_type_dict':{'type':['plot','plot'],
+                                                       'x':[resid_df.index,lowess(resid_df['standard_residuals'],resid_df.index).T[0]],
+                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df.index).T[1]],
+                                                       'marker':['o',''],
+                                                       'linestyle':['','-'],
+                                                       'color':['blue','red']
+                                                       }},
+                    'resid3':{'Title':'Studentized Residuals by Origin Period',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'Studentized Residual',
+                                     'chart_type_dict':{'type':['plot','plot'],
+                                                       'x':[resid_df['cal_period'],lowess(resid_df['standard_residuals'],resid_df['cal_period']).T[0]],
+                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['cal_period']).T[1]],
+                                                       'marker':['o',''],
+                                                       'linestyle':['','-'],
+                                                       'color':['blue','red']
+                                                       }},      
+                    'bar':{'Title':'Ultimates by origin period +/- 1 std. err.',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'Ultimates',
+                                     'chart_type_dict':{'type':['bar','bar'],
+                                                       'height':[summary['Latest'],summary['IBNR']],
+                                                       'left':[summary.index,summary.index],
+                                                       'bottom':[0,summary['Latest']],
+                                                       'yerr':[0,y_r]
+                                                       }},
+                    'ultimate':{'Title':'Fully Developed Triangle',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'Values',
+                                     'chart_type_dict':{'type':['line','line'],
+                                                       'rows':[len(self.full_triangle), len(self.triangle.data)],
+                                                       'x':[xvals, xvals[:-1]],
+                                                       'y':[self.full_triangle, self.triangle.data],
+                                                       'linestyle':['--', '-'],
+                                                       'linewidth':[5, 5],
+                                                       'alpha':[0.5, 1.0]
+                                                       
+                                                       }} ,
+                    'latest':{'Title':'Latest Triangle Data',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'Values',
+                                     'chart_type_dict':{'type':['line'],
+                                                       'rows':[len(self.triangle.data)],
+                                                       'x':[xvals[:-1]],
+                                                       'y':[self.triangle.data],
+                                                       'linestyle':['-'],
+                                                       'linewidth':[5],
+                                                       'alpha':[1]
+                                                       }} 
+                    }
+        return plot_dict
     

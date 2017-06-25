@@ -10,6 +10,8 @@ approach.
 
 import numpy as np
 from pandas import DataFrame, concat, pivot_table, Series
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
 from chainladder.Triangle import Triangle
 
@@ -83,8 +85,8 @@ class Chainladder():
         for i in range(0, len(self.triangle.data.columns) - 1):
             data = self.triangle.data.iloc[:, i:i + 2].dropna()
             w = self.weights.data.iloc[:, i].dropna().iloc[:-1]
-            X = data.iloc[:, 0].values
-            y = data.iloc[:, 1].values
+            X = data.iloc[:, 0]
+            y = data.iloc[:, 1]
             sample_weight = np.array(w).astype(
                 float) / np.array(X).astype(float)**self.delta[i]
             lm = WRTO(X, y, sample_weight)
@@ -139,7 +141,7 @@ class Chainladder():
                         self.triangle.data.columns.values[num + 1] for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])])
         if len(LDF) >= len(self.triangle.data.columns)-1:
-            return LDF[:len(self.triangle.data.columns)-1]
+            return Series(LDF[:len(self.triangle.data.columns)-1])
         else:
             return LDF
             
@@ -172,13 +174,24 @@ class Chainladder():
         else:
             tail_factor = 1
         return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
+
+    def get_residuals(self):
+        Resid = DataFrame()
+        for i in range(len(self.models)):
+            resid = DataFrame()
+            resid['x'] = self.models[i].x
+            resid['dev'] = int(self.models[i].x.name)
+            resid['cal_period'] = resid.index + resid['dev'] - 1
+            resid['residuals'] = self.models[i].residual
+            resid['standard_residuals'] = self.models[i].std_resid
+            resid['fitted_value'] = self.models[i].fittedvalues
+            Resid = Resid.append(resid)
+        return Resid.drop(['x'], axis=1).dropna()
     
 class WRTO():
     """Weighted least squares regression through the origin
 
-    I could not find any decent Python package that does Weighted regression 
-    through origin that also produces summary statistics, so I wrote my own.
-    It is a fairly simple class that also keep package dependencies down.
+    Collecting the relevant variables from statsmodel
 
     Parameters:    
         X : numpy.array or pandas.Series
@@ -212,15 +225,27 @@ class WRTO():
 
     """
 
-    def __init__(self, X, y, w):
-        self.X = X
+    def __init__(self, x, y, w):
+        self.x = x
         self.y = y
         self.w = w
-        self.coefficient = sum(w * X * y) / sum(w * X * X)
-        self.WSSResidual = sum(w * ((y - self.coefficient * X)**2))
-        if len(X) == 1:
+        WLS = sm.WLS(y,x, w)
+        OLS = sm.OLS(WLS.wendog,WLS.wexog).fit()
+        self.coefficient = OLS.params[0]
+        self.WSSResidual = OLS.ssr
+        self.fittedvalues = OLS.predict(x)
+        self.residual = OLS.resid
+        if len(x) == 1:
             self.mean_square_error = np.nan 
+            self.standard_error = np.nan
+            self.sigma = np.nan
+            self.std_resid = np.nan
         else:
-            self.mean_square_error = self.WSSResidual / (len(X) - 1)
-        self.standard_error = np.sqrt(self.mean_square_error / sum(w * X * X))
-        self.sigma = np.sqrt(self.mean_square_error)
+            self.mean_square_error = OLS.mse_resid 
+            self.standard_error = OLS.params[0]/OLS.tvalues[0]
+            self.sigma = np.sqrt(self.mean_square_error)
+            self.std_resid = OLSInfluence(OLS).resid_studentized_internal
+        
+        
+        
+        
