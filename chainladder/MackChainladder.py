@@ -11,7 +11,7 @@ from chainladder.Chainladder import Chainladder
 from warnings import warn
 import matplotlib.pyplot as plt
 import seaborn as sns
-from statsmodels.nonparametric.smoothers_lowess import lowess
+#from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 class MackChainladder:
