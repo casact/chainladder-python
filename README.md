@@ -8,7 +8,10 @@ This code is currently under development and only contains:
   - Mack Chain Ladder Functionality
 
 ## Installation
-Package is coming soon to Pypi and Anaconda...
+To install using pip:
+`pip install chainladder`
+
+Package is coming soon to Anaconda...
 
 ## Documentation
 Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for source code documentation
