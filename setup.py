@@ -17,6 +17,7 @@ setup(
     packages=['chainladder'],
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
+    download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.0.tar.gz'
     license='LICENSE',
     include_package_data=True,
     description= descr,
