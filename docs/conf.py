@@ -24,7 +24,7 @@ import chainladder
 #sys.path.insert(0,os.path.abspath('..\chainladder'))
 
 
-#print(sys.path)
+
 
 class Mock(object):
     def __init__(self, *args, **kwargs):

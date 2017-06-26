@@ -275,7 +275,7 @@ class WRTO():
         self.x = x
         self.y = y
         self.w = w
-        sm.WLS = sm.WLS(y,x, w)
+        WLS = sm.WLS(y,x, w)
         OLS = sm.OLS(WLS.wendog,WLS.wexog).fit()
         #if OLS.params[0] = 
         self.coefficient = OLS.params[0]
