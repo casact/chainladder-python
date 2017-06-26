@@ -1,2 +1,3 @@
+statsmodels
 chainladder
 nbsphinx
