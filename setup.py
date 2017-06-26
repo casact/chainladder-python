@@ -1,6 +1,7 @@
 descr = "Chainladder Package - P&C actuarial package modeled after the R package of the same name"
 
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='chainladder',
