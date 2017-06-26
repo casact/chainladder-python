@@ -1,4 +1,3 @@
 statsmodels
 seaborn
-warnings
 nbsphinx
