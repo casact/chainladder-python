@@ -22,3 +22,5 @@ GenIns_mack = cl.MackChainladder(cl.Triangle(GenIns), alpha=2)
 #cl.MackChainladder(M3IR5, tail=True)
 
 
+MCL_inc = cl.load_dataset('MCLincurred')
+MCL_paid = cl.load_dataset('MCLpaid')

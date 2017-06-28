@@ -10,4 +10,5 @@ from chainladder.UtilityFunctions import load_dataset
 from chainladder.Chainladder import Chainladder, WRTO
 from chainladder.Triangle import Triangle
 from chainladder.MackChainladder import MackChainladder
+from chainladder.MunichChainladder import MunichChainladder
 
