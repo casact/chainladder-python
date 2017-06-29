@@ -4,8 +4,9 @@
 
 This is a rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLadder) in Python.
 
-This code is currently under development and only contains:
-  - Mack Chain Ladder Functionality
+This code is actively under development and contains the following functionality:
+  - Mack Chain Ladder
+  - Munich Chain Ladder
 
 ## Installation
 To install using pip:
