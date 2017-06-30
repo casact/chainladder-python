@@ -131,7 +131,7 @@ class MackChainladder:
         ind = 0 if self.chainladder.tail == False else 1
         for i in range(1, self.triangle.ncol+ind):
             temp = DataFrame(np.sqrt((self.full_triangle.iloc[:, i - 1] * self.fse[i - 1])**2 + (
-                self.f[i - 1] * paramrisk.iloc[:, i - 1])**2) * bool_df.iloc[:, i])
+                self.f[i - 1] * paramrisk.iloc[:, i - 1])**2) * bool_df.iloc[:, i])          
             temp.columns = [self.full_triangle.columns[i]]
             paramrisk = concat([paramrisk, temp], axis=1)
         return paramrisk

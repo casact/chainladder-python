@@ -12,10 +12,10 @@ ABC = cl.load_dataset('ABC')
 UKMotor = cl.load_dataset('UKMotor')
 GenIns = cl.load_dataset('GenIns')
 
-RAA_mack = cl.MackChainladder(cl.Triangle(RAA), tail=True)
+RAA_mack = cl.MackChainladder(cl.Triangle(RAA))
 ABC_mack = cl.MackChainladder(cl.Triangle(ABC), alpha=2, tail=True)
 UKMotor_mack = cl.MackChainladder(cl.Triangle(UKMotor))
-GenIns_mack = cl.MackChainladder(cl.Triangle(GenIns), alpha=2)
+GenIns_mack = cl.MackChainladder(cl.Triangle(GenIns), alpha=2, tail=True)
 
 #print(RAA_mack.summary().round(3))
 #print(ABC_mack.summary().round(3))
