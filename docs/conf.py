@@ -42,7 +42,7 @@ class Mock(object):
         else:
             return Mock()
  
-#MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'pandas', 'matplotlib.pyplot', 'statsmodels', 'warnings', 'statsmodels.nonparametric.smoothers_lowess', 'seaborn', 'statsmodels.stats.outliers_influence', 'statsmodels.api']
+
 MOCK_MODULES = ['numpy', 'scipy', 'pandas', 'matplotlib.pyplot']
 
 for mod_name in MOCK_MODULES:
@@ -60,7 +60,7 @@ for mod_name in MOCK_MODULES:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.githubpages', 'nbsphinx']
+    'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

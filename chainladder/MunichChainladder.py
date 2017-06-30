@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jun 27 10:21:15 2017
-
-@author: jboga
+Since Pythagoras, we know that :math:`a^2 + b^2 = c^2`
 """
 import chainladder as cl
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from chainladder.UtilityFunctions import Plot
+from chainladder.Triangle import Triangle
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 class MunichChainladder:
+    """ This is the Munich Chain Ladde Class.
+    
+    Attributes:
+        sigma: For the sigma parameter, we use the usual formula:
+            :math:`\\widehat{(\\sigma_{s\\rightarrow t}^{P})^2}:=\\frac{1}{n-s-1}\\cdot \\sum_{i=1}^{n-s}P_{i,s}\\cdot \\left (\\frac{P_{i,t}}{P_{i,s}}-\\widehat{f^{_{s\\rightarrow t}^{P}}}  \\right )`
+    
+    """
     def __init__(self, Paid, Incurred, tailP=False, tailI=False):
         self.tailP = tailP
         self.tailI = tailI
@@ -111,6 +118,11 @@ class MunichChainladder:
             full_paid[str(i+2)] = self.Paid.data.iloc[:,i+1].fillna(paid)
         return full_paid, full_incurred
     
+    def __get_PI_ratios(self):
+        """ Used for plotting
+        """
+        actuals = MCL.MackPaid.triangle.data_as_table()['values']/MCL.MackIncurred.triangle.data_as_table()['values']
+        
     def summary(self):
         """ Method to produce a summary table of of the Munich Chainladder 
         model.
@@ -203,7 +215,37 @@ class MunichChainladder:
                                                        'width':[0.35,0.35],
                                                        'bottom':[0,0],
                                                        'yerr':[0,0]
-                                                       }}
+                                                       }},
+                      'PI1':{'Title':'(P/I) Triangle using Basic Chainladder',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'',
+                                     'chart_type_dict':{'type':['plot', 'plot', 'plot'],
+                                                       'x':[Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[0]],
+                                                       'y':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'], 
+                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[1]],
+                                                       'marker':['o','o',''],
+                                                       'linestyle':['','','-'],
+                                                       'color':['grey','blue', 'red']
+                                                       }},
+                      'PI2':{'Title':'(P/I) Triangle using Munich Chainladder',
+                                     'XLabel':'Origin Period',
+                                     'YLabel':'',
+                                     'chart_type_dict':{'type':['plot', 'plot','plot'],
+                                                       'x':[Triangle(self.MCL_paid).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[0]],
+                                                       'y':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'], 
+                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
+                                                            lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'],
+                                                                   Triangle(self.MCL_paid).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table()['dev']))<=6 else 0.666).T[1]],
+                                                       'marker':['o','o',''],
+                                                       'linestyle':['','','-'],
+                                                       'color':['grey','blue', 'red']
+                                                       }},      
                     }
         return plot_dict
 

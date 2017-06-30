@@ -16,6 +16,7 @@ This package is inspired by the `R package <https://github.com/mages/ChainLadder
    Modules.rst
    Datasets.rst
    Examples.rst
+   citations.rst
 
 Indices and tables
 ==================

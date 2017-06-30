@@ -1,8 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-   
 
 """The MackChainladder module and class establishes the statistical framework
-of the chainladder method.  With MackChainLadder, various standard errors can
-be computed to ultimately develop confidence intervals on IBNR estimates.   
+of the chainladder method.  This is based *The Standard Error of Chain Ladder 
+Reserve Estimates: Recursive Calculation and Inclusion of a Tail Factor* by
+Thomas Mack `[Mack99] <citations.html>`_.
+
 """
 import numpy as np
 from pandas import DataFrame, concat, Series
@@ -12,6 +14,7 @@ from warnings import warn
 import matplotlib.pyplot as plt
 import seaborn as sns
 from statsmodels.nonparametric.smoothers_lowess import lowess
+import statsmodels.api as sm
 from chainladder.UtilityFunctions import Plot
 
 
@@ -25,11 +28,14 @@ class MackChainladder:
 
     Parameters:    
         tri : Triangle
-            A triangle object. Refer to :class:`Classes.Triangle`
+            A triangle object. Refer to :class:`Triangle`
         weights : int
             A value representing an input into the weights of the WRTO class.
         alpha : int
-            A value representing an input into the weights of the WRTO class.
+            A value :math:`\\alpha \\in \\{0;1;2\\}` where: 
+                | :math:`\\alpha = 0` corresponds with straight average LDFs.
+                | :math:`\\alpha = 1` corresponds with volume weighted average LDFs.          
+                | :math:`\\alpha = 2` corresponds with ordinary regression with intercept 0.  
         tail : bool
             Represent whether a tail factor should be applied to the data. 
             Value of False sets tail factor to 1.0
@@ -42,8 +48,20 @@ class MackChainladder:
         full_triangle : pandas.DataFrame
             A completed triangle using Mack Chainladder assumptions.
         f : numpy.array
-            An array representing the (col-1) loss development factors, 
-            f-notation borrowed from Mack
+            An array representing the loss development (age-to-age) factors defined as: 
+            :math:`\\widehat{f}_{k}=\\frac{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}
+            F_{ik}}{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}}` 
+            
+            where: 
+            :math:`F_{ik}=C_{i,k+1}/C_{ik}, 1\\leq i\\leq n, 1\\leq k \\leq n-1`  
+            
+            are the individual development factors and where 
+            :math:`w_{ik}\\in [0;1]`  
+        sigma: numpy.array
+            An array representing the standard error of :math:`\\widehat{f}`:
+            :math:`\\widehat{\\sigma}_{k}=\\sqrt{\\frac{1}{n-k-1}
+            \\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}\\left (F_{ik}-
+            \\widehat{f}_{k}  \\right )^{2}}, 1\\leq k\\leq n - 2`   
         fse : numpy.array
             An array representing the (col-1) standard errors of loss 
             development factors.
@@ -66,6 +84,8 @@ class MackChainladder:
         self.fse = np.array([item.standard_error for item in self.chainladder.models])[:-1]
         self.fse = np.append(self.fse,self.__get_tail_se())
         self.Fse = self.__get_Fse()
+        self.parameter_risk = self.__get_parameter_risk()
+        self.process_risk = self.__get_process_risk()
         self.total_process_risk = np.array(np.sqrt((self.__get_process_risk()**2).sum()))
         self.total_parameter_risk = self.__get_total_parameter_risk()
         self.mack_se = np.sqrt(self.__get_process_risk()**2 +
@@ -158,6 +178,10 @@ class MackChainladder:
                                                  * np.array(self.full_triangle.iloc[:, i]).astype(float)**self.alpha[i]))], axis=1)
         Fse.set_index(self.full_triangle.index, inplace=True)
         Fse.columns = self.triangle.data.columns
+        if self.chainladder.tail == True:
+            Fse.iloc[:,-1] = self.sigma[-1]/np.sqrt(self.full_triangle.iloc[:,-2])
+        else: 
+            Fse = Fse.iloc[:,:-1]
         return Fse
 
     def __get_tail_se(self):
@@ -215,11 +239,22 @@ class MackChainladder:
         
         Returns: float32
         """
+        #n = self.triangle.ncol-1
+        #y = self.f[:n]
+        #x = np.array([i + 1 for i in range(len(y))]) 
+        #ldf_reg = stats.linregress(x, np.log(y - 1))
+        #time_pd = (np.log(self.f[n] - 1) - ldf_reg[1]) / ldf_reg[0]
+        
         n = self.triangle.ncol-1
-        y = self.f[:n]
-        x = np.array([i + 1 for i in range(len(y))]) 
-        ldf_reg = stats.linregress(x, np.log(y - 1))
-        time_pd = (np.log(self.f[n] - 1) - ldf_reg[1]) / ldf_reg[0]
+        y = Series(self.f[:n])
+        x = [num+1 for num, item in enumerate(y)]
+        y.index = x
+        x = sm.add_constant((y.index)[y>1])
+        y = y[y>1]
+        ldf_reg = sm.OLS(np.log(y-1),x).fit()
+        time_pd = (np.log(self.f[n] - 1) - ldf_reg.params[0]) / ldf_reg.params[1]
+        #tail_factor = np.exp(tail_model.params[0] + np.array([i+2 for i in range(n,n+100)]) * tail_model.params[1]).astype(float) + 1)
+        
         return time_pd
         
     def summary(self):
@@ -278,12 +313,7 @@ class MackChainladder:
                 
         
         """
-        y = Series(Chainladder(tri, weights=weights,  delta=2 - alpha).LDF)
-        y.index = [i+1 for i in range(len(y))]
-        y = y[y>1]
-        model = stats.linregress(y.index, np.log(y-1))
-        if model[3]>0.05:
-            warn('Unable to generate tail from LDFs, setting tail factor to 1.0')        
+        if Chainladder(tri,weights=weights, delta=2-alpha, tail=True).get_tail_factor()[0] == 1:
             return False
         else:
             return True
@@ -389,5 +419,6 @@ class MackChainladder:
                                                        }} 
                     }
         return plot_dict
+
 
     

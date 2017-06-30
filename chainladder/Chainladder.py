@@ -192,17 +192,27 @@ class Chainladder():
         Returns:
             Pandas.Series of the tail factor.        
         """
-        LDF = self.get_LDF()[:self.triangle.ncol-1]
-        n = len(LDF)
-        if (LDF[-1] * LDF[-2] > 1.0001) and self.tail == True:
-            LDF_positive = np.array([item for item in LDF if item > 1])
-            n = np.max(np.where(LDF >= 1)[0])            
-            tail_model = np.polyfit(range(1,len(LDF_positive)+1),np.log(LDF_positive-1),1)
-            tail_factor = np.product(np.exp(tail_model[1] + np.array([i+2 for i in range(n,n+100)]) * tail_model[0]).astype(float) + 1)
+        LDF = np.array(self.get_LDF()[:self.triangle.ncol-1])
+        if self.tail==False:
+            tail_factor=1
+        elif len(LDF[LDF>1]) < 2:
+            warn("Not enough factors larger than 1.0 to fit an exponential regression.")
+            tail_factor = 1
+        elif (LDF[-3] * LDF[-2] > 1.0001):
+            y = Series(LDF)
+            x = sm.add_constant((y.index+1)[y>1])
+            y = LDF[LDF>1]
+            n, = np.where(LDF==y[-1])[0]
+            tail_model = sm.OLS(np.log(y-1),x).fit()
+            tail_factor = np.product(np.exp(tail_model.params[0] + np.array([i+2 for i in range(n,n+100)]) * tail_model.params[1]).astype(float) + 1)
             if tail_factor > 2:
                 warn("The estimate tail factor was bigger than 2 and has been reset to 1.")
                 tail_factor = 1
+            if tail_model.f_pvalue > 0.05:
+                warn("The p-value of the exponential tail fit is insignificant and tail has been set to 1.")
+                tail_factor = 1
         else:
+            warn("LDF[-2] * LDF[-1] is not greater than 1.0001 and tail has been set to 1.")
             tail_factor = 1
         return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
 

@@ -13,7 +13,7 @@ UKMotor = cl.load_dataset('UKMotor')
 GenIns = cl.load_dataset('GenIns')
 
 RAA_mack = cl.MackChainladder(cl.Triangle(RAA), tail=True)
-ABC_mack = cl.MackChainladder(cl.Triangle(ABC), alpha=2)
+ABC_mack = cl.MackChainladder(cl.Triangle(ABC), alpha=2, tail=True)
 UKMotor_mack = cl.MackChainladder(cl.Triangle(UKMotor))
 GenIns_mack = cl.MackChainladder(cl.Triangle(GenIns), alpha=2)
 
@@ -22,7 +22,7 @@ GenIns_mack = cl.MackChainladder(cl.Triangle(GenIns), alpha=2)
 #cl.MackChainladder(M3IR5, tail=True)
 
 
-MCL_inc = cl.load_dataset('MCLincurred')
-MCL_paid = cl.load_dataset('MCLpaid')
+#MCL_inc = cl.load_dataset('MCLincurred')
+#MCL_paid = cl.load_dataset('MCLpaid')
 
-MCL = cl.MunichChainladder(MCL_paid, MCL_inc)
+#MCL = cl.MunichChainladder(MCL_paid, MCL_inc)
