@@ -27,7 +27,7 @@ class MackChainladder:
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
 
     Parameters:    
-        tri : Triangle
+        tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Triangle`
         weights : int
             A value representing an input into the weights of the WRTO class.
@@ -41,8 +41,8 @@ class MackChainladder:
             Value of False sets tail factor to 1.0
 
     Attributes:
-        tri : Triangle
-            A triangle object. Refer to :class:`Classes.Triangle`
+        tri : `Triangle <Triangle.html>`_
+            The raw triangle
         weights : pandas.DataFrame
             A value representing an input into the weights of the WRTO class.
         full_triangle : pandas.DataFrame
@@ -57,6 +57,7 @@ class MackChainladder:
             
             are the individual development factors and where 
             :math:`w_{ik}\\in [0;1]`  
+        chainladder: `Chainladder <ChainLadder.html>`_
         sigma: numpy.array
             An array representing the standard error of :math:`\\widehat{f}`:
             :math:`\\widehat{\\sigma}_{k}=\\sqrt{\\frac{1}{n-k-1}
@@ -65,6 +66,20 @@ class MackChainladder:
         fse : numpy.array
             An array representing the (col-1) standard errors of loss 
             development factors.
+        Fse : pandas.DataFrame
+            Needs documentation
+        parameter_risk: pandas.DataFrame
+            Parameter risk
+        process_risk: pandas.DataFrame
+            Process Risk
+        total_parameter_risk: numpy.array
+            Needs documentation
+        total_process_risk: numpy.array
+            Needs documentation
+        mack_se: pandas.DataFrame
+            Needs documentation
+        total_mack_se: float32  
+            Needs documentation
 
     """
 
@@ -264,6 +279,7 @@ class MackChainladder:
         Returns:
             This calculation is consistent with the R calculation 
             MackChainLadder$summary
+            
         """
         summary = DataFrame()
         summary['Latest'] = self.triangle.get_latest_diagonal()
@@ -286,6 +302,7 @@ class MackChainladder:
 
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
+            
         """
         return self.chainladder.age_to_age(colname_sep='-')
     
@@ -319,16 +336,26 @@ class MackChainladder:
             return True
     
     def plot(self, plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4']): 
-        """ Method, callable by end-user that renders the matplotlib plots 
-        based on the configurations in __get_plot_dict().
+        """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
             plots: list[str]
                 A list of strings representing the charts the end user would like
-                to see.  Of ommitted, all plots are displayed.
-
+                to see.  If ommitted, all plots are displayed.  Available plots include:
+                    ============== =================================================
+                    Str            Description
+                    ============== =================================================
+                    summary        Bar chart with Ultimates and std. Errors
+                    full_triangle  Line chart of origin period x development period
+                    resid1         Studentized residuals x fitted Value
+                    resid2         Studentized residuals x origin period
+                    resid3         Studentized residuals x calendar period
+                    resid4         Studentized residuals x development period
+                    ============== =================================================
+                    
         Returns:
             Renders the matplotlib plots.
+            
         """   
         my_dict = []
         plot_dict = self.__get_plot_dict()
@@ -339,12 +366,12 @@ class MackChainladder:
     def __get_plot_dict(self):
         resid_df = self.chainladder.get_residuals()  
         xlabs = self.full_triangle.columns
-        xvals = [i for i in range(len(self.full_triangle.columns))]
+        xvals = [i+1 for i in range(len(self.full_triangle.columns))]
         summary = self.summary()
         means = list(summary['Ultimate'])
         ci = list(zip(summary['Ultimate']+summary['Mack S.E.'], summary['Ultimate']-summary['Mack S.E.']))
         y_r = [list(summary['Ultimate'])[i] - ci[i][1] for i in range(len(ci))]
-        plot_dict = {'resid1':{'Title':'Studentized Residuals by fitted Value',
+        plot_dict = {'resid1':{'Title':'Studentized Residuals by Fitted Value',
                              'XLabel':'Fitted Value',
                              'YLabel':'Studentized Residual',
                              'chart_type_dict':{'type':['plot','plot'],
@@ -374,8 +401,8 @@ class MackChainladder:
                                                        'linestyle':['','-'],
                                                        'color':['blue','red']
                                                        }},
-                    'resid3':{'Title':'Studentized Residuals by Origin Period',
-                                     'XLabel':'Origin Period',
+                    'resid3':{'Title':'Studentized Residuals by Calendar Period',
+                                     'XLabel':'Calendar Period',
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['plot','plot'],
                                                        'x':[resid_df['cal_period'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[0]],
@@ -395,7 +422,7 @@ class MackChainladder:
                                                        'yerr':[0,y_r]
                                                        }},
                     'full_triangle':{'Title':'Fully Developed Triangle',
-                                     'XLabel':'Origin Period',
+                                     'XLabel':'Development Period',
                                      'YLabel':'Values',
                                      'chart_type_dict':{'type':['line','line'],
                                                        'rows':[len(self.full_triangle), len(self.triangle.data)],
@@ -407,7 +434,7 @@ class MackChainladder:
                                                        
                                                        }} ,
                     'triangle':{'Title':'Latest Triangle Data',
-                                     'XLabel':'Origin Period',
+                                     'XLabel':'Development Period',
                                      'YLabel':'Values',
                                      'chart_type_dict':{'type':['line'],
                                                        'rows':[len(self.triangle.data)],

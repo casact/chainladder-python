@@ -34,7 +34,7 @@ class Chainladder():
     `Need to properly cite... <https://github.com/mages/ChainLadder>`_
 
     Parameters:    
-        tri : Triangle
+        tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Classes.Triangle`
         weights : int
             A value representing an input into the weights of the WRTO class.
@@ -45,7 +45,7 @@ class Chainladder():
             factor to be applied to the data.
 
     Attributes:
-        tri : Triangle
+        tri : `Triangle <Triangle.html>`_
             A triangle object on which the Chainladder model will be built.
         weights : pandas.DataFrame
             A value representing an input into the weights of the WRTO class.

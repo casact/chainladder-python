@@ -1,24 +1,107 @@
 # -*- coding: utf-8 -*-
 """
-Since Pythagoras, we know that :math:`a^2 + b^2 = c^2`
+The Munich chainladder approach considers the correlations between paid and
+incurred loss data so as to converge chainladder paid ultimates and chainladder
+incurred ultimates `[Quarg99] <citations.html>`_
+
 """
 import chainladder as cl
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from warnings import warn
 from chainladder.UtilityFunctions import Plot
 from chainladder.Triangle import Triangle
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 class MunichChainladder:
-    """ This is the Munich Chain Ladde Class.
+    """ This is the Munich Chain Ladder Class.
     
+    Parameters:
+        Paid: `Triangle <Triangle.html>`_
+            The raw paid triangle
+        Incurred: `Triangle <Triangle.html>`_
+            The raw incurred triangle
+        tailP: bool
+            Represent whether a tail factor should be applied to the paid data. 
+            Value of False sets tail factor to 1.0
+        tailI: bool
+            Represent whether a tail factor should be applied to the incurred data. 
+            Value of False sets tail factor to 1.0
+        
     Attributes:
-        sigma: For the sigma parameter, we use the usual formula:
-            :math:`\\widehat{(\\sigma_{s\\rightarrow t}^{P})^2}:=\\frac{1}{n-s-1}\\cdot \\sum_{i=1}^{n-s}P_{i,s}\\cdot \\left (\\frac{P_{i,t}}{P_{i,s}}-\\widehat{f^{_{s\\rightarrow t}^{P}}}  \\right )`
+        tailP: bool
+            Represent whether a tail factor should be applied to the paid data. 
+            Value of False sets tail factor to 1.0
+        tailI: bool
+            Represent whether a tail factor should be applied to the incurred data. 
+            Value of False sets tail factor to 1.0
+        MackPaid: `MackChainladder <MackChainLadder.html>`_
+            A Mack chainladder model of paid triangle
+        MackIncurred: `MackChainladder <MackChainLadder.html>`_
+            A Mack chainladder model of incurred triangle
+        Paid: `Triangle <Triangle.html>`_
+            The raw paid triangle
+        Incurred: `Triangle <Triangle.html>`_
+            The raw incurred triangle
+        rhoI_sigma: np.array
+            The rho_sigma of incurred:
+            
+            :math:`\\widehat{\\rho_s^I}=\\sqrt{\\frac{1}{n-s}\\cdot \\sum_{j=1}^{n-s+1}I_{j,s}\\cdot \\left ( Q_{j,s}-\\widehat{q_s} \\right )^2}`
+        rhoP_sigma: np.array
+            The rho_sigma of paid:
+            
+            :math:`\\widehat{\\rho_s^P}=\\sqrt{\\frac{1}{n-s}\\cdot \\sum_{j=1}^{n-s+1}P_{j,s}\\cdot \\left ( Q_{j,s}^{-1}-\\widehat{q_s}^{-1} \\right )^2}`
+        q_f: np.array
+            The volume weighted Paid/Incurred link-ratios
+            
+            :math:`\\widehat{q_s}=\\frac{\\sum_{j=1}^{n-s+1}P_{j,s}}{\\sum_{j=1}^{n-s+1}I_{j,s}}`
+        qinverse_f: np.array
+            The volume weighted Incurred/Paid link-ratios
+            
+            :math:`\\widehat{q_s^{-1}}=\\frac{1}{\\widehat{q_s}}`
+        paid_residuals: np.array
+            Paid residuals:
+            
+            :math:`\\mathbf{\\widehat{Res}}(P_{i,t})=\\frac{\\frac{P_{i,t}}{P_{i,s}}-\\widehat{f}_{s\\rightarrow t}^{P}}{\\widehat{\\sigma_{s\\rightarrow t}^P}}\\cdot \\sqrt{P_{i,s}}`,  where
+            
+            :math:`\\widehat{(\\sigma_{s\\rightarrow t}^{P})}:=\\sqrt{\\frac{1}{n-s-1}\\cdot \\sum_{i=1}^{n-s}P_{i,s}\\cdot \\left (\\frac{P_{i,t}}{P_{i,s}}-\\widehat{f^{_{s\\rightarrow t}^{P}}}  \\right )^2}`
+        incurred_residuals: np.array
+            Incurred residuals:
+            
+            :math:`\\mathbf{\\widehat{Res}}(I_{i,t})=\\frac{\\frac{I_{i,t}}{I_{i,s}}-\\widehat{f}_{s\\rightarrow t}^{I}}{\\widehat{\\sigma_{s\\rightarrow t}^I}}\\cdot \\sqrt{I_{i,s}}`,  where
+            
+            :math:`\\widehat{(\\sigma_{s\\rightarrow t}^{I})}:=\\sqrt{\\frac{1}{n-s-1}\\cdot \\sum_{i=1}^{n-s}I_{i,s}\\cdot \\left (\\frac{I_{i,t}}{I_{i,s}}-\\widehat{f^{_{s\\rightarrow t}^{I}}}  \\right )^2}`
+        Q_inverse_residuals: numpy.array
+            The Qinverse residuals:
+            
+            :math:`\\mathbf{\\widehat{Res}}(Q_{i,s}^{-1})=\\frac{Q_{i,s}^{-1}-\\widehat{q}_s^{-1}}{\\widehat{\\rho_s^P}}\\cdot \\sqrt{P_{i,s}}`
+        Q_residuals: numpy.array
+            The Q residuals:
+            
+            :math:`\\mathbf{\\widehat{Res}}(Q_{i,s})=\\frac{Q_{i,s}-\\widehat{q}_s}{\\widehat{\\rho_s^I}}\\cdot \\sqrt{I_{i,s}}`
+        lambdaP: float32
+            The Paid correlation parameter:
+            
+            :math:`\\widehat{\\lambda^{P}}:=\\frac{\\sum_{i,s}\\mathbf{\\widehat{Res}}(Q_{i,s}^{-1})\\cdot \\mathbf{\\widehat{Res}}(P_{i,t})}{\\sum_{i,s}\\mathbf{\\widehat{Res}}(Q_{i,s}^{-1})^{2}}`
+        lambdaI: float32
+            The Incurred correlation parameter:
+            
+            :math:`\\widehat{\\lambda^{I}}:=\\frac{\\sum_{i,s}\\mathbf{\\widehat{Res}}(Q_{i,s})\\cdot \\mathbf{\\widehat{Res}}(I_{i,t})}{\\sum_{i,s}\\mathbf{\\widehat{Res}}(Q_{i,s})^{2}}`
+        MCL_paid: pandas.DataFrame
+            Fully developed paid triangle using the Munich chainladder model
+        MCL_incurred: pandas.DataFrame
+            Fully developed paid triangle using the Munich chainladder model
+            
     
     """
     def __init__(self, Paid, Incurred, tailP=False, tailI=False):
+        if Incurred.shape != Paid.shape:
+            warn('Paid and Incurred triangle must have same dimension.')
+            return
+        if len(Incurred) > len(Incurred.columns): 
+            warn('MunichChainLadder does not support triangles with fewer development periods than origin periods.')
+            return
         self.tailP = tailP
         self.tailI = tailI
         self.MackPaid = cl.MackChainladder(Paid, tail=self.tailP)
@@ -42,8 +125,7 @@ class MunichChainladder:
         self.MCL_paid = MCL_full_triangle[0]
         self.MCL_incurred = MCL_full_triangle[1]
 
-#if self.Incurred.shape != self.Paid.shape: print('Paid and Incurred triangle must have same dimension.')
-#if len(self.Incurred) > len(self.Incurred.columns): print('MunichChainLadder does not support triangles with fewer development periods than origin periods.')
+
 
     def __repr__(self):   
         return str(self.summary())
@@ -141,13 +223,29 @@ class MunichChainladder:
         return summary
     
     def plot(self, plots=['summary', 'MCLvsMack', 'resid1', 'resid2']):
-        """ Method that is designed to configure the matplotlib graphs for the
-        MunichChainLadder class using a dictionary and then calls on the Plot 
-        class from UtilityFunctions.
+        """ Method, callable by end-user that renders the matplotlib plots.
         
+        Arguments:
+            plots: list[str]
+                A list of strings representing the charts the end user would like
+                to see.  If ommitted, all plots are displayed.  Available plots include:
+                    ============== ==========================================================
+                    Str            Description
+                    ============== ==========================================================
+                    summary        Bar chart with Ultimate paid and incurred
+                    MCLvsMack      Bar chart comparing P/I of Munich vs. Mack Chainladder 
+                    resid1         Paid residual vs I/P residual
+                    resid2         Incurred residual vs P/I residual
+                    MCLvsMackpaid  Bar chart of paid Munich vs Paid Mack Ultimates
+                    MCLvsMackinc   Bar chart of incurred Munich vs incurred Mack Ultimates
+                    PI1            P/I ratios by development period using Munich chainladder
+                    PI2            P/I ratios by development period using Mack chainladder
+                    ============== ==========================================================
+                    
         Returns:
-            Returns a dictionary containing the configuration of the selected plot.
-        """
+            Renders the matplotlib plots.
+            
+        """   
     
         my_dict = []
         plot_dict = self.__get_plot_dict()
@@ -217,8 +315,8 @@ class MunichChainladder:
                                                        'yerr':[0,0]
                                                        }},
                       'PI1':{'Title':'(P/I) Triangle using Basic Chainladder',
-                                     'XLabel':'Origin Period',
-                                     'YLabel':'',
+                                     'XLabel':'Development Period',
+                                     'YLabel':'Paid/Incurred Ratio',
                                      'chart_type_dict':{'type':['plot', 'plot', 'plot'],
                                                        'x':[Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
                                                             lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
@@ -232,8 +330,8 @@ class MunichChainladder:
                                                        'color':['grey','blue', 'red']
                                                        }},
                       'PI2':{'Title':'(P/I) Triangle using Munich Chainladder',
-                                     'XLabel':'Origin Period',
-                                     'YLabel':'',
+                                     'XLabel':'Development Period',
+                                     'YLabel':'Paid/Incurred Ratio',
                                      'chart_type_dict':{'type':['plot', 'plot','plot'],
                                                        'x':[Triangle(self.MCL_paid).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
                                                             lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],

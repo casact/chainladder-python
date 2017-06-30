@@ -1,6 +1,6 @@
 """
-The datasets module has only one function.  It could probably be refactored
-into the Triangle class, and may do so in the future.
+This module contains various utilities shared across most of the other
+*chainladder* modules.
 
 """
 from pandas import read_pickle
@@ -24,19 +24,19 @@ def load_dataset(key):
 
     
 class Plot():
-    def __init__(self, my_dict): 
-        """ Method, callable by end-user that renders the matplotlib plots 
-        based on the configurations in __get_plot_dict().
-        
-        Arguments:
-            plots: list[str]
-                A list of strings representing the charts the end user would like
-                to see.  Of ommitted, all plots are displayed.
+    """ Method, callable by end-user that renders the matplotlib plots 
+    based on the configurations in __get_plot_dict().
 
-        Returns:
-            Renders the matplotlib plots.
-        """        
-        
+    Arguments:
+        my_dict: dict
+            A dictionary representing the charts the end user would like
+            to see.  If ommitted, the default plots are displayed.
+
+    Returns:
+        Renders the matplotlib plots.
+
+    """       
+    def __init__(self, my_dict):     
         sns.set_style("whitegrid")
         _ = plt.figure()
         grid_x = 1 if len(my_dict) == 1 else round(len(my_dict) / 2,0)
@@ -44,9 +44,9 @@ class Plot():
         fig, ax = plt.subplots(figsize=(grid_y*15, grid_x*10))
         for num, item in enumerate(my_dict):
             _ = plt.subplot(grid_x,grid_y,num+1)
-            self.dict_plot(item) 
+            self.__dict_plot(item) 
 
-    def dict_plot(self, my_dict):
+    def __dict_plot(self, my_dict):
         """ Method that renders the matplotlib plots based on the configurations
         in __get_plot_dict().  This method should probably be private and may be
         so in a future release.
@@ -74,3 +74,6 @@ class Plot():
                                  linewidth=my_dict['chart_type_dict']['linewidth'][i],
                                  alpha=my_dict['chart_type_dict']['alpha'][i])
             _ = plt.title(my_dict['Title'], fontsize=30)
+            _ = plt.xlabel(my_dict['XLabel'], fontsize=20)
+            _ = plt.ylabel(my_dict['YLabel'],fontsize=20)
+            
