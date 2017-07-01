@@ -4,7 +4,7 @@ The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.  
 """
 
-from pandas import DataFrame, concat, pivot_table
+from pandas import DataFrame, concat, pivot_table, Series
 
 
 class Triangle():
@@ -58,6 +58,8 @@ class Triangle():
             raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
         self.data = data
         self.origin = origin
+        if dataform == 'triangle':
+            self.ncol = len(data.columns)
         if origin == None:
             origin_in_col_bool, origin_in_index_bool = self.__set_origin()
         self.dev = dev
@@ -219,3 +221,8 @@ class Triangle():
         else:
             self.values = 'values'
         return
+    
+    def get_latest_diagonal(self):
+        return Series([row.dropna(
+        ).iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
+        

@@ -34,7 +34,7 @@ class Chainladder():
     `Need to properly cite... <https://github.com/mages/ChainLadder>`_
 
     Parameters:    
-        tri : Triangle
+        tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Classes.Triangle`
         weights : int
             A value representing an input into the weights of the WRTO class.
@@ -45,7 +45,7 @@ class Chainladder():
             factor to be applied to the data.
 
     Attributes:
-        tri : Triangle
+        tri : `Triangle <Triangle.html>`_
             A triangle object on which the Chainladder model will be built.
         weights : pandas.DataFrame
             A value representing an input into the weights of the WRTO class.
@@ -75,7 +75,7 @@ class Chainladder():
             self.triangle = tri 
         else:
             self.triangle = Triangle(tri)
-        self.delta = [delta for item in range(len(self.triangle.data.columns) )]
+        self.delta = [delta for item in range(self.triangle.ncol)]
         self.weights = Triangle(self.triangle.data * 0 + weights)
         self.models = self.fit()
         self.tail = tail
@@ -109,7 +109,7 @@ class Chainladder():
             that can be accessed later.  See WRTO class implementation.
         """
         models = []
-        for i in range(0, len(self.triangle.data.columns) - 1):
+        for i in range(0, self.triangle.ncol - 1):
             data = self.triangle.data.iloc[:, i:i + 2].dropna()
             w = self.weights.data.iloc[:, i].dropna().iloc[:-1]
             X = data.iloc[:, 0]
@@ -135,7 +135,7 @@ class Chainladder():
         """
         incr = DataFrame(self.triangle.data.iloc[:, 1] /
                          self.triangle.data.iloc[:, 0])
-        for i in range(1, len(self.triangle.data.columns) - 1):
+        for i in range(1, self.triangle.ncol - 1):
             incr = concat([incr, self.triangle.data.iloc[:, i + 1] /
                            self.triangle.data.iloc[:, i]], axis=1)
         incr.columns = [item + colname_sep +
@@ -167,8 +167,8 @@ class Chainladder():
         LDF = Series([ldf.coefficient for ldf in self.models], index=[item + colname_sep +
                         self.triangle.data.columns.values[num + 1] for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])])
-        if len(LDF) >= len(self.triangle.data.columns)-1:
-            return Series(LDF[:len(self.triangle.data.columns)-1])
+        if len(LDF) >= self.triangle.ncol-1:
+            return Series(LDF[:self.triangle.ncol-1])
         else:
             return LDF
             
@@ -192,17 +192,27 @@ class Chainladder():
         Returns:
             Pandas.Series of the tail factor.        
         """
-        LDF = self.get_LDF()[:len(self.triangle.data.columns)-1]
-        n = len(LDF)
-        if (LDF[-1] * LDF[-2] > 1.0001) and self.tail == True:
-            LDF_positive = np.array([item for item in LDF if item > 1])
-            n = np.max(np.where(LDF >= 1)[0])            
-            tail_model = np.polyfit(range(1,len(LDF_positive)+1),np.log(LDF_positive-1),1)
-            tail_factor = np.product(np.exp(tail_model[1] + np.array([i+2 for i in range(n,n+100)]) * tail_model[0]).astype(float) + 1)
+        LDF = np.array(self.get_LDF()[:self.triangle.ncol-1])
+        if self.tail==False:
+            tail_factor=1
+        elif len(LDF[LDF>1]) < 2:
+            warn("Not enough factors larger than 1.0 to fit an exponential regression.")
+            tail_factor = 1
+        elif (LDF[-3] * LDF[-2] > 1.0001):
+            y = Series(LDF)
+            x = sm.add_constant((y.index+1)[y>1])
+            y = LDF[LDF>1]
+            n, = np.where(LDF==y[-1])[0]
+            tail_model = sm.OLS(np.log(y-1),x).fit()
+            tail_factor = np.product(np.exp(tail_model.params[0] + np.array([i+2 for i in range(n,n+100)]) * tail_model.params[1]).astype(float) + 1)
             if tail_factor > 2:
                 warn("The estimate tail factor was bigger than 2 and has been reset to 1.")
                 tail_factor = 1
+            if tail_model.f_pvalue > 0.05:
+                warn("The p-value of the exponential tail fit is insignificant and tail has been set to 1.")
+                tail_factor = 1
         else:
+            warn("LDF[-2] * LDF[-1] is not greater than 1.0001 and tail has been set to 1.")
             tail_factor = 1
         return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
 
@@ -277,7 +287,6 @@ class WRTO():
         self.w = w
         WLS = sm.WLS(y,x, w)
         OLS = sm.OLS(WLS.wendog,WLS.wexog).fit()
-        #if OLS.params[0] = 
         self.coefficient = OLS.params[0]
         self.WSSResidual = OLS.ssr
         self.fittedvalues = OLS.predict(x)

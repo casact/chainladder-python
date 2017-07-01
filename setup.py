@@ -5,13 +5,13 @@ from setuptools import setup
 
 setup(
     name='chainladder',
-    version='0.1.4',
+    version='0.1.5',
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
     packages=['chainladder'],
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
-    download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.4.tar.gz',
+    download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.5.tar.gz',
     license='LICENSE',
     include_package_data=True,
     package_data = {'data':['/data/ABC',
