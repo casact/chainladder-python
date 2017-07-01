@@ -1,7 +1,8 @@
 Examples
 ========
 
-Examples landing page.  
+The following examples will walk you through basic tutorials
+on how to use the chainladder package.
 
 .. toctree::
    :caption: Table of Contents:
@@ -9,5 +10,6 @@ Examples landing page.
 
    quickstart.rst
    MackExample.rst
+   MunichExample.rst
 
 

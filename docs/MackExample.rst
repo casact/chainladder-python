@@ -19,11 +19,7 @@ Load package and data
     %matplotlib inline
 
 
-.. parsed-literal::
-
-    C:\Users\jboga\Anaconda3\lib\site-packages\statsmodels\compat\pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
-      from pandas.core import datetools
-    
+  
 
 We will be exploring the MackChainladder class on the ``GenIns`` dataset
 included in the **chainladder** package. Let's load the triangle and
@@ -38,186 +34,21 @@ look at it.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th>dev</th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>6</th>
-          <th>7</th>
-          <th>8</th>
-          <th>9</th>
-          <th>10</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1.0</th>
-          <td>357848</td>
-          <td>1124788.0</td>
-          <td>1735330.0</td>
-          <td>2218270.0</td>
-          <td>2745596.0</td>
-          <td>3319994.0</td>
-          <td>3466336.0</td>
-          <td>3606286.0</td>
-          <td>3833515.0</td>
-          <td>3901463.0</td>
-        </tr>
-        <tr>
-          <th>2.0</th>
-          <td>352118</td>
-          <td>1236139.0</td>
-          <td>2170033.0</td>
-          <td>3353322.0</td>
-          <td>3799067.0</td>
-          <td>4120063.0</td>
-          <td>4647867.0</td>
-          <td>4914039.0</td>
-          <td>5339085.0</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>3.0</th>
-          <td>290507</td>
-          <td>1292306.0</td>
-          <td>2218525.0</td>
-          <td>3235179.0</td>
-          <td>3985995.0</td>
-          <td>4132918.0</td>
-          <td>4628910.0</td>
-          <td>4909315.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>4.0</th>
-          <td>310608</td>
-          <td>1418858.0</td>
-          <td>2195047.0</td>
-          <td>3757447.0</td>
-          <td>4029929.0</td>
-          <td>4381982.0</td>
-          <td>4588268.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>5.0</th>
-          <td>443160</td>
-          <td>1136350.0</td>
-          <td>2128333.0</td>
-          <td>2897821.0</td>
-          <td>3402672.0</td>
-          <td>3873311.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>6.0</th>
-          <td>396132</td>
-          <td>1333217.0</td>
-          <td>2180715.0</td>
-          <td>2985752.0</td>
-          <td>3691712.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>7.0</th>
-          <td>440832</td>
-          <td>1288463.0</td>
-          <td>2419861.0</td>
-          <td>3483130.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>8.0</th>
-          <td>359480</td>
-          <td>1421128.0</td>
-          <td>2864498.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>9.0</th>
-          <td>376686</td>
-          <td>1363294.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>10.0</th>
-          <td>344014</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
+========== ======== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
+       dev        1          2          3          4          5          6          7          8          9         10     
+========== ======== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
+**origin**
+**1**        357848    1124788    1735330    2218270    2745596    3319994    3466336    3606286    3833515    3901463  
+**2**        352118    1236139    2170033    3353322    3799067    4120063    4647867    4914039    5339085        NaN
+**3**        290507    1292306    2218525    3235179    3985995    4132918    4628910    4909315        NaN        NaN
+**4**        310608    1418858    2195047    3757447    4029929    4381982    4588268        NaN        NaN        NaN
+**5**        443160    1136350    2128333    2897821    3402672    3873311        NaN        NaN        NaN        NaN
+**6**        396132    1333217    2180715    2985752    3691712        NaN        NaN        NaN        NaN        NaN
+**7**        440832    1288463    2419861    3483130        NaN        NaN        NaN        NaN        NaN        NaN
+**8**        359480    1421128    2864498        NaN        NaN        NaN        NaN        NaN        NaN        NaN
+**9**        376686    1363294        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN
+**10**       344014        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN
+========== ======== ========== ========== ========== ========== ========== ========== ========== ========== ========== 
 
 
 Create the MackChainladder model
@@ -268,20 +99,14 @@ and methods are shown below. Details on these are contained in the
      'age_to_age',
      'alpha',
      'chainladder',
-     'dict_plot',
      'f',
      'fse',
      'full_triangle',
-     'get_Fse',
-     'get_parameter_risk',
-     'get_process_risk',
-     'get_tail_se',
-     'get_tail_sigma',
-     'get_tail_weighted_time_period',
-     'get_total_parameter_risk',
      'is_exponential_tail_appropriate',
      'mack_se',
+     'parameter_risk',
      'plot',
+     'process_risk',
      'sigma',
      'summary',
      'total_mack_se',
@@ -307,139 +132,20 @@ insight into the uncertainty in the model.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>Latest</th>
-          <th>Dev to Date</th>
-          <th>Ultimate</th>
-          <th>IBNR</th>
-          <th>Mack S.E.</th>
-          <th>CV(IBNR)</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1.0</th>
-          <td>3901463.0</td>
-          <td>1.000</td>
-          <td>3901463.000</td>
-          <td>0.000</td>
-          <td>0.000</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>2.0</th>
-          <td>5339085.0</td>
-          <td>0.983</td>
-          <td>5433718.815</td>
-          <td>94633.815</td>
-          <td>71835.187</td>
-          <td>0.759</td>
-        </tr>
-        <tr>
-          <th>3.0</th>
-          <td>4909315.0</td>
-          <td>0.913</td>
-          <td>5378826.290</td>
-          <td>469511.290</td>
-          <td>119473.736</td>
-          <td>0.254</td>
-        </tr>
-        <tr>
-          <th>4.0</th>
-          <td>4588268.0</td>
-          <td>0.866</td>
-          <td>5297905.821</td>
-          <td>709637.821</td>
-          <td>131572.833</td>
-          <td>0.185</td>
-        </tr>
-        <tr>
-          <th>5.0</th>
-          <td>3873311.0</td>
-          <td>0.797</td>
-          <td>4858199.639</td>
-          <td>984888.639</td>
-          <td>260530.015</td>
-          <td>0.265</td>
-        </tr>
-        <tr>
-          <th>6.0</th>
-          <td>3691712.0</td>
-          <td>0.722</td>
-          <td>5111171.458</td>
-          <td>1419459.458</td>
-          <td>410406.890</td>
-          <td>0.289</td>
-        </tr>
-        <tr>
-          <th>7.0</th>
-          <td>3483130.0</td>
-          <td>0.615</td>
-          <td>5660770.620</td>
-          <td>2177640.620</td>
-          <td>557795.542</td>
-          <td>0.256</td>
-        </tr>
-        <tr>
-          <th>8.0</th>
-          <td>2864498.0</td>
-          <td>0.422</td>
-          <td>6784799.012</td>
-          <td>3920301.012</td>
-          <td>874882.218</td>
-          <td>0.223</td>
-        </tr>
-        <tr>
-          <th>9.0</th>
-          <td>1363294.0</td>
-          <td>0.242</td>
-          <td>5642266.263</td>
-          <td>4278972.263</td>
-          <td>970959.785</td>
-          <td>0.227</td>
-        </tr>
-        <tr>
-          <th>10.0</th>
-          <td>344014.0</td>
-          <td>0.069</td>
-          <td>4969824.694</td>
-          <td>4625810.694</td>
-          <td>1362981.070</td>
-          <td>0.295</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
-
+========= ======= =========== =========== ============ ============ =========
+origin     Latest Dev to Date    Ultimate         IBNR    Mack S.E.  CV(IBNR)
+========= ======= =========== =========== ============ ============ =========
+1   	  3901463      1.000  3901463.000        0.000        0.000       NaN
+2  	  5339085      0.983  5433718.815    94633.815    71835.187     0.759
+3  	  4909315      0.913  5378826.290   469511.290   119473.736     0.254
+4  	  4588268      0.866  5297905.821   709637.821   131572.833     0.185
+5   	  3873311      0.797  4858199.639   984888.639   260530.015     0.265
+6  	  3691712      0.722  5111171.458  1419459.458   410406.890     0.289
+7  	  3483130      0.615  5660770.620  2177640.620   557795.542     0.256
+8  	  2864498      0.422  6784799.012  3920301.012   874882.218     0.223
+9  	  1363294      0.242  5642266.263  4278972.263   970959.785     0.227
+10 	   344014      0.069  4969824.694  4625810.694  1362981.070     0.295
+========= ======= =========== =========== ============ ============ =========
 
 Plotting the Mack model
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -451,7 +157,7 @@ calling the plot() method.
 The plot() method can be passed a list of desired plots or it can be
 generically called to plot all available plots.
 
-\*\* Individual plot \*\*
+**Individual plot**
 
 .. code:: ipython3
 
@@ -461,14 +167,14 @@ generically called to plot all available plots.
 
 .. parsed-literal::
 
-    <matplotlib.figure.Figure at 0x19124f995c0>
+    <matplotlib.figure.Figure at 0x233ac232390>
 
 
 
 .. image:: output_11_1.png
 
 
-\*\* Plotting default (all plots) \*\*
+**Plotting default (all plots)**
 
 .. code:: ipython3
 
@@ -478,7 +184,7 @@ generically called to plot all available plots.
 
 .. parsed-literal::
 
-    <matplotlib.figure.Figure at 0x19125898d68>
+    <matplotlib.figure.Figure at 0x233acb89cf8>
 
 
 

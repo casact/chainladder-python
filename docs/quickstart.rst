@@ -38,186 +38,21 @@ be using the *Reinsurance Association of America* (RAA) triangle.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th>dev</th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>6</th>
-          <th>7</th>
-          <th>8</th>
-          <th>9</th>
-          <th>10</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1981.0</th>
-          <td>5012</td>
-          <td>8269.0</td>
-          <td>10907.0</td>
-          <td>11805.0</td>
-          <td>13539.0</td>
-          <td>16181.0</td>
-          <td>18009.0</td>
-          <td>18608.0</td>
-          <td>18662.0</td>
-          <td>18834.0</td>
-        </tr>
-        <tr>
-          <th>1982.0</th>
-          <td>106</td>
-          <td>4285.0</td>
-          <td>5396.0</td>
-          <td>10666.0</td>
-          <td>13782.0</td>
-          <td>15599.0</td>
-          <td>15496.0</td>
-          <td>16169.0</td>
-          <td>16704.0</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1983.0</th>
-          <td>3410</td>
-          <td>8992.0</td>
-          <td>13873.0</td>
-          <td>16141.0</td>
-          <td>18735.0</td>
-          <td>22214.0</td>
-          <td>22863.0</td>
-          <td>23466.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1984.0</th>
-          <td>5655</td>
-          <td>11555.0</td>
-          <td>15766.0</td>
-          <td>21266.0</td>
-          <td>23425.0</td>
-          <td>26083.0</td>
-          <td>27067.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1985.0</th>
-          <td>1092</td>
-          <td>9565.0</td>
-          <td>15836.0</td>
-          <td>22169.0</td>
-          <td>25955.0</td>
-          <td>26180.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1986.0</th>
-          <td>1513</td>
-          <td>6445.0</td>
-          <td>11702.0</td>
-          <td>12935.0</td>
-          <td>15852.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1987.0</th>
-          <td>557</td>
-          <td>4020.0</td>
-          <td>10946.0</td>
-          <td>12314.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1988.0</th>
-          <td>1351</td>
-          <td>6947.0</td>
-          <td>13112.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1989.0</th>
-          <td>3133</td>
-          <td>5395.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1990.0</th>
-          <td>2063</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
+==========  ==== ======== ======== ======== ======== ======== ======== ======== ======== ========
+dev            1        2        3        4        5        6        7        8        9       10
+==========  ==== ======== ======== ======== ======== ======== ======== ======== ======== ========
+**origin**                                                                                       
+**1981**    5012   8269.0  10907.0  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
+**1982**     106   4285.0   5396.0  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0      NaN
+**1983**    3410   8992.0  13873.0  16141.0  18735.0  22214.0  22863.0  23466.0      NaN      NaN
+**1984**    5655  11555.0  15766.0  21266.0  23425.0  26083.0  27067.0      NaN      NaN      NaN
+**1985**    1092   9565.0  15836.0  22169.0  25955.0  26180.0      NaN      NaN      NaN      NaN
+**1986**    1513   6445.0  11702.0  12935.0  15852.0      NaN      NaN      NaN      NaN      NaN
+**1987**     557   4020.0  10946.0  12314.0      NaN      NaN      NaN      NaN      NaN      NaN
+**1988**    1351   6947.0  13112.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+**1989**    3133   5395.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+**1990**    2063      NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+==========  ==== ======== ======== ======== ======== ======== ======== ======== ======== ========
 
 
 Building our first triangle
@@ -238,185 +73,21 @@ or representing the data in tabular form.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th>dev</th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>6</th>
-          <th>7</th>
-          <th>8</th>
-          <th>9</th>
-          <th>10</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1981.0</th>
-          <td>5012</td>
-          <td>3257.0</td>
-          <td>2638.0</td>
-          <td>898.0</td>
-          <td>1734.0</td>
-          <td>2642.0</td>
-          <td>1828.0</td>
-          <td>599.0</td>
-          <td>54.0</td>
-          <td>172.0</td>
-        </tr>
-        <tr>
-          <th>1982.0</th>
-          <td>106</td>
-          <td>4179.0</td>
-          <td>1111.0</td>
-          <td>5270.0</td>
-          <td>3116.0</td>
-          <td>1817.0</td>
-          <td>-103.0</td>
-          <td>673.0</td>
-          <td>535.0</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1983.0</th>
-          <td>3410</td>
-          <td>5582.0</td>
-          <td>4881.0</td>
-          <td>2268.0</td>
-          <td>2594.0</td>
-          <td>3479.0</td>
-          <td>649.0</td>
-          <td>603.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1984.0</th>
-          <td>5655</td>
-          <td>5900.0</td>
-          <td>4211.0</td>
-          <td>5500.0</td>
-          <td>2159.0</td>
-          <td>2658.0</td>
-          <td>984.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1985.0</th>
-          <td>1092</td>
-          <td>8473.0</td>
-          <td>6271.0</td>
-          <td>6333.0</td>
-          <td>3786.0</td>
-          <td>225.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1986.0</th>
-          <td>1513</td>
-          <td>4932.0</td>
-          <td>5257.0</td>
-          <td>1233.0</td>
-          <td>2917.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1987.0</th>
-          <td>557</td>
-          <td>3463.0</td>
-          <td>6926.0</td>
-          <td>1368.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1988.0</th>
-          <td>1351</td>
-          <td>5596.0</td>
-          <td>6165.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1989.0</th>
-          <td>3133</td>
-          <td>2262.0</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1990.0</th>
-          <td>2063</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
+==========  ==== ======= ======= ======= ======= ======= ======= ====== ====== ======
+dev            1       2       3       4       5       6       7      8      9     10
+==========  ==== ======= ======= ======= ======= ======= ======= ====== ====== ======
+**origin**                                                                           
+**1981**    5012  3257.0  2638.0   898.0  1734.0  2642.0  1828.0  599.0   54.0  172.0
+**1982**     106  4179.0  1111.0  5270.0  3116.0  1817.0  -103.0  673.0  535.0    NaN
+**1983**    3410  5582.0  4881.0  2268.0  2594.0  3479.0   649.0  603.0    NaN    NaN
+**1984**    5655  5900.0  4211.0  5500.0  2159.0  2658.0   984.0    NaN    NaN    NaN
+**1985**    1092  8473.0  6271.0  6333.0  3786.0   225.0     NaN    NaN    NaN    NaN
+**1986**    1513  4932.0  5257.0  1233.0  2917.0     NaN     NaN    NaN    NaN    NaN
+**1987**     557  3463.0  6926.0  1368.0     NaN     NaN     NaN    NaN    NaN    NaN
+**1988**    1351  5596.0  6165.0     NaN     NaN     NaN     NaN    NaN    NaN    NaN
+**1989**    3133  2262.0     NaN     NaN     NaN     NaN     NaN    NaN    NaN    NaN
+**1990**    2063     NaN     NaN     NaN     NaN     NaN     NaN    NaN    NaN    NaN
+==========  ==== ======= ======= ======= ======= ======= ======= ====== ====== ======
 
 
 
@@ -429,64 +100,15 @@ or representing the data in tabular form.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>dev</th>
-          <th>values</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1981.0</th>
-          <td>1</td>
-          <td>5012.0</td>
-        </tr>
-        <tr>
-          <th>1982.0</th>
-          <td>1</td>
-          <td>106.0</td>
-        </tr>
-        <tr>
-          <th>1983.0</th>
-          <td>1</td>
-          <td>3410.0</td>
-        </tr>
-        <tr>
-          <th>1984.0</th>
-          <td>1</td>
-          <td>5655.0</td>
-        </tr>
-        <tr>
-          <th>1985.0</th>
-          <td>1</td>
-          <td>1092.0</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
+========== ==== =======
+origin      dev  values
+========== ==== =======
+**1981**      1  5012.0
+**1982**      1   106.0
+**1983**      1  3410.0
+**1984**      1  5655.0
+**1985**      1  1092.0
+========== ==== =======
 
 
 
@@ -510,185 +132,22 @@ age-to-age summary using the ata() method.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>1-2</th>
-          <th>2-3</th>
-          <th>3-4</th>
-          <th>4-5</th>
-          <th>5-6</th>
-          <th>6-7</th>
-          <th>7-8</th>
-          <th>8-9</th>
-          <th>9-10</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1981.0</th>
-          <td>1.650</td>
-          <td>1.319</td>
-          <td>1.082</td>
-          <td>1.147</td>
-          <td>1.195</td>
-          <td>1.113</td>
-          <td>1.033</td>
-          <td>1.003</td>
-          <td>1.009</td>
-        </tr>
-        <tr>
-          <th>1982.0</th>
-          <td>40.425</td>
-          <td>1.259</td>
-          <td>1.977</td>
-          <td>1.292</td>
-          <td>1.132</td>
-          <td>0.993</td>
-          <td>1.043</td>
-          <td>1.033</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1983.0</th>
-          <td>2.637</td>
-          <td>1.543</td>
-          <td>1.163</td>
-          <td>1.161</td>
-          <td>1.186</td>
-          <td>1.029</td>
-          <td>1.026</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1984.0</th>
-          <td>2.043</td>
-          <td>1.364</td>
-          <td>1.349</td>
-          <td>1.102</td>
-          <td>1.113</td>
-          <td>1.038</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1985.0</th>
-          <td>8.759</td>
-          <td>1.656</td>
-          <td>1.400</td>
-          <td>1.171</td>
-          <td>1.009</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1986.0</th>
-          <td>4.260</td>
-          <td>1.816</td>
-          <td>1.105</td>
-          <td>1.226</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1987.0</th>
-          <td>7.217</td>
-          <td>2.723</td>
-          <td>1.125</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1988.0</th>
-          <td>5.142</td>
-          <td>1.887</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>1989.0</th>
-          <td>1.722</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-          <td>NaN</td>
-        </tr>
-        <tr>
-          <th>smpl</th>
-          <td>8.206</td>
-          <td>1.696</td>
-          <td>1.315</td>
-          <td>1.183</td>
-          <td>1.127</td>
-          <td>1.043</td>
-          <td>1.034</td>
-          <td>1.018</td>
-          <td>1.009</td>
-        </tr>
-        <tr>
-          <th>vwtd</th>
-          <td>2.999</td>
-          <td>1.624</td>
-          <td>1.271</td>
-          <td>1.172</td>
-          <td>1.113</td>
-          <td>1.042</td>
-          <td>1.033</td>
-          <td>1.017</td>
-          <td>1.009</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
+============ ========= ========= ========= ========= ========= ========= ========= ========= ========= =======
+origin             1-2       2-3       3-4       4-5       5-6       6-7       7-8       8-9      9-10  10-Ult
+============ ========= ========= ========= ========= ========= ========= ========= ========= ========= ======= 
+**1981**      1.649840  1.319023  1.082332  1.146887  1.195140  1.112972  1.033261  1.002902  1.009217     NaN
+**1982**     40.424528  1.259277  1.976649  1.292143  1.131839  0.993397  1.043431  1.033088       NaN     NaN
+**1983**      2.636950  1.542816  1.163483  1.160709  1.185695  1.029216  1.026374       NaN       NaN     NaN
+**1984**      2.043324  1.364431  1.348852  1.101524  1.113469  1.037726       NaN       NaN       NaN     NaN
+**1985**      8.759158  1.655619  1.399912  1.170779  1.008669       NaN       NaN       NaN       NaN     NaN
+**1986**      4.259749  1.815671  1.105367  1.225512       NaN       NaN       NaN       NaN       NaN     NaN
+**1987**      7.217235  2.722886  1.124977       NaN       NaN       NaN       NaN       NaN       NaN     NaN
+**1988**      5.142117  1.887433       NaN       NaN       NaN       NaN       NaN       NaN       NaN     NaN
+**1989**      1.721992       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN     NaN
+**simple**    8.206099  1.695894  1.314510  1.182926  1.126962  1.043328  1.034355  1.017995  1.009217     1.0
+**vol-wtd**   2.999359  1.623523  1.270888  1.171675  1.113385  1.041935  1.033264  1.016936  1.009217     1.0
+**Selected**  2.999359  1.623523  1.270888  1.171675  1.113385  1.041935  1.033264  1.016936  1.009217     1.0
+============ ========= ========= ========= ========= ========= ========= ========= ========= ========= =======
 
 
 
@@ -758,185 +217,21 @@ things such as ldfs, cdfs, and complete triangles.
 
 
 
-.. raw:: html
-
-    <div>
-    <style>
-        .dataframe thead tr:only-child th {
-            text-align: right;
-        }
-    
-        .dataframe thead th {
-            text-align: left;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    </style>
-    <table border="1" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th>dev</th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>6</th>
-          <th>7</th>
-          <th>8</th>
-          <th>9</th>
-          <th>10</th>
-        </tr>
-        <tr>
-          <th>origin</th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1981.0</th>
-          <td>5012</td>
-          <td>8269.0</td>
-          <td>10907.0</td>
-          <td>11805.0</td>
-          <td>13539.0</td>
-          <td>16181.0</td>
-          <td>18009.0</td>
-          <td>18608.0</td>
-          <td>18662.0</td>
-          <td>18834.0</td>
-        </tr>
-        <tr>
-          <th>1982.0</th>
-          <td>106</td>
-          <td>4285.0</td>
-          <td>5396.0</td>
-          <td>10666.0</td>
-          <td>13782.0</td>
-          <td>15599.0</td>
-          <td>15496.0</td>
-          <td>16169.0</td>
-          <td>16704.0</td>
-          <td>16858.0</td>
-        </tr>
-        <tr>
-          <th>1983.0</th>
-          <td>3410</td>
-          <td>8992.0</td>
-          <td>13873.0</td>
-          <td>16141.0</td>
-          <td>18735.0</td>
-          <td>22214.0</td>
-          <td>22863.0</td>
-          <td>23466.0</td>
-          <td>23863.0</td>
-          <td>24083.0</td>
-        </tr>
-        <tr>
-          <th>1984.0</th>
-          <td>5655</td>
-          <td>11555.0</td>
-          <td>15766.0</td>
-          <td>21266.0</td>
-          <td>23425.0</td>
-          <td>26083.0</td>
-          <td>27067.0</td>
-          <td>27967.0</td>
-          <td>28441.0</td>
-          <td>28703.0</td>
-        </tr>
-        <tr>
-          <th>1985.0</th>
-          <td>1092</td>
-          <td>9565.0</td>
-          <td>15836.0</td>
-          <td>22169.0</td>
-          <td>25955.0</td>
-          <td>26180.0</td>
-          <td>27278.0</td>
-          <td>28185.0</td>
-          <td>28663.0</td>
-          <td>28927.0</td>
-        </tr>
-        <tr>
-          <th>1986.0</th>
-          <td>1513</td>
-          <td>6445.0</td>
-          <td>11702.0</td>
-          <td>12935.0</td>
-          <td>15852.0</td>
-          <td>17649.0</td>
-          <td>18389.0</td>
-          <td>19001.0</td>
-          <td>19323.0</td>
-          <td>19501.0</td>
-        </tr>
-        <tr>
-          <th>1987.0</th>
-          <td>557</td>
-          <td>4020.0</td>
-          <td>10946.0</td>
-          <td>12314.0</td>
-          <td>14428.0</td>
-          <td>16064.0</td>
-          <td>16738.0</td>
-          <td>17294.0</td>
-          <td>17587.0</td>
-          <td>17749.0</td>
-        </tr>
-        <tr>
-          <th>1988.0</th>
-          <td>1351</td>
-          <td>6947.0</td>
-          <td>13112.0</td>
-          <td>16664.0</td>
-          <td>19525.0</td>
-          <td>21738.0</td>
-          <td>22650.0</td>
-          <td>23403.0</td>
-          <td>23800.0</td>
-          <td>24019.0</td>
-        </tr>
-        <tr>
-          <th>1989.0</th>
-          <td>3133</td>
-          <td>5395.0</td>
-          <td>8759.0</td>
-          <td>11132.0</td>
-          <td>13043.0</td>
-          <td>14521.0</td>
-          <td>15130.0</td>
-          <td>15634.0</td>
-          <td>15898.0</td>
-          <td>16045.0</td>
-        </tr>
-        <tr>
-          <th>1990.0</th>
-          <td>2063</td>
-          <td>6188.0</td>
-          <td>10046.0</td>
-          <td>12767.0</td>
-          <td>14959.0</td>
-          <td>16655.0</td>
-          <td>17353.0</td>
-          <td>17931.0</td>
-          <td>18234.0</td>
-          <td>18402.0</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
+========== ==== ======== ======== ======== ======== ======== ======== ======== ======== ======== ========
+dev           1        2        3        4        5        6        7        8        9       10      Ult
+========== ==== ======== ======== ======== ======== ======== ======== ======== ======== ======== ========
+**origin**    
+**1981**   5012   8269.0  10907.0  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0  18834.0
+**1982**    106   4285.0   5396.0  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0  16858.0  16858.0
+**1983**   3410   8992.0  13873.0  16141.0  18735.0  22214.0  22863.0  23466.0  23863.0  24083.0  24083.0
+**1984**   5655  11555.0  15766.0  21266.0  23425.0  26083.0  27067.0  27967.0  28441.0  28703.0  28703.0
+**1985**   1092   9565.0  15836.0  22169.0  25955.0  26180.0  27278.0  28185.0  28663.0  28927.0  28927.0
+**1986**   1513   6445.0  11702.0  12935.0  15852.0  17649.0  18389.0  19001.0  19323.0  19501.0  19501.0
+**1987**    557   4020.0  10946.0  12314.0  14428.0  16064.0  16738.0  17294.0  17587.0  17749.0  17749.0
+**1988**   1351   6947.0  13112.0  16664.0  19525.0  21738.0  22650.0  23403.0  23800.0  24019.0  24019.0
+**1989**   3133   5395.0   8759.0  11132.0  13043.0  14521.0  15130.0  15634.0  15898.0  16045.0  16045.0
+**1990**   2063   6188.0  10046.0  12767.0  14959.0  16655.0  17353.0  17931.0  18234.0  18402.0  18402.0
+========== ==== ======== ======== ======== ======== ======== ======== ======== ======== ======== ========
 
 
 
