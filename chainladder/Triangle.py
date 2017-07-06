@@ -124,6 +124,7 @@ class Triangle():
         else:
             return self.data
 
+
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.  Note,
         the triangle must be in triangle form.
@@ -136,16 +137,11 @@ class Triangle():
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
 
         """
-        incr = DataFrame(self.data.iloc[:, 0])
-        for val in range(1, len(self.data.T.index)):
-            incr = concat(
-                [incr, self.data.iloc[:, val] + incr.iloc[:, -1]], axis=1)
-        incr = incr.rename_axis('dev', axis='columns')
-        incr.columns = self.data.T.index
+        
+        incr = self.data.T.cumsum().T
         if inplace == True:
             self.data = incr
         return incr
-
     def cum_to_incr(self, inplace=False):
         """Method to convert an cumulative triangle into a incremental triangle.  Note,
         the triangle must be in triangle form.

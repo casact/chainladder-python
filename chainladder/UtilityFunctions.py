@@ -73,6 +73,9 @@ class Plot():
                                  linestyle=my_dict['chart_type_dict']['linestyle'][i], 
                                  linewidth=my_dict['chart_type_dict']['linewidth'][i],
                                  alpha=my_dict['chart_type_dict']['alpha'][i])
+            if my_dict['chart_type_dict']['type'][i] == 'hist':
+                _ = plt.hist(my_dict['chart_type_dict']['x'][i],
+                             bins=my_dict['chart_type_dict']['bins'][i])
             _ = plt.title(my_dict['Title'], fontsize=30)
             _ = plt.xlabel(my_dict['XLabel'], fontsize=20)
             _ = plt.ylabel(my_dict['YLabel'],fontsize=20)
