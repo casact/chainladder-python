@@ -7,6 +7,7 @@ This is a rewrite of the popular [R ChainLadder package](https://github.com/mage
 This code is actively under development and contains the following functionality:
   - Mack Chain Ladder
   - Munich Chain Ladder
+  - Bootstrap Chain Ladder
 
 ## Installation
 To install using pip:
