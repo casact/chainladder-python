@@ -13,6 +13,8 @@ This code is actively under development and contains the following functionality
 To install using pip:
 `pip install chainladder`
 
+Note: This package has been tested with Python 3.4 and later.
+
 Package is coming soon to Anaconda...
 
 ## Documentation
