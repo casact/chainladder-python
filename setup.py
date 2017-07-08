@@ -37,11 +37,11 @@ setup(
     description= descr,
     long_description=open('README.rst').read(),
     install_requires=[
-        "pandas>=0.20.2",
-        "numpy>=1.12.1",
-        "matplotlib>=2.0.2",
-        "seaborn>=0.7.1",
-        "scipy>=0.19.0",
-        "statsmodels>=0.8.0",
+    #    "pandas>=0.20.2",
+    #    "numpy>=1.12.1",
+    #    "matplotlib>=2.0.2",
+    #    "seaborn>=0.7.1",
+    #    "scipy>=0.19.0",
+    #    "statsmodels>=0.8.0",
     ],
 )
