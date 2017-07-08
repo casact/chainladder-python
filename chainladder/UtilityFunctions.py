@@ -24,7 +24,7 @@ def load_dataset(key):
 
     
 class Plot():
-    """ Method, callable by end-user that renders the matplotlib plots 
+    """ Class that renders the matplotlib plots 
     based on the configurations in __get_plot_dict().
 
     Arguments:
@@ -73,6 +73,13 @@ class Plot():
                                  linestyle=my_dict['chart_type_dict']['linestyle'][i], 
                                  linewidth=my_dict['chart_type_dict']['linewidth'][i],
                                  alpha=my_dict['chart_type_dict']['alpha'][i])
+            if my_dict['chart_type_dict']['type'][i] == 'hist':
+                _ = plt.hist(my_dict['chart_type_dict']['x'][i],
+                             bins=my_dict['chart_type_dict']['bins'][i])
+            if my_dict['chart_type_dict']['type'][i] == 'box':
+                _ = plt.boxplot(my_dict['chart_type_dict']['x'][i],
+                                positions= my_dict['chart_type_dict']['positions'][i],
+                                showfliers=True)
             _ = plt.title(my_dict['Title'], fontsize=30)
             _ = plt.xlabel(my_dict['XLabel'], fontsize=20)
             _ = plt.ylabel(my_dict['YLabel'],fontsize=20)

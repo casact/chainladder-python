@@ -1,7 +1,7 @@
 References
 ==========
 
-============ ==================================================
+============ ===================================================
 [Mack99]     Mack, T. (1999). The Standard Error of Chain    
       	     Ladder Reserve Estimates: Recursive Calculation 
       	     and Inclusion of a Tail Factor. ASTIN Bulletin, 
@@ -11,4 +11,6 @@ References
              between IBNR Projections Based on Paid Losses and 
              IBNR Projections Based on Incurred Losses," 
              Variance 2:2, 2008, pp. 266-299.
-============ ==================================================
+[Shapland16] Shapland, Mark R., "Using the ODP Bootstrap Model: 
+		  A Practicioner's Guide" CAS Monograph No. 4, 2016
+============ ===================================================

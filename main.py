@@ -26,3 +26,5 @@ MCL_inc = cl.load_dataset('MCLincurred')
 MCL_paid = cl.load_dataset('MCLpaid')
 
 MCL = cl.MunichChainladder(MCL_paid, MCL_inc)
+#BS = cl.BootChainladder(cl.Triangle(RAA),n_sims=1000, process_distr="od poisson")
+

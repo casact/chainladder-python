@@ -448,4 +448,3 @@ class MackChainladder:
         return plot_dict
 
 
-    
