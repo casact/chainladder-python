@@ -5,13 +5,13 @@ from setuptools import setup
 
 setup(
     name='chainladder',
-    version='0.1.6',
+    version='0.1.7',
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
     packages=['chainladder'],
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
-    download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.6.tar.gz',
+    download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.7.tar.gz',
     license= 'LICENSE',
     include_package_data=True,
     package_data = {'data':['/data/ABC',
@@ -35,7 +35,7 @@ setup(
                     '/data/liab$AutoLiab',
                     '/data/liab$GeneralLiab']},
     description= descr,
-    long_description=open('README.md').read(),
+    #long_description=open('README.md').read(),
     install_requires=[
         "pandas>=0.20.2",
         "numpy>=1.12.1",
