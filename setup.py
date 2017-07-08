@@ -35,7 +35,7 @@ setup(
                     '/data/liab$AutoLiab',
                     '/data/liab$GeneralLiab']},
     description= descr,
-    long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
     install_requires=[
     #    "pandas>=0.20.2",
     #    "numpy>=1.12.1",
