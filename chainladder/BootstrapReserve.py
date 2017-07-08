@@ -90,7 +90,7 @@ class BootChainladder:
         exp_clms = np.array(exp_incr_triangle)
         resids = np.array(adj_resids).flatten()   
         adj_resid_dist = resids[np.isfinite(resids)]
-        # Suggestions from "Using the ODP Bootstrap Model: A Practitioner’s Guide"
+        # Suggestions from Using the ODP Bootstrap Model: A Practitioners Guide
         adj_resid_dist = adj_resid_dist[adj_resid_dist>0]
         adj_resid_dist = adj_resid_dist - np.mean(adj_resid_dist)
         
