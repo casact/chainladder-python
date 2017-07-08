@@ -5,6 +5,7 @@ class is a pandas.DataFrame.
 """
 
 from pandas import DataFrame, concat, pivot_table, Series
+from chainladder.UtilityFunctions import Plot
 
 
 class Triangle():
@@ -57,20 +58,27 @@ class Triangle():
         if type(data) is not DataFrame:
             raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
         self.data = data
+        self.data.columns = [str(item) for item in self.data.columns]
         self.origin = origin
-        if dataform == 'triangle':
-            self.ncol = len(data.columns)
         if origin == None:
             origin_in_col_bool, origin_in_index_bool = self.__set_origin()
+        else:
+            origin_in_col_bool = True
         self.dev = dev
         if dev == None:
             dev_in_col_bool = self.__set_dev()
+        else:
+            dev_in_col_bool = True
         self.dataform = dataform
         if dev_in_col_bool == True and origin_in_col_bool == True:
             self.dataform = 'tabular'
         self.values = values
         if values == None and self.dataform == 'tabular':
             self.__set_values()
+        if dataform == 'triangle':
+            self.ncol = len(data.columns)
+        else:
+            self.ncol = len(self.data[dev].unique())
         #self.latest_values = Series(
         #    [row.dropna().iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
         
@@ -170,7 +178,7 @@ class Triangle():
 
         """
         origin_names = ['accyr', 'accyear', 'accident year', 'origin', 'accmo', 'accpd',
-                        'accident month']
+                        'accident month','AccidentYear']
         origin_in_col_bool = False
         origin_in_index_bool = False
         origin_in_index_T_bool = False
@@ -221,4 +229,43 @@ class Triangle():
     def get_latest_diagonal(self):
         return Series([row.dropna(
         ).iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
+    
+    def plot(self, plots=['triangle']): 
+        """ Method, callable by end-user that renders the matplotlib plots.
+        
+        Arguments:
+            plots: list[str]
+                A list of strings representing the charts the end user would like
+                to see.  If ommitted, all plots are displayed.  Available plots include:
+                    ============== =================================================
+                    Str            Description
+                    ============== =================================================
+                    triangle       Line chart of origin period x development period
+                    ============== =================================================
+                    
+        Returns:
+            Renders the matplotlib plots.
+            
+        """   
+        my_dict = []
+        plot_dict = self.__get_plot_dict()
+        for item in plots:
+            my_dict.append(plot_dict[item])
+        Plot(my_dict)
+        
+    def __get_plot_dict(self):
+        xvals = [i+1 for i in range(len(self.data.columns))]
+        plot_dict = {'triangle':{'Title':'Latest Triangle Data',
+                                     'XLabel':'Development Period',
+                                     'YLabel':'Values',
+                                     'chart_type_dict':{'type':['line'],
+                                                       'rows':[len(self.data)],
+                                                       'x':[xvals],
+                                                       'y':[self.data],
+                                                       'linestyle':['-'],
+                                                       'linewidth':[5],
+                                                       'alpha':[1]
+                                                       }} 
+                    }
+        return plot_dict
         

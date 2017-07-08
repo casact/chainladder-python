@@ -11,5 +11,6 @@ on how to use the chainladder package.
    quickstart.rst
    MackExample.rst
    MunichExample.rst
+   BootstrapExample.rst
 
 

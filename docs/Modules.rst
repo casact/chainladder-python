@@ -14,6 +14,7 @@ Welcome to the Modules landing page.  From here you will find documentation on a
    ChainLadder.rst
    MackChainLadder.rst
    MunichChainLadder.rst
+   BootstrapReserve.rst
    Utilities.rst
 
 

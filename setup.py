@@ -12,7 +12,7 @@ setup(
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
     download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.6.tar.gz',
-    license='LICENSE',
+    license= 'LICENSE',
     include_package_data=True,
     package_data = {'data':['/data/ABC',
                     '/data/M3IR5',
@@ -35,7 +35,7 @@ setup(
                     '/data/liab$AutoLiab',
                     '/data/liab$GeneralLiab']},
     description= descr,
-    #long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
     install_requires=[
         "pandas>=0.20.2",
         "numpy>=1.12.1",
