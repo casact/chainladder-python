@@ -23,7 +23,7 @@ Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) f
 ## Tutorials
  -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)  
  -[Using Mack Chainladder](http://chainladder-python.readthedocs.io/en/latest/MackExample.html)  
- -[Using Munich Chainladder](http://chainladder-python.readthedocs.io/en/latest/MunichExample.html)
+ -[Using Munich Chainladder](http://chainladder-python.readthedocs.io/en/latest/MunichExample.html)  
  -[Using Bootstrap Chainladder](http://chainladder-python.readthedocs.io/en/latest/BootstrapExample.html)
  
 
