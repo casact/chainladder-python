@@ -21,9 +21,9 @@ Package is coming soon to Anaconda...
 Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for source code documentation
 
 ## Tutorials
- -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/latest/quickstart.html)  
- -[Using Mack Chainladder](http://chainladder-python.readthedocs.io/en/latest/MackExample.html)  
- -[Using Munich Chainladder](http://chainladder-python.readthedocs.io/en/latest/MunichExample.html)  
- -[Using Bootstrap Chainladder](http://chainladder-python.readthedocs.io/en/latest/BootstrapExample.html)
+ -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/master/quickstart.html)  
+ -[Using Mack Chainladder](http://chainladder-python.readthedocs.io/en/master/MackExample.html)  
+ -[Using Munich Chainladder](http://chainladder-python.readthedocs.io/en/master/MunichExample.html)  
+ -[Using Bootstrap Chainladder](http://chainladder-python.readthedocs.io/en/master/BootstrapExample.html)
  
 
