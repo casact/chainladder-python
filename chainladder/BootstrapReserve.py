@@ -4,9 +4,10 @@ is `[Shapland16] <citations.html>`_.
 
 """
 
-from chainladder.UtilityFunctions import Plot
+from chainladder.UtilityFunctions import Plot, boxwhisker
 from warnings import warn
 from chainladder.Chainladder import Chainladder
+import statsmodels.api as sm
 import numpy as np
 import pandas as pd
 
@@ -146,7 +147,7 @@ class BootChainladder:
         summary['IBNR 95%'] = pd.Series([np.percentile(np.array(IBNR)[:,num],q=95) for num in range(len(tri.data))],index=summary.index)
         return summary
     
-    def plot(self, plots=['IBNR','ECDF', 'Ultimate','Latest']): 
+    def plot(self, ctype='m', plots=['IBNR','ECDF', 'Ultimate','Latest']): 
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -170,51 +171,91 @@ class BootChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(my_dict)
+        Plot(ctype, my_dict)
         
     def __get_plot_dict(self):
         IBNR = np.sum(self.IBNR,axis=1)
+        hist, edges = np.histogram(IBNR, density=True, bins=min(int(self.n_sims/50),250))
+        kdest = sm.nonparametric.KDEUnivariate(IBNR)
+        kdest.fit()
         plot_dict = {'IBNR':{'Title':'Histogram of total IBNR',
                                      'XLabel':'Total IBNR',
                                      'YLabel':'Frequency',
-                                     'chart_type_dict':{'type':['hist'],
-                                                       'x':[IBNR],
-                                                       'bins':[min(int(self.n_sims/50),250)]
+                                     'chart_type_dict':{'mtype':['hist'],
+                                                       'x':[IBNR,kdest.support],
+                                                       'bins':[min(int(self.n_sims/50),250)],
+                                                       'label':['Total IBNR'],
+                                                       
+                                                       'type':['quad','line'],
+                                                       'top':[hist,None],
+                                                       'bottom':[[0]*min(int(self.n_sims/50),250),None],
+                                                       'left':[edges[:-1],None],
+                                                       'right':[edges[1:],None],
+                                                       
+                                                       'y':[None,pd.DataFrame(kdest.density, index=kdest.support).T],
+                                                       'line_width':[None,2],
+                                                       'line_cap':[None,'round'],
+                                                       'line_join':[None,'round'],
+                                                       'line_dash':[None,'solid'],
+                                                       'alpha':[.5,.5,],
+                                                       'label':['simluation',['kde']],
+                                                       'rows':[None,1],
+                                                       'color':['blue',['red']]
                                                        }},
                      'ECDF':{'Title':'ECDF(Total IBNR)',
                                      'XLabel':'Total IBNR',
                                      'YLabel':'F(x)',
-                                     'chart_type_dict':{'type':['plot'],
-                                                       'x':[np.sort(np.sum(self.IBNR,axis=1))],
-                                                       'y':[np.array(list(range(1,self.n_sims+1)))/self.n_sims],
-                                                       'marker':['.',None],
-                                                       'linestyle':['-',None],
-                                                       'color':['red',None],
-                                                       'alpha':[.5,None]
+                                     'chart_type_dict':{'mtype':['plot', 'plot'],
+                                                       'x':[np.sort(np.sum(self.IBNR,axis=1)), np.sort(np.random.normal(np.mean(np.sum(self.IBNR,axis=1)),np.std(np.sum(self.IBNR,axis=1)),10000))],
+                                                       'yM':[np.array(list(range(1,self.n_sims+1)))/self.n_sims, np.array(list(range(1,10000+1)))/10000],
+                                                       'markerM':['.',''],
+                                                       'linestyle':['-','-'],
+                                                       'colorM':['red','blue'],
+                                                       'alpha':[.5,1],
+                                                       'type':['line','line'],
+                                                       'y':[pd.DataFrame(np.array(list(range(1,self.n_sims+1)))/self.n_sims).T, pd.DataFrame(np.array(list(range(1,10000+1)))/10000).T],
+                                                       'line_width':[3,2],
+                                                       'line_cap':['round','round'],
+                                                       'line_join':['round','round'],
+                                                       'line_dash':['solid','dashed'],
+                                                       'label':[['IBNR'],['Normal']],
+                                                       'rows':[1,1],
+                                                       'color':[['blue'],['red']]
                                                        }},
                      'Ultimate':{'Title':'Simulated Ultimate Claim Cost',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Simulated Cost',
-                                     'chart_type_dict':{'type':['plot','box'],
+                                     'chart_type_dict':{'mtype':['plot','box'],
                                                        'x':[self.summary().index, np.repeat(np.expand_dims(np.array(self.summary()['Latest']),axis=0), self.n_sims,axis=0)+self.IBNR],
                                                        'positions':[None,self.summary().index],
-                                                       'y':[self.summary()['Mean Ultimate'],None],
-                                                       'marker':['o',None],
+                                                       'yM':[self.summary()['Mean Ultimate'],None],
+                                                       'markerM':['o',None],
                                                        'linestyle':['',None],
-                                                       'color':['red',None],
-                                                       'alpha':[.5,None]
+                                                       'colorM':['red',None],
+                                                       'alpha':[.5,None],
+                                                       'label':['Mean Ultimate',None],
+                                                       'type':['scatter','box'],
+                                                       'y':[self.summary()['Mean Ultimate'], pd.DataFrame(np.repeat(np.expand_dims(np.array(self.summary()['Latest']),axis=0), self.n_sims,axis=0)+self.IBNR, columns = self.tri.data.index)],
+                                                       'marker':['circle',None],
+                                                       'color':['red',None]
                                                        }},
                      'Latest':{'Title':'Latest Actual Incremental Claims vs. Simulation',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Simulated Latest',
-                                     'chart_type_dict':{'type':['plot','box'],
+                                     'chart_type_dict':{'mtype':['plot','box'],
                                                        'x':[self.summary().index, (np.flip(self.sim_claims,axis=1).diagonal(axis1=1,axis2=2) - np.append(np.array([[0]]*self.n_sims),np.flip(self.sim_claims[:,:-1,:-1],axis=1).diagonal(axis1=1,axis2=2),axis=1))[:,::-1]],
                                                        'positions':[None,self.summary().index],
-                                                       'y':[(np.diag(np.flip(np.array(self.tri.data),axis=0)) -np.append([0],np.diag(np.flip(np.array(self.tri.data.iloc[:-1,:-1]),axis=0))))[::-1],None],
-                                                       'marker':['o',None],
+                                                       'yM':[(np.diag(np.flip(np.array(self.tri.data),axis=0)) -np.append([0],np.diag(np.flip(np.array(self.tri.data.iloc[:-1,:-1]),axis=0))))[::-1],None],
+                                                       'markerM':['o',None],
                                                        'linestyle':['',None],
-                                                       'color':['red',None],
-                                                       'alpha':[.5,None]
+                                                       'colorM':['red',None],
+                                                       'alpha':[.5,None],
+                                                       'label':['Latest Incremental',None],
+                                                       'type':['scatter','box'],
+                                                       'y':[(np.diag(np.flip(np.array(self.tri.data),axis=0)) -np.append([0],np.diag(np.flip(np.array(self.tri.data.iloc[:-1,:-1]),axis=0))))[::-1], 
+                                                            pd.DataFrame((np.flip(self.sim_claims,axis=1).diagonal(axis1=1,axis2=2) - np.append(np.array([[0]]*self.n_sims),np.flip(self.sim_claims[:,:-1,:-1],axis=1).diagonal(axis1=1,axis2=2),axis=1))[:,::-1], columns = self.tri.data.index)],
+                                                       'marker':['circle',None],
+                                                       'color':['red',None]
                                                        }}
                     }
         return plot_dict
