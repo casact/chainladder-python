@@ -6,7 +6,7 @@ class is a pandas.DataFrame.
 
 from pandas import DataFrame, concat, pivot_table, Series
 from chainladder.UtilityFunctions import Plot
-
+from bokeh.palettes import Spectral10
 
 class Triangle():
     """Triangle class is the basic data representation of an actuarial triangle.
@@ -230,7 +230,7 @@ class Triangle():
         return Series([row.dropna(
         ).iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
     
-    def plot(self, plots=['triangle']): 
+    def plot(self, ctype='m', plots=['triangle']): 
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -251,7 +251,7 @@ class Triangle():
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(my_dict)
+        Plot(ctype, my_dict)
         
     def __get_plot_dict(self):
         xvals = [i+1 for i in range(len(self.data.columns))]
@@ -259,13 +259,22 @@ class Triangle():
                                      'XLabel':'Development Period',
                                      'YLabel':'Values',
                                      'chart_type_dict':{'type':['line'],
+                                                       'mtype':['line'],
                                                        'rows':[len(self.data)],
                                                        'x':[xvals],
                                                        'y':[self.data],
+                                                       'line_dash':['solid'],
+                                                       'line_width':[4],
+                                                       'alpha':[1],
+                                                       'line_cap':['round'],
+                                                       'line_join':['round'],
+                                                       'color':[Spectral10*int(len(self.data)/10+1)],
+                                                       'label':[[str(item) for item in self.data.index]],
                                                        'linestyle':['-'],
                                                        'linewidth':[5],
                                                        'alpha':[1]
                                                        }} 
                     }
         return plot_dict
-        
+
+    
