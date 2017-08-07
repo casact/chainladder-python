@@ -14,6 +14,7 @@ import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
 from chainladder.Triangle import Triangle
+import copy
 
 class Chainladder():
     """ ChainLadder class specifies the chainladder model.
@@ -72,8 +73,8 @@ class Chainladder():
 
     def __init__(self, tri, weights=1, delta=1, tail=False):
         if type(tri) is Triangle:
-            self.triangle = tri 
-        else:
+            self.triangle = copy.deepcopy(tri)
+        elif tri.shape[1]>= tri.shape[0]:
             self.triangle = Triangle(tri)
         self.delta = [delta for item in range(self.triangle.ncol)]
         self.weights = Triangle(self.triangle.data * 0 + weights)
@@ -138,17 +139,23 @@ class Chainladder():
         for i in range(1, self.triangle.ncol - 1):
             incr = concat([incr, self.triangle.data.iloc[:, i + 1] /
                            self.triangle.data.iloc[:, i]], axis=1)
-        incr.columns = [item + colname_sep +
-                        self.triangle.data.columns.values[num + 1] for num,
+        incr.columns = [str(item) + colname_sep +
+                        str(self.triangle.data.columns.values[num + 1]) for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])]
         incr = incr.iloc[:-1]
         incr[str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
-        ldf = Chainladder(self.triangle.data, delta=2, tail=self.tail).LDF
-        incr.loc['simple'] = ldf
-        ldf = Chainladder(self.triangle.data, delta=1, tail=self.tail).LDF
-        incr.loc['vol-wtd'] = ldf
-        incr.loc['Selected'] = ldf
+        ldf_s = Chainladder(self.triangle.data, delta=2, tail=self.tail).LDF
+        ldf_v = Chainladder(self.triangle.data, delta=1, tail=self.tail).LDF
+        if len(incr.index.names)>1:
+            incr.loc[tuple("simple" if i == 0 else "" for i in range(0,len(incr.index.names))),:] = list(ldf_s)
+            incr.loc[tuple("vol-wtd" if i == 0 else "" for i in range(0,len(incr.index.names))),:] = list(ldf_v)
+            incr.loc[tuple("Selected" if i == 0 else "" for i in range(0,len(incr.index.names))),:] = list(ldf_v)
+        else:
+            incr.loc['simple'] = list(ldf_s)
+            incr.loc["vol-wtd"] = list(ldf_v)
+            incr.loc["Selected"] = list(ldf_v)
         ldf = self.LDF
+        incr.iloc[0,-1]=1.0
         return incr
     
     def get_LDF(self, colname_sep='-'):
@@ -164,8 +171,8 @@ class Chainladder():
             Pandas.Series of the LDFs.
         
         """
-        LDF = Series([ldf.coefficient for ldf in self.models], index=[item + colname_sep +
-                        self.triangle.data.columns.values[num + 1] for num,
+        LDF = Series([ldf.coefficient for ldf in self.models], index=[str(item) + colname_sep +
+                        str(self.triangle.data.columns.values[num + 1]) for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])])
         if len(LDF) >= self.triangle.ncol-1:
             return Series(LDF[:self.triangle.ncol-1])
@@ -214,7 +221,7 @@ class Chainladder():
         else:
             warn("LDF[-2] * LDF[-1] is not greater than 1.0001 and tail has been set to 1.")
             tail_factor = 1
-        return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
+        return Series(tail_factor, index = [str(self.triangle.data.columns[-1]) + colname_sep + 'Ult'])
 
     def get_residuals(self):
         """Generates a table of chainladder residuals along with other statistics.
@@ -223,18 +230,19 @@ class Chainladder():
         Returns:
             Pandas.DataFrame of the residual table        
         """
-
+        
         Resid = DataFrame()
         for i in range(len(self.models)):
             resid = DataFrame()
             resid['x'] = self.models[i].x
-            resid['dev'] = int(self.models[i].x.name)
-            resid['cal_period'] = resid.index + resid['dev'] - 1
+            resid['dev_lag'] = int(self.models[i].x.name)
+            resid['dev_lag'] = resid['dev_lag']
             resid['residuals'] = self.models[i].residual
             resid['standard_residuals'] = self.models[i].std_resid
             resid['fitted_value'] = self.models[i].fittedvalues
             Resid = Resid.append(resid)
-        return Resid.drop(['x'], axis=1).dropna()
+        Resid = Resid.reset_index().merge(self.triangle.lag_to_date().reset_index(), how='inner', on=[self.triangle.origin_dict[key] for key in self.triangle.origin_dict]+['dev_lag'])
+        return Resid.set_index([self.triangle.origin_dict[key] for key in self.triangle.origin_dict]).drop(['x'], axis=1).dropna()
     
 class WRTO():
     """Weighted least squares regression through the origin
