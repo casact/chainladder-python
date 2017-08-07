@@ -204,7 +204,7 @@ class MunichChainladder:
     def __get_PI_ratios(self):
         """ Used for plotting
         """
-        actuals = MCL.MackPaid.triangle.data_as_table()['values']/MCL.MackIncurred.triangle.data_as_table()['values']
+        actuals = MCL.MackPaid.triangle.data_as_table().data['values']/MCL.MackIncurred.triangle.data_as_table().data['values']
         
     def summary(self):
         """ Method to produce a summary table of of the Munich Chainladder 
@@ -223,7 +223,7 @@ class MunichChainladder:
         summary['P/I Ratio'] = summary['Ult. Paid']/summary['Ult. Incurred'] 
         return summary
     
-    def plot(self, ctype='m', plots=['summary', 'MCLvsMack', 'resid1', 'resid2']):
+    def plot(self, ctype='m', plots=['summary', 'MCLvsMack', 'resid1', 'resid2'], plot_width=450, plot_height=275):
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -252,7 +252,7 @@ class MunichChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(ctype, my_dict)
+        return Plot(ctype, my_dict, plot_width=plot_width, plot_height=plot_height).grid
     
     def __get_plot_dict(self):
         plot_dict = {'summary':{'Title':'Munich Chainladder Results',
@@ -358,21 +358,21 @@ class MunichChainladder:
                                      'XLabel':'Development Period',
                                      'YLabel':'Paid/Incurred Ratio',
                                      'chart_type_dict':{'mtype':['plot', 'plot', 'plot'],
-                                                       'x':[Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
-                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[0]],
-                                                       'yM':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'], 
-                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
-                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[1]],
+                                                       'x':[Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'], self.MackPaid.triangle.data_as_table().data['dev_lag'],
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[0]],
+                                                       'yM':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]],
                                                        'markerM':['o','o',''],
                                                        'linestyle':['','','-'],
                                                        'colorM':['grey','blue', 'red'],
                                                        'type':['scatter', 'scatter', 'line'],
-                                                       'y':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'], 
-                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
-                                                            pd.DataFrame(lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[1]).T],
+                                                       'y':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            pd.DataFrame(lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]).T],
                                                        'line_width':[None,None,2],
                                                        'line_cap':[None,None,'round'],
                                                        'line_join':[None,None,'round'],
@@ -387,21 +387,21 @@ class MunichChainladder:
                                      'XLabel':'Development Period',
                                      'YLabel':'Paid/Incurred Ratio',
                                      'chart_type_dict':{'mtype':['plot', 'plot','plot'],
-                                                       'x':[Triangle(self.MCL_paid).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
-                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[0]],
-                                                       'yM':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'], 
-                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
-                                                            lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'],
-                                                                   Triangle(self.MCL_paid).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table()['dev']))<=6 else 0.666).T[1]],
+                                                       'x':[Triangle(self.MCL_paid).data_as_table().data['dev_lag'], self.MackPaid.triangle.data_as_table().data['dev_lag'],
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[0]],
+                                                       'yM':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'],
+                                                                   Triangle(self.MCL_paid).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]],
                                                        'markerM':['o','o',''],
                                                        'linestyle':['','','-'],
                                                        'colorM':['grey','blue', 'red'],
                                                        'type':['scatter', 'scatter', 'line'],
-                                                       'y':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'], 
-                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
-                                                            pd.DataFrame(lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'],
-                                                                   Triangle(self.MCL_paid).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table()['dev']))<=6 else 0.666).T[1]).T],
+                                                       'y':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            pd.DataFrame(lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'],
+                                                                   Triangle(self.MCL_paid).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]).T],
                                                        'line_width':[None,None,2],
                                                        'line_cap':[None,None,'round'],
                                                        'line_join':[None,None,'round'],

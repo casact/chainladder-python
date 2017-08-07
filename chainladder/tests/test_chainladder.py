@@ -42,24 +42,22 @@ def test_data_as_table(df):
 
 @pytest.mark.parametrize('df', l1)
 def test_cum_to_incr_convert(df):
-        a = cl.Triangle(df)
-        data1 = a.data
-        a.cum_to_incr(inplace=True)
-        a.incr_to_cum(inplace=True)
-        test = ((data1 == a.data) | ((data1 != data1) &
-                (a.data != a.data))).as_matrix()
-        assert_equal(test.shape[0]*test.shape[1], np.sum(test))
+    a = cl.Triangle(df)    
+    data1 = a.data
+    a.cum_to_incr(inplace=True)
+    a.incr_to_cum(inplace=True)
+    test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
+    assert_equal(test.shape[0]*test.shape[1], np.sum(test))
 
 
 @pytest.mark.parametrize('df', l1)
 def test_incr_to_cum_convert(df):
-        a = cl.Triangle(df)
-        data1 = a.data
-        a.incr_to_cum(inplace=True)
-        a.cum_to_incr(inplace=True)
-        test = ((data1 == a.data) | ((data1 != data1) &
-                (a.data != a.data))).as_matrix()
-        assert_equal(test.shape[0]*test.shape[1], np.sum(test))
+    a = cl.Triangle(df)
+    data1 = a.data
+    a.incr_to_cum(inplace=True)
+    a.cum_to_incr(inplace=True)
+    test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
+    assert_equal(test.shape[0]*test.shape[1], np.sum(test))
 
 
 @pytest.mark.parametrize('python_data, r_data', l3)

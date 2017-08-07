@@ -12,6 +12,7 @@ from scipy import stats
 from chainladder.Chainladder import Chainladder
 from warnings import warn
 import matplotlib.pyplot as plt
+from matplotlib.dates import date2num
 import seaborn as sns
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import statsmodels.api as sm
@@ -340,7 +341,7 @@ class MackChainladder:
         else:
             return True
     
-    def plot(self, ctype='m', plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4']): 
+    def plot(self, ctype='m', plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4'], plot_width=450, plot_height=275):
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -366,7 +367,7 @@ class MackChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(ctype, my_dict)
+        return Plot(ctype, my_dict, plot_width=plot_width, plot_height=plot_height).grid
     
     def __get_plot_dict(self):
         resid_df = self.chainladder.get_residuals()  
@@ -402,9 +403,9 @@ class MackChainladder:
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['scatter','line'],
                                                        'mtype':['plot','plot'],
-                                                       'x':[resid_df['dev'],lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[0]],
-                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[1]).T],
-                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[1]],
+                                                       'x':[resid_df['dev_lag'],lowess(resid_df['standard_residuals'],resid_df['dev_lag'],frac=1 if len(np.unique(resid_df['dev_lag'].values))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df['dev_lag'],frac=1 if len(np.unique(resid_df['dev_lag'].values))<=6 else 0.666).T[1]).T],
+                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev_lag'],frac=1 if len(np.unique(resid_df['dev_lag'].values))<=6 else 0.666).T[1]],
                                                        'marker':['circle',''],
                                                        'line_width':[None,2],
                                                        'line_cap':[None,'round'],
@@ -444,9 +445,9 @@ class MackChainladder:
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['scatter','line'],
                                                        'mtype':['plot','plot'],
-                                                       'x':[resid_df['cal_period'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[0]],
-                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[1]).T],
-                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[1]],
+                                                       'x':[date2num(resid_df['cal_period']),lowess(resid_df['standard_residuals'],date2num(resid_df['cal_period']),frac=1 if len(np.unique(date2num(resid_df['cal_period'])))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],date2num(resid_df['cal_period']),frac=1 if len(np.unique(date2num(resid_df['cal_period'])))<=6 else 0.666).T[1]).T],
+                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],date2num(resid_df['cal_period']),frac=1 if len(np.unique(date2num(resid_df['cal_period'])))<=6 else 0.666).T[1]],
                                                        'marker':['circle',''],
                                                        'line_width':[None,2],
                                                        'line_cap':[None,'round'],
