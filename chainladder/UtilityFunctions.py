@@ -38,8 +38,9 @@ class Plot():
         Renders the matplotlib plots.
 
     """       
-    def __init__(self, ctype, my_dict): 
+    def __init__(self, ctype, my_dict, plot_width, plot_height): 
         plot_list = []
+        self.grid = None
         if ctype=='m':
             sns.set_style("whitegrid")
             _ = plt.figure()
@@ -49,11 +50,13 @@ class Plot():
             for num, item in enumerate(my_dict):
                 _ = plt.subplot(grid_x,grid_y,num+1)
                 self.__dict_plot(item) 
-        if ctype=='b':
+        if ctype[0]=='b':
             for num, item in enumerate(my_dict):
                 plot_list.append(self.__bokeh_dict_plot(item))
-            grid = gridplot(plot_list,  ncols=2, plot_width=450, plot_height=275)
-            show(grid)
+            grid = gridplot(plot_list,  ncols=2, plot_width=plot_width, plot_height=plot_height)
+            if len(ctype) == 1:
+                show(grid)
+            self.grid = grid
 
     def __dict_plot(self, my_dict):
         """ Method that renders the matplotlib plots based on the configurations
@@ -99,7 +102,7 @@ class Plot():
         so in a future release.
         
         """
-        p = figure(plot_width=450, plot_height=275,title=my_dict['Title'], x_axis_label = my_dict['XLabel'], y_axis_label=my_dict['YLabel'])
+        p = figure(plot_width=450, plot_height=275,title=my_dict['Title'], x_axis_label = my_dict['XLabel'], y_axis_label=my_dict['YLabel'], logo=None)
         for i in range(len(my_dict['chart_type_dict']['type'])):
             if my_dict['chart_type_dict']['type'][i] == 'scatter':
                 p.scatter(x = my_dict['chart_type_dict']['x'][i], 

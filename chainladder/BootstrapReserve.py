@@ -76,7 +76,8 @@ class BootChainladder:
         n_sims = self.n_sims
         LDF, CDF, ults, exp_incr_triangle = self.__model_form(np.array([np.array(tri.data)]))
         exp_incr_triangle = exp_incr_triangle[0,:,:]*(tri.data*0+1)
-        unscaled_residuals = (tri.cum_to_incr()-exp_incr_triangle)/np.sqrt(abs(exp_incr_triangle))
+        
+        unscaled_residuals = (tri.cum_to_incr().data-exp_incr_triangle)/np.sqrt(abs(exp_incr_triangle))
         
         ## Calculate the Pearson scale parameter
         nobs = 0.5 * tri.ncol * (tri.ncol + 1) # This is N
@@ -147,7 +148,7 @@ class BootChainladder:
         summary['IBNR 95%'] = pd.Series([np.percentile(np.array(IBNR)[:,num],q=95) for num in range(len(tri.data))],index=summary.index)
         return summary
     
-    def plot(self, ctype='m', plots=['IBNR','ECDF', 'Ultimate','Latest']): 
+    def plot(self, ctype='m', plots=['IBNR','ECDF', 'Ultimate','Latest'], plot_width=400, plot_height=275): 
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -171,7 +172,7 @@ class BootChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(ctype, my_dict)
+        return Plot(ctype, my_dict, plot_width=plot_width, plot_height=plot_height).grid
         
     def __get_plot_dict(self):
         IBNR = np.sum(self.IBNR,axis=1)
