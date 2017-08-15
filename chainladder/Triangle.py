@@ -59,7 +59,7 @@ class Triangle():
 
     """
 
-    def __init__(self, data=None, origin=None, development=None, values=None, dataform=None):
+    def __init__(self, data=None, origin=None, development=None, values=None, dataform=None, **kwargs):
         # Currently only support pandas dataframes as data
         if type(data) is not DataFrame:
             raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
@@ -94,7 +94,7 @@ class Triangle():
             self.__minimize_data()
             self.data.set_index([self.origin_dict[keys] for keys in self.origin_dict],inplace=True)
             self.data.sort_index(inplace=True)
-        self.dev_grain = self.__get_lag_granularity()
+        self.__get_lag_granularity()
            
     def __set_period(self, per_type):
         """ This method will take an variable length array of columns and convert them to
@@ -128,7 +128,7 @@ class Triangle():
                 self.data[colname]=self.data[period_dict['year']].astype(str)+'Q'+self.data[period_dict['quarter']].astype(str)
             dates = DatetimeIndex(to_datetime(self.data[colname]))
             self.data.drop([colname], axis=1, inplace=True) # get rid of temporary concat column
-            self.data = self.data.drop(self.origin, axis=1) # get rid of original columns
+            if per_type == 'origin':self.data = self.data.drop(self.origin, axis=1) # get rid of original columns
             
         if len(period) == 1:
             dates = DatetimeIndex(to_datetime(self.data[period[0]]))
@@ -144,6 +144,13 @@ class Triangle():
             
         if per_type == 'dev':
             # sets the most granular dev_lag available.
+            if 'month'in period_dict.keys():
+                self.dev_grain = 'month'
+            elif 'quarter' in period_dict.keys() and 'month' not in period_dict.keys():
+                self.dev_grain = 'quarter'
+            else:
+                self.dev_grain = 'year'
+                
             if len(set(dates.year)) == 1:
                 #Implies that a dev lag has been specified over dev period
                 if np.all((self.data[period[0]].unique()<3000) & (self.data[period[0]].unique()>1900)): # carve out unique case of YYYY.
@@ -179,12 +186,12 @@ class Triangle():
         yval = (len(temp.data.iloc[-1]) - temp.data.iloc[-1] .count()) - (len(temp.data.iloc[-2]) - temp.data.iloc[-2] .count())
         xval = len(temp.origin_dict.keys())
         if yval == 4:
-            return 'quarter'
+            self.dev_grain = 'quarter'
         if yval in (3,12):
-            return 'month'
+            self.dev_grain = 'month'
         if yval == 1:
             temp_dict={1:'year',2:'quarter',3:'month'}
-            return temp_dict[xval]
+            self.dev_grain =  temp_dict[xval]
             
     def __repr__(self):   
         return str(self.data)
@@ -204,6 +211,12 @@ class Triangle():
             return y
         else:
             return NotImplemented
+    
+    def __radd__(self, obj):
+        if obj == 0:
+            return self
+        else:
+            return self.__add__(obj)
 
     def __sub__(self, obj):
         if isinstance(obj, Triangle):
@@ -269,7 +282,6 @@ class Triangle():
                 idx = list(self.data.index.names)
                 self.data = melt(self.data.reset_index(),id_vars=idx, value_vars=self.data.columns, 
                                var_name='dev_lag', value_name='values').dropna().set_index(idx).sort_index()
-                #self.data['dev_lag'] = self.data['dev_lag'].astype(np.int64)
             self.dataform = 'tabular'
             return self
         if inplace == False:
@@ -362,10 +374,14 @@ class Triangle():
             return new_instance.cum_to_incr(inplace=True)
     
     def get_latest_diagonal(self):
-        return Series([row.dropna(
-        ).iloc[-1] for index, row in self.data.iterrows()], index=self.data.index)
+        #return DataFrame({'dev_lag':[self.data.columns[len(row.dropna())-1] for index,row in self.data.iterrows()],
+        #                  'values':[row.dropna().iloc[-1] for index, row in self.data.iterrows()]}, 
+        #        index=self.data.index)
+        return DataFrame({'dev_lag':[self.data.columns[np.where(np.logical_not(np.isnan(row)))][-1] for index,row in self.data.iterrows()],
+                          'values':[row[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]+1] for index, row in self.data.iterrows()]}, 
+                index=self.data.index)
     
-    def plot(self, ctype='m', plots=['triangle'], plot_width=450, plot_height=275): 
+    def plot(self, ctype='m', plots=['triangle'], **kwargs): 
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -386,7 +402,7 @@ class Triangle():
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        return Plot(ctype, my_dict, plot_width=plot_width, plot_height=plot_height).grid
+        return Plot(ctype, my_dict, **kwargs).grid
         
     def __get_plot_dict(self):
         xvals = [i+1 for i in range(len(self.data.columns))]
@@ -438,9 +454,10 @@ class Triangle():
             return new_instance.slide_right(right=right, inplace=True)
             
 
-    def grain(self, grain, incremental=False, inplace=False):
+    def grain(self, grain='', incremental=False, inplace=False):
         # data needs to be in triangle form to use this.
-        
+        if grain == '':
+            grain = self.get_grain()
         if inplace == True:
             if self.dataform == 'tabular':
                 self.data_as_triangle(inplace=True)
@@ -500,5 +517,86 @@ class Triangle():
         data = data[['dev_lag','cal_period']]
         return data
 
+    def get_grain(self):
+        if 'month' in self.origin_dict.keys():
+            temp = 'OM'
+        elif 'quarter' in self.origin_dict.keys():
+            temp = 'OQ'
+        else:
+            temp = 'OY'
+        temp = temp + {'year':'DY','quarter':'DQ','month':'DM'}[self.dev_grain]
+        return temp
+    
+
+# Pandas-style indexing classes to support an array of triangles
+        
+class TriangleSet:
+    def __init__(self, data=None, origin=None, development=None, values=None, groups=None):
+        if type(values) is list:
+            self.values = values
+        if type(values) is str:
+            self.values = [values]
+        if groups is None:
+            self.group_list = ['total']
+            self.tri_dict= dict([(item, dict([(val, Triangle(data, origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
+        else:
+            self.group_list = list(data[groups].unique())
+            self.tri_dict= dict([(item, dict([(val, Triangle(data = data[data[groups]==item], origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
+        
+        self.iloc = iloc(self.tri_dict)
+        self.loc = loc(self.tri_dict)
+        self.shape = (len(self.tri_dict), len(self.tri_dict[list(self.tri_dict.keys())[0]]))
+        
+        
+    def __len__(self):
+        return len(self.tri_dict)
+    
+class iloc:
+    def __init__(self, tri_dict):
+        self.tri_dict = tri_dict
+        
+    def __getitem__(self, idx):
+        if type(idx[0]) is int:
+            row = slice(idx[0], idx[0]+1,1)
+        else:
+            row = idx[0]
+        if type(idx[1]) is int:
+            col = slice(idx[1], idx[1]+1,1)
+        else:
+            col = idx[1]
+        group_start, group_stop, group_step = self.parse_slice(row)
+        val_start, val_stop, val_step = self.parse_slice(col)
+        temp = [item[1] for item in list(self.tri_dict.items())[group_start:group_stop:group_step]]
+        temp2 = [[item[1] for item in list(tempdict.items())[val_start:val_stop:val_step]] for tempdict in temp]
+        temp3 = [item for sublist in temp2 for item in sublist]
+        if len(temp3) == 1:
+            return temp3[0]
+        else:
+            return temp3
+        
+    
+    def parse_slice(self, sl):
+        if sl.start is None:
+            start = 0
+        else:
+            start = sl.start
+        if sl.stop is None:
+            stop = len(self.tri_dict.keys())
+        else:
+            stop = sl.stop
+        if sl.step is None:
+            step = 1
+        else:
+            step = sl.step
+        return start, stop, step
+        
+
+class loc:
+    def __init__(self, tri_dict):
+        self.tri_dict = tri_dict
+        
+    def __getitem__(self,idx):    
+        return self.tri_dict[idx[0]][idx[1]]
     
     
+

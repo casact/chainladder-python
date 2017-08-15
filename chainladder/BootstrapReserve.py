@@ -115,9 +115,6 @@ class BootChainladder:
         x = np.nan_to_num(tri_array[:,:,:-1]*(tri_array[:,:,1:]*0+1))
         y = np.nan_to_num(tri_array[:,:,1:])
         LDF = np.sum(w*x*y,axis=1)/np.sum(w*x*x,axis=1)
-        #Chainladder (alpha=1/delta=1)
-        #LDF = np.sum(np.nan_to_num(tri_array[:,:,1:]),axis=1) / np.sum(np.nan_to_num((tri_array[:,:,1:]*0+1)*tri_array[:,:,:-1]),axis=1)
-        #print(LDF.shape)
         # assumes no tail
         CDF = np.append(np.cumprod(LDF[:,::-1],axis=1)[:,::-1],np.array([1]*tri_array.shape[0]).reshape(tri_array.shape[0],1),axis=1)    
         latest = np.flip(tri_array,axis=1).diagonal(axis1=1,axis2=2)   
@@ -140,7 +137,7 @@ class BootChainladder:
         IBNR = self.IBNR
         tri = self.tri
         summary = pd.DataFrame()
-        summary['Latest'] = tri.get_latest_diagonal()
+        summary['Latest'] = tri.get_latest_diagonal().iloc[:,-1]
         summary['Mean Ultimate'] = summary['Latest'] + pd.Series([np.mean(np.array(IBNR)[:,num]) for num in range(len(tri.data))],index=summary.index)
         summary['Mean IBNR'] = summary['Mean Ultimate'] - summary['Latest'] 
         summary['SD IBNR'] = pd.Series([np.std(np.array(IBNR)[:,num]) for num in range(len(tri.data))],index=summary.index)

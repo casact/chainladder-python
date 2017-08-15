@@ -10,13 +10,11 @@ import numpy as np
 from pandas import DataFrame, concat, Series
 from scipy import stats
 from chainladder.Chainladder import Chainladder
-from warnings import warn
-import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
-import seaborn as sns
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import statsmodels.api as sm
 from chainladder.UtilityFunctions import Plot
+import copy
 
 
 from bokeh.plotting import figure, show
@@ -89,12 +87,17 @@ class MackChainladder:
 
     """
 
-    def __init__(self, tri,  weights=1,  alpha=1,
-                 tail=False):
-        # Determine whether LDFs can eb extrapolated with exponential tail
+    def __init__(self, triangle,  weights=1,  alpha=1, tail=False, **kwargs):
+        # Determine whether LDFs can be extrapolated with exponential tail
         if tail == True:
-            tail = self.is_exponential_tail_appropriate(tri,  weights,  alpha)       
-        self.chainladder = Chainladder(tri, weights=weights,  delta=2 - alpha, tail=tail)
+            tail = self.is_exponential_tail_appropriate(triangle.data_as_triangle(),  weights,  alpha)
+        if 'chainladder' in kwargs.keys():
+            self.chainladder = kwargs['chainladder']
+        else:
+            self.chainladder = Chainladder(triangle, weights=weights,  delta=2 - alpha, tail=tail)
+        self.set_attributes()
+    
+    def set_attributes(self):
         self.triangle = self.chainladder.triangle
         self.alpha = [2 - item for item in self.chainladder.delta]
         self.weights = self.chainladder.weights
@@ -113,7 +116,7 @@ class MackChainladder:
                                self.__get_parameter_risk()**2)
         self.total_mack_se = np.sqrt(
             self.total_process_risk[-1]**2 + self.total_parameter_risk[-1]**2)
-
+        
     def __repr__(self):   
         return str(self.summary())
     
@@ -288,7 +291,7 @@ class MackChainladder:
             
         """
         summary = DataFrame()
-        summary['Latest'] = self.triangle.get_latest_diagonal()
+        summary['Latest'] = self.triangle.get_latest_diagonal().iloc[:,-1]
         summary['Dev to Date'] = Series([row.dropna().iloc[-1] for index, row in self.triangle.data.iterrows(
         )], index=self.triangle.data.index) / self.full_triangle.iloc[:, -1]
         summary['Ultimate'] = self.full_triangle.iloc[:, -1]
@@ -311,6 +314,16 @@ class MackChainladder:
             
         """
         return self.chainladder.age_to_age(colname_sep='-')
+    
+    def exclude_link_ratios(self, otype, inplace=False):
+        if inplace == True:
+            chainladder = self.chainladder.exclude_link_ratios(otype=otype, inplace=inplace)
+            self.set_attributes()
+            return self
+        if inplace == False:
+            new_instance = copy.deepcopy(self)
+            return new_instance.exclude_link_ratios(otype=otype, inplace=True)
+        
     
     def is_exponential_tail_appropriate(self, tri,  weights,  alpha):
         """ Method to determine whether an exponential tail fit is appropriate
@@ -341,7 +354,7 @@ class MackChainladder:
         else:
             return True
     
-    def plot(self, ctype='m', plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4'], plot_width=450, plot_height=275):
+    def plot(self, ctype='m', plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4'], **kwargs):
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -367,7 +380,7 @@ class MackChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        return Plot(ctype, my_dict, plot_width=plot_width, plot_height=plot_height).grid
+        return Plot(ctype, my_dict, **kwargs).grid
     
     def __get_plot_dict(self):
         resid_df = self.chainladder.get_residuals()  
