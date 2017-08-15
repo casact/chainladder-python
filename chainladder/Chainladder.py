@@ -14,26 +14,20 @@ import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
 from chainladder.Triangle import Triangle
-import copy
 
 class Chainladder():
     """ ChainLadder class specifies the chainladder model.
-
     The classical chain-ladder is a deterministic algorithm to forecast claims 
     based on historical data. It assumes that the proportional developments of 
     claims from one development period to the next are the same for all origin 
     years.
-
     Mack uses alpha between 0 and 2 to distinguish
     alpha = 0 straight averages
     alpha = 1 historical chain ladder age-to-age factors
     alpha = 2 ordinary regression with intercept 0
-
     However, in Zehnwirth & Barnett they use the notation of delta, whereby 
     delta = 2 - alpha the delta is than used in a linear modelling context.
-
     `Need to properly cite... <https://github.com/mages/ChainLadder>`_
-
     Parameters:    
         tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Classes.Triangle`
@@ -44,7 +38,6 @@ class Chainladder():
         tail : bool
             A value representing whether the user would like an exponential tail
             factor to be applied to the data.
-
     Attributes:
         tri : `Triangle <Triangle.html>`_
             A triangle object on which the Chainladder model will be built.
@@ -68,13 +61,12 @@ class Chainladder():
         full_triangle : Pandas.DataFrame
             A table representing the raw triangle data as well as future
             lags populated with the expectation from the chainladder fit.
-
     """
 
     def __init__(self, tri, weights=1, delta=1, tail=False):
         if type(tri) is Triangle:
-            self.triangle = copy.deepcopy(tri)
-        elif tri.shape[1]>= tri.shape[0]:
+            self.triangle = tri 
+        else:
             self.triangle = Triangle(tri)
         self.delta = [delta for item in range(self.triangle.ncol)]
         self.weights = Triangle(self.triangle.data * 0 + weights)
@@ -125,12 +117,10 @@ class Chainladder():
         """ Method to display an age-to-age triangle with a display of simple 
         average chainladder development factors and volume weighted average 
         development factors.
-
         Parameters:    
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
-
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
         """
@@ -144,18 +134,12 @@ class Chainladder():
                         item in enumerate(self.triangle.data.columns.values[:-1])]
         incr = incr.iloc[:-1]
         incr[str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
-        ldf_s = Chainladder(self.triangle.data, delta=2, tail=self.tail).LDF
-        ldf_v = Chainladder(self.triangle.data, delta=1, tail=self.tail).LDF
-        if len(incr.index.names)>1:
-            incr.loc[tuple("simple" if i == 0 else "" for i in range(0,len(incr.index.names))),:] = list(ldf_s)
-            incr.loc[tuple("vol-wtd" if i == 0 else "" for i in range(0,len(incr.index.names))),:] = list(ldf_v)
-            incr.loc[tuple("Selected" if i == 0 else "" for i in range(0,len(incr.index.names))),:] = list(ldf_v)
-        else:
-            incr.loc['simple'] = list(ldf_s)
-            incr.loc["vol-wtd"] = list(ldf_v)
-            incr.loc["Selected"] = list(ldf_v)
+        ldf = Chainladder(self.triangle.data, delta=2, tail=self.tail).LDF
+        incr.loc['simple'] = ldf
+        ldf = Chainladder(self.triangle.data, delta=1, tail=self.tail).LDF
+        incr.loc['vol-wtd'] = ldf
+        incr.loc['Selected'] = ldf
         ldf = self.LDF
-        incr.iloc[0,-1]=1.0
         return incr
     
     def get_LDF(self, colname_sep='-'):
@@ -166,7 +150,6 @@ class Chainladder():
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
-
         Returns:
             Pandas.Series of the LDFs.
         
@@ -190,12 +173,10 @@ class Chainladder():
         rejected if the slope parameter p-value >0.5.  This is currently representative
         of the R implementation of this package, but may be enhanced in the future to be
         p-value based.
-
         Parameters:    
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
-
         Returns:
             Pandas.Series of the tail factor.        
         """
@@ -246,11 +227,9 @@ class Chainladder():
     
 class WRTO():
     """Weighted least squares regression through the origin
-
     Collecting the relevant variables from statsmodel OLS/WLS. Note in
     release 0.1.0 of chainladder, there is a deprecation warning with statsmodel
     that will persist until statsmodel is upgraded.
-
     Parameters:    
         X : numpy.array or pandas.Series
             An array representing the independent observations of the 
@@ -260,7 +239,6 @@ class WRTO():
         w : numpy.array or pandas.Series
             An array representing the weights of the observations of the 
             regression.
-
     Attributes:
         X : numpy.array or pandas.Series
             An array representing the independent observations of the 
@@ -286,7 +264,6 @@ class WRTO():
             Represents internally studentized residuals which generally vary between
             [-2,2].  Used in residual scatterplots and help determine the appropriateness
             of the model on the data.
-
     """
 
     def __init__(self, x, y, w):
@@ -309,7 +286,3 @@ class WRTO():
             self.standard_error = OLS.params[0]/OLS.tvalues[0]
             self.sigma = np.sqrt(self.mean_square_error)
             self.std_resid = OLSInfluence(OLS).resid_studentized_internal
-        
-        
-        
-        

@@ -38,7 +38,7 @@ class Plot():
         Renders the matplotlib plots.
 
     """       
-    def __init__(self, ctype, my_dict, plot_width, plot_height): 
+    def __init__(self, ctype, my_dict, **kwargs): 
         plot_list = []
         self.grid = None
         if ctype=='m':
@@ -53,7 +53,7 @@ class Plot():
         if ctype[0]=='b':
             for num, item in enumerate(my_dict):
                 plot_list.append(self.__bokeh_dict_plot(item))
-            grid = gridplot(plot_list,  ncols=2, plot_width=plot_width, plot_height=plot_height)
+            grid = gridplot(plot_list,  ncols=2, **kwargs)
             if len(ctype) == 1:
                 show(grid)
             self.grid = grid
@@ -97,9 +97,8 @@ class Plot():
             _ = plt.ylabel(my_dict['YLabel'],fontsize=20)
     
     def __bokeh_dict_plot(self, my_dict):
-        """ Method that renders the matplotlib plots based on the configurations
-        in __get_plot_dict().  This method should probably be private and may be
-        so in a future release.
+        """ Method that renders the Bokeh plots based on the configurations
+        in __get_plot_dict().
         
         """
         p = figure(plot_width=450, plot_height=275,title=my_dict['Title'], x_axis_label = my_dict['XLabel'], y_axis_label=my_dict['YLabel'], logo=None)

@@ -215,8 +215,8 @@ class MunichChainladder:
             MunichChainLadder$summary
         """
         summary = pd.DataFrame()
-        summary['Latest Paid'] = self.Paid.get_latest_diagonal()
-        summary['Latest Incurred'] = self.Incurred.get_latest_diagonal()
+        summary['Latest Paid'] = self.Paid.get_latest_diagonal().iloc[:,-1]
+        summary['Latest Incurred'] = self.Incurred.get_latest_diagonal().iloc[:,-1]
         summary['Latest P/I Ratio'] = summary['Latest Paid']/summary['Latest Incurred'] 
         summary['Ult. Paid'] = self.MCL_paid.iloc[:,-1]
         summary['Ult. Incurred'] = self.MCL_incurred.iloc[:,-1]
