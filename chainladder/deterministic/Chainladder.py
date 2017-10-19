@@ -73,11 +73,11 @@ class Chainladder():
     """
 
     def __init__(self, triangle, weights=1, **kwargs):
-        if type(triangle) is Triangle:
+        if isinstance(triangle, Triangle):
             self.triangle = copy.deepcopy(triangle).data_as_triangle()
         else:
             self.triangle = Triangle(data=triangle).data_as_triangle()
-        if type(weights) != Triangle:
+        if not isinstance(weights, Triangle):
             self.weights = Triangle(self.triangle.data * 0 + weights)
         else:
             self.weights = weights
@@ -88,17 +88,17 @@ class Chainladder():
             self.LDF_average = np.array(LDF_average)[:self.triangle.ncol - 1]
         self.method = kwargs.get('method','DFM')
         self.apriori = kwargs.get('apriori',None)
-        self.exposure = np.array(kwargs.get('exposure',None))
+        self.exposure = kwargs.get('exposure',None)
         self.trend = kwargs.get('trend',0)
         self.decay = kwargs.get('decay',1)
         self.n_iters = kwargs.get('n_iters',1)
         self.tail_factor = 1
-        triangle_pred = kwargs.get('triangle_pred',None)
+        self.triangle_pred = kwargs.get('triangle_pred',None)
         self.set_LDF(self.LDF_average, inplace=True)
-        if self.method == 'DFM': self.DFM(triangle_pred, inplace=True)
-        if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, triangle_pred, inplace=True)
-        if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, triangle_pred, inplace=True)
-        if self.method == 'cape_cod': self.cape_cod(self.exposure, self.trend, self.decay, triangle_pred, inplace=True)
+        if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
+        if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
+        if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
+        if self.method == 'cape_cod': self.cape_cod(self.exposure, self.trend, self.decay, self.triangle_pred, inplace=True)
         
     def __repr__(self):   
         return str(self.age_to_age())
@@ -151,14 +151,17 @@ class Chainladder():
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
         """
-
+        if self.triangle.dataform == 'tabular':
+            x = self.triangle.data_as_triangle().data
+        else:
+            x = self.triangle.data
         incr = DataFrame(
-                np.array(self.triangle.data.iloc[:,1:])/
-                np.array(self.triangle.data.iloc[:,:-1]),
-                index=self.triangle.data.index, columns = 
-                [str(item) + colname_sep + str(self.triangle.data.columns.values[num + 1]) 
-                for num, item in enumerate(self.triangle.data.columns.values[:-1])])
-        incr[str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
+                np.array(x.iloc[:,1:])/
+                np.array(x.iloc[:,:-1]),
+                index=x.index, columns = 
+                [str(item) + colname_sep + str(x.columns.values[num + 1]) 
+                for num, item in enumerate(x.columns.values[:-1])])
+        incr[str(x.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
         incr.iloc[0,-1]=1
         #print(len(incr.columns))
         #print(len(self.LDF_average))
@@ -192,7 +195,7 @@ class Chainladder():
             if triangle is None:
                 triangle =self.triangle
             latest = np.array(triangle.get_latest_diagonal())
-            self.ultimates = Series((latest[:,1]*np.array(self.CDF)[latest[:,0].astype(int)-1]), index = triangle.data.index)
+            self.ultimates = Series((latest[:,1]*np.array(self.CDF)[::-1]), index = triangle.data.index)
             return self
         if inplace==False:
             new_instance = copy.deepcopy(self)
@@ -270,6 +273,9 @@ class Chainladder():
     def exclude_link_ratios(self, otype, inplace=False):
         if inplace == True:
             if type(otype) is list:
+                if len(otype)>0:
+                    if type(otype[0]) is not tuple:
+                        otype = [(item[0],item[1]) for item in otype]
                 for item in otype:
                     self.weights.data.iloc[item] = 0
             else:    
@@ -281,9 +287,11 @@ class Chainladder():
                 if otype == 'max':
                     val = np.invert(ata == ata.max())
                 self.weights.data = self.weights.data * val
-            self.LDF = self.get_LDF().append(self.get_tail_factor())
-            self.CDF = self.LDF[::-1].cumprod()[::-1]
-            self.DFM(inplace=True)
+            self.set_LDF(self.LDF_average, inplace=True)
+            if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
+            if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
+            if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
+            if self.method == 'cape_cod': self.cape_cod(self.exposure, self.trend, self.decay, self.triangle_pred, inplace=True)
             return self
         if inplace == False:
             new_instance = copy.deepcopy(self)
@@ -331,7 +339,5 @@ class Chainladder():
         return self
         
 
-        
-        
         
         

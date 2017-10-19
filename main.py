@@ -1,6 +1,7 @@
 import chainladder as cl
 import chainladder.deterministic as cld
 import pandas as pd
+import numpy
 
 RAA = cl.load_dataset('RAA')
 ABC = cl.load_dataset('ABC')
@@ -32,8 +33,5 @@ print(BS.summary())
  
 #cld.Chainladder(RAA).grid_search(param_grid = param_grid)
 
-comm_auto = pd.read_csv(r'http://www.casact.org/research/reserve_data/comauto_pos.csv')
-latest_year = max(comm_auto['AccidentYear'])
-CA1997 = comm_auto[comm_auto['DevelopmentYear'] <= latest_year]
-CA1997 = CA1997[CA1997['GRCODE'] != 32670]
 
+  

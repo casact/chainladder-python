@@ -4,13 +4,15 @@ The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.  
 """
 
-from pandas import DataFrame, concat, pivot_table, Series, DatetimeIndex, to_datetime, to_timedelta, melt
+from pandas import DataFrame, concat, pivot_table, Series, DatetimeIndex, to_datetime, to_timedelta, melt, read_json, to_numeric
 from pandas.tseries.offsets import MonthEnd, QuarterEnd, YearEnd
 import numpy as np
+import functools
 from chainladder.UtilityFunctions import Plot
 from bokeh.palettes import Spectral10
 import re
 import copy
+import json
 
 
 
@@ -59,8 +61,8 @@ class Triangle():
 
     """
 
-    def __init__(self, data=None, origin=None, development=None, values=None, dataform=None, **kwargs):
-        # Currently only support pandas dataframes as data
+    def __init__(self, data=None, origin=None, development=None, values=None, dataform=None):
+        # Currently only support pandas dataframes as data            
         if type(data) is not DataFrame:
             raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
         if dataform == None:
@@ -69,6 +71,13 @@ class Triangle():
             else:
                 dataform = 'tabular'
         self.data = copy.deepcopy(data)
+        if development is None and dataform == 'tabular':
+                # If development is missing, it is likely an exposure triangle, and needs to conform
+                development = 'index'
+                temp = self.data.pivot_table(values=values, index=origin, aggfunc='sum').sort_index(ascending=False).reset_index().reset_index().set_index(origin).sort_index()
+                temp['index']=temp['index']+1
+                self.data = self.data.merge(temp['index'].reset_index(), how='inner', on=origin)
+                
         self.data.columns = [str(item) for item in self.data.columns]
         self.dataform = dataform
         if dataform == 'triangle':
@@ -80,8 +89,7 @@ class Triangle():
             self.dev_lag = 'dev_lag'
             self.origin_dict = self.__set_period('origin') 
             self.ncol = len(data.columns)
-            self.__minimize_data()
-            
+            self.__minimize_data()         
         else:
             self.origin = origin
             self.origin_dict = self.__set_period('origin')
@@ -155,7 +163,7 @@ class Triangle():
                 #Implies that a dev lag has been specified over dev period
                 if np.all((self.data[period[0]].unique()<3000) & (self.data[period[0]].unique()>1900)): # carve out unique case of YYYY.
                     self.data[per_type + '_year']=self.data[period[0]]
-                    self.data['dev_lag']=self.data['dev_year']-self.data['origin_year']
+                    self.data['dev_lag']=self.data['dev_year']-self.data['origin_year']+1
                 else:
                     self.data['dev_lag'] = self.data[period]
             else:
@@ -305,7 +313,7 @@ class Triangle():
             my_origin_periods = [item for item in available_origin_periods if item in self.data.reset_index().columns]
             
             tri = pivot_table(self.data, values=self.values, index=
-                              my_origin_periods, columns=self.dev_lag).sort_index()
+                              my_origin_periods, columns=self.dev_lag, aggfunc="sum").sort_index()
             tri.columns = [item for item in tri.columns]
             if inplace == True:
                 self.data = tri
@@ -377,9 +385,13 @@ class Triangle():
         #return DataFrame({'dev_lag':[self.data.columns[len(row.dropna())-1] for index,row in self.data.iterrows()],
         #                  'values':[row.dropna().iloc[-1] for index, row in self.data.iterrows()]}, 
         #        index=self.data.index)
-        return DataFrame({'dev_lag':[self.data.columns[np.where(np.logical_not(np.isnan(row)))][-1] for index,row in self.data.iterrows()],
-                          'values':[row[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]+1] for index, row in self.data.iterrows()]}, 
-                index=self.data.index)
+        if self.dataform == 'tabular':
+            x = self.data_as_triangle().data
+        else:
+            x = self.data
+        return DataFrame({'dev_lag':[x.columns[np.where(np.logical_not(np.isnan(row)))][-1] for index,row in x.iterrows()],
+                          'values':[row.iloc[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]] for index, row in x.iterrows()]}, 
+                index=x.index)
     
     def plot(self, ctype='m', plots=['triangle'], **kwargs): 
         """ Method, callable by end-user that renders the matplotlib plots.
@@ -526,77 +538,155 @@ class Triangle():
             temp = 'OY'
         temp = temp + {'year':'DY','quarter':'DQ','month':'DM'}[self.dev_grain]
         return temp
-    
-
-# Pandas-style indexing classes to support an array of triangles
+          
         
+# Pandas-style indexing classes to support an array of triangles 
+#class TriangleSet2:
+#    def __init__(self, data=None, origin=None, development=None, values=None, groups=None):
+#        self.origin = origin
+#        self.development = development
+##            self.values = values
+ #       if type(values) is str:
+ #           self.values = [values]
+ #       if groups is None:
+ #           self.group_list = ['total']
+ #           self.tri_dict= dict([(item, dict([(val, Triangle(data, origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
+ #       elif type(groups) is str:
+ ##           self.tri_dict= dict([(item, dict([(val, Triangle(data = data[data[groups]==item], origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
+ #       else:
+ #           def conjunction(*conditions):
+ #               return functools.reduce(np.logical_and, conditions) 
+ #           self.group_list = data.groupby(groups).size().reset_index().drop(0, axis=1)
+ #           self.tri_dict = dict([(idx, dict([(val, Triangle(data = dataset, origin=origin, development=development, values=val)) for val in self.values])) for idx, dataset in enumerate([data[conjunction(*[data[k]==v for k,v in dict_item.items()])] for dict_item in [dict(self.group_list.iloc[row]) for row in range(len(self.group_list))]])])
+ #       self.iloc = iloc(self.tri_dict)
+ #       self.loc = loc(self.tri_dict)
+ #       self.shape = (len(self.tri_dict), len(self.tri_dict[list(self.tri_dict.keys())[0]]))
+        
+ #   def __len__(self):
+ #       return len(self.tri_dict)
+
 class TriangleSet:
     def __init__(self, data=None, origin=None, development=None, values=None, groups=None):
+        self.origin = origin
+        self.development = development
         if type(values) is list:
             self.values = values
         if type(values) is str:
             self.values = [values]
-        if groups is None:
-            self.group_list = ['total']
-            self.tri_dict= dict([(item, dict([(val, Triangle(data, origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
-        else:
-            self.group_list = list(data[groups].unique())
-            self.tri_dict= dict([(item, dict([(val, Triangle(data = data[data[groups]==item], origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
-        
-        self.iloc = iloc(self.tri_dict)
-        self.loc = loc(self.tri_dict)
+        if groups is None or groups == [] or groups == '':
+            groups = ['total']
+            data['total'] = 'total'
+        self.group_list = data.groupby(groups).size().reset_index().drop(0, axis=1)
+        self.columns = list(data.columns)
+        self.data = np.array(data)
+        self.tri_dict = dict([(iloc, self.data[np.product([np.where(self.data[:,item]==self.group_list.iloc[iloc,num],True,False) for num,item in enumerate([self.columns.index(col) for col in list(self.group_list.columns)])],axis=0, dtype=bool)]) for iloc in range(len(self.group_list))])
+        #self.iloc = iloc(self.tri_dict)
+        #self.loc = loc(self.tri_dict)
         self.shape = (len(self.tri_dict), len(self.tri_dict[list(self.tri_dict.keys())[0]]))
-        
         
     def __len__(self):
         return len(self.tri_dict)
     
-class iloc:
-    def __init__(self, tri_dict):
-        self.tri_dict = tri_dict
-        
-    def __getitem__(self, idx):
-        if type(idx[0]) is int:
-            row = slice(idx[0], idx[0]+1,1)
+    def get_triangles(self, query_values, query_list, operator='+'):
+        group_subset = np.concatenate([self.tri_dict[item] for item in query_list],axis=0)
+        value_subset = np.sum([group_subset[:,idx] for idx in [self.columns.index(item) for item in [self.values[i] for i in query_values]]],axis=0)
+        val_col = '__values' if 'values' in self.columns else 'values'
+        df_subset = DataFrame(np.concatenate([group_subset, np.expand_dims(value_subset,axis=1)],axis=1), columns=self.columns+[val_col])
+        df_subset['values'] = to_numeric(df_subset['values'])
+        if len(query_values) == 2 and operator!="+":
+            print(self.values[query_values[1]])
+            tri1 = Triangle(df_subset, origin=self.origin, development=self.development, values=self.values[query_values[0]])
+            tri2 = Triangle(df_subset, origin=self.origin, development=self.development, values=self.values[query_values[1]])
+            print(tri1.data_as_triangle()/tri2.data_as_triangle())
+            if operator in ["-"]: 
+                return tri1-tri2
+            if operator in ["×","*"]:
+                return tri1*tri2
+            if operator in ["÷","/"]:
+                return (tri1.data_as_triangle()/tri2.data_as_triangle()).data_as_table()
         else:
-            row = idx[0]
-        if type(idx[1]) is int:
-            col = slice(idx[1], idx[1]+1,1)
-        else:
-            col = idx[1]
-        group_start, group_stop, group_step = self.parse_slice(row)
-        val_start, val_stop, val_step = self.parse_slice(col)
-        temp = [item[1] for item in list(self.tri_dict.items())[group_start:group_stop:group_step]]
-        temp2 = [[item[1] for item in list(tempdict.items())[val_start:val_stop:val_step]] for tempdict in temp]
-        temp3 = [item for sublist in temp2 for item in sublist]
-        if len(temp3) == 1:
-            return temp3[0]
-        else:
-            return temp3
+            return Triangle(df_subset, origin=self.origin, development=self.development, values='values')
+    
+ 
         
     
-    def parse_slice(self, sl):
-        if sl.start is None:
-            start = 0
-        else:
-            start = sl.start
-        if sl.stop is None:
-            stop = len(self.tri_dict.keys())
-        else:
-            stop = sl.stop
-        if sl.step is None:
-            step = 1
-        else:
-            step = sl.step
-        return start, stop, step
+#class iloc:
+#    def __init__(self, tri_dict):
+#        self.tri_dict = tri_dict
+        
+ #   def __getitem__(self, idx):
+        # slicing
+        
+ #       if type(idx[0]) is int:
+ #           row = slice(idx[0], idx[0]+1,1)
+ #       else:
+ #           row = idx[0]
+ #       if type(idx[1]) is int:
+ #           col = slice(idx[1], idx[1]+1,1)
+ #       else:
+ #           col = idx[1]
+ #       group_start, group_stop, group_step = self.parse_slice(row)
+ #       val_start, val_stop, val_step = self.parse_slice(col)
+ #       temp = [item[1] for item in list(self.tri_dict.items())[group_start:group_stop:group_step]]
+ #       temp2 = [[item[1] for item in list(tempdict.items())[val_start:val_stop:val_step]] for tempdict in temp]
+ #       temp3 = [item for sublist in temp2 for item in sublist]
+ #       if len(temp3) == 1:
+ #           return temp3[0]
+ #       else:
+ #           return temp3    
+    
+  #  def parse_slice(self, sl):
+  #      if sl.start is None:
+  #          start = 0
+ #       else:
+ #           start = sl.start
+ #       if sl.stop is None:
+ #           stop = len(self.tri_dict.keys())
+ #       else:
+ #           stop = sl.stop
+ #       if sl.step is None:
+ #           step = 1
+ #       else:
+ #           step = sl.step
+ #       return start, stop, step
         
 
-class loc:
-    def __init__(self, tri_dict):
-        self.tri_dict = tri_dict
+#class loc:
+#    def __init__(self, tri_dict):
+#        self.tri_dict = tri_dict
         
-    def __getitem__(self,idx):    
-        return self.tri_dict[idx[0]][idx[1]]
+#    def __getitem__(self,idx):    
+#        return self.tri_dict[idx[0]][idx[1]]
     
     
+#groups_to_iterate_over = list(group_key.keys())
+#return_list = []
+#for i in range(len(groups_to_iterate_over)):
+#    return_list.append([group_key[groups_to_iterate_over[i]][idx] for idx in test[i]])
+#bool_array = np.ones(len(group_list), dtype=bool)
+#for i in range(len(groups_to_iterate_over)):
+#    bool_array = bool_array * np.array(group_list.iloc[:,i].isin(return_list[i]), dtype=bool)
+#final = list(group_list[bool_array].index)
+    
+
+#data = np.array(TOT1997)
+#columns = list(TOT1997.columns)
+#group_list = TS.group_list
+#values = TS.values
+#origin=TS.origin
+#development=TS.development
+
+
+# Get index of each of the group list columns in master array
+#iloc = 0
+#groups_to_loop_over = [columns.index(col) for col in list(group_list.columns)]
+
+#query_list = [1,5,3,6,7,84,8,12,64]
+#query_values=[3,4,5]
+#group_subset = np.concatenate([tri_dict[item] for item in query_list],axis=0)
+#value_subset = np.sum([sub_set[:,idx] for idx in [columns.index(item) for item in [values[i] for i in query_values]]],axis=0)
+#df_subset = pd.DataFrame(np.concatenate([sub_set, np.expand_dims(new_val,axis=1)],axis=1), columns=columns+['values'])
+#df_subset['values'] = pd.to_numeric(df_subset['values'])
+#cl.Triangle(df_subset, origin=origin, development=development, values='values').data_as_triangle()
+
 
