@@ -10,12 +10,16 @@ import numpy as np
 from pandas import DataFrame, concat, Series
 from scipy import stats
 from chainladder.Chainladder import Chainladder
-from warnings import warn
-import matplotlib.pyplot as plt
-import seaborn as sns
+from matplotlib.dates import date2num
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import statsmodels.api as sm
 from chainladder.UtilityFunctions import Plot
+import copy
+
+
+from bokeh.plotting import figure, show
+from bokeh.layouts import gridplot
+from bokeh.palettes import Spectral10
 
 
 class MackChainladder:
@@ -83,12 +87,17 @@ class MackChainladder:
 
     """
 
-    def __init__(self, tri,  weights=1,  alpha=1,
-                 tail=False):
-        # Determine whether LDFs can eb extrapolated with exponential tail
+    def __init__(self, triangle,  weights=1,  alpha=1, tail=False, **kwargs):
+        # Determine whether LDFs can be extrapolated with exponential tail
         if tail == True:
-            tail = self.is_exponential_tail_appropriate(tri,  weights,  alpha)       
-        self.chainladder = Chainladder(tri, weights=weights,  delta=2 - alpha, tail=tail)
+            tail = self.is_exponential_tail_appropriate(triangle.data_as_triangle(),  weights,  alpha)
+        if 'chainladder' in kwargs.keys():
+            self.chainladder = kwargs['chainladder']
+        else:
+            self.chainladder = Chainladder(triangle, weights=weights,  delta=2 - alpha, tail=tail)
+        self.set_attributes()
+    
+    def set_attributes(self):
         self.triangle = self.chainladder.triangle
         self.alpha = [2 - item for item in self.chainladder.delta]
         self.weights = self.chainladder.weights
@@ -107,7 +116,7 @@ class MackChainladder:
                                self.__get_parameter_risk()**2)
         self.total_mack_se = np.sqrt(
             self.total_process_risk[-1]**2 + self.total_parameter_risk[-1]**2)
-
+        
     def __repr__(self):   
         return str(self.summary())
     
@@ -282,7 +291,7 @@ class MackChainladder:
             
         """
         summary = DataFrame()
-        summary['Latest'] = self.triangle.get_latest_diagonal()
+        summary['Latest'] = self.triangle.get_latest_diagonal().iloc[:,-1]
         summary['Dev to Date'] = Series([row.dropna().iloc[-1] for index, row in self.triangle.data.iterrows(
         )], index=self.triangle.data.index) / self.full_triangle.iloc[:, -1]
         summary['Ultimate'] = self.full_triangle.iloc[:, -1]
@@ -305,6 +314,16 @@ class MackChainladder:
             
         """
         return self.chainladder.age_to_age(colname_sep='-')
+    
+    def exclude_link_ratios(self, otype, inplace=False):
+        if inplace == True:
+            chainladder = self.chainladder.exclude_link_ratios(otype=otype, inplace=inplace)
+            self.set_attributes()
+            return self
+        if inplace == False:
+            new_instance = copy.deepcopy(self)
+            return new_instance.exclude_link_ratios(otype=otype, inplace=True)
+        
     
     def is_exponential_tail_appropriate(self, tri,  weights,  alpha):
         """ Method to determine whether an exponential tail fit is appropriate
@@ -335,7 +354,7 @@ class MackChainladder:
         else:
             return True
     
-    def plot(self, plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4']): 
+    def plot(self, ctype='m', plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4'], **kwargs):
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -361,8 +380,8 @@ class MackChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(my_dict)
-        
+        return Plot(ctype, my_dict, **kwargs).grid
+    
     def __get_plot_dict(self):
         resid_df = self.chainladder.get_residuals()  
         xlabs = self.full_triangle.columns
@@ -374,77 +393,144 @@ class MackChainladder:
         plot_dict = {'resid1':{'Title':'Studentized Residuals by Fitted Value',
                              'XLabel':'Fitted Value',
                              'YLabel':'Studentized Residual',
-                             'chart_type_dict':{'type':['plot','plot'],
+                             'chart_type_dict':{'type':['scatter','line'],
+                                               'mtype':['plot','plot'],
                                                'x':[resid_df['fitted_value'],lowess(resid_df['standard_residuals'],resid_df['fitted_value'],frac=1 if len(np.unique(resid_df['fitted_value'].values))<=6 else 0.666).T[0]],
-                                               'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['fitted_value'],frac=1 if len(np.unique(resid_df['fitted_value'].values))<=6 else 0.666).T[1]],
-                                               'marker':['o',''],
+                                               'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df['fitted_value'],frac=1 if len(np.unique(resid_df['fitted_value'].values))<=6 else 0.666).T[1]).T],
+                                               'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['fitted_value'],frac=1 if len(np.unique(resid_df['fitted_value'].values))<=6 else 0.666).T[1]],
+                                               'marker':['circle',''],
+                                               'line_width':[None,2],
+                                               'line_cap':[None,'round'],
+                                               'line_join':[None,'round'],
+                                               'line_dash':[None,'solid'],
+                                               'color':['blue',['red']],
+                                               'alpha':[.5,.5],
+                                               'label':['residual',['loess']],
+                                               'rows':[None,1],
+                                               'markerM':['o',''],
                                                'linestyle':['','-'],
-                                               'color':['blue','red']
+                                               'colorM':['blue','red']
                                                }},
                     'resid4':{'Title':'Studentized Residuals by Development Period',
                                      'XLabel':'Development Period',
                                      'YLabel':'Studentized Residual',
-                                     'chart_type_dict':{'type':['plot','plot'],
-                                                       'x':[resid_df['dev'],lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[0]],
-                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev'],frac=1 if len(np.unique(resid_df['dev'].values))<=6 else 0.666).T[1]],
-                                                       'marker':['o',''],
+                                     'chart_type_dict':{'type':['scatter','line'],
+                                                       'mtype':['plot','plot'],
+                                                       'x':[resid_df['dev_lag'],lowess(resid_df['standard_residuals'],resid_df['dev_lag'],frac=1 if len(np.unique(resid_df['dev_lag'].values))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df['dev_lag'],frac=1 if len(np.unique(resid_df['dev_lag'].values))<=6 else 0.666).T[1]).T],
+                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['dev_lag'],frac=1 if len(np.unique(resid_df['dev_lag'].values))<=6 else 0.666).T[1]],
+                                                       'marker':['circle',''],
+                                                       'line_width':[None,2],
+                                                       'line_cap':[None,'round'],
+                                                       'line_join':[None,'round'],
+                                                       'line_dash':[None,'solid'],
+                                                       'color':['blue',['red']],
+                                                       'alpha':[.5,.5],
+                                                       'label':['residual',['loess']],
+                                                       'rows':[None,1],
+                                                       'markerM':['o',''],
                                                        'linestyle':['','-'],
-                                                       'color':['blue','red']
+                                                       'colorM':['blue','red']
                                                        }},
                     'resid2':{'Title':'Studentized Residuals by Origin Period',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Studentized Residual',
-                                     'chart_type_dict':{'type':['plot','plot'],
+                                     'chart_type_dict':{'type':['scatter','line'],
+                                                       'mtype':['plot','plot'], 
                                                        'x':[resid_df.index,lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[0]],
-                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[1]],
-                                                       'marker':['o',''],
+                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[1]).T],
+                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[1]],
+                                                       'marker':['circle',''],
+                                                       'line_width':[None,2],
+                                                       'line_cap':[None,'round'],
+                                                       'line_join':[None,'round'],
+                                                       'line_dash':[None,'solid'],
+                                                       'color':['blue',['red']],
+                                                       'alpha':[.5,.5],
+                                                       'label':['residual',['loess']],
+                                                       'rows':[None,1],
+                                                       'markerM':['o',''],
                                                        'linestyle':['','-'],
-                                                       'color':['blue','red']
+                                                       'colorM':['blue','red']
                                                        }},
                     'resid3':{'Title':'Studentized Residuals by Calendar Period',
                                      'XLabel':'Calendar Period',
                                      'YLabel':'Studentized Residual',
-                                     'chart_type_dict':{'type':['plot','plot'],
-                                                       'x':[resid_df['cal_period'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[0]],
-                                                       'y':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df['cal_period'],frac=1 if len(np.unique(resid_df['cal_period'].values))<=6 else 0.666).T[1]],
-                                                       'marker':['o',''],
+                                     'chart_type_dict':{'type':['scatter','line'],
+                                                       'mtype':['plot','plot'],
+                                                       'x':[date2num(resid_df['cal_period']),lowess(resid_df['standard_residuals'],date2num(resid_df['cal_period']),frac=1 if len(np.unique(date2num(resid_df['cal_period'])))<=6 else 0.666).T[0]],
+                                                       'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],date2num(resid_df['cal_period']),frac=1 if len(np.unique(date2num(resid_df['cal_period'])))<=6 else 0.666).T[1]).T],
+                                                       'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],date2num(resid_df['cal_period']),frac=1 if len(np.unique(date2num(resid_df['cal_period'])))<=6 else 0.666).T[1]],
+                                                       'marker':['circle',''],
+                                                       'line_width':[None,2],
+                                                       'line_cap':[None,'round'],
+                                                       'line_join':[None,'round'],
+                                                       'line_dash':[None,'solid'],
+                                                       'color':['blue',['red']],
+                                                       'alpha':[.5,.5],
+                                                       'label':['residual',['loess']],
+                                                       'rows':[None,1],
+                                                       'markerM':['o',''],
                                                        'linestyle':['','-'],
-                                                       'color':['blue','red']
+                                                       'colorM':['blue','red']
                                                        }},      
                     'summary':{'Title':'Ultimates by origin period +/- 1 std. err.',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Ultimates',
-                                     'chart_type_dict':{'type':['bar','bar'],
+                                     'chart_type_dict':{'type':['vbar','vbar','errline'],                                                       
+                                                       'top':[summary['Latest'],summary['Latest']+summary['IBNR'],None],
+                                                       'x':[summary.index,summary.index,[(item,item) for item in summary.index.values]],
+                                                       'width':[0.8,0.8,None],
+                                                       'bottom':[0,summary['Latest'],None],
+                                                       'color':[Spectral10[1],Spectral10[2],'black'],
+                                                       'label':['latest','IBNR',None],
+                                                       'y':[None, None, list(zip(summary['Ultimate']+summary['Mack S.E.'], summary['Ultimate']-summary['Mack S.E.']))],
+                                                       'mtype':['bar','bar'],
                                                        'height':[summary['Latest'],summary['IBNR']],
-                                                       'left':[summary.index,summary.index],
-                                                       'width':[0.8,0.8],
-                                                       'bottom':[0,summary['Latest']],
                                                        'yerr':[0,y_r]
                                                        }},
                     'full_triangle':{'Title':'Fully Developed Triangle',
                                      'XLabel':'Development Period',
                                      'YLabel':'Values',
+                                     'loc':'lower left',
+                                     'bbox_to_anchor':(.90, 0),
+                                     'label':[item for item in self.triangle.data.index],
                                      'chart_type_dict':{'type':['line','line'],
+                                                       'mtype':['line','line'],
                                                        'rows':[len(self.full_triangle), len(self.triangle.data)],
                                                        'x':[xvals, xvals[:-1]],
                                                        'y':[self.full_triangle, self.triangle.data],
+                                                       'line_dash':['dashed','solid'],
+                                                       'line_width':[4,4],
+                                                       'alpha':[.5,1],
+                                                       'line_cap':['round','round'],
+                                                       'line_join':['round','round'],
+                                                       'color':[Spectral10*int(len(self.triangle.data)/10+1),Spectral10*int(len(self.triangle.data)/10+1)],
+                                                       'label':[[str(item) for item in self.triangle.data.index],['' for item in self.triangle.data.index]],
                                                        'linestyle':['--', '-'],
-                                                       'linewidth':[5, 5],
-                                                       'alpha':[0.5, 1.0]
-                                                       
+                                                       'linewidth':[5,5],
                                                        }} ,
                     'triangle':{'Title':'Latest Triangle Data',
                                      'XLabel':'Development Period',
                                      'YLabel':'Values',
+                                     'loc':'lower left',
+                                     'bbox_to_anchor':(.90, 0),
+                                     'label':[item for item in self.triangle.data.index],
                                      'chart_type_dict':{'type':['line'],
+                                                       'mtype':['line'],
                                                        'rows':[len(self.triangle.data)],
                                                        'x':[xvals[:-1]],
                                                        'y':[self.triangle.data],
+                                                       'line_dash':['solid'],
+                                                       'line_width':[4],
+                                                       'alpha':[1],
+                                                       'line_cap':['round'],
+                                                       'line_join':['round'],
+                                                       'color':[Spectral10*int(len(self.triangle.data)/10+1)],
+                                                       'label':[[str(item) for item in self.triangle.data.index]],
                                                        'linestyle':['-'],
-                                                       'linewidth':[5],
-                                                       'alpha':[1]
+                                                       'linewidth':[5]
                                                        }} 
                     }
         return plot_dict
-
-
+    

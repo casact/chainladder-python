@@ -8,9 +8,12 @@ Created on Sat Jun 17 07:08:08 2017
 
 from chainladder.UtilityFunctions import load_dataset
 from chainladder.Chainladder import Chainladder, WRTO
-from chainladder.Triangle import Triangle
+from chainladder.Triangle import Triangle, TriangleSet#, iloc, loc
 from chainladder.MackChainladder import MackChainladder
 from chainladder.MunichChainladder import MunichChainladder
 from chainladder.BootstrapReserve import BootChainladder
+
+
+
 
 

@@ -8,7 +8,7 @@ setup(
     version='0.1.7',
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
-    packages=['chainladder'],
+    packages=['chainladder', 'chainladder.deterministic'],
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
     download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.7.tar.gz',

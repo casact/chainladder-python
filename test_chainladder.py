@@ -20,7 +20,6 @@ def test_data_as_table(df):
     if a.dataform == 'tabular':
         assert True
     else:
-        
         data1 = a.data
         a.data_as_table(inplace=True)
         a.data_as_triangle(inplace=True)
@@ -29,21 +28,21 @@ def test_data_as_table(df):
        
 @pytest.mark.parametrize('df',[cl.load_dataset(item) for item in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),'chainladder','data'))])
 def test_cum_to_incr_convert(df):
-        a = cl.Triangle(df)
-        data1 = a.data
-        a.cum_to_incr(inplace=True)
-        a.incr_to_cum(inplace=True)
-        test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
-        assert test.shape[0]*test.shape[1] == sum(sum(test))
+    a = cl.Triangle(df)    
+    data1 = a.data
+    a.cum_to_incr(inplace=True)
+    a.incr_to_cum(inplace=True)
+    test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
+    assert test.shape[0]*test.shape[1] == sum(sum(test))
         
 @pytest.mark.parametrize('df',[cl.load_dataset(item) for item in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),'chainladder','data'))])
 def test_incr_to_cum_convert(df):
-        a = cl.Triangle(df)
-        data1 = a.data
-        a.incr_to_cum(inplace=True)
-        a.cum_to_incr(inplace=True)
-        test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
-        assert test.shape[0]*test.shape[1] == sum(sum(test))
+    a = cl.Triangle(df)
+    data1 = a.data
+    a.incr_to_cum(inplace=True)
+    a.cum_to_incr(inplace=True)
+    test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
+    assert test.shape[0]*test.shape[1] == sum(sum(test))
 
 
 l1 = [cl.load_dataset(item) for item in os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),'chainladder','data'))]

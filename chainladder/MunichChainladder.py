@@ -13,6 +13,7 @@ from warnings import warn
 from chainladder.UtilityFunctions import Plot
 from chainladder.Triangle import Triangle
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from bokeh.palettes import Spectral10
 
 class MunichChainladder:
     """ This is the Munich Chain Ladder Class.
@@ -203,7 +204,7 @@ class MunichChainladder:
     def __get_PI_ratios(self):
         """ Used for plotting
         """
-        actuals = MCL.MackPaid.triangle.data_as_table()['values']/MCL.MackIncurred.triangle.data_as_table()['values']
+        actuals = MCL.MackPaid.triangle.data_as_table().data['values']/MCL.MackIncurred.triangle.data_as_table().data['values']
         
     def summary(self):
         """ Method to produce a summary table of of the Munich Chainladder 
@@ -214,15 +215,15 @@ class MunichChainladder:
             MunichChainLadder$summary
         """
         summary = pd.DataFrame()
-        summary['Latest Paid'] = self.Paid.get_latest_diagonal()
-        summary['Latest Incurred'] = self.Incurred.get_latest_diagonal()
+        summary['Latest Paid'] = self.Paid.get_latest_diagonal().iloc[:,-1]
+        summary['Latest Incurred'] = self.Incurred.get_latest_diagonal().iloc[:,-1]
         summary['Latest P/I Ratio'] = summary['Latest Paid']/summary['Latest Incurred'] 
         summary['Ult. Paid'] = self.MCL_paid.iloc[:,-1]
         summary['Ult. Incurred'] = self.MCL_incurred.iloc[:,-1]
         summary['P/I Ratio'] = summary['Ult. Paid']/summary['Ult. Incurred'] 
         return summary
     
-    def plot(self, plots=['summary', 'MCLvsMack', 'resid1', 'resid2']):
+    def plot(self, ctype='m', plots=['summary', 'MCLvsMack', 'resid1', 'resid2'], plot_width=450, plot_height=275):
         """ Method, callable by end-user that renders the matplotlib plots.
         
         Arguments:
@@ -251,98 +252,165 @@ class MunichChainladder:
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
-        Plot(my_dict)
+        return Plot(ctype, my_dict, plot_width=plot_width, plot_height=plot_height).grid
     
     def __get_plot_dict(self):
         plot_dict = {'summary':{'Title':'Munich Chainladder Results',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Ultimates',
-                                     'chart_type_dict':{'type':['bar','bar'],
+                                     'chart_type_dict':{'mtype':['bar','bar'],
                                                        'height':[self.summary()['Ult. Paid'],self.summary()['Ult. Incurred']],
-                                                       'left':[self.summary().index-.35/2,self.summary().index+.35/2],
+                                                       'x':[self.summary().index-.35/2,self.summary().index+.35/2],
                                                        'width':[0.35,0.35],
                                                        'bottom':[0,0],
-                                                       'yerr':[0,0]
+                                                       'yerr':[0,0],
+                                                       'type':['vbar','vbar'],
+                                                       'top':[self.summary()['Ult. Paid'],self.summary()['Ult. Incurred']],
+                                                       'color':[Spectral10[1],Spectral10[2]],
+                                                       'label':['Paid','Incurred']
                                                        }},
-                     'MCLvsMack':{'Title':'Munich Chainladder vs. Standard Chainladder',
+                     'MCLvsMack':{'Title':'Munich Chainladder vs. Standard Chainladder (P/I) Ratio',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Ultimates',
-                                     'chart_type_dict':{'type':['bar','bar'],
+                                     'chart_type_dict':{'mtype':['bar','bar'],
                                                        'height':[self.summary()['Ult. Paid']/self.summary()['Ult. Incurred'],self.MackPaid.summary()['Ultimate']/self.MackIncurred.summary()['Ultimate']],
-                                                       'left':[self.summary().index-.35/2,self.summary().index+.35/2],
+                                                       'x':[self.summary().index-.35/2,self.summary().index+.35/2],
                                                        'width':[0.35,0.35],
                                                        'bottom':[0,0],
-                                                       'yerr':[0,0]
+                                                       'yerr':[0,0],
+                                                       'type':['vbar','vbar'],
+                                                       'top':[self.summary()['Ult. Paid']/self.summary()['Ult. Incurred'],self.MackPaid.summary()['Ultimate']/self.MackIncurred.summary()['Ultimate']],
+                                                       'color':[Spectral10[1],Spectral10[2]],
+                                                       'label':['Munich','Mack']
                                                        }},
                       'resid1':{'Title':'Paid Residual Plot',
                                      'XLabel':'Incurred/Paid Residuals',
                                      'YLabel':'Paid Residuals',
-                                     'chart_type_dict':{'type':['plot','plot','plot','plot'],
+                                     'chart_type_dict':{'mtype':['plot','plot','plot','plot'],
                                                        'x':[self.Q_inverse_residuals,[min(self.Q_inverse_residuals),max(self.Q_inverse_residuals)],[0,0],[min(self.Q_inverse_residuals),max(self.Q_inverse_residuals)]],
-                                                       'y':[self.paid_residuals, [min(self.Q_inverse_residuals)*self.lambdaP,max(self.Q_inverse_residuals)*self.lambdaP],[min(self.paid_residuals),max(self.paid_residuals)],[0,0]],
-                                                       'marker':['o','','',''],
+                                                       'yM':[self.paid_residuals, [min(self.Q_inverse_residuals)*self.lambdaP,max(self.Q_inverse_residuals)*self.lambdaP],[min(self.paid_residuals),max(self.paid_residuals)],[0,0]],
+                                                       'markerM':['o','','',''],
                                                        'linestyle':['','-','-','-'],
-                                                       'color':['blue','red','grey','grey']
+                                                       'colorM':['blue','red','grey','grey'],
+                                                       'type':['scatter','line','line','line'],
+                                                       'y':[self.paid_residuals, pd.DataFrame([min(self.Q_inverse_residuals)*self.lambdaP,max(self.Q_inverse_residuals)*self.lambdaP]).T,pd.DataFrame([min(self.paid_residuals),max(self.paid_residuals)]).T,pd.DataFrame([0,0]).T],
+                                                       'marker':['circle','','',''],
+                                                       'line_width':[None,2,2,2],
+                                                       'line_cap':[None,'round','round','round'],
+                                                       'line_join':[None,'round','round','round'],
+                                                       'line_dash':[None,'solid','solid','solid'],
+                                                       'alpha':[.5,.5,.5,.5],
+                                                       'label':['residual',['fit'],[''],['']],
+                                                       'rows':[None,1,1,1],
+                                                       'color':['blue',['red'],['grey'],['grey']]
                                                        }},
                       'resid2':{'Title':'Incurred Residual Plot',
                                      'XLabel':'Paid/Incurred Residuals',
                                      'YLabel':'Incurred Residuals',
-                                     'chart_type_dict':{'type':['plot','plot','plot', 'plot'],
+                                     'chart_type_dict':{'mtype':['plot','plot','plot', 'plot'],
                                                        'x':[self.Q_residuals,[min(self.Q_residuals),max(self.Q_residuals)],[0,0],[min(self.Q_residuals),max(self.Q_residuals)]],
-                                                       'y':[self.incurred_residuals, [min(self.Q_residuals)*self.lambdaI,max(self.Q_residuals)*self.lambdaI],[min(self.incurred_residuals),max(self.incurred_residuals)],[0,0]],
-                                                       'marker':['o','','',''],
+                                                       'yM':[self.incurred_residuals, [min(self.Q_residuals)*self.lambdaI,max(self.Q_residuals)*self.lambdaI],[min(self.incurred_residuals),max(self.incurred_residuals)],[0,0]],
+                                                       'markerM':['o','','',''],
                                                        'linestyle':['','-','-','-'],
-                                                       'color':['blue','red','grey','grey']
+                                                       'colorM':['blue','red','grey','grey'],
+                                                       'type':['scatter','line','line','line'],
+                                                       'y':[self.incurred_residuals, pd.DataFrame([min(self.Q_residuals)*self.lambdaI,max(self.Q_residuals)*self.lambdaI]).T,pd.DataFrame([min(self.incurred_residuals),max(self.incurred_residuals)]).T,pd.DataFrame([0,0]).T],
+                                                       'marker':['circle','','',''],
+                                                       'line_width':[None,2,2,2],
+                                                       'line_cap':[None,'round','round','round'],
+                                                       'line_join':[None,'round','round','round'],
+                                                       'line_dash':[None,'solid','solid','solid'],
+                                                       'alpha':[.5,.5,.5,.5],
+                                                       'label':['residual',['fit'],[''],['']],
+                                                       'rows':[None,1,1,1],
+                                                       'marker':['circle','','',''],
+                                                       'color':['blue',['red'],['grey'],['grey']]
                                                        }},
                       'MCLvsMackpaid':{'Title':'Paid Munich vs Paid Mack',
                                      'XLabel':'Origin',
                                      'YLabel':'Ultimate',
-                                     'chart_type_dict':{'type':['bar','bar'],
+                                     'chart_type_dict':{'mtype':['bar','bar'],
                                                        'height':[self.summary()['Ult. Paid'], self.MackPaid.summary()['Ultimate']],
-                                                       'left':[self.summary().index-.35/2,self.summary().index+.35/2],
+                                                       'x':[self.summary().index-.35/2,self.summary().index+.35/2],
                                                        'width':[0.35,0.35],
                                                        'bottom':[0,0],
-                                                       'yerr':[0,0]
+                                                       'yerr':[0,0],
+                                                       'type':['vbar','vbar'],
+                                                       'top':[self.summary()['Ult. Paid'], self.MackPaid.summary()['Ultimate']],
+                                                       'color':[Spectral10[1],Spectral10[2]],
+                                                       'label':['Munich','Mack']
                                                        }},
-                      'MCLvsMackinc':{'Title':'Incurred Munich vs Paid Mack',
+                      'MCLvsMackinc':{'Title':'Incurred Munich vs Incurred Mack',
                                      'XLabel':'Origin',
                                      'YLabel':'Ultimate',
-                                     'chart_type_dict':{'type':['bar','bar'],
+                                     'chart_type_dict':{'mtype':['bar','bar'],
                                                        'height':[self.summary()['Ult. Incurred'], self.MackIncurred.summary()['Ultimate']],
-                                                       'left':[self.summary().index-.35/2,self.summary().index+.35/2],
+                                                       'x':[self.summary().index-.35/2,self.summary().index+.35/2],
                                                        'width':[0.35,0.35],
                                                        'bottom':[0,0],
-                                                       'yerr':[0,0]
+                                                       'yerr':[0,0],
+                                                       'type':['vbar','vbar'],
+                                                       'top':[self.summary()['Ult. Incurred'], self.MackIncurred.summary()['Ultimate']],
+                                                       'color':[Spectral10[1],Spectral10[2]],
+                                                       'label':['Munich','Mack']
                                                        }},
                       'PI1':{'Title':'(P/I) Triangle using Basic Chainladder',
                                      'XLabel':'Development Period',
                                      'YLabel':'Paid/Incurred Ratio',
-                                     'chart_type_dict':{'type':['plot', 'plot', 'plot'],
-                                                       'x':[Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
-                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[0]],
-                                                       'y':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'], 
-                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
-                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[1]],
-                                                       'marker':['o','o',''],
+                                     'chart_type_dict':{'mtype':['plot', 'plot', 'plot'],
+                                                       'x':[Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'], self.MackPaid.triangle.data_as_table().data['dev_lag'],
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[0]],
+                                                       'yM':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]],
+                                                       'markerM':['o','o',''],
                                                        'linestyle':['','','-'],
-                                                       'color':['grey','blue', 'red']
+                                                       'colorM':['grey','blue', 'red'],
+                                                       'type':['scatter', 'scatter', 'line'],
+                                                       'y':[(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            pd.DataFrame(lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]).T],
+                                                       'line_width':[None,None,2],
+                                                       'line_cap':[None,None,'round'],
+                                                       'line_join':[None,None,'round'],
+                                                       'line_dash':[None,None,'solid'],
+                                                       'alpha':[.5,.5,.5],
+                                                       'label':['projected','actual',['loess']],
+                                                       'rows':[None,1,1,1],
+                                                       'marker':['circle','circle',''],
+                                                       'color':['grey','blue',['red']]
                                                        }},
                       'PI2':{'Title':'(P/I) Triangle using Munich Chainladder',
                                      'XLabel':'Development Period',
                                      'YLabel':'Paid/Incurred Ratio',
-                                     'chart_type_dict':{'type':['plot', 'plot','plot'],
-                                                       'x':[Triangle(self.MCL_paid).data_as_table()['dev'], self.MackPaid.triangle.data_as_table()['dev'],
-                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table())['values'],
-                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table()['dev']))<=6 else 0.666).T[0]],
-                                                       'y':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'], 
-                                                            (self.MackPaid.triangle.data_as_table()['values']/self.MackIncurred.triangle.data_as_table()['values']),
-                                                            lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table())['values'],
-                                                                   Triangle(self.MCL_paid).data_as_table()['dev'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table()['dev']))<=6 else 0.666).T[1]],
-                                                       'marker':['o','o',''],
+                                     'chart_type_dict':{'mtype':['plot', 'plot','plot'],
+                                                       'x':[Triangle(self.MCL_paid).data_as_table().data['dev_lag'], self.MackPaid.triangle.data_as_table().data['dev_lag'],
+                                                            lowess((Triangle(self.MackPaid.full_triangle.iloc[:,:-1]/self.MackIncurred.full_triangle.iloc[:,:-1]).data_as_table().data)['values'],
+                                                                   Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MackPaid.full_triangle.iloc[:,:-1]).data_as_table().data['dev_lag']))<=6 else 0.666).T[0]],
+                                                       'yM':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'],
+                                                                   Triangle(self.MCL_paid).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]],
+                                                       'markerM':['o','o',''],
                                                        'linestyle':['','','-'],
-                                                       'color':['grey','blue', 'red']
+                                                       'colorM':['grey','blue', 'red'],
+                                                       'type':['scatter', 'scatter', 'line'],
+                                                       'y':[(Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'], 
+                                                            (self.MackPaid.triangle.data_as_table().data['values']/self.MackIncurred.triangle.data_as_table().data['values']),
+                                                            pd.DataFrame(lowess((Triangle(self.MCL_paid/self.MCL_incurred).data_as_table().data)['values'],
+                                                                   Triangle(self.MCL_paid).data_as_table().data['dev_lag'],frac=1 if len(np.unique(Triangle(self.MCL_paid).data_as_table().data['dev_lag']))<=6 else 0.666).T[1]).T],
+                                                       'line_width':[None,None,2],
+                                                       'line_cap':[None,None,'round'],
+                                                       'line_join':[None,None,'round'],
+                                                       'line_dash':[None,None,'solid'],
+                                                       'alpha':[.5,.5,.5],
+                                                       'label':['projected','actual',['loess']],
+                                                       'rows':[None,1,1,1],
+                                                       'marker':['circle','circle',''],
+                                                       'color':['grey','blue',['red']]
                                                        }},      
                     }
         return plot_dict
