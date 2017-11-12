@@ -1,5 +1,4 @@
-﻿﻿# -*- coding: utf-8 -*-
-"""
+﻿"""
 The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.  
 """
