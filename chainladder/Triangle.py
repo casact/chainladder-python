@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+﻿﻿# -*- coding: utf-8 -*-
 """
 The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.  
@@ -13,8 +13,6 @@ from bokeh.palettes import Spectral10
 import re
 import copy
 import json
-
-
 
 class Triangle():
     """Triangle class is the basic data representation of an actuarial triangle.
@@ -116,17 +114,16 @@ class Triangle():
         period_dict = {}
         if type(period) == str:
             period = [period]
-        
         if len(period) > 1:
             for item in period:
                 #Runs through many column names to determine if they measure year, quarter or month
                 #Items named YearQuarter, yearmonth or some combo would fail, but I generally don't expect
                 #this when multiple separate period columns are provided.
-                if len(re.findall(r'y[a-z]*r|y',item))>0:
+                if len(re.findall(r'y[a-z]*r|y|Y[A-Z]*R|Y',item))>0:
                     period_dict['year'] = item
-                if len(re.findall(r'q[a-z]*r|q',item))>0 and len(self.data[item].unique()) == 4:
+                if len(re.findall(r'q[a-z]*r|q|Q[A-Z]*R|Q',item))>0 and len(self.data[item].unique()) == 4:
                     period_dict['quarter'] = item
-                if len(re.findall(r'm[a-z]*',item))>0 and len(self.data[item].unique()) == 12:
+                if len(re.findall(r'm[a-z]*|M[A-Z]*',item))>0 and len(self.data[item].unique()) == 12:
                     period_dict['month'] = item
             if 'month' in period_dict.keys():
                 colname = str(period_dict['year'])+'-'+str(period_dict['month'])
@@ -311,10 +308,16 @@ class Triangle():
         if self.dataform == 'tabular':
             available_origin_periods = ['origin_year', 'origin_quarter','origin_month']
             my_origin_periods = [item for item in available_origin_periods if item in self.data.reset_index().columns]
-            
             tri = pivot_table(self.data, values=self.values, index=
-                              my_origin_periods, columns=self.dev_lag, aggfunc="sum").sort_index()
+                              my_origin_periods, columns=self.dev_lag, aggfunc="sum", fill_value=0).sort_index()
             tri.columns = [item for item in tri.columns]
+            # temp fills in lower diagonal with NANs, only works for symmetric triangles
+            if tri.shape[0] == tri.shape[1]:
+                temp = (np.flip(np.tril(np.empty(tri.shape)*np.NAN, k=-1),axis=1)+1)
+                tri = tri * temp
+            else:
+                tri = pivot_table(self.data, values=self.values, index=
+                              my_origin_periods, columns=self.dev_lag, aggfunc="sum", fill_value=0).sort_index()
             if inplace == True:
                 self.data = tri
                 self.dataform = 'triangle'
@@ -435,7 +438,6 @@ class Triangle():
                                                        'label':[[str(item) for item in self.data.index]],
                                                        'linestyle':['-'],
                                                        'linewidth':[5],
-                                                       'alpha':[1]
                                                        }} 
                     }
         return plot_dict
@@ -688,5 +690,4 @@ class TriangleSet:
 #df_subset = pd.DataFrame(np.concatenate([sub_set, np.expand_dims(new_val,axis=1)],axis=1), columns=columns+['values'])
 #df_subset['values'] = pd.to_numeric(df_subset['values'])
 #cl.Triangle(df_subset, origin=origin, development=development, values='values').data_as_triangle()
-
 
