@@ -1,20 +1,51 @@
 language: python
-python:
-  #- "2.6"
-  #- "2.7"
-  #- "3.2"
-  #- "3.3"
-  - "3.4"
-  # PyPy versions
-  #- "pypy"  # PyPy2 2.5.0
-  #- "pypy3" # Pypy3 2.4.0
-  #- "pypy-5.3.1"
-# command to install dependencies
+
+
+matrix:
+  fast_finish: true
+  include:
+  - python: 3.5
+    env:
+    - PANDAS: 0.20.2
+  - python: 3.5
+    env:
+    - PANDAS: 0.21
+  - python: 3.6
+    env:
+    - PANDAS: 0.22
+  - python: 3.6
+
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install libnlopt-dev gfortran
+  # nlopt is missing... install manually
+  - sudo ln -s /bin/tar /bin/gtar
+
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+
+  # Replace dep1 dep2 ... with your dependencies
+  - PKGS="python=${TRAVIS_PYTHON_VERSION} rpy2 scipy matplotlib seaborn statsmodels"
+  # Need to compile R
+  - PKGS="${PKGS} gcc_linux-64 gxx_linux-64 gfortran_linux-64"
+  - PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi
+  - PKGS="${PKGS} numpy"; if [ ${NUMPY} ]; then PKGS="${PKGS}=${NUMPY}"; fi
+  - conda create -q -n chainladder ${PKGS} pytest
+  - source activate chainladder
+
+  # Install the R ChainLadder for comparisons
+  - conda install -q -c conda-forge nlopt 
+  - R -e "install.packages('ChainLadder', repos = 'http://cran.us.r-project.org')"
+
 install:
-  - pip install --upgrade pip setuptools wheel
-  - pip install --only-binary=numpy,scipy,pandas,matplotlib numpy scipy pandas matplotlib
-  - pip install seaborn
-  - pip install statsmodels
-# command to run tests
+  - pip install -e .
+
 script: 
   - python main.py
+  - py.test test_chainladder.py -v
