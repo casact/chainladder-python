@@ -7,6 +7,7 @@ matrix:
   - python: 3.5
     env:
     - PANDAS: 0.20.2
+    - MATPLOTLIB: 2.0.2
   - python: 3.5
     env:
     - PANDAS: 0.21
@@ -30,15 +31,15 @@ before_install:
   - conda update -q conda
   - conda info -a
 
-  - PKGS="python=${TRAVIS_PYTHON_VERSION} rpy2 scipy matplotlib seaborn statsmodels"
+  - PKGS="python=${TRAVIS_PYTHON_VERSION} rpy2 scipy seaborn statsmodels pytest pytest-cov"
   - PKGS="${PKGS} gcc_linux-64 gxx_linux-64 gfortran_linux-64"
   - PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi
-  - PKGS="${PKGS} numpy"; if [ ${NUMPY} ]; then PKGS="${PKGS}=${NUMPY}"; fi
-  - conda create -q -n chainladder ${PKGS} pytest
+  - PKGS="${PKGS} matplotlib"; if [ ${MATPLOTLIB} ]; then PKGS="${PKGS}=${MATPLOTLIB}"; fi
+  - conda create -q -n chainladder ${PKGS}
   - source activate chainladder
 
+  - conda install -q -c conda-forge nlopt codecov
   # Install the R ChainLadder package for comparisons
-  - conda install -q -c conda-forge nlopt 
   - R -e "install.packages('ChainLadder', repos = 'http://cran.us.r-project.org')"
 
 install:
@@ -46,4 +47,7 @@ install:
 
 script: 
   - python main.py
-  - py.test test_chainladder.py -v
+  - py.test --cov=chainladder chainladder -v
+
+after_success:
+  - codecov

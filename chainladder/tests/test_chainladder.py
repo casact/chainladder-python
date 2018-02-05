@@ -20,7 +20,7 @@ d = r('data(package=\"ChainLadder\")')
 ATOL = 1e-5
 
 DATA_DIR = os.listdir(os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'chainladder', 'data'))
+        os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
 l1 = [cl.load_dataset(item) for item in DATA_DIR]
 l2 = [item for item in DATA_DIR]
 l3 = list(zip(l1, l2))
