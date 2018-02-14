@@ -29,25 +29,28 @@ before_install:
   - conda update -q conda
   - conda info -a
 
-  - PKGS="python=${TRAVIS_PYTHON_VERSION} rpy2 scipy seaborn statsmodels pytest pytest-cov"
+  - PKGS="python=${TRAVIS_PYTHON_VERSION} scipy seaborn statsmodels pytest pytest-cov"
   - PKGS="${PKGS} gcc_linux-64 gxx_linux-64 gfortran_linux-64"
-  - PKGS="${PKGS} r-nloptr r-matrix r-reshape2 r-lattice r-latticeextra r-gridbase"
-  - PKGS="${PKGS} r-gridextra r-ggplot2 r-mass r-rcppeigen r-lme4 r-sparsem"
-  - PKGS="${PKGS} r-matrixmodels r-mgcv r-nnet r-pbkrtest r-quantreg r-zoo"
-  - PKGS="${PKGS} r-car r-lmtest r-sandwich r-coda r-minqa"
   - PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi
   - PKGS="${PKGS} matplotlib"; if [ ${MATPLOTLIB} ]; then PKGS="${PKGS}=${MATPLOTLIB}"; fi
+
+  - RPKGS="rpy2 libiconv r-nloptr r-matrix r-reshape2 r-lattice r-latticeextra r-gridbase"
+  - RPKGS="${RPKGS} r-gridextra r-ggplot2 r-mass r-rcppeigen r-lme4 r-sparsem"
+  - RPKGS="${RPKGS} r-matrixmodels r-mgcv r-nnet r-pbkrtest r-quantreg r-zoo"
+  - RPKGS="${RPKGS} r-car r-lmtest r-sandwich r-coda r-minqa"
+
   - conda create -q -n chainladder ${PKGS}
   - source activate chainladder
 
   - conda install -q -c conda-forge codecov
+  - conda install -q -c r ${RPKGS}
   # Install the R ChainLadder package for comparisons
   - R -e "install.packages('ChainLadder', repos = 'http://cran.us.r-project.org')"
 
 install:
   - pip install -e .
 
-script: 
+script:
   - python main.py
   - py.test --cov=chainladder chainladder -v
 
