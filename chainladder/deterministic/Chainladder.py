@@ -86,6 +86,7 @@ class Chainladder():
             self.LDF_average = [LDF_average]*(self.triangle.ncol - 1)
         else:        
             self.LDF_average = np.array(LDF_average)[:self.triangle.ncol - 1]
+        self.lags = kwargs.get('lags',None)
         self.method = kwargs.get('method','DFM')
         self.apriori = kwargs.get('apriori',None)
         self.exposure = kwargs.get('exposure',None)
@@ -104,12 +105,15 @@ class Chainladder():
         return str(self.age_to_age())
              
     
-    def set_LDF(self, LDF_average = 'volume', colname_sep='-', inplace=False):
+    def set_LDF(self, LDF_average = 'volume', lags=None, colname_sep='-', inplace=False):
         if inplace == True:
             tri_array = np.array(self.triangle.data)
+            # set tri_array 0s to 1s and set weights to 0
             weights = np.array(self.weights.data)
             x = np.nan_to_num(tri_array[:,:-1]*(tri_array[:,1:]*0+1))
-            w = np.nan_to_num(weights[:,:-1]*(tri_array[:,1:]*0+1))
+            #w = np.nan_to_num(weights[:,:-1]*(tri_array[:,1:]*0+1))
+            w = np.nan_to_num(weights[:,:-1]*(np.minimum(np.nan_to_num(tri_array[:,1:]),1)*(tri_array[:,1:]*0+1)))
+            #(np.maximum(np.nan_to_num(tri_array[:,:-1]),1)*(tri_array[:,:-1]*0+1))
             y = np.nan_to_num(tri_array[:,1:])
             if type(LDF_average) is str:
                 LDF_average = [LDF_average]*(self.triangle.ncol - 1)
@@ -118,9 +122,9 @@ class Chainladder():
             #Volume Weighted average and Straight Average, and regression through origin
             val = np.repeat((np.array([[{'regression':0, 'volume':1,'simple':2}.get(item.lower(),2) for item in average]])),len(self.triangle.data.index),axis=0)
             val = np.nan_to_num(val*(tri_array[:,1:]*0+1))
-            w = np.nan_to_num(w/tri_array[:,:-1]**(val))
+            #w = np.nan_to_num(w/tri_array[:,:-1]**(val))
+            w = np.nan_to_num(w/(np.maximum(np.nan_to_num(tri_array[:,:-1]),1)*(tri_array[:,:-1]*0+1))**(val))
             LDF = np.sum(w*x*y,axis=0)/np.sum(w*x*x,axis=0)
-            
             #Harmonic Mean
             harmonic = np.sum(np.nan_to_num(tri_array[:,1:]*0+1),axis=0)/np.sum(np.reciprocal(w*x*y, where=w*x*y!=0),axis=0)
             #Geometric Mean
@@ -163,8 +167,7 @@ class Chainladder():
                 for num, item in enumerate(x.columns.values[:-1])])
         incr[str(x.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
         incr.iloc[0,-1]=1
-        #print(len(incr.columns))
-        #print(len(self.LDF_average))
+
         incr.loc['Average'] = list(self.LDF_average)+['tail']
         incr.loc['LDF'] = self.LDF
         incr.loc['CDF'] = self.CDF
@@ -339,5 +342,33 @@ class Chainladder():
         return self
         
 
+
+    def select_average(self, average=None, inplace=False):
+        """ Used to select number of years in LDF average 
+        """
+        if inplace == True:
+            temp = np.array(self.weights.data)
+            if average is None:
+                average = np.repeat(temp.shape[0],temp.shape[1])
+            if type(average) == int:
+                average = np.repeat(average,temp.shape[1])
+            total_index = temp.shape[0]
+            for i in range(temp.shape[1] - 1):
+                try:
+                    first_index = max(np.where(np.isnan(temp[:,i])==True)[0][0] - average[i] - 1,0)
+                except:
+                    first_index = max(total_index- average[i] - 1,0)
+                temp[:,i] = np.append(np.repeat(0,first_index),np.repeat(1,total_index-first_index))*(temp[:,i]*0+1)
+            self.weights = Triangle(DataFrame(temp, index=self.weights.data.index, columns = self.weights.data.columns))
+            self.set_LDF(self.LDF_average, inplace=True)
+            if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
+            if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
+            if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
+            if self.method == 'cape_cod': self.cape_cod(self.exposure, self.trend, self.decay, self.triangle_pred, inplace=True)
+            return self
+        if inplace == False:
+            new_instance = copy.deepcopy(self)
+            return new_instance.select_average(average=average, inplace=True)
         
+   
         
