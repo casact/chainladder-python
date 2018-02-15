@@ -1,21 +1,58 @@
 language: python
-python:
-  #- "2.6"
-  #- "2.7"
-  #- "3.2"
-  #- "3.3"
-  - "3.4"
-  # PyPy versions
-  #- "pypy"  # PyPy2 2.5.0
-  #- "pypy3" # Pypy3 2.4.0
-  #- "pypy-5.3.1"
-# command to install dependencies
+
+
+matrix:
+  fast_finish: true
+  include:
+  - python: 3.5
+    env:
+    - PANDAS: 0.20.2
+    - MATPLOTLIB: 2.0.2
+  - python: 3.5
+    env:
+    - PANDAS: 0.21
+  - python: 3.6
+    env:
+    - PANDAS: 0.22
+  - python: 3.6
+
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install gfortran
+
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+
+  - PKGS="python=${TRAVIS_PYTHON_VERSION} scipy seaborn statsmodels pytest pytest-cov"
+  - PKGS="${PKGS} gcc_linux-64 gxx_linux-64 gfortran_linux-64"
+  - PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi
+  - PKGS="${PKGS} matplotlib"; if [ ${MATPLOTLIB} ]; then PKGS="${PKGS}=${MATPLOTLIB}"; fi
+
+  - RPKGS="rpy2 libiconv r-nloptr r-matrix r-reshape2 r-lattice r-latticeextra r-gridbase"
+  - RPKGS="${RPKGS} r-gridextra r-ggplot2 r-mass r-rcppeigen r-lme4 r-sparsem"
+  - RPKGS="${RPKGS} r-matrixmodels r-mgcv r-nnet r-pbkrtest r-quantreg r-zoo"
+  - RPKGS="${RPKGS} r-car r-lmtest r-sandwich r-coda r-minqa"
+
+  - conda create -q -n chainladder ${PKGS}
+  - source activate chainladder
+
+  - conda install -q -c conda-forge codecov
+  - conda install -q -c r ${RPKGS}
+  # Install the R ChainLadder package for comparisons
+  - R -e "install.packages('ChainLadder', repos = 'http://cran.us.r-project.org')"
+
 install:
-  - pip install --upgrade pip setuptools wheel
-  - pip install --only-binary=numpy,scipy,pandas,matplotlib
-  - pip install seaborn
-  - pip install statsmodels
-  - pip install bokeh
-# command to run tests
-script: 
+  - pip install -e .
+
+script:
   - python main.py
+  - py.test --cov=chainladder chainladder -v
+
+after_success:
+  - codecov
