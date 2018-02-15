@@ -1,6 +1,7 @@
-﻿"""
+﻿# -*- coding: utf-8 -*-
+"""
 The Triangle Module includes the Triangle class.  This base structure of the
-class is a pandas.DataFrame.  
+class is a pandas.DataFrame.
 """
 
 from pandas import DataFrame, concat, pivot_table, Series, DatetimeIndex, to_datetime, to_timedelta, melt, read_json, to_numeric
@@ -27,10 +28,10 @@ class Triangle():
     homogeneous lines of business, division levels or perils.
     Most reserving methods of the ChainLadderpackage expect triangles as input data
     sets with development periods along the columns and the origin period in rows. The
-    package comes with several example triangles. 
+    package comes with several example triangles.
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
 
-    Parameters:   
+    Parameters:
         data : pandas.DataFrame
             A DataFrame representing the triangle
         origin : str or list
@@ -59,7 +60,7 @@ class Triangle():
     """
 
     def __init__(self, data=None, origin=None, development=None, values=None, dataform=None):
-        # Currently only support pandas dataframes as data            
+        # Currently only support pandas dataframes as data
         if type(data) is not DataFrame:
             raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
         if dataform == None:
@@ -74,7 +75,7 @@ class Triangle():
                 temp = self.data.pivot_table(values=values, index=origin, aggfunc='sum').sort_index(ascending=False).reset_index().reset_index().set_index(origin).sort_index()
                 temp['index']=temp['index']+1
                 self.data = self.data.merge(temp['index'].reset_index(), how='inner', on=origin)
-                
+
         self.data.columns = [str(item) for item in self.data.columns]
         self.dataform = dataform
         if dataform == 'triangle':
@@ -84,9 +85,9 @@ class Triangle():
             self.data.reset_index(inplace=True)
             self.values='values'
             self.dev_lag = 'dev_lag'
-            self.origin_dict = self.__set_period('origin') 
+            self.origin_dict = self.__set_period('origin')
             self.ncol = len(data.columns)
-            self.__minimize_data()         
+            self.__minimize_data()
         else:
             self.origin = origin
             self.origin_dict = self.__set_period('origin')
@@ -100,7 +101,7 @@ class Triangle():
             self.data.set_index([self.origin_dict[keys] for keys in self.origin_dict],inplace=True)
             self.data.sort_index(inplace=True)
         self.__get_lag_granularity()
-           
+
     def __set_period(self, per_type):
         """ This method will take an variable length array of columns and convert them to
         separate year/quarter/month columns if this information is extractable.
@@ -130,10 +131,11 @@ class Triangle():
             if 'month' not in period_dict.keys() and 'quarter' in period_dict.keys():
                 colname = str(period_dict['year'])+'-'+str(period_dict['quarter'])
                 self.data[colname]=self.data[period_dict['year']].astype(str)+'Q'+self.data[period_dict['quarter']].astype(str)
+
             dates = DatetimeIndex(to_datetime(self.data[colname]))
             self.data.drop([colname], axis=1, inplace=True) # get rid of temporary concat column
             if per_type == 'origin':self.data = self.data.drop(self.origin, axis=1) # get rid of original columns
-            
+
         if len(period) == 1:
             dates = DatetimeIndex(to_datetime(self.data[period[0]]))
         period_dict['year'] = per_type + '_year'
@@ -145,7 +147,7 @@ class Triangle():
         if len(set(dates.month)) == 12:
             period_dict['month'] = per_type + '_month'
             self.data[per_type + '_month']=dates.month
-            
+        
         if per_type == 'dev':
             # sets the most granular dev_lag available.
             if 'month'in period_dict.keys():
@@ -154,37 +156,39 @@ class Triangle():
                 self.dev_grain = 'quarter'
             else:
                 self.dev_grain = 'year'
-                
             if len(set(dates.year)) == 1:
                 #Implies that a dev lag has been specified over dev period
                 if np.all((self.data[period[0]].unique()<3000) & (self.data[period[0]].unique()>1900)): # carve out unique case of YYYY.
                     self.data[per_type + '_year']=self.data[period[0]]
-                    self.data['dev_lag']=self.data['dev_year']-self.data['origin_year']+1
+                    self.data['dev_lag']=(self.data['dev_year']-self.data['origin_year']+1).astype(int)
                 else:
-                    self.data['dev_lag'] = self.data[period]
+                    self.data['dev_lag'] = self.data[period].astype(int)
             else:
                 # set development lag, this should handle both symmetric and asymmentric triangles
                 if len(set(dates.month)) == 12: # use month
-                    self.data['dev_lag']=(self.data['dev_year']-self.data['origin_year'])*12 + self.data['dev_month']-self.data['origin_month']+1
+                    if self.origin_dict.get('month') == None:
+                        self.data['dev_lag']=((self.data['dev_year']-self.data['origin_year'])*12 + self.data['dev_month']).astype(int)
+                    else:
+                        self.data['dev_lag']=((self.data['dev_year']-self.data['origin_year'])*12 + self.data['dev_month']-self.data['origin_month']+1).astype(int)
                 elif len(set(dates.quarter)) == 4:
-                    self.data['dev_lag']=(self.data['dev_year']-self.data['origin_year'])*4 + self.data['dev_quarter']-self.data['origin_quarter']+1
+                    self.data['dev_lag']=((self.data['dev_year']-self.data['origin_year'])*4 + self.data['dev_quarter']-self.data['origin_quarter']+1).astype(int)
                 else:
-                    self.data['dev_lag']=self.data['dev_year']-self.data['origin_year']
-                    
+                    self.data['dev_lag']=(self.data['dev_year']-self.data['origin_year']).astype(int)
+
         if per_type == 'origin' and len(set(dates.year)) == 1:
-            self.data['origin_year'] = self.data[period]              
+            self.data['origin_year'] = self.data[period]
             if period != ['origin_year']:
                 self.data = self.data.drop(self.origin, axis=1)
-        
-        return period_dict     
-    
+
+        return period_dict
+
     def __minimize_data(self):
         if self.dataform == 'triangle':
             self.data = self.data.set_index([self.origin_dict[key] for key in self.origin_dict])
         if self.dataform == 'tabular':
             cols = [self.origin_dict[key] for key in self.origin_dict] + ['dev_lag', 'values']
-            self.data = self.data[cols] 
-        
+            self.data = self.data[cols]
+
     def __get_lag_granularity(self):
         temp = self.data_as_triangle()
         yval = (len(temp.data.iloc[-1]) - temp.data.iloc[-1] .count()) - (len(temp.data.iloc[-2]) - temp.data.iloc[-2] .count())
@@ -196,10 +200,10 @@ class Triangle():
         if yval == 1:
             temp_dict={1:'year',2:'quarter',3:'month'}
             self.dev_grain =  temp_dict[xval]
-            
-    def __repr__(self):   
+
+    def __repr__(self):
         return str(self.data)
-    
+
     def __add__(self, obj):
         if isinstance(obj, Triangle):
             y = copy.deepcopy(self)
@@ -215,7 +219,7 @@ class Triangle():
             return y
         else:
             return NotImplemented
-    
+
     def __radd__(self, obj):
         if obj == 0:
             return self
@@ -237,7 +241,7 @@ class Triangle():
             return y
         else:
             return NotImplemented
-        
+
     def __mul__(self, obj):
         if isinstance(obj, Triangle):
             y = copy.deepcopy(self)
@@ -269,22 +273,22 @@ class Triangle():
             return y
         else:
             return NotImplemented
-                       
+
     def data_as_table(self, inplace=False):
         """Method to convert triangle form to tabular form.
 
         Arguments:
             inplace: bool
-                Set to True will update the instance data attribute inplace 
+                Set to True will update the instance data attribute inplace
 
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
         """
-        
+
         if inplace == True:
             if self.dataform == 'triangle':
                 idx = list(self.data.index.names)
-                self.data = melt(self.data.reset_index(),id_vars=idx, value_vars=self.data.columns, 
+                self.data = melt(self.data.reset_index(),id_vars=idx, value_vars=self.data.columns,
                                var_name='dev_lag', value_name='values').dropna().set_index(idx).sort_index()
             self.dataform = 'tabular'
             return self
@@ -296,11 +300,11 @@ class Triangle():
 
     def data_as_triangle(self, inplace=False):
         """Method to convert tabular form to triangle form.
-    
+
         Arguments:
             inplace: bool
-                Set to True will update the instance data attribute inplace 
-    
+                Set to True will update the instance data attribute inplace
+
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
         """
@@ -308,15 +312,10 @@ class Triangle():
             available_origin_periods = ['origin_year', 'origin_quarter','origin_month']
             my_origin_periods = [item for item in available_origin_periods if item in self.data.reset_index().columns]
             tri = pivot_table(self.data, values=self.values, index=
-                              my_origin_periods, columns=self.dev_lag, aggfunc="sum", fill_value=0).sort_index()
+                              my_origin_periods, columns=self.dev_lag, aggfunc="sum").sort_index()
             tri.columns = [item for item in tri.columns]
-            # temp fills in lower diagonal with NANs, only works for symmetric triangles
-            if tri.shape[0] == tri.shape[1]:
-                temp = (np.flip(np.tril(np.empty(tri.shape)*np.NAN, k=-1),axis=1)+1)
-                tri = tri * temp
-            else:
-                tri = pivot_table(self.data, values=self.values, index=
-                              my_origin_periods, columns=self.dev_lag, aggfunc="sum", fill_value=0).sort_index()
+            #fills in lower diagonal with NANs
+            tri = self.fill_inner_diagonal_nans(tri)
             if inplace == True:
                 self.data = tri
                 self.dataform = 'triangle'
@@ -334,13 +333,13 @@ class Triangle():
 
         Arguments:
             inplace: bool
-                Set to True will update the instance data attribute inplace 
+                Set to True will update the instance data attribute inplace
 
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
 
         """
-        
+
         if inplace == True:
             if self.dataform != 'triangle':
                 self.data_as_triangle(inplace=True)
@@ -352,21 +351,21 @@ class Triangle():
         if inplace == False:
             new_instance = copy.deepcopy(self)
             return new_instance.incr_to_cum(inplace=True)
-        
-    
+
+
     def cum_to_incr(self, inplace=False):
         """Method to convert an cumulative triangle into a incremental triangle.  Note,
         the triangle must be in triangle form.
 
         Arguments:
             inplace: bool
-                Set to True will update the instance data attribute inplace 
+                Set to True will update the instance data attribute inplace
 
         Returns:
             Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
 
         """
-        
+
         if inplace == True:
             if self.dataform != 'triangle':
                 self.data_as_triangle(inplace=True)
@@ -382,22 +381,22 @@ class Triangle():
         if inplace == False:
             new_instance = copy.deepcopy(self)
             return new_instance.cum_to_incr(inplace=True)
-    
+
     def get_latest_diagonal(self):
         #return DataFrame({'dev_lag':[self.data.columns[len(row.dropna())-1] for index,row in self.data.iterrows()],
-        #                  'values':[row.dropna().iloc[-1] for index, row in self.data.iterrows()]}, 
+        #                  'values':[row.dropna().iloc[-1] for index, row in self.data.iterrows()]},
         #        index=self.data.index)
         if self.dataform == 'tabular':
             x = self.data_as_triangle().data
         else:
             x = self.data
         return DataFrame({'dev_lag':[x.columns[np.where(np.logical_not(np.isnan(row)))][-1] for index,row in x.iterrows()],
-                          'values':[row.iloc[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]] for index, row in x.iterrows()]}, 
+                          'values':[row.iloc[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]] for index, row in x.iterrows()]},
                 index=x.index)
-    
-    def plot(self, ctype='m', plots=['triangle'], **kwargs): 
+
+    def plot(self, ctype='m', plots=['triangle'], **kwargs):
         """ Method, callable by end-user that renders the matplotlib plots.
-        
+
         Arguments:
             plots: list[str]
                 A list of strings representing the charts the end user would like
@@ -407,17 +406,17 @@ class Triangle():
                     ============== =================================================
                     triangle       Line chart of origin period x development period
                     ============== =================================================
-                    
+
         Returns:
             Renders the matplotlib plots.
-            
-        """   
+
+        """
         my_dict = []
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
         return Plot(ctype, my_dict, **kwargs).grid
-        
+
     def __get_plot_dict(self):
         xvals = [i+1 for i in range(len(self.data.columns))]
         plot_dict = {'triangle':{'Title':'Latest Triangle Data',
@@ -437,7 +436,7 @@ class Triangle():
                                                        'label':[[str(item) for item in self.data.index]],
                                                        'linestyle':['-'],
                                                        'linewidth':[5],
-                                                       }} 
+                                                       }}
                     }
         return plot_dict
 
@@ -446,7 +445,7 @@ class Triangle():
         """
         Function used for making aggregations across origin period.
         """
-        
+
         if inplace == True:
             if self.dataform=='tabular':
                 self.data_as_triangle(inplace=True)
@@ -465,7 +464,7 @@ class Triangle():
         if inplace == False:
             new_instance = copy.deepcopy(self)
             return new_instance.slide_right(right=right, inplace=True)
-            
+
 
     def grain(self, grain='', incremental=False, inplace=False):
         # data needs to be in triangle form to use this.
@@ -478,8 +477,8 @@ class Triangle():
                 self.data_as_table(inplace=True)
                 return self
             ograin = grain[:2]
-            if ograin == 'OQ':      
-                idx = [self.origin_dict['year'], self.origin_dict['quarter']]  
+            if ograin == 'OQ':
+                idx = [self.origin_dict['year'], self.origin_dict['quarter']]
                 if 'month' in self.origin_dict: del self.origin_dict['month']
             elif ograin == 'OY':
                 idx = [self.origin_dict['year']]
@@ -491,8 +490,10 @@ class Triangle():
                 idx = self.data.index
             if incremental == True:
                 self.incr_to_cum(inplace=True)
+            self.slide_right().data.to_clipboard()
             self.data = pivot_table(self.slide_right().data_as_table().data,index=idx,columns=self.dev_lag,values=self.values, aggfunc='sum')
             self.slide_right(False,True)
+            
             dgrain = grain[-2:]
             initial_lag = self.data.iloc[-1].count().item()
             dev_grain = self.dev_grain
@@ -514,7 +515,7 @@ class Triangle():
         if inplace == False:
             new_instance = copy.deepcopy(self)
             return new_instance.grain(grain=grain, incremental=incremental, inplace=True)
-        
+
     def lag_to_date(self):
         # need tabular view
         data = self.data_as_table().data.reset_index()
@@ -526,7 +527,7 @@ class Triangle():
             data['origin_period'] = to_datetime(data[self.origin_dict['year']].astype(str))
         data = data.set_index([self.origin_dict[key] for key in self.origin_dict])
         params = {'month':[1,'M'],'quarter':[3,'M'],'year':[1,'Y']}[self.dev_grain]
-        data['cal_period'] = (data['origin_period']+to_timedelta(((data['dev_lag'])*params[0]).astype(int),unit=params[1])).dt.date
+        data['cal_period'] = (data['origin_period']+to_timedelta(((data['dev_lag'].astype(int))*params[0]).astype(int),unit=params[1])).dt.date
         data = data[['dev_lag','cal_period']]
         return data
 
@@ -539,9 +540,22 @@ class Triangle():
             temp = 'OY'
         temp = temp + {'year':'DY','quarter':'DQ','month':'DM'}[self.dev_grain]
         return temp
-          
-        
-# Pandas-style indexing classes to support an array of triangles 
+
+    def fill_inner_diagonal_nans(self, data):
+        cols = data.columns
+        index = data.index
+        temp = np.array(data)
+        key = []
+        temp_array = np.nan_to_num(np.array(data))
+        for i in range(len(cols)):
+            x = np.where(np.isfinite(temp[:,i][::-1]))[0][0]
+            key.append(x)
+            if x > 0: 
+                temp_array[:,i][-x:] = np.nan      
+        return DataFrame(temp_array, index=index, columns=cols)
+
+
+# Pandas-style indexing classes to support an array of triangles
 #class TriangleSet2:
 #    def __init__(self, data=None, origin=None, development=None, values=None, groups=None):
 #        self.origin = origin
@@ -556,13 +570,13 @@ class Triangle():
  ##           self.tri_dict= dict([(item, dict([(val, Triangle(data = data[data[groups]==item], origin=origin, development=development, values=val)) for val in self.values])) for item in self.group_list])
  #       else:
  #           def conjunction(*conditions):
- #               return functools.reduce(np.logical_and, conditions) 
+ #               return functools.reduce(np.logical_and, conditions)
  #           self.group_list = data.groupby(groups).size().reset_index().drop(0, axis=1)
  #           self.tri_dict = dict([(idx, dict([(val, Triangle(data = dataset, origin=origin, development=development, values=val)) for val in self.values])) for idx, dataset in enumerate([data[conjunction(*[data[k]==v for k,v in dict_item.items()])] for dict_item in [dict(self.group_list.iloc[row]) for row in range(len(self.group_list))]])])
  #       self.iloc = iloc(self.tri_dict)
  #       self.loc = loc(self.tri_dict)
  #       self.shape = (len(self.tri_dict), len(self.tri_dict[list(self.tri_dict.keys())[0]]))
-        
+
  #   def __len__(self):
  #       return len(self.tri_dict)
 
@@ -584,10 +598,10 @@ class TriangleSet:
         #self.iloc = iloc(self.tri_dict)
         #self.loc = loc(self.tri_dict)
         self.shape = (len(self.tri_dict), len(self.tri_dict[list(self.tri_dict.keys())[0]]))
-        
+
     def __len__(self):
         return len(self.tri_dict)
-    
+
     def get_triangles(self, query_values, query_list, operator='+'):
         group_subset = np.concatenate([self.tri_dict[item] for item in query_list],axis=0)
         value_subset = np.sum([group_subset[:,idx] for idx in [self.columns.index(item) for item in [self.values[i] for i in query_values]]],axis=0)
@@ -595,11 +609,9 @@ class TriangleSet:
         df_subset = DataFrame(np.concatenate([group_subset, np.expand_dims(value_subset,axis=1)],axis=1), columns=self.columns+[val_col])
         df_subset['values'] = to_numeric(df_subset['values'])
         if len(query_values) == 2 and operator!="+":
-            print(self.values[query_values[1]])
             tri1 = Triangle(df_subset, origin=self.origin, development=self.development, values=self.values[query_values[0]])
             tri2 = Triangle(df_subset, origin=self.origin, development=self.development, values=self.values[query_values[1]])
-            print(tri1.data_as_triangle()/tri2.data_as_triangle())
-            if operator in ["-"]: 
+            if operator in ["-"]:
                 return tri1-tri2
             if operator in ["×","*"]:
                 return tri1*tri2
@@ -607,17 +619,18 @@ class TriangleSet:
                 return (tri1.data_as_triangle()/tri2.data_as_triangle()).data_as_table()
         else:
             return Triangle(df_subset, origin=self.origin, development=self.development, values='values')
-    
- 
-        
-    
+
+
+
+
+
 #class iloc:
 #    def __init__(self, tri_dict):
 #        self.tri_dict = tri_dict
-        
+
  #   def __getitem__(self, idx):
         # slicing
-        
+
  #       if type(idx[0]) is int:
  #           row = slice(idx[0], idx[0]+1,1)
  #       else:
@@ -634,8 +647,8 @@ class TriangleSet:
  #       if len(temp3) == 1:
  #           return temp3[0]
  #       else:
- #           return temp3    
-    
+ #           return temp3
+
   #  def parse_slice(self, sl):
   #      if sl.start is None:
   #          start = 0
@@ -650,16 +663,16 @@ class TriangleSet:
  #       else:
  #           step = sl.step
  #       return start, stop, step
-        
+
 
 #class loc:
 #    def __init__(self, tri_dict):
 #        self.tri_dict = tri_dict
-        
-#    def __getitem__(self,idx):    
+
+#    def __getitem__(self,idx):
 #        return self.tri_dict[idx[0]][idx[1]]
-    
-    
+
+
 #groups_to_iterate_over = list(group_key.keys())
 #return_list = []
 #for i in range(len(groups_to_iterate_over)):
@@ -668,7 +681,7 @@ class TriangleSet:
 #for i in range(len(groups_to_iterate_over)):
 #    bool_array = bool_array * np.array(group_list.iloc[:,i].isin(return_list[i]), dtype=bool)
 #final = list(group_list[bool_array].index)
-    
+
 
 #data = np.array(TOT1997)
 #columns = list(TOT1997.columns)
@@ -689,4 +702,3 @@ class TriangleSet:
 #df_subset = pd.DataFrame(np.concatenate([sub_set, np.expand_dims(new_val,axis=1)],axis=1), columns=columns+['values'])
 #df_subset['values'] = pd.to_numeric(df_subset['values'])
 #cl.Triangle(df_subset, origin=origin, development=development, values='values').data_as_triangle()
-
