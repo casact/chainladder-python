@@ -17,22 +17,17 @@ from chainladder.Triangle import Triangle
 
 class Chainladder():
     """ ChainLadder class specifies the chainladder model.
-
     The classical chain-ladder is a deterministic algorithm to forecast claims 
     based on historical data. It assumes that the proportional developments of 
     claims from one development period to the next are the same for all origin 
     years.
-
     Mack uses alpha between 0 and 2 to distinguish
     alpha = 0 straight averages
     alpha = 1 historical chain ladder age-to-age factors
     alpha = 2 ordinary regression with intercept 0
-
     However, in Zehnwirth & Barnett they use the notation of delta, whereby 
     delta = 2 - alpha the delta is than used in a linear modelling context.
-
     `Need to properly cite... <https://github.com/mages/ChainLadder>`_
-
     Parameters:    
         tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Classes.Triangle`
@@ -43,7 +38,6 @@ class Chainladder():
         tail : bool
             A value representing whether the user would like an exponential tail
             factor to be applied to the data.
-
     Attributes:
         tri : `Triangle <Triangle.html>`_
             A triangle object on which the Chainladder model will be built.
@@ -67,7 +61,6 @@ class Chainladder():
         full_triangle : Pandas.DataFrame
             A table representing the raw triangle data as well as future
             lags populated with the expectation from the chainladder fit.
-
     """
 
     def __init__(self, tri, weights=1, delta=1, tail=False):
@@ -124,12 +117,10 @@ class Chainladder():
         """ Method to display an age-to-age triangle with a display of simple 
         average chainladder development factors and volume weighted average 
         development factors.
-
         Parameters:    
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
-
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
         """
@@ -138,8 +129,8 @@ class Chainladder():
         for i in range(1, self.triangle.ncol - 1):
             incr = concat([incr, self.triangle.data.iloc[:, i + 1] /
                            self.triangle.data.iloc[:, i]], axis=1)
-        incr.columns = [item + colname_sep +
-                        self.triangle.data.columns.values[num + 1] for num,
+        incr.columns = [str(item) + colname_sep +
+                        str(self.triangle.data.columns.values[num + 1]) for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])]
         incr = incr.iloc[:-1]
         incr[str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
@@ -159,13 +150,12 @@ class Chainladder():
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
-
         Returns:
             Pandas.Series of the LDFs.
         
         """
-        LDF = Series([ldf.coefficient for ldf in self.models], index=[item + colname_sep +
-                        self.triangle.data.columns.values[num + 1] for num,
+        LDF = Series([ldf.coefficient for ldf in self.models], index=[str(item) + colname_sep +
+                        str(self.triangle.data.columns.values[num + 1]) for num,
                         item in enumerate(self.triangle.data.columns.values[:-1])])
         if len(LDF) >= self.triangle.ncol-1:
             return Series(LDF[:self.triangle.ncol-1])
@@ -183,12 +173,10 @@ class Chainladder():
         rejected if the slope parameter p-value >0.5.  This is currently representative
         of the R implementation of this package, but may be enhanced in the future to be
         p-value based.
-
         Parameters:    
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
-
         Returns:
             Pandas.Series of the tail factor.        
         """
@@ -214,7 +202,7 @@ class Chainladder():
         else:
             warn("LDF[-2] * LDF[-1] is not greater than 1.0001 and tail has been set to 1.")
             tail_factor = 1
-        return Series(tail_factor, index = [self.triangle.data.columns[-1] + colname_sep + 'Ult'])
+        return Series(tail_factor, index = [str(self.triangle.data.columns[-1]) + colname_sep + 'Ult'])
 
     def get_residuals(self):
         """Generates a table of chainladder residuals along with other statistics.
@@ -223,26 +211,25 @@ class Chainladder():
         Returns:
             Pandas.DataFrame of the residual table        
         """
-
+        
         Resid = DataFrame()
         for i in range(len(self.models)):
             resid = DataFrame()
             resid['x'] = self.models[i].x
-            resid['dev'] = int(self.models[i].x.name)
-            resid['cal_period'] = resid.index + resid['dev'] - 1
+            resid['dev_lag'] = int(self.models[i].x.name)
+            resid['dev_lag'] = resid['dev_lag']
             resid['residuals'] = self.models[i].residual
             resid['standard_residuals'] = self.models[i].std_resid
             resid['fitted_value'] = self.models[i].fittedvalues
             Resid = Resid.append(resid)
-        return Resid.drop(['x'], axis=1).dropna()
+        Resid = Resid.reset_index().merge(self.triangle.lag_to_date().reset_index(), how='inner', on=[self.triangle.origin_dict[key] for key in self.triangle.origin_dict]+['dev_lag'])
+        return Resid.set_index([self.triangle.origin_dict[key] for key in self.triangle.origin_dict]).drop(['x'], axis=1).dropna()
     
 class WRTO():
     """Weighted least squares regression through the origin
-
     Collecting the relevant variables from statsmodel OLS/WLS. Note in
     release 0.1.0 of chainladder, there is a deprecation warning with statsmodel
     that will persist until statsmodel is upgraded.
-
     Parameters:    
         X : numpy.array or pandas.Series
             An array representing the independent observations of the 
@@ -252,7 +239,6 @@ class WRTO():
         w : numpy.array or pandas.Series
             An array representing the weights of the observations of the 
             regression.
-
     Attributes:
         X : numpy.array or pandas.Series
             An array representing the independent observations of the 
@@ -278,7 +264,6 @@ class WRTO():
             Represents internally studentized residuals which generally vary between
             [-2,2].  Used in residual scatterplots and help determine the appropriateness
             of the model on the data.
-
     """
 
     def __init__(self, x, y, w):
@@ -301,7 +286,3 @@ class WRTO():
             self.standard_error = OLS.params[0]/OLS.tvalues[0]
             self.sigma = np.sqrt(self.mean_square_error)
             self.std_resid = OLSInfluence(OLS).resid_studentized_internal
-        
-        
-        
-        

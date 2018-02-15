@@ -29,7 +29,7 @@ before_install:
   - conda update -q conda
   - conda info -a
 
-  - PKGS="python=${TRAVIS_PYTHON_VERSION} scipy seaborn statsmodels pytest pytest-cov"
+  - PKGS="python=${TRAVIS_PYTHON_VERSION} scipy seaborn bokeh statsmodels pytest pytest-cov"
   - PKGS="${PKGS} gcc_linux-64 gxx_linux-64 gfortran_linux-64"
   - PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi
   - PKGS="${PKGS} matplotlib"; if [ ${MATPLOTLIB} ]; then PKGS="${PKGS}=${MATPLOTLIB}"; fi
