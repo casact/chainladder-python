@@ -4,10 +4,8 @@ The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.
 """
 
-from pandas import DataFrame, concat, pivot_table, Series, DatetimeIndex, to_datetime, to_timedelta, melt, read_json, to_numeric
-from pandas.tseries.offsets import MonthEnd, QuarterEnd, YearEnd
+from pandas import DataFrame, pivot_table, DatetimeIndex, to_datetime, to_timedelta, melt,  to_numeric
 import numpy as np
-import functools
 from chainladder.UtilityFunctions import Plot
 from bokeh.palettes import Spectral10
 import re
@@ -542,6 +540,10 @@ class Triangle():
         return temp
 
     def fill_inner_diagonal_nans(self, data):
+        '''
+        Function ussed to clear out NANs in inner diagonal of triangles.  Does so
+        for both symmetric and asymmetric triangles.
+        '''
         cols = data.columns
         index = data.index
         temp = np.array(data)
@@ -673,32 +675,3 @@ class TriangleSet:
 #        return self.tri_dict[idx[0]][idx[1]]
 
 
-#groups_to_iterate_over = list(group_key.keys())
-#return_list = []
-#for i in range(len(groups_to_iterate_over)):
-#    return_list.append([group_key[groups_to_iterate_over[i]][idx] for idx in test[i]])
-#bool_array = np.ones(len(group_list), dtype=bool)
-#for i in range(len(groups_to_iterate_over)):
-#    bool_array = bool_array * np.array(group_list.iloc[:,i].isin(return_list[i]), dtype=bool)
-#final = list(group_list[bool_array].index)
-
-
-#data = np.array(TOT1997)
-#columns = list(TOT1997.columns)
-#group_list = TS.group_list
-#values = TS.values
-#origin=TS.origin
-#development=TS.development
-
-
-# Get index of each of the group list columns in master array
-#iloc = 0
-#groups_to_loop_over = [columns.index(col) for col in list(group_list.columns)]
-
-#query_list = [1,5,3,6,7,84,8,12,64]
-#query_values=[3,4,5]
-#group_subset = np.concatenate([tri_dict[item] for item in query_list],axis=0)
-#value_subset = np.sum([sub_set[:,idx] for idx in [columns.index(item) for item in [values[i] for i in query_values]]],axis=0)
-#df_subset = pd.DataFrame(np.concatenate([sub_set, np.expand_dims(new_val,axis=1)],axis=1), columns=columns+['values'])
-#df_subset['values'] = pd.to_numeric(df_subset['values'])
-#cl.Triangle(df_subset, origin=origin, development=development, values='values').data_as_triangle()

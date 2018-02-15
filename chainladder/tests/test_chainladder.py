@@ -28,9 +28,11 @@ l3 = list(zip(l1, l2))
 
 @pytest.mark.parametrize('df', l1)
 def test_data_as_table(df):
-    a = cl.Triangle(df)
-    if a.dataform == 'tabular':
+    # Deprecated loading tabular data without specifying origin or development
+    # and bypassing for GenInsLong dataset
+    if r_data in ['GenInsLong']:
         return
+    a = cl.Triangle(df)
     else:
         data1 = a.data
         a.data_as_table(inplace=True)
@@ -42,6 +44,10 @@ def test_data_as_table(df):
 
 @pytest.mark.parametrize('df', l1)
 def test_cum_to_incr_convert(df):
+        # Deprecated loading tabular data without specifying origin or development
+        # and bypassing for GenInsLong dataset
+        if r_data in ['GenInsLong']:
+            return
         a = cl.Triangle(df)
         data1 = a.data
         a.cum_to_incr(inplace=True)
@@ -53,6 +59,11 @@ def test_cum_to_incr_convert(df):
 
 @pytest.mark.parametrize('df', l1)
 def test_incr_to_cum_convert(df):
+        # Deprecated loading tabular data without specifying origin or development
+        # and bypassing for GenInsLong dataset
+        if r_data in ['GenInsLong']:
+            return
+        a = cl.Triangle(df)
         a = cl.Triangle(df)
         data1 = a.data
         a.incr_to_cum(inplace=True)
