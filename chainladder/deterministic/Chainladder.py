@@ -105,8 +105,10 @@ class Chainladder():
         return str(self.age_to_age())
              
     
-    def set_LDF(self, LDF_average = 'volume', lags=None, colname_sep='-', inplace=False):
+    def set_LDF(self, LDF_average = None, colname_sep='-', inplace=False):
         if inplace == True:
+            if LDF_average is None:
+                LDF_average = self.LDF_average
             tri_array = np.array(self.triangle.data)
             # set tri_array 0s to 1s and set weights to 0
             weights = np.array(self.weights.data)
@@ -126,11 +128,19 @@ class Chainladder():
             w = np.nan_to_num(w/(np.maximum(np.nan_to_num(tri_array[:,:-1]),1)*(tri_array[:,:-1]*0+1))**(val))
             LDF = np.sum(w*x*y,axis=0)/np.sum(w*x*x,axis=0)
             #Harmonic Mean
-            harmonic = np.sum(np.nan_to_num(tri_array[:,1:]*0+1),axis=0)/np.sum(np.reciprocal(w*x*y, where=w*x*y!=0),axis=0)
+            w = np.array(self.weights.data.iloc[:,:-1])
+            w = np.array(self.weights.data.iloc[:,:-1])
+            w = np.logical_not(np.logical_not(w))
+            x[x == 0] = np.inf
+            ata = y/x*w
+            harmonic = (np.sum(w,axis=0)-1)/np.sum(np.reciprocal(ata, where=ata!=0),axis=0)
             #Geometric Mean
-            geometric = np.prod(w*x*y+np.logical_not(np.nan_to_num(tri_array[:,1:]*0+1)),axis=0)**(1/np.sum(np.nan_to_num(tri_array[:,1:]*0+1),axis=0))
-            
-            LDF = LDF*(average=='volume')+LDF*(average=='simple')+LDF*(average=='regression')+geometric*(average=='geometric')+harmonic*(average=='harmonic')            
+            geometric = ata
+            geometric[geometric == 0] = 1 
+            DataFrame(y/x*w).iloc[:,0].to_clipboard()
+            geometric = np.prod(geometric,axis=0)**(1/(np.sum(w,axis=0)-1))
+            # Array of product of Series is due to bypass an invalid numpy warning - weird code...but it works
+            LDF = LDF*(average=='volume')+LDF*(average=='simple')+LDF*(average=='regression')+np.array(Series(average=='geometric')*Series(geometric))+np.array(Series(harmonic)*Series(average=='harmonic'))            
             LDF = np.append(LDF,[self.tail_factor]) # Need to modify for tail
             columns = [str(item) + colname_sep + str(self.triangle.data.columns.values[num + 1]) 
                     for num, item in enumerate(self.triangle.data.columns.values[:-1])] + [str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult']
@@ -141,6 +151,35 @@ class Chainladder():
         if inplace == False:
             new_instance = copy.deepcopy(self)
             return new_instance.set_LDF(LDF_average=LDF_average, colname_sep = colname_sep, inplace=True)
+        
+    def select_average(self, LDF_average = None, num_periods=None, inplace=False):
+        """ Used to select number of years in LDF average 
+        """
+        if inplace == True:
+            temp = np.array(self.weights.data)
+            total_index = temp.shape[0]
+            if num_periods is None:
+                num_periods = np.repeat(total_index,temp.shape[1])
+            if type(num_periods) == int:
+                num_periods = np.repeat(num_periods,temp.shape[1])
+            for i in range(temp.shape[1] - 1):
+                try:
+                    first_index = max(np.where(np.isnan(temp[:,i])==True)[0][0] - num_periods[i] - 1 ,0)
+                except:
+                    first_index = max(total_index- num_periods[i] - 1 ,0)
+                temp[:,i] = np.append(np.repeat(0,first_index),np.repeat(1,total_index-first_index))*(temp[:,i]*0+1)
+            self.weights = Triangle(DataFrame(temp, index=self.weights.data.index, columns = self.weights.data.columns))
+            self.set_LDF(LDF_average, inplace=True)
+            if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
+            if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
+            if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
+            if self.method == 'cape_cod': self.cape_cod(self.exposure, self.trend, self.decay, self.triangle_pred, inplace=True)
+            return self
+        if inplace == False:
+            new_instance = copy.deepcopy(self)
+            return new_instance.select_average(LDF_average=LDF_average, num_periods=num_periods, inplace=True)
+        
+   
         
     def age_to_age(self, colname_sep='-'):
         """ Method to display an age-to-age triangle with a display of simple 
@@ -159,9 +198,11 @@ class Chainladder():
             x = self.triangle.data_as_triangle().data
         else:
             x = self.triangle.data
+            numer = np.array(x.iloc[:,1:])
+            denom = np.array(x.iloc[:,:-1])
+            denom[denom == 0] = np.inf
         incr = DataFrame(
-                np.array(x.iloc[:,1:])/
-                np.array(x.iloc[:,:-1]),
+                numer/denom,
                 index=x.index, columns = 
                 [str(item) + colname_sep + str(x.columns.values[num + 1]) 
                 for num, item in enumerate(x.columns.values[:-1])])
@@ -172,20 +213,7 @@ class Chainladder():
         incr.loc['LDF'] = self.LDF
         incr.loc['CDF'] = self.CDF
         return incr.round(4)
-    
-    
-    def grid_search(self, param_grid):
-        for my_dict in param_grid:
-            my_list = [param_grid[my_dict][key] for key in param_grid[my_dict]]
-            key_list = list(param_grid[my_dict].keys())
-            value_list = []
-            for element in itertools.product(*my_list):
-                value_list.append(element)
-            for item in value_list:
-               grid_dict = dict(zip(key_list, item))
-               #print('Method: ' + my_dict + '\n' + 'Paremeters:\n'+str(grid_dict))
-               print(Chainladder(self.triangle, method=my_dict, **grid_dict).ultimates)
-           
+               
     def DFM(self, triangle = None, inplace = False):
         """ Method to 'square' the triangle based on the WRTO 'models' list.
         
@@ -343,32 +371,4 @@ class Chainladder():
         
 
 
-    def select_average(self, average=None, inplace=False):
-        """ Used to select number of years in LDF average 
-        """
-        if inplace == True:
-            temp = np.array(self.weights.data)
-            if average is None:
-                average = np.repeat(temp.shape[0],temp.shape[1])
-            if type(average) == int:
-                average = np.repeat(average,temp.shape[1])
-            total_index = temp.shape[0]
-            for i in range(temp.shape[1] - 1):
-                try:
-                    first_index = max(np.where(np.isnan(temp[:,i])==True)[0][0] - average[i] - 1,0)
-                except:
-                    first_index = max(total_index- average[i] - 1,0)
-                temp[:,i] = np.append(np.repeat(0,first_index),np.repeat(1,total_index-first_index))*(temp[:,i]*0+1)
-            self.weights = Triangle(DataFrame(temp, index=self.weights.data.index, columns = self.weights.data.columns))
-            self.set_LDF(self.LDF_average, inplace=True)
-            if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
-            if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
-            if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
-            if self.method == 'cape_cod': self.cape_cod(self.exposure, self.trend, self.decay, self.triangle_pred, inplace=True)
-            return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.select_average(average=average, inplace=True)
-        
-   
-        
+            
