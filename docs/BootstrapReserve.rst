@@ -3,7 +3,6 @@ BootstrapReserve
 
 This is the Bootstrap Chainladder class documentation.
 
-.. automodule:: chainladder.BootstrapReserve
+.. automodule:: chainladder.stochastic.BootstrapReserve
 .. autoclass:: BootChainladder
    :members:
-

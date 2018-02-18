@@ -6,7 +6,7 @@ is `[Shapland16] <citations.html>`_.
 
 from chainladder.UtilityFunctions import Plot, boxwhisker
 from warnings import warn
-from chainladder.Chainladder import Chainladder
+from chainladder.stochastic.Chainladder import Chainladder
 import statsmodels.api as sm
 import numpy as np
 import pandas as pd

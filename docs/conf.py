@@ -19,8 +19,13 @@
 #
 import os
 import sys
-import chainladder
-#sys.path.append(os.path.abspath('..'))
+
+import chainladder as cl
+import chainladder.deterministic as cld
+import chainladder.stochastic as clst
+
+sys.path.append(os.path.abspath('../chainladder/deterministic/'))
+sys.path.append(os.path.abspath('../chainladder/stochastic/'))
 #sys.path.insert(0,os.path.abspath('..\chainladder'))
 
 
@@ -41,9 +46,9 @@ class Mock(object):
             return type(name, (), {})
         else:
             return Mock()
- 
 
-MOCK_MODULES = ['numpy', 'scipy', 'pandas', 'matplotlib.pyplot']
+
+MOCK_MODULES = ['numpy', 'scipy', 'pandas', 'bokeh', 'matplotlib.pyplot']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
@@ -140,19 +145,19 @@ htmlhelp_basename = 'ChainLadderdoc'
 
 latex_elements = {
 #     The paper size ('letterpaper' or 'a4paper').
-    
+
 #     'papersize': 'letterpaper',
 
 #     The font size ('10pt', '11pt' or '12pt').
-    
+
 #     'pointsize': '10pt',
 
 #     Additional stuff for the LaTeX preamble.
-    
+
 #     'preamble': '',
 
 #     Latex figure (float) alignment
-    
+
 #     'figure_align': 'htbp',
 }
 
@@ -185,6 +190,3 @@ texinfo_documents = [
      author, 'ChainLadder', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
