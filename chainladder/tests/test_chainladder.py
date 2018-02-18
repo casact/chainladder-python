@@ -556,6 +556,7 @@ def test_MackChainladder_tail_parameter_risk_a0(python_data, r_data):
         assert_allclose(python, r_lang, atol=ATOL)
 
 def test_triangle_subtract():
+    a = cl.Triangle(cl.load_dataset('RAA'))
     assert_equal(np.sum(np.nan_to_num(np.array((a - a).data))), 0)
 
 def test_triangle_tabular():
