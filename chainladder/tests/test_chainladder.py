@@ -25,7 +25,6 @@ l1 = [cl.load_dataset(item) for item in DATA_DIR]
 l2 = [item for item in DATA_DIR]
 l3 = list(zip(l1, l2))
 
-
 @pytest.mark.parametrize('df', l1)
 def test_data_as_table(df):
     if df.shape[0] > df.shape[1]:
