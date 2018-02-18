@@ -9,7 +9,7 @@ Thomas Mack `[Mack99] <citations.html>`_.
 import numpy as np
 from pandas import DataFrame, concat, Series
 from scipy import stats
-from chainladder.Chainladder import Chainladder
+from chainladder.stochastic.Chainladder import Chainladder
 from matplotlib.dates import date2num
 from statsmodels.nonparametric.smoothers_lowess import lowess
 import statsmodels.api as sm

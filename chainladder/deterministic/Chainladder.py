@@ -106,6 +106,20 @@ class Chainladder():
              
     
     def set_LDF(self, LDF_average = None, colname_sep='-', inplace=False):
+        """Method to convert triangle form to tabular form.
+
+        Arguments:
+            LDF_average: str or list
+                Allows for the selection of 'volume', 'simple' 'regression', 'geometric', and 'harmonic averages.
+                Note that 'regression' is an OLS regression through the origin.  Specified as string will apply the
+                same average to all development periods.  Specified as a list, each LDF can take on a different average.
+                As a list, the length must be equal to the number of columns in the triangle - 1.
+            
+                
+
+        Returns:
+            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+        """
         if inplace == True:
             if LDF_average is None:
                 LDF_average = self.LDF_average
@@ -130,15 +144,20 @@ class Chainladder():
             #Harmonic Mean
             w = np.array(self.weights.data.iloc[:,:-1])
             w = np.array(self.weights.data.iloc[:,:-1])
-            w = np.logical_not(np.logical_not(w))
+            w_geom = np.logical_not(np.logical_not(w))
+            w_harm = np.nan_to_num(w)
             x[x == 0] = np.inf
-            ata = y/x*w
-            harmonic = (np.sum(w,axis=0)-1)/np.sum(np.reciprocal(ata, where=ata!=0),axis=0)
+            ata = y/x*w_harm
+            # Something is wrong with reciprocal function.  It seems there is some mutation of the ata object going on.
+            harmonic = (np.sum(w_harm,axis=0)-1)/np.sum(np.reciprocal(ata, where=ata!=0),axis=0)
+            
             #Geometric Mean
+            w_geom = np.logical_not(np.logical_not(w))
             geometric = ata
-            geometric[geometric == 0] = 1 
-            DataFrame(y/x*w).iloc[:,0].to_clipboard()
-            geometric = np.prod(geometric,axis=0)**(1/(np.sum(w,axis=0)-1))
+            geometric[geometric == 0] = 1
+            
+
+            geometric = np.prod(geometric,axis=0)**(1/(np.sum(w_geom,axis=0)-1))
             # Array of product of Series is due to bypass an invalid numpy warning - weird code...but it works
             LDF = LDF*(average=='volume')+LDF*(average=='simple')+LDF*(average=='regression')+np.array(Series(average=='geometric')*Series(geometric))+np.array(Series(harmonic)*Series(average=='harmonic'))            
             LDF = np.append(LDF,[self.tail_factor]) # Need to modify for tail
@@ -153,7 +172,23 @@ class Chainladder():
             return new_instance.set_LDF(LDF_average=LDF_average, colname_sep = colname_sep, inplace=True)
         
     def select_average(self, LDF_average = None, num_periods=None, inplace=False):
-        """ Used to select number of years in LDF average 
+        """ Method to select number of years and the average used in LDF pick of the chainladder model.
+        
+         Arguments:
+            LDF_average: str or list
+                Allows for the selection of 'volume', 'simple' 'regression', 'geometric', and 'harmonic averages.
+                Note that 'regression' is an OLS regression through the origin.  Specified as string will apply the
+                same average to all development periods.  Specified as a list, each LDF can take on a different average.
+                As a list, the length must be equal to the number of columns in the triangle - 1.
+            num_periods: int or list
+                Specify the number of origin periods to use in the LDF averaging.  Specified as a list, each LDF can 
+                take on a number of periods, and the list length must be equal to the number of columns in the triangle - 1.
+            inplace: bool
+                Set to true will mutate the Chainladder object, set to false will create a copy.
+            
+         Returns:
+            Chainladder object with LDF parameters selected.
+        
         """
         if inplace == True:
             temp = np.array(self.weights.data)
@@ -161,7 +196,7 @@ class Chainladder():
             if num_periods is None:
                 num_periods = np.repeat(total_index,temp.shape[1])
             if type(num_periods) == int:
-                num_periods = np.repeat(num_periods,temp.shape[1])
+                num_periods = np.repeat(min(num_periods,total_index),temp.shape[1])
             for i in range(temp.shape[1] - 1):
                 try:
                     first_index = max(np.where(np.isnan(temp[:,i])==True)[0][0] - num_periods[i] - 1 ,0)
@@ -215,11 +250,18 @@ class Chainladder():
         return incr.round(4)
                
     def DFM(self, triangle = None, inplace = False):
-        """ Method to 'square' the triangle based on the WRTO 'models' list.
-        
-        Returns:
-            pandas.DataFrame representing the raw triangle data as well as future
-            lags populated with the expectation from the chainladder fit.
+        """ Method to develop ultimates using the Development Factor Method (DFM)
+         
+        Parameters:
+            triangle: Triangle or None
+                Set as None will apply the DFM to the triangle embedded in the Chainladder object.
+                This can be overriden to apply the DFM method to a new triangle.
+                
+            inplace: bool
+                Set to true will mutate the Chainladder object, set to false will create a copy.
+            
+         Returns:
+            Chainladder object fit with the DFM method.
         """
         
         if inplace==True:
@@ -234,6 +276,23 @@ class Chainladder():
             
     
     def born_ferg(self, exposure, apriori, triangle = None, inplace=False):
+        """ Method to develop ultimates using the Bornheutter-Ferguson Method (BF)
+         
+        Parameters:
+            exposure: pandas.Series or numpy.array
+                Specifies the exposures to be used in the BF calculation.  The length of the
+                exposure object my be equal to the number of origin periods in the Triangle.
+            apriori: number
+                The apriori estimate to be used in the BF method.    
+            triangle: Triangle or None
+                Set as None will apply the DFM to the triangle embedded in the Chainladder object.
+                This can be overriden to apply the DFM method to a new triangle.           
+            inplace: bool
+                Set to true will mutate the Chainladder object, set to false will create a copy.
+            
+         Returns:
+            Chainladder object fit with the BF method.
+        """
         if inplace == True:
             if triangle is None:
                 triangle = self.triangle
@@ -371,4 +430,4 @@ class Chainladder():
         
 
 
-            
+    

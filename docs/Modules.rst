@@ -11,14 +11,6 @@ Welcome to the Modules landing page.  From here you will find documentation on a
    :maxdepth: 2
 
    Triangle.rst
-   ChainLadder.rst
-   MackChainLadder.rst
-   MunichChainLadder.rst
-   BootstrapReserve.rst
+   Modules_deterministic.rst
+   Modules_stochastic.rst
    Utilities.rst
-
-
-
-
-
-
