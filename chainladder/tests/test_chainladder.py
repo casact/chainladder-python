@@ -6,6 +6,7 @@ Created on Mon Jun 19 17:58:03 2017
 """
 import chainladder as cl
 import chainladder.deterministic as cld
+import copy
 import pytest
 import os.path
 from rpy2.robjects.packages import importr
@@ -615,3 +616,22 @@ def test_benktander_deterministic_3_custom():
     exp = answer*0+40000
     question = np.array(cld.Chainladder(RAA).select_average(LDF_average=avg_type, num_periods=nper).exclude_link_ratios(otype=[(7,1)]).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
     assert_equal(question, answer)
+
+def test_cape_cod_1():
+    # trend = 0 and decay = 1 -> apriori to be used in BF, where BF and cape cod will be equal
+    RAA = cl.load_dataset('RAA')
+    exp = copy.deepcopy(RAA.iloc[:,0])*0+40000
+    question = cld.Chainladder(RAA).cape_cod(trend=0,decay=1,exposure=exp).ultimates
+    apriori = sum(question)/sum(exp)
+    answer = cld.Chainladder(RAA).born_ferg(exposure=exp, apriori=apriori).ultimates.astype(int)
+    assert_equal(np.array(question.astype(int)) , np.array(answer))
+
+def test_triangle_mult_div():
+    RAA = cl.load_dataset('RAA')
+    assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA)/cl.Triangle(RAA)*cl.Triangle(RAA)).data)),
+    np.nan_to_num(np.array(cl.Triangle(RAA).data)))
+
+def test_triangle_add_subtract():
+    RAA = cl.load_dataset('RAA')
+    assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA)+cl.Triangle(RAA)-cl.Triangle(RAA)).data)),
+    np.nan_to_num(np.array(cl.Triangle(RAA).data)))

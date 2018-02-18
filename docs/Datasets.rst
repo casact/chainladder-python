@@ -3,7 +3,7 @@
 Datasets
 ========
 
-The chainladder package comes pre-installed with 20 datasets.  These can be accessed via :func:`load_dataset` in the :mod:`datasets` module.
+The chainladder package comes pre-installed with 20 datasets.  These can be accessed via :func:`load_dataset` in the :mod:`UtilityFunctions` module.
 
 =========================  =================================================================
 Dataset       		   Description 
@@ -29,11 +29,3 @@ liab$GeneralLiab           Run off triangle of accumulated claim data (GeneralLi
 qincurred                  Quarterly run off triangle of accumulated claims data
 qpaid                      Quarterly run off triangle of accumulated claims data
 =========================  =================================================================
-    
-
-
-
-
-
-
-
