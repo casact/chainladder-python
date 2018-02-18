@@ -5,6 +5,7 @@ Created on Mon Jun 19 17:58:03 2017
 @author: jboga
 """
 import chainladder as cl
+import chainladder.deterministic as cld
 import pytest
 import os.path
 from rpy2.robjects.packages import importr
@@ -564,3 +565,53 @@ def test_triangle_tabular():
 
 def test_triangle_OYDM_grain():
     assert_equal(cl.Triangle(cl.load_dataset('qincurred')).grain('OYDY').data.shape,(12,12))
+
+def test_DFM_deterministic():
+    answer = np.array([18834, 16857, 24083, 28703, 28926, 19501, 17749, 24019, 16044, 18402])
+    RAA = cl.load_dataset('RAA')
+    question = np.array(cld.Chainladder(RAA).ultimates.astype(int))
+    assert_equal(question, answer)
+
+def test_BF_deterministic():
+    answer = np.array([18834, 16886, 23978, 28207, 28079, 19594, 18438, 22194, 18670, 19820])
+    RAA = cl.load_dataset('RAA')
+    exp = answer*0+40000
+    question = np.array(cld.Chainladder(RAA).born_ferg(exposure = exp, apriori = 0.5).ultimates.astype(int))
+    assert_equal(question, answer)
+
+def test_benktander_deterministic_1():
+    RAA = cl.load_dataset('RAA')
+    exp = np.array([40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000])
+    answer = np.array(cld.Chainladder(RAA).born_ferg(exposure = exp, apriori = 0.5).ultimates.astype(int))
+    question = np.array(cld.Chainladder(RAA).benktander(exposure = exp, apriori = 0.5, n_iters=1).ultimates.astype(int))
+    assert_equal(question, answer)
+
+def test_benktander_deterministic_999():
+    RAA = cl.load_dataset('RAA')
+    answer = np.array(cld.Chainladder(RAA).ultimates.astype(int))
+    exp = answer*0+40000
+    question = np.array(cld.Chainladder(RAA).benktander(exposure = exp, apriori = 0.5, n_iters=999).ultimates.astype(int))
+    assert_equal(question, answer)
+
+def test_benktander_deterministic_3():
+    answer = np.array([18834, 16857, 24083, 28701, 28919, 19504, 17813, 23642, 17201, 19520])
+    RAA = cl.load_dataset('RAA')
+    exp = answer*0+40000
+    question = np.array(cld.Chainladder(RAA).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
+    assert_equal(question, answer)
+
+def test_benktander_deterministic_3_vol5():
+    answer = np.array([18834, 16857, 24083, 28701, 28919, 19504, 17866, 23287, 17937, 21562])
+    RAA = cl.load_dataset('RAA')
+    exp = answer*0+40000
+    question = np.array(cld.Chainladder(RAA).select_average(num_periods=5).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
+    assert_equal(question, answer)
+
+def test_benktander_deterministic_3_custom():
+    answer = np.array([18834, 16857, 24083, 28701, 28919, 19504, 17866, 23626, 19141, 21952])
+    avg_type = ['volume','simple','volume','volume', 'volume','volume','volume','volume','volume']
+    RAA = cl.load_dataset('RAA')
+    nper = [5, 5, 4, 5, 5, 5, 5, 5, 5]
+    exp = answer*0+40000
+    question = np.array(cld.Chainladder(RAA).select_average(LDF_average=avg_type, num_periods=nper).exclude_link_ratios(otype=[(7,1)]).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
+    assert_equal(question, answer)
