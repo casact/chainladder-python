@@ -554,3 +554,12 @@ def test_MackChainladder_tail_parameter_risk_a0(python_data, r_data):
         r_lang = np.array(r('mack<-MackChainLadder(' + r_data +
                             ' ,tail=TRUE,alpha=0)')[9])
         assert_allclose(python, r_lang, atol=ATOL)
+
+def test_triangle_subtract():
+    assert_equal(np.sum(np.nan_to_num(np.array((a - a).data))), 0)
+
+def test_triangle_tabular():
+    assert_equal(cl.Triangle(cl.load_dataset('GenInsLong'), origin='accyear', development='devyear', values='incurred claims').data_as_triangle().data.shape,(10,10))
+
+def test_triangle_OYDM_grain():
+    assert_equal(cl.Triangle(cl.load_dataset('qincurred')).grain('OYDY').data.shape,(12,12))
