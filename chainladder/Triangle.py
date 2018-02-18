@@ -490,7 +490,7 @@ class Triangle():
                 idx = self.data.index
             if incremental == True:
                 self.incr_to_cum(inplace=True)
-            self.slide_right().data.to_clipboard()
+            
             self.data = pivot_table(self.slide_right().data_as_table().data,index=idx,columns=self.dev_lag,values=self.values, aggfunc='sum')
             self.slide_right(False,True)
             
