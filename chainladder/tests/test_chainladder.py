@@ -635,3 +635,21 @@ def test_triangle_add_subtract():
     RAA = cl.load_dataset('RAA')
     assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA)+cl.Triangle(RAA)-cl.Triangle(RAA)).data)),
     np.nan_to_num(np.array(cl.Triangle(RAA).data)))
+
+def test_get_grain():
+    RAA = cl.load_dataset('RAA')
+    assert_equal(cl.Triangle(RAA).get_grain(),'OYDY')
+
+def test_triangle_set():
+    answer = np.array((cl.Triangle(cl.load_dataset('MCLincurred')) - cl.Triangle(cl.load_dataset('MCLpaid'))).data)
+    # make a consolidated dataset
+    paid = cl.Triangle(cl.load_dataset('MCLpaid')).data_as_table().data.reset_index()
+    incurred = cl.Triangle(cl.load_dataset('MCLincurred')).data_as_table().data.reset_index()
+    paid.columns = ['origin_year', 'dev_lag','paid']
+    incurred.columns = ['origin_year', 'dev_lag','incurred']
+    consolidated = incurred.merge(paid, how='inner', on=['origin_year', 'dev_lag'])
+    #create triangleset, and access indices
+    tri_set = cl.TriangleSet(consolidated, origin='origin_year',development='dev_lag', values=['paid','incurred'])
+    tri_set.get_triangles(query_values=[1,0],query_list=[0],operator='-').data_as_triangle()
+    question = np.array(tri_set.get_triangles(query_values=[1,0],query_list=[0],operator='-').data_as_triangle().data)
+    assert_equal(question, answer)

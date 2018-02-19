@@ -517,7 +517,8 @@ class Triangle():
             return new_instance.grain(grain=grain, incremental=incremental, inplace=True)
 
     def lag_to_date(self):
-        # need tabular view
+        ''' Converts development lag to a date.  Needs work as it doesn't work on leap year
+        '''
         data = self.data_as_table().data.reset_index()
         if 'month' in self.origin_dict.keys():
             data['origin_period'] = to_datetime(data[self.origin_dict['year']].astype(str) + '-' + (data[self.origin_dict['month']]).astype(str))
@@ -581,6 +582,11 @@ class Triangle():
  #       return len(self.tri_dict)
 
 class TriangleSet:
+    '''Class that allows for the management of mutliple triangles in one object.
+    This is useful when you have a single dataset has multiple values (paid, incurred, etc), or
+    multiple reserve groups (property, liability).  It will create a set of triangles
+    that can be accessed by their index numbers.
+    '''
     def __init__(self, data=None, origin=None, development=None, values=None, groups=None):
         self.origin = origin
         self.development = development
@@ -603,6 +609,8 @@ class TriangleSet:
         return len(self.tri_dict)
 
     def get_triangles(self, query_values, query_list, operator='+'):
+        '''function to access individual triangles by index number.
+        '''
         group_subset = np.concatenate([self.tri_dict[item] for item in query_list],axis=0)
         value_subset = np.sum([group_subset[:,idx] for idx in [self.columns.index(item) for item in [self.values[i] for i in query_values]]],axis=0)
         val_col = '__values' if 'values' in self.columns else 'values'
