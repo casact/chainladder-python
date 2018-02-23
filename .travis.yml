@@ -1,5 +1,16 @@
 language: python
 
+cache:
+    apt: true
+
+addons:
+    apt:
+        packages:
+            - gfortran
+
+apt:
+  packages:
+    - gfortran
 
 matrix:
   fast_finish: true
@@ -15,44 +26,23 @@ matrix:
     env:
     - PANDAS: 0.22
   - python: 3.6
+  - python: 3.6
+    env:
+    - FLAKE8: true
 
+before_install: source ci_scripts/install.sh
 
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install gfortran
-
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-
-  - PKGS="python=${TRAVIS_PYTHON_VERSION} scipy seaborn bokeh statsmodels pytest pytest-cov"
-  - PKGS="${PKGS} gcc_linux-64 gxx_linux-64 gfortran_linux-64"
-  - PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi
-  - PKGS="${PKGS} matplotlib"; if [ ${MATPLOTLIB} ]; then PKGS="${PKGS}=${MATPLOTLIB}"; fi
-
-  - RPKGS="rpy2 libiconv r-nloptr r-matrix r-reshape2 r-lattice r-latticeextra r-gridbase"
-  - RPKGS="${RPKGS} r-gridextra r-ggplot2 r-mass r-rcppeigen r-lme4 r-sparsem"
-  - RPKGS="${RPKGS} r-matrixmodels r-mgcv r-nnet r-pbkrtest r-quantreg r-zoo"
-  - RPKGS="${RPKGS} r-car r-lmtest r-sandwich r-coda r-minqa"
-
-  - conda create -q -n chainladder ${PKGS}
-  - source activate chainladder
-
-  - conda install -q -c conda-forge codecov
-  - conda install -q -c r ${RPKGS}
-  # Install the R ChainLadder package for comparisons
-  - R -e "install.packages('ChainLadder', repos = 'http://cran.us.r-project.org')"
-
-install:
-  - pip install -e .
+install: if [ -z ${FLAKE8} ]; then pip install -e .; fi
 
 script:
-  - python main.py
-  - py.test --cov=chainladder chainladder -v
+  - if [ -z ${FLAKE8} ]; then
+    python main.py;
+    py.test --cov=chainladder chainladder -v;
+    else
+    echo $PATH;
+    which flake8;
+    ci_scripts/flake8_diff.sh;
+    fi;
 
 after_success:
-  - codecov
+  - if [ -z ${FLAKE8} ]; then codecov; fi
