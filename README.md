@@ -6,9 +6,16 @@
 This is a rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLadder) in Python.
 
 This code is actively under development and contains the following functionality:
+
+### Stochastic Methods
   - Mack Chain Ladder
   - Munich Chain Ladder
   - Bootstrap Chain Ladder
+### Deterministic Methods
+  - Development Factor Method
+  - Bornhuetter-Ferguson Method
+  - Benktander Method
+  - Generalized Cape Cod Method
 
 ## Installation
 To install using pip:
@@ -26,5 +33,3 @@ Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) f
  -[Using Mack Chainladder](http://chainladder-python.readthedocs.io/en/master/MackExample.html)  
  -[Using Munich Chainladder](http://chainladder-python.readthedocs.io/en/master/MunichExample.html)  
  -[Using Bootstrap Chainladder](http://chainladder-python.readthedocs.io/en/master/BootstrapExample.html)
- 
-
