@@ -4,15 +4,18 @@ The Triangle Module includes the Triangle class.  This base structure of the
 class is a pandas.DataFrame.
 """
 
-from pandas import DataFrame, concat, pivot_table, Series, DatetimeIndex, to_datetime, to_timedelta, melt, read_json, to_numeric
+from pandas import (DataFrame, concat, pivot_table, Series, DatetimeIndex,
+                    to_datetime, to_timedelta, melt, read_json, to_numeric,
+                    PeriodIndex)
 from pandas.tseries.offsets import MonthEnd, QuarterEnd, YearEnd
 import numpy as np
 import functools
 from chainladder.UtilityFunctions import Plot
 from bokeh.palettes import Spectral10
 import re
-import copy
 import json
+import warnings
+
 
 class Triangle():
     """Triangle class is the basic data representation of an actuarial triangle.
@@ -59,33 +62,43 @@ class Triangle():
 
     """
 
-    def __init__(self, data=None, origin=None, development=None, values=None, dataform=None):
+    def __init__(self, data=None, origin=None, development=None, values=None,
+                 dataform=None, origin_period=None):
         # Currently only support pandas dataframes as data
         if type(data) is not DataFrame:
-            raise TypeError(str(type(data)) + ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
-        if dataform == None:
-            if data.shape[1]>= data.shape[0]:
+            raise TypeError(str(type(data)) + ' is not a valid datatype for '
+                            'the Triangle class.  Currently only DataFrames '
+                            'are supported.')
+        if dataform is None:
+            if data.shape[1] >= data.shape[0]:
                 dataform = 'triangle'
             else:
                 dataform = 'tabular'
-        self.data = copy.deepcopy(data)
+        self.data = data.copy()
         if development is None and dataform == 'tabular':
-                # If development is missing, it is likely an exposure triangle, and needs to conform
+                # If development is missing, it is likely an exposure triangle,
+                # and needs to conform
                 development = 'index'
-                temp = self.data.pivot_table(values=values, index=origin, aggfunc='sum').sort_index(ascending=False).reset_index().reset_index().set_index(origin).sort_index()
-                temp['index']=temp['index']+1
-                self.data = self.data.merge(temp['index'].reset_index(), how='inner', on=origin)
+                temp = (self.data.pivot_table(values=values, index=origin,
+                                              aggfunc='sum')
+                        .sort_index(ascending=False).reset_index()
+                        .reset_index().set_index(origin).sort_index())
+                temp['index'] = temp['index'] + 1
+                self.data = self.data.merge(temp['index'].reset_index(),
+                                            how='inner', on=origin)
 
         self.data.columns = [str(item) for item in self.data.columns]
         self.dataform = dataform
         if dataform == 'triangle':
-            #self.data['origin'] = self.data.index.names # does not work for multi-index
+            # self.data['origin'] = self.data.index.names # does not work for
+            # multi-index
             self.origin = list(self.data.index.names)
-            self.data.columns = list(np.array(self.data.columns).astype(np.int64))
+            self.data.columns = list(np.array(self.data.columns)
+                                     .astype(np.int64))
             self.data.reset_index(inplace=True)
-            self.values='values'
+            self.values = 'values'
             self.dev_lag = 'dev_lag'
-            self.origin_dict = self.__set_period('origin')
+            self.__set_period(origin_period)
             self.ncol = len(data.columns)
             self.__minimize_data()
         else:
@@ -102,94 +115,40 @@ class Triangle():
             self.data.sort_index(inplace=True)
         self.__get_lag_granularity()
 
-    def __set_period(self, per_type):
-        """ This method will take an variable length array of columns and convert them to
-        separate year/quarter/month columns if this information is extractable.
-        It also defines the development lag at the most granular level.
+    def __set_period(self, period_type):
+        """ This method will take an variable length array of columns and
+        convert them to separate year/quarter/month columns if this information
+        is extractable. It also defines the development lag at the most
+        granular level.
         """
-        if per_type == 'origin':
-            period = self.origin
+        if period_type is None:
+            data = self.data
+            if isinstance(data.index, PeriodIndex):
+                period_type = data.index.freq.name
+            elif data.index.dtype.kind == 'O':  # Is string?
+                period_type = 'NA'
+            elif isinstance(data.index.dtype, int):
+                period_type = 'NA'
         else:
-            period = self.development
-        period_dict = {}
-        if type(period) == str:
-            period = [period]
-        if len(period) > 1:
-            for item in period:
-                #Runs through many column names to determine if they measure year, quarter or month
-                #Items named YearQuarter, yearmonth or some combo would fail, but I generally don't expect
-                #this when multiple separate period columns are provided.
-                if len(re.findall(r'y[a-z]*r|y|Y[A-Z]*R|Y',item))>0:
-                    period_dict['year'] = item
-                if len(re.findall(r'q[a-z]*r|q|Q[A-Z]*R|Q',item))>0 and len(self.data[item].unique()) == 4:
-                    period_dict['quarter'] = item
-                if len(re.findall(r'm[a-z]*|M[A-Z]*',item))>0 and len(self.data[item].unique()) == 12:
-                    period_dict['month'] = item
-            if 'month' in period_dict.keys():
-                colname = str(period_dict['year'])+'-'+str(period_dict['month'])
-                self.data[colname]=self.data[period_dict['year']].astype(str) + '-' + self.data[period_dict['month']].astype(str)
-            if 'month' not in period_dict.keys() and 'quarter' in period_dict.keys():
-                colname = str(period_dict['year'])+'-'+str(period_dict['quarter'])
-                self.data[colname]=self.data[period_dict['year']].astype(str)+'Q'+self.data[period_dict['quarter']].astype(str)
+            data.index = PeriodIndex(data.index, freq=period_type)
 
-            dates = DatetimeIndex(to_datetime(self.data[colname]))
-            self.data.drop([colname], axis=1, inplace=True) # get rid of temporary concat column
-            if per_type == 'origin':self.data = self.data.drop(self.origin, axis=1) # get rid of original columns
-
-        if len(period) == 1:
-            dates = DatetimeIndex(to_datetime(self.data[period[0]]))
-        period_dict['year'] = per_type + '_year'
-        if len(set(dates.quarter)) > 1:
-            self.data[per_type + '_year']=dates.year
-        if len(set(dates.quarter)) == 4:
-            period_dict['quarter'] = per_type + '_quarter'
-            self.data[per_type + '_quarter']=dates.quarter
-        if len(set(dates.month)) == 12:
-            period_dict['month'] = per_type + '_month'
-            self.data[per_type + '_month']=dates.month
-        
-        if per_type == 'dev':
-            # sets the most granular dev_lag available.
-            if 'month'in period_dict.keys():
-                self.dev_grain = 'month'
-            elif 'quarter' in period_dict.keys() and 'month' not in period_dict.keys():
-                self.dev_grain = 'quarter'
-            else:
-                self.dev_grain = 'year'
-            if len(set(dates.year)) == 1:
-                #Implies that a dev lag has been specified over dev period
-                if np.all((self.data[period[0]].unique()<3000) & (self.data[period[0]].unique()>1900)): # carve out unique case of YYYY.
-                    self.data[per_type + '_year']=self.data[period[0]]
-                    self.data['dev_lag']=(self.data['dev_year']-self.data['origin_year']+1).astype(int)
-                else:
-                    self.data['dev_lag'] = self.data[period].astype(int)
-            else:
-                # set development lag, this should handle both symmetric and asymmentric triangles
-                if len(set(dates.month)) == 12: # use month
-                    if self.origin_dict.get('month') == None:
-                        self.data['dev_lag']=((self.data['dev_year']-self.data['origin_year'])*12 + self.data['dev_month']).astype(int)
-                    else:
-                        self.data['dev_lag']=((self.data['dev_year']-self.data['origin_year'])*12 + self.data['dev_month']-self.data['origin_month']+1).astype(int)
-                elif len(set(dates.quarter)) == 4:
-                    self.data['dev_lag']=((self.data['dev_year']-self.data['origin_year'])*4 + self.data['dev_quarter']-self.data['origin_quarter']+1).astype(int)
-                else:
-                    self.data['dev_lag']=(self.data['dev_year']-self.data['origin_year']).astype(int)
-
-        if per_type == 'origin' and len(set(dates.year)) == 1:
-            self.data['origin_year'] = self.data[period]
-            if period != ['origin_year']:
-                self.data = self.data.drop(self.origin, axis=1)
-
-        return period_dict
+        if period_type == 'NA':
+            try:
+                data.index = PeriodIndex(data.index, freq='A')
+            except ValueError:
+                warnings.warn('Unable to determine appropriate period from '
+                              'data, leaving as-is. We recommend formatting '
+                              'the origin date as a Pandas PeriodIndex.')
+        self.origin_period_type = period_type
 
     def __minimize_data(self):
         if self.dataform == 'triangle':
-            self.data = self.data.set_index([self.origin_dict[key] for key in self.origin_dict])
+            return
         if self.dataform == 'tabular':
             cols = [self.origin_dict[key] for key in self.origin_dict] + ['dev_lag', 'values']
             self.data = self.data[cols]
 
-    def __get_lag_granularity(self):
+    def _granularity(self):
         temp = self.data_as_triangle()
         yval = (len(temp.data.iloc[-1]) - temp.data.iloc[-1] .count()) - (len(temp.data.iloc[-2]) - temp.data.iloc[-2] .count())
         xval = len(temp.origin_dict.keys())
@@ -490,10 +449,10 @@ class Triangle():
                 idx = self.data.index
             if incremental == True:
                 self.incr_to_cum(inplace=True)
-            
+
             self.data = pivot_table(self.slide_right().data_as_table().data,index=idx,columns=self.dev_lag,values=self.values, aggfunc='sum')
             self.slide_right(False,True)
-            
+
             dgrain = grain[-2:]
             initial_lag = self.data.iloc[-1].count().item()
             dev_grain = self.dev_grain
@@ -551,8 +510,8 @@ class Triangle():
         for i in range(len(cols)):
             x = np.where(np.isfinite(temp[:,i][::-1]))[0][0]
             key.append(x)
-            if x > 0: 
-                temp_array[:,i][-x:] = np.nan      
+            if x > 0:
+                temp_array[:,i][-x:] = np.nan
         return DataFrame(temp_array, index=index, columns=cols)
 
 
