@@ -20,33 +20,40 @@ import warnings
 class Triangle():
     """Triangle class is the basic data representation of an actuarial triangle.
 
-    Historical insurance data is often presented in form of a triangle structure, showing
-    the development of claims over time for each exposure (origin) period. An origin
-    period could be the year the policy was written or earned, or the loss occurrence
-    period. Of course the origin period doesn’t have to be yearly, e.g. quarterly or
-    6
-    monthly origin periods are also often used. The development period of an origin
-    period is also called age or lag. Data on the diagonals present payments in the
-    same calendar period. Note, data of individual policies is usually aggregated to
-    homogeneous lines of business, division levels or perils.
-    Most reserving methods of the ChainLadderpackage expect triangles as input data
-    sets with development periods along the columns and the origin period in rows. The
-    package comes with several example triangles.
+    Historical insurance data is often presented in form of a triangle
+    structure, showing the development of claims over time for each exposure
+    (origin) period. An origin period could be the year the policy was written
+    or earned, the loss occurrence period, or the date the loss was reported.
+    Of course the origin period doesn’t have to be yearly, e.g. quarterly,
+    monthly, or semi-annual origin periods are also often used. The development
+    period of an origin period is also called age or lag. Data on the diagonals
+    present payments in the same calendar period.
+
+    Note, data of individual policies is usually aggregated to homogeneous
+    lines of business, division levels or perils. Most reserving methods of the
+    ChainLadderpackage expect triangles as input data sets with development
+    periods along the columns and the origin period in rows. The package comes
+    with several example triangles.
+
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
 
     Parameters:
         data : pandas.DataFrame
-            A DataFrame representing the triangle
-        origin : str or list
-            An array representing the origin period of the triangle.
-        dev : numpy.array or pandas.Series
-            An array representing the development period of the triangle. In triangle form,
-            the development periods must be the columns of the dataset
-        values : str
-            A string representing the column name of the triangle measure if the data is in
-            tabular form.  Otherwise it is ignored.
+            A DataFrame representing the triangle. When in triangle form, the
+            index of the dataframe should be the origin period. The columns
+            names will be the development periods.
         dataform : str
-            A string value that takes on one of two values ['triangle' and 'tabular']
+            A string value that takes on one of two values
+            ['triangle' and 'tabular']
+        cumulative : boolean
+            When True (the default) values in the data should reflect cumulative
+            values. Otherwise, values reflect incremental values.
+        origin : str
+            Required or 'tabular' format, should be the column representing the
+            origin periods.
+        development : str
+            Required for 'tabular' format, should be the column representing
+            the  development periods.
 
     Attributes:
         data : pandas.DataFrame
@@ -61,232 +68,84 @@ class Triangle():
             Refer to parameter value.
 
     """
-
-    def __init__(self, data=None, origin=None, development=None, values=None,
-                 dataform=None, origin_period=None):
+    def __init__(self, data=None, dataform='triangle', cumulative=True,
+                 origin=None, development=None):
         # Currently only support pandas dataframes as data
-        if type(data) is not DataFrame:
+        if (type(data) is not DataFrame) and (type(data) is not Series):
             raise TypeError(str(type(data)) + ' is not a valid datatype for '
                             'the Triangle class.  Currently only DataFrames '
-                            'are supported.')
-        if dataform is None:
-            if data.shape[1] >= data.shape[0]:
-                dataform = 'triangle'
-            else:
-                dataform = 'tabular'
-        self.data = data.copy()
-        if development is None and dataform == 'tabular':
-                # If development is missing, it is likely an exposure triangle,
-                # and needs to conform
-                development = 'index'
-                temp = (self.data.pivot_table(values=values, index=origin,
-                                              aggfunc='sum')
-                        .sort_index(ascending=False).reset_index()
-                        .reset_index().set_index(origin).sort_index())
-                temp['index'] = temp['index'] + 1
-                self.data = self.data.merge(temp['index'].reset_index(),
-                                            how='inner', on=origin)
+                            'and Series are supported.')
+        if (type(data) is Series) and (dataform == 'triangle'):
+            raise TypeError('Series may only be used as a tabular dataform')
+        data = data.copy()
+        # Its simplest to force the data into a standard format... we'll use
+        # tabular form out of convenience
 
-        self.data.columns = [str(item) for item in self.data.columns]
-        self.dataform = dataform
         if dataform == 'triangle':
-            # self.data['origin'] = self.data.index.names # does not work for
-            # multi-index
-            self.origin = list(self.data.index.names)
-            self.data.columns = list(np.array(self.data.columns)
-                                     .astype(np.int64))
-            self.data.reset_index(inplace=True)
-            self.values = 'values'
-            self.dev_lag = 'dev_lag'
-            self.__set_period(origin_period)
-            self.ncol = len(data.columns)
-            self.__minimize_data()
-        else:
-            self.origin = origin
-            self.origin_dict = self.__set_period('origin')
-            self.development = development
-            self.dev_dict = self.__set_period('dev')
-            self.dev_lag = 'dev_lag'
-            self.values = 'values'
-            self.data['values'] = self.data[values]
-            self.ncol = len(self.data['dev_lag'].drop_duplicates())
-            self.__minimize_data()
-            self.data.set_index([self.origin_dict[keys] for keys in self.origin_dict],inplace=True)
-            self.data.sort_index(inplace=True)
-        self.__get_lag_granularity()
+            data = data.stack()
+        elif type(data) is DataFrame:
+            data = data.set_index([origin, development])
 
-    def __set_period(self, period_type):
-        """ This method will take an variable length array of columns and
-        convert them to separate year/quarter/month columns if this information
-        is extractable. It also defines the development lag at the most
-        granular level.
-        """
-        if period_type is None:
-            data = self.data
-            if isinstance(data.index, PeriodIndex):
-                period_type = data.index.freq.name
-            elif data.index.dtype.kind == 'O':  # Is string?
-                period_type = 'NA'
-            elif isinstance(data.index.dtype, int):
-                period_type = 'NA'
-        else:
-            data.index = PeriodIndex(data.index, freq=period_type)
+        if not cumulative:
+            data = data.groupby(level=[0]).cumsum()
 
-        if period_type == 'NA':
-            try:
-                data.index = PeriodIndex(data.index, freq='A')
-            except ValueError:
-                warnings.warn('Unable to determine appropriate period from '
-                              'data, leaving as-is. We recommend formatting '
-                              'the origin date as a Pandas PeriodIndex.')
-        self.origin_period_type = period_type
-
-    def __minimize_data(self):
-        if self.dataform == 'triangle':
-            return
-        if self.dataform == 'tabular':
-            cols = [self.origin_dict[key] for key in self.origin_dict] + ['dev_lag', 'values']
-            self.data = self.data[cols]
-
-    def _granularity(self):
-        temp = self.data_as_triangle()
-        yval = (len(temp.data.iloc[-1]) - temp.data.iloc[-1] .count()) - (len(temp.data.iloc[-2]) - temp.data.iloc[-2] .count())
-        xval = len(temp.origin_dict.keys())
-        if yval == 4:
-            self.dev_grain = 'quarter'
-        if yval in (3,12):
-            self.dev_grain = 'month'
-        if yval == 1:
-            temp_dict={1:'year',2:'quarter',3:'month'}
-            self.dev_grain =  temp_dict[xval]
+        self.data = data
+        self.dataform = 'tabular'
 
     def __repr__(self):
         return str(self.data)
 
-    def __add__(self, obj):
-        if isinstance(obj, Triangle):
-            y = copy.deepcopy(self)
-            x = copy.deepcopy(obj)
-            if x.dataform == 'triangle':
-                x.data_as_table(inplace=True)
-            if y.dataform == 'triangle':
-                y.data_as_table(inplace=True)
-
-            y.data['values']=y.data['values']+x.data['values']
-            if self.dataform == 'triangle':
-                y.data_as_triangle(inplace=True)
-            return y
+    def __add__(self, other):
+        if isinstance(other, Triangle):
+            output = self.data + other.data
+            return Triangle(output, dataform='tabular')
         else:
             return NotImplemented
 
-    def __radd__(self, obj):
-        if obj == 0:
+    def __radd__(self, other):
+        if other is None:
             return self
         else:
-            return self.__add__(obj)
+            return self.__add__(other)
 
-    def __sub__(self, obj):
-        if isinstance(obj, Triangle):
-            y = copy.deepcopy(self)
-            x = copy.deepcopy(obj)
-            if x.dataform == 'triangle':
-                x.data_as_table(inplace=True)
-            if y.dataform == 'triangle':
-                y.data_as_table(inplace=True)
-
-            y.data['values']=y.data['values']-x.data['values']
-            if self.dataform == 'triangle':
-                y.data_as_triangle(inplace=True)
-            return y
+    def __sub__(self, other):
+        if isinstance(other, Triangle):
+            output = self.data - other.data
+            return Triangle(output, dataform='tabular')
         else:
             return NotImplemented
 
-    def __mul__(self, obj):
-        if isinstance(obj, Triangle):
-            y = copy.deepcopy(self)
-            x = copy.deepcopy(obj)
-            if x.dataform == 'triangle':
-                x.data_as_table(inplace=True)
-            if y.dataform == 'triangle':
-                y.data_as_table(inplace=True)
-
-            y.data['values']=y.data['values']*x.data['values']
-            if self.dataform == 'triangle':
-                y.data_as_triangle(inplace=True)
-            return y
+    def __mul__(self, other):
+        if isinstance(other, Triangle):
+            output = self.data * other.data
+            return Triangle(output, dataform='tabular')
         else:
             return NotImplemented
 
-    def __truediv__(self, obj):
-        if isinstance(obj, Triangle):
-            y = copy.deepcopy(self)
-            x = copy.deepcopy(obj)
-            if x.dataform == 'triangle':
-                x.data_as_table(inplace=True)
-            if y.dataform == 'triangle':
-                y.data_as_table(inplace=True)
-
-            y.data['values']=y.data['values']/x.data['values']
-            if self.dataform == 'triangle':
-                y.data_as_triangle(inplace=True)
-            return y
+    def __truediv__(self, other):
+        if isinstance(other, Triangle):
+            output = self.data / other.data
+            return Triangle(output, dataform='tabular')
         else:
             return NotImplemented
 
-    def data_as_table(self, inplace=False):
+    def data_as_table(self):
         """Method to convert triangle form to tabular form.
 
-        Arguments:
-            inplace: bool
-                Set to True will update the instance data attribute inplace
-
         Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+            Pandas dataframe of Triangle in trabular form.
         """
-
-        if inplace == True:
-            if self.dataform == 'triangle':
-                idx = list(self.data.index.names)
-                self.data = melt(self.data.reset_index(),id_vars=idx, value_vars=self.data.columns,
-                               var_name='dev_lag', value_name='values').dropna().set_index(idx).sort_index()
-            self.dataform = 'tabular'
-            return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.data_as_table(inplace=True)
-        else:
-            return self
+        return self.data
 
     def data_as_triangle(self, inplace=False):
         """Method to convert tabular form to triangle form.
 
-        Arguments:
-            inplace: bool
-                Set to True will update the instance data attribute inplace
-
         Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+            Returns a pandas.DataFrame of the data in triangle form
         """
-        if self.dataform == 'tabular':
-            available_origin_periods = ['origin_year', 'origin_quarter','origin_month']
-            my_origin_periods = [item for item in available_origin_periods if item in self.data.reset_index().columns]
-            tri = pivot_table(self.data, values=self.values, index=
-                              my_origin_periods, columns=self.dev_lag, aggfunc="sum").sort_index()
-            tri.columns = [item for item in tri.columns]
-            #fills in lower diagonal with NANs
-            tri = self.fill_inner_diagonal_nans(tri)
-            if inplace == True:
-                self.data = tri
-                self.dataform = 'triangle'
-                return self
-            if inplace == False:
-                new_instance = copy.deepcopy(self)
-                return new_instance.data_as_triangle(inplace=True)
-        else:
-            return self
+        return self.data.unstack()
 
-
-    def incr_to_cum(self, inplace=False):
+    def incr_to_cum(self):
         """Method to convert an incremental triangle into a cumulative triangle.  Note,
         the triangle must be in triangle form.
 
@@ -295,51 +154,30 @@ class Triangle():
                 Set to True will update the instance data attribute inplace
 
         Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+            Updated instance `data` parameter if inplace is set to True.
+            Otherwise it returns a pandas.DataFrame
 
         """
-
-        if inplace == True:
-            if self.dataform != 'triangle':
-                self.data_as_triangle(inplace=True)
-                self.incr_to_cum(inplace=True)
-                self.data_as_table(inplace=True)
-                return self
-            self.data = self.data.T.cumsum().T
-            return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.incr_to_cum(inplace=True)
-
+        return self.data
 
     def cum_to_incr(self, inplace=False):
-        """Method to convert an cumulative triangle into a incremental triangle.  Note,
-        the triangle must be in triangle form.
+        """Method to convert an cumulative triangle into a incremental
+        triangle. Note, the triangle must be in triangle form.
 
         Arguments:
             inplace: bool
                 Set to True will update the instance data attribute inplace
 
         Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+            Updated instance `data` parameter if inplace is set to True.
+            Otherwise it returns a pandas.DataFrame
 
         """
-
-        if inplace == True:
-            if self.dataform != 'triangle':
-                self.data_as_triangle(inplace=True)
-                self.cum_to_incr(inplace=True)
-                self.data_as_table(inplace=True)
-                return self
-            a = np.array(self.data)
-            incr = DataFrame(np.concatenate((a[:,0].reshape(a.shape[0],1),a[:,1:]-a[:,:-1]),axis=1))
-            incr.index = self.data.index
-            incr.columns = self.data.columns
-            self.data = incr
-            return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.cum_to_incr(inplace=True)
+        data = self.data.copy()
+        for origin in data.index.levels[0]:
+            incr = data.loc[origin] - data.loc[origin].shift(1).fillna(0)
+            data.loc[origin] = incr.values
+        return data
 
     def get_latest_diagonal(self):
         #return DataFrame({'dev_lag':[self.data.columns[len(row.dropna())-1] for index,row in self.data.iterrows()],
