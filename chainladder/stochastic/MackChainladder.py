@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-   
+# -*- coding: utf-8 -*-
 
 """The MackChainladder module and class establishes the statistical framework
-of the chainladder method.  This is based *The Standard Error of Chain Ladder 
+of the chainladder method.  This is based *The Standard Error of Chain Ladder
 Reserve Estimates: Recursive Calculation and Inclusion of a Tail Factor* by
 Thomas Mack `[Mack99] <citations.html>`_.
 
@@ -26,22 +26,22 @@ class MackChainladder:
     """ MackChainLadder class specifies the Mack chainladder model.
 
     Thomas Mack published in 1993 [Mac93] a method which estimates the standard
-    errors of the chain-ladder forecast without assuming a distribution under 
+    errors of the chain-ladder forecast without assuming a distribution under
     three conditions.
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
 
-    Parameters:    
+    Parameters:
         tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Triangle`
         weights : int
             A value representing an input into the weights of the WRTO class.
         alpha : int
-            A value :math:`\\alpha \\in \\{0;1;2\\}` where: 
+            A value :math:`\\alpha \\in \\{0;1;2\\}` where:
                 | :math:`\\alpha = 0` corresponds with straight average LDFs.
-                | :math:`\\alpha = 1` corresponds with volume weighted average LDFs.          
-                | :math:`\\alpha = 2` corresponds with ordinary regression with intercept 0.  
+                | :math:`\\alpha = 1` corresponds with volume weighted average LDFs.
+                | :math:`\\alpha = 2` corresponds with ordinary regression with intercept 0.
         tail : bool
-            Represent whether a tail factor should be applied to the data. 
+            Represent whether a tail factor should be applied to the data.
             Value of False sets tail factor to 1.0
 
     Attributes:
@@ -52,23 +52,23 @@ class MackChainladder:
         full_triangle : pandas.DataFrame
             A completed triangle using Mack Chainladder assumptions.
         f : numpy.array
-            An array representing the loss development (age-to-age) factors defined as: 
+            An array representing the loss development (age-to-age) factors defined as:
             :math:`\\widehat{f}_{k}=\\frac{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}
-            F_{ik}}{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}}` 
-            
-            where: 
-            :math:`F_{ik}=C_{i,k+1}/C_{ik}, 1\\leq i\\leq n, 1\\leq k \\leq n-1`  
-            
-            are the individual development factors and where 
-            :math:`w_{ik}\\in [0;1]`  
+            F_{ik}}{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}}`
+
+            where:
+            :math:`F_{ik}=C_{i,k+1}/C_{ik}, 1\\leq i\\leq n, 1\\leq k \\leq n-1`
+
+            are the individual development factors and where
+            :math:`w_{ik}\\in [0;1]`
         chainladder: `Chainladder <ChainLadder.html>`_
         sigma: numpy.array
             An array representing the standard error of :math:`\\widehat{f}`:
             :math:`\\widehat{\\sigma}_{k}=\\sqrt{\\frac{1}{n-k-1}
             \\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}\\left (F_{ik}-
-            \\widehat{f}_{k}  \\right )^{2}}, 1\\leq k\\leq n - 2`   
+            \\widehat{f}_{k}  \\right )^{2}}, 1\\leq k\\leq n - 2`
         fse : numpy.array
-            An array representing the (col-1) standard errors of loss 
+            An array representing the (col-1) standard errors of loss
             development factors.
         Fse : pandas.DataFrame
             Needs documentation
@@ -82,21 +82,23 @@ class MackChainladder:
             Needs documentation
         mack_se: pandas.DataFrame
             Needs documentation
-        total_mack_se: float32  
+        total_mack_se: float32
             Needs documentation
 
     """
 
     def __init__(self, triangle,  weights=1,  alpha=1, tail=False, **kwargs):
         # Determine whether LDFs can be extrapolated with exponential tail
-        if tail == True:
-            tail = self.is_exponential_tail_appropriate(triangle.data_as_triangle(),  weights,  alpha)
+        if tail:
+            tail = self.is_exponential_tail_appropriate(
+                    triangle.data_as_triangle(), weights, alpha)
         if 'chainladder' in kwargs.keys():
             self.chainladder = kwargs['chainladder']
         else:
-            self.chainladder = Chainladder(triangle, weights=weights,  delta=2 - alpha, tail=tail)
+            self.chainladder = Chainladder(triangle, weights=weights,
+                                           delta=2 - alpha, tail=tail)
         self.set_attributes()
-    
+
     def set_attributes(self):
         self.triangle = self.chainladder.triangle
         self.alpha = [2 - item for item in self.chainladder.delta]
@@ -116,24 +118,24 @@ class MackChainladder:
                                self.__get_parameter_risk()**2)
         self.total_mack_se = np.sqrt(
             self.total_process_risk[-1]**2 + self.total_parameter_risk[-1]**2)
-        
-    def __repr__(self):   
+
+    def __repr__(self):
         return str(self.summary())
-    
+
     def __get_process_risk(self):
         """ Method to return the process risk of the Mack Chainladder model.
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$Mack.ProcessRisk.
         """
-
+        triangle = self.triangle.data_as_triangle()
         procrisk = DataFrame([0 for item in range(len(self.full_triangle))],
                              index=self.full_triangle.index, columns=[self.full_triangle.columns[0]])
-        bool_df = self.triangle.data.isnull()
+        bool_df = self.triangle.data_as_triangle().isnull()
         bool_df['Ult'] = True
         ind = 0 if self.chainladder.tail == False else 1
-        for i in range(1, self.triangle.ncol + ind):
+        for i in range(1, len(triangle.columns) + ind):
             temp = DataFrame(np.sqrt((self.full_triangle.iloc[:, i - 1] * self.Fse.iloc[:, i - 1])**2 + (
                 self.f[i - 1] * procrisk.iloc[:, i - 1])**2) * bool_df.iloc[:, i])
             temp.columns = [self.full_triangle.columns[i]]
@@ -144,18 +146,18 @@ class MackChainladder:
         """ Method to return the parameter risk of the Mack Chainladder model.
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$Mack.ParameterRisk.
         """
-
+        triangle = self.triangle.data_as_triangle()
         paramrisk = DataFrame([0 for item in range(len(self.full_triangle))],
                               index=self.full_triangle.index, columns=[self.full_triangle.columns[0]])
-        bool_df = self.triangle.data.isnull()
+        bool_df = self.triangle.data_as_triangle().isnull()
         bool_df['Ult'] = True
-        ind = 0 if self.chainladder.tail == False else 1
-        for i in range(1, self.triangle.ncol+ind):
+        ind = 0 if not self.chainladder.tail else 1
+        for i in range(1, len(triangle.columns) + ind):
             temp = DataFrame(np.sqrt((self.full_triangle.iloc[:, i - 1] * self.fse[i - 1])**2 + (
-                self.f[i - 1] * paramrisk.iloc[:, i - 1])**2) * bool_df.iloc[:, i])          
+                self.f[i - 1] * paramrisk.iloc[:, i - 1])**2) * bool_df.iloc[:, i])
             temp.columns = [self.full_triangle.columns[i]]
             paramrisk = concat([paramrisk, temp], axis=1)
         return paramrisk
@@ -165,7 +167,7 @@ class MackChainladder:
         for each development column.
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$Total.ProcessRisk.
 
         """
@@ -181,19 +183,21 @@ class MackChainladder:
         return np.array(tpr)
 
     def __get_Fse(self):
-        """ Method to produce the Full Triangle standard error of the Mack Chainladder 
+        """ Method to produce the Full Triangle standard error of the Mack Chainladder
         model.
 
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$F.se
         """
 
         # This is sloppy, and I don't know that it works for non-uniform
         # weights.
-        full_triangle = self.full_triangle.iloc[:,:-1]
-        full_triangleweightconst = self.weights.data.mode().T.mode().iloc[0, 0]
+        triangle = self.triangle.data_as_triangle()
+        weights = self.weights.data_as_triangle()
+        # full_triangle = self.full_triangle.iloc[:, :-1]
+        full_triangleweightconst = weights.mode().T.mode().iloc[0, 0]
         full_triangleweight = self.full_triangle * 0 + full_triangleweightconst
         Fse = DataFrame()
         for i in range(self.full_triangle.shape[1] - 1):
@@ -201,23 +205,23 @@ class MackChainladder:
                                          np.sqrt(np.array(full_triangleweight.iloc[:, i]).astype(float)
                                                  * np.array(self.full_triangle.iloc[:, i]).astype(float)**self.alpha[i]))], axis=1)
         Fse.set_index(self.full_triangle.index, inplace=True)
-        Fse.columns = self.triangle.data.columns
+        Fse.columns = triangle.columns
         if self.chainladder.tail == True:
             Fse.iloc[:,-1] = self.sigma[-1]/np.sqrt(self.full_triangle.iloc[:,-2])
-        else: 
+        else:
             Fse = Fse.iloc[:,:-1]
         return Fse
 
     def __get_tail_se(self):
-        """ Method to produce the standard error of the Mack Chainladder 
+        """ Method to produce the standard error of the Mack Chainladder
         model tail factor
 
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$tail.se
         """
-        
+
         tailse = np.array(self.sigma[-2] / \
             np.sqrt(self.full_triangle.iloc[0, -3]**self.alpha[-1]))
         if self.chainladder.tail == True:
@@ -231,15 +235,16 @@ class MackChainladder:
         return tailse
 
     def __get_tail_sigma(self):
-        """ Method to produce the sigma of the Mack Chainladder 
+        """ Method to produce the sigma of the Mack Chainladder
         model tail factor
 
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$tail.sigma
         """
-        y = np.log(self.sigma[:len(self.triangle.data.columns[:-2])])
+        triangle = self.triangle.data_as_triangle()
+        y = np.log(self.sigma[:len(triangle.columns[:-2])])
         x = np.array([i + 1 for i in range(len(y))])
         model = stats.linregress(x, y)
         tailsigma = np.exp((x[-1] + 1) * model[0] + model[1])
@@ -247,28 +252,29 @@ class MackChainladder:
             y = self.sigma
             tailsigma = np.sqrt(
                 abs(min((y[-1]**4 / y[-2]**2), min(y[-2]**2, y[-1]**2))))
-        if self.chainladder.tail == True: 
+        if self.chainladder.tail:
             time_pd = self.__get_tail_weighted_time_period()
-            y = np.log(np.append(self.sigma,tailsigma))
+            y = np.log(np.append(self.sigma, tailsigma))
             x = np.array([i + 1 for i in range(len(y))])
             sigma_reg = stats.linregress(x, y)
-            tailsigma = np.append(tailsigma, np.exp(time_pd * sigma_reg[0] + sigma_reg[1]))
+            tailsigma = np.append(tailsigma, np.exp(time_pd * sigma_reg[0] +
+                                                    sigma_reg[1]))
         else:
-            tailsigma = np.append(tailsigma,0)
+            tailsigma = np.append(tailsigma, 0)
         return tailsigma
 
     def __get_tail_weighted_time_period(self):
         """ Method to approximate the weighted-average development age assuming
         exponential tail fit.
-        
+
         Returns: float32
         """
         #n = self.triangle.ncol-1
         #y = self.f[:n]
-        #x = np.array([i + 1 for i in range(len(y))]) 
+        #x = np.array([i + 1 for i in range(len(y))])
         #ldf_reg = stats.linregress(x, np.log(y - 1))
         #time_pd = (np.log(self.f[n] - 1) - ldf_reg[1]) / ldf_reg[0]
-        
+
         n = self.triangle.ncol-1
         y = Series(self.f[:n])
         x = [num+1 for num, item in enumerate(y)]
@@ -278,17 +284,17 @@ class MackChainladder:
         ldf_reg = sm.OLS(np.log(y-1),x).fit()
         time_pd = (np.log(self.f[n] - 1) - ldf_reg.params[0]) / ldf_reg.params[1]
         #tail_factor = np.exp(tail_model.params[0] + np.array([i+2 for i in range(n,n+100)]) * tail_model.params[1]).astype(float) + 1)
-        
+
         return time_pd
-        
+
     def summary(self):
-        """ Method to produce a summary table of of the Mack Chainladder 
+        """ Method to produce a summary table of of the Mack Chainladder
         model.
 
         Returns:
-            This calculation is consistent with the R calculation 
+            This calculation is consistent with the R calculation
             MackChainLadder$summary
-            
+
         """
         summary = DataFrame()
         summary['Latest'] = self.triangle.get_latest_diagonal().iloc[:,-1]
@@ -299,22 +305,22 @@ class MackChainladder:
         summary['Mack S.E.'] = self.mack_se.iloc[:, -1]
         summary['CV(IBNR)'] = summary['Mack S.E.'] / summary['IBNR']
         return summary
-    
+
     def age_to_age(self, colname_sep='-'):
-        """ Simple method that calls on the Chainladder class method of the 
+        """ Simple method that calls on the Chainladder class method of the
         same name.  See age_to_age() in Chainladder module.
 
-        Parameters:    
+        Parameters:
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
 
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
-            
+
         """
         return self.chainladder.age_to_age(colname_sep='-')
-    
+
     def exclude_link_ratios(self, otype, inplace=False):
         if inplace == True:
             chainladder = self.chainladder.exclude_link_ratios(otype=otype, inplace=inplace)
@@ -323,40 +329,40 @@ class MackChainladder:
         if inplace == False:
             new_instance = copy.deepcopy(self)
             return new_instance.exclude_link_ratios(otype=otype, inplace=True)
-        
-    
+
+
     def is_exponential_tail_appropriate(self, tri,  weights,  alpha):
         """ Method to determine whether an exponential tail fit is appropriate
         based purely on the p-value of the slope parameter.  This method
-        currently uses scipy.stats, but this dependency can be removed as 
+        currently uses scipy.stats, but this dependency can be removed as
         statsmodels.api has a more robust regression framework and is used
         elsewhere in the package.
-        
+
         Arguments:
-            tri: Triangle 
-                An object of the Triangle class that will be used to test the 
+            tri: Triangle
+                An object of the Triangle class that will be used to test the
                 exponential tail fit.
-            weights: Triangle 
+            weights: Triangle
                 An object representing the weights of the exponential regression
                 model.
             alpha: pandas.Series
                 An object representing the alpha parameter of the mackChainLadder
                 model.
-        
+
         Returns:
             Boolean value is returned as True if exponential tail is appropriate
             otherwise a value of False is returned.
-                
-        
+
+
         """
         if Chainladder(tri,weights=weights, delta=2-alpha, tail=True).get_tail_factor()[0] == 1:
             return False
         else:
             return True
-    
+
     def plot(self, ctype='m', plots=['summary', 'full_triangle', 'resid1', 'resid2','resid3','resid4'], **kwargs):
         """ Method, callable by end-user that renders the matplotlib plots.
-        
+
         Arguments:
             plots: list[str]
                 A list of strings representing the charts the end user would like
@@ -371,19 +377,19 @@ class MackChainladder:
                     resid3         Studentized residuals x calendar period
                     resid4         Studentized residuals x development period
                     ============== =================================================
-                    
+
         Returns:
             Renders the matplotlib plots.
-            
-        """   
+
+        """
         my_dict = []
         plot_dict = self.__get_plot_dict()
         for item in plots:
             my_dict.append(plot_dict[item])
         return Plot(ctype, my_dict, **kwargs).grid
-    
+
     def __get_plot_dict(self):
-        resid_df = self.chainladder.get_residuals()  
+        resid_df = self.chainladder.get_residuals()
         xlabs = self.full_triangle.columns
         xvals = [i+1 for i in range(len(self.full_triangle.columns))]
         summary = self.summary()
@@ -436,7 +442,7 @@ class MackChainladder:
                                      'XLabel':'Origin Period',
                                      'YLabel':'Studentized Residual',
                                      'chart_type_dict':{'type':['scatter','line'],
-                                                       'mtype':['plot','plot'], 
+                                                       'mtype':['plot','plot'],
                                                        'x':[resid_df.index,lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[0]],
                                                        'y':[resid_df['standard_residuals'],DataFrame(lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[1]).T],
                                                        'yM':[resid_df['standard_residuals'],lowess(resid_df['standard_residuals'],resid_df.index, frac=1 if len(np.unique(resid_df.index.values))<=6 else 0.666).T[1]],
@@ -473,11 +479,11 @@ class MackChainladder:
                                                        'markerM':['o',''],
                                                        'linestyle':['','-'],
                                                        'colorM':['blue','red']
-                                                       }},      
+                                                       }},
                     'summary':{'Title':'Ultimates by origin period +/- 1 std. err.',
                                      'XLabel':'Origin Period',
                                      'YLabel':'Ultimates',
-                                     'chart_type_dict':{'type':['vbar','vbar','errline'],                                                       
+                                     'chart_type_dict':{'type':['vbar','vbar','errline'],
                                                        'top':[summary['Latest'],summary['Latest']+summary['IBNR'],None],
                                                        'x':[summary.index,summary.index,[(item,item) for item in summary.index.values]],
                                                        'width':[0.8,0.8,None],
@@ -530,7 +536,6 @@ class MackChainladder:
                                                        'label':[[str(item) for item in self.triangle.data.index]],
                                                        'linestyle':['-'],
                                                        'linewidth':[5]
-                                                       }} 
+                                                       }}
                     }
         return plot_dict
-    

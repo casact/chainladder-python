@@ -11,6 +11,7 @@ import pytest
 import os.path
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri, r
+from pandas.testing import assert_series_equal
 import numpy as np
 
 from numpy.testing import assert_allclose, assert_equal
@@ -27,41 +28,66 @@ l1 = [cl.load_dataset(item) for item in DATA_DIR]
 l2 = [item for item in DATA_DIR]
 l3 = list(zip(l1, l2))
 
+
 @pytest.mark.parametrize('df', l1)
 def test_data_as_table(df):
     if df.shape[0] > df.shape[1]:
         return
     a = cl.Triangle(df)
     data1 = a.data
-    a.data_as_table(inplace=True)
-    a.data_as_triangle(inplace=True)
-    test = ((data1 == a.data) | ((data1 != data1) &
-            (a.data != a.data))).as_matrix()
-    assert_equal(test.shape[0]*test.shape[1], np.sum(test))
+    data_table = a.data_as_table()
+    assert_series_equal(data1, data_table)
 
 
 @pytest.mark.parametrize('df', l1)
-def test_cum_to_incr_convert(df):
+def test_data_as_triangle(df):
     if df.shape[0] > df.shape[1]:
         return
     a = cl.Triangle(df)
-    data1 = a.data
-    a.cum_to_incr(inplace=True)
-    a.incr_to_cum(inplace=True)
-    test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
-    assert_equal(test.shape[0]*test.shape[1], np.sum(test))
+    data_triangle = a.data_as_triangle()
+    assert_equal(df.as_matrix(), data_triangle.as_matrix())
 
 
 @pytest.mark.parametrize('df', l1)
-def test_incr_to_cum_convert(df):
+def test_cum_to_incr_rountrip(df):
     if df.shape[0] > df.shape[1]:
         return
     a = cl.Triangle(df)
-    data1 = a.data
-    a.incr_to_cum(inplace=True)
+    data1 = a.data.copy()
     a.cum_to_incr(inplace=True)
-    test = ((data1 == a.data) | ((data1 != data1) & (a.data != a.data))).as_matrix()
-    assert_equal(test.shape[0]*test.shape[1], np.sum(test))
+    data2 = a.incr_to_cum(inplace=False)
+    assert_series_equal(data1, data2)
+    a.incr_to_cum(inplace=True)
+    assert_series_equal(data1, a.data)
+    data3 = a.incr_to_cum(inplace=False)
+    assert_series_equal(data1, data3)
+
+
+@pytest.mark.parametrize('df', l1)
+def test_cum_to_cum(df):
+    if df.shape[0] > df.shape[1]:
+        return
+    a = cl.Triangle(df)
+    data1 = a.data.copy()
+    a.incr_to_cum(inplace=True)
+    assert_series_equal(data1, a.data)
+    data2 = a.incr_to_cum(inplace=False)
+    assert_series_equal(data1, data2)
+
+
+@pytest.mark.parametrize('df', l1)
+def test_incr_to_cum_convert_roundtrip(df):
+    if df.shape[0] > df.shape[1]:
+        return
+    a = cl.Triangle(df, cumulative=False)
+    data1 = a.data.copy()
+    a.incr_to_cum(inplace=True)
+    data2 = a.cum_to_incr(inplace=False)
+    assert_series_equal(data1, data2)
+    a.cum_to_incr(inplace=True)
+    assert_series_equal(data1, a.data)
+    data3 = a.cum_to_incr(inplace=False)
+    assert_series_equal(data1, data3)
 
 
 @pytest.mark.parametrize('python_data, r_data', l3)

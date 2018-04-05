@@ -86,11 +86,11 @@ class Triangle():
         elif type(data) is DataFrame:
             data = data.set_index([origin, development])
 
-        if not cumulative:
-            data = data.groupby(level=[0]).cumsum()
-
         self.data = data
         self.dataform = 'tabular'
+        self.cumulative = cumulative
+
+        self.ncol = len(self.data.index.levels[1])
 
     def __repr__(self):
         return str(self.data)
@@ -145,7 +145,7 @@ class Triangle():
         """
         return self.data.unstack()
 
-    def incr_to_cum(self):
+    def incr_to_cum(self, inplace=True):
         """Method to convert an incremental triangle into a cumulative triangle.  Note,
         the triangle must be in triangle form.
 
@@ -158,9 +158,22 @@ class Triangle():
             Otherwise it returns a pandas.DataFrame
 
         """
-        return self.data
+        if not self.cumulative:
+            data = self.data.copy()
+            data = data.groupby(level=[0]).cumsum()
+            if inplace:
+                self.data = data
+                self.cumulative = True
+                return
+            else:
+                return data
+        else:
+            if inplace:
+                return
+            else:
+                return self.data
 
-    def cum_to_incr(self, inplace=False):
+    def cum_to_incr(self, inplace=True):
         """Method to convert an cumulative triangle into a incremental
         triangle. Note, the triangle must be in triangle form.
 
@@ -173,11 +186,22 @@ class Triangle():
             Otherwise it returns a pandas.DataFrame
 
         """
-        data = self.data.copy()
-        for origin in data.index.levels[0]:
-            incr = data.loc[origin] - data.loc[origin].shift(1).fillna(0)
-            data.loc[origin] = incr.values
-        return data
+        if self.cumulative:
+            data = self.data.copy()
+            for origin in data.index.levels[0]:
+                incr = data.loc[origin] - data.loc[origin].shift(1).fillna(0)
+                data.loc[origin] = incr.values
+            if inplace:
+                self.data = data
+                self.cumulative = False
+                return
+            else:
+                return data
+        else:
+            if inplace:
+                return
+            else:
+                return self.data
 
     def get_latest_diagonal(self):
         #return DataFrame({'dev_lag':[self.data.columns[len(row.dropna())-1] for index,row in self.data.iterrows()],
