@@ -91,6 +91,8 @@ class Triangle():
         self.cumulative = cumulative
 
         self.ncol = len(self.data.index.levels[1])
+        self.n_dev_periods = self.ncol
+        self.n_origin_periods = len(self.data.index.levels[0])
 
     def __repr__(self):
         return str(self.data)

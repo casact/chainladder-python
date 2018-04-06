@@ -130,19 +130,18 @@ class Chainladder():
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
         """
-        incr = DataFrame(self.triangle.data.iloc[:, 1] /
-                         self.triangle.data.iloc[:, 0])
+        tri = self.triangle.data_as_triangle()
+        incr = DataFrame(tri.iloc[:, 1] / tri.iloc[:, 0])
         for i in range(1, self.triangle.ncol - 1):
-            incr = concat([incr, self.triangle.data.iloc[:, i + 1] /
-                           self.triangle.data.iloc[:, i]], axis=1)
+            incr = concat([incr, tri.iloc[:, i + 1] / tri.iloc[:, i]], axis=1)
         incr.columns = [str(item) + colname_sep +
-                        str(self.triangle.data.columns.values[num + 1]) for num,
-                        item in enumerate(self.triangle.data.columns.values[:-1])]
+                        str(tri.columns.values[num + 1]) for num,
+                        item in enumerate(tri.columns.values[: -1])]
         incr = incr.iloc[:-1]
-        incr[str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
-        ldf = Chainladder(self.triangle.data, delta=2, tail=self.tail).LDF
+        incr[str(tri.columns.values[-1]) + colname_sep + 'Ult'] = np.nan
+        ldf = Chainladder(self.triangle, delta=2, tail=self.tail).LDF
         incr.loc['simple'] = ldf
-        ldf = Chainladder(self.triangle.data, delta=1, tail=self.tail).LDF
+        ldf = Chainladder(self.triangle, delta=1, tail=self.tail).LDF
         incr.loc['vol-wtd'] = ldf
         incr.loc['Selected'] = ldf
         ldf = self.LDF

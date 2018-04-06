@@ -309,8 +309,9 @@ def test_MackChainladder_parameter_risk_a0(python_data, r_data):
 
 
 def test_MunichChainladder_1():
-    python = cl.MunichChainladder(cl.load_dataset('MCLpaid'),
-                                  cl.load_dataset('MCLincurred'))
+    paid = cl.Triangle(cl.load_dataset('MCLpaid'))
+    incurred = cl.Triangle(cl.load_dataset('MCLincurred'))
+    python = cl.MunichChainladder(paid, incurred)
     r_lang = np.array(r('a<-MunichChainLadder(MCLpaid,MCLincurred)'))
     assert_allclose(python.lambdaI, np.array(r_lang[12][0])[0], atol=ATOL)
     assert_allclose(python.lambdaP, np.array(r_lang[11][0])[0], atol=ATOL)
