@@ -68,23 +68,33 @@ class Triangle():
             Refer to parameter value.
 
     """
-    def __init__(self, data=None, dataform='triangle', cumulative=True,
-                 origin=None, development=None):
+    def __init__(self, data=None, dataform=None, cumulative=True,
+                 origin=None, development=None, values=None):
         # Currently only support pandas dataframes as data
-        if (type(data) is not DataFrame) and (type(data) is not Series):
+        if not (isinstance(data, DataFrame) or isinstance(data, Series)):
             raise TypeError(str(type(data)) + ' is not a valid datatype for '
                             'the Triangle class.  Currently only DataFrames '
                             'and Series are supported.')
-        if (type(data) is Series) and (dataform == 'triangle'):
+        if isinstance(data, Series) and (dataform == 'triangle'):
             raise TypeError('Series may only be used as a tabular dataform')
+        if dataform is None:
+            # Let's try to figure out what dataform we have...
+            if development is not None:
+                # if development is provided, can't be a triangle:
+                dataform = 'tabular'
+            elif isinstance(data, Series):
+                # Series must be tabular
+                dataform = 'tabular'
+            else:
+                dataform = 'triangle'
         data = data.copy()
         # Its simplest to force the data into a standard format... we'll use
         # tabular form out of convenience
 
         if dataform == 'triangle':
             data = data.stack()
-        elif type(data) is DataFrame:
-            data = data.set_index([origin, development])
+        elif isinstance(data, DataFrame):
+            data = data.set_index([origin, development])[values]
 
         self.data = data
         self.dataform = 'tabular'

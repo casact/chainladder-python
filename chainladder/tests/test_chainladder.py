@@ -584,21 +584,30 @@ def test_MackChainladder_tail_parameter_risk_a0(python_data, r_data):
                             ' ,tail=TRUE,alpha=0)')[9])
         assert_allclose(python, r_lang, atol=ATOL)
 
+
 def test_triangle_subtract():
     a = cl.Triangle(cl.load_dataset('RAA'))
     assert_equal(np.sum(np.nan_to_num(np.array((a - a).data))), 0)
 
+
 def test_triangle_tabular():
-    assert_equal(cl.Triangle(cl.load_dataset('GenInsLong'), origin='accyear', development='devyear', values='incurred claims').data_as_triangle().data.shape,(10,10))
+    assert_equal(cl.Triangle(cl.load_dataset('GenInsLong'),
+                             origin='accyear',
+                             development='devyear',
+                             values='incurred claims')
+                 .data_as_triangle().shape, (10, 10))
+
 
 def test_triangle_OYDM_grain():
     assert_equal(cl.Triangle(cl.load_dataset('qincurred')).grain('OYDY').data.shape,(12,12))
+
 
 def test_DFM_deterministic():
     answer = np.array([18834, 16857, 24083, 28703, 28926, 19501, 17749, 24019, 16044, 18402])
     RAA = cl.load_dataset('RAA')
     question = np.array(cld.Chainladder(RAA).ultimates.astype(int))
     assert_equal(question, answer)
+
 
 def test_BF_deterministic():
     answer = np.array([18834, 16886, 23978, 28207, 28079, 19594, 18438, 22194, 18670, 19820])
@@ -607,12 +616,14 @@ def test_BF_deterministic():
     question = np.array(cld.Chainladder(RAA).born_ferg(exposure = exp, apriori = 0.5).ultimates.astype(int))
     assert_equal(question, answer)
 
+
 def test_benktander_deterministic_1():
     RAA = cl.load_dataset('RAA')
     exp = np.array([40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000, 40000])
     answer = np.array(cld.Chainladder(RAA).born_ferg(exposure = exp, apriori = 0.5).ultimates.astype(int))
     question = np.array(cld.Chainladder(RAA).benktander(exposure = exp, apriori = 0.5, n_iters=1).ultimates.astype(int))
     assert_equal(question, answer)
+
 
 def test_benktander_deterministic_999():
     RAA = cl.load_dataset('RAA')
@@ -621,6 +632,7 @@ def test_benktander_deterministic_999():
     question = np.array(cld.Chainladder(RAA).benktander(exposure = exp, apriori = 0.5, n_iters=999).ultimates.astype(int))
     assert_equal(question, answer)
 
+
 def test_benktander_deterministic_3():
     answer = np.array([18834, 16857, 24083, 28701, 28919, 19504, 17813, 23642, 17201, 19520])
     RAA = cl.load_dataset('RAA')
@@ -628,12 +640,14 @@ def test_benktander_deterministic_3():
     question = np.array(cld.Chainladder(RAA).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
     assert_equal(question, answer)
 
+
 def test_benktander_deterministic_3_vol5():
     answer = np.array([18834, 16857, 24083, 28701, 28919, 19504, 17866, 23287, 17937, 21562])
     RAA = cl.load_dataset('RAA')
     exp = answer*0+40000
     question = np.array(cld.Chainladder(RAA).select_average(num_periods=5).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
     assert_equal(question, answer)
+
 
 def test_benktander_deterministic_3_custom():
     answer = np.array([18834, 16857, 24083, 28701, 28919, 19504, 17866, 23626, 19141, 21952])
@@ -644,6 +658,7 @@ def test_benktander_deterministic_3_custom():
     question = np.array(cld.Chainladder(RAA).select_average(LDF_average=avg_type, num_periods=nper).exclude_link_ratios(otype=[(7,1)]).benktander(exposure = exp, apriori = 0.5, n_iters=3).ultimates.astype(int))
     assert_equal(question, answer)
 
+
 def test_cape_cod_1():
     # trend = 0 and decay = 1 -> apriori to be used in BF, where BF and cape cod will be equal
     RAA = cl.load_dataset('RAA')
@@ -653,19 +668,23 @@ def test_cape_cod_1():
     answer = cld.Chainladder(RAA).born_ferg(exposure=exp, apriori=apriori).ultimates.astype(int)
     assert_equal(np.array(question.astype(int)) , np.array(answer))
 
+
 def test_triangle_mult_div():
     RAA = cl.load_dataset('RAA')
     assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA)/cl.Triangle(RAA)*cl.Triangle(RAA)).data)),
     np.nan_to_num(np.array(cl.Triangle(RAA).data)))
+
 
 def test_triangle_add_subtract():
     RAA = cl.load_dataset('RAA')
     assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA)+cl.Triangle(RAA)-cl.Triangle(RAA)).data)),
     np.nan_to_num(np.array(cl.Triangle(RAA).data)))
 
+
 def test_get_grain():
     RAA = cl.load_dataset('RAA')
     assert_equal(cl.Triangle(RAA).get_grain(),'OYDY')
+
 
 def test_triangle_set():
     answer = np.array((cl.Triangle(cl.load_dataset('MCLincurred')) - cl.Triangle(cl.load_dataset('MCLpaid'))).data)
