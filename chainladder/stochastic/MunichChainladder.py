@@ -8,12 +8,12 @@ incurred ultimates `[Quarg99] <citations.html>`_
 import chainladder as cl
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 from warnings import warn
 from chainladder.UtilityFunctions import Plot
 from chainladder.Triangle import Triangle
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from bokeh.palettes import Spectral10
+
 
 class MunichChainladder:
     """ This is the Munich Chain Ladder Class.
@@ -97,12 +97,13 @@ class MunichChainladder:
 
     """
     def __init__(self, Paid, Incurred, tailP=False, tailI=False):
-        if Incurred.data.shape != Paid.data.shape:
+        if ((Incurred.n_origin_periods != Paid.n_origin_periods) or
+                (Incurred.n_dev_periods != Paid.n_dev_periods)):
             warn('Paid and Incurred triangle must have same dimension.')
             return
         if Incurred.n_origin_periods > Incurred.n_dev_periods:
-            warn("MunichChainLadder does not support triangles with fewer "
-                 "development periods than origin periods.")
+            warn('MunichChainLadder does not support triangles with fewer '
+                 'development periods than origin periods.')
             return
         self.tailP = tailP
         self.tailI = tailI
@@ -116,10 +117,10 @@ class MunichChainladder:
         self.q_f = MCL_model[2]
         self.qinverse_f = MCL_model[3]
         MCL_residuals = self.__get_MCL_residuals()
-        self.paid_residuals =  MCL_residuals[0]
+        self.paid_residuals = MCL_residuals[0]
         self.incurred_residuals = MCL_residuals[1]
         self.Q_inverse_residuals = MCL_residuals[2]
-        self.Q_residuals =  MCL_residuals[3]
+        self.Q_residuals = MCL_residuals[3]
         MCL_lambda = self.__get_MCL_lambda()
         self.lambdaP = MCL_lambda[0]
         self.lambdaI = MCL_lambda[1]
@@ -146,14 +147,8 @@ class MunichChainladder:
         modelsI=[]
         modelsP=[]
         for i in range(self.Incurred.n_dev_periods):
-            Incurred = self.Incurred.data_as_triangle()
-            Paid = self.Paid.data_as_triangle()
-            modelsI.append(cl.WRTO(Incurred.iloc[:, i].dropna(),
-                                   Paid.iloc[:, i].dropna(),
-                                   w=1 / Incurred.iloc[:, i].dropna()))
-            modelsP.append(cl.WRTO(Paid.iloc[:, i].dropna(),
-                                   Incurred.iloc[:, i].dropna(),
-                                   w=1 / Paid.iloc[:, i].dropna()))
+                modelsI.append(cl.WRTO(self.Incurred.data_as_triangle().iloc[:,i].dropna(), self.Paid.data_as_triangle().iloc[:,i].dropna(), w=1/self.Incurred.data_as_triangle().iloc[:,i].dropna()))
+                modelsP.append(cl.WRTO(self.Paid.data_as_triangle().iloc[:,i].dropna(), self.Incurred.data_as_triangle().iloc[:,i].dropna(), w=1/self.Paid.data_as_triangle().iloc[:,i].dropna()))
         q_f = np.array([item.coefficient for item in modelsI])
         qinverse_f = np.array([item.coefficient for item in modelsP])
         rhoI_sigma = np.array([item.sigma for item in modelsI])
@@ -172,22 +167,21 @@ class MunichChainladder:
                                     / np.array(pd.DataFrame([self.MackPaid.sigma[:-1]]*(self.Paid.n_origin_periods-1)))
                                     * np.array(np.sqrt(self.Paid.data_as_triangle().iloc[:-1,:-1])))
         incurred_residual = pd.DataFrame((np.array(self.MackIncurred.age_to_age().iloc[:-3,:-1])
-                                    - np.array(pd.DataFrame([self.MackIncurred.f[:-1]]*(self.Incurred.n_origin_periods-1)))) \
-                                    / np.array(pd.DataFrame([self.MackIncurred.sigma[:-1]]*(self.Incurred.n_origin_periods-1)))
+                                    - np.array(pd.DataFrame([self.MackIncurred.f[:-1]]*(self.Incurred.n_dev_periods-1)))) \
+                                    / np.array(pd.DataFrame([self.MackIncurred.sigma[:-1]]*(self.Incurred.n_dev_periods-1)))
                                     * np.array(np.sqrt(self.Incurred.data_as_triangle().iloc[:-1,:-1])))
 
-        Q_ratios = np.array((self.Paid.data_as_triangle() /
-                             self.Incurred.data_as_triangle()).iloc[:,: -1])
+        Q_ratios = np.array((self.Paid.data_as_triangle()/self.Incurred.data_as_triangle()).iloc[:,:-1])
         Q_f = np.array(pd.DataFrame([self.q_f[:-1]]*(self.Paid.n_origin_periods)))
-        Q_residual = pd.DataFrame((Q_ratios - Q_f) /
-                      np.array(pd.DataFrame([self.rhoI_sigma[:-1]]*(self.Incurred.n_origin_periods))
-                      * np.array(np.sqrt(self.Incurred.data_as_triangle().iloc[:,:-1]))))
-        Q_inverse_residual = pd.DataFrame((1/Q_ratios - 1/Q_f) /
-                                np.array(pd.DataFrame([self.rhoP_sigma[:-1]]*(len(self.Paid.data))))
+        Q_residual = pd.DataFrame((Q_ratios - Q_f) \
+                      / np.array(pd.DataFrame([self.rhoI_sigma[:-1]]*(self.Incurred.n_origin_periods)))
+                      * np.array(np.sqrt(self.Incurred.data_as_triangle().iloc[:,:-1])))
+        Q_inverse_residual = pd.DataFrame((1/Q_ratios - 1/Q_f) \
+                                / np.array(pd.DataFrame([self.rhoP_sigma[:-1]]*(self.Paid.n_origin_periods)))
                                 * np.array(np.sqrt(self.Paid.data_as_triangle().iloc[:,:-1])))
 
         paid_residual = self.__MCL_vector(paid_residual.iloc[:,:-1],self.Paid.n_dev_periods)
-        incurred_residual = self.__MCL_vector(incurred_residual.iloc[:,:-1],self.Paid.n_dev_periods)
+        incurred_residual = self.__MCL_vector(incurred_residual.iloc[:,:-1],self.Incurred.n_dev_periods)
         Q_inverse_residual = self.__MCL_vector(Q_inverse_residual.iloc[:,:-1],self.Paid.n_dev_periods)
         Q_residual = self.__MCL_vector(Q_residual.iloc[:,:-1],self.Paid.n_dev_periods)
         return paid_residual, incurred_residual, Q_inverse_residual, Q_residual
@@ -202,11 +196,11 @@ class MunichChainladder:
     def __get_MCL_full_triangle(self):
         full_paid = pd.DataFrame(self.Paid.data_as_triangle().iloc[:,0])
         full_incurred = pd.DataFrame(self.Incurred.data_as_triangle().iloc[:,0])
-        for i in range(len(self.Paid.data.columns)-1):
+        for i in range(self.Paid.n_dev_periods-1):
             paid = (self.MackPaid.f[i] + self.lambdaP*self.MackPaid.sigma[i] /self.rhoP_sigma[i]*(full_incurred.iloc[:,-1]/full_paid.iloc[:,-1] - self.qinverse_f[i]))*full_paid.iloc[:,-1]
             inc = (self.MackIncurred.f[i] + self.lambdaI*self.MackIncurred.sigma[i] /self.rhoI_sigma[i]*(full_paid.iloc[:,-1]/full_incurred.iloc[:,-1] - self.q_f[i]))*full_incurred.iloc[:,-1]
-            full_incurred[str(i+2)] = self.Incurred.data.iloc[:,i+1].fillna(inc)
-            full_paid[str(i+2)] = self.Paid.data.iloc[:,i+1].fillna(paid)
+            full_incurred[str(i+2)] = self.Incurred.data_as_triangle().iloc[:,i+1].fillna(inc)
+            full_paid[str(i+2)] = self.Paid.data_as_triangle().iloc[:,i+1].fillna(paid)
         return full_paid, full_incurred
 
     def __get_PI_ratios(self):
