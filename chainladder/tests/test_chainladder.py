@@ -686,8 +686,9 @@ def test_benktander_deterministic_3_custom():
 def test_cape_cod_1():
     # trend = 0 and decay = 1 -> apriori to be used in BF, where BF and cape
     # cod will be equal
-    RAA = cl.Triangle(cl.load_dataset('RAA'))
+    RAA = cl.load_dataset('RAA')
     exp = copy.deepcopy(RAA.iloc[:, 0]) * 0 + 40000
+    RAA = cl.Triangle(RAA)
     question = cld.Chainladder(RAA).cape_cod(trend=0,
                                              decay=1, exposure=exp).ultimates
     apriori = np.sum(question) / np.sum(exp)
@@ -698,9 +699,7 @@ def test_cape_cod_1():
 
 def test_triangle_mult_div():
     RAA = cl.Triangle(cl.load_dataset('RAA'))
-    assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA) / cl.Triangle(RAA) *
-                                         cl.Triangle(RAA)).data)),
-                 np.nan_to_num(np.array(cl.Triangle(RAA).data)))
+    assert_series_equal((RAA * RAA / RAA).data, RAA.data)
 
 
 def test_triangle_add_subtract():
