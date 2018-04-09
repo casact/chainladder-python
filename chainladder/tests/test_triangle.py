@@ -63,9 +63,24 @@ def test_triangle_math():
 
 
 def test_incremental_to_cumulative():
-    data = simple_tabular.copy()
-    triangle = Triangle(data=data, dataform='tabular', cumulative=False)
-    assert_series_equal(triangle.data, data.groupby(level=[0]).cumsum())
-    assert_series_equal(triangle.incr_to_cum(),
-                        data.groupby(level=[0]).cumsum())
-    assert_series_equal(triangle.cum_to_incr(), data)
+    incremental = simple_tabular.copy()
+    cumulative = incremental.groupby(level=[0]).cumsum()
+    triangle = Triangle(data=incremental, dataform='tabular', cumulative=False)
+    assert_series_equal(triangle.data, incremental)
+
+    # Run the following 2 tests over to make sure the triangle remembers if
+    # it is cumulative or incremental
+
+    assert_series_equal(triangle.incr_to_cum(inplace=False), cumulative)
+    triangle.incr_to_cum()
+    assert_series_equal(triangle.data, cumulative)
+    triangle.incr_to_cum(inplace=True)
+    assert_series_equal(triangle.data, cumulative)
+    assert_series_equal(triangle.incr_to_cum(inplace=False), cumulative)
+
+    assert_series_equal(triangle.cum_to_incr(inplace=False), incremental)
+    triangle.cum_to_incr()
+    assert_series_equal(triangle.data, incremental)
+    triangle.cum_to_incr(inplace=True)
+    assert_series_equal(triangle.data, incremental)
+    assert_series_equal(triangle.cum_to_incr(inplace=False), incremental)

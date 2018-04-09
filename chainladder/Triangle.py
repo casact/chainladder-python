@@ -216,16 +216,10 @@ class Triangle():
                 return self.data
 
     def get_latest_diagonal(self):
-        #return DataFrame({'dev_lag':[self.data.columns[len(row.dropna())-1] for index,row in self.data.iterrows()],
-        #                  'values':[row.dropna().iloc[-1] for index, row in self.data.iterrows()]},
-        #        index=self.data.index)
-        if self.dataform == 'tabular':
-            x = self.data_as_triangle().data
-        else:
-            x = self.data
-        return DataFrame({'dev_lag':[x.columns[np.where(np.logical_not(np.isnan(row)))][-1] for index,row in x.iterrows()],
-                          'values':[row.iloc[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]] for index, row in x.iterrows()]},
-                index=x.index)
+        x = self.data.groupby(level=[0]).tail(1).reset_index()
+        x.columns = ['Origin', 'dev_lag', 'values']
+        x.set_index('Origin', inplace=True)
+        return x
 
     def plot(self, ctype='m', plots=['triangle'], **kwargs):
         """ Method, callable by end-user that renders the matplotlib plots.
