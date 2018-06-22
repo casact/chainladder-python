@@ -211,7 +211,7 @@ things such as ldfs, cdfs, and complete triangles.
 
 .. code:: python
 
-    RAA_CL.ultimates.astype(int)
+    RAA_CL.full_triangle['Ult'].astype(int)
 
 
 
