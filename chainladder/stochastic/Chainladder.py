@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-The Chainladder Module allows for the computation of basic chainladder methods 
-on an object of the Triangle class.  The module contains two classes, 
-ChainLadder and WRTO.  Chainladder is the main class while WRTO (Weighted 
-regression through the origin) is a unique case of a linear model with 0 
+The Chainladder Module allows for the computation of basic chainladder methods
+on an object of the Triangle class.  The module contains two classes,
+ChainLadder and WRTO.  Chainladder is the main class while WRTO (Weighted
+regression through the origin) is a unique case of a linear model with 0
 intercept and a single slope parameter which is the form of a chainladder LDF
 approach.
 """
@@ -17,18 +17,18 @@ from chainladder.Triangle import Triangle
 
 class Chainladder():
     """ ChainLadder class specifies the chainladder model.
-    The classical chain-ladder is a deterministic algorithm to forecast claims 
-    based on historical data. It assumes that the proportional developments of 
-    claims from one development period to the next are the same for all origin 
+    The classical chain-ladder is a deterministic algorithm to forecast claims
+    based on historical data. It assumes that the proportional developments of
+    claims from one development period to the next are the same for all origin
     years.
     Mack uses alpha between 0 and 2 to distinguish
     alpha = 0 straight averages
     alpha = 1 historical chain ladder age-to-age factors
     alpha = 2 ordinary regression with intercept 0
-    However, in Zehnwirth & Barnett they use the notation of delta, whereby 
+    However, in Zehnwirth & Barnett they use the notation of delta, whereby
     delta = 2 - alpha the delta is than used in a linear modelling context.
     `Need to properly cite... <https://github.com/mages/ChainLadder>`_
-    Parameters:    
+    Parameters:
         tri : `Triangle <Triangle.html>`_
             A triangle object. Refer to :class:`Classes.Triangle`
         weights : int
@@ -44,7 +44,7 @@ class Chainladder():
         weights : pandas.DataFrame
             A value representing an input into the weights of the WRTO class.
         delta : list
-            A set of values representing an input into the weights of the WRTO 
+            A set of values representing an input into the weights of the WRTO
             class.
         models : list
             A list of WTRO objects for of length (col-1)
@@ -65,9 +65,10 @@ class Chainladder():
 
     def __init__(self, tri, weights=1, delta=1, tail=False):
         if type(tri) is Triangle:
-            self.triangle = tri 
+            self.triangle = tri
         else:
             self.triangle = Triangle(tri)
+        self.triangle.ncol = len(self.triangle.data.columns)
         self.delta = [delta for item in range(self.triangle.ncol)]
         self.weights = Triangle(self.triangle.data * 0 + weights)
         self.models = self.fit()
@@ -75,13 +76,13 @@ class Chainladder():
         self.LDF = self.get_LDF().append(self.get_tail_factor())
         self.CDF = self.LDF[::-1].cumprod()[::-1]
         self.full_triangle = self.predict()
-        
-    def __repr__(self):   
+
+    def __repr__(self):
         return str(self.age_to_age())
-    
+
     def predict(self):
         """ Method to 'square' the triangle based on the WRTO 'models' list.
-        
+
         Returns:
             pandas.DataFrame representing the raw triangle data as well as future
             lags populated with the expectation from the chainladder fit.
@@ -96,9 +97,9 @@ class Chainladder():
 
     def fit(self):
         """ Method to call the weighted regression trhough the origin fitting.
-        
+
         Returns:
-            list of statsmodel (Chainladder) models with a subset of properties 
+            list of statsmodel (Chainladder) models with a subset of properties
             that can be accessed later.  See WRTO class implementation.
         """
         models = []
@@ -114,10 +115,10 @@ class Chainladder():
         return models
 
     def age_to_age(self, colname_sep='-'):
-        """ Method to display an age-to-age triangle with a display of simple 
-        average chainladder development factors and volume weighted average 
+        """ Method to display an age-to-age triangle with a display of simple
+        average chainladder development factors and volume weighted average
         development factors.
-        Parameters:    
+        Parameters:
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
@@ -141,18 +142,18 @@ class Chainladder():
         incr.loc['Selected'] = ldf
         ldf = self.LDF
         return incr
-    
+
     def get_LDF(self, colname_sep='-'):
         """ Method to obtain the loss development factors (LDFs) from the
         chainladder model.
-        
-        Parameters:    
+
+        Parameters:
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
         Returns:
             Pandas.Series of the LDFs.
-        
+
         """
         LDF = Series([ldf.coefficient for ldf in self.models], index=[str(item) + colname_sep +
                         str(self.triangle.data.columns.values[num + 1]) for num,
@@ -161,9 +162,9 @@ class Chainladder():
             return Series(LDF[:self.triangle.ncol-1])
         else:
             return LDF
-            
-         
-        
+
+
+
 
     def get_tail_factor(self, colname_sep='-'):
         """Estimate tail factor, idea from Thomas Mack:
@@ -173,12 +174,12 @@ class Chainladder():
         rejected if the slope parameter p-value >0.5.  This is currently representative
         of the R implementation of this package, but may be enhanced in the future to be
         p-value based.
-        Parameters:    
+        Parameters:
             colname_sep : str
                 text to join the names of two adjacent columns representing the
                 age-to-age factor column name.
         Returns:
-            Pandas.Series of the tail factor.        
+            Pandas.Series of the tail factor.
         """
         LDF = np.array(self.get_LDF()[:self.triangle.ncol-1])
         if self.tail==False:
@@ -207,11 +208,11 @@ class Chainladder():
     def get_residuals(self):
         """Generates a table of chainladder residuals along with other statistics.
         These get used in the MackChainLadder.plot() method for residual plots.
-         
+
         Returns:
-            Pandas.DataFrame of the residual table        
+            Pandas.DataFrame of the residual table
         """
-        
+
         Resid = DataFrame()
         for i in range(len(self.models)):
             resid = DataFrame()
@@ -224,29 +225,29 @@ class Chainladder():
             Resid = Resid.append(resid)
         Resid = Resid.reset_index().merge(self.triangle.lag_to_date().reset_index(), how='inner', on=[self.triangle.origin_dict[key] for key in self.triangle.origin_dict]+['dev_lag'])
         return Resid.set_index([self.triangle.origin_dict[key] for key in self.triangle.origin_dict]).drop(['x'], axis=1).dropna()
-    
+
 class WRTO():
     """Weighted least squares regression through the origin
     Collecting the relevant variables from statsmodel OLS/WLS. Note in
     release 0.1.0 of chainladder, there is a deprecation warning with statsmodel
     that will persist until statsmodel is upgraded.
-    Parameters:    
+    Parameters:
         X : numpy.array or pandas.Series
-            An array representing the independent observations of the 
+            An array representing the independent observations of the
             regression.
         y : numpy.array or pandas.Series
             An array representing the dependent observations of the regression.
         w : numpy.array or pandas.Series
-            An array representing the weights of the observations of the 
+            An array representing the weights of the observations of the
             regression.
     Attributes:
         X : numpy.array or pandas.Series
-            An array representing the independent observations of the 
+            An array representing the independent observations of the
             regression.
         y : numpy.array or pandas.Series
             An array representing the dependent observations of the regression.
         w : numpy.array or pandas.Series
-            An array representing the weights of the observations of the 
+            An array representing the weights of the observations of the
             regression.
         coefficient : numpy.float64
             Slope parameter of the regression.
@@ -259,7 +260,7 @@ class WRTO():
         standard_error : numpy.float64
             Standard error of the regression slope paramter.
         sigma : numpy.float64
-            Square root of the mean square error of the regression. 
+            Square root of the mean square error of the regression.
         std_resid : numpy.array
             Represents internally studentized residuals which generally vary between
             [-2,2].  Used in residual scatterplots and help determine the appropriateness
@@ -277,12 +278,12 @@ class WRTO():
         self.fittedvalues = OLS.predict(x)
         self.residual = OLS.resid
         if len(x) == 1:
-            self.mean_square_error = np.nan 
+            self.mean_square_error = np.nan
             self.standard_error = np.nan
             self.sigma = np.nan
             self.std_resid = np.nan
         else:
-            self.mean_square_error = OLS.mse_resid 
+            self.mean_square_error = OLS.mse_resid
             self.standard_error = OLS.params[0]/OLS.tvalues[0]
             self.sigma = np.sqrt(self.mean_square_error)
             self.std_resid = OLSInfluence(OLS).resid_studentized_internal

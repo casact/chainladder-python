@@ -99,7 +99,6 @@ class MackChainladder:
 
     def set_attributes(self):
         self.triangle = self.chainladder.triangle
-        self.triangle.ncol = len(self.triangle.data.columns)
         self.alpha = [2 - item for item in self.chainladder.delta]
         self.weights = self.chainladder.weights
         self.full_triangle = self.chainladder.full_triangle
