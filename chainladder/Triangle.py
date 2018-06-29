@@ -113,7 +113,6 @@ class Triangle():
             grain = 'Y' if len(quarters) == 1 else 'Q'
             grain = grain if len(months) == len(quarters) else 'M'
         else:
-            print(self.dataform)
             vertical_diff = max(len(self.data.iloc[:,-2].dropna()) - len(self.data.iloc[:,-1].dropna()),1)
             horizontal_diff = max(len(self.data.iloc[-2].dropna()) - len(self.data.iloc[-1].dropna()),1)
             dgrain_dict = {(1,4):'Q', (1,12):'M',(4,1):'Y',(1,3):'M',(12,1):'Y',(3,1):'Q'}
@@ -138,7 +137,7 @@ class Triangle():
         to a development date '''
         if self.development_grain == 'Q':
             development = self.data.reset_index()['origin'].values.astype('datetime64[M]') + \
-                    ((self.data.reset_index()['dev_lag']*4)-1).values.astype('timedelta64[M]')
+                    ((self.data.reset_index()['dev_lag']*3)-3).values.astype('timedelta64[M]')
         else:
             development = self.data.reset_index()['origin'].values.astype('datetime64[' + self.development_grain + ']') + \
                     (self.data.reset_index()['dev_lag']-1).values.astype('timedelta64[' + self.development_grain + ']')
@@ -311,7 +310,7 @@ class Triangle():
             if y.dataform == 'triangle':
                 y.data_as_table(inplace=True)
 
-            y.data[y.values]=y.data[y.values]+x.data[x.values]
+            y.data['values']=y.data['values']+x.data['values']
             if self.dataform == 'triangle':
                 y.data_as_triangle(inplace=True)
             return y
@@ -333,7 +332,7 @@ class Triangle():
             if y.dataform == 'triangle':
                 y.data_as_table(inplace=True)
 
-            y.data[y.values]=y.data[y.values]-x.data[x.values]
+            y.data['values']=y.data['values']-x.data['values']
             if self.dataform == 'triangle':
                 y.data_as_triangle(inplace=True)
             return y
@@ -349,7 +348,7 @@ class Triangle():
             if y.dataform == 'triangle':
                 y.data_as_table(inplace=True)
 
-            y.data[y.values]=y.data[y.values]*x.data[x.values]
+            y.data['values']=y.data['values']*x.data['values']
             if self.dataform == 'triangle':
                 y.data_as_triangle(inplace=True)
             return y
@@ -365,7 +364,7 @@ class Triangle():
             if y.dataform == 'triangle':
                 y.data_as_table(inplace=True)
 
-            y.data[y.values]=y.data[y.values]/x.data[x.values]
+            y.data['values']=y.data['values']/x.data['values']
             if self.dataform == 'triangle':
                 y.data_as_triangle(inplace=True)
             return y
@@ -384,23 +383,26 @@ class Triangle():
 
             # The real function
             ograin = grain[1:2]
-            self.origin_grain = ograin
-            temp = self.data
-            temp['origin'] = pd.PeriodIndex(temp['origin'],freq=ograin).to_timestamp()
-            if incremental == True:
-                self.incr_to_cum(inplace=True)
-            self.data = pd.pivot_table(temp,index=['origin','development'],values='values', aggfunc='sum').reset_index()
+            if self.origin_grain != ograin:
+                self.origin_grain = ograin
+                temp = self.data
+                temp['origin'] = pd.PeriodIndex(temp['origin'],freq=ograin).to_timestamp()
+                if incremental == True:
+                    self.incr_to_cum(inplace=True)
+                self.data = pd.pivot_table(temp,index=['origin','development'],values='values', aggfunc='sum').reset_index()
 
             self.data_as_triangle(inplace=True)
-            init_lag = self.data.iloc[-1].dropna().index[-1]
-            final_lag = self.data.iloc[0].dropna().index[-1]
-            freq = {'Y':12,'Q':3,'M':1}
             dgrain = grain[-1]
-            self.data[[item for item in range(init_lag,final_lag,freq[dgrain])]]
-            self.data_as_table(inplace=True)
-            if incremental == True:
-                self.cum_to_incr(inplace=True)
-            self.development_grain = dgrain
+            if self.development_grain != dgrain:
+                init_lag = self.data.iloc[-1].dropna().index[-1]
+                final_lag = self.data.iloc[0].dropna().index[-1]
+                freq = {'M':{'Y':12,'Q':3,'M':1},
+                        'Q':{'Y':4,'Q':1}}
+                self.data[[item for item in range(init_lag,final_lag,freq[self.development_grain][dgrain])]]
+                self.data_as_table(inplace=True)
+                if incremental == True:
+                    self.cum_to_incr(inplace=True)
+                self.development_grain = dgrain
             return self
         if inplace == False:
             new_instance = copy.deepcopy(self)

@@ -564,7 +564,7 @@ def test_triangle_subtract():
 def test_triangle_tabular():
     assert_equal(cl.Triangle(cl.load_dataset('GenInsLong'), origin='accyear', development='devyear', values='incurred claims').data_as_triangle().data.shape,(10,10))
 
-def test_triangle_OYDM_grain():
+def test_triangle_OYDY_grain():
     assert_equal(cl.Triangle(cl.load_dataset('qincurred')).grain('OYDY').data.shape,(12,12))
 
 def test_DFM_deterministic():
@@ -619,8 +619,8 @@ def test_benktander_deterministic_3_custom():
 
 def test_cape_cod_1():
     # trend = 0 and decay = 1 -> apriori to be used in BF, where BF and cape cod will be equal
-    RAA = cl.load_dataset('RAA')
-    exp = copy.deepcopy(RAA.iloc[:,0])*0+40000
+    RAA = cl.Triangle(cl.load_dataset('RAA'))
+    exp = copy.deepcopy(RAA.data.iloc[:,0])*0+40000
     question = cld.Chainladder(RAA).cape_cod(trend=0,decay=1,exposure=exp).ultimates
     apriori = sum(question)/sum(exp)
     answer = cld.Chainladder(RAA).born_ferg(exposure=exp, apriori=apriori).ultimates.astype(int)
@@ -635,21 +635,3 @@ def test_triangle_add_subtract():
     RAA = cl.load_dataset('RAA')
     assert_equal(np.nan_to_num(np.array((cl.Triangle(RAA)+cl.Triangle(RAA)-cl.Triangle(RAA)).data)),
     np.nan_to_num(np.array(cl.Triangle(RAA).data)))
-
-def test_get_grain():
-    RAA = cl.load_dataset('RAA')
-    assert_equal(cl.Triangle(RAA).get_grain(),'OYDY')
-
-def test_triangle_set():
-    answer = np.array((cl.Triangle(cl.load_dataset('MCLincurred')) - cl.Triangle(cl.load_dataset('MCLpaid'))).data)
-    # make a consolidated dataset
-    paid = cl.Triangle(cl.load_dataset('MCLpaid')).data_as_table().data.reset_index()
-    incurred = cl.Triangle(cl.load_dataset('MCLincurred')).data_as_table().data.reset_index()
-    paid.columns = ['origin_year', 'dev_lag','paid']
-    incurred.columns = ['origin_year', 'dev_lag','incurred']
-    consolidated = incurred.merge(paid, how='inner', on=['origin_year', 'dev_lag'])
-    #create triangleset, and access indices
-    tri_set = cl.TriangleSet(consolidated, origin='origin_year',development='dev_lag', values=['paid','incurred'])
-    tri_set.get_triangles(query_values=[1,0],query_list=[0],operator='-').data_as_triangle()
-    question = np.array(tri_set.get_triangles(query_values=[1,0],query_list=[0],operator='-').data_as_triangle().data)
-    assert_equal(question, answer)
