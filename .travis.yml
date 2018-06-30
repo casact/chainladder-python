@@ -18,9 +18,6 @@ matrix:
   - python: 3.5
     env:
     - PANDAS: 0.21
-  - python: 3.5
-    env:
-    - PANDAS: 0.21
   - python: 3.6
     env:
     - PANDAS: 0.22
