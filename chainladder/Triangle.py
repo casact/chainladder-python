@@ -222,7 +222,7 @@ class Triangle():
         if inplace == True:
             data = np.array(self.data)
             incr = np.concatenate((data[:,0].reshape(a.shape[0],1),
-                                   data[:,1:]-data[:,:-1]), axis=1))
+                                   data[:,1:]-data[:,:-1]), axis=1)
             self.data = self.data*0 + incr
             return self
         if inplace == False:
