@@ -230,7 +230,7 @@ class Chainladder():
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
         """
-    
+
         x = self.triangle.data
         numer = np.array(x.iloc[:,1:])
         denom = np.array(x.iloc[:,:-1])
@@ -267,7 +267,7 @@ class Chainladder():
             if triangle is None:
                 triangle =self.triangle
             latest = np.array(triangle.get_latest_diagonal())
-            self.ultimates = Series((latest[:,1]*np.array(self.CDF)[::-1]), index = triangle.data.index)
+            self.ultimates = Series((latest[:,0]*np.array(self.CDF)[::-1]), index = triangle.data.index)
             return self
         if inplace==False:
             new_instance = copy.deepcopy(self)
