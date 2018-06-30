@@ -626,14 +626,19 @@ def test_triangle_add_subtract():
 def test_triangle_method_chaining_1():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data)),
-    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY').data)))
+    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY', incremental=True).data)))
 
-def test_triangle_method_chaining_1():
+def test_triangle_method_chaining_2():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY').data)))
 
-def test_triangle_method_chaining_2():
+def test_triangle_method_chaining_3():
+    tri = cl.load_dataset('qincurred')
+    assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').data)),
+    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().incr_to_cum().grain('OYDY').data)))
+
+def test_triangle_method_chaining_4():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).incr_to_cum().cum_to_incr().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().incr_to_cum().data)))
@@ -642,13 +647,3 @@ def test_triangle_grain_defaults():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).data)))
-
-def test_triangle_format_and_clipboard():
-    tri = cl.load_dataset('qincurred')
-    cl.Triangle(tri).to_clipboard()
-    assert True
-
-def test_triangle_plot():
-    tri = cl.load_dataset('qincurred')
-    cl.Triangle(tri).plot()
-    assert True
