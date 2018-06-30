@@ -625,7 +625,7 @@ def test_triangle_add_subtract():
 
 def test_triangle_method_chaining_1():
     tri = cl.load_dataset('qincurred')
-    assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data),
+    assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY').data)))
 
 def test_triangle_method_chaining_1():
