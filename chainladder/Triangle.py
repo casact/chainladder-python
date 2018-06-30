@@ -221,7 +221,7 @@ class Triangle():
 
         if inplace == True:
             data = np.array(self.data)
-            incr = np.concatenate((data[:,0].reshape(a.shape[0],1),
+            incr = np.concatenate((data[:,0].reshape(data.shape[0],1),
                                    data[:,1:]-data[:,:-1]), axis=1)
             self.data = self.data*0 + incr
             return self
@@ -269,13 +269,13 @@ class Triangle():
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
-        Triangle(self.data - other.data)
+        return Triangle(self.data - other.data)
 
     def __mul__(self, other):
-        Triangle(self.data * other.data)
+        return Triangle(self.data * other.data)
 
     def __truediv__(self, other):
-        Triangle(self.data / other.data)
+        return Triangle(self.data / other.data)
 
     def grain(self, grain='', incremental=False, inplace=False):
         if inplace == True:
