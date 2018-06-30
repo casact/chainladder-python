@@ -11,7 +11,7 @@ import copy
 
 class ClarkLDF:
     def __init__(self, triangle, cumulative = True, maxage = np.inf, adol = True, adol_age = None, origin_width = None, G = "loglogistic"):
-        self.triangle = triangle.data_as_triangle()
+        self.triangle = triangle
         self.origin = self.triangle.data.index
         self.cols = self.triangle.data.index
         self.nr = len(self.origin)
@@ -40,7 +40,7 @@ class ClarkLDF:
         temp.columns = [item+1 for item in range(temp.ncol)]
         af_dict = dict(zip(temp.columns, self.age_from))
         at_dict = dict(zip(temp.columns, self.age_to))
-        self.table_one_one = temp.data_as_table().data
+        self.table_one_one = temp.data_as_table()
         self.table_one_one['Age_from'] =self.table_one_one['dev_lag'].map(af_dict)
         self.table_one_one['Age_to'] = self.table_one_one['dev_lag'].map(at_dict)
         self.theta = copy.deepcopy(Uinit)
@@ -54,5 +54,3 @@ class loglogistic:
         self.G = 1 / self.cdf
         self.pdf = sympy.simplify(sympy.diff(self.cdf,x))
         self.dGd
-        
-        

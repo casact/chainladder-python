@@ -74,9 +74,9 @@ class Chainladder():
 
     def __init__(self, triangle, weights=1, **kwargs):
         if isinstance(triangle, Triangle):
-            self.triangle = copy.deepcopy(triangle)#.data_as_triangle()
+            self.triangle = copy.deepcopy(triangle)
         else:
-            self.triangle = Triangle(data=triangle)#.data_as_triangle()
+            self.triangle = Triangle(data=triangle)
         self.triangle.ncol = len(self.triangle.data.columns)
         if not isinstance(weights, Triangle):
             self.weights = Triangle(self.triangle.data * 0 + weights)
@@ -230,9 +230,7 @@ class Chainladder():
         Returns:
             Pandas.DataFrame of the age-to-age triangle.
         """
-        #if self.triangle.dataform == 'tabular':
-        #    x = self.triangle.data_as_triangle().data
-        #else:
+    
         x = self.triangle.data
         numer = np.array(x.iloc[:,1:])
         denom = np.array(x.iloc[:,:-1])
