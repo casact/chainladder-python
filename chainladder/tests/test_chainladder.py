@@ -626,7 +626,15 @@ def test_triangle_add_subtract():
 def test_triangle_method_chaining_1():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data)),
-    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY', incremental=True).data)))
+    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY', incremental=True).data
+
+def test_ograin_change():
+    tri = cl.load_dataset('qincurred')
+    tri = cl.Triangle(tri).data.T
+    tri.columns = [item +1 for item in range(len(tri.columns))]
+    tri.index = pd.date_range(start='1/1/2000',periods=len(tri.index), freq='Q')
+    assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').data)),
+    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().incr_to_cum().grain('OYDY').data)))
 
 def test_triangle_method_chaining_3():
     tri = cl.load_dataset('qincurred')
@@ -642,3 +650,11 @@ def test_triangle_grain_defaults():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).data)))
+
+def test_triangle_plot():
+    _ = cl.Triangle(cl.load_dataset('RAA')).plot()
+    assert True
+
+def test_triangle_format():
+    print(cl.Triangle(cl.load_dataset('RAA')))
+    assert True

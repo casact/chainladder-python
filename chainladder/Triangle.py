@@ -291,7 +291,7 @@ class Triangle():
                 temp = pd.pivot_table(temp,index=['origin','development'],values='values', aggfunc='sum').reset_index()
                 col_dict = {'origin':'o','development':'d','values':'v'}
                 temp.columns = [col_dict.get(item, item) for item in temp.columns]
-                temp = Triangle(temp, origin='o',development='d',values='v')
+                temp = Triangle(temp, origin='o',development='d',values='v').data
             # At this point we need to be in triangle format
             self.data = temp
             dgrain = grain[-1]
