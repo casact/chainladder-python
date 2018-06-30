@@ -628,11 +628,6 @@ def test_triangle_method_chaining_1():
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY', incremental=True).data)))
 
-def test_triangle_method_chaining_2():
-    tri = cl.load_dataset('qincurred')
-    assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').cum_to_incr().data)),
-    np.nan_to_num(np.array(cl.Triangle(tri).cum_to_incr().grain('OYDY').data)))
-
 def test_triangle_method_chaining_3():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain('OYDY').data)),
