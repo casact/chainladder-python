@@ -298,10 +298,10 @@ class Chainladder():
             if type(apriori) in [float, int]:
                 my_apriori = np.array([apriori]*len(exposure))
             my_apriori = np.array(exposure) * apriori
-            latest = np.array(triangle.get_latest_diagonal())
-            CDF = np.array(self.CDF)[latest[:,0].astype(int)-1]
+            latest = np.array(triangle.get_latest_diagonal().iloc[:,-1])
+            CDF = np.array(self.CDF)[::-1]
             unreported_pct = 1 - 1 / CDF
-            self.ultimates = Series(latest[:,1] + unreported_pct * my_apriori,index=triangle.data.index)
+            self.ultimates = Series(latest + unreported_pct * my_apriori,index=triangle.data.index)
             self.method = 'born_ferg'
             self.apriori = apriori
             self.exposure = exposure

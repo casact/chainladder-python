@@ -55,7 +55,7 @@ class Triangle():
             raise TypeError(str(type(data)) + \
                             ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
         self.data = data.copy()
-        if data.shape[1]>= data.shape[0]:
+        if data.shape[1]>= data.shape[0] or origin is None or development is None:
             self.data.index.name = 'orig'
             self.data.reset_index(inplace=True)
             self.__set_period(axis=0, fields=['orig'])
