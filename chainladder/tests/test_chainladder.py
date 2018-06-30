@@ -12,6 +12,7 @@ import os.path
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri, r
 import numpy as np
+import pandas as pd
 
 from numpy.testing import assert_allclose, assert_equal
 
@@ -650,10 +651,6 @@ def test_triangle_grain_defaults():
     tri = cl.load_dataset('qincurred')
     assert_equal(np.nan_to_num(np.array(cl.Triangle(tri).grain().data)),
     np.nan_to_num(np.array(cl.Triangle(tri).data)))
-
-def test_triangle_plot():
-    _ = cl.Triangle(cl.load_dataset('RAA')).plot()
-    assert True
 
 def test_triangle_format():
     print(cl.Triangle(cl.load_dataset('RAA')))
