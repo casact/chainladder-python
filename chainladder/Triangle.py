@@ -54,7 +54,7 @@ class Triangle():
         if type(data) is not pd.DataFrame:
             raise TypeError(str(type(data)) + \
                             ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
-        self.data = copy.deepcopy(data)
+        self.data = data.copy()
         if data.shape[1]>= data.shape[0]:
             self.data.index.name = 'orig'
             self.data.reset_index(inplace=True)
@@ -148,8 +148,7 @@ class Triangle():
     def __format(self):
         '''The purpose of this method is to display the dates at the grain
         of the triangle, i.e. don't dispay months if quarter is lowest grain'''
-        temp = self.data.copy()
-        temp = temp.reset_index()
+        temp = self.data.copy().reset_index()
         temp['origin'] = pd.PeriodIndex(temp['origin'], freq=self.origin_grain)
         temp.set_index('origin', inplace=True)
         return temp
@@ -193,7 +192,8 @@ class Triangle():
 
     def __fill_inner_diagonal_nans(self, data):
         '''purpose of this method is to provide data clean-up with missing Values
-        in the middle of our data.
+        in inner diagonals of our data. This occurs in practice where the development
+        periods avaialble do not go as far back as the origin periods.
         '''
         cols = data.columns
         index = data.index
@@ -203,8 +203,7 @@ class Triangle():
         for i in range(len(cols)):
             x = np.where(np.isfinite(temp[:,i][::-1]))[0][0]
             key.append(x)
-            if x > 0:
-                temp_array[:,i][-x:] = np.nan
+            if x > 0: temp_array[:,i][-x:] = np.nan
         return pd.DataFrame(temp_array, index=index, columns=cols)
 
     def cum_to_incr(self, inplace=False):
@@ -221,11 +220,10 @@ class Triangle():
         """
 
         if inplace == True:
-            a = np.array(self.data)
-            incr = pd.DataFrame(np.concatenate((a[:,0].reshape(a.shape[0],1),a[:,1:]-a[:,:-1]),axis=1))
-            incr.index = self.data.index
-            incr.columns = self.data.columns
-            self.data = incr
+            data = np.array(self.data)
+            incr = np.concatenate((data[:,0].reshape(a.shape[0],1),
+                                   data[:,1:]-data[:,:-1]), axis=1))
+            self.data = self.data*0 + incr
             return self
         if inplace == False:
             new_instance = copy.deepcopy(self)
@@ -252,51 +250,39 @@ class Triangle():
             return new_instance.incr_to_cum(inplace=True)
 
     def get_latest_diagonal(self):
-        x = self.data
-        return pd.DataFrame({'dev_lag':[x.columns[np.where(np.logical_not(np.isnan(row)))][-1] for index,row in x.iterrows()],
-                             'values':[row.iloc[np.where(np.logical_not(np.isnan(np.array(row))))[0][-1]] for index, row in x.iterrows()]},
-                index=x.index)
+        """Method to return the latest diagonal of the triangle.
 
-    def __add__(self, obj):
-        return self.__triangle_arithmetic(obj,'+')
+        Returns: pandas.Series
 
-    def __radd__(self, obj):
-        return self if obj == 0 else self.__add__(obj)
+        """
 
-    def __sub__(self, obj):
-        return self.__triangle_arithmetic(obj,'-')
+        data = self.data_as_table()
+        return data[data['development'] == data['development'].max()] \
+                    .sort_values('origin') \
+                    .set_index('origin') \
+                    .drop('development',axis=1)
 
-    def __mul__(self, obj):
-        return self.__triangle_arithmetic(obj,'*')
+    def __add__(self, other):
+        return Triangle(self.data + other.data)
 
-    def __truediv__(self, obj):
-        return self.__triangle_arithmetic(obj,'/')
+    def __radd__(self, other):
+        return self if other == 0 else self.__add__(other)
 
-    def __triangle_arithmetic(self, obj, operator):
-        if isinstance(obj, Triangle):
-            y = copy.deepcopy(self)
-            x = copy.deepcopy(obj)
-            x = x.data_as_table()
-            y = y.data_as_table()
-            arithmetic_dict = {'+':y['values']+x['values'],
-                               '-':y['values']-x['values'],
-                               '*':y['values']*x['values'],
-                               '/':y['values']/x['values']}
-            y['values']=arithmetic_dict[operator]
-            col_dict = {'origin':'o','development':'d','values':'v'}
-            y.columns = [col_dict[item] for item in y.columns]
-            return Triangle(y, origin='o', development = 'd', values='v')
-        else:
-            return NotImplemented
+    def __sub__(self, other):
+        Triangle(self.data - other.data)
+
+    def __mul__(self, other):
+        Triangle(self.data * other.data)
+
+    def __truediv__(self, other):
+        Triangle(self.data / other.data)
 
     def grain(self, grain='', incremental=False, inplace=False):
         if inplace == True:
-            if grain == '':
-                grain = 'O' + self.origin_grain + 'D' + self.development_grain
+            if grain == '': grain = 'O' + self.origin_grain + 'D' + self.development_grain
             # At this point we need to convert to tabular format
             ograin = grain[1:2]
-            if incremental == True:
-                self.incr_to_cum(inplace=True)
+            if incremental == True: self.incr_to_cum(inplace=True)
             temp = self.data.copy()
             if self.origin_grain != ograin:
                 self.origin_grain = ograin
@@ -304,13 +290,12 @@ class Triangle():
                 temp['origin'] = pd.PeriodIndex(temp['origin'],freq=ograin).to_timestamp()
                 temp = pd.pivot_table(temp,index=['origin','development'],values='values', aggfunc='sum').reset_index()
                 col_dict = {'origin':'o','development':'d','values':'v'}
-                temp.columns = [col_dict[item] for item in temp.columns]
+                temp.columns = [col_dict.get(item, item) for item in temp.columns]
                 temp = Triangle(temp, origin='o',development='d',values='v')
             # At this point we need to be in triangle format
             self.data = temp
             dgrain = grain[-1]
             if self.development_grain != dgrain:
-
                 init_lag = self.data.iloc[-1].dropna().index[-1]
                 final_lag = self.data.iloc[0].dropna().index[-1] + 1
                 freq = {'M':{'Y':12,'Q':3,'M':1},
