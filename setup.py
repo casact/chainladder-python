@@ -43,6 +43,7 @@ setup(
         "seaborn>=0.7.1",
         "scipy>=0.19.0",
         "statsmodels>=0.8.0",
-        "bokeh>=0.11.0"
+        "bokeh>=0.11.0",
+        "holoviews>=1.10.0"
     ],
 )
