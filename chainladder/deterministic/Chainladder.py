@@ -16,6 +16,7 @@ from warnings import warn
 from chainladder.Triangle import Triangle
 import copy
 import itertools
+import holoviews as hv
 
 class Chainladder():
     """ ChainLadder class specifies the chainladder model.
@@ -247,6 +248,13 @@ class Chainladder():
         incr.loc['LDF'] = self.LDF
         incr.loc['CDF'] = self.CDF
         return incr.round(4)
+
+    def plot_age_to_age(self,period=0):
+        ata = self.age_to_age()
+        hv.extension('bokeh')
+        return hv.Curve(ata.iloc[:-3,period].dropna()[ata.iloc[:-3,period].dropna()>0],group='Age to Age',
+                        label=ata.iloc[:,period].name).options(height=400,width=800) * \
+                        hv.HLine(self.LDF[period], label='Selected').options(color='red',line_dash='dashed')
 
     def DFM(self, triangle = None, inplace = False):
         """ Method to develop ultimates using the Development Factor Method (DFM)

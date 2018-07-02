@@ -6,8 +6,7 @@ class is a pandas.DataFrame.
 
 import pandas as pd
 import numpy as np
-from chainladder.UtilityFunctions import Plot
-from bokeh.palettes import Spectral10
+import holoviews as hv
 import copy
 
 class Triangle():
@@ -135,7 +134,7 @@ class Triangle():
                     ((obj.reset_index()['dev_lag']*3)-3).values.astype('timedelta64[M]')
         else:
             development = obj.reset_index()['origin'].values.astype('datetime64[' + self.development_grain + ']') + \
-                    (obj.reset_index()['dev_lag']-1).values.astype('timedelta64[' + self.development_grain + ']')
+                    (obj.reset_index()['dev_lag']).values.astype('timedelta64[' + self.development_grain + ']')
         return pd.concat([obj.reset_index()[['origin','dev_lag']], pd.Series(development, name='development')], axis=1)
 
     def __repr__(self):
@@ -163,15 +162,15 @@ class Triangle():
         unit tests for success:
             1. must retain the original origin date
         """
+        origin = pd.PeriodIndex(start=self.data['origin'].min(), end=self.data['origin'].max(), freq = self.origin_grain).to_timestamp()
+        development = pd.PeriodIndex(start=self.data['origin'].min(), end=self.data['development'].max(), freq = self.development_grain).to_timestamp()
+        cartesian_product = pd.DataFrame(self.__cartesian_product(origin, development),columns = ['origin','development'])
+        cartesian_product = cartesian_product[cartesian_product['development']>= cartesian_product['origin']].set_index(['origin','development'])
+        self.data = cartesian_product.merge(self.data.set_index(['origin','development']), how='left', left_index=True, right_index=True).fillna(0).reset_index()
         dev_lag = self.data.merge(self.__get_dev_lag(), how='inner', on=['origin','development'])
-        origin_dict = {'Y':self.data['origin'].dt.strftime('%Y'),
-                       'Q':self.data['origin'].dt.year.astype(str) +'-'+ 'Q' + self.data['origin'].dt.quarter.astype(str),
-                       'M':self.data['origin'].dt.strftime('%Y-%b')}
         tri = pd.pivot_table(dev_lag, values='values', index='origin',
                              columns='dev_lag', aggfunc="sum").sort_index()
         tri.columns = [item for item in tri.columns]
-        #fills in lower diagonal with NANs
-        tri = self.__fill_inner_diagonal_nans(tri)
         return tri
 
     def data_as_table(self):
@@ -190,21 +189,15 @@ class Triangle():
         data = data.merge(self.__get_development(data), how='inner', on=['origin','dev_lag']).drop('dev_lag',axis=1).sort_values(['origin','development'])
         return data
 
-    def __fill_inner_diagonal_nans(self, data):
-        '''purpose of this method is to provide data clean-up with missing Values
-        in inner diagonals of our data. This occurs in practice where the development
-        periods avaialble do not go as far back as the origin periods.
-        '''
-        cols = data.columns
-        index = data.index
-        temp = np.array(data)
-        key = []
-        temp_array = np.nan_to_num(np.array(data))
-        for i in range(len(cols)):
-            x = np.where(np.isfinite(temp[:,i][::-1]))[0][0]
-            key.append(x)
-            if x > 0: temp_array[:,i][-x:] = np.nan
-        return pd.DataFrame(temp_array, index=index, columns=cols)
+    def __cartesian_product(self, *arrays):
+        '''A fast implementation of cartesian product, used for filling in gaps
+        in inner diagonals (if any)'''
+        la = len(arrays)
+        dtype = np.result_type(*arrays)
+        arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
+        for i, a in enumerate(np.ix_(*arrays)):
+            arr[...,i] = a
+        return arr.reshape(-1, la)
 
     def cum_to_incr(self, inplace=False):
         """Method to convert an cumulative triangle into a incremental triangle.  Note,
@@ -301,7 +294,7 @@ class Triangle():
                 freq = {'M':{'Y':12,'Q':3,'M':1},
                         'Q':{'Y':4,'Q':1}}
                 self.data = self.data[[item for item in range(init_lag,final_lag,freq[self.development_grain][dgrain])]]
-
+                self.data.columns = [item for item in range(len(self.data.columns))]
                 self.development_grain = dgrain
             if incremental == True:
                 self.cum_to_incr(inplace=True)
@@ -327,37 +320,14 @@ class Triangle():
             Renders the matplotlib plots.
 
         """
-        my_dict = []
-        plot_dict = self.__get_plot_dict()
-        for item in plots:
-            my_dict.append(plot_dict[item])
-        return Plot(ctype, my_dict, **kwargs).grid
-
-    def __get_plot_dict(self):
-        '''Should probably put the configuration in a yaml or json file
-        '''
-        xvals = [i+1 for i in range(len(self.data.columns))]
-        plot_dict = \
-            {'triangle': \
-                {'Title':'Latest Triangle Data',
-                 'XLabel':'Development Period',
-                 'YLabel':'Values',
-                 'chart_type_dict': \
-                    {'type':['line'],
-                     'mtype':['line'],
-                     'rows':[len(self.data)],
-                     'x':[xvals],
-                     'y':[self.data],
-                     'line_dash':['solid'],
-                     'line_width':[4],
-                     'alpha':[1],
-                     'line_cap':['round'],
-                     'line_join':['round'],
-                     'color':[Spectral10*int(len(self.data)/10+1)],
-                     'label':[[str(item) for item in self.data.index]],
-                     'linestyle':['-'],
-                     'linewidth':[5],
-                     }
-                }
-            }
-        return plot_dict
+        Spectral10 = ['#5e4fa2', '#3288bd', '#66c2a5', '#abdda4', '#e6f598', '#fee08b', '#fdae61', '#f46d43', '#d53e4f', '#9e0142']
+        color_cycle = hv.Cycle(Spectral10)
+        origin_periods = [str(item) for item in pd.PeriodIndex(self.data.index,freq=self.origin_grain)]
+        rows = [np.array(self.data.loc[item]) for item in self.data.index]
+        backend_dict = {'bokeh':dict(height=400,width=600, line_width=3, line_cap='round', color=color_cycle)}
+        hv.extension('bokeh')
+        return hv.Overlay([hv.Curve(rows[item], kdims=['Development Period'], vdims=['Values'],
+                           label = origin_periods[item]) \
+                             .options(**backend_dict['bokeh'])
+                        for item in range(len(rows))])\
+                   .options(title_format="Latest Triangle Data")
