@@ -65,7 +65,8 @@ class Triangle():
             development = list(development) if type(development) is not str else [development]
             origin = list(origin) if type(origin) is not str else [origin]
             data['values'] = data[values]
-            self.data = data[origin + development + ['values']].copy()
+            self.data = pd.pivot_table(data, index=origin + development,
+                                       values='values', aggfunc='sum').reset_index()
             self.__set_period(axis=0, fields=origin)
             self.__set_period(axis=1, fields=development)
             self.origin_grain = self.__get_period_grain(axis=0)

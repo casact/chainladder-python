@@ -434,3 +434,16 @@ class Chainladder():
         self.tail_factor = tail_factor
         self.set_LDF(self.LDF_average, inplace=True)
         return self
+
+    def inverse_power_tail(self):
+        '''Calculates the tail using the inverse power curve fit
+        '''
+    
+        X = np.array([np.log(1/(item+1)) for item in range(len(self.age_to_age().columns))])
+        y = np.array(np.log(self.LDF-1))
+        X = sm.add_constant(X)
+        OLS = sm.OLS(y,X).fit()
+        new_X = np.array(range(int(np.max(1/np.exp(X))),100000))
+        self.tail_factor = np.product(1 + np.exp(np.log(1/new_X)*OLS.params[1]+OLS.params[0]))
+        self.set_LDF(self.LDF_average, inplace=True)
+        return self
