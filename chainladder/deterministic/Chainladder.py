@@ -97,7 +97,7 @@ class Chainladder():
         self.n_iters = kwargs.get('n_iters',1)
         self.tail_factor = 1
         self.triangle_pred = kwargs.get('triangle_pred',None)
-        self.set_LDF(self.LDF_average, inplace=True)
+        self.set_LDF(self.LDF_average, tail_factor=self.tail_factor, inplace=True)
         if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
         if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
         if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
@@ -107,7 +107,7 @@ class Chainladder():
         return str(self.age_to_age())
 
 
-    def set_LDF(self, LDF_average = None, colname_sep='-', inplace=False):
+    def set_LDF(self, LDF_average = None, colname_sep='-', tail_factor=1.0, inplace=False):
         """Method to convert triangle form to tabular form.
 
         Arguments:
@@ -162,7 +162,8 @@ class Chainladder():
             geometric = np.prod(geometric,axis=0)**(1/(np.sum(w_geom,axis=0)-1))
             # Array of product of Series is due to bypass an invalid numpy warning - weird code...but it works
             LDF = LDF*(average=='volume')+LDF*(average=='simple')+LDF*(average=='regression')+np.array(Series(average=='geometric')*Series(geometric))+np.array(Series(harmonic)*Series(average=='harmonic'))
-            LDF = np.append(LDF,[self.tail_factor]) # Need to modify for tail
+            self.tail_factor = tail_factor
+            LDF = np.append(LDF,[self.tail_factor])
             columns = [str(item) + colname_sep + str(self.triangle.data.columns.values[num + 1])
                     for num, item in enumerate(self.triangle.data.columns.values[:-1])] + [str(self.triangle.data.columns.values[-1]) + colname_sep + 'Ult']
             self.LDF = Series(LDF, index=columns)
@@ -171,9 +172,9 @@ class Chainladder():
             return self
         if inplace == False:
             new_instance = copy.deepcopy(self)
-            return new_instance.set_LDF(LDF_average=LDF_average, colname_sep = colname_sep, inplace=True)
+            return new_instance.set_LDF(LDF_average=LDF_average, colname_sep = colname_sep, tail_factor=tail_factor, inplace=True)
 
-    def select_average(self, LDF_average = None, num_periods=None, inplace=False):
+    def select_average(self, LDF_average = None, num_periods=None, tail_factor=1.0, inplace=False):
         """ Method to select number of years and the average used in LDF pick of the chainladder model.
 
          Arguments:
@@ -206,7 +207,7 @@ class Chainladder():
                     first_index = max(total_index- num_periods[i] - 1 ,0)
                 temp[:,i] = np.append(np.repeat(0,first_index),np.repeat(1,total_index-first_index))*(temp[:,i]*0+1)
             self.weights = Triangle(DataFrame(temp, index=self.weights.data.index, columns = self.weights.data.columns))
-            self.set_LDF(LDF_average, inplace=True)
+            self.set_LDF(LDF_average, tail_factor=tail_factor,inplace=True)
             if self.method == 'DFM': self.DFM(self.triangle_pred, inplace=True)
             if self.method == 'born_ferg': self.born_ferg(self.exposure, self.apriori, self.triangle_pred, inplace=True)
             if self.method == 'benktander': self.benktander(self.exposure, self.apriori, self.n_iters, self.triangle_pred, inplace=True)
@@ -214,7 +215,7 @@ class Chainladder():
             return self
         if inplace == False:
             new_instance = copy.deepcopy(self)
-            return new_instance.select_average(LDF_average=LDF_average, num_periods=num_periods, inplace=True)
+            return new_instance.select_average(LDF_average=LDF_average, num_periods=num_periods, tail_factor=tail_factor, inplace=True)
 
 
 
@@ -305,6 +306,8 @@ class Chainladder():
                 triangle = self.triangle
             if type(apriori) in [float, int]:
                 my_apriori = np.array([apriori]*len(exposure))
+            exposure = Series(exposure)
+            exposure.index = triangle.data.index
             my_apriori = np.array(exposure) * apriori
             latest = np.array(triangle.get_latest_diagonal().iloc[:,-1])
             CDF = np.array(self.CDF)[::-1]
@@ -322,7 +325,9 @@ class Chainladder():
         if inplace == True:
             if triangle is None:
                 triangle = self.triangle
-            temp_ult = np.array(exposure) * apriori
+            exposure = Series(exposure)
+            exposure.index = triangle.data.index
+            temp_ult = exposure * apriori
             for i in range(n_iters):
                 temp_ult = self.born_ferg(exposure=temp_ult, apriori=1, triangle=triangle).ultimates
             self.ultimates = temp_ult
@@ -339,6 +344,8 @@ class Chainladder():
         if inplace == True:
             if triangle is None:
                 triangle = self.triangle
+            exposure = Series(exposure)
+            exposure.index = triangle.data.index
             latest = np.array(triangle.get_latest_diagonal().iloc[:,-1])
             latest = latest[exposure>0]
             CDF = np.array(self.CDF)[::-1]
@@ -438,7 +445,7 @@ class Chainladder():
     def inverse_power_tail(self):
         '''Calculates the tail using the inverse power curve fit
         '''
-    
+
         X = np.array([np.log(1/(item+1)) for item in range(len(self.age_to_age().columns))])
         y = np.array(np.log(self.LDF-1))
         X = sm.add_constant(X)
