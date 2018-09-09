@@ -135,7 +135,7 @@ class Triangle():
                     ((obj.reset_index()['dev_lag']*3)-3).values.astype('timedelta64[M]')
         else:
             development = obj.reset_index()['origin'].values.astype('datetime64[' + self.development_grain + ']') + \
-                    (obj.reset_index()['dev_lag']).values.astype('timedelta64[' + self.development_grain + ']')
+                    ((obj.reset_index()['dev_lag']*1)-1).values.astype('timedelta64[' + self.development_grain + ']')
         return pd.concat([obj.reset_index()[['origin','dev_lag']], pd.Series(development, name='development')], axis=1)
 
     def __repr__(self):
@@ -278,14 +278,17 @@ class Triangle():
             ograin = grain[1:2]
             if incremental == True: self.incr_to_cum(inplace=True)
             temp = self.data.copy()
+
             if self.origin_grain != ograin:
                 self.origin_grain = ograin
                 temp = self.data_as_table()
                 temp['origin'] = pd.PeriodIndex(temp['origin'],freq=ograin).to_timestamp()
                 temp = pd.pivot_table(temp,index=['origin','development'],values='values', aggfunc='sum').reset_index()
+
                 col_dict = {'origin':'o','development':'d','values':'v'}
                 temp.columns = [col_dict.get(item, item) for item in temp.columns]
                 temp = Triangle(temp, origin='o',development='d',values='v').data
+
             # At this point we need to be in triangle format
             self.data = temp
             dgrain = grain[-1]

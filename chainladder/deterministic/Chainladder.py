@@ -77,7 +77,7 @@ class Chainladder():
         if isinstance(triangle, Triangle):
             self.triangle = copy.deepcopy(triangle)
         else:
-            self.triangle = Triangle(data=triangle)
+            self.triangle = Triangle(data=triangle.copy())
         self.triangle.ncol = len(self.triangle.data.columns)
         if not isinstance(weights, Triangle):
             self.weights = Triangle(self.triangle.data * 0 + weights)
@@ -88,7 +88,6 @@ class Chainladder():
             self.LDF_average = [LDF_average]*(self.triangle.ncol - 1)
         else:
             self.LDF_average = np.array(LDF_average)[:self.triangle.ncol - 1]
-        self.lags = kwargs.get('lags',None)
         self.method = kwargs.get('method','DFM')
         self.apriori = kwargs.get('apriori',None)
         self.exposure = kwargs.get('exposure',None)
@@ -105,7 +104,6 @@ class Chainladder():
 
     def __repr__(self):
         return str(self.age_to_age())
-
 
     def set_LDF(self, LDF_average = None, colname_sep='-', tail_factor=1.0, inplace=False):
         """Method to convert triangle form to tabular form.
@@ -136,7 +134,7 @@ class Chainladder():
             if type(LDF_average) is str:
                 LDF_average = [LDF_average]*(self.triangle.ncol - 1)
             self.LDF_average = LDF_average
-            average = np.array(self.LDF_average)
+            average = np.array(LDF_average)
             #Volume Weighted average and Straight Average, and regression through origin
             val = np.repeat((np.array([[{'regression':0, 'volume':1,'simple':2}.get(item.lower(),2) for item in average]])),len(self.triangle.data.index),axis=0)
             val = np.nan_to_num(val*(tri_array[:,1:]*0+1))
@@ -150,8 +148,7 @@ class Chainladder():
             w_harm = np.nan_to_num(w)
             x[x == 0] = np.inf
             ata = y/x*w_harm
-            # Something is wrong with reciprocal function.  It seems there is some mutation of the ata object going on.
-            harmonic = (np.sum(w_harm,axis=0)-1)/np.sum(np.reciprocal(ata, where=ata!=0),axis=0)
+            harmonic = (np.sum(w_harm,axis=0)-1)/np.sum(1/np.where(ata==0,1,ata)*(ata!=0),axis=0)
 
             #Geometric Mean
             w_geom = np.logical_not(np.logical_not(w))
@@ -217,8 +214,6 @@ class Chainladder():
             new_instance = copy.deepcopy(self)
             return new_instance.select_average(LDF_average=LDF_average, num_periods=num_periods, tail_factor=tail_factor, inplace=True)
 
-
-
     def age_to_age(self, colname_sep='-'):
         """ Method to display an age-to-age triangle with a display of simple
         average chainladder development factors and volume weighted average
@@ -250,13 +245,6 @@ class Chainladder():
         incr.loc['CDF'] = self.CDF
         return incr.round(4)
 
-    def plot_age_to_age(self,period=0):
-        ata = self.age_to_age()
-        hv.extension('bokeh')
-        return hv.Curve(ata.iloc[:-3,period].dropna()[ata.iloc[:-3,period].dropna()>0],group='Age to Age',
-                        label=ata.iloc[:,period].name).options(height=400,width=800) * \
-                        hv.HLine(self.LDF[period], label='Selected').options(color='red',line_dash='dashed')
-
     def DFM(self, triangle = None, inplace = False):
         """ Method to develop ultimates using the Development Factor Method (DFM)
 
@@ -272,16 +260,18 @@ class Chainladder():
             Chainladder object fit with the DFM method.
         """
 
-        if inplace==True:
+        if inplace == True:
             if triangle is None:
-                triangle =self.triangle
-            latest = np.array(triangle.get_latest_diagonal())
-            self.ultimates = Series((latest[:,0]*np.array(self.CDF)[::-1]), index = triangle.data.index)
+                triangle = self.triangle
+            exposure = np.array(triangle.data)[:,0]*0
+            n_iters = np.ceil(np.log(0.0000000001)/np.log((1-1/self.CDF.iloc[0]))).astype(int)
+            self.benktander(exposure=exposure, apriori = 0, n_iters = n_iters,
+                            triangle = triangle, inplace=True)
+            self.method = 'DFM'
             return self
         if inplace==False:
             new_instance = copy.deepcopy(self)
-            return new_instance.DFM(triangle=triangle, inplace=True)
-
+            return new_instance.DFM(triangle=triangle.copy(), inplace=True)
 
     def born_ferg(self, exposure, apriori, triangle = None, inplace=False):
         """ Method to develop ultimates using the Bornheutter-Ferguson Method (BF)
@@ -302,35 +292,37 @@ class Chainladder():
             Chainladder object fit with the BF method.
         """
         if inplace == True:
-            if triangle is None:
-                triangle = self.triangle
-            if type(apriori) in [float, int]:
-                my_apriori = np.array([apriori]*len(exposure))
-            exposure = Series(exposure)
-            exposure.index = triangle.data.index
-            my_apriori = np.array(exposure) * apriori
-            latest = np.array(triangle.get_latest_diagonal().iloc[:,-1])
-            CDF = np.array(self.CDF)[::-1]
-            unreported_pct = 1 - 1 / CDF
-            self.ultimates = Series(latest + unreported_pct * my_apriori,index=triangle.data.index)
+            self.benktander(exposure=exposure, apriori = apriori, n_iters = 1,
+                            triangle = triangle, inplace=True)
             self.method = 'born_ferg'
-            self.apriori = apriori
-            self.exposure = exposure
             return self
         if inplace == False:
             new_instance = copy.deepcopy(self)
-            return new_instance.born_ferg(exposure=exposure, apriori = apriori, triangle=triangle, inplace=True)
+            return new_instance.born_ferg(exposure=exposure, apriori = apriori,
+                                          triangle=triangle, inplace=True)
 
     def benktander(self, exposure, apriori, n_iters = 1, triangle = None, inplace=False):
+        '''This method generalizes both the DFM and Bornheuetter-Ferguson (BF)
+           methods.  It serves as the computational base for these other two methods
+           by setting the n_iters parameter to 1 in the case of the BF method and
+           a sufficiently high n_iters for the chainladder.
+           L\sum_{k=0}^{n-1}(1-\frac{1}{CDF}) + Apriori\times (1-\frac{1}{CDF})^{n}
+        '''
         if inplace == True:
             if triangle is None:
                 triangle = self.triangle
             exposure = Series(exposure)
             exposure.index = triangle.data.index
-            temp_ult = exposure * apriori
-            for i in range(n_iters):
-                temp_ult = self.born_ferg(exposure=temp_ult, apriori=1, triangle=triangle).ultimates
-            self.ultimates = temp_ult
+            my_apriori = np.array(exposure) * apriori
+            latest = np.array(triangle.get_latest_diagonal().iloc[:,-1])
+            CDF = np.array(self.CDF)[::-1]
+            CDF = np.expand_dims(np.array(CDF),1)
+            CDF = 1-1/np.repeat(CDF,n_iters+1,axis=1)
+            exponents = np.expand_dims(list(range(n_iters+1)),0)
+            exponents = np.repeat(exponents,CDF.shape[0], axis=0)
+            CDF = CDF**exponents
+            self.ultimates = Series(np.sum(CDF[:,:-1],axis=1)*latest+CDF[:,-1]*my_apriori,
+                                    index=triangle.data.index)
             self.method = 'benktander'
             self.apriori = apriori
             self.exposure = exposure
@@ -372,7 +364,6 @@ class Chainladder():
 
     def fish_lang():
         return
-
 
     def exclude_link_ratios(self, otype, inplace=False):
         if inplace == True:
@@ -454,3 +445,22 @@ class Chainladder():
         self.tail_factor = np.product(1 + np.exp(np.log(1/new_X)*OLS.params[1]+OLS.params[0]))
         self.set_LDF(self.LDF_average, inplace=True)
         return self
+
+    def full_triangle(self):
+        '''Produces a 'completed' triangle.  Useful for tracking actuals vs
+           expected over time. '''
+        CDF = np.expand_dims(np.append(np.array(self.CDF),[1.],0),axis=0)
+        CDF = np.repeat(CDF,self.triangle.data.shape[0],axis=0)
+        ultimates = np.expand_dims(np.array(self.ultimates),axis=1)
+        ultimates = np.repeat(ultimates,CDF.shape[1],axis=1)
+        latest = np.append(np.array(self.triangle.data),
+                           np.repeat(np.array([[np.nan]]),
+                                     self.triangle.data.shape[0],
+                                     axis=0),
+                           axis=1)
+        existing_elements_ind = np.nan_to_num(latest-latest+1)
+        full = (np.nan_to_num(latest)*existing_elements_ind + \
+                ultimates / CDF * (1-existing_elements_ind))
+        return DataFrame(full,
+                         index = self.triangle.data.index,
+                         columns = list(self.triangle.data.columns) + ['Ultimate'])
