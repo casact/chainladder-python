@@ -464,3 +464,9 @@ class Chainladder():
         return DataFrame(full,
                          index = self.triangle.data.index,
                          columns = list(self.triangle.data.columns) + ['Ultimate'])
+
+    #def expected(self, num_periods):
+    #    '''Determines expected emergence from valuation date for a number of periods'''  
+    #    full = Triangle(self.full_triangle().iloc[:,:-1]).data_as_table().set_index('origin')
+    #    # Specify how tail decays.  We are currently ignoreing this 
+    #    (temp[temp['development']=='2018-02-01']['values'] - temp[temp['development']=='2017-12-01']['values']).fillna(0)

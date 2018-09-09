@@ -130,13 +130,17 @@ class Triangle():
         to a development date '''
         if obj is None:
             obj = self.data
-        if self.development_grain == 'Q':
-            development = obj.reset_index()['origin'].values.astype('datetime64[M]') + \
-                    ((obj.reset_index()['dev_lag']*3)-3).values.astype('timedelta64[M]')
-        else:
-            development = obj.reset_index()['origin'].values.astype('datetime64[' + self.development_grain + ']') + \
-                    ((obj.reset_index()['dev_lag']*1)-1).values.astype('timedelta64[' + self.development_grain + ']')
-        return pd.concat([obj.reset_index()[['origin','dev_lag']], pd.Series(development, name='development')], axis=1)
+        my_dict = {'Y':12,'Q':3,'M':1}
+        num_months = ((obj['dev_lag']-1)*my_dict[self.development_grain]).astype(int)
+        num_years = np.floor(num_months/12)
+        num_months =  num_months % 12
+        num_years = num_years + (obj['origin'].dt.month+num_months > 12) * 1
+        num_months = num_months - (obj['origin'].dt.month+num_months > 12) * 12
+        development = pd.to_datetime((obj['origin'].dt.year+num_years).astype(int).astype(str) + \
+                        '-' + (obj['origin'].dt.month + num_months).astype(int).astype(str) + \
+                        '-01')
+        return pd.concat([obj.reset_index()[['origin','dev_lag']],
+                         pd.Series(development, name='development')], axis=1)
 
     def __repr__(self):
         return str(self.__format())
@@ -149,7 +153,7 @@ class Triangle():
         '''The purpose of this method is to display the dates at the grain
         of the triangle, i.e. don't dispay months if quarter is lowest grain'''
         temp = self.data.copy().reset_index()
-        temp['origin'] = pd.PeriodIndex(temp['origin'], freq=self.origin_grain)
+        temp['origin'] = temp['origin'].dt.strftime('%Y-%m')
         temp.set_index('origin', inplace=True)
         return temp
 
@@ -188,7 +192,9 @@ class Triangle():
         data = pd.melt(self.data.reset_index(),id_vars=idx, value_vars=self.data.columns,
                        var_name='dev_lag', value_name='values').dropna().set_index(idx).sort_index().reset_index()
         data = data.merge(self.__get_development(data), how='inner', on=['origin','dev_lag']).drop('dev_lag',axis=1).sort_values(['origin','development'])
-        return data
+        data['origin'] = data['origin'].dt.strftime('%Y-%m')
+        data['development'] = data['development'].dt.strftime('%Y-%m')
+        return data[['origin','development','values']].reset_index().drop('index',axis=1)
 
     def __cartesian_product(self, *arrays):
         '''A fast implementation of cartesian product, used for filling in gaps
