@@ -1,4 +1,5 @@
-rpy2=2.9.4
+rpy2
+tzlocal
 libiconv
 r-nloptr
 r-matrix
