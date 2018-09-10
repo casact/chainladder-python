@@ -9,7 +9,7 @@ approach.
 """
 
 import numpy as np
-from pandas import DataFrame, concat, Series
+from pandas import DataFrame, concat, Series, to_datetime
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
@@ -465,8 +465,24 @@ class Chainladder():
                          index = self.triangle.data.index,
                          columns = list(self.triangle.data.columns) + ['Ultimate'])
 
-    #def expected(self, num_periods):
-    #    '''Determines expected emergence from valuation date for a number of periods'''  
-    #    full = Triangle(self.full_triangle().iloc[:,:-1]).data_as_table().set_index('origin')
-    #    # Specify how tail decays.  We are currently ignoreing this 
-    #    (temp[temp['development']=='2018-02-01']['values'] - temp[temp['development']=='2017-12-01']['values']).fillna(0)
+    def get_expectation(self, num_periods, decay):
+        '''Determines expected emergence from valuation date for a number of periods'''
+        val_date = self.triangle.data.index.max()
+        my_dict = {'Y':12,'Q':3,'M':1}
+        num_months = num_periods*my_dict[self.triangle.development_grain]
+        num_years = np.floor(num_months/12)
+        num_months =  num_months % 12
+        num_years = num_years + 1 if val_date.month+num_months > 12 else num_years
+        num_months = num_months - 12  if val_date.month+num_months > 12 else num_months
+        end_date = to_datetime(str(int(val_date.year+num_years)) + '-' + str(int(num_months + val_date.month)) + '-01').strftime('%Y-%m')
+        val_date = val_date.strftime('%Y-%m')
+        full = self.full_triangle().iloc[:,:-1]
+        tail_ldf_initial = (1-decay)*(self.tail_factor-1)
+        tail_decay = 1 + np.repeat(np.repeat(np.array([[tail_ldf_initial]]),full.shape[0],axis=0),240,axis=1) * \
+                         decay**np.repeat(np.expand_dims(np.array(range(0,240)),0),full.shape[0],axis=0)
+        tail_decay = np.cumprod(tail_decay, axis=1)*self.tail_factor/np.prod(tail_decay, axis=1)[0]
+        tail_decay = np.repeat(np.expand_dims(np.array(full.iloc[:,-1]),1),tail_decay.shape[1],axis=1)*tail_decay
+        full = np.append(full,tail_decay,axis=1)
+        temp = DataFrame(full, index=self.full_triangle().index, columns = [item + 1 for item in range(full.shape[1])])
+        temp = Triangle(temp).data_as_table().set_index('origin')
+        return temp[temp['development']==end_date]['values'] - temp[temp['development']==val_date]['values']
