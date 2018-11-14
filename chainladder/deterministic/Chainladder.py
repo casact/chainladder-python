@@ -247,31 +247,26 @@ class Chainladder():
 
     def DFM(self, triangle = None, inplace = False):
         """ Method to develop ultimates using the Development Factor Method (DFM)
-
         Parameters:
             triangle: Triangle or None
                 Set as None will apply the DFM to the triangle embedded in the Chainladder object.
                 This can be overriden to apply the DFM method to a new triangle.
-
             inplace: bool
                 Set to true will mutate the Chainladder object, set to false will create a copy.
-
          Returns:
             Chainladder object fit with the DFM method.
         """
 
-        if inplace == True:
+        if inplace==True:
             if triangle is None:
-                triangle = self.triangle
-            exposure = np.array(triangle.data)[:,0]*0
-            n_iters = np.ceil(np.log(0.0000000001)/np.log((1-1/self.CDF.iloc[0]))).astype(int)
-            self.benktander(exposure=exposure, apriori = 0, n_iters = n_iters,
-                            triangle = triangle, inplace=True)
-            self.method = 'DFM'
+                triangle =self.triangle
+            latest = np.array(triangle.get_latest_diagonal())
+            self.ultimates = Series((latest[:,0]*np.array(self.CDF)[::-1]), index = triangle.data.index)
             return self
         if inplace==False:
             new_instance = copy.deepcopy(self)
-            return new_instance.DFM(triangle=triangle.copy(), inplace=True)
+            return new_instance.DFM(triangle=triangle, inplace=True)
+
 
     def born_ferg(self, exposure, apriori, triangle = None, inplace=False):
         """ Method to develop ultimates using the Bornheutter-Ferguson Method (BF)

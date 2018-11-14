@@ -1,343 +1,433 @@
-# -*- coding: utf-8 -*-
-"""
-The Triangle Module includes the Triangle class.  This base structure of the
-class is a pandas.DataFrame.
-"""
+'''
+Triangle class creates multiple actuarial triangles in an easy to manage class.
+The API borrows heavily from pandas for the purpose of indexing,slicing, and
+accessing individual triangles within the broader class.
 
+The core data structure at the heart of the Triangle class is a 4D numpy array
+with dimensions defined as:
+    Dimension 0: represents key dimensions or the lowest grain(s) at which you
+                 want to manage the triangle, e.g State, Company, etc. The
+                 grain supports multiple key dimensions that will behave like a
+                 pandas.multiIndex
+
+    Dimension 1: represents value dimensions or numeric data to be represented
+                 in each triangle, e.g. Paid, Incurred, etc.
+
+    Dimension 2: represents the origin dimension which will be stored as a date
+                 e.g. Accident Month, Report Year, Policy Quarter, etc.
+
+    Dimension 3: represents the development dimension which will be store
+                 e.g. Valuation Month, Valuation Year, Valuation Quarter, etc.
+
+Dimensions 0 and 1 are accessed like a pandas Dataframe.  You can think about
+the 4d structure as a 2D Dataframe where each element (row, col) is its own 2D
+triangle. The most common operations in pandas are included and allows for
+powerful manipulation. For example:
+
+    my_triangle['incurred'] = my_triangle['paid'] + my_triangle['reserve']
+
+This snippet would extend the values dimension of the my_triangle instance for
+all key, origin and development dimensions.
+
+'''
 import pandas as pd
 import numpy as np
-import holoviews as hv
 import copy
+from UtilityFunctions import (to_datetime, development_lag, get_grain,
+                              cartesian_product)
+
 
 class Triangle():
-    """Triangle class is the basic data representation of an actuarial triangle.
-
-    Historical insurance data is often presented in form of a triangle structure, showing
-    the development of claims over time for each exposure (origin) period. An origin
-    period could be the year the policy was written or earned, or the loss occurrence
-    period. Of course the origin period doesn’t have to be yearly, e.g. quarterly or
-    6
-    monthly origin periods are also often used. The development period of an origin
-    period is also called age or lag. Data on the diagonals present payments in the
-    same calendar period. Note, data of individual policies is usually aggregated to
-    homogeneous lines of business, division levels or perils.
-    Most reserving methods of the ChainLadderpackage expect triangles as input data
-    sets with development periods along the columns and the origin period in rows. The
-    package comes with several example triangles.
-    `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
-
-    Parameters:
-        data : pandas.DataFrame
-            A DataFrame representing the triangle
-        origin : str or list
-            An array representing the origin period of the triangle.
-        development : str or list
-            An array representing the development period of the triangle. In triangle form,
-            the development periods must be the columns of the dataset
-        values : str
-            A string representing the column name of the triangle measure if the data is in
-            tabular form.  Otherwise it is ignored.
-
-    Attributes:
-        data : pandas.DataFrame
-            A DataFrame representing the triangle
-        origin_grain : str
-            The level of granularity of the development of the triangle.
-        development_grain : str
-            The level of granularity of the development of the triangle.
-
-
-    """
-
-    def __init__(self, data=None, origin=None, development=None, values=None):
-        if type(data) is not pd.DataFrame:
-            raise TypeError(str(type(data)) + \
-                            ' is not a valid datatype for the Triangle class.  Currently only DataFrames are supported.')
-        self.data = data.copy()
-        if data.shape[1]>= data.shape[0] or origin is None or development is None:
-            self.data.index.name = 'orig'
-            self.data.reset_index(inplace=True)
-            self.__set_period(axis=0, fields=['orig'])
-            self.origin_grain = self.__get_period_grain(axis=0)
-            self.data.set_index('origin', inplace=True)
-            self.development_grain = self.__get_period_grain()
+    def __init__(self, data=None, origin=None, development=None,
+                 values=None, groupby=None):
+        # Sanitize Inputs
+        if groupby is None:
+            groupby = ['Total']
+            data_agg = data.groupby(origin+development).sum().reset_index()
+            data_agg[groupby[0]] = 'Total'
         else:
-            development = list(development) if type(development) is not str else [development]
-            origin = list(origin) if type(origin) is not str else [origin]
-            data['values'] = data[values]
-            self.data = pd.pivot_table(data, index=origin + development,
-                                       values='values', aggfunc='sum').reset_index()
-            self.__set_period(axis=0, fields=origin)
-            self.__set_period(axis=1, fields=development)
-            self.origin_grain = self.__get_period_grain(axis=0)
-            self.development_grain = self.__get_period_grain(axis=1)
-            self.data = self.__data_as_triangle()
+            data_agg = data.groupby(origin+development+groupby) \
+                           .sum().reset_index()
+        values = [values] if type(values) is str else values
+        origin = [origin] if type(origin) is str else origin
+        development = [development] if type(values) is str else development
 
-    def __set_period(self, axis, fields):
-        '''For tabular form, this will take a set of origin or development
-        column(s) and convert them to dates.
+        # Convert origin/development to dates
+        origin_date = to_datetime(data_agg, origin)
+        self.origin_grain = get_grain(origin_date)
+        development_date = to_datetime(data_agg, development)
+        self.development_grain = get_grain(development_date)
+
+        # Prep the data for 4D Triangle
+        data_agg = self.get_axes(data_agg, groupby, values,
+                                 origin_date, development_date)
+        data_agg = pd.pivot_table(data_agg, index=groupby+['origin'],
+                                  columns='development', values=values,
+                                  aggfunc='sum')
+        # Assign object properties
+        self.kdims = np.array(data_agg.index.droplevel(-1).unique())
+        self.odims = np.array(data_agg.index.levels[-1].unique())
+        self.ddims = np.array(data_agg.columns.levels[-1].unique())
+        self.vdims = np.array(data_agg.columns.levels[0].unique())
+        self.valuation_date = development_date.max()
+        self.groupby = groupby
+        self.iloc = Triangle.Ilocation(self)
+        self.loc = Triangle.Location(self)
+        # Create 4D Triangle
+        triangle = \
+            np.array(data_agg).reshape(len(self.kdims), len(self.odims),
+                                       len(self.vdims), len(self.ddims))
+        triangle = np.swapaxes(triangle, 1, 2)
+        # Set all 0s to NAN for nansafe ufunc arithmetic
+        triangle[triangle == 0] = np.nan
+        self.triangle = triangle
+
+    # ---------------------------------------------------------------- #
+    # ----------------------- Class Properties ----------------------- #
+    # ---------------------------------------------------------------- #
+    @property
+    def shape(self):
+        ''' Returns 4D triangle shape '''
+        return self.triangle.shape
+
+    @property
+    def latest_diagonal(self):
+        return self.get_latest_diagonal()
+
+    @property
+    def keys(self):
+        return pd.DataFrame(list(self.kdims), columns=self.groupby)
+
+    # ---------------------------------------------------------------- #
+    # ---------------------- End User Methods ------------------------ #
+    # ---------------------------------------------------------------- #
+    def get_latest_diagonal(self):
+        ''' Method to return the latest diagonal of the triangle.
         '''
-        target_field = 'origin' if axis == 0 else 'development'
-        if target_field in fields:
-            raise ValueError('The column names `origin` and/or `development` are reserved.')
-        self.data[target_field] = ''
-        for item in fields:
-            self.data[target_field] = self.data[target_field] + self.data[item].astype(str)
-        # Use pandas to infer date
-        datetime_arg = self.data[target_field].astype(str).str.strip()
-        date_inference_list = [{'arg':datetime_arg, 'format':'%Y%m'},
-                               {'arg':datetime_arg, 'infer_datetime_format':True},]
-        for item in date_inference_list:
-            try:
-                self.data[target_field] = pd.to_datetime(**item)
-                break
-            except:
-                pass
-        self.data.drop(fields, axis=1,inplace=True)
-
-    def __get_period_grain(self, axis = None):
-        '''For tabular form. Given date granlarity, it will return Y = Year,
-        Q = Quarter or M = Month grain
-        '''
-        if axis is not None:
-            target_field = 'origin' if axis == 0 else 'development'
-            months = self.data[target_field].dt.month.unique()
-            quarters = self.data[target_field].dt.quarter.unique()
-            grain = 'Y' if len(quarters) == 1 else 'Q'
-            grain = grain if len(months) == len(quarters) else 'M'
-        else:
-            vertical_diff = max(len(self.data.iloc[:,-2].dropna()) - len(self.data.iloc[:,-1].dropna()),1)
-            horizontal_diff = max(len(self.data.iloc[-2].dropna()) - len(self.data.iloc[-1].dropna()),1)
-            dgrain_dict = {(1,4):'Q', (1,12):'M',(4,1):'Y',(1,3):'M',(12,1):'Y',(3,1):'Q'}
-            grain = self.origin_grain if vertical_diff == horizontal_diff \
-                    else dgrain_dict[(vertical_diff,horizontal_diff)]
-        return grain
-
-    def __get_dev_lag(self):
-        ''' For tabular format, this will convert the origin/development difference
-        to a development lag '''
-        year_diff = self.data['development'].dt.year - self.data['origin'].dt.year
-        quarter_diff = self.data['development'].dt.quarter - self.data['origin'].dt.quarter
-        month_diff = self.data['development'].dt.month - self.data['origin'].dt.month
-        dev_lag_dict = {'Y':year_diff + 1,
-                        'Q':year_diff * 4 + quarter_diff + 1,
-                        'M':year_diff * 12 + month_diff + 1}
-        dev_lag = dev_lag_dict[self.development_grain].rename('dev_lag')
-        return pd.concat([self.data[['origin','development']], dev_lag], axis=1)
-
-    def __get_development(self, obj = None):
-        ''' For triangle format, this will convert the origin/dev_lag difference
-        to a development date '''
-        if obj is None:
-            obj = self.data
-        my_dict = {'Y':12,'Q':3,'M':1}
-        num_months = ((obj['dev_lag']-1)*my_dict[self.development_grain]).astype(int)
-        num_years = np.floor(num_months/12)
-        num_months =  num_months % 12
-        num_years = num_years + (obj['origin'].dt.month+num_months > 12) * 1
-        num_months = num_months - (obj['origin'].dt.month+num_months > 12) * 12
-        development = pd.to_datetime((obj['origin'].dt.year+num_years).astype(int).astype(str) + \
-                        '-' + (obj['origin'].dt.month + num_months).astype(int).astype(str) + \
-                        '-01')
-        return pd.concat([obj.reset_index()[['origin','dev_lag']],
-                         pd.Series(development, name='development')], axis=1)
-
-    def __repr__(self):
-        return str(self.__format())
-
-    def to_clipboard(self):
-        '''pass-through of pandas DataFrame.to_clipboard() functionality '''
-        return self.__format().to_clipboard()
-
-    def __format(self):
-        '''The purpose of this method is to display the dates at the grain
-        of the triangle, i.e. don't dispay months if quarter is lowest grain'''
-        temp = self.data.copy().reset_index()
-        temp['origin'] = temp['origin'].dt.strftime('%Y-%m')
-        temp.set_index('origin', inplace=True)
-        return temp
-
-
-    def __data_as_triangle(self):
-        """Method to convert tabular form to triangle form.
-
-        Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
-
-        unit tests for success:
-            1. must retain the original origin date
-        """
-        origin = pd.PeriodIndex(start=self.data['origin'].min(), end=self.data['origin'].max(), freq = self.origin_grain).to_timestamp()
-        development = pd.PeriodIndex(start=self.data['origin'].min(), end=self.data['development'].max(), freq = self.development_grain).to_timestamp()
-        cartesian_product = pd.DataFrame(self.__cartesian_product(origin, development),columns = ['origin','development'])
-        cartesian_product = cartesian_product[cartesian_product['development']>= cartesian_product['origin']].set_index(['origin','development'])
-        self.data = cartesian_product.merge(self.data.set_index(['origin','development']), how='left', left_index=True, right_index=True).fillna(0).reset_index()
-        dev_lag = self.data.merge(self.__get_dev_lag(), how='inner', on=['origin','development'])
-        tri = pd.pivot_table(dev_lag, values='values', index='origin',
-                             columns='dev_lag', aggfunc="sum").sort_index()
-        tri.columns = [item for item in tri.columns]
-        return tri
-
-    def data_as_table(self):
-        """Method to convert triangle form to tabular form.
-
-        Arguments:
-            inplace: bool
-                Set to True will update the instance data attribute inplace
-
-        Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
-        """
-        idx = list(self.data.index.names)
-        data = pd.melt(self.data.reset_index(),id_vars=idx, value_vars=self.data.columns,
-                       var_name='dev_lag', value_name='values').dropna().set_index(idx).sort_index().reset_index()
-        data = data.merge(self.__get_development(data), how='inner', on=['origin','dev_lag']).drop('dev_lag',axis=1).sort_values(['origin','development'])
-        data['origin'] = data['origin'].dt.strftime('%Y-%m')
-        data['development'] = data['development'].dt.strftime('%Y-%m')
-        return data[['origin','development','values']].reset_index().drop('index',axis=1)
-
-    def __cartesian_product(self, *arrays):
-        '''A fast implementation of cartesian product, used for filling in gaps
-        in inner diagonals (if any)'''
-        la = len(arrays)
-        dtype = np.result_type(*arrays)
-        arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
-        for i, a in enumerate(np.ix_(*arrays)):
-            arr[...,i] = a
-        return arr.reshape(-1, la)
-
-    def cum_to_incr(self, inplace=False):
-        """Method to convert an cumulative triangle into a incremental triangle.  Note,
-        the triangle must be in triangle form.
-
-        Arguments:
-            inplace: bool
-                Set to True will update the instance data attribute inplace
-
-        Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
-
-        """
-
-        if inplace == True:
-            data = np.array(self.data)
-            incr = np.concatenate((data[:,0].reshape(data.shape[0],1),
-                                   data[:,1:]-data[:,:-1]), axis=1)
-            self.data = self.data*0 + incr
-            return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.cum_to_incr(inplace=True)
+        nan_tri = self.nan_triangle()
+        diagonal = np.ones(nan_tri.shape).cumsum(axis=1)
+        x = np.expand_dims(nan_tri.shape[1] -
+                           np.sum(np.isnan(nan_tri), axis=1), axis=1)
+        diagonal = diagonal == np.repeat(x, nan_tri.shape[1], axis=1)
+        diagonal = self.expand_dims(diagonal)
+        return np.nansum(diagonal*self.triangle, axis=3)
 
     def incr_to_cum(self, inplace=False):
-        """Method to convert an incremental triangle into a cumulative triangle.  Note,
-        the triangle must be in triangle form.
+        '''Method to convert an incremental triangle into a cumulative triangle.
 
-        Arguments:
-            inplace: bool
-                Set to True will update the instance data attribute inplace
+            Arguments:
+                inplace: bool
+                    Set to True will update the instance data attribute inplace
 
-        Returns:
-            Updated instance `data` parameter if inplace is set to True otherwise it returns a pandas.DataFrame
+            Returns:
+                Updated instance of triangle accumulated along the origin
+        '''
 
-        """
-
-        if inplace == True:
-            self.data = self.data.cumsum(axis=1)
+        if inplace:
+            nan_tri = self.expand_dims(self.nan_triangle())
+            self.triangle = np.nan_to_num(self.triangle).cumsum(axis=3)*nan_tri
             return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.incr_to_cum(inplace=True)
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.incr_to_cum(inplace=True)
 
-    def get_latest_diagonal(self):
-        """Method to return the latest diagonal of the triangle.
+    def grain(self, grain='', incremental=False, inplace=False):
+        ''' TODO - Make incremental work '''
+        if inplace:
+            # First do Origin
+            origin_grain = grain[1:2]
+            development_grain = grain[-1]
+            orig = np.nan_to_num(self.slide(self.triangle))
+            o_dt = pd.Series(self.odims)
+            if origin_grain == 'Q':
+                o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
+                                            o_dt.dt.quarter.astype(str)))
+            elif origin_grain == 'Y':
+                o = np.array(o_dt.dt.year)
+            else:
+                o = self.odims
+            o_new = np.unique(o)
+            o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
+            o_new = np.repeat(np.expand_dims(o_new, axis=0), len(o), axis=0)
+            o_bool = np.repeat(np.expand_dims((o == o_new), axis=1),
+                               len(self.ddims), axis=1)
+            o_bool = self.expand_dims(o_bool)
+            new_tri = np.repeat(np.expand_dims(orig, axis=-1),
+                                o_bool.shape[-1], axis=-1)
+            new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
+            # Then do Development
+            dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
+                              'Q': {'Y': 4, 'Q': 1}}
+            keeps = dev_grain_dict[self.development_grain][development_grain]
+            keeps = self.ddims % keeps == 0
+            new_tri = new_tri[:, :, :, keeps]
+            self.ddims = self.ddims[keeps]
+            self.odims = o_new
+            self.origin_grain = origin_grain
+            self.development_grain = development_grain
+            self.triangle = new_tri
+            self.triangle = self.slide(self.triangle, direction='l')
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            new_obj.grain(grain=grain, incremental=incremental, inplace=True)
+            return new_obj
 
-        Returns: pandas.Series
+    # ---------------------------------------------------------------- #
+    # ------------------------ Display Options ----------------------- #
+    # ---------------------------------------------------------------- #
+    def __repr__(self):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            data = self._repr_format()
+            return data.to_string()
+        else:
+            data = 'Valuation: ' + self.valuation_date.strftime('%Y-%m') + \
+                   '\nGrain:     ' + 'O' + self.origin_grain + \
+                                     'D' + self.development_grain + \
+                   '\nShape:     ' + str(self.shape) + \
+                   '\nKeys:      ' + str(self.groupby) + \
+                   '\nValues:    ' + str(list(self.vdims))
+            return data
 
-        """
+    def _repr_html_(self):
+        ''' Jupyter/Ipython HTML representation '''
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            data = self._repr_format()
+            data = data.to_html(max_rows=pd.options.display.max_rows,
+                                max_cols=pd.options.display.max_columns)
+            return data
+        else:
+            data = pd.Series([self.valuation_date.strftime('%Y-%m'),
+                             'O' + self.origin_grain + 'D'
+                              + self.development_grain,
+                              self.shape, self.groupby, list(self.vdims)],
+                             index=['Valuation:', 'Grain:', 'Shape',
+                                    'Keys:', "Values:"],
+                             name='Triangle Summary').to_frame()
+            return data.to_html(max_rows=pd.options.display.max_rows,
+                                max_cols=pd.options.display.max_columns)
 
-        data = self.data_as_table()
-        return data[data['development'] == data['development'].max()] \
-                    .sort_values('origin') \
-                    .set_index('origin') \
-                    .drop('development',axis=1)
+    def _repr_format(self):
+        ''' Flatten to 2D DataFrame '''
+        x = np.nansum(self.triangle, axis=0)
+        x = np.nansum(x, axis=0)*self.nan_triangle()
+        origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
+        return pd.DataFrame(x, index=origin, columns=self.ddims)
 
+    def to_clipboard(self):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            self._repr_format().to_clipboard()
+
+    # ---------------------------------------------------------------- #
+    # ---------------------- Arithmetic Overload --------------------- #
+    # ---------------------------------------------------------------- #
     def __add__(self, other):
-        return Triangle(self.data + other.data)
+        obj = copy.deepcopy(self)
+        obj.triangle = self.triangle + other.triangle
+        obj.vdims = np.array([None])
+        return obj
 
     def __radd__(self, other):
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
-        return Triangle(self.data - other.data)
+        obj = copy.deepcopy(self)
+        obj.triangle = self.triangle - other.triangle
+        obj.vdims = np.array([None])
+        return obj
 
     def __mul__(self, other):
-        return Triangle(self.data * other.data)
+        obj = copy.deepcopy(self)
+        obj.triangle = self.triangle * other.triangle
+        obj.vdims = np.array([None])
+        return obj
 
     def __truediv__(self, other):
-        return Triangle(self.data / other.data)
+        obj = copy.deepcopy(self)
+        obj.triangle = self.triangle / other.triangle
+        obj.vdims = np.array([None])
+        return obj
 
-    def grain(self, grain='', incremental=False, inplace=False):
-        if inplace == True:
-            if grain == '': grain = 'O' + self.origin_grain + 'D' + self.development_grain
-            # At this point we need to convert to tabular format
-            ograin = grain[1:2]
-            if incremental == True: self.incr_to_cum(inplace=True)
-            temp = self.data.copy()
+    def sum(self):
+        obj = copy.deepcopy(self)
+        x = np.nansum(obj.triangle, axis=0)*obj.nan_triangle()
+        obj.kdims = np.array([0])
+        obj.triangle = np.expand_dims(x, axis=0)
+        obj.groupby = [0]
+        return obj
 
-            if self.origin_grain != ograin:
-                self.origin_grain = ograin
-                temp = self.data_as_table()
-                temp['origin'] = pd.PeriodIndex(temp['origin'],freq=ograin).to_timestamp()
-                temp = pd.pivot_table(temp,index=['origin','development'],values='values', aggfunc='sum').reset_index()
+    # ---------------------------------------------------------------- #
+    # ----------------------Slicing and indexing---------------------- #
+    # ---------------------------------------------------------------- #
+    class LocBase:
+        ''' Base class for pandas style indexing '''
+        def __init__(self, obj):
+            self.obj = obj
 
-                col_dict = {'origin':'o','development':'d','values':'v'}
-                temp.columns = [col_dict.get(item, item) for item in temp.columns]
-                temp = Triangle(temp, origin='o',development='d',values='v').data
+        def get_idx(self, idx):
+            if type(idx) is pd.Series:
+                if len(idx) == len(self.obj.kdims):
+                    idx = idx.to_frame()
+                else:
+                    idx = idx.to_frame().T
+            elif type(idx) is tuple:
+                idx = self.obj.idx_table().iloc[idx[0]:idx[0] + 1,
+                                                idx[1]:idx[1] + 1]
+            obj = copy.deepcopy(self.obj)
+            obj.kdims = np.array(idx.index.unique())
+            obj.vdims = np.array(idx.columns.unique())
+            obj.iloc = Triangle.Ilocation(obj)
+            obj.loc = Triangle.Location(obj)
+            idx_slice = np.array(idx).flatten()
+            x = tuple([np.unique(np.array(item))
+                       for item in list(zip(*idx_slice))])
+            obj.triangle = obj.triangle[x[0]][:, x[1]]
+            obj.triangle[obj.triangle == 0] = np.nan
+            return obj
 
-            # At this point we need to be in triangle format
-            self.data = temp
-            dgrain = grain[-1]
-            if self.development_grain != dgrain:
-                init_lag = self.data.iloc[-1].dropna().index[-1]
-                final_lag = self.data.iloc[0].dropna().index[-1] + 1
-                freq = {'M':{'Y':12,'Q':3,'M':1},
-                        'Q':{'Y':4,'Q':1}}
-                self.data = self.data[[item for item in range(init_lag,final_lag,freq[self.development_grain][dgrain])]]
-                self.data.columns = [item for item in range(len(self.data.columns))]
-                self.development_grain = dgrain
-            if incremental == True:
-                self.cum_to_incr(inplace=True)
-            return self
-        if inplace == False:
-            new_instance = copy.deepcopy(self)
-            return new_instance.grain(grain=grain, incremental=incremental, inplace=True)
+    class Location(LocBase):
+        ''' Class for pandas style .loc indexing '''
+        def __getitem__(self, key):
+            idx = self.obj.idx_table().loc[key]
+            return self.get_idx(idx)
 
-    def plot(self, ctype='m', plots=['triangle'], **kwargs):
-        """ Method, callable by end-user that renders the matplotlib plots.
+    class Ilocation(LocBase):
+        ''' Class for pandas style .iloc indexing '''
+        def __getitem__(self, key):
+            idx = self.obj.idx_table().iloc[key]
+            return self.get_idx(idx)
 
-        Arguments:
-            plots: list[str]
-                A list of strings representing the charts the end user would like
-                to see.  If ommitted, all plots are displayed.  Available plots include:
-                    ============== =================================================
-                    Str            Description
-                    ============== =================================================
-                    triangle       Line chart of origin period x development period
-                    ============== =================================================
+    def idx_table(self):
+        temp = pd.DataFrame(list(self.kdims), columns=self.groupby)
+        for num, item in enumerate(self.vdims):
+            temp[item] = list(zip(np.arange(len(temp)),
+                              (np.ones(len(temp))*num).astype(int)))
+        temp.set_index(self.groupby, inplace=True)
+        return temp
 
-        Returns:
-            Renders the matplotlib plots.
+    def __getitem__(self, key):
+        ''' Function for pandas style column indexing getting '''
+        idx = self.idx_table()[key]
+        return Triangle.LocBase(self).get_idx(idx)
 
-        """
-        Spectral10 = ['#5e4fa2', '#3288bd', '#66c2a5', '#abdda4', '#e6f598', '#fee08b', '#fdae61', '#f46d43', '#d53e4f', '#9e0142']
-        color_cycle = hv.Cycle(Spectral10)
-        origin_periods = [str(item) for item in pd.PeriodIndex(self.data.index,freq=self.origin_grain)]
-        rows = [np.array(self.data.loc[item]) for item in self.data.index]
-        backend_dict = {'bokeh':dict(height=400,width=600, line_width=3, line_cap='round', color=color_cycle)}
-        hv.extension('bokeh')
-        return hv.Overlay([hv.Curve(rows[item], kdims=['Development Period'], vdims=['Values'],
-                           label = origin_periods[item]) \
-                             .options(**backend_dict['bokeh'])
-                        for item in range(len(rows))])\
-                   .options(title_format="Latest Triangle Data")
+    def __setitem__(self, key, value):
+        ''' Function for pandas style column indexing setting '''
+        idx = self.idx_table()
+        idx[key] = 1
+        self.vdims = np.array(idx.columns.unique())
+        self.triangle = np.append(self.triangle, value.triangle, axis=1)
+
+    def append(self, obj, index):
+        return_obj = copy.deepcopy(self)
+        x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.groupby)
+        new_idx = pd.DataFrame([index], columns=return_obj.groupby)
+        x = x.append(new_idx)
+        x.set_index(return_obj.groupby, inplace=True)
+        return_obj.triangle = np.append(return_obj.triangle, obj.triangle,
+                                        axis=0)
+        return_obj.kdims = np.array(x.index.unique())
+        return return_obj
+
+    # ---------------------------------------------------------------- #
+    # ------------------- Data Ingestion Functions ------------------- #
+    # ---------------------------------------------------------------- #
+
+    def get_date_axes(self, origin_date, development_date):
+        ''' Function to find any missing origin dates or development dates that
+            would otherwise mess up the origin/development dimensions.
+        '''
+        def complete_date_range(origin_date, development_date,
+                                origin_grain, development_grain):
+            ''' Determines origin/development combinations in full.  Useful for
+                when the triangle has holes in it. '''
+            origin_unique = \
+                pd.PeriodIndex(start=origin_date.min(),
+                               end=origin_date.max(),
+                               freq=origin_grain).to_timestamp()
+            development_unique = \
+                pd.PeriodIndex(start=origin_date.min(),
+                               end=development_date.max(),
+                               freq=development_grain).to_timestamp()
+            # Let's get rid of any development periods before origin periods
+            cart_prod = cartesian_product(origin_unique, development_unique)
+            cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
+            return pd.DataFrame(cart_prod, columns=['origin', 'development'])
+
+        cart_prod_o = \
+            complete_date_range(pd.Series(origin_date.min()), development_date,
+                                self.origin_grain, self.development_grain)
+        cart_prod_d = \
+            complete_date_range(origin_date, pd.Series(origin_date.max()),
+                                self.origin_grain, self.development_grain)
+        cart_prod_t = pd.DataFrame({'origin': origin_date,
+                                   'development': development_date})
+        cart_prod = cart_prod_o.append(cart_prod_d) \
+                               .append(cart_prod_t).drop_duplicates()
+        cart_prod = cart_prod[cart_prod['development'] >= cart_prod['origin']]
+        return cart_prod
+
+    def get_axes(self, data_agg, groupby, values,
+                 origin_date, development_date):
+        ''' Preps axes for the 4D triangle
+        '''
+        date_axes = self.get_date_axes(origin_date, development_date)
+        #if len(groupby) != 0:
+        kdims = data_agg[groupby].drop_duplicates()
+        kdims['key'] = 1
+        #else:
+        #    kdims = pd.DataFrame({'Total': [0], 'key': 1})
+        date_axes['key'] = 1
+        all_axes = pd.merge(date_axes, kdims, on='key').drop('key', axis=1)
+        data_agg = \
+            all_axes.merge(data_agg, how='left',
+                           left_on=['origin', 'development'] + groupby,
+                           right_on=[origin_date, development_date] + groupby) \
+                    .fillna(0)[['origin', 'development'] + groupby + values]
+        data_agg['development'] = development_lag(data_agg['origin'],
+                                                  data_agg['development'])
+        return data_agg
+
+    # ---------------------------------------------------------------- #
+    # ------------------- Class Utility Functions -------------------- #
+    # ---------------------------------------------------------------- #
+    def nan_triangle(self):
+        '''Given the current triangle shape and grain, it determines the
+           appropriate placement of NANs in the triangle for future valuations.
+           This becomes useful when managing array arithmetic.
+        '''
+        grain_dict = {'Y': {'Y': 1, 'Q': 4, 'M': 12},
+                      'Q': {'Q': 1, 'M': 3},
+                      'M': {'M': 1}}
+        val_lag = self.triangle.shape[3] % \
+            grain_dict[self.origin_grain][self.development_grain]
+        val_lag = 1 if val_lag == 0 else val_lag
+        goods = (np.arange(self.triangle.shape[2]) *
+                 grain_dict[self.origin_grain][self.development_grain] +
+                 val_lag)[::-1]
+        blank_bool = np.ones(self.triangle[0, 0].shape).cumsum(axis=1) <= \
+            np.repeat(np.expand_dims(goods, axis=1),
+                      self.triangle[0, 0].shape[1], axis=1)
+        blank = (blank_bool*1.)
+        blank[~blank_bool] = np.nan
+        return blank
+
+    def slide(self, triangle, direction='r'):
+        ''' Facilitates swapping alignment of triangle between development
+            period and development date. '''
+        nan_tri = self.nan_triangle()
+        r = (nan_tri.shape[1] - np.nansum(nan_tri, axis=1)).astype(int)
+        r = -r if direction == 'l' else r
+        k, v, rows, column_indices = \
+            np.ogrid[:triangle.shape[0], :triangle.shape[1],
+                     :triangle.shape[2], :triangle.shape[3]]
+        r[r < 0] += nan_tri.shape[1]
+        column_indices = column_indices - r[:, np.newaxis]
+        return triangle[k, v, rows, column_indices]
+
+    def expand_dims(self, tri_2d):
+        '''Expands from one 2D triangle to full 4D object
+        '''
+        k = len(self.kdims)
+        v = len(self.vdims)
+        tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
+        return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
