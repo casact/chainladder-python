@@ -39,18 +39,19 @@ from UtilityFunctions import (to_datetime, development_lag, get_grain,
 
 class Triangle():
     def __init__(self, data=None, origin=None, development=None,
-                 values=None, groupby=None):
+                 values=None, keys=None):
         # Sanitize Inputs
-        if groupby is None:
-            groupby = ['Total']
-            data_agg = data.groupby(origin+development).sum().reset_index()
-            data_agg[groupby[0]] = 'Total'
-        else:
-            data_agg = data.groupby(origin+development+groupby) \
-                           .sum().reset_index()
         values = [values] if type(values) is str else values
         origin = [origin] if type(origin) is str else origin
-        development = [development] if type(values) is str else development
+        if type(development) is str:
+            development = [development]
+        if keys is None:
+            keys = ['Total']
+            data_agg = data.groupby(origin+development).sum().reset_index()
+            data_agg[keys[0]] = 'Total'
+        else:
+            data_agg = data.groupby(origin+development+keys) \
+                           .sum().reset_index()
 
         # Convert origin/development to dates
         origin_date = to_datetime(data_agg, origin)
@@ -59,9 +60,9 @@ class Triangle():
         self.development_grain = get_grain(development_date)
 
         # Prep the data for 4D Triangle
-        data_agg = self.get_axes(data_agg, groupby, values,
+        data_agg = self.get_axes(data_agg, keys, values,
                                  origin_date, development_date)
-        data_agg = pd.pivot_table(data_agg, index=groupby+['origin'],
+        data_agg = pd.pivot_table(data_agg, index=keys+['origin'],
                                   columns='development', values=values,
                                   aggfunc='sum')
         # Assign object properties
@@ -70,7 +71,7 @@ class Triangle():
         self.ddims = np.array(data_agg.columns.levels[-1].unique())
         self.vdims = np.array(data_agg.columns.levels[0].unique())
         self.valuation_date = development_date.max()
-        self.groupby = groupby
+        self.groupby = keys
         self.iloc = Triangle.Ilocation(self)
         self.loc = Triangle.Location(self)
         # Create 4D Triangle
@@ -97,6 +98,10 @@ class Triangle():
     @property
     def keys(self):
         return pd.DataFrame(list(self.kdims), columns=self.groupby)
+
+    @property
+    def values(self):
+        return pd.Series(list(self.vdims), name='values')
 
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
@@ -193,9 +198,21 @@ class Triangle():
         ''' Jupyter/Ipython HTML representation '''
         if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
             data = self._repr_format()
-            data = data.to_html(max_rows=pd.options.display.max_rows,
-                                max_cols=pd.options.display.max_columns)
-            return data
+            if np.nanmean(data) < 10:
+                fmt_str = '{0:,.4f}'
+            elif np.nanmean(data) < 1000:
+                fmt_str = '{0:,.2f}'
+            else:
+                fmt_str = '{:,.0f}'
+            data.columns = [['Development Lag']*len(self.ddims), self.ddims]
+            default = data.to_html(max_rows=pd.options.display.max_rows,
+                                   max_cols=pd.options.display.max_columns,
+                                   float_format=fmt_str.format) \
+                          .replace('nan', '')
+            return default.replace('<th></th>\n      <th>1</th>',
+                                   '<th>Origin</th>\n      <th>1</th>')
+            # .replace('<th></th>\n      <th colspan',
+            #          '<th>Origin</th>\n      <th colspan')
         else:
             data = pd.Series([self.valuation_date.strftime('%Y-%m'),
                              'O' + self.origin_grain + 'D'
@@ -204,6 +221,7 @@ class Triangle():
                              index=['Valuation:', 'Grain:', 'Shape',
                                     'Keys:', "Values:"],
                              name='Triangle Summary').to_frame()
+            pd.options.display.precision = 0
             return data.to_html(max_rows=pd.options.display.max_rows,
                                 max_cols=pd.options.display.max_columns)
 
@@ -276,6 +294,7 @@ class Triangle():
             obj = copy.deepcopy(self.obj)
             obj.kdims = np.array(idx.index.unique())
             obj.vdims = np.array(idx.columns.unique())
+            obj.groupby = list(idx.index.names)
             obj.iloc = Triangle.Ilocation(obj)
             obj.loc = Triangle.Location(obj)
             idx_slice = np.array(idx).flatten()
@@ -298,7 +317,12 @@ class Triangle():
             return self.get_idx(idx)
 
     def idx_table(self):
-        temp = pd.DataFrame(list(self.kdims), columns=self.groupby)
+        if len(self.kdims) == 1:
+            idx = np.array(self.kdims)
+        else:
+            idx = self.kdims
+        temp = pd.DataFrame(list(idx), columns=self.groupby)
+        temp.to_clipboard()
         for num, item in enumerate(self.vdims):
             temp[item] = list(zip(np.arange(len(temp)),
                               (np.ones(len(temp))*num).astype(int)))
@@ -307,6 +331,12 @@ class Triangle():
 
     def __getitem__(self, key):
         ''' Function for pandas style column indexing getting '''
+        if type(key) is pd.Series:
+            # Boolean-indexing of all keys
+            return self.iloc[list(self.keys[key].index)]
+        if key in self.groupby:
+            # Boolean-indexing of a particular key
+            return self.keys[key]
         idx = self.idx_table()[key]
         return Triangle.LocBase(self).get_idx(idx)
 
@@ -371,11 +401,8 @@ class Triangle():
         ''' Preps axes for the 4D triangle
         '''
         date_axes = self.get_date_axes(origin_date, development_date)
-        #if len(groupby) != 0:
         kdims = data_agg[groupby].drop_duplicates()
         kdims['key'] = 1
-        #else:
-        #    kdims = pd.DataFrame({'Total': [0], 'key': 1})
         date_axes['key'] = 1
         all_axes = pd.merge(date_axes, kdims, on='key').drop('key', axis=1)
         data_agg = \
