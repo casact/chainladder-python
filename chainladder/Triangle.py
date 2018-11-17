@@ -71,7 +71,7 @@ class Triangle():
         self.ddims = np.array(data_agg.columns.levels[-1].unique())
         self.vdims = np.array(data_agg.columns.levels[0].unique())
         self.valuation_date = development_date.max()
-        self.groupby = keys
+        self.key_labels = keys
         self.iloc = Triangle.Ilocation(self)
         self.loc = Triangle.Location(self)
         # Create 4D Triangle
@@ -97,7 +97,7 @@ class Triangle():
 
     @property
     def keys(self):
-        return pd.DataFrame(list(self.kdims), columns=self.groupby)
+        return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
     @property
     def values(self):
@@ -115,7 +115,12 @@ class Triangle():
                            np.sum(np.isnan(nan_tri), axis=1), axis=1)
         diagonal = diagonal == np.repeat(x, nan_tri.shape[1], axis=1)
         diagonal = self.expand_dims(diagonal)
-        return np.nansum(diagonal*self.triangle, axis=3)
+        diagonal = np.nansum(diagonal*self.triangle, axis=3)
+        diagonal = np.expand_dims(diagonal, axis=3)
+        obj = copy.deepcopy(self)
+        obj.triangle = diagonal
+        obj.ddims = ['Latest']
+        return obj
 
     def incr_to_cum(self, inplace=False):
         '''Method to convert an incremental triangle into a cumulative triangle.
@@ -190,7 +195,7 @@ class Triangle():
                    '\nGrain:     ' + 'O' + self.origin_grain + \
                                      'D' + self.development_grain + \
                    '\nShape:     ' + str(self.shape) + \
-                   '\nKeys:      ' + str(self.groupby) + \
+                   '\nKeys:      ' + str(self.key_labels) + \
                    '\nValues:    ' + str(list(self.vdims))
             return data
 
@@ -198,13 +203,15 @@ class Triangle():
         ''' Jupyter/Ipython HTML representation '''
         if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
             data = self._repr_format()
-            if np.nanmean(data) < 10:
+            if np.nanmean(abs(data)) < 10:
                 fmt_str = '{0:,.4f}'
-            elif np.nanmean(data) < 1000:
+            elif np.nanmean(abs(data)) < 1000:
                 fmt_str = '{0:,.2f}'
             else:
                 fmt_str = '{:,.0f}'
-            data.columns = [['Development Lag']*len(self.ddims), self.ddims]
+            if len(self.ddims) > 1 and type(self.ddims[0]) is int:
+                data.columns = [['Development Lag'] * len(self.ddims),
+                                self.ddims]
             default = data.to_html(max_rows=pd.options.display.max_rows,
                                    max_cols=pd.options.display.max_columns,
                                    float_format=fmt_str.format) \
@@ -217,7 +224,7 @@ class Triangle():
             data = pd.Series([self.valuation_date.strftime('%Y-%m'),
                              'O' + self.origin_grain + 'D'
                               + self.development_grain,
-                              self.shape, self.groupby, list(self.vdims)],
+                              self.shape, self.key_labels, list(self.vdims)],
                              index=['Valuation:', 'Grain:', 'Shape',
                                     'Keys:', "Values:"],
                              name='Triangle Summary').to_frame()
@@ -229,7 +236,10 @@ class Triangle():
         ''' Flatten to 2D DataFrame '''
         x = np.nansum(self.triangle, axis=0)
         x = np.nansum(x, axis=0)*self.nan_triangle()
-        origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
+        if type(self.odims[0]) == np.datetime64:
+            origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
+        else:
+            origin = pd.Series(self.odims)
         return pd.DataFrame(x, index=origin, columns=self.ddims)
 
     def to_clipboard(self):
@@ -267,12 +277,42 @@ class Triangle():
         return obj
 
     def sum(self):
-        obj = copy.deepcopy(self)
-        x = np.nansum(obj.triangle, axis=0)*obj.nan_triangle()
-        obj.kdims = np.array([0])
-        obj.triangle = np.expand_dims(x, axis=0)
-        obj.groupby = [0]
-        return obj
+        return Triangle.TriangleGroupBy(self, by=-1).sum(axis=1)
+
+    def groupby(self, by):
+        return Triangle.TriangleGroupBy(self, by)
+
+    class TriangleGroupBy:
+        def __init__(self, old_obj, by):
+            obj = copy.deepcopy(old_obj)
+            v1_len = len(obj.keys.index)
+            if by != -1:
+                indices = obj.keys.groupby(by).indices
+                new_index = obj.keys.groupby(by).count().index
+            else:
+                indices = {'All': np.arange(len(obj.keys))}
+                new_index = pd.Index(['All'], name='All')
+            groups = list(indices.values())
+            v2_len = len(groups)
+            init = np.zeros((v1_len, v2_len))
+            for num, item in enumerate(groups):
+                init[:, num][item] = 1
+            init = np.swapaxes(init, 0, 1)
+            for i in range(3):
+                init = np.expand_dims(init, axis=-1)
+            new_tri = obj.triangle
+            new_tri = np.repeat(np.expand_dims(new_tri, axis=0), v2_len, axis = 0)
+
+            obj.triangle = new_tri
+            obj.kdims = list(new_index)
+            obj.key_labels = list(new_index.names)
+            self.obj = obj
+            self.init = init
+
+        def sum(self, axis=1):
+            self.obj.triangle = np.nansum((self.obj.triangle * self.init), axis = axis)
+            self.obj.triangle[self.obj.triangle == 0] = np.nan
+            return self.obj
 
     # ---------------------------------------------------------------- #
     # ----------------------Slicing and indexing---------------------- #
@@ -283,18 +323,10 @@ class Triangle():
             self.obj = obj
 
         def get_idx(self, idx):
-            if type(idx) is pd.Series:
-                if len(idx) == len(self.obj.kdims):
-                    idx = idx.to_frame()
-                else:
-                    idx = idx.to_frame().T
-            elif type(idx) is tuple:
-                idx = self.obj.idx_table().iloc[idx[0]:idx[0] + 1,
-                                                idx[1]:idx[1] + 1]
             obj = copy.deepcopy(self.obj)
             obj.kdims = np.array(idx.index.unique())
             obj.vdims = np.array(idx.columns.unique())
-            obj.groupby = list(idx.index.names)
+            obj.key_labels = list(idx.index.names)
             obj.iloc = Triangle.Ilocation(obj)
             obj.loc = Triangle.Location(obj)
             idx_slice = np.array(idx).flatten()
@@ -308,25 +340,39 @@ class Triangle():
         ''' Class for pandas style .loc indexing '''
         def __getitem__(self, key):
             idx = self.obj.idx_table().loc[key]
+            idx = self.obj.idx_table_format(idx)
             return self.get_idx(idx)
 
     class Ilocation(LocBase):
         ''' Class for pandas style .iloc indexing '''
         def __getitem__(self, key):
             idx = self.obj.idx_table().iloc[key]
+            idx = self.obj.idx_table_format(idx)
             return self.get_idx(idx)
 
+    def idx_table_format(self, idx):
+        if type(idx) is pd.Series:
+            # One row or one column selection
+            if len(idx) == len(self.kdims):
+                # One row selection
+                idx = idx.to_frame()
+            else:
+                # One column selection
+                idx = idx.to_frame().T
+                idx.index.names = self.key_labels
+        elif type(idx) is tuple:
+            # Single cell selection
+            idx = self.idx_table().iloc[idx[0]:idx[0] + 1,
+                                        idx[1]:idx[1] + 1]
+        return idx
+
     def idx_table(self):
-        if len(self.kdims) == 1:
-            idx = np.array(self.kdims)
-        else:
-            idx = self.kdims
-        temp = pd.DataFrame(list(idx), columns=self.groupby)
-        temp.to_clipboard()
+        idx = self.kdims
+        temp = pd.DataFrame(list(idx), columns=self.key_labels)
         for num, item in enumerate(self.vdims):
             temp[item] = list(zip(np.arange(len(temp)),
                               (np.ones(len(temp))*num).astype(int)))
-        temp.set_index(self.groupby, inplace=True)
+        temp.set_index(self.key_labels, inplace=True)
         return temp
 
     def __getitem__(self, key):
@@ -334,10 +380,11 @@ class Triangle():
         if type(key) is pd.Series:
             # Boolean-indexing of all keys
             return self.iloc[list(self.keys[key].index)]
-        if key in self.groupby:
+        if key in self.key_labels:
             # Boolean-indexing of a particular key
             return self.keys[key]
         idx = self.idx_table()[key]
+        idx = self.idx_table_format(idx)
         return Triangle.LocBase(self).get_idx(idx)
 
     def __setitem__(self, key, value):
@@ -349,10 +396,10 @@ class Triangle():
 
     def append(self, obj, index):
         return_obj = copy.deepcopy(self)
-        x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.groupby)
-        new_idx = pd.DataFrame([index], columns=return_obj.groupby)
+        x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
+        new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
         x = x.append(new_idx)
-        x.set_index(return_obj.groupby, inplace=True)
+        x.set_index(return_obj.key_labels, inplace=True)
         return_obj.triangle = np.append(return_obj.triangle, obj.triangle,
                                         axis=0)
         return_obj.kdims = np.array(x.index.unique())
@@ -422,6 +469,11 @@ class Triangle():
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
+        if self.triangle.shape[2] == 1 or self.triangle.shape[3] == 1:
+            # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
+            # and does not need nan overrides
+            return np.ones(self.triangle.shape[2:])
+
         grain_dict = {'Y': {'Y': 1, 'Q': 4, 'M': 12},
                       'Q': {'Q': 1, 'M': 3},
                       'M': {'M': 1}}
