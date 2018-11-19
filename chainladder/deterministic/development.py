@@ -35,9 +35,8 @@ class Development(BaseEstimator):
         _x = np.nan_to_num(_x_reg * (_y_reg * 0 + 1))
         _y = np.nan_to_num(_y_reg)
         _w = np.nan_to_num(weight * (np.minimum(_y, 1) * (_y_reg * 0 + 1)))
-
         if type(self.avg_type) is str:
-            avg_type = [self.avg_type] * (tri_array.shape[2] - 1)
+            avg_type = [self.avg_type] * (tri_array.shape[3] - 1)
         else:
             avg_type = self.avg_type
 
@@ -84,7 +83,7 @@ class Development(BaseEstimator):
             cdf_groupby = np.nanmean(cdf_groupby, axis=0)
             X_groupby.triangle = np.flip(cdf_groupby, axis=2)
         else:
-            X_groupby.triangle = np.swapaxes(cdf_groupby, -1, -2)
+            X_groupby.triangle = np.flip(np.swapaxes(cdf_groupby, -1, -2), axis=2)
         return X.latest_diagonal, X_groupby
 
     def transform(self, X):

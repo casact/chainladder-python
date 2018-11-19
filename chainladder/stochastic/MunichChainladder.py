@@ -11,7 +11,7 @@ import pandas as pd
 import statsmodels.api as sm
 from warnings import warn
 from chainladder.UtilityFunctions import Plot
-from chainladder.Triangle import Triangle
+from chainladder.triangle import Triangle
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from bokeh.palettes import Spectral10
 

@@ -13,7 +13,7 @@ from pandas import DataFrame, concat, Series
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import OLSInfluence
 from warnings import warn
-from chainladder.Triangle import Triangle
+from chainladder.triangle import Triangle
 
 class Chainladder():
     """ ChainLadder class specifies the chainladder model.

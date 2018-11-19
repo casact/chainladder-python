@@ -1,6 +1,6 @@
 '''
 Triangle class creates multiple actuarial triangles in an easy to manage class.
-The API borrows heavily from pandas for the purpose of indexing,slicing, and
+The API borrows heavily from pandas for the purpose of indexing, slicing, and
 accessing individual triangles within the broader class.
 
 The core data structure at the heart of the Triangle class is a 4D numpy array
@@ -33,7 +33,7 @@ all key, origin and development dimensions.
 import pandas as pd
 import numpy as np
 import copy
-from UtilityFunctions import (to_datetime, development_lag, get_grain,
+from chainladder.UtilityFunctions import (to_datetime, development_lag, get_grain,
                               cartesian_product)
 
 
@@ -103,6 +103,14 @@ class Triangle():
     def values(self):
         return pd.Series(list(self.vdims), name='values')
 
+    @property
+    def origin(self):
+        return pd.DatetimeIndex(self.odims, name='origin')
+
+    @property
+    def development(self):
+        return pd.Series(list(self.ddims), name='development')
+
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
@@ -144,35 +152,17 @@ class Triangle():
     def grain(self, grain='', incremental=False, inplace=False):
         ''' TODO - Make incremental work '''
         if inplace:
-            # First do Origin
             origin_grain = grain[1:2]
             development_grain = grain[-1]
-            orig = np.nan_to_num(self.slide(self.triangle))
-            o_dt = pd.Series(self.odims)
-            if origin_grain == 'Q':
-                o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
-                                            o_dt.dt.quarter.astype(str)))
-            elif origin_grain == 'Y':
-                o = np.array(o_dt.dt.year)
-            else:
-                o = self.odims
-            o_new = np.unique(o)
-            o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
-            o_new = np.repeat(np.expand_dims(o_new, axis=0), len(o), axis=0)
-            o_bool = np.repeat(np.expand_dims((o == o_new), axis=1),
-                               len(self.ddims), axis=1)
-            o_bool = self.expand_dims(o_bool)
-            new_tri = np.repeat(np.expand_dims(orig, axis=-1),
-                                o_bool.shape[-1], axis=-1)
-            new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
-            # Then do Development
+            new_tri, o = self._set_ograin(grain=grain, incremental=incremental)
+            # Set development Grain
             dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                               'Q': {'Y': 4, 'Q': 1}}
             keeps = dev_grain_dict[self.development_grain][development_grain]
             keeps = self.ddims % keeps == 0
             new_tri = new_tri[:, :, :, keeps]
             self.ddims = self.ddims[keeps]
-            self.odims = o_new
+            self.odims = np.unique(o)
             self.origin_grain = origin_grain
             self.development_grain = development_grain
             self.triangle = new_tri
@@ -182,6 +172,36 @@ class Triangle():
             new_obj = copy.deepcopy(self)
             new_obj.grain(grain=grain, incremental=incremental, inplace=True)
             return new_obj
+
+    def _set_ograin(self, grain, incremental):
+        origin_grain = grain[1:2]
+        orig = np.nan_to_num(self.slide(self.triangle))
+        o_dt = pd.Series(self.odims)
+        if origin_grain == 'Q':
+            o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
+                                        o_dt.dt.quarter.astype(str)))
+        elif origin_grain == 'Y':
+            o = np.array(o_dt.dt.year)
+        else:
+            o = self.odims
+        # Get unique new origin array
+        o_new = np.unique(o)
+        # Make it 2D so we have an old to new map
+        o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
+        o_new = np.repeat(np.expand_dims(o_new, axis=0), len(o), axis=0)
+        # Make a boolean array out of the old to new map
+        # and add ddims to it
+        o_bool = np.repeat(np.expand_dims((o == o_new), axis=1),
+                           len(self.ddims), axis=1)
+        # Add kdims and vdims as well
+        o_bool = self.expand_dims(o_bool)
+        # Expand actual triangle to have o_new length on last axis
+        new_tri = np.repeat(np.expand_dims(orig, axis=-1),
+                            o_bool.shape[-1], axis=-1)
+        # Multiply the triangle by the boolean array and aggregate out
+        # The olf odims
+        new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
+        return new_tri, o
 
     # ---------------------------------------------------------------- #
     # ------------------------ Display Options ----------------------- #
@@ -378,8 +398,13 @@ class Triangle():
     def __getitem__(self, key):
         ''' Function for pandas style column indexing getting '''
         if type(key) is pd.Series:
-            # Boolean-indexing of all keys
-            return self.iloc[list(self.keys[key].index)]
+            if key.name == 'development':
+                return self._slice_development(key)
+            else:
+                # Boolean-indexing of all keys
+                return self.iloc[list(self.keys[key].index)]
+        if type(key) is np.ndarray:
+            return self._slice_origin(key)
         if key in self.key_labels:
             # Boolean-indexing of a particular key
             return self.keys[key]
@@ -404,6 +429,18 @@ class Triangle():
                                         axis=0)
         return_obj.kdims = np.array(x.index.unique())
         return return_obj
+
+    def _slice_origin(self, key):
+        obj = copy.deepcopy(self)
+        obj.odims = obj.odims[key]
+        obj.triangle = obj.triangle[:, :, key, :]
+        return obj
+
+    def _slice_development(self, key):
+        obj = copy.deepcopy(self)
+        obj.ddims = obj.ddims[key]
+        obj.triangle = obj.triangle[:, :, :, key]
+        return obj
 
     # ---------------------------------------------------------------- #
     # ------------------- Data Ingestion Functions ------------------- #
@@ -510,3 +547,68 @@ class Triangle():
         v = len(self.vdims)
         tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
         return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
+
+
+
+class Exposure(Triangle):
+    def __init__(self, data=None, origin=None, values=None, keys=None):
+        # Sanitize Inputs
+        values = [values] if type(values) is str else values
+        origin = [origin] if type(origin) is str else origin
+        if keys is None:
+            keys = ['Total']
+            data_agg = data.groupby(origin).sum().reset_index()
+            data_agg[keys[0]] = 'Total'
+        else:
+            data_agg = data.groupby(origin+keys) \
+                           .sum().reset_index()
+
+        # Convert origin/development to dates
+        origin_date = to_datetime(data_agg, origin)
+        self.origin_grain = get_grain(origin_date)
+        development_date = origin_date
+        self.development_grain = self.origin_grain
+
+        # Prep the data for 4D Triangle
+        data_agg = self.get_axes(data_agg, keys, values,
+                                 origin_date, development_date)
+        data_agg = pd.pivot_table(data_agg, index=keys+['origin'],
+                                  values=values, aggfunc='sum')
+        # Assign object properties
+        self.kdims = np.array(data_agg.index.droplevel(-1).unique())
+        self.odims = np.array(data_agg.index.levels[-1].unique())
+        self.ddims = np.array(['Exposure'])
+        self.vdims = np.array(data_agg.columns.unique())
+        self.valuation_date = development_date.max()
+        self.key_labels = keys
+        self.iloc = Triangle.Ilocation(self)
+        self.loc = Triangle.Location(self)
+        # Create 4D Triangle
+        triangle = \
+            np.array(data_agg).reshape(len(self.kdims), len(self.odims),
+                                       len(self.vdims), len(self.ddims))
+        triangle = np.swapaxes(triangle, 1, 2)
+        # Set all 0s to NAN for nansafe ufunc arithmetic
+        triangle[triangle == 0] = np.nan
+        self.triangle = triangle
+
+    def grain(self, grain='', incremental=False, inplace=False):
+        ''' TODO - Make incremental work '''
+        if inplace:
+            origin_grain = grain[1:2]
+            development_grain = grain[-1]
+            new_tri, o = self._set_ograin(grain=grain, incremental=incremental)
+            self.ddims = ['Exposure']
+            self.odims = np.unique(o)
+            self.origin_grain = origin_grain
+            self.development_grain = development_grain
+            self.triangle = new_tri
+            self.triangle = self.slide(self.triangle, direction='l')
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            new_obj.grain(grain=grain, incremental=incremental, inplace=True)
+            return new_obj
+
+    def latest_diagonal(self):
+        return self
