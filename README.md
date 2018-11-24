@@ -5,6 +5,7 @@
 
 This is a rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLadder) in Python.
 
+
 This code is actively under development and contains the following functionality:
 
 ### Stochastic Methods
@@ -16,6 +17,13 @@ This code is actively under development and contains the following functionality
   - Bornhuetter-Ferguson Method
   - Benktander Method
   - Generalized Cape Cod Method
+
+
+### The API
+We've adopted as much of the pandas API for accessing/manipulating data structures
+in the package, and scikit-learn for the model fitting routines.  The goal here is to
+allow an actuary already versed in these tools to easily pick up this package.
+
 
 ## Installation
 To install using pip:

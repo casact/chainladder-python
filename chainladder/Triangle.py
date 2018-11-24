@@ -33,8 +33,6 @@ all key, origin and development dimensions.
 import pandas as pd
 import numpy as np
 import copy
-from chainladder.UtilityFunctions import (to_datetime, development_lag, get_grain,
-                              cartesian_product)
 
 
 class Triangle():
@@ -54,10 +52,11 @@ class Triangle():
                            .sum().reset_index()
 
         # Convert origin/development to dates
-        origin_date = to_datetime(data_agg, origin)
-        self.origin_grain = get_grain(origin_date)
-        development_date = to_datetime(data_agg, development)
-        self.development_grain = get_grain(development_date)
+        origin_date = Triangle.to_datetime(data_agg, origin)
+        self.origin_grain = Triangle.get_grain(origin_date)
+        # These only work with valuation periods and not lags
+        development_date = Triangle.to_datetime(data_agg, development)
+        self.development_grain = Triangle.get_grain(development_date)
 
         # Prep the data for 4D Triangle
         data_agg = self.get_axes(data_agg, keys, values,
@@ -111,6 +110,22 @@ class Triangle():
     def development(self):
         return pd.Series(list(self.ddims), name='development')
 
+    @property
+    def link_ratio(self):
+        obj = copy.deepcopy(self)
+        obj.triangle = obj.triangle[:, :, :, 1:]/obj.triangle[:, :, :, :-1]
+        obj.ddims = np.array([f'{i+1}-{i+2}'
+                              for i in range(len(obj.ddims)-1)])
+        # Check whether we want to eliminate the last origin period
+        if np.max(np.sum(~np.isnan(self.triangle[:, :, -1, :]), axis=2) - 1) == 0:
+            obj.triangle = obj.triangle[:, :, :-1, :]
+            obj.odims = obj.odims[:-1]
+        return obj
+
+    @property
+    def age_to_age(self):
+        return self.link_ratio
+
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
@@ -124,6 +139,7 @@ class Triangle():
         diagonal = diagonal == np.repeat(x, nan_tri.shape[1], axis=1)
         diagonal = self.expand_dims(diagonal)
         diagonal = np.nansum(diagonal*self.triangle, axis=3)
+        diagonal[diagonal == 0] = np.nan
         diagonal = np.expand_dims(diagonal, axis=3)
         obj = copy.deepcopy(self)
         obj.triangle = diagonal
@@ -166,7 +182,7 @@ class Triangle():
             self.origin_grain = origin_grain
             self.development_grain = development_grain
             self.triangle = new_tri
-            self.triangle = self.slide(self.triangle, direction='l')
+            self.triangle = self._slide(self.triangle, direction='l')
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -175,7 +191,7 @@ class Triangle():
 
     def _set_ograin(self, grain, incremental):
         origin_grain = grain[1:2]
-        orig = np.nan_to_num(self.slide(self.triangle))
+        orig = np.nan_to_num(self._slide(self.triangle))
         o_dt = pd.Series(self.odims)
         if origin_grain == 'Q':
             o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
@@ -271,7 +287,8 @@ class Triangle():
     # ---------------------------------------------------------------- #
     def __add__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = self.triangle + other.triangle
+        obj.triangle = np.nan_to_num(self.triangle) + np.nan_to_num(other.triangle)
+        obj.triangle[obj.triangle == 0] = np.nan
         obj.vdims = np.array([None])
         return obj
 
@@ -280,21 +297,32 @@ class Triangle():
 
     def __sub__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = self.triangle - other.triangle
+        obj.triangle = np.nan_to_num(self.triangle) - \
+            np.nan_to_num(other.triangle)
+        obj.triangle[obj.triangle == 0] = np.nan
         obj.vdims = np.array([None])
         return obj
 
     def __mul__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = self.triangle * other.triangle
+        obj.triangle = np.nan_to_num(self.triangle) * \
+            np.nan_to_num(other.triangle)
+        obj.triangle[obj.triangle == 0] = np.nan
         obj.vdims = np.array([None])
         return obj
 
     def __truediv__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = self.triangle / other.triangle
+        obj.triangle = np.nan_to_num(self.triangle) / other.triangle
         obj.vdims = np.array([None])
         return obj
+
+    def __eq__(self, other):
+        if np.all(np.nan_to_num(self.triangle) ==
+           np.nan_to_num(other.triangle)):
+            return True
+        else:
+            return False
 
     def sum(self):
         return Triangle.TriangleGroupBy(self, by=-1).sum(axis=1)
@@ -371,6 +399,7 @@ class Triangle():
             return self.get_idx(idx)
 
     def idx_table_format(self, idx):
+
         if type(idx) is pd.Series:
             # One row or one column selection
             if len(idx) == len(self.kdims):
@@ -463,7 +492,7 @@ class Triangle():
                                end=development_date.max(),
                                freq=development_grain).to_timestamp()
             # Let's get rid of any development periods before origin periods
-            cart_prod = cartesian_product(origin_unique, development_unique)
+            cart_prod = Triangle.cartesian_product(origin_unique, development_unique)
             cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
             return pd.DataFrame(cart_prod, columns=['origin', 'development'])
 
@@ -494,7 +523,7 @@ class Triangle():
                            left_on=['origin', 'development'] + groupby,
                            right_on=[origin_date, development_date] + groupby) \
                     .fillna(0)[['origin', 'development'] + groupby + values]
-        data_agg['development'] = development_lag(data_agg['origin'],
+        data_agg['development'] = Triangle.development_lag(data_agg['origin'],
                                                   data_agg['development'])
         return data_agg
 
@@ -527,7 +556,7 @@ class Triangle():
         blank[~blank_bool] = np.nan
         return blank
 
-    def slide(self, triangle, direction='r'):
+    def _slide(self, triangle, direction='r'):
         ''' Facilitates swapping alignment of triangle between development
             period and development date. '''
         nan_tri = self.nan_triangle()
@@ -548,6 +577,74 @@ class Triangle():
         tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
         return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
 
+    @staticmethod
+    def to_datetime(data, fields):
+        '''For tabular form, this will take a set of data
+        column(s) and return a single date array.
+        '''
+        # Concat everything into one field
+        if len(fields) > 1:
+            target_field = pd.Series(index=data.index).fillna('')
+            for item in fields:
+                target_field = target_field + data[item].astype(str)
+        else:
+            target_field = data[fields[0]]
+        # pandas is not good at inferring YYYYMM format so trying that first
+        # and if it fails, move on to how pandas infers things.
+        datetime_arg = target_field.unique()
+        date_inference_list = \
+            [{'arg': datetime_arg, 'format': '%Y%m'},
+             {'arg': datetime_arg, 'format': '%Y'},
+             {'arg': datetime_arg, 'infer_datetime_format': True}]
+        for item in date_inference_list:
+            try:
+                arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
+                break
+            except:
+                pass
+        return target_field.map(arr)
+
+    @staticmethod
+    def development_lag(origin, development):
+        ''' For tabular format, this will convert the origin/development
+            difference to a development lag '''
+        year_diff = development.dt.year - origin.dt.year
+        development_grain = Triangle.get_grain(development)
+        if development_grain == 'Y':
+            return year_diff + 1
+        if development_grain == 'Q':
+            quarter_diff = development.dt.quarter - origin.dt.quarter
+            return year_diff * 4 + quarter_diff + 1
+        if development_grain == 'M':
+            month_diff = development.dt.month - origin.dt.month
+            return year_diff * 12 + month_diff + 1
+
+    @staticmethod
+    def get_grain(array):
+        num_months = len(array.dt.month.unique())
+        return {1: 'Y', 4: 'Q', 12: 'M'}[num_months]
+
+    @staticmethod
+    def cartesian_product(*arrays, pandas=False):
+        '''A fast implementation of cartesian product, used for filling in gaps
+        in triangles (if any)'''
+        if pandas:
+            # Pandas can support mixed datatypes, but is slower?
+            arr = arrays[0].to_frame(index=[1]*len(arrays[0]))
+            for num, array in enumerate(arrays):
+                if num > 0:
+                    temp = array.to_frame(index=[1]*len(array))
+                arr.merge(temp, how='inner', left_index=True, right_index=True)
+            return arr
+        else:
+            # Numpy approach needs all the same datatype.
+            length_arrays = len(arrays)
+            dtype = np.result_type(*arrays)
+            arr = np.empty([len(a) for a in arrays] + [length_arrays], dtype=dtype)
+            for i, a in enumerate(np.ix_(*arrays)):
+                arr[..., i] = a
+            arr = arr.reshape(-1, length_arrays)
+            return arr
 
 
 class Exposure(Triangle):
@@ -564,8 +661,8 @@ class Exposure(Triangle):
                            .sum().reset_index()
 
         # Convert origin/development to dates
-        origin_date = to_datetime(data_agg, origin)
-        self.origin_grain = get_grain(origin_date)
+        origin_date = Triangle.to_datetime(data_agg, origin)
+        self.origin_grain = Triangle.get_grain(origin_date)
         development_date = origin_date
         self.development_grain = self.origin_grain
 
@@ -603,7 +700,7 @@ class Exposure(Triangle):
             self.origin_grain = origin_grain
             self.development_grain = development_grain
             self.triangle = new_tri
-            self.triangle = self.slide(self.triangle, direction='l')
+            self.triangle = self._slide(self.triangle, direction='l')
             return self
         else:
             new_obj = copy.deepcopy(self)

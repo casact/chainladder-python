@@ -89,7 +89,7 @@ class MackChainladder:
 
     def __init__(self, triangle,  weights=1,  alpha=1, tail=False, **kwargs):
         # Determine whether LDFs can be extrapolated with exponential tail
-        if tail == True:
+        if tail:
             tail = self.is_exponential_tail_appropriate(triangle,  weights,  alpha)
         if 'chainladder' in kwargs.keys():
             self.chainladder = kwargs['chainladder']

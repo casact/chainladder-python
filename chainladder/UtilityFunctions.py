@@ -3,14 +3,14 @@ This module contains various utilities shared across most of the other
 *chainladder* modules.
 
 """
-from pandas import read_pickle
+import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from bokeh.plotting import figure, show
 from bokeh.layouts import gridplot
 import numpy as np
-import pandas as pd
+from chainladder.triangle import Triangle
 
 
 def load_dataset(key):
@@ -24,76 +24,23 @@ def load_dataset(key):
 	pandas.DataFrame of the loaded dataset.
    """
     path = os.path.dirname(os.path.abspath(__file__))
-    return read_pickle(os.path.join(path, 'data', key))
+    origin = 'origin'
+    development = 'development'
+    values = 'values'
+    keys = None
+    if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto']:
+        values = ['incurred', 'paid']
+    if key.lower() == 'casresearch':
+        origin = 'AccidentYear'
+        development = 'DevelopmentYear'
+        keys = ['GRNAME', 'LOB']
+        values = ['IncurLoss', 'CumPaidLoss', 'EarnedPremDIR']
+    if key.lower() in ['liab', 'auto']:
+        keys = ['lob']
+    df = pd.read_pickle(os.path.join(path, 'data', key + '.pkl'))
+    return Triangle(df, origin=origin, development=development,
+                    values=values, keys=keys)
 
-
-def to_datetime(data, fields):
-    '''For tabular form, this will take a set of data
-    column(s) and return a single date array.
-    '''
-    # Concat everything into one field
-    if len(fields) > 1:
-        target_field = pd.Series(index=data.index).fillna('')
-        for item in fields:
-            target_field = target_field + data[item].astype(str)
-    else:
-        target_field = data[fields[0]]
-    # pandas is not good at inferring YYYYMM format so trying that first
-    # and if it fails, move on to how pandas infers things.
-    datetime_arg = target_field.unique()
-    date_inference_list = \
-        [{'arg': datetime_arg, 'format': '%Y%m'},
-         {'arg': datetime_arg, 'format': '%Y'},
-         {'arg': datetime_arg, 'infer_datetime_format': True}]
-    for item in date_inference_list:
-        try:
-            arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
-            break
-        except:
-            pass
-    return target_field.map(arr)
-
-
-def development_lag(origin, development):
-    ''' For tabular format, this will convert the origin/development
-        difference to a development lag '''
-    year_diff = development.dt.year - origin.dt.year
-    development_grain = get_grain(development)
-    if development_grain == 'Y':
-        return year_diff + 1
-    if development_grain == 'Q':
-        quarter_diff = development.dt.quarter - origin.dt.quarter
-        return year_diff * 4 + quarter_diff + 1
-    if development_grain == 'M':
-        month_diff = development.dt.month - origin.dt.month
-        return year_diff * 12 + month_diff + 1
-
-
-def get_grain(array):
-    num_months = len(array.dt.month.unique())
-    return {1: 'Y', 4: 'Q', 12: 'M'}[num_months]
-
-
-def cartesian_product(*arrays, pandas=False):
-    '''A fast implementation of cartesian product, used for filling in gaps
-    in triangles (if any)'''
-    if pandas:
-        # Pandas can support mixed datatypes, but is slower?
-        arr = arrays[0].to_frame(index=[1]*len(arrays[0]))
-        for num, array in enumerate(arrays):
-            if num > 0:
-                temp = array.to_frame(index=[1]*len(array))
-            arr.merge(temp, how='inner', left_index=True, right_index=True)
-        return arr
-    else:
-        # Numpy approach needs all the same datatype.
-        length_arrays = len(arrays)
-        dtype = np.result_type(*arrays)
-        arr = np.empty([len(a) for a in arrays] + [length_arrays], dtype=dtype)
-        for i, a in enumerate(np.ix_(*arrays)):
-            arr[..., i] = a
-        arr = arr.reshape(-1, length_arrays)
-        return arr
 
 
 class Plot():

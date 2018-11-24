@@ -4,12 +4,10 @@ from sklearn.base import BaseEstimator
 
 
 class Chainladder(BaseEstimator):
-    def __init__(self):
-        pass
-
     def fit(self, X, y=None):
-        latest, cdf = X[0].latest_diagonal, X[1].latest_diagonal
-        self.ultimates_ = latest * cdf
-        self.ultimates_.vdims = latest.vdims
-        self.ultimates_.ddims = ['Ultimate']
+        latest, cdf = X.triangle[:, :, :, 0], X.triangle[:, :, :, 1]
+        obj = copy.deepcopy(X)
+        obj.triangle = np.expand_dims(latest * cdf, axis=3)
+        obj.ddims = ['Ultimate']
+        self.ultimates_ = obj
         return self
