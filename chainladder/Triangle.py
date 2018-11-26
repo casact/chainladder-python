@@ -342,23 +342,23 @@ class Triangle():
                 new_index = pd.Index(['All'], name='All')
             groups = list(indices.values())
             v2_len = len(groups)
-            init = np.zeros((v1_len, v2_len))
+            old_k_by_new_k = np.zeros((v1_len, v2_len))
             for num, item in enumerate(groups):
-                init[:, num][item] = 1
-            init = np.swapaxes(init, 0, 1)
+                old_k_by_new_k[:, num][item] = 1
+            old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
             for i in range(3):
-                init = np.expand_dims(init, axis=-1)
+                old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
             new_tri = obj.triangle
             new_tri = np.repeat(np.expand_dims(new_tri, axis=0), v2_len, axis = 0)
 
             obj.triangle = new_tri
-            obj.kdims = list(new_index)
+            obj.kdims = np.array(list(new_index))
             obj.key_labels = list(new_index.names)
             self.obj = obj
-            self.init = init
+            self.old_k_by_new_k = old_k_by_new_k
 
         def sum(self, axis=1):
-            self.obj.triangle = np.nansum((self.obj.triangle * self.init), axis = axis)
+            self.obj.triangle = np.nansum((self.obj.triangle * self.old_k_by_new_k), axis = axis)
             self.obj.triangle[self.obj.triangle == 0] = np.nan
             return self.obj
 
