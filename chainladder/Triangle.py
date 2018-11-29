@@ -165,6 +165,27 @@ class Triangle():
             new_obj = copy.deepcopy(self)
             return new_obj.incr_to_cum(inplace=True)
 
+    def cum_to_incr(self, inplace=False):
+        '''Method to convert an cumlative triangle into a incremental triangle.
+
+            Arguments:
+                inplace: bool
+                    Set to True will update the instance data attribute inplace
+
+            Returns:
+                Updated instance of triangle accumulated along the origin
+        '''
+
+        if inplace:
+            nan_tri = self.expand_dims(self.nan_triangle())
+            temp = np.nan_to_num(self.triangle)[:,:,:,1:] - np.nan_to_num(self.triangle)[:,:,:,:-1]
+            temp = np.concatenate((self.triangle[:,:,:,0:1], temp), axis=3)
+            self.triangle = temp*nan_tri
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.cum_to_incr(inplace=True)
+
     def grain(self, grain='', incremental=False, inplace=False):
         ''' TODO - Make incremental work '''
         if inplace:

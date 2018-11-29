@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
-from chainladder import weighted_regression_through_origin, weighted_regression
+from chainladder import WeightedRegression
 
 
 class Development(BaseEstimator):
-    def __init__(self, n_per=-1, avg_type='simple', sigma_interpolation='lin'):
+    def __init__(self, n_per=-1, avg_type='simple', sigma_interpolation='loglinear'):
         self.n_per = n_per
         self.avg_type = avg_type
         self.sigma_interpolation = sigma_interpolation
@@ -51,15 +51,16 @@ class Development(BaseEstimator):
             avg_type = self.avg_type
         average = np.array(avg_type)
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
-        x_ = tri_array[:, :, :, :-1]
-        y_ = tri_array[:, :, :, 1:]
+        _x = tri_array[:, :, :, :-1]
+        _y = tri_array[:, :, :, 1:]
         val = np.array([weight_dict.get(item.lower(), 2)
                         for item in average])
         for i in [2, 1, 0]:
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
-        val = np.nan_to_num(val * (y_ * 0 + 1))
-        w_ = 1 / (x_**(val))
-        params = weighted_regression_through_origin(x_, y_, w_, axis = 2)
+        val = np.nan_to_num(val * (_y * 0 + 1))
+        _w = 1 / (_x**(val))
+        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True).fit().sigma_fill()
+        params = np.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = np.swapaxes(params, 2, 3)
         obj = copy.deepcopy(X)
         obj.triangle = params
@@ -70,7 +71,6 @@ class Development(BaseEstimator):
         # This is a bastardization of the Triangle object so marking as hidden
         # and only accessible through @property
         self._params = obj
-        self.sigma_fill()
         return self
 
     def predict(self, X):
@@ -117,23 +117,9 @@ class Development(BaseEstimator):
     def transform(self, X):
         return self.predict(X)
 
-    def fit_transform(self, X, y=None):
+    def fit_transform(self, X, y=None, sample_weight=None):
         return self.fit_predict(X)
 
     def fit_predict(self, X):
         self.fit(X)
         return self.predict(X)
-
-    def sigma_fill(self):
-        y = self._params.triangle[:, :, 1:2, :]
-        w = np.nan_to_num(y*0+1)
-        y = np.log(y)
-        slope, intercept = weighted_regression(y=y, w=w, axis=3)
-        x = np.reshape(np.arange(y.shape[3]), (1, 1, 1, y.shape[3]))
-        temp = np.array(x.shape)
-        temp = np.where(temp == temp.max())[0][0]
-        x = np.swapaxes(x, temp, 3) *(1-w)
-        sigma_fill_ = np.exp(x*slope+intercept)*(1-w)
-        self._params.triangle[:,:,1:2,:] = np.nan_to_num(self._params.triangle[:,:,1:2,:]) + \
-            sigma_fill_
-        return self

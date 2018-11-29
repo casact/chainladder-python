@@ -1,5 +1,4 @@
 import numpy as np
-import copy
 from chainladder.tails import TailBase
 
 
