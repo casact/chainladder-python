@@ -78,6 +78,7 @@ class WeightedRegression:
             returns OLS slope and intercept.
         '''
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
+
         x[w == 0] = np.nan
         y[w == 0] = np.nan
         slope = (np.nansum(w*x*y, axis) - np.nansum(x*w, axis)*np.nanmean(y, axis)) / \
@@ -108,19 +109,24 @@ class WeightedRegression:
 
     def sigma_fill(self):
         ''' This Function is designed to take an array of sigmas and does log-
-            linear extrapolation to fill in the rest.
-            Specifics to this class:
-                1. the section of the np array
-            Generics to be factored out:
-                1. prepping the weights and log(y)
-                2. prepping x
-                3. returning a filled array
+            linear extrapolation where n_obs = 1 and sigma cannot be calculated.
         '''
-        y = np.log(self.sigma_)
-        w = np.nan_to_num(y*0+1)
-        reg = WeightedRegression(y=y, w=w, axis=-2, thru_orig=False).fit()
-        slope, intercept = reg.slope_, reg.intercept_
-        sigma_fill_ = np.exp(reg.x*slope+intercept)*(1-w)
-        print(slope, intercept)
-        self.sigma_ = np.nan_to_num(self.sigma_) + sigma_fill_
+        self.sigma_ = self.loglinear_interpolation(self.sigma_)
         return self
+
+    def std_err_fill(self):
+        y = self.sigma_*np.sqrt(np.expand_dims(self.w[:, :, 0, :], -1))
+        w = np.nan_to_num(self.std_err_*0+1)
+        std_err_ = y * (1 - w)
+        self.std_err_ = np.nan_to_num(self.std_err_) + std_err_
+        return self
+
+    def loglinear_interpolation(self, y):
+        ''' Use Cases: generally for filling in last element of sigma_
+        '''
+        ly = np.log(y)
+        w = np.nan_to_num(ly*0+1)
+        reg = WeightedRegression(y=ly, w=w, axis=self.axis, thru_orig=False).fit()
+        slope, intercept = reg.slope_, reg.intercept_
+        fill_ = np.exp(reg.x*slope+intercept)*(1-w)
+        return np.nan_to_num(y) + fill_

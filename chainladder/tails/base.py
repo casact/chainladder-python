@@ -19,15 +19,6 @@ class TailBase(Development):
     def predict(self, X):
         return self
 
-    def _get_tail_sigma(self):
-        """ Method to produce the sigma of the tail factor
-        """
-        sigma_ = self._params.triangle[:,:,1:2,:]
-        # Mack Method
-        if self.sigma_est == 'mack':
-            y = sigma_
-            return np.sqrt(abs(min((y[:, : , :, -1]**4 / y[:, : , :, -2]**2),
-                                    min(y[:, : , :, -2]**2, y[:, : , :, -1]**2))))
 
 class CurveFit(TailBase):
     ''' Base sub-class used for curve fit methods of tail factors '''
@@ -58,13 +49,35 @@ class CurveFit(TailBase):
         n_obs = _y.shape[3]
         k, v = params.triangle.shape[:2]
         _x = self.get_x(_w,_y)
+        # Get LDFs
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = np.arange(n_obs + 1, n_obs + self.extrap_per)
         extrapolate = np.reshape(extrapolate, (1, 1, 1, 1, len(extrapolate)))
         tail = self.predict_tail(slope, intercept, extrapolate)
-        sigma = tail.copy() * np.nan
-        std_err = tail.copy() * 0
+        sigma, std_err = self._get_tail_stats(tail)
         tail = np.concatenate((tail, sigma, std_err), 2)
         params.triangle = np.append(params.triangle, tail, 3)
         return self
+
+    def _get_tail_weighted_time_period(self, tail):
+        """ Method to approximate the weighted-average development age of tail
+        using log-linear extrapolation
+
+        Returns: float32
+        """
+        y = self.ldf_.triangle
+        reg = WeightedRegression(y = np.log(y - 1), axis=3).fit()
+        time_pd = (np.log(tail - 1) - reg.intercept_) / reg.slope_
+        return time_pd
+
+    def _get_tail_stats(self, tail):
+        """ Method to approximate the tail sigma using
+        log-linear extrapolation applied to tail average period
+        """
+        time_pd = self._get_tail_weighted_time_period(tail)
+        reg = WeightedRegression(y=np.log(self.sigma_.triangle[:,:,:,:-1]), axis=3).fit()
+        sigma_ = np.exp(time_pd*reg.slope_ + reg.intercept_)
+        reg = WeightedRegression(y=np.log(self.std_err_.triangle), axis=3).fit()
+        std_err_ = np.exp(time_pd*reg.slope_ + reg.intercept_)
+        return sigma_, std_err_

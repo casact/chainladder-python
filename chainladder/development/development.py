@@ -59,7 +59,8 @@ class Development(BaseEstimator):
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         val = np.nan_to_num(val * (_y * 0 + 1))
         _w = 1 / (_x**(val))
-        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True).fit().sigma_fill()
+        self.w_ = _w
+        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True).fit().sigma_fill().std_err_fill()
         params = np.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = np.swapaxes(params, 2, 3)
         obj = copy.deepcopy(X)
