@@ -57,11 +57,7 @@ class WeightedRegression:
         if self.w is None:
             self.w = np.ones(self.y.shape)
         if self.x is None:
-            self.x = np.reshape(np.arange(self.y.shape[self.axis]),
-                                (1, 1, 1, self.y.shape[self.axis])) + 1.
-            temp = np.array(self.x.shape)
-            temp = np.where(temp == temp.max())[0][0]
-            self.x = np.swapaxes(self.x, temp, self.axis)
+            self.x = np.cumsum(np.ones(self.y.shape), self.axis)
         return self
 
     def fit(self):
@@ -78,7 +74,6 @@ class WeightedRegression:
             returns OLS slope and intercept.
         '''
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
-
         x[w == 0] = np.nan
         y[w == 0] = np.nan
         slope = (np.nansum(w*x*y, axis) - np.nansum(x*w, axis)*np.nanmean(y, axis)) / \
@@ -107,11 +102,14 @@ class WeightedRegression:
         self.std_err_ = std_err
         return self
 
-    def sigma_fill(self):
+    def sigma_fill(self, interpolation):
         ''' This Function is designed to take an array of sigmas and does log-
             linear extrapolation where n_obs = 1 and sigma cannot be calculated.
         '''
-        self.sigma_ = self.loglinear_interpolation(self.sigma_)
+        if interpolation == 'loglinear':
+            self.sigma_ = self.loglinear_interpolation(self.sigma_)
+        if interpolation == 'mack':
+            self.sigma_ = self.mack_interpolation(self.sigma_)
         return self
 
     def std_err_fill(self):
@@ -126,7 +124,24 @@ class WeightedRegression:
         '''
         ly = np.log(y)
         w = np.nan_to_num(ly*0+1)
-        reg = WeightedRegression(y=ly, w=w, axis=self.axis, thru_orig=False).fit()
+        reg = WeightedRegression(w, None, ly, self.axis, False).fit()
         slope, intercept = reg.slope_, reg.intercept_
         fill_ = np.exp(reg.x*slope+intercept)*(1-w)
+        return np.nan_to_num(y) + fill_
+
+    def mack_interpolation(self, y):
+        ''' Use Mack's approximation to fill last element of sigma_ which is the
+            same as loglinear extrapolation using the last two element '''
+        w = np.nan_to_num(y*0+1)
+        slicer_n = ([slice(None)]*4)
+        slicer_d = ([slice(None)]*4)
+        slicer_a = ([slice(None)]*4)
+        slicer_n[self.axis] = slice(1, -1, 1)
+        slicer_d[self.axis] = slice(0, -2, 1)
+        slicer_a[self.axis] = slice(0, 2, 1)
+        slicer_n, slicer_d, slicer_a = tuple(slicer_n), tuple(slicer_d), tuple(slicer_a)
+        fill_ = np.sqrt(
+            abs(np.minimum((y[slicer_n]**4 / y[slicer_d]**2),
+                np.minimum(y[slicer_d]**2, y[slicer_n]**2))))
+        fill_ = np.concatenate((w[slicer_a], fill_), axis=self.axis)*(1-w)
         return np.nan_to_num(y) + fill_

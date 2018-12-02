@@ -6,7 +6,8 @@ from chainladder import WeightedRegression
 
 
 class Development(BaseEstimator):
-    def __init__(self, n_per=-1, avg_type='simple', sigma_interpolation='loglinear'):
+    def __init__(self, n_per=-1, avg_type='simple',
+                 sigma_interpolation='loglinear'):
         self.n_per = n_per
         self.avg_type = avg_type
         self.sigma_interpolation = sigma_interpolation
@@ -60,8 +61,11 @@ class Development(BaseEstimator):
         val = np.nan_to_num(val * (_y * 0 + 1))
         _w = 1 / (_x**(val))
         self.w_ = _w
-        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True).fit().sigma_fill().std_err_fill()
-        params = np.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
+        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True) \
+            .fit().sigma_fill(self.sigma_interpolation).std_err_fill()
+        params = np.concatenate((params.slope_,
+                                 params.sigma_,
+                                 params.std_err_), 3)
         params = np.swapaxes(params, 2, 3)
         obj = copy.deepcopy(X)
         obj.triangle = params

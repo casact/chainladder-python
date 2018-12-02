@@ -1,11 +1,6 @@
-''' Exponential Tail
-Use constant.py as a template
-reference:
-    https://www.casact.org/pubs/forum/13fforum/02-Tail-Factors-Working-Party.pdf
-'''
-
 import numpy as np
 from chainladder.tails import CurveFit
+
 
 class Exponential(CurveFit):
     """Exponential Tail Fit
@@ -21,10 +16,7 @@ class Exponential(CurveFit):
     Exponentail decay requires LDFs strictly larger than 1.0.  If LDFs are
     less than 1.0, they will be removed from the calculation ('ignore') or
     they will raise an error ('raise').
-    sigma_est : {'lin', 'exp','mack'}, default: 'mack'
-    Computation basis of the tail sigma. Linear ('lin') and Exponential
-    ('exp') decay are applied directly to the LDF sigmas.  Mack ('mack')
-    uses the Mack approximation for
+
     Attributes
     ----------
     ldf_ : Triangle
@@ -49,4 +41,5 @@ class Exponential(CurveFit):
         return None
 
     def predict_tail(self, slope, intercept, extrapolate):
-        return np.product(1 + np.exp(slope*extrapolate + intercept), 4)
+        tail = np.exp(slope*extrapolate + intercept)
+        return np.expand_dims(np.product(1 + tail, -1), -1)

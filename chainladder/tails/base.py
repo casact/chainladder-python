@@ -23,11 +23,10 @@ class TailBase(Development):
 class CurveFit(TailBase):
     ''' Base sub-class used for curve fit methods of tail factors '''
     def __init__(self, fit_per=slice(None, None, None), extrap_per=100,
-                 errors='ignore', sigma_interpolation='loglinear'):
+                 errors='ignore'):
         self.fit_per = fit_per
         self.extrap_per = extrap_per
         self.errors = errors
-        self.sigma_interpolation = sigma_interpolation
 
     def fit(self, X, y=None, sample_weight=None):
         super().fit(X, y, sample_weight)
@@ -44,18 +43,19 @@ class CurveFit(TailBase):
         elif self.errors == 'raise' and np.any(y < 1.0):
             raise ZeroDivisionError('Tail fit requires all LDFs to be \
                                      greater than 1.0')
-
         _y = np.log(_y - 1)
         n_obs = _y.shape[3]
         k, v = params.triangle.shape[:2]
-        _x = self.get_x(_w,_y)
+        _x = self.get_x(_w, _y)
         # Get LDFs
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
-        extrapolate = np.arange(n_obs + 1, n_obs + self.extrap_per)
-        extrapolate = np.reshape(extrapolate, (1, 1, 1, 1, len(extrapolate)))
+        extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] + [self.extrap_per])), -1) + n_obs
+        print(extrapolate.shape, slope.shape, intercept.shape)
         tail = self.predict_tail(slope, intercept, extrapolate)
+        
         sigma, std_err = self._get_tail_stats(tail)
+        print(tail.shape, sigma.shape, std_err.shape)
         tail = np.concatenate((tail, sigma, std_err), 2)
         params.triangle = np.append(params.triangle, tail, 3)
         return self
@@ -67,8 +67,8 @@ class CurveFit(TailBase):
         Returns: float32
         """
         y = self.ldf_.triangle
-        reg = WeightedRegression(y = np.log(y - 1), axis=3).fit()
-        time_pd = (np.log(tail - 1) - reg.intercept_) / reg.slope_
+        reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
+        time_pd = (np.log(tail-1)-reg.intercept_)/reg.slope_
         return time_pd
 
     def _get_tail_stats(self, tail):
@@ -76,8 +76,8 @@ class CurveFit(TailBase):
         log-linear extrapolation applied to tail average period
         """
         time_pd = self._get_tail_weighted_time_period(tail)
-        reg = WeightedRegression(y=np.log(self.sigma_.triangle[:,:,:,:-1]), axis=3).fit()
-        sigma_ = np.exp(time_pd*reg.slope_ + reg.intercept_)
+        reg = WeightedRegression(y=np.log(self.sigma_.triangle), axis=3).fit()
+        sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         reg = WeightedRegression(y=np.log(self.std_err_.triangle), axis=3).fit()
-        std_err_ = np.exp(time_pd*reg.slope_ + reg.intercept_)
+        std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         return sigma_, std_err_
