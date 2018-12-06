@@ -1,3 +1,5 @@
+""" tails should store all tail methodologies
+"""
 from chainladder.tails.base import TailBase, CurveFit
 from chainladder.tails.constant import Constant
 from chainladder.tails.exponential import Exponential

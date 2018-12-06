@@ -35,6 +35,25 @@ import numpy as np
 import copy
 
 
+def check_X(f):
+    ''' Post-condition check to ensure the integrity of the triangle object
+        remains intact
+    '''
+    def wrapper(*args, **kwargs):
+        print('checking')
+        X = f(*args, **kwargs)
+        if not hasattr(X, 'triangle'):
+            raise ValueError('X is missing triangle attribute')
+        if X.triangle.ndim != 4:
+            raise ValueError('X.triangle must be a 4-dimensional array')
+        if len(X.kdims) != X.triangle.shape[0]:
+            raise ValueError('X.keys and X.triangle are misaligned')
+        if len(X.vdims) != X.triangle.shape[1]:
+            raise ValueError('X.values and X.triangle are misaligned')
+        return X
+    return wrapper
+
+
 class Triangle():
     def __init__(self, data=None, origin=None, development=None,
                  values=None, keys=None):
@@ -111,6 +130,7 @@ class Triangle():
         return pd.Series(list(self.ddims), name='development')
 
     @property
+    @check_X
     def link_ratio(self):
         obj = copy.deepcopy(self)
         obj.triangle = obj.triangle[:, :, :, 1:]/obj.triangle[:, :, :, :-1]
@@ -129,6 +149,7 @@ class Triangle():
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
+    @check_X
     def get_latest_diagonal(self):
         ''' Method to return the latest diagonal of the triangle.
         '''
@@ -146,6 +167,7 @@ class Triangle():
         obj.ddims = ['Latest']
         return obj
 
+    @check_X
     def incr_to_cum(self, inplace=False):
         '''Method to convert an incremental triangle into a cumulative triangle.
 
@@ -165,6 +187,7 @@ class Triangle():
             new_obj = copy.deepcopy(self)
             return new_obj.incr_to_cum(inplace=True)
 
+    @check_X
     def cum_to_incr(self, inplace=False):
         '''Method to convert an cumlative triangle into a incremental triangle.
 
@@ -186,6 +209,7 @@ class Triangle():
             new_obj = copy.deepcopy(self)
             return new_obj.cum_to_incr(inplace=True)
 
+    @check_X
     def grain(self, grain='', incremental=False, inplace=False):
         ''' TODO - Make incremental work '''
         if inplace:
@@ -306,6 +330,7 @@ class Triangle():
     # ---------------------------------------------------------------- #
     # ---------------------- Arithmetic Overload --------------------- #
     # ---------------------------------------------------------------- #
+    @check_X
     def __add__(self, other):
         obj = copy.deepcopy(self)
         obj.triangle = np.nan_to_num(self.triangle) + np.nan_to_num(other.triangle)
@@ -313,9 +338,11 @@ class Triangle():
         obj.vdims = np.array([None])
         return obj
 
+    @check_X
     def __radd__(self, other):
         return self if other == 0 else self.__add__(other)
 
+    @check_X
     def __sub__(self, other):
         obj = copy.deepcopy(self)
         obj.triangle = np.nan_to_num(self.triangle) - \
@@ -324,6 +351,7 @@ class Triangle():
         obj.vdims = np.array([None])
         return obj
 
+    @check_X
     def __mul__(self, other):
         obj = copy.deepcopy(self)
         obj.triangle = np.nan_to_num(self.triangle) * \
@@ -332,12 +360,14 @@ class Triangle():
         obj.vdims = np.array([None])
         return obj
 
+    @check_X
     def __truediv__(self, other):
         obj = copy.deepcopy(self)
         obj.triangle = np.nan_to_num(self.triangle) / other.triangle
         obj.vdims = np.array([None])
         return obj
 
+    @check_X
     def __eq__(self, other):
         if np.all(np.nan_to_num(self.triangle) ==
            np.nan_to_num(other.triangle)):
@@ -345,6 +375,7 @@ class Triangle():
         else:
             return False
 
+    @check_X
     def sum(self):
         return Triangle.TriangleGroupBy(self, by=-1).sum(axis=1)
 
@@ -378,6 +409,7 @@ class Triangle():
             self.obj = obj
             self.old_k_by_new_k = old_k_by_new_k
 
+        @check_X
         def sum(self, axis=1):
             self.obj.triangle = np.nansum((self.obj.triangle * self.old_k_by_new_k), axis = axis)
             self.obj.triangle[self.obj.triangle == 0] = np.nan
@@ -391,6 +423,7 @@ class Triangle():
         def __init__(self, obj):
             self.obj = obj
 
+        @check_X
         def get_idx(self, idx):
             obj = copy.deepcopy(self.obj)
             obj.kdims = np.array(idx.index.unique())
@@ -420,7 +453,6 @@ class Triangle():
             return self.get_idx(idx)
 
     def idx_table_format(self, idx):
-
         if type(idx) is pd.Series:
             # One row or one column selection
             if len(idx) == len(self.kdims):
@@ -469,6 +501,7 @@ class Triangle():
         self.vdims = np.array(idx.columns.unique())
         self.triangle = np.append(self.triangle, value.triangle, axis=1)
 
+    @check_X
     def append(self, obj, index):
         return_obj = copy.deepcopy(self)
         x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
@@ -480,12 +513,14 @@ class Triangle():
         return_obj.kdims = np.array(x.index.unique())
         return return_obj
 
+    @check_X
     def _slice_origin(self, key):
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
         obj.triangle = obj.triangle[:, :, key, :]
         return obj
 
+    @check_X
     def _slice_development(self, key):
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
@@ -597,6 +632,12 @@ class Triangle():
         v = len(self.vdims)
         tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
         return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
+
+    @check_X
+    def set_params(self, **parameters):
+        for parameter, value in parameters.items():
+            setattr(self, parameter, value)
+        return self
 
     @staticmethod
     def to_datetime(data, fields):
