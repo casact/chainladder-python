@@ -55,8 +55,7 @@ class TriangleBase:
     def link_ratio(self):
         obj = copy.deepcopy(self)
         obj.triangle = obj.triangle[:, :, :, 1:]/obj.triangle[:, :, :, :-1]
-        obj.ddims = np.array([f'{i+1}-{i+2}'
-                              for i in range(len(obj.ddims)-1)])
+        obj.ddims = np.array([f'{i+1}-{i+2}' for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
         if np.max(np.sum(~np.isnan(self.triangle[:, :, -1, :]), axis=2) - 1) == 0:
             obj.triangle = obj.triangle[:, :, :-1, :]
