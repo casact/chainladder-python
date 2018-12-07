@@ -1,6 +1,5 @@
 descr = "Chainladder Package - P&C actuarial package modeled after the R package of the same name"
 
-#from distutils.core import setup
 from setuptools import setup
 
 setup(
@@ -13,9 +12,9 @@ setup(
     scripts=[],
     url='https://github.com/jbogaardt/chainladder-python',
     download_url='https://github.com/jbogaardt/chainladder-python/archive/v0.1.7.tar.gz',
-    license= 'LICENSE',
+    license='LICENSE',
     include_package_data=True,
-    package_data = {'data':[
+    package_data={'data': [
                     '/utils/data/ABC',
                     '/utils/data/M3IR5',
                     '/utils/data/mcl',
@@ -30,10 +29,11 @@ setup(
                     '/utils/data/GenIns',
                     '/utils/data/liab',
                     '/utils/data/casresearch']},
-    description= descr,
-    #long_description=open('README.md').read(),
+    description=descr,
+    # long_description=open('README.md').read(),
     install_requires=[
         "pandas>=0.21.0",
-        "numpy>=1.12.1"
+        "numpy>=1.12.1",
+        "scikit-learn>=0.19.0"
     ],
 )
