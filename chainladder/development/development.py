@@ -62,7 +62,10 @@ class Development(BaseEstimator):
         _w = 1 / (_x**(val))
         self.w_ = _w
         params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True) \
-            .fit().sigma_fill(self.sigma_interpolation).std_err_fill()
+            .fit().sigma_fill(self.sigma_interpolation)
+        params.std_err_ = np.nan_to_num(params.std_err_) + \
+            (1-np.nan_to_num(params.std_err_*0+1)) * params.sigma_ /  \
+            np.swapaxes(np.sqrt(_x**(2-val))[:, :, 0:1, :], -1, -2)
         params = np.concatenate((params.slope_,
                                  params.sigma_,
                                  params.std_err_), 3)

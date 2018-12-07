@@ -73,10 +73,7 @@ class WeightedRegression:
         return self
 
     def std_err_fill(self):
-        y = self.sigma_*np.sqrt(np.expand_dims(self.w[:, :, 0, :], -1))
-        w = np.nan_to_num(self.std_err_*0+1)
-        std_err_ = y * (1 - w)
-        self.std_err_ = np.nan_to_num(self.std_err_) + std_err_
+        '''currently handled in development.py which doesn't feel right'''
         return self
 
     def loglinear_interpolation(self, y):
