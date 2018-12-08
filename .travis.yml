@@ -27,13 +27,13 @@ before_install: source ci_scripts/install.sh
 install: if [ -z ${FLAKE8} ]; then pip install -e .; fi
 
 script:
-  - if [ -z ${FLAKE8} ]; then
+  - #if [ -z ${FLAKE8} ]; then
     py.test --cov=chainladder chainladder -v;
-    else
-    echo $PATH;
-    which flake8;
-    ci_scripts/flake8_diff.sh;
-    fi;
+    #else
+    #echo $PATH;
+    #which flake8;
+    #ci_scripts/flake8_diff.sh;
+    #fi;
 
 after_success:
   - if [ -z ${FLAKE8} ]; then codecov; fi

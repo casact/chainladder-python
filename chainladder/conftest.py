@@ -39,10 +39,10 @@ def mack_r(alpha):
     return r_dict
 
 
-def mack_p(avg_type):
+def mack_p(average):
     p_dict = dict(datasets())
     for k, v in p_dict.items():
-        p_dict[k] = cl.Development(avg_type=avg_type).fit(cl.load_dataset(v))
+        p_dict[k] = cl.Development(average=average).fit(cl.load_dataset(v))
     return p_dict
 
 
