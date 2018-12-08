@@ -6,6 +6,7 @@
 This is a rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLadder) in Python.
 
 
+
 This code is actively under development and contains the following functionality:
 
 ### Stochastic Methods
@@ -29,9 +30,8 @@ allow an actuary already versed in these tools to easily pick up this package.
 To install using pip:
 `pip install chainladder`
 
-Note: This package has been tested with Python 3.4 and later.
+Note: This package has been tested with Python 3.6 and later.
 
-Package is coming soon to Anaconda...
 
 ## Documentation
 Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for source code documentation

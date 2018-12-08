@@ -24,5 +24,6 @@ else
   conda install -q -c r --file ci_scripts/conda_r_requirements.txt;
 
   # Install the R ChainLadder package for comparisons
-  R -e "install.packages('ChainLadder', repos = 'http://cran.us.r-project.org')";
+  R -e "options(repos = c(CRAN = 'http://cran.rstudio.com'))"
+  R -e "install.packages('ChainLadder')";
 fi;

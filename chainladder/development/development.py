@@ -6,10 +6,10 @@ from chainladder import WeightedRegression
 
 
 class Development(BaseEstimator):
-    def __init__(self, n_per=-1, avg_type='simple',
+    def __init__(self, n_per=-1, average='simple',
                  sigma_interpolation='loglinear'):
         self.n_per = n_per
-        self.avg_type = avg_type
+        self.average = average
         self.sigma_interpolation = sigma_interpolation
 
     @property
@@ -40,17 +40,48 @@ class Development(BaseEstimator):
             obj.odims = obj.odims[idx:idx+1]
             return obj
 
+    def _assign_n_per_weight(self, X):
+        if type(self.n_per) is int:
+            return self._assign_n_per_weight_int(X, self.n_per)[:, :, :, :-1]
+        elif type(self.n_per) is list:
+            if len(self.n_per) != X.triangle.shape[3]-1:
+                raise ValueError(f'n_per list must be of lenth {X.triangle.shape[3]-1}.')
+            else:
+                return self._assign_n_per_weight_list(X)
+        else:
+            raise ValueError('n_per must be of type <int> or <list>')
+
+    def _assign_n_per_weight_list(self, X):
+        dict_map = {item: self._assign_n_per_weight_int(X, item)
+                    for item in set(self.n_per)}
+        conc = [dict_map[item][:, :, num:num+1, :]
+                for num, item in enumerate(self.n_per)]
+        return np.swapaxes(np.concatenate(tuple(conc), 2), 2, 3)
+
+    def _assign_n_per_weight_int(self, X, n_per):
+        ''' Zeros out weights depending on number of periods desired
+            Only works for type(n_per) == int
+        '''
+        if n_per < 1 or n_per >= X.shape[2] - 1:
+            return X.triangle*0+1
+        else:
+            flip_nan = np.nan_to_num(X.triangle*0+1)
+            k, v, o, d = flip_nan.shape
+            return np.concatenate((1-flip_nan[:, :, -(o-n_per-1):, :],
+                                   np.ones((k, v, n_per+1, d))), 2)*flip_nan
+
     def fit(self, X, y=None, sample_weight=None):
         # Capture the fit inputs
         self.X_ = X
         self.y_ = y
         self.sample_weight_ = sample_weight
         tri_array = X.triangle.copy()
-        if type(self.avg_type) is str:
-            avg_type = [self.avg_type] * (tri_array.shape[3] - 1)
+        tri_array[tri_array == 0] = np.nan
+        if type(self.average) is str:
+            average = [self.average] * (tri_array.shape[3] - 1)
         else:
-            avg_type = self.avg_type
-        average = np.array(avg_type)
+            average = self.average
+        average = np.array(average)
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         _x = tri_array[:, :, :, :-1]
         _y = tri_array[:, :, :, 1:]
@@ -59,7 +90,7 @@ class Development(BaseEstimator):
         for i in [2, 1, 0]:
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         val = np.nan_to_num(val * (_y * 0 + 1))
-        _w = 1 / (_x**(val))
+        _w = self._assign_n_per_weight(X) / (_x**(val))
         self.w_ = _w
         params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True) \
             .fit().sigma_fill(self.sigma_interpolation)
@@ -73,7 +104,7 @@ class Development(BaseEstimator):
         obj = copy.deepcopy(X)
         obj.triangle = params
         obj.odims = ['LDF', 'Sigma', 'Std Err']
-        obj.ddims = np.array([f'{i+1}-{i+2}'
+        obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
                               for i in range(len(obj.ddims)-1)])
         # We're replacing origin dimension with different statistics
         # This is a bastardization of the Triangle object so marking as hidden

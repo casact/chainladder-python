@@ -54,10 +54,13 @@ class TriangleBase:
     @check_triangle_postcondition
     def link_ratio(self):
         obj = copy.deepcopy(self)
-        obj.triangle = obj.triangle[:, :, :, 1:]/obj.triangle[:, :, :, :-1]
-        obj.ddims = np.array([f'{i+1}-{i+2}' for i in range(len(obj.ddims)-1)])
+        temp = obj.triangle.copy()
+        temp[temp == 0] = np.nan
+        obj.triangle = temp[:, :, :, 1:]/temp[:, :, :, :-1]
+        obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
+                              for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
-        if np.max(np.sum(~np.isnan(self.triangle[:, :, -1, :]), axis=2) - 1) == 0:
+        if np.max(np.sum(~np.isnan(self.triangle[:, :, -1, :]), 2)-1) == 0:
             obj.triangle = obj.triangle[:, :, :-1, :]
             obj.odims = obj.odims[:-1]
         return obj
@@ -258,7 +261,9 @@ class TriangleBase:
     @check_triangle_postcondition
     def __truediv__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = np.nan_to_num(self.triangle) / other.triangle
+        temp = other.triangle.copy()
+        temp[temp == 0] = np.nan
+        obj.triangle = np.nan_to_num(self.triangle) / temp
         obj.vdims = np.array([None])
         return obj
 

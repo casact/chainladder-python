@@ -102,6 +102,7 @@ class Triangle(TriangleBase):
             self.development_grain = development_grain
             self.triangle = new_tri
             self.triangle = self._slide(self.triangle, direction='l')
+            self.triangle[self.triangle == 0] = np.nan
             return self
         else:
             new_obj = copy.deepcopy(self)
