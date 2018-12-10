@@ -82,6 +82,8 @@ class Triangle(TriangleBase):
         # Set all 0s to NAN for nansafe ufunc arithmetic
         triangle[triangle == 0] = np.nan
         self.triangle = triangle
+        # Used to show NANs in lower part of triangle
+        self.nan_override = False
 
     @check_triangle_postcondition
     def grain(self, grain='', incremental=False, inplace=False):

@@ -5,9 +5,9 @@ from sklearn.base import BaseEstimator
 from chainladder import WeightedRegression
 
 
-class Development(BaseEstimator):
-    def __init__(self, n_per=-1, average='simple',
-                 sigma_interpolation='loglinear'):
+class DevelopmentBase(BaseEstimator):
+    def __init__(self, n_per=-1, average='volume',
+                 sigma_interpolation='log-linear'):
         self.n_per = n_per
         self.average = average
         self.sigma_interpolation = sigma_interpolation
@@ -82,6 +82,7 @@ class Development(BaseEstimator):
         else:
             average = self.average
         average = np.array(average)
+        self.average_ = average
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         _x = tri_array[:, :, :, :-1]
         _y = tri_array[:, :, :, 1:]
@@ -97,6 +98,9 @@ class Development(BaseEstimator):
         params.std_err_ = np.nan_to_num(params.std_err_) + \
             (1-np.nan_to_num(params.std_err_*0+1)) * params.sigma_ /  \
             np.swapaxes(np.sqrt(_x**(2-val))[:, :, 0:1, :], -1, -2)
+        temp = np.nan_to_num(params.std_err_) + \
+            (1-np.nan_to_num(params.std_err_*0+1)) * params.sigma_ /  \
+            np.swapaxes(np.sqrt(_x**(2-val)), -1, -2)
         params = np.concatenate((params.slope_,
                                  params.sigma_,
                                  params.std_err_), 3)
@@ -162,3 +166,6 @@ class Development(BaseEstimator):
     def fit_predict(self, X):
         self.fit(X)
         return self.predict(X)
+
+class Development(DevelopmentBase):
+    pass

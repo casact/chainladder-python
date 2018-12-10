@@ -66,7 +66,7 @@ class WeightedRegression:
         ''' This Function is designed to take an array of sigmas and does log-
             linear extrapolation where n_obs = 1 and sigma cannot be calculated.
         '''
-        if interpolation == 'loglinear':
+        if interpolation == 'log-linear':
             self.sigma_ = self.loglinear_interpolation(self.sigma_)
         if interpolation == 'mack':
             self.sigma_ = self.mack_interpolation(self.sigma_)

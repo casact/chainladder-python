@@ -1,68 +1,54 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+import chainladder as cl
+from rpy2.robjects.packages import importr
+from rpy2.robjects import pandas2ri, r
+
+pandas2ri.activate()
+CL = importr('ChainLadder')
+
+
+@pytest.fixture
+def atol():
+    return 1e-5
+
+
+def mack_r(data, alpha, est_sigma):
+    return r(f'mack<-MackChainLadder({data},alpha={alpha}, est.sigma="{est_sigma}")')
+
+
+def mack_p(data, average, est_sigma):
+    return cl.Development(average=average, sigma_interpolation=est_sigma).fit(cl.load_dataset(data))
+
 
 data = ['RAA', 'ABC', 'GenIns', 'M3IR5', 'MW2008', 'MW2014']
-# Mortgage 2 fail
-
-@pytest.mark.parametrize('data', data)
-def test_mack_simple_sigma(mack_r_simple, mack_p_simple, data, atol):
-    assert_allclose(np.array(mack_r_simple[data].rx('sigma')),
-                    mack_p_simple[data].sigma_.triangle[0, 0, :, :],
-                    atol=atol)
+averages = [('simple', 0), ('volume', 1), ('regression', 2)]
+est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 
 @pytest.mark.parametrize('data', data)
-def test_mack_volume_sigma(mack_r_volume, mack_p_volume, data, atol):
-    assert_allclose(np.array(mack_r_volume[data].rx('sigma')),
-                    mack_p_volume[data].sigma_.triangle[0, 0, :, :],
-                    atol=atol)
+@pytest.mark.parametrize('averages', averages)
+@pytest.mark.parametrize('est_sigma', est_sigma)
+def test_mack_ldf(data, averages, est_sigma, atol):
+    r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))[:, :-1]
+    p = mack_p(data, averages[0], est_sigma[0]).ldf_.triangle[0, 0, :, :]
+    assert_allclose(r, p, atol=atol)
 
 
 @pytest.mark.parametrize('data', data)
-def test_mack_reg_sigma(mack_r_reg, mack_p_reg, data, atol):
-    assert_allclose(np.array(mack_r_reg[data].rx('sigma')),
-                    mack_p_reg[data].sigma_.triangle[0, 0, :, :],
-                    atol=atol)
+@pytest.mark.parametrize('averages', averages)
+@pytest.mark.parametrize('est_sigma', est_sigma)
+def test_mack_sigma(data, averages, est_sigma, atol):
+    r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
+    p = mack_p(data, averages[0], est_sigma[0]).sigma_.triangle[0, 0, :, :]
+    assert_allclose(r, p, atol=atol)
 
 
 @pytest.mark.parametrize('data', data)
-def test_mack_simple_f(mack_r_simple, mack_p_simple, data, atol):
-    assert_allclose(np.array(mack_r_simple[data].rx('f'))[:, :-1],
-                    mack_p_simple[data].ldf_.triangle[0, 0, :, :],
-                    atol=atol)
-
-
-@pytest.mark.parametrize('data', data)
-def test_mack_volume_f(mack_r_volume, mack_p_volume, data, atol):
-    assert_allclose(np.array(mack_r_volume[data].rx('f'))[:, :-1],
-                    mack_p_volume[data].ldf_.triangle[0, 0, :, :],
-                    atol=atol)
-
-
-@pytest.mark.parametrize('data', data)
-def test_mack_reg_f(mack_r_reg, mack_p_reg, data, atol):
-    assert_allclose(np.array(mack_r_reg[data].rx('f'))[:, :-1],
-                    mack_p_reg[data].ldf_.triangle[0, 0, :, :],
-                    atol=atol)
-
-
-@pytest.mark.parametrize('data', data)
-def test_mack_simple_fse(mack_r_simple, mack_p_simple, data, atol):
-    assert_allclose(np.array(mack_r_simple[data].rx('f.se')),
-                    mack_p_simple[data].std_err_.triangle[0, 0, :, :],
-                    atol=atol)
-
-
-@pytest.mark.parametrize('data', data)
-def test_mack_volume_fse(mack_r_volume, mack_p_volume, data, atol):
-    assert_allclose(np.array(mack_r_volume[data].rx('f.se')),
-                    mack_p_volume[data].std_err_.triangle[0, 0, :, :],
-                    atol=atol)
-
-
-@pytest.mark.parametrize('data', data)
-def test_mack_reg_fse(mack_r_reg, mack_p_reg, data, atol):
-    assert_allclose(np.array(mack_r_reg[data].rx('f.se')),
-                    mack_p_reg[data].std_err_.triangle[0, 0, :, :],
-                    atol=atol)
+@pytest.mark.parametrize('averages', averages)
+@pytest.mark.parametrize('est_sigma', est_sigma)
+def test_mack_std_err(data, averages, est_sigma, atol):
+    r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
+    p = mack_p(data, averages[0], est_sigma[0]).std_err_.triangle[0, 0, :, :]
+    assert_allclose(r, p, atol=atol)

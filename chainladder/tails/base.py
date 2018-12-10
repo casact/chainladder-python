@@ -1,18 +1,25 @@
 import copy
 import numpy as np
-from chainladder.development import Development
+from chainladder.development import DevelopmentBase
 from chainladder import WeightedRegression
 
 
-class TailBase(Development):
+class TailBase(DevelopmentBase):
     ''' Base class for all tail methods.  Tail objects are equivalent
         to development objects with an additional set of tail statistics'''
+
+    def __init__(self):
+        pass
+
     def fit(self, X, y=None, sample_weight=None):
         self.X_ = X.X_
+        if DevelopmentBase not in set(X.__class__.__mro__):
+            self.X_ = DevelopmentBase().fit(X.X_)
         self._params = copy.deepcopy(X._params)
         self._params.ddims = \
             np.append(self._params.ddims,
                       [str(int(len(self._params.ddims) + 1)) + '-Ult'])
+        self.average_ = copy.deepcopy(X.average_)
         self.y_ = y
         self.sample_weight_ = sample_weight
 
@@ -51,11 +58,8 @@ class CurveFit(TailBase):
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] + [self.extrap_per])), -1) + n_obs
-        print(extrapolate.shape, slope.shape, intercept.shape)
         tail = self.predict_tail(slope, intercept, extrapolate)
-        
         sigma, std_err = self._get_tail_stats(tail)
-        print(tail.shape, sigma.shape, std_err.shape)
         tail = np.concatenate((tail, sigma, std_err), 2)
         params.triangle = np.append(params.triangle, tail, 3)
         return self

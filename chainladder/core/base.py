@@ -73,21 +73,18 @@ class TriangleBase:
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
     @check_triangle_postcondition
-    def get_latest_diagonal(self):
-        ''' Method to return the latest diagonal of the triangle.
+    def get_latest_diagonal(self, compress=True):
+        ''' Method to return the latest diagonal of the triangle.  Requires
+            self.nan_overide == False.
         '''
         nan_tri = self.nan_triangle()
-        diagonal = np.ones(nan_tri.shape).cumsum(axis=1)
-        x = np.expand_dims(nan_tri.shape[1] -
-                           np.sum(np.isnan(nan_tri), axis=1), axis=1)
-        diagonal = diagonal == np.repeat(x, nan_tri.shape[1], axis=1)
-        diagonal = self.expand_dims(diagonal)
-        diagonal = np.nansum(diagonal*self.triangle, axis=3)
-        diagonal[diagonal == 0] = np.nan
-        diagonal = np.expand_dims(diagonal, axis=3)
+        diagonal = self.expand_dims(nan_tri*np.fliplr(np.fliplr(nan_tri).T).T)
+        diagonal = diagonal*self.triangle
         obj = copy.deepcopy(self)
+        if compress:
+            diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
+            obj.ddims = ['Latest']
         obj.triangle = diagonal
-        obj.ddims = ['Latest']
         return obj
 
     @check_triangle_postcondition
@@ -489,11 +486,10 @@ class TriangleBase:
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
-        if self.triangle.shape[2] == 1 or self.triangle.shape[3] == 1:
+        if self.triangle.shape[2] == 1 or self.triangle.shape[3] == 1 or self.nan_override:
             # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
             # and does not need nan overrides
             return np.ones(self.triangle.shape[2:])
-
         grain_dict = {'Y': {'Y': 1, 'Q': 4, 'M': 12},
                       'Q': {'Q': 1, 'M': 3},
                       'M': {'M': 1}}
