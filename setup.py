@@ -32,7 +32,7 @@ setup(
     description=descr,
     # long_description=open('README.md').read(),
     install_requires=[
-        "pandas>=0.21.0",
+        "pandas>=0.23.0",
         "numpy>=1.12.1",
         "scikit-learn>=0.19.0"
     ],
