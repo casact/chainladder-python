@@ -3,7 +3,7 @@ import numpy as np
 import copy
 
 tri = cl.load_dataset('casresearch')
-
+qtr = cl.load_dataset('quarterly')
 
 # Test Triangle slicing
 def test_slice_by_boolean():
@@ -47,7 +47,7 @@ def test_sum_of_diff_eq_diff_of_sum():
 
 
 def test_grain():
-    actual = cl.load_dataset('quarterly').iloc[0,0].grain('OYDY').triangle[0,0,:,:]
+    actual = qtr.iloc[0,0].grain('OYDY').triangle[0,0,:,:]
     expected = np.array([[  44.,  621.,  950., 1020., 1070., 1069., 1089., 1094., 1097.,
         1099., 1100., 1100.],
        [  42.,  541., 1052., 1169., 1238., 1249., 1266., 1269., 1296.,

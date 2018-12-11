@@ -1,1 +1,2 @@
-from chainladder.development.development import Development, DevelopmentBase
+from chainladder.development.base import Development, DevelopmentBase
+from chainladder.development.munich import MunichDevelopment
