@@ -17,11 +17,12 @@ def load_dataset(key):
 
         Returns:
     	pandas.DataFrame of the loaded dataset.
+
    """
     path = os.path.dirname(os.path.abspath(__file__))
     origin = 'origin'
     development = 'development'
-    values = 'values'
+    values = ['values']
     keys = None
     if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto']:
         values = ['incurred', 'paid']
