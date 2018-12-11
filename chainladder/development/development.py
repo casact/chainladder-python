@@ -67,8 +67,9 @@ class DevelopmentBase(BaseEstimator):
         else:
             flip_nan = np.nan_to_num(X.triangle*0+1)
             k, v, o, d = flip_nan.shape
-            return np.concatenate((1-flip_nan[:, :, -(o-n_per-1):, :],
-                                   np.ones((k, v, n_per+1, d))), 2)*flip_nan
+            w = np.concatenate((1-flip_nan[:, :, -(o-n_per-1):, :],
+                                np.ones((k, v, n_per+1, d))), 2)*flip_nan
+            return w*X.expand_dims(X.nan_triangle())
 
     def fit(self, X, y=None, sample_weight=None):
         # Capture the fit inputs
@@ -92,15 +93,12 @@ class DevelopmentBase(BaseEstimator):
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         val = np.nan_to_num(val * (_y * 0 + 1))
         _w = self._assign_n_per_weight(X) / (_x**(val))
-        self.w_ = _w
+        self.w_ = self._assign_n_per_weight(X)
         params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True) \
             .fit().sigma_fill(self.sigma_interpolation)
         params.std_err_ = np.nan_to_num(params.std_err_) + \
-            (1-np.nan_to_num(params.std_err_*0+1)) * params.sigma_ /  \
-            np.swapaxes(np.sqrt(_x**(2-val))[:, :, 0:1, :], -1, -2)
-        temp = np.nan_to_num(params.std_err_) + \
-            (1-np.nan_to_num(params.std_err_*0+1)) * params.sigma_ /  \
-            np.swapaxes(np.sqrt(_x**(2-val)), -1, -2)
+            np.nan_to_num((1-np.nan_to_num(params.std_err_*0+1)) *
+            params.sigma_/np.swapaxes(np.sqrt(_x**(2-val))[:, :, 0:1, :], -1, -2))
         params = np.concatenate((params.slope_,
                                  params.sigma_,
                                  params.std_err_), 3)

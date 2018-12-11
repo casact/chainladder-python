@@ -16,6 +16,7 @@ class TailBase(DevelopmentBase):
         if DevelopmentBase not in set(X.__class__.__mro__):
             self.X_ = DevelopmentBase().fit(X.X_)
         self._params = copy.deepcopy(X._params)
+        self.w_ = copy.deepcopy(X.w_)
         self._params.ddims = \
             np.append(self._params.ddims,
                       [str(int(len(self._params.ddims) + 1)) + '-Ult'])

@@ -69,6 +69,7 @@ class Triangle(TriangleBase):
         self.kdims = np.array(data_agg.index.droplevel(-1).unique())
         self.odims = np.array(data_agg.index.levels[-1].unique())
         self.ddims = np.array(data_agg.columns.levels[-1].unique())
+        self.ddims = self.ddims*({'Y': 12, 'Q': 3, 'M': 1}[self.development_grain])
         self.vdims = np.array(data_agg.columns.levels[0].unique())
         self.valuation_date = development_date.max()
         self.key_labels = keys
@@ -96,7 +97,8 @@ class Triangle(TriangleBase):
             dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                               'Q': {'Y': 4, 'Q': 1}}
             keeps = dev_grain_dict[self.development_grain][development_grain]
-            keeps = self.ddims % keeps == 0
+            keeps = np.where(np.arange(new_tri.shape[3]) % keeps == 0)[0]
+            keeps = -(keeps + 1)[::-1]
             new_tri = new_tri[:, :, :, keeps]
             self.ddims = self.ddims[keeps]
             self.odims = np.unique(o)

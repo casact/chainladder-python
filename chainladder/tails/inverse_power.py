@@ -9,4 +9,4 @@ class InversePower(CurveFit):
         return np.log(reg.x)
 
     def predict_tail(self, slope, intercept, extrapolate):
-        return np.expand_dim(np.product(1 + np.exp(intercept)*(extrapolate**slope), -1), -1)
+        return np.expand_dims(np.product(1 + np.exp(intercept)*(extrapolate**slope), -1), -1)

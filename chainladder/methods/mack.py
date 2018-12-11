@@ -6,6 +6,7 @@ Reserve Estimates: Recursive Calculation and Inclusion of a Tail Factor* by
 Thomas Mack `[Mack99] <citations.html>`_.
 
 """
+import pandas as pd
 import numpy as np
 import copy
 from chainladder.methods.base import MethodBase
@@ -82,14 +83,18 @@ class Mack(MethodBase):
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         k, v, o, d = val.shape
         weight = np.sqrt(tri_array[:, :, :, :-1]**(2-val))
+        weight[weight == 0] = np.nan
         obj.triangle = self.sigma_.triangle / weight
+        w = np.concatenate((self.w_, np.ones((k, v, o, 1))*np.nan), axis=3)
+        w[np.isnan(w)] = 1
+        obj.triangle = np.nan_to_num(obj.triangle) * w
         obj.nan_override = True
         return obj
 
     @property
     def total_process_risk_(self):
         obj = copy.deepcopy(self.process_risk_)
-        obj.triangle = np.sqrt(np.sum(self.process_risk_.triangle**2, 2))
+        obj.triangle = np.sqrt(np.nansum(self.process_risk_.triangle**2, 2))
         obj.triangle = np.expand_dims(obj.triangle, 2)
         obj.odims = ['tot_proc_risk']
         return obj
@@ -145,10 +150,21 @@ class Mack(MethodBase):
         obj = copy.deepcopy(self.parameter_risk_)
         obj.triangle = np.sqrt(self.parameter_risk_.triangle**2 +
                                self.process_risk_.triangle**2)
-        obj.odims = ['Mack Std Err']
         return obj
 
     @property
     def total_mack_std_err_(self):
         return np.sqrt(self.total_process_risk_.triangle**2 +
                        self.total_parameter_risk_.triangle**2)[:, :, :, -1]
+
+    @property
+    def summary_(self):
+        obj = copy.deepcopy(self.X_)
+        obj.triangle = np.concatenate(
+            (self.X_.latest_diagonal.triangle,
+             self.ibnr_.triangle,
+             self.ultimate_.triangle,
+             self.mack_std_err_.triangle[:, :, :, -1:]), 3)
+        obj.ddims = ['Latest', 'IBNR', 'Ultimate', 'Mack Std Err']
+        obj.nan_override = True
+        return obj

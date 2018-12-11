@@ -13,6 +13,7 @@ class MethodBase(TailBase):
         if TailBase not in set(X.__class__.__mro__):
             obj = Constant().fit(obj)
         self.X_ = obj.X_
+        self.w_ = obj.w_
         self._params = obj._params
         self.average_ = obj.average_
 

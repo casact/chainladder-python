@@ -78,8 +78,12 @@ class TriangleBase:
             self.nan_overide == False.
         '''
         nan_tri = self.nan_triangle()
-        diagonal = self.expand_dims(nan_tri*np.fliplr(np.fliplr(nan_tri).T).T)
-        diagonal = diagonal*self.triangle
+        latest_start = int(np.nansum(nan_tri[-1]))-1
+        diagonal = nan_tri[:, latest_start:]*np.fliplr(np.fliplr(nan_tri[:, latest_start:]).T).T
+        if latest_start != 0:
+            filler = (np.ones((nan_tri.shape[0], 1))*np.nan)
+            diagonal = np.concatenate((filler, diagonal), 1)
+        diagonal = self.expand_dims(diagonal)*self.triangle
         obj = copy.deepcopy(self)
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
@@ -121,8 +125,9 @@ class TriangleBase:
 
         if inplace:
             nan_tri = self.expand_dims(self.nan_triangle())
-            temp = np.nan_to_num(self.triangle)[:,:,:,1:] - np.nan_to_num(self.triangle)[:,:,:,:-1]
-            temp = np.concatenate((self.triangle[:,:,:,0:1], temp), axis=3)
+            temp = np.nan_to_num(self.triangle)[:, :, :, 1:] - \
+                np.nan_to_num(self.triangle)[:, :, :, :-1]
+            temp = np.concatenate((self.triangle[:, :, :, 0:1], temp), axis=3)
             self.triangle = temp*nan_tri
             return self
         else:
@@ -228,7 +233,9 @@ class TriangleBase:
     @check_triangle_postcondition
     def __add__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = np.nan_to_num(self.triangle) + np.nan_to_num(other.triangle)
+        if type(other) not in [int, float]:
+            other = other.triangle
+        obj.triangle = np.nan_to_num(self.triangle) + np.nan_to_num(other)
         obj.triangle[obj.triangle == 0] = np.nan
         obj.vdims = np.array([None])
         return obj
@@ -240,8 +247,21 @@ class TriangleBase:
     @check_triangle_postcondition
     def __sub__(self, other):
         obj = copy.deepcopy(self)
+        if type(other) not in [int, float]:
+            other = other.triangle
         obj.triangle = np.nan_to_num(self.triangle) - \
-            np.nan_to_num(other.triangle)
+            np.nan_to_num(other)
+        obj.triangle[obj.triangle == 0] = np.nan
+        obj.vdims = np.array([None])
+        return obj
+
+    @check_triangle_postcondition
+    def __rsub__(self, other):
+        obj = copy.deepcopy(self)
+        if type(other) not in [int, float]:
+            other = other.triangle
+        obj.triangle = np.nan_to_num(other) - \
+            np.nan_to_num(self.triangle)
         obj.triangle[obj.triangle == 0] = np.nan
         obj.vdims = np.array([None])
         return obj
@@ -260,8 +280,14 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         temp = other.triangle.copy()
         temp[temp == 0] = np.nan
-        obj.triangle = np.nan_to_num(self.triangle) / temp
         obj.vdims = np.array([None])
+        obj.triangle = np.nan_to_num(self.triangle) / temp
+        return obj
+
+    @check_triangle_postcondition
+    def __rtruediv__(self, other):
+        obj = copy.deepcopy(self)
+        obj.triangle = other / self.triangle
         return obj
 
     def __eq__(self, other):
@@ -296,7 +322,7 @@ class TriangleBase:
             for i in range(3):
                 old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
             new_tri = obj.triangle
-            new_tri = np.repeat(np.expand_dims(new_tri, axis=0), v2_len, axis = 0)
+            new_tri = np.repeat(np.expand_dims(new_tri, 0), v2_len, 0)
 
             obj.triangle = new_tri
             obj.kdims = np.array(list(new_index))
@@ -306,7 +332,8 @@ class TriangleBase:
 
         @check_triangle_postcondition
         def sum(self, axis=1):
-            self.obj.triangle = np.nansum((self.obj.triangle * self.old_k_by_new_k), axis = axis)
+            self.obj.triangle = np.nansum((self.obj.triangle *
+                                           self.old_k_by_new_k), axis=axis)
             self.obj.triangle[self.obj.triangle == 0] = np.nan
             return self.obj
 
@@ -443,7 +470,8 @@ class TriangleBase:
                                end=development_date.max(),
                                freq=development_grain).to_timestamp()
             # Let's get rid of any development periods before origin periods
-            cart_prod = TriangleBase.cartesian_product(origin_unique, development_unique)
+            cart_prod = TriangleBase.cartesian_product(origin_unique,
+                                                       development_unique)
             cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
             return pd.DataFrame(cart_prod, columns=['origin', 'development'])
 
@@ -474,8 +502,9 @@ class TriangleBase:
                            left_on=['origin', 'development'] + groupby,
                            right_on=[origin_date, development_date] + groupby) \
                     .fillna(0)[['origin', 'development'] + groupby + values]
-        data_agg['development'] = TriangleBase.development_lag(data_agg['origin'],
-                                                  data_agg['development'])
+        data_agg['development'] = \
+            TriangleBase.development_lag(data_agg['origin'],
+                                         data_agg['development'])
         return data_agg
 
     # ---------------------------------------------------------------- #
@@ -486,7 +515,9 @@ class TriangleBase:
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
-        if self.triangle.shape[2] == 1 or self.triangle.shape[3] == 1 or self.nan_override:
+        if self.triangle.shape[2] == 1 or \
+           self.triangle.shape[3] == 1 or \
+           self.nan_override:
             # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
             # and does not need nan overrides
             return np.ones(self.triangle.shape[2:])
@@ -596,7 +627,8 @@ class TriangleBase:
             # Numpy approach needs all the same datatype.
             length_arrays = len(arrays)
             dtype = np.result_type(*arrays)
-            arr = np.empty([len(a) for a in arrays] + [length_arrays], dtype=dtype)
+            arr = np.empty([len(a) for a in arrays]+[length_arrays],
+                           dtype=dtype)
             for i, a in enumerate(np.ix_(*arrays)):
                 arr[..., i] = a
             arr = arr.reshape(-1, length_arrays)

@@ -1,4 +1,5 @@
 import chainladder as cl
+import numpy as np
 import copy
 
 tri = cl.load_dataset('casresearch')
@@ -43,3 +44,32 @@ def test_latest_diagonal_two_routes():
 def test_sum_of_diff_eq_diff_of_sum():
     assert (tri['BulkLoss']-tri['CumPaidLoss']).latest_diagonal == \
            (tri.latest_diagonal['BulkLoss'] - tri.latest_diagonal['CumPaidLoss'])
+
+
+def test_grain():
+    actual = cl.load_dataset('quarterly').iloc[0,0].grain('OYDY').triangle[0,0,:,:]
+    expected = np.array([[  44.,  621.,  950., 1020., 1070., 1069., 1089., 1094., 1097.,
+        1099., 1100., 1100.],
+       [  42.,  541., 1052., 1169., 1238., 1249., 1266., 1269., 1296.,
+        1300., 1300.,   np.nan],
+       [  17.,  530.,  966., 1064., 1100., 1128., 1155., 1196., 1201.,
+        1200.,   np.nan,   np.nan],
+       [  10.,  393.,  935., 1062., 1126., 1209., 1243., 1286., 1298.,
+          np.nan,   np.nan,   np.nan],
+       [  13.,  481., 1021., 1267., 1400., 1476., 1550., 1583.,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [   2.,  380.,  788.,  953., 1001., 1030., 1066.,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [   4.,  777., 1063., 1307., 1362., 1411.,   np.nan,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [   2.,  472., 1617., 1818., 1820.,   np.nan,   np.nan,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [   3.,  597., 1092., 1221.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [   4.,  583., 1212.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [  21.,  422.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan],
+       [  13.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
+          np.nan,   np.nan,   np.nan]])
+    np.testing.assert_equal(actual, expected)
