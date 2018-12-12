@@ -56,9 +56,8 @@ class Triangle(TriangleBase):
         origin_date = TriangleBase.to_datetime(data_agg, origin)
         self.origin_grain = TriangleBase.get_grain(origin_date)
         # These only work with valuation periods and not lags
-        development_date = TriangleBase.to_datetime(data_agg, development)
+        development_date = TriangleBase.to_datetime(data_agg, development, period_end=True)
         self.development_grain = TriangleBase.get_grain(development_date)
-
         # Prep the data for 4D Triangle
         data_agg = self.get_axes(data_agg, keys, values,
                                  origin_date, development_date)
@@ -95,7 +94,8 @@ class Triangle(TriangleBase):
             new_tri, o = self._set_ograin(grain=grain, incremental=incremental)
             # Set development Grain
             dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
-                              'Q': {'Y': 4, 'Q': 1}}
+                              'Q': {'Y': 4, 'Q': 1},
+                              'Y': {'Y': 1}}
             keeps = dev_grain_dict[self.development_grain][development_grain]
             keeps = np.where(np.arange(new_tri.shape[3]) % keeps == 0)[0]
             keeps = -(keeps + 1)[::-1]

@@ -1,4 +1,5 @@
 import chainladder as cl
+import pandas as pd
 import numpy as np
 import copy
 
@@ -73,3 +74,6 @@ def test_grain():
        [  13.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
           np.nan,   np.nan,   np.nan]])
     np.testing.assert_equal(actual, expected)
+
+def test_off_cycle_val_date():
+    assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31')

@@ -55,6 +55,7 @@ class WeightedRegression:
         mse = wss_residual / mse_denom
         std_err = np.sqrt(mse/np.nansum(w*x*x*(y*0+1), axis))
         std_err = np.expand_dims(std_err, -1)
+        std_err[std_err == 0] = np.nan
         coef = np.expand_dims(coef, -1)
         sigma = np.expand_dims(np.sqrt(mse), -1)
         self.slope_ = coef
@@ -79,6 +80,7 @@ class WeightedRegression:
     def loglinear_interpolation(self, y):
         ''' Use Cases: generally for filling in last element of sigma_
         '''
+        y[y==0] = np.nan # If no link-ratio variation then interpolate
         ly = np.log(y)
         w = np.nan_to_num(ly*0+1)
         reg = WeightedRegression(w, None, ly, self.axis, False).fit()
@@ -88,7 +90,8 @@ class WeightedRegression:
 
     def mack_interpolation(self, y):
         ''' Use Mack's approximation to fill last element of sigma_ which is the
-            same as loglinear extrapolation using the last two element '''
+            same as loglinear extrapolation using the last two element
+            I think this needs to be recursive... '''
         w = np.nan_to_num(y*0+1)
         slicer_n = ([slice(None)]*4)
         slicer_d = ([slice(None)]*4)

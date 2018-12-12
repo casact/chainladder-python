@@ -124,11 +124,11 @@ class Mack(MethodBase):
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
+        t1_t = (self.full_triangle_.triangle[:, :, :, :-1] * std_err)**2
+        ldf = self.ldf_.triangle.copy()
         for i in range(self.full_triangle_.shape[3]-1):
-            t1 = (self.full_triangle_.triangle[:, :, :, i:i+1] *
-                  std_err[:, :, :, i:i+1])**2
-            t2 = (self.ldf_.triangle[:, :, :, i:i+1] *
-                  risk_arr[:, :, :, i:i+1])**2
+            t1 = t1_t[:, :, :, i:i+1]
+            t2 = (ldf[:, :, :, i:i+1] * risk_arr[:, :, :, i:i+1])**2
             t_tot = np.sqrt(t1+t2)*nans[:, :, :, i+1:i+2]
             risk_arr = np.concatenate((risk_arr, t_tot), 3)
         return risk_arr
@@ -138,9 +138,10 @@ class Mack(MethodBase):
              np.nan_to_num(self.X_.triangle) + \
              np.nan_to_num(self.X_.get_latest_diagonal(False).triangle)
         t1 = np.expand_dims(np.sum(t1, 2), 2) * self.std_err_.triangle
+        ldf = self.ldf_.triangle.copy()
         for i in range(self.full_triangle_.shape[3]-1):
             t_tot = np.sqrt((t1[:, :, :, i:i+1])**2 +
-                            (self.ldf_.triangle[:, :, :, i:i+1] *
+                            (ldf[:, :, :, i:i+1] *
                              risk_arr[:, :, :, -1:])**2)
             risk_arr = np.concatenate((risk_arr, t_tot), 3)
         return risk_arr

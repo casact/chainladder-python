@@ -142,7 +142,7 @@ class TriangleBase:
             o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
                                         o_dt.dt.quarter.astype(str)))
         elif origin_grain == 'Y':
-            o = np.array(o_dt.dt.year)
+            o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
         else:
             o = self.odims
         # Get unique new origin array
@@ -469,6 +469,7 @@ class TriangleBase:
                 pd.PeriodIndex(start=origin_date.min(),
                                end=development_date.max(),
                                freq=development_grain).to_timestamp()
+            development_unique = TriangleBase.period_end(development_unique)
             # Let's get rid of any development periods before origin periods
             cart_prod = TriangleBase.cartesian_product(origin_unique,
                                                        development_unique)
@@ -565,7 +566,7 @@ class TriangleBase:
         return self
 
     @staticmethod
-    def to_datetime(data, fields):
+    def to_datetime(data, fields, period_end=False):
         '''For tabular form, this will take a set of data
         column(s) and return a single date array.
         '''
@@ -589,7 +590,10 @@ class TriangleBase:
                 break
             except:
                 pass
-        return target_field.map(arr)
+        target = target_field.map(arr)
+        if period_end:
+            target = TriangleBase.period_end(target)
+        return target
 
     @staticmethod
     def development_lag(origin, development):
@@ -605,6 +609,17 @@ class TriangleBase:
         if development_grain == 'M':
             month_diff = development.dt.month - origin.dt.month
             return year_diff * 12 + month_diff + 1
+
+    @staticmethod
+    def period_end(array):
+        if type(array) is not pd.DatetimeIndex:
+            array_lookup = len(set(array.dt.month))
+        else:
+            array_lookup = len(set(array.month))
+        offset = {12: pd.tseries.offsets.MonthEnd(),
+                  4: pd.tseries.offsets.QuarterEnd(),
+                  1: pd.tseries.offsets.YearEnd()}
+        return array + offset[array_lookup]
 
     @staticmethod
     def get_grain(array):

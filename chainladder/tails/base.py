@@ -83,6 +83,8 @@ class CurveFit(TailBase):
         time_pd = self._get_tail_weighted_time_period(tail)
         reg = WeightedRegression(y=np.log(self.sigma_.triangle), axis=3).fit()
         sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
-        reg = WeightedRegression(y=np.log(self.std_err_.triangle), axis=3).fit()
+        y = self.std_err_.triangle.copy()
+        y[y == 0] = np.nan
+        reg = WeightedRegression(y=np.log(y), axis=3).fit()
         std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         return sigma_, std_err_
