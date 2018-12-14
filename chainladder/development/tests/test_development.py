@@ -27,6 +27,16 @@ averages = [('simple', 0), ('volume', 1), ('regression', 2)]
 est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 
+def test_full_slice():
+    assert cl.Development().fit(cl.load_dataset('GenIns')).ldf_ == \
+        cl.Development(n_per=1000).fit(cl.load_dataset('GenIns')).ldf_
+
+
+def test_full_slice2():
+    assert cl.Development().fit(cl.load_dataset('GenIns')).ldf_ == \
+        cl.Development(n_per=[1000]*(cl.load_dataset('GenIns').shape[3]-1)).fit(cl.load_dataset('GenIns')).ldf_
+
+
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)

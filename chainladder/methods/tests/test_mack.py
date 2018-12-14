@@ -34,6 +34,11 @@ averages = [('volume', 1), ('simple', 0), ('volume', 1), ('regression', 2)]
 est_sigma = [('log-linear', 'log-linear'), ('mack', 'Mack')]
 
 
+def test_mack_to_triangle():
+    assert cl.Mack().fit(cl.load_dataset('ABC')).summary_ == \
+        cl.Mack().fit(cl.Development().fit(cl.load_dataset('ABC'))).summary_
+
+
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)

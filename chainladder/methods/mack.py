@@ -6,7 +6,6 @@ Reserve Estimates: Recursive Calculation and Inclusion of a Tail Factor* by
 Thomas Mack `[Mack99] <citations.html>`_.
 
 """
-import pandas as pd
 import numpy as np
 import copy
 from chainladder.methods.base import MethodBase
@@ -74,6 +73,8 @@ class Mack(MethodBase):
 
     @property
     def full_std_err_(self):
+        """
+        """
         obj = copy.deepcopy(self.X_)
         tri_array = self.full_triangle_.triangle
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
@@ -155,8 +156,13 @@ class Mack(MethodBase):
 
     @property
     def total_mack_std_err_(self):
-        return np.sqrt(self.total_process_risk_.triangle**2 +
-                       self.total_parameter_risk_.triangle**2)[:, :, :, -1]
+        obj = copy.deepcopy(self.X_.latest_diagonal)
+        obj.triangle = np.sqrt(self.total_process_risk_.triangle**2 +
+                               self.total_parameter_risk_.triangle**2)
+        obj.triangle = obj.triangle[:, :, :, -1:]
+        obj.ddims = ['Total Mack Std Err']
+        obj.odims = ['Total']
+        return obj
 
     @property
     def summary_(self):

@@ -36,15 +36,17 @@ class TriangleBase:
 
     @property
     def values(self):
-        return pd.Series(list(self.vdims), name='values')
+        return pd.Series(list(self.vdims), name='values').to_frame()
 
     @property
     def origin(self):
         return pd.DatetimeIndex(self.odims, name='origin')
+        return pd.Series(self.odims, name='origin') \
+                 .dt.to_period(self.origin_grain).to_frame()
 
     @property
     def development(self):
-        return pd.Series(list(self.ddims), name='development')
+        return pd.Series(list(self.ddims), name='development').to_frame()
 
     @property
     def latest_diagonal(self):
@@ -227,6 +229,26 @@ class TriangleBase:
         if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
             self._repr_format().to_clipboard()
 
+    def to_csv(self, *args, **kwargs):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            self._repr_format().to_csv(*args, **kwargs)
+
+    def to_pickle(self, *args, **kwargs):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            self._repr_format().to_pickle(*args, **kwargs)
+
+    def to_excel(self, *args, **kwargs):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            self._repr_format().to_excel(*args, **kwargs)
+
+    def to_json(self, *args, **kwargs):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            self._repr_format().to_json(*args, **kwargs)
+
+    def to_html(self, *args, **kwargs):
+        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+            self._repr_format().to_html(*args, **kwargs)
+
     # ---------------------------------------------------------------- #
     # ---------------------- Arithmetic Overload --------------------- #
     # ---------------------------------------------------------------- #
@@ -269,17 +291,26 @@ class TriangleBase:
     @check_triangle_postcondition
     def __mul__(self, other):
         obj = copy.deepcopy(self)
+        if type(other) not in [int, float]:
+            other = np.nan_to_num(other.triangle)
         obj.triangle = np.nan_to_num(self.triangle) * \
-            np.nan_to_num(other.triangle)
+            other
         obj.triangle[obj.triangle == 0] = np.nan
         obj.vdims = np.array([None])
         return obj
 
     @check_triangle_postcondition
+    def __rmul__(self, other):
+        return self if other == 1 else self.__mul__(other)
+
+    @check_triangle_postcondition
     def __truediv__(self, other):
         obj = copy.deepcopy(self)
-        temp = other.triangle.copy()
-        temp[temp == 0] = np.nan
+        if type(other) not in [int, float]:
+            temp = other.triangle.copy()
+            temp[temp == 0] = np.nan
+        else:
+            temp = other
         obj.vdims = np.array([None])
         obj.triangle = np.nan_to_num(self.triangle) / temp
         return obj
@@ -348,8 +379,9 @@ class TriangleBase:
         @check_triangle_postcondition
         def get_idx(self, idx):
             obj = copy.deepcopy(self.obj)
+            vdims = pd.Series(obj.vdims)
             obj.kdims = np.array(idx.index.unique())
-            obj.vdims = np.array(idx.columns.unique())
+            obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
             obj.key_labels = list(idx.index.names)
             obj.iloc = TriangleBase.Ilocation(obj)
             obj.loc = TriangleBase.Location(obj)
@@ -400,15 +432,13 @@ class TriangleBase:
         return temp
 
     def __getitem__(self, key):
-        ''' Function for pandas style column indexing getting '''
-        if type(key) is pd.Series:
-            if key.name == 'development':
-                return self._slice_development(key)
-            else:
-                # Boolean-indexing of all keys
-                return self.iloc[list(self.keys[key].index)]
+        ''' Function for pandas style column indexing'''
+        if type(key) is pd.DataFrame and 'development' in key.columns:
+            return self._slice_development(key['development'])
         if type(key) is np.ndarray:
             return self._slice_origin(key)
+        if type(key) is pd.Series:
+            return self.iloc[list(self.keys[key].index)]
         if key in self.key_labels:
             # Boolean-indexing of a particular key
             return self.keys[key]
@@ -627,24 +657,14 @@ class TriangleBase:
         return {1: 'Y', 4: 'Q', 12: 'M'}[num_months]
 
     @staticmethod
-    def cartesian_product(*arrays, pandas=False):
+    def cartesian_product(*arrays):
         '''A fast implementation of cartesian product, used for filling in gaps
         in triangles (if any)'''
-        if pandas:
-            # Pandas can support mixed datatypes, but is slower?
-            arr = arrays[0].to_frame(index=[1]*len(arrays[0]))
-            for num, array in enumerate(arrays):
-                if num > 0:
-                    temp = array.to_frame(index=[1]*len(array))
-                arr.merge(temp, how='inner', left_index=True, right_index=True)
-            return arr
-        else:
-            # Numpy approach needs all the same datatype.
-            length_arrays = len(arrays)
-            dtype = np.result_type(*arrays)
-            arr = np.empty([len(a) for a in arrays]+[length_arrays],
-                           dtype=dtype)
-            for i, a in enumerate(np.ix_(*arrays)):
-                arr[..., i] = a
-            arr = arr.reshape(-1, length_arrays)
-            return arr
+        length_arrays = len(arrays)
+        dtype = np.result_type(*arrays)
+        arr = np.empty([len(a) for a in arrays]+[length_arrays],
+                       dtype=dtype)
+        for i, a in enumerate(np.ix_(*arrays)):
+            arr[..., i] = a
+        arr = arr.reshape(-1, length_arrays)
+        return arr

@@ -34,6 +34,6 @@ def load_dataset(key):
                   'EarnedPremCeded', 'EarnedPremNet']
     if key.lower() in ['liab', 'auto']:
         keys = ['lob']
-    df = pd.read_pickle(os.path.join(path, 'data', key + '.pkl'))
+    df = pd.read_pickle(os.path.join(path, 'data', key.lower() + '.pkl'))
     return Triangle(df, origin=origin, development=development,
                     values=values, keys=keys)

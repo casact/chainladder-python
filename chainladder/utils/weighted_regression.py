@@ -46,7 +46,8 @@ class WeightedRegression:
     def fit_OLS_thru_orig(self):
         w, x, y, axis = self.w, self.x, self.y, self.axis
         coef = np.nansum(w*x*y, axis)/np.nansum((y*0+1)*w*x*x, axis)
-        fitted_value = np.repeat(np.expand_dims(coef, axis), x.shape[axis], axis)
+        fitted_value = np.repeat(np.expand_dims(coef, axis),
+                                 x.shape[axis], axis)
         fitted_value = (fitted_value*x*(y*0+1))
         residual = (y-fitted_value)*np.sqrt(w)
         wss_residual = np.nansum(residual**2, axis)
@@ -65,7 +66,7 @@ class WeightedRegression:
 
     def sigma_fill(self, interpolation):
         ''' This Function is designed to take an array of sigmas and does log-
-            linear extrapolation where n_obs = 1 and sigma cannot be calculated.
+            linear extrapolation where n_obs=1 and sigma cannot be calculated.
         '''
         if interpolation == 'log-linear':
             self.sigma_ = self.loglinear_interpolation(self.sigma_)
@@ -80,7 +81,7 @@ class WeightedRegression:
     def loglinear_interpolation(self, y):
         ''' Use Cases: generally for filling in last element of sigma_
         '''
-        y[y==0] = np.nan # If no link-ratio variation then interpolate
+        y[y == 0] = np.nan
         ly = np.log(y)
         w = np.nan_to_num(ly*0+1)
         reg = WeightedRegression(w, None, ly, self.axis, False).fit()
@@ -91,7 +92,9 @@ class WeightedRegression:
     def mack_interpolation(self, y):
         ''' Use Mack's approximation to fill last element of sigma_ which is the
             same as loglinear extrapolation using the last two element
-            I think this needs to be recursive... '''
+            same as loglinear extrapolation using the preceding two element to
+            the missing value. This function needs a recursive definition...
+        '''
         w = np.nan_to_num(y*0+1)
         slicer_n = ([slice(None)]*4)
         slicer_d = ([slice(None)]*4)

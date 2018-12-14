@@ -12,9 +12,9 @@ class TailBase(DevelopmentBase):
         pass
 
     def fit(self, X, y=None, sample_weight=None):
-        self.X_ = X.X_
         if DevelopmentBase not in set(X.__class__.__mro__):
-            self.X_ = DevelopmentBase().fit(X.X_)
+            X = DevelopmentBase().fit(X)
+        self.X_ = X.X_
         self._params = copy.deepcopy(X._params)
         self.w_ = copy.deepcopy(X.w_)
         self._params.ddims = \
@@ -28,6 +28,8 @@ class TailBase(DevelopmentBase):
         return self
 
 
+
+
 class CurveFit(TailBase):
     ''' Base sub-class used for curve fit methods of tail factors '''
     def __init__(self, fit_per=slice(None, None, None), extrap_per=100,
@@ -39,7 +41,7 @@ class CurveFit(TailBase):
     def fit(self, X, y=None, sample_weight=None):
         super().fit(X, y, sample_weight)
         params = self._params
-        _y = params.triangle[:, :, 0:1, :]
+        _y = params.triangle[:, :, 0:1, :].copy()
         _w = np.zeros(_y.shape)
         if type(self.fit_per) is not slice:
             raise TypeError('fit_per must be slice.')
@@ -58,7 +60,8 @@ class CurveFit(TailBase):
         # Get LDFs
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
-        extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] + [self.extrap_per])), -1) + n_obs
+        extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] +
+                                              [self.extrap_per])), -1) + n_obs
         tail = self.predict_tail(slope, intercept, extrapolate)
         sigma, std_err = self._get_tail_stats(tail)
         tail = np.concatenate((tail, sigma, std_err), 2)
@@ -71,7 +74,8 @@ class CurveFit(TailBase):
 
         Returns: float32
         """
-        y = self.ldf_.triangle
+        y = self.ldf_.triangle.copy()
+        y[y <= 1] = np.nan
         reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
         time_pd = (np.log(tail-1)-reg.intercept_)/reg.slope_
         return time_pd

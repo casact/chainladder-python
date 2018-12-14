@@ -16,6 +16,16 @@ def test_slice_by_loc():
     assert tri.loc['Aegis Grp'].loc['comauto'].keys.iloc[0, 0] == 'comauto'
 
 
+def test_slice_origin():
+    assert cl.load_dataset('raa')[cl.load_dataset('raa').origin>'1985'].shape == \
+        (1, 1, 5, 10)
+
+
+def test_slice_development():
+    assert cl.load_dataset('raa')[cl.load_dataset('raa').development<72].shape == \
+        (1, 1, 10, 5)
+
+
 def test_slice_by_loc_iloc():
     assert tri.groupby('LOB').sum().loc['comauto'].keys.iloc[0, 0] == 'comauto'
 
@@ -45,6 +55,10 @@ def test_latest_diagonal_two_routes():
 def test_sum_of_diff_eq_diff_of_sum():
     assert (tri['BulkLoss']-tri['CumPaidLoss']).latest_diagonal == \
            (tri.latest_diagonal['BulkLoss'] - tri.latest_diagonal['CumPaidLoss'])
+
+
+def test_append():
+    assert cl.load_dataset('raa').append(cl.load_dataset('raa'), index='raa2').sum() == 2*cl.load_dataset('raa')
 
 
 def test_grain():
@@ -77,3 +91,6 @@ def test_grain():
 
 def test_off_cycle_val_date():
     assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31')
+
+def test_value_order():
+    assert np.all(tri[['CumPaidLoss', 'BulkLoss']].values == tri[['BulkLoss', 'CumPaidLoss']].values)
