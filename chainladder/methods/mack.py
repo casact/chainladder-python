@@ -102,6 +102,7 @@ class Mack(MethodBase):
 
     def _mack_recursion(self, est):
         obj = copy.deepcopy(self.X_)
+        # replace this with nan_x_latest
         nans = np.expand_dims(np.expand_dims(self.X_.nan_triangle(), 0), 0)
         k, v, o, d = self.X_.shape
         nans = nans * np.ones((k, v, o, d))

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import copy
 
-tri = cl.load_dataset('casresearch')
+tri = cl.load_dataset('clrd')
 qtr = cl.load_dataset('quarterly')
 
 # Test Triangle slicing
@@ -28,6 +28,15 @@ def test_slice_development():
 
 def test_slice_by_loc_iloc():
     assert tri.groupby('LOB').sum().loc['comauto'].keys.iloc[0, 0] == 'comauto'
+
+
+def test_link_ratio():
+    np.testing.assert_allclose(cl.load_dataset('RAA').link_ratio.triangle*cl.load_dataset('RAA').triangle[:,:,:-1,:-1],
+                               cl.load_dataset('RAA').triangle[:,:,:-1,1:], atol=1e-5)
+
+
+def test_incr_to_cum():
+    np.testing.assert_equal(tri.cum_to_incr().incr_to_cum().triangle, tri.triangle)
 
 
 def test_create_new_value():
@@ -60,6 +69,9 @@ def test_sum_of_diff_eq_diff_of_sum():
 def test_append():
     assert cl.load_dataset('raa').append(cl.load_dataset('raa'), index='raa2').sum() == 2*cl.load_dataset('raa')
 
+def test_arithmetic_across_keys():
+    x = cl.load_dataset('auto')
+    np.testing.assert_equal((x.sum()-x.iloc[0]).triangle, x.iloc[1].triangle)
 
 def test_grain():
     actual = qtr.iloc[0,0].grain('OYDY').triangle[0,0,:,:]

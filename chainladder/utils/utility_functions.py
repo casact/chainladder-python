@@ -26,7 +26,7 @@ def load_dataset(key):
     keys = None
     if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto']:
         values = ['incurred', 'paid']
-    if key.lower() == 'casresearch':
+    if key.lower() == 'clrd':
         origin = 'AccidentYear'
         development = 'DevelopmentYear'
         keys = ['GRNAME', 'LOB']

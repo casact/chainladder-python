@@ -91,7 +91,6 @@ class WeightedRegression:
 
     def mack_interpolation(self, y):
         ''' Use Mack's approximation to fill last element of sigma_ which is the
-            same as loglinear extrapolation using the last two element
             same as loglinear extrapolation using the preceding two element to
             the missing value. This function needs a recursive definition...
         '''
