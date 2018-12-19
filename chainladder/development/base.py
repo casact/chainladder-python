@@ -1,8 +1,32 @@
 import numpy as np
-import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
 from chainladder import WeightedRegression
+
+"""
+All transforms must return a Triangle object.  Because we need
+to pass through more properties than just the data, we will extend the
+triangle classto be three triangles
+(k,v,o,d, m) - data, link_ratio, multi-origin cdf - the od_tri
+(k, v, o, 1, m) - latest, ultimate, exposure - the o_tri
+(k,v,1,d, m) - cdf, ldf, sigma, std_err - the d_tri
+
+All fit properties that need to be passed on must be accessible from one of
+these triangle and use @property so that we can access them by name rather than
+worry about which triangle they come from.  @properties also allows us to
+wrap them in functions so that we can use the same numpy array to store a
+(k,v,o,d) and (k,v,o,d-1) object without the end user having to worry about
+shape. That means these @properties need to be bound to the Triangle class.
+This can be done through:
+def foo(self):
+    print('hi')
+setattr(Class, 'foo', property(foo))
+They can all share kdims and vdims, but will likely have different odims and ddims
+Assignment of these properties will occur in the transform method
+The data for the properties will be generated in the fit method, but at that
+point, they will not be bound to the triangle. They will only be properties of
+the sklearn model
+"""
 
 
 class DevelopmentBase(BaseEstimator):
@@ -11,34 +35,6 @@ class DevelopmentBase(BaseEstimator):
         self.n_per = n_per
         self.average = average
         self.sigma_interpolation = sigma_interpolation
-
-    @property
-    def ldf_(self):
-        return self._param_property(0)
-
-    @property
-    def sigma_(self):
-        return self._param_property(1)
-
-    @property
-    def std_err_(self):
-        return self._param_property(2)
-
-    @property
-    def cdf_(self):
-            obj = self.ldf_
-            cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, axis=3),
-                                      axis=3), axis=3)
-            obj.triangle = cdf_
-            obj.odims = ['CDF']
-            return obj
-
-    def _param_property(self, idx):
-            obj = copy.deepcopy(self._params)
-            temp = obj.triangle[:, :, idx:idx+1, :]
-            obj.triangle = temp
-            obj.odims = obj.odims[idx:idx+1]
-            return obj
 
     def _assign_n_per_weight(self, X):
         if type(self.n_per) is int:
@@ -73,9 +69,6 @@ class DevelopmentBase(BaseEstimator):
 
     def fit(self, X, y=None, sample_weight=None):
         # Capture the fit inputs
-        self.X_ = X
-        self.y_ = y
-        self.sample_weight_ = sample_weight
         tri_array = X.triangle.copy()
         tri_array[tri_array == 0] = np.nan
         if type(self.average) is str:
@@ -108,9 +101,6 @@ class DevelopmentBase(BaseEstimator):
         obj.odims = ['LDF', 'Sigma', 'Std Err']
         obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
                               for i in range(len(obj.ddims)-1)])
-        # We're replacing origin dimension with different statistics
-        # This is a bastardization of the Triangle object so marking as hidden
-        # and only accessible through @property
         self._params = obj
         return self
 
@@ -124,36 +114,21 @@ class DevelopmentBase(BaseEstimator):
                 residual - (k,v,o,d)
                 latest_diagonal - (k,v,o,1)
         '''
-        if np.all(self.X_.vdims != X.vdims):
-            raise KeyError('Values dimension not aligned')
-        if np.all(self.X_.ddims != X.ddims):
-            raise KeyError('Development dimension not aligned')
-        if not np.all([item in X.key_labels for item in self.X_.key_labels]):
-            raise KeyError('Key dimension not aligned')
-        obj = copy.deepcopy(self)
-        if np.all(X.key_labels != self.X_.key_labels):
-            # Need to apply the development object to the expanded set of keys
-            # that exist on X.
-            new_param = self._params.triangle.copy()
-            temp1 = X.keys.reset_index().rename(columns={'index': 'old_index'})
-            temp2 = self.X_.keys.reset_index().rename(columns={'index': 'new_index'})
-            old_k_by_new_k = temp1.merge(temp2, how='left', on=self.X_.key_labels)
-            old_k_by_new_k = \
-                np.array(pd.pivot_table(old_k_by_new_k,
-                                        index='old_index',
-                                        columns='new_index',
-                                        values=self.X_.key_labels[0],
-                                        aggfunc='count').fillna(0))
-            new_param = np.expand_dims(new_param, 0)
-            for i in range(3):
-                old_k_by_new_k = np.expand_dims(old_k_by_new_k, -1)
-            new_param = new_param*old_k_by_new_k
-            new_param = np.max(np.nan_to_num(new_param), axis=1)
-            obj._params.triangle = new_param
-            obj._params.kdims = X.kdims
-            obj._params.key_labels = X.key_labels
-        obj.X_ = X
-        return obj
+        if np.all(self._params.vdims != X.vdims):
+            raise KeyError('Values not aligned')
+        if np.all(self._params.kdims != X.kdims):
+            raise KeyError('Keys not aligned')
+        X.triangle_d = self._params
+        X.triangle_d.nan_overide = True
+        setattr(X.__class__, '_param_property', _param_property)
+        setattr(X.__class__, 'std_err_', property(std_err_))
+        setattr(X.__class__, 'cdf_', property(cdf_))
+        setattr(X.__class__, 'ldf_', property(ldf_))
+        setattr(X.__class__, 'sigma_', property(sigma_))
+        setattr(X.__class__, 'sigma_interpolation', self.sigma_interpolation)
+        setattr(X.__class__, 'average_', self.average_)
+        setattr(X.__class__, 'w_', self.w_)
+        return X
 
     def transform(self, X):
         return self.predict(X)
@@ -168,3 +143,36 @@ class DevelopmentBase(BaseEstimator):
 
 class Development(DevelopmentBase):
     pass
+
+    # ---------------------------------------------------------------- #
+    # ---------------------- Transform Methods ----------------------- #
+    # ---------------------------------------------------------------- #
+
+
+def std_err_(self):
+    return self._param_property(2)
+
+
+def ldf_(self):
+    return self._param_property(0)
+
+
+def sigma_(self):
+    return self._param_property(1)
+
+
+def cdf_(self):
+        obj = self.ldf_
+        cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, axis=3),
+                                  axis=3), axis=3)
+        obj.triangle = cdf_
+        obj.odims = ['CDF']
+        return obj
+
+
+def _param_property(self, idx):
+        obj = copy.deepcopy(self.triangle_d)
+        temp = obj.triangle[:, :, idx:idx+1, :]
+        obj.triangle = temp
+        obj.odims = obj.odims[idx:idx+1]
+        return obj

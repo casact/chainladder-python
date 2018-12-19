@@ -761,7 +761,8 @@ class TriangleBase:
 
     def _set_ograin(self, grain, incremental):
         origin_grain = grain[1:2]
-        orig = np.nan_to_num(self._slide(self.triangle))
+        tri = np.nan_to_num(self.triangle)*self.nan_triangle()
+        orig = np.nan_to_num(self._slide(tri))
         o_dt = pd.Series(self.odims)
         if origin_grain == 'Q':
             o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +

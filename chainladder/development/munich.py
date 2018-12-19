@@ -1,26 +1,26 @@
-from chainladder.development.base import DevelopmentBase
+from sklearn.base import BaseEstimator
 from chainladder.utils.weighted_regression import WeightedRegression
 import numpy as np
 
 
-class MunichDevelopment(DevelopmentBase):
+class MunichDevelopment(BaseEstimator):
     """ Munich Chainladder
+        TODO:
+            1. Create 'square' LDF as a triangle obj
+            2. Let it take both Development and Tail objects
+
     """
-    def __init__(self, n_per=-1, average='volume',
-                 sigma_interpolation='log-linear',
-                 paid_to_incurred={}):
-        self.n_per = n_per
-        self.average = average
-        self.sigma_interpolation = sigma_interpolation
+    def __init__(self, paid_to_incurred={}):
         self.paid_to_incurred = paid_to_incurred
 
     def fit(self, X, y=None, sample_weight=None):
-        super().fit(X, y, sample_weight)
-        self.p_to_i_X_ = self._get_p_to_i_object(self.X_)
-        self.p_to_i_ldf_ = self._get_p_to_i_object(self.ldf_)
-        self.p_to_i_sigma_ = self._get_p_to_i_object(self.sigma_)
-        self.q_f_, self.rho_sigma_ = self._get_MCL_model()
-        self.residual_, self.q_resid_ = self._get_MCL_residuals()
+        if X.__class__.__dict__.get('ldf_', None) is None:
+            raise ValueError('Triangle must have LDFs.')
+        self.p_to_i_X_ = self._get_p_to_i_object(X)
+        self.p_to_i_ldf_ = self._get_p_to_i_object(X.ldf_)
+        self.p_to_i_sigma_ = self._get_p_to_i_object(X.sigma_)
+        self.q_f_, self.rho_sigma_ = self._get_MCL_model(X)
+        self.residual_, self.q_resid_ = self._get_MCL_residuals(X)
         self.lambda_coef_ = self._get_MCL_lambda()
         return self
 
@@ -40,18 +40,18 @@ class MunichDevelopment(DevelopmentBase):
                               np.expand_dims(obj_i, 0)), 0)
         return obj
 
-    def _get_MCL_model(self):
+    def _get_MCL_model(self, X):
         p, i = self.p_to_i_X_[0], self.p_to_i_X_[1]
         modelsP = WeightedRegression(w=1/p, x=p, y=i, axis=2, thru_orig=True)
-        modelsP = modelsP.fit().sigma_fill(self.sigma_interpolation)
+        modelsP = modelsP.fit().sigma_fill(X.sigma_interpolation)
         modelsI = WeightedRegression(w=1/i, x=i, y=p, axis=2, thru_orig=True)
-        modelsI = modelsI.fit().sigma_fill(self.sigma_interpolation)
+        modelsI = modelsI.fit().sigma_fill(X.sigma_interpolation)
         q_f = self._p_to_i_concate(modelsP.slope_, modelsI.slope_)
         rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_)
         return np.swapaxes(q_f, -1, -2), np.swapaxes(rho_sigma, -1, -2)
 
-    def _get_MCL_residuals(self):
-        p_to_i_ata = self._get_p_to_i_object(self.X_.link_ratio)
+    def _get_MCL_residuals(self, X):
+        p_to_i_ata = self._get_p_to_i_object(X.link_ratio)
         p_to_i_ldf = self.p_to_i_ldf_
         p_to_i_sigma = self.p_to_i_sigma_
         paid, incurred = self.p_to_i_X_[0], self.p_to_i_X_[1]
@@ -59,7 +59,7 @@ class MunichDevelopment(DevelopmentBase):
             p_to_i_sigma[0]*np.sqrt(paid[:, :, :-1, :-1])
         residualI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
             p_to_i_sigma[1]*np.sqrt(incurred[:, :, :-1, :-1])
-        nans = self.X_.nan_triangle_x_latest()
+        nans = X.nan_triangle_x_latest()
         q_resid = (paid/incurred - self.q_f_[1]) / \
             self.rho_sigma_[1]*np.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \

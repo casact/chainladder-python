@@ -1,28 +1,27 @@
 import numpy as np
 import copy
+from sklearn.base import BaseEstimator
 from chainladder.tails.constant import Constant
-from chainladder.tails.base import TailBase
 
 
-class MethodBase(TailBase):
+class MethodBase(BaseEstimator):
     def __init__(self):
         pass
 
     def validate_X(self, X):
         obj = copy.deepcopy(X)
-        if TailBase not in set(X.__class__.__mro__):
-            obj = Constant().fit(obj)
-        self.X_ = obj.X_
-        self.w_ = obj.w_
-        self._params = obj._params
-        self.average_ = obj.average_
+        if len(obj.ddims) - len(obj.triangle_d.ddims) == 1:
+            obj = Constant().fit_transform(obj)
+        self._params = X.triangle_d
+        self.average_ = X.average_
+        return obj
 
     @property
     def full_cdf_(self):
         obj = copy.deepcopy(self.X_)
-        obj.triangle = np.repeat(self.cdf_.triangle,
+        obj.triangle = np.repeat(obj.cdf_.triangle,
                                  self.X_.triangle.shape[2], 2)
-        obj.ddims = self.cdf_.ddims
+        obj.ddims = obj.cdf_.ddims
         obj.nan_override = True
         return obj
 

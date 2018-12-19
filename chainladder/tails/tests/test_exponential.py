@@ -17,10 +17,10 @@ def mack_r(data, alpha, est_sigma):
 
 
 def mack_p(data, average, est_sigma):
-    return cl.Exponential().fit(cl.Development(average=average, sigma_interpolation=est_sigma).fit(cl.load_dataset(data)))
+    return cl.Exponential().fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data)))
 
 def mack_p_no_tail(data, average, est_sigma):
-    return cl.Development(average=average, sigma_interpolation=est_sigma).fit(cl.load_dataset(data))
+    return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))
 
 data = ['RAA', 'ABC', 'GenIns', 'MW2008', 'MW2014']
 # M3IR5 in R fails silently on exponential tail. Python actually computes it.

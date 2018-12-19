@@ -19,7 +19,7 @@ def mack_r(data, alpha, est_sigma):
 
 
 def mack_p(data, average, est_sigma):
-    return cl.Development(average=average, sigma_interpolation=est_sigma).fit(cl.load_dataset(data))
+    return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))
 
 
 data = ['RAA', 'ABC', 'GenIns', 'M3IR5', 'MW2008', 'MW2014']
@@ -28,13 +28,13 @@ est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 
 def test_full_slice():
-    assert cl.Development().fit(cl.load_dataset('GenIns')).ldf_ == \
-        cl.Development(n_per=1000).fit(cl.load_dataset('GenIns')).ldf_
+    assert cl.Development().fit_transform(cl.load_dataset('GenIns')).ldf_ == \
+        cl.Development(n_per=1000).fit_transform(cl.load_dataset('GenIns')).ldf_
 
 
 def test_full_slice2():
-    assert cl.Development().fit(cl.load_dataset('GenIns')).ldf_ == \
-        cl.Development(n_per=[1000]*(cl.load_dataset('GenIns').shape[3]-1)).fit(cl.load_dataset('GenIns')).ldf_
+    assert cl.Development().fit_transform(cl.load_dataset('GenIns')).ldf_ == \
+        cl.Development(n_per=[1000]*(cl.load_dataset('GenIns').shape[3]-1)).fit_transform(cl.load_dataset('GenIns')).ldf_
 
 
 @pytest.mark.parametrize('data', data)

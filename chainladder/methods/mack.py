@@ -65,7 +65,7 @@ class Mack(MethodBase):
     """
 
     def fit(self, X, y=None):
-        self.validate_X(X)
+        self.X_ = self.validate_X(X)
         self._mack_recursion('param_risk')
         self._mack_recursion('process_risk')
         self._mack_recursion('total_param_risk')
@@ -85,8 +85,8 @@ class Mack(MethodBase):
         k, v, o, d = val.shape
         weight = np.sqrt(tri_array[:, :, :, :-1]**(2-val))
         weight[weight == 0] = np.nan
-        obj.triangle = self.sigma_.triangle / weight
-        w = np.concatenate((self.w_, np.ones((k, v, o, 1))*np.nan), axis=3)
+        obj.triangle = self.X_.sigma_.triangle / weight
+        w = np.concatenate((self.X_.w_, np.ones((k, v, o, 1))*np.nan), axis=3)
         w[np.isnan(w)] = 1
         obj.triangle = np.nan_to_num(obj.triangle) * w
         obj.nan_override = True
@@ -113,7 +113,7 @@ class Mack(MethodBase):
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':
             obj.triangle = self._get_risk(nans, risk_arr,
-                                          self.std_err_.triangle)
+                                          obj.std_err_.triangle)
             self.parameter_risk_ = obj
         elif est == 'process_risk':
             obj.triangle = self._get_risk(nans, risk_arr,
@@ -127,7 +127,7 @@ class Mack(MethodBase):
 
     def _get_risk(self, nans, risk_arr, std_err):
         t1_t = (self.full_triangle_.triangle[:, :, :, :-1] * std_err)**2
-        ldf = self.ldf_.triangle.copy()
+        ldf = self.X_.ldf_.triangle.copy()
         for i in range(self.full_triangle_.shape[3]-1):
             t1 = t1_t[:, :, :, i:i+1]
             t2 = (ldf[:, :, :, i:i+1] * risk_arr[:, :, :, i:i+1])**2
@@ -139,8 +139,8 @@ class Mack(MethodBase):
         t1 = self.full_triangle_.triangle[:, :, :, :-1] - \
              np.nan_to_num(self.X_.triangle) + \
              np.nan_to_num(self.X_.get_latest_diagonal(False).triangle)
-        t1 = np.expand_dims(np.sum(t1, 2), 2) * self.std_err_.triangle
-        ldf = self.ldf_.triangle.copy()
+        t1 = np.expand_dims(np.sum(t1, 2), 2) * self.X_.std_err_.triangle
+        ldf = self.X_.ldf_.triangle.copy()
         for i in range(self.full_triangle_.shape[3]-1):
             t_tot = np.sqrt((t1[:, :, :, i:i+1])**2 +
                             (ldf[:, :, :, i:i+1] *
