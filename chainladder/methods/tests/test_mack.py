@@ -47,9 +47,7 @@ def test_mack_full_std_err(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('F.se')
     p = mack_p(data, averages[0], est_sigma[0], tail).full_std_err_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(pandas2ri.ri2py_dataframe(df))
-    r = np.reshape(r, np.swapaxes(p, 0, 1).shape).T
-    print(r)
+    r = np.array(df[0])
     assert_allclose(r, p, atol=atol)
 
 
@@ -61,9 +59,7 @@ def test_mack_process_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Mack.ProcessRisk')
     p = mack_p(data, averages[0], est_sigma[0], tail).process_risk_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(pandas2ri.ri2py_dataframe(df))
-    r = np.reshape(r, np.swapaxes(p, 0, 1).shape).T
-    print(r)
+    r = np.array(df[0])
     assert_allclose(r, p, atol=atol)
 
 
@@ -75,9 +71,7 @@ def test_mack_parameter_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Mack.ParameterRisk')
     p = mack_p(data, averages[0], est_sigma[0], tail).parameter_risk_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(pandas2ri.ri2py_dataframe(df))
-    r = np.reshape(r, np.swapaxes(p, 0, 1).shape).T
-    print(r)
+    r = np.array(df[0])
     assert_allclose(r, p, atol=atol)
 
 
@@ -89,9 +83,7 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Total.ProcessRisk')
     p = mack_p(data, averages[0], est_sigma[0], tail).total_process_risk_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(pandas2ri.ri2py_dataframe(df))
-    r = np.reshape(r, np.swapaxes(p, 0, 1).shape).T
-    print(r)
+    r = np.array(df[0])
     assert_allclose(r, p, atol=atol)
 
 
@@ -103,9 +95,7 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Total.ParameterRisk')
     p = mack_p(data, averages[0], est_sigma[0], tail).total_parameter_risk_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(pandas2ri.ri2py_dataframe(df))
-    r = np.reshape(r, np.swapaxes(p, 0, 1).shape).T
-    print(r)
+    r = np.array(df[0])
     assert_allclose(r, p, atol=atol)
 
 
@@ -117,7 +107,5 @@ def test_mack_mack_std_err_(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Mack.S.E')
     p = mack_p(data, averages[0], est_sigma[0], tail).mack_std_err_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(pandas2ri.ri2py_dataframe(df))
-    r = np.reshape(r, np.swapaxes(p, 0, 1).shape).T
-    print(r)
+    r = np.array(df[0])
     assert_allclose(r, p, atol=atol)
