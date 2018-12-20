@@ -3,9 +3,8 @@ import pytest
 from numpy.testing import assert_allclose
 import chainladder as cl
 from rpy2.robjects.packages import importr
-from rpy2.robjects import pandas2ri, r
+from rpy2.robjects import r
 
-pandas2ri.activate()
 CL = importr('ChainLadder')
 
 
@@ -83,7 +82,7 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Total.ProcessRisk')
     p = mack_p(data, averages[0], est_sigma[0], tail).total_process_risk_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(df[0])
+    r = np.expand_dims(np.array(df[0]), 0)
     assert_allclose(r, p, atol=atol)
 
 
@@ -95,7 +94,7 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Total.ParameterRisk')
     p = mack_p(data, averages[0], est_sigma[0], tail).total_parameter_risk_.triangle[0, 0, :, :]
     p = p[:, :-1] if not tail else p
-    r = np.array(df[0])
+    r = np.expand_dims(np.array(df[0]),0)
     assert_allclose(r, p, atol=atol)
 
 
