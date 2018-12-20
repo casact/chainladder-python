@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.testing import assert_allclose
 import chainladder as cl
-from rpy2.robjects.packages import importr, r
+from rpy2.robjects.packages import importr
+from rpy2.robjects import r
 
 CL = importr('ChainLadder')
 
