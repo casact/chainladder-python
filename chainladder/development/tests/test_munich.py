@@ -3,6 +3,7 @@ from numpy.testing import assert_allclose
 import chainladder as cl
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri, r
+import pandas as pd
 
 pandas2ri.activate()
 CL = importr('ChainLadder')
@@ -26,6 +27,10 @@ def test_mcl_incurred():
 
 def test_rpy2():
     df = r(f'MunichChainLadder(MCLpaid, MCLincurred)').rx('MCLPaid')
-    p = cl.MunichDevelopment(paid_to_incurred={'paid':'incurred'}).fit(cl.Development(sigma_interpolation='mack').fit_transform(cl.load_dataset('mcl'))).get_MCL_full_triangle()[0,0,0,:,:]
     expected = np.array(pandas2ri.ri2py_dataframe(df))
     assert expected == [1]
+
+def test_rpy3():
+    df = r(f'MunichChainLadder(MCLpaid, MCLincurred)').rx('MCLPaid')
+    expected = pandas2ri.ri2py_dataframe(df)
+    assert expected == pd.DataFrame(np.random.rand(5,2))
