@@ -1,6 +1,5 @@
 """ tails should store all tail methodologies
 """
-from chainladder.tails.base import TailBase, CurveFit
-from chainladder.tails.constant import Constant
-from chainladder.tails.exponential import Exponential
-from chainladder.tails.inverse_power import InversePower
+from chainladder.tails.base import TailBase
+from chainladder.tails.constant import TailConstant
+from chainladder.tails.curve import TailCurve

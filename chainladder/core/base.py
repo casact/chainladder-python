@@ -117,12 +117,12 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         temp = obj.triangle.copy()
         temp[temp == 0] = np.nan
-        obj.triangle = temp[:, :, :, 1:]/temp[:, :, :, :-1]
+        obj.triangle = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
                               for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
-        if np.max(np.sum(~np.isnan(self.triangle[:, :, -1, :]), 2)-1) == 0:
-            obj.triangle = obj.triangle[:, :, :-1, :]
+        if np.max(np.sum(~np.isnan(self.triangle[..., -1, :]), 2)-1) == 0:
+            obj.triangle = obj.triangle[..., :-1, :]
             obj.odims = obj.odims[:-1]
         return obj
 
@@ -185,9 +185,9 @@ class TriangleBase:
         '''
 
         if inplace:
-            temp = np.nan_to_num(self.triangle)[:, :, :, 1:] - \
-                np.nan_to_num(self.triangle)[:, :, :, :-1]
-            temp = np.concatenate((self.triangle[:, :, :, 0:1], temp), axis=3)
+            temp = np.nan_to_num(self.triangle)[..., 1:] - \
+                np.nan_to_num(self.triangle)[..., :-1]
+            temp = np.concatenate((self.triangle[..., 0:1], temp), axis=3)
             temp[temp == 0] = np.nan
             self.triangle = temp
             return self
@@ -210,7 +210,7 @@ class TriangleBase:
                 keeps = dev_grain_dict[self.development_grain][development_grain]
                 keeps = np.where(np.arange(new_tri.shape[3]) % keeps == 0)[0]
                 keeps = -(keeps + 1)[::-1]
-                new_tri = new_tri[:, :, :, keeps]
+                new_tri = new_tri[..., keeps]
                 self.ddims = self.ddims[keeps]
             self.odims = np.unique(o)
             self.origin_grain = origin_grain
@@ -547,14 +547,14 @@ class TriangleBase:
     def _slice_origin(self, key):
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
-        obj.triangle = obj.triangle[:, :, key, :]
+        obj.triangle = obj.triangle[..., key, :]
         return obj
 
     @check_triangle_postcondition
     def _slice_development(self, key):
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
-        obj.triangle = obj.triangle[:, :, :, key]
+        obj.triangle = obj.triangle[..., key]
         return obj
 
     # ---------------------------------------------------------------- #

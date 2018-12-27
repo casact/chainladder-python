@@ -1,6 +1,5 @@
 import copy
 import numpy as np
-from chainladder import WeightedRegression
 from sklearn.base import BaseEstimator
 
 
@@ -12,15 +11,25 @@ class TailBase(BaseEstimator):
         pass
 
     def fit(self, X, y=None, sample_weight=None):
-        if X.__class__.__dict__.get('ldf_', None) is None:
+        if X.__dict__.get('ldf_', None) is None:
             raise ValueError('Triangle must have LDFs.')
-        self._params = copy.deepcopy(X.triangle_d)
-        self._params.ddims = \
-            np.append(self._params.ddims,
-                      [str(int(len(self._params.ddims) + 1)) + '-Ult'])
+        self.ldf_ = copy.deepcopy(X.ldf_)
+        tail = np.ones(self.ldf_.shape)[..., -1:]
+        self.ldf_.triangle = np.concatenate((self.ldf_.triangle, tail), -1)
+        self.sigma_ = X.sigma_
+        self.std_err_ = X.std_err_
+        zeros = tail*0
+        self.sigma_.triangle = np.concatenate((self.sigma_.triangle, zeros), -1)
+        self.std_err_.triangle = np.concatenate((self.std_err_.triangle, zeros), -1)
+        ddims = np.append(self.ldf_.ddims, [f'{int(X.ddims[-1])}-Ult'])
+        self.ldf_.ddims = self.sigma_.ddims = self.std_err_.ddims = ddims
+        return self
 
     def predict(self, X):
-        X.triangle_d = self._params
+        X.std_err_ = self.std_err_
+        X.cdf_ = self.cdf_
+        X.ldf_ = self.ldf_
+        X.sigma_ = self.sigma_
         return X
 
     def transform(self, X):
@@ -33,66 +42,12 @@ class TailBase(BaseEstimator):
     def fit_predict(self, X, y=None, sample_weight=None):
         return self.fit_transform(X)
 
-
-class CurveFit(TailBase):
-    ''' Base sub-class used for curve fit methods of tail factors '''
-    def __init__(self, fit_per=slice(None, None, None), extrap_per=100,
-                 errors='ignore'):
-        self.fit_per = fit_per
-        self.extrap_per = extrap_per
-        self.errors = errors
-
-    def fit(self, X, y=None, sample_weight=None):
-        super().fit(X, y, sample_weight)
-        params = copy.deepcopy(X.triangle_d)
-        _y = params.triangle[:, :, 0:1, :].copy()
-        _w = np.zeros(_y.shape)
-        if type(self.fit_per) is not slice:
-            raise TypeError('fit_per must be slice.')
+    @property
+    def cdf_(self):
+        if self.__dict__.get('ldf_', None) is None:
+            return
         else:
-            _w[:, :, :, self.fit_per] = 1.0
-        if self.errors == 'ignore':
-            _w[_y <= 1.0] = 0
-            _y[_y <= 1.0] = 1.01
-        elif self.errors == 'raise' and np.any(y < 1.0):
-            raise ZeroDivisionError('Tail fit requires all LDFs to be \
-                                     greater than 1.0')
-        _y = np.log(_y - 1)
-        n_obs = _y.shape[3]
-        k, v = params.triangle.shape[:2]
-        _x = self.get_x(_w, _y)
-        # Get LDFs
-        coefs = WeightedRegression(_w, _x, _y, 3).fit()
-        slope, intercept = coefs.slope_, coefs.intercept_
-        extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] +
-                                              [self.extrap_per])), -1) + n_obs
-        tail = self.predict_tail(slope, intercept, extrapolate)
-        sigma, std_err = self._get_tail_stats(tail, X)
-        tail = np.concatenate((tail, sigma, std_err), 2)
-        self._params.triangle = np.append(params.triangle, tail, 3)
-        return self
-
-    def _get_tail_weighted_time_period(self, tail, X):
-        """ Method to approximate the weighted-average development age of tail
-        using log-linear extrapolation
-
-        Returns: float32
-        """
-        y = X.ldf_.triangle.copy()
-        y[y <= 1] = np.nan
-        reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
-        time_pd = (np.log(tail-1)-reg.intercept_)/reg.slope_
-        return time_pd
-
-    def _get_tail_stats(self, tail, X):
-        """ Method to approximate the tail sigma using
-        log-linear extrapolation applied to tail average period
-        """
-        time_pd = self._get_tail_weighted_time_period(tail, X)
-        reg = WeightedRegression(y=np.log(X.sigma_.triangle), axis=3).fit()
-        sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
-        y = X.std_err_.triangle.copy()
-        y[y == 0] = np.nan
-        reg = WeightedRegression(y=np.log(y), axis=3).fit()
-        std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)
-        return sigma_, std_err_
+            obj = copy.deepcopy(self.ldf_)
+            cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, -1), -1), -1)
+            obj.triangle = cdf_
+            return obj

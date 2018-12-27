@@ -3,9 +3,8 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 import chainladder as cl
 from rpy2.robjects.packages import importr
-from rpy2.robjects import pandas2ri, r
+from rpy2.robjects import r
 
-pandas2ri.activate()
 CL = importr('ChainLadder')
 
 @pytest.fixture
@@ -17,7 +16,7 @@ def mack_r(data, alpha, est_sigma):
 
 
 def mack_p(data, average, est_sigma):
-    return cl.Exponential().fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data)))
+    return cl.TailCurve(curve='exponential').fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data)))
 
 def mack_p_no_tail(data, average, est_sigma):
     return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))
@@ -34,6 +33,7 @@ est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 def test_mack_tail_ldf(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))
     p = mack_p(data, averages[0], est_sigma[0]).ldf_.triangle[0, 0, :, :]
+    p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
 
@@ -43,6 +43,7 @@ def test_mack_tail_ldf(data, averages, est_sigma, atol):
 def test_mack_tail_sigma(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
     p = mack_p(data, averages[0], est_sigma[0]).sigma_.triangle[0, 0, :, :]
+    p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
 
@@ -52,6 +53,7 @@ def test_mack_tail_sigma(data, averages, est_sigma, atol):
 def test_mack_tail_std_err(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
     p = mack_p(data, averages[0], est_sigma[0]).std_err_.triangle[0, 0, :, :]
+    p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
 

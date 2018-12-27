@@ -8,10 +8,10 @@ Thomas Mack `[Mack99] <citations.html>`_.
 """
 import numpy as np
 import copy
-from chainladder.methods.base import MethodBase
+from chainladder.methods.base import DeterministicCL
 
 
-class Mack(MethodBase):
+class MackCL(DeterministicCL):
     """ MackChainladder class specifies the Mack chainladder model.
 
     Thomas Mack published in 1993 [Mac93] a method which estimates the standard
@@ -64,8 +64,8 @@ class Mack(MethodBase):
 
     """
 
-    def fit(self, X, y=None):
-        self.X_ = self.validate_X(X)
+    def fit(self, X, y=None, sample_weight=None):
+        super().fit(X, y, sample_weight)
         self._mack_recursion('param_risk')
         self._mack_recursion('process_risk')
         self._mack_recursion('total_param_risk')
@@ -83,7 +83,7 @@ class Mack(MethodBase):
         for i in [2, 1, 0]:
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         k, v, o, d = val.shape
-        weight = np.sqrt(tri_array[:, :, :, :-1]**(2-val))
+        weight = np.sqrt(tri_array[..., :-1]**(2-val))
         weight[weight == 0] = np.nan
         obj.triangle = self.X_.sigma_.triangle / weight
         w = np.concatenate((self.X_.w_, np.ones((k, v, o, 1))*np.nan), axis=3)
@@ -120,32 +120,31 @@ class Mack(MethodBase):
                                           self.full_std_err_.triangle)
             self.process_risk_ = obj
         else:
-            risk_arr = risk_arr[:, :, 0:1, :]
+            risk_arr = risk_arr[..., 0:1, :]
             obj.triangle = self._get_tot_param_risk(risk_arr)
             obj.odims = ['Total param risk']
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
-        t1_t = (self.full_triangle_.triangle[:, :, :, :-1] * std_err)**2
+        t1_t = (self.full_triangle_.triangle[..., :-1] * std_err)**2
         ldf = self.X_.ldf_.triangle.copy()
         for i in range(self.full_triangle_.shape[3]-1):
-            t1 = t1_t[:, :, :, i:i+1]
-            t2 = (ldf[:, :, :, i:i+1] * risk_arr[:, :, :, i:i+1])**2
-            t_tot = np.sqrt(t1+t2)*nans[:, :, :, i+1:i+2]
+            t1 = t1_t[..., i:i+1]
+            t2 = (ldf[..., i:i+1] * risk_arr[..., i:i+1])**2
+            t_tot = np.sqrt(t1+t2)*nans[..., i+1:i+2]
             risk_arr = np.concatenate((risk_arr, t_tot), 3)
         return risk_arr
 
     def _get_tot_param_risk(self, risk_arr):
-        t1 = self.full_triangle_.triangle[:, :, :, :-1] - \
+        t1 = self.full_triangle_.triangle[..., :-1] - \
              np.nan_to_num(self.X_.triangle) + \
              np.nan_to_num(self.X_.get_latest_diagonal(False).triangle)
-        t1 = np.expand_dims(np.sum(t1, 2), 2) * self.X_.std_err_.triangle
-        ldf = self.X_.ldf_.triangle.copy()
-        for i in range(self.full_triangle_.shape[3]-1):
-            t_tot = np.sqrt((t1[:, :, :, i:i+1])**2 +
-                            (ldf[:, :, :, i:i+1] *
-                             risk_arr[:, :, :, -1:])**2)
-            risk_arr = np.concatenate((risk_arr, t_tot), 3)
+        t1 = np.expand_dims(np.sum(t1*self.X_.std_err_.triangle, 2), 2)
+        ldf = np.unique(self.X_.ldf_.triangle, axis=-2)
+        for i in range(self.full_triangle_.shape[-1]-1):
+            t_tot = np.sqrt((t1[..., i:i+1])**2 + (ldf[..., i:i+1] *
+                            risk_arr[..., -1:])**2)
+            risk_arr = np.concatenate((risk_arr, t_tot), -1)
         return risk_arr
 
     @property
@@ -160,7 +159,7 @@ class Mack(MethodBase):
         obj = copy.deepcopy(self.X_.latest_diagonal)
         obj.triangle = np.sqrt(self.total_process_risk_.triangle**2 +
                                self.total_parameter_risk_.triangle**2)
-        obj.triangle = obj.triangle[:, :, :, -1:]
+        obj.triangle = obj.triangle[..., -1:]
         obj.ddims = ['Total Mack Std Err']
         obj.odims = ['Total']
         return obj
@@ -172,7 +171,7 @@ class Mack(MethodBase):
             (self.X_.latest_diagonal.triangle,
              self.ibnr_.triangle,
              self.ultimate_.triangle,
-             self.mack_std_err_.triangle[:, :, :, -1:]), 3)
+             self.mack_std_err_.triangle[..., -1:]), 3)
         obj.ddims = ['Latest', 'IBNR', 'Ultimate', 'Mack Std Err']
         obj.nan_override = True
         return obj

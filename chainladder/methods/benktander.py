@@ -1,8 +1,8 @@
 import numpy as np
 import copy
-from sklearn.base import BaseEstimator
+from chainladder.methods import MethodBase
 
-class Benktander(BaseEstimator):
+class Benktander(MethodBase):
     def __init__(self, apriori=.5, n_iters=1):
         self.apriori = apriori
         self.n_iters = n_iters
@@ -14,22 +14,24 @@ class Benktander(BaseEstimator):
            a sufficiently high n_iters for the chainladder.
            L\sum_{k=0}^{n-1}(1-\frac{1}{CDF}) + Apriori\times (1-\frac{1}{CDF})^{n}
         '''
-
-        latest, cdf = np.expand_dims(X.triangle[:, :, :, 0],-1), np.expand_dims(X.triangle[:, :, :, 1],-1)
+        super().fit(X, y, sample_weight)
+        self.sample_weight_ = sample_weight
+        latest = self.X_.latest_diagonal.triangle
         apriori = sample_weight.triangle * self.apriori
-        cdf = np.expand_dims(np.array(cdf), 4)
-        cdf = 1-1/np.repeat(cdf, self.n_iters + 1, axis=4)
-        exponents = np.expand_dims(np.expand_dims(np.arange(self.n_iters+1), 0),0)
-        exponents = np.repeat(exponents, cdf.shape[2], axis=0)
-        exponents = X.expand_dims(exponents)
+        obj = copy.deepcopy(self.X_)
+        obj.triangle = self.X_.cdf_.triangle * (obj.triangle*0+1)
+        cdf = obj.latest_diagonal.triangle
+        cdf = np.expand_dims(1-1/cdf, 0)
+        exponents = np.arange(self.n_iters+1)
+        exponents = np.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents
-        ultimates = np.sum(cdf[:,:,:,:,:-1],axis=4)*latest+cdf[:,:,:,:,-1]*apriori
-        obj = copy.deepcopy(X)
-        obj.triangle = ultimates
+        obj.triangle = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
         obj.ddims = ['Ultimate']
-        return obj
+        self.ultimate_ = obj
+        return self
 
-class BornFerg(BaseEstimator):
+
+class DeterministicBF(Benktander):
     def __init__(self, apriori=.5):
         self.apriori = apriori
 

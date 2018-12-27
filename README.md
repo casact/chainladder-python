@@ -30,7 +30,7 @@ allow an actuary already versed in these tools to easily pick up this package.
 To install using pip:
 `pip install chainladder`
 
-Note: This package has been tested with Python 3.6 and later.
+Note: This package requires Python 3.6 and later.
 
 
 ## Documentation
