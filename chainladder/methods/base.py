@@ -4,6 +4,7 @@ from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
 
+
 class MethodBase(BaseEstimator):
     def __init__(self):
         pass
@@ -27,7 +28,8 @@ class MethodBase(BaseEstimator):
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
         obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
-        obj.triangle = np.concatenate((obj.triangle, self.ultimate_.triangle), 3)
+        obj.triangle = \
+            np.concatenate((obj.triangle, self.ultimate_.triangle), 3)
         obj.ddims = list(obj.ddims) + ['Ult']
         obj.nan_override = True
         return obj
@@ -51,15 +53,4 @@ class MethodBase(BaseEstimator):
         obj.triangle = np.concatenate((obj.triangle,
                                        self.ultimate_.triangle), 3)
         obj.ddims = np.array([str(item) for item in obj.ddims]+['Ult'])
-        return obj
-
-class DeterministicCL(MethodBase):
-    @property
-    def ultimate_(self):
-        obj = copy.deepcopy(self.X_)
-        obj.triangle = np.repeat(self.X_.latest_diagonal.triangle,
-                                 self.cdf_.shape[3], 3)
-        obj.triangle = (self.cdf_.triangle*obj.triangle)*self.X_.nan_triangle()
-        obj = obj.latest_diagonal
-        obj.ddims = ['Ultimate']
         return obj

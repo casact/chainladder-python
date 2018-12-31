@@ -2,4 +2,5 @@
     are used by various modules in the package.
 """
 from chainladder.utils.weighted_regression import WeightedRegression
-from chainladder.utils.utility_functions import load_dataset
+from chainladder.utils.exhibits import Exhibits
+from chainladder.utils.utility_functions import load_dataset, parallelogram_olf

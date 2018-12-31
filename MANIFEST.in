@@ -12,3 +12,4 @@ include chainladder/utils/data/quarterly.pkl
 include chainladder/utils/data/raa.pkl
 include chainladder/utils/data/ukmotor.pkl
 include chainladder/utils/data/usaa.pkl
+include chainladder/utils/data/usauto.pkl

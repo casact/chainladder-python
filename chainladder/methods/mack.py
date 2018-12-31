@@ -8,10 +8,10 @@ Thomas Mack `[Mack99] <citations.html>`_.
 """
 import numpy as np
 import copy
-from chainladder.methods.base import DeterministicCL
+from chainladder.methods import Chainladder
 
 
-class MackCL(DeterministicCL):
+class MackChainladder(Chainladder):
     """ MackChainladder class specifies the Mack chainladder model.
 
     Thomas Mack published in 1993 [Mac93] a method which estimates the standard
@@ -77,7 +77,7 @@ class MackCL(DeterministicCL):
         """
         obj = copy.deepcopy(self.X_)
         tri_array = self.full_triangle_.triangle
-        weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
+        weight_dict = {'regression': 2, 'volume': 1, 'simple': 0}
         val = np.array([weight_dict.get(item.lower(), 2)
                         for item in list(self.average_) + ['volume']])
         for i in [2, 1, 0]:

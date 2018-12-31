@@ -73,8 +73,8 @@ class TriangleBase:
         self.loc = TriangleBase.Location(self)
         # Create 4D Triangle
         triangle = \
-            np.array(data_agg).reshape(len(self.kdims), len(self.odims),
-                                       len(self.vdims), len(self.ddims))
+            np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
+                                       len(self.vdims), len(self.ddims)))
         triangle = np.swapaxes(triangle, 1, 2)
         # Set all 0s to NAN for nansafe ufunc arithmetic
         triangle[triangle == 0] = np.nan
@@ -106,6 +106,14 @@ class TriangleBase:
     @property
     def development(self):
         return pd.Series(list(self.ddims), name='development').to_frame()
+
+    @property
+    def columns(self):
+        return list(self.ddims)
+
+    @property
+    def index(self):
+        return list(self.odims)
 
     @property
     def latest_diagonal(self):
@@ -165,7 +173,7 @@ class TriangleBase:
         '''
 
         if inplace:
-            self.triangle = np.nan_to_num(self.triangle).cumsum(axis=3)
+            np.cumsum(np.nan_to_num(self.triangle), axis=3, out=self.triangle)
             self.triangle[self.triangle == 0] = np.nan
             return self
         else:
@@ -223,6 +231,25 @@ class TriangleBase:
             new_obj = copy.deepcopy(self)
             new_obj.grain(grain=grain, incremental=incremental, inplace=True)
             return new_obj
+
+    def detrend(self, trend=.03, axis=None):
+        '''  Allows for the detrending along origin or development
+        '''
+        axis = {'origin': -2, 'development': -1}.get(axis, None)
+        if axis is None:
+            if self.shape[-2] == 1 and self.shape[-1] != 1:
+                axis = -1
+            elif self.shape[-2] != 1 and self.shape[-1] == 1:
+                axis = -2
+            else:
+                raise ValueError('Cannot infer axis, please supply')
+        trend = (1+trend)**np.arange(self.shape[axis])[::-1]
+        trend = np.expand_dims(self.expand_dims(trend), -1)
+        if axis == -1:
+            trend = np.swapaxes(trend, -2, -1)
+        obj = copy.deepcopy(self)
+        obj.triangle = obj.triangle*trend
+        return obj
 
     # ---------------------------------------------------------------- #
     # ------------------------ Display Options ----------------------- #
@@ -333,6 +360,7 @@ class TriangleBase:
         other = self._validate_arithmetic(other)
         obj.triangle = np.nan_to_num(self.triangle) + np.nan_to_num(other)
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
+        obj.triangle[obj.triangle == 0] = np.nan
         return obj
 
     @check_triangle_postcondition
@@ -346,6 +374,7 @@ class TriangleBase:
         obj.triangle = np.nan_to_num(self.triangle) - \
             np.nan_to_num(other)
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
+        obj.triangle[obj.triangle == 0] = np.nan
         return obj
 
     @check_triangle_postcondition
@@ -355,6 +384,7 @@ class TriangleBase:
         obj.triangle = np.nan_to_num(other) - \
             np.nan_to_num(self.triangle)
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
+        obj.triangle[obj.triangle == 0] = np.nan
         return obj
 
     def __len__(self):
@@ -376,6 +406,7 @@ class TriangleBase:
         other = self._validate_arithmetic(other)
         obj.triangle = np.nan_to_num(self.triangle)*other
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
+        obj.triangle[obj.triangle == 0] = np.nan
         return obj
 
     @check_triangle_postcondition
@@ -387,12 +418,14 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         other = self._validate_arithmetic(other)
         obj.triangle = np.nan_to_num(self.triangle)/other
+        obj.triangle[obj.triangle == 0] = np.nan
         return obj
 
     @check_triangle_postcondition
     def __rtruediv__(self, other):
         obj = copy.deepcopy(self)
         obj.triangle = other / self.triangle
+        obj.triangle[obj.triangle == 0] = np.nan
         return obj
 
     def __eq__(self, other):

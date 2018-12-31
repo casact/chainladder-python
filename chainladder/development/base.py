@@ -52,7 +52,7 @@ class DevelopmentBase(BaseEstimator):
             average = self.average
         average = np.array(average)
         self.average_ = average
-        weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
+        weight_dict = {'regression': 2, 'volume': 1, 'simple': 0}
         _x = tri_array[..., :-1]
         _y = tri_array[..., 1:]
         val = np.array([weight_dict.get(item.lower(), 2)

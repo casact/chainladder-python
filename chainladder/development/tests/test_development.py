@@ -23,7 +23,7 @@ def mack_p(data, average, est_sigma):
 
 
 data = ['RAA', 'ABC', 'GenIns', 'M3IR5', 'MW2008', 'MW2014']
-averages = [('simple', 0), ('volume', 1), ('regression', 2)]
+averages = [('simple', 2), ('volume', 1), ('regression', 0)]
 est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 
@@ -36,6 +36,12 @@ def test_full_slice2():
     assert cl.Development().fit_transform(cl.load_dataset('GenIns')).ldf_ == \
         cl.Development(n_periods=[1000]*(cl.load_dataset('GenIns').shape[3]-1)).fit_transform(cl.load_dataset('GenIns')).ldf_
 
+def test_n_periods():
+    d = cl.load_dataset('usauto')['incurred']
+    return np.all(np.round(np.unique(
+        cl.Development(n_periods=3, average='volume').fit(d).ldf_.triangle,
+        axis=-2), 3).flatten() ==
+        np.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0]))
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)

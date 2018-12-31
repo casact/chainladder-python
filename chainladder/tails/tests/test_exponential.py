@@ -23,7 +23,7 @@ def mack_p_no_tail(data, average, est_sigma):
 
 data = ['RAA', 'ABC', 'GenIns', 'MW2008', 'MW2014']
 # M3IR5 in R fails silently on exponential tail. Python actually computes it.
-averages = [('simple', 0), ('volume', 1), ('regression', 2)]
+averages = [('simple', 2), ('volume', 1), ('regression', 0)]
 est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 

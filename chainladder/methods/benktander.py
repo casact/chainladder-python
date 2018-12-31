@@ -31,9 +31,14 @@ class Benktander(MethodBase):
         return self
 
 
-class DeterministicBF(Benktander):
+class BornhuetterFerguson(MethodBase):
     def __init__(self, apriori=.5):
         self.apriori = apriori
 
     def fit(self, X, y=None, sample_weight=None):
-        return Benktander(apriori=self.apriori, n_iters=1).fit(X=X, sample_weight=sample_weight)
+        super().fit(X, y, sample_weight)
+        self.sample_weight_ = sample_weight
+        obj = Benktander(apriori=self.apriori, n_iters=1) \
+            .fit(X=X, sample_weight=sample_weight)
+        self.ultimate_ = obj.ultimate_
+        return self

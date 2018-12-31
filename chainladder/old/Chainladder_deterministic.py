@@ -136,7 +136,7 @@ class Chainladder():
             self.LDF_average = LDF_average
             average = np.array(LDF_average)
             #Volume Weighted average and Straight Average, and regression through origin
-            val = np.repeat((np.array([[{'regression':0, 'volume':1,'simple':2}.get(item.lower(),2) for item in average]])),len(self.triangle.data.index),axis=0)
+            val = np.repeat((np.array([[{'regression':2, 'volume':1,'simple':0}.get(item.lower(),2) for item in average]])),len(self.triangle.data.index),axis=0)
             val = np.nan_to_num(val*(tri_array[:,1:]*0+1))
             #w = np.nan_to_num(w/tri_array[:,:-1]**(val))
             w = np.nan_to_num(w/(np.maximum(np.nan_to_num(tri_array[:,:-1]),1)*(tri_array[:,:-1]*0+1))**(val))
