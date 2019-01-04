@@ -3,16 +3,15 @@
 [![Documentation Status](https://readthedocs.org/projects/chainladder-python/badge/?version=latest)](http://chainladder-python.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/jbogaardt/chainladder-python/branch/master/graph/badge.svg)](https://codecov.io/gh/jbogaardt/chainladder-python)
 
-This is a rewrite of the popular [R ChainLadder package](https://github.com/mages/ChainLadder) in Python.
-
-
+### chainladder - Property and Casualty Loss Reserving in Python
+This package is highly inspired by the popular [R ChainLadder package](https://github.com/mages/ChainLadder).
 
 This code is actively under development and contains the following functionality:
 
 ### Stochastic Methods
-  - Mack Chain Ladder
-  - Munich Chain Ladder
-  - Bootstrap Chain Ladder
+  - Mack Chainladder
+  - Munich Chainladder
+  - Bootstrap Chainladder
 ### Deterministic Methods
   - Development Factor Method
   - Bornhuetter-Ferguson Method
@@ -22,8 +21,9 @@ This code is actively under development and contains the following functionality
 
 ### The API
 We've adopted as much of the pandas API for accessing/manipulating data structures
-in the package, and scikit-learn for the model fitting routines.  The goal here is to
-allow an actuary already versed in these tools to easily pick up this package.
+in the package as possible.  For fitting actuarial models, the scikit-learn API
+was adopted.  The goal here is to allow an actuary already versed in these tools
+to easily pick up this package.
 
 
 ## Installation

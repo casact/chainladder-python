@@ -65,7 +65,7 @@ class TriangleBase:
             self.ddims = self.ddims*({'Y': 12, 'Q': 3, 'M': 1}[self.development_grain])
             self.vdims = np.array(data_agg.columns.levels[0].unique())
         else:
-            self.ddims = np.array(['Exposure'])
+            self.ddims = np.array([None])
             self.vdims = np.array(data_agg.columns.unique())
         self.valuation_date = development_date.max()
         self.key_labels = keys
@@ -74,7 +74,7 @@ class TriangleBase:
         # Create 4D Triangle
         triangle = \
             np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
-                                       len(self.vdims), len(self.ddims)))
+                      len(self.vdims), len(self.ddims)))
         triangle = np.swapaxes(triangle, 1, 2)
         # Set all 0s to NAN for nansafe ufunc arithmetic
         triangle[triangle == 0] = np.nan
@@ -174,6 +174,7 @@ class TriangleBase:
 
         if inplace:
             np.cumsum(np.nan_to_num(self.triangle), axis=3, out=self.triangle)
+            self.triangle = self.expand_dims(self.nan_triangle())*self.triangle
             self.triangle[self.triangle == 0] = np.nan
             return self
         else:
@@ -232,8 +233,8 @@ class TriangleBase:
             new_obj.grain(grain=grain, incremental=incremental, inplace=True)
             return new_obj
 
-    def detrend(self, trend=.03, axis=None):
-        '''  Allows for the detrending along origin or development
+    def trend(self, trend=.03, axis=None):
+        '''  Allows for the trending along origin or development
         '''
         axis = {'origin': -2, 'development': -1}.get(axis, None)
         if axis is None:
@@ -250,6 +251,17 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         obj.triangle = obj.triangle*trend
         return obj
+
+    def rename(self, keys=None, values=None, origin=None, development=None):
+        if keys is not None:
+            self.kdims = [keys] if type(keys) is str else keys
+        if values is not None:
+            self.vdims = [values] if type(values) is str else values
+        if origin is not None:
+            self.odims = [origin] if type(origin) is str else origin
+        if development is not None:
+            self.ddims = [development] if type(development) is str else development
+        return self
 
     # ---------------------------------------------------------------- #
     # ------------------------ Display Options ----------------------- #
@@ -361,6 +373,7 @@ class TriangleBase:
         obj.triangle = np.nan_to_num(self.triangle) + np.nan_to_num(other)
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
         obj.triangle[obj.triangle == 0] = np.nan
+        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     @check_triangle_postcondition
@@ -375,6 +388,7 @@ class TriangleBase:
             np.nan_to_num(other)
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
         obj.triangle[obj.triangle == 0] = np.nan
+        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     @check_triangle_postcondition
@@ -385,6 +399,7 @@ class TriangleBase:
             np.nan_to_num(self.triangle)
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
         obj.triangle[obj.triangle == 0] = np.nan
+        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     def __len__(self):
@@ -407,6 +422,7 @@ class TriangleBase:
         obj.triangle = np.nan_to_num(self.triangle)*other
         obj.triangle = obj.triangle * self.expand_dims(self.nan_triangle())
         obj.triangle[obj.triangle == 0] = np.nan
+        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     @check_triangle_postcondition
@@ -419,6 +435,7 @@ class TriangleBase:
         other = self._validate_arithmetic(other)
         obj.triangle = np.nan_to_num(self.triangle)/other
         obj.triangle[obj.triangle == 0] = np.nan
+        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     @check_triangle_postcondition
@@ -668,7 +685,8 @@ class TriangleBase:
                       'M': {'M': 1}}
         val_lag = self.triangle.shape[3] % \
             grain_dict[self.origin_grain][self.development_grain]
-        val_lag = 1 if val_lag == 0 else val_lag
+        if val_lag == 0:
+            val_lag = grain_dict[self.origin_grain][self.development_grain]
         goods = (np.arange(self.triangle.shape[2]) *
                  grain_dict[self.origin_grain][self.development_grain] +
                  val_lag)[::-1]

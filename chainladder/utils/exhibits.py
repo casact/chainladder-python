@@ -15,6 +15,7 @@ class Exhibits:
     percent_format = {'num_format': '0.0%'}
     decimal_format = {'num_format': '0.000'}
     date_format = {'num_format': 'm/d/yyyy'}
+    int_format = {'num_format': 'General'}
     text_format = {'align': 'left'}
     index_format = {'num_format': '0;(0)', 'text_wrap': True,
                     'bold': True, 'valign': 'bottom', 'align': 'right'}
@@ -99,13 +100,14 @@ class Exhibits:
         money = workbook.add_format(self.money_format)
         percent = workbook.add_format(self.percent_format)
         decimal = workbook.add_format(self.decimal_format)
+        integer = workbook.add_format(self.int_format)
         text = workbook.add_format(self.text_format)
         date = workbook.add_format(self.date_format)
         header_format = workbook.add_format(self.header_format)
         index_format = workbook.add_format(self.index_format)
         format_dict = {'money': money, 'percent': percent,
                        'decimal': decimal, 'text': text,
-                       'date': date}
+                       'date': date, 'integer': integer}
 
         for ex_num in range(len(self.sheet_names)):
             title_offset = 0 if self.titles[ex_num] is None else 4
