@@ -14,3 +14,10 @@ class TailConstant(TailBase):
         super().fit(X, y, sample_weight)
         self.ldf_.triangle[..., -1] = self.ldf_.triangle[..., -1]*self.tail
         return self
+
+    def predict(self, X):
+        X.std_err_ = self.std_err_
+        X.cdf_ = self.cdf_
+        X.ldf_ = self.ldf_
+        X.sigma_ = self.sigma_
+        return X

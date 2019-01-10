@@ -6,10 +6,10 @@ import numpy as np
 class TailCurve(TailBase):
     ''' Base sub-class used for curve fit methods of tail factors '''
     def __init__(self, curve='exponential', fit_period=slice(None, None, None),
-                 extrap_per=100, errors='ignore'):
+                 extrap_periods=100, errors='ignore'):
         self.curve = curve
         self.fit_period = fit_period
-        self.extrap_per = extrap_per
+        self.extrap_periods = extrap_periods
         self.errors = errors
 
     def fit(self, X, y=None, sample_weight=None):
@@ -34,12 +34,14 @@ class TailCurve(TailBase):
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] +
-                                              [self.extrap_per])), -1) + n_obs
+                                              [self.extrap_periods])), -1) + n_obs
         tail = self.predict_tail(slope, intercept, extrapolate)
         sigma, std_err = self._get_tail_stats(tail, X)
         self.ldf_.triangle[..., -1] = tail[..., -1]
         self.sigma_.triangle[..., -1] = sigma[..., -1]
         self.std_err_.triangle[..., -1] = std_err[..., -1]
+        self.slope_ = slope
+        self.intercept_ = intercept
         return self
 
     def _get_tail_weighted_time_period(self, tail, X):
@@ -59,9 +61,9 @@ class TailCurve(TailBase):
         log-linear extrapolation applied to tail average period
         """
         time_pd = self._get_tail_weighted_time_period(tail, X)
-        reg = WeightedRegression(y=np.log(X.sigma_.triangle[..., :-1]), axis=3).fit()
+        reg = WeightedRegression(y=np.log(X.sigma_.triangle), axis=3).fit()
         sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
-        y = X.std_err_.triangle[..., :-1]
+        y = X.std_err_.triangle
         y[y == 0] = np.nan
         reg = WeightedRegression(y=np.log(y), axis=3).fit()
         std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)

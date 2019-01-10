@@ -197,6 +197,7 @@ class TriangleBase:
             temp = np.nan_to_num(self.triangle)[..., 1:] - \
                 np.nan_to_num(self.triangle)[..., :-1]
             temp = np.concatenate((self.triangle[..., 0:1], temp), axis=3)
+            temp = temp*self.expand_dims(self.nan_triangle())
             temp[temp == 0] = np.nan
             self.triangle = temp
             return self
@@ -233,7 +234,7 @@ class TriangleBase:
             new_obj.grain(grain=grain, incremental=incremental, inplace=True)
             return new_obj
 
-    def trend(self, trend=.03, axis=None):
+    def trend(self, trend=0.0, axis=None):
         '''  Allows for the trending along origin or development
         '''
         axis = {'origin': -2, 'development': -1}.get(axis, None)

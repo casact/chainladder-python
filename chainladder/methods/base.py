@@ -24,6 +24,11 @@ class MethodBase(BaseEstimator):
         self.X_ = self.validate_X(X)
         return self
 
+    def predict(self, X):
+        obj = copy.deepcopy(self)
+        obj.X_ = copy.deepcopy(X)
+        return obj
+
     @property
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
