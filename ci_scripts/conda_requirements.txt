@@ -1,7 +1,3 @@
-scipy
-seaborn
-bokeh
-statsmodels
 pytest
 pytest-cov
 gcc_linux-64
