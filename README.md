@@ -37,7 +37,7 @@ Note: This package requires Python 3.6 and later.
 Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) for source code documentation
 
 ## Tutorials
--[Getting Started with Triangles](https://github.com/jbogaardt/chainladder-python/blob/triangle_rewrite/notebooks/triangle_demo.ipynb)[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)(https://colab.research.google.com/github/jbogaardt/chainladder-python/blob/triangle_rewrite/notebooks/triangle_demo.ipynb#scrollTo=JTvUhh3GBxrf)]
+-[Getting Started with Triangles](https://github.com/jbogaardt/chainladder-python/blob/triangle_rewrite/notebooks/triangle_demo.ipynb)[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)(https://colab.research.google.com/github/jbogaardt/chainladder-python/blob/triangle_rewrite/notebooks/triangle_demo.ipynb#scrollTo=JTvUhh3GBxrf)
 
  -[Quickstart Guide](http://chainladder-python.readthedocs.io/en/master/quickstart.html)  
  -[Using Mack Chainladder](http://chainladder-python.readthedocs.io/en/master/MackExample.html)  
