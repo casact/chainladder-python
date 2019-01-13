@@ -4,12 +4,19 @@ import pandas as pd
 class Exhibits:
     """ Wrapper to pandas.to_excel that allows for composite exhibits,
         multiple sheets, and custom formatting using xlsxwriter.
+
+        Arguments: None
+        Returns: instance of Exhibits
     """
     # Class level formats - can be overridden by end-user
     title1_format = {'font_size': 20, 'align': 'center'}
     title2_format = {'font_size': 16, 'align': 'center'}
     title3_format = {'font_size': 16, 'align': 'center'}
     title4_format = {'font_size': 13, 'align': 'center'}
+    index_format = {'num_format': '0;(0)', 'text_wrap': True,
+                    'bold': True, 'valign': 'bottom', 'align': 'right'}
+    header_format = {'num_format': '0;(0)', 'text_wrap': True, 'bottom': 1,
+                     'bold': True, 'valign': 'bottom', 'align': 'right'}
     all_columns = {'align': 'center'}
     money_format = {'num_format': '#,##'}
     percent_format = {'num_format': '0.0%'}
@@ -17,12 +24,10 @@ class Exhibits:
     date_format = {'num_format': 'm/d/yyyy'}
     int_format = {'num_format': 'General'}
     text_format = {'align': 'left'}
-    index_format = {'num_format': '0;(0)', 'text_wrap': True,
-                    'bold': True, 'valign': 'bottom', 'align': 'right'}
-    header_format = dict(index_format)
-    header_format['bottom'] = 1
+
 
     def __init__(self):
+        ''' Instantiate a workbook '''
         self.sheet_names = []
         self.titles = []
         self.columns = []
@@ -147,8 +152,8 @@ class Exhibits:
                                     col_num+self.start_col[ex_num],
                                     value, header_format)
                     if self.col_nums[ex_num]:
-                        worksheet.write(5+self.start_row[ex_num], col_num,
-                                        -col_num-1, header_format)
+                        worksheet.write(self.start_row[ex_num]+1+title_offset,
+                                        col_num,-col_num-1, header_format)
             # Set Index
             if self.index[ex_num]:
                 for row_num, value in enumerate(ex.index.astype(str)):
