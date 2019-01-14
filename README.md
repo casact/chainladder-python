@@ -49,6 +49,6 @@ Please refer to the [Documentation](http://chainladder-python.readthedocs.io/) f
 ## Usage
 |Tutorial|Live Notebook|
 |--------|-----|
-|[Triangle API](https://github.com/jbogaardt/chainladder-python/blob/triangle_rewrite/notebooks/triangle_demo.ipynb)|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jbogaardt/chainladder-python/blob/triangle_rewrite/notebooks/triangle_demo.ipynb#scrollTo=JTvUhh3GBxrf)|
+|[Triangle API](https://github.com/jbogaardt/chainladder-python/blob/master/notebooks/triangle_demo.ipynb)|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jbogaardt/chainladder-python/blob/master/notebooks/triangle_demo.ipynb#scrollTo=JTvUhh3GBxrf)|
 |Modeling API|TBD|
 |Excel Exhibits|TBD|
