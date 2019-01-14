@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
 from os import listdir
 
-descr = "Chainladder Package - P&C actuarial package modeled after the R \
-         package of the same name"
+descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/jbogaardt/chainladder-python'
 
@@ -12,7 +11,7 @@ setup(
     version='0.2.0',
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
-    packages=[f'{name}.{p}' for p in find_packages(where=name)],
+    packages=[f'{name}.{p}' for p in find_packages(where=name)]+['chainladder'],
     scripts=[],
     url=url,
     download_url=f'{url}/archive/v0.2.0.tar.gz',
