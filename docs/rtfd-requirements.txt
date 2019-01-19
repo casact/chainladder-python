@@ -1,2 +1,5 @@
 seaborn
 nbsphinx
+sklearn
+pandas
+numpy
