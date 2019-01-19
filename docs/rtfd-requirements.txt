@@ -1,5 +1,7 @@
 seaborn
 nbsphinx
+sphinx_gallery
 sklearn
 pandas
 numpy
+numpydoc
