@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from functools import wraps
 import copy
 
 
@@ -7,6 +8,7 @@ def check_triangle_postcondition(f):
     ''' Post-condition check to ensure the integrity of the triangle object
         remains intact
     '''
+    @wraps(f)
     def wrapper(*args, **kwargs):
         X = f(*args, **kwargs)
         if not hasattr(X, 'triangle'):
@@ -225,8 +227,7 @@ class TriangleBase:
             self.odims = np.unique(o)
             self.origin_grain = origin_grain
             self.development_grain = development_grain
-            self.triangle = new_tri
-            self.triangle = self._slide(self.triangle, direction='l')
+            self.triangle = self._slide(new_tri, direction='l')
             self.triangle[self.triangle == 0] = np.nan
             return self
         else:
@@ -331,24 +332,31 @@ class TriangleBase:
             raise ValueError('len(keys) and len(values) must be 1.')
 
     def to_clipboard(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         self.to_frame().to_clipboard(*args, **kwargs)
 
     def to_csv(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         self.to_frame().to_csv(*args, **kwargs)
 
     def to_pickle(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         self.to_frame().to_pickle(*args, **kwargs)
 
     def to_excel(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         self.to_frame().to_excel(*args, **kwargs)
 
     def to_json(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         self.to_frame().to_json(*args, **kwargs)
 
     def to_html(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         self.to_frame().to_html(*args, **kwargs)
 
     def unstack(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
         return self.to_frame().unstack(*args, **kwargs)
 
     # ---------------------------------------------------------------- #
@@ -356,7 +364,7 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     def _validate_arithmetic(self, other):
         other = copy.deepcopy(other)
-        if type(other) not in [int, float]:
+        if type(other) not in [int, float, np.float64, np.int64]:
             if len(self.vdims) != len(other.vdims):
                 raise ValueError('Triangles must have the same number of \
                                   values')
@@ -522,14 +530,12 @@ class TriangleBase:
             return obj
 
     class Location(LocBase):
-        ''' Class for pandas style .loc indexing '''
         def __getitem__(self, key):
             idx = self.obj.idx_table().loc[key]
             idx = self.obj.idx_table_format(idx)
             return self.get_idx(idx)
 
     class Ilocation(LocBase):
-        ''' Class for pandas style .iloc indexing '''
         def __getitem__(self, key):
             idx = self.obj.idx_table().iloc[key]
             idx = self.obj.idx_table_format(idx)
@@ -672,7 +678,7 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     def nan_triangle(self):
         '''Given the current triangle shape and grain, it determines the
-           appropriate placement of NANs in the triangle for future valuations.
+           appropriate placement of NANs in the triangle for futurilocae valuations.
            This becomes useful when managing array arithmetic.
         '''
         if self.triangle.shape[2] == 1 or \

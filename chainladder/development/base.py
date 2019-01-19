@@ -1,3 +1,7 @@
+"""
+Loss Development
+================
+"""
 import numpy as np
 import copy
 from sklearn.base import BaseEstimator
@@ -125,4 +129,31 @@ class DevelopmentBase(BaseEstimator):
 
 
 class Development(DevelopmentBase):
+    """ A Transformer that allows for basic loss development pattern selection.
+
+    Parameters
+    ----------
+    n_periods : integer, optional (default=-1)
+        number of origin periods to be used in the ldf average calculation. For
+        all origin periods, set n_periods=-1
+    average : string, optional (default='volume')
+        type of averaging to use for ldf average calculation.  Options include
+        'volume', 'simple', and 'regression'
+    sigma_interpolation : string optional (default='log-linear')
+        Options include 'log-linear' and 'mack'
+
+    Attributes
+    ----------
+    ldf_ : Triangle
+        The estimated loss development patterns
+    cdf_ : Triangle
+        The estimated cumulative development patterns
+    sigma_ : Triangle
+        Sigma of the ldf regression
+    std_err_ : Triangle
+        Std_err of the ldf regression
+    w_ : Triangle
+        The weight used in the ldf regression
+
+    """
     pass

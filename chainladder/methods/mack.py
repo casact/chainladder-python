@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
+"""
+:ref:`chainladder.methods<methods>`.MackChainladder
+===================================================
 
-"""The MackChainladder module and class establishes the statistical framework
-of the chainladder method.  This is based *The Standard Error of Chain Ladder
-Reserve Estimates: Recursive Calculation and Inclusion of a Tail Factor* by
-Thomas Mack `[Mack99] <citations.html>`_.
+:ref:`MackChainladder<mack>` produces the same IBNR results as the deterministic
+approach, but ldf selection happens in a regression framework that allows for
+the calculation of prediction errors.  The Mack Chainladder technique is the OG
+stochastic method.
 
 """
 import numpy as np
@@ -19,48 +21,36 @@ class MackChainladder(Chainladder):
     three conditions.
     `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
 
-    Parameters:
+    Parameters
+    ----------
+    None
 
-    Attributes:
-        tri : `Triangle <Triangle.html>`_
-            The raw triangle
-        weights : pandas.DataFrame
-            A value representing an input into the weights of the WRTO class.
-        full_triangle : pandas.DataFrame
-            A completed triangle using Mack Chainladder assumptions.
-        f : numpy.array
-            An array representing the loss development (age-to-age) factors defined as:
-            :math:`\\widehat{f}_{k}=\\frac{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}
-            F_{ik}}{\\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}}`
-
-            where:
-            :math:`F_{ik}=C_{i,k+1}/C_{ik}, 1\\leq i\\leq n, 1\\leq k \\leq n-1`
-
-            are the individual development factors and where
-            :math:`w_{ik}\\in [0;1]`
-        chainladder: `Chainladder <ChainLadder.html>`_
-        sigma: numpy.array
-            An array representing the standard error of :math:`\\widehat{f}`:
-            :math:`\\widehat{\\sigma}_{k}=\\sqrt{\\frac{1}{n-k-1}
-            \\sum_{i=1}^{n-k}w_{ik}C_{ik}^{\\alpha}\\left (F_{ik}-
-            \\widehat{f}_{k}  \\right )^{2}}, 1\\leq k\\leq n - 2`
-        fse : numpy.array
-            An array representing the (col-1) standard errors of loss
-            development factors.
-        Fse : pandas.DataFrame
-            Needs documentation
-        parameter_risk: pandas.DataFrame
-            Parameter risk
-        process_risk: pandas.DataFrame
-            Process Risk
-        total_parameter_risk: numpy.array
-            Needs documentation
-        total_process_risk: numpy.array
-            Needs documentation
-        mack_se: pandas.DataFrame
-            Needs documentation
-        total_mack_se: float32
-            Needs documentation
+    Attributes
+    ----------
+    triangle
+        returns **X**
+    ultimate_
+        The ultimate losses per the method
+    ibnr_
+        The IBNR per the method
+    full_expectation_
+        The ultimates back-filled to each development period in **X** replacing
+        the known data
+    full_triangle_
+        The ultimates back-filled to each development period in **X** retaining
+        the known data
+    summary_
+        summary of the model
+    full_std_err_
+        The full standard error
+    total_process_risk_
+        The total process error
+    total_parameter_risk_
+        The total parameter error
+    mack_std_err_
+        The total prediction error by origin period
+    total_mack_std_err_
+        The total prediction error across all origin periods
 
     """
 

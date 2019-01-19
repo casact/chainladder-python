@@ -25,7 +25,7 @@ class TailBase(BaseEstimator):
         self.ldf_.ddims = self.sigma_.ddims = self.std_err_.ddims = ddims
         return self
 
-    def predict(self, X):
+    def transform(self, X):
         X.std_err_.triangle = np.concatenate((X.std_err_.triangle, self.std_err_.triangle[..., -1:]), -1)
         X.cdf_.triangle = np.concatenate((X.cdf_.triangle, self.cdf_.triangle[..., -1:]*0+1), -1)
         X.cdf_.triangle = X.cdf_.triangle*self.cdf_.triangle[..., -1:]
@@ -34,15 +34,9 @@ class TailBase(BaseEstimator):
         X.cdf_.ddims = X.ldf_.ddims = X.sigma_.ddims = X.std_err_.ddims = self.ldf_.ddims
         return X
 
-    def transform(self, X):
-        return self.predict(X)
-
     def fit_transform(self, X, y=None, sample_weight=None):
         self.fit(X)
-        return self.predict(X)
-
-    def fit_predict(self, X, y=None, sample_weight=None):
-        return self.fit_transform(X)
+        return self.transform(X)
 
     @property
     def cdf_(self):

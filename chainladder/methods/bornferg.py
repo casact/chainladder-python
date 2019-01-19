@@ -1,0 +1,68 @@
+"""
+:ref:`chainladder.methods<methods>`.BornhuetterFerguson
+======================================================
+
+:ref:`BornhuetterFerguson<bornferg>` is one of the most-widely used loss
+reserve valuation methods, second only to the chainladder method. It combines
+features of the chainladder and expected loss ratio methods and assigns
+weights to each method.
+"""
+from chainladder.methods import MethodBase, Benktander
+
+class BornhuetterFerguson(MethodBase):
+    """Allows for the entry of a constant tail factor to LDFs.
+
+    Parameters
+    ----------
+    apriori : float, optional (default=1.0)
+        Multiplier for the sample_weight used in the Bornhuetter Ferguson
+        method. If sample_weight is already an apriori measure of ultimate,
+        then use 1.0
+
+    Examples
+    --------
+    Smoothing chainladder ultimates by using them as apriori figures in the
+    Bornhuetter Ferguson method.
+
+    >>> raa = cl.load_dataset('RAA')
+    >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
+    >>> apriori = cl_ult*0+(cl_ult.sum()/10)[0] # Mean Chainladder Ultimate
+    >>> cl.BornhuetterFerguson(apriori=1).fit(raa, sample_weight=apriori).ultimate_
+              Ultimate
+    1981  18834.000000
+    1982  16898.632172
+    1983  24012.333266
+    1984  28281.843524
+    1985  28203.700714
+    1986  19840.005163
+    1987  18840.362337
+    1988  22789.948877
+    1989  19541.155136
+    1990  20986.022826
+
+    References
+    ----------
+    .. [1] Bornhuetter, R.L. and Ferguson, R.E. (1972) The Actuary and IBNR. In Proceedings of the Casualty Actuarial Society, Vol. LIX, 181 - 195
+    """
+    def __init__(self, apriori=1.0):
+        self.apriori = apriori
+
+    def fit(self, X, y=None, sample_weight=None):
+        """Applies the Bornhuetter-Ferguson technique to triangle **X**
+
+        Parameters
+        ----------
+        X : Triangle
+            The data used to compute the mean and standard deviation
+            used for later scaling along the features axis.
+        y : None
+            Ignored
+        sample_weight : Triangle
+            Required exposure to be used in the calculation.
+        """
+        super().fit(X, y, sample_weight)
+        self.sample_weight_ = sample_weight
+        obj = Benktander(apriori=self.apriori, n_iters=1) \
+            .fit(X=X, sample_weight=sample_weight)
+        self.ultimate_ = obj.ultimate_
+        return self

@@ -1,3 +1,9 @@
+"""
+:ref:`chainladder.methods<methods>`.CapeCod
+===============================================
+
+:ref:`CapeCod<capecod>` is a cool method
+"""
 import numpy as np
 import copy
 from chainladder.methods import MethodBase
@@ -9,6 +15,29 @@ class CapeCod(MethodBase):
         self.decay = decay
 
     def fit(self, X, y=None, sample_weight=None):
+        """Applies the CapeCod technique to triangle **X**
+
+        Parameters
+        ----------
+        X : Triangle
+            The data used to compute the mean and standard deviation
+            used for later scaling along the features axis.
+        y : None
+            Ignored
+        sample_weight : Triangle
+            Required exposure to be used in the calculation.
+
+        Attributes
+        ----------
+        triangle :
+            returns **X**
+        ultimate_ :
+            The ultimate losses per the method
+        ibnr_ :
+            The IBNR per the method
+        apriori_ :
+            The apriori vector developed by the Cape Cod Method
+        """
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.triangle

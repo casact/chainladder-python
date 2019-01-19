@@ -1,10 +1,14 @@
+"""
+:ref:`TailCurve<curve>` is a curve
+"""
+
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
 import numpy as np
 
 
 class TailCurve(TailBase):
-    ''' Base sub-class used for curve fit methods of tail factors '''
+    """ Curve Fit Class Documentation """
     def __init__(self, curve='exponential', fit_period=slice(None, None, None),
                  extrap_periods=100, errors='ignore'):
         self.curve = curve
@@ -13,6 +17,7 @@ class TailCurve(TailBase):
         self.errors = errors
 
     def fit(self, X, y=None, sample_weight=None):
+        """ fit method """
         super().fit(X, y, sample_weight)
         _y = self.ldf_.triangle[..., :-1].copy()
         _w = np.zeros(_y.shape)
@@ -29,13 +34,13 @@ class TailCurve(TailBase):
         _y = np.log(_y - 1)
         n_obs = _y.shape[-1]
         k, v = X.shape[:2]
-        _x = self.get_x(_w, _y)
+        _x = self._get_x(_w, _y)
         # Get LDFs
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] +
                                               [self.extrap_periods])), -1) + n_obs
-        tail = self.predict_tail(slope, intercept, extrapolate)
+        tail = self._predict_tail(slope, intercept, extrapolate)
         sigma, std_err = self._get_tail_stats(tail, X)
         self.ldf_.triangle[..., -1] = tail[..., -1]
         self.sigma_.triangle[..., -1] = sigma[..., -1]
@@ -69,7 +74,7 @@ class TailCurve(TailBase):
         std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         return sigma_, std_err_
 
-    def get_x(self, w, y):
+    def _get_x(self, w, y):
         ''' For Exponential decay, no transformation on x is needed '''
         if self.curve == 'exponential':
             return None
@@ -77,7 +82,7 @@ class TailCurve(TailBase):
             reg = WeightedRegression(w, None, y, 3, False).infer_x_w()
             return np.log(reg.x)
 
-    def predict_tail(self, slope, intercept, extrapolate):
+    def _predict_tail(self, slope, intercept, extrapolate):
         if self.curve == 'exponential':
             tail = np.exp(slope*extrapolate + intercept)
             return np.expand_dims(np.product(1 + tail, -1), -1)

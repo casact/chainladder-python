@@ -21,10 +21,35 @@ class MethodBase(BaseEstimator):
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
+        """Applies the chainladder technique to triangle **X**
+
+        Parameters
+        ----------
+        X : Triangle
+            The data used to compute the mean and standard deviation
+            used for later scaling along the features axis.
+        y : None
+            Ignored
+        sample_weight : None
+            ignored
+        """
         self.X_ = self.validate_X(X)
         return self
 
     def predict(self, X):
+        """Predicts the chainladder ultimate on a new triangle **X**
+
+        Parameters
+        ----------
+        X : Triangle
+            The data used to compute the mean and standard deviation
+            used for later scaling along the features axis.
+
+        Returns
+        -------
+        X_new: Triangle
+
+        """
         obj = copy.deepcopy(self)
         obj.X_ = copy.deepcopy(X)
         return obj

@@ -1,20 +1,22 @@
 from setuptools import setup, find_packages
 from os import listdir
+import chainladder
 
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/jbogaardt/chainladder-python'
+version=chainladder.__version__
 
 data_path = ''
 setup(
     name=name,
-    version='0.2.0',
+    version=version,
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
     packages=[f'{name}.{p}' for p in find_packages(where=name)]+['chainladder'],
     scripts=[],
     url=url,
-    download_url=f'{url}/archive/v0.2.0.tar.gz',
+    download_url=f'{url}/archive/v{version}.tar.gz',
     license='LICENSE',
     include_package_data=True,
     package_data={'data': [data_path+item

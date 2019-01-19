@@ -1,3 +1,0 @@
-statsmodels
-seaborn
-nbsphinx

@@ -1,3 +1,8 @@
+"""
+The Munich Adjustment Method
+============================
+"""
+
 from sklearn.base import BaseEstimator
 from chainladder.utils.weighted_regression import WeightedRegression
 import numpy as np

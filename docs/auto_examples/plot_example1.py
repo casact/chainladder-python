@@ -1,0 +1,18 @@
+"""
+Using Industry Patterns
+=======================
+
+This example demonstrates how you can create development patterns at a
+particular `key` grain and apply them to another.
+"""
+import chainladder as cl
+
+clrd = cl.load_dataset('clrd')['CumPaidLoss']
+clrd = clrd[clrd['LOB'] == 'wkcomp']
+
+industry = clrd.sum()
+allstate_industry_cl = cl.Chainladder().fit(industry).predict(clrd).ultimate_.loc['Allstate Ins Co Grp']
+allstate_company_cl = cl.Chainladder().fit(clrd.loc['Allstate Ins Co Grp']).ultimate_
+diff = (allstate_industry_cl - allstate_company_cl)
+
+print(diff.rename(development='Industry to Company LDF Diff'))

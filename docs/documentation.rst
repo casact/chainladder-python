@@ -1,0 +1,2 @@
+Documentation of chainladder |version|
+=======================================

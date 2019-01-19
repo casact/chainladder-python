@@ -1,3 +1,7 @@
+"""
+Incremental Additive Development
+================================
+"""
 from sklearn.base import BaseEstimator
 from chainladder.development.base import Development
 import numpy as np
