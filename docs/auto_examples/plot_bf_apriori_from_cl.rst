@@ -45,7 +45,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
 
     g = sns.lineplot(data=plot_data, x='Accident Year', y='Ultimate', hue='Method')
 
-**Total running time of the script:** ( 0 minutes  0.318 seconds)
+**Total running time of the script:** ( 0 minutes  0.323 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bf_apriori_from_cl.py:

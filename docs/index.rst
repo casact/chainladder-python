@@ -19,7 +19,7 @@
         <blockquote>
         <p>Data object to manage and manipulate reserving data</p>
         <div class="box-links">
-        <strong>Goal</strong>: Look like an extension of pandas-style syntax</br>
+        <strong>Application</strong>: Extend pandas syntax to manipulate reserving triangles</br>
         <strong>Classes</strong>:&nbsp;
 
     :ref:`Triangle<triangle>`
@@ -28,7 +28,7 @@
 
         <small class="float-right box-example-links">
 
-    `Examples`
+    :ref:`Examples<general_examples>`
 
     .. raw:: html
 
@@ -48,7 +48,7 @@
         <blockquote>
         <p>Tooling to generate loss development</p>
         <div class="box-links">
-        <strong>Applications</strong>: Drug response, Stock prices.</br>
+        <strong>Applications</strong>: comprehensive library of development techniques</br>
         <strong>Classes</strong>:&nbsp;
 
     :ref:`Development<dev>`, :ref:`MunichAdjustment<munich>`, :ref:`IncrementalAdditive<incremental>`, ...
@@ -57,7 +57,7 @@
 
         <small class="float-right box-example-links">
 
-    `Examples`
+    :ref:`Examples<general_examples>`
 
     .. raw:: html
 
@@ -87,7 +87,7 @@
 
         <small class="float-right example-links">
 
-    `Examples`
+    :ref:`Examples<general_examples>`
 
     .. raw:: html
 
@@ -104,7 +104,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`IBNR Models<methods>`
+    :ref:`IBNR Models<methods_toc>`
 
     .. raw:: html
 
@@ -112,7 +112,7 @@
         <blockquote>
         <p>Generate IBNR estimates and associated statistics</p>
         <div class="box-links">
-        <strong>Applications</strong>: Visualization, Increased efficiency</br>
+        <strong>Applications</strong>: constructing reserve estimates</br>
         <strong>Algorithms</strong>:&nbsp;
 
     :ref:`Chainladder<chainladder>`, :ref:`BornhuetterFerguson<bornferg>`, :ref:`CapeCod<capecod>`, ...
@@ -121,7 +121,7 @@
 
         <small class="float-right example-links">
 
-    `Examples`
+    :ref:`Examples<general_examples>`
 
     .. raw:: html
 
@@ -140,9 +140,9 @@
 
         </h2>
         <blockquote>
-        <p>scikit-learn style Pipelines for what-if analyses</p>
+        <p>scikit-learn style Pipelines for what-if reserving analyses</p>
         <div class="box-links">
-        <strong>Goal</strong>: Assumption sensitivity, simulation</br>
+        <strong>Applications</strong>: Assumption sensitivity, simulation</br>
         <strong>Modules</strong>:&nbsp;
 
     Pipeline, GridSearch, ...
@@ -151,7 +151,7 @@
 
         <small class="float-right example-links">
 
-    `Examples`
+    :ref:`Examples<general_examples>`
 
     .. raw:: html
 
@@ -164,25 +164,25 @@
         <div class="span4 box">
         <h2>
 
-    Utilities
+    :ref:`Utilities <utils>`
 
     .. raw:: html
 
         </h2>
         <blockquote>
-        <p>Rich exhibits output to Microsoft Excel.</p>
+        <p>Other useful tid-bits</p>
         <div class="box-links">
-        <strong>Application</strong>: Transforming input data such as text for use with machine learning algorithms.</br>
+        <strong>Application</strong>: Reporting and Communication</br>
         <strong>Modules</strong>:&nbsp;
 
-    Exhibits, On-leveling, ...
+    :ref:`Exhibits<exhibits>`, On-leveling, ...
 
     .. raw:: html
 
         <span class="example-links">
         <small class="float-right example-links">
 
-    `Examples`
+    :ref:`Examples<general_examples>`
 
     .. raw:: html
 

@@ -23,7 +23,7 @@ from chainladder.methods import MethodBase
 
 
 class Benktander(MethodBase):
-    """ The Benktander Class
+    """ The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
 
     Parameters
     ----------

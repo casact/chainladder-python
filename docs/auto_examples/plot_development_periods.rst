@@ -45,7 +45,7 @@ transformer to see its influence on the overall ultimate estimate.
                              index=['n_period', 'Ultimate to Latest Factor']).T
     g = sns.pointplot(data=plot_data, x='n_period', y='Ultimate to Latest Factor')
 
-**Total running time of the script:** ( 0 minutes  2.813 seconds)
+**Total running time of the script:** ( 0 minutes  2.654 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_development_periods.py:

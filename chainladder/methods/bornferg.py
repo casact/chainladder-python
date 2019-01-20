@@ -1,6 +1,6 @@
 """
 :ref:`chainladder.methods<methods>`.BornhuetterFerguson
-======================================================
+=======================================================
 
 :ref:`BornhuetterFerguson<bornferg>` is one of the most-widely used loss
 reserve valuation methods, second only to the chainladder method. It combines
@@ -10,7 +10,7 @@ weights to each method.
 from chainladder.methods import MethodBase, Benktander
 
 class BornhuetterFerguson(MethodBase):
-    """Allows for the entry of a constant tail factor to LDFs.
+    """The deterministic Bornhuetter Ferguson IBNR model
 
     Parameters
     ----------

@@ -104,5 +104,22 @@ def test_grain():
 def test_off_cycle_val_date():
     assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31')
 
+def test_printer():
+    print(cl.load_dataset('abc'))
+
+
 def test_value_order():
     assert np.all(tri[['CumPaidLoss', 'BulkLoss']].values == tri[['BulkLoss', 'CumPaidLoss']].values)
+
+
+def test_trend():
+    assert abs((cl.load_dataset('abc').trend(0.05, axis='origin').trend((1/1.05)-1, axis='origin') - cl.load_dataset('abc')).sum().sum())<1e-5
+
+
+def test_arithmetic_1():
+    x = cl.load_dataset('mortgage')
+    np.testing.assert_equal(-(((x/x)+0)*x), -(+x))
+
+def test_arithmetic_2():
+    x = cl.load_dataset('mortgage')
+    np.testing.assert_equal(1-(x/x), 0*x*0)

@@ -14,12 +14,7 @@ from chainladder.methods import Chainladder
 
 
 class MackChainladder(Chainladder):
-    """ MackChainladder class specifies the Mack chainladder model.
-
-    Thomas Mack published in 1993 [Mac93] a method which estimates the standard
-    errors of the chainladder forecast without assuming a distribution under
-    three conditions.
-    `Proper Citation Needed... <https://github.com/mages/ChainLadder>`_
+    """ Basic stochastic chainladder method popularized by Thomas Mack
 
     Parameters
     ----------

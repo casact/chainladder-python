@@ -13,6 +13,8 @@ from chainladder.methods import MethodBase
 
 class Chainladder(MethodBase):
     """
+    The basic determinsitic chainladder method.
+
     Parameters
     ----------
     None
