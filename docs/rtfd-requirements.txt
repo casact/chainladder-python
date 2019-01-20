@@ -1,6 +1,5 @@
 seaborn
 nbsphinx
-sphinx_gallery
 matplotlib
 sklearn
 pandas

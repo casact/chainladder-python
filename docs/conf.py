@@ -40,7 +40,7 @@ class Mock(object):
             return Mock()
 
 if os.name != 'nt':
-    MOCK_MODULES = ['numpy', 'scipy', 'pandas', 'bokeh', 'matplotlib.pyplot']
+    MOCK_MODULES = ['numpy', 'scipy', 'pandas', 'bokeh', 'sklearn', 'matplotlib.pyplot']
     for mod_name in MOCK_MODULES:
         sys.modules[mod_name] = Mock()
 
@@ -56,9 +56,11 @@ if os.name != 'nt':
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
-              'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax']
-
+if os.name != 'nt':
+    extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
+                  'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax']
+else:
+    extensions = ['sphinx.ext.autodoc', 'numpydoc', 'nbsphinx', 'sphinx.ext.mathjax']
 numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
