@@ -56,7 +56,7 @@ if os.name != 'nt':
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-if os.name != 'nt':
+if os.name == 'nt':
     extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
                   'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax']
 else:
