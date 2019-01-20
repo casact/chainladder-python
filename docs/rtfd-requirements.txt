@@ -5,3 +5,4 @@ sklearn
 pandas
 numpy
 numpydoc
+sphinx_gallery
