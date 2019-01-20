@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 
 from github_link import make_linkcode_resolve
 import sphinx_gallery
+import chainladder as cl
 
 
 class Mock(object):
@@ -116,7 +117,7 @@ author = 'John Bogaardt'
 # built documents.
 #
 # The short X.Y version.
-import chainladder as cl
+
 version = cl.__version__
 # The full version, including alpha/beta/rc tags.
 release = cl.__version__
