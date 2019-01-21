@@ -105,10 +105,26 @@ Classes
    CapeCod
 
 
- .. _workflow_ref:
+.. _workflow_ref:
 
- :mod:`chainladder.workflow`: Workflow
- =====================================
+:mod:`chainladder.workflow`: Workflow
+=====================================
+.. automodule:: chainladder.workflow
+  :no-members:
+  :no-inherited-members:
+
+**User guide:** See the :ref:`workflow_toc` section for further details.
+
+Classes
+-------
+.. currentmodule:: chainladder
+
+.. autosummary::
+  :toctree: generated/
+  :template: class.rst
+
+  Pipeline
+  GridSearch
 
 
 .. _utils_ref:

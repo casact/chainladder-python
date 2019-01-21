@@ -1,6 +1,6 @@
 # chainladder (python)
 [![Build Status](https://travis-ci.org/jbogaardt/chainladder-python.svg?branch=master)](https://travis-ci.org/jbogaardt/chainladder-python)
-[![Documentation Status](https://readthedocs.org/projects/chainladder-python/badge/?version=latest)](http://chainladder-python.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/chainladder-python/badge/?version=master)](http://chainladder-python.readthedocs.io/en/latest/?badge=master)
 [![codecov](https://codecov.io/gh/jbogaardt/chainladder-python/branch/master/graph/badge.svg)](https://codecov.io/gh/jbogaardt/chainladder-python)
 
 ## chainladder - Property and Casualty Loss Reserving in Python
@@ -13,7 +13,7 @@ scikit-learn, so they can spend as little mental energy as possible learning yet
 another API.
 
 ## Documentation
-Please visit the [Documentation](http://chainladder-python.readthedocs.io/) page for examples, how-tos, and source
+Please visit the [Documentation](https://chainladder-python.readthedocs.io/en/latest/) page for examples, how-tos, and source
 code documentation.
 
 ## Installation

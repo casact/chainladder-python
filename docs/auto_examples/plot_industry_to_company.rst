@@ -56,7 +56,7 @@ particular `key` grain and apply them to another.
 
     print(diff.rename(development='Industry to Company LDF Diff'))
 
-**Total running time of the script:** ( 0 minutes  0.575 seconds)
+**Total running time of the script:** ( 0 minutes  0.712 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_industry_to_company.py:
