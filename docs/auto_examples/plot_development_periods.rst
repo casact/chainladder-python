@@ -7,9 +7,9 @@
 .. _sphx_glr_auto_examples_plot_development_periods.py:
 
 
-===========================
-Development scenario tuning
-===========================
+====================================================
+Basic Assumption Tuning with Pipeline and Gridsearch
+====================================================
 
 This example demonstrates testing multiple number of periods in the development
 transformer to see its influence on the overall ultimate estimate.
@@ -27,25 +27,29 @@ transformer to see its influence on the overall ultimate estimate.
 .. code-block:: python
 
 
-    import chainladder as cl
     import seaborn as sns
-    import pandas as pd
     sns.set_style('whitegrid')
 
-    # Loop through 2 through 10 year weighted average development
-    ult_ratio = {}
-    for n_periods in range(2, 11):
-        abc = cl.load_dataset('abc')
-        dev = cl.Development(n_periods=n_periods).fit_transform(abc)
-        ult = cl.Chainladder().fit(abc)
-        ult_ratio[n_periods] = ult.ultimate_.sum()[0]/dev.latest_diagonal.sum()[0]
+    import chainladder as cl
 
-    # Plot the data
-    plot_data = pd.DataFrame([ult_ratio.keys(), ult_ratio.values()],
-                             index=['n_period', 'Ultimate to Latest Factor']).T
-    g = sns.pointplot(data=plot_data, x='n_period', y='Ultimate to Latest Factor')
+    tri = cl.load_dataset('abc')
 
-**Total running time of the script:** ( 0 minutes  2.654 seconds)
+    # Set up Pipeline
+    steps = [('dev',cl.Development()),
+             ('chainladder',cl.Chainladder())]
+    params = dict(dev__n_periods=[item for item in range(2,11)])
+    pipe = cl.Pipeline(steps=steps)
+
+    # Develop scoring function that returns an Ultimate/Incurred Ratio
+    scoring = lambda x: x.named_steps.chainladder.ultimate_.sum()[0] / tri.latest_diagonal.sum()[0]
+
+    # Run GridSearch
+    grid = cl.GridSearch(pipe, params, scoring).fit(tri)
+
+    # Plot Results
+    g = sns.pointplot(data=grid.results_,x='dev__n_periods',y='score')
+
+**Total running time of the script:** ( 0 minutes  1.081 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_development_periods.py:

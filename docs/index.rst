@@ -134,7 +134,7 @@
         <div class="span4 box">
         <h2>
 
-    Workflow
+    :ref:`Workflow <workflow>`
 
     .. raw:: html
 
@@ -145,7 +145,7 @@
         <strong>Applications</strong>: Assumption sensitivity, simulation</br>
         <strong>Modules</strong>:&nbsp;
 
-    Pipeline, GridSearch, ...
+    :ref:`Pipeline <pipeline>`, :ref:`GridSearch <gridsearch>`
 
     .. raw:: html
 

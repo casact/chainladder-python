@@ -80,7 +80,7 @@ class DevelopmentBase(BaseEstimator):
         self.std_err_ = self._param_property(X, params, 2)
         return self
 
-    def predict(self, X):
+    def transform(self, X):
         ''' If X and self are of different shapes, align self
             to X, else return self
 
@@ -90,24 +90,19 @@ class DevelopmentBase(BaseEstimator):
                 residual - (k,v,o,d)
                 latest_diagonal - (k,v,o,1)
         '''
-        X.std_err_ = self.std_err_
-        X.cdf_ = self.cdf_
-        X.ldf_ = self.ldf_
-        X.sigma_ = self.sigma_
-        X.sigma_interpolation = self.sigma_interpolation
-        X.average_ = self.average_
-        X.w_ = self.w_
-        return X
-
-    def transform(self, X):
-        return self.predict(X)
+        X_new = copy.deepcopy(X)
+        X_new.std_err_ = self.std_err_
+        X_new.cdf_ = self.cdf_
+        X_new.ldf_ = self.ldf_
+        X_new.sigma_ = self.sigma_
+        X_new.sigma_interpolation = self.sigma_interpolation
+        X_new.average_ = self.average_
+        X_new.w_ = self.w_
+        return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):
-        return self.fit_predict(X)
-
-    def fit_predict(self, X):
         self.fit(X)
-        return self.predict(X)
+        return self.transform(X)
 
     @property
     def cdf_(self):

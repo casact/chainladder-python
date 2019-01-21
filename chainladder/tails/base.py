@@ -26,13 +26,14 @@ class TailBase(BaseEstimator):
         return self
 
     def transform(self, X):
-        X.std_err_.triangle = np.concatenate((X.std_err_.triangle, self.std_err_.triangle[..., -1:]), -1)
-        X.cdf_.triangle = np.concatenate((X.cdf_.triangle, self.cdf_.triangle[..., -1:]*0+1), -1)
-        X.cdf_.triangle = X.cdf_.triangle*self.cdf_.triangle[..., -1:]
-        X.ldf_.triangle = np.concatenate((X.ldf_.triangle, self.ldf_.triangle[..., -1:]), -1)
-        X.sigma_.triangle = np.concatenate((X.sigma_.triangle, self.sigma_.triangle[..., -1:]), -1)
-        X.cdf_.ddims = X.ldf_.ddims = X.sigma_.ddims = X.std_err_.ddims = self.ldf_.ddims
-        return X
+        X_new = copy.deepcopy(X)
+        X_new.std_err_.triangle = np.concatenate((X_new.std_err_.triangle, self.std_err_.triangle[..., -1:]), -1)
+        X_new.cdf_.triangle = np.concatenate((X_new.cdf_.triangle, self.cdf_.triangle[..., -1:]*0+1), -1)
+        X_new.cdf_.triangle = X_new.cdf_.triangle*self.cdf_.triangle[..., -1:]
+        X_new.ldf_.triangle = np.concatenate((X_new.ldf_.triangle, self.ldf_.triangle[..., -1:]), -1)
+        X_new.sigma_.triangle = np.concatenate((X_new.sigma_.triangle, self.sigma_.triangle[..., -1:]), -1)
+        X_new.cdf_.ddims = X_new.ldf_.ddims = X_new.sigma_.ddims = X_new.std_err_.ddims = self.ldf_.ddims
+        return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):
         self.fit(X)
