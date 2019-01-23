@@ -8,7 +8,34 @@ import numpy as np
 
 
 class TailCurve(TailBase):
-    """ Curve Fit Class Documentation """
+    """Allows for the entry of a constant tail factor to LDFs.
+
+    Parameters
+    ----------
+    curve : str ('exponential', 'inverse_power')
+        The type of curve extrapolation you'd like to use
+    fit_period : slice
+        A slice object representing the range (by index) of ldfs to use in
+        the curve fit.
+    extrap_periods : int
+        Then number of development periods from attachment point to extrapolate
+        the fit.
+    errors : str ('raise' or 'ignore')
+        Whether to raise an error or ignore observations that violate the
+        distribution being fit.  The most common is ldfs < 1.0 will not work
+        in either the `exponential` or `inverse_power` fits.
+
+    Attributes
+    ----------
+    ldf_
+        ldf_ with tail applied.
+    cdf_
+        cdf_ with tail applied.
+    sigma_
+        sigma_ with tail factor applied.
+    std_err_
+        std_err_ with tail factor applied
+    """
     def __init__(self, curve='exponential', fit_period=slice(None, None, None),
                  extrap_periods=100, errors='ignore'):
         self.curve = curve

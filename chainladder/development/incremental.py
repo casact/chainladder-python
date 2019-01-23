@@ -9,6 +9,19 @@ import copy
 
 
 class IncrementalAdditive(BaseEstimator):
+    """ The Incremental Additive Method.
+
+    Parameters
+    ----------
+    trend : float (default=0.0)
+        A multiplicative trend amount used to trend each development period to
+        a common level.
+    n_periods : integer, optional (default=-1)
+        number of origin periods to be used in the ldf average calculation. For
+        all origin periods, set n_periods=-1
+
+
+    """
     def __init__(self, trend=0.0, n_periods=-1):
         self.trend = trend
         self.n_periods = n_periods

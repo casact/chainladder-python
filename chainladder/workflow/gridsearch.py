@@ -25,8 +25,9 @@ class GridSearch(BaseEstimator):
         dictionaries, in which case the grids spanned by each dictionary
         in the list are explored. This enables searching over any sequence
         of parameter settings.
-    scoring : callable
-        The callable should return a single value.
+    scoring : callable or dict of callable(s)
+        Should be of the form {'name': callable}.  The callable(s) should
+        return a single value.
     verbose : integer
         Controls the verbosity: the higher, the more messages.
     error_score : 'raise' or numeric
@@ -42,18 +43,26 @@ class GridSearch(BaseEstimator):
         A DataFrame with each param_grid key as a column and the `scoring`
         score as the last column
     """
-    def __init__(self, estimator, param_grid, scoring):
+    def __init__(self, estimator, param_grid, scoring, verbose=0,
+                 error_score='raise'):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
+        self.verbose = verbose
+        self.error_score = error_score
 
     def fit(self, X):
+        if type(self.scoring) is not dict:
+            scoring = dict(score=self.scoring)
+        else:
+            scoring = self.scoring
         grid = list(ParameterGrid(self.param_grid))
         results_ = []
         for num, item in enumerate(grid):
             est = copy.deepcopy(self.estimator).set_params(**item)
             model = est.fit(X)
-            item['score'] = self.scoring(model)
+            for score in scoring.keys():
+                item[score] = scoring[score](model)
             results_.append(item)
         self.results_ = pd.DataFrame(results_)
         return self

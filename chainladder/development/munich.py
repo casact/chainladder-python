@@ -10,10 +10,16 @@ import copy
 
 
 class MunichAdjustment(BaseEstimator):
-    """ Munich Chainladder
-        TODO:
-            1. Create 'square' LDF as a triangle obj
-            2. Let it take both Development and Tail objects
+    """Applies the Munich Chainladder adjustment to a set of paid/incurred
+       ldfs.
+
+    Parameters
+    ----------
+    paid_to_incurred : dict
+        A dictionary representing the `values` of paid and incurred triangles
+        where `values` are an appropriate selection from :class:`Triangle`
+        `.values`, such as ``{'paid':'incurred'}``
+
 
     """
     def __init__(self, paid_to_incurred={}):

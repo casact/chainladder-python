@@ -10,7 +10,7 @@ from chainladder.core.base import TriangleBase, check_triangle_postcondition
 class Triangle(TriangleBase):
     """
     The core data structure of the chainladder package
-    
+
     Parameters
     ----------
     data : DataFrame
@@ -22,18 +22,18 @@ class Triangle(TriangleBase):
     development : str or list
         A representation of the development/valuation periods of the triangle
         that will map to the Development dimension
-    values : str or list
-        A representation of the keys of the triangle that will map to the
-        Keys dimension.  If None, then a single 'Total' key will be generated.
-    keys : str or list or None
-        A representation of the keys of the triangle that will map to the
-        Keys dimension.  If None, then a single 'Total' key will be generated.
+    columns : str or list
+        A representation of the numeric data of the triangle that will map to the
+        columns dimension.  If None, then a single 'Total' key will be generated.
+    index : str or list or None
+        A representation of the index of the triangle that will map to the
+        index dimension.  If None, then a single 'Total' key will be generated.
 
     Attributes
     ----------
-    keys
-        Represents all available levels of the key dimension.
-    values
+    index
+        Represents all available levels of the index dimension.
+    columns
         Represents all available levels of the value dimension.
     origin
         Represents all available levels of the origin dimension.

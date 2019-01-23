@@ -32,6 +32,8 @@ class WeightedRegression:
     def fit_OLS(self):
         ''' Given a set of w, x, y, and an axis, this Function
             returns OLS slope and intercept.
+            TODO:
+                Make this work with n_periods = 1 without numpy warning.
         '''
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
         x[w == 0] = np.nan

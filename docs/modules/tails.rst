@@ -19,4 +19,5 @@ useful when relying on tail selections from an external source like industry dat
 Curve Fit
 =========
 :class:`TailCurve` allows for extrapolating a tail factor using curve fitting.
-Currently, Exponential Decay, and Inverse Power curve are supported.
+Currently, Exponential Decay of ldfs and Inverse Power curve (for slower decay)
+are supported.

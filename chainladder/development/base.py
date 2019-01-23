@@ -4,6 +4,7 @@ Loss Development
 """
 import numpy as np
 import copy
+import warnings
 from sklearn.base import BaseEstimator
 from chainladder import WeightedRegression
 
@@ -66,8 +67,13 @@ class DevelopmentBase(BaseEstimator):
         val = np.nan_to_num(val * (_y * 0 + 1))
         _w = self._assign_n_periods_weight(X) / (_x**(val))
         self.w_ = self._assign_n_periods_weight(X)
-        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True) \
-            .fit().sigma_fill(self.sigma_interpolation)
+        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True).fit()
+        if self.n_periods != 1:
+            params = params.sigma_fill(self.sigma_interpolation)
+        else:
+            warnings.warn('Setting n_periods=1 does not allow enough degrees of'
+                          '  freedom to support calculation of all regression '
+                          'statistics.  Only LDFs have been calculated.')
         params.std_err_ = np.nan_to_num(params.std_err_) + \
             np.nan_to_num((1-np.nan_to_num(params.std_err_*0+1)) *
             params.sigma_/np.swapaxes(np.sqrt(_x**(2-val))[..., 0:1, :], -1, -2))

@@ -49,6 +49,46 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Mack Chainladder method. ">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_mack_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_mack.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_mack
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a :class:`Triangle` inst...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_triangle_slicing
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the output of one method as the apriori selection...">
 
 .. only:: html
@@ -66,6 +106,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_bf_apriori_from_cl
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_triangle_from_pandas
 .. raw:: html
 
     <div style='clear:both'></div>

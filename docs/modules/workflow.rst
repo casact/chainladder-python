@@ -2,7 +2,7 @@
 
 .. currentmodule:: chainladder
 
-=========
+==========
 Workflow
 ==========
 

@@ -13,7 +13,7 @@ def test_slice_by_boolean():
 
 
 def test_slice_by_loc():
-    assert tri.loc['Aegis Grp'].loc['comauto'].keys.iloc[0, 0] == 'comauto'
+    assert tri.loc['Aegis Grp'].loc['comauto'].index.iloc[0, 0] == 'comauto'
 
 
 def test_slice_origin():
@@ -27,7 +27,7 @@ def test_slice_development():
 
 
 def test_slice_by_loc_iloc():
-    assert tri.groupby('LOB').sum().loc['comauto'].keys.iloc[0, 0] == 'comauto'
+    assert tri.groupby('LOB').sum().loc['comauto'].index.iloc[0, 0] == 'comauto'
 
 
 def test_link_ratio():
@@ -109,7 +109,7 @@ def test_printer():
 
 
 def test_value_order():
-    assert np.all(tri[['CumPaidLoss', 'BulkLoss']].values == tri[['BulkLoss', 'CumPaidLoss']].values)
+    assert np.all(tri[['CumPaidLoss', 'BulkLoss']].columns == tri[['BulkLoss', 'CumPaidLoss']].columns)
 
 
 def test_trend():

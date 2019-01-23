@@ -49,7 +49,7 @@ transformer to see its influence on the overall ultimate estimate.
     # Plot Results
     g = sns.pointplot(data=grid.results_,x='dev__n_periods',y='score')
 
-**Total running time of the script:** ( 0 minutes  1.081 seconds)
+**Total running time of the script:** ( 0 minutes  1.063 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_development_periods.py:

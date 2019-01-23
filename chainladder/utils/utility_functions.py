@@ -23,24 +23,24 @@ def load_dataset(key):
     path = os.path.dirname(os.path.abspath(__file__))
     origin = 'origin'
     development = 'development'
-    values = ['values']
-    keys = None
+    columns = ['values']
+    index = None
     if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto', 'usauto']:
-        values = ['incurred', 'paid']
+        columns = ['incurred', 'paid']
     if key.lower() == 'clrd':
         origin = 'AccidentYear'
         development = 'DevelopmentYear'
-        keys = ['GRNAME', 'LOB']
-        values = ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR',
+        index = ['GRNAME', 'LOB']
+        columns = ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR',
                   'EarnedPremCeded', 'EarnedPremNet']
     if key.lower() in ['liab', 'auto']:
-        keys = ['lob']
+        index = ['lob']
     df = pd.read_pickle(os.path.join(path, 'data', key.lower() + '.pkl'))
     return Triangle(df, origin=origin, development=development,
-                    values=values, keys=keys)
+                    columns=columns, index=index)
 
 
-def parallelogram_olf(values, date, start_date=None, end_date=None,
+def parallelogram_olf(columns, date, start_date=None, end_date=None,
                       grain='M', vertical_line=False):
     """ Parallelogram approach to on-leveling.  Need to fix return grain
     """
@@ -50,9 +50,9 @@ def parallelogram_olf(values, date, start_date=None, end_date=None,
     if not end_date:
         end_date = f'{date.max().year+1}-12-31'
     date_idx = pd.date_range(start_date, end_date)
-    y = pd.Series(np.array(values), np.array(date))
+    y = pd.Series(np.array(columns), np.array(date))
     y = y.reindex(date_idx, fill_value=0)
-    idx = np.cumprod(y.values+1)
+    idx = np.cumprod(y.columns+1)
     idx = idx[-1]/idx
     y = pd.Series(idx, y.index)
     if not vertical_line:

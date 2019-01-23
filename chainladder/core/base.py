@@ -16,29 +16,29 @@ def check_triangle_postcondition(f):
         if X.triangle.ndim != 4:
             raise ValueError('X.triangle must be a 4-dimensional array')
         if len(X.kdims) != X.triangle.shape[0]:
-            raise ValueError('X.keys and X.triangle are misaligned')
+            raise ValueError('X.index and X.triangle are misaligned')
         if len(X.vdims) != X.triangle.shape[1]:
             print(X.vdims, X.shape)
-            raise ValueError('X.values and X.triangle are misaligned')
+            raise ValueError('X.columns and X.triangle are misaligned')
         return X
     return wrapper
 
 
 class TriangleBase:
     def __init__(self, data=None, origin=None, development=None,
-                 values=None, keys=None):
+                 columns=None, index=None):
         # Sanitize Inputs
-        values = [values] if type(values) is str else values
+        columns = [columns] if type(columns) is str else columns
         origin = [origin] if type(origin) is str else origin
         if development is not None and type(development) is str:
             development = [development]
         key_gr = origin if not development else origin+development
-        if not keys:
-            keys = ['Total']
+        if not index:
+            index = ['Total']
             data_agg = data.groupby(key_gr).sum().reset_index()
-            data_agg[keys[0]] = 'Total'
+            data_agg[index[0]] = 'Total'
         else:
-            data_agg = data.groupby(key_gr+keys) \
+            data_agg = data.groupby(key_gr+index) \
                            .sum().reset_index()
         # Convert origin/development to dates
         origin_date = TriangleBase.to_datetime(data_agg, origin)
@@ -52,12 +52,11 @@ class TriangleBase:
             development_date = origin_date
             self.development_grain = self.origin_grain
             col = None
-
         # Prep the data for 4D Triangle
-        data_agg = self.get_axes(data_agg, keys, values,
+        data_agg = self.get_axes(data_agg, index, columns,
                                  origin_date, development_date)
-        data_agg = pd.pivot_table(data_agg, index=keys+['origin'],
-                                  columns=col, values=values,
+        data_agg = pd.pivot_table(data_agg, index=index+['origin'],
+                                  columns=col, values=columns,
                                   aggfunc='sum')
         # Assign object properties
         self.kdims = np.array(data_agg.index.droplevel(-1).unique())
@@ -70,7 +69,7 @@ class TriangleBase:
             self.ddims = np.array([None])
             self.vdims = np.array(data_agg.columns.unique())
         self.valuation_date = development_date.max()
-        self.key_labels = keys
+        self.key_labels = index
         self.iloc = TriangleBase.Ilocation(self)
         self.loc = TriangleBase.Location(self)
         # Create 4D Triangle
@@ -92,12 +91,12 @@ class TriangleBase:
         return self.triangle.shape
 
     @property
-    def keys(self):
+    def index(self):
         return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
     @property
-    def values(self):
-        return pd.Series(list(self.vdims), name='values').to_frame()
+    def columns(self):
+        return pd.Series(list(self.vdims), name='columns').to_frame()
 
     @property
     def origin(self):
@@ -108,14 +107,6 @@ class TriangleBase:
     @property
     def development(self):
         return pd.Series(list(self.ddims), name='development').to_frame()
-
-    @property
-    def columns(self):
-        return list(self.ddims)
-
-    @property
-    def index(self):
-        return list(self.odims)
 
     @property
     def latest_diagonal(self):
@@ -254,11 +245,11 @@ class TriangleBase:
         obj.triangle = obj.triangle*trend
         return obj
 
-    def rename(self, keys=None, values=None, origin=None, development=None):
-        if keys is not None:
-            self.kdims = [keys] if type(keys) is str else keys
-        if values is not None:
-            self.vdims = [values] if type(values) is str else values
+    def rename(self, index=None, columns=None, origin=None, development=None):
+        if index is not None:
+            self.kdims = [index] if type(index) is str else index
+        if columns is not None:
+            self.vdims = [columns] if type(columns) is str else columns
         if origin is not None:
             self.odims = [origin] if type(origin) is str else origin
         if development is not None:
@@ -277,8 +268,8 @@ class TriangleBase:
                    '\nGrain:     ' + 'O' + self.origin_grain + \
                                      'D' + self.development_grain + \
                    '\nShape:     ' + str(self.shape) + \
-                   '\nKeys:      ' + str(self.key_labels) + \
-                   '\nValues:    ' + str(list(self.vdims))
+                   '\nindex:      ' + str(self.key_labels) + \
+                   '\ncolumns:    ' + str(list(self.vdims))
             return data
 
     def _repr_html_(self):
@@ -306,7 +297,7 @@ class TriangleBase:
                               + self.development_grain,
                               self.shape, self.key_labels, list(self.vdims)],
                              index=['Valuation:', 'Grain:', 'Shape',
-                                    'Keys:', "Values:"],
+                                    'index:', "columns:"],
                              name='Triangle Summary').to_frame()
             pd.options.display.precision = 0
             return data.to_html(max_rows=pd.options.display.max_rows,
@@ -329,7 +320,7 @@ class TriangleBase:
         if self.shape[:2] == (1, 1):
             return self._repr_format()
         else:
-            raise ValueError('len(keys) and len(values) must be 1.')
+            raise ValueError('len(index) and len(columns) must be 1.')
 
     def to_clipboard(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
@@ -367,9 +358,9 @@ class TriangleBase:
         if type(other) not in [int, float, np.float64, np.int64]:
             if len(self.vdims) != len(other.vdims):
                 raise ValueError('Triangles must have the same number of \
-                                  values')
+                                  columns')
             if len(self.kdims) != len(other.kdims):
-                raise ValueError('Triangles must have the same number of keys')
+                raise ValueError('Triangles must have the same number of index')
             if len(self.vdims) == 1:
                 other.vdims = np.array([None])
             other = other.triangle
@@ -474,12 +465,12 @@ class TriangleBase:
     class TriangleGroupBy:
         def __init__(self, old_obj, by):
             obj = copy.deepcopy(old_obj)
-            v1_len = len(obj.keys.index)
+            v1_len = len(obj.index.index)
             if by != -1:
-                indices = obj.keys.groupby(by).indices
-                new_index = obj.keys.groupby(by).count().index
+                indices = obj.index.groupby(by).indices
+                new_index = obj.index.groupby(by).count().index
             else:
-                indices = {'All': np.arange(len(obj.keys))}
+                indices = {'All': np.arange(len(obj.index))}
                 new_index = pd.Index(['All'], name='All')
             groups = list(indices.values())
             v2_len = len(groups)
@@ -573,10 +564,10 @@ class TriangleBase:
         if type(key) is np.ndarray:
             return self._slice_origin(key)
         if type(key) is pd.Series:
-            return self.iloc[list(self.keys[key].index)]
+            return self.iloc[list(self.index[key].index)]
         if key in self.key_labels:
             # Boolean-indexing of a particular key
-            return self.keys[key]
+            return self.index[key]
         idx = self.idx_table()[key]
         idx = self.idx_table_format(idx)
         return TriangleBase.LocBase(self).get_idx(idx)
@@ -654,7 +645,7 @@ class TriangleBase:
         cart_prod = cart_prod[cart_prod['development'] >= cart_prod['origin']]
         return cart_prod
 
-    def get_axes(self, data_agg, groupby, values,
+    def get_axes(self, data_agg, groupby, columns,
                  origin_date, development_date):
         ''' Preps axes for the 4D triangle
         '''
@@ -667,7 +658,7 @@ class TriangleBase:
             all_axes.merge(data_agg, how='left',
                            left_on=['origin', 'development'] + groupby,
                            right_on=[origin_date, development_date] + groupby) \
-                    .fillna(0)[['origin', 'development'] + groupby + values]
+                    .fillna(0)[['origin', 'development'] + groupby + columns]
         data_agg['development'] = \
             TriangleBase.development_lag(data_agg['origin'],
                                          data_agg['development'])
