@@ -618,11 +618,11 @@ class TriangleBase:
             ''' Determines origin/development combinations in full.  Useful for
                 when the triangle has holes in it. '''
             origin_unique = \
-                pd.PeriodIndex(start=origin_date.min(),
+                pd.period_range(start=origin_date.min(),
                                end=origin_date.max(),
                                freq=origin_grain).to_timestamp()
             development_unique = \
-                pd.PeriodIndex(start=origin_date.min(),
+                pd.period_range(start=origin_date.min(),
                                end=development_date.max(),
                                freq=development_grain).to_timestamp()
             development_unique = TriangleBase.period_end(development_unique)

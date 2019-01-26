@@ -126,6 +126,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_triangle_from_pandas
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to adjust LDFs by the relationship between Paid and Incurred usin...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_munich.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_munich
 .. raw:: html
 
     <div style='clear:both'></div>
