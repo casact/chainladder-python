@@ -200,7 +200,24 @@ class TriangleBase:
 
     @check_triangle_postcondition
     def grain(self, grain='', incremental=False, inplace=False):
-        ''' TODO - Make incremental work '''
+        """Changes the grain of a cumulative triangle.
+
+        Parameters
+        ----------
+        grain : str
+            The grain to which you want your triangle converted, specified as
+            'O<x>D<y>' where <x> and <y> can take on values of `['Y', 'Q', 'M']`
+            For example, 'OYDY' for Origin Year/Development Year, 'OQDM' for
+            Origin quarter, etc.
+        incremental : bool
+            Not implemented yet
+        inplace : bool
+            Whether to mutate the existing Triangle instance or return a new one.
+
+        Returns
+        -------
+            Triangle
+        """
         if inplace:
             origin_grain = grain[1:2]
             development_grain = grain[-1]

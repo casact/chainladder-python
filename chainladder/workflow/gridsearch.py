@@ -51,7 +51,7 @@ class GridSearch(BaseEstimator):
         self.verbose = verbose
         self.error_score = error_score
 
-    def fit(self, X):
+    def fit(self, X, y=None, sample_weight=None):
         if type(self.scoring) is not dict:
             scoring = dict(score=self.scoring)
         else:
@@ -60,7 +60,7 @@ class GridSearch(BaseEstimator):
         results_ = []
         for num, item in enumerate(grid):
             est = copy.deepcopy(self.estimator).set_params(**item)
-            model = est.fit(X)
+            model = est.fit(X, y, sample_weight)
             for score in scoring.keys():
                 item[score] = scoring[score](model)
             results_.append(item)

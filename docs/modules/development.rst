@@ -33,8 +33,15 @@ percentage of exposure, which we then use to square the triangle.
 Munich Adjustment
 ==================
 
-:class:`MunichAdjustment` allows for correcting both paid and incurred development
-patterns for the ratio of paid-to-incurred.
+:class:`MunichAdjustment` combines the paid (P) and incurred (I) data types by taking the
+(P/I) ratio into account in its projections.
+
+.. include:: chainladder.MunichAdjustment.examples
+
+.. raw:: html
+
+    <div class="clearer"></div>
+
 
 .. topic:: References
 

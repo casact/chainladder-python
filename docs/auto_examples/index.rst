@@ -109,6 +109,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_benktander.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_benktander
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
 
 .. only:: html
@@ -146,6 +166,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_munich
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the deterministic CapeCod method and shows the sensitivi...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_capecod.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_capecod
 .. raw:: html
 
     <div style='clear:both'></div>
