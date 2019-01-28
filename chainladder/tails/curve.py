@@ -23,18 +23,18 @@ class TailCurve(TailBase):
     errors : str ('raise' or 'ignore')
         Whether to raise an error or ignore observations that violate the
         distribution being fit.  The most common is ldfs < 1.0 will not work
-        in either the `exponential` or `inverse_power` fits.
+        in either the ``exponential`` or ``inverse_power`` fits.
 
     Attributes
     ----------
-    ldf_
-        ldf_ with tail applied.
-    cdf_
-        cdf_ with tail applied.
-    sigma_
-        sigma_ with tail factor applied.
-    std_err_
-        std_err_ with tail factor applied
+    ldf_ :
+        ldf with tail applied.
+    cdf_ :
+        cdf with tail applied.
+    sigma_ :
+        sigma with tail factor applied.
+    std_err_ :
+        std_err with tail factor applied
     """
     def __init__(self, curve='exponential', fit_period=slice(None, None, None),
                  extrap_periods=100, errors='ignore'):
@@ -44,7 +44,20 @@ class TailCurve(TailBase):
         self.errors = errors
 
     def fit(self, X, y=None, sample_weight=None):
-        """ fit method """
+        """Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the tail will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         super().fit(X, y, sample_weight)
         _y = self.ldf_.triangle[..., :-1].copy()
         _w = np.zeros(_y.shape)

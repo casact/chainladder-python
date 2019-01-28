@@ -4,7 +4,7 @@ Using Industry Patterns on a Company
 ====================================
 
 This example demonstrates how you can create development patterns at a
-particular `key` grain and apply them to another.
+particular ``index`` grain and apply them to another.
 """
 import chainladder as cl
 

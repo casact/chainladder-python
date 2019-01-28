@@ -36,6 +36,19 @@ class TailBase(BaseEstimator):
         return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):
+        """ Equivalent to fit(X).transform(X)
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs based on the model.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         self.fit(X)
         return self.transform(X)
 

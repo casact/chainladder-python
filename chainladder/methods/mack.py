@@ -50,6 +50,20 @@ class MackChainladder(Chainladder):
     """
 
     def fit(self, X, y=None, sample_weight=None):
+        """Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Data to which the model will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         super().fit(X, y, sample_weight)
         self._mack_recursion('param_risk')
         self._mack_recursion('process_risk')
@@ -58,8 +72,6 @@ class MackChainladder(Chainladder):
 
     @property
     def full_std_err_(self):
-        """
-        """
         obj = copy.deepcopy(self.X_)
         tri_array = self.full_triangle_.triangle
         weight_dict = {'regression': 2, 'volume': 1, 'simple': 0}

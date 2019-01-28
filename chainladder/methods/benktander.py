@@ -36,10 +36,16 @@ class Benktander(MethodBase):
         method. If sample_weight is already an apriori measure of ultimate,
         then use 1.0
 
+    Attributes
+    ----------
+    ultimate_ : Triangle
+        The ultimate losses per the method
+    ibnr_ : Triangle
+        The IBNR per the method
+
     References
     ----------
     .. [2] Benktander, G. (1976) An Approach to Credibility in Calculating IBNR for Casualty Excess Reinsurance. In The Actuarial Review, April 1976, p.7
-
     """
     def __init__(self, apriori=1.0, n_iters=1):
         self.apriori = apriori
@@ -51,22 +57,18 @@ class Benktander(MethodBase):
         Parameters
         ----------
         X : Triangle
-            The data used to compute the mean and standard deviation
-            used for later scaling along the features axis.
+            Loss data to which the model will be applied.
         y : None
             Ignored
         sample_weight : Triangle
             Required exposure to be used in the calculation.
 
-        Attributes
-        ----------
-        triangle :
-            returns **X**
-        ultimate_ :
-            The ultimate losses per the method
-        ibnr_ :
-            The IBNR per the method
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
         """
+
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.triangle

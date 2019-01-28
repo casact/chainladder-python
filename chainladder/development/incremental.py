@@ -20,6 +20,13 @@ class IncrementalAdditive(BaseEstimator):
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
 
+    Attributes
+    ----------
+    ldf_ : Triangle
+        The estimated loss development patterns
+    cdf_ : Triangle
+        The estimated cumulative development patterns
+
 
     """
     def __init__(self, trend=0.0, n_periods=-1):
@@ -27,6 +34,20 @@ class IncrementalAdditive(BaseEstimator):
         self.n_periods = n_periods
 
     def fit(self, X, y=None, sample_weight=None):
+        """Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the model will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         obj = X/sample_weight
         x = obj.trend(self.trend, axis='origin')
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
@@ -47,6 +68,18 @@ class IncrementalAdditive(BaseEstimator):
         return self
 
     def transform(self, X):
+        """ If X and self are of different shapes, align self to X, else
+        return self.
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         X.cdf_ = self.cdf_
         X.ldf_ = self.ldf_
         X.sigma_ = self.cdf_*0
@@ -54,10 +87,20 @@ class IncrementalAdditive(BaseEstimator):
         X.incremental_ = self.incremental_
         return X
 
-    def predict(self, X):
-        return self.transform(X)
-
     def fit_transform(self, X, y=None, sample_weight=None):
+        """ Equivalent to fit(X).transform(X)
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs based on the model.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         self.fit(X, y, sample_weight)
         return self.transform(X)
 

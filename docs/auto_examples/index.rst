@@ -9,7 +9,7 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can create development patterns at a particular `key` grain a...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can create development patterns at a particular ``index`` gra...">
 
 .. only:: html
 

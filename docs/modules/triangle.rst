@@ -46,11 +46,11 @@ own 2D triangle.  see :ref:`Slicing<slicing>`
 Inferring Dates when creating an instance
 -----------------------------------------
 When instantiating a :class:`Triangle`, the ``origin`` and ``development``
-arguments can take a `str` representing the column name in your pandas DataFrame
+arguments can take a ``str`` representing the column name in your pandas DataFrame
 that contains the relevant information.  Alternatively, the arguments can also
-take a `list` in the case where your DataFrame includes multiple columns that
+take a ``list`` in the case where your DataFrame includes multiple columns that
 represent the dimension, e.g. ``['accident_year','accident_quarter']`` can be
-supplied to create an `origin` dimension at the accident quarter grain.
+supplied to create an ``origin`` dimension at the accident quarter grain.
 
 **Example:**
    >>> import chainladder as cl
@@ -60,7 +60,7 @@ supplied to create an `origin` dimension at the accident quarter grain.
 Slicing and Boolean Indexing
 ----------------------------
 With a Triangle created, individual triangles can be sliced out of the object
-using pandas-style `loc`/`iloc` or boolean indexing.
+using pandas-style ``loc``/``iloc`` or boolean indexing.
 
 **Example:**
    >>> import chainladder as cl
@@ -72,7 +72,7 @@ using pandas-style `loc`/`iloc` or boolean indexing.
 .. note::
    Boolean indexing on non-index columns in pandas feels natural.  We've exposed
    the same syntax specifically for the index column(s) of the Triangle without the
-   need for `reset_index()` or trying to boolean-index on a `MultiIndex`. This is
+   need for ``reset_index()`` or trying to boolean-index on a ``MultiIndex``. This is
    a divergence from the pandas API.
 
 Changing Origin and Development Granularity
@@ -117,7 +117,7 @@ columns to your :class:`Triangle`.
 Aggregating Data
 ----------------
 Much like in pandas, you can aggregate multiple triangles within a :class:`Triangle`
-by using `sum()` which can optionally be coupled with `groupby()`
+by using ``sum()`` which can optionally be coupled with ``groupby()``.
 
 **Example:**
    >>> clrd = cl.load_dataset('clrd')

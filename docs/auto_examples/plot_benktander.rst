@@ -13,8 +13,8 @@ Benktander: Relationship between Chainladder and BornhuetterFerguson
 
 This example demonstrates the relationship between the Chainladder and
 BornhuetterFerguson methods by way fo the Benktander model. Each is a
-special case of the Benktander model where `n_iters = 1` for BornhuetterFerguson
-and as `n_iters` approaches infinity yields the chainladder.  As `n_iters`
+special case of the Benktander model where ``n_iters = 1`` for BornhuetterFerguson
+and as ``n_iters`` approaches infinity yields the chainladder.  As ``n_iters``
 increases the apriori selection becomes less relevant regardless of initial
 choice.
 
@@ -62,7 +62,7 @@ choice.
     plt.title('Benktander convergence to Chainladder')
     g = plt.ylabel('IBNR')
 
-**Total running time of the script:** ( 0 minutes  1.173 seconds)
+**Total running time of the script:** ( 0 minutes  1.416 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_benktander.py:

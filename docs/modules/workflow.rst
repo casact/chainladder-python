@@ -16,5 +16,5 @@ estimator, as a chain of transforms and estimators.
 GridSearch
 ==========
 The grid search provided by :class:`GridSearch` exhaustively generates
-candidates from a grid of parameter values specified with the `param_grid`
+candidates from a grid of parameter values specified with the ``param_grid``
 parameter.

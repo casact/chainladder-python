@@ -41,6 +41,20 @@ class CapeCod(MethodBase):
         self.decay = decay
 
     def fit(self, X, y=None, sample_weight=None):
+        """Fit the model with X.
+        
+        Parameters
+        ----------
+        X : Triangle-like
+            Loss data to which the model will be applied.
+        y : Ignored
+        sample_weight : Triangle-like
+            The exposure to be used in the method.
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.triangle

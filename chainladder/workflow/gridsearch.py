@@ -13,7 +13,6 @@ class GridSearch(BaseEstimator):
     estimator used.
     The parameters of the estimator used to apply these methods are optimized
     by cross-validated grid-search over a parameter grid.
-    Read more in the :ref:`User Guide <grid_search>`.
 
     Parameters
     ----------
@@ -40,7 +39,7 @@ class GridSearch(BaseEstimator):
     Attributes
     ----------
     results_ : DataFrame
-        A DataFrame with each param_grid key as a column and the `scoring`
+        A DataFrame with each param_grid key as a column and the ``scoring``
         score as the last column
     """
     def __init__(self, estimator, param_grid, scoring, verbose=0,
@@ -52,6 +51,18 @@ class GridSearch(BaseEstimator):
         self.error_score = error_score
 
     def fit(self, X, y=None, sample_weight=None):
+        """Fit the model with X.
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the tail will be applied.
+        y : Ignored
+        sample_weight : Ignored
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         if type(self.scoring) is not dict:
             scoring = dict(score=self.scoring)
         else:

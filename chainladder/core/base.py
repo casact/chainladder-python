@@ -87,7 +87,6 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     @property
     def shape(self):
-        ''' Returns 4D triangle shape '''
         return self.triangle.shape
 
     @property
@@ -155,15 +154,17 @@ class TriangleBase:
 
     @check_triangle_postcondition
     def incr_to_cum(self, inplace=False):
-        '''Method to convert an incremental triangle into a cumulative triangle.
+        """Method to convert an incremental triangle into a cumulative triangle.
 
-            Arguments:
-                inplace: bool
-                    Set to True will update the instance data attribute inplace
+        Parameters
+        ----------
+        inplace: bool
+            Set to True will update the instance data attribute inplace
 
-            Returns:
-                Updated instance of triangle accumulated along the origin
-        '''
+        Returns
+        -------
+            Updated instance of triangle accumulated along the origin
+        """
 
         if inplace:
             np.cumsum(np.nan_to_num(self.triangle), axis=3, out=self.triangle)
@@ -176,15 +177,17 @@ class TriangleBase:
 
     @check_triangle_postcondition
     def cum_to_incr(self, inplace=False):
-        '''Method to convert an cumlative triangle into a incremental triangle.
+        """Method to convert an cumlative triangle into a incremental triangle.
 
-            Arguments:
-                inplace: bool
-                    Set to True will update the instance data attribute inplace
+        Parameters
+        ----------
+            inplace: bool
+                Set to True will update the instance data attribute inplace
 
-            Returns:
-                Updated instance of triangle accumulated along the origin
-        '''
+        Returns
+        -------
+            Updated instance of triangle accumulated along the origin
+        """
 
         if inplace:
             temp = np.nan_to_num(self.triangle)[..., 1:] - \
@@ -206,7 +209,7 @@ class TriangleBase:
         ----------
         grain : str
             The grain to which you want your triangle converted, specified as
-            'O<x>D<y>' where <x> and <y> can take on values of `['Y', 'Q', 'M']`
+            'O<x>D<y>' where <x> and <y> can take on values of ``['Y', 'Q', 'M']``
             For example, 'OYDY' for Origin Year/Development Year, 'OQDM' for
             Origin quarter, etc.
         incremental : bool
@@ -244,8 +247,20 @@ class TriangleBase:
             return new_obj
 
     def trend(self, trend=0.0, axis=None):
-        '''  Allows for the trending along origin or development
-        '''
+        """  Allows for the trending along origin or development
+
+        Parameters
+        ----------
+        trend : float
+            The amount of the trend
+        axis : str ('origin' or 'development')
+            The axis along which to apply the trend factors.  The latest period
+            of the axis is the trend-to period.
+
+        Returns
+        -------
+            Triangle updated with multiplicative trend applied.
+        """
         axis = {'origin': -2, 'development': -1}.get(axis, None)
         if axis is None:
             if self.shape[-2] == 1 and self.shape[-1] != 1:
@@ -334,6 +349,13 @@ class TriangleBase:
     # ----------------------- Pandas Passthrus ----------------------- #
     # ---------------------------------------------------------------- #
     def to_frame(self, *args, **kwargs):
+        """ Converts a triangle to a pandas.DataFrame.  Requires an individual
+        index and column selection to appropriately grab the 2D DataFrame.
+
+        Returns
+        -------
+            pandas.DataFrame representation of the Triangle.
+        """
         if self.shape[:2] == (1, 1):
             return self._repr_format()
         else:

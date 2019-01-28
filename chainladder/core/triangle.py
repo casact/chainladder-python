@@ -31,22 +31,27 @@ class Triangle(TriangleBase):
 
     Attributes
     ----------
-    index
+    index : Series
         Represents all available levels of the index dimension.
-    columns
+    columns : Series
         Represents all available levels of the value dimension.
-    origin
+    origin : Series
         Represents all available levels of the origin dimension.
-    development
+    development : Series
         Represents all available levels of the development dimension.
+    shape : tuple
+        The 4D shape of the triangle instance
     link_ratio, age_to_age
         Set of age-to-age ratios for the triangle.
-    valuation_date
+    valuation_date : date
         The latest valuation date of the data
-    loc
-        pandas-style `loc` accessor
-    iloc
-        pandas-style `iloc` accessor
-
+    loc : Triangle
+        pandas-style ``loc`` accessor
+    iloc : Triangle
+        pandas-style ``iloc`` accessor
+    latest_diagonal : Triangle
+        The latest diagonal of the triangle
+    triangle : array
+        4D numpy array underlying the Triangle instance
     """
     pass
