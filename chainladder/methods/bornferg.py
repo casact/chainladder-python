@@ -19,6 +19,13 @@ class BornhuetterFerguson(MethodBase):
         method. If sample_weight is already an apriori measure of ultimate,
         then use 1.0
 
+    Attributes
+    ----------
+    ultimate_ : Triangle
+        The ultimate losses per the method
+    ibnr_ : Triangle
+        The IBNR per the method
+
     Examples
     --------
     Smoothing chainladder ultimates by using them as apriori figures in the
@@ -53,12 +60,16 @@ class BornhuetterFerguson(MethodBase):
         Parameters
         ----------
         X : Triangle
-            The data used to compute the mean and standard deviation
-            used for later scaling along the features axis.
+            Loss data to which the model will be applied.
         y : None
             Ignored
         sample_weight : Triangle
             Required exposure to be used in the calculation.
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight

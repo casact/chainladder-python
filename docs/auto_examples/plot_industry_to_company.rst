@@ -12,7 +12,7 @@ Using Industry Patterns on a Company
 ====================================
 
 This example demonstrates how you can create development patterns at a
-particular `key` grain and apply them to another.
+particular ``index`` grain and apply them to another.
 
 
 
@@ -56,7 +56,7 @@ particular `key` grain and apply them to another.
 
     print(diff.rename(development='Industry to Company LDF Diff'))
 
-**Total running time of the script:** ( 0 minutes  0.663 seconds)
+**Total running time of the script:** ( 0 minutes  0.602 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_industry_to_company.py:

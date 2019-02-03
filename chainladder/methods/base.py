@@ -28,10 +28,13 @@ class MethodBase(BaseEstimator):
         X : Triangle
             The data used to compute the mean and standard deviation
             used for later scaling along the features axis.
-        y : None
-            Ignored
-        sample_weight : None
-            ignored
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
         """
         self.X_ = self.validate_X(X)
         return self

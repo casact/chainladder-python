@@ -1,0 +1,22 @@
+
+
+Examples using ``chainladder.CapeCod``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the deterministic CapeCod method and shows the sensitivi...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_capecod.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_capecod.py`

@@ -9,6 +9,7 @@ Loss Development Patterns
 
 
 .. _dev:
+
 Basic Development
 ==================
 
@@ -16,6 +17,7 @@ Basic Development
 
 
 .. _incremental:
+
 Incremental Additive
 ====================
 
@@ -27,14 +29,15 @@ percentage of exposure, which we then use to square the triangle.
 
 .. topic:: References
 
-  .. [BS2010] T Boles and A Staudt, "On the Accuracy of Loss Reserving Methodology", CAS E-forum Fall 2010
+  .. [S2006] K Schmidt, "Methods and Models of Loss Reserving Based on Run–Off Triangles: A Unifying Survey"
 
 .. _munich:
+
 Munich Adjustment
 ==================
 
-:class:`MunichAdjustment` allows for correcting both paid and incurred development
-patterns for the ratio of paid-to-incurred.
+:class:`MunichAdjustment` combines the paid (P) and incurred (I) data types by taking the
+(P/I) ratio into account in its projections.
 
 .. topic:: References
 

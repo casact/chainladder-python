@@ -19,7 +19,6 @@ For reference on concepts repeated across the API, see glossary.
   :no-members:
   :no-inherited-members:
 
-**User guide:** See the :ref:`development_toc` section for further details.
 
 Classes
 -------
@@ -41,7 +40,6 @@ Classes
   :no-members:
   :no-inherited-members:
 
-**User guide:** See the :ref:`development_toc` section for further details.
 
 Classes
 -------
@@ -65,7 +63,6 @@ Classes
   :no-members:
   :no-inherited-members:
 
-**User guide:** See the :ref:`tails_toc` section for further details.
 
 Classes
 -------
@@ -88,7 +85,6 @@ Classes
    :no-members:
    :no-inherited-members:
 
-**User guide:** See the :ref:`methods_toc` section for further details.
 
 Classes
 -------
@@ -113,8 +109,6 @@ Classes
   :no-members:
   :no-inherited-members:
 
-**User guide:** See the :ref:`workflow_toc` section for further details.
-
 Classes
 -------
 .. currentmodule:: chainladder
@@ -134,8 +128,6 @@ Classes
 .. automodule:: chainladder.utils
    :no-members:
    :no-inherited-members:
-
-**User guide:** See the :ref:`utils_toc` section for further details.
 
 Classes
 -------

@@ -21,8 +21,8 @@ class Chainladder(MethodBase):
 
     Attributes
     ----------
-    triangle
-        returns **X**
+    X_
+        returns **X** used to fit the triangle
     ultimate_
         The ultimate losses per the method
     ibnr_

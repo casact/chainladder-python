@@ -48,7 +48,21 @@ class DevelopmentBase(BaseEstimator):
             return w*X.expand_dims(X.nan_triangle())
 
     def fit(self, X, y=None, sample_weight=None):
-        # Capture the fit inputs
+        """Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the munich adjustment will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+
         tri_array = X.triangle.copy()
         tri_array[tri_array == 0] = np.nan
         if type(self.average) is str:
@@ -87,15 +101,18 @@ class DevelopmentBase(BaseEstimator):
         return self
 
     def transform(self, X):
-        ''' If X and self are of different shapes, align self
-            to X, else return self
+        """ If X and self are of different shapes, align self to X, else
+        return self.
 
-            Returns:
-                X, residual - (k,v,o,d) original array
-                ldf, std_err, sigma - (k,v,1,d)
-                residual - (k,v,o,d)
-                latest_diagonal - (k,v,o,1)
-        '''
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         X_new = copy.deepcopy(X)
         X_new.std_err_ = self.std_err_
         X_new.cdf_ = self.cdf_
@@ -107,6 +124,19 @@ class DevelopmentBase(BaseEstimator):
         return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):
+        """ Equivalent to fit(X).transform(X)
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the munich adjustment will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         self.fit(X)
         return self.transform(X)
 

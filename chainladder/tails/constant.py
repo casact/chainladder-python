@@ -61,17 +61,17 @@ class TailConstant(TailBase):
         self.tail = tail
 
     def fit(self, X, y=None, sample_weight=None):
-        """Applies the given tail parameter to a set of LDFs.
-
+        """Fit the model with X.
         Parameters
         ----------
-        X : {Triangle}
-            The data used to compute the mean and standard deviation
-            used for later scaling along the features axis.
-        y :
-            Ignored
-        sample_weight :
-            Ignored
+        X : Triangle-like
+            Set of LDFs to which the tail will be applied.
+        y : Ignored
+        sample_weight : Ignored
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
         self.ldf_.triangle[..., -1] = self.ldf_.triangle[..., -1]*self.tail

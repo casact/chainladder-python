@@ -16,9 +16,9 @@ class MunichAdjustment(BaseEstimator):
     Parameters
     ----------
     paid_to_incurred : dict
-        A dictionary representing the `values` of paid and incurred triangles
-        where `values` are an appropriate selection from :class:`Triangle`
-        `.values`, such as ``{'paid':'incurred'}``
+        A dictionary representing the ``values`` of paid and incurred triangles
+        where ``values`` are an appropriate selection from :class:`Triangle`
+        ``.values``, such as ``{'paid':'incurred'}``
 
 
     """
@@ -26,6 +26,20 @@ class MunichAdjustment(BaseEstimator):
         self.paid_to_incurred = paid_to_incurred
 
     def fit(self, X, y=None, sample_weight=None):
+        """Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the munich adjustment will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         if X.__dict__.get('ldf_', None) is None:
             raise ValueError('Triangle must have LDFs.')
         self.p_to_i_X_ = self._get_p_to_i_object(X)
@@ -38,19 +52,38 @@ class MunichAdjustment(BaseEstimator):
         return self
 
     def transform(self, X):
+        """ If X and self are of different shapes, align self to X, else
+        return self.
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         X.cdf_ = self.cdf_
         X.ldf_ = self.ldf_
         return X
 
-    def predict(self, X):
-        return self.transform(X)
-
     def fit_transform(self, X, y=None, sample_weight=None):
+        """ Equivalent to fit(X).transform(X)
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs to which the munich adjustment will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
         self.fit(X, y, sample_weight)
         return self.transform(X)
-
-    def fit_predict(self, X, y=None, sample_weight=None):
-        return self.fit_transform(X)
 
     def _get_p_to_i_object(self, obj):
         paid = obj[list(self.paid_to_incurred.keys())[0]]
