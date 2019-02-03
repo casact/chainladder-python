@@ -29,7 +29,7 @@ percentage of exposure, which we then use to square the triangle.
 
 .. topic:: References
 
-  .. [BS2010] T Boles and A Staudt, "On the Accuracy of Loss Reserving Methodology", CAS E-forum Fall 2010
+  .. [S2006] K Schmidt, "Methods and Models of Loss Reserving Based on Run–Off Triangles: A Unifying Survey"
 
 .. _munich:
 

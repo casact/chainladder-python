@@ -35,7 +35,7 @@ def load_dataset(key):
                    'EarnedPremCeded', 'EarnedPremNet']
     if key.lower() in ['liab', 'auto']:
         index = ['lob']
-    if key.lower() in ['cc_sample']:
+    if key.lower() in ['cc_sample', 'ia_sample']:
         columns = ['loss', 'exposure']
     df = pd.read_csv(os.path.join(path, 'data', key.lower() + '.csv'))
     return Triangle(df, origin=origin, development=development,

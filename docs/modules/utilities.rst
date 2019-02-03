@@ -21,6 +21,7 @@ auto      Auto Data
 cc_sample Sample Insurance Data for Cape Cod Method in Struhuss
 clrd      CAS Loss Reserving DataBase
 genins    General Insurance Data used in Clark
+ia_sample Sample data for Incremental Additive Mthod in Schmidt
 liab      more data
 m3ir5     more data
 mcl       Sample insurance data for Munich Adjustment in Quarg
