@@ -1,0 +1,156 @@
+"""
+Bootstrap Chainladder
+=====================
+* Generalize to a full set of 4d triangles and not jsut a 1x1xmxn
+* Need to include DoF adjustment when hat matrix fails
+    - perhaps options for the user to select
+* Need to include n_periods
+* Need to handle first diagonal being cumulative
+* Need to develop heteroskedaticity adjustment
+* Need to conceptualize how this operates with tail classes
+
+
+
+"""
+from sklearn.base import BaseEstimator
+from sklearn.utils import check_random_state
+
+from chainladder.methods.chainladder import Chainladder
+from chainladder.development.base import Development
+import numpy as np
+import pandas as pd
+import copy
+
+
+class BootstrapDevelopment(BaseEstimator):
+    """ The Bootstrap Development Model
+
+    Parameters
+    ----------
+    n_sims : int (default=1000)
+        Number of simulations to generate
+    n_periods : integer, optional (default=-1)
+        number of origin periods to be used in the ldf average calculation. For
+        all origin periods, set n_periods=-1
+    process_dist: str optional (default='poisson')
+        type of averaging to use for ldf average calculation.  Options include
+        'poisson'.
+    random_state : int, RandomState instance or None, optional (default=None)
+        If int, random_state is the seed used by the random number generator;
+        If RandomState instance, random_state is the random number generator;
+        If None, the random number generator is the RandomState instance used
+        by np.random.
+
+    Attributes
+    ----------
+    ldf_ : Triangle
+        The estimated loss development patterns
+    cdf_ : Triangle
+        The estimated cumulative development patterns
+    incremental_ : Triangle
+        A triangle of full incremental values.
+
+
+    """
+    def __init__(self, n_sims=1000, n_periods=-1, process_dist='poisson',
+                 hat_adj=True, random_state=None):
+        self.n_sims = n_sims
+        self.n_periods = n_periods
+        self.process_dist = process_dist
+        self.hat_adj = hat_adj
+        self.random_state = random_state
+
+    def fit(self, X, y=None, sample_weight=None):
+        obj = copy.deepcopy(X)
+        obj = Chainladder().fit(obj)
+        # Works for only a single triangle - can we generalize this
+        exp_incr_triangle = obj.full_expectation_.cum_to_incr().triangle[0, 0, :, :-1]
+        exp_incr_triangle = np.nan_to_num(exp_incr_triangle)*obj.X_.nan_triangle()
+        self.design_matrix_ = self._get_design_matrix(X)
+        self.hat_ = self._get_hat(X, exp_incr_triangle)
+        self.resampled_triangles_, self.scale_ = self._get_simulation(X, exp_incr_triangle)
+        return self
+
+    def _get_simulation(self, X, exp_incr_triangle):
+        k_value = 1 # for ODP Poisson
+        if X.shape[:2] != (1,1):
+            raise ValueError('Only single index/column triangles are supported')
+        unscaled_residuals = ((X.cum_to_incr().triangle - exp_incr_triangle)/np.sqrt(np.abs(exp_incr_triangle**k_value)))[0,0,:,:]
+        standardized_residuals = self.hat_ * unscaled_residuals
+        pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
+        n_params = self.design_matrix_.shape[1]
+        degree_freedom = np.nansum(X.nan_triangle()) - n_params
+        # Shapland has a hetero adjustment to degree_freedom here
+        # He also adjusts the residuals for the etero adjustment
+        scale_phi = pearson_chi_sq/degree_freedom
+        k, v, o, d = X.shape
+        resids = np.reshape(standardized_residuals,(k,v,o*d))
+
+        adj_resid_dist = resids[np.isfinite(resids)]  # Missing k,v dimensions
+        # Suggestions from Using the ODP Bootstrap Model: A Practitioners Guide
+        adj_resid_dist = adj_resid_dist[adj_resid_dist!=0]
+        adj_resid_dist = adj_resid_dist - np.mean(adj_resid_dist)
+
+        random_state = check_random_state(self.random_state)
+        resampled_residual = np.array([random_state.choice(adj_resid_dist, size=exp_incr_triangle.shape,replace=True)*(exp_incr_triangle*0+1) for item in range(self.n_sims)])
+        resampled_residual = resampled_residual.reshape(self.n_sims, exp_incr_triangle.shape[0], exp_incr_triangle.shape[1])
+        b = np.repeat(np.expand_dims(exp_incr_triangle, 0), self.n_sims, 0)
+        resampled_triangles = (resampled_residual*np.sqrt(abs(b))+b).cumsum(axis=2)
+        resampled_triangles = np.swapaxes(np.expand_dims(resampled_triangles, 0), 0, 1)
+        obj = copy.deepcopy(X)
+        obj.kdims = np.arange(self.n_sims)
+        obj.triangle = resampled_triangles
+
+
+
+        return obj, scale_phi
+
+        # Shapland cites Verral and England 2002 in using gamma as a proxy for
+        # poisson because of computational efficiency even though poisson is
+        # the more theoretically correct choice.  Does this belong in the fit?
+
+        # Process variance adjustment
+        #lower_diagonal = (obj.nan_triangle()*0)
+        #lower_diagonal[np.isnan(lower_diagonal)]=1
+        #obj.triangle = Chainladder().fit(Development().fit_transform(obj)).full_expectation_.triangle[...,:-1]*lower_diagonal
+        #obj.nan_override = True
+        #if self.process_dist == 'gamma':
+        #    process_triangle = np.nan_to_num(np.array([np.random.gamma(shape=abs(item/scale_phi),scale=scale_phi)*np.sign(np.nan_to_num(item)) for item in sim_exp_incr_triangle]))
+        #if self.process_dist == 'od poisson':
+        #    process_triangle = np.nan_to_num(np.array([np.random.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
+        #IBNR = process_triangle.cumsum(axis=2)[:,:,-1]
+
+    def _get_design_matrix(self, X):
+        """ The design matrix used in hat matric adjustment (Shapland eq3.12)
+        """
+        w = X.nan_triangle()
+        arr = np.diag(w[:, 0])
+        intra_beta = np.zeros((w.shape[0], w.shape[1]-1))
+        arr = np.concatenate((arr, intra_beta), axis=1)
+        print(intra_beta.shape)
+        for i in range(w.shape[1]-1):
+            len_alpha = len(w[:, i+1][~np.isnan(w[:, i+1])])
+            intra_alpha = np.diag(w[:, i+1])[:len_alpha, :]
+            intra_beta[:, i] = 1
+            intra_beta = intra_beta[:len_alpha, :]
+            intra_arr = np.concatenate((intra_alpha, intra_beta), axis=1)
+            arr = np.concatenate((arr, intra_arr), axis=0)
+        return arr
+
+    def _get_hat(self, X, exp_incr_triangle):
+        """ The hat matrix adjustment (Shapland eq3.23)"""
+        weight_matrix = np.diag(pd.DataFrame(exp_incr_triangle).unstack().dropna().values)
+        design_matrix = self.design_matrix_
+        pd.DataFrame(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix))).to_clipboard()
+        hat = np.matmul(np.matmul(np.matmul(design_matrix,np.linalg.inv(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
+        hat = np.diagonal(np.sqrt(np.divide(1, 1-hat, where=(1-hat)!=0)))
+        total_length = X.nan_triangle().shape[0]
+        reshaped_hat = np.reshape(hat[:total_length],(1, total_length))
+        indices = np.nansum(X.nan_triangle(), axis=0).cumsum().astype(int)
+        for num, item in enumerate(indices[:-1]):
+            col_length = int(indices[num+1]-indices[num])
+            col = np.reshape(hat[int(indices[num]):int(indices[num+1])],(1,col_length))
+            nans = np.repeat(np.expand_dims(np.array([np.nan]),0),total_length-col_length, axis=1)
+            col = np.concatenate((col, nans), axis=1)
+            reshaped_hat = np.concatenate((reshaped_hat,col),axis=0)
+        return reshaped_hat.T

@@ -4,24 +4,24 @@ from functools import wraps
 import copy
 
 
-def check_triangle_postcondition(f):
-    ''' Post-condition check to ensure the integrity of the triangle object
-        remains intact
-    '''
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        X = f(*args, **kwargs)
-        if not hasattr(X, 'triangle'):
-            raise ValueError('X is missing triangle attribute')
-        if X.triangle.ndim != 4:
-            raise ValueError('X.triangle must be a 4-dimensional array')
-        if len(X.kdims) != X.triangle.shape[0]:
-            raise ValueError('X.index and X.triangle are misaligned')
-        if len(X.vdims) != X.triangle.shape[1]:
-            print(X.vdims, X.shape)
-            raise ValueError('X.columns and X.triangle are misaligned')
-        return X
-    return wrapper
+# def check_triangle_postcondition(f):
+#     ''' Post-condition check to ensure the integrity of the triangle object
+#         remains intact. (used for debugging)
+#     '''
+#     @wraps(f)
+#     def wrapper(*args, **kwargs):
+#         X = f(*args, **kwargs)
+#         if not hasattr(X, 'triangle'):
+#             raise ValueError('X is missing triangle attribute')
+#         if X.triangle.ndim != 4:
+#             raise ValueError('X.triangle must be a 4-dimensional array')
+#         if len(X.kdims) != X.triangle.shape[0]:
+#             raise ValueError('X.index and X.triangle are misaligned')
+#         if len(X.vdims) != X.triangle.shape[1]:
+#             print(X.vdims, X.shape)
+#             raise ValueError('X.columns and X.triangle are misaligned')
+#         return X
+#     return wrapper
 
 
 class TriangleBase:
@@ -112,7 +112,7 @@ class TriangleBase:
         return self.get_latest_diagonal()
 
     @property
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def link_ratio(self):
         obj = copy.deepcopy(self)
         temp = obj.triangle.copy()
@@ -133,7 +133,7 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def get_latest_diagonal(self, compress=True):
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
@@ -152,7 +152,7 @@ class TriangleBase:
         obj.triangle = diagonal
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
 
@@ -175,7 +175,7 @@ class TriangleBase:
             new_obj = copy.deepcopy(self)
             return new_obj.incr_to_cum(inplace=True)
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def cum_to_incr(self, inplace=False):
         """Method to convert an cumlative triangle into a incremental triangle.
 
@@ -201,7 +201,7 @@ class TriangleBase:
             new_obj = copy.deepcopy(self)
             return new_obj.cum_to_incr(inplace=True)
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def grain(self, grain='', incremental=False, inplace=False):
         """Changes the grain of a cumulative triangle.
 
@@ -405,7 +405,7 @@ class TriangleBase:
             other = other.triangle
         return other
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __add__(self, other):
         obj = copy.deepcopy(self)
         other = self._validate_arithmetic(other)
@@ -415,11 +415,11 @@ class TriangleBase:
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __radd__(self, other):
         return self if other == 0 else self.__add__(other)
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __sub__(self, other):
         obj = copy.deepcopy(self)
         other = self._validate_arithmetic(other)
@@ -430,7 +430,7 @@ class TriangleBase:
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __rsub__(self, other):
         obj = copy.deepcopy(self)
         other = self._validate_arithmetic(other)
@@ -444,17 +444,17 @@ class TriangleBase:
     def __len__(self):
         return self.shape[0]
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __neg__(self):
         obj = copy.deepcopy(self)
         obj.triangle = -obj.triangle
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __pos__(self):
         return self
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __mul__(self, other):
         obj = copy.deepcopy(self)
         other = self._validate_arithmetic(other)
@@ -464,11 +464,11 @@ class TriangleBase:
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __rmul__(self, other):
         return self if other == 1 else self.__mul__(other)
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __truediv__(self, other):
         obj = copy.deepcopy(self)
         other = self._validate_arithmetic(other)
@@ -477,7 +477,7 @@ class TriangleBase:
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def __rtruediv__(self, other):
         obj = copy.deepcopy(self)
         obj.triangle = other / self.triangle
@@ -528,7 +528,7 @@ class TriangleBase:
             self.obj = obj
             self.old_k_by_new_k = old_k_by_new_k
 
-        @check_triangle_postcondition
+        # @check_triangle_postcondition
         def sum(self, axis=1):
             self.obj.triangle = np.nansum((self.obj.triangle *
                                            self.old_k_by_new_k), axis=axis)
@@ -543,7 +543,7 @@ class TriangleBase:
         def __init__(self, obj):
             self.obj = obj
 
-        @check_triangle_postcondition
+        # @check_triangle_postcondition
         def get_idx(self, idx):
             obj = copy.deepcopy(self.obj)
             vdims = pd.Series(obj.vdims)
@@ -618,7 +618,7 @@ class TriangleBase:
         self.vdims = np.array(idx.columns.unique())
         self.triangle = np.append(self.triangle, value.triangle, axis=1)
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def append(self, obj, index):
         return_obj = copy.deepcopy(self)
         x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
@@ -630,14 +630,14 @@ class TriangleBase:
         return_obj.kdims = np.array(x.index.unique())
         return return_obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def _slice_origin(self, key):
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
         obj.triangle = obj.triangle[..., key, :]
         return obj
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def _slice_development(self, key):
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
@@ -764,7 +764,7 @@ class TriangleBase:
         tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
         return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
 
-    @check_triangle_postcondition
+    # @check_triangle_postcondition
     def set_params(self, **parameters):
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
