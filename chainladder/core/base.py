@@ -94,6 +94,7 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     # ----------------------- Class Properties ----------------------- #
     # ---------------------------------------------------------------- #
+    def _len_check(self, x, y):
         if len(x) != len(y):
             raise ValueError(f'Length mismatch: Expected axis has ',
                              f'{len(x)} elements, new values have',
