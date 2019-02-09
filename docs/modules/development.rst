@@ -42,3 +42,18 @@ Munich Adjustment
 .. topic:: References
 
   .. [QM2004] G Quarg, Gerhard, and T Mack, "Munich Chain Ladder: A Reserving Method that Reduces the Gap between IBNR"
+
+
+.. _bootstrap:
+
+Bootstrap Over-dispersed Poisson Sample
+========================================
+
+:class:`BootstrapODPSample` simulates new triangles according to the ODP Bootstrap
+model. The class only simulates new triangles from which you can generate
+statistics about parameter uncertainty. Estimates of ultimate along with process
+uncertainty would occur with the various :ref:`IBNR Models<methods_toc>`.
+
+.. topic:: References
+
+  .. [SM2016] M Shapland, "Using the ODP Bootstrap Model: A Practitioner's Guide", CAS Monograph No.4

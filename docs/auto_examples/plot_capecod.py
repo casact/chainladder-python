@@ -16,7 +16,7 @@ sns.set_style('whitegrid')
 # Grab data
 ppauto_loss = cl.load_dataset('clrd').groupby('LOB').sum().loc['ppauto']['CumPaidLoss']
 ppauto_prem = cl.load_dataset('clrd').groupby('LOB').sum() \
-                .loc['ppauto']['EarnedPremDIR'].latest_diagonal.rename(development='Premium')
+                .loc['ppauto']['EarnedPremDIR'].latest_diagonal.rename('development',['Premium'])
 
 def get_apriori(decay, trend):
     """ Function to grab apriori array from cape cod method """

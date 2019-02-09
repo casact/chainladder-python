@@ -16,4 +16,4 @@ allstate_industry_cl = cl.Chainladder().fit(industry).predict(clrd).ultimate_.lo
 allstate_company_cl = cl.Chainladder().fit(clrd.loc['Allstate Ins Co Grp']).ultimate_
 diff = (allstate_industry_cl - allstate_company_cl)
 
-print(diff.rename(development='Industry to Company LDF Diff'))
+print(diff.rename('development',['Industry to Company LDF Diff']))

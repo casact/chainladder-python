@@ -3,6 +3,14 @@ import numpy as np
 from functools import wraps
 import copy
 
+# Pass through pd.DataFrame methods for a (1,1,o,d) shaped triangle:
+df_passthru = ['to_clipboard', 'to_csv', 'to_pickle', 'to_excel', 'to_json',
+               'to_html', 'to_dict', 'unstack', 'pivot', 'drop_duplicates',
+               'describe', 'melt']
+
+# Aggregate method overridden to the 4D Triangle Shape
+agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod', 'var', 'std']
+agg_funcs = {item: 'nan'+item for item in agg_funcs}
 
 # def check_triangle_postcondition(f):
 #     ''' Post-condition check to ensure the integrity of the triangle object
@@ -22,6 +30,7 @@ import copy
 #             raise ValueError('X.columns and X.triangle are misaligned')
 #         return X
 #     return wrapper
+
 
 
 class TriangleBase:
@@ -70,8 +79,8 @@ class TriangleBase:
             self.vdims = np.array(data_agg.columns.unique())
         self.valuation_date = development_date.max()
         self.key_labels = index
-        self.iloc = TriangleBase.Ilocation(self)
-        self.loc = TriangleBase.Location(self)
+        self.iloc = _Ilocation(self)
+        self.loc = _Location(self)
         # Create 4D Triangle
         triangle = \
             np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
@@ -85,6 +94,11 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     # ----------------------- Class Properties ----------------------- #
     # ---------------------------------------------------------------- #
+        if len(x) != len(y):
+            raise ValueError(f'Length mismatch: Expected axis has ',
+                             f'{len(x)} elements, new values have',
+                             f' {len(y)} elements')
+
     @property
     def shape(self):
         return self.triangle.shape
@@ -95,17 +109,31 @@ class TriangleBase:
 
     @property
     def columns(self):
+        return self.idx_table().columns
         return pd.Series(list(self.vdims), name='columns').to_frame()
+
+    @columns.setter
+    def columns(self, value):
+        self._len_check(self.columns, value)
+        self.vdims = [value] if type(value) is str else value
 
     @property
     def origin(self):
         return pd.DatetimeIndex(self.odims, name='origin')
-        return pd.Series(self.odims, name='origin') \
-                 .dt.to_period(self.origin_grain).to_frame()
+
+    @origin.setter
+    def origin(self, value):
+        self._len_check(self.origin, value)
+        self.odims = [value] if type(value) is str else value
 
     @property
     def development(self):
         return pd.Series(list(self.ddims), name='development').to_frame()
+
+    @development.setter
+    def development(self, value):
+        self._len_check(self.development, value)
+        self.ddims = [value] if type(value) is str else value
 
     @property
     def latest_diagonal(self):
@@ -277,15 +305,15 @@ class TriangleBase:
         obj.triangle = obj.triangle*trend
         return obj
 
-    def rename(self, index=None, columns=None, origin=None, development=None):
-        if index is not None:
-            self.kdims = [index] if type(index) is str else index
-        if columns is not None:
-            self.vdims = [columns] if type(columns) is str else columns
-        if origin is not None:
-            self.odims = [origin] if type(origin) is str else origin
-        if development is not None:
-            self.ddims = [development] if type(development) is str else development
+    def rename(self, axis, value):
+        if axis == 'index' or axis == 0:
+            self.index = value
+        if axis == 'columns' or axis == 1:
+            self.columns = value
+        if axis == 'origin' or axis == 2:
+            self.origin = value
+        if axis == 'development' or axis == 3:
+            self.development = value
         return self
 
     # ---------------------------------------------------------------- #
@@ -356,38 +384,26 @@ class TriangleBase:
         -------
             pandas.DataFrame representation of the Triangle.
         """
+        axes = [num for num, item in enumerate(self.shape) if item > 1]
         if self.shape[:2] == (1, 1):
             return self._repr_format()
+        elif len(axes) == 2:
+            tri = np.squeeze(self.triangle)
+            axes_lookup = {0: self.kdims, 1: self.vdims,
+                           2: self.odims, 3: self.ddims}
+            return pd.DataFrame(tri, index=axes_lookup[axes[0]],
+                                columns=axes_lookup[axes[1]])
         else:
             raise ValueError('len(index) and len(columns) must be 1.')
 
-    def to_clipboard(self, *args, **kwargs):
+    def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
-        self.to_frame().to_clipboard(*args, **kwargs)
+        return self.to_frame().plot(*args, **kwargs)
 
-    def to_csv(self, *args, **kwargs):
+    @property
+    def T(self):
         """ Passthrough of pandas functionality """
-        self.to_frame().to_csv(*args, **kwargs)
-
-    def to_pickle(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
-        self.to_frame().to_pickle(*args, **kwargs)
-
-    def to_excel(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
-        self.to_frame().to_excel(*args, **kwargs)
-
-    def to_json(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
-        self.to_frame().to_json(*args, **kwargs)
-
-    def to_html(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
-        self.to_frame().to_html(*args, **kwargs)
-
-    def unstack(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
-        return self.to_frame().unstack(*args, **kwargs)
+        return self.to_frame().T
 
     # ---------------------------------------------------------------- #
     # ---------------------- Arithmetic Overload --------------------- #
@@ -491,85 +507,15 @@ class TriangleBase:
         else:
             return False
 
-    def sum(self, *args, **kwargs):
+    def quantile(self, q, *args, **kwargs):
         if self.shape[:2] == (1, 1):
-            return self.to_frame().sum(*args, **kwargs)
-        return TriangleBase.TriangleGroupBy(self, by=-1).sum(axis=1)
+            return self.to_frame().quantile(q, *args, **kwargs)
+        return _TriangleGroupBy(self, by=-1).quantile(q, axis=1)
 
     def groupby(self, by, *args, **kwargs):
         if self.shape[:2] == (1, 1):
             return self.to_frame().groupby(*args, **kwargs)
-        return TriangleBase.TriangleGroupBy(self, by)
-
-    class TriangleGroupBy:
-        def __init__(self, old_obj, by):
-            obj = copy.deepcopy(old_obj)
-            v1_len = len(obj.index.index)
-            if by != -1:
-                indices = obj.index.groupby(by).indices
-                new_index = obj.index.groupby(by).count().index
-            else:
-                indices = {'All': np.arange(len(obj.index))}
-                new_index = pd.Index(['All'], name='All')
-            groups = list(indices.values())
-            v2_len = len(groups)
-            old_k_by_new_k = np.zeros((v1_len, v2_len))
-            for num, item in enumerate(groups):
-                old_k_by_new_k[:, num][item] = 1
-            old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
-            for i in range(3):
-                old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
-            new_tri = obj.triangle
-            new_tri = np.repeat(np.expand_dims(new_tri, 0), v2_len, 0)
-
-            obj.triangle = new_tri
-            obj.kdims = np.array(list(new_index))
-            obj.key_labels = list(new_index.names)
-            self.obj = obj
-            self.old_k_by_new_k = old_k_by_new_k
-
-        # @check_triangle_postcondition
-        def sum(self, axis=1):
-            self.obj.triangle = np.nansum((self.obj.triangle *
-                                           self.old_k_by_new_k), axis=axis)
-            self.obj.triangle[self.obj.triangle == 0] = np.nan
-            return self.obj
-
-    # ---------------------------------------------------------------- #
-    # ----------------------Slicing and indexing---------------------- #
-    # ---------------------------------------------------------------- #
-    class LocBase:
-        ''' Base class for pandas style indexing '''
-        def __init__(self, obj):
-            self.obj = obj
-
-        # @check_triangle_postcondition
-        def get_idx(self, idx):
-            obj = copy.deepcopy(self.obj)
-            vdims = pd.Series(obj.vdims)
-            obj.kdims = np.array(idx.index.unique())
-            obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
-            obj.key_labels = list(idx.index.names)
-            obj.iloc = TriangleBase.Ilocation(obj)
-            obj.loc = TriangleBase.Location(obj)
-            idx_slice = np.array(idx).flatten()
-            x = tuple([np.unique(np.array(item))
-                       for item in list(zip(*idx_slice))])
-            obj.triangle = obj.triangle[x[0]][:, x[1]]
-            obj.triangle[obj.triangle == 0] = np.nan
-            return obj
-
-    class Location(LocBase):
-        def __getitem__(self, key):
-            idx = self.obj.idx_table().loc[key]
-            idx = self.obj.idx_table_format(idx)
-            return self.get_idx(idx)
-
-    class Ilocation(LocBase):
-        def __getitem__(self, key):
-            idx = self.obj.idx_table().iloc[key]
-            idx = self.obj.idx_table_format(idx)
-            return self.get_idx(idx)
+        return _TriangleGroupBy(self, by)
 
     def idx_table_format(self, idx):
         if type(idx) is pd.Series:
@@ -609,7 +555,7 @@ class TriangleBase:
             return self.index[key]
         idx = self.idx_table()[key]
         idx = self.idx_table_format(idx)
-        return TriangleBase.LocBase(self).get_idx(idx)
+        return _LocBase(self).get_idx(idx)
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
@@ -877,3 +823,128 @@ class TriangleBase:
         # The olf odims
         new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
         return new_tri, o
+
+
+# ---------------------------------------------------------------- #
+# ----------------------Slicing and indexing---------------------- #
+# ---------------------------------------------------------------- #
+class _LocBase:
+    ''' Base class for pandas style indexing '''
+    def __init__(self, obj):
+        self.obj = obj
+
+    # @check_triangle_postcondition
+    def get_idx(self, idx):
+        obj = copy.deepcopy(self.obj)
+        vdims = pd.Series(obj.vdims)
+        obj.kdims = np.array(idx.index.unique())
+        obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
+        obj.key_labels = list(idx.index.names)
+        obj.iloc = _Ilocation(obj)
+        obj.loc = _Location(obj)
+        idx_slice = np.array(idx).flatten()
+        x = tuple([np.unique(np.array(item))
+                   for item in list(zip(*idx_slice))])
+        obj.triangle = obj.triangle[x[0]][:, x[1]]
+        obj.triangle[obj.triangle == 0] = np.nan
+        return obj
+
+
+class _Location(_LocBase):
+    def __getitem__(self, key):
+        idx = self.obj.idx_table().loc[key]
+        idx = self.obj.idx_table_format(idx)
+        return self.get_idx(idx)
+
+
+class _Ilocation(_LocBase):
+    def __getitem__(self, key):
+        idx = self.obj.idx_table().iloc[key]
+        idx = self.obj.idx_table_format(idx)
+        return self.get_idx(idx)
+
+# ---------------------------------------------------------------- #
+# ---------------------Groupby Functionality---------------------- #
+# ---------------------------------------------------------------- #
+class _TriangleGroupBy:
+    def __init__(self, old_obj, by):
+        obj = copy.deepcopy(old_obj)
+        v1_len = len(obj.index.index)
+        if by != -1:
+            indices = obj.index.groupby(by).indices
+            new_index = obj.index.groupby(by).count().index
+        else:
+            indices = {'All': np.arange(len(obj.index))}
+            new_index = pd.Index(['All'], name='All')
+        groups = list(indices.values())
+        v2_len = len(groups)
+        old_k_by_new_k = np.zeros((v1_len, v2_len))
+        for num, item in enumerate(groups):
+            old_k_by_new_k[:, num][item] = 1
+        old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
+        for i in range(3):
+            old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
+        new_tri = obj.triangle
+        new_tri = np.repeat(np.expand_dims(new_tri, 0), v2_len, 0)
+
+        obj.triangle = new_tri
+        obj.kdims = np.array(list(new_index))
+        obj.key_labels = list(new_index.names)
+        self.obj = obj
+        self.old_k_by_new_k = old_k_by_new_k
+
+    def quantile(self, q, axis=1, *args, **kwargs):
+        x = self.obj.triangle*self.old_k_by_new_k
+        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == x.shape[1]
+        x = np.where(ignore_vector, 0, x)
+        self.obj.triangle = \
+            getattr(np, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
+        self.obj.triangle[self.obj.triangle == 0] = np.nan
+        return self.obj
+# ---------------------------------------------------------------- #
+# ------------------------- Meta methods ------------------------- #
+# ---------------------------------------------------------------- #
+
+def set_method(cls, func, k):
+    ''' Assigns methods to a class '''
+    func.__doc__ = f"Refer to pandas for ``{k}`` functionality."
+    func.__name__ = k
+    setattr(cls, func.__name__, func)
+
+
+def add_triangle_agg_func(cls, k, v):
+    ''' Aggregate Overrides in Triangle '''
+    def agg_func(self, *args, **kwargs):
+        if self.shape[:2] == (1, 1):
+            return getattr(pd.DataFrame, k)(self.to_frame(), *args, **kwargs)
+        else:
+            return getattr(_TriangleGroupBy(self, by=-1), k)(axis=1)
+    set_method(cls, agg_func, k)
+
+
+def add_groupby_agg_func(cls, k, v):
+    ''' Aggregate Overrides in GroupBy '''
+    def agg_func(self, axis=1, *args, **kwargs):
+        x = self.obj.triangle*self.old_k_by_new_k
+        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == x.shape[1]
+        x = np.where(ignore_vector, 0, x)
+        self.obj.triangle = \
+            getattr(np, v)(x, axis=1, *args, **kwargs)
+        self.obj.triangle[self.obj.triangle == 0] = np.nan
+        return self.obj
+    set_method(cls, agg_func, k)
+
+
+def add_df_passthru(cls, k):
+    '''Pass Through of pandas functionality '''
+    def df_passthru(self, *args, **kwargs):
+        return getattr(pd.DataFrame, k)(self.to_frame(), *args, **kwargs)
+    set_method(cls, df_passthru, k)
+
+
+for k, v in agg_funcs.items():
+    add_triangle_agg_func(TriangleBase, k, v)
+    add_groupby_agg_func(_TriangleGroupBy, k, v)
+
+for item in df_passthru:
+    add_df_passthru(TriangleBase, item)

@@ -51,7 +51,7 @@
         <strong>Applications</strong>: comprehensive library of development techniques</br>
         <strong>Classes</strong>:&nbsp;
 
-    :ref:`Development<dev>`, :ref:`MunichAdjustment<munich>`, :ref:`IncrementalAdditive<incremental>`, ...
+    :ref:`Development<dev>`, :ref:`MunichAdjustment<munich>`, :ref:`BootstrapODPSample<bootstrap>`, ...
 
     .. raw:: html
 

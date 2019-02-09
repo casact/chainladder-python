@@ -4,26 +4,24 @@ Bootstrap Chainladder
 * Generalize to a full set of 4d triangles and not jsut a 1x1xmxn
 * Need to include DoF adjustment when hat matrix fails
     - perhaps options for the user to select
-* Need to include n_periods
 * Need to handle first diagonal being cumulative
-* Need to develop heteroskedaticity adjustment
+* Need to develop heteroskedasticity adjustment
 * Need to conceptualize how this operates with tail classes
 
-
-
 """
-from sklearn.base import BaseEstimator
+
 from sklearn.utils import check_random_state
 
 from chainladder.methods.chainladder import Chainladder
-from chainladder.development.base import Development
+from chainladder.development.base import DevelopmentBase, Development
 import numpy as np
 import pandas as pd
 import copy
 
 
-class BootstrapDevelopment(BaseEstimator):
-    """ The Bootstrap Development Model
+class BootstrapODPSample(DevelopmentBase):
+    """ Class to generate bootstrap samples of triangles.  Currently this Only
+        supports 'single' triangles (single index and single column).
 
     Parameters
     ----------
@@ -32,9 +30,6 @@ class BootstrapDevelopment(BaseEstimator):
     n_periods : integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    process_dist: str optional (default='poisson')
-        type of averaging to use for ldf average calculation.  Options include
-        'poisson'.
     random_state : int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
@@ -43,39 +38,41 @@ class BootstrapDevelopment(BaseEstimator):
 
     Attributes
     ----------
-    ldf_ : Triangle
-        The estimated loss development patterns
-    cdf_ : Triangle
-        The estimated cumulative development patterns
-    incremental_ : Triangle
-        A triangle of full incremental values.
-
-
+    resampled_triangles_ : Triangle
+        A set of triangles represented by each simulation
+    scale_ :
+        The scale parameter to be used in generating process risk
     """
-    def __init__(self, n_sims=1000, n_periods=-1, process_dist='poisson',
+    def __init__(self, n_sims=1000, n_periods=-1,
                  hat_adj=True, random_state=None):
         self.n_sims = n_sims
         self.n_periods = n_periods
-        self.process_dist = process_dist
         self.hat_adj = hat_adj
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
         obj = copy.deepcopy(X)
+        obj = Development(n_periods=self.n_periods).fit_transform(obj)
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
-        exp_incr_triangle = obj.full_expectation_.cum_to_incr().triangle[0, 0, :, :-1]
-        exp_incr_triangle = np.nan_to_num(exp_incr_triangle)*obj.X_.nan_triangle()
+        exp_incr_triangle = obj.full_expectation_ \
+                               .cum_to_incr().triangle[0, 0, :, :-1]
+        exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
+            obj.X_.nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)
         self.hat_ = self._get_hat(X, exp_incr_triangle)
-        self.resampled_triangles_, self.scale_ = self._get_simulation(X, exp_incr_triangle)
+        self.resampled_triangles_, self.scale_ = \
+            self._get_simulation(X, exp_incr_triangle)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
-        k_value = 1 # for ODP Poisson
-        if X.shape[:2] != (1,1):
-            raise ValueError('Only single index/column triangles are supported')
-        unscaled_residuals = ((X.cum_to_incr().triangle - exp_incr_triangle)/np.sqrt(np.abs(exp_incr_triangle**k_value)))[0,0,:,:]
+        k_value = 1  # for ODP Poisson
+        if X.shape[:2] != (1, 1):
+            raise ValueError('Only single index/column triangles are ',
+                             'supported')
+        unscaled_residuals = \
+            ((X.cum_to_incr().triangle - exp_incr_triangle) /
+             np.sqrt(np.abs(exp_incr_triangle**k_value)))[0, 0, ...]
         standardized_residuals = self.hat_ * unscaled_residuals
         pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
         n_params = self.design_matrix_.shape[1]
@@ -84,25 +81,26 @@ class BootstrapDevelopment(BaseEstimator):
         # He also adjusts the residuals for the etero adjustment
         scale_phi = pearson_chi_sq/degree_freedom
         k, v, o, d = X.shape
-        resids = np.reshape(standardized_residuals,(k,v,o*d))
+        resids = np.reshape(standardized_residuals, (k, v, o*d))
 
         adj_resid_dist = resids[np.isfinite(resids)]  # Missing k,v dimensions
         # Suggestions from Using the ODP Bootstrap Model: A Practitioners Guide
-        adj_resid_dist = adj_resid_dist[adj_resid_dist!=0]
+        adj_resid_dist = adj_resid_dist[adj_resid_dist != 0]
         adj_resid_dist = adj_resid_dist - np.mean(adj_resid_dist)
 
         random_state = check_random_state(self.random_state)
-        resampled_residual = np.array([random_state.choice(adj_resid_dist, size=exp_incr_triangle.shape,replace=True)*(exp_incr_triangle*0+1) for item in range(self.n_sims)])
-        resampled_residual = resampled_residual.reshape(self.n_sims, exp_incr_triangle.shape[0], exp_incr_triangle.shape[1])
+        resampled_residual = [random_state.choice(adj_resid_dist, size=exp_incr_triangle.shape, replace=True)*(exp_incr_triangle*0+1)
+                              for item in range(self.n_sims)]
+        resampled_residual = np.array(resampled_residual) \
+                               .reshape(self.n_sims, exp_incr_triangle.shape[0],
+                                        exp_incr_triangle.shape[1])
+        resampled_residual = resampled_residual
         b = np.repeat(np.expand_dims(exp_incr_triangle, 0), self.n_sims, 0)
-        resampled_triangles = (resampled_residual*np.sqrt(abs(b))+b).cumsum(axis=2)
+        resampled_triangles = (resampled_residual*np.sqrt(abs(b))+b).cumsum(2)
         resampled_triangles = np.swapaxes(np.expand_dims(resampled_triangles, 0), 0, 1)
         obj = copy.deepcopy(X)
         obj.kdims = np.arange(self.n_sims)
         obj.triangle = resampled_triangles
-
-
-
         return obj, scale_phi
 
         # Shapland cites Verral and England 2002 in using gamma as a proxy for
@@ -115,9 +113,9 @@ class BootstrapDevelopment(BaseEstimator):
         #obj.triangle = Chainladder().fit(Development().fit_transform(obj)).full_expectation_.triangle[...,:-1]*lower_diagonal
         #obj.nan_override = True
         #if self.process_dist == 'gamma':
-        #    process_triangle = np.nan_to_num(np.array([np.random.gamma(shape=abs(item/scale_phi),scale=scale_phi)*np.sign(np.nan_to_num(item)) for item in sim_exp_incr_triangle]))
+        #    process_triangle = np.nan_to_num(np.array([random_state.gamma(shape=abs(item/scale_phi),scale=scale_phi)*np.sign(np.nan_to_num(item)) for item in sim_exp_incr_triangle]))
         #if self.process_dist == 'od poisson':
-        #    process_triangle = np.nan_to_num(np.array([np.random.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
+        #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
         #IBNR = process_triangle.cumsum(axis=2)[:,:,-1]
 
     def _get_design_matrix(self, X):
@@ -127,7 +125,6 @@ class BootstrapDevelopment(BaseEstimator):
         arr = np.diag(w[:, 0])
         intra_beta = np.zeros((w.shape[0], w.shape[1]-1))
         arr = np.concatenate((arr, intra_beta), axis=1)
-        print(intra_beta.shape)
         for i in range(w.shape[1]-1):
             len_alpha = len(w[:, i+1][~np.isnan(w[:, i+1])])
             intra_alpha = np.diag(w[:, i+1])[:len_alpha, :]
@@ -154,3 +151,24 @@ class BootstrapDevelopment(BaseEstimator):
             col = np.concatenate((col, nans), axis=1)
             reshaped_hat = np.concatenate((reshaped_hat,col),axis=0)
         return reshaped_hat.T
+
+    def _get_hetero_adjustment(self):
+        pass
+
+    def transform(self, X):
+        """ If X and self are of different shapes, align self to X, else
+        return self.
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
+        X_new = copy.deepcopy(X)
+        X_new = self.resampled_triangles_
+        X_new.scale_ = self.scale_
+        return X_new

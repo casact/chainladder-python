@@ -50,14 +50,17 @@ class GridSearch(BaseEstimator):
         self.verbose = verbose
         self.error_score = error_score
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None, **fit_params):
         """Fit the model with X.
+
         Parameters
         ----------
         X : Triangle-like
             Set of LDFs to which the tail will be applied.
         y : Ignored
-        sample_weight : Ignored
+        fit_params : (optional) dict of string -> object
+            Parameters passed to the ``fit`` method of the estimator
+
         Returns
         -------
         self : object
@@ -71,7 +74,7 @@ class GridSearch(BaseEstimator):
         results_ = []
         for num, item in enumerate(grid):
             est = copy.deepcopy(self.estimator).set_params(**item)
-            model = est.fit(X, y, sample_weight)
+            model = est.fit(X, y, **fit_params)
             for score in scoring.keys():
                 item[score] = scoring[score](model)
             results_.append(item)

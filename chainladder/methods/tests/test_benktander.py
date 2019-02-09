@@ -21,7 +21,7 @@ def test_benktander_to_chainladder(data, atol):
 
 def test_bf_eq_cl_when_using_cl_apriori():
     cl_ult = cl.Chainladder().fit(cl.load_dataset('quarterly')).ultimate_
-    cl_ult.rename(development=['apriori'])
+    cl_ult.rename('development', ['apriori'])
     bf_ult = cl.BornhuetterFerguson().fit(cl.load_dataset('quarterly'),
                                           sample_weight=cl_ult).ultimate_
     assert_allclose(cl_ult.triangle, bf_ult.triangle, atol=1e-5)

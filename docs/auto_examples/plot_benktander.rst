@@ -40,7 +40,7 @@ choice.
     clrd = cl.load_dataset('clrd')
     medmal_paid = clrd.groupby('LOB').sum().loc['medmal']['CumPaidLoss']
     medmal_prem = clrd.groupby('LOB').sum().loc['medmal']['EarnedPremDIR'].latest_diagonal
-    medmal_prem.rename(development='premium')
+    medmal_prem.rename('development', ['premium'])
 
     # Generate LDFs and Tail Factor
     medmal_paid = cl.Development().fit_transform(medmal_paid)
@@ -62,7 +62,7 @@ choice.
     plt.title('Benktander convergence to Chainladder')
     g = plt.ylabel('IBNR')
 
-**Total running time of the script:** ( 0 minutes  1.416 seconds)
+**Total running time of the script:** ( 0 minutes  1.229 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_benktander.py:
