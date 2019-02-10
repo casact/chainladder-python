@@ -267,6 +267,7 @@ class TriangleBase:
             self.odims = np.unique(o)
             self.origin_grain = origin_grain
             self.development_grain = development_grain
+            self.triangle = new_tri
             self.triangle = self._slide(new_tri, direction='l')
             self.triangle[self.triangle == 0] = np.nan
             return self
@@ -806,6 +807,7 @@ class TriangleBase:
             o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
         else:
             o = self.odims
+
         # Get unique new origin array
         o_new = np.unique(o)
         # Make it 2D so we have an old to new map
@@ -821,7 +823,7 @@ class TriangleBase:
         new_tri = np.repeat(np.expand_dims(orig, axis=-1),
                             o_bool.shape[-1], axis=-1)
         # Multiply the triangle by the boolean array and aggregate out
-        # The olf odims
+        # The old odims
         new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
         return new_tri, o
 
