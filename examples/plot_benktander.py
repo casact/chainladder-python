@@ -20,7 +20,7 @@ sns.set_style('whitegrid')
 clrd = cl.load_dataset('clrd')
 medmal_paid = clrd.groupby('LOB').sum().loc['medmal']['CumPaidLoss']
 medmal_prem = clrd.groupby('LOB').sum().loc['medmal']['EarnedPremDIR'].latest_diagonal
-medmal_prem.rename(development='premium')
+medmal_prem.rename('development', ['premium'])
 
 # Generate LDFs and Tail Factor
 medmal_paid = cl.Development().fit_transform(medmal_paid)

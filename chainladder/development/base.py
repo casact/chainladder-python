@@ -10,6 +10,63 @@ from chainladder import WeightedRegression
 
 
 class DevelopmentBase(BaseEstimator):
+    def fit_transform(self, X, y=None, sample_weight=None):
+        """ Equivalent to fit(X).transform(X)
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Set of LDFs based on the model.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
+        self.fit(X, y, sample_weight)
+        return self.transform(X)
+
+    @property
+    def cdf_(self):
+        if self.__dict__.get('ldf_', None) is None:
+            return
+        else:
+            obj = copy.deepcopy(self.ldf_)
+            cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, -1), -1), -1)
+            obj.triangle = cdf_
+            return obj
+
+
+
+class Development(DevelopmentBase):
+    """ A Transformer that allows for basic loss development pattern selection.
+
+    Parameters
+    ----------
+    n_periods : integer, optional (default=-1)
+        number of origin periods to be used in the ldf average calculation. For
+        all origin periods, set n_periods=-1
+    average : string, optional (default='volume')
+        type of averaging to use for ldf average calculation.  Options include
+        'volume', 'simple', and 'regression'
+    sigma_interpolation : string optional (default='log-linear')
+        Options include 'log-linear' and 'mack'
+
+    Attributes
+    ----------
+    ldf_ : Triangle
+        The estimated loss development patterns
+    cdf_ : Triangle
+        The estimated cumulative development patterns
+    sigma_ : Triangle
+        Sigma of the ldf regression
+    std_err_ : Triangle
+        Std_err of the ldf regression
+    w_ : Triangle
+        The weight used in the ldf regression
+
+    """
     def __init__(self, n_periods=-1, average='volume',
                  sigma_interpolation='log-linear'):
         self.n_periods = n_periods
@@ -123,33 +180,6 @@ class DevelopmentBase(BaseEstimator):
         X_new.w_ = self.w_
         return X_new
 
-    def fit_transform(self, X, y=None, sample_weight=None):
-        """ Equivalent to fit(X).transform(X)
-
-        Parameters
-        ----------
-        X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
-        y : Ignored
-        sample_weight : Ignored
-
-        Returns
-        -------
-            X_new : New triangle with transformed attributes.
-        """
-        self.fit(X)
-        return self.transform(X)
-
-    @property
-    def cdf_(self):
-        if self.__dict__.get('ldf_', None) is None:
-            return
-        else:
-            obj = copy.deepcopy(self.ldf_)
-            cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, -1), -1), -1)
-            obj.triangle = cdf_
-            return obj
-
     def _param_property(self, X, params, idx):
         obj = copy.deepcopy(X)
         obj.triangle = np.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
@@ -157,34 +187,3 @@ class DevelopmentBase(BaseEstimator):
                               for i in range(len(obj.ddims)-1)])
         obj.nan_override = True
         return obj
-
-
-class Development(DevelopmentBase):
-    """ A Transformer that allows for basic loss development pattern selection.
-
-    Parameters
-    ----------
-    n_periods : integer, optional (default=-1)
-        number of origin periods to be used in the ldf average calculation. For
-        all origin periods, set n_periods=-1
-    average : string, optional (default='volume')
-        type of averaging to use for ldf average calculation.  Options include
-        'volume', 'simple', and 'regression'
-    sigma_interpolation : string optional (default='log-linear')
-        Options include 'log-linear' and 'mack'
-
-    Attributes
-    ----------
-    ldf_ : Triangle
-        The estimated loss development patterns
-    cdf_ : Triangle
-        The estimated cumulative development patterns
-    sigma_ : Triangle
-        Sigma of the ldf regression
-    std_err_ : Triangle
-        Std_err of the ldf regression
-    w_ : Triangle
-        The weight used in the ldf regression
-
-    """
-    pass

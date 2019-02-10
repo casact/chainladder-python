@@ -54,9 +54,9 @@ particular ``index`` grain and apply them to another.
     allstate_company_cl = cl.Chainladder().fit(clrd.loc['Allstate Ins Co Grp']).ultimate_
     diff = (allstate_industry_cl - allstate_company_cl)
 
-    print(diff.rename(development='Industry to Company LDF Diff'))
+    print(diff.rename('development',['Industry to Company LDF Diff']))
 
-**Total running time of the script:** ( 0 minutes  0.602 seconds)
+**Total running time of the script:** ( 0 minutes  0.483 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_industry_to_company.py:

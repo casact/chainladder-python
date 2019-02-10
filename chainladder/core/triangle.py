@@ -1,10 +1,6 @@
 """
 """
-
-import pandas as pd
-import numpy as np
-import copy
-from chainladder.core.base import TriangleBase, check_triangle_postcondition
+from chainladder.core.base import TriangleBase
 
 
 class Triangle(TriangleBase):

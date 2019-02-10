@@ -2,13 +2,13 @@
 Incremental Additive Development
 ================================
 """
-from sklearn.base import BaseEstimator
-from chainladder.development.base import Development
+
+from chainladder.development.base import Development, DevelopmentBase
 import numpy as np
 import copy
 
 
-class IncrementalAdditive(BaseEstimator):
+class IncrementalAdditive(DevelopmentBase):
     """ The Incremental Additive Method.
 
     Parameters
@@ -100,30 +100,3 @@ class IncrementalAdditive(BaseEstimator):
         X.std_err_ = self.cdf_*0
         X.incremental_ = self.incremental_
         return X
-
-    def fit_transform(self, X, y=None, sample_weight=None):
-        """ Equivalent to fit(X).transform(X)
-
-        Parameters
-        ----------
-        X : Triangle-like
-            Set of LDFs based on the model.
-        y : Ignored
-        sample_weight : Ignored
-
-        Returns
-        -------
-            X_new : New triangle with transformed attributes.
-        """
-        self.fit(X, y, sample_weight)
-        return self.transform(X)
-
-    @property
-    def cdf_(self):
-        if self.__dict__.get('ldf_', None) is None:
-            return
-        else:
-            obj = copy.deepcopy(self.ldf_)
-            cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, -1), -1), -1)
-            obj.triangle = cdf_
-            return obj

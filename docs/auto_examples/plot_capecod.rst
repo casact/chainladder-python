@@ -36,7 +36,7 @@ and ``decay``.
     # Grab data
     ppauto_loss = cl.load_dataset('clrd').groupby('LOB').sum().loc['ppauto']['CumPaidLoss']
     ppauto_prem = cl.load_dataset('clrd').groupby('LOB').sum() \
-                    .loc['ppauto']['EarnedPremDIR'].latest_diagonal.rename(development='Premium')
+                    .loc['ppauto']['EarnedPremDIR'].latest_diagonal.rename('development',['Premium'])
 
     def get_apriori(decay, trend):
         """ Function to grab apriori array from cape cod method """
@@ -68,7 +68,7 @@ and ``decay``.
     ax11.set_title('Trend: 2.5%')
     g = fig.suptitle("Private Passenger Auto Cape Cod Detrended Aprioris")
 
-**Total running time of the script:** ( 0 minutes  1.222 seconds)
+**Total running time of the script:** ( 0 minutes  1.266 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_capecod.py:
