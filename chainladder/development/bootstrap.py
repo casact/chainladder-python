@@ -138,7 +138,6 @@ class BootstrapODPSample(DevelopmentBase):
         """ The hat matrix adjustment (Shapland eq3.23)"""
         weight_matrix = np.diag(pd.DataFrame(exp_incr_triangle).unstack().dropna().values)
         design_matrix = self.design_matrix_
-        pd.DataFrame(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix))).to_clipboard()
         hat = np.matmul(np.matmul(np.matmul(design_matrix,np.linalg.inv(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
         hat = np.diagonal(np.sqrt(np.divide(1, 1-hat, where=(1-hat)!=0)))
         total_length = X.nan_triangle().shape[0]
