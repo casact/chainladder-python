@@ -6,6 +6,7 @@ The Munich Adjustment Method
 from sklearn.base import BaseEstimator
 from chainladder.utils.weighted_regression import WeightedRegression
 import numpy as np
+import pandas as pd
 import copy
 
 
@@ -122,7 +123,9 @@ class MunichAdjustment(BaseEstimator):
             p_to_i_sigma[0]*np.sqrt(paid[..., :-1, :-1])
         residualI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
             p_to_i_sigma[1]*np.sqrt(incurred[..., :-1, :-1])
-        nans = X.nan_triangle_x_latest()
+        nans = np.array((pd.DataFrame(X.valuation_triangle) <
+                         X.valuation_date).astype(int))
+        nans = np.where(nans != 0, nans, np.nan)
         q_resid = (paid/incurred - self.q_f_[1]) / \
             self.rho_sigma_[1]*np.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \

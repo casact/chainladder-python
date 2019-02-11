@@ -91,6 +91,7 @@ class TriangleBase:
         self.triangle = triangle
         # Used to show NANs in lower part of triangle
         self.nan_override = False
+        self.valuation_triangle = self._valuation_triangle()
     # ---------------------------------------------------------------- #
     # ----------------------- Class Properties ----------------------- #
     # ---------------------------------------------------------------- #
@@ -244,7 +245,8 @@ class TriangleBase:
         incremental : bool
             Not implemented yet
         inplace : bool
-            Whether to mutate the existing Triangle instance or return a new one.
+            Whether to mutate the existing Triangle instance or return a new
+            one.
 
         Returns
         -------
@@ -267,7 +269,6 @@ class TriangleBase:
             self.odims = np.unique(o)
             self.origin_grain = origin_grain
             self.development_grain = development_grain
-            self.triangle = new_tri
             self.triangle = self._slide(new_tri, direction='l')
             self.triangle[self.triangle == 0] = np.nan
             return self
@@ -317,6 +318,39 @@ class TriangleBase:
         if axis == 'development' or axis == 3:
             self.development = value
         return self
+
+    def shift(self, periods=0, inplace=False):
+        """ shift allows for censoring triangles to earlier valuations.  Useful
+        for backtesting models.
+
+        Parameters
+        ----------
+        periods : int (default=0)
+            The number of valuation periods prior to latest period to shift to.
+        inplace : bool
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+            Triangle
+        """
+        if inplace:
+            period_scalar = {'Y': 12, 'Q': 3, 'M': 1}[self.development_grain]
+            self.valuation_date = self.valuation_date - \
+                pd.DateOffset(months=abs(periods)*period_scalar)
+            nan_tri = self.nan_triangle()
+            o, d = nan_tri.shape
+            self.odims = self.odims[np.sum(np.isnan(nan_tri), 1) != d]
+            self.ddims = self.ddims[np.sum(np.isnan(nan_tri), 0) != o]
+            self.triangle = (self.triangle*nan_tri)[
+                ..., :len(self.odims), :len(self.ddims)]
+            self.valuation_triangle = self._valuation_triangle()
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            new_obj.shift(periods=periods, inplace=True)
+            return new_obj
 
     # ---------------------------------------------------------------- #
     # ------------------------ Display Options ----------------------- #
@@ -656,7 +690,7 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     def nan_triangle(self):
         '''Given the current triangle shape and grain, it determines the
-           appropriate placement of NANs in the triangle for futurilocae valuations.
+           appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
         if self.triangle.shape[2] == 1 or \
@@ -665,36 +699,33 @@ class TriangleBase:
             # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
             # and does not need nan overrides
             return np.ones(self.triangle.shape[2:])
-        grain_dict = {'Y': {'Y': 1, 'Q': 4, 'M': 12},
-                      'Q': {'Q': 1, 'M': 3},
-                      'M': {'M': 1}}
-        val_lag = self.triangle.shape[3] % \
-            grain_dict[self.origin_grain][self.development_grain]
-        if val_lag == 0:
-            val_lag = grain_dict[self.origin_grain][self.development_grain]
-        goods = (np.arange(self.triangle.shape[2]) *
-                 grain_dict[self.origin_grain][self.development_grain] +
-                 val_lag)[::-1]
-        blank_bool = np.ones(self.triangle[0, 0].shape).cumsum(axis=1) <= \
-            np.repeat(np.expand_dims(goods, axis=1),
-                      self.triangle[0, 0].shape[1], axis=1)
-        blank = (blank_bool*1.)
-        blank[~blank_bool] = np.nan
-        return blank
+        if self.valuation_triangle.shape != (len(self.odims), len(self.ddims)):
+            val_array = self._valuation_triangle()
+        else:
+            val_array = self.valuation_triangle
+        nan_triangle = np.array(pd.DataFrame(val_array) > self.valuation_date)
+        nan_triangle = np.where(nan_triangle, np.nan, 1)
+        return nan_triangle
 
-    def nan_triangle_x_latest(self):
-        ''' Same as nan_triangle but sets latest diagonal to nan as well. '''
-        nans = np.expand_dims(np.expand_dims(self.nan_triangle(), 0), 0)
-        k, v, o, d = self.shape
-        nans = nans * np.ones((k, v, o, d))
-        nans = np.concatenate((nans, np.ones((k, v, o, 1))*np.nan), 3)
-        nans[nans == 0] = np.nan
-        return nans[0, 0, :, 1:]
+    def _valuation_triangle(self):
+        origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
+                   .to_timestamp(how='s')
+        origin = pd.Series(origin)
+        origin[origin>self.valuation_date] = self.valuation_date
+        next_development = origin+pd.DateOffset(days=-1, months=self.ddims[0])
+        val_array = np.expand_dims(np.array(next_development), -1)
+        for item in self.ddims[1:]:
+            next_development = np.expand_dims(
+                np.array(origin+pd.DateOffset(days=-1, months=item)), -1)
+            val_array = np.concatenate((val_array, next_development), -1)
+        return val_array
 
     def _slide(self, triangle, direction='r'):
         ''' Facilitates swapping alignment of triangle between development
             period and development date. '''
-        nan_tri = self.nan_triangle()
+        obj = copy.deepcopy(self)
+        obj.triangle = triangle
+        nan_tri = obj.nan_triangle()
         r = (nan_tri.shape[1] - np.nansum(nan_tri, axis=1)).astype(int)
         r = -r if direction == 'l' else r
         k, v, rows, column_indices = \

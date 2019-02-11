@@ -42,7 +42,7 @@ def load_dataset(key):
                     columns=columns, index=index)
 
 
-def parallelogram_olf(columns, date, start_date=None, end_date=None,
+def parallelogram_olf(values, date, start_date=None, end_date=None,
                       grain='M', vertical_line=False):
     """ Parallelogram approach to on-leveling.  Need to fix return grain
     """
@@ -52,9 +52,9 @@ def parallelogram_olf(columns, date, start_date=None, end_date=None,
     if not end_date:
         end_date = f'{date.max().year+1}-12-31'
     date_idx = pd.date_range(start_date, end_date)
-    y = pd.Series(np.array(columns), np.array(date))
+    y = pd.Series(np.array(values), np.array(date))
     y = y.reindex(date_idx, fill_value=0)
-    idx = np.cumprod(y.columns+1)
+    idx = np.cumprod(y.values+1)
     idx = idx[-1]/idx
     y = pd.Series(idx, y.index)
     if not vertical_line:

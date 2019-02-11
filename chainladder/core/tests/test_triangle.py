@@ -120,6 +120,17 @@ def test_arithmetic_1():
     x = cl.load_dataset('mortgage')
     np.testing.assert_equal(-(((x/x)+0)*x), -(+x))
 
+
 def test_arithmetic_2():
     x = cl.load_dataset('mortgage')
     np.testing.assert_equal(1-(x/x), 0*x*0)
+
+
+def test_shift():
+    x = cl.load_dataset('quarterly').iloc[0,0]
+    np.testing.assert_equal(x.shift(0).triangle, x.triangle)
+
+def test_quantile_vs_median():
+    clrd = cl.load_dataset('clrd')
+    np.testing.assert_equal(clrd.quantile(.5)['CumPaidLoss'].triangle,
+                            clrd.median()['CumPaidLoss'].triangle)
