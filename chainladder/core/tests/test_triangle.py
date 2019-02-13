@@ -128,7 +128,7 @@ def test_arithmetic_2():
 
 def test_shift():
     x = cl.load_dataset('quarterly').iloc[0,0]
-    np.testing.assert_equal(x.shift(0).triangle, x.triangle)
+    np.testing.assert_equal(x[x.valuation<=x.valuation_date].triangle, x.triangle)
 
 def test_quantile_vs_median():
     clrd = cl.load_dataset('clrd')

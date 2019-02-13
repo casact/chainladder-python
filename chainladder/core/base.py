@@ -91,7 +91,7 @@ class TriangleBase:
         self.triangle = triangle
         # Used to show NANs in lower part of triangle
         self.nan_override = False
-        self.valuation_triangle = self._valuation_triangle()
+        self.valuation = self._valuation_triangle()
     # ---------------------------------------------------------------- #
     # ----------------------- Class Properties ----------------------- #
     # ---------------------------------------------------------------- #
@@ -168,14 +168,8 @@ class TriangleBase:
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
         '''
-        nan_tri = self.nan_triangle()
-        latest_start = int(np.nansum(nan_tri[-1]))-1
-        diagonal = nan_tri[:, latest_start:]*np.fliplr(np.fliplr(nan_tri[:, latest_start:]).T).T
-        if latest_start != 0:
-            filler = (np.ones((nan_tri.shape[0], 1))*np.nan)
-            diagonal = np.concatenate((filler, diagonal), 1)
-        diagonal = self.expand_dims(diagonal)*self.triangle
         obj = copy.deepcopy(self)
+        diagonal = obj[obj.valuation==obj.valuation_date].triangle
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = ['Latest']
@@ -318,39 +312,6 @@ class TriangleBase:
         if axis == 'development' or axis == 3:
             self.development = value
         return self
-
-    def shift(self, periods=0, inplace=False):
-        """ shift allows for censoring triangles to earlier valuations.  Useful
-        for backtesting models.
-
-        Parameters
-        ----------
-        periods : int (default=0)
-            The number of valuation periods prior to latest period to shift to.
-        inplace : bool
-            Whether to mutate the existing Triangle instance or return a new
-            one.
-
-        Returns
-        -------
-            Triangle
-        """
-        if inplace:
-            period_scalar = {'Y': 12, 'Q': 3, 'M': 1}[self.development_grain]
-            self.valuation_date = self.valuation_date - \
-                pd.DateOffset(months=abs(periods)*period_scalar)
-            nan_tri = self.nan_triangle()
-            o, d = nan_tri.shape
-            self.odims = self.odims[np.sum(np.isnan(nan_tri), 1) != d]
-            self.ddims = self.ddims[np.sum(np.isnan(nan_tri), 0) != o]
-            self.triangle = (self.triangle*nan_tri)[
-                ..., :len(self.odims), :len(self.ddims)]
-            self.valuation_triangle = self._valuation_triangle()
-            return self
-        else:
-            new_obj = copy.deepcopy(self)
-            new_obj.shift(periods=periods, inplace=True)
-            return new_obj
 
     # ---------------------------------------------------------------- #
     # ------------------------ Display Options ----------------------- #
@@ -583,6 +544,8 @@ class TriangleBase:
         if type(key) is pd.DataFrame and 'development' in key.columns:
             return self._slice_development(key['development'])
         if type(key) is np.ndarray:
+            if len(key) == self.shape[-2]*self.shape[-1]:
+                return self._slice_valuation(key)
             return self._slice_origin(key)
         if type(key) is pd.Series:
             return self.iloc[list(self.index[key].index)]
@@ -617,6 +580,24 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
         obj.triangle = obj.triangle[..., key, :]
+        return obj
+
+    # @check_triangle_postcondition
+    def _slice_valuation(self, key):
+        obj = copy.deepcopy(self)
+        obj.valuation_date = obj.valuation[key].max()
+        key = key.reshape(self.shape[-2:], order='f')
+        nan_tri = np.ones(self.shape[-2:])
+        nan_tri = key*nan_tri
+        nan_tri[nan_tri == 0] = np.nan
+        o, d = nan_tri.shape
+        o_idx = np.arange(o)[list(np.sum(np.isnan(nan_tri), 1) != d)]
+        d_idx = np.arange(d)[list(np.sum(np.isnan(nan_tri), 0) != o)]
+        obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
+        obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
+        obj.triangle = (obj.triangle*nan_tri)
+        obj.triangle = np.take(np.take(obj.triangle, o_idx, -2), d_idx, -1)
+        obj.valuation = obj._valuation_triangle()
         return obj
 
     # @check_triangle_postcondition
@@ -699,13 +680,15 @@ class TriangleBase:
             # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
             # and does not need nan overrides
             return np.ones(self.triangle.shape[2:])
-        if self.valuation_triangle.shape != (len(self.odims), len(self.ddims)):
-            val_array = self._valuation_triangle()
-        else:
-            val_array = self.valuation_triangle
-        nan_triangle = np.array(pd.DataFrame(val_array) > self.valuation_date)
-        nan_triangle = np.where(nan_triangle, np.nan, 1)
-        return nan_triangle
+        if len(self.valuation) != len(self.odims)*len(self.ddims) or not \
+           hasattr(self, '_nan_triangle'):
+            self.valuation = self._valuation_triangle()
+            val_array = self.valuation
+            val_array = val_array.values.reshape(self.shape[-2:], order='f')
+            nan_triangle = np.array(pd.DataFrame(val_array) > self.valuation_date)
+            nan_triangle = np.where(nan_triangle, np.nan, 1)
+            self._nan_triangle = nan_triangle
+        return self._nan_triangle
 
     def _valuation_triangle(self):
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
@@ -718,7 +701,7 @@ class TriangleBase:
             next_development = np.expand_dims(
                 np.array(origin+pd.DateOffset(days=-1, months=item)), -1)
             val_array = np.concatenate((val_array, next_development), -1)
-        return val_array
+        return pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
 
     def _slide(self, triangle, direction='r'):
         ''' Facilitates swapping alignment of triangle between development

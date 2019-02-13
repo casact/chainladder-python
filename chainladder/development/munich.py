@@ -123,9 +123,7 @@ class MunichAdjustment(BaseEstimator):
             p_to_i_sigma[0]*np.sqrt(paid[..., :-1, :-1])
         residualI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
             p_to_i_sigma[1]*np.sqrt(incurred[..., :-1, :-1])
-        nans = np.array((pd.DataFrame(X.valuation_triangle) <
-                         X.valuation_date).astype(int))
-        nans = np.where(nans != 0, nans, np.nan)
+        nans = (X-X[X.valuation==X.valuation_date]).triangle[0,0]*0+1
         q_resid = (paid/incurred - self.q_f_[1]) / \
             self.rho_sigma_[1]*np.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \
