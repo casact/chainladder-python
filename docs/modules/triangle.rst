@@ -75,8 +75,8 @@ using pandas-style ``loc``/``iloc`` or boolean indexing.
    need for ``reset_index()`` or trying to boolean-index on a ``MultiIndex``. This is
    a divergence from the pandas API.
 
-Changing Origin and Development Granularity
--------------------------------------------
+Changing Triangle Granularity
+-----------------------------
 If your triangle has origin and development grains that are more frequent then
 yearly, you can easily swap to a higher grain using the `grain` method of the
 :class:`Triangle`. The `grain` method recognizes Yearly (Y), Quarterly (Q), and
@@ -133,3 +133,17 @@ by using ``sum()`` which can optionally be coupled with ``groupby()``.
    Shape:     (6, 6, 10, 10)
    index:      ['LOB']
    columns:    ['BulkLoss', 'CumPaidLoss', 'EarnedPremCeded', 'EarnedPremDIR', 'EarnedPremNet', 'IncurLoss']
+
+
+Accessor methods
+----------------
+Like pandas ``.str`` and ``.dt`` accessor functions, you can also perform operations
+on the ``origin``, ``development`` or ``valuation`` of a triangle. For example, all
+of these operations are legal.
+
+**Example:**
+   >>> raa = cl.load_dataset('raa')
+   >>> x = raa[raa.origin=='1986']
+   >>> x = raa[(raa.development>=24)&(raa.development<=48)]
+   >>> x = raa[raa.origin<='1985-JUN']
+   >>> x = raa[raa.origin>'1987-01-01'][raa.development<=36]

@@ -19,8 +19,9 @@ class Triangle(TriangleBase):
         A representation of the development/valuation periods of the triangle
         that will map to the Development dimension
     columns : str or list
-        A representation of the numeric data of the triangle that will map to the
-        columns dimension.  If None, then a single 'Total' key will be generated.
+        A representation of the numeric data of the triangle that will map to
+        the columns dimension.  If None, then a single 'Total' key will be
+        generated.
     index : str or list or None
         A representation of the index of the triangle that will map to the
         index dimension.  If None, then a single 'Total' key will be generated.

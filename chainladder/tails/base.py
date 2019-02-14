@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator
 
 
@@ -23,6 +24,10 @@ class TailBase(BaseEstimator):
         self.std_err_.triangle = np.concatenate((self.std_err_.triangle, zeros), -1)
         ddims = np.append(self.ldf_.ddims, [f'{int(X.ddims[-1])}-Ult'])
         self.ldf_.ddims = self.sigma_.ddims = self.std_err_.ddims = ddims
+        val_array = pd.DataFrame(X.ldf_.valuation.values.reshape(X.ldf_.shape[-2:],order='f'))
+        val_array['ult'] = pd.to_datetime('2262-04-11')
+        val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
+        self.ldf_.valuation = self.sigma_.valuation = self.std_err_.valuation = val_array
         return self
 
     def transform(self, X):
@@ -33,6 +38,7 @@ class TailBase(BaseEstimator):
         X_new.ldf_.triangle = np.concatenate((X_new.ldf_.triangle, self.ldf_.triangle[..., -1:]), -1)
         X_new.sigma_.triangle = np.concatenate((X_new.sigma_.triangle, self.sigma_.triangle[..., -1:]), -1)
         X_new.cdf_.ddims = X_new.ldf_.ddims = X_new.sigma_.ddims = X_new.std_err_.ddims = self.ldf_.ddims
+        X_new.cdf_.valuation = X_new.ldf_.valuation = X_new.sigma_.valuation = X_new.std_err_.valuation = self.ldf_.valuation
         return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):

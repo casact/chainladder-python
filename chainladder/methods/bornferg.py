@@ -76,4 +76,5 @@ class BornhuetterFerguson(MethodBase):
         obj = Benktander(apriori=self.apriori, n_iters=1) \
             .fit(X=X, sample_weight=sample_weight)
         self.ultimate_ = obj.ultimate_
+        self.full_triangle_ = obj.full_triangle_
         return self

@@ -54,7 +54,8 @@ class TriangleBase:
         self.origin_grain = TriangleBase.get_grain(origin_date)
         # These only work with valuation periods and not lags
         if development:
-            development_date = TriangleBase.to_datetime(data_agg, development, period_end=True)
+            development_date = TriangleBase.to_datetime(data_agg, development,
+                                                        period_end=True)
             self.development_grain = TriangleBase.get_grain(development_date)
             col = 'development'
         else:
@@ -72,7 +73,8 @@ class TriangleBase:
         self.odims = np.array(data_agg.index.levels[-1].unique())
         if development:
             self.ddims = np.array(data_agg.columns.levels[-1].unique())
-            self.ddims = self.ddims*({'Y': 12, 'Q': 3, 'M': 1}[self.development_grain])
+            self.ddims = self.ddims*({'Y': 12, 'Q': 3, 'M': 1}
+                                     [self.development_grain])
             self.vdims = np.array(data_agg.columns.levels[0].unique())
         else:
             self.ddims = np.array([None])
@@ -84,7 +86,7 @@ class TriangleBase:
         # Create 4D Triangle
         triangle = \
             np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
-                      len(self.vdims), len(self.ddims)))
+                       len(self.vdims), len(self.ddims)))
         triangle = np.swapaxes(triangle, 1, 2)
         # Set all 0s to NAN for nansafe ufunc arithmetic
         triangle[triangle == 0] = np.nan
@@ -92,6 +94,7 @@ class TriangleBase:
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
+
     # ---------------------------------------------------------------- #
     # ----------------------- Class Properties ----------------------- #
     # ---------------------------------------------------------------- #
@@ -169,7 +172,7 @@ class TriangleBase:
             self.nan_overide == False.
         '''
         obj = copy.deepcopy(self)
-        diagonal = obj[obj.valuation==obj.valuation_date].triangle
+        diagonal = obj[obj.valuation == obj.valuation_date].triangle
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = ['Latest']
@@ -346,8 +349,9 @@ class TriangleBase:
                                    max_cols=pd.options.display.max_columns,
                                    float_format=fmt_str.format) \
                           .replace('nan', '')
-            return default.replace('<th></th>\n      <th>1</th>',
-                                   '<th>Origin</th>\n      <th>1</th>')
+            return default.replace(
+                f'<th></th>\n      <th>{self.development.values[0][0]}</th>',
+                f'<th>Origin</th>\n      <th>{self.development.values[0][0]}</th>')
         else:
             data = pd.Series([self.valuation_date.strftime('%Y-%m'),
                              'O' + self.origin_grain + 'D'
@@ -412,7 +416,8 @@ class TriangleBase:
                 raise ValueError('Triangles must have the same number of \
                                   columns')
             if len(self.kdims) != len(other.kdims):
-                raise ValueError('Triangles must have the same number of index')
+                raise ValueError('Triangles must have the same number of',
+                                 'index')
             if len(self.vdims) == 1:
                 other.vdims = np.array([None])
             other = other.triangle
@@ -598,6 +603,10 @@ class TriangleBase:
         obj.triangle = (obj.triangle*nan_tri)
         obj.triangle = np.take(np.take(obj.triangle, o_idx, -2), d_idx, -1)
         obj.valuation = obj._valuation_triangle()
+        if hasattr(obj, '_nan_triangle'):
+            # Force update on _nan_triangle at next access.
+            del obj._nan_triangle
+            obj._nan_triangle = obj.nan_triangle()
         return obj
 
     # @check_triangle_postcondition
@@ -621,12 +630,12 @@ class TriangleBase:
                 when the triangle has holes in it. '''
             origin_unique = \
                 pd.period_range(start=origin_date.min(),
-                               end=origin_date.max(),
-                               freq=origin_grain).to_timestamp()
+                                end=origin_date.max(),
+                                freq=origin_grain).to_timestamp()
             development_unique = \
                 pd.period_range(start=origin_date.min(),
-                               end=development_date.max(),
-                               freq=development_grain).to_timestamp()
+                                end=development_date.max(),
+                                freq=development_grain).to_timestamp()
             development_unique = TriangleBase.period_end(development_unique)
             # Let's get rid of any development periods before origin periods
             cart_prod = TriangleBase.cartesian_product(origin_unique,
@@ -685,7 +694,8 @@ class TriangleBase:
             self.valuation = self._valuation_triangle()
             val_array = self.valuation
             val_array = val_array.values.reshape(self.shape[-2:], order='f')
-            nan_triangle = np.array(pd.DataFrame(val_array) > self.valuation_date)
+            nan_triangle = np.array(
+                pd.DataFrame(val_array) > self.valuation_date)
             nan_triangle = np.where(nan_triangle, np.nan, 1)
             self._nan_triangle = nan_triangle
         return self._nan_triangle
@@ -694,7 +704,7 @@ class TriangleBase:
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
                    .to_timestamp(how='s')
         origin = pd.Series(origin)
-        origin[origin>self.valuation_date] = self.valuation_date
+        origin[origin > self.valuation_date] = self.valuation_date
         next_development = origin+pd.DateOffset(days=-1, months=self.ddims[0])
         val_array = np.expand_dims(np.array(next_development), -1)
         for item in self.ddims[1:]:
@@ -880,6 +890,7 @@ class _Ilocation(_LocBase):
         idx = self.obj.idx_table_format(idx)
         return self.get_idx(idx)
 
+
 # ---------------------------------------------------------------- #
 # ---------------------Groupby Functionality---------------------- #
 # ---------------------------------------------------------------- #
@@ -912,7 +923,8 @@ class _TriangleGroupBy:
 
     def quantile(self, q, axis=1, *args, **kwargs):
         x = self.obj.triangle*self.old_k_by_new_k
-        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == x.shape[1]
+        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
+            x.shape[1]
         x = np.where(ignore_vector, 0, x)
         self.obj.triangle = \
             getattr(np, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
@@ -921,6 +933,7 @@ class _TriangleGroupBy:
 # ---------------------------------------------------------------- #
 # ------------------------- Meta methods ------------------------- #
 # ---------------------------------------------------------------- #
+
 
 def set_method(cls, func, k):
     ''' Assigns methods to a class '''
@@ -943,7 +956,8 @@ def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
         x = self.obj.triangle*self.old_k_by_new_k
-        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == x.shape[1]
+        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
+            x.shape[1]
         x = np.where(ignore_vector, 0, x)
         self.obj.triangle = \
             getattr(np, v)(x, axis=1, *args, **kwargs)

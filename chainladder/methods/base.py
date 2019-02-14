@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
@@ -37,6 +38,7 @@ class MethodBase(BaseEstimator):
             Returns the instance itself.
         """
         self.X_ = self.validate_X(X)
+
         return self
 
     def predict(self, X):
@@ -61,6 +63,7 @@ class MethodBase(BaseEstimator):
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
         obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
+        obj.valuation = self._set_valuation(obj)
         obj.triangle = \
             np.concatenate((obj.triangle, self.ultimate_.triangle), 3)
         obj.ddims = list(obj.ddims) + ['Ult']
@@ -74,8 +77,7 @@ class MethodBase(BaseEstimator):
         obj.ddims = ['IBNR']
         return obj
 
-    @property
-    def full_triangle_(self):
+    def _get_full_triangle_(self):
         obj = copy.deepcopy(self.X_)
         w = 1-np.nan_to_num(obj.nan_triangle())
         obj.nan_override = True
@@ -83,7 +85,14 @@ class MethodBase(BaseEstimator):
             self.cdf_.triangle
         e_tri = e_tri * w
         obj.triangle = np.nan_to_num(obj.triangle) + e_tri
+        obj.valuation = self._set_valuation(obj)
         obj.triangle = np.concatenate((obj.triangle,
                                        self.ultimate_.triangle), 3)
         obj.ddims = np.array([str(item) for item in obj.ddims]+['Ult'])
         return obj
+
+    def _set_valuation(self, obj):
+        val_array = pd.DataFrame(obj.valuation.values.reshape(obj.shape[-2:], order='f'))
+        val_array['Ult'] = pd.to_datetime('2262-04-11')
+        val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
+        return val_array

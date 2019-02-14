@@ -7,6 +7,7 @@ The IBNR model is entirely described by the LDFs
 """
 
 import numpy as np
+import pandas as pd
 import copy
 from chainladder.methods import MethodBase
 
@@ -57,6 +58,25 @@ class Chainladder(MethodBase):
     1997                   -273.269090
     """
 
+    def fit(self, X, y=None, sample_weight=None):
+        """Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle-like
+            Data to which the model will be applied.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+        super().fit(X, y, sample_weight)
+        self.full_triangle_ = self._get_full_triangle_()
+        return self
+
     @property
     def ultimate_(self):
         obj = copy.deepcopy(self.X_)
@@ -65,4 +85,5 @@ class Chainladder(MethodBase):
         obj.triangle = (self.cdf_.triangle*obj.triangle)*self.X_.nan_triangle()
         obj = obj.latest_diagonal
         obj.ddims = ['Ultimate']
+        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
         return obj

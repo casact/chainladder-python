@@ -5,6 +5,7 @@
 :ref:`CapeCod<capecod>` is a cool method
 """
 import numpy as np
+import pandas as pd
 import copy
 from chainladder.methods import MethodBase
 
@@ -42,7 +43,7 @@ class CapeCod(MethodBase):
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
-        
+
         Parameters
         ----------
         X : Triangle-like
@@ -84,5 +85,7 @@ class CapeCod(MethodBase):
         ibnr = detrended_ultimate*(1-1/cdf)*exposure
         obj.triangle = latest + ibnr
         obj.ddims = ['Ultimate']
+        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
         self.ultimate_ = obj
+        self.full_triangle_ = self._get_full_triangle_()
         return self

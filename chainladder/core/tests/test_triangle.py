@@ -134,3 +134,9 @@ def test_quantile_vs_median():
     clrd = cl.load_dataset('clrd')
     np.testing.assert_equal(clrd.quantile(.5)['CumPaidLoss'].triangle,
                             clrd.median()['CumPaidLoss'].triangle)
+
+def test_reset_nan_on_valuation_chg():
+    raa = cl.load_dataset('raa')
+    x = raa-raa[raa.development>='1989-01-01']
+    x = raa[raa.origin<'1989-01-01']
+    return True

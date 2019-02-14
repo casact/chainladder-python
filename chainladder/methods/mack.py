@@ -9,6 +9,7 @@ stochastic method.
 
 """
 import numpy as np
+import pandas as pd
 import copy
 from chainladder.methods import Chainladder
 
@@ -106,6 +107,7 @@ class MackChainladder(Chainladder):
         nans = np.concatenate((nans, np.ones((k, v, o, 1))*np.nan), 3)
         nans = 1-np.nan_to_num(nans)
         obj.ddims = np.array([str(item) for item in obj.ddims]+['Ult'])
+        obj.valuation = self._set_valuation(obj)
         obj.nan_override = True
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':
@@ -153,6 +155,7 @@ class MackChainladder(Chainladder):
 
     @property
     def total_mack_std_err_(self):
+        # This might be better as a dataframe
         obj = copy.deepcopy(self.X_.latest_diagonal)
         obj.triangle = np.sqrt(self.total_process_risk_.triangle**2 +
                                self.total_parameter_risk_.triangle**2)
@@ -163,6 +166,7 @@ class MackChainladder(Chainladder):
 
     @property
     def summary_(self):
+        # This might be better as a dataframe
         obj = copy.deepcopy(self.X_)
         obj.triangle = np.concatenate(
             (self.X_.latest_diagonal.triangle,

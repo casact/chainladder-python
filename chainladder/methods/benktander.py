@@ -18,6 +18,7 @@ Bayesian procedure.
 """
 
 import numpy as np
+import pandas as pd
 import copy
 from chainladder.methods import MethodBase
 
@@ -82,5 +83,7 @@ class Benktander(MethodBase):
         cdf = cdf**exponents
         obj.triangle = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
         obj.ddims = ['Ultimate']
+        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
         self.ultimate_ = obj
+        self.full_triangle_ = self._get_full_triangle_()
         return self
