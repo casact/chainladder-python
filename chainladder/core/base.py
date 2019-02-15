@@ -26,7 +26,6 @@ agg_funcs = {item: 'nan'+item for item in agg_funcs}
 #         if len(X.kdims) != X.triangle.shape[0]:
 #             raise ValueError('X.index and X.triangle are misaligned')
 #         if len(X.vdims) != X.triangle.shape[1]:
-#             print(X.vdims, X.shape)
 #             raise ValueError('X.columns and X.triangle are misaligned')
 #         return X
 #     return wrapper
@@ -150,6 +149,7 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         temp = obj.triangle.copy()
         temp[temp == 0] = np.nan
+        val_array = obj.valuation.values.reshape(obj.shape[-2:],order='f')[:, 1:]
         obj.triangle = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
                               for i in range(len(obj.ddims)-1)])
@@ -157,6 +157,8 @@ class TriangleBase:
         if np.max(np.sum(~np.isnan(self.triangle[..., -1, :]), 2)-1) == 0:
             obj.triangle = obj.triangle[..., :-1, :]
             obj.odims = obj.odims[:-1]
+            val_array = val_array[:-1, :]
+        obj.valuation = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         return obj
 
     @property
@@ -176,6 +178,8 @@ class TriangleBase:
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = ['Latest']
+            obj.valuation = pd.DatetimeIndex(
+                [pd.to_datetime(obj.valuation_date)]*len(obj.odims))
         obj.triangle = diagonal
         return obj
 
@@ -366,8 +370,7 @@ class TriangleBase:
 
     def _repr_format(self):
         ''' Flatten to 2D DataFrame '''
-        x = np.nansum(self.triangle, axis=0)
-        x = np.nansum(x, axis=0)*self.nan_triangle()
+        x = self.triangle[0, 0]
         if type(self.odims[0]) == np.datetime64:
             origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
         else:
@@ -549,7 +552,8 @@ class TriangleBase:
         if type(key) is pd.DataFrame and 'development' in key.columns:
             return self._slice_development(key['development'])
         if type(key) is np.ndarray:
-            if len(key) == self.shape[-2]*self.shape[-1]:
+            # Presumes that if I have a 1D array, I will want to slice origin.
+            if len(key) == self.shape[-2]*self.shape[-1] and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             return self._slice_origin(key)
         if type(key) is pd.Series:
@@ -599,7 +603,8 @@ class TriangleBase:
         o_idx = np.arange(o)[list(np.sum(np.isnan(nan_tri), 1) != d)]
         d_idx = np.arange(d)[list(np.sum(np.isnan(nan_tri), 0) != o)]
         obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
-        obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
+        if len(obj.ddims) > 1:
+            obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
         obj.triangle = (obj.triangle*nan_tri)
         obj.triangle = np.take(np.take(obj.triangle, o_idx, -2), d_idx, -1)
         obj.valuation = obj._valuation_triangle()
