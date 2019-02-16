@@ -25,7 +25,7 @@ class TailBase(BaseEstimator):
         ddims = np.append(self.ldf_.ddims, [f'{int(X.ddims[-1])}-Ult'])
         self.ldf_.ddims = self.sigma_.ddims = self.std_err_.ddims = ddims
         val_array = pd.DataFrame(X.ldf_.valuation.values.reshape(X.ldf_.shape[-2:],order='f'))
-        val_array['ult'] = pd.to_datetime('2262-04-11')
+        val_array[9999] = pd.to_datetime('2262-04-11')
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         self.ldf_.valuation = self.sigma_.valuation = self.std_err_.valuation = val_array
         return self

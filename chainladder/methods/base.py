@@ -66,7 +66,7 @@ class MethodBase(BaseEstimator):
         obj.valuation = self._set_valuation(obj)
         obj.triangle = \
             np.concatenate((obj.triangle, self.ultimate_.triangle), 3)
-        obj.ddims = list(obj.ddims) + ['Ult']
+        obj.ddims = np.array([item for item in obj.ddims]+[9999])
         obj.nan_override = True
         return obj
 
@@ -88,11 +88,11 @@ class MethodBase(BaseEstimator):
         obj.valuation = self._set_valuation(obj)
         obj.triangle = np.concatenate((obj.triangle,
                                        self.ultimate_.triangle), 3)
-        obj.ddims = np.array([str(item) for item in obj.ddims]+['Ult'])
+        obj.ddims = np.array([item for item in obj.ddims]+[9999])
         return obj
 
     def _set_valuation(self, obj):
         val_array = pd.DataFrame(obj.valuation.values.reshape(obj.shape[-2:], order='f'))
-        val_array['Ult'] = pd.to_datetime('2262-04-11')
+        val_array[9999] = pd.to_datetime('2262-04-11')
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         return val_array
