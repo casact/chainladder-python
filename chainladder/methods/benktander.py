@@ -75,7 +75,8 @@ class Benktander(MethodBase):
         latest = self.X_.latest_diagonal.triangle
         apriori = sample_weight.triangle * self.apriori
         obj = copy.deepcopy(self.X_)
-        obj.triangle = self.X_.cdf_.triangle * (obj.triangle*0+1)
+        obj.triangle = \
+            self.X_.cdf_.triangle[..., :obj.shape[-1]]*(obj.triangle*0+1)
         cdf = obj.latest_diagonal.triangle
         cdf = np.expand_dims(1-1/cdf, 0)
         exponents = np.arange(self.n_iters+1)

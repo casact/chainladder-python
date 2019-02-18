@@ -60,7 +60,8 @@ class CapeCod(MethodBase):
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.triangle
         obj = copy.deepcopy(self.X_)
-        obj.triangle = self.X_.cdf_.triangle * (obj.triangle*0+1)
+        obj.triangle = \
+            self.X_.cdf_.triangle[..., :obj.shape[-1]]*(obj.triangle*0+1)
         cdf = obj.latest_diagonal.triangle
         exposure = sample_weight.triangle
         reported_exposure = exposure/cdf

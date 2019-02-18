@@ -3,7 +3,6 @@ Loss Development
 ================
 """
 import numpy as np
-import pandas as pd
 import copy
 import warnings
 from sklearn.base import BaseEstimator
@@ -184,9 +183,7 @@ class Development(DevelopmentBase):
     def _param_property(self, X, params, idx):
         obj = copy.deepcopy(X)
         obj.triangle = np.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
-        obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
-                              for i in range(len(obj.ddims)-1)])
-        val_array = X.valuation.values.reshape(X.shape[-2:],order='f')[:, 1:]
-        obj.valuation = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
+        obj.ddims = X.link_ratio.ddims
+        obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
         return obj

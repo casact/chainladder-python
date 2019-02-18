@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
@@ -16,9 +15,9 @@ class MethodBase(BaseEstimator):
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
             obj = TailConstant().fit_transform(obj)
-        self.cdf_ = obj.cdf_
-        self.ldf_ = obj.ldf_
-        self.average_ = obj.average_
+        self.cdf_ = obj.__dict__.get('cdf_', None)
+        self.ldf_ = obj.__dict__.get('ldf_', None)
+        self.average_ = obj.__dict__.get('average_', None)
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
@@ -63,10 +62,11 @@ class MethodBase(BaseEstimator):
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
         obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
-        obj.valuation = self._set_valuation(obj)
         obj.triangle = \
-            np.concatenate((obj.triangle, self.ultimate_.triangle), 3)
-        obj.ddims = np.array([item for item in obj.ddims]+[9999])
+            np.concatenate((obj.triangle, self.ultimate_.triangle), -1)
+        ddims = [int(item[item.find('-')+1:]) for item in self.cdf_.ddims]
+        obj.ddims = np.array([obj.ddims[0]]+ddims)
+        obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
         return obj
 
@@ -80,19 +80,19 @@ class MethodBase(BaseEstimator):
     def _get_full_triangle_(self):
         obj = copy.deepcopy(self.X_)
         w = 1-np.nan_to_num(obj.nan_triangle())
+        extend = len(self.ldf_.ddims) - len(self.X_.ddims)
+        ones = np.ones((w.shape[-2], extend))
+        w = np.concatenate((w, ones), -1)
         obj.nan_override = True
-        e_tri = np.repeat(self.ultimate_.triangle, obj.shape[3], 3) / \
-            self.cdf_.triangle
+        e_tri = np.repeat(self.ultimate_.triangle,
+                          self.cdf_.triangle.shape[3], 3)/self.cdf_.triangle
         e_tri = e_tri * w
-        obj.triangle = np.nan_to_num(obj.triangle) + e_tri
-        obj.valuation = self._set_valuation(obj)
+        zeros = obj.expand_dims(ones - ones)
+        properties = self.full_expectation_
+        obj.valuation = properties.valuation
+        obj.ddims = properties.ddims
+        obj.triangle = \
+            np.concatenate((np.nan_to_num(obj.triangle), zeros), -1) + e_tri
         obj.triangle = np.concatenate((obj.triangle,
                                        self.ultimate_.triangle), 3)
-        obj.ddims = np.array([item for item in obj.ddims]+[9999])
         return obj
-
-    def _set_valuation(self, obj):
-        val_array = pd.DataFrame(obj.valuation.values.reshape(obj.shape[-2:], order='f'))
-        val_array[9999] = pd.to_datetime('2262-04-11')
-        val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
-        return val_array

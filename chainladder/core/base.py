@@ -362,7 +362,7 @@ class TriangleBase:
                               + self.development_grain,
                               self.shape, self.key_labels, list(self.vdims)],
                              index=['Valuation:', 'Grain:', 'Shape',
-                                    'index:', "columns:"],
+                                    'Index:', "Columns:"],
                              name='Triangle Summary').to_frame()
             pd.options.display.precision = 0
             return data.to_html(max_rows=pd.options.display.max_rows,
@@ -722,18 +722,29 @@ class TriangleBase:
             self._nan_triangle = nan_triangle
         return self._nan_triangle
 
-    def _valuation_triangle(self):
+    def _valuation_triangle(self, ddims=None):
+        ''' Given origin and development, develop a triangle of valuation
+        dates.
+        '''
+        ddims = self.ddims if ddims is None else ddims
+        if ddims[0]is None:
+            ddims = pd.Series([self.valuation_date]*len(self.origin))
+            return pd.DatetimeIndex(ddims.values)
+        if type(ddims[0]) is np.str_:
+            ddims = [int(item[:item.find('-'):]) for item in ddims]
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
                    .to_timestamp(how='s')
         origin = pd.Series(origin)
         # Limit origin to valuation date
         origin[origin > self.valuation_date] = self.valuation_date
-        next_development = origin+pd.DateOffset(days=-1, months=self.ddims[0])
+        next_development = origin+pd.DateOffset(days=-1, months=ddims[0])
         val_array = np.expand_dims(np.array(next_development), -1)
-        for item in self.ddims[1:]:
-            if str(item).lower() == 'ult':
-                next_development = np.expand_dims(
-                    np.array(pd.to_datetime('2262-04-11')), -1)
+        for item in ddims[1:]:
+            if item == 9999:
+                next_development = pd.Series([pd.to_datetime('2262-03-01')] *
+                                             len(origin))
+                next_development = np.expand_dims(np.array(
+                    next_development), -1)
             else:
                 next_development = np.expand_dims(
                     np.array(origin+pd.DateOffset(days=-1, months=item)), -1)

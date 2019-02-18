@@ -81,7 +81,7 @@ class MackChainladder(Chainladder):
         for i in [2, 1, 0]:
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         k, v, o, d = val.shape
-        weight = np.sqrt(tri_array[..., :-1]**(2-val))
+        weight = np.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val))
         weight[weight == 0] = np.nan
         obj.triangle = self.X_.sigma_.triangle / weight
         w = np.concatenate((self.X_.w_, np.ones((k, v, o, 1))*np.nan), axis=3)
@@ -106,8 +106,8 @@ class MackChainladder(Chainladder):
         nans = nans * np.ones((k, v, o, d))
         nans = np.concatenate((nans, np.ones((k, v, o, 1))*np.nan), 3)
         nans = 1-np.nan_to_num(nans)
-        obj.ddims = np.array([str(item) for item in obj.ddims]+['Ult'])
-        obj.valuation = self._set_valuation(obj)
+        properties = self.full_triangle_
+        obj.ddims, obj.valuation = properties.ddims, properties.valuation
         obj.nan_override = True
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':
@@ -125,9 +125,14 @@ class MackChainladder(Chainladder):
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
-        t1_t = (self.full_triangle_.triangle[..., :-1] * std_err)**2
-        ldf = self.X_.ldf_.triangle.copy()
-        for i in range(self.full_triangle_.shape[3]-1):
+        full_tri = self.full_triangle_.triangle[..., :len(self.X_.ddims)]
+        t1_t = (full_tri * std_err)**2
+        extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
+        ldf = self.X_.ldf_.triangle[..., :len(self.X_.ddims)-1]
+        ldf = np.concatenate(
+            (ldf, np.prod(self.X_.ldf_.triangle[..., -extend:], -1,
+             keepdims=True)), -1)
+        for i in range(len(self.X_.ddims)):
             t1 = t1_t[..., i:i+1]
             t2 = (ldf[..., i:i+1] * risk_arr[..., i:i+1])**2
             t_tot = np.sqrt(t1+t2)*nans[..., i+1:i+2]
@@ -135,11 +140,17 @@ class MackChainladder(Chainladder):
         return risk_arr
 
     def _get_tot_param_risk(self, risk_arr):
-        t1 = self.full_triangle_.triangle[..., :-1] - \
+        """ This assumes triangle symmertry """
+        t1 = self.full_triangle_.triangle[..., :len(self.X_.ddims)] - \
              np.nan_to_num(self.X_.triangle) + \
              np.nan_to_num(self.X_.get_latest_diagonal(False).triangle)
         t1 = np.expand_dims(np.sum(t1*self.X_.std_err_.triangle, 2), 2)
-        ldf = np.unique(self.X_.ldf_.triangle, axis=-2)
+        extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
+        ldf = self.X_.ldf_.triangle[..., :len(self.X_.ddims)-1]
+        ldf = np.concatenate(
+            (ldf, np.prod(self.X_.ldf_.triangle[..., -extend:], -1,
+             keepdims=True)), -1)
+        ldf = np.unique(ldf, axis=-2)
         for i in range(self.full_triangle_.shape[-1]-1):
             t_tot = np.sqrt((t1[..., i:i+1])**2 + (ldf[..., i:i+1] *
                             risk_arr[..., -1:])**2)

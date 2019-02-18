@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 class Exhibits:
@@ -58,10 +59,10 @@ class Exhibits:
         elif len(title) < 4:
             title = title + ['' for item in range(4-len(title))]
         if type(header) is not list:
-            if header:
+            if np.all(header):
                 header = [col for sublist in [item.columns for item in data]
                           for col in sublist]
-            elif not header:
+            elif not np.all(header):
                 header = ['' for sublist in [item.columns for item in data]
                           for col in sublist]
         if type(formats) is str:
