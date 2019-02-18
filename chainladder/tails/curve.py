@@ -73,23 +73,25 @@ class TailCurve(TailBase):
                                      greater than 1.0')
         _y = np.log(_y - 1)
         n_obs = _y.shape[-1]
+        n_obs = X.shape[-1]-1
         k, v = X.shape[:2]
         _x = self._get_x(_w, _y)
         # Get LDFs
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
-        extrapolate = np.cumsum(np.ones(tuple(list(_y.shape)[:-1] +
-                                              [self.extrap_periods])), -1) + n_obs
+        extrapolate = np.cumsum(
+            np.ones(tuple(list(_y.shape)[:-self._ave_period[0]-1] +
+                    [self.extrap_periods])), -1) + n_obs
         tail = self._predict_tail(slope, intercept, extrapolate)
-        sigma, std_err = self._get_tail_stats(tail, X)
-        self.ldf_.triangle[..., -1] = tail[..., -1]
+        self.ldf_.triangle[..., -tail.shape[-1]:] = tail
+        sigma, std_err = self._get_tail_stats(X)
         self.sigma_.triangle[..., -1] = sigma[..., -1]
         self.std_err_.triangle[..., -1] = std_err[..., -1]
         self.slope_ = slope
         self.intercept_ = intercept
         return self
 
-    def _get_tail_weighted_time_period(self, tail, X):
+    def _get_tail_weighted_time_period(self, X):
         """ Method to approximate the weighted-average development age of tail
         using log-linear extrapolation
 
@@ -98,14 +100,17 @@ class TailCurve(TailBase):
         y = X.ldf_.triangle.copy()
         y[y <= 1] = np.nan
         reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
+        tail = np.prod(self.ldf_.triangle[..., -self._ave_period[0]-1:],
+                       -1, keepdims=True)
+        reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
         time_pd = (np.log(tail-1)-reg.intercept_)/reg.slope_
         return time_pd
 
-    def _get_tail_stats(self, tail, X):
+    def _get_tail_stats(self, X):
         """ Method to approximate the tail sigma using
         log-linear extrapolation applied to tail average period
         """
-        time_pd = self._get_tail_weighted_time_period(tail, X)
+        time_pd = self._get_tail_weighted_time_period(X)
         reg = WeightedRegression(y=np.log(X.sigma_.triangle), axis=3).fit()
         sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         y = X.std_err_.triangle
@@ -125,6 +130,11 @@ class TailCurve(TailBase):
     def _predict_tail(self, slope, intercept, extrapolate):
         if self.curve == 'exponential':
             tail = np.exp(slope*extrapolate + intercept)
-            return np.expand_dims(np.product(1 + tail, -1), -1)
+            ave = 1 + tail[..., :self._ave_period[0]]
+            all = np.expand_dims(
+                np.product(1 + tail[..., self._ave_period[0]:], -1), -1)
+            tail = np.concatenate((ave, all), -1)
+            return tail
         if self.curve == 'inverse_power':
-            return np.expand_dims(np.product(1 + np.exp(intercept)*(extrapolate**slope), -1), -1)
+            return np.expand_dims(np.product(
+                1+np.exp(intercept)*(extrapolate**slope), -1), -1)

@@ -82,7 +82,9 @@ class Chainladder(MethodBase):
         obj = copy.deepcopy(self.X_)
         obj.triangle = np.repeat(self.X_.latest_diagonal.triangle,
                                  self.cdf_.shape[3], 3)
-        obj.triangle = (self.cdf_.triangle*obj.triangle)*self.X_.nan_triangle()
+        cdf = self.cdf_.triangle[..., :self.X_.nan_triangle().shape[-1]]
+        obj_tri = obj.triangle[..., :self.X_.nan_triangle().shape[-1]]
+        obj.triangle = (cdf*obj_tri)*self.X_.nan_triangle()
         obj = obj.latest_diagonal
         obj.ddims = ['Ultimate']
         obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])

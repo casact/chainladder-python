@@ -62,10 +62,10 @@ class MethodBase(BaseEstimator):
     @property
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
-        obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
         obj.valuation = self._set_valuation(obj)
+        obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
         obj.triangle = \
-            np.concatenate((obj.triangle, self.ultimate_.triangle), 3)
+            np.concatenate((obj.triangle, self.ultimate_.triangle), -1)
         obj.ddims = np.array([item for item in obj.ddims]+[9999])
         obj.nan_override = True
         return obj
@@ -80,19 +80,25 @@ class MethodBase(BaseEstimator):
     def _get_full_triangle_(self):
         obj = copy.deepcopy(self.X_)
         w = 1-np.nan_to_num(obj.nan_triangle())
+        extend = len(self.ldf_.ddims) - len(self.X_.ddims)
+        ones = np.ones((w.shape[-2], extend))
+        w = np.concatenate((w, ones), -1)
         obj.nan_override = True
-        e_tri = np.repeat(self.ultimate_.triangle, obj.shape[3], 3) / \
-            self.cdf_.triangle
+        e_tri = np.repeat(self.ultimate_.triangle,
+                          self.cdf_.triangle.shape[3], 3)/self.cdf_.triangle
         e_tri = e_tri * w
-        obj.triangle = np.nan_to_num(obj.triangle) + e_tri
+        zeros = obj.expand_dims(ones - ones)
         obj.valuation = self._set_valuation(obj)
+        obj.triangle = \
+            np.concatenate((np.nan_to_num(obj.triangle), zeros), -1) + e_tri
         obj.triangle = np.concatenate((obj.triangle,
                                        self.ultimate_.triangle), 3)
         obj.ddims = np.array([item for item in obj.ddims]+[9999])
         return obj
 
     def _set_valuation(self, obj):
-        val_array = pd.DataFrame(obj.valuation.values.reshape(obj.shape[-2:], order='f'))
-        val_array[9999] = pd.to_datetime('2262-04-11')
+        ldf_val = pd.DataFrame(self.ldf_.valuation.values.reshape(self.ldf_.shape[-2:], order='f'))
+        val_array = pd.DataFrame(obj.valuation.values.reshape(obj.shape[-2:], order='f')).iloc[:,0]
+        val_array = pd.concat((val_array, ldf_val), axis=1, ignore_index=True)
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         return val_array
