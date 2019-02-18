@@ -72,7 +72,6 @@ class TailCurve(TailBase):
             raise ZeroDivisionError('Tail fit requires all LDFs to be \
                                      greater than 1.0')
         _y = np.log(_y - 1)
-        n_obs = _y.shape[-1]
         n_obs = X.shape[-1]-1
         k, v = X.shape[:2]
         _x = self._get_x(_w, _y)
