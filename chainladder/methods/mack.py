@@ -106,8 +106,8 @@ class MackChainladder(Chainladder):
         nans = nans * np.ones((k, v, o, d))
         nans = np.concatenate((nans, np.ones((k, v, o, 1))*np.nan), 3)
         nans = 1-np.nan_to_num(nans)
-        obj.ddims = np.array([str(item) for item in obj.ddims]+['Ult'])
-        obj.valuation = self._set_valuation(obj)
+        properties = self.full_triangle_
+        obj.ddims, obj.valuation = properties.ddims, properties.valuation
         obj.nan_override = True
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':

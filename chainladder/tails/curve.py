@@ -79,10 +79,11 @@ class TailCurve(TailBase):
         coefs = WeightedRegression(_w, _x, _y, 3).fit()
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = np.cumsum(
-            np.ones(tuple(list(_y.shape)[:-self._ave_period[0]-1] +
+            np.ones(tuple(list(_y.shape)[:-1] +
                     [self.extrap_periods])), -1) + n_obs
         tail = self._predict_tail(slope, intercept, extrapolate)
-        self.ldf_.triangle[..., -tail.shape[-1]:] = tail
+        self.ldf_.triangle = self.ldf_.triangle[..., -1:]
+        self.ldf_.triangle = np.concatenate((self.ldf_.triangle, tail), -1)
         sigma, std_err = self._get_tail_stats(X)
         self.sigma_.triangle[..., -1] = sigma[..., -1]
         self.std_err_.triangle[..., -1] = std_err[..., -1]
@@ -129,11 +130,10 @@ class TailCurve(TailBase):
     def _predict_tail(self, slope, intercept, extrapolate):
         if self.curve == 'exponential':
             tail = np.exp(slope*extrapolate + intercept)
-            ave = 1 + tail[..., :self._ave_period[0]]
-            all = np.expand_dims(
-                np.product(1 + tail[..., self._ave_period[0]:], -1), -1)
-            tail = np.concatenate((ave, all), -1)
-            return tail
         if self.curve == 'inverse_power':
-            return np.expand_dims(np.product(
-                1+np.exp(intercept)*(extrapolate**slope), -1), -1)
+            tail = np.exp(intercept)*(extrapolate**slope)
+        ave = 1 + tail[..., :self._ave_period[0]]
+        all = np.expand_dims(
+            np.product(1 + tail[..., self._ave_period[0]:], -1), -1)
+        tail = np.concatenate((ave, all), -1)
+        return tail

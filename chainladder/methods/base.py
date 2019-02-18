@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
@@ -16,9 +15,9 @@ class MethodBase(BaseEstimator):
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
             obj = TailConstant().fit_transform(obj)
-        self.cdf_ = obj.cdf_
-        self.ldf_ = obj.ldf_
-        self.average_ = obj.average_
+        self.cdf_ = obj.__dict__.get('cdf_', None)
+        self.ldf_ = obj.__dict__.get('ldf_', None)
+        self.average_ = obj.__dict__.get('average_', None)
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
@@ -62,11 +61,12 @@ class MethodBase(BaseEstimator):
     @property
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
-        obj.valuation = self._set_valuation(obj)
         obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
         obj.triangle = \
             np.concatenate((obj.triangle, self.ultimate_.triangle), -1)
-        obj.ddims = np.array([item for item in obj.ddims]+[9999])
+        ddims = [int(item[item.find('-')+1:]) for item in self.cdf_.ddims]
+        obj.ddims = np.array([obj.ddims[0]]+ddims)
+        obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
         return obj
 
@@ -88,17 +88,11 @@ class MethodBase(BaseEstimator):
                           self.cdf_.triangle.shape[3], 3)/self.cdf_.triangle
         e_tri = e_tri * w
         zeros = obj.expand_dims(ones - ones)
-        obj.valuation = self._set_valuation(obj)
+        properties = self.full_expectation_
+        obj.valuation = properties.valuation
+        obj.ddims = properties.ddims
         obj.triangle = \
             np.concatenate((np.nan_to_num(obj.triangle), zeros), -1) + e_tri
         obj.triangle = np.concatenate((obj.triangle,
                                        self.ultimate_.triangle), 3)
-        obj.ddims = np.array([item for item in obj.ddims]+[9999])
         return obj
-
-    def _set_valuation(self, obj):
-        ldf_val = pd.DataFrame(self.ldf_.valuation.values.reshape(self.ldf_.shape[-2:], order='f'))
-        val_array = pd.DataFrame(obj.valuation.values.reshape(obj.shape[-2:], order='f')).iloc[:,0]
-        val_array = pd.concat((val_array, ldf_val), axis=1, ignore_index=True)
-        val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
-        return val_array
