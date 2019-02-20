@@ -87,5 +87,5 @@ class Chainladder(MethodBase):
         obj.triangle = (cdf*obj_tri)*self.X_.nan_triangle()
         obj = obj.latest_diagonal
         obj.ddims = ['Ultimate']
-        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
+        obj.valuation = obj._valuation_triangle()
         return obj

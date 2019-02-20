@@ -727,9 +727,11 @@ class TriangleBase:
         dates.
         '''
         ddims = self.ddims if ddims is None else ddims
-        if ddims[0]is None:
+        if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
             return pd.DatetimeIndex(ddims.values)
+        if ddims[0] == 'Ultimate':
+            return pd.DatetimeIndex([pd.to_datetime('2262-03-01')]*len(self.origin))
         if type(ddims[0]) is np.str_:
             ddims = [int(item[:item.find('-'):]) for item in ddims]
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
