@@ -272,6 +272,7 @@ class TriangleBase:
             self.development_grain = development_grain
             self.triangle = self._slide(new_tri, direction='l')
             self.triangle[self.triangle == 0] = np.nan
+            self.valuation = self._valuation_triangle()
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -730,8 +731,10 @@ class TriangleBase:
         if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
             return pd.DatetimeIndex(ddims.values)
-        if ddims[0] == 'Ultimate':
-            return pd.DatetimeIndex([pd.to_datetime('2262-03-01')]*len(self.origin))
+        special_cases = dict(Ultimate='2262-03-01', Latest=self.valuation_date)
+        if ddims[0] in special_cases.keys():
+            return pd.DatetimeIndex([pd.to_datetime(special_cases[ddims[0]])] *
+                                    len(self.origin))
         if type(ddims[0]) is np.str_:
             ddims = [int(item[:item.find('-'):]) for item in ddims]
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \

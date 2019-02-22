@@ -140,3 +140,8 @@ def test_reset_nan_on_valuation_chg():
     x = raa-raa[raa.development>='1989-01-01']
     x = raa[raa.origin<'1989-01-01']
     return True
+
+
+def test_grain_returns_valid_tri():
+    tri = cl.load_dataset('quarterly')
+    assert tri.grain('OYDY').latest_diagonal == tri.latest_diagonal
