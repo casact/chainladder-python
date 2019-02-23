@@ -54,7 +54,8 @@ def test_multilevel_index_groupby_sum2():
 
 
 def test_boolean_groupby_eq_groupby_loc():
-    assert tri[tri['LOB']=='ppauto'].sum() == tri.groupby('LOB').sum().loc['ppauto']
+    np.testing.assert_equal(tri[tri['LOB']=='ppauto'].sum().triangle,
+                        tri.groupby('LOB').sum().loc['ppauto'].triangle)
 
 
 def test_latest_diagonal_two_routes():
