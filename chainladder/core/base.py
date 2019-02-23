@@ -983,7 +983,7 @@ class _TriangleGroupBy:
 
 def set_method(cls, func, k):
     ''' Assigns methods to a class '''
-    func.__doc__ = f"Refer to pandas for ``{k}`` functionality."
+    func.__doc__ = 'Refer to pandas for ``{}`` functionality.'.format(k)
     func.__name__ = k
     setattr(cls, func.__name__, func)
 
