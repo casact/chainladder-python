@@ -93,8 +93,8 @@ class MunichAdjustment(BaseEstimator):
         incurred = obj[list(self.paid_to_incurred.values())[0]]
         for item in list(self.paid_to_incurred.values())[1:]:
             incurred[item] = obj[item]
-        paid = np.expand_dims(paid.triangle, 0)
-        incurred = np.expand_dims(incurred.triangle, 0)
+        paid = np.expand_dims(paid.values, 0)
+        incurred = np.expand_dims(incurred.values, 0)
         return np.concatenate((paid, incurred), axis=0)
 
     def _p_to_i_concate(self, obj_p, obj_i):
@@ -123,7 +123,7 @@ class MunichAdjustment(BaseEstimator):
             p_to_i_sigma[0]*np.sqrt(paid[..., :-1, :-1])
         residualI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
             p_to_i_sigma[1]*np.sqrt(incurred[..., :-1, :-1])
-        nans = (X-X[X.valuation == X.valuation_date]).triangle[0, 0]*0+1
+        nans = (X-X[X.valuation == X.valuation_date]).values[0, 0]*0+1
         q_resid = (paid/incurred - self.q_f_[1]) / \
             self.rho_sigma_[1]*np.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \
@@ -185,19 +185,19 @@ class MunichAdjustment(BaseEstimator):
         paid = list(self.paid_to_incurred.keys())
         for n, item in enumerate(paid):
             idx = np.where(X.cdf_.vdims == item)[0][0]
-            obj.triangle[:, idx:idx+1, ...] = cdf_triangle[0, :, n:n+1, ...]
+            obj.values[:, idx:idx+1, ...] = cdf_triangle[0, :, n:n+1, ...]
         incurred = list(self.paid_to_incurred.values())
         for n, item in enumerate(incurred):
             idx = np.where(X.cdf_.vdims == item)[0][0]
-            obj.triangle[:, idx:idx+1, ...] = cdf_triangle[1, :, n:n+1, ...]
+            obj.values[:, idx:idx+1, ...] = cdf_triangle[1, :, n:n+1, ...]
         obj.nan_override = True
         return obj
 
     @property
     def ldf_(self):
-        ldf_tri = self.cdf_.triangle.copy()
+        ldf_tri = self.cdf_.values.copy()
         ldf_tri = np.concatenate((ldf_tri, np.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1]/ldf_tri[..., 1:]
         obj = copy.deepcopy(self.cdf_)
-        obj.triangle = ldf_tri
+        obj.values = ldf_tri
         return obj

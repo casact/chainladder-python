@@ -33,8 +33,8 @@ class DevelopmentBase(BaseEstimator):
             return
         else:
             obj = copy.deepcopy(self.ldf_)
-            cdf_ = np.flip(np.cumprod(np.flip(obj.triangle, -1), -1), -1)
-            obj.triangle = cdf_
+            cdf_ = np.flip(np.cumprod(np.flip(obj.values, -1), -1), -1)
+            obj.values = cdf_
             return obj
 
 
@@ -77,8 +77,8 @@ class Development(DevelopmentBase):
         if type(self.n_periods) is int:
             return self._assign_n_periods_weight_int(X, self.n_periods)[..., :-1]
         elif type(self.n_periods) is list:
-            if len(self.n_periods) != X.triangle.shape[-1]-1:
-                raise ValueError('n_periods list must be of lenth {}.'.format(X.triangle.shape[-1]-1))
+            if len(self.n_periods) != X.values.shape[-1]-1:
+                raise ValueError('n_periods list must be of lenth {}.'.format(X.values.shape[-1]-1))
             else:
                 return self._assign_n_periods_weight_list(X)
         else:
@@ -96,9 +96,9 @@ class Development(DevelopmentBase):
             Only works for type(n_periods) == int
         '''
         if n_periods < 1 or n_periods >= X.shape[-2] - 1:
-            return X.triangle*0+1
+            return X.values*0+1
         else:
-            flip_nan = np.nan_to_num(X.triangle*0+1)
+            flip_nan = np.nan_to_num(X.values*0+1)
             k, v, o, d = flip_nan.shape
             w = np.concatenate((1-flip_nan[..., -(o-n_periods-1):, :],
                                 np.ones((k, v, n_periods+1, d))), 2)*flip_nan
@@ -120,7 +120,7 @@ class Development(DevelopmentBase):
             Returns the instance itself.
         """
 
-        tri_array = X.triangle.copy()
+        tri_array = X.values.copy()
         tri_array[tri_array == 0] = np.nan
         if type(self.average) is str:
             average = [self.average] * (tri_array.shape[-1] - 1)
@@ -182,7 +182,7 @@ class Development(DevelopmentBase):
 
     def _param_property(self, X, params, idx):
         obj = copy.deepcopy(X)
-        obj.triangle = np.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
+        obj.values = np.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True

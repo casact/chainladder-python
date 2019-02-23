@@ -80,11 +80,11 @@ class Chainladder(MethodBase):
     @property
     def ultimate_(self):
         obj = copy.deepcopy(self.X_)
-        obj.triangle = np.repeat(self.X_.latest_diagonal.triangle,
+        obj.values = np.repeat(self.X_.latest_diagonal.values,
                                  self.cdf_.shape[3], 3)
-        cdf = self.cdf_.triangle[..., :self.X_.nan_triangle().shape[-1]]
-        obj_tri = obj.triangle[..., :self.X_.nan_triangle().shape[-1]]
-        obj.triangle = (cdf*obj_tri)*self.X_.nan_triangle()
+        cdf = self.cdf_.values[..., :self.X_.nan_triangle().shape[-1]]
+        obj_tri = obj.values[..., :self.X_.nan_triangle().shape[-1]]
+        obj.values = (cdf*obj_tri)*self.X_.nan_triangle()
         obj = obj.latest_diagonal
         obj.ddims = ['Ultimate']
         obj.valuation = obj._valuation_triangle()

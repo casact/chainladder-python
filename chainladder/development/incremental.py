@@ -62,20 +62,20 @@ class IncrementalAdditive(DevelopmentBase):
         w_ = np.concatenate((w_, (w_[..., -1:]*x.nan_triangle())[..., -1:]),
                             axis=-1)
         if self.average == 'simple':
-            y_ = np.nanmean(w_*x.triangle, axis=-2)
+            y_ = np.nanmean(w_*x.values, axis=-2)
         if self.average == 'volume':
-            y_ = np.nansum(w_*x.triangle*sample_weight.triangle, axis=-2)
-            y_ = y_ / np.nansum(w_*sample_weight.triangle, axis=-2)
+            y_ = np.nansum(w_*x.values*sample_weight.values, axis=-2)
+            y_ = y_ / np.nansum(w_*sample_weight.values, axis=-2)
         y_ = np.repeat(np.expand_dims(y_, -2), len(x.odims), -2)
         obj = copy.deepcopy(x)
         keeps = 1-np.nan_to_num(x.nan_triangle()) + \
-            np.nan_to_num(x.get_latest_diagonal(compress=False).triangle[0,0,...]*0+1)
+            np.nan_to_num(x.get_latest_diagonal(compress=False).values[0,0,...]*0+1)
 
-        obj.triangle = (1+self.trend)**np.flip((np.abs(np.expand_dims(np.arange(obj.shape[-2]), 0).T -
+        obj.values = (1+self.trend)**np.flip((np.abs(np.expand_dims(np.arange(obj.shape[-2]), 0).T -
                      np.expand_dims(np.arange(obj.shape[-2]), 0))),0)*y_*keeps
-        obj.triangle = obj.triangle*(x.expand_dims(1-np.nan_to_num(x.nan_triangle()))) + \
-            np.nan_to_num((X.cum_to_incr()/sample_weight).triangle)
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = obj.values*(x.expand_dims(1-np.nan_to_num(x.nan_triangle()))) + \
+            np.nan_to_num((X.cum_to_incr()/sample_weight).values)
+        obj.values[obj.values == 0] = np.nan
         obj.nan_override = True
         self.incremental_ = obj*sample_weight
         self.ldf_ = obj.incr_to_cum().link_ratio

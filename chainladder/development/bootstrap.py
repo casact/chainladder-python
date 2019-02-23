@@ -56,7 +56,7 @@ class BootstrapODPSample(DevelopmentBase):
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
         exp_incr_triangle = obj.full_expectation_ \
-                               .cum_to_incr().triangle[0, 0, :, :X.shape[-1]]
+                               .cum_to_incr().values[0, 0, :, :X.shape[-1]]
         exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
             obj.X_.nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)
@@ -71,7 +71,7 @@ class BootstrapODPSample(DevelopmentBase):
             raise ValueError('Only single index/column triangles are ',
                              'supported')
         unscaled_residuals = \
-            ((X.cum_to_incr().triangle - exp_incr_triangle) /
+            ((X.cum_to_incr().values - exp_incr_triangle) /
              np.sqrt(np.abs(exp_incr_triangle**k_value)))[0, 0, ...]
         standardized_residuals = self.hat_ * unscaled_residuals
         pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
@@ -100,7 +100,7 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_triangles = np.swapaxes(np.expand_dims(resampled_triangles, 0), 0, 1)
         obj = copy.deepcopy(X)
         obj.kdims = np.arange(self.n_sims)
-        obj.triangle = resampled_triangles
+        obj.values = resampled_triangles
         return obj, scale_phi
 
         # Shapland cites Verral and England 2002 in using gamma as a proxy for
@@ -110,7 +110,7 @@ class BootstrapODPSample(DevelopmentBase):
         # Process variance adjustment
         #lower_diagonal = (obj.nan_triangle()*0)
         #lower_diagonal[np.isnan(lower_diagonal)]=1
-        #obj.triangle = Chainladder().fit(Development().fit_transform(obj)).full_expectation_.triangle[...,:-1]*lower_diagonal
+        #obj.values = Chainladder().fit(Development().fit_transform(obj)).full_expectation_.values[...,:-1]*lower_diagonal
         #obj.nan_override = True
         #if self.process_dist == 'gamma':
         #    process_triangle = np.nan_to_num(np.array([random_state.gamma(shape=abs(item/scale_phi),scale=scale_phi)*np.sign(np.nan_to_num(item)) for item in sim_exp_incr_triangle]))

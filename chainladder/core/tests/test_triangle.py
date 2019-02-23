@@ -31,12 +31,12 @@ def test_slice_by_loc_iloc():
 
 
 def test_link_ratio():
-    np.testing.assert_allclose(cl.load_dataset('RAA').link_ratio.triangle*cl.load_dataset('RAA').triangle[:,:,:-1,:-1],
-                               cl.load_dataset('RAA').triangle[:,:,:-1,1:], atol=1e-5)
+    np.testing.assert_allclose(cl.load_dataset('RAA').link_ratio.values*cl.load_dataset('RAA').values[:,:,:-1,:-1],
+                               cl.load_dataset('RAA').values[:,:,:-1,1:], atol=1e-5)
 
 
 def test_incr_to_cum():
-    np.testing.assert_equal(tri.cum_to_incr().incr_to_cum().triangle, tri.triangle)
+    np.testing.assert_equal(tri.cum_to_incr().incr_to_cum().values, tri.values)
 
 
 def test_create_new_value():
@@ -54,8 +54,8 @@ def test_multilevel_index_groupby_sum2():
 
 
 def test_boolean_groupby_eq_groupby_loc():
-    np.testing.assert_equal(tri[tri['LOB']=='ppauto'].sum().triangle,
-                        tri.groupby('LOB').sum().loc['ppauto'].triangle)
+    np.testing.assert_equal(tri[tri['LOB']=='ppauto'].sum().values,
+                        tri.groupby('LOB').sum().loc['ppauto'].values)
 
 
 def test_latest_diagonal_two_routes():
@@ -72,10 +72,10 @@ def test_append():
 
 def test_arithmetic_across_keys():
     x = cl.load_dataset('auto')
-    np.testing.assert_equal((x.sum()-x.iloc[0]).triangle, x.iloc[1].triangle)
+    np.testing.assert_equal((x.sum()-x.iloc[0]).values, x.iloc[1].values)
 
 def test_grain():
-    actual = qtr.iloc[0,0].grain('OYDY').triangle[0,0,:,:]
+    actual = qtr.iloc[0,0].grain('OYDY').values[0,0,:,:]
     expected = np.array([[  44.,  621.,  950., 1020., 1070., 1069., 1089., 1094., 1097.,
         1099., 1100., 1100.],
        [  42.,  541., 1052., 1169., 1238., 1249., 1266., 1269., 1296.,
@@ -129,12 +129,12 @@ def test_arithmetic_2():
 
 def test_shift():
     x = cl.load_dataset('quarterly').iloc[0,0]
-    np.testing.assert_equal(x[x.valuation<=x.valuation_date].triangle, x.triangle)
+    np.testing.assert_equal(x[x.valuation<=x.valuation_date].values, x.values)
 
 def test_quantile_vs_median():
     clrd = cl.load_dataset('clrd')
-    np.testing.assert_equal(clrd.quantile(.5)['CumPaidLoss'].triangle,
-                            clrd.median()['CumPaidLoss'].triangle)
+    np.testing.assert_equal(clrd.quantile(.5)['CumPaidLoss'].values,
+                            clrd.median()['CumPaidLoss'].values)
 
 
 def test_grain_returns_valid_tri():

@@ -59,7 +59,7 @@ class TailCurve(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        _y = self.ldf_.triangle[..., :-1].copy()
+        _y = self.ldf_.values[..., :-1].copy()
         _w = np.zeros(_y.shape)
         if type(self.fit_period) is not slice:
             raise TypeError('fit_period must be slice.')
@@ -82,11 +82,11 @@ class TailCurve(TailBase):
             np.ones(tuple(list(_y.shape)[:-1] +
                     [self.extrap_periods])), -1) + n_obs
         tail = self._predict_tail(slope, intercept, extrapolate)
-        self.ldf_.triangle = self.ldf_.triangle[..., :-tail.shape[-1]]
-        self.ldf_.triangle = np.concatenate((self.ldf_.triangle, tail), -1)
+        self.ldf_.values = self.ldf_.values[..., :-tail.shape[-1]]
+        self.ldf_.values = np.concatenate((self.ldf_.values, tail), -1)
         sigma, std_err = self._get_tail_stats(X)
-        self.sigma_.triangle[..., -1] = sigma[..., -1]
-        self.std_err_.triangle[..., -1] = std_err[..., -1]
+        self.sigma_.values[..., -1] = sigma[..., -1]
+        self.std_err_.values[..., -1] = std_err[..., -1]
         self.slope_ = slope
         self.intercept_ = intercept
         return self
@@ -97,10 +97,10 @@ class TailCurve(TailBase):
 
         Returns: float32
         """
-        y = X.ldf_.triangle.copy()
+        y = X.ldf_.values.copy()
         y[y <= 1] = np.nan
         reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
-        tail = np.prod(self.ldf_.triangle[..., -self._ave_period[0]-1:],
+        tail = np.prod(self.ldf_.values[..., -self._ave_period[0]-1:],
                        -1, keepdims=True)
         reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
         time_pd = (np.log(tail-1)-reg.intercept_)/reg.slope_
@@ -111,9 +111,9 @@ class TailCurve(TailBase):
         log-linear extrapolation applied to tail average period
         """
         time_pd = self._get_tail_weighted_time_period(X)
-        reg = WeightedRegression(y=np.log(X.sigma_.triangle), axis=3).fit()
+        reg = WeightedRegression(y=np.log(X.sigma_.values), axis=3).fit()
         sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
-        y = X.std_err_.triangle
+        y = X.std_err_.values
         y[y == 0] = np.nan
         reg = WeightedRegression(y=np.log(y), axis=3).fit()
         std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)

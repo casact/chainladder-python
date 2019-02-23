@@ -58,12 +58,12 @@ class CapeCod(MethodBase):
         """
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
-        latest = self.X_.latest_diagonal.triangle
+        latest = self.X_.latest_diagonal.values
         obj = copy.deepcopy(self.X_)
-        obj.triangle = \
-            self.X_.cdf_.triangle[..., :obj.shape[-1]]*(obj.triangle*0+1)
-        cdf = obj.latest_diagonal.triangle
-        exposure = sample_weight.triangle
+        obj.values = \
+            self.X_.cdf_.values[..., :obj.shape[-1]]*(obj.values*0+1)
+        cdf = obj.latest_diagonal.values
+        exposure = sample_weight.values
         reported_exposure = exposure/cdf
         trend_exponent = exposure.shape[-2]-np.arange(exposure.shape[-2])-1
         trend_array = (1+self.trend)**(trend_exponent)
@@ -77,14 +77,14 @@ class CapeCod(MethodBase):
                                        reported_exposure, -1, -2)
         apriori = np.sum(weighted_exposure*trended_ultimate, -1) / \
             np.sum(weighted_exposure, -1)
-        obj.triangle = np.expand_dims(apriori, -1)
+        obj.values = np.expand_dims(apriori, -1)
         obj.ddims = ['Apriori']
         self.apriori_ = copy.deepcopy(obj)
-        detrended_ultimate = self.apriori_.triangle/trend_array
+        detrended_ultimate = self.apriori_.values/trend_array
         self.detrended_apriori_ = copy.deepcopy(obj)
         self.detrended_apriori_.tiangle = detrended_ultimate
         ibnr = detrended_ultimate*(1-1/cdf)*exposure
-        obj.triangle = latest + ibnr
+        obj.values = latest + ibnr
         obj.ddims = ['Ultimate']
         obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
         self.ultimate_ = obj

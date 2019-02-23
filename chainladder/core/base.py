@@ -21,12 +21,12 @@ agg_funcs = {item: 'nan'+item for item in agg_funcs}
 #         X = f(*args, **kwargs)
 #         if not hasattr(X, 'triangle'):
 #             raise ValueError('X is missing triangle attribute')
-#         if X.triangle.ndim != 4:
-#             raise ValueError('X.triangle must be a 4-dimensional array')
-#         if len(X.kdims) != X.triangle.shape[0]:
-#             raise ValueError('X.index and X.triangle are misaligned')
-#         if len(X.vdims) != X.triangle.shape[1]:
-#             raise ValueError('X.columns and X.triangle are misaligned')
+#         if X.values.ndim != 4:
+#             raise ValueError('X.values must be a 4-dimensional array')
+#         if len(X.kdims) != X.values.shape[0]:
+#             raise ValueError('X.index and X.values are misaligned')
+#         if len(X.vdims) != X.values.shape[1]:
+#             raise ValueError('X.columns and X.values are misaligned')
 #         return X
 #     return wrapper
 
@@ -90,7 +90,7 @@ class TriangleBase:
         triangle = np.swapaxes(triangle, 1, 2)
         # Set all 0s to NAN for nansafe ufunc arithmetic
         triangle[triangle == 0] = np.nan
-        self.triangle = triangle
+        self.values = triangle
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
@@ -106,7 +106,7 @@ class TriangleBase:
 
     @property
     def shape(self):
-        return self.triangle.shape
+        return self.values.shape
 
     @property
     def index(self):
@@ -147,15 +147,15 @@ class TriangleBase:
     # @check_triangle_postcondition
     def link_ratio(self):
         obj = copy.deepcopy(self)
-        temp = obj.triangle.copy()
+        temp = obj.values.copy()
         temp[temp == 0] = np.nan
         val_array = obj.valuation.values.reshape(obj.shape[-2:],order='f')[:, 1:]
-        obj.triangle = temp[..., 1:]/temp[..., :-1]
+        obj.values = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
-        if np.max(np.sum(~np.isnan(self.triangle[..., -1, :]), 2)-1) == 0:
-            obj.triangle = obj.triangle[..., :-1, :]
+        if np.max(np.sum(~np.isnan(self.values[..., -1, :]), 2)-1) == 0:
+            obj.values = obj.values[..., :-1, :]
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
         obj.valuation = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
@@ -174,13 +174,13 @@ class TriangleBase:
             self.nan_overide == False.
         '''
         obj = copy.deepcopy(self)
-        diagonal = obj[obj.valuation == obj.valuation_date].triangle
+        diagonal = obj[obj.valuation == obj.valuation_date].values
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = ['Latest']
             obj.valuation = pd.DatetimeIndex(
                 [pd.to_datetime(obj.valuation_date)]*len(obj.odims))
-        obj.triangle = diagonal
+        obj.values = diagonal
         return obj
 
     # @check_triangle_postcondition
@@ -198,9 +198,9 @@ class TriangleBase:
         """
 
         if inplace:
-            np.cumsum(np.nan_to_num(self.triangle), axis=3, out=self.triangle)
-            self.triangle = self.expand_dims(self.nan_triangle())*self.triangle
-            self.triangle[self.triangle == 0] = np.nan
+            np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
+            self.values = self.expand_dims(self.nan_triangle())*self.values
+            self.values[self.values == 0] = np.nan
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -221,12 +221,12 @@ class TriangleBase:
         """
 
         if inplace:
-            temp = np.nan_to_num(self.triangle)[..., 1:] - \
-                np.nan_to_num(self.triangle)[..., :-1]
-            temp = np.concatenate((self.triangle[..., 0:1], temp), axis=3)
+            temp = np.nan_to_num(self.values)[..., 1:] - \
+                np.nan_to_num(self.values)[..., :-1]
+            temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
             temp = temp*self.expand_dims(self.nan_triangle())
             temp[temp == 0] = np.nan
-            self.triangle = temp
+            self.values = temp
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -270,8 +270,8 @@ class TriangleBase:
             self.odims = np.unique(o)
             self.origin_grain = origin_grain
             self.development_grain = development_grain
-            self.triangle = self._slide(new_tri, direction='l')
-            self.triangle[self.triangle == 0] = np.nan
+            self.values = self._slide(new_tri, direction='l')
+            self.values[self.values == 0] = np.nan
             self.valuation = self._valuation_triangle()
             return self
         else:
@@ -307,7 +307,7 @@ class TriangleBase:
         if axis == -1:
             trend = np.swapaxes(trend, -2, -1)
         obj = copy.deepcopy(self)
-        obj.triangle = obj.triangle*trend
+        obj.values = obj.values*trend
         return obj
 
     def rename(self, axis, value):
@@ -325,7 +325,7 @@ class TriangleBase:
     # ------------------------ Display Options ----------------------- #
     # ---------------------------------------------------------------- #
     def __repr__(self):
-        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             return data.to_string()
         else:
@@ -339,7 +339,7 @@ class TriangleBase:
 
     def _repr_html_(self):
         ''' Jupyter/Ipython HTML representation '''
-        if (self.triangle.shape[0], self.triangle.shape[1]) == (1, 1):
+        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             if np.nanmean(abs(data)) < 10:
                 fmt_str = '{0:,.4f}'
@@ -355,8 +355,10 @@ class TriangleBase:
                                    float_format=fmt_str.format) \
                           .replace('nan', '')
             return default.replace(
-                '<th></th>\n      <th>{}</th>'.format(self.development.values[0][0]),
-                '<th>Origin</th>\n      <th>{}</th>'.format(self.development.values[0][0]))
+                '<th></th>\n      <th>{}</th>'.format(
+                    self.development.values[0][0]),
+                '<th>Origin</th>\n      <th>{}</th>'.format(
+                    self.development.values[0][0]))
         else:
             data = pd.Series([self.valuation_date.strftime('%Y-%m'),
                              'O' + self.origin_grain + 'D'
@@ -371,7 +373,7 @@ class TriangleBase:
 
     def _repr_format(self):
         ''' Flatten to 2D DataFrame '''
-        x = self.triangle[0, 0]
+        x = self.values[0, 0]
         if type(self.odims[0]) == np.datetime64:
             origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
         else:
@@ -393,7 +395,7 @@ class TriangleBase:
         if self.shape[:2] == (1, 1):
             return self._repr_format()
         elif len(axes) == 2 or len(axes) == 1:
-            tri = np.squeeze(self.triangle)
+            tri = np.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: self.odims, 3: self.ddims}
             if len(axes) == 2:
@@ -441,16 +443,16 @@ class TriangleBase:
                 other = other[other.origin.isin(odims)][other.development.isin(ddims)]
                 obj.odims = np.sort(np.array(list(odims)))
                 obj.ddims = np.sort(np.array(list(ddims)))
-            other = other.triangle
+            other = other.values
         return obj, other
 
     # @check_triangle_postcondition
     def __add__(self, other):
         obj = copy.deepcopy(self)
         obj, other = self._validate_arithmetic(obj, other)
-        obj.triangle = np.nan_to_num(obj.triangle) + np.nan_to_num(other)
-        obj.triangle = obj.triangle * self.expand_dims(obj.nan_triangle())
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = np.nan_to_num(obj.values) + np.nan_to_num(other)
+        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
+        obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
@@ -462,10 +464,10 @@ class TriangleBase:
     def __sub__(self, other):
         obj = copy.deepcopy(self)
         obj, other = self._validate_arithmetic(obj, other)
-        obj.triangle = np.nan_to_num(obj.triangle) - \
+        obj.values = np.nan_to_num(obj.values) - \
             np.nan_to_num(other)
-        obj.triangle = obj.triangle * self.expand_dims(obj.nan_triangle())
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
+        obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
@@ -473,10 +475,10 @@ class TriangleBase:
     def __rsub__(self, other):
         obj = copy.deepcopy(self)
         obj, other = self._validate_arithmetic(obj, other)
-        obj.triangle = np.nan_to_num(other) - \
-            np.nan_to_num(obj.triangle)
-        obj.triangle = obj.triangle * self.expand_dims(obj.nan_triangle())
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = np.nan_to_num(other) - \
+            np.nan_to_num(obj.values)
+        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
+        obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
@@ -486,7 +488,7 @@ class TriangleBase:
     # @check_triangle_postcondition
     def __neg__(self):
         obj = copy.deepcopy(self)
-        obj.triangle = -obj.triangle
+        obj.values = -obj.values
         return obj
 
     # @check_triangle_postcondition
@@ -497,9 +499,9 @@ class TriangleBase:
     def __mul__(self, other):
         obj = copy.deepcopy(self)
         obj, other = self._validate_arithmetic(obj, other)
-        obj.triangle = np.nan_to_num(obj.triangle)*other
-        obj.triangle = obj.triangle * self.expand_dims(obj.nan_triangle())
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = np.nan_to_num(obj.values)*other
+        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
+        obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
@@ -511,21 +513,21 @@ class TriangleBase:
     def __truediv__(self, other):
         obj = copy.deepcopy(self)
         obj, other = self._validate_arithmetic(obj, other)
-        obj.triangle = np.nan_to_num(obj.triangle)/other
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = np.nan_to_num(obj.values)/other
+        obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     # @check_triangle_postcondition
     def __rtruediv__(self, other):
         obj = copy.deepcopy(self)
-        obj.triangle = other / self.triangle
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = other / self.values
+        obj.values[obj.values == 0] = np.nan
         return obj
 
     def __eq__(self, other):
-        if np.all(np.nan_to_num(self.triangle) ==
-           np.nan_to_num(other.triangle)):
+        if np.all(np.nan_to_num(self.values) ==
+           np.nan_to_num(other.values)):
             return True
         else:
             return False
@@ -588,7 +590,7 @@ class TriangleBase:
         idx = self.idx_table()
         idx[key] = 1
         self.vdims = np.array(idx.columns.unique())
-        self.triangle = np.append(self.triangle, value.triangle, axis=1)
+        self.values = np.append(self.values, value.values, axis=1)
 
     # @check_triangle_postcondition
     def append(self, obj, index):
@@ -597,7 +599,7 @@ class TriangleBase:
         new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
         x = x.append(new_idx)
         x.set_index(return_obj.key_labels, inplace=True)
-        return_obj.triangle = np.append(return_obj.triangle, obj.triangle,
+        return_obj.values = np.append(return_obj.values, obj.values,
                                         axis=0)
         return_obj.kdims = np.array(x.index.unique())
         return return_obj
@@ -606,7 +608,7 @@ class TriangleBase:
     def _slice_origin(self, key):
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
-        obj.triangle = obj.triangle[..., key, :]
+        obj.values = obj.values[..., key, :]
         return self._cleanup_slice(obj)
 
     # @check_triangle_postcondition
@@ -623,15 +625,15 @@ class TriangleBase:
         obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
         if len(obj.ddims) > 1:
             obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
-        obj.triangle = (obj.triangle*nan_tri)
-        obj.triangle = np.take(np.take(obj.triangle, o_idx, -2), d_idx, -1)
+        obj.values = (obj.values*nan_tri)
+        obj.values = np.take(np.take(obj.values, o_idx, -2), d_idx, -1)
         return self._cleanup_slice(obj)
 
     # @check_triangle_postcondition
     def _slice_development(self, key):
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
-        obj.triangle = obj.triangle[..., key]
+        obj.values = obj.values[..., key]
         return self._cleanup_slice(obj)
 
     def _cleanup_slice(self, obj):
@@ -710,12 +712,12 @@ class TriangleBase:
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
-        if self.triangle.shape[2] == 1 or \
-           self.triangle.shape[3] == 1 or \
+        if self.values.shape[2] == 1 or \
+           self.values.shape[3] == 1 or \
            self.nan_override:
             # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
             # and does not need nan overrides
-            return np.ones(self.triangle.shape[2:])
+            return np.ones(self.values.shape[2:])
         if len(self.valuation) != len(self.odims)*len(self.ddims) or not \
            hasattr(self, '_nan_triangle'):
             self.valuation = self._valuation_triangle()
@@ -764,7 +766,7 @@ class TriangleBase:
         ''' Facilitates swapping alignment of triangle between development
             period and development date. '''
         obj = copy.deepcopy(self)
-        obj.triangle = triangle
+        obj.values = triangle
         nan_tri = obj.nan_triangle()
         r = (nan_tri.shape[1] - np.nansum(nan_tri, axis=1)).astype(int)
         r = -r if direction == 'l' else r
@@ -868,7 +870,7 @@ class TriangleBase:
 
     def _set_ograin(self, grain, incremental):
         origin_grain = grain[1:2]
-        tri = np.nan_to_num(self.triangle)*self.nan_triangle()
+        tri = np.nan_to_num(self.values)*self.nan_triangle()
         orig = np.nan_to_num(self._slide(tri))
         o_dt = pd.Series(self.odims)
         if origin_grain == 'Q':
@@ -919,8 +921,8 @@ class _LocBase:
         idx_slice = np.array(idx).flatten()
         x = tuple([np.unique(np.array(item))
                    for item in list(zip(*idx_slice))])
-        obj.triangle = obj.triangle[x[0]][:, x[1]]
-        obj.triangle[obj.triangle == 0] = np.nan
+        obj.values = obj.values[x[0]][:, x[1]]
+        obj.values[obj.values == 0] = np.nan
         return obj
 
 
@@ -959,23 +961,23 @@ class _TriangleGroupBy:
         old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
         for i in range(3):
             old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
-        new_tri = obj.triangle
+        new_tri = obj.values
         new_tri = np.repeat(np.expand_dims(new_tri, 0), v2_len, 0)
 
-        obj.triangle = new_tri
+        obj.values = new_tri
         obj.kdims = np.array(list(new_index))
         obj.key_labels = list(new_index.names)
         self.obj = obj
         self.old_k_by_new_k = old_k_by_new_k
 
     def quantile(self, q, axis=1, *args, **kwargs):
-        x = self.obj.triangle*self.old_k_by_new_k
+        x = self.obj.values*self.old_k_by_new_k
         ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
         x = np.where(ignore_vector, 0, x)
-        self.obj.triangle = \
+        self.obj.values = \
             getattr(np, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
-        self.obj.triangle[self.obj.triangle == 0] = np.nan
+        self.obj.values[self.obj.values == 0] = np.nan
         return self.obj
 # ---------------------------------------------------------------- #
 # ------------------------- Meta methods ------------------------- #
@@ -1002,13 +1004,13 @@ def add_triangle_agg_func(cls, k, v):
 def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
-        x = self.obj.triangle*self.old_k_by_new_k
+        x = self.obj.values*self.old_k_by_new_k
         ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
         x = np.where(ignore_vector, 0, x)
-        self.obj.triangle = \
+        self.obj.values = \
             getattr(np, v)(x, axis=1, *args, **kwargs)
-        self.obj.triangle[self.obj.triangle == 0] = np.nan
+        self.obj.values[self.obj.values == 0] = np.nan
         return self.obj
     set_method(cls, agg_func, k)
 

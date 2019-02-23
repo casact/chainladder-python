@@ -32,7 +32,7 @@ est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_tail_ldf(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))
-    p = mack_p(data, averages[0], est_sigma[0]).ldf_.triangle[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[0, 0, :, :]
     p = np.concatenate((p[:,:-2], np.prod(p[:, -2:],-1, keepdims=True)), -1)
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
@@ -43,7 +43,7 @@ def test_mack_tail_ldf(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_tail_sigma(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
-    p = mack_p(data, averages[0], est_sigma[0]).sigma_.triangle[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).sigma_.values[0, 0, :, :]
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
@@ -53,7 +53,7 @@ def test_mack_tail_sigma(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_tail_std_err(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
-    p = mack_p(data, averages[0], est_sigma[0]).std_err_.triangle[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).std_err_.values[0, 0, :, :]
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
@@ -62,8 +62,8 @@ def test_mack_tail_std_err(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('averages', averages[0:1])
 @pytest.mark.parametrize('est_sigma', est_sigma[0:1])
 def test_tail_doesnt_mutate_std_err(data, averages, est_sigma):
-    p = mack_p(data, averages[0], est_sigma[0]).std_err_.triangle[:, :, :, :-1]
-    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).std_err_.triangle
+    p = mack_p(data, averages[0], est_sigma[0]).std_err_.values[:, :, :, :-1]
+    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).std_err_.values
     assert_equal(p_no_tail, p)
 
 
@@ -71,8 +71,8 @@ def test_tail_doesnt_mutate_std_err(data, averages, est_sigma):
 @pytest.mark.parametrize('averages', averages[0:1])
 @pytest.mark.parametrize('est_sigma', est_sigma[0:1])
 def test_tail_doesnt_mutate_ldf_(data, averages, est_sigma):
-    p = mack_p(data, averages[0], est_sigma[0]).ldf_.triangle[..., :len(cl.load_dataset(data).ddims)-1]
-    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).ldf_.triangle
+    p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[..., :len(cl.load_dataset(data).ddims)-1]
+    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).ldf_.values
     assert_equal(p_no_tail, p)
 
 
@@ -80,6 +80,6 @@ def test_tail_doesnt_mutate_ldf_(data, averages, est_sigma):
 @pytest.mark.parametrize('averages', averages[0:1])
 @pytest.mark.parametrize('est_sigma', est_sigma[0:1])
 def test_tail_doesnt_mutate_sigma_(data, averages, est_sigma):
-    p = mack_p(data, averages[0], est_sigma[0]).sigma_.triangle[:, :, :, :-1]
-    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).sigma_.triangle
+    p = mack_p(data, averages[0], est_sigma[0]).sigma_.values[:, :, :, :-1]
+    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).sigma_.values
     assert_equal(p_no_tail, p)

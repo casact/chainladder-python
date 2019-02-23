@@ -39,7 +39,7 @@ def test_full_slice2():
 def test_n_periods():
     d = cl.load_dataset('usauto')['incurred']
     return np.all(np.round(np.unique(
-        cl.Development(n_periods=3, average='volume').fit(d).ldf_.triangle,
+        cl.Development(n_periods=3, average='volume').fit(d).ldf_.values,
         axis=-2), 3).flatten() ==
         np.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0]))
 
@@ -48,7 +48,7 @@ def test_n_periods():
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_ldf(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))[:, :-1]
-    p = mack_p(data, averages[0], est_sigma[0]).ldf_.triangle[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[0, 0, :, :]
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
@@ -58,7 +58,7 @@ def test_mack_ldf(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_sigma(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
-    p = mack_p(data, averages[0], est_sigma[0]).sigma_.triangle[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).sigma_.values[0, 0, :, :]
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
 
@@ -68,6 +68,6 @@ def test_mack_sigma(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_std_err(data, averages, est_sigma, atol):
     r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
-    p = mack_p(data, averages[0], est_sigma[0]).std_err_.triangle[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).std_err_.values[0, 0, :, :]
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)

@@ -61,9 +61,9 @@ class MethodBase(BaseEstimator):
     @property
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
-        obj.triangle = self.ultimate_.triangle / self.cdf_.triangle
-        obj.triangle = \
-            np.concatenate((obj.triangle, self.ultimate_.triangle), -1)
+        obj.values = self.ultimate_.values / self.cdf_.values
+        obj.values = \
+            np.concatenate((obj.values, self.ultimate_.values), -1)
         ddims = [int(item[item.find('-')+1:]) for item in self.cdf_.ddims]
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
@@ -73,7 +73,7 @@ class MethodBase(BaseEstimator):
     @property
     def ibnr_(self):
         obj = copy.deepcopy(self.ultimate_)
-        obj.triangle = self.ultimate_.triangle-self.X_.latest_diagonal.triangle
+        obj.values = self.ultimate_.values-self.X_.latest_diagonal.values
         obj.ddims = ['IBNR']
         return obj
 
@@ -84,15 +84,15 @@ class MethodBase(BaseEstimator):
         ones = np.ones((w.shape[-2], extend))
         w = np.concatenate((w, ones), -1)
         obj.nan_override = True
-        e_tri = np.repeat(self.ultimate_.triangle,
-                          self.cdf_.triangle.shape[3], 3)/self.cdf_.triangle
+        e_tri = np.repeat(self.ultimate_.values,
+                          self.cdf_.values.shape[3], 3)/self.cdf_.values
         e_tri = e_tri * w
         zeros = obj.expand_dims(ones - ones)
         properties = self.full_expectation_
         obj.valuation = properties.valuation
         obj.ddims = properties.ddims
-        obj.triangle = \
-            np.concatenate((np.nan_to_num(obj.triangle), zeros), -1) + e_tri
-        obj.triangle = np.concatenate((obj.triangle,
-                                       self.ultimate_.triangle), 3)
+        obj.values = \
+            np.concatenate((np.nan_to_num(obj.values), zeros), -1) + e_tri
+        obj.values = np.concatenate((obj.values,
+                                       self.ultimate_.values), 3)
         return obj

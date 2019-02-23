@@ -74,7 +74,7 @@ class MackChainladder(Chainladder):
     @property
     def full_std_err_(self):
         obj = copy.deepcopy(self.X_)
-        tri_array = self.full_triangle_.triangle
+        tri_array = self.full_triangle_.values
         weight_dict = {'regression': 2, 'volume': 1, 'simple': 0}
         val = np.array([weight_dict.get(item.lower(), 2)
                         for item in list(self.average_) + ['volume']])
@@ -83,18 +83,18 @@ class MackChainladder(Chainladder):
         k, v, o, d = val.shape
         weight = np.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val))
         weight[weight == 0] = np.nan
-        obj.triangle = self.X_.sigma_.triangle / weight
+        obj.values = self.X_.sigma_.values / weight
         w = np.concatenate((self.X_.w_, np.ones((k, v, o, 1))*np.nan), axis=3)
         w[np.isnan(w)] = 1
-        obj.triangle = np.nan_to_num(obj.triangle) * w
+        obj.values = np.nan_to_num(obj.values) * w
         obj.nan_override = True
         return obj
 
     @property
     def total_process_risk_(self):
         obj = copy.deepcopy(self.process_risk_)
-        obj.triangle = np.sqrt(np.nansum(self.process_risk_.triangle**2, 2))
-        obj.triangle = np.expand_dims(obj.triangle, 2)
+        obj.values = np.sqrt(np.nansum(self.process_risk_.values**2, 2))
+        obj.values = np.expand_dims(obj.values, 2)
         obj.odims = ['tot_proc_risk']
         return obj
 
@@ -111,26 +111,26 @@ class MackChainladder(Chainladder):
         obj.nan_override = True
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':
-            obj.triangle = self._get_risk(nans, risk_arr,
-                                          obj.std_err_.triangle)
+            obj.values = self._get_risk(nans, risk_arr,
+                                          obj.std_err_.values)
             self.parameter_risk_ = obj
         elif est == 'process_risk':
-            obj.triangle = self._get_risk(nans, risk_arr,
-                                          self.full_std_err_.triangle)
+            obj.values = self._get_risk(nans, risk_arr,
+                                          self.full_std_err_.values)
             self.process_risk_ = obj
         else:
             risk_arr = risk_arr[..., 0:1, :]
-            obj.triangle = self._get_tot_param_risk(risk_arr)
+            obj.values = self._get_tot_param_risk(risk_arr)
             obj.odims = ['Total param risk']
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
-        full_tri = self.full_triangle_.triangle[..., :len(self.X_.ddims)]
+        full_tri = self.full_triangle_.values[..., :len(self.X_.ddims)]
         t1_t = (full_tri * std_err)**2
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
-        ldf = self.X_.ldf_.triangle[..., :len(self.X_.ddims)-1]
+        ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
         ldf = np.concatenate(
-            (ldf, np.prod(self.X_.ldf_.triangle[..., -extend:], -1,
+            (ldf, np.prod(self.X_.ldf_.values[..., -extend:], -1,
              keepdims=True)), -1)
         for i in range(len(self.X_.ddims)):
             t1 = t1_t[..., i:i+1]
@@ -141,14 +141,14 @@ class MackChainladder(Chainladder):
 
     def _get_tot_param_risk(self, risk_arr):
         """ This assumes triangle symmertry """
-        t1 = self.full_triangle_.triangle[..., :len(self.X_.ddims)] - \
-             np.nan_to_num(self.X_.triangle) + \
-             np.nan_to_num(self.X_.get_latest_diagonal(False).triangle)
-        t1 = np.expand_dims(np.sum(t1*self.X_.std_err_.triangle, 2), 2)
+        t1 = self.full_triangle_.values[..., :len(self.X_.ddims)] - \
+             np.nan_to_num(self.X_.values) + \
+             np.nan_to_num(self.X_.get_latest_diagonal(False).values)
+        t1 = np.expand_dims(np.sum(t1*self.X_.std_err_.values, 2), 2)
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
-        ldf = self.X_.ldf_.triangle[..., :len(self.X_.ddims)-1]
+        ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
         ldf = np.concatenate(
-            (ldf, np.prod(self.X_.ldf_.triangle[..., -extend:], -1,
+            (ldf, np.prod(self.X_.ldf_.values[..., -extend:], -1,
              keepdims=True)), -1)
         ldf = np.unique(ldf, axis=-2)
         for i in range(self.full_triangle_.shape[-1]-1):
@@ -160,17 +160,17 @@ class MackChainladder(Chainladder):
     @property
     def mack_std_err_(self):
         obj = copy.deepcopy(self.parameter_risk_)
-        obj.triangle = np.sqrt(self.parameter_risk_.triangle**2 +
-                               self.process_risk_.triangle**2)
+        obj.values = np.sqrt(self.parameter_risk_.values**2 +
+                               self.process_risk_.values**2)
         return obj
 
     @property
     def total_mack_std_err_(self):
         # This might be better as a dataframe
         obj = copy.deepcopy(self.X_.latest_diagonal)
-        obj.triangle = np.sqrt(self.total_process_risk_.triangle**2 +
-                               self.total_parameter_risk_.triangle**2)
-        obj.triangle = obj.triangle[..., -1:]
+        obj.values = np.sqrt(self.total_process_risk_.values**2 +
+                               self.total_parameter_risk_.values**2)
+        obj.values = obj.values[..., -1:]
         obj.ddims = ['Total Mack Std Err']
         obj.odims = ['Total']
         return obj
@@ -179,11 +179,11 @@ class MackChainladder(Chainladder):
     def summary_(self):
         # This might be better as a dataframe
         obj = copy.deepcopy(self.X_)
-        obj.triangle = np.concatenate(
-            (self.X_.latest_diagonal.triangle,
-             self.ibnr_.triangle,
-             self.ultimate_.triangle,
-             self.mack_std_err_.triangle[..., -1:]), 3)
+        obj.values = np.concatenate(
+            (self.X_.latest_diagonal.values,
+             self.ibnr_.values,
+             self.ultimate_.values,
+             self.mack_std_err_.values[..., -1:]), 3)
         obj.ddims = ['Latest', 'IBNR', 'Ultimate', 'Mack Std Err']
         obj.nan_override = True
         return obj

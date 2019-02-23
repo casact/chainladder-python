@@ -76,7 +76,7 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        self.ldf_.triangle[..., -1] = self.ldf_.triangle[..., -1]*self.tail
+        self.ldf_.values[..., -1] = self.ldf_.values[..., -1]*self.tail
         return self
 
     def transform(self, X):

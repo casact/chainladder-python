@@ -72,17 +72,17 @@ class Benktander(MethodBase):
 
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
-        latest = self.X_.latest_diagonal.triangle
-        apriori = sample_weight.triangle * self.apriori
+        latest = self.X_.latest_diagonal.values
+        apriori = sample_weight.values * self.apriori
         obj = copy.deepcopy(self.X_)
-        obj.triangle = \
-            self.X_.cdf_.triangle[..., :obj.shape[-1]]*(obj.triangle*0+1)
-        cdf = obj.latest_diagonal.triangle
+        obj.values = \
+            self.X_.cdf_.values[..., :obj.shape[-1]]*(obj.values*0+1)
+        cdf = obj.latest_diagonal.values
         cdf = np.expand_dims(1-1/cdf, 0)
         exponents = np.arange(self.n_iters+1)
         exponents = np.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents
-        obj.triangle = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
+        obj.values = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
         obj.ddims = ['Ultimate']
         obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
         self.ultimate_ = obj
