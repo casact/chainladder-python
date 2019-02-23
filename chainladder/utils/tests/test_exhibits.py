@@ -13,5 +13,5 @@ def test_simple_exhibit():
                          sheet_name='Sheet2')
     exhibits.del_exhibit('Sheet1')
     exhibits.to_excel('test_excel.xlsx')
-    np.testing.assert_equal(pd.read_excel('test_excel.xlsx').values,
+    np.testing.assert_equal(pd.read_excel('test_excel.xlsx', index_col=0).values,
                             cl.load_dataset('raa').to_frame().values)

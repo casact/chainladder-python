@@ -677,8 +677,9 @@ class TriangleBase:
                                 self.origin_grain, self.development_grain)
         cart_prod_t = pd.DataFrame({'origin': origin_date,
                                    'development': development_date})
-        cart_prod = cart_prod_o.append(cart_prod_d) \
-                               .append(cart_prod_t).drop_duplicates()
+        cart_prod = cart_prod_o.append(cart_prod_d, sort=True) \
+                               .append(cart_prod_t, sort=True) \
+                               .drop_duplicates()
         cart_prod = cart_prod[cart_prod['development'] >= cart_prod['origin']]
         return cart_prod
 
@@ -950,7 +951,7 @@ class _TriangleGroupBy:
         else:
             indices = {'All': np.arange(len(obj.index))}
             new_index = pd.Index(['All'], name='All')
-        groups = list(indices.values())
+        groups = [indices[item] for item in sorted(list(indices.keys()))]
         v2_len = len(groups)
         old_k_by_new_k = np.zeros((v1_len, v2_len))
         for num, item in enumerate(groups):
