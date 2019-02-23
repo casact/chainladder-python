@@ -22,7 +22,7 @@ class TailBase(BaseEstimator):
         tail = np.ones(self.ldf_.shape)[..., -1:]
         tail = np.repeat(tail, self._ave_period[0]+1, -1)
         self.ldf_.triangle = np.concatenate((self.ldf_.triangle, tail), -1)
-        self.ldf_.ddims = np.array([f'{ddims[i]}-{ddims[i+1]}'
+        self.ldf_.ddims = np.array(['{}-{}'.format(ddims[i], ddims[i+1])
                                     for i in range(len(ddims)-1)])
         self.ldf_.valuation = self.ldf_._valuation_triangle()
         self.sigma_ = copy.deepcopy(X.sigma_)
@@ -33,7 +33,7 @@ class TailBase(BaseEstimator):
         self.std_err_.triangle = np.concatenate(
             (self.std_err_.triangle, zeros), -1)
         self.sigma_.ddims = self.std_err_.ddims = \
-            np.append(X.ldf_.ddims, [f'{int(X.ddims[-1])}-9999'])
+            np.append(X.ldf_.ddims, ['{}-9999'.format(int(X.ddims[-1]))])
         val_array = self.sigma_._valuation_triangle(self.sigma_.ddims)
         self.sigma_.valuation = self.std_err_.valuation = val_array
         return self

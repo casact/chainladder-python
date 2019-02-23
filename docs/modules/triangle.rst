@@ -36,7 +36,7 @@ Dimension 2 (``origin`` dimension):
     e.g. Accident Month, Report Year, Policy Quarter, etc.
 
 Dimension 3 (``development`` dimension):
-    represents the development dimension which will be store
+    represents the development dimension
     e.g. Valuation Month, Valuation Year, Valuation Quarter, etc.
 
 ``index`` and ``columns`` are accessed like a pandas Dataframe.  You can think of

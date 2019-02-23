@@ -13,14 +13,14 @@ setup(
     version=version,
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
-    packages=[f'{name}.{p}' for p in find_packages(where=name)]+['chainladder'],
+    packages=['{}.{}'.format(name, p) for p in find_packages(where=name)]+['chainladder'],
     scripts=[],
     url=url,
-    download_url=f'{url}/archive/v{version}.tar.gz',
+    download_url='{}/archive/v{}.tar.gz'.format(url, version),
     license='LICENSE',
     include_package_data=True,
     package_data={'data': [data_path+item
-                           for item in listdir(f'chainladder{data_path}')]},
+                           for item in listdir('chainladder{}'.format(data_path))]},
     description=descr,
     # long_description=open('README.md').read(),
     install_requires=[

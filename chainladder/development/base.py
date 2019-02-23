@@ -78,7 +78,7 @@ class Development(DevelopmentBase):
             return self._assign_n_periods_weight_int(X, self.n_periods)[..., :-1]
         elif type(self.n_periods) is list:
             if len(self.n_periods) != X.triangle.shape[-1]-1:
-                raise ValueError(f'n_periods list must be of lenth {X.triangle.shape[-1]-1}.')
+                raise ValueError('n_periods list must be of lenth {}.'.format(X.triangle.shape[-1]-1))
             else:
                 return self._assign_n_periods_weight_list(X)
         else:

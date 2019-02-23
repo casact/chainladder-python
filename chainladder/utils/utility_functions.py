@@ -48,9 +48,9 @@ def parallelogram_olf(values, date, start_date=None, end_date=None,
     """
     date = pd.to_datetime(date)
     if not start_date:
-        start_date = f'{date.min().year-1}-01-01'
+        start_date = '{}-01-01'.format(date.min().year-1)
     if not end_date:
-        end_date = f'{date.max().year+1}-12-31'
+        end_date = '{}-12-31'.format(date.max().year+1)
     date_idx = pd.date_range(start_date, end_date)
     y = pd.Series(np.array(values), np.array(date))
     y = y.reindex(date_idx, fill_value=0)

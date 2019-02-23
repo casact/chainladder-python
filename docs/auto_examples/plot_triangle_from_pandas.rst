@@ -34,12 +34,14 @@ in the CAS Loss Reserve Database for Workers' Compensation.
  .. code-block:: none
 
     Raw data:
-       GRCODE               GRNAME  AccidentYear  DevelopmentYear  DevelopmentLag  IncurLoss_D  CumPaidLoss_D  BulkLoss_D  EarnedPremDIR_D  EarnedPremCeded_D  EarnedPremNet_D  Single  PostedReserve97_D
-    0      86  Allstate Ins Co Grp          1988             1988               1       367404          70571      127737           400699               5957           394742       0             281872
-    1      86  Allstate Ins Co Grp          1988             1989               2       362988         155905       60173           400699               5957           394742       0             281872
-    2      86  Allstate Ins Co Grp          1988             1990               3       347288         220744       27763           400699               5957           394742       0             281872
-    3      86  Allstate Ins Co Grp          1988             1991               4       330648         251595       15280           400699               5957           394742       0             281872
-    4      86  Allstate Ins Co Grp          1988             1992               5       354690         274156       27689           400699               5957           394742       0             281872
+       GRCODE               GRNAME  AccidentYear  DevelopmentYear  DevelopmentLag  IncurLoss_D        ...          BulkLoss_D  EarnedPremDIR_D  EarnedPremCeded_D  EarnedPremNet_D  Single  PostedReserve97_D
+    0      86  Allstate Ins Co Grp          1988             1988               1       367404        ...              127737           400699               5957           394742       0             281872
+    1      86  Allstate Ins Co Grp          1988             1989               2       362988        ...               60173           400699               5957           394742       0             281872
+    2      86  Allstate Ins Co Grp          1988             1990               3       347288        ...               27763           400699               5957           394742       0             281872
+    3      86  Allstate Ins Co Grp          1988             1991               4       330648        ...               15280           400699               5957           394742       0             281872
+    4      86  Allstate Ins Co Grp          1988             1992               5       354690        ...               27689           400699               5957           394742       0             281872
+
+    [5 rows x 13 columns]
 
     Triangle summary:
     Valuation: 1997-12
@@ -77,7 +79,7 @@ in the CAS Loss Reserve Database for Workers' Compensation.
 
     # Read in the data
     lobs = 'wkcomp'
-    data = pd.read_csv(f'https://www.casact.org/research/reserve_data/wkcomp_pos.csv')
+    data = pd.read_csv(r'https://www.casact.org/research/reserve_data/wkcomp_pos.csv')
     data = data[data['DevelopmentYear']<=1997]
 
     # Create a triangle
@@ -105,7 +107,7 @@ in the CAS Loss Reserve Database for Workers' Compensation.
     g = sns.pointplot(x='Development Period', y='Cumulative Paid Loss',
                       hue='Accident Year', data=plot_data, markers='.')
 
-**Total running time of the script:** ( 0 minutes  2.495 seconds)
+**Total running time of the script:** ( 0 minutes  4.600 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_triangle_from_pandas.py:

@@ -8,7 +8,7 @@ import numpy as np
 
 
 class TailCurve(TailBase):
-    """Allows for the entry of a constant tail factor to LDFs.
+    """Allows for extraploation of LDFs to form a tail factor.
 
     Parameters
     ----------
@@ -82,7 +82,7 @@ class TailCurve(TailBase):
             np.ones(tuple(list(_y.shape)[:-1] +
                     [self.extrap_periods])), -1) + n_obs
         tail = self._predict_tail(slope, intercept, extrapolate)
-        self.ldf_.triangle = self.ldf_.triangle[..., -1:]
+        self.ldf_.triangle = self.ldf_.triangle[..., :-tail.shape[-1]]
         self.ldf_.triangle = np.concatenate((self.ldf_.triangle, tail), -1)
         sigma, std_err = self._get_tail_stats(X)
         self.sigma_.triangle[..., -1] = sigma[..., -1]
@@ -120,7 +120,7 @@ class TailCurve(TailBase):
         return sigma_, std_err_
 
     def _get_x(self, w, y):
-        ''' For Exponential decay, no transformation on x is needed '''
+        # For Exponential decay, no transformation on x is needed
         if self.curve == 'exponential':
             return None
         if self.curve == 'inverse_power':

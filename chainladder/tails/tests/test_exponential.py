@@ -12,7 +12,7 @@ def atol():
     return 1e-5
 
 def mack_r(data, alpha, est_sigma):
-    return r(f'mack<-MackChainLadder({data},alpha={alpha}, est.sigma="{est_sigma}", tail=TRUE)')
+    return r('mack<-MackChainLadder({},alpha={}, est.sigma="{}", tail=TRUE)'.format(data, alpha, est_sigma))
 
 
 def mack_p(data, average, est_sigma):

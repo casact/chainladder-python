@@ -29,6 +29,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a :class:`Triangle` inst...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_triangle_slicing
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
 
 .. only:: html
@@ -66,26 +86,6 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_mack
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a :class:`Triangle` inst...">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
-
-        :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_triangle_slicing
 
 .. raw:: html
 

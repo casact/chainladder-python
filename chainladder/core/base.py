@@ -100,9 +100,9 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     def _len_check(self, x, y):
         if len(x) != len(y):
-            raise ValueError(f'Length mismatch: Expected axis has ',
-                             f'{len(x)} elements, new values have',
-                             f' {len(y)} elements')
+            raise ValueError('Length mismatch: Expected axis has ',
+                             '{} elements, new values have'.format(len(x)),
+                             ' {} elements'.format(len(y)))
 
     @property
     def shape(self):
@@ -151,7 +151,7 @@ class TriangleBase:
         temp[temp == 0] = np.nan
         val_array = obj.valuation.values.reshape(obj.shape[-2:],order='f')[:, 1:]
         obj.triangle = temp[..., 1:]/temp[..., :-1]
-        obj.ddims = np.array([f'{obj.ddims[i]}-{obj.ddims[i+1]}'
+        obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
         if np.max(np.sum(~np.isnan(self.triangle[..., -1, :]), 2)-1) == 0:
@@ -355,8 +355,8 @@ class TriangleBase:
                                    float_format=fmt_str.format) \
                           .replace('nan', '')
             return default.replace(
-                f'<th></th>\n      <th>{self.development.values[0][0]}</th>',
-                f'<th>Origin</th>\n      <th>{self.development.values[0][0]}</th>')
+                '<th></th>\n      <th>{}</th>'.format(self.development.values[0][0]),
+                '<th>Origin</th>\n      <th>{}</th>'.format(self.development.values[0][0]))
         else:
             data = pd.Series([self.valuation_date.strftime('%Y-%m'),
                              'O' + self.origin_grain + 'D'
@@ -392,12 +392,15 @@ class TriangleBase:
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if self.shape[:2] == (1, 1):
             return self._repr_format()
-        elif len(axes) == 2:
+        elif len(axes) == 2 or len(axes) == 1:
             tri = np.squeeze(self.triangle)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: self.odims, 3: self.ddims}
-            return pd.DataFrame(tri, index=axes_lookup[axes[0]],
-                                columns=axes_lookup[axes[1]])
+            if len(axes) == 2:
+                return pd.DataFrame(tri, index=axes_lookup[axes[0]],
+                                    columns=axes_lookup[axes[1]])
+            if len(axes) == 1:
+                return pd.Series(tri, index=axes_lookup[axes[0]])
         else:
             raise ValueError('len(index) and len(columns) must be 1.')
 

@@ -9,7 +9,6 @@ This example demonstrates the familiarity of the pandas API applied to a
 """
 import chainladder as cl
 import seaborn as sns
-import matplotlib.pyplot as plt
 sns.set_style('whitegrid')
 
 # The base Triangle Class:
@@ -24,12 +23,7 @@ clrd = clrd['CumPaidLoss']
 # pandas loc-style index slicing
 clrd = clrd.loc['medmal']
 
-# Convert link ratios to dataframe
-link_ratios = clrd.link_ratio.to_frame().unstack().reset_index()
-link_ratios.columns = ['Age', 'Accident Year', 'Link Ratio']
-
 # Plot
-sns.pointplot(hue='Age', y='Link Ratio', x='Accident Year',
-              data=link_ratios, markers='.')
-plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-g = plt.title('Medical Malpractice Link Ratios')
+g = clrd.link_ratio.plot(marker='o') \
+        .set(title='Medical Malpractice Link Ratios',
+             ylabel='Link Ratio', xlabel='Accident Year')

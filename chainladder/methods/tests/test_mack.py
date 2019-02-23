@@ -15,9 +15,9 @@ def atol():
 
 def mack_r(data, alpha, est_sigma, tail):
     if tail:
-        return r(f'mack<-MackChainLadder({data},alpha={alpha}, est.sigma="{est_sigma}", tail=TRUE)')
+        return r('mack<-MackChainLadder({},alpha={}, est.sigma="{}", tail=TRUE)'.format(data, alpha, est_sigma))
     else:
-        return r(f'mack<-MackChainLadder({data},alpha={alpha}, est.sigma="{est_sigma}")')
+        return r('mack<-MackChainLadder({},alpha={}, est.sigma="{}")'.format(data, alpha, est_sigma))
 
 
 def mack_p(data, average, est_sigma, tail):

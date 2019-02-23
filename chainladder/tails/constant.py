@@ -18,14 +18,14 @@ class TailConstant(TailBase):
 
     Attributes
     ----------
-    ldf_
-        ldf_ with tail applied.
-    cdf_
-        cdf_ with tail applied.
-    sigma_
-        sigma_ with tail factor applied.
-    std_err_
-        std_err_ with tail factor applied
+    ldf_ :
+        ldf with tail applied.
+    cdf_ :
+        cdf with tail applied.
+    sigma_ :
+        sigma with tail factor applied.
+    std_err_ :
+        std_err with tail factor applied
 
     Examples
     --------
@@ -62,12 +62,14 @@ class TailConstant(TailBase):
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
+
         Parameters
         ----------
         X : Triangle-like
             Set of LDFs to which the tail will be applied.
         y : Ignored
         sample_weight : Ignored
+
         Returns
         -------
         self : object
@@ -86,12 +88,12 @@ class TailConstant(TailBase):
 
         Parameters
         ----------
-        X : {Triangle}
-            Triangle must contain the `ldf_` development attribute.
+        X : Triangle
+            Triangle must contain the ``ldf_`` development attribute.
 
         Returns
         -------
-        X_new : {Triangle}
+        X_new : Triangle
             New Triangle with tail factor applied to its development
             attributes.
         """

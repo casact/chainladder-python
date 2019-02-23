@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 # Read in the data
 lobs = 'wkcomp'
-data = pd.read_csv(f'https://www.casact.org/research/reserve_data/wkcomp_pos.csv')
+data = pd.read_csv(r'https://www.casact.org/research/reserve_data/wkcomp_pos.csv')
 data = data[data['DevelopmentYear']<=1997]
 
 # Create a triangle
