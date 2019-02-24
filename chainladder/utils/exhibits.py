@@ -6,8 +6,13 @@ class Exhibits:
     """ Wrapper to pandas.to_excel that allows for composite exhibits,
         multiple sheets, and custom formatting using xlsxwriter.
 
-        Arguments: None
-        Returns: instance of Exhibits
+        Arguments:
+        ----------
+        None
+
+        Returns:
+        --------
+        instance of Exhibits
     """
     # Class level formats - can be overridden by end-user
     title1_format = {'font_size': 20, 'align': 'center'}
@@ -25,7 +30,6 @@ class Exhibits:
     date_format = {'num_format': 'm/d/yyyy'}
     int_format = {'num_format': 'General'}
     text_format = {'align': 'left'}
-
 
     def __init__(self):
         ''' Instantiate a workbook '''
@@ -46,8 +50,36 @@ class Exhibits:
     def add_exhibit(self, sheet_name, data, header=True, formats='money',
                     start_row=0, start_col=0, index=True, index_label='',
                     title=None, col_nums=True):
-        """  Add sheet_names to the class instance.  Each sheet_name will show up on
-             its own sheet.
+        """  Add sheet_names to the class instance.  Each sheet_name will show
+        up on its own sheet.
+
+        Parameters:
+        -----------
+        sheet_name : str, default ‘Sheet1’
+            Name of sheet which will contain DataFrame.
+        data : DataFrame or Triangle (2D)
+            The data to be places in the exhibit
+        header : bool or list (len of data.columns)
+            False uses no headers, True uses headers from data. Alternatively,
+            a list of strings will override headers.
+        formats : str or list (len of data.columns)
+            The formats to be applied to the data.  Options include
+            'money', 'percent', 'decimal', 'date', 'int', and 'text'.  Each
+            format can be overriden at the class level by overriding its:
+            resepective format dict (e.g. Exhibits.money_format, ...)
+        start_row : int, default 0
+            Uppermost row in Excel sheet to position the exhibit
+        start_col : int, default 0
+            Leftmost column in Excel sheet to position the exhibit
+        index : bool, default True
+            Write row names (index).
+        index_label : str or sequence, optional
+            Column label for index column(s) if desired.
+        title : list
+            A list of strings up to length 4 (Title, subtitle1, subtitle2,
+            subtitle3) to be placed above the data in the exhibit.
+        col_nums : bool
+            Set to True will insert column numbers into the exhibit.
         """
         if type(data) is not list:
             data = [data]
@@ -80,7 +112,13 @@ class Exhibits:
         return self
 
     def del_exhibit(self, sheet_name):
-        """ Removes sheet_name by name from the sheet_name instance. """
+        """ Removes sheet_name by name from the ``Exhibit`` instance.
+
+        Parameters:
+        -----------
+        sheet_name : str
+            The sheet to remove from the Excel document.
+        """
         exh_num = self.sheet_names.index(sheet_name)
         del self.sheet_names[exh_num]
         del self.titles[exh_num]
@@ -96,6 +134,11 @@ class Exhibits:
 
     def to_excel(self, workbook_path):
         """ Creates Excel file at specified path with all sheet_names.
+
+        Parameters:
+        -----------
+        workbook_path : str
+            The target path and filename of the Excel document
         """
         writer = pd.ExcelWriter(workbook_path, date_format='m/d/yyyy')
         workbook = writer.book
@@ -154,7 +197,7 @@ class Exhibits:
                                     value, header_format)
                     if self.col_nums[ex_num]:
                         worksheet.write(self.start_row[ex_num]+1+title_offset,
-                                        col_num,-col_num-1, header_format)
+                                        col_num, -col_num-1, header_format)
             # Set Index
             if self.index[ex_num]:
                 for row_num, value in enumerate(ex.index.astype(str)):

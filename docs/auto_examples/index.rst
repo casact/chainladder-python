@@ -206,6 +206,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_capecod
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the ``Exhibits`` class. It creates an Exce...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_exhibits.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_exhibits
 .. raw:: html
 
     <div style='clear:both'></div>

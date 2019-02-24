@@ -92,3 +92,21 @@ Examples using ``chainladder.Development``
 .. only:: not html
 
     * :ref:`sphx_glr_auto_examples_plot_munich.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the ``Exhibits`` class. It creates an Exce...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_exhibits.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_exhibits.py`
