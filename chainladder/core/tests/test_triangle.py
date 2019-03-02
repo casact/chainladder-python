@@ -30,6 +30,22 @@ def test_slice_by_loc_iloc():
     assert tri.groupby('LOB').sum().loc['comauto'].index.iloc[0, 0] == 'comauto'
 
 
+def test_repr():
+    np.testing.assert_equal(pd.read_html(cl.load_dataset('raa')._repr_html_())[0].set_index('Origin').values,
+                            cl.load_dataset('raa').to_frame().values)
+
+
+def test_arithmetic_intersection():
+    raa = cl.load_dataset('raa')
+    assert raa[raa.valuation<'1987'].shape == (raa-raa[raa.valuation<'1987']).shape
+
+
+def test_to_frame_unusual():
+    a = cl.load_dataset('clrd').groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
+    b = cl.load_dataset('clrd').latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
+    np.testing.assert_equal(a, b)
+
+
 def test_link_ratio():
     np.testing.assert_allclose(cl.load_dataset('RAA').link_ratio.values*cl.load_dataset('RAA').values[:,:,:-1,:-1],
                                cl.load_dataset('RAA').values[:,:,:-1,1:], atol=1e-5)

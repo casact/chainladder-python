@@ -60,6 +60,6 @@ def parallelogram_olf(values, date, start_date=None, end_date=None,
     if not vertical_line:
         y = y.to_frame().rolling(365).mean()
     y = y.groupby(y.index.to_period(grain)).mean().reset_index()
-    y.columns = ['origin', 'olf']
-    y['origin'] = y['origin'].astype(str)
-    return y
+    y.columns = ['Origin', 'OLF']
+    y['Origin'] = y['Origin'].astype(str)
+    return y.set_index('Origin')
