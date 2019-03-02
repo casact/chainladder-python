@@ -4,6 +4,7 @@
 
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
+from chainladder.development import DevelopmentBase
 import numpy as np
 
 
@@ -89,6 +90,7 @@ class TailCurve(TailBase):
         self.std_err_.values[..., -1] = std_err[..., -1]
         self.slope_ = slope
         self.intercept_ = intercept
+        self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
     def _get_tail_weighted_time_period(self, X):

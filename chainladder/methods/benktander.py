@@ -70,6 +70,8 @@ class Benktander(MethodBase):
             Returns the instance itself.
         """
 
+        if sample_weight is None:
+            raise ValueError('sample_weight is required.')
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.values

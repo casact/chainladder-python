@@ -1,9 +1,3 @@
-"""
-:ref:`chainladder.methods<methods>`.CapeCod
-===============================================
-
-:ref:`CapeCod<capecod>` is a cool method
-"""
 import numpy as np
 import pandas as pd
 import copy
@@ -15,13 +9,10 @@ class CapeCod(MethodBase):
 
     Parameters
     ----------
-    X : Triangle
-        The data used to compute the mean and standard deviation
-        used for later scaling along the features axis.
-    y : None
-        Ignored
-    sample_weight : Triangle
-        Required exposure to be used in the calculation.
+    trend : float (default=0.0)
+        The cape cod trend assumption
+    decay : float (defaut=1.0)
+        The cape cod decay assumption
 
     Attributes
     ----------
@@ -56,6 +47,8 @@ class CapeCod(MethodBase):
         self : object
             Returns the instance itself.
         """
+        if sample_weight is None:
+            raise ValueError('sample_weight is required.')
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.values

@@ -20,8 +20,9 @@ import copy
 
 
 class BootstrapODPSample(DevelopmentBase):
-    """ Class to generate bootstrap samples of triangles.  Currently this Only
-        supports 'single' triangles (single index and single column).
+    """
+    Class to generate bootstrap samples of triangles.  Currently this Only
+    supports 'single' triangles (single index and single column).
 
     Parameters
     ----------

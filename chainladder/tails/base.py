@@ -1,7 +1,7 @@
 import copy
 import numpy as np
-import pandas as pd
 from sklearn.base import BaseEstimator
+from chainladder.development import DevelopmentBase
 
 
 class TailBase(BaseEstimator):
@@ -25,8 +25,8 @@ class TailBase(BaseEstimator):
         self.ldf_.ddims = np.array(['{}-{}'.format(ddims[i], ddims[i+1])
                                     for i in range(len(ddims)-1)])
         self.ldf_.valuation = self.ldf_._valuation_triangle()
-        self.sigma_ = copy.deepcopy(X.sigma_)
-        self.std_err_ = copy.deepcopy(X.std_err_)
+        self.sigma_ = copy.deepcopy(X.__dict__.get('sigma_', X.cdf_*0))
+        self.std_err_ = copy.deepcopy(X.__dict__.get('std_err_', X.cdf_*0))
         zeros = tail[..., -1:]*0
         self.sigma_.values = np.concatenate(
             (self.sigma_.values, zeros), -1)
@@ -36,16 +36,25 @@ class TailBase(BaseEstimator):
             np.append(X.ldf_.ddims, ['{}-9999'.format(int(X.ddims[-1]))])
         val_array = self.sigma_._valuation_triangle(self.sigma_.ddims)
         self.sigma_.valuation = self.std_err_.valuation = val_array
+        self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
     def transform(self, X):
         X_new = copy.deepcopy(X)
-        X_new.std_err_.values = np.concatenate((X_new.std_err_.values, self.std_err_.values[..., -1:]), -1)
-        X_new.cdf_.values = np.concatenate((X_new.cdf_.values, self.cdf_.values[..., -self._ave_period[0]-1:]*0+1), -1)
-        X_new.cdf_.values = X_new.cdf_.values*self.cdf_.values[..., -self._ave_period[0]-1:-self._ave_period[0]]
+        X_new.std_err_.values = np.concatenate(
+            (X_new.std_err_.values,
+             self.std_err_.values[..., -1:]), -1)
+        X_new.cdf_.values = np.concatenate(
+            (X_new.cdf_.values,
+             self.cdf_.values[..., -self._ave_period[0]-1:]*0+1), -1)
+        X_new.cdf_.values = X_new.cdf_.values * \
+            self.cdf_.values[..., -self._ave_period[0]-1:-self._ave_period[0]]
         X_new.cdf_.values[..., -1] = self.cdf_.values[..., -1]
-        X_new.ldf_.values = np.concatenate((X_new.ldf_.values, self.ldf_.values[..., -self._ave_period[0]-1:]), -1)
-        X_new.sigma_.values = np.concatenate((X_new.sigma_.values, self.sigma_.values[..., -1:]), -1)
+        X_new.ldf_.values = np.concatenate(
+            (X_new.ldf_.values,
+             self.ldf_.values[..., -self._ave_period[0]-1:]), -1)
+        X_new.sigma_.values = np.concatenate(
+            (X_new.sigma_.values, self.sigma_.values[..., -1:]), -1)
         X_new.cdf_.ddims = X_new.ldf_.ddims = self.ldf_.ddims
         X_new.sigma_.ddims = X_new.std_err_.ddims = self.sigma_.ddims
         X_new.cdf_.valuation = X_new.ldf_.valuation = self.ldf_.valuation
@@ -68,13 +77,3 @@ class TailBase(BaseEstimator):
         """
         self.fit(X)
         return self.transform(X)
-
-    @property
-    def cdf_(self):
-        if self.__dict__.get('ldf_', None) is None:
-            return
-        else:
-            obj = copy.deepcopy(self.ldf_)
-            cdf_ = np.flip(np.cumprod(np.flip(obj.values, -1), -1), -1)
-            obj.values = cdf_
-            return obj

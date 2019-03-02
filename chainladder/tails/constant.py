@@ -6,7 +6,7 @@
 """
 
 from chainladder.tails import TailBase
-
+from chainladder.development import DevelopmentBase
 
 class TailConstant(TailBase):
     """Allows for the entry of a constant tail factor to LDFs.
@@ -77,6 +77,7 @@ class TailConstant(TailBase):
         """
         super().fit(X, y, sample_weight)
         self.ldf_.values[..., -1] = self.ldf_.values[..., -1]*self.tail
+        self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
     def transform(self, X):

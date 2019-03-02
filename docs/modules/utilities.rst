@@ -19,7 +19,7 @@ instance.
 
 Example output of Exhibits
 --------------------------
-The following example creates highlights the general usage of the ``Exhibits``
+The following example highlights the general usage of the ``Exhibits``
 class.  The image is the output of this :ref:`example<exhibit_example>`.
 
 .. image:: ../_static/images/exhibits.PNG

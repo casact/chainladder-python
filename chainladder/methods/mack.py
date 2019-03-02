@@ -1,15 +1,4 @@
-"""
-:ref:`chainladder.methods<methods>`.MackChainladder
-===================================================
-
-:ref:`MackChainladder<mack>` produces the same IBNR results as the deterministic
-approach, but ldf selection happens in a regression framework that allows for
-the calculation of prediction errors.  The Mack Chainladder technique is the OG
-stochastic method.
-
-"""
 import numpy as np
-import pandas as pd
 import copy
 from chainladder.methods import Chainladder
 
@@ -112,11 +101,11 @@ class MackChainladder(Chainladder):
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':
             obj.values = self._get_risk(nans, risk_arr,
-                                          obj.std_err_.values)
+                                        obj.std_err_.values)
             self.parameter_risk_ = obj
         elif est == 'process_risk':
             obj.values = self._get_risk(nans, risk_arr,
-                                          self.full_std_err_.values)
+                                        self.full_std_err_.values)
             self.process_risk_ = obj
         else:
             risk_arr = risk_arr[..., 0:1, :]
@@ -161,7 +150,7 @@ class MackChainladder(Chainladder):
     def mack_std_err_(self):
         obj = copy.deepcopy(self.parameter_risk_)
         obj.values = np.sqrt(self.parameter_risk_.values**2 +
-                               self.process_risk_.values**2)
+                             self.process_risk_.values**2)
         return obj
 
     @property
@@ -169,7 +158,7 @@ class MackChainladder(Chainladder):
         # This might be better as a dataframe
         obj = copy.deepcopy(self.X_.latest_diagonal)
         obj.values = np.sqrt(self.total_process_risk_.values**2 +
-                               self.total_parameter_risk_.values**2)
+                             self.total_parameter_risk_.values**2)
         obj.values = obj.values[..., -1:]
         obj.ddims = ['Total Mack Std Err']
         obj.odims = ['Total']

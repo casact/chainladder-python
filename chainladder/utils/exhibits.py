@@ -3,16 +3,17 @@ import numpy as np
 
 
 class Exhibits:
-    """ Wrapper to pandas.to_excel that allows for composite exhibits,
-        multiple sheets, and custom formatting using xlsxwriter.
+    """
+    Wrapper to pandas.to_excel that allows for composite exhibits,
+    multiple sheets, and custom formatting using xlsxwriter.
 
-        Arguments:
-        ----------
-        None
+    Arguments:
+    ----------
+    None
 
-        Returns:
-        --------
-        instance of Exhibits
+    Returns:
+    --------
+    instance of Exhibits
     """
     # Class level formats - can be overridden by end-user
     title1_format = {'font_size': 20, 'align': 'center'}

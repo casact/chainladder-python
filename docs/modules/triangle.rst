@@ -59,7 +59,7 @@ supplied to create an ``origin`` dimension at the accident quarter grain.
 .. _slicing:
 Slicing and Boolean Indexing
 ----------------------------
-With a Triangle created, individual triangles can be sliced out of the object
+With a Triangle is created, individual triangles can be sliced out of the object
 using pandas-style ``loc``/``iloc`` or boolean indexing.
 
 **Example:**

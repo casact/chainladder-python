@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from functools import wraps
 import copy
 
 # Pass through pd.DataFrame methods for a (1,1,o,d) shaped triangle:
@@ -11,25 +10,6 @@ df_passthru = ['to_clipboard', 'to_csv', 'to_pickle', 'to_excel', 'to_json',
 # Aggregate method overridden to the 4D Triangle Shape
 agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod', 'var', 'std']
 agg_funcs = {item: 'nan'+item for item in agg_funcs}
-
-# def check_triangle_postcondition(f):
-#     ''' Post-condition check to ensure the integrity of the triangle object
-#         remains intact. (used for debugging)
-#     '''
-#     @wraps(f)
-#     def wrapper(*args, **kwargs):
-#         X = f(*args, **kwargs)
-#         if not hasattr(X, 'triangle'):
-#             raise ValueError('X is missing triangle attribute')
-#         if X.values.ndim != 4:
-#             raise ValueError('X.values must be a 4-dimensional array')
-#         if len(X.kdims) != X.values.shape[0]:
-#             raise ValueError('X.index and X.values are misaligned')
-#         if len(X.vdims) != X.values.shape[1]:
-#             raise ValueError('X.columns and X.values are misaligned')
-#         return X
-#     return wrapper
-
 
 
 class TriangleBase:
@@ -46,6 +26,7 @@ class TriangleBase:
             data_agg = data.groupby(key_gr).sum().reset_index()
             data_agg[index[0]] = 'Total'
         else:
+            index = [index] if type(index) is str else index
             data_agg = data.groupby(key_gr+index) \
                            .sum().reset_index()
         # Convert origin/development to dates
@@ -81,8 +62,7 @@ class TriangleBase:
         self.ddims = self.ddims
         self.valuation_date = development_date.max()
         self.key_labels = index
-        self.iloc = _Ilocation(self)
-        self.loc = _Location(self)
+        self.iloc, self.loc = _Ilocation(self), _Location(self)
         # Create 4D Triangle
         triangle = \
             np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
@@ -114,7 +94,7 @@ class TriangleBase:
 
     @property
     def columns(self):
-        return self.idx_table().columns
+        return self._idx_table().columns
 
     @columns.setter
     def columns(self, value):
@@ -144,12 +124,12 @@ class TriangleBase:
         return self.get_latest_diagonal()
 
     @property
-    # @check_triangle_postcondition
     def link_ratio(self):
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
-        val_array = obj.valuation.values.reshape(obj.shape[-2:],order='f')[:, 1:]
+        val_array = obj.valuation.values.reshape(obj.shape[-2:],
+                                                 order='f')[:, 1:]
         obj.values = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
@@ -158,7 +138,8 @@ class TriangleBase:
             obj.values = obj.values[..., :-1, :]
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
-        obj.valuation = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
+        obj.valuation = pd.DatetimeIndex(
+            pd.DataFrame(val_array).unstack().values)
         return obj
 
     @property
@@ -168,7 +149,6 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
-    # @check_triangle_postcondition
     def get_latest_diagonal(self, compress=True):
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
@@ -183,7 +163,6 @@ class TriangleBase:
         obj.values = diagonal
         return obj
 
-    # @check_triangle_postcondition
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
 
@@ -206,7 +185,6 @@ class TriangleBase:
             new_obj = copy.deepcopy(self)
             return new_obj.incr_to_cum(inplace=True)
 
-    # @check_triangle_postcondition
     def cum_to_incr(self, inplace=False):
         """Method to convert an cumlative triangle into a incremental triangle.
 
@@ -232,7 +210,6 @@ class TriangleBase:
             new_obj = copy.deepcopy(self)
             return new_obj.cum_to_incr(inplace=True)
 
-    # @check_triangle_postcondition
     def grain(self, grain='', incremental=False, inplace=False):
         """Changes the grain of a cumulative triangle.
 
@@ -240,9 +217,9 @@ class TriangleBase:
         ----------
         grain : str
             The grain to which you want your triangle converted, specified as
-            'O<x>D<y>' where <x> and <y> can take on values of ``['Y', 'Q', 'M']``
-            For example, 'OYDY' for Origin Year/Development Year, 'OQDM' for
-            Origin quarter, etc.
+            'O<x>D<y>' where <x> and <y> can take on values of ``['Y', 'Q', 'M'
+            ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
+            for Origin quarter, etc.
         incremental : bool
             Not implemented yet
         inplace : bool
@@ -372,13 +349,11 @@ class TriangleBase:
                                 max_cols=pd.options.display.max_columns)
 
     def _repr_format(self):
-        ''' Flatten to 2D DataFrame '''
-        x = self.values[0, 0]
         if type(self.odims[0]) == np.datetime64:
             origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
         else:
             origin = pd.Series(self.odims)
-        return pd.DataFrame(x, index=origin, columns=self.ddims)
+        return pd.DataFrame(self.values[0, 0], index=origin, columns=self.ddims)
 
     # ---------------------------------------------------------------- #
     # ----------------------- Pandas Passthrus ----------------------- #
@@ -418,7 +393,8 @@ class TriangleBase:
     # ---------------------------------------------------------------- #
     # ---------------------- Arithmetic Overload --------------------- #
     # ---------------------------------------------------------------- #
-    def _validate_arithmetic(self, obj, other):
+    def _validate_arithmetic(self, other):
+        obj = copy.deepcopy(self)
         other = copy.deepcopy(other)
         ddims = None
         odims = None
@@ -446,79 +422,56 @@ class TriangleBase:
             other = other.values
         return obj, other
 
-    # @check_triangle_postcondition
-    def __add__(self, other):
-        obj = copy.deepcopy(self)
-        obj, other = self._validate_arithmetic(obj, other)
-        obj.values = np.nan_to_num(obj.values) + np.nan_to_num(other)
+    def _arithmetic_cleanup(self, obj):
         obj.values = obj.values * self.expand_dims(obj.nan_triangle())
         obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
-    # @check_triangle_postcondition
+    def __add__(self, other):
+        obj, other = self._validate_arithmetic(other)
+        obj.values = np.nan_to_num(obj.values) + np.nan_to_num(other)
+        return self._arithmetic_cleanup(obj)
+
     def __radd__(self, other):
         return self if other == 0 else self.__add__(other)
 
-    # @check_triangle_postcondition
     def __sub__(self, other):
-        obj = copy.deepcopy(self)
-        obj, other = self._validate_arithmetic(obj, other)
+        obj, other = self._validate_arithmetic(other)
         obj.values = np.nan_to_num(obj.values) - \
             np.nan_to_num(other)
-        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
-        obj.values[obj.values == 0] = np.nan
-        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
-        return obj
+        return self._arithmetic_cleanup(obj)
 
-    # @check_triangle_postcondition
     def __rsub__(self, other):
-        obj = copy.deepcopy(self)
-        obj, other = self._validate_arithmetic(obj, other)
+        obj, other = self._validate_arithmetic(other)
         obj.values = np.nan_to_num(other) - \
             np.nan_to_num(obj.values)
-        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
-        obj.values[obj.values == 0] = np.nan
-        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
-        return obj
+        return self._arithmetic_cleanup(obj)
 
     def __len__(self):
         return self.shape[0]
 
-    # @check_triangle_postcondition
     def __neg__(self):
         obj = copy.deepcopy(self)
         obj.values = -obj.values
         return obj
 
-    # @check_triangle_postcondition
     def __pos__(self):
         return self
 
-    # @check_triangle_postcondition
     def __mul__(self, other):
-        obj = copy.deepcopy(self)
-        obj, other = self._validate_arithmetic(obj, other)
+        obj, other = self._validate_arithmetic(other)
         obj.values = np.nan_to_num(obj.values)*other
-        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
-        obj.values[obj.values == 0] = np.nan
-        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
-        return obj
+        return self._arithmetic_cleanup(obj)
 
-    # @check_triangle_postcondition
     def __rmul__(self, other):
         return self if other == 1 else self.__mul__(other)
 
-    # @check_triangle_postcondition
     def __truediv__(self, other):
-        obj = copy.deepcopy(self)
-        obj, other = self._validate_arithmetic(obj, other)
+        obj, other = self._validate_arithmetic(other)
         obj.values = np.nan_to_num(obj.values)/other
-        obj.values[obj.values == 0] = np.nan
-        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
-        return obj
+        return self._arithmetic_cleanup(obj)
 
-    # @check_triangle_postcondition
     def __rtruediv__(self, other):
         obj = copy.deepcopy(self)
         obj.values = other / self.values
@@ -542,7 +495,7 @@ class TriangleBase:
             return self.to_frame().groupby(*args, **kwargs)
         return _TriangleGroupBy(self, by)
 
-    def idx_table_format(self, idx):
+    def _idx_table_format(self, idx):
         if type(idx) is pd.Series:
             # One row or one column selection is it k or v?
             if len(set(idx.index).intersection(set(self.vdims))) == len(idx):
@@ -554,18 +507,17 @@ class TriangleBase:
                 idx = idx.to_frame()
         elif type(idx) is tuple:
             # Single cell selection
-            idx = self.idx_table().iloc[idx[0]:idx[0] + 1,
+            idx = self._idx_table().iloc[idx[0]:idx[0] + 1,
                                         idx[1]:idx[1] + 1]
         return idx
 
-    def idx_table(self):
-        idx = self.kdims
-        temp = pd.DataFrame(list(idx), columns=self.key_labels)
+    def _idx_table(self):
+        df = pd.DataFrame(list(self.kdims), columns=self.key_labels)
         for num, item in enumerate(self.vdims):
-            temp[item] = list(zip(np.arange(len(temp)),
-                              (np.ones(len(temp))*num).astype(int)))
-        temp.set_index(self.key_labels, inplace=True)
-        return temp
+            df[item] = list(zip(np.arange(len(df)),
+                            (np.ones(len(df))*num).astype(int)))
+        df.set_index(self.key_labels, inplace=True)
+        return df
 
     def __getitem__(self, key):
         ''' Function for pandas style column indexing'''
@@ -573,7 +525,7 @@ class TriangleBase:
             return self._slice_development(key['development'])
         if type(key) is np.ndarray:
             # Presumes that if I have a 1D array, I will want to slice origin.
-            if len(key) == self.shape[-2]*self.shape[-1] and self.shape[-1] > 1:
+            if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             return self._slice_origin(key)
         if type(key) is pd.Series:
@@ -581,37 +533,33 @@ class TriangleBase:
         if key in self.key_labels:
             # Boolean-indexing of a particular key
             return self.index[key]
-        idx = self.idx_table()[key]
-        idx = self.idx_table_format(idx)
+        idx = self._idx_table()[key]
+        idx = self._idx_table_format(idx)
         return _LocBase(self).get_idx(idx)
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
-        idx = self.idx_table()
+        idx = self._idx_table()
         idx[key] = 1
         self.vdims = np.array(idx.columns.unique())
         self.values = np.append(self.values, value.values, axis=1)
 
-    # @check_triangle_postcondition
     def append(self, obj, index):
         return_obj = copy.deepcopy(self)
         x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
         new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
-        x = x.append(new_idx)
+        x = x.append(new_idx, sort=True)
         x.set_index(return_obj.key_labels, inplace=True)
-        return_obj.values = np.append(return_obj.values, obj.values,
-                                        axis=0)
+        return_obj.values = np.append(return_obj.values, obj.values, axis=0)
         return_obj.kdims = np.array(x.index.unique())
         return return_obj
 
-    # @check_triangle_postcondition
     def _slice_origin(self, key):
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
         obj.values = obj.values[..., key, :]
         return self._cleanup_slice(obj)
 
-    # @check_triangle_postcondition
     def _slice_valuation(self, key):
         obj = copy.deepcopy(self)
         obj.valuation_date = obj.valuation[key].max()
@@ -629,7 +577,6 @@ class TriangleBase:
         obj.values = np.take(np.take(obj.values, o_idx, -2), d_idx, -1)
         return self._cleanup_slice(obj)
 
-    # @check_triangle_postcondition
     def _slice_development(self, key):
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
@@ -785,7 +732,6 @@ class TriangleBase:
         tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
         return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
 
-    # @check_triangle_postcondition
     def set_params(self, **parameters):
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
@@ -852,20 +798,17 @@ class TriangleBase:
 
     @staticmethod
     def get_grain(array):
-        num_months = len(array.dt.month.unique())
-        return {1: 'Y', 4: 'Q', 12: 'M'}[num_months]
+        return {1: 'Y', 4: 'Q', 12: 'M'}[len(array.dt.month.unique())]
 
     @staticmethod
     def cartesian_product(*arrays):
         '''A fast implementation of cartesian product, used for filling in gaps
         in triangles (if any)'''
-        length_arrays = len(arrays)
-        dtype = np.result_type(*arrays)
-        arr = np.empty([len(a) for a in arrays]+[length_arrays],
-                       dtype=dtype)
+        arr = np.empty([len(a) for a in arrays]+[len(arrays)],
+                       dtype=np.result_type(*arrays))
         for i, a in enumerate(np.ix_(*arrays)):
             arr[..., i] = a
-        arr = arr.reshape(-1, length_arrays)
+        arr = arr.reshape(-1, len(arrays))
         return arr
 
     def _set_ograin(self, grain, incremental):
@@ -905,19 +848,17 @@ class TriangleBase:
 # ----------------------Slicing and indexing---------------------- #
 # ---------------------------------------------------------------- #
 class _LocBase:
-    ''' Base class for pandas style indexing '''
+    ''' Base class for pandas style loc/iloc indexing '''
     def __init__(self, obj):
         self.obj = obj
 
-    # @check_triangle_postcondition
     def get_idx(self, idx):
         obj = copy.deepcopy(self.obj)
         vdims = pd.Series(obj.vdims)
         obj.kdims = np.array(idx.index.unique())
         obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
         obj.key_labels = list(idx.index.names)
-        obj.iloc = _Ilocation(obj)
-        obj.loc = _Location(obj)
+        obj.iloc, obj.loc = _Ilocation(obj), _Location(obj)
         idx_slice = np.array(idx).flatten()
         x = tuple([np.unique(np.array(item))
                    for item in list(zip(*idx_slice))])
@@ -928,16 +869,14 @@ class _LocBase:
 
 class _Location(_LocBase):
     def __getitem__(self, key):
-        idx = self.obj.idx_table().loc[key]
-        idx = self.obj.idx_table_format(idx)
-        return self.get_idx(idx)
+        idx = self.obj._idx_table().loc[key]
+        return self.get_idx(self.obj._idx_table_format(idx))
 
 
 class _Ilocation(_LocBase):
     def __getitem__(self, key):
-        idx = self.obj.idx_table().iloc[key]
-        idx = self.obj.idx_table_format(idx)
-        return self.get_idx(idx)
+        idx = self.obj._idx_table().iloc[key]
+        return self.get_idx(self.obj._idx_table_format(idx))
 
 
 # ---------------------------------------------------------------- #
@@ -963,7 +902,6 @@ class _TriangleGroupBy:
             old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
         new_tri = obj.values
         new_tri = np.repeat(np.expand_dims(new_tri, 0), v2_len, 0)
-
         obj.values = new_tri
         obj.kdims = np.array(list(new_index))
         obj.key_labels = list(new_index.names)

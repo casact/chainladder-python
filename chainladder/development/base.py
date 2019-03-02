@@ -27,15 +27,15 @@ class DevelopmentBase(BaseEstimator):
         self.fit(X, y, sample_weight)
         return self.transform(X)
 
-    @property
-    def cdf_(self):
-        if self.__dict__.get('ldf_', None) is None:
+    @staticmethod
+    def _get_cdf(obj):
+        if obj.__dict__.get('ldf_', None) is None:
             return
         else:
-            obj = copy.deepcopy(self.ldf_)
-            cdf_ = np.flip(np.cumprod(np.flip(obj.values, -1), -1), -1)
-            obj.values = cdf_
-            return obj
+            obj2 = copy.deepcopy(obj.ldf_)
+            cdf_ = np.flip(np.cumprod(np.flip(obj2.values, -1), -1), -1)
+            obj2.values = cdf_
+            return obj2
 
 
 
@@ -78,7 +78,8 @@ class Development(DevelopmentBase):
             return self._assign_n_periods_weight_int(X, self.n_periods)[..., :-1]
         elif type(self.n_periods) is list:
             if len(self.n_periods) != X.values.shape[-1]-1:
-                raise ValueError('n_periods list must be of lenth {}.'.format(X.values.shape[-1]-1))
+                raise ValueError('n_periods list must be of lenth {}.'
+                                 .format(X.values.shape[-1]-1))
             else:
                 return self._assign_n_periods_weight_list(X)
         else:
@@ -142,9 +143,9 @@ class Development(DevelopmentBase):
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
         else:
-            warnings.warn('Setting n_periods=1 does not allow enough degrees of'
-                          '  freedom to support calculation of all regression '
-                          'statistics.  Only LDFs have been calculated.')
+            warnings.warn('Setting n_periods=1 does not allow enough degrees '
+                          'of freedom to support calculation of all regression'
+                          ' statistics.  Only LDFs have been calculated.')
         params.std_err_ = np.nan_to_num(params.std_err_) + \
             np.nan_to_num((1-np.nan_to_num(params.std_err_*0+1)) *
             params.sigma_/np.swapaxes(np.sqrt(_x**(2-val))[..., 0:1, :], -1, -2))
@@ -153,6 +154,7 @@ class Development(DevelopmentBase):
                                  params.std_err_), 3)
         params = np.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(X, params, 0)
+        self.cdf_ = self._get_cdf(self)
         self.sigma_ = self._param_property(X, params, 1)
         self.std_err_ = self._param_property(X, params, 2)
         return self
@@ -171,13 +173,9 @@ class Development(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.deepcopy(X)
-        X_new.std_err_ = self.std_err_
-        X_new.cdf_ = self.cdf_
-        X_new.ldf_ = self.ldf_
-        X_new.sigma_ = self.sigma_
-        X_new.sigma_interpolation = self.sigma_interpolation
-        X_new.average_ = self.average_
-        X_new.w_ = self.w_
+        for item in ['std_err_', 'cdf_', 'ldf_', 'average_',
+                     'sigma_', 'w_', 'sigma_interpolation']:
+            X_new.__dict__[item] = self.__dict__[item]
         return X_new
 
     def _param_property(self, X, params, idx):

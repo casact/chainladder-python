@@ -38,8 +38,9 @@ class WeightedRegression:
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
         x[w == 0] = np.nan
         y[w == 0] = np.nan
-        slope = (np.nansum(w*x*y, axis) - np.nansum(x*w, axis)*np.nanmean(y, axis)) / \
-            (np.nansum(w*x*x, axis) - np.nanmean(x, axis)*np.nansum(w*x, axis))
+        slope = (
+            (np.nansum(w*x*y, axis)-np.nansum(x*w, axis)*np.nanmean(y, axis)) /
+            (np.nansum(w*x*x, axis)-np.nanmean(x, axis)*np.nansum(w*x, axis)))
         intercept = np.nanmean(y, axis) - slope * np.nanmean(x, axis)
         self.slope_ = np.expand_dims(slope, -1)
         self.intercept_ = np.expand_dims(intercept, -1)
@@ -103,7 +104,8 @@ class WeightedRegression:
         slicer_n[self.axis] = slice(1, -1, 1)
         slicer_d[self.axis] = slice(0, -2, 1)
         slicer_a[self.axis] = slice(0, 2, 1)
-        slicer_n, slicer_d, slicer_a = tuple(slicer_n), tuple(slicer_d), tuple(slicer_a)
+        slicer_n, slicer_d, slicer_a = (tuple(slicer_n), tuple(slicer_d),
+                                        tuple(slicer_a))
         fill_ = np.sqrt(
             abs(np.minimum((y[slicer_n]**4 / y[slicer_d]**2),
                 np.minimum(y[slicer_d]**2, y[slicer_n]**2))))

@@ -79,6 +79,7 @@ class IncrementalAdditive(DevelopmentBase):
         obj.nan_override = True
         self.incremental_ = obj*sample_weight
         self.ldf_ = obj.incr_to_cum().link_ratio
+        self.cdf_ = DevelopmentBase._get_cdf(self.ldf_)
         return self
 
     def transform(self, X):
@@ -94,9 +95,7 @@ class IncrementalAdditive(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X.cdf_ = self.cdf_
-        X.ldf_ = self.ldf_
-        X.sigma_ = self.cdf_*0
-        X.std_err_ = self.cdf_*0
-        X.incremental_ = self.incremental_
-        return X
+        X_new = copy.deepcopy(X)
+        for item in ['incremental_', 'cdf_', 'ldf_']:
+            X_new.__dict__[item] = self.__dict__[item]
+        return X_new

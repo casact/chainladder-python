@@ -1,13 +1,4 @@
-"""
-:ref:`chainladder.methods<methods>`.Chainladder
-===============================================
-
-:ref:`Chainladder<chainladder>` is the most basic and fundamental method.
-The IBNR model is entirely described by the LDFs
-"""
-
 import numpy as np
-import pandas as pd
 import copy
 from chainladder.methods import MethodBase
 
@@ -81,7 +72,7 @@ class Chainladder(MethodBase):
     def ultimate_(self):
         obj = copy.deepcopy(self.X_)
         obj.values = np.repeat(self.X_.latest_diagonal.values,
-                                 self.cdf_.shape[3], 3)
+                               self.cdf_.shape[3], 3)
         cdf = self.cdf_.values[..., :self.X_.nan_triangle().shape[-1]]
         obj_tri = obj.values[..., :self.X_.nan_triangle().shape[-1]]
         obj.values = (cdf*obj_tri)*self.X_.nan_triangle()

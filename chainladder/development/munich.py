@@ -5,8 +5,8 @@ The Munich Adjustment Method
 
 from sklearn.base import BaseEstimator
 from chainladder.utils.weighted_regression import WeightedRegression
+from chainladder.development import Development
 import numpy as np
-import pandas as pd
 import copy
 
 
@@ -23,7 +23,7 @@ class MunichAdjustment(BaseEstimator):
 
 
     """
-    def __init__(self, paid_to_incurred={}):
+    def __init__(self, paid_to_incurred):
         self.paid_to_incurred = paid_to_incurred
 
     def fit(self, X, y=None, sample_weight=None):
@@ -41,15 +41,16 @@ class MunichAdjustment(BaseEstimator):
         self : object
             Returns the instance itself.
         """
-        if X.__dict__.get('ldf_', None) is None:
-            raise ValueError('Triangle must have LDFs.')
-        self.p_to_i_X_ = self._get_p_to_i_object(X)
-        self.p_to_i_ldf_ = self._get_p_to_i_object(X.ldf_)
-        self.p_to_i_sigma_ = self._get_p_to_i_object(X.sigma_)
-        self.q_f_, self.rho_sigma_ = self._get_MCL_model(X)
-        self.residual_, self.q_resid_ = self._get_MCL_residuals(X)
+        obj = copy.deepcopy(X)
+        if obj.__dict__.get('ldf_', None) is None:
+            obj = Development().fit_transform(obj)
+        self.p_to_i_X_ = self._get_p_to_i_object(obj)
+        self.p_to_i_ldf_ = self._get_p_to_i_object(obj.ldf_)
+        self.p_to_i_sigma_ = self._get_p_to_i_object(obj.sigma_)
+        self.q_f_, self.rho_sigma_ = self._get_MCL_model(obj)
+        self.residual_, self.q_resid_ = self._get_MCL_residuals(obj)
         self.lambda_coef_ = self._get_MCL_lambda()
-        self.cdf_ = self._get_cdf(X)
+        self.cdf_ = self._get_cdf(obj)
         return self
 
     def transform(self, X):
