@@ -143,6 +143,10 @@ def test_arithmetic_2():
     np.testing.assert_equal(1-(x/x), 0*x*0)
 
 
+def test_rtruediv():
+    assert np.nansum(abs(((1/cl.load_dataset('raa'))*cl.load_dataset('raa')).values[0,0] - cl.load_dataset('raa').nan_triangle()))< .00001
+
+
 def test_shift():
     x = cl.load_dataset('quarterly').iloc[0,0]
     np.testing.assert_equal(x[x.valuation<=x.valuation_date].values, x.values)
@@ -156,3 +160,20 @@ def test_quantile_vs_median():
 def test_grain_returns_valid_tri():
     tri = cl.load_dataset('quarterly')
     assert tri.grain('OYDY').latest_diagonal == tri.latest_diagonal
+
+
+def test_base_minimum_exposure_triangle():
+    raa = (cl.load_dataset('raa').latest_diagonal*0+50000).to_frame().reset_index()
+    raa['index'] = raa['index'].astype(str)
+    cl.Triangle(raa, origin='index', columns='Latest')
+
+
+def test_origin_and_value_setters():
+    raa = cl.load_dataset('raa')
+    raa2 = cl.load_dataset('raa')
+    raa.columns = list(raa.columns)
+    raa.origin = list(raa.origin)
+    assert np.all((np.all(raa2.origin == raa.origin),
+                   np.all(raa2.development == raa.development),
+                   np.all(raa2.odims == raa.odims),
+                   np.all(raa2.vdims == raa.vdims)))

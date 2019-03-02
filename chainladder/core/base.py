@@ -108,7 +108,7 @@ class TriangleBase:
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
-        self.odims = [value] if type(value) is str else value
+        self.odims = pd.Series([value] if type(value) is str else value).values
 
     @property
     def development(self):
@@ -731,11 +731,6 @@ class TriangleBase:
         v = len(self.vdims)
         tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
         return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
-
-    def set_params(self, **parameters):
-        for parameter, value in parameters.items():
-            setattr(self, parameter, value)
-        return self
 
     @staticmethod
     def to_datetime(data, fields, period_end=False):
