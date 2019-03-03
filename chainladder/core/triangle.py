@@ -32,14 +32,16 @@ class Triangle(TriangleBase):
         Represents all available levels of the index dimension.
     columns : Series
         Represents all available levels of the value dimension.
-    origin : Series
+    origin : DatetimeIndex
         Represents all available levels of the origin dimension.
     development : Series
         Represents all available levels of the development dimension.
+    valuation : DatetimeIndex
+        Represents all valuation dates of each cell in the Triangle.
     shape : tuple
         The 4D shape of the triangle instance
     link_ratio, age_to_age
-        Set of age-to-age ratios for the triangle.
+        Displays age-to-age ratios for the triangle.
     valuation_date : date
         The latest valuation date of the data
     loc : Triangle

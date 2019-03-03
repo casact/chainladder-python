@@ -36,9 +36,21 @@ gradually less important.
 Deterministic Benktander
 ==========================
 
-The :class:`Benktander` method, introduced in 1976, is a credibility-weighted average of the BornhuetterFerguson technique and the development technique. The advantage cited by the authors is that
-this method will prove more responsive than the Bornhuetter-Ferguson technique and more stable
-than the development technique
+The :class:`Benktander` method, introduced in 1976, is a credibility-weighted
+average of the ``BornhuetterFerguson`` technique and the development technique.
+  The advantage cited by the authors is that this method will prove more
+responsive than the Bornhuetter-Ferguson technique and more stable
+than the development technique. It is also known as the interated BF method.
+The generalized formula is:
+
+:math:`\\sum_{k=0}^{n-1}(1-\\frac{1}{CDF}) + Apriori\\times (1-\\frac{1}{CDF})^{n}`
+
+`n=1` yields the traditional BF method, and when `n` is sufficiently large, the
+method converges to the traditional CL method.
+
+Mack noted the ``Benktander`` method is found to have almost always a smaller mean
+squared error than the other two methods and to be almost as precise as an exact
+Bayesian procedure.
 
 .. topic:: References
 

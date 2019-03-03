@@ -139,7 +139,7 @@ class Development(DevelopmentBase):
         val = np.nan_to_num(val * (_y * 0 + 1))
         _w = self._assign_n_periods_weight(X) / (_x**(val))
         self.w_ = self._assign_n_periods_weight(X)
-        params = WeightedRegression(_w, _x, _y, axis=2, thru_orig=True).fit()
+        params = WeightedRegression(axis=2, thru_orig=True).fit(_x, _y, _w)
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
         else:

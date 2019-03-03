@@ -1,15 +1,12 @@
 import numpy as np
+from sklearn.base import BaseEstimator
 
-
-class WeightedRegression:
+class WeightedRegression(BaseEstimator):
     ''' Helper class that fits a system of regression equations
         simultaneously on a multi-dimensional array.  Look into
         SUR as a replacement.
     '''
-    def __init__(self, w=None, x=None, y=None, axis=None, thru_orig=False):
-        self.x = x
-        self.y = y
-        self.w = w
+    def __init__(self, axis=None, thru_orig=False):
         self.axis = axis
         self.thru_orig = thru_orig
 
@@ -20,16 +17,19 @@ class WeightedRegression:
             self.x = np.cumsum(np.ones(self.y.shape), self.axis)
         return self
 
-    def fit(self):
+    def fit(self, X, y=None, sample_weight=None):
+        self.x = X
+        self.y = y
+        self.w = sample_weight
         if self.x is None:
             self.infer_x_w()
         if self.thru_orig:
-            self.fit_OLS_thru_orig()
+            self._fit_OLS_thru_orig()
         else:
-            self.fit_OLS()
+            self._fit_OLS()
         return self
 
-    def fit_OLS(self):
+    def _fit_OLS(self):
         ''' Given a set of w, x, y, and an axis, this Function
             returns OLS slope and intercept.
             TODO:
@@ -46,7 +46,7 @@ class WeightedRegression:
         self.intercept_ = np.expand_dims(intercept, -1)
         return self
 
-    def fit_OLS_thru_orig(self):
+    def _fit_OLS_thru_orig(self):
         w, x, y, axis = self.w, self.x, self.y, self.axis
         coef = np.nansum(w*x*y, axis)/np.nansum((y*0+1)*w*x*x, axis)
         fitted_value = np.repeat(np.expand_dims(coef, axis),
@@ -87,7 +87,7 @@ class WeightedRegression:
         y[y == 0] = np.nan
         ly = np.log(y)
         w = np.nan_to_num(ly*0+1)
-        reg = WeightedRegression(w, None, ly, self.axis, False).fit()
+        reg = WeightedRegression(self.axis, False).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
         fill_ = np.exp(reg.x*slope+intercept)*(1-w)
         return np.nan_to_num(y) + fill_
@@ -98,12 +98,10 @@ class WeightedRegression:
             the missing value. This function needs a recursive definition...
         '''
         w = np.nan_to_num(y*0+1)
-        slicer_n = ([slice(None)]*4)
-        slicer_d = ([slice(None)]*4)
-        slicer_a = ([slice(None)]*4)
-        slicer_n[self.axis] = slice(1, -1, 1)
-        slicer_d[self.axis] = slice(0, -2, 1)
-        slicer_a[self.axis] = slice(0, 2, 1)
+        slicer_n, slicer_d, slicer_a = \
+            ([slice(None)]*4), ([slice(None)]*4), ([slice(None)]*4)
+        slicer_n[self.axis], slicer_d[self.axis], slicer_a[self.axis] = \
+            slice(1, -1, 1), slice(0, -2, 1), slice(0, 2, 1)
         slicer_n, slicer_d, slicer_a = (tuple(slicer_n), tuple(slicer_d),
                                         tuple(slicer_a))
         fill_ = np.sqrt(

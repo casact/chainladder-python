@@ -105,10 +105,10 @@ class MunichAdjustment(BaseEstimator):
 
     def _get_MCL_model(self, X):
         p, i = self.p_to_i_X_[0], self.p_to_i_X_[1]
-        modelsP = WeightedRegression(w=1/p, x=p, y=i, axis=2, thru_orig=True)
-        modelsP = modelsP.fit().sigma_fill(X.sigma_interpolation)
-        modelsI = WeightedRegression(w=1/i, x=i, y=p, axis=2, thru_orig=True)
-        modelsI = modelsI.fit().sigma_fill(X.sigma_interpolation)
+        modelsP = WeightedRegression(axis=2, thru_orig=True)
+        modelsP = modelsP.fit(p, i, 1/p).sigma_fill(X.sigma_interpolation)
+        modelsI = WeightedRegression(axis=2, thru_orig=True)
+        modelsI = modelsI.fit(i, p, 1/i).sigma_fill(X.sigma_interpolation)
         q_f = self._p_to_i_concate(modelsP.slope_, modelsI.slope_)
         rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_)
         return np.swapaxes(q_f, -1, -2), np.swapaxes(rho_sigma, -1, -2)
@@ -138,14 +138,12 @@ class MunichAdjustment(BaseEstimator):
         w = np.reshape(self.residual_[1], (k, v, o*d))
         w[w == 0] = np.nan
         w = w*0+1
-        lambdaI = WeightedRegression(
-            w, x=np.reshape(self.q_resid_[1][..., :-1, :-1], (k, v, o*d)),
-            y=np.reshape(self.residual_[1], (k, v, o*d)),
-            thru_orig=True, axis=-1).fit().slope_
-        lambdaP = WeightedRegression(
-            w, x=np.reshape(self.q_resid_[0][..., :-1, :-1], (k, v, o*d)),
-            y=np.reshape(self.residual_[0], (k, v, o*d)),
-            thru_orig=True, axis=-1).fit().slope_
+        lambdaI = WeightedRegression(thru_orig=True, axis=-1).fit(
+            np.reshape(self.q_resid_[1][..., :-1, :-1], (k, v, o*d)),
+            np.reshape(self.residual_[1], (k, v, o*d)), w).slope_
+        lambdaP = WeightedRegression(thru_orig=True, axis=-1).fit(
+            np.reshape(self.q_resid_[0][..., :-1, :-1], (k, v, o*d)),
+            np.reshape(self.residual_[0], (k, v, o*d)), w).slope_
         return np.expand_dims(self._p_to_i_concate(lambdaP, lambdaI), -1)
 
     @property

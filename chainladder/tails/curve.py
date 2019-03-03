@@ -4,7 +4,7 @@
 
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
-from chainladder.development import DevelopmentBase
+from chainladder.development import DevelopmentBase, Development
 import numpy as np
 
 
@@ -77,7 +77,7 @@ class TailCurve(TailBase):
         k, v = X.shape[:2]
         _x = self._get_x(_w, _y)
         # Get LDFs
-        coefs = WeightedRegression(_w, _x, _y, 3).fit()
+        coefs = WeightedRegression(axis=3).fit(_x, _y, _w)
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = np.cumsum(
             np.ones(tuple(list(_y.shape)[:-1] +
@@ -85,7 +85,11 @@ class TailCurve(TailBase):
         tail = self._predict_tail(slope, intercept, extrapolate)
         self.ldf_.values = self.ldf_.values[..., :-tail.shape[-1]]
         self.ldf_.values = np.concatenate((self.ldf_.values, tail), -1)
-        sigma, std_err = self._get_tail_stats(X)
+        if X.__dict__.get('ldf_', None) is None:
+            obj = Development().fit_transform(X)
+        else:
+            obj = X
+        sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values[..., -1] = sigma[..., -1]
         self.std_err_.values[..., -1] = std_err[..., -1]
         self.slope_ = slope
@@ -101,10 +105,10 @@ class TailCurve(TailBase):
         """
         y = X.ldf_.values.copy()
         y[y <= 1] = np.nan
-        reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
+        reg = WeightedRegression(axis=3).fit(None, np.log(y - 1), None)
         tail = np.prod(self.ldf_.values[..., -self._ave_period[0]-1:],
                        -1, keepdims=True)
-        reg = WeightedRegression(y=np.log(y - 1), axis=3).fit()
+        reg = WeightedRegression(axis=3).fit(None, np.log(y - 1), None)
         time_pd = (np.log(tail-1)-reg.intercept_)/reg.slope_
         return time_pd
 
@@ -113,11 +117,11 @@ class TailCurve(TailBase):
         log-linear extrapolation applied to tail average period
         """
         time_pd = self._get_tail_weighted_time_period(X)
-        reg = WeightedRegression(y=np.log(X.sigma_.values), axis=3).fit()
+        reg = WeightedRegression(axis=3).fit(None, np.log(X.sigma_.values), None)
         sigma_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         y = X.std_err_.values
         y[y == 0] = np.nan
-        reg = WeightedRegression(y=np.log(y), axis=3).fit()
+        reg = WeightedRegression(axis=3).fit(None, np.log(y), None)
         std_err_ = np.exp(time_pd*reg.slope_+reg.intercept_)
         return sigma_, std_err_
 
@@ -126,7 +130,7 @@ class TailCurve(TailBase):
         if self.curve == 'exponential':
             return None
         if self.curve == 'inverse_power':
-            reg = WeightedRegression(w, None, y, 3, False).infer_x_w()
+            reg = WeightedRegression(3, False).fit(None, y, w).infer_x_w()
             return np.log(reg.x)
 
     def _predict_tail(self, slope, intercept, extrapolate):

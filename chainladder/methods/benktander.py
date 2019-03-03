@@ -1,22 +1,3 @@
-"""
-:ref:`chainladder.methods<methods>`.Benktander
-===============================================
-
-:ref:`Benktander<benktander>` is a generalization of both the traditional
-chainladder (CL) and the Bornhutter-Ferguson method.  It is also known as the
-interated BF method.
-The generalized formula is:
-
-:math:`\\sum_{k=0}^{n-1}(1-\\frac{1}{CDF}) + Apriori\\times (1-\\frac{1}{CDF})^{n}`
-
-`n=1` yields the traditional BF method, and when `n` is sufficiently large, the
-method converges to the traditional CL method.
-
-Mack noted the Benktander method is found to have almost always a smaller mean
-squared error than the other two methods and to be almost as precise as an exact
-Bayesian procedure.
-"""
-
 import numpy as np
 import pandas as pd
 import copy
