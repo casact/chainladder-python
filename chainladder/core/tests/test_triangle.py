@@ -126,11 +126,13 @@ def test_printer():
 
 
 def test_value_order():
-    assert np.all(tri[['CumPaidLoss', 'BulkLoss']].columns == tri[['BulkLoss', 'CumPaidLoss']].columns)
+    assert np.all(tri[['CumPaidLoss', 'BulkLoss']].columns ==
+                  tri[['BulkLoss', 'CumPaidLoss']].columns)
 
 
 def test_trend():
-    assert abs((cl.load_dataset('abc').trend(0.05, axis='origin').trend((1/1.05)-1, axis='origin') - cl.load_dataset('abc')).sum().sum())<1e-5
+    assert abs((cl.load_dataset('abc').trend(0.05).trend((1/1.05)-1) -
+                cl.load_dataset('abc')).sum().sum()) < 1e-5
 
 
 def test_arithmetic_1():
@@ -177,3 +179,9 @@ def test_origin_and_value_setters():
                    np.all(raa2.development == raa.development),
                    np.all(raa2.odims == raa.odims),
                    np.all(raa2.vdims == raa.vdims)))
+
+def test_grain_increm_arg():
+    tri = cl.load_dataset('quarterly')['incurred']
+    tri_i = tri.cum_to_incr()
+    np.testing.assert_equal(tri_i.grain('OYDY', incremental=True).incr_to_cum(),
+                            tri.grain('OYDY'))

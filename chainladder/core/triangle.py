@@ -50,7 +50,10 @@ class Triangle(TriangleBase):
         pandas-style ``iloc`` accessor
     latest_diagonal : Triangle
         The latest diagonal of the triangle
-    triangle : array
+    values : array
         4D numpy array underlying the Triangle instance
+    T : Triangle
+        Transpose index and columns of object.  Only available when Triangle is
+        convertible to DataFrame.
     """
     pass

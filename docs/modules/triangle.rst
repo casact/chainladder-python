@@ -15,7 +15,7 @@ package requires all data to be instances of the Triangle class.
 Four-dimensional tabular data structure with labeled axes (index, columns,
 origin, development). Triangle is the primary data structure in
 chainladder. The notation to manipulate the triangle object borrows heavily
-from pandas and the experience should feel familar to a practitioner versed
+from pandas and the experience should feel familiar to a practitioner versed
 in using pandas.
 
 The core data structure at the heart of the Triangle class is a 4D numpy
@@ -40,8 +40,8 @@ Dimension 3 (``development`` dimension):
     e.g. Valuation Month, Valuation Year, Valuation Quarter, etc.
 
 ``index`` and ``columns`` are accessed like a pandas Dataframe.  You can think of
-the 4d structure as a 2D Dataframe where each cell (row, col) is its
-own 2D triangle.  see :ref:`Slicing<slicing>`
+the 4d structure as a pandas Dataframe where each cell (row, col) is its
+own triangle.  see :ref:`Slicing<slicing>`
 
 Inferring Dates when creating an instance
 -----------------------------------------
@@ -147,3 +147,4 @@ of these operations are legal.
    >>> x = raa[(raa.development>=24)&(raa.development<=48)]
    >>> x = raa[raa.origin<='1985-JUN']
    >>> x = raa[raa.origin>'1987-01-01'][raa.development<=36]
+   >>> x = raa[raa.valuation<raa.valuation_date]

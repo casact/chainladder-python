@@ -90,7 +90,9 @@ class BootstrapODPSample(DevelopmentBase):
         adj_resid_dist = adj_resid_dist - np.mean(adj_resid_dist)
 
         random_state = check_random_state(self.random_state)
-        resampled_residual = [random_state.choice(adj_resid_dist, size=exp_incr_triangle.shape, replace=True)*(exp_incr_triangle*0+1)
+        resampled_residual = [random_state.choice(adj_resid_dist,
+                              size=exp_incr_triangle.shape,
+                              replace=True)*(exp_incr_triangle*0+1)
                               for item in range(self.n_sims)]
         resampled_residual = np.array(resampled_residual) \
                                .reshape(self.n_sims, exp_incr_triangle.shape[0],
@@ -98,7 +100,8 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_residual = resampled_residual
         b = np.repeat(np.expand_dims(exp_incr_triangle, 0), self.n_sims, 0)
         resampled_triangles = (resampled_residual*np.sqrt(abs(b))+b).cumsum(2)
-        resampled_triangles = np.swapaxes(np.expand_dims(resampled_triangles, 0), 0, 1)
+        resampled_triangles = np.swapaxes(
+            np.expand_dims(resampled_triangles, 0), 0, 1)
         obj = copy.deepcopy(X)
         obj.kdims = np.arange(self.n_sims)
         obj.values = resampled_triangles

@@ -31,19 +31,19 @@ class TriangleBase:
                            .sum().reset_index()
         # Convert origin/development to dates
         origin_date = TriangleBase.to_datetime(data_agg, origin)
-        self.origin_grain = TriangleBase.get_grain(origin_date)
+        self.origin_grain = TriangleBase._get_grain(origin_date)
         # These only work with valuation periods and not lags
         if development:
             development_date = TriangleBase.to_datetime(data_agg, development,
                                                         period_end=True)
-            self.development_grain = TriangleBase.get_grain(development_date)
+            self.development_grain = TriangleBase._get_grain(development_date)
             col = 'development'
         else:
             development_date = origin_date
             self.development_grain = self.origin_grain
             col = None
         # Prep the data for 4D Triangle
-        data_agg = self.get_axes(data_agg, index, columns,
+        data_agg = self._get_axes(data_agg, index, columns,
                                  origin_date, development_date)
         data_agg = pd.pivot_table(data_agg, index=index+['origin'],
                                   columns=col, values=columns,
@@ -219,7 +219,7 @@ class TriangleBase:
             The grain to which you want your triangle converted, specified as
             'O<x>D<y>' where <x> and <y> can take on values of ``['Y', 'Q', 'M'
             ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
-            for Origin quarter, etc.
+            for Origin quarter/Development Month, etc.
         incremental : bool
             Not implemented yet
         inplace : bool
@@ -233,7 +233,9 @@ class TriangleBase:
         if inplace:
             origin_grain = grain[1:2]
             development_grain = grain[-1]
-            new_tri, o = self._set_ograin(grain=grain, incremental=incremental)
+            if incremental:
+                self.incr_to_cum(inplace=True)
+            new_tri, o = self._set_ograin(grain=grain)
             # Set development Grain
             dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                               'Q': {'Y': 4, 'Q': 1},
@@ -250,44 +252,61 @@ class TriangleBase:
             self.values = self._slide(new_tri, direction='l')
             self.values[self.values == 0] = np.nan
             self.valuation = self._valuation_triangle()
+            del self._nan_triangle
+            if incremental:
+                self.cum_to_incr(inplace=True)
             return self
         else:
             new_obj = copy.deepcopy(self)
             new_obj.grain(grain=grain, incremental=incremental, inplace=True)
             return new_obj
 
-    def trend(self, trend=0.0, axis=None):
-        """  Allows for the trending along origin or development
+    def trend(self, trend=0.0):
+        """  Allows for the trending of a Triangle object or an origin vector.
+        This method trends using days and assumes a years is 365.25 days long.
 
         Parameters
         ----------
         trend : float
-            The amount of the trend
-        axis : str ('origin' or 'development')
-            The axis along which to apply the trend factors.  The latest period
-            of the axis is the trend-to period.
+            The annual amount of the trend
 
         Returns
         -------
-            Triangle updated with multiplicative trend applied.
+        Triangle
+            updated with multiplicative trend applied.
         """
-        axis = {'origin': -2, 'development': -1}.get(axis, None)
-        if axis is None:
-            if self.shape[-2] == 1 and self.shape[-1] != 1:
-                axis = -1
-            elif self.shape[-2] != 1 and self.shape[-1] == 1:
-                axis = -2
-            else:
-                raise ValueError('Cannot infer axis, please supply')
-        trend = (1+trend)**np.arange(self.shape[axis])[::-1]
-        trend = np.expand_dims(self.expand_dims(trend), -1)
-        if axis == -1:
-            trend = np.swapaxes(trend, -2, -1)
+
+        if self.shape[-2] == 1 and self.shape[-1] != 1:
+            trend = (1 + trend)**-(
+                pd.Series(self.origin.values -
+                          np.datetime64(self.valuation_date)).dt.days
+                  .value/365.25)
+        else:
+            trend = (1 + trend)**-(
+                pd.Series(self.valuation.values -
+                          np.datetime64(self.valuation_date)).dt.days
+                  .values.reshape(self.shape[-2:], order='f')/365.25)
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj
 
     def rename(self, axis, value):
+        """ Alter axes labels.
+
+        Parameters
+        ----------
+            axis: str or int
+                A value of 0 <= axis <= 4 corresponding to axes 'index',
+                'columns', 'origin', 'development' respectively.  Both the
+                int and str representation can be used.
+            value: list
+                List of new labels to be assigned to the axis. List must be of
+                same length of the specified axis.
+
+        Returns
+        -------
+            Triangle with relabeled axis.
+        """
         if axis == 'index' or axis == 0:
             self.index = value
         if axis == 'columns' or axis == 1:
@@ -387,7 +406,6 @@ class TriangleBase:
 
     @property
     def T(self):
-        """ Passthrough of pandas functionality """
         return self.to_frame().T
 
     # ---------------------------------------------------------------- #
@@ -491,6 +509,18 @@ class TriangleBase:
         return _TriangleGroupBy(self, by=-1).quantile(q, axis=1)
 
     def groupby(self, by, *args, **kwargs):
+        """ Group Triangle by index values.  If the triangle is convertable to a
+        DataFrame, then it defaults to pandas groupby functionality.
+
+        Parameters
+        ----------
+        by: str or list
+            The index to group by
+
+        Returns
+        -------
+            GroupBy object (pandas or Triangle)
+        """
         if self.shape[:2] == (1, 1):
             return self.to_frame().groupby(*args, **kwargs)
         return _TriangleGroupBy(self, by)
@@ -544,13 +574,26 @@ class TriangleBase:
         self.vdims = np.array(idx.columns.unique())
         self.values = np.append(self.values, value.values, axis=1)
 
-    def append(self, obj, index):
+    def append(self, other, index):
+        """ Append rows of other to the end of caller, returning a new object.
+
+        Parameters
+        ----------
+        other : Triangle
+            The data to append.
+        index:
+            The index label(s) to assign the appended data.
+
+        Returns
+        -------
+            New Triangle with appended data.
+        """
         return_obj = copy.deepcopy(self)
         x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
         new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
         x = x.append(new_idx, sort=True)
         x.set_index(return_obj.key_labels, inplace=True)
-        return_obj.values = np.append(return_obj.values, obj.values, axis=0)
+        return_obj.values = np.append(return_obj.values, other.values, axis=0)
         return_obj.kdims = np.array(x.index.unique())
         return return_obj
 
@@ -595,7 +638,7 @@ class TriangleBase:
     # ------------------- Data Ingestion Functions ------------------- #
     # ---------------------------------------------------------------- #
 
-    def get_date_axes(self, origin_date, development_date):
+    def _get_date_axes(self, origin_date, development_date):
         ''' Function to find any missing origin dates or development dates that
             would otherwise mess up the origin/development dimensions.
         '''
@@ -611,9 +654,9 @@ class TriangleBase:
                 pd.period_range(start=origin_date.min(),
                                 end=development_date.max(),
                                 freq=development_grain).to_timestamp()
-            development_unique = TriangleBase.period_end(development_unique)
+            development_unique = TriangleBase._period_end(development_unique)
             # Let's get rid of any development periods before origin periods
-            cart_prod = TriangleBase.cartesian_product(origin_unique,
+            cart_prod = TriangleBase._cartesian_product(origin_unique,
                                                        development_unique)
             cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
             return pd.DataFrame(cart_prod, columns=['origin', 'development'])
@@ -632,11 +675,11 @@ class TriangleBase:
         cart_prod = cart_prod[cart_prod['development'] >= cart_prod['origin']]
         return cart_prod
 
-    def get_axes(self, data_agg, groupby, columns,
+    def _get_axes(self, data_agg, groupby, columns,
                  origin_date, development_date):
         ''' Preps axes for the 4D triangle
         '''
-        date_axes = self.get_date_axes(origin_date, development_date)
+        date_axes = self._get_date_axes(origin_date, development_date)
         kdims = data_agg[groupby].drop_duplicates()
         kdims['key'] = 1
         date_axes['key'] = 1
@@ -759,7 +802,7 @@ class TriangleBase:
                 pass
         target = target_field.map(arr)
         if period_end:
-            target = TriangleBase.period_end(target)
+            target = TriangleBase._period_end(target)
         return target
 
     @staticmethod
@@ -768,7 +811,7 @@ class TriangleBase:
             difference to a development lag '''
         year_diff = development.dt.year - origin.dt.year
         if np.all(origin != development):
-            development_grain = TriangleBase.get_grain(development)
+            development_grain = TriangleBase._get_grain(development)
         else:
             development_grain = 'M'
         if development_grain == 'Y':
@@ -781,7 +824,7 @@ class TriangleBase:
             return year_diff * 12 + month_diff + 1
 
     @staticmethod
-    def period_end(array):
+    def _period_end(array):
         if type(array) is not pd.DatetimeIndex:
             array_lookup = len(set(array.dt.month))
         else:
@@ -792,11 +835,11 @@ class TriangleBase:
         return array + offset[array_lookup]
 
     @staticmethod
-    def get_grain(array):
+    def _get_grain(array):
         return {1: 'Y', 4: 'Q', 12: 'M'}[len(array.dt.month.unique())]
 
     @staticmethod
-    def cartesian_product(*arrays):
+    def _cartesian_product(*arrays):
         '''A fast implementation of cartesian product, used for filling in gaps
         in triangles (if any)'''
         arr = np.empty([len(a) for a in arrays]+[len(arrays)],
@@ -806,7 +849,7 @@ class TriangleBase:
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def _set_ograin(self, grain, incremental):
+    def _set_ograin(self, grain):
         origin_grain = grain[1:2]
         tri = np.nan_to_num(self.values)*self.nan_triangle()
         orig = np.nan_to_num(self._slide(tri))
@@ -904,6 +947,21 @@ class _TriangleGroupBy:
         self.old_k_by_new_k = old_k_by_new_k
 
     def quantile(self, q, axis=1, *args, **kwargs):
+        """ Return values at the given quantile over requested axis.  If Triangle is
+        convertible to DataFrame then pandas quantile functionality is used instead.
+
+        Parameters
+        ----------
+        q: float or array-like, default 0.5 (50% quantile)
+            Value between 0 <= q <= 1, the quantile(s) to compute.
+        axis:  {0, 1, ‘index’, ‘columns’} (default 1)
+            Equals 0 or ‘index’ for row-wise, 1 or ‘columns’ for column-wise.
+
+        Returns
+        -------
+            Triangle
+
+        """
         x = self.obj.values*self.old_k_by_new_k
         ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
