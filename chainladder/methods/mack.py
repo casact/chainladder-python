@@ -64,7 +64,7 @@ class MackChainladder(Chainladder):
     def full_std_err_(self):
         obj = copy.deepcopy(self.X_)
         tri_array = self.full_triangle_.values
-        weight_dict = {'regression': 2, 'volume': 1, 'simple': 0}
+        weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         val = np.array([weight_dict.get(item.lower(), 2)
                         for item in list(self.average_) + ['volume']])
         for i in [2, 1, 0]:

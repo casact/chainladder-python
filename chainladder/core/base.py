@@ -103,12 +103,15 @@ class TriangleBase:
 
     @property
     def origin(self):
-        return pd.DatetimeIndex(self.odims, name='origin')
+        return pd.DatetimeIndex(self.odims, name='origin') \
+                 .to_period(self.origin_grain)
 
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
-        self.odims = pd.Series([value] if type(value) is str else value).values
+        value = pd.PeriodIndex([item for item in list(value)],
+                               freq=self.origin_grain).to_timestamp()
+        self.odims = value.values
 
     @property
     def development(self):
@@ -128,7 +131,7 @@ class TriangleBase:
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
-        val_array = obj.valuation.values.reshape(obj.shape[-2:],
+        val_array = obj.valuation.to_timestamp().values.reshape(obj.shape[-2:],
                                                  order='f')[:, 1:]
         obj.values = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
@@ -139,7 +142,7 @@ class TriangleBase:
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
         obj.valuation = pd.DatetimeIndex(
-            pd.DataFrame(val_array).unstack().values)
+            pd.DataFrame(val_array).unstack().values).to_period(self._lowest_grain())
         return obj
 
     @property
@@ -159,7 +162,7 @@ class TriangleBase:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = ['Latest']
             obj.valuation = pd.DatetimeIndex(
-                [pd.to_datetime(obj.valuation_date)]*len(obj.odims))
+                [pd.to_datetime(obj.valuation_date)]*len(obj.odims)).to_period(self._lowest_grain())
         obj.values = diagonal
         return obj
 
@@ -252,7 +255,9 @@ class TriangleBase:
             self.values = self._slide(new_tri, direction='l')
             self.values[self.values == 0] = np.nan
             self.valuation = self._valuation_triangle()
-            del self._nan_triangle
+            if hasattr(self, '_nan_triangle'):
+                # Force update on _nan_triangle at next access.
+                del self._nan_triangle
             if incremental:
                 self.cum_to_incr(inplace=True)
             return self
@@ -283,7 +288,7 @@ class TriangleBase:
                   .value/365.25)
         else:
             trend = (1 + trend)**-(
-                pd.Series(self.valuation.values -
+                pd.Series(self.valuation.to_timestamp().values -
                           np.datetime64(self.valuation_date)).dt.days
                   .values.reshape(self.shape[-2:], order='f')/365.25)
         obj = copy.deepcopy(self)
@@ -433,6 +438,8 @@ class TriangleBase:
                 ddims = set(self.ddims).intersection(set(other.ddims))
                 odims = set(self.odims).intersection(set(other.odims))
                 # Need to set string vs int type-casting
+                odims = pd.PeriodIndex(np.array(list(odims)),
+                                       freq=self.origin_grain)
                 obj = obj[obj.origin.isin(odims)][obj.development.isin(ddims)]
                 other = other[other.origin.isin(odims)][other.development.isin(ddims)]
                 obj.odims = np.sort(np.array(list(odims)))
@@ -712,7 +719,7 @@ class TriangleBase:
            hasattr(self, '_nan_triangle'):
             self.valuation = self._valuation_triangle()
             val_array = self.valuation
-            val_array = val_array.values.reshape(self.shape[-2:], order='f')
+            val_array = val_array.to_timestamp().values.reshape(self.shape[-2:], order='f')
             nan_triangle = np.array(
                 pd.DataFrame(val_array) > self.valuation_date)
             nan_triangle = np.where(nan_triangle, np.nan, 1)
@@ -736,6 +743,8 @@ class TriangleBase:
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
                    .to_timestamp(how='s')
         origin = pd.Series(origin)
+        if type(self.valuation_date) is not pd.Timestamp:
+            self.valuation_date = self.valuation_date.to_timestamp()
         # Limit origin to valuation date
         origin[origin > self.valuation_date] = self.valuation_date
         next_development = origin+pd.DateOffset(days=-1, months=ddims[0])
@@ -750,7 +759,16 @@ class TriangleBase:
                 next_development = np.expand_dims(
                     np.array(origin+pd.DateOffset(days=-1, months=item)), -1)
             val_array = np.concatenate((val_array, next_development), -1)
-        return pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
+        val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
+        return val_array.to_period(self._lowest_grain())
+
+    def _lowest_grain(self):
+        my_list = ['M', 'Q', 'Y']
+        my_dict = {item: num for num, item in enumerate(my_list)}
+        lowest_grain = my_list[min(my_dict[self.origin_grain],
+                                   my_dict[self.development_grain])]
+        return lowest_grain
+
 
     def _slide(self, triangle, direction='r'):
         ''' Facilitates swapping alignment of triangle between development
@@ -803,6 +821,7 @@ class TriangleBase:
         target = target_field.map(arr)
         if period_end:
             target = TriangleBase._period_end(target)
+        target.name = 'valuation'
         return target
 
     @staticmethod

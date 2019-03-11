@@ -3,6 +3,7 @@ Loss Development
 ================
 """
 import numpy as np
+import pandas as pd
 import copy
 import warnings
 from sklearn.base import BaseEstimator
@@ -52,6 +53,15 @@ class Development(DevelopmentBase):
         'volume', 'simple', and 'regression'
     sigma_interpolation : string optional (default='log-linear')
         Options include 'log-linear' and 'mack'
+    drop : tuple or list of tuples
+        Drops specific origin/development combination(s)
+    drop_high : bool or list of bool (default=None)
+        Drops highest link ratio(s) from LDF calculation
+    drop_low : bool or list of bool (default=None)
+        Drops lowest link ratio(s) from LDF calculation
+    drop_valuation : str or list of str (default=None)
+        Drops specific valuation periods. str must be date convertible.
+
 
     Attributes
     ----------
@@ -68,10 +78,15 @@ class Development(DevelopmentBase):
 
     """
     def __init__(self, n_periods=-1, average='volume',
-                 sigma_interpolation='log-linear'):
+                 sigma_interpolation='log-linear', drop=None,
+                 drop_high=None, drop_low=None, drop_valuation=None):
         self.n_periods = n_periods
         self.average = average
         self.sigma_interpolation = sigma_interpolation
+        self.drop_high = drop_high
+        self.drop_low = drop_low
+        self.drop_valuation = drop_valuation
+        self.drop = drop
 
     def _assign_n_periods_weight(self, X):
         if type(self.n_periods) is int:
@@ -105,6 +120,56 @@ class Development(DevelopmentBase):
                                 np.ones((k, v, n_periods+1, d))), 2)*flip_nan
             return w*X.expand_dims(X.nan_triangle())
 
+    def _drop_adjustment(self, X, link_ratio):
+        return self._drop_valuation(X)*self._drop(X)
+
+    def _drop_hi(self, X, link_ratio):
+        max_vals = np.nanmax(link_ratio, -2, keepdims=True)
+        min_vals = np.nanmin(link_ratio, -2, keepdims=True)
+        hilo = 1*(max_vals != link_ratio) * \
+                 (min_vals != link_ratio)
+        for num, item in enumerate(self.average_):
+            if item != 'olympic':
+                hilo[..., num] = hilo[..., num]*0+1
+            else:
+                if hilo.shape[-1]-sum(link_ratio[0, 0, :, num]==0) < 3:
+                    hilo[..., num] = hilo[..., num]*0+1
+                    warnings.warn('Olympic average cannot be computed when '
+                                  'less than three LDFs are present. Using '
+                                  'simple average in some cases.')
+        return hilo
+
+    def _drop_valuation(self, X):
+        if self.drop_valuation is None:
+            return X.nan_triangle()[:, :-1]
+        if type(self.drop_valuation) is not list:
+            drop_valuation = [self.drop_valuation]
+        else:
+            drop_valuation = self.drop_valuation
+        arr = 1-np.nan_to_num(X[X.valuation.isin(
+            pd.PeriodIndex(drop_valuation,
+                           freq=X.origin_grain))].values[0, 0]*0+1)
+        ofill = X.shape[-2]-arr.shape[-2]
+        dfill = X.shape[-1]-arr.shape[-1]
+        np.repeat(np.expand_dims(np.ones(arr.shape[-1]), 0), ofill, 0)
+        if ofill > 0:
+            arr = np.concatenate((arr, np.repeat(
+                np.expand_dims(np.ones(arr.shape[-1]), 0), ofill, 0)), 0)
+        if dfill > 0:
+            arr = np.concatenate((arr, np.repeat(
+                np.expand_dims(np.ones(arr.shape[-2]), -1), dfill, -1)), -1)
+        return arr[:, :-1]
+
+    def _drop(self, X):
+        if self.drop is None:
+            return X.nan_triangle()[:, :-1]
+        drop = [self.drop] if type(self.drop) is not list else self.drop
+        arr = X.nan_triangle()
+        for item in drop:
+            arr[np.where(X.origin == item[0])[0][0],
+                np.where(X.development == item[1])[0][0]] = 0
+        return arr[:, :-1]
+
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
 
@@ -129,17 +194,20 @@ class Development(DevelopmentBase):
             average = self.average
         average = np.array(average)
         self.average_ = average
-        weight_dict = {'regression': 2, 'volume': 1, 'simple': 0}
-        _x = tri_array[..., :-1]
-        _y = tri_array[..., 1:]
-        val = np.array([weight_dict.get(item.lower(), 2)
+        weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
+        x, y = tri_array[..., :-1], tri_array[..., 1:]
+        val = np.array([weight_dict.get(item.lower(), 1)
                         for item in average])
         for i in [2, 1, 0]:
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
-        val = np.nan_to_num(val * (_y * 0 + 1))
-        _w = self._assign_n_periods_weight(X) / (_x**(val))
+        val = np.nan_to_num(val * (y * 0 + 1))
         self.w_ = self._assign_n_periods_weight(X)
-        params = WeightedRegression(axis=2, thru_orig=True).fit(_x, _y, _w)
+        if not (self.drop is self.drop_low is self.drop_high is
+                self.drop_valuation is self.drop is None):
+            link_ratio = np.divide(y, x, where=np.nan_to_num(x) != 0)
+            self.w_ = self.w_*self._drop_adjustment(X, link_ratio)
+        w = self.w_ / (x**(val))
+        params = WeightedRegression(axis=2, thru_orig=True).fit(x, y, w)
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
         else:
@@ -148,7 +216,7 @@ class Development(DevelopmentBase):
                           ' statistics.  Only LDFs have been calculated.')
         params.std_err_ = np.nan_to_num(params.std_err_) + \
             np.nan_to_num((1-np.nan_to_num(params.std_err_*0+1)) *
-            params.sigma_/np.swapaxes(np.sqrt(_x**(2-val))[..., 0:1, :], -1, -2))
+            params.sigma_/np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
         params = np.concatenate((params.slope_,
                                  params.sigma_,
                                  params.std_err_), 3)

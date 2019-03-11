@@ -27,9 +27,9 @@ def mack_p(data, average, est_sigma, tail):
         return cl.MackChainladder().fit(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data)))
 
 
-data = ['RAA', 'ABC', 'GenIns', 'MW2008', 'MW2014']
+data = ['ABC', 'MW2008']
 tail = [True, False]
-averages = [('simple', 2), ('volume', 1), ('regression', 0)]
+averages = [('simple', 0), ('volume', 1), ('regression', 2)]
 est_sigma = [('log-linear', 'log-linear'), ('mack', 'Mack')]
 
 
