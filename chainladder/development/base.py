@@ -121,27 +121,41 @@ class Development(DevelopmentBase):
             return w*X.expand_dims(X.nan_triangle())
 
     def _drop_adjustment(self, X, link_ratio):
-        return self._drop_valuation(X)*self._drop(X)
+        weight = X.nan_triangle()[:, :-1]
+        if self.drop_high is not None:
+            weight = weight*self._drop_hilo('high', X, link_ratio)
+        if self.drop_low is not None:
+            weight = weight*self._drop_hilo('low', X, link_ratio)
+        if self.drop is not None:
+            weight = weight*self._drop(X)
+        if self.drop_valuation is not None:
+            weight = weight*self._drop_valuation(X)
+        return weight
 
-    def _drop_hi(self, X, link_ratio):
-        max_vals = np.nanmax(link_ratio, -2, keepdims=True)
-        min_vals = np.nanmin(link_ratio, -2, keepdims=True)
-        hilo = 1*(max_vals != link_ratio) * \
-                 (min_vals != link_ratio)
+    def _drop_hilo(self, kind, X, link_ratio):
+        link_ratio[link_ratio == 0] = np.nan
+        lr_valid_count = np.sum(~np.isnan(link_ratio)[0, 0], axis=0)
+        if kind == 'high':
+            vals = np.nanmax(link_ratio, -2, keepdims=True)
+            drop_hilo = self.drop_high
+        else:
+            vals = np.nanmin(link_ratio, -2, keepdims=True)
+            drop_hilo = self.drop_low
+        hilo = 1*(vals != link_ratio)
+        if type(drop_hilo) is bool:
+            drop_hilo = [drop_hilo]*(len(X.development)-1)
         for num, item in enumerate(self.average_):
-            if item != 'olympic':
+            if not drop_hilo[num]:
                 hilo[..., num] = hilo[..., num]*0+1
             else:
-                if hilo.shape[-1]-sum(link_ratio[0, 0, :, num]==0) < 3:
+                if lr_valid_count[num] < 3:
                     hilo[..., num] = hilo[..., num]*0+1
-                    warnings.warn('Olympic average cannot be computed when '
-                                  'less than three LDFs are present. Using '
-                                  'simple average in some cases.')
+                    warnings.warn('drop_high and drop_low cannot be computed '
+                                  'when less than three LDFs are present. '
+                                  'Ignoring exclusions in some cases.')
         return hilo
 
     def _drop_valuation(self, X):
-        if self.drop_valuation is None:
-            return X.nan_triangle()[:, :-1]
         if type(self.drop_valuation) is not list:
             drop_valuation = [self.drop_valuation]
         else:
@@ -161,8 +175,6 @@ class Development(DevelopmentBase):
         return arr[:, :-1]
 
     def _drop(self, X):
-        if self.drop is None:
-            return X.nan_triangle()[:, :-1]
         drop = [self.drop] if type(self.drop) is not list else self.drop
         arr = X.nan_triangle()
         for item in drop:
@@ -201,11 +213,9 @@ class Development(DevelopmentBase):
         for i in [2, 1, 0]:
             val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
         val = np.nan_to_num(val * (y * 0 + 1))
-        self.w_ = self._assign_n_periods_weight(X)
-        if not (self.drop is self.drop_low is self.drop_high is
-                self.drop_valuation is self.drop is None):
-            link_ratio = np.divide(y, x, where=np.nan_to_num(x) != 0)
-            self.w_ = self.w_*self._drop_adjustment(X, link_ratio)
+        link_ratio = np.divide(y, x, where=np.nan_to_num(x) != 0)
+        self.w_ = self._assign_n_periods_weight(X) * \
+                  self._drop_adjustment(X, link_ratio)
         w = self.w_ / (x**(val))
         params = WeightedRegression(axis=2, thru_orig=True).fit(x, y, w)
         if self.n_periods != 1:
