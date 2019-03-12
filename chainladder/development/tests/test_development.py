@@ -22,8 +22,8 @@ def mack_p(data, average, est_sigma):
     return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))
 
 
-data = ['RAA', 'ABC', 'GenIns', 'M3IR5', 'MW2008', 'MW2014']
-averages = [('simple', 2), ('volume', 1), ('regression', 0)]
+data = ['RAA', 'GenIns', 'MW2014']
+averages = [('simple', 0), ('volume', 1), ('regression', 2)]
 est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 
@@ -35,6 +35,16 @@ def test_full_slice():
 def test_full_slice2():
     assert cl.Development().fit_transform(cl.load_dataset('GenIns')).ldf_ == \
         cl.Development(n_periods=[1000]*(cl.load_dataset('GenIns').shape[3]-1)).fit_transform(cl.load_dataset('GenIns')).ldf_
+
+def test_drop1():
+    raa = cl.load_dataset('raa')
+    assert cl.Development(drop=('1982', 12)).fit(raa).ldf_.values[0, 0, 0, 0] == \
+           cl.Development(drop_high=[True]+[False]*8).fit(raa).ldf_.values[0, 0, 0, 0]
+
+def test_drop2():
+    raa = cl.load_dataset('raa')
+    assert cl.Development(drop_valuation='1981').fit(raa).ldf_.values[0, 0, 0, 0] == \
+           cl.Development(drop_low=[True]+[False]*8).fit(raa).ldf_.values[0, 0, 0, 0]
 
 def test_n_periods():
     d = cl.load_dataset('usauto')['incurred']
