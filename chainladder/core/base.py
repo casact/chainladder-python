@@ -579,8 +579,11 @@ class TriangleBase:
         ''' Function for pandas style column indexing setting '''
         idx = self._idx_table()
         idx[key] = 1
-        self.vdims = np.array(idx.columns.unique())
-        self.values = np.append(self.values, value.values, axis=1)
+        if key in self.vdims:
+            self.values[:, np.where(self.vdims == key)[0][0]] = value.values
+        else:
+            self.vdims = np.array(idx.columns.unique())
+            self.values = np.append(self.values, value.values, axis=1)
 
     def append(self, other, index):
         """ Append rows of other to the end of caller, returning a new object.

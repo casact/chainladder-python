@@ -86,6 +86,14 @@ def test_sum_of_diff_eq_diff_of_sum():
 def test_append():
     assert cl.load_dataset('raa').append(cl.load_dataset('raa'), index='raa2').sum() == 2*cl.load_dataset('raa')
 
+
+def test_assign_existing_col():
+    tri = cl.load_dataset('quarterly')
+    before = tri.shape
+    tri['paid'] = 1/tri['paid']
+    assert tri.shape == before
+
+
 def test_arithmetic_across_keys():
     x = cl.load_dataset('auto')
     np.testing.assert_equal((x.sum()-x.iloc[0]).values, x.iloc[1].values)
