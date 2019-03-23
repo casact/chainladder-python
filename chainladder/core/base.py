@@ -96,10 +96,10 @@ class TriangleBase:
     def columns(self):
         return self._idx_table().columns
 
-    #@columns.setter
-    #def columns(self, value):
-    #    self._len_check(self.columns, value)
-    #    self.vdims = [value] if type(value) is str else value
+    @columns.setter
+    def columns(self, value):
+        self._len_check(self.columns, value)
+        self.vdims = [value] if type(value) is str else value
 
     @property
     def origin(self):
