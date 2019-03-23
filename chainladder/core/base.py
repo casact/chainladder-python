@@ -96,10 +96,10 @@ class TriangleBase:
     def columns(self):
         return self._idx_table().columns
 
-    @columns.setter
-    def columns(self, value):
-        self._len_check(self.columns, value)
-        self.vdims = [value] if type(value) is str else value
+    #@columns.setter
+    #def columns(self, value):
+    #    self._len_check(self.columns, value)
+    #    self.vdims = [value] if type(value) is str else value
 
     @property
     def origin(self):
@@ -162,7 +162,8 @@ class TriangleBase:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = ['Latest']
             obj.valuation = pd.DatetimeIndex(
-                [pd.to_datetime(obj.valuation_date)]*len(obj.odims)).to_period(self._lowest_grain())
+                [pd.to_datetime(obj.valuation_date)] *
+                len(obj.odims)).to_period(self._lowest_grain())
         obj.values = diagonal
         return obj
 
@@ -788,10 +789,9 @@ class TriangleBase:
     def expand_dims(self, tri_2d):
         '''Expands from one 2D triangle to full 4D object
         '''
-        k = len(self.kdims)
-        v = len(self.vdims)
-        tri_3d = np.repeat(np.expand_dims(tri_2d, axis=0), v, axis=0)
-        return np.repeat(np.expand_dims(tri_3d, axis=0), k, axis=0)
+        k, v = len(self.kdims), len(self.vdims)
+        tri_3d = np.repeat(tri_2d[np.newaxis], v, axis=0)
+        return np.repeat(tri_3d[np.newaxis], k, axis=0)
 
     @staticmethod
     def to_datetime(data, fields, period_end=False):
@@ -956,9 +956,9 @@ class _TriangleGroupBy:
             old_k_by_new_k[:, num][item] = 1
         old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
         for i in range(3):
-            old_k_by_new_k = np.expand_dims(old_k_by_new_k, axis=-1)
+            old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
         new_tri = obj.values
-        new_tri = np.repeat(np.expand_dims(new_tri, 0), v2_len, 0)
+        new_tri = np.repeat(new_tri[np.newaxis], v2_len, 0)
         obj.values = new_tri
         obj.kdims = np.array(list(new_index))
         obj.key_labels = list(new_index.names)

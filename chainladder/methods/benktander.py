@@ -27,7 +27,8 @@ class Benktander(MethodBase):
 
     References
     ----------
-    .. [2] Benktander, G. (1976) An Approach to Credibility in Calculating IBNR for Casualty Excess Reinsurance. In The Actuarial Review, April 1976, p.7
+    .. [2] Benktander, G. (1976) An Approach to Credibility in Calculating IBNR
+           for Casualty Excess Reinsurance. In The Actuarial Review, April 1976, p.7
     """
     def __init__(self, apriori=1.0, n_iters=1):
         self.apriori = apriori
@@ -54,20 +55,22 @@ class Benktander(MethodBase):
         if sample_weight is None:
             raise ValueError('sample_weight is required.')
         super().fit(X, y, sample_weight)
+        origin, development = -2, -1  # Set axes by name
         self.sample_weight_ = sample_weight
         latest = self.X_.latest_diagonal.values
-        apriori = sample_weight.values * self.apriori
+        apriori = sample_weight.values*self.apriori
         obj = copy.deepcopy(self.X_)
         obj.values = \
-            self.X_.cdf_.values[..., :obj.shape[-1]]*(obj.values*0+1)
+            self.X_.cdf_.values[..., :obj.shape[development]]*(obj.values*0+1)
         cdf = obj.latest_diagonal.values
-        cdf = np.expand_dims(1-1/cdf, 0)
+        cdf = (1-1/cdf)[np.newaxis]
         exponents = np.arange(self.n_iters+1)
         exponents = np.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents
         obj.values = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
         obj.ddims = ['Ultimate']
-        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')]*obj.shape[-2])
+        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
+                                         obj.shape[origin])
         self.ultimate_ = obj
         self.full_triangle_ = self._get_full_triangle_()
         return self

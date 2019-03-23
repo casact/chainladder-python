@@ -15,10 +15,12 @@ class TailBase(BaseEstimator):
         obj = copy.deepcopy(X)
         if obj.__dict__.get('ldf_', None) is None:
             obj = Development().fit_transform(obj)
-        self._ave_period = {'Y': (1, 12), 'Q': (4, 3), 'M': (12, 1)}[obj.development_grain]
+        self._ave_period = {'Y': (1, 12),
+                            'Q': (4, 3),
+                            'M': (12, 1)}[obj.development_grain]
         ddims = np.concatenate(
             (obj.ddims, [(item+1)*self._ave_period[1] + obj.ddims[-1]
-                       for item in range(self._ave_period[0])], [9999]), 0)
+                         for item in range(self._ave_period[0])], [9999]), 0)
         self.ldf_ = copy.deepcopy(obj.ldf_)
         tail = np.ones(self.ldf_.shape)[..., -1:]
         tail = np.repeat(tail, self._ave_period[0]+1, -1)
@@ -77,4 +79,13 @@ class TailBase(BaseEstimator):
             X_new : New triangle with transformed attributes.
         """
         self.fit(X)
+        if X.__dict__.get('std_err_', None) is None:
+            X = Development().fit_transform(X)
         return self.transform(X)
+
+    def _get_tail_prediction(self, tail_ldf):
+        ave = 1 + tail_ldf[..., :self._ave_period[0]]
+        all = np.expand_dims(
+            np.product(1 + tail_ldf[..., self._ave_period[0]:], -1), -1)
+        tail = np.concatenate((ave, all), -1)
+        return tail

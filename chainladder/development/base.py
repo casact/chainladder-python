@@ -165,13 +165,12 @@ class Development(DevelopmentBase):
                            freq=X.origin_grain))].values[0, 0]*0+1)
         ofill = X.shape[-2]-arr.shape[-2]
         dfill = X.shape[-1]-arr.shape[-1]
-        np.repeat(np.expand_dims(np.ones(arr.shape[-1]), 0), ofill, 0)
         if ofill > 0:
             arr = np.concatenate((arr, np.repeat(
-                np.expand_dims(np.ones(arr.shape[-1]), 0), ofill, 0)), 0)
+                np.ones(arr.shape[-1])[np.newaxis], ofill, 0)), 0)
         if dfill > 0:
             arr = np.concatenate((arr, np.repeat(
-                np.expand_dims(np.ones(arr.shape[-2]), -1), dfill, -1)), -1)
+                np.ones(arr.shape[-2])[..., np.newaxis], dfill, -1)), -1)
         return arr[:, :-1]
 
     def _drop(self, X):
@@ -211,7 +210,7 @@ class Development(DevelopmentBase):
         val = np.array([weight_dict.get(item.lower(), 1)
                         for item in average])
         for i in [2, 1, 0]:
-            val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
+            val = np.repeat(val[np.newaxis], tri_array.shape[i], axis=0)
         val = np.nan_to_num(val * (y * 0 + 1))
         link_ratio = np.divide(y, x, where=np.nan_to_num(x) != 0)
         self.w_ = self._assign_n_periods_weight(X) * \

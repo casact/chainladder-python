@@ -68,7 +68,7 @@ class MackChainladder(Chainladder):
         val = np.array([weight_dict.get(item.lower(), 2)
                         for item in list(self.average_) + ['volume']])
         for i in [2, 1, 0]:
-            val = np.repeat(np.expand_dims(val, 0), tri_array.shape[i], axis=0)
+            val = np.repeat(val[np.newaxis], tri_array.shape[i], axis=0)
         k, v, o, d = val.shape
         weight = np.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val))
         weight[weight == 0] = np.nan
@@ -81,16 +81,17 @@ class MackChainladder(Chainladder):
 
     @property
     def total_process_risk_(self):
+        origin = 2
         obj = copy.deepcopy(self.process_risk_)
-        obj.values = np.sqrt(np.nansum(self.process_risk_.values**2, 2))
-        obj.values = np.expand_dims(obj.values, 2)
+        obj.values = np.sqrt(np.nansum(self.process_risk_.values**2, origin))
+        obj.values = np.expand_dims(obj.values, origin)
         obj.odims = ['tot_proc_risk']
         return obj
 
     def _mack_recursion(self, est):
         obj = copy.deepcopy(self.X_)
         # replace this with nan_x_latest
-        nans = np.expand_dims(np.expand_dims(self.X_.nan_triangle(), 0), 0)
+        nans = self.X_.nan_triangle()[np.newaxis, np.newaxis]
         k, v, o, d = self.X_.shape
         nans = nans * np.ones((k, v, o, d))
         nans = np.concatenate((nans, np.ones((k, v, o, 1))*np.nan), 3)
@@ -133,7 +134,7 @@ class MackChainladder(Chainladder):
         t1 = self.full_triangle_.values[..., :len(self.X_.ddims)] - \
              np.nan_to_num(self.X_.values) + \
              np.nan_to_num(self.X_.get_latest_diagonal(False).values)
-        t1 = np.expand_dims(np.sum(t1*self.X_.std_err_.values, 2), 2)
+        t1 = np.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
         ldf = np.concatenate(

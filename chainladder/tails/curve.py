@@ -1,7 +1,3 @@
-"""
-:ref:`TailCurve<curve>` is a curve
-"""
-
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
 from chainladder.development import DevelopmentBase, Development
@@ -135,11 +131,7 @@ class TailCurve(TailBase):
 
     def _predict_tail(self, slope, intercept, extrapolate):
         if self.curve == 'exponential':
-            tail = np.exp(slope*extrapolate + intercept)
+            tail_ldf = np.exp(slope*extrapolate + intercept)
         if self.curve == 'inverse_power':
-            tail = np.exp(intercept)*(extrapolate**slope)
-        ave = 1 + tail[..., :self._ave_period[0]]
-        all = np.expand_dims(
-            np.product(1 + tail[..., self._ave_period[0]:], -1), -1)
-        tail = np.concatenate((ave, all), -1)
-        return tail
+            tail_ldf = np.exp(intercept)*(extrapolate**slope)
+        return self._get_tail_prediction(tail_ldf)

@@ -56,8 +56,8 @@ class BootstrapODPSample(DevelopmentBase):
         obj = Development(n_periods=self.n_periods).fit_transform(obj)
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
-        exp_incr_triangle = obj.full_expectation_ \
-                               .cum_to_incr().values[0, 0, :, :X.shape[-1]]
+        exp_incr_triangle = obj.full_expectation_.cum_to_incr() \
+                               .values[0, 0, :, :X.shape[-1]]
         exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
             obj.X_.nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)

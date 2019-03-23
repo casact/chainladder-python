@@ -1,10 +1,4 @@
-"""
-:ref:`chainladder.tails<tails>`.Constant
-=========================================
-
-:ref:`TailConstant<constant>` is a constant.
-"""
-
+import numpy as np
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase
 
@@ -15,6 +9,10 @@ class TailConstant(TailBase):
     ----------
     tail : float
         The constant to apply to all LDFs within a triangle object.
+    decay : float (default=0.50)
+        An exponential decay constant that allows for decay over future
+        development periods.  A decay rate of 0.5 sets the development portion
+        of each successive LDF to 50% of the previous LDF.
 
     Attributes
     ----------
@@ -57,8 +55,9 @@ class TailConstant(TailBase):
     TailCurve
 
     """
-    def __init__(self, tail=1.0):
+    def __init__(self, tail=1.0, decay=0.5):
         self.tail = tail
+        self.decay = decay
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -76,7 +75,13 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        self.ldf_.values[..., -1] = self.ldf_.values[..., -1]*self.tail
+        decay_range = self.ldf_.shape[-1]-X.shape[-1]+1
+        ldfs = 1+self._get_initial_ldf()*(self.decay**np.arange(1000))
+        ldfs = ldfs[:decay_range]
+        ldfs[-1] = self.tail/np.prod(ldfs[:-1])
+        ldfs = X.expand_dims(ldfs[np.newaxis])
+        self.ldf_.values[..., -decay_range:] = \
+            self.ldf_.values[..., -decay_range:]*ldfs
         self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
@@ -103,3 +108,11 @@ class TailConstant(TailBase):
         X.ldf_ = self.ldf_
         X.sigma_ = self.sigma_
         return X
+
+    def _get_initial_ldf(self):
+        ''' Quadratic series expansion solution '''
+        arr = self.decay**np.arange(1000)
+        a = np.sum(arr**2)
+        b = np.sum(arr)
+        c = -np.log(self.tail)
+        return (-b+np.sqrt(b**2-4*a*c))/(2*a)

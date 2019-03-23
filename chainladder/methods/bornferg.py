@@ -41,7 +41,8 @@ class BornhuetterFerguson(MethodBase):
 
     References
     ----------
-    .. [1] Bornhuetter, R.L. and Ferguson, R.E. (1972) The Actuary and IBNR. In Proceedings of the Casualty Actuarial Society, Vol. LIX, 181 - 195
+    .. [1] Bornhuetter, R. and Ferguson, R. (1972) The Actuary and IBNR. In
+           Proceedings of the Casualty Actuarial Society, Vol. LIX, 181 - 195
     """
     def __init__(self, apriori=1.0):
         self.apriori = apriori

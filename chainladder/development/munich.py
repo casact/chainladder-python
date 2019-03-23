@@ -94,14 +94,12 @@ class MunichAdjustment(BaseEstimator):
         incurred = obj[list(self.paid_to_incurred.values())[0]]
         for item in list(self.paid_to_incurred.values())[1:]:
             incurred[item] = obj[item]
-        paid = np.expand_dims(paid.values, 0)
-        incurred = np.expand_dims(incurred.values, 0)
+        paid = paid.values[np.newaxis]
+        incurred = incurred.values[np.newaxis]
         return np.concatenate((paid, incurred), axis=0)
 
     def _p_to_i_concate(self, obj_p, obj_i):
-        obj = np.concatenate((np.expand_dims(obj_p, 0),
-                              np.expand_dims(obj_i, 0)), 0)
-        return obj
+        return np.concatenate((obj_p[np.newaxis], obj_i[np.newaxis]), 0)
 
     def _get_MCL_model(self, X):
         p, i = self.p_to_i_X_[0], self.p_to_i_X_[1]
@@ -144,7 +142,7 @@ class MunichAdjustment(BaseEstimator):
         lambdaP = WeightedRegression(thru_orig=True, axis=-1).fit(
             np.reshape(self.q_resid_[0][..., :-1, :-1], (k, v, o*d)),
             np.reshape(self.residual_[0], (k, v, o*d)), w).slope_
-        return np.expand_dims(self._p_to_i_concate(lambdaP, lambdaI), -1)
+        return self._p_to_i_concate(lambdaP, lambdaI)[..., np.newaxis]
 
     @property
     def munich_full_triangle_(self):
