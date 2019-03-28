@@ -193,3 +193,37 @@ def test_grain_increm_arg():
     tri_i = tri.cum_to_incr()
     np.testing.assert_equal(tri_i.grain('OYDY', incremental=True).incr_to_cum(),
                             tri.grain('OYDY'))
+
+
+def test_valdev1():
+    a = cl.load_dataset('quarterly').dev_to_val().val_to_dev().values
+    b = cl.load_dataset('quarterly').values
+    np.testing.assert_equal(a,b)
+
+
+def test_valdev2():
+    a = cl.load_dataset('quarterly').dev_to_val().grain('OYDY').val_to_dev().values
+    b = cl.load_dataset('quarterly').grain('OYDY').values
+    np.testing.assert_equal(a,b)
+
+
+def test_valdev3():
+    a = cl.load_dataset('quarterly').grain('OYDY').dev_to_val().val_to_dev().values
+    b = cl.load_dataset('quarterly').grain('OYDY').values
+    np.testing.assert_equal(a,b)
+
+
+def test_valdev4():
+    raa = cl.load_dataset('raa')
+    np.testing.assert_equal(raa.dev_to_val()[raa.dev_to_val().development>='1989'].values,
+        raa[raa.valuation>='1989'].dev_to_val().values)
+
+
+def test_valdev5():
+    raa = cl.load_dataset('raa')
+    np.testing.assert_equal(raa[raa.valuation>='1989'].latest_diagonal.values,
+                            raa.latest_diagonal.values)
+
+def test_valdev6():
+    np.testing.assert_equal(cl.load_dataset('raa').grain('OYDY').latest_diagonal.values,
+                            cl.load_dataset('raa').latest_diagonal.grain('OYDY').values)

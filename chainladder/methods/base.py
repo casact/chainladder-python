@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
@@ -94,5 +95,5 @@ class MethodBase(BaseEstimator):
         obj.values = \
             np.concatenate((np.nan_to_num(obj.values), zeros), -1) + e_tri
         obj.values = np.concatenate((obj.values,
-                                       self.ultimate_.values), 3)
+                                     self.ultimate_.values), 3)
         return obj

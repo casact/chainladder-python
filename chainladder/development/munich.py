@@ -41,6 +41,8 @@ class MunichAdjustment(BaseEstimator):
         self : object
             Returns the instance itself.
         """
+        if (type(X.ddims) != np.ndarray):
+            raise ValueError('Triangle must be expressed with development lags')
         obj = copy.deepcopy(X)
         if obj.__dict__.get('ldf_', None) is None:
             obj = Development().fit_transform(obj)

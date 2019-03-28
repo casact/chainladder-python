@@ -196,7 +196,8 @@ class Development(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-
+        if (type(X.ddims) != np.ndarray):
+            raise ValueError('Triangle must be expressed with development lags')
         tri_array = X.values.copy()
         tri_array[tri_array == 0] = np.nan
         if type(self.average) is str:

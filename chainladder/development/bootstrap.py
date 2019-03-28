@@ -52,6 +52,8 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
+        if (type(X.ddims) != np.ndarray):
+            raise ValueError('Triangle must be expressed with development lags')
         obj = copy.deepcopy(X)
         obj = Development(n_periods=self.n_periods).fit_transform(obj)
         obj = Chainladder().fit(obj)

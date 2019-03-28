@@ -55,6 +55,8 @@ class IncrementalAdditive(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
+        if (type(X.ddims) != np.ndarray):
+            raise ValueError('Triangle must be expressed with development lags')
         obj = X.cum_to_incr()/sample_weight
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
@@ -81,6 +83,7 @@ class IncrementalAdditive(DevelopmentBase):
         self.incremental_ = obj*sample_weight
         self.ldf_ = obj.incr_to_cum().link_ratio
         self.cdf_ = DevelopmentBase._get_cdf(self.ldf_)
+        self.sigma_ = self.std_err_ = 0*self.ldf_
         return self
 
     def transform(self, X):
@@ -97,6 +100,6 @@ class IncrementalAdditive(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.deepcopy(X)
-        for item in ['incremental_', 'cdf_', 'ldf_']:
+        for item in ['incremental_', 'cdf_', 'ldf_', 'sigma_', 'std_err_']:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new

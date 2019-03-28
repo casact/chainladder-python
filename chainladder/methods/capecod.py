@@ -73,14 +73,14 @@ class CapeCod(MethodBase):
         apriori = np.sum(weighted_exposure*trended_ultimate, development) / \
             np.sum(weighted_exposure, development)
         obj.values = apriori[..., np.newaxis]
-        obj.ddims = ['Apriori']
+        obj.ddims = np.array(['Apriori'])
         self.apriori_ = copy.deepcopy(obj)
         detrended_ultimate = self.apriori_.values/trend_array
         self.detrended_apriori_ = copy.deepcopy(obj)
         self.detrended_apriori_.tiangle = detrended_ultimate
         ibnr = detrended_ultimate*(1-1/cdf)*exposure
         obj.values = latest + ibnr
-        obj.ddims = ['Ultimate']
+        obj.ddims = np.array(['Ultimate'])
         obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          len_orig)
         self.ultimate_ = obj

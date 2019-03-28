@@ -160,7 +160,7 @@ class TriangleBase:
         diagonal = obj[obj.valuation == obj.valuation_date].values
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
-            obj.ddims = ['Latest']
+            obj.ddims = np.array(['Latest'])
             obj.valuation = pd.DatetimeIndex(
                 [pd.to_datetime(obj.valuation_date)] *
                 len(obj.odims)).to_period(self._lowest_grain())
@@ -214,6 +214,85 @@ class TriangleBase:
             new_obj = copy.deepcopy(self)
             return new_obj.cum_to_incr(inplace=True)
 
+    def dev_to_val(self):
+        ''' Converts triangle from a development lag triangle to a valuation
+        triangle.
+
+        Returns
+        -------
+            Updated instance of triangle with valuation periods.
+        '''
+        dev_mode = (type(self.ddims) == np.ndarray)
+        return self._val_dev_chg('dev_to_val') if dev_mode else self
+
+    def val_to_dev(self):
+        ''' Converts triangle from a valuation triangle to a development lag
+        triangle.
+
+        Returns
+        -------
+            Updated instance of triangle with development lags
+        '''
+        dev_mode = (type(self.ddims) == np.ndarray)
+        return self if dev_mode else self._val_dev_chg('val_to_dev')
+
+    def _val_dev_chg(self, kind):
+        obj = copy.deepcopy(self)
+        o_vals = obj.expand_dims(np.arange(len(obj.origin))[:, np.newaxis])
+        if self.shape[-1] == 1:
+            return obj
+        if kind == 'val_to_dev':
+            dmin = obj.development.min()[0].to_timestamp(how='e')
+            omax = obj.origin.max().to_timestamp(how='s')
+            dmax = obj.development.max()[0].to_timestamp(how='e')
+            omin = obj.origin.min().to_timestamp(how='s')
+            start = 12*max(dmin.year-omax.year, 0)+(dmin.month-omax.month)+1
+            end = 12*(dmax.year-omin.year)+(dmax.month-omin.month)+1
+            step = {'Y': 12, 'Q': 3, 'M': 1}[obj.development_grain]
+            rng = range(start, start+end, step)
+            mtrx = \
+                12*(obj.ddims.to_timestamp(how='e').year.values[np.newaxis] -
+                    obj.origin.to_timestamp(how='s')
+                       .year.values[:, np.newaxis]) + \
+                   (obj.ddims.to_timestamp(how='e').month.values[np.newaxis] -
+                    obj.origin.to_timestamp(how='s')
+                       .month.values[:, np.newaxis]) + 1
+        else:
+            rng = obj.valuation.unique().sort_values()
+        for item in rng:
+            if kind == 'val_to_dev':
+                val = np.where(mtrx == item)
+            else:
+                val = np.where(obj.expand_dims(obj.valuation == item)
+                                  .reshape(obj.shape, order='f'))[-2:]
+            val = np.unique(np.array(list(zip(val[0], val[1]))), axis=0)
+            arr = np.expand_dims(obj.values[:, :, val[:, 0], val[:, 1]], -1)
+            if val[0, 0] != 0:
+                prepend = obj.expand_dims(np.array([np.nan]*(val[0, 0]))[:, np.newaxis])
+                arr = np.concatenate((prepend, arr), -2)
+            if len(obj.origin)-1-val[-1, 0] != 0:
+                append = obj.expand_dims(
+                    np.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, np.newaxis])
+                arr = np.concatenate((arr, append), -2)
+            o_vals = np.append(o_vals, arr, -1)
+        obj.values = o_vals[..., 1:]
+        keep = np.where(np.sum(
+            (np.nansum(np.nansum(obj.values, 0), 0) == 0), -2) !=
+            len(obj.origin))[-1]
+        obj.values = obj.values[..., keep]
+        if kind == 'val_to_dev':
+            obj.ddims = np.array([item for item in range(start, start+end, step)])
+            obj.ddims = obj.ddims[keep]
+            obj.valuation = obj._valuation_triangle()
+        else:
+            obj.ddims = obj.valuation.unique().sort_values()
+            obj.ddims = obj.ddims[keep]
+            obj.valuation = pd.PeriodIndex(
+                np.repeat(obj.ddims.values[np.newaxis],
+                          len(obj.origin)).reshape(1, -1).flatten())
+        return obj
+
+
     def grain(self, grain='', incremental=False, inplace=False):
         """Changes the grain of a cumulative triangle.
 
@@ -239,7 +318,8 @@ class TriangleBase:
             development_grain = grain[-1]
             if incremental:
                 self.incr_to_cum(inplace=True)
-            new_tri, o = self._set_ograin(grain=grain)
+            dev_mode = (type(self.ddims) == np.ndarray)
+            new_tri = self._set_ograin(grain=grain, dev_mode=dev_mode)
             # Set development Grain
             dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                               'Q': {'Y': 4, 'Q': 1},
@@ -248,17 +328,18 @@ class TriangleBase:
                 keeps = dev_grain_dict[self.development_grain][development_grain]
                 keeps = np.where(np.arange(new_tri.shape[3]) % keeps == 0)[0]
                 keeps = -(keeps + 1)[::-1]
-                new_tri = new_tri[..., keeps]
-                self.ddims = self.ddims[keeps]
-            self.odims = np.unique(o)
-            self.origin_grain = origin_grain
-            self.development_grain = development_grain
-            self.values = self._slide(new_tri, direction='l')
-            self.values[self.values == 0] = np.nan
-            self.valuation = self._valuation_triangle()
+                new_tri.values = new_tri.values[..., keeps]
+                new_tri.ddims = new_tri.ddims[keeps]
+            self.origin_grain = new_tri.origin_grain = origin_grain
+            self.development_grain = new_tri.development_grain = development_grain
+            new_tri.values[new_tri.values == 0] = np.nan
+
             if hasattr(self, '_nan_triangle'):
                 # Force update on _nan_triangle at next access.
                 del self._nan_triangle
+            new_tri = new_tri.val_to_dev() if dev_mode else new_tri
+            self.values, self.valuation = new_tri.values, new_tri.valuation
+            self.odims, self.ddims = new_tri.odims, new_tri.ddims
             if incremental:
                 self.cum_to_incr(inplace=True)
             return self
@@ -281,17 +362,14 @@ class TriangleBase:
         Triangle
             updated with multiplicative trend applied.
         """
-
+        days = np.datetime64(self.valuation_date)
         if self.shape[-2] == 1 and self.shape[-1] != 1:
             trend = (1 + trend)**-(
-                pd.Series(self.origin.values -
-                          np.datetime64(self.valuation_date)).dt.days
-                  .value/365.25)
+                pd.Series(self.origin.values-days).dt.days.value/365.25)
         else:
             trend = (1 + trend)**-(
-                pd.Series(self.valuation.to_timestamp().values -
-                          np.datetime64(self.valuation_date)).dt.days
-                  .values.reshape(self.shape[-2:], order='f')/365.25)
+                pd.Series(self.valuation.to_timestamp().values-days)
+                  .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj
@@ -616,7 +694,7 @@ class TriangleBase:
 
     def _slice_valuation(self, key):
         obj = copy.deepcopy(self)
-        obj.valuation_date = obj.valuation[key].max()
+        # obj.valuation_date = obj.valuation[key].max()
         key = key.reshape(self.shape[-2:], order='f')
         nan_tri = np.ones(self.shape[-2:])
         nan_tri = key*nan_tri
@@ -687,7 +765,7 @@ class TriangleBase:
         return cart_prod
 
     def _get_axes(self, data_agg, groupby, columns,
-                 origin_date, development_date):
+                  origin_date, development_date):
         ''' Preps axes for the 4D triangle
         '''
         date_axes = self._get_date_axes(origin_date, development_date)
@@ -735,13 +813,15 @@ class TriangleBase:
         dates.
         '''
         ddims = self.ddims if ddims is None else ddims
+        if type(ddims) == pd.PeriodIndex:
+            return
         if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
-            return pd.DatetimeIndex(ddims.values)
+            return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain())
         special_cases = dict(Ultimate='2262-03-01', Latest=self.valuation_date)
         if ddims[0] in special_cases.keys():
             return pd.DatetimeIndex([pd.to_datetime(special_cases[ddims[0]])] *
-                                    len(self.origin))
+                                    len(self.origin)).to_period(self._lowest_grain())
         if type(ddims[0]) is np.str_:
             ddims = [int(item[:item.find('-'):]) for item in ddims]
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
@@ -772,22 +852,6 @@ class TriangleBase:
         lowest_grain = my_list[min(my_dict[self.origin_grain],
                                    my_dict[self.development_grain])]
         return lowest_grain
-
-
-    def _slide(self, triangle, direction='r'):
-        ''' Facilitates swapping alignment of triangle between development
-            period and development date. '''
-        obj = copy.deepcopy(self)
-        obj.values = triangle
-        nan_tri = obj.nan_triangle()
-        r = (nan_tri.shape[1] - np.nansum(nan_tri, axis=1)).astype(int)
-        r = -r if direction == 'l' else r
-        k, v, rows, column_indices = \
-            np.ogrid[:triangle.shape[0], :triangle.shape[1],
-                     :triangle.shape[2], :triangle.shape[3]]
-        r[r < 0] += nan_tri.shape[1]
-        column_indices = column_indices - r[:, np.newaxis]
-        return triangle[k, v, rows, column_indices]
 
     def expand_dims(self, tri_2d):
         '''Expands from one 2D triangle to full 4D object
@@ -871,10 +935,9 @@ class TriangleBase:
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def _set_ograin(self, grain):
+    def _set_ograin(self, grain, dev_mode):
         origin_grain = grain[1:2]
-        tri = np.nan_to_num(self.values)*self.nan_triangle()
-        orig = np.nan_to_num(self._slide(tri))
+        orig = self.dev_to_val() if dev_mode else self
         o_dt = pd.Series(self.odims)
         if origin_grain == 'Q':
             o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
@@ -883,25 +946,26 @@ class TriangleBase:
             o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
         else:
             o = self.odims
-
-        # Get unique new origin array
         o_new = np.unique(o)
-        # Make it 2D so we have an old to new map
         o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
         o_new = np.repeat(np.expand_dims(o_new, axis=0), len(o), axis=0)
-        # Make a boolean array out of the old to new map
-        # and add ddims to it
-        o_bool = np.repeat(np.expand_dims((o == o_new), axis=1),
-                           len(self.ddims), axis=1)
-        # Add kdims and vdims as well
+        o_bool = np.repeat((o == o_new)[:, np.newaxis],
+                           len(orig.ddims), axis=1)
         o_bool = self.expand_dims(o_bool)
-        # Expand actual triangle to have o_new length on last axis
-        new_tri = np.repeat(np.expand_dims(orig, axis=-1),
-                            o_bool.shape[-1], axis=-1)
-        # Multiply the triangle by the boolean array and aggregate out
-        # The old odims
+        new_tri = np.repeat(np.expand_dims(np.nan_to_num(orig.values),
+                            axis=-1), o_bool.shape[-1], axis=-1)
         new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
-        return new_tri, o
+        orig.values = new_tri
+        orig.odims = np.unique(o)
+        if type(orig.ddims) is list:
+            orig.ddims = np.array(orig.ddims)
+        if orig.shape[-1] == 1:
+            orig.valuation = orig.valuation[:len(orig.odims)]
+        else:
+            orig.valuation = pd.PeriodIndex(
+                np.repeat(orig.development.values[np.newaxis],
+                          len(orig.origin)).reshape(1, -1).flatten())
+        return orig
 
 
 # ---------------------------------------------------------------- #

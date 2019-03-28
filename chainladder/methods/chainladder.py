@@ -79,6 +79,6 @@ class Chainladder(MethodBase):
         obj_tri = obj.values[..., :nans.shape[development]]
         obj.values = (cdf*obj_tri)*nans
         obj = obj.latest_diagonal
-        obj.ddims = ['Ultimate']
+        obj.ddims = np.array(['Ultimate'])
         obj.valuation = obj._valuation_triangle()
         return obj
