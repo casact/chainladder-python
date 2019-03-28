@@ -5,7 +5,7 @@ import copy
 # Pass through pd.DataFrame methods for a (1,1,o,d) shaped triangle:
 df_passthru = ['to_clipboard', 'to_csv', 'to_pickle', 'to_excel', 'to_json',
                'to_html', 'to_dict', 'unstack', 'pivot', 'drop_duplicates',
-               'describe', 'melt']
+               'describe', 'melt', 'pct_chg']
 
 # Aggregate method overridden to the 4D Triangle Shape
 agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod', 'var', 'std']
