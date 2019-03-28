@@ -23,7 +23,7 @@ matrix:
     env:
     - PANDAS: 0.23
     - SCIKIT-LEARN: 0.18.0
-  - python: 3.7
+  - python: 3.6
     env:
     - PANDAS: 0.24
     - SCIKIT-LEARN: 0.20.0
