@@ -26,6 +26,7 @@ setup(
     install_requires=[
         "pandas>=0.23.0",
         "numpy>=1.12.0",
-        "scikit-learn>=0.18.0"
+        "scikit-learn>=0.18.0",
+        "joblib"
     ],
 )

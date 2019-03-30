@@ -6,3 +6,4 @@ pandas
 numpy
 numpydoc
 sphinx_gallery
+joblib
