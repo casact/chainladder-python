@@ -5,6 +5,7 @@ This module contains various utilities shared across most of the other
 """
 import pandas as pd
 import numpy as np
+import joblib
 import os
 from chainladder.core.triangle import Triangle
 
@@ -40,6 +41,10 @@ def load_dataset(key):
     df = pd.read_csv(os.path.join(path, 'data', key.lower() + '.csv'))
     return Triangle(df, origin=origin, development=development,
                     columns=columns, index=index)
+
+
+def read_pickle(path):
+    return joblib.load(path)
 
 
 def parallelogram_olf(values, date, start_date=None, end_date=None,

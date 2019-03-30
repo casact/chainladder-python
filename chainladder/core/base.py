@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import copy
+import joblib
 
 # Pass through pd.DataFrame methods for a (1,1,o,d) shaped triangle:
-df_passthru = ['to_clipboard', 'to_csv', 'to_pickle', 'to_excel', 'to_json',
+df_passthru = ['to_clipboard', 'to_csv', 'to_excel', 'to_json',
                'to_html', 'to_dict', 'unstack', 'pivot', 'drop_duplicates',
                'describe', 'melt', 'pct_chg']
 
@@ -11,8 +12,11 @@ df_passthru = ['to_clipboard', 'to_csv', 'to_pickle', 'to_excel', 'to_json',
 agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod', 'var', 'std']
 agg_funcs = {item: 'nan'+item for item in agg_funcs}
 
+class IO:
+    def to_pickle(self, path, protocol=None):
+        joblib.dump(self, filename=path, protocol=protocol)
 
-class TriangleBase:
+class TriangleBase(IO):
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None):
         # Sanitize Inputs
@@ -658,7 +662,8 @@ class TriangleBase:
         idx = self._idx_table()
         idx[key] = 1
         if key in self.vdims:
-            self.values[:, np.where(self.vdims == key)[0][0]] = value.values
+            i = np.where(self.vdims == key)[0][0]
+            self.values[:, i:i+1] = value.values
         else:
             self.vdims = np.array(idx.columns.unique())
             self.values = np.append(self.values, value.values, axis=1)

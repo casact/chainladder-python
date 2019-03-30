@@ -3,4 +3,4 @@
 """
 from chainladder.utils.weighted_regression import WeightedRegression
 from chainladder.utils.exhibits import Exhibits
-from chainladder.utils.utility_functions import load_dataset, parallelogram_olf
+from chainladder.utils.utility_functions import load_dataset, parallelogram_olf, read_pickle

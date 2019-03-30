@@ -8,9 +8,9 @@ import copy
 import warnings
 from sklearn.base import BaseEstimator
 from chainladder import WeightedRegression
+from chainladder.core import IO
 
-
-class DevelopmentBase(BaseEstimator):
+class DevelopmentBase(BaseEstimator, IO):
     def fit_transform(self, X, y=None, sample_weight=None):
         """ Equivalent to fit(X).transform(X)
 

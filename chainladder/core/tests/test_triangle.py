@@ -228,3 +228,8 @@ def test_valdev5():
 def test_valdev6():
     np.testing.assert_equal(cl.load_dataset('raa').grain('OYDY').latest_diagonal.values,
                             cl.load_dataset('raa').latest_diagonal.grain('OYDY').values)
+
+def test_reassignment():
+    raa = cl.load_dataset('clrd')
+    raa['values'] = raa['CumPaidLoss']
+    raa['values'] = raa['values'] + raa['CumPaidLoss']

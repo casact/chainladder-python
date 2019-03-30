@@ -4,9 +4,10 @@ import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
+from chainladder.core import IO
 
 
-class MethodBase(BaseEstimator):
+class MethodBase(BaseEstimator, IO):
     def __init__(self):
         pass
 
