@@ -6,28 +6,11 @@ import numpy as np
 import pandas as pd
 import copy
 import warnings
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder import WeightedRegression
 from chainladder.core import IO
 
-class DevelopmentBase(BaseEstimator, IO):
-    def fit_transform(self, X, y=None, sample_weight=None):
-        """ Equivalent to fit(X).transform(X)
-
-        Parameters
-        ----------
-        X : Triangle-like
-            Set of LDFs based on the model.
-        y : Ignored
-        sample_weight : Ignored
-
-        Returns
-        -------
-            X_new : New triangle with transformed attributes.
-        """
-        self.fit(X, y, sample_weight)
-        return self.transform(X)
-
+class DevelopmentBase(BaseEstimator, TransformerMixin, IO):
     @staticmethod
     def _get_cdf(obj):
         if obj.__dict__.get('ldf_', None) is None:

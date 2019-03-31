@@ -109,6 +109,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_ave_analysis
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
 
 .. only:: html

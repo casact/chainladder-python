@@ -1,10 +1,10 @@
 import copy
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development import DevelopmentBase, Development
 
 
-class TailBase(BaseEstimator):
+class TailBase(BaseEstimator, TransformerMixin):
     ''' Base class for all tail methods.  Tail objects are equivalent
         to development objects with an additional set of tail statistics'''
 

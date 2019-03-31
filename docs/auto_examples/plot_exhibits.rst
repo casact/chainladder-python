@@ -16,6 +16,8 @@ creates an Excel file called 'clrd.xlsx' that includes various statistics on
 industry development patterns for each line of business in the CAS loss reserve
 database.
 
+Output can be viewed online in `Google Sheets <https://docs.google.com/spreadsheets/d/1fwHK1Sys6aHDhEhFO6stVJtmZVKEcXXBsmJLSLIBLJY/edit#gid=1190415861>`_.
+
 See :ref:`Exhibits<exhibits>` for more detail.
 
 .. _exhibit_example:
@@ -77,7 +79,7 @@ See :ref:`Exhibits<exhibits>` for more detail.
     # Create Excel File
     exhibits.to_excel('clrd.xlsx')
 
-**Total running time of the script:** ( 0 minutes  2.915 seconds)
+**Total running time of the script:** ( 0 minutes  4.548 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_exhibits.py:

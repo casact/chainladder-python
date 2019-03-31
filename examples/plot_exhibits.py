@@ -8,6 +8,8 @@ creates an Excel file called 'clrd.xlsx' that includes various statistics on
 industry development patterns for each line of business in the CAS loss reserve
 database.
 
+Output can be viewed online in `Google Sheets <https://docs.google.com/spreadsheets/d/1fwHK1Sys6aHDhEhFO6stVJtmZVKEcXXBsmJLSLIBLJY/edit#gid=1190415861>`_.
+
 See :ref:`Exhibits<exhibits>` for more detail.
 
 .. _exhibit_example:

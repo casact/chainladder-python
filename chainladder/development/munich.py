@@ -3,7 +3,7 @@ The Munich Adjustment Method
 ============================
 """
 
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils.weighted_regression import WeightedRegression
 from chainladder.development import Development
 from chainladder.core import IO
@@ -11,7 +11,7 @@ import numpy as np
 import copy
 
 
-class MunichAdjustment(BaseEstimator, IO):
+class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
     """Applies the Munich Chainladder adjustment to a set of paid/incurred
        ldfs.
 
@@ -72,23 +72,6 @@ class MunichAdjustment(BaseEstimator, IO):
         X.cdf_ = self.cdf_
         X.ldf_ = self.ldf_
         return X
-
-    def fit_transform(self, X, y=None, sample_weight=None):
-        """ Equivalent to fit(X).transform(X)
-
-        Parameters
-        ----------
-        X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
-        y : Ignored
-        sample_weight : Ignored
-
-        Returns
-        -------
-            X_new : New triangle with transformed attributes.
-        """
-        self.fit(X, y, sample_weight)
-        return self.transform(X)
 
     def _get_p_to_i_object(self, obj):
         paid = obj[list(self.paid_to_incurred.keys())[0]]

@@ -387,7 +387,7 @@ class TriangleBase(IO):
                 A value of 0 <= axis <= 4 corresponding to axes 'index',
                 'columns', 'origin', 'development' respectively.  Both the
                 int and str representation can be used.
-            value: list
+            value: list or str
                 List of new labels to be assigned to the axis. List must be of
                 same length of the specified axis.
 
@@ -395,6 +395,7 @@ class TriangleBase(IO):
         -------
             Triangle with relabeled axis.
         """
+        value = [value] if type(value) is str else value
         if axis == 'index' or axis == 0:
             self.index = value
         if axis == 'columns' or axis == 1:
@@ -479,12 +480,12 @@ class TriangleBase(IO):
         elif len(axes) == 2 or len(axes) == 1:
             tri = np.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
-                           2: self.odims, 3: self.ddims}
+                           2: self.origin, 3: self.ddims}
             if len(axes) == 2:
                 return pd.DataFrame(tri, index=axes_lookup[axes[0]],
-                                    columns=axes_lookup[axes[1]])
+                                    columns=axes_lookup[axes[1]]).fillna(0)
             if len(axes) == 1:
-                return pd.Series(tri, index=axes_lookup[axes[0]])
+                return pd.Series(tri, index=axes_lookup[axes[0]]).fillna(0)
         else:
             raise ValueError('len(index) and len(columns) must be 1.')
 
@@ -699,7 +700,7 @@ class TriangleBase(IO):
 
     def _slice_valuation(self, key):
         obj = copy.deepcopy(self)
-        # obj.valuation_date = obj.valuation[key].max()
+        obj.valuation_date = min(obj.valuation[key].max().to_timestamp(how='e'), obj.valuation_date)
         key = key.reshape(self.shape[-2:], order='f')
         nan_tri = np.ones(self.shape[-2:])
         nan_tri = key*nan_tri
