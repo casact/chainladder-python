@@ -1,7 +1,7 @@
 from chainladder.methods import MethodBase, Benktander
 
 
-class BornhuetterFerguson(MethodBase):
+class BornhuetterFerguson(Benktander):
     """The deterministic Bornhuetter Ferguson IBNR model
 
     Parameters
@@ -64,10 +64,6 @@ class BornhuetterFerguson(MethodBase):
         self : object
             Returns the instance itself.
         """
+        self.n_iters=1
         super().fit(X, y, sample_weight)
-        self.sample_weight_ = sample_weight
-        obj = Benktander(apriori=self.apriori, n_iters=1) \
-            .fit(X=X, sample_weight=sample_weight)
-        self.ultimate_ = obj.ultimate_
-        self.full_triangle_ = obj.full_triangle_
         return self

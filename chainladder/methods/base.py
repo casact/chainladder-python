@@ -42,7 +42,7 @@ class MethodBase(BaseEstimator, IO):
 
         return self
 
-    def predict(self, X):
+    def predict(self, X, sample_weight=None):
         """Predicts the chainladder ultimate on a new triangle **X**
 
         Parameters
@@ -50,6 +50,8 @@ class MethodBase(BaseEstimator, IO):
         X : Triangle
             The data used to compute the mean and standard deviation
             used for later scaling along the features axis.
+        sample_weight : Triangle
+            For exposure-based methods, the exposure to be used for predictions
 
         Returns
         -------
@@ -58,14 +60,26 @@ class MethodBase(BaseEstimator, IO):
         """
         obj = copy.deepcopy(self)
         obj.X_ = copy.deepcopy(X)
+        obj.sample_weight = sample_weight
+        if np.unique(self.cdf_.values, axis=-2).shape[-2] == 1:
+            obj.cdf_.values = np.repeat(
+                np.unique(self.cdf_.values, axis=-2),
+                len(X.odims), -2)
+            obj.ldf_.values = np.repeat(
+                np.unique(self.ldf_.values, axis=-2),
+                len(X.odims), -2)
+            obj.cdf_.odims = obj.ldf_.odims = obj.X_.odims
+            obj.cdf_.valuation = obj.ldf_.valuation = \
+                Development().fit(X).cdf_.valuation
         return obj
 
     @property
     def full_expectation_(self):
         obj = copy.deepcopy(self.X_)
-        obj.values = self.ultimate_.values / self.cdf_.values
-        obj.values = \
-            np.concatenate((obj.values, self.ultimate_.values), -1)
+        obj.values = (self.ultimate_.values /
+                      np.unique(self.cdf_.values, axis=-2))
+        obj.values = np.concatenate((obj.values,
+                                    self.ultimate_.values), -1)
         ddims = [int(item[item.find('-')+1:]) for item in self.cdf_.ddims]
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
@@ -86,8 +100,9 @@ class MethodBase(BaseEstimator, IO):
         ones = np.ones((w.shape[-2], extend))
         w = np.concatenate((w, ones), -1)
         obj.nan_override = True
-        e_tri = np.repeat(self.ultimate_.values,
-                          self.cdf_.values.shape[3], 3)/self.cdf_.values
+        e_tri = \
+            np.repeat(self.ultimate_.values, self.cdf_.values.shape[3], 3) / \
+            np.unique(self.cdf_.values, axis=-2)
         e_tri = e_tri * w
         zeros = obj.expand_dims(ones - ones)
         properties = self.full_expectation_

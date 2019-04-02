@@ -54,23 +54,33 @@ class Benktander(MethodBase):
 
         if sample_weight is None:
             raise ValueError('sample_weight is required.')
-        super().fit(X, y, sample_weight)
-        origin, development = -2, -1  # Set axes by name
+        super().fit(X, y, sample_weight) # creates self.X_ and attaches LDFs to self
+        obj = copy.deepcopy(self)
         self.sample_weight_ = sample_weight
-        latest = self.X_.latest_diagonal.values
+        self.ultimate_ = self._get_ultimate_(X, sample_weight, obj)
+        self.full_triangle_ = self._get_full_triangle_()
+        return self
+
+    def _get_ultimate_(self, X, sample_weight, obj):
+        ult = obj.X_
+        origin, development = -2, -1  # Set axes by name
+        latest = X.latest_diagonal.values
         apriori = sample_weight.values*self.apriori
-        obj = copy.deepcopy(self.X_)
-        obj.values = \
-            self.X_.cdf_.values[..., :obj.shape[development]]*(obj.values*0+1)
-        cdf = obj.latest_diagonal.values
+        ult.values = \
+            obj.cdf_.values[..., :ult.shape[development]]*(ult.values*0+1)
+        cdf = ult.latest_diagonal.values
         cdf = (1-1/cdf)[np.newaxis]
         exponents = np.arange(self.n_iters+1)
         exponents = np.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents
-        obj.values = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
-        obj.ddims = np.array(['Ultimate'])
-        obj.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
-                                         obj.shape[origin])
-        self.ultimate_ = obj
-        self.full_triangle_ = self._get_full_triangle_()
-        return self
+        ult.values = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
+        ult.ddims = np.array(['Ultimate'])
+        ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
+                                         ult.shape[origin])
+        return ult
+
+    def predict(self, X, sample_weight):
+        obj = super().predict(X, sample_weight)
+        obj.ultimate_ = self._get_ultimate_(X, sample_weight, obj)
+        obj.full_triangle_ = obj._get_full_triangle_()
+        return obj

@@ -68,6 +68,11 @@ class Chainladder(MethodBase):
         self.full_triangle_ = self._get_full_triangle_()
         return self
 
+    def predict(self, X):
+        obj = super().predict(X)
+        obj.full_triangle_ = obj._get_full_triangle_()
+        return obj
+
     @property
     def ultimate_(self):
         development = -1
@@ -77,6 +82,9 @@ class Chainladder(MethodBase):
                                self.cdf_.shape[development], development)
         cdf = self.cdf_.values[..., :nans.shape[development]]
         obj_tri = obj.values[..., :nans.shape[development]]
+        if np.unique(cdf, axis=2).shape[2] == 1 and \
+           len(obj.odims) != cdf.shape[2]:
+            cdf = np.repeat(np.unique(cdf, axis=2), len(obj.odims), axis=2)
         obj.values = (cdf*obj_tri)*nans
         obj = obj.latest_diagonal
         obj.ddims = np.array(['Ultimate'])

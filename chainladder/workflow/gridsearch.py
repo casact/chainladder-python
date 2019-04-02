@@ -1,6 +1,7 @@
 from sklearn.model_selection import ParameterGrid
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline as PipelineSL
+from chainladder.core import IO
 import copy
 import pandas as pd
 
@@ -81,7 +82,7 @@ class GridSearch(BaseEstimator):
         self.results_ = pd.DataFrame(results_)
         return self
 
-class Pipeline(PipelineSL):
+class Pipeline(PipelineSL, IO):
     """This is a direct of copy the scikit-learn Pipeline class.
 
     Sequentially apply a list of transforms and a final estimator.
