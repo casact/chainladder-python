@@ -105,9 +105,8 @@ class Development(DevelopmentBase):
 
     def _drop_adjustment(self, X, link_ratio):
         weight = X.nan_triangle()[:, :-1]
-        bypass = list(set([self.drop_high, self.drop_low,
-                           self.drop, self.drop_valuation]))
-        if len(bypass) == 1 and bypass[0] is None:
+        if self.drop_high == self.drop_low == \
+           self.drop == self.drop_valuation is None:
             return weight
         obj = copy.deepcopy(X)
         if self.drop_high is not None:

@@ -34,6 +34,8 @@ class BootstrapODPSample(DevelopmentBase):
     hat_adj : bool (default=TRUE)
         Adjust standardized Pearson residuals with the hat matrix adjustment
         factor.
+    drop : tuple or list of tuples
+        Drops specific origin/development combination(s) from residual sample
     random_state : int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
@@ -48,16 +50,18 @@ class BootstrapODPSample(DevelopmentBase):
         The scale parameter to be used in generating process risk
     """
     def __init__(self, n_sims=1000, n_periods=-1,
-                 hat_adj=True, random_state=None):
+                 hat_adj=True, drop=None, random_state=None):
         self.n_sims = n_sims
         self.n_periods = n_periods
         self.hat_adj = hat_adj
+        self.drop = drop
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.deepcopy(X)
+        self.w_ = X.nan_triangle() if not self.drop else self._drop(X)
         obj = Development(n_periods=self.n_periods).fit_transform(obj)
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
@@ -162,6 +166,15 @@ class BootstrapODPSample(DevelopmentBase):
 
     def _get_hetero_adjustment(self):
         pass
+
+    def _drop(self, X):
+        obj = copy.deepcopy(X)
+        drop = [self.drop] if type(self.drop) is not list else self.drop
+        arr = obj.nan_triangle()
+        for item in drop:
+            arr[np.where(obj.origin == item[0])[0][0],
+                np.where(obj.development == item[1])[0][0]] = 0
+        return arr
 
     def transform(self, X):
         """ If X and self are of different shapes, align self to X, else
