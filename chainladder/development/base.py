@@ -105,14 +105,19 @@ class Development(DevelopmentBase):
 
     def _drop_adjustment(self, X, link_ratio):
         weight = X.nan_triangle()[:, :-1]
+        bypass = list(set([self.drop_high, self.drop_low,
+                           self.drop, self.drop_valuation]))
+        if len(bypass) == 1 and bypass[0] is None:
+            return weight
+        obj = copy.deepcopy(X)
         if self.drop_high is not None:
-            weight = weight*self._drop_hilo('high', X, link_ratio)
+            weight = weight*self._drop_hilo('high', obj, link_ratio)
         if self.drop_low is not None:
-            weight = weight*self._drop_hilo('low', X, link_ratio)
+            weight = weight*self._drop_hilo('low', obj, link_ratio)
         if self.drop is not None:
-            weight = weight*self._drop(X)
+            weight = weight*self._drop(obj)
         if self.drop_valuation is not None:
-            weight = weight*self._drop_valuation(X)
+            weight = weight*self._drop_valuation(obj)
         return weight
 
     def _drop_hilo(self, kind, X, link_ratio):

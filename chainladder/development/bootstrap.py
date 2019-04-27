@@ -31,6 +31,9 @@ class BootstrapODPSample(DevelopmentBase):
     n_periods : integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
+    hat_adj : bool (default=TRUE)
+        Adjust standardized Pearson residuals with the hat matrix adjustment
+        factor.
     random_state : int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
@@ -125,7 +128,7 @@ class BootstrapODPSample(DevelopmentBase):
         #IBNR = process_triangle.cumsum(axis=2)[:,:,-1]
 
     def _get_design_matrix(self, X):
-        """ The design matrix used in hat matric adjustment (Shapland eq3.12)
+        """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
         """
         w = X.nan_triangle()
         arr = np.diag(w[:, 0])
@@ -145,7 +148,7 @@ class BootstrapODPSample(DevelopmentBase):
         weight_matrix = np.diag(pd.DataFrame(exp_incr_triangle).unstack().dropna().values)
         design_matrix = self.design_matrix_
         hat = np.matmul(np.matmul(np.matmul(design_matrix,np.linalg.inv(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
-        hat = np.diagonal(np.sqrt(np.divide(1, 1-hat, where=(1-hat)!=0)))
+        hat = np.diagonal(np.sqrt(np.divide(1, abs(1-hat), where=(1-hat)!=0)))
         total_length = X.nan_triangle().shape[0]
         reshaped_hat = np.reshape(hat[:total_length],(1, total_length))
         indices = np.nansum(X.nan_triangle(), axis=0).cumsum().astype(int)
