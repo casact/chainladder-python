@@ -1033,7 +1033,6 @@ class _Ilocation(_LocBase):
 # ---------------------------------------------------------------- #
 class _TriangleGroupBy:
     def __init__(self, old_obj, by):
-        print(old_obj.__dict__.keys())
         obj = copy.deepcopy(old_obj)
         v1_len = len(obj.index.index)
         if by != -1:

@@ -62,7 +62,11 @@ class BootstrapODPSample(DevelopmentBase):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.deepcopy(X)
         self.w_ = X.nan_triangle() if not self.drop else self._drop(X)
-        obj = Development(n_periods=self.n_periods).fit_transform(obj)
+        lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
+        if type(self.drop) is not list and self.drop is not None:
+            self.drop = [self.drop]
+        drop = [(item[0], item[1]-lag) for item in self.drop]
+        obj = Development(n_periods=self.n_periods, drop=drop).fit_transform(obj)
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
         exp_incr_triangle = obj.full_expectation_.cum_to_incr() \
@@ -73,6 +77,11 @@ class BootstrapODPSample(DevelopmentBase):
         self.hat_ = self._get_hat(X, exp_incr_triangle)
         self.resampled_triangles_, self.scale_ = \
             self._get_simulation(X, exp_incr_triangle)
+        n_obs = np.nansum(self.w_)
+        n_origin_params = X.shape[2]
+        n_dev_params = X.shape[3] - 1
+        deg_free = n_obs - n_origin_params - n_dev_params
+        deg_free_adj_fctr = np.sqrt(n_obs/deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
