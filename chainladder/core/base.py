@@ -22,6 +22,9 @@ class IO:
 class TriangleBase(IO):
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None):
+        if data is None and origin is None and development is None and \
+           columns is None and index is None:
+            return
         # Sanitize Inputs
         columns = [columns] if type(columns) is str else columns
         origin = [origin] if type(origin) is str else origin
@@ -135,7 +138,7 @@ class TriangleBase(IO):
 
     @property
     def link_ratio(self):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
         val_array = obj.valuation.to_timestamp().values.reshape(
@@ -163,7 +166,7 @@ class TriangleBase(IO):
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
         '''
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         diagonal = obj[obj.valuation == obj.valuation_date].values
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
@@ -193,7 +196,7 @@ class TriangleBase(IO):
             self.values[self.values == 0] = np.nan
             return self
         else:
-            new_obj = copy.deepcopy(self)
+            new_obj = self.copy()
             return new_obj.incr_to_cum(inplace=True)
 
     def cum_to_incr(self, inplace=False):
@@ -218,7 +221,7 @@ class TriangleBase(IO):
             self.values = temp
             return self
         else:
-            new_obj = copy.deepcopy(self)
+            new_obj = self.copy()
             return new_obj.cum_to_incr(inplace=True)
 
     def dev_to_val(self):
@@ -244,7 +247,7 @@ class TriangleBase(IO):
         return self if dev_mode else self._val_dev_chg('val_to_dev')
 
     def _val_dev_chg(self, kind):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         o_vals = obj.expand_dims(np.arange(len(obj.origin))[:, np.newaxis])
         if self.shape[-1] == 1:
             return obj
@@ -351,7 +354,7 @@ class TriangleBase(IO):
                 self.cum_to_incr(inplace=True)
             return self
         else:
-            new_obj = copy.deepcopy(self)
+            new_obj = self.copy()
             new_obj.grain(grain=grain, incremental=incremental, inplace=True)
             return new_obj
 
@@ -377,8 +380,24 @@ class TriangleBase(IO):
             trend = (1 + trend)**-(
                 pd.Series(self.valuation.to_timestamp().values-days)
                   .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = obj.values*trend
+        return obj
+
+    def copy(self):
+        obj = TriangleBase()
+        obj.values = self.values.copy()
+        obj.origin_grain = self.origin_grain
+        obj.development_grain = self.development_grain
+        obj.kdims = self.kdims.copy()
+        obj.odims = self.odims.copy()
+        obj.ddims = self.ddims.copy()
+        obj.vdims = self.vdims.copy()
+        obj.valuation_date = self.valuation_date
+        obj.key_labels = self.key_labels.copy()
+        obj.iloc, obj.loc = _Ilocation(self), _Location(self)
+        obj.nan_override = self.nan_override
+        obj.valuation = self.valuation.copy()
         return obj
 
     def rename(self, axis, value):
@@ -504,8 +523,8 @@ class TriangleBase(IO):
     # ---------------------- Arithmetic Overload --------------------- #
     # ---------------------------------------------------------------- #
     def _validate_arithmetic(self, other):
-        obj = copy.deepcopy(self)
-        other = copy.deepcopy(other)
+        obj = self.copy()
+        other = other if type(other) in [int, float] else other.copy()
         ddims = None
         odims = None
         if type(other) not in [int, float, np.float64, np.int64]:
@@ -564,7 +583,7 @@ class TriangleBase(IO):
         return self.shape[0]
 
     def __neg__(self):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = -obj.values
         return obj
 
@@ -585,7 +604,7 @@ class TriangleBase(IO):
         return self._arithmetic_cleanup(obj)
 
     def __rtruediv__(self, other):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = other / self.values
         obj.values[obj.values == 0] = np.nan
         return obj
@@ -686,7 +705,7 @@ class TriangleBase(IO):
         -------
             New Triangle with appended data.
         """
-        return_obj = copy.deepcopy(self)
+        return_obj = self.copy()
         x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
         new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
         x = x.append(new_idx, sort=True)
@@ -696,13 +715,13 @@ class TriangleBase(IO):
         return return_obj
 
     def _slice_origin(self, key):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.odims = obj.odims[key]
         obj.values = obj.values[..., key, :]
         return self._cleanup_slice(obj)
 
     def _slice_valuation(self, key):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.valuation_date = min(obj.valuation[key].max().to_timestamp(how='e'), obj.valuation_date)
         key = key.reshape(self.shape[-2:], order='f')
         nan_tri = np.ones(self.shape[-2:])
@@ -719,7 +738,7 @@ class TriangleBase(IO):
         return self._cleanup_slice(obj)
 
     def _slice_development(self, key):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.ddims = obj.ddims[key]
         obj.values = obj.values[..., key]
         return self._cleanup_slice(obj)
@@ -986,7 +1005,7 @@ class _LocBase:
         self.obj = obj
 
     def get_idx(self, idx):
-        obj = copy.deepcopy(self.obj)
+        obj = self.obj.copy()
         vdims = pd.Series(obj.vdims)
         obj.kdims = np.array(idx.index.unique())
         obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])

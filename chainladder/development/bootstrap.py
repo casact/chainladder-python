@@ -31,6 +31,11 @@ class BootstrapODPSample(DevelopmentBase):
     n_periods : integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
+    hat_adj : bool (default=TRUE)
+        Adjust standardized Pearson residuals with the hat matrix adjustment
+        factor.
+    drop : tuple or list of tuples
+        Drops specific origin/development combination(s) from residual sample
     random_state : int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
@@ -45,17 +50,25 @@ class BootstrapODPSample(DevelopmentBase):
         The scale parameter to be used in generating process risk
     """
     def __init__(self, n_sims=1000, n_periods=-1,
-                 hat_adj=True, random_state=None):
+                 hat_adj=True, drop=None, random_state=None):
         self.n_sims = n_sims
         self.n_periods = n_periods
         self.hat_adj = hat_adj
+        self.drop = drop
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.deepcopy(X)
-        obj = Development(n_periods=self.n_periods).fit_transform(obj)
+        self.w_ = X.nan_triangle() if not self.drop else self._drop(X)
+        lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
+        if type(self.drop) is not list and self.drop is not None:
+            self.drop = [self.drop]
+            drop = [(item[0], item[1]-lag) for item in self.drop]
+        else:
+            drop = self.drop
+        obj = Development(n_periods=self.n_periods, drop=drop).fit_transform(obj)
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
         exp_incr_triangle = obj.full_expectation_.cum_to_incr() \
@@ -66,6 +79,11 @@ class BootstrapODPSample(DevelopmentBase):
         self.hat_ = self._get_hat(X, exp_incr_triangle)
         self.resampled_triangles_, self.scale_ = \
             self._get_simulation(X, exp_incr_triangle)
+        n_obs = np.nansum(self.w_)
+        n_origin_params = X.shape[2]
+        n_dev_params = X.shape[3] - 1
+        deg_free = n_obs - n_origin_params - n_dev_params
+        deg_free_adj_fctr = np.sqrt(n_obs/deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
@@ -125,7 +143,7 @@ class BootstrapODPSample(DevelopmentBase):
         #IBNR = process_triangle.cumsum(axis=2)[:,:,-1]
 
     def _get_design_matrix(self, X):
-        """ The design matrix used in hat matric adjustment (Shapland eq3.12)
+        """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
         """
         w = X.nan_triangle()
         arr = np.diag(w[:, 0])
@@ -145,7 +163,7 @@ class BootstrapODPSample(DevelopmentBase):
         weight_matrix = np.diag(pd.DataFrame(exp_incr_triangle).unstack().dropna().values)
         design_matrix = self.design_matrix_
         hat = np.matmul(np.matmul(np.matmul(design_matrix,np.linalg.inv(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
-        hat = np.diagonal(np.sqrt(np.divide(1, 1-hat, where=(1-hat)!=0)))
+        hat = np.diagonal(np.sqrt(np.divide(1, abs(1-hat), where=(1-hat)!=0)))
         total_length = X.nan_triangle().shape[0]
         reshaped_hat = np.reshape(hat[:total_length],(1, total_length))
         indices = np.nansum(X.nan_triangle(), axis=0).cumsum().astype(int)
@@ -159,6 +177,15 @@ class BootstrapODPSample(DevelopmentBase):
 
     def _get_hetero_adjustment(self):
         pass
+
+    def _drop(self, X):
+        obj = copy.deepcopy(X)
+        drop = [self.drop] if type(self.drop) is not list else self.drop
+        arr = obj.nan_triangle()
+        for item in drop:
+            arr[np.where(obj.origin == item[0])[0][0],
+                np.where(obj.development == item[1])[0][0]] = 0
+        return arr
 
     def transform(self, X):
         """ If X and self are of different shapes, align self to X, else
