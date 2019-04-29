@@ -13,6 +13,9 @@ agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod', 'var', 'std']
 agg_funcs = {item: 'nan'+item for item in agg_funcs}
 
 class IO:
+    ''' Class intended to allow persistence of triangle or estimator objects
+        to disk
+    '''
     def to_pickle(self, path, protocol=None):
         joblib.dump(self, filename=path, protocol=protocol)
 
@@ -135,8 +138,8 @@ class TriangleBase(IO):
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
-        val_array = obj.valuation.to_timestamp().values.reshape(obj.shape[-2:],
-                                                 order='f')[:, 1:]
+        val_array = obj.valuation.to_timestamp().values.reshape(
+            obj.shape[-2:], order='f')[:, 1:]
         obj.values = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
