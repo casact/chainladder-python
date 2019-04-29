@@ -65,7 +65,9 @@ class BootstrapODPSample(DevelopmentBase):
         lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
         if type(self.drop) is not list and self.drop is not None:
             self.drop = [self.drop]
-        drop = [(item[0], item[1]-lag) for item in self.drop]
+            drop = [(item[0], item[1]-lag) for item in self.drop]
+        else:
+            drop = self.drop
         obj = Development(n_periods=self.n_periods, drop=drop).fit_transform(obj)
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
