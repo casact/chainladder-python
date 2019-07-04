@@ -85,6 +85,9 @@ class MethodBase(BaseEstimator, IO):
         obj.nan_override = True
         return obj
 
+    def ultimate_(self):
+        raise NotImplementedError
+
     @property
     def ibnr_(self):
         obj = copy.deepcopy(self.ultimate_)

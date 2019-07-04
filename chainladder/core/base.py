@@ -314,7 +314,8 @@ class TriangleBase(IO):
             ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
             for Origin quarter/Development Month, etc.
         incremental : bool
-            Not implemented yet
+            Grain does not work on incremental triangles and this argument let's
+            the function know to make it cumuative before operating on the grain.
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
@@ -383,50 +384,6 @@ class TriangleBase(IO):
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj
-
-    def copy(self):
-        obj = TriangleBase()
-        obj.values = self.values.copy()
-        obj.origin_grain = self.origin_grain
-        obj.development_grain = self.development_grain
-        obj.kdims = self.kdims.copy()
-        obj.odims = self.odims.copy()
-        obj.ddims = self.ddims.copy()
-        obj.vdims = self.vdims.copy()
-        obj.valuation_date = self.valuation_date
-        obj.key_labels = self.key_labels.copy()
-        obj.iloc, obj.loc = _Ilocation(self), _Location(self)
-        obj.nan_override = self.nan_override
-        obj.valuation = self.valuation.copy()
-        return obj
-
-    def rename(self, axis, value):
-        """ Alter axes labels.
-
-        Parameters
-        ----------
-            axis: str or int
-                A value of 0 <= axis <= 4 corresponding to axes 'index',
-                'columns', 'origin', 'development' respectively.  Both the
-                int and str representation can be used.
-            value: list or str
-                List of new labels to be assigned to the axis. List must be of
-                same length of the specified axis.
-
-        Returns
-        -------
-            Triangle with relabeled axis.
-        """
-        value = [value] if type(value) is str else value
-        if axis == 'index' or axis == 0:
-            self.index = value
-        if axis == 'columns' or axis == 1:
-            self.columns = value
-        if axis == 'origin' or axis == 2:
-            self.origin = value
-        if axis == 'development' or axis == 3:
-            self.development = value
-        return self
 
     # ---------------------------------------------------------------- #
     # ------------------------ Display Options ----------------------- #
@@ -518,6 +475,79 @@ class TriangleBase(IO):
     @property
     def T(self):
         return self.to_frame().T
+
+    def quantile(self, q, *args, **kwargs):
+        if self.shape[:2] == (1, 1):
+            return self.to_frame().quantile(q, *args, **kwargs)
+        return _TriangleGroupBy(self, by=-1).quantile(q, axis=1)
+
+    def groupby(self, by, *args, **kwargs):
+        """ Group Triangle by index values.  If the triangle is convertable to a
+        DataFrame, then it defaults to pandas groupby functionality.
+
+        Parameters
+        ----------
+        by: str or list
+            The index to group by
+
+        Returns
+        -------
+            GroupBy object (pandas or Triangle)
+        """
+        if self.shape[:2] == (1, 1):
+            return self.to_frame().groupby(*args, **kwargs)
+        return _TriangleGroupBy(self, by)
+
+    def append(self, other, index):
+        """ Append rows of other to the end of caller, returning a new object.
+
+        Parameters
+        ----------
+        other : Triangle
+            The data to append.
+        index:
+            The index label(s) to assign the appended data.
+
+        Returns
+        -------
+            New Triangle with appended data.
+        """
+        return_obj = copy.deepcopy(self)
+        x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
+        new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
+        x = x.append(new_idx, sort=True)
+        x.set_index(return_obj.key_labels, inplace=True)
+        return_obj.values = np.append(return_obj.values, other.values, axis=0)
+        return_obj.kdims = np.array(x.index.unique())
+        return return_obj
+
+    def rename(self, axis, value):
+        """ Alter axes labels.
+
+        Parameters
+        ----------
+            axis: str or int
+                A value of 0 <= axis <= 4 corresponding to axes 'index',
+                'columns', 'origin', 'development' respectively.  Both the
+                int and str representation can be used.
+            value: list or str
+                List of new labels to be assigned to the axis. List must be of
+                same length of the specified axis.
+
+        Returns
+        -------
+            Triangle with relabeled axis.
+        """
+        value = [value] if type(value) is str else value
+        if axis == 'index' or axis == 0:
+            self.index = value
+        if axis == 'columns' or axis == 1:
+            self.columns = value
+        if axis == 'origin' or axis == 2:
+            self.origin = value
+        if axis == 'development' or axis == 3:
+            self.development = value
+        return self
 
     # ---------------------------------------------------------------- #
     # ---------------------- Arithmetic Overload --------------------- #
@@ -616,27 +646,9 @@ class TriangleBase(IO):
         else:
             return False
 
-    def quantile(self, q, *args, **kwargs):
-        if self.shape[:2] == (1, 1):
-            return self.to_frame().quantile(q, *args, **kwargs)
-        return _TriangleGroupBy(self, by=-1).quantile(q, axis=1)
-
-    def groupby(self, by, *args, **kwargs):
-        """ Group Triangle by index values.  If the triangle is convertable to a
-        DataFrame, then it defaults to pandas groupby functionality.
-
-        Parameters
-        ----------
-        by: str or list
-            The index to group by
-
-        Returns
-        -------
-            GroupBy object (pandas or Triangle)
-        """
-        if self.shape[:2] == (1, 1):
-            return self.to_frame().groupby(*args, **kwargs)
-        return _TriangleGroupBy(self, by)
+# ---------------------------------------------------------------- #
+# ----------------------- Slicing Functions ---------------------- #
+# ---------------------------------------------------------------- #
 
     def _idx_table_format(self, idx):
         if type(idx) is pd.Series:
@@ -666,19 +678,28 @@ class TriangleBase(IO):
         ''' Function for pandas style column indexing'''
         if type(key) is pd.DataFrame and 'development' in key.columns:
             return self._slice_development(key['development'])
-        if type(key) is np.ndarray:
+        elif type(key) is np.ndarray:
             # Presumes that if I have a 1D array, I will want to slice origin.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             return self._slice_origin(key)
-        if type(key) is pd.Series:
+        elif type(key) is pd.Series:
             return self.iloc[list(self.index[key].index)]
-        if key in self.key_labels:
+        elif key in self.key_labels:
             # Boolean-indexing of a particular key
             return self.index[key]
-        idx = self._idx_table()[key]
-        idx = self._idx_table_format(idx)
-        return _LocBase(self).get_idx(idx)
+        else:
+            idx = self._idx_table()[key]
+            idx = self._idx_table_format(idx)
+            obj = _LocBase(self).get_idx(idx)
+            if type(key) is not str and key != list(obj.vdims):
+                # Honor order of the slice
+                obj2 = obj[key[0]]
+                for item in key[1:]:
+                    obj2[item] = obj[item]
+                return obj2
+            else:
+                return _LocBase(self).get_idx(idx)
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
@@ -690,29 +711,6 @@ class TriangleBase(IO):
         else:
             self.vdims = np.array(idx.columns.unique())
             self.values = np.append(self.values, value.values, axis=1)
-
-    def append(self, other, index):
-        """ Append rows of other to the end of caller, returning a new object.
-
-        Parameters
-        ----------
-        other : Triangle
-            The data to append.
-        index:
-            The index label(s) to assign the appended data.
-
-        Returns
-        -------
-            New Triangle with appended data.
-        """
-        return_obj = copy.deepcopy(self)
-        x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
-        new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
-        x = x.append(new_idx, sort=True)
-        x.set_index(return_obj.key_labels, inplace=True)
-        return_obj.values = np.append(return_obj.values, other.values, axis=0)
-        return_obj.kdims = np.array(x.index.unique())
-        return return_obj
 
     def _slice_origin(self, key):
         obj = copy.deepcopy(self)
@@ -1008,6 +1006,7 @@ class _LocBase:
         obj = copy.deepcopy(self.obj)
         vdims = pd.Series(obj.vdims)
         obj.kdims = np.array(idx.index.unique())
+        # Honor horder of column labels
         obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
         obj.key_labels = list(idx.index.names)
         obj.iloc, obj.loc = _Ilocation(obj), _Location(obj)

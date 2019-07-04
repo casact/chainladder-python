@@ -1,6 +1,7 @@
 import chainladder as cl
 import pandas as pd
 import numpy as np
+from numpy.testing import assert_equal
 import copy
 
 tri = cl.load_dataset('clrd')
@@ -134,8 +135,9 @@ def test_printer():
 
 
 def test_value_order():
-    assert np.all(tri[['CumPaidLoss', 'BulkLoss']].columns ==
-                  tri[['BulkLoss', 'CumPaidLoss']].columns)
+    a = tri[['CumPaidLoss','BulkLoss']]
+    b = tri[['BulkLoss', 'CumPaidLoss']]
+    assert_equal(a.values[:,-1], b.values[:, 0])
 
 
 def test_trend():
