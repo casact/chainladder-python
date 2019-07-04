@@ -18,6 +18,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, IO):
         else:
             obj2 = copy.deepcopy(obj.ldf_)
             cdf_ = np.flip(np.cumprod(np.flip(obj2.values, -1), -1), -1)
+            obj2.ddims = [item.replace(item[item.find("-")+1:],'9999')
+                          for item in obj2.ddims]
             obj2.values = cdf_
             return obj2
 
