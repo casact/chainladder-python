@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant

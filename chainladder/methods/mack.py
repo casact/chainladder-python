@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import copy
 from chainladder.methods import Chainladder
 
@@ -97,7 +98,10 @@ class MackChainladder(Chainladder):
         nans = np.concatenate((nans, np.ones((k, v, o, 1))*np.nan), 3)
         nans = 1-np.nan_to_num(nans)
         properties = self.full_triangle_
-        obj.ddims, obj.valuation = properties.ddims, properties.valuation
+        obj.valuation = properties.valuation
+        obj.ddims = np.append(
+            properties.ddims[:len(self.X_.ddims)],
+            properties.ddims[-1])
         obj.nan_override = True
         risk_arr = np.zeros((k, v, o, 1))
         if est == 'param_risk':
@@ -156,14 +160,13 @@ class MackChainladder(Chainladder):
 
     @property
     def total_mack_std_err_(self):
-        # This might be better as a dataframe
         obj = copy.deepcopy(self.X_.latest_diagonal)
         obj.values = np.sqrt(self.total_process_risk_.values**2 +
                              self.total_parameter_risk_.values**2)
         obj.values = obj.values[..., -1:]
-        obj.ddims = ['Total Mack Std Err']
-        obj.odims = ['Total']
-        return obj
+        return pd.DataFrame(
+            obj.values[..., 0, 0], index=obj.kdims,
+            columns=[item + ' Total Mack Std Err' for item in obj.vdims])
 
     @property
     def summary_(self):
