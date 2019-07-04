@@ -25,5 +25,5 @@ else
 
   # Install the R ChainLadder package for comparisons
   R -e "options(repos = c(CRAN = 'http://cran.rstudio.com'))"
-  R -e "install.packages('ChainLadder')";
+  R -e "install.packages('ChainLadder', repo='http://cran.rstudio.com')";
 fi;
