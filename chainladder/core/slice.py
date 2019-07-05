@@ -34,102 +34,103 @@ class Ilocation(_LocBase):
         return self.get_idx(self.obj._idx_table_format(idx))
 
 class TriangleSlicer:
-        def _idx_table_format(self, idx):
-            if type(idx) is pd.Series:
-                # One row or one column selection is it k or v?
-                if len(set(idx.index).intersection(set(self.vdims))) == len(idx):
-                    # One column selection
-                    idx = idx.to_frame().T
-                    idx.index.names = self.key_labels
-                else:
-                    # One row selection
-                    idx = idx.to_frame()
-            elif type(idx) is tuple:
-                # Single cell selection
-                idx = self._idx_table().iloc[idx[0]:idx[0] + 1,
-                                            idx[1]:idx[1] + 1]
-            return idx
-
-        def _idx_table(self):
-            df = pd.DataFrame(list(self.kdims), columns=self.key_labels)
-            for num, item in enumerate(self.vdims):
-                df[item] = list(zip(np.arange(len(df)),
-                                (np.ones(len(df))*num).astype(int)))
-            df.set_index(self.key_labels, inplace=True)
-            return df
-
-        def __getitem__(self, key):
-            ''' Function for pandas style column indexing'''
-            if type(key) is pd.DataFrame and 'development' in key.columns:
-                return self._slice_development(key['development'])
-            elif type(key) is np.ndarray:
-                # Presumes that if I have a 1D array, I will want to slice origin.
-                if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
-                    return self._slice_valuation(key)
-                return self._slice_origin(key)
-            elif type(key) is pd.Series:
-                return self.iloc[list(self.index[key].index)]
-            elif key in self.key_labels:
-                # Boolean-indexing of a particular key
-                return self.index[key]
+    ''' Slicer functionality '''
+    def _idx_table_format(self, idx):
+        if type(idx) is pd.Series:
+            # One row or one column selection is it k or v?
+            if len(set(idx.index).intersection(set(self.vdims))) == len(idx):
+                # One column selection
+                idx = idx.to_frame().T
+                idx.index.names = self.key_labels
             else:
-                idx = self._idx_table()[key]
-                idx = self._idx_table_format(idx)
-                obj = _LocBase(self).get_idx(idx)
-                if type(key) is not str and key != list(obj.vdims):
-                    # Honor order of the slice
-                    obj2 = obj[key[0]]
-                    for item in key[1:]:
-                        obj2[item] = obj[item]
-                    return obj2
-                else:
-                    return _LocBase(self).get_idx(idx)
+                # One row selection
+                idx = idx.to_frame()
+        elif type(idx) is tuple:
+            # Single cell selection
+            idx = self._idx_table().iloc[idx[0]:idx[0] + 1,
+                                        idx[1]:idx[1] + 1]
+        return idx
 
-        def __setitem__(self, key, value):
-            ''' Function for pandas style column indexing setting '''
-            idx = self._idx_table()
-            idx[key] = 1
-            if key in self.vdims:
-                i = np.where(self.vdims == key)[0][0]
-                self.values[:, i:i+1] = value.values
+    def _idx_table(self):
+        df = pd.DataFrame(list(self.kdims), columns=self.key_labels)
+        for num, item in enumerate(self.vdims):
+            df[item] = list(zip(np.arange(len(df)),
+                            (np.ones(len(df))*num).astype(int)))
+        df.set_index(self.key_labels, inplace=True)
+        return df
+
+    def __getitem__(self, key):
+        ''' Function for pandas style column indexing'''
+        if type(key) is pd.DataFrame and 'development' in key.columns:
+            return self._slice_development(key['development'])
+        elif type(key) is np.ndarray:
+            # Presumes that if I have a 1D array, I will want to slice origin.
+            if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
+                return self._slice_valuation(key)
+            return self._slice_origin(key)
+        elif type(key) is pd.Series:
+            return self.iloc[list(self.index[key].index)]
+        elif key in self.key_labels:
+            # Boolean-indexing of a particular key
+            return self.index[key]
+        else:
+            idx = self._idx_table()[key]
+            idx = self._idx_table_format(idx)
+            obj = _LocBase(self).get_idx(idx)
+            if type(key) is not str and key != list(obj.vdims):
+                # Honor order of the slice
+                obj2 = obj[key[0]]
+                for item in key[1:]:
+                    obj2[item] = obj[item]
+                return obj2
             else:
-                self.vdims = np.array(idx.columns.unique())
-                self.values = np.append(self.values, value.values, axis=1)
+                return _LocBase(self).get_idx(idx)
 
-        def _slice_origin(self, key):
-            obj = copy.deepcopy(self)
-            obj.odims = obj.odims[key]
-            obj.values = obj.values[..., key, :]
-            return self._cleanup_slice(obj)
+    def __setitem__(self, key, value):
+        ''' Function for pandas style column indexing setting '''
+        idx = self._idx_table()
+        idx[key] = 1
+        if key in self.vdims:
+            i = np.where(self.vdims == key)[0][0]
+            self.values[:, i:i+1] = value.values
+        else:
+            self.vdims = np.array(idx.columns.unique())
+            self.values = np.append(self.values, value.values, axis=1)
 
-        def _slice_valuation(self, key):
-            obj = copy.deepcopy(self)
-            obj.valuation_date = min(obj.valuation[key].max().to_timestamp(how='e'),
-                                     obj.valuation_date)
-            key = key.reshape(self.shape[-2:], order='f')
-            nan_tri = np.ones(self.shape[-2:])
-            nan_tri = key*nan_tri
-            nan_tri[nan_tri == 0] = np.nan
-            o, d = nan_tri.shape
-            o_idx = np.arange(o)[list(np.sum(np.isnan(nan_tri), 1) != d)]
-            d_idx = np.arange(d)[list(np.sum(np.isnan(nan_tri), 0) != o)]
-            obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
-            if len(obj.ddims) > 1:
-                obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
-            obj.values = (obj.values*nan_tri)
-            obj.values = np.take(np.take(obj.values, o_idx, -2), d_idx, -1)
-            return self._cleanup_slice(obj)
+    def _slice_origin(self, key):
+        obj = copy.deepcopy(self)
+        obj.odims = obj.odims[key]
+        obj.values = obj.values[..., key, :]
+        return self._cleanup_slice(obj)
 
-        def _slice_development(self, key):
-            obj = copy.deepcopy(self)
-            obj.ddims = obj.ddims[key]
-            obj.values = obj.values[..., key]
-            return self._cleanup_slice(obj)
+    def _slice_valuation(self, key):
+        obj = copy.deepcopy(self)
+        obj.valuation_date = min(obj.valuation[key].max().to_timestamp(how='e'),
+                                 obj.valuation_date)
+        key = key.reshape(self.shape[-2:], order='f')
+        nan_tri = np.ones(self.shape[-2:])
+        nan_tri = key*nan_tri
+        nan_tri[nan_tri == 0] = np.nan
+        o, d = nan_tri.shape
+        o_idx = np.arange(o)[list(np.sum(np.isnan(nan_tri), 1) != d)]
+        d_idx = np.arange(d)[list(np.sum(np.isnan(nan_tri), 0) != o)]
+        obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
+        if len(obj.ddims) > 1:
+            obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
+        obj.values = (obj.values*nan_tri)
+        obj.values = np.take(np.take(obj.values, o_idx, -2), d_idx, -1)
+        return self._cleanup_slice(obj)
 
-        def _cleanup_slice(self, obj):
-            obj.valuation = obj._valuation_triangle()
-            if hasattr(obj, '_nan_triangle'):
-                # Force update on _nan_triangle at next access.
-                del obj._nan_triangle
-                obj._nan_triangle = obj.nan_triangle()
-            return obj
+    def _slice_development(self, key):
+        obj = copy.deepcopy(self)
+        obj.ddims = obj.ddims[key]
+        obj.values = obj.values[..., key]
+        return self._cleanup_slice(obj)
+
+    def _cleanup_slice(self, obj):
+        obj.valuation = obj._valuation_triangle()
+        if hasattr(obj, '_nan_triangle'):
+            # Force update on _nan_triangle at next access.
+            del obj._nan_triangle
+            obj._nan_triangle = obj.nan_triangle()
+        return obj

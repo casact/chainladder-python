@@ -34,15 +34,15 @@ class TriangleDisplay():
                           .replace('nan', '')
             return default.replace(
                 '<th></th>\n      <th>{}</th>'.format(
-                    self.development.values[0][0]),
+                    list(data.columns)[0]),
                 '<th>Origin</th>\n      <th>{}</th>'.format(
-                    self.development.values[0][0]))
+                    list(data.columns)[0]))
         else:
             data = pd.Series([self.valuation_date.strftime('%Y-%m'),
                              'O' + self.origin_grain + 'D'
                               + self.development_grain,
                               self.shape, self.key_labels, list(self.vdims)],
-                             index=['Valuation:', 'Grain:', 'Shape',
+                             index=['Valuation:', 'Grain:', 'Shape:',
                                     'Index:', "Columns:"],
                              name='Triangle Summary').to_frame()
             pd.options.display.precision = 0
@@ -54,4 +54,12 @@ class TriangleDisplay():
             origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
         else:
             origin = pd.Series(self.odims)
-        return pd.DataFrame(self.values[0, 0], index=origin, columns=self.ddims)
+        out = pd.DataFrame(self.values[0, 0], index=origin, columns=self.ddims)
+        if str(out.columns[0]).find('-') > 0:
+            out.columns = [item.replace('-9999','-Ult') for item in out.columns]
+            if len(out.drop_duplicates()) != 1:
+                return out
+            else:
+                return out.drop_duplicates().set_index(pd.Index(['(All)']))
+        else:
+            return out

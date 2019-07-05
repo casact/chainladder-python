@@ -3,11 +3,9 @@ import numpy as np
 import copy
 import joblib
 from chainladder.core.display import TriangleDisplay
-from chainladder.core.groupby import TriangleGroupBy
 from chainladder.core.dunders import TriangleDunders
-from chainladder.core.pandas import TrianglePandas
+from chainladder.core.pandas import TrianglePandas, TriangleGroupBy
 from chainladder.core.slice import Ilocation, Location, TriangleSlicer
-from chainladder.core import set_method
 
 
 class IO:
@@ -92,7 +90,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
                              '{} elements, new values have'.format(len(x)),
                              ' {} elements'.format(len(y)))
 
-    
+
     # ---------------------------------------------------------------- #
     # ------------------- Data Ingestion Functions ------------------- #
     # ---------------------------------------------------------------- #
