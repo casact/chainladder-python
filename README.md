@@ -25,3 +25,4 @@ Alternatively, install directly from github:
 
 Note: This package requires Python 3.5 and later, numpy 1.12.0 and later,
 pandas 0.23.0 and later, scikit-learn 0.18.0 and later.
+
