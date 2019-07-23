@@ -54,7 +54,7 @@ class Benktander(MethodBase):
 
         if sample_weight is None:
             raise ValueError('sample_weight is required.')
-        super().fit(X, y, sample_weight) # creates self.X_ and attaches LDFs to self
+        super().fit(X, y, sample_weight)
         obj = copy.deepcopy(self)
         self.sample_weight_ = sample_weight
         self.ultimate_ = self._get_ultimate_(X, sample_weight, obj)

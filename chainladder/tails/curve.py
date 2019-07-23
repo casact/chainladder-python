@@ -66,8 +66,8 @@ class TailCurve(TailBase):
             _w[_y <= 1.0] = 0
             _y[_y <= 1.0] = 1.01
         elif self.errors == 'raise' and np.any(y < 1.0):
-            raise ZeroDivisionError('Tail fit requires all LDFs to be \
-                                     greater than 1.0')
+            raise ZeroDivisionError('Tail fit requires all LDFs to be' +
+                                    ' greater than 1.0')
         _y = np.log(_y - 1)
         n_obs = X.shape[-1]-1
         k, v = X.shape[:2]
@@ -81,10 +81,7 @@ class TailCurve(TailBase):
         tail = self._predict_tail(slope, intercept, extrapolate)
         self.ldf_.values = self.ldf_.values[..., :-tail.shape[-1]]
         self.ldf_.values = np.concatenate((self.ldf_.values, tail), -1)
-        if X.__dict__.get('ldf_', None) is None:
-            obj = Development().fit_transform(X)
-        else:
-            obj = X
+        obj = Development().fit_transform(X) if 'ldf_' not in X else X
         sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values[..., -1] = sigma[..., -1]
         self.std_err_.values[..., -1] = std_err[..., -1]

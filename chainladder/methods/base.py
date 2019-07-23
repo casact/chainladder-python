@@ -12,13 +12,12 @@ class MethodBase(BaseEstimator, IO):
 
     def validate_X(self, X):
         obj = copy.deepcopy(X)
-        if obj.__dict__.get('ldf_', None) is None:
+        if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
             obj = TailConstant().fit_transform(obj)
-        self.cdf_ = obj.__dict__.get('cdf_', None)
-        self.ldf_ = obj.__dict__.get('ldf_', None)
-        self.average_ = obj.__dict__.get('average_', None)
+        for item in ['cdf_', 'ldf_', 'average_']:
+            setattr(self, item, getattr(obj, item, None))
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
@@ -38,7 +37,6 @@ class MethodBase(BaseEstimator, IO):
             Returns the instance itself.
         """
         self.X_ = self.validate_X(X)
-
         return self
 
     def predict(self, X, sample_weight=None):

@@ -136,8 +136,8 @@ class MackChainladder(Chainladder):
     def _get_tot_param_risk(self, risk_arr):
         """ This assumes triangle symmertry """
         t1 = self.full_triangle_.values[..., :len(self.X_.ddims)] - \
-             np.nan_to_num(self.X_.values) + \
-             np.nan_to_num(self.X_.get_latest_diagonal(False).values)
+            np.nan_to_num(self.X_.values) + \
+            np.nan_to_num(self.X_.get_latest_diagonal(False).values)
         t1 = np.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]

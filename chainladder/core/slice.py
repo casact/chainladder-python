@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import copy
 
+
 class _LocBase:
     ''' Base class for pandas style loc/iloc indexing '''
     def __init__(self, obj):
@@ -22,16 +23,20 @@ class _LocBase:
         obj.values[obj.values == 0] = np.nan
         return obj
 
+
 class Location(_LocBase):
+    ''' class to generate .loc[] functionality '''
     def __getitem__(self, key):
         idx = self.obj._idx_table().loc[key]
         return self.get_idx(self.obj._idx_table_format(idx))
 
 
 class Ilocation(_LocBase):
+    ''' class to generate .iloc[] functionality '''
     def __getitem__(self, key):
         idx = self.obj._idx_table().iloc[key]
         return self.get_idx(self.obj._idx_table_format(idx))
+
 
 class TriangleSlicer:
     ''' Slicer functionality '''
@@ -48,10 +53,14 @@ class TriangleSlicer:
         elif type(idx) is tuple:
             # Single cell selection
             idx = self._idx_table().iloc[idx[0]:idx[0] + 1,
-                                        idx[1]:idx[1] + 1]
+                                         idx[1]:idx[1] + 1]
         return idx
 
     def _idx_table(self):
+        ''' private method that generates a dataframe of triangle indices.
+            The dataframe is meant ot be sliced using pandas and the resultant
+            indices are then to be extracted from the Triangle object.
+        '''
         df = pd.DataFrame(list(self.kdims), columns=self.key_labels)
         for num, item in enumerate(self.vdims):
             df[item] = list(zip(np.arange(len(df)),
@@ -98,15 +107,17 @@ class TriangleSlicer:
             self.values = np.append(self.values, value.values, axis=1)
 
     def _slice_origin(self, key):
+        ''' private method for handling of origin slicing '''
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
         obj.values = obj.values[..., key, :]
         return self._cleanup_slice(obj)
 
     def _slice_valuation(self, key):
+        ''' private method for handling of valuation slicing '''
         obj = copy.deepcopy(self)
-        obj.valuation_date = min(obj.valuation[key].max().to_timestamp(how='e'),
-                                 obj.valuation_date)
+        obj.valuation_date = min(
+            obj.valuation[key].max().to_timestamp(how='e'), obj.valuation_date)
         key = key.reshape(self.shape[-2:], order='f')
         nan_tri = np.ones(self.shape[-2:])
         nan_tri = key*nan_tri
@@ -122,12 +133,14 @@ class TriangleSlicer:
         return self._cleanup_slice(obj)
 
     def _slice_development(self, key):
+        ''' private method for handling of development slicing '''
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
         obj.values = obj.values[..., key]
         return self._cleanup_slice(obj)
 
     def _cleanup_slice(self, obj):
+        ''' private method with common post-slicing functionality'''
         obj.valuation = obj._valuation_triangle()
         if hasattr(obj, '_nan_triangle'):
             # Force update on _nan_triangle at next access.

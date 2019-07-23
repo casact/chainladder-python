@@ -45,7 +45,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.deepcopy(X)
-        if obj.__dict__.get('ldf_', None) is None:
+        if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         self.p_to_i_X_ = self._get_p_to_i_object(obj)
         self.p_to_i_ldf_ = self._get_p_to_i_object(obj.ldf_)

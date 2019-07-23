@@ -10,19 +10,19 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder import WeightedRegression
 from chainladder.core import IO
 
+
 class DevelopmentBase(BaseEstimator, TransformerMixin, IO):
     @staticmethod
     def _get_cdf(obj):
-        if obj.__dict__.get('ldf_', None) is None:
+        if 'ldf_' not in obj:
             return
         else:
             obj2 = copy.deepcopy(obj.ldf_)
             cdf_ = np.flip(np.cumprod(np.flip(obj2.values, -1), -1), -1)
-            obj2.ddims = [item.replace(item[item.find("-")+1:],'9999')
+            obj2.ddims = [item.replace(item[item.find("-")+1:], '9999')
                           for item in obj2.ddims]
             obj2.values = cdf_
             return obj2
-
 
 
 class Development(DevelopmentBase):
@@ -86,6 +86,7 @@ class Development(DevelopmentBase):
             raise ValueError('n_periods must be of type <int> or <list>')
 
     def _assign_n_periods_weight_list(self, X):
+        ''' private method to standardize the n_periods input to a list '''
         dict_map = {item: self._assign_n_periods_weight_int(X, item)
                     for item in set(self.n_periods)}
         conc = [dict_map[item][..., num:num+1, :]
@@ -214,11 +215,12 @@ class Development(DevelopmentBase):
                           'of freedom to support calculation of all regression'
                           ' statistics.  Only LDFs have been calculated.')
         params.std_err_ = np.nan_to_num(params.std_err_) + \
-            np.nan_to_num((1-np.nan_to_num(params.std_err_*0+1)) *
-            params.sigma_/np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
-        params = np.concatenate((params.slope_,
-                                 params.sigma_,
-                                 params.std_err_), 3)
+            np.nan_to_num(
+                (1-np.nan_to_num(params.std_err_*0+1)) *
+                params.sigma_ /
+                np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
+        params = np.concatenate(
+            (params.slope_, params.sigma_, params.std_err_), 3)
         params = np.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(X, params, 0)
         self.cdf_ = self._get_cdf(self)
@@ -242,7 +244,7 @@ class Development(DevelopmentBase):
         X_new = copy.deepcopy(X)
         for item in ['std_err_', 'cdf_', 'ldf_', 'average_',
                      'sigma_', 'w_', 'sigma_interpolation']:
-            X_new.__dict__[item] = self.__dict__[item]
+            setattr(X_new, item, getattr(self, item))
         return X_new
 
     def _param_property(self, X, params, idx):

@@ -216,14 +216,7 @@ class Triangle(TriangleBase):
         if self.shape[-1] == 1:
             return obj
         if kind == 'val_to_dev':
-            dmin = obj.development.min()[0].to_timestamp(how='e')
-            omax = obj.origin.max().to_timestamp(how='s')
-            dmax = obj.development.max()[0].to_timestamp(how='e')
-            omin = obj.origin.min().to_timestamp(how='s')
-            start = 12*max(dmin.year-omax.year, 0)+(dmin.month-omax.month)+1
-            end = 12*(dmax.year-omin.year)+(dmax.month-omin.month)+1
             step = {'Y': 12, 'Q': 3, 'M': 1}[obj.development_grain]
-            rng = range(start, start+end, step)
             mtrx = \
                 12*(obj.ddims.to_timestamp(how='e').year.values[np.newaxis] -
                     obj.origin.to_timestamp(how='s')
@@ -231,6 +224,7 @@ class Triangle(TriangleBase):
                    (obj.ddims.to_timestamp(how='e').month.values[np.newaxis] -
                     obj.origin.to_timestamp(how='s')
                        .month.values[:, np.newaxis]) + 1
+            rng = range(mtrx[mtrx > 0].min(), mtrx.max()+1, step)
         else:
             rng = obj.valuation.unique().sort_values()
         for item in rng:
@@ -255,7 +249,7 @@ class Triangle(TriangleBase):
             len(obj.origin))[-1]
         obj.values = obj.values[..., keep]
         if kind == 'val_to_dev':
-            obj.ddims = np.array([item for item in range(start, start+end, step)])
+            obj.ddims = np.array([item for item in rng])
             obj.ddims = obj.ddims[keep]
             obj.valuation = obj._valuation_triangle()
         else:
@@ -308,7 +302,6 @@ class Triangle(TriangleBase):
             self.origin_grain = new_tri.origin_grain = origin_grain
             self.development_grain = new_tri.development_grain = development_grain
             new_tri.values[new_tri.values == 0] = np.nan
-
             if hasattr(self, '_nan_triangle'):
                 # Force update on _nan_triangle at next access.
                 del self._nan_triangle

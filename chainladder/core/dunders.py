@@ -2,18 +2,23 @@ import pandas as pd
 import numpy as np
 import copy
 
+
 class TriangleDunders:
+    ''' Class that implements the dunder (double underscore) methods for the
+        Triangle class
+    '''
     def _validate_arithmetic(self, other):
+        ''' Common functionality BEFORE arithmetic operations '''
         obj = copy.deepcopy(self)
         other = other if type(other) in [int, float] else copy.deepcopy(other)
         ddims = None
         odims = None
         if type(other) not in [int, float, np.float64, np.int64]:
             if len(self.vdims) != len(other.vdims):
-                raise ValueError('Triangles must have the same number of \
-                                  columns')
+                raise ValueError('Triangles must have the same number of ' +
+                                 'columns')
             if len(self.kdims) != len(other.kdims):
-                raise ValueError('Triangles must have the same number of',
+                raise ValueError('Triangles must have the same number of ' +
                                  'index')
             if len(self.vdims) == 1:
                 other.vdims = np.array([None])
@@ -35,6 +40,7 @@ class TriangleDunders:
         return obj, other
 
     def _arithmetic_cleanup(self, obj):
+        ''' Common functionality AFTER arithmetic operations '''
         obj.values = obj.values * self.expand_dims(obj.nan_triangle())
         obj.values[obj.values == 0] = np.nan
         obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims

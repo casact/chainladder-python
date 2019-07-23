@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
-import copy
 import joblib
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
-from chainladder.core.pandas import TrianglePandas, TriangleGroupBy
+from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import Ilocation, Location, TriangleSlicer
 
 
@@ -15,33 +14,31 @@ class IO:
     def to_pickle(self, path, protocol=None):
         joblib.dump(self, filename=path, protocol=protocol)
 
-class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, TrianglePandas):
+    def __contains__(self, value):
+        if self.__dict__.get(value, None) is None:
+            return False
+        return True
+
+
+class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
+                   TriangleDunders, TrianglePandas):
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None):
-        if data is None and origin is None and development is None and \
-           columns is None and index is None:
-            return
-        # Sanitize Inputs
-        columns = [columns] if type(columns) is str else columns
-        origin = [origin] if type(origin) is str else origin
-        if development is not None and type(development) is str:
-            development = [development]
-        key_gr = origin if not development else origin+development
+        # Sanitize inputs
+        index, columns, origin, development = self.str_to_list(
+            index, columns, origin, development)
+        key_gr = origin + self.flatten(development, index)
+        # Aggregate data
+        data_agg = data.groupby(key_gr).sum().reset_index()
         if not index:
             index = ['Total']
-            data_agg = data.groupby(key_gr).sum().reset_index()
             data_agg[index[0]] = 'Total'
-        else:
-            index = [index] if type(index) is str else index
-            data_agg = data.groupby(key_gr+index) \
-                           .sum().reset_index()
-        # Convert origin/development to dates
+        # Initialize origin and development dates and grains
         origin_date = TriangleBase.to_datetime(data_agg, origin)
         self.origin_grain = TriangleBase._get_grain(origin_date)
-        # These only work with valuation periods and not lags
         if development:
-            development_date = TriangleBase.to_datetime(data_agg, development,
-                                                        period_end=True)
+            development_date = TriangleBase.to_datetime(
+                data_agg, development, period_end=True)
             self.development_grain = TriangleBase._get_grain(development_date)
             col = 'development'
         else:
@@ -50,7 +47,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
             col = None
         # Prep the data for 4D Triangle
         data_agg = self._get_axes(data_agg, index, columns,
-                                 origin_date, development_date)
+                                  origin_date, development_date)
         data_agg = pd.pivot_table(data_agg, index=index+['origin'],
                                   columns=col, values=columns,
                                   aggfunc='sum')
@@ -65,7 +62,6 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
         else:
             self.ddims = np.array([None])
             self.vdims = np.array(data_agg.columns.unique())
-        self.ddims = self.ddims
         self.valuation_date = development_date.max()
         self.key_labels = index
         self.iloc, self.loc = Ilocation(self), Location(self)
@@ -81,19 +77,12 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
         self.nan_override = False
         self.valuation = self._valuation_triangle()
 
-    # ---------------------------------------------------------------- #
-    # ----------------------- Class Properties ----------------------- #
-    # ---------------------------------------------------------------- #
     def _len_check(self, x, y):
         if len(x) != len(y):
-            raise ValueError('Length mismatch: Expected axis has ',
-                             '{} elements, new values have'.format(len(x)),
-                             ' {} elements'.format(len(y)))
-
-
-    # ---------------------------------------------------------------- #
-    # ------------------- Data Ingestion Functions ------------------- #
-    # ---------------------------------------------------------------- #
+            raise ValueError(
+                'Length mismatch: Expected axis has ',
+                '{} elements, new values have'.format(len(x)),
+                ' {} elements'.format(len(y)))
 
     def _get_date_axes(self, origin_date, development_date):
         ''' Function to find any missing origin dates or development dates that
@@ -103,27 +92,26 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
                                 origin_grain, development_grain):
             ''' Determines origin/development combinations in full.  Useful for
                 when the triangle has holes in it. '''
-            origin_unique = \
-                pd.period_range(start=origin_date.min(),
-                                end=origin_date.max(),
-                                freq=origin_grain).to_timestamp()
-            development_unique = \
-                pd.period_range(start=origin_date.min(),
-                                end=development_date.max(),
-                                freq=development_grain).to_timestamp()
+            origin_unique = pd.period_range(
+                start=origin_date.min(),
+                end=origin_date.max(),
+                freq=origin_grain).to_timestamp()
+            development_unique = pd.period_range(
+                start=origin_date.min(),
+                end=development_date.max(),
+                freq=development_grain).to_timestamp()
             development_unique = TriangleBase._period_end(development_unique)
             # Let's get rid of any development periods before origin periods
-            cart_prod = TriangleBase._cartesian_product(origin_unique,
-                                                       development_unique)
+            cart_prod = TriangleBase._cartesian_product(
+                origin_unique, development_unique)
             cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
             return pd.DataFrame(cart_prod, columns=['origin', 'development'])
-
-        cart_prod_o = \
-            complete_date_range(pd.Series(origin_date.min()), development_date,
-                                self.origin_grain, self.development_grain)
-        cart_prod_d = \
-            complete_date_range(origin_date, pd.Series(origin_date.max()),
-                                self.origin_grain, self.development_grain)
+        cart_prod_o = complete_date_range(
+            pd.Series(origin_date.min()), development_date,
+            self.origin_grain, self.development_grain)
+        cart_prod_d = complete_date_range(
+            origin_date, pd.Series(origin_date.max()),
+            self.origin_grain, self.development_grain)
         cart_prod_t = pd.DataFrame({'origin': origin_date,
                                    'development': development_date})
         cart_prod = cart_prod_o.append(cart_prod_d, sort=True) \
@@ -140,19 +128,15 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
         kdims = data_agg[groupby].drop_duplicates()
         kdims['key'] = date_axes['key'] = 1
         all_axes = pd.merge(date_axes, kdims, on='key').drop('key', axis=1)
-        data_agg = \
-            all_axes.merge(data_agg, how='left',
-                           left_on=['origin', 'development'] + groupby,
-                           right_on=[origin_date, development_date] + groupby) \
-                    .fillna(0)[['origin', 'development'] + groupby + columns]
-        data_agg['development'] = \
-            TriangleBase.development_lag(data_agg['origin'],
-                                         data_agg['development'])
+        data_agg = all_axes.merge(
+            data_agg, how='left',
+            left_on=['origin', 'development'] + groupby,
+            right_on=[origin_date, development_date] + groupby).fillna(0)
+        data_agg = data_agg[['origin', 'development'] + groupby + columns]
+        data_agg['development'] = TriangleBase.development_lag(
+            data_agg['origin'], data_agg['development'])
         return data_agg
 
-    # ---------------------------------------------------------------- #
-    # ------------------- Class Utility Functions -------------------- #
-    # ---------------------------------------------------------------- #
     def nan_triangle(self):
         '''Given the current triangle shape and grain, it determines the
            appropriate placement of NANs in the triangle for future valuations.
@@ -221,8 +205,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
         return lowest_grain
 
     def expand_dims(self, tri_2d):
-        '''Expands from one 2D triangle to full 4D object
-        '''
+        '''Expands from one 2D triangle to full 4D object'''
         k, v = len(self.kdims), len(self.vdims)
         tri_3d = np.repeat(tri_2d[np.newaxis], v, axis=0)
         return np.repeat(tri_3d[np.newaxis], k, axis=0)
@@ -263,21 +246,20 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
         ''' For tabular format, this will convert the origin/development
             difference to a development lag '''
         year_diff = development.dt.year - origin.dt.year
+        quarter_diff = development.dt.quarter - origin.dt.quarter
+        month_diff = development.dt.month - origin.dt.month
         if np.all(origin != development):
             development_grain = TriangleBase._get_grain(development)
         else:
             development_grain = 'M'
-        if development_grain == 'Y':
-            return year_diff + 1
-        if development_grain == 'Q':
-            quarter_diff = development.dt.quarter - origin.dt.quarter
-            return year_diff * 4 + quarter_diff + 1
-        if development_grain == 'M':
-            month_diff = development.dt.month - origin.dt.month
-            return year_diff * 12 + month_diff + 1
+        diffs = dict(Y=year_diff + 1,
+                     Q=year_diff * 4 + quarter_diff + 1,
+                     M=year_diff * 12 + month_diff + 1)
+        return diffs[development_grain]
 
     @staticmethod
     def _period_end(array):
+        ''' private method that returns end of period '''
         if type(array) is not pd.DatetimeIndex:
             array_lookup = len(set(array.dt.month))
         else:
@@ -289,6 +271,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
 
     @staticmethod
     def _get_grain(array):
+        ''' does this fail on new books of business? '''
         return {1: 'Y', 4: 'Q', 12: 'M'}[len(array.dt.month.unique())]
 
     @staticmethod
@@ -307,8 +290,8 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
         orig = self.dev_to_val() if dev_mode else self
         o_dt = pd.Series(self.odims)
         if origin_grain == 'Q':
-            o = np.array(pd.to_datetime(o_dt.dt.year.astype(str) + 'Q' +
-                                        o_dt.dt.quarter.astype(str)))
+            o = np.array(pd.to_datetime(
+                o_dt.dt.year.astype(str) + 'Q' + o_dt.dt.quarter.astype(str)))
         elif origin_grain == 'Y':
             o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
         else:
@@ -333,3 +316,13 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer, TriangleDunders, Triangl
                 np.repeat(orig.development.values[np.newaxis],
                           len(orig.origin)).reshape(1, -1).flatten())
         return orig
+
+    def str_to_list(self, *args):
+        return tuple([arg] if type(arg) is str else arg for arg in args)
+
+    def flatten(self, *args):
+        return_list = []
+        for item in args:
+            if item:
+                return_list = return_list + item
+        return return_list

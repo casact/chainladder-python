@@ -1,4 +1,4 @@
-from chainladder.methods import MethodBase, Benktander
+from chainladder.methods import Benktander
 
 
 class BornhuetterFerguson(Benktander):
@@ -64,6 +64,6 @@ class BornhuetterFerguson(Benktander):
         self : object
             Returns the instance itself.
         """
-        self.n_iters=1
+        self.n_iters = 1
         super().fit(X, y, sample_weight)
         return self

@@ -1,7 +1,7 @@
-from chainladder.methods.base import MethodBase
-from chainladder.methods.chainladder import Chainladder
-from chainladder.methods.mack import MackChainladder
-from chainladder.methods.benktander import Benktander
-from chainladder.methods.bornferg import BornhuetterFerguson
-from chainladder.methods.capecod import CapeCod
-from chainladder.methods.clark_capecod import ClarkCapeCod
+from chainladder.methods.base import MethodBase # noqa (API import)
+from chainladder.methods.chainladder import Chainladder # noqa (API import)
+from chainladder.methods.mack import MackChainladder # noqa (API import)
+from chainladder.methods.benktander import Benktander # noqa (API import)
+from chainladder.methods.bornferg import BornhuetterFerguson # noqa (API import)
+from chainladder.methods.capecod import CapeCod # noqa (API import)
+from chainladder.methods.clark_capecod import ClarkCapeCod # noqa (API import)

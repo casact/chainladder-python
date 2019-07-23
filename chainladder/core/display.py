@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+
 class TriangleDisplay():
     def __repr__(self):
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
@@ -11,8 +12,8 @@ class TriangleDisplay():
                    '\nGrain:     ' + 'O' + self.origin_grain + \
                                      'D' + self.development_grain + \
                    '\nShape:     ' + str(self.shape) + \
-                   '\nindex:      ' + str(self.key_labels) + \
-                   '\ncolumns:    ' + str(list(self.vdims))
+                   '\nIndex:      ' + str(self.key_labels) + \
+                   '\nColumns:    ' + str(list(self.vdims))
             return data
 
     def _repr_html_(self):
@@ -55,8 +56,10 @@ class TriangleDisplay():
         else:
             origin = pd.Series(self.odims)
         out = pd.DataFrame(self.values[0, 0], index=origin, columns=self.ddims)
-        if str(out.columns[0]).find('-') > 0:
-            out.columns = [item.replace('-9999','-Ult') for item in out.columns]
+        if str(out.columns[0]).find('-') > 0 and not \
+           isinstance(out.columns, pd.PeriodIndex):
+            out.columns = [item.replace('-9999', '-Ult')
+                           for item in out.columns]
             if len(out.drop_duplicates()) != 1:
                 return out
             else:
