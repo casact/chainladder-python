@@ -15,19 +15,17 @@ class TriangleGroupBy:
             new_index = pd.Index(['All'], name='All')
         groups = [indices[item] for item in sorted(list(indices.keys()))]
         v2_len = len(groups)
-        old_k_by_new_k = np.zeros((v1_len, v2_len))
+        old_k_by_new_k = np.zeros((v1_len, v2_len), dtype='int8')
         for num, item in enumerate(groups):
             old_k_by_new_k[:, num][item] = 1
         old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
         for i in range(3):
             old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
-        new_tri = obj.values
-        new_tri = np.repeat(new_tri[np.newaxis], v2_len, 0)
-        obj.values = new_tri
         obj.kdims = np.array(list(new_index))
         obj.key_labels = list(new_index.names)
         self.obj = obj
         self.old_k_by_new_k = old_k_by_new_k
+
 
     def quantile(self, q, axis=1, *args, **kwargs):
         """ Return values at the given quantile over requested axis.  If Triangle is
@@ -174,14 +172,17 @@ def add_triangle_agg_func(cls, k, v):
 def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
-        x = self.obj.values*self.old_k_by_new_k
+        obj = copy.deepcopy(self.obj)
+        x = np.repeat(self.obj.values[np.newaxis],
+                      self.old_k_by_new_k.shape[0], 0) * \
+            self.old_k_by_new_k
         ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
         x = np.where(ignore_vector, 0, x)
-        self.obj.values = \
+        obj.values = \
             getattr(np, v)(x, axis=1, *args, **kwargs)
-        self.obj.values[self.obj.values == 0] = np.nan
-        return self.obj
+        obj.values[obj.values == 0] = np.nan
+        return obj
     set_method(cls, agg_func, k)
 
 

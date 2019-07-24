@@ -67,7 +67,9 @@ def test_multilevel_index_groupby_sum1():
 
 
 def test_multilevel_index_groupby_sum2():
-    assert tri.groupby('GRNAME').sum().sum() == tri.groupby('LOB').sum().sum()
+    a = tri.groupby('GRNAME').sum().sum()
+    b = tri.groupby('LOB').sum().sum()
+    assert a == b
 
 
 def test_boolean_groupby_eq_groupby_loc():
