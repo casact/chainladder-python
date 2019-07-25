@@ -10,7 +10,7 @@ import os
 from chainladder.core.triangle import Triangle
 
 
-def load_dataset(key):
+def load_dataset(key, *args, **kwargs):
     """ Function to load datasets included in the chainladder package.
 
         Arguments:
@@ -40,7 +40,7 @@ def load_dataset(key):
         columns = ['loss', 'exposure']
     df = pd.read_csv(os.path.join(path, 'data', key.lower() + '.csv'))
     return Triangle(df, origin=origin, development=development,
-                    columns=columns, index=index)
+                    columns=columns, index=index, *args, **kwargs)
 
 
 def read_pickle(path):

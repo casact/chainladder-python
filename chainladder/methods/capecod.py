@@ -81,15 +81,16 @@ class CapeCod(MethodBase):
             np.sum(weighted_exposure, development)
         ult.values = apriori[..., np.newaxis]
         ult.ddims = np.array(['Apriori'])
-        apriori_ = copy.deepcopy(ult)
+        apriori_ = copy.copy(ult)
         detrended_ultimate = apriori_.values/trend_array
-        detrended_apriori_ = copy.deepcopy(obj)
+        detrended_apriori_ = copy.copy(obj)
         detrended_apriori_.values = detrended_ultimate
         ibnr = detrended_ultimate*(1-1/cdf)*exposure
         ult.values = latest + ibnr
         ult.ddims = np.array(['Ultimate'])
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          len_orig)
+        apriori_.set_slicers()
         return ult, apriori_, detrended_apriori_
 
     def predict(self, X, sample_weight):

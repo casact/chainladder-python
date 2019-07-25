@@ -11,7 +11,7 @@ class MethodBase(BaseEstimator, IO):
         pass
 
     def validate_X(self, X):
-        obj = copy.deepcopy(X)
+        obj = copy.copy(X)
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
@@ -55,8 +55,8 @@ class MethodBase(BaseEstimator, IO):
         X_new: Triangle
 
         """
-        obj = copy.deepcopy(self)
-        obj.X_ = copy.deepcopy(X)
+        obj = copy.copy(self)
+        obj.X_ = copy.copy(X)
         obj.sample_weight = sample_weight
         if np.unique(self.cdf_.values, axis=-2).shape[-2] == 1:
             obj.cdf_.values = np.repeat(
@@ -68,11 +68,13 @@ class MethodBase(BaseEstimator, IO):
             obj.cdf_.odims = obj.ldf_.odims = obj.X_.odims
             obj.cdf_.valuation = obj.ldf_.valuation = \
                 Development().fit(X).cdf_.valuation
+        obj.cdf_.set_slicers()
+        obj.ldf_.set_slicers()
         return obj
 
     @property
     def full_expectation_(self):
-        obj = copy.deepcopy(self.X_)
+        obj = copy.copy(self.X_)
         obj.values = (self.ultimate_.values /
                       np.unique(self.cdf_.values, axis=-2))
         obj.values = np.concatenate((obj.values,
@@ -81,6 +83,7 @@ class MethodBase(BaseEstimator, IO):
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
+        obj.set_slicers()
         return obj
 
     def ultimate_(self):
@@ -88,13 +91,14 @@ class MethodBase(BaseEstimator, IO):
 
     @property
     def ibnr_(self):
-        obj = copy.deepcopy(self.ultimate_)
+        obj = copy.copy(self.ultimate_)
         obj.values = self.ultimate_.values-self.X_.latest_diagonal.values
         obj.ddims = ['IBNR']
+        obj.set_slicers()
         return obj
 
     def _get_full_triangle_(self):
-        obj = copy.deepcopy(self.X_)
+        obj = copy.copy(self.X_)
         w = 1-np.nan_to_num(obj.nan_triangle())
         extend = len(self.ldf_.ddims) - len(self.X_.ddims)
         ones = np.ones((w.shape[-2], extend))
@@ -112,4 +116,5 @@ class MethodBase(BaseEstimator, IO):
             np.concatenate((np.nan_to_num(obj.values), zeros), -1) + e_tri
         obj.values = np.concatenate((obj.values,
                                      self.ultimate_.values), 3)
+        obj.set_slicers()
         return obj

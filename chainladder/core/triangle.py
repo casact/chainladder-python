@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import copy
 
+
 from chainladder.core.base import TriangleBase
 
 
@@ -341,3 +342,4 @@ class Triangle(TriangleBase):
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj
+    

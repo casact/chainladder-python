@@ -147,3 +147,6 @@ class TriangleSlicer:
             del obj._nan_triangle
             obj._nan_triangle = obj.nan_triangle()
         return obj
+
+    def set_slicers(self):
+        self.iloc, self.loc = Ilocation(self), Location(self)

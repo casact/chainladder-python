@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy as np
 import joblib
+from sys import getsizeof
+
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
 from chainladder.core.pandas import TrianglePandas
-from chainladder.core.slice import Ilocation, Location, TriangleSlicer
+from chainladder.core.slice import TriangleSlicer
 
 
 class IO:
@@ -19,11 +21,14 @@ class IO:
             return False
         return True
 
+    @property
+    def memory_usage(self):
+        return sum([getsizeof(v) for k, v in self.__dict__.items()])
 
 class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas):
     def __init__(self, data=None, origin=None, development=None,
-                 columns=None, index=None):
+                 columns=None, index=None, *args, **kwargs):
         # Sanitize inputs
         index, columns, origin, development = self.str_to_list(
             index, columns, origin, development)
@@ -64,7 +69,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             self.vdims = np.array(data_agg.columns.unique())
         self.valuation_date = development_date.max()
         self.key_labels = index
-        self.iloc, self.loc = Ilocation(self), Location(self)
+        self.set_slicers()
         # Create 4D Triangle
         triangle = \
             np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
@@ -72,7 +77,8 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
         triangle = np.swapaxes(triangle, 1, 2)
         # Set all 0s to NAN for nansafe ufunc arithmetic
         triangle[triangle == 0] = np.nan
-        self.values = triangle
+
+        self.values = np.array(triangle, dtype=kwargs.get('dtype', None))
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
@@ -147,7 +153,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
            self.nan_override:
             # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
             # and does not need nan overrides
-            return np.ones(self.values.shape[2:])
+            return np.ones(self.values.shape[2:], dtype='float16')
         if len(self.valuation) != len(self.odims)*len(self.ddims) or not \
            hasattr(self, '_nan_triangle'):
             self.valuation = self._valuation_triangle()
@@ -155,7 +161,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             val_array = val_array.to_timestamp().values.reshape(self.shape[-2:], order='f')
             nan_triangle = np.array(
                 pd.DataFrame(val_array) > self.valuation_date)
-            nan_triangle = np.where(nan_triangle, np.nan, 1)
+            nan_triangle = np.array(np.where(nan_triangle, np.nan, 1), dtype='float16')
             self._nan_triangle = nan_triangle
         return self._nan_triangle
 
@@ -171,8 +177,9 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain())
         special_cases = dict(Ultimate='2262-03-01', Latest=self.valuation_date)
         if ddims[0] in special_cases.keys():
-            return pd.DatetimeIndex([pd.to_datetime(special_cases[ddims[0]])] *
-                                    len(self.origin)).to_period(self._lowest_grain())
+            return pd.DatetimeIndex(
+                [pd.to_datetime(special_cases[ddims[0]])] *
+                len(self.origin)).to_period(self._lowest_grain())
         if type(ddims[0]) is np.str_:
             ddims = [int(item[:item.find('-'):]) for item in ddims]
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
@@ -183,16 +190,16 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
         # Limit origin to valuation date
         origin[origin > self.valuation_date] = self.valuation_date
         next_development = origin+pd.DateOffset(days=-1, months=ddims[0])
-        val_array = np.expand_dims(np.array(next_development), -1)
+        val_array = np.array(next_development)[..., np.newaxis]
         for item in ddims[1:]:
             if item == 9999:
                 next_development = pd.Series([pd.to_datetime('2262-03-01')] *
                                              len(origin))
-                next_development = np.expand_dims(np.array(
-                    next_development), -1)
+                next_development = np.array(next_development)[..., np.newaxis]
             else:
-                next_development = np.expand_dims(
-                    np.array(origin+pd.DateOffset(days=-1, months=item)), -1)
+                next_development = np.array(
+                    origin+pd.DateOffset(days=-1, months=item)
+                )[..., np.newaxis]
             val_array = np.concatenate((val_array, next_development), -1)
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         return val_array.to_period(self._lowest_grain())
@@ -206,9 +213,8 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
 
     def expand_dims(self, tri_2d):
         '''Expands from one 2D triangle to full 4D object'''
-        k, v = len(self.kdims), len(self.vdims)
-        tri_3d = np.repeat(tri_2d[np.newaxis], v, axis=0)
-        return np.repeat(tri_3d[np.newaxis], k, axis=0)
+        return np.broadcast_to(
+            tri_2d, (len(self.kdims), len(self.vdims), *tri_2d.shape))
 
     @staticmethod
     def to_datetime(data, fields, period_end=False):
@@ -298,12 +304,12 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             o = self.odims
         o_new = np.unique(o)
         o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
-        o_new = np.repeat(np.expand_dims(o_new, axis=0), len(o), axis=0)
+        o_new = np.repeat(o_new[np.newaxis], len(o), axis=0)
         o_bool = np.repeat((o == o_new)[:, np.newaxis],
                            len(orig.ddims), axis=1)
         o_bool = self.expand_dims(o_bool)
-        new_tri = np.repeat(np.expand_dims(np.nan_to_num(orig.values),
-                            axis=-1), o_bool.shape[-1], axis=-1)
+        new_tri = np.repeat(np.nan_to_num(orig.values)[..., np.newaxis],
+                            o_bool.shape[-1], axis=-1)
         new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
         orig.values = new_tri
         orig.odims = np.unique(o)

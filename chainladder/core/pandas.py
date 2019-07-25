@@ -1,4 +1,4 @@
-import pandas  as pd
+import pandas as pd
 import numpy as np
 import copy
 
@@ -6,7 +6,6 @@ import copy
 class TriangleGroupBy:
     def __init__(self, old_obj, by):
         obj = copy.deepcopy(old_obj)
-        v1_len = len(obj.index.index)
         if by != -1:
             indices = obj.index.groupby(by).indices
             new_index = obj.index.groupby(by).count().index
@@ -14,22 +13,22 @@ class TriangleGroupBy:
             indices = {'All': np.arange(len(obj.index))}
             new_index = pd.Index(['All'], name='All')
         groups = [indices[item] for item in sorted(list(indices.keys()))]
-        v2_len = len(groups)
-        old_k_by_new_k = np.zeros((v1_len, v2_len), dtype='int8')
+        old_k_by_new_k = np.zeros(
+            (len(obj.index.index), len(groups)), dtype='bool')
         for num, item in enumerate(groups):
-            old_k_by_new_k[:, num][item] = 1
+            old_k_by_new_k[:, num][item] = True
         old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
         for i in range(3):
             old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
+        self.old_k_by_new_k = old_k_by_new_k
         obj.kdims = np.array(list(new_index))
         obj.key_labels = list(new_index.names)
         self.obj = obj
-        self.old_k_by_new_k = old_k_by_new_k
-
 
     def quantile(self, q, axis=1, *args, **kwargs):
-        """ Return values at the given quantile over requested axis.  If Triangle is
-        convertible to DataFrame then pandas quantile functionality is used instead.
+        """ Return values at the given quantile over requested axis.  If
+            Triangle is convertible to DataFrame then pandas quantile
+            functionality is used instead.
 
         Parameters
         ----------
@@ -158,6 +157,24 @@ class TrianglePandas:
             self.development = value
         return self
 
+    def astype(self, dtype, inplace=True):
+        '''
+        Copy of the array, cast to a specified type.
+
+        Parameters
+        ----------
+            dtype : str or dtype
+                Typecode or data-type to which the array is cast.
+            copy : bool, optional
+                By default, astype always returns a newly allocated array.
+        Returns
+        -------
+            Triangle as new datatype.
+        '''
+        obj = copy.deepcopy(self) if inplace is True else self
+        obj.values = obj.values.astype(dtype)
+        return obj
+
 
 def add_triangle_agg_func(cls, k, v):
     ''' Aggregate Overrides in Triangle '''
@@ -173,8 +190,9 @@ def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
         obj = copy.deepcopy(self.obj)
-        x = np.repeat(self.obj.values[np.newaxis],
-                      self.old_k_by_new_k.shape[0], 0) * \
+        x = np.broadcast_to(
+            self.obj.values,
+            (self.old_k_by_new_k.shape[0], *self.obj.values.shape)) * \
             self.old_k_by_new_k
         ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]

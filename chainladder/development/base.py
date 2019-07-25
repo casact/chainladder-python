@@ -17,11 +17,12 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, IO):
         if 'ldf_' not in obj:
             return
         else:
-            obj2 = copy.deepcopy(obj.ldf_)
+            obj2 = copy.copy(obj.ldf_)
             cdf_ = np.flip(np.cumprod(np.flip(obj2.values, -1), -1), -1)
             obj2.ddims = [item.replace(item[item.find("-")+1:], '9999')
                           for item in obj2.ddims]
             obj2.values = cdf_
+            obj2.set_slicers()
             return obj2
 
 
@@ -111,15 +112,14 @@ class Development(DevelopmentBase):
         if self.drop_high == self.drop_low == \
            self.drop == self.drop_valuation is None:
             return weight
-        obj = copy.deepcopy(X)
         if self.drop_high is not None:
-            weight = weight*self._drop_hilo('high', obj, link_ratio)
+            weight = weight*self._drop_hilo('high', X, link_ratio)
         if self.drop_low is not None:
-            weight = weight*self._drop_hilo('low', obj, link_ratio)
+            weight = weight*self._drop_hilo('low', X, link_ratio)
         if self.drop is not None:
-            weight = weight*self._drop(obj)
+            weight = weight*self._drop(X)
         if self.drop_valuation is not None:
-            weight = weight*self._drop_valuation(obj)
+            weight = weight*self._drop_valuation(X)
         return weight
 
     def _drop_hilo(self, kind, X, link_ratio):
@@ -204,8 +204,9 @@ class Development(DevelopmentBase):
             val = np.repeat(val[np.newaxis], tri_array.shape[i], axis=0)
         val = np.nan_to_num(val * (y * 0 + 1))
         link_ratio = np.divide(y, x, where=np.nan_to_num(x) != 0)
-        self.w_ = self._assign_n_periods_weight(X) * \
-                  self._drop_adjustment(X, link_ratio)
+        self.w_ = np.array(self._assign_n_periods_weight(X) *
+                           self._drop_adjustment(X, link_ratio),
+                           dtype='float16')
         w = self.w_ / (x**(val))
         params = WeightedRegression(axis=2, thru_orig=True).fit(x, y, w)
         if self.n_periods != 1:
@@ -241,16 +242,18 @@ class Development(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.deepcopy(X)
-        for item in ['std_err_', 'cdf_', 'ldf_', 'average_',
-                     'sigma_', 'w_', 'sigma_interpolation']:
+        X_new = copy.copy(X)
+        triangles = ['std_err_', 'cdf_', 'ldf_', 'sigma_']
+        for item in triangles + ['average_', 'w_', 'sigma_interpolation']:
             setattr(X_new, item, getattr(self, item))
+        X_new.set_slicers()
         return X_new
 
     def _param_property(self, X, params, idx):
-        obj = copy.deepcopy(X)
+        obj = copy.copy(X)
         obj.values = np.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
+        obj.set_slicers()
         return obj

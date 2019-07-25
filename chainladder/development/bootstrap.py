@@ -60,7 +60,7 @@ class BootstrapODPSample(DevelopmentBase):
     def fit(self, X, y=None, sample_weight=None):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
-        obj = copy.deepcopy(X)
+        obj = copy.copy(X)
         self.w_ = X.nan_triangle() if not self.drop else self._drop(X)
         lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
         if type(self.drop) is not list and self.drop is not None:
@@ -122,9 +122,10 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_triangles = (resampled_residual*np.sqrt(abs(b))+b).cumsum(2)
         resampled_triangles = np.swapaxes(
             np.expand_dims(resampled_triangles, 0), 0, 1)
-        obj = copy.deepcopy(X)
+        obj = copy.copy(X)
         obj.kdims = np.arange(self.n_sims)
         obj.values = resampled_triangles
+        obj.set_slicers()
         return obj, scale_phi
 
         # Shapland cites Verral and England 2002 in using gamma as a proxy for
@@ -179,12 +180,11 @@ class BootstrapODPSample(DevelopmentBase):
         pass
 
     def _drop(self, X):
-        obj = copy.deepcopy(X)
         drop = [self.drop] if type(self.drop) is not list else self.drop
-        arr = obj.nan_triangle()
+        arr = X.nan_triangle()
         for item in drop:
-            arr[np.where(obj.origin == item[0])[0][0],
-                np.where(obj.development == item[1])[0][0]] = 0
+            arr[np.where(X.origin == item[0])[0][0],
+                np.where(X.development == item[1])[0][0]] = 0
         return arr
 
     def transform(self, X):
@@ -200,7 +200,7 @@ class BootstrapODPSample(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.deepcopy(X)
+        X_new = copy.copy(X)
         X_new = self.resampled_triangles_
         X_new.scale_ = self.scale_
         return X_new

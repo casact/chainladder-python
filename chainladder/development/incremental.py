@@ -69,7 +69,7 @@ class IncrementalAdditive(DevelopmentBase):
             y_ = np.nansum(w_*x.values*sample_weight.values, axis=-2)
             y_ = y_ / np.nansum(w_*sample_weight.values, axis=-2)
         y_ = np.repeat(np.expand_dims(y_, -2), len(x.odims), -2)
-        obj = copy.deepcopy(x)
+        obj = copy.copy(x)
         keeps = 1-np.nan_to_num(x.nan_triangle()) + \
             np.nan_to_num(
                 x.get_latest_diagonal(compress=False).values[0, 0, ...]*0+1)
@@ -80,6 +80,7 @@ class IncrementalAdditive(DevelopmentBase):
             np.nan_to_num((X.cum_to_incr()/sample_weight).values)
         obj.values[obj.values == 0] = np.nan
         obj.nan_override = True
+        obj.set_slicers()
         self.incremental_ = obj*sample_weight
         self.ldf_ = obj.incr_to_cum().link_ratio
         self.cdf_ = DevelopmentBase._get_cdf(self.ldf_)
@@ -99,7 +100,7 @@ class IncrementalAdditive(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.deepcopy(X)
+        X_new = copy.copy(X)
         for item in ['incremental_', 'cdf_', 'ldf_', 'sigma_', 'std_err_']:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new

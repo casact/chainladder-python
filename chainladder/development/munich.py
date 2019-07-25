@@ -44,7 +44,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
         """
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
-        obj = copy.deepcopy(X)
+        obj = copy.copy(X)
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         self.p_to_i_X_ = self._get_p_to_i_object(obj)
@@ -162,7 +162,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
         ''' needs to be an attribute that gets assigned.  requires we overwrite
             the cdf and ldf methods with
         '''
-        obj = copy.deepcopy(X.cdf_)
+        obj = copy.copy(X.cdf_)
         cdf_triangle = self.munich_full_triangle_
         cdf_triangle = cdf_triangle[..., -1:]/cdf_triangle[..., :-1]
         paid = list(self.paid_to_incurred.keys())
@@ -174,6 +174,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
             idx = np.where(X.cdf_.vdims == item)[0][0]
             obj.values[:, idx:idx+1, ...] = cdf_triangle[1, :, n:n+1, ...]
         obj.nan_override = True
+        obj.set_slicers()
         return obj
 
     @property
@@ -181,6 +182,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
         ldf_tri = self.cdf_.values.copy()
         ldf_tri = np.concatenate((ldf_tri, np.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1]/ldf_tri[..., 1:]
-        obj = copy.deepcopy(self.cdf_)
+        obj = copy.copy(self.cdf_)
         obj.values = ldf_tri
+        obj.set_slicers
         return obj

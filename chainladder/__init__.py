@@ -1,8 +1,8 @@
-from chainladder.utils import *
-from chainladder.core import *
-from chainladder.development import *
-from chainladder.tails import *
-from chainladder.methods import *
-from chainladder.workflow import *
+from chainladder.utils import * # noqa (API Import)
+from chainladder.core import * # noqa (API Import)
+from chainladder.development import * # noqa (API Import)
+from chainladder.tails import * # noqa (API Import)
+from chainladder.methods import * # noqa (API Import)
+from chainladder.workflow import * # noqa (API Import)
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
