@@ -1,4 +1,4 @@
-rpy2
+rpy2=2.8
 tzlocal
 libiconv
 r-nloptr
