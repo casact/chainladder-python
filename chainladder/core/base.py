@@ -28,7 +28,8 @@ class IO:
 class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas):
     def __init__(self, data=None, origin=None, development=None,
-                 columns=None, index=None, *args, **kwargs):
+                 columns=None, index=None, origin_format=None,
+                 development_format=None, *args, **kwargs):
         # Sanitize inputs
         index, columns, origin, development = self.str_to_list(
             index, columns, origin, development)
@@ -39,11 +40,13 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             index = ['Total']
             data_agg[index[0]] = 'Total'
         # Initialize origin and development dates and grains
-        origin_date = TriangleBase.to_datetime(data_agg, origin)
+        origin_date = TriangleBase.to_datetime(
+            data_agg, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
         if development:
             development_date = TriangleBase.to_datetime(
-                data_agg, development, period_end=True)
+                data_agg, development, period_end=True,
+                format=development_format)
             self.development_grain = TriangleBase._get_grain(development_date)
             col = 'development'
         else:
@@ -217,17 +220,16 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             tri_2d, (len(self.kdims), len(self.vdims), *tri_2d.shape))
 
     @staticmethod
-    def to_datetime(data, fields, period_end=False):
+    def to_datetime(data, fields, period_end=False, format=None):
         '''For tabular form, this will take a set of data
-        column(s) and return a single date array.
+        column(s) and return a single date array.  This function heavily
+        relies on pandas, but does two additional things:
+        1. It extends the automatic inference using date_inference_list
+        2. it allows pd_to_datetime on a set of columns
         '''
         # Concat everything into one field
-        if len(fields) > 1:
-            target_field = pd.Series(index=data.index).fillna('')
-            for item in fields:
-                target_field = target_field + data[item].astype(str)
-        else:
-            target_field = data[fields[0]]
+        target_field = data[fields].astype(str).apply(
+            lambda x: '-'.join(x), axis=1)
         # pandas is not good at inferring YYYYMM format so trying that first
         # and if it fails, move on to how pandas infers things.
         datetime_arg = target_field.unique()
@@ -235,6 +237,9 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             [{'arg': datetime_arg, 'format': '%Y%m'},
              {'arg': datetime_arg, 'format': '%Y'},
              {'arg': datetime_arg, 'infer_datetime_format': True}]
+        if format is not None:
+            date_inference_list = [{'arg': datetime_arg, 'format': format}] + \
+                                  date_inference_list
         for item in date_inference_list:
             try:
                 arr = dict(zip(datetime_arg, pd.to_datetime(**item)))

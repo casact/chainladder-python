@@ -4,6 +4,7 @@ from sklearn.pipeline import Pipeline as PipelineSL
 from chainladder.core import IO
 import copy
 import pandas as pd
+import json
 
 class GridSearch(BaseEstimator):
     """Exhaustive search over specified parameter values for an estimator.
@@ -119,4 +120,17 @@ class Pipeline(PipelineSL, IO):
     named_steps : bunch object, a dictionary with attribute access
         Read-only attribute to access any step parameter by user given name.
         Keys are step names and values are steps parameters."""
-    pass
+
+    def to_json(self):
+        return json.dumps(
+            {item[0]: {'params': item[1].get_params(),
+                       '__class__': item[1].__class__.__name__}
+             for item in self.steps})
+
+    def from_json(self, json_str):
+        import chainladder as cl
+        self = Pipeline(
+            steps=[(k, cl.__dict__[v['__class__']]().set_params(**v['params']))
+                   for k,v in json.loads(json_str).items()]
+        )
+        return self

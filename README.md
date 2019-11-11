@@ -16,6 +16,9 @@ another API.
 Please visit the [Documentation](https://chainladder-python.readthedocs.io/en/latest/) page for examples, how-tos, and source
 code documentation.
 
+## Have a question?
+Feel free to reach out on [Gitter](https://gitter.im/chainladder-python/community).
+
 ## Installation
 To install using pip:
 `pip install chainladder`
@@ -25,4 +28,3 @@ Alternatively, install directly from github:
 
 Note: This package requires Python 3.5 and later, numpy 1.12.0 and later,
 pandas 0.23.0 and later, scikit-learn 0.18.0 and later.
-
