@@ -76,7 +76,7 @@ class BootstrapODPSample(DevelopmentBase):
         exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
             obj.X_.nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)
-        self.hat_ = self._get_hat(X, exp_incr_triangle)
+        self.hat_ = self._get_hat(X, exp_incr_triangle) if self.hat_adj else None 
         self.resampled_triangles_, self.scale_ = \
             self._get_simulation(X, exp_incr_triangle)
         n_obs = np.nansum(self.w_)

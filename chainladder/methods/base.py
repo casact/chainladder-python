@@ -79,7 +79,7 @@ class MethodBase(BaseEstimator, IO):
                       np.unique(self.cdf_.values, axis=-2))
         obj.values = np.concatenate((obj.values,
                                     self.ultimate_.values), -1)
-        ddims = [int(item[item.find('-')+1:]) for item in self.cdf_.ddims]
+        ddims = [int(item[item.find('-')+1:]) for item in self.ldf_.ddims]
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True

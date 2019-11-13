@@ -19,7 +19,7 @@ else
 
   conda create -q -n chainladder --file ci_scripts/conda_requirements.txt ${PKGS};
   source activate chainladder;
-  conda install -c conda-forge r=3.5.1
+
   conda install -q -c conda-forge codecov;
   conda install -q -c r --file ci_scripts/conda_r_requirements.txt;
 

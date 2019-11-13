@@ -106,3 +106,5 @@ ENV/
 
 # references
 references/
+
+settings.json
