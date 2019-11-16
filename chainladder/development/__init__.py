@@ -2,3 +2,4 @@ from chainladder.development.base import Development, DevelopmentBase # noqa (AP
 from chainladder.development.munich import MunichAdjustment # noqa (API import)
 from chainladder.development.incremental import IncrementalAdditive # noqa (API import)
 from chainladder.development.bootstrap import BootstrapODPSample # noqa (API import)
+from chainladder.development.constant import DevelopmentConstant # noqa (API import)
