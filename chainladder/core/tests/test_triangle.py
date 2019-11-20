@@ -36,9 +36,9 @@ def test_repr():
                             cl.load_dataset('raa').to_frame().values)
 
 
-def test_arithmetic_intersection():
+def test_arithmetic_union():
     raa = cl.load_dataset('raa')
-    assert raa[raa.valuation<'1987'].shape == (raa-raa[raa.valuation<'1987']).shape
+    assert raa.shape == (raa-raa[raa.valuation<'1987']).shape
 
 
 def test_to_frame_unusual():

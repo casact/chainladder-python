@@ -189,7 +189,7 @@ class Triangle(TriangleBase):
             new_obj = copy.deepcopy(self)
             return new_obj.cum_to_incr(inplace=True)
 
-    def dev_to_val(self):
+    def dev_to_val(self, inplace=False):
         ''' Converts triangle from a development lag triangle to a valuation
         triangle.
 
@@ -197,10 +197,16 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with valuation periods.
         '''
-        dev_mode = (type(self.ddims) == np.ndarray)
-        return self._val_dev_chg('dev_to_val') if dev_mode else self
+        if inplace:
+            dev_mode = (type(self.ddims) == np.ndarray)
+            self = self._val_dev_chg('dev_to_val') if dev_mode else self
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.dev_to_val(inplace=True)
 
-    def val_to_dev(self):
+
+    def val_to_dev(self, inplace=False):
         ''' Converts triangle from a valuation triangle to a development lag
         triangle.
 
@@ -208,8 +214,12 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with development lags
         '''
-        dev_mode = (type(self.ddims) == np.ndarray)
-        return self if dev_mode else self._val_dev_chg('val_to_dev')
+        if inplace:
+            dev_mode = (type(self.ddims) == np.ndarray)
+            return self if dev_mode else self._val_dev_chg('val_to_dev')
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.val_to_dev(inplace=True)
 
     def _val_dev_chg(self, kind):
         obj = copy.deepcopy(self)
@@ -246,7 +256,7 @@ class Triangle(TriangleBase):
             o_vals = np.append(o_vals, arr, -1)
         obj.values = o_vals[..., 1:]
         keep = np.where(np.sum(
-            (np.nansum(np.nansum(obj.values, 0), 0) == 0), -2) !=
+            (np.nansum(np.nansum(obj.values, 0), 0)), -2) !=
             len(obj.origin))[-1]
         obj.values = obj.values[..., keep]
         if kind == 'val_to_dev':
@@ -256,6 +266,10 @@ class Triangle(TriangleBase):
         else:
             obj.ddims = obj.valuation.unique().sort_values()
             obj.ddims = obj.ddims[keep]
+            obj.values = obj.values[..., :np.where(
+                obj.ddims.to_timestamp() <= obj.valuation_date)[0].max()+1]
+            obj.ddims = obj.ddims[obj.ddims.to_timestamp()
+                                  <= obj.valuation_date]
             obj.valuation = pd.PeriodIndex(
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
@@ -285,15 +299,33 @@ class Triangle(TriangleBase):
         """
         if inplace:
             origin_grain = grain[1:2]
+            origin_grain_dict = {'Y':'%Y', 'Q':'%Y-Q%q','M':'%Y-%m'}
+            dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
+                            'Q': {'Y': 4, 'Q': 1},
+                            'Y': {'Y': 1}}
+            new_o = pd.period_range(
+                start=self.origin.strftime(origin_grain_dict[origin_grain]).min(),
+                end=self.valuation_date, freq=origin_grain)
+            new_d = None
+            if len(new_o)>len(self.odims) and len(self.ddims) > 1:
+                addl_dev = dev_grain_dict[self.development_grain][self.origin_grain]*(len(new_o)-len(self.origin))
+                print(addl_dev)
+                new_d = np.append(
+                    self.ddims, 
+                    [self.ddims[-1] + item * dev_grain_dict['M'][self.development_grain]
+                    for item in range(1, addl_dev + 1)])
+                new_tri = copy.deepcopy(self)
+                new_tri.values = np.zeros((self.shape[0], self.shape[1], len(new_o), len(new_d)))
+                new_tri.ddims = new_d
+                new_tri.odims = np.array(new_o.start_time)
+                new_tri.valuation = new_tri._valuation_triangle()
+                self = self + new_tri
             development_grain = grain[-1]
             if incremental:
                 self.incr_to_cum(inplace=True)
             dev_mode = (type(self.ddims) == np.ndarray)
             new_tri = self._set_ograin(grain=grain, dev_mode=dev_mode)
             # Set development Grain
-            dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
-                              'Q': {'Y': 4, 'Q': 1},
-                              'Y': {'Y': 1}}
             if self.shape[3] != 1:
                 keeps = dev_grain_dict[self.development_grain][development_grain]
                 keeps = np.where(np.arange(new_tri.shape[3]) % keeps == 0)[0]
@@ -311,11 +343,11 @@ class Triangle(TriangleBase):
             self.odims, self.ddims = new_tri.odims, new_tri.ddims
             if incremental:
                 self.cum_to_incr(inplace=True)
-            return self
+            return self if new_d is None else self[self.development<=new_d.max()]
         else:
             new_obj = copy.deepcopy(self)
-            new_obj.grain(grain=grain, incremental=incremental, inplace=True)
-            return new_obj
+            return new_obj.grain(grain=grain, incremental=incremental,
+                                 inplace=True)
 
     def trend(self, trend=0.0):
         """  Allows for the trending of a Triangle object or an origin vector.
@@ -332,6 +364,7 @@ class Triangle(TriangleBase):
             updated with multiplicative trend applied.
         """
         days = np.datetime64(self.valuation_date)
+        print(self.shape[-2] == 1 and self.shape[-1] != 1)
         if self.shape[-2] == 1 and self.shape[-1] != 1:
             trend = (1 + trend)**-(
                 pd.Series(self.origin.values-days).dt.days.value/365.25)

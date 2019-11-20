@@ -22,20 +22,45 @@ class TriangleDunders:
                                  'index')
             if len(self.vdims) == 1:
                 other.vdims = np.array([None])
-            # If broadcasting doesn't work, then try intersecting before
-            # failure
+            # If broadcasting doesn't work, then try union of origin/developments
+            # before failure
             a, b = self.shape[-2:], other.shape[-2:]
-            if not (a[0] == 1 or b[0] == 1 or a[0] == b[0]) and \
+            if not (a[0] == 1 or b[0] == 1 or a[0] == b[0]) or \
                not (a[1] == 1 or b[1] == 1 or a[1] == b[1]):
-                ddims = set(self.ddims).intersection(set(other.ddims))
-                odims = set(self.odims).intersection(set(other.odims))
-                # Need to set string vs int type-casting
-                odims = pd.PeriodIndex(np.array(list(odims)),
-                                       freq=self.origin_grain)
-                obj = obj[obj.origin.isin(odims)][obj.development.isin(ddims)]
-                other = other[other.origin.isin(odims)][other.development.isin(ddims)]
-                obj.odims = np.sort(np.array(list(odims)))
-                obj.ddims = np.sort(np.array(list(ddims)))
+                ddims = pd.concat((pd.Series(self.ddims, index=self.ddims),
+                                pd.Series(other.ddims, index=other.ddims)), axis=1)
+                odims = pd.concat((pd.Series(self.odims, index=self.odims),
+                                pd.Series(other.odims, index=other.odims)), axis=1)
+                other_arr = np.zeros(
+                    (other.shape[0], other.shape[1], len(odims), len(ddims)))
+                other_arr[:] = np.nan
+                ol, oh = np.where(~odims[1].isna().values == 1)[0].min(
+                ), np.where(~odims[1].isna().values == 1)[0].max()+1
+                dl, dh = np.where(~ddims[1].isna().values == 1)[0].min(
+                ), np.where(~ddims[1].isna().values == 1)[0].max()+1
+                other_arr[:, :, ol:oh, dl:dh] = other.values
+
+                obj_arr = np.zeros(
+                    (self.shape[0], self.shape[1], len(odims), len(ddims)))
+                obj_arr[:] = np.nan
+
+                ol, oh = np.where(~odims[0].isna().values == 1)[0].min(
+                ), np.where(~odims[0].isna().values == 1)[0].max()+1
+                dl, dh = np.where(~ddims[0].isna().values == 1)[0].min(
+                ), np.where(~ddims[0].isna().values == 1)[0].max()+1
+                obj_arr[:, :, ol:oh, dl:dh] = self.values
+
+                odims = np.array(odims.index)
+                ddims = np.array(ddims.index)
+                obj.ddims =  ddims
+                obj.odims =  odims
+                obj.values = obj_arr
+                other.values = other_arr
+                obj.set_slicers()
+                obj.valuation = obj._valuation_triangle()
+                if hasattr(obj, '_nan_triangle'):
+                    # Force update on _nan_triangle at next access.
+                    del obj._nan_triangle
             other = other.values
         return obj, other
 
