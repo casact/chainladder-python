@@ -127,6 +127,7 @@ class TrianglePandas:
         x.set_index(return_obj.key_labels, inplace=True)
         return_obj.values = np.append(return_obj.values, other.values, axis=0)
         return_obj.kdims = np.array(x.index.unique())
+        return_obj.set_slicers()
         return return_obj
 
     def rename(self, axis, value):

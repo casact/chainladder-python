@@ -75,6 +75,7 @@ class Triangle(TriangleBase):
     def columns(self, value):
         self._len_check(self.columns, value)
         self.vdims = [value] if type(value) is str else value
+        self.set_slicers()
 
     @property
     def origin(self):
@@ -96,6 +97,7 @@ class Triangle(TriangleBase):
     def development(self, value):
         self._len_check(self.development, value)
         self.ddims = [value] if type(value) is str else value
+
 
     @property
     def latest_diagonal(self):
@@ -364,7 +366,6 @@ class Triangle(TriangleBase):
             updated with multiplicative trend applied.
         """
         days = np.datetime64(self.valuation_date)
-        print(self.shape[-2] == 1 and self.shape[-1] != 1)
         if self.shape[-2] == 1 and self.shape[-1] != 1:
             trend = (1 + trend)**-(
                 pd.Series(self.origin.values-days).dt.days.value/365.25)
