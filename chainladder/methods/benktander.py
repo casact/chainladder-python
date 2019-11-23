@@ -74,7 +74,8 @@ class Benktander(MethodBase):
         exponents = np.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents
         ult.values = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
-        ult.ddims = np.array(['Ultimate'])
+        ult.values[~np.isfinite(ult.values)] = np.nan
+        ult.ddims = np.array([None])
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          ult.shape[origin])
         return ult

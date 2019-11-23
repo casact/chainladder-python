@@ -43,6 +43,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
         origin_date = TriangleBase.to_datetime(
             data_agg, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
+        m_cnt = {'Y': 12, 'Q': 3, 'M': 1}
         if development:
             development_date = TriangleBase.to_datetime(
                 data_agg, development, period_end=True,
@@ -50,7 +51,8 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
             self.development_grain = TriangleBase._get_grain(development_date)
             col = 'development'
         else:
-            development_date = origin_date
+            development_date = origin_date + \
+                pd.tseries.offsets.MonthEnd(m_cnt[self.origin_grain])
             self.development_grain = self.origin_grain
             col = None
         # Prep the data for 4D Triangle
@@ -64,7 +66,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
         self.odims = np.array(data_agg.index.levels[-1].unique())
         if development:
             self.ddims = np.array(data_agg.columns.levels[-1].unique())
-            self.ddims = self.ddims*({'Y': 12, 'Q': 3, 'M': 1}
+            self.ddims = self.ddims*(m_cnt
                                      [self.development_grain])
             self.vdims = np.array(data_agg.columns.levels[0].unique())
         else:
@@ -315,6 +317,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
         o_bool = self.expand_dims(o_bool)
         new_tri = np.repeat(np.nan_to_num(orig.values)[..., np.newaxis],
                             o_bool.shape[-1], axis=-1)
+        new_tri[~np.isfinite(new_tri)] = 0
         new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
         orig.values = new_tri
         orig.odims = np.unique(o)

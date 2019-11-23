@@ -137,7 +137,7 @@ class Triangle(TriangleBase):
         diagonal = obj[obj.valuation == obj.valuation_date].values
         if compress:
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
-            obj.ddims = np.array(['Latest'])
+            obj.ddims = np.array([None])
             obj.valuation = pd.DatetimeIndex(
                 [pd.to_datetime(obj.valuation_date)] *
                 len(obj.odims)).to_period(self._lowest_grain())
@@ -351,7 +351,7 @@ class Triangle(TriangleBase):
             return new_obj.grain(grain=grain, incremental=incremental,
                                  inplace=True)
 
-    def trend(self, trend=0.0):
+    def trend(self, trend=0.0, axis='origin'):
         """  Allows for the trending of a Triangle object or an origin vector.
         This method trends using days and assumes a years is 365.25 days long.
 
@@ -359,20 +359,22 @@ class Triangle(TriangleBase):
         ----------
         trend : float
             The annual amount of the trend
-
+        axis : str (options: ['origin', 'valuation'])
+            The axis on which to apply the trend
         Returns
         -------
         Triangle
             updated with multiplicative trend applied.
         """
         days = np.datetime64(self.valuation_date)
-        if self.shape[-2] == 1 and self.shape[-1] != 1:
+        if axis == 'origin':
+            trend = np.array((1 + trend)**-(
+                pd.Series(self.origin.end_time.values-days).dt.days/365.25)
+                )[np.newaxis, np.newaxis, ..., np.newaxis]
+        elif axis == 'valuation':
             trend = (1 + trend)**-(
-                pd.Series(self.origin.values-days).dt.days.value/365.25)
-        else:
-            trend = (1 + trend)**-(
-                pd.Series(self.valuation.to_timestamp().values-days)
-                  .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
+                pd.Series(self.valuation.end_time.values-days)
+                .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj

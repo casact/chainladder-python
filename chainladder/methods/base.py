@@ -93,7 +93,7 @@ class MethodBase(BaseEstimator, IO):
     def ibnr_(self):
         obj = copy.copy(self.ultimate_)
         obj.values = self.ultimate_.values-self.X_.latest_diagonal.values
-        obj.ddims = ['IBNR']
+        obj.ddims = [None]
         obj.set_slicers()
         return obj
 

@@ -149,4 +149,8 @@ class TriangleSlicer:
         return obj
 
     def set_slicers(self):
+        ''' 
+        This method should be called any time the shape of index or column
+        changes
+        '''
         self.iloc, self.loc = Ilocation(self), Location(self)

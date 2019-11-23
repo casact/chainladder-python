@@ -179,7 +179,8 @@ def test_grain_returns_valid_tri():
 def test_base_minimum_exposure_triangle():
     raa = (cl.load_dataset('raa').latest_diagonal*0+50000).to_frame().reset_index()
     raa['index'] = raa['index'].astype(str)
-    cl.Triangle(raa, origin='index', columns='Latest')
+    cl.Triangle(raa, origin='index',
+                columns=list(cl.load_dataset('raa').columns))
 
 
 def test_origin_and_value_setters():

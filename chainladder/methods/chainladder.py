@@ -87,7 +87,7 @@ class Chainladder(MethodBase):
             cdf = np.repeat(np.unique(cdf, axis=2), len(obj.odims), axis=2)
         obj.values = (cdf*obj_tri)*nans
         obj = obj.latest_diagonal
-        obj.ddims = np.array(['Ultimate'])
+        obj.ddims = np.array([None])
         obj.valuation = obj._valuation_triangle()
         obj.set_slicers()
         return obj

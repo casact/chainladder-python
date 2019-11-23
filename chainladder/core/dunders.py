@@ -68,7 +68,6 @@ class TriangleDunders:
         ''' Common functionality AFTER arithmetic operations '''
         obj.values = obj.values * self.expand_dims(obj.nan_triangle())
         obj.values[obj.values == 0] = np.nan
-        obj.vdims = [None] if len(obj.vdims) == 1 else obj.vdims
         return obj
 
     def __add__(self, other):

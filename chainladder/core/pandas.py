@@ -198,6 +198,7 @@ def add_groupby_agg_func(cls, k, v):
         ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
         x = np.where(ignore_vector, 0, x)
+        x[~np.isfinite(x)] = np.nan
         obj.values = \
             getattr(np, v)(x, axis=1, *args, **kwargs)
         obj.values[obj.values == 0] = np.nan
