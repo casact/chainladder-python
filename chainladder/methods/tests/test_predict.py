@@ -2,7 +2,7 @@ import chainladder as cl
 raa = cl.load_dataset('RAA')
 raa_1989 = raa[raa.valuation < raa.valuation_date]
 cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
-apriori = cl_ult*0+(cl_ult.sum()/10)[0]  # Mean Chainladder Ultimate
+apriori = cl_ult*0+(cl_ult.sum()/10)  # Mean Chainladder Ultimate
 apriori_1989 = apriori[apriori.origin < '1990']
 
 

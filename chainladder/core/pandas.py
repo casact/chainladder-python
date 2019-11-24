@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import copy
+import inspect
+
 
 
 class TriangleGroupBy:
@@ -79,6 +81,11 @@ class TrianglePandas:
     def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
         return self.to_frame().plot(*args, **kwargs)
+
+    def _get_axis(self, axis):
+        ax = {0: 0, 1: 1,2: 2, 3: 3, -1: 3, -2: 2, -3: 1, -4: 0,
+             'index': 0,'columns': 1, 'origin': 2, 'development':3}
+        return ax.get(axis, 0)
 
     @property
     def T(self):
@@ -179,11 +186,35 @@ class TrianglePandas:
 
 def add_triangle_agg_func(cls, k, v):
     ''' Aggregate Overrides in Triangle '''
-    def agg_func(self, *args, **kwargs):
-        if self.shape[:2] == (1, 1):
-            return getattr(pd.DataFrame, k)(self.to_frame(), *args, **kwargs)
-        else:
-            return getattr(TriangleGroupBy(self, by=-1), k)(axis=1)
+    def agg_func(self, axis=None, *args, **kwargs):
+            obj = copy.deepcopy(self)
+            if axis is None:
+                axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
+            else:
+                axis = self._get_axis(axis)
+            func = getattr(np, v)
+            if 'keepdims' in inspect.getfullargspec(func).args:
+                obj.values = func(
+                    obj.values, axis=axis, keepdims=True, *args, **kwargs)
+            else:
+                obj.values = func(
+                    obj.values, axis=axis, *args, **kwargs)
+            if axis == 0 and obj.values.shape[axis] == 1:
+                obj.kdims = np.array([None])
+                obj.key_labels = [None]
+            if axis == 1 and obj.values.shape[axis] == 1:
+                obj.vdims = np.array([None])
+            if axis == 2 and obj.values.shape[axis] == 1:
+                obj.odims = np.array([None])
+            if axis == 3 and obj.values.shape[axis] == 1:
+                obj.ddims = np.array([None])
+            obj.set_slicers()
+            obj.values = obj.values * obj.expand_dims(obj.nan_triangle())
+            obj.values[obj.values == 0] = np.nan
+            if obj.shape == (1, 1, 1, 1):
+                return obj.values[0, 0, 0, 0] 
+            else:
+                return obj
     set_method(cls, agg_func, k)
 
 
@@ -223,8 +254,11 @@ def set_method(cls, func, k):
 df_passthru = ['to_clipboard', 'to_csv', 'to_excel', 'to_json',
                'to_html', 'to_dict', 'unstack', 'pivot', 'drop_duplicates',
                'describe', 'melt', 'pct_chg']
-agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod', 'var', 'std']
+agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod',
+             'var', 'std', 'cumsum']
 agg_funcs = {item: 'nan'+item for item in agg_funcs}
+more_aggs= ['diff']
+agg_funcs = {**agg_funcs, **{item: item for item in more_aggs}}
 
 for item in df_passthru:
     add_df_passthru(TrianglePandas, item)

@@ -144,52 +144,27 @@ class Triangle(TriangleBase):
         obj.values = diagonal
         return obj
 
-    def incr_to_cum(self, inplace=False):
+    def incr_to_cum(self):
         """Method to convert an incremental triangle into a cumulative triangle.
 
-        Parameters
-        ----------
-        inplace: bool
-            Set to True will update the instance data attribute inplace
-
         Returns
         -------
             Updated instance of triangle accumulated along the origin
         """
+        return self.cumsum(axis=-1)
+        
 
-        if inplace:
-            np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
-            self.values = self.expand_dims(self.nan_triangle())*self.values
-            self.values[self.values == 0] = np.nan
-            return self
-        else:
-            new_obj = copy.deepcopy(self)
-            return new_obj.incr_to_cum(inplace=True)
-
-    def cum_to_incr(self, inplace=False):
+    def cum_to_incr(self):
         """Method to convert an cumlative triangle into a incremental triangle.
 
-        Parameters
-        ----------
-            inplace: bool
-                Set to True will update the instance data attribute inplace
-
         Returns
         -------
             Updated instance of triangle accumulated along the origin
         """
+        obj = copy.deepcopy(self)
+        obj.values = np.nan_to_num(obj.values)
+        return obj.diff(axis=-1, prepend=0)
 
-        if inplace:
-            temp = np.nan_to_num(self.values)[..., 1:] - \
-                np.nan_to_num(self.values)[..., :-1]
-            temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
-            temp = temp*self.expand_dims(self.nan_triangle())
-            temp[temp == 0] = np.nan
-            self.values = temp
-            return self
-        else:
-            new_obj = copy.deepcopy(self)
-            return new_obj.cum_to_incr(inplace=True)
 
     def dev_to_val(self, inplace=False):
         ''' Converts triangle from a development lag triangle to a valuation
@@ -324,7 +299,7 @@ class Triangle(TriangleBase):
                 self = self + new_tri
             development_grain = grain[-1]
             if incremental:
-                self.incr_to_cum(inplace=True)
+                self = self.incr_to_cum()
             dev_mode = (type(self.ddims) == np.ndarray)
             new_tri = self._set_ograin(grain=grain, dev_mode=dev_mode)
             # Set development Grain
@@ -344,7 +319,7 @@ class Triangle(TriangleBase):
             self.values, self.valuation = new_tri.values, new_tri.valuation
             self.odims, self.ddims = new_tri.odims, new_tri.ddims
             if incremental:
-                self.cum_to_incr(inplace=True)
+                self = self.cum_to_incr()
             return self if new_d is None else self[self.development<=new_d.max()]
         else:
             new_obj = copy.deepcopy(self)
