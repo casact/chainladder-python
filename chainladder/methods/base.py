@@ -3,10 +3,10 @@ import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
-from chainladder.core import IO
+from chainladder.core import EstimatorIO
 
 
-class MethodBase(BaseEstimator, IO):
+class MethodBase(BaseEstimator, EstimatorIO):
     def __init__(self):
         pass
 

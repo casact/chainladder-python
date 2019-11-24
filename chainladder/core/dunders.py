@@ -126,3 +126,8 @@ class TriangleDunders:
             return True
         else:
             return False
+    
+    def __contains__(self, value):
+        if self.__dict__.get(value, None) is None:
+            return False
+        return True

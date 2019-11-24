@@ -8,10 +8,10 @@ import copy
 import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder import WeightedRegression
-from chainladder.core import IO
+from chainladder.core import EstimatorIO
 
 
-class DevelopmentBase(BaseEstimator, TransformerMixin, IO):
+class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO):
     @staticmethod
     def _get_cdf(obj):
         if 'ldf_' not in obj:

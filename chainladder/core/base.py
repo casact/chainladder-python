@@ -1,35 +1,21 @@
 import pandas as pd
 import numpy as np
-import joblib
-from sys import getsizeof
 
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
 from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
+from chainladder.core.io import TriangleIO
 
 
-class IO:
-    ''' Class intended to allow persistence of triangle or estimator objects
-        to disk
-    '''
-    def to_pickle(self, path, protocol=None):
-        joblib.dump(self, filename=path, protocol=protocol)
-
-    def __contains__(self, value):
-        if self.__dict__.get(value, None) is None:
-            return False
-        return True
-
-    @property
-    def memory_usage(self):
-        return sum([getsizeof(v) for k, v in self.__dict__.items()])
-
-class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
+class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas):
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None, origin_format=None,
                  development_format=None, *args, **kwargs):
+        if data is None:
+            ' Instance with nothing set'
+            return
         # Sanitize inputs
         index, columns, origin, development = self.str_to_list(
             index, columns, origin, development)
@@ -62,7 +48,7 @@ class TriangleBase(IO, TriangleDisplay, TriangleSlicer,
                                   columns=col, values=columns,
                                   aggfunc='sum')
         # Assign object properties
-        self.kdims = np.array(data_agg.index.droplevel(-1).unique())
+        self.kdims = np.array(np.array(data_agg.index.droplevel(-1).unique()).tolist())
         self.odims = np.array(data_agg.index.levels[-1].unique())
         if development:
             self.ddims = np.array(data_agg.columns.levels[-1].unique())
