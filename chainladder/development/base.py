@@ -101,11 +101,18 @@ class Development(DevelopmentBase):
         if n_periods < 1 or n_periods >= X.shape[-2] - 1:
             return X.values*0+1
         else:
-            flip_nan = np.nan_to_num(X.values*0+1)
-            k, v, o, d = flip_nan.shape
-            w = np.concatenate((1-flip_nan[..., -(o-n_periods-1):, :],
-                                np.ones((k, v, n_periods+1, d))), 2)*flip_nan
-            return w*X.expand_dims(X.nan_triangle())
+            val_offset = {
+                'Y': {'Y': 1},
+                'Q': {'Y':4, 'Q': 1},
+                'M': {'Y':12, 'Q': 3, 'M': 1}}
+            val_date_min = \
+                X.valuation[X.valuation<=X.valuation_date].drop_duplicates().sort_values()
+            val_date_min = \
+                val_date_min[-n_periods - \
+                val_offset[X.development_grain][X.origin_grain]]
+            w = X[X.valuation>=val_date_min]
+            return np.nan_to_num((w/w).values)*X.expand_dims(X.nan_triangle())
+           
 
     def _drop_adjustment(self, X, link_ratio):
         weight = X.nan_triangle()[:, :-1]
