@@ -1,7 +1,7 @@
 from sklearn.model_selection import ParameterGrid
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline as PipelineSL
-from chainladder.core import IO
+from chainladder.core import EstimatorIO
 import copy
 import pandas as pd
 import json
@@ -83,7 +83,8 @@ class GridSearch(BaseEstimator):
         self.results_ = pd.DataFrame(results_)
         return self
 
-class Pipeline(PipelineSL, IO):
+
+class Pipeline(PipelineSL, EstimatorIO):
     """This is a direct of copy the scikit-learn Pipeline class.
 
     Sequentially apply a list of transforms and a final estimator.
@@ -123,14 +124,7 @@ class Pipeline(PipelineSL, IO):
 
     def to_json(self):
         return json.dumps(
-            {item[0]: {'params': item[1].get_params(),
-                       '__class__': item[1].__class__.__name__}
-             for item in self.steps})
-
-    def from_json(self, json_str):
-        import chainladder as cl
-        self = Pipeline(
-            steps=[(k, cl.__dict__[v['__class__']]().set_params(**v['params']))
-                   for k,v in json.loads(json_str).items()]
-        )
-        return self
+            [{'name': item[0],
+              'params': item[1].get_params(),
+              '__class__': item[1].__class__.__name__}
+             for item in self.steps])

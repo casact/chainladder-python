@@ -6,12 +6,12 @@ The Munich Adjustment Method
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils.weighted_regression import WeightedRegression
 from chainladder.development import Development
-from chainladder.core import IO
+from chainladder.core import EstimatorIO
 import numpy as np
 import copy
 
 
-class MunichAdjustment(BaseEstimator, TransformerMixin, IO):
+class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
     """Applies the Munich Chainladder adjustment to a set of paid/incurred
        ldfs.
 

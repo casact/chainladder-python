@@ -4,6 +4,4 @@
 from chainladder.utils.weighted_regression import WeightedRegression # noqa (API import)
 from chainladder.utils.exhibits import Exhibits # noqa (API import)
 from chainladder.utils.utility_functions import ( # noqa (API import)
-    load_dataset,
-    parallelogram_olf,
-    read_pickle)
+    load_dataset, parallelogram_olf, read_pickle, read_json)

@@ -2,10 +2,10 @@ import copy
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development import DevelopmentBase, Development
-from chainladder.core import IO
+from chainladder.core import EstimatorIO
 
 
-class TailBase(BaseEstimator, TransformerMixin, IO):
+class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
     ''' Base class for all tail methods.  Tail objects are equivalent
         to development objects with an additional set of tail statistics'''
     def fit(self, X, y=None, sample_weight=None):

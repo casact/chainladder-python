@@ -1,13 +1,10 @@
-"""
-This module contains various utilities shared across most of the other
-*chainladder* modules.
-
-"""
 import pandas as pd
 import numpy as np
 import joblib
+import json
 import os
 from chainladder.core.triangle import Triangle
+from chainladder.workflow import Pipeline
 
 
 def load_dataset(key, *args, **kwargs):
@@ -46,6 +43,36 @@ def load_dataset(key, *args, **kwargs):
 def read_pickle(path):
     return joblib.load(path)
 
+
+def read_json(json_str):
+    json_dict = json.loads(json_str)
+    if type(json_dict) is list:
+        import chainladder as cl
+        return Pipeline(steps=[
+            (item['name'],
+             cl.__dict__[item['__class__']]().set_params(**item['params']))
+            for item in json_dict])
+    elif 'kdims' in json_dict.keys():
+        tri = Triangle()
+        arrays = ['values', 'kdims', 'vdims', 'odims', 'ddims']
+        for array in arrays:
+            setattr(tri, array, np.array(
+                json_dict[array]['array'], dtype=json_dict[array]['dtype']))
+        properties = ['key_labels', 'origin_grain', 'development_grain',
+                    'nan_override']
+        for prop in properties:
+            setattr(tri, prop, json_dict[prop])
+        tri.valuation_date = pd.to_datetime(
+            json_dict['valuation_date'], format='%Y-%m-%d')
+        tri.set_slicers()
+        tri.valuation = tri._valuation_triangle()
+        return tri
+    else:
+        import chainladder as cl
+        return cl.__dict__[
+            json_dict['__class__']]().set_params(**json_dict['params'])
+
+    
 
 def parallelogram_olf(values, date, start_date=None, end_date=None,
                       grain='M', vertical_line=False):
