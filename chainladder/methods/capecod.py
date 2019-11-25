@@ -52,7 +52,7 @@ class CapeCod(MethodBase):
         super().fit(X, y, sample_weight)
         obj = copy.deepcopy(self)
         self.sample_weight_ = sample_weight
-        self.ultimate_, self.apriori_, self.detrended_ultimate_ = \
+        self.ultimate_, self.apriori_, self.detrended_apriori_ = \
             self._get_ultimate_(X, sample_weight, obj)
         self.full_triangle_ = self._get_full_triangle_()
         return self
@@ -83,7 +83,7 @@ class CapeCod(MethodBase):
         ult.ddims = np.array([None])
         apriori_ = copy.copy(ult)
         detrended_ultimate = apriori_.values/trend_array
-        detrended_apriori_ = copy.copy(obj)
+        detrended_apriori_ = copy.copy(ult)
         detrended_apriori_.values = detrended_ultimate
         ibnr = detrended_ultimate*(1-1/cdf)*exposure
         ult.values = latest + ibnr
@@ -95,7 +95,7 @@ class CapeCod(MethodBase):
 
     def predict(self, X, sample_weight):
         obj = super().predict(X, sample_weight)
-        obj.ultimate_, obj.apriori_, obj.detrended_ultimate_ = \
+        obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = \
             obj._get_ultimate_(X, sample_weight, obj)
         obj.full_triangle_ = obj._get_full_triangle_()
         return obj

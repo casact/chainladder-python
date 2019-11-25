@@ -32,7 +32,7 @@ benk = cl.Benktander()
 # Prep Benktander Grid Search with various assumptions, and a scoring function
 param_grid = dict(n_iters=list(range(1,100,2)),
                   apriori=[0.50, 0.75, 1.00])
-scoring = {'IBNR':lambda x: x.ibnr_.sum()[0]}
+scoring = {'IBNR':lambda x: x.ibnr_.sum()}
 grid = cl.GridSearch(benk, param_grid, scoring=scoring)
 # Perform Grid Search
 grid.fit(medmal_paid, sample_weight=medmal_prem)

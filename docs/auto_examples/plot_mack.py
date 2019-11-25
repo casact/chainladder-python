@@ -10,12 +10,13 @@ import chainladder as cl
 import seaborn as sns
 sns.set_style('whitegrid')
 
+
 # Load the data
 data = cl.load_dataset('raa')
 
 # Compute Mack Chainladder ultimates and Std Err using 'simple' average
 mack = cl.MackChainladder()
-dev = cl.Development(average='simple')
+dev = cl.Development(average='volume')
 mack.fit(dev.fit_transform(data))
 
 # Plotting
@@ -26,4 +27,4 @@ g = plot_data[['Latest', 'IBNR']] \
                              'IBNR': plot_data['Mack Std Err']}),
           ylim=(0, None), title='Mack Chainladder Ultimate')
 g.set_xlabel('Accident Year')
-_ = g.set_ylabel('Loss')
+g.set_ylabel('Loss');

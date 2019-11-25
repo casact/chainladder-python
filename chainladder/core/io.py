@@ -9,6 +9,11 @@ class TriangleIO():
         joblib.dump(self, filename=path, protocol=protocol)
 
     def to_json(self):
+        ''' Serializes triangle object to json format
+        Returns
+        -------
+            string representation of object in json format
+        '''
         json_dict = {}
         attributes = ['values', 'kdims', 'vdims', 'odims', 'ddims']
         for attribute in attributes:
@@ -27,17 +32,21 @@ class EstimatorIO:
     ''' Class intended to allow persistence of estimator objects
         to disk
     '''
-    
+
     def to_pickle(self, path, protocol=None):
         joblib.dump(self, filename=path, protocol=protocol)
-    
+
     def to_json(self):
+        ''' Serializes triangle object to json format
+        Returns
+        -------
+            string representation of object in json format
+        '''
         return json.dumps(
             {'params': self.get_params(),
              '__class__': self.__class__.__name__})
-    
+
     def __contains__(self, value):
         if self.__dict__.get(value, None) is None:
             return False
         return True
-

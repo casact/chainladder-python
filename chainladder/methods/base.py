@@ -82,6 +82,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
         ddims = [int(item[item.find('-')+1:]) for item in self.ldf_.ddims]
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
+        obj.valuation_date = max(obj.valuation).to_timestamp()
         obj.nan_override = True
         obj.set_slicers()
         return obj
@@ -111,6 +112,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
         zeros = obj.expand_dims(ones - ones)
         properties = self.full_expectation_
         obj.valuation = properties.valuation
+        obj.valuation_date = properties.valuation_date
         obj.ddims = properties.ddims
         obj.values = \
             np.concatenate((np.nan_to_num(obj.values), zeros), -1) + e_tri

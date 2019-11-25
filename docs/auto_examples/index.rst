@@ -1,5 +1,9 @@
 :orphan:
 
+
+
+.. _sphx_glr_auto_examples:
+
 .. _general_examples:
 ====================================
 Gallery of Chainladder Functionality
@@ -9,13 +13,13 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can create development patterns at a particular ``index`` gra...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can create development patterns at a particular index grain a...">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_industry_to_company_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_industry_to_company_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_industry_to_company.py`
+     :ref:`sphx_glr_auto_examples_plot_industry_to_company.py`
 
 .. raw:: html
 
@@ -29,13 +33,13 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a :class:`Triangle` inst...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+     :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
 
 .. raw:: html
 
@@ -53,9 +57,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_development_periods.py`
+     :ref:`sphx_glr_auto_examples_plot_development_periods.py`
 
 .. raw:: html
 
@@ -73,9 +77,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_mack_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_mack_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_mack.py`
+     :ref:`sphx_glr_auto_examples_plot_mack.py`
 
 .. raw:: html
 
@@ -93,9 +97,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+     :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
 
 .. raw:: html
 
@@ -113,9 +117,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
 
 .. raw:: html
 
@@ -133,9 +137,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
+     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
 
 .. raw:: html
 
@@ -153,9 +157,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_benktander.py`
+     :ref:`sphx_glr_auto_examples_plot_benktander.py`
 
 .. raw:: html
 
@@ -173,9 +177,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
+     :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
 
 .. raw:: html
 
@@ -193,9 +197,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_munich.py`
+     :ref:`sphx_glr_auto_examples_plot_munich.py`
 
 .. raw:: html
 
@@ -213,9 +217,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_capecod.py`
+     :ref:`sphx_glr_auto_examples_plot_capecod.py`
 
 .. raw:: html
 
@@ -229,13 +233,13 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the ``Exhibits`` class. It creates an Exce...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the Exhibits class. It creates an Excel fi...">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_exhibits.py`
+     :ref:`sphx_glr_auto_examples_plot_exhibits.py`
 
 .. raw:: html
 
@@ -248,7 +252,7 @@ Gallery of Chainladder Functionality
    /auto_examples/plot_exhibits
 .. raw:: html
 
-    <div style='clear:both'></div>
+    <div class="sphx-glr-clear"></div>
 
 
 
@@ -260,17 +264,17 @@ Gallery of Chainladder Functionality
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: auto_examples_python.zip </C:/Users/jbogaard/Documents/github/chainladder-python/docs/auto_examples/auto_examples_python.zip>`
+    :download:`Download all examples in Python source code: auto_examples_python.zip </C:/Users/jboga/OneDrive/Documents/GitHub/chainladder-python/docs/auto_examples/auto_examples_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip </C:/Users/jbogaard/Documents/github/chainladder-python/docs/auto_examples/auto_examples_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip </C:/Users/jboga/OneDrive/Documents/GitHub/chainladder-python/docs/auto_examples/auto_examples_jupyter.zip>`
 
 
 .. only:: html
 
  .. rst-class:: sphx-glr-signature
 
-    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_
