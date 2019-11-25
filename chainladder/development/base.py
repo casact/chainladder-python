@@ -108,8 +108,8 @@ class Development(DevelopmentBase):
             val_date_min = \
                 X.valuation[X.valuation<=X.valuation_date].drop_duplicates().sort_values()
             val_date_min = \
-                val_date_min[-n_periods - \
-                val_offset[X.development_grain][X.origin_grain]]
+                val_date_min[-n_periods * \
+                val_offset[X.development_grain][X.origin_grain] - 1]
             w = X[X.valuation>=val_date_min]
             return np.nan_to_num((w/w).values)*X.expand_dims(X.nan_triangle())
            
