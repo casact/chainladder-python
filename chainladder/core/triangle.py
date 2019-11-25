@@ -28,6 +28,12 @@ class Triangle(TriangleBase):
     index : str or list or None
         A representation of the index of the triangle that will map to the
         index dimension.  If None, then a single 'Total' key will be generated.
+    origin_format : optional str
+        A string representation of the date format of the origin arg. If
+        omitted then date format will be inferred by pandas.
+    development_format : optional str
+        A string representation of the date format of the development arg. If
+        omitted then date format will be inferred by pandas.
 
     Attributes
     ----------
@@ -144,26 +150,49 @@ class Triangle(TriangleBase):
         obj.values = diagonal
         return obj
 
-    def incr_to_cum(self):
+    def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
-
+        Parameters
+        ----------
+        inplace: bool
+            Set to True will update the instance data attribute inplace
         Returns
         -------
             Updated instance of triangle accumulated along the origin
         """
-        return self.cumsum(axis=-1)
-        
 
-    def cum_to_incr(self):
+        if inplace:
+            np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
+            self.values = self.expand_dims(self.nan_triangle())*self.values
+            self.values[self.values == 0] = np.nan
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.incr_to_cum(inplace=True)
+
+    def cum_to_incr(self, inplace=False):
         """Method to convert an cumlative triangle into a incremental triangle.
-
+        Parameters
+        ----------
+            inplace: bool
+                Set to True will update the instance data attribute inplace
         Returns
         -------
             Updated instance of triangle accumulated along the origin
         """
-        obj = copy.deepcopy(self)
-        obj.values = np.nan_to_num(obj.values)
-        return obj.diff(axis=-1, prepend=0)
+
+        if inplace:
+            temp = np.nan_to_num(self.values)[..., 1:] - \
+                np.nan_to_num(self.values)[..., :-1]
+            temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
+            temp = temp*self.expand_dims(self.nan_triangle())
+            temp[temp == 0] = np.nan
+            self.values = temp
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.cum_to_incr(inplace=True)
+
 
 
     def dev_to_val(self, inplace=False):
@@ -288,7 +317,7 @@ class Triangle(TriangleBase):
                 addl_dev = dev_grain_dict[self.development_grain][self.origin_grain]*(len(new_o)-len(self.origin))
                 print(addl_dev)
                 new_d = np.append(
-                    self.ddims, 
+                    self.ddims,
                     [self.ddims[-1] + item * dev_grain_dict['M'][self.development_grain]
                     for item in range(1, addl_dev + 1)])
                 new_tri = copy.deepcopy(self)
@@ -353,4 +382,3 @@ class Triangle(TriangleBase):
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj
-    

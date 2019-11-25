@@ -11,10 +11,9 @@ Structure
 The :class:`Triangle` is the core data structure of the chainladder package.
 Just as scikit-learn requires all datasets to be numpy arrays, the chainladder
 package requires all data to be instances of the Triangle class.
-
-Four-dimensional tabular data structure with labeled axes (index, columns,
-origin, development). Triangle is the primary data structure in
-chainladder. The notation to manipulate the triangle object borrows heavily
+The Triangle is a four-dimensional tabular data structure with labeled axes
+(index, columns, origin, development). Triangle is the primary data structure
+in chainladder. The notation to manipulate the triangle object borrows heavily
 from pandas and the experience should feel familiar to a practitioner versed
 in using pandas.
 
@@ -43,6 +42,11 @@ Dimension 3 (``development`` dimension):
 the 4d structure as a pandas Dataframe where each cell (row, col) is its
 own triangle.  see :ref:`Slicing<slicing>`
 
+You can access the ``values`` property of a triangle to get its numpy
+representation, however the Triangle class provides many helper methods to
+keep the shape of the numpy representation in sync with the other Triangle
+properties.
+
 Inferring Dates when creating an instance
 -----------------------------------------
 When instantiating a :class:`Triangle`, the ``origin`` and ``development``
@@ -55,6 +59,11 @@ supplied to create an ``origin`` dimension at the accident quarter grain.
 **Example:**
    >>> import chainladder as cl
    >>> cl.Triangle(data, origin='Acc Year', development=['Cal Year', 'Cal Month'], values=['Paid Loss'])
+
+ Triangle relies heavily on pandas date inference, and while pretty good it does
+ not infer all dates correctly.  When initializing a Triangle you can always
+ use the ``origin_format`` and/or ``development_format`` arguments to force
+ the inference, e.g. ``origin_format='%Y/%m/%d'
 
 .. _slicing:
 Slicing and Boolean Indexing
@@ -134,6 +143,10 @@ by using ``sum()`` which can optionally be coupled with ``groupby()``.
    index:      ['LOB']
    columns:    ['BulkLoss', 'CumPaidLoss', 'EarnedPremCeded', 'EarnedPremDIR', 'EarnedPremNet', 'IncurLoss']
 
+Aggregation functions can also be used without ``groupby()``.  By default,
+the aggregation will apply to the first axis with a length greater than 1.
+Alternatively, you can specify the axis using the ``axis`` argument of the
+aggregate method.
 
 Accessor methods
 ----------------
@@ -148,3 +161,6 @@ of these operations are legal.
    >>> x = raa[raa.origin<='1985-JUN']
    >>> x = raa[raa.origin>'1987-01-01'][raa.development<=36]
    >>> x = raa[raa.valuation<raa.valuation_date]
+
+There are many more methods available to manipulate triangles.  The complete 
+list of methods is available under the :class:`Triangle` docstrings.

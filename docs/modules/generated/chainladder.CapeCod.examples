@@ -1,7 +1,7 @@
 
 
 Examples using ``chainladder.CapeCod``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html
 
@@ -9,9 +9,9 @@ Examples using ``chainladder.CapeCod``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_capecod.py`
+     :ref:`sphx_glr_auto_examples_plot_capecod.py`
 
 .. raw:: html
 
@@ -19,4 +19,4 @@ Examples using ``chainladder.CapeCod``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_capecod.py`
+ * :ref:`sphx_glr_auto_examples_plot_capecod.py`

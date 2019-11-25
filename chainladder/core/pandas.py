@@ -87,6 +87,20 @@ class TrianglePandas:
              'index': 0,'columns': 1, 'origin': 2, 'development':3}
         return ax.get(axis, 0)
 
+    def dropna(self):
+        """  Method that removes orgin/development vectors from edge of a
+        triangle that are all missing values.
+        """
+        obj = copy.deepcopy(self)
+        obj = obj.sum(axis=0).sum(axis=1)
+        odim = list(obj.sum(axis=-1).values[0,0, :, 0]*0+1)
+        min_odim = obj.origin[odim.index(1)]
+        max_odim = obj.origin[::-1][odim[::-1].index(1)]
+        print(min_odim, max_odim)
+        obj = self[(self.origin>=min_odim)&(self.origin<=max_odim)]
+        obj = obj[obj.valuation<=obj.valuation_date]
+        return obj
+
     @property
     def T(self):
         return self.to_frame().T
@@ -212,7 +226,7 @@ def add_triangle_agg_func(cls, k, v):
             obj.values = obj.values * obj.expand_dims(obj.nan_triangle())
             obj.values[obj.values == 0] = np.nan
             if obj.shape == (1, 1, 1, 1):
-                return obj.values[0, 0, 0, 0] 
+                return obj.values[0, 0, 0, 0]
             else:
                 return obj
     set_method(cls, agg_func, k)

@@ -1,17 +1,17 @@
 
 
 Examples using ``chainladder.Exhibits``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the ``Exhibits`` class. It creates an Exce...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the Exhibits class. It creates an Excel fi...">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_exhibits.py`
+     :ref:`sphx_glr_auto_examples_plot_exhibits.py`
 
 .. raw:: html
 
@@ -19,4 +19,4 @@ Examples using ``chainladder.Exhibits``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_exhibits.py`
+ * :ref:`sphx_glr_auto_examples_plot_exhibits.py`

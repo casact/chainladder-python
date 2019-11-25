@@ -81,3 +81,9 @@ def test_mack_std_err(data, averages, est_sigma, atol):
     p = mack_p(data, averages[0], est_sigma[0]).std_err_.values[0, 0, :, :]
     p = np.unique(p, axis=-2)
     assert_allclose(r, p, atol=atol)
+
+def test_assymetric_development():
+    quarterly = cl.load_dataset('quarterly')['paid']
+    dev = cl.Development(n_periods=1, average='simple').fit(quarterly)
+    dev2 = cl.Development(n_periods=1, average='regression').fit(quarterly)
+    assert_allclose(dev.ldf_.values, dev2.ldf_.values, atol=1e-5)

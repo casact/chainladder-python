@@ -1,7 +1,7 @@
 
 
 Examples using ``chainladder.TailCurve``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html
 
@@ -9,9 +9,9 @@ Examples using ``chainladder.TailCurve``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
 
 .. raw:: html
 
@@ -19,7 +19,7 @@ Examples using ``chainladder.TailCurve``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+ * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
 
 .. raw:: html
 
@@ -27,9 +27,9 @@ Examples using ``chainladder.TailCurve``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_benktander.py`
+     :ref:`sphx_glr_auto_examples_plot_benktander.py`
 
 .. raw:: html
 
@@ -37,4 +37,4 @@ Examples using ``chainladder.TailCurve``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_benktander.py`
+ * :ref:`sphx_glr_auto_examples_plot_benktander.py`
