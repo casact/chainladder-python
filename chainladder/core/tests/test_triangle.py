@@ -238,3 +238,8 @@ def test_reassignment():
     raa = cl.load_dataset('clrd')
     raa['values'] = raa['CumPaidLoss']
     raa['values'] = raa['values'] + raa['CumPaidLoss']
+
+def test_dropna():
+    clrd = cl.load_dataset('clrd')
+    assert clrd.shape == clrd.dropna().shape
+    assert clrd[clrd['LOB']=='wkcomp'].iloc[-5]['CumPaidLoss'].dropna().shape == (1,1,2,2)
