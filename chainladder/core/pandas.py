@@ -89,14 +89,14 @@ class TrianglePandas:
 
     def dropna(self):
         """  Method that removes orgin/development vectors from edge of a
-        triangle that are all missing values.
+        triangle that are all missing values. This may come in handy for a 
+        new line of business that doesn't have origins/developments of an
+        existing line in the same triangle.
         """
-        obj = copy.deepcopy(self)
-        obj = obj.sum(axis=0).sum(axis=1)
+        obj = self.sum(axis=0).sum(axis=1)
         odim = list(obj.sum(axis=-1).values[0,0, :, 0]*0+1)
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
-        print(min_odim, max_odim)
         obj = self[(self.origin>=min_odim)&(self.origin<=max_odim)]
         obj = obj[obj.valuation<=obj.valuation_date]
         return obj
