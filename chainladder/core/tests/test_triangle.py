@@ -234,6 +234,11 @@ def test_valdev6():
     np.testing.assert_equal(cl.load_dataset('raa').grain('OYDY').latest_diagonal.values,
                             cl.load_dataset('raa').latest_diagonal.grain('OYDY').values)
 
+def test_valdev7():
+    tri = cl.load_dataset('quarterly')
+    x = cl.Chainladder().fit(tri).full_expectation_
+    np.testing.assert_equal(x.dev_to_val().val_to_dev().values, x.values)
+    
 def test_reassignment():
     raa = cl.load_dataset('clrd')
     raa['values'] = raa['CumPaidLoss']

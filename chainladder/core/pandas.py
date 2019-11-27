@@ -89,7 +89,7 @@ class TrianglePandas:
 
     def dropna(self):
         """  Method that removes orgin/development vectors from edge of a
-        triangle that are all missing values. This may come in handy for a 
+        triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
         """
@@ -97,8 +97,10 @@ class TrianglePandas:
         odim = list(obj.sum(axis=-1).values[0,0, :, 0]*0+1)
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
+        ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0,0,0])
+        ddim = obj.development.iloc[:,0][pd.Series(ddim).astype(bool)]
         obj = self[(self.origin>=min_odim)&(self.origin<=max_odim)]
-        obj = obj[obj.valuation<=obj.valuation_date]
+        obj = obj[(self.development>=ddim.min())&(self.development<=ddim.max())]
         return obj
 
     @property
