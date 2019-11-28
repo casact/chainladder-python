@@ -12,7 +12,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas):
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None, origin_format=None,
-                 development_format=None, *args, **kwargs):
+                 development_format=None, cumulative=None, *args, **kwargs):
         if data is None:
             ' Instance with nothing set'
             return
@@ -73,6 +73,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
+        self.is_cumulative = cumulative
 
     def _len_check(self, x, y):
         if len(x) != len(y):
@@ -162,7 +163,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         '''
         ddims = self.ddims if ddims is None else ddims
         if type(ddims) == pd.PeriodIndex:
-            return
+            return pd.DatetimeIndex(pd.DataFrame(
+                np.repeat(self.ddims.to_timestamp(how='e').values[np.newaxis], len(self.odims), 0))
+                .unstack().values).to_period(self._lowest_grain())
         if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
             return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain())

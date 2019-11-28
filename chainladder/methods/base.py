@@ -84,6 +84,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.valuation_date = max(obj.valuation).to_timestamp()
         obj.nan_override = True
+        obj.values[obj.values == 0] = np.nan
         obj.set_slicers()
         return obj
 
@@ -118,5 +119,6 @@ class MethodBase(BaseEstimator, EstimatorIO):
             np.concatenate((np.nan_to_num(obj.values), zeros), -1) + e_tri
         obj.values = np.concatenate((obj.values,
                                      self.ultimate_.values), 3)
+        obj.values[obj.values==0] = np.nan
         obj.set_slicers()
         return obj

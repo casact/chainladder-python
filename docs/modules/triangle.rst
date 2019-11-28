@@ -162,5 +162,37 @@ of these operations are legal.
    >>> x = raa[raa.origin>'1987-01-01'][raa.development<=36]
    >>> x = raa[raa.valuation<raa.valuation_date]
 
+Valuation or development
+------------------------
+While most Estimators that use triangles expect the development period to be
+expressed as an origin age, it is possible to transform a trianle into a valuation
+triangle where the development periods are converted to valuation periods.  Expressing
+triangles this way may provide a more convenient view of valuation slices.
+Switching between a development triangle and a valuation triangle can be 
+accomplished with the method `dev_to_val()` and its inverse `'val_to_dev`.  For
+example, slicing the calendar period incurred for the last two years of a 
+triangle in a more compact tablular format can be done as follows:
+
+**Example:**
+   >>> import chainladder as cl
+   >>> raa = cl.load_dataset('raa').dev_to_val()
+   >>> raa.cum_to_incr()[raa.valuation>='1989']
+
+Commutative methods
+-------------------
+Where possible, the triangle methods are designed to be commutative.  For example,
+each of these operations is functionally equivalent..\
+
+
+**Example:**
+   >>> import chainladder as cl
+   >>> full = cl.Chainladder().fit(cl.load_dataset('quarterly')).full_expectation_
+   >>> # Functionally equivalent transformations
+   >>> full.grain('OYDY').val_to_dev() == full.val_to_dev().grain('OYDY')
+   >>> full.cum_to_incr().grain('OYDY').val_to_dev() == full.val_to_dev().cum_to_incr().grain('OYDY')
+   >>> full.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum() == full.val_to_dev().grain('OYDY')
+
+
+
 There are many more methods available to manipulate triangles.  The complete 
 list of methods is available under the :class:`Triangle` docstrings.

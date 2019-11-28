@@ -34,6 +34,10 @@ class Triangle(TriangleBase):
     development_format : optional str
         A string representation of the date format of the development arg. If
         omitted then date format will be inferred by pandas.
+    cumulative : bool
+        Whether the triangle is cumulative or incremental.  This attribute is
+        required to use the `grain` and `dev_to_val` methods and will be
+        automatically set when invoking `cum_to_incr` or `incr_to_cum` methods.
 
     Attributes
     ----------
@@ -49,6 +53,8 @@ class Triangle(TriangleBase):
         Represents all valuation dates of each cell in the Triangle.
     shape : tuple
         The 4D shape of the triangle instance
+    cumulative : bool
+        Whether the triangle is cumulative or incremental
     link_ratio, age_to_age
         Displays age-to-age ratios for the triangle.
     valuation_date : date
@@ -59,6 +65,13 @@ class Triangle(TriangleBase):
         pandas-style ``iloc`` accessor
     latest_diagonal : Triangle
         The latest diagonal of the triangle
+    is_cumulative: bool
+        Whether the triangle is cumulative or not
+    is_ultimate: bool
+        Whether the triangle has an ultimate valuation
+    is_val_tri:
+        Whether the triangle development period is expressed as valuation
+        periods.
     values : array
         4D numpy array underlying the Triangle instance
     T : Triangle
@@ -104,6 +117,17 @@ class Triangle(TriangleBase):
         self._len_check(self.development, value)
         self.ddims = [value] if type(value) is str else value
 
+    @property
+    def is_full(self):
+        return self.nan_triangle().sum().sum() == np.prod(self.shape[-2:])
+    
+    @property
+    def is_ultimate(self):
+        return sum(self.valuation >= '2262') > 0
+
+    @property
+    def is_val_tri(self):
+        return (type(self.ddims) != np.ndarray)
 
     @property
     def latest_diagonal(self):
@@ -138,6 +162,10 @@ class Triangle(TriangleBase):
     def get_latest_diagonal(self, compress=True):
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
+        Parameters
+        ----------
+        compress: bool
+            Whether to collapse the diagonal into a single columns
         '''
         obj = copy.deepcopy(self)
         diagonal = obj[obj.valuation == obj.valuation_date].values
@@ -162,9 +190,11 @@ class Triangle(TriangleBase):
         """
 
         if inplace:
-            np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
-            self.values = self.expand_dims(self.nan_triangle())*self.values
-            self.values[self.values == 0] = np.nan
+            if not self.is_cumulative:
+                np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
+                self.values = self.expand_dims(self.nan_triangle())*self.values
+                self.values[self.values == 0] = np.nan
+                self.is_cumulative = True
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -182,18 +212,18 @@ class Triangle(TriangleBase):
         """
 
         if inplace:
-            temp = np.nan_to_num(self.values)[..., 1:] - \
-                np.nan_to_num(self.values)[..., :-1]
-            temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
-            temp = temp*self.expand_dims(self.nan_triangle())
-            temp[temp == 0] = np.nan
-            self.values = temp
+            if self.is_cumulative:        
+                temp = np.nan_to_num(self.values)[..., 1:] - \
+                    np.nan_to_num(self.values)[..., :-1]
+                temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
+                temp = temp*self.expand_dims(self.nan_triangle())
+                temp[temp == 0] = np.nan
+                self.values = temp
+                self.is_cumulative = False
             return self
         else:
             new_obj = copy.deepcopy(self)
             return new_obj.cum_to_incr(inplace=True)
-
-
 
     def dev_to_val(self, inplace=False):
         ''' Converts triangle from a development lag triangle to a valuation
@@ -209,12 +239,10 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with valuation periods.
         '''
-        dev_mode = (type(self.ddims) == np.ndarray)
         if inplace:
-            self = self._val_dev_chg('dev_to_val') if dev_mode else self
+            self = self._val_dev_chg('dev_to_val') if not self.is_val_tri else self
             return self
-        return self._val_dev_chg('dev_to_val') if dev_mode else copy.deepcopy(self)
-
+        return self._val_dev_chg('dev_to_val') if not self.is_val_tri else copy.deepcopy(self)
 
     def val_to_dev(self, inplace=False):
         ''' Converts triangle from a valuation triangle to a development lag
@@ -230,28 +258,30 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with development lags
         '''
-        dev_mode = (type(self.ddims) == np.ndarray)
-        if dev_mode:
+        if not self.is_val_tri:
             ret_val = self
         else:
-            if sum(self.valuation=='2262')>0:
-                obj = self[self.valuation<'2262']._val_dev_chg('val_to_dev').dropna()
-                ultimate = self[self.valuation=='2262']
-                obj.values = np.concatenate((obj.values, ultimate.values),axis=-1)
-                obj.ddims = np.append(obj.ddims,9999)
+            if self.is_ultimate:
+                obj = self[self.valuation<'2262']
+                non_ultimates = obj.values
+                obj = obj._val_dev_chg('val_to_dev')
+                ultimate = self[self.valuation>='2262']
+                max_val = self[self.valuation<'2262'][self.origin== self.origin.max()].valuation.max()
+                max_dev = obj[obj.origin == obj.origin.max()]
+                max_dev = max_dev[max_dev.valuation == max_val].ddims[0]
+                obj = obj[obj.development <= max_dev]
+                obj.values = np.concatenate(
+                    (obj.values, ultimate.values), axis=-1)
+                obj.ddims = np.append(obj.ddims, 9999)
                 obj.valuation = obj._valuation_triangle(obj.ddims)
                 obj.valuation_date = max(obj.valuation).to_timestamp()
-                obj.nan_override = True
-                obj.set_slicers()
-                ret_val =  obj
                 ret_val = obj
             else:
                 ret_val = self._val_dev_chg('val_to_dev')
+        ret_val.values = self.expand_dims(ret_val.nan_triangle())*ret_val.values
         if inplace:
-            self = ret_val
-            return self
-        else:
-            return ret_val
+            self = ret_val    
+        return ret_val
 
 
     def _val_dev_chg(self, kind):
@@ -271,6 +301,7 @@ class Triangle(TriangleBase):
             rng = range(mtrx[mtrx > 0].min(), mtrx.max()+1, step)
         else:
             rng = obj.valuation.unique().sort_values()
+        old_arr = None
         for item in rng:
             if kind == 'val_to_dev':
                 val = np.where(mtrx == item)
@@ -286,8 +317,12 @@ class Triangle(TriangleBase):
                 append = obj.expand_dims(
                     np.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, np.newaxis])
                 arr = np.concatenate((arr, append), -2)
+            if obj.is_cumulative and old_arr is not None:
+                arr = np.isnan(arr)*np.nan_to_num(old_arr) + np.nan_to_num(arr)
+            old_arr = arr.copy()
             o_vals = np.append(o_vals, arr, -1)
         obj.values = o_vals[..., 1:]
+        obj.values[obj.values == 0] = np.nan
         keep = np.where(np.sum(
             (np.nansum(np.nansum(obj.values, 0), 0)), -2) !=
             len(obj.origin))[-1]
@@ -309,7 +344,7 @@ class Triangle(TriangleBase):
         return obj
 
 
-    def grain(self, grain='', incremental=False, inplace=False):
+    def grain(self, grain='', inplace=False):
         """Changes the grain of a cumulative triangle.
 
         Parameters
@@ -330,59 +365,65 @@ class Triangle(TriangleBase):
         -------
             Triangle
         """
-        if incremental:
+        if not self.is_cumulative:
             # Must be cumulative to work
-            self = self.incr_to_cum()
+            obj = self.incr_to_cum().dev_to_val(inplace=True)
+        else:
+            obj = self.dev_to_val(inplace=True)
         # put data in valuation mode
         ograin_new = grain[1:2]
-        ograin_old = self.origin_grain
-        self = self.dev_to_val(inplace=True)
+        ograin_old = obj.origin_grain
         if ograin_new != ograin_old:
-            o_dt = pd.Series(self.odims)
+            o_dt = pd.Series(obj.odims)
             if ograin_new == 'Q':
                 o = np.array(pd.to_datetime(
                     o_dt.dt.year.astype(str) + 'Q' + o_dt.dt.quarter.astype(str)))
             elif ograin_new == 'Y':
                 o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
             else:
-                o = self.odims
+                o = obj.odims
             o_new = np.unique(o)
             o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
             o_new = np.repeat(o_new[np.newaxis], len(o), axis=0)
             o_bool = np.repeat((o == o_new)[:, np.newaxis],
-                               len(self.ddims), axis=1)
-            o_bool = self.expand_dims(o_bool)
-            new_tri = np.repeat(np.nan_to_num(self.values)[..., np.newaxis],
+                               len(obj.ddims), axis=1)
+            o_bool = obj.expand_dims(o_bool)
+            new_tri = np.repeat(np.nan_to_num(obj.values)[..., np.newaxis],
                                 o_bool.shape[-1], axis=-1)
             new_tri[~np.isfinite(new_tri)] = 0
             new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
-            self.values = new_tri
-            self.odims = np.unique(o)
-            self.valuation = self._valuation_triangle()
-        self = self.val_to_dev(inplace=True)
+            obj.values = new_tri
+            obj.odims = np.unique(o)
+            obj.valuation = obj._valuation_triangle()
+        if type(self.ddims) == np.ndarray:
+            obj = obj.val_to_dev(inplace=True)
         # Now do development
         dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                           'Q': {'Y': 4, 'Q': 1},
                           'Y': {'Y': 1}}
         dgrain_new = grain[-1]
-        dgrain_old = self.development_grain
-        if self.shape[3] != 1:
+        dgrain_old = obj.development_grain
+        if obj.shape[3] != 1:
             keeps = dev_grain_dict[dgrain_old][dgrain_new]
-            keeps = np.where(np.arange(self.shape[3]) % keeps == 0)[0]
+            keeps = np.where(np.arange(obj.shape[3]) % keeps == 0)[0]
             keeps = -(keeps + 1)[::-1]
-            self.values = self.values[..., keeps]
-            self.ddims = self.ddims[keeps]
-        self.origin_grain = ograin_new
-        self.development_grain = dgrain_new
-        self.values[self.values == 0] = np.nan
-        self.valuation = self._valuation_triangle()
-        if hasattr(self, '_nan_triangle'):
+            obj.values = obj.values[..., keeps]
+            obj.ddims = obj.ddims[keeps]
+        obj.origin_grain = ograin_new
+        obj.development_grain = dgrain_new
+        obj.values[obj.values == 0] = np.nan
+        obj.valuation = obj._valuation_triangle()
+        if hasattr(obj, '_nan_triangle'):
             # Force update on _nan_triangle at next access.
-            del self._nan_triangle
-        if incremental:
-            self = self.cum_to_incr()
-        return self
-
+            del obj._nan_triangle
+        if not self.is_cumulative:
+            obj = obj.cum_to_incr()
+        if inplace:
+            self = obj
+            return self
+        else:
+            return obj
+        
 
     def trend(self, trend=0.0, axis='origin'):
         """  Allows for the trending of a Triangle object or an origin vector.

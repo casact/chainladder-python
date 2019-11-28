@@ -196,7 +196,7 @@ def test_origin_and_value_setters():
 def test_grain_increm_arg():
     tri = cl.load_dataset('quarterly')['incurred']
     tri_i = tri.cum_to_incr()
-    np.testing.assert_equal(tri_i.grain('OYDY', incremental=True).incr_to_cum(),
+    np.testing.assert_equal(tri_i.grain('OYDY').incr_to_cum(),
                             tri.grain('OYDY'))
 
 
