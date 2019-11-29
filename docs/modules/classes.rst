@@ -50,6 +50,7 @@ Classes
   :template: class.rst
 
   Development
+  DevelopmentConstant
   MunichAdjustment
   BootstrapODPSample
   IncrementalAdditive

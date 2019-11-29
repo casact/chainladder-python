@@ -248,3 +248,14 @@ def test_dropna():
     clrd = cl.load_dataset('clrd')
     assert clrd.shape == clrd.dropna().shape
     assert clrd[clrd['LOB']=='wkcomp'].iloc[-5]['CumPaidLoss'].dropna().shape == (1,1,2,2)
+
+def test_commutative():
+    tri = cl.load_dataset('quarterly')
+    full = cl.Chainladder().fit(tri).full_expectation_
+    assert tri.grain('OYDY').val_to_dev() == tri.val_to_dev().grain('OYDY')
+    assert tri.cum_to_incr().grain('OYDY').val_to_dev() == tri.val_to_dev().cum_to_incr().grain('OYDY')
+    assert tri.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum() == tri.val_to_dev().grain('OYDY')
+    assert full.grain('OYDY').val_to_dev() == full.val_to_dev().grain('OYDY')
+    assert full.cum_to_incr().grain('OYDY').val_to_dev() == full.val_to_dev().cum_to_incr().grain('OYDY')
+    assert np.allclose(np.nan_to_num(full.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum().values),
+            np.nan_to_num(full.val_to_dev().grain('OYDY').values), atol=1e-5)

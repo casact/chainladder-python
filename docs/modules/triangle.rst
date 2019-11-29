@@ -162,6 +162,7 @@ of these operations are legal.
    >>> x = raa[raa.origin>'1987-01-01'][raa.development<=36]
    >>> x = raa[raa.valuation<raa.valuation_date]
 
+
 Valuation or development
 ------------------------
 While most Estimators that use triangles expect the development period to be
@@ -169,7 +170,7 @@ expressed as an origin age, it is possible to transform a trianle into a valuati
 triangle where the development periods are converted to valuation periods.  Expressing
 triangles this way may provide a more convenient view of valuation slices.
 Switching between a development triangle and a valuation triangle can be 
-accomplished with the method `dev_to_val()` and its inverse `'val_to_dev`.  For
+accomplished with the method `dev_to_val()` and its inverse `'val_to_dev()`.  For
 example, slicing the calendar period incurred for the last two years of a 
 triangle in a more compact tablular format can be done as follows:
 
@@ -177,7 +178,19 @@ triangle in a more compact tablular format can be done as follows:
    >>> import chainladder as cl
    >>> raa = cl.load_dataset('raa').dev_to_val()
    >>> raa.cum_to_incr()[raa.valuation>='1989']
+           1989    1990
+   1981    54.0   172.0
+   1982   673.0   535.0
+   1983   649.0   603.0
+   1984  2658.0   984.0
+   1985  3786.0   225.0
+   1986  1233.0  2917.0
+   1987  6926.0  1368.0
+   1988  5596.0  6165.0
+   1989  3133.0  2262.0
+   1990     NaN  2063.0
 
+   
 Commutative methods
 -------------------
 Where possible, the triangle methods are designed to be commutative.  For example,

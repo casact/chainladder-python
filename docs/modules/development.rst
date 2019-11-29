@@ -7,6 +7,39 @@ Loss Development Patterns
 
 .. currentmodule:: chainladder
 
+Estimators
+===========
+
+Fitting data: the main modeling API implemented by chainladder follows that of
+the scikit-learn estimator. An estimator is any object that learns from data.
+
+All estimator objects expose a fit method that takes a `Triangle()` object:
+
+**Example:**
+  >>> estimator.fit(data)
+
+Estimator parameters: All the parameters of an estimator can be set when it is
+instantiated or by modifying the corresponding attribute:
+
+**Example:**
+  >>> estimator = Estimator(param1=1, param2=2)
+  >>> estimator.param1
+  1
+
+Estimated parameters: When data is fitted with an estimator, parameters are
+estimated from the data at hand. All the estimated parameters are attributes
+of the estimator object ending by an underscore:
+
+**Example:**
+>>> estimator.estimated_param_ 
+
+In many cases the estimated paramaters are themselves triangles and can be
+manipulated using the same methods we learned about in the :class:`Triangle` class.  
+
+**Example:**
+  >>> dev = cl.Development().fit(cl.load_dataset('ukmotor'))
+  >>> type(dev.cdf_)
+  <class 'chainladder.core.triangle.Triangle'>
 
 .. _dev:
 
@@ -48,6 +81,28 @@ of the 'drop' arguments is permissible.
 .. note::
   ``drop_high`` and ``drop_low`` are ignored in cases where the number of link
   ratios available for a given development period is less than 3.
+
+Properties
+----------
+:class:`Development` uses the regression approach suggested by Mack to estimate
+development patterns.  Using the regression framework, we not only get estimates 
+for our patterns (``cdf_``, and ``ldf_``), but also measures of variability of 
+our estimates (``sigma_``, ``std_err_``).  These variability propeperties are
+used to develop the stochastic featuers in the `MackChainladder()` method.
+
+
+.. _dev_const:
+
+Constant
+========
+
+The :class:`DevelopmentConstant` method simply allows you to hard code development
+patterns into a Development Estimator.  A common example would be to include a
+set of industry development patterns in your workflow that are not directly 
+estimated from any of your own data.
+
+For more info refer to the docstring of:class:`DevelopmentConstant`.
+
 
 .. _incremental:
 
