@@ -94,7 +94,7 @@ class Triangle(TriangleBase):
     def columns(self, value):
         self._len_check(self.columns, value)
         self.vdims = [value] if type(value) is str else value
-        self.set_slicers()
+        self._set_slicers()
 
     @property
     def origin(self):
@@ -119,8 +119,8 @@ class Triangle(TriangleBase):
 
     @property
     def is_full(self):
-        return self.nan_triangle().sum().sum() == np.prod(self.shape[-2:])
-    
+        return self._nan_triangle().sum().sum() == np.prod(self.shape[-2:])
+
     @property
     def is_ultimate(self):
         return sum(self.valuation >= '2262') > 0
@@ -131,7 +131,7 @@ class Triangle(TriangleBase):
 
     @property
     def latest_diagonal(self):
-        return self.get_latest_diagonal()
+        return self._get_latest_diagonal()
 
     @property
     def link_ratio(self):
@@ -159,9 +159,10 @@ class Triangle(TriangleBase):
     # ---------------------------------------------------------------- #
     # ---------------------- End User Methods ------------------------ #
     # ---------------------------------------------------------------- #
-    def get_latest_diagonal(self, compress=True):
+    def _get_latest_diagonal(self, compress=True):
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
+
         Parameters
         ----------
         compress: bool
@@ -180,10 +181,12 @@ class Triangle(TriangleBase):
 
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
+
         Parameters
         ----------
         inplace: bool
             Set to True will update the instance data attribute inplace
+
         Returns
         -------
             Updated instance of triangle accumulated along the origin
@@ -192,7 +195,7 @@ class Triangle(TriangleBase):
         if inplace:
             if not self.is_cumulative:
                 np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
-                self.values = self.expand_dims(self.nan_triangle())*self.values
+                self.values = self._expand_dims(self._nan_triangle())*self.values
                 self.values[self.values == 0] = np.nan
                 self.is_cumulative = True
             return self
@@ -202,21 +205,23 @@ class Triangle(TriangleBase):
 
     def cum_to_incr(self, inplace=False):
         """Method to convert an cumlative triangle into a incremental triangle.
+
         Parameters
         ----------
             inplace: bool
                 Set to True will update the instance data attribute inplace
+
         Returns
         -------
             Updated instance of triangle accumulated along the origin
         """
 
         if inplace:
-            if self.is_cumulative:        
+            if self.is_cumulative:
                 temp = np.nan_to_num(self.values)[..., 1:] - \
                     np.nan_to_num(self.values)[..., :-1]
                 temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
-                temp = temp*self.expand_dims(self.nan_triangle())
+                temp = temp*self._expand_dims(self._nan_triangle())
                 temp[temp == 0] = np.nan
                 self.values = temp
                 self.is_cumulative = False
@@ -278,15 +283,15 @@ class Triangle(TriangleBase):
                 ret_val = obj
             else:
                 ret_val = self._val_dev_chg('val_to_dev')
-        ret_val.values = self.expand_dims(ret_val.nan_triangle())*ret_val.values
+        ret_val.values = self._expand_dims(ret_val._nan_triangle())*ret_val.values
         if inplace:
-            self = ret_val    
+            self = ret_val
         return ret_val
 
 
     def _val_dev_chg(self, kind):
         obj = copy.deepcopy(self)
-        o_vals = obj.expand_dims(np.arange(len(obj.origin))[:, np.newaxis])
+        o_vals = obj._expand_dims(np.arange(len(obj.origin))[:, np.newaxis])
         if self.shape[-1] == 1:
             return obj
         if kind == 'val_to_dev':
@@ -306,15 +311,15 @@ class Triangle(TriangleBase):
             if kind == 'val_to_dev':
                 val = np.where(mtrx == item)
             else:
-                val = np.where(obj.expand_dims(obj.valuation == item)
+                val = np.where(obj._expand_dims(obj.valuation == item)
                                   .reshape(obj.shape, order='f'))[-2:]
             val = np.unique(np.array(list(zip(val[0], val[1]))), axis=0)
             arr = np.expand_dims(obj.values[:, :, val[:, 0], val[:, 1]], -1)
             if val[0, 0] != 0:
-                prepend = obj.expand_dims(np.array([np.nan]*(val[0, 0]))[:, np.newaxis])
+                prepend = obj._expand_dims(np.array([np.nan]*(val[0, 0]))[:, np.newaxis])
                 arr = np.concatenate((prepend, arr), -2)
             if len(obj.origin)-1-val[-1, 0] != 0:
-                append = obj.expand_dims(
+                append = obj._expand_dims(
                     np.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, np.newaxis])
                 arr = np.concatenate((arr, append), -2)
             if obj.is_cumulative and old_arr is not None:
@@ -387,7 +392,7 @@ class Triangle(TriangleBase):
             o_new = np.repeat(o_new[np.newaxis], len(o), axis=0)
             o_bool = np.repeat((o == o_new)[:, np.newaxis],
                                len(obj.ddims), axis=1)
-            o_bool = obj.expand_dims(o_bool)
+            o_bool = obj._expand_dims(o_bool)
             new_tri = np.repeat(np.nan_to_num(obj.values)[..., np.newaxis],
                                 o_bool.shape[-1], axis=-1)
             new_tri[~np.isfinite(new_tri)] = 0
@@ -413,9 +418,9 @@ class Triangle(TriangleBase):
         obj.development_grain = dgrain_new
         obj.values[obj.values == 0] = np.nan
         obj.valuation = obj._valuation_triangle()
-        if hasattr(obj, '_nan_triangle'):
+        if hasattr(obj, '_nan_triangle_'):
             # Force update on _nan_triangle at next access.
-            del obj._nan_triangle
+            del obj._nan_triangle_
         if not self.is_cumulative:
             obj = obj.cum_to_incr()
         if inplace:
@@ -423,7 +428,7 @@ class Triangle(TriangleBase):
             return self
         else:
             return obj
-        
+
 
     def trend(self, trend=0.0, axis='origin'):
         """  Allows for the trending of a Triangle object or an origin vector.
@@ -435,6 +440,7 @@ class Triangle(TriangleBase):
             The annual amount of the trend
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
+
         Returns
         -------
         Triangle

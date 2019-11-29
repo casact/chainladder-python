@@ -64,7 +64,7 @@ def read_json(json_str):
             setattr(tri, prop, json_dict[prop])
         tri.valuation_date = pd.to_datetime(
             json_dict['valuation_date'], format='%Y-%m-%d')
-        tri.set_slicers()
+        tri._set_slicers()
         tri.valuation = tri._valuation_triangle()
         return tri
     else:

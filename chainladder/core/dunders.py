@@ -56,17 +56,17 @@ class TriangleDunders:
                 obj.odims =  odims
                 obj.values = obj_arr
                 other.values = other_arr
-                obj.set_slicers()
+                obj._set_slicers()
                 obj.valuation = obj._valuation_triangle()
-                if hasattr(obj, '_nan_triangle'):
+                if hasattr(obj, '_nan_triangle_'):
                     # Force update on _nan_triangle at next access.
-                    del obj._nan_triangle
+                    del obj._nan_triangle_
             other = other.values
         return obj, other
 
     def _arithmetic_cleanup(self, obj):
         ''' Common functionality AFTER arithmetic operations '''
-        obj.values = obj.values * self.expand_dims(obj.nan_triangle())
+        obj.values = obj.values * self._expand_dims(obj._nan_triangle())
         obj.values[obj.values == 0] = np.nan
         return obj
 
@@ -126,7 +126,7 @@ class TriangleDunders:
             return True
         else:
             return False
-    
+
     def __contains__(self, value):
         if self.__dict__.get(value, None) is None:
             return False

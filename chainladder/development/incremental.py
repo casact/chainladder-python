@@ -61,7 +61,7 @@ class IncrementalAdditive(DevelopmentBase):
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
         w_[w_ == 0] = np.nan
-        w_ = np.concatenate((w_, (w_[..., -1:]*x.nan_triangle())[..., -1:]),
+        w_ = np.concatenate((w_, (w_[..., -1:]*x._nan_triangle())[..., -1:]),
                             axis=-1)
         if self.average == 'simple':
             y_ = np.nanmean(w_*x.values, axis=-2)
@@ -70,17 +70,17 @@ class IncrementalAdditive(DevelopmentBase):
             y_ = y_ / np.nansum(w_*sample_weight.values, axis=-2)
         y_ = np.repeat(np.expand_dims(y_, -2), len(x.odims), -2)
         obj = copy.copy(x)
-        keeps = 1-np.nan_to_num(x.nan_triangle()) + \
+        keeps = 1-np.nan_to_num(x._nan_triangle()) + \
             np.nan_to_num(
-                x.get_latest_diagonal(compress=False).values[0, 0, ...]*0+1)
+                x._get_latest_diagonal(compress=False).values[0, 0, ...]*0+1)
         obj.values = (1+self.trend) ** \
             np.flip((np.abs(np.arange(obj.shape[-2])[np.newaxis].T -
                      np.arange(obj.shape[-2])[np.newaxis])), 0)*y_*keeps
-        obj.values = obj.values*(x.expand_dims(1-np.nan_to_num(x.nan_triangle()))) + \
+        obj.values = obj.values*(X._expand_dims(1-np.nan_to_num(x._nan_triangle()))) + \
             np.nan_to_num((X.cum_to_incr()/sample_weight).values)
         obj.values[obj.values == 0] = np.nan
         obj.nan_override = True
-        obj.set_slicers()
+        obj._set_slicers()
         self.incremental_ = obj*sample_weight
         self.ldf_ = obj.incr_to_cum().link_ratio
         self.cdf_ = DevelopmentBase._get_cdf(self.ldf_)

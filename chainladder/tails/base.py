@@ -37,10 +37,10 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         val_array = self.sigma_._valuation_triangle(self.sigma_.ddims)
         self.sigma_.valuation = self.std_err_.valuation = val_array
         self.cdf_ = DevelopmentBase._get_cdf(self)
-        self.cdf_.set_slicers()
-        self.ldf_.set_slicers()
-        self.sigma_.set_slicers()
-        self.std_err_.set_slicers()
+        self.cdf_._set_slicers()
+        self.ldf_._set_slicers()
+        self.sigma_._set_slicers()
+        self.std_err_._set_slicers()
         return self
 
     def transform(self, X):
@@ -64,10 +64,10 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         X_new.cdf_.valuation = X_new.ldf_.valuation = self.ldf_.valuation
         X_new.sigma_.valuation = \
             X_new.std_err_.valuation = self.sigma_.valuation
-        X_new.sigma_.set_slicers()
-        X_new.ldf_.set_slicers()
-        X_new.cdf_.set_slicers()
-        X_new.std_err_.set_slicers()
+        X_new.sigma_._set_slicers()
+        X_new.ldf_._set_slicers()
+        X_new.cdf_._set_slicers()
+        X_new.std_err_._set_slicers()
         return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):

@@ -130,7 +130,7 @@ def test_grain():
     np.testing.assert_equal(actual, expected)
 
 def test_off_cycle_val_date():
-    assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31')
+    assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31 23:59:59.999999999')
 
 def test_printer():
     print(cl.load_dataset('abc'))
@@ -158,7 +158,7 @@ def test_arithmetic_2():
 
 
 def test_rtruediv():
-    assert np.nansum(abs(((1/cl.load_dataset('raa'))*cl.load_dataset('raa')).values[0,0] - cl.load_dataset('raa').nan_triangle()))< .00001
+    assert np.nansum(abs(((1/cl.load_dataset('raa'))*cl.load_dataset('raa')).values[0,0] - cl.load_dataset('raa')._nan_triangle()))< .00001
 
 
 def test_shift():
@@ -238,7 +238,7 @@ def test_valdev7():
     tri = cl.load_dataset('quarterly')
     x = cl.Chainladder().fit(tri).full_expectation_
     np.testing.assert_equal(x.dev_to_val().val_to_dev().values, x.values)
-    
+
 def test_reassignment():
     raa = cl.load_dataset('clrd')
     raa['values'] = raa['CumPaidLoss']

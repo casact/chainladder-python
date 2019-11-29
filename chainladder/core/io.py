@@ -30,7 +30,6 @@ class TriangleIO():
 
 class EstimatorIO:
     ''' Class intended to allow persistence of estimator objects
-        to disk
     '''
 
     def to_pickle(self, path, protocol=None):

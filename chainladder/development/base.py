@@ -22,7 +22,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO):
             obj2.ddims = [item.replace(item[item.find("-")+1:], '9999')
                           for item in obj2.ddims]
             obj2.values = cdf_
-            obj2.set_slicers()
+            obj2._set_slicers()
             return obj2
 
 
@@ -111,11 +111,11 @@ class Development(DevelopmentBase):
                 val_date_min[-n_periods * \
                 val_offset[X.development_grain][X.origin_grain] - 1]
             w = X[X.valuation>=val_date_min]
-            return np.nan_to_num((w/w).values)*X.expand_dims(X.nan_triangle())
+            return np.nan_to_num((w/w).values)*X._expand_dims(X._nan_triangle())
            
 
     def _drop_adjustment(self, X, link_ratio):
-        weight = X.nan_triangle()[:, :-1]
+        weight = X._nan_triangle()[:, :-1]
         if self.drop_high == self.drop_low == \
            self.drop == self.drop_valuation is None:
             return weight
@@ -172,7 +172,7 @@ class Development(DevelopmentBase):
 
     def _drop(self, X):
         drop = [self.drop] if type(self.drop) is not list else self.drop
-        arr = X.nan_triangle()
+        arr = X._nan_triangle()
         for item in drop:
             arr[np.where(X.origin == item[0])[0][0],
                 np.where(X.development == item[1])[0][0]] = 0
@@ -253,7 +253,7 @@ class Development(DevelopmentBase):
         triangles = ['std_err_', 'cdf_', 'ldf_', 'sigma_']
         for item in triangles + ['average_', 'w_', 'sigma_interpolation']:
             setattr(X_new, item, getattr(self, item))
-        X_new.set_slicers()
+        X_new._set_slicers()
         return X_new
 
     def _param_property(self, X, params, idx):
@@ -262,5 +262,5 @@ class Development(DevelopmentBase):
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
-        obj.set_slicers()
+        obj._set_slicers()
         return obj

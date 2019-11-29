@@ -77,7 +77,7 @@ class MackChainladder(Chainladder):
         w[np.isnan(w)] = 1
         obj.values = np.nan_to_num(obj.values) * w
         obj.nan_override = True
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
 
     @property
@@ -87,12 +87,12 @@ class MackChainladder(Chainladder):
         obj.values = np.sqrt(np.nansum(self.process_risk_.values**2, origin))
         obj.values = np.expand_dims(obj.values, origin)
         obj.odims = ['tot_proc_risk']
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
 
     def _mack_recursion(self, est):
         obj = copy.copy(self.X_)
-        nans = self.X_.nan_triangle()[np.newaxis, np.newaxis]
+        nans = self.X_._nan_triangle()[np.newaxis, np.newaxis]
         nans = nans * np.ones(self.X_.shape)
         nans = np.concatenate(
             (nans, np.ones((*self.X_.shape[:3], 1))*np.nan), 3)
@@ -107,18 +107,18 @@ class MackChainladder(Chainladder):
         if est == 'param_risk':
             obj.values = self._get_risk(nans, risk_arr,
                                         obj.std_err_.values)
-            obj.set_slicers()
+            obj._set_slicers()
             self.parameter_risk_ = obj
         elif est == 'process_risk':
             obj.values = self._get_risk(nans, risk_arr,
                                         self.full_std_err_.values)
-            obj.set_slicers()
+            obj._set_slicers()
             self.process_risk_ = obj
         else:
             risk_arr = risk_arr[..., 0:1, :]
             obj.values = self._get_tot_param_risk(risk_arr)
             obj.odims = ['Total param risk']
-            obj.set_slicers()
+            obj._set_slicers()
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
@@ -140,7 +140,7 @@ class MackChainladder(Chainladder):
         """ This assumes triangle symmertry """
         t1 = self.full_triangle_.values[..., :len(self.X_.ddims)] - \
             np.nan_to_num(self.X_.values) + \
-            np.nan_to_num(self.X_.get_latest_diagonal(False).values)
+            np.nan_to_num(self.X_._get_latest_diagonal(False).values)
         t1 = np.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
@@ -159,7 +159,7 @@ class MackChainladder(Chainladder):
         obj = copy.copy(self.parameter_risk_)
         obj.values = np.sqrt(self.parameter_risk_.values**2 +
                              self.process_risk_.values**2)
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
 
     @property
@@ -183,5 +183,5 @@ class MackChainladder(Chainladder):
              self.mack_std_err_.values[..., -1:]), 3)
         obj.ddims = ['Latest', 'IBNR', 'Ultimate', 'Mack Std Err']
         obj.nan_override = True
-        obj.set_slicers()
+        obj._set_slicers()
         return obj

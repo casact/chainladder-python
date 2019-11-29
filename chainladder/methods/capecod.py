@@ -68,11 +68,11 @@ class CapeCod(MethodBase):
         reported_exposure = exposure/cdf
         trend_exponent = len_orig-np.arange(len_orig)-1
         trend_array = (1+self.trend)**(trend_exponent)
-        trend_array = X.expand_dims(trend_array[..., np.newaxis])
+        trend_array = X._expand_dims(trend_array[..., np.newaxis])
         decay_matrix = self.decay ** np.abs(
             np.arange(len_orig)[np.newaxis].T -
             np.arange(len_orig)[np.newaxis])
-        decay_matrix = X.expand_dims(decay_matrix)
+        decay_matrix = X._expand_dims(decay_matrix)
         weighted_exposure = \
             np.swapaxes(reported_exposure, development, origin)*decay_matrix
         trended_ultimate = (latest*trend_array)/reported_exposure
@@ -90,7 +90,7 @@ class CapeCod(MethodBase):
         ult.ddims = np.array([None])
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          len_orig)
-        apriori_.set_slicers()
+        apriori_._set_slicers()
         return ult, apriori_, detrended_apriori_
 
     def predict(self, X, sample_weight):

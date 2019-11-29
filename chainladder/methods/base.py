@@ -68,8 +68,8 @@ class MethodBase(BaseEstimator, EstimatorIO):
             obj.cdf_.odims = obj.ldf_.odims = obj.X_.odims
             obj.cdf_.valuation = obj.ldf_.valuation = \
                 Development().fit(X).cdf_.valuation
-        obj.cdf_.set_slicers()
-        obj.ldf_.set_slicers()
+        obj.cdf_._set_slicers()
+        obj.ldf_._set_slicers()
         return obj
 
     @property
@@ -85,7 +85,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj.valuation_date = max(obj.valuation).to_timestamp()
         obj.nan_override = True
         obj.values[obj.values == 0] = np.nan
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
 
     def ultimate_(self):
@@ -96,12 +96,12 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj = copy.copy(self.ultimate_)
         obj.values = self.ultimate_.values-self.X_.latest_diagonal.values
         obj.ddims = [None]
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
 
     def _get_full_triangle_(self):
         obj = copy.copy(self.X_)
-        w = 1-np.nan_to_num(obj.nan_triangle())
+        w = 1-np.nan_to_num(obj._nan_triangle())
         extend = len(self.ldf_.ddims) - len(self.X_.ddims)
         ones = np.ones((w.shape[-2], extend))
         w = np.concatenate((w, ones), -1)
@@ -110,7 +110,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
             np.repeat(self.ultimate_.values, self.cdf_.values.shape[3], 3) / \
             np.unique(self.cdf_.values, axis=-2)
         e_tri = e_tri * w
-        zeros = obj.expand_dims(ones - ones)
+        zeros = obj._expand_dims(ones - ones)
         properties = self.full_expectation_
         obj.valuation = properties.valuation
         obj.valuation_date = properties.valuation_date
@@ -120,5 +120,5 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj.values = np.concatenate((obj.values,
                                      self.ultimate_.values), 3)
         obj.values[obj.values==0] = np.nan
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
