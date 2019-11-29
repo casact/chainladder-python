@@ -31,10 +31,10 @@ estimated from the data at hand. All the estimated parameters are attributes
 of the estimator object ending by an underscore:
 
 **Example:**
->>> estimator.estimated_param_ 
+  >>> estimator.estimated_param_
 
 In many cases the estimated paramaters are themselves triangles and can be
-manipulated using the same methods we learned about in the :class:`Triangle` class.  
+manipulated using the same methods we learned about in the :class:`Triangle` class.
 
 **Example:**
   >>> dev = cl.Development().fit(cl.load_dataset('ukmotor'))
@@ -85,8 +85,8 @@ of the 'drop' arguments is permissible.
 Properties
 ----------
 :class:`Development` uses the regression approach suggested by Mack to estimate
-development patterns.  Using the regression framework, we not only get estimates 
-for our patterns (``cdf_``, and ``ldf_``), but also measures of variability of 
+development patterns.  Using the regression framework, we not only get estimates
+for our patterns (``cdf_``, and ``ldf_``), but also measures of variability of
 our estimates (``sigma_``, ``std_err_``).  These variability propeperties are
 used to develop the stochastic featuers in the `MackChainladder()` method.
 
@@ -98,7 +98,7 @@ Constant
 
 The :class:`DevelopmentConstant` method simply allows you to hard code development
 patterns into a Development Estimator.  A common example would be to include a
-set of industry development patterns in your workflow that are not directly 
+set of industry development patterns in your workflow that are not directly
 estimated from any of your own data.
 
 For more info refer to the docstring of:class:`DevelopmentConstant`.

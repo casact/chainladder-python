@@ -53,8 +53,6 @@ class Triangle(TriangleBase):
         Represents all valuation dates of each cell in the Triangle.
     shape : tuple
         The 4D shape of the triangle instance
-    cumulative : bool
-        Whether the triangle is cumulative or incremental
     link_ratio, age_to_age
         Displays age-to-age ratios for the triangle.
     valuation_date : date
