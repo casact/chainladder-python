@@ -139,4 +139,8 @@ Classes
    :toctree: generated/
    :template: class.rst
 
-   Exhibits
+   DataFrame
+   Row
+   Column
+   Tabs
+   

@@ -130,7 +130,7 @@ def test_grain():
     np.testing.assert_equal(actual, expected)
 
 def test_off_cycle_val_date():
-    assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31 23:59:59.999999999')
+    assert cl.load_dataset('quarterly').valuation_date.strftime('%Y-%m-%d') == '2006-03-31'
 
 def test_printer():
     print(cl.load_dataset('abc'))

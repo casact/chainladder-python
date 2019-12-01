@@ -4,14 +4,18 @@ import chainladder as cl
 
 
 def test_simple_exhibit():
-    exhibits = cl.Exhibits()
-    exhibits.add_exhibit(data=cl.load_dataset('raa'),
-                         col_nums=False,
-                         sheet_name='Sheet1')
-    exhibits.add_exhibit(data=cl.load_dataset('raa'),
-                         col_nums=False,
-                         sheet_name='Sheet2')
-    exhibits.del_exhibit('Sheet1')
-    exhibits.to_excel('test_excel.xlsx')
-    np.testing.assert_equal(pd.read_excel('test_excel.xlsx', index_col=0).values,
-                            cl.load_dataset('raa').to_frame().values)
+    raa = cl.load_dataset('raa')
+
+    col = cl.Column(
+        cl.DataFrame(raa, margin=(0,0,1,0)),
+        cl.DataFrame(raa.link_ratio, formats={'italic': True})
+    )
+    composite = cl.Row(
+        col, col,
+        title=['This title spans both Column Objects'],
+        margin=(0,1,0,0)
+    )
+    x = cl.Tabs(
+       ('a_sheet', composite),
+       ('another_sheet', composite)
+    ).to_excel('workbook.xlsx')
