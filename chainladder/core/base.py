@@ -264,7 +264,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         else:
             array_lookup = len(set(array.month))
         offset = {12: pd.tseries.offsets.MonthEnd(),
-                  4: pd.tseries.offsets.QuarterEnd(),
+                  4: pd.tseries.offsets.QuarterEnd(0),
                   1: pd.tseries.offsets.YearEnd()}
         return array + offset[array_lookup]
 
