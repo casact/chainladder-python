@@ -130,7 +130,7 @@ def test_grain():
     np.testing.assert_equal(actual, expected)
 
 def test_off_cycle_val_date():
-    assert cl.load_dataset('quarterly').valuation_date == pd.to_datetime('2006-03-31')
+    assert cl.load_dataset('quarterly').valuation_date.strftime('%Y-%m-%d') == '2006-03-31'
 
 def test_printer():
     print(cl.load_dataset('abc'))
@@ -158,7 +158,7 @@ def test_arithmetic_2():
 
 
 def test_rtruediv():
-    assert np.nansum(abs(((1/cl.load_dataset('raa'))*cl.load_dataset('raa')).values[0,0] - cl.load_dataset('raa').nan_triangle()))< .00001
+    assert np.nansum(abs(((1/cl.load_dataset('raa'))*cl.load_dataset('raa')).values[0,0] - cl.load_dataset('raa')._nan_triangle()))< .00001
 
 
 def test_shift():
@@ -196,7 +196,7 @@ def test_origin_and_value_setters():
 def test_grain_increm_arg():
     tri = cl.load_dataset('quarterly')['incurred']
     tri_i = tri.cum_to_incr()
-    np.testing.assert_equal(tri_i.grain('OYDY', incremental=True).incr_to_cum(),
+    np.testing.assert_equal(tri_i.grain('OYDY').incr_to_cum(),
                             tri.grain('OYDY'))
 
 
@@ -234,6 +234,11 @@ def test_valdev6():
     np.testing.assert_equal(cl.load_dataset('raa').grain('OYDY').latest_diagonal.values,
                             cl.load_dataset('raa').latest_diagonal.grain('OYDY').values)
 
+def test_valdev7():
+    tri = cl.load_dataset('quarterly')
+    x = cl.Chainladder().fit(tri).full_expectation_
+    np.testing.assert_equal(x.dev_to_val().val_to_dev().values, x.values)
+
 def test_reassignment():
     raa = cl.load_dataset('clrd')
     raa['values'] = raa['CumPaidLoss']
@@ -243,3 +248,14 @@ def test_dropna():
     clrd = cl.load_dataset('clrd')
     assert clrd.shape == clrd.dropna().shape
     assert clrd[clrd['LOB']=='wkcomp'].iloc[-5]['CumPaidLoss'].dropna().shape == (1,1,2,2)
+
+def test_commutative():
+    tri = cl.load_dataset('quarterly')
+    full = cl.Chainladder().fit(tri).full_expectation_
+    assert tri.grain('OYDY').val_to_dev() == tri.val_to_dev().grain('OYDY')
+    assert tri.cum_to_incr().grain('OYDY').val_to_dev() == tri.val_to_dev().cum_to_incr().grain('OYDY')
+    assert tri.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum() == tri.val_to_dev().grain('OYDY')
+    assert full.grain('OYDY').val_to_dev() == full.val_to_dev().grain('OYDY')
+    assert full.cum_to_incr().grain('OYDY').val_to_dev() == full.val_to_dev().cum_to_incr().grain('OYDY')
+    assert np.allclose(np.nan_to_num(full.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum().values),
+            np.nan_to_num(full.val_to_dev().grain('OYDY').values), atol=1e-5)

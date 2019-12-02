@@ -174,7 +174,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
             idx = np.where(X.cdf_.vdims == item)[0][0]
             obj.values[:, idx:idx+1, ...] = cdf_triangle[1, :, n:n+1, ...]
         obj.nan_override = True
-        obj.set_slicers()
+        obj._set_slicers()
         return obj
 
     @property
@@ -184,5 +184,5 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         ldf_tri = ldf_tri[..., :-1]/ldf_tri[..., 1:]
         obj = copy.copy(self.cdf_)
         obj.values = ldf_tri
-        obj.set_slicers
+        obj._set_slicers
         return obj

@@ -10,6 +10,7 @@ class TriangleIO():
 
     def to_json(self):
         ''' Serializes triangle object to json format
+
         Returns
         -------
             string representation of object in json format
@@ -30,7 +31,6 @@ class TriangleIO():
 
 class EstimatorIO:
     ''' Class intended to allow persistence of estimator objects
-        to disk
     '''
 
     def to_pickle(self, path, protocol=None):
@@ -38,6 +38,7 @@ class EstimatorIO:
 
     def to_json(self):
         ''' Serializes triangle object to json format
+
         Returns
         -------
             string representation of object in json format

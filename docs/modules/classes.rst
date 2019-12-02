@@ -50,6 +50,7 @@ Classes
   :template: class.rst
 
   Development
+  DevelopmentConstant
   MunichAdjustment
   BootstrapODPSample
   IncrementalAdditive
@@ -138,4 +139,8 @@ Classes
    :toctree: generated/
    :template: class.rst
 
-   Exhibits
+   DataFrame
+   Row
+   Column
+   Tabs
+   

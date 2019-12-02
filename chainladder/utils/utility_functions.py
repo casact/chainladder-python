@@ -36,8 +36,8 @@ def load_dataset(key, *args, **kwargs):
     if key.lower() in ['cc_sample', 'ia_sample']:
         columns = ['loss', 'exposure']
     df = pd.read_csv(os.path.join(path, 'data', key.lower() + '.csv'))
-    return Triangle(df, origin=origin, development=development,
-                    columns=columns, index=index, *args, **kwargs)
+    return Triangle(df, origin=origin, development=development, index=index,
+                    columns=columns, cumulative=True, *args, **kwargs)
 
 
 def read_pickle(path):
@@ -64,7 +64,7 @@ def read_json(json_str):
             setattr(tri, prop, json_dict[prop])
         tri.valuation_date = pd.to_datetime(
             json_dict['valuation_date'], format='%Y-%m-%d')
-        tri.set_slicers()
+        tri._set_slicers()
         tri.valuation = tri._valuation_triangle()
         return tri
     else:

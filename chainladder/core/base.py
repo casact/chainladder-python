@@ -10,28 +10,30 @@ from chainladder.core.io import TriangleIO
 
 class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas):
+    ''' This class handles the initialization of a triangle '''
+
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None, origin_format=None,
-                 development_format=None, *args, **kwargs):
+                 development_format=None, cumulative=None, *args, **kwargs):
         if data is None:
             ' Instance with nothing set'
             return
         # Sanitize inputs
-        index, columns, origin, development = self.str_to_list(
+        index, columns, origin, development = self._str_to_list(
             index, columns, origin, development)
-        key_gr = origin + self.flatten(development, index)
+        key_gr = origin + self._flatten(development, index)
         # Aggregate data
         data_agg = data.groupby(key_gr).sum().reset_index()
         if not index:
             index = ['Total']
             data_agg[index[0]] = 'Total'
         # Initialize origin and development dates and grains
-        origin_date = TriangleBase.to_datetime(
+        origin_date = TriangleBase._to_datetime(
             data_agg, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
         m_cnt = {'Y': 12, 'Q': 3, 'M': 1}
         if development:
-            development_date = TriangleBase.to_datetime(
+            development_date = TriangleBase._to_datetime(
                 data_agg, development, period_end=True,
                 format=development_format)
             self.development_grain = TriangleBase._get_grain(development_date)
@@ -60,7 +62,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             self.vdims = np.array(data_agg.columns.unique())
         self.valuation_date = development_date.max()
         self.key_labels = index
-        self.set_slicers()
+        self._set_slicers()
         # Create 4D Triangle
         triangle = \
             np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
@@ -73,6 +75,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
+        self.is_cumulative = cumulative
 
     def _len_check(self, x, y):
         if len(x) != len(y):
@@ -96,8 +99,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             development_unique = pd.period_range(
                 start=origin_date.min(),
                 end=development_date.max(),
-                freq=development_grain).to_timestamp()
-            development_unique = TriangleBase._period_end(development_unique)
+                freq=development_grain).to_timestamp(how='e')
             # Let's get rid of any development periods before origin periods
             cart_prod = TriangleBase._cartesian_product(
                 origin_unique, development_unique)
@@ -130,31 +132,28 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             left_on=['origin', 'development'] + groupby,
             right_on=[origin_date, development_date] + groupby).fillna(0)
         data_agg = data_agg[['origin', 'development'] + groupby + columns]
-        data_agg['development'] = TriangleBase.development_lag(
+        data_agg['development'] = TriangleBase._development_lag(
             data_agg['origin'], data_agg['development'])
         return data_agg
 
-    def nan_triangle(self):
+    def _nan_triangle(self):
         '''Given the current triangle shape and grain, it determines the
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
-        if self.values.shape[2] == 1 or \
-           self.values.shape[3] == 1 or \
-           self.nan_override:
-            # This is reserved for summary arrays, e.g. LDF, Diagonal, etc
-            # and does not need nan overrides
+
+        if min(self.values.shape[2:]) == 1 or self.nan_override:
             return np.ones(self.values.shape[2:], dtype='float16')
         if len(self.valuation) != len(self.odims)*len(self.ddims) or not \
-           hasattr(self, '_nan_triangle'):
+           hasattr(self, '_nan_triangle_'):
             self.valuation = self._valuation_triangle()
             val_array = self.valuation
             val_array = val_array.to_timestamp().values.reshape(self.shape[-2:], order='f')
             nan_triangle = np.array(
                 pd.DataFrame(val_array) > self.valuation_date)
             nan_triangle = np.array(np.where(nan_triangle, np.nan, 1), dtype='float16')
-            self._nan_triangle = nan_triangle
-        return self._nan_triangle
+            self._nan_triangle_ = nan_triangle
+        return self._nan_triangle_
 
     def _valuation_triangle(self, ddims=None):
         ''' Given origin and development, develop a triangle of valuation
@@ -162,7 +161,10 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         '''
         ddims = self.ddims if ddims is None else ddims
         if type(ddims) == pd.PeriodIndex:
-            return
+            return pd.DatetimeIndex(pd.DataFrame(
+                np.repeat(self.ddims.to_timestamp(how='e').values[np.newaxis],
+                          len(self.odims), 0))
+                .unstack().values).to_period(self._lowest_grain())
         if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
             return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain())
@@ -202,13 +204,13 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                                    my_dict[self.development_grain])]
         return lowest_grain
 
-    def expand_dims(self, tri_2d):
+    def _expand_dims(self, tri_2d):
         '''Expands from one 2D triangle to full 4D object'''
         return np.broadcast_to(
             tri_2d, (len(self.kdims), len(self.vdims), *tri_2d.shape))
 
     @staticmethod
-    def to_datetime(data, fields, period_end=False, format=None):
+    def _to_datetime(data, fields, period_end=False, format=None):
         '''For tabular form, this will take a set of data
         column(s) and return a single date array.  This function heavily
         relies on pandas, but does two additional things:
@@ -218,8 +220,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # Concat everything into one field
         target_field = data[fields].astype(str).apply(
             lambda x: '-'.join(x), axis=1)
-        # pandas is not good at inferring YYYYMM format so trying that first
-        # and if it fails, move on to how pandas infers things.
         datetime_arg = target_field.unique()
         date_inference_list = \
             [{'arg': datetime_arg, 'format': '%Y%m'},
@@ -236,12 +236,14 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 pass
         target = target_field.map(arr)
         if period_end:
-            target = TriangleBase._period_end(target)
+            target = target.dt.to_period(
+                TriangleBase._get_grain(target)
+            ).dt.to_timestamp(how='e')
         target.name = 'valuation'
         return target
 
     @staticmethod
-    def development_lag(origin, development):
+    def _development_lag(origin, development):
         ''' For tabular format, this will convert the origin/development
             difference to a development lag '''
         year_diff = development.dt.year - origin.dt.year
@@ -257,21 +259,10 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         return diffs[development_grain]
 
     @staticmethod
-    def _period_end(array):
-        ''' private method that returns end of period '''
-        if type(array) is not pd.DatetimeIndex:
-            array_lookup = len(set(array.dt.month))
-        else:
-            array_lookup = len(set(array.month))
-        offset = {12: pd.tseries.offsets.MonthEnd(),
-                  4: pd.tseries.offsets.QuarterEnd(0),
-                  1: pd.tseries.offsets.YearEnd()}
-        return array + offset[array_lookup]
-
-    @staticmethod
     def _get_grain(array):
-        ''' does this fail on new books of business? '''
-        return {1: 'Y', 4: 'Q', 12: 'M'}[len(array.dt.month.unique())]
+        months = set(array.dt.month)
+        grain = {**{1: 'Y', 4: 'Q'}, **{item: 'M' for item in range(5,13)}}
+        return grain[len(months)]
 
     @staticmethod
     def _cartesian_product(*arrays):
@@ -284,43 +275,10 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def _set_ograin(self, grain, dev_mode):
-        origin_grain = grain[1:2]
-        orig = self.dev_to_val() if dev_mode else self
-        o_dt = pd.Series(self.odims)
-        if origin_grain == 'Q':
-            o = np.array(pd.to_datetime(
-                o_dt.dt.year.astype(str) + 'Q' + o_dt.dt.quarter.astype(str)))
-        elif origin_grain == 'Y':
-            o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
-        else:
-            o = self.odims
-        o_new = np.unique(o)
-        o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
-        o_new = np.repeat(o_new[np.newaxis], len(o), axis=0)
-        o_bool = np.repeat((o == o_new)[:, np.newaxis],
-                           len(orig.ddims), axis=1)
-        o_bool = self.expand_dims(o_bool)
-        new_tri = np.repeat(np.nan_to_num(orig.values)[..., np.newaxis],
-                            o_bool.shape[-1], axis=-1)
-        new_tri[~np.isfinite(new_tri)] = 0
-        new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
-        orig.values = new_tri
-        orig.odims = np.unique(o)
-        if type(orig.ddims) is list:
-            orig.ddims = np.array(orig.ddims)
-        if orig.shape[-1] == 1:
-            orig.valuation = orig.valuation[:len(orig.odims)]
-        else:
-            orig.valuation = pd.PeriodIndex(
-                np.repeat(orig.development.values[np.newaxis],
-                          len(orig.origin)).reshape(1, -1).flatten())
-        return orig
-
-    def str_to_list(self, *args):
+    def _str_to_list(self, *args):
         return tuple([arg] if type(arg) is str else arg for arg in args)
 
-    def flatten(self, *args):
+    def _flatten(self, *args):
         return_list = []
         for item in args:
             if item:

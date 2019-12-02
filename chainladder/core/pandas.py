@@ -89,16 +89,19 @@ class TrianglePandas:
 
     def dropna(self):
         """  Method that removes orgin/development vectors from edge of a
-        triangle that are all missing values. This may come in handy for a 
+        triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
         """
         obj = self.sum(axis=0).sum(axis=1)
-        odim = list(obj.sum(axis=-1).values[0,0, :, 0]*0+1)
+        odim = list(obj.sum(axis=-1).values[0, 0, :, 0]*0+1)
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
-        obj = self[(self.origin>=min_odim)&(self.origin<=max_odim)]
-        obj = obj[obj.valuation<=obj.valuation_date]
+        ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0])
+        ddim = obj.development.iloc[:, 0][pd.Series(ddim).astype(bool)]
+        obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
+        obj = obj[(self.development >= ddim.min()) &
+                  (self.development <= ddim.max())]
         return obj
 
     @property
@@ -148,7 +151,7 @@ class TrianglePandas:
         x.set_index(return_obj.key_labels, inplace=True)
         return_obj.values = np.append(return_obj.values, other.values, axis=0)
         return_obj.kdims = np.array(x.index.unique())
-        return_obj.set_slicers()
+        return_obj._set_slicers()
         return return_obj
 
     def rename(self, axis, value):
@@ -222,8 +225,8 @@ def add_triangle_agg_func(cls, k, v):
                 obj.odims = np.array([None])
             if axis == 3 and obj.values.shape[axis] == 1:
                 obj.ddims = np.array([None])
-            obj.set_slicers()
-            obj.values = obj.values * obj.expand_dims(obj.nan_triangle())
+            obj._set_slicers()
+            obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
             obj.values[obj.values == 0] = np.nan
             if obj.shape == (1, 1, 1, 1):
                 return obj.values[0, 0, 0, 0]

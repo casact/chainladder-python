@@ -56,7 +56,7 @@ class DevelopmentConstant(DevelopmentBase):
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
-        obj.set_slicers()
+        obj._set_slicers()
 
         self.ldf_ = obj
         self.cdf_ = self._get_cdf(self)
@@ -81,5 +81,5 @@ class DevelopmentConstant(DevelopmentBase):
         triangles = ['cdf_', 'ldf_']
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
-        X_new.set_slicers()
+        X_new._set_slicers()
         return X_new

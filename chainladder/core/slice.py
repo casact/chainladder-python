@@ -9,10 +9,11 @@ class _LocBase:
         self.obj = obj
 
     def get_idx(self, idx):
+        ''' Returns a slice of the original Triangle '''
         obj = copy.deepcopy(self.obj)
         vdims = pd.Series(obj.vdims)
         obj.kdims = np.array(idx.index.unique())
-        # Honor horder of column labels
+        # Honor order of column labels
         obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
         obj.key_labels = list(idx.index.names)
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
@@ -142,15 +143,12 @@ class TriangleSlicer:
     def _cleanup_slice(self, obj):
         ''' private method with common post-slicing functionality'''
         obj.valuation = obj._valuation_triangle()
-        if hasattr(obj, '_nan_triangle'):
+        if hasattr(obj, '_nan_triangle_'):
             # Force update on _nan_triangle at next access.
-            del obj._nan_triangle
-            obj._nan_triangle = obj.nan_triangle()
+            del obj._nan_triangle_
+            obj._nan_triangle_ = obj._nan_triangle()
         return obj
 
-    def set_slicers(self):
-        ''' 
-        This method should be called any time the shape of index or column
-        changes
-        '''
+    def _set_slicers(self):
+        ''' Call any time the shape of index or column changes '''
         self.iloc, self.loc = Ilocation(self), Location(self)

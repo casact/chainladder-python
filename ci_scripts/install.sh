@@ -15,7 +15,8 @@ if [ ${FLAKE8} == true ]; then
   source activate chainladder;
 else
   PKGS="${PKGS} pandas"; if [ ${PANDAS} ]; then PKGS="${PKGS}=${PANDAS}"; fi;
-  PKGS="${PKGS} matplotlib"; if [ ${MATPLOTLIB} ]; then PKGS="${PKGS}=${MATPLOTLIB}"; fi;
+  PKGS="${PKGS} scikit-learn"; if [ ${LEARN} ]; then PKGS="${PKGS}=${LEARN}"; fi;
+  PKGS="${PKGS} numpy"; if [ ${NUMPY} ]; then PKGS="${PKGS}=${NUMPY}"; fi;
 
   conda create -q -n chainladder --file ci_scripts/conda_requirements.txt ${PKGS};
   source activate chainladder;

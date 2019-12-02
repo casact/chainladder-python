@@ -76,7 +76,7 @@ class Chainladder(MethodBase):
     @property
     def ultimate_(self):
         development = -1
-        nans = self.X_.nan_triangle()
+        nans = self.X_._nan_triangle()
         obj = copy.copy(self.X_)
         obj.values = np.repeat(self.X_.latest_diagonal.values,
                                self.cdf_.shape[development], development)
@@ -89,5 +89,5 @@ class Chainladder(MethodBase):
         obj = obj.latest_diagonal
         obj.ddims = np.array([None])
         obj.valuation = obj._valuation_triangle()
-        obj.set_slicers()
+        obj._set_slicers()
         return obj

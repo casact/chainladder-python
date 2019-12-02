@@ -79,7 +79,7 @@ class TailConstant(TailBase):
         ldfs = 1+self._get_initial_ldf()*(self.decay**np.arange(1000))
         ldfs = ldfs[:decay_range]
         ldfs[-1] = self.tail/np.prod(ldfs[:-1])
-        ldfs = X.expand_dims(ldfs[np.newaxis])
+        ldfs = X._expand_dims(ldfs[np.newaxis])
         self.ldf_.values[..., -decay_range:] = \
             self.ldf_.values[..., -decay_range:]*ldfs
         self.cdf_ = DevelopmentBase._get_cdf(self)

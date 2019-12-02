@@ -61,7 +61,7 @@ class BootstrapODPSample(DevelopmentBase):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.copy(X)
-        self.w_ = X.nan_triangle() if not self.drop else self._drop(X)
+        self.w_ = X._nan_triangle() if not self.drop else self._drop(X)
         lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
         if type(self.drop) is not list and self.drop is not None:
             self.drop = [self.drop]
@@ -74,7 +74,7 @@ class BootstrapODPSample(DevelopmentBase):
         exp_incr_triangle = obj.full_expectation_.cum_to_incr() \
                                .values[0, 0, :, :X.shape[-1]]
         exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
-            obj.X_.nan_triangle()
+            obj.X_._nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)
         self.hat_ = self._get_hat(X, exp_incr_triangle) if self.hat_adj else None 
         self.resampled_triangles_, self.scale_ = \
@@ -97,7 +97,7 @@ class BootstrapODPSample(DevelopmentBase):
         standardized_residuals = self.hat_ * unscaled_residuals
         pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
         n_params = self.design_matrix_.shape[1]
-        degree_freedom = np.nansum(X.nan_triangle()) - n_params
+        degree_freedom = np.nansum(X._nan_triangle()) - n_params
         # Shapland has a hetero adjustment to degree_freedom here
         # He also adjusts the residuals for the etero adjustment
         scale_phi = pearson_chi_sq/degree_freedom
@@ -125,7 +125,7 @@ class BootstrapODPSample(DevelopmentBase):
         obj = copy.copy(X)
         obj.kdims = np.arange(self.n_sims)
         obj.values = resampled_triangles
-        obj.set_slicers()
+        obj._set_slicers()
         return obj, scale_phi
 
         # Shapland cites Verral and England 2002 in using gamma as a proxy for
@@ -133,7 +133,7 @@ class BootstrapODPSample(DevelopmentBase):
         # the more theoretically correct choice.  Does this belong in the fit?
 
         # Process variance adjustment
-        #lower_diagonal = (obj.nan_triangle()*0)
+        #lower_diagonal = (obj._nan_triangle()*0)
         #lower_diagonal[np.isnan(lower_diagonal)]=1
         #obj.values = Chainladder().fit(Development().fit_transform(obj)).full_expectation_.values[...,:-1]*lower_diagonal
         #obj.nan_override = True
@@ -146,7 +146,7 @@ class BootstrapODPSample(DevelopmentBase):
     def _get_design_matrix(self, X):
         """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
         """
-        w = X.nan_triangle()
+        w = X._nan_triangle()
         arr = np.diag(w[:, 0])
         intra_beta = np.zeros((w.shape[0], w.shape[1]-1))
         arr = np.concatenate((arr, intra_beta), axis=1)
@@ -165,9 +165,9 @@ class BootstrapODPSample(DevelopmentBase):
         design_matrix = self.design_matrix_
         hat = np.matmul(np.matmul(np.matmul(design_matrix,np.linalg.inv(np.matmul(design_matrix.T, np.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
         hat = np.diagonal(np.sqrt(np.divide(1, abs(1-hat), where=(1-hat)!=0)))
-        total_length = X.nan_triangle().shape[0]
+        total_length = X._nan_triangle().shape[0]
         reshaped_hat = np.reshape(hat[:total_length],(1, total_length))
-        indices = np.nansum(X.nan_triangle(), axis=0).cumsum().astype(int)
+        indices = np.nansum(X._nan_triangle(), axis=0).cumsum().astype(int)
         for num, item in enumerate(indices[:-1]):
             col_length = int(indices[num+1]-indices[num])
             col = np.reshape(hat[int(indices[num]):int(indices[num+1])],(1,col_length))
@@ -181,7 +181,7 @@ class BootstrapODPSample(DevelopmentBase):
 
     def _drop(self, X):
         drop = [self.drop] if type(self.drop) is not list else self.drop
-        arr = X.nan_triangle()
+        arr = X._nan_triangle()
         for item in drop:
             arr[np.where(X.origin == item[0])[0][0],
                 np.where(X.development == item[1])[0][0]] = 0
