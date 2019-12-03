@@ -130,8 +130,8 @@ class _Workbook:
         row_rng = range(start_row, end_row)
         for r in row_rng:
             exhibit.worksheet.merge_range(
-                r, start_col, r, end_col, exhibit.data.iloc[r][0],
-                self.title_format[r])
+                r, start_col, r, end_col, exhibit.data.iloc[r - start_row][0],
+                self.title_format[r - start_row])
 
     def _write_header(self, exhibit):
         ''' Adds column headers to data table '''
@@ -198,6 +198,11 @@ class _Workbook:
                 r_idx = r - exhibit.col_nums - exhibit.header - \
                         exhibit.start_row - exhibit.margin[0]
                 exhibit.worksheet.write(r, c, d[r_idx, c_idx], fmt)
+                if r == start_row:
+                    exhibit.worksheet.set_column(
+                        first_col=c, last_col=c,
+                        width=exhibit.column_widths[c_idx])
+
 
 class _Title:
     def __init__(self, data, width):
@@ -270,6 +275,7 @@ class DataFrame:
         if title is None or title == []:
             title = None
         elif len(title) < 4:
+            self.height = self.height + len(title)
             title = _Title(title, width=self.width - self.margin[1] - self.margin[3])
         self.title = title
 
