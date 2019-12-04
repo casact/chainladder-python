@@ -5,7 +5,7 @@ from os import listdir
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/jbogaardt/chainladder-python'
-version='0.4.3' # Put this in __init__.py
+version='0.4.4' # Put this in __init__.py
 
 data_path = ''
 setup(

@@ -398,8 +398,8 @@ class Triangle(TriangleBase):
             obj.values = new_tri
             obj.odims = np.unique(o)
             obj.valuation = obj._valuation_triangle()
-        if type(self.ddims) == np.ndarray:
-            obj = obj.val_to_dev(inplace=True)
+            del obj._nan_triangle_
+        obj = obj.val_to_dev(inplace=True)
         # Now do development
         dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                           'Q': {'Y': 4, 'Q': 1},
