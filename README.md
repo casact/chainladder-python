@@ -24,7 +24,7 @@ To install using pip:
 `pip install chainladder`
 
 Alternatively, install directly from github:
-`pip install git+https://github.com/jbogaardt/chainladder-python/`
+`pip install git+https://github.com/casact/chainladder-python/`
 
 Note: This package requires Python 3.5 and later, numpy 1.12.0 and later,
 pandas 0.23.0 and later, scikit-learn 0.18.0 and later.
