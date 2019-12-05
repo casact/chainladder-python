@@ -8,7 +8,7 @@ from os import listdir
 
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
-url = 'https://github.com/jbogaardt/chainladder-python'
+url = 'https://github.com/casact/chainladder-python'
 version='0.4.4' # Put this in __init__.py
 
 data_path = ''
