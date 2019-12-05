@@ -1,3 +1,6 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import copy
 import json
@@ -20,10 +23,10 @@ class _Workbook:
             {'font_size': 16, 'align': 'center', 'font_name': self.font_name},
             {'font_size': 13, 'align': 'center', 'font_name': self.font_name}]
         index_format = {'num_format': '0;(0)', 'text_wrap': True,
-                        'bold': True, 'valign': 'bottom', 'align': 'right',
+                        'bold': True, 'valign': 'bottom', 'align': 'center',
                         'font_name': self.font_name}
         header_format = {'num_format': '0;(0)', 'text_wrap': True, 'bottom': 1,
-                        'bold': True, 'valign': 'bottom', 'align': 'left',
+                        'bold': True, 'valign': 'bottom', 'align': 'center',
                         'font_name': self.font_name}
         all_columns = {'align': 'center', 'font_name': self.font_name}
         decimal_format = {'num_format': '#,0.00', 'font_name': self.font_name}
@@ -502,6 +505,6 @@ class Tabs:
         -----------
         workbook_path : str
             The target path and filename of the Excel document
-        
+
         """
         _Workbook(workbook_path=workbook_path, exhibits=self).to_excel()

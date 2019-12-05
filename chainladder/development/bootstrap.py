@@ -1,15 +1,6 @@
-"""
-Bootstrap Chainladder
-=====================
-* Generalize to a full set of 4d triangles and not jsut a 1x1xmxn
-* Need to include DoF adjustment when hat matrix fails
-    - perhaps options for the user to select
-* Need to handle first diagonal being cumulative
-* Need to develop heteroskedasticity adjustment
-* Need to conceptualize how this operates with tail classes
-
-"""
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from sklearn.utils import check_random_state
 
 from chainladder.methods.chainladder import Chainladder
@@ -76,7 +67,7 @@ class BootstrapODPSample(DevelopmentBase):
         exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
             obj.X_._nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)
-        self.hat_ = self._get_hat(X, exp_incr_triangle) if self.hat_adj else None 
+        self.hat_ = self._get_hat(X, exp_incr_triangle) if self.hat_adj else None
         self.resampled_triangles_, self.scale_ = \
             self._get_simulation(X, exp_incr_triangle)
         n_obs = np.nansum(self.w_)

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import pandas as pd
 import numpy as np
 import copy
@@ -398,7 +402,8 @@ class Triangle(TriangleBase):
             obj.values = new_tri
             obj.odims = np.unique(o)
             obj.valuation = obj._valuation_triangle()
-            del obj._nan_triangle_
+            if hasattr(obj, '_nan_triangle_'):
+                del obj._nan_triangle_
         obj = obj.val_to_dev(inplace=True)
         # Now do development
         dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},

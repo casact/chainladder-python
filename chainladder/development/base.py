@@ -1,7 +1,6 @@
-"""
-Loss Development
-================
-"""
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
 import copy
@@ -112,7 +111,7 @@ class Development(DevelopmentBase):
                 val_offset[X.development_grain][X.origin_grain] - 1]
             w = X[X.valuation>=val_date_min]
             return np.nan_to_num((w/w).values)*X._expand_dims(X._nan_triangle())
-           
+
 
     def _drop_adjustment(self, X, link_ratio):
         weight = X._nan_triangle()[:, :-1]

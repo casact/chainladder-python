@@ -1,3 +1,6 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
 import joblib
@@ -72,7 +75,7 @@ def read_json(json_str):
         return cl.__dict__[
             json_dict['__class__']]().set_params(**json_dict['params'])
 
-    
+
 
 def parallelogram_olf(values, date, start_date=None, end_date=None,
                       grain='M', vertical_line=False):

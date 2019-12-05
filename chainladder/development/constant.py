@@ -1,3 +1,6 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
 import copy
 import numpy as np
@@ -13,11 +16,11 @@ class DevelopmentConstant(DevelopmentBase):
     Parameters
     ----------
     patterns : dict,  (default={})
-        A dictionary key/value representation of age(in months)/value 
+        A dictionary key/value representation of age(in months)/value
     style : string, optional (default='ldf')
         type of averaging to use for ldf average calculation.  Options include
         'volume', 'simple', and 'regression'
-   
+
 
     Attributes
     ----------
