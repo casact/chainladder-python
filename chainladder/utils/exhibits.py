@@ -10,53 +10,16 @@ class _Workbook:
     """
     Excel Workbook level configurations.  This is not part of the end_user API
     """
-    font_name = 'Calibri'
-    font_size = 11
     max_column_width = 30
     max_portrait_width = 120
     footer = '&CPage &P of &N\n&A'
 
-    def __init__(self, workbook_path, exhibits):
-        title_format = \
-            [{'font_size': 20, 'align': 'center', 'font_name': self.font_name},
-            {'font_size': 16, 'align': 'center', 'font_name': self.font_name},
-            {'font_size': 16, 'align': 'center', 'font_name': self.font_name},
-            {'font_size': 13, 'align': 'center', 'font_name': self.font_name}]
-        index_format = {'num_format': '0;(0)', 'text_wrap': True,
-                        'bold': True, 'valign': 'bottom', 'align': 'center',
-                        'font_name': self.font_name}
-        header_format = {'num_format': '0;(0)', 'text_wrap': True, 'bottom': 1,
-                        'bold': True, 'valign': 'bottom', 'align': 'center',
-                        'font_name': self.font_name}
-        all_columns = {'align': 'center', 'font_name': self.font_name}
-        decimal_format = {'num_format': '#,0.00', 'font_name': self.font_name}
-        datetime_format = {'num_format': 'yyyy-mm-dd hh:mm', 'font_name': self.font_name}
-        date_format = {'num_format': 'yyyy-mm-dd', 'font_name': self.font_name}
-        int_format = {'num_format': '#,0', 'font_name': self.font_name}
-        text_format = {'align': 'left', 'font_name': self.font_name}
+    def __init__(self, workbook_path, exhibits, default_formats):
         self.formats = {}
-        self.writer = pd.ExcelWriter(
-            workbook_path)
-        self.title_format = [self.writer.book.add_format(item)
-                        for item in title_format]
-        self.header_format = self.writer.book.add_format(header_format)
-        self.index_format = self.writer.book.add_format(index_format)
-        self.global_formats = {
-            'font_name': self.font_name,
-            'font_size': self.font_size}
-        self.default_formats = {
-            '"float64"': self.writer.book.add_format(decimal_format),
-            '"float32"': self.writer.book.add_format(decimal_format),
-            '"int64"': self.writer.book.add_format(int_format),
-            '"int32"': self.writer.book.add_format(int_format),
-            '"<M8[ns]"': self.writer.book.add_format(datetime_format),
-            '"object"': self.writer.book.add_format(text_format),
-        }
+        self.writer = pd.ExcelWriter(workbook_path)
         self.exhibits = exhibits
         self.workbook_path = workbook_path
-
-    def __repr__(self):
-        return self.workbook_path
+        self.default_formats = {} if default_formats is None else default_formats
 
     def to_excel(self):
         """ Outputs object to Excel.
@@ -66,9 +29,6 @@ class _Workbook:
         workbook_path : str
             The target path and filename of the Excel document
         """
-        #all_formats = {}
-        #for item in self.exhibits:
-        #    all_formats.update(item.formats)
         if self.exhibits.__class__.__name__ != 'Tabs':
             self.exhibits = Tabs(('sheet1', self.exhibits))
         for sheet in self.exhibits:
@@ -126,15 +86,20 @@ class _Workbook:
             exhibit.worksheet.set_landscape()
 
     def _write_title(self, exhibit):
-        start_row = exhibit.start_row
-        start_col = exhibit.start_col
+        start_row = exhibit.start_row + exhibit.margin[0]
+        start_col = exhibit.start_col + exhibit.margin[3]
         end_row = start_row + exhibit.height
         end_col = start_col + exhibit.width - 1
         row_rng = range(start_row, end_row)
+        title_format = []
+        for item in exhibit.title_formats:
+            v = self.default_formats.copy()
+            v.update(item)
+            title_format.append(self.writer.book.add_format(v))
         for r in row_rng:
             exhibit.worksheet.merge_range(
                 r, start_col, r, end_col, exhibit.data.iloc[r - start_row][0],
-                self.title_format[r - start_row])
+                title_format[r - start_row])
 
     def _write_header(self, exhibit):
         ''' Adds column headers to data table '''
@@ -142,48 +107,54 @@ class _Workbook:
             headers = exhibit.data.columns
         else:
             headers = [exhibit.index_label]+list(exhibit.data.columns)
+        header_format = self.default_formats.copy()
+        header_format.update(exhibit.header_formats)
+        header_format = self.writer.book.add_format(header_format)
         for col_num, value in enumerate(headers):
             exhibit.worksheet.write(
                 exhibit.start_row + exhibit.margin[0],
                 col_num + exhibit.start_col + exhibit.margin[3],
-                value, self.header_format)
+                value, header_format)
             if exhibit.col_nums:
                 exhibit.worksheet.write(
-                    exhibit.start_row + 1,
-                    col_num, -col_num-1, self.header_format)
+                    exhibit.start_row + 1, col_num, -col_num-1, header_format)
 
     def _write_index(self, exhibit):
         ''' Adds row index to data table '''
+        index_format = self.default_formats.copy()
+        index_format.update(exhibit.index_formats)
+        index_format = self.writer.book.add_format(index_format)
         for row_num, value in enumerate(exhibit.data.index.astype(str)):
             exhibit.worksheet.write(
                 row_num + exhibit.start_row + exhibit.header + \
                 exhibit.col_nums + exhibit.margin[0],
                 exhibit.start_col + exhibit.margin[3],
-                value, self.index_format)
+                value, index_format)
 
     def _register_formats(self, exhibit):
         """
         Registers all unique user-defined formats with the Workbook
         """
         for num, k in enumerate(exhibit.formats.keys()):
+            # Add unique formats
             v = exhibit.formats[k]
             if type(v) is dict:
                 col_formats = v
-            elif self.default_formats.get(v, None) is not None:
-                col_formats = self.default_formats[v]
             elif type(v) is str:
                 col_formats = {'num_format': v}
             else:
                 raise ValueError(f'Cannot infer format {v}')
-            for desc, attr in self.global_formats.items():
-                if col_formats is None:
-                    col_formats = attr
+            col_formats = self.default_formats.copy()
+            col_formats.update(v)
             if self.formats.get(json.dumps(col_formats), None) is None:
                 self.formats[json.dumps(col_formats)] = \
                     self.writer.book.add_format(col_formats)
-        for k, v in exhibit.formats.items():
-            exhibit.formats[k] = self.formats.get(json.dumps(v),
-                                self.default_formats.get(json.dumps(v)))
+
+        for k in exhibit.formats.keys():
+            # Assign formats to columns
+            v = self.default_formats.copy()
+            v.update(exhibit.formats[k])
+            exhibit.formats[k] = self.formats[json.dumps(v)]
 
     def _write_data(self, exhibit):
         start_row = exhibit.start_row + exhibit.col_nums + exhibit.header + \
@@ -208,20 +179,41 @@ class _Workbook:
 
 
 class _Title:
-    def __init__(self, data, width):
+    def __init__(self, data, width, title_formats, margin):
         if type(data) is str:
             data = [data]
         self.data = pd.DataFrame(data)
+        self.title_formats = title_formats
         self.width = width
         self.height = len(self.data)
-        self.header=False
-        self.index=False
-        self.col_nums=False
-        self.margin=(0,0,0,0)
+        self.header = False
+        self.index = False
+        self.col_nums = False
+        self.margin = margin
         self.formats = {}
 
     def __len__(self):
         return len(self.data)
+
+    @staticmethod
+    def _default_title_format():
+        return [{'font_size': 20, 'align': 'center'},
+                {'font_size': 16, 'align': 'center'},
+                {'font_size': 16, 'align': 'center'}] + \
+               [{'font_size': 13, 'align': 'center'}]*10
+
+    @staticmethod
+    def _set_title_format(overlay):
+        original = _Title._default_title_format()
+        if overlay is not None:
+            if type(overlay) is list:
+                for num, item in enumerate(overlay):
+                    original[num].update(item)
+            else:
+                for num, item in enumerate(original):
+                    original[num].update(overlay)
+        return original
+
 
 class DataFrame:
     """
@@ -231,23 +223,30 @@ class DataFrame:
     -----------
     data : DataFrame or Triangle (2D)
         The data to be places in the exhibit
-    header : bool or list (len of data.columns)
-        False uses no headers, True uses headers from data. Alternatively,
-        a list of strings will override headers.
-    formats : str or list (len of data.columns)
+    formats : dict
         The formats to be applied to the data.  Options include
         'money', 'percent', 'decimal', 'date', 'int', and 'text'.  Each
         format can be overriden at the class level by overriding its:
         resepective format dict (e.g. DataFrame.money_format, ...)
+    header : bool or list (len of data.columns)
+        False uses no headers, True uses headers from data. Alternatively,
+        a list of strings will override headers.
+    header_formats : dict
+        The formats to be applied to the header, if any
+    col_nums : bool
+        Set to True will insert column numbers into the exhibit.
     index : bool, default True
         Write row names (index).
+    index_formats : dict
+        The formats to be applied to the index, if any
     index_label : str or sequence, optional
         Column label for index column(s) if desired.
     title : list
         A list of strings up to length 4 (Title, subtitle1, subtitle2,
         subtitle3) to be placed above the data in the exhibit.
-    col_nums : bool
-        Set to True will insert column numbers into the exhibit.
+    title_formats : list of dicts
+        Formats to be applied to the title.  title_formats length must equal
+        the title length
     """
 
     min_numeric_col_width = 12
@@ -255,9 +254,20 @@ class DataFrame:
     # and need a bit more width
     col_padding_multiplier = 1.1
 
-    def __init__(self, data, header=True, formats=None, index=True,
-                 index_label='', title=None, col_nums=False,
+    def __init__(self, data, formats=None,
+                 header=True, header_formats=None, col_nums=False,
+                 index=True, index_label='', index_formats=None,
+                 title=None, title_formats=None,
                  column_widths=None, margin=None):
+        self.title_formats = _Title._set_title_format(title_formats)
+        if type(title) is list:
+            self.title_formats = self.title_formats[:len(title)]
+        self.index_formats = {
+            'num_format': '0;(0)', 'text_wrap': True,
+            'bold': True, 'valign': 'bottom', 'align': 'center'}
+        self.header_formats = {
+            'num_format': '0;(0)', 'text_wrap': True, 'bottom': 1,
+            'bold': True, 'valign': 'bottom', 'align': 'center'}
         if type(data) is not pd.DataFrame:
             data = data.to_frame()
         self.margin = _Container._set_margin(margin)
@@ -277,12 +287,20 @@ class DataFrame:
                      self.margin[3]
         if title is None or title == []:
             title = None
-        elif len(title) < 4:
+        else:
             self.height = self.height + len(title)
-            title = _Title(title, width=self.width - self.margin[1] - self.margin[3])
+            title = _Title(
+                title, width=data.shape[1] + self.index,
+                title_formats=self.title_formats,
+                margin=(self.margin[0], 0, 0, self.margin[3]))
         self.title = title
 
-    def to_excel(self, workbook_path):
+        if header_formats is not None:
+            self.header_formats.update(header_formats)
+        if index_formats is not None:
+            self.index_formats.update(index_formats)
+
+    def to_excel(self, workbook_path, default_formats=None):
         """ Outputs object to Excel.
 
         Parameters:
@@ -290,7 +308,8 @@ class DataFrame:
         workbook_path : str
             The target path and filename of the Excel document
         """
-        _Workbook(workbook_path=workbook_path, exhibits=self).to_excel()
+        _Workbook(workbook_path=workbook_path, exhibits=self,
+                  default_formats=default_formats).to_excel()
 
     def get_column_widths(self):
         header_w = [max([len(token) for token in str(item).split(' ')])
@@ -303,12 +322,20 @@ class DataFrame:
                  for item in self.data.columns]
         return [max(item) for item in zip(header_w, row_w)]
 
-    def __repr__(self):
-        return str(self.data.shape)
-
     def format_validation(self, formats):
         ''' Creates an Excel format compatible dictionary '''
-        self.formats = dict(self.data.dtypes.astype(str))
+        base_formats = {
+            'float64': {'num_format': '#,0.00'},
+            'float32': {'num_format': '#,0.00'},
+            'int64': {'num_format': '#,0'},
+            'int32': {'num_format': '#,0'},
+            '<M8[ns]': {'num_format': 'yyyy-mm-dd hh:mm'},
+            'object': {'align': 'left'},
+        }
+        self.formats = {
+            k: base_formats[v]
+            for k, v in dict(self.data.dtypes.astype(str)).items()
+        }
         if type(formats) is list:
             self.formats.update(dict(zip(self.data.columns, formats)))
         elif type(formats) is str:
@@ -324,30 +351,6 @@ class DataFrame:
                 self.formats.update(formats)
         else:
             pass
-        for field, format_str in self.formats.items():
-            digits = 0
-            if type(format_str) is not str:
-                continue
-            if format_str.find('[') > 0 and \
-               format_str not in ('datetime64[ns]', 'timedelta64[ns]'):
-                digits = int(
-                    format_str[format_str.find('[') + 1:format_str.find(']')])
-            digits = ('.' if digits > 0 else '') + ''.join(['0']*digits)
-            if format_str.lower().find('currency') > -1:
-                self.formats[field] = (
-                    f'_($* #,##0{digits}_);'
-                    f'_($* (#,##0{digits});'
-                    '_($* "-"??_);'
-                    '_(@_)')
-            if format_str.lower().find('accounting') > -1:
-                self.formats[field] = (
-                    f'_(* #,##0{digits}_);'
-                    f'_(* (#,##0{digits});'
-                    '_(* "-"??_);'
-                    '_(@_)')
-            if format_str.lower().find('percent') > -1:
-                self.formats[field] = f'0{digits}%'
-
 
 class _Container():
     """ Base class for Row and Column
@@ -359,10 +362,20 @@ class _Container():
             self.args = args
         self.margin = _Container._set_margin(kwargs.get('margin', None))
         self._title_len = 0
+        if kwargs.get('title_formats', None) is not None:
+            self.title_formats = _Title._set_title_format(kwargs['title_formats'])
+            if type(kwargs['title']) is list:
+                self.title_formats = self.title_formats[:len(kwargs['title'])]
         if kwargs.get('title', None) is not None:
-            self.title = _Title(kwargs['title'], width=self.width)
+            if kwargs.get('title_formats', None) is None:
+                self.title_formats = _Title._default_title_format()
+            self.title = _Title(
+                kwargs['title'], width=self.width,
+                title_formats=self.title_formats, margin=(0, 0, 0, 0))
             if getattr(self, 'title', None) is not None:
                 self._title_len = len(getattr(self, 'title'))
+
+
         arg_title = [0]
         for item in args:
             if getattr(item, 'title', None) is not None:
@@ -375,7 +388,7 @@ class _Container():
     def __len__(self):
         return len(self.args)
 
-    def to_excel(self, workbook_path):
+    def to_excel(self, workbook_path, default_formats=None):
         """ Outputs object to Excel.
 
         Parameters:
@@ -383,7 +396,8 @@ class _Container():
         workbook_path : str
             The target path and filename of the Excel document
         """
-        _Workbook(workbook_path=workbook_path, exhibits=self).to_excel()
+        _Workbook(workbook_path=workbook_path, exhibits=self,
+                  default_formats=default_formats).to_excel()
 
     @staticmethod
     def _set_margin(margin):
@@ -498,7 +512,7 @@ class Tabs:
     def __len__(self):
         return len(self.args)
 
-    def to_excel(self, workbook_path):
+    def to_excel(self, workbook_path, default_formats=None):
         """ Outputs object to Excel.
 
         Parameters:
@@ -507,4 +521,5 @@ class Tabs:
             The target path and filename of the Excel document
 
         """
-        _Workbook(workbook_path=workbook_path, exhibits=self).to_excel()
+        _Workbook(workbook_path=workbook_path, exhibits=self,
+                  default_formats=default_formats).to_excel()

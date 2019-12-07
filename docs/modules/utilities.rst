@@ -85,6 +85,17 @@ nested dictionary.
    >>> formats={'Ultimate':{'num_format':'#,#', 'font_color':'red'},
    ...          'Latest':  {'num_format':'#,0.00', 'bold':True}}
 
+Formatting options exist for the `index` and `header`.  Simply pass the desired
+formats through using `index_formats` and `header_formats`.
+
+**Example:**
+   >>> formats={'italic':True, 'font_color':'red'}
+   >>> cl.DataFrame(raa, index_formats=formats).to_excel('workbook.xlsx')
+
+   .. note::
+      Chainladder already has default formats set up.  As you apply your own
+      formats, the defaults will be applied first followed by your own.
+
 For more information on available formats refer to
 https://xlsxwriter.readthedocs.io/format.html
 
@@ -99,7 +110,15 @@ expressed as a list:
    >>> cl.DataFrame(raa, title=title).to_excel('workbook.xlsx')
 
 Many actuarial exhibits include column numbering for easier reference.
-This can be turned on using the ``col_nums=True``.
+This can be turned on using the `col_nums=True`.  As with everything else,
+formats are adjustable through the `title_formats` argument.
+
+**Example:**
+   >>> title_formats = [{'font_color': 'red'},
+   ...        {'font_color': 'green'},
+   ...        {'font_color': 'blue'}]
+   >>> cl.DataFrame(raa, title=title, title_formats=title_formats).to_excel('workbook.xlsx')
+
 
 Laying out composite objects
 ============================
@@ -138,13 +157,14 @@ be a deep as you want allowing for a highly customized layout.
 **Example:**
    >>> cl.Row(col, col).to_excel('workbook.xlsx')
 
-``Row`` and ``Column`` optionally take `title` and `margin` keywords that
-function the same as those in ``cl.DataFrame``.
+``Row`` and ``Column`` optionally take `title`, ``title_formats`` and `margin`
+keywords that function the same as those in ``cl.DataFrame``.
 
 **Example:**
    >>> composite = cl.Row(
    ...     col, col,
    ...     title=['This title spans both Column Objects'],
+   ...     title_formats=[{'underline': True}]
    ...     margin=(0,1,0,0)
    ... )
    >>> composite.to_excel('workbook.xlsx')
@@ -152,13 +172,30 @@ function the same as those in ``cl.DataFrame``.
 Tabs
 ----
 
-:class:`Tabs` are the sheet representation of these objects.
+:class:`Tabs` are the sheet representation of these objects.  Tabs are different
+from ``Row`` and ``Column`` in that each object passed to ``Tabs`` must be
+expressed as a 2-tuple corresponding to ``('sheet_name', object)``.
 
 **Example:**
    >>> cl.Tabs(
    ...    ('a_sheet', composite),
    ...    ('another_sheet', composite)
    ... ).to_excel('workbook.xlsx')
+
+Modifying defaults for all objects
+----------------------------------
+You may choose to override all defaults.  For example, by default, the font is
+set to 'Calibri'.  `to_excel()` takes an additional parameter `default_formats`
+to will apply to all nested objects you intend to export.
+
+**Example:**
+   >>> cl.Tabs(
+   ...    ('a_sheet', composite),
+   ...    ('another_sheet', composite)
+   ... ).to_excel('workbook.xlsx', default_formats={'font_name': 'Arial'})
+
+If any nested object has a default override, the override will be honored over
+this default.
 
 
 Datasets
