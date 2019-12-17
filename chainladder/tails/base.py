@@ -47,7 +47,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         return self
 
     def transform(self, X):
-        X_new = copy.copy(X)
+        X_new = copy.deepcopy(X)
         X_new.std_err_.values = np.concatenate(
             (X_new.std_err_.values,
              self.std_err_.values[..., -1:]), -1)
