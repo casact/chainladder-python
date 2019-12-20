@@ -62,7 +62,7 @@ def read_json(json_str):
             setattr(tri, array, np.array(
                 json_dict[array]['array'], dtype=json_dict[array]['dtype']))
         properties = ['key_labels', 'origin_grain', 'development_grain',
-                    'nan_override']
+                    'nan_override', 'is_cumulative']
         for prop in properties:
             setattr(tri, prop, json_dict[prop])
         tri.valuation_date = pd.to_datetime(
