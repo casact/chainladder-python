@@ -330,17 +330,11 @@ class Triangle(TriangleBase):
             o_vals = np.append(o_vals, arr, -1)
         obj.values = o_vals[..., 1:]
         obj.values[obj.values == 0] = np.nan
-        keep = np.where(np.sum(
-            (np.nansum(np.nansum(obj.values, 0), 0)), -2) !=
-            len(obj.origin))[-1]
-        obj.values = obj.values[..., keep]
         if kind == 'val_to_dev':
             obj.ddims = np.array([item for item in rng])
-            obj.ddims = obj.ddims[keep]
             obj.valuation = obj._valuation_triangle()
         else:
             obj.ddims = obj.valuation.unique().sort_values()
-            obj.ddims = obj.ddims[keep]
             obj.values = obj.values[..., :np.where(
                 obj.ddims.to_timestamp() <= obj.valuation_date)[0].max()+1]
             obj.ddims = obj.ddims[obj.ddims.to_timestamp()
