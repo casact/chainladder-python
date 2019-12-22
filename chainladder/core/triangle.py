@@ -88,6 +88,24 @@ class Triangle(TriangleBase):
     def index(self):
         return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
+    @index.setter
+    def index(self, value):
+        self._len_check(self.index, value)
+        if type(value) is pd.DataFrame:
+            self.kdims = value.values
+            self._set_slicers()
+        else:
+            raise TypeError('index must be a pandas DataFrame')
+
+    def set_index(self, value, inplace=False):
+        """ Sets the index of the Triangle """
+        if inplace:
+            self.index = value
+            return self
+        else:
+            new_obj = copy.deepcopy(self)
+            return new_obj.set_index(value=value, inplace=True)
+
     @property
     def columns(self):
         return self._idx_table().columns

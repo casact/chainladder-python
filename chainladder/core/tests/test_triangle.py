@@ -87,7 +87,7 @@ def test_sum_of_diff_eq_diff_of_sum():
 
 
 def test_append():
-    assert cl.load_dataset('raa').append(cl.load_dataset('raa'), index='raa2').sum() == 2*cl.load_dataset('raa')
+    assert cl.load_dataset('raa').append(cl.load_dataset('raa')).sum() == 2*cl.load_dataset('raa')
 
 
 def test_assign_existing_col():

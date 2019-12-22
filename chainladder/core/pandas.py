@@ -133,27 +133,21 @@ class TrianglePandas:
             return self.to_frame().groupby(*args, **kwargs)
         return TriangleGroupBy(self, by)
 
-    def append(self, other, index):
+    def append(self, other):
         """ Append rows of other to the end of caller, returning a new object.
 
         Parameters
         ----------
         other : Triangle
             The data to append.
-        index:
-            The index label(s) to assign the appended data.
 
         Returns
         -------
             New Triangle with appended data.
         """
         return_obj = copy.deepcopy(self)
-        x = pd.DataFrame(list(return_obj.kdims), columns=return_obj.key_labels)
-        new_idx = pd.DataFrame([index], columns=return_obj.key_labels)
-        x = x.append(new_idx, sort=True)
-        x.set_index(return_obj.key_labels, inplace=True)
+        return_obj.kdims = (return_obj.index.append(other.index)).values
         return_obj.values = np.append(return_obj.values, other.values, axis=0)
-        return_obj.kdims = np.array(x.index.unique())
         return_obj._set_slicers()
         return return_obj
 
@@ -273,7 +267,7 @@ def set_method(cls, func, k):
 
 df_passthru = ['to_clipboard', 'to_csv', 'to_excel', 'to_json',
                'to_html', 'to_dict', 'unstack', 'pivot', 'drop_duplicates',
-               'describe', 'melt', 'pct_chg']
+               'describe', 'melt', 'pct_chg', 'round']
 agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod',
              'var', 'std', 'cumsum']
 agg_funcs = {item: 'nan'+item for item in agg_funcs}
