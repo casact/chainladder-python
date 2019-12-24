@@ -39,19 +39,24 @@ class TriangleDunders:
                 other_arr[:] = np.nan
                 ol, oh = np.where(~odims[1].isna().values == 1)[0].min(
                 ), np.where(~odims[1].isna().values == 1)[0].max()+1
-                dl, dh = np.where(~ddims[1].isna().values == 1)[0].min(
-                ), np.where(~ddims[1].isna().values == 1)[0].max()+1
-                other_arr[:, :, ol:oh, dl:dh] = other.values
+                if self.ddims != other.ddims:
+                    dl, dh = np.where(~ddims[1].isna().values == 1)[0].min(
+                    ), np.where(~ddims[1].isna().values == 1)[0].max()+1
+                    other_arr[:, :, ol:oh, dl:dh] = other.values
+                else:
+                    other_arr[:, :, ol:oh, :] = other.values
 
                 obj_arr = np.zeros(
                     (self.shape[0], self.shape[1], len(odims), len(ddims)))
                 obj_arr[:] = np.nan
-
                 ol, oh = np.where(~odims[0].isna().values == 1)[0].min(
                 ), np.where(~odims[0].isna().values == 1)[0].max()+1
-                dl, dh = np.where(~ddims[0].isna().values == 1)[0].min(
-                ), np.where(~ddims[0].isna().values == 1)[0].max()+1
-                obj_arr[:, :, ol:oh, dl:dh] = self.values
+                if self.ddims != other.ddims:
+                    dl, dh = np.where(~ddims[0].isna().values == 1)[0].min(
+                    ), np.where(~ddims[0].isna().values == 1)[0].max()+1
+                    obj_arr[:, :, ol:oh, dl:dh] = self.values
+                else:
+                    obj_arr[:, :, ol:oh, :] = self.values
 
                 odims = np.array(odims.index)
                 ddims = np.array(ddims.index)

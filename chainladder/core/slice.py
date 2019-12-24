@@ -108,7 +108,14 @@ class TriangleSlicer:
             self.values[:, i:i+1] = value.values
         else:
             self.vdims = np.array(idx.columns.unique())
-            self.values = np.append(self.values, value.values, axis=1)
+            try:
+                self.values = np.append(self.values, value.values, axis=1)
+            except:
+                # For misaligned triangle support
+                self.values = np.append(
+                    self.values,
+                    (self.iloc[:, 0]*0+value).values, axis=1)
+
 
     def _slice_origin(self, key):
         ''' private method for handling of origin slicing '''
