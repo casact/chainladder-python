@@ -4,8 +4,6 @@
 import pandas as pd
 import numpy as np
 import copy
-import inspect
-
 
 
 class TriangleGroupBy:
@@ -149,7 +147,14 @@ class TrianglePandas:
         """
         return_obj = copy.deepcopy(self)
         return_obj.kdims = (return_obj.index.append(other.index)).values
-        return_obj.values = np.append(return_obj.values, other.values, axis=0)
+        try:
+            return_obj.values = np.append(return_obj.values, other.values, axis=0)
+        except:
+            # For misaligned triangle support
+            self.values = np.append(
+                return_obj.values,
+                (return_obj.iloc[:, 0]*0+other.values).values, axis=1)
+
         return_obj._set_slicers()
         return return_obj
 
@@ -209,12 +214,8 @@ def add_triangle_agg_func(cls, k, v):
             else:
                 axis = self._get_axis(axis)
             func = getattr(np, v)
-            if 'keepdims' in inspect.getfullargspec(func).args:
-                obj.values = func(
-                    obj.values, axis=axis, keepdims=True, *args, **kwargs)
-            else:
-                obj.values = func(
-                    obj.values, axis=axis, *args, **kwargs)
+            kwargs.update({'keepdims': True})
+            obj.values = func(obj.values, axis=axis, *args, **kwargs)
             if axis == 0 and obj.values.shape[axis] == 1:
                 obj.kdims = np.array([None])
                 obj.key_labels = [None]

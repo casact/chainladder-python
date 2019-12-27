@@ -39,7 +39,7 @@ class TriangleDunders:
                 other_arr[:] = np.nan
                 ol, oh = np.where(~odims[1].isna().values == 1)[0].min(
                 ), np.where(~odims[1].isna().values == 1)[0].max()+1
-                if self.ddims != other.ddims:
+                if np.any(self.ddims != other.ddims):
                     dl, dh = np.where(~ddims[1].isna().values == 1)[0].min(
                     ), np.where(~ddims[1].isna().values == 1)[0].max()+1
                     other_arr[:, :, ol:oh, dl:dh] = other.values
@@ -51,7 +51,7 @@ class TriangleDunders:
                 obj_arr[:] = np.nan
                 ol, oh = np.where(~odims[0].isna().values == 1)[0].min(
                 ), np.where(~odims[0].isna().values == 1)[0].max()+1
-                if self.ddims != other.ddims:
+                if np.any(self.ddims != other.ddims):
                     dl, dh = np.where(~ddims[0].isna().values == 1)[0].min(
                     ), np.where(~ddims[0].isna().values == 1)[0].max()+1
                     obj_arr[:, :, ol:oh, dl:dh] = self.values
