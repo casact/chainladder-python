@@ -189,15 +189,26 @@ class Triangle(TriangleBase):
             Whether to collapse the diagonal into a single columns
         '''
         obj = copy.deepcopy(self)
-        diagonal = obj[obj.valuation == obj.valuation_date].values
+        if not compress:
+            offset = {'M': {'Y': 12, 'Q': 3, 'M': 1},
+                      'Q': {'Q': 1, 'Y': 4},
+                      'Y': {'Y': 1}}
+            val_idx = self.valuation.unique().sort_values()
+            val_idx = val_idx[val_idx <= self.valuation_date]
+            val_idx = val_idx[-offset[self.development_grain][self.origin_grain]:]
+            val_min, val_max = val_idx.min(), val_idx.max()
+            diagonal = obj[obj.valuation >= val_min]
+            diagonal = diagonal[diagonal.valuation <= val_max]
+            return diagonal
         if compress:
+            diagonal = obj[obj.valuation == obj.valuation_date].values
             diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
             obj.ddims = np.array([None])
             obj.valuation = pd.DatetimeIndex(
                 [pd.to_datetime(obj.valuation_date)] *
                 len(obj.odims)).to_period(self._lowest_grain())
-        obj.values = diagonal
-        return obj
+            obj.values = diagonal
+            return obj
 
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.

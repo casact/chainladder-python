@@ -101,8 +101,9 @@ class TrianglePandas:
         if obj.shape[-1] != 1:
             ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0])
             ddim = obj.development.iloc[:, 0][pd.Series(ddim).astype(bool)]
-            obj = obj[(self.development >= ddim.min()) &
+            obj = self[(self.development >= ddim.min()) &
                   (self.development <= ddim.max())]
+            return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 

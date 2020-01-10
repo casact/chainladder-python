@@ -67,7 +67,15 @@ class BootstrapODPSample(DevelopmentBase):
         exp_incr_triangle = np.nan_to_num(exp_incr_triangle) * \
             obj.X_._nan_triangle()
         self.design_matrix_ = self._get_design_matrix(X)
-        self.hat_ = self._get_hat(X, exp_incr_triangle) if self.hat_adj else None
+        if self.hat_adj:
+            try:
+                self.hat_ = self._get_hat(X, exp_incr_triangle)
+            except:
+                warn('Could not compute hat matrix.  Setting hat_adj to False')
+                self.had_adj = False
+                self.hat_ = None
+        else:
+            self.hat_ = None
         self.resampled_triangles_, self.scale_ = \
             self._get_simulation(X, exp_incr_triangle)
         n_obs = np.nansum(self.w_)
@@ -85,13 +93,16 @@ class BootstrapODPSample(DevelopmentBase):
         unscaled_residuals = \
             ((X.cum_to_incr().values - exp_incr_triangle) /
              np.sqrt(np.abs(exp_incr_triangle**k_value)))[0, 0, ...]
-        standardized_residuals = self.hat_ * unscaled_residuals
+        if self.hat_ is None:
+            standardized_residuals = unscaled_residuals
+        else:
+            standardized_residuals = self.hat_ * unscaled_residuals
         pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
         n_params = self.design_matrix_.shape[1]
         degree_freedom = np.nansum(X._nan_triangle()) - n_params
         # Shapland has a hetero adjustment to degree_freedom here
         # He also adjusts the residuals for the etero adjustment
-        scale_phi = pearson_chi_sq/degree_freedom
+        scale_phi = pearson_chi_sq / degree_freedom
         k, v, o, d = X.shape
         resids = np.reshape(standardized_residuals, (k, v, o*d))
 

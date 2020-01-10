@@ -125,7 +125,7 @@ class MackChainladder(Chainladder):
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
-        full_tri = self.full_triangle_.values[..., :len(self.X_.ddims)]
+        full_tri = np.nan_to_num(self.full_triangle_.values)[..., :len(self.X_.ddims)]
         t1_t = (full_tri * std_err)**2
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
@@ -141,7 +141,7 @@ class MackChainladder(Chainladder):
 
     def _get_tot_param_risk(self, risk_arr):
         """ This assumes triangle symmertry """
-        t1 = self.full_triangle_.values[..., :len(self.X_.ddims)] - \
+        t1 = np.nan_to_num(self.full_triangle_.values)[..., :len(self.X_.ddims)] - \
             np.nan_to_num(self.X_.values) + \
             np.nan_to_num(self.X_._get_latest_diagonal(False).values)
         t1 = np.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
@@ -173,7 +173,7 @@ class MackChainladder(Chainladder):
         obj.values = obj.values[..., -1:]
         return pd.DataFrame(
             obj.values[..., 0, 0], index=obj.kdims,
-            columns=[item + ' Total Mack Std Err' for item in obj.vdims])
+            columns=[item for item in obj.vdims])
 
     @property
     def summary_(self):

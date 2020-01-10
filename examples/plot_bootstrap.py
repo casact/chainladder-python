@@ -14,7 +14,7 @@ sns.set_style('whitegrid')
 
 
 #  Grab a Triangle
-tri = cl.load_dataset('bs_sample')
+tri = cl.load_dataset('genins')
 # Generate bootstrap samples
 sims = cl.BootstrapODPSample().fit_transform(tri)
 # Calculate LDF for each simulation
