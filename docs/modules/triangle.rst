@@ -218,7 +218,7 @@ of these operations are legal.
 Valuation or development
 ------------------------
 While most Estimators that use triangles expect the development period to be
-expressed as an origin age, it is possible to transform a trianle into a valuation
+expressed as an origin age, it is possible to transform a triangle into a valuation
 triangle where the development periods are converted to valuation periods.  Expressing
 triangles this way may provide a more convenient view of valuation slices.
 Switching between a development triangle and a valuation triangle can be

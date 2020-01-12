@@ -47,6 +47,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             self.development_grain = self.origin_grain
             col = None
         # Prep the data for 4D Triangle
+        origin_date = pd.PeriodIndex(origin_date, freq=self.origin_grain).to_timestamp()
         data_agg = self._get_axes(data_agg, index, columns,
                                   origin_date, development_date)
         data_agg = pd.pivot_table(data_agg, index=index+['origin'],
@@ -133,7 +134,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         data_agg = all_axes.merge(
             data_agg, how='left',
             left_on=['origin', 'development'] + groupby,
-            right_on=[origin_date, development_date] + groupby).fillna(0)
+            right_on=[origin_date, development_date] + groupby)
         data_agg = data_agg[['origin', 'development'] + groupby + columns]
         data_agg['development'] = TriangleBase._development_lag(
             data_agg['origin'], data_agg['development'])
