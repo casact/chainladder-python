@@ -302,7 +302,7 @@ class Triangle(TriangleBase):
                 non_ultimates = obj.values
                 obj = obj._val_dev_chg('val_to_dev')
                 ultimate = self[self.valuation>='2262']
-                max_val = self[self.valuation<'2262'][self.origin== self.origin.max()].valuation.max()
+                max_val = self[self.valuation<'2262'][self.origin == self.origin.max()].valuation.max()
                 max_dev = obj[obj.origin == obj.origin.max()]
                 max_dev = max_dev[max_dev.valuation == max_val].ddims[0]
                 obj = obj[obj.development <= max_dev]

@@ -26,8 +26,8 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\core\pandas.py:198: RuntimeWarning: Mean of empty slice
-      obj.values, axis=axis, keepdims=True, *args, **kwargs)
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\core\pandas.py:219: RuntimeWarning: Mean of empty slice
+      obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
     [Text(0.5,0,'LDF'), Text(0.5,1,'Age 12-24 LDF Distribution')]
 
@@ -48,7 +48,7 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
 
     #  Grab a Triangle
-    tri = cl.load_dataset('bs_sample')
+    tri = cl.load_dataset('genins')
     # Generate bootstrap samples
     sims = cl.BootstrapODPSample().fit_transform(tri)
     # Calculate LDF for each simulation
@@ -69,7 +69,7 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.845 seconds)
+   **Total running time of the script:** ( 0 minutes  14.352 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap.py:

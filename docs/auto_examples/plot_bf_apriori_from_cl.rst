@@ -27,7 +27,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x0000026A3B5F4EF0>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x00000220F1A6C4E0>
 
 
 
@@ -60,7 +60,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.292 seconds)
+   **Total running time of the script:** ( 0 minutes  1.345 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bf_apriori_from_cl.py:

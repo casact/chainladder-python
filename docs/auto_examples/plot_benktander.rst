@@ -65,7 +65,7 @@ choice.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  29.913 seconds)
+   **Total running time of the script:** ( 0 minutes  30.942 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_benktander.py:

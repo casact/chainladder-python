@@ -233,7 +233,7 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the Exhibits class. It creates an Excel fi...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the Excel outputs. It creates an Excel fil...">
 
 .. only:: html
 

@@ -23,29 +23,29 @@ particular ``index`` grain and apply them to another.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:51: RuntimeWarning: divide by zero encountered in true_divide
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:54: RuntimeWarning: divide by zero encountered in true_divide
       coef = np.nansum(w*x*y, axis)/np.nansum((y*0+1)*w*x*x, axis)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:51: RuntimeWarning: invalid value encountered in true_divide
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:54: RuntimeWarning: invalid value encountered in true_divide
       coef = np.nansum(w*x*y, axis)/np.nansum((y*0+1)*w*x*x, axis)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:55: RuntimeWarning: invalid value encountered in sqrt
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:58: RuntimeWarning: invalid value encountered in sqrt
       residual = (y-fitted_value)*np.sqrt(w)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:60: RuntimeWarning: invalid value encountered in true_divide
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:63: RuntimeWarning: invalid value encountered in true_divide
       std_err = np.sqrt(mse/np.nansum(w*x*x*(y*0+1), axis))
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:89: RuntimeWarning: invalid value encountered in multiply
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:92: RuntimeWarning: invalid value encountered in multiply
       w = np.nan_to_num(ly*0+1)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:42: RuntimeWarning: Mean of empty slice
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:45: RuntimeWarning: Mean of empty slice
       (np.nansum(w*x*y, axis)-np.nansum(x*w, axis)*np.nanmean(y, axis)) /
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:43: RuntimeWarning: Mean of empty slice
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:46: RuntimeWarning: Mean of empty slice
       (np.nansum(w*x*x, axis)-np.nanmean(x, axis)*np.nansum(w*x, axis)))
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:43: RuntimeWarning: invalid value encountered in true_divide
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:46: RuntimeWarning: invalid value encountered in true_divide
       (np.nansum(w*x*x, axis)-np.nanmean(x, axis)*np.nansum(w*x, axis)))
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:44: RuntimeWarning: Mean of empty slice
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:47: RuntimeWarning: Mean of empty slice
       intercept = np.nanmean(y, axis) - slope * np.nanmean(x, axis)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:228: RuntimeWarning: invalid value encountered in multiply
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:227: RuntimeWarning: invalid value encountered in multiply
       params.sigma_ /
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:229: RuntimeWarning: invalid value encountered in sqrt
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:228: RuntimeWarning: invalid value encountered in sqrt
       np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:229: RuntimeWarning: overflow encountered in add
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:228: RuntimeWarning: overflow encountered in add
       np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
           Industry to Company LDF Diff
     1988                           NaN
@@ -84,7 +84,7 @@ particular ``index`` grain and apply them to another.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  4.412 seconds)
+   **Total running time of the script:** ( 0 minutes  4.303 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_industry_to_company.py:
