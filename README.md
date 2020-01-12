@@ -19,6 +19,9 @@ code documentation.
 ## Have a question?
 Feel free to reach out on [Gitter](https://gitter.im/chainladder-python/community).
 
+## Want to contribute?
+Check out our [contributing guidelines](https://github.com/casact/chainladder-python/blob/master/CONTRIBUTING.md).
+
 ## Installation
 To install using pip:
 `pip install chainladder`
