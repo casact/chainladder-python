@@ -1,5 +1,5 @@
 # chainladder (python)
-[![Build Status](https://github.com/casact/chainladder-python/workflows/Run%20all%20unit%20tests/badge.svg)
+[![Build Status](https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/chainladder-python/badge/?version=master)](http://chainladder-python.readthedocs.io/en/latest/?badge=master)
 [![codecov](https://codecov.io/gh/jbogaardt/chainladder-python/branch/master/graph/badge.svg)](https://codecov.io/gh/jbogaardt/chainladder-python)
 
