@@ -140,7 +140,11 @@ Classes
    :template: class.rst
 
    DataFrame
+   Series
+   Title
+   Image
    Row
    Column
    Tabs
-   
+   CSpacer
+   RSpacer
