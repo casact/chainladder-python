@@ -52,4 +52,5 @@ of the project with `pytest chainladder`.
 #### Functionality in R
  Several of the unit tests use `rpy2` to call into R's version of
 `chainladder`.  In general, if the functionality exists in R, it is worth
-liberally writing tests that directly compares the two softwares.
+liberally writing tests that directly compares the two softwares.  The R dependencies
+are available in `r_requirements.txt`.
