@@ -43,7 +43,7 @@ python.
 
 #### Documents
 To build the documents, you should have sphinx and a few other packages
-`seaborn`,`nbsphinx`, `matplotlib`, `numpydoc`, `sphinx_gallery`.
+`seaborn`,`nbsphinx`, `matplotlib`, `numpydoc`, `sphinx_gallery`.  The complete list is in `docs/rtfd-requirements.txt`
 
 #### Unit tests
 Unit tests rely on `pytest`. Every module has a `tests` directory where the unit tests can be found.  All unit tests can be run from the root directory
@@ -52,4 +52,5 @@ of the project with `pytest chainladder`.
 #### Functionality in R
  Several of the unit tests use `rpy2` to call into R's version of
 `chainladder`.  In general, if the functionality exists in R, it is worth
-liberally writing tests that directly compares the two softwares.
+liberally writing tests that directly compares the two softwares.  The R dependencies
+are available in `r_requirements.txt`.

@@ -1,5 +1,6 @@
 # chainladder (python)
-[![Build Status](https://travis-ci.org/jbogaardt/chainladder-python.svg?branch=master)](https://travis-ci.org/jbogaardt/chainladder-python)
+[![PyPI version](https://badge.fury.io/py/chainladder.svg)](https://badge.fury.io/py/chainladder)
+![Build Status](https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/chainladder-python/badge/?version=master)](http://chainladder-python.readthedocs.io/en/latest/?badge=master)
 [![codecov](https://codecov.io/gh/jbogaardt/chainladder-python/branch/master/graph/badge.svg)](https://codecov.io/gh/jbogaardt/chainladder-python)
 

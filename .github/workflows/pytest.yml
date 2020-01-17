@@ -1,0 +1,43 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+    - '*'
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  linux:
+    name: (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest'] #, 'macos-latest', 'windows-latest']
+        python-version: ['3.7'] #, '2.7']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+      - name: Install repo and dependencies
+        shell: bash -l {0}
+        run: |
+          python setup.py develop
+          conda install -q -c r --file requirements.txt;
+          conda install -q -c r --file r_requirements.txt;
+          R -e "options(repos = c(CRAN = 'http://cran.rstudio.com'))"
+          R -e "install.packages('ChainLadder', repo='http://cran.rstudio.com')";
+          pytest --cov=. --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          yml: ./codecov.yml
+          fail_ci_if_error: true
