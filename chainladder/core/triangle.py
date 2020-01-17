@@ -456,30 +456,44 @@ class Triangle(TriangleBase):
             return obj
 
 
-    def trend(self, trend=0.0, axis='origin'):
+    def trend(self, trend=0.0, axis='origin', valuation_date=None, ultimate_lag=None):
         """  Allows for the trending of a Triangle object or an origin vector.
         This method trends using days and assumes a years is 365.25 days long.
 
         Parameters
         ----------
         trend : float
-            The annual amount of the trend
+            The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
+        ultimate_lag : int
+            If ultimate valuations are in the triangle, you can set the overall
+            age of the ultimate to be some lag from the latest non-Ultimate
+            development
 
         Returns
         -------
         Triangle
             updated with multiplicative trend applied.
         """
-        days = np.datetime64(self.valuation_date)
+        if not valuation_date:
+            days = np.datetime64(self.valuation_date)
+        else:
+            days = np.datetime64(valuation_date)
         if axis == 'origin':
             trend = np.array((1 + trend)**-(
                 pd.Series(self.origin.end_time.values-days).dt.days/365.25)
                 )[np.newaxis, np.newaxis, ..., np.newaxis]
         elif axis == 'valuation':
+            valuation  = self.valuation
+            if self.is_ultimate and ultimate_lag is not None:
+                unit_lag = self.valuation[1] - self.valuation[0]
+                val_df = pd.DataFrame(
+                    self.valuation.values.reshape(self.shape[-2:], order='f'))
+                val_df.iloc[:, -1] = val_df.iloc[:, -2] + unit_lag * ultimate_lag
+                valuation = pd.PeriodIndex(val_df.unstack().values)
             trend = (1 + trend)**-(
-                pd.Series(self.valuation.end_time.values-days)
+                pd.Series(valuation.end_time.values-days)
                 .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend

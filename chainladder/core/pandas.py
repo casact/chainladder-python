@@ -164,13 +164,13 @@ class TrianglePandas:
 
         Parameters
         ----------
-            axis: str or int
-                A value of 0 <= axis <= 4 corresponding to axes 'index',
-                'columns', 'origin', 'development' respectively.  Both the
-                int and str representation can be used.
-            value: list or str
-                List of new labels to be assigned to the axis. List must be of
-                same length of the specified axis.
+        axis: str or int
+            A value of 0 <= axis <= 4 corresponding to axes 'index',
+            'columns', 'origin', 'development' respectively.  Both the
+            int and str representation can be used.
+        value: list or str
+            List of new labels to be assigned to the axis. List must be of
+            same length of the specified axis.
 
         Returns
         -------
