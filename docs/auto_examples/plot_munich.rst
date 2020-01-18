@@ -64,7 +64,7 @@ and Incurred using the MunichAdjustment.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.975 seconds)
+   **Total running time of the script:** ( 0 minutes  1.898 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_munich.py:

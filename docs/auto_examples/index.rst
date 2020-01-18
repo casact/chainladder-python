@@ -53,6 +53,66 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example uses the BootstrapODPSample to simulate new triangles that are then used to simula...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_value_at_risk_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_value_at_risk.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_value_at_risk
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="All IBNR models spin off several results triangles including inbr_, ultimate_, full_expectation...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ibnr_runoff_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_ibnr_runoff
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Although triangles have both origin and development attributes, it is often convenient to creat...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exposure_triangle_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_exposure_triangle
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
 
 .. only:: html
@@ -113,6 +173,46 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_triangle_from_pandas
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can drop the outlier link ratios from the BootstrapODPSample ...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_comparison_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_bootstrap_comparison
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
 
 .. only:: html
@@ -170,26 +270,6 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_benktander
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_triangle_from_pandas
 
 .. raw:: html
 

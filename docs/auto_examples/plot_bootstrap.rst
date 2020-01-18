@@ -26,6 +26,8 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
  .. code-block:: none
 
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\bootstrap.py:64: UserWarning: Process risk not yet implemented...
+      warn('Process risk not yet implemented...')
     c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\core\pandas.py:219: RuntimeWarning: Mean of empty slice
       obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
@@ -69,7 +71,7 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  14.352 seconds)
+   **Total running time of the script:** ( 0 minutes  12.333 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap.py:

@@ -68,7 +68,7 @@ payment patterns for the demo.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.530 seconds)
+   **Total running time of the script:** ( 0 minutes  3.187 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_ave_analysis.py:
