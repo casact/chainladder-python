@@ -171,7 +171,7 @@ class Development(DevelopmentBase):
 
     def _drop(self, X):
         drop = [self.drop] if type(self.drop) is not list else self.drop
-        arr = X._nan_triangle()
+        arr = X._nan_triangle().copy()
         for item in drop:
             arr[np.where(X.origin == item[0])[0][0],
                 np.where(X.development == item[1])[0][0]] = 0

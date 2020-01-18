@@ -28,6 +28,13 @@ class BootstrapODPSample(DevelopmentBase):
         factor.
     drop : tuple or list of tuples
         Drops specific origin/development combination(s) from residual sample
+    drop_high : bool or list of bool (default=None)
+        Drops highest link ratio(s) from residual sample
+    drop_low : bool or list of bool (default=None)
+        Drops lowest link ratio(s) from residual sample
+    drop_valuation : str or list of str (default=None)
+        Drops specific valuation periods from residual sample. str must be date
+        convertible.
     random_state : int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
@@ -42,25 +49,27 @@ class BootstrapODPSample(DevelopmentBase):
         The scale parameter to be used in generating process risk
     """
     def __init__(self, n_sims=1000, n_periods=-1,
-                 hat_adj=True, drop=None, random_state=None):
+                 hat_adj=True, drop=None, drop_high=None, drop_low=None,
+                 drop_valuation=None, random_state=None):
         self.n_sims = n_sims
         self.n_periods = n_periods
         self.hat_adj = hat_adj
         self.drop = drop
+        self.drop_high = drop_high
+        self.drop_low = drop_low
+        self.drop_valuation = drop_valuation
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.copy(X)
-        self.w_ = X._nan_triangle() if not self.drop else self._drop(X)
         lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
-        if type(self.drop) is not list and self.drop is not None:
-            self.drop = [self.drop]
-            drop = [(item[0], item[1]-lag) for item in self.drop]
-        else:
-            drop = self.drop
-        obj = Development(n_periods=self.n_periods, drop=drop).fit_transform(obj)
+        obj = Development(
+            n_periods=self.n_periods, drop=self.drop,
+            drop_high=self.drop_high, drop_low=self.drop_low,
+            drop_valuation=self.drop_valuation).fit_transform(obj)
+        self.w_ = obj.w_
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
         exp_incr_triangle = obj.full_expectation_.cum_to_incr() \
@@ -94,11 +103,15 @@ class BootstrapODPSample(DevelopmentBase):
         unscaled_residuals = \
             ((X.cum_to_incr().values - exp_incr_triangle) /
              np.sqrt(np.abs(exp_incr_triangle**k_value)))[0, 0, ...]
+        w_ = self.w_[0, 0]
+        w_[:, 1:]*w_[:, 1:]
+        w_ = np.concatenate((w_[:, 0:1], w_), axis=1)
+        unscaled_residuals = unscaled_residuals * w_
+        pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
         if self.hat_ is None:
             standardized_residuals = unscaled_residuals
         else:
             standardized_residuals = self.hat_ * unscaled_residuals
-        pearson_chi_sq = sum(sum(np.nan_to_num(unscaled_residuals)**2))
         n_params = self.design_matrix_.shape[1]
         degree_freedom = np.nansum(X._nan_triangle()) - n_params
         # Shapland has a hetero adjustment to degree_freedom here
@@ -181,14 +194,6 @@ class BootstrapODPSample(DevelopmentBase):
 
     def _get_hetero_adjustment(self):
         pass
-
-    def _drop(self, X):
-        drop = [self.drop] if type(self.drop) is not list else self.drop
-        arr = X._nan_triangle()
-        for item in drop:
-            arr[np.where(X.origin == item[0])[0][0],
-                np.where(X.development == item[1])[0][0]] = 0
-        return arr
 
     def transform(self, X):
         """ If X and self are of different shapes, align self to X, else
