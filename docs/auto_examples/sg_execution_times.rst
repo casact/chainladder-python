@@ -5,10 +5,12 @@
 
 Computation times
 =================
-**00:12.601** total execution time for **auto_examples** files:
+**00:30.622** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_bootstrap.py` (``plot_bootstrap.py``)                       | 00:12.601 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py` (``plot_stochastic_bornferg.py``)   | 00:17.268 | 0.0 MB |
++-----------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_bootstrap.py` (``plot_bootstrap.py``)                       | 00:13.354 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
@@ -33,8 +35,6 @@ Computation times
 | :ref:`sphx_glr_auto_examples_plot_mack.py` (``plot_mack.py``)                                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_munich.py` (``plot_munich.py``)                             | 00:00.000 | 0.0 MB |
-+-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py` (``plot_stochastic_bornferg.py``)   | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py` (``plot_triangle_from_pandas.py``) | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
