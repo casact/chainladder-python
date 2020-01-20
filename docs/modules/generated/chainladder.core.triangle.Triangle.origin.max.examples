@@ -5,7 +5,7 @@ Examples using ``chainladder.core.triangle.Triangle.origin.max``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
+    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
 
 .. only:: html
 

@@ -237,9 +237,9 @@ Gallery of Chainladder Functionality
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
+     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
 
 .. raw:: html
 
@@ -249,7 +249,7 @@ Gallery of Chainladder Functionality
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_bootstrap
+   /auto_examples/plot_stochastic_bornferg
 
 .. raw:: html
 
@@ -290,6 +290,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_munich
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_bootstrap
 
 .. raw:: html
 
