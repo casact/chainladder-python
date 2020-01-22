@@ -23,9 +23,9 @@ class BootstrapODPSample(DevelopmentBase):
     n_periods : integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    hat_adj : bool (default=TRUE)
+    hat_adj : bool (default=False)
         Adjust standardized Pearson residuals with the hat matrix adjustment
-        factor.
+        factor.  If false, Degree of Freedom adjustment is used.
     drop : tuple or list of tuples
         Drops specific origin/development combination(s) from residual sample
     drop_high : bool or list of bool (default=None)
@@ -115,7 +115,7 @@ class BootstrapODPSample(DevelopmentBase):
         n_params = self.design_matrix_.shape[1]
         degree_freedom = np.nansum(X._nan_triangle()) - n_params
         # Shapland has a hetero adjustment to degree_freedom here
-        # He also adjusts the residuals for the etero adjustment
+        # He also adjusts the residuals for the hetero adjustment
         scale_phi = pearson_chi_sq / degree_freedom
         k, v, o, d = X.shape
         resids = np.reshape(standardized_residuals, (k, v, o*d))
