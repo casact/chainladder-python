@@ -498,3 +498,31 @@ class Triangle(TriangleBase):
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj
+
+    def broadcast_axis(self, axis, value):
+        """ Broadcasts (i.e. repeats) triangles along an axis.  The axis to be
+        broadcast must be of length 1.
+
+        Parameters
+        ----------
+        axis : str or int
+            the axis to be broadcast over.
+        value : axis-like
+            The value of the new axis.
+        """
+        obj = copy.deepcopy(self)
+        axis = self._get_axis(axis)
+        if self.shape[axis] != 1:
+            raise ValueError('Axis to be broadcast must be of length 1')
+        elif axis > 1:
+            raise ValueError('Only index and column axes are supported')
+        else:
+            obj.values = np.repeat(obj.values, len(value), axis)
+            if axis == 0:
+                obj.key_labels = list(value.columns)
+                obj.kdims = value.values
+                obj.index = value
+            if axis == 1:
+                obj.vdims = value.values
+                obj.columns = value
+        return obj

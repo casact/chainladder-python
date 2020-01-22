@@ -23,6 +23,24 @@ Examples using ``chainladder.Triangle.to_frame``
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can drop the outlier link ratios from the BootstrapODPSample ...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_comparison_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
 
 .. only:: html

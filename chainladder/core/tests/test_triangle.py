@@ -259,3 +259,9 @@ def test_commutative():
     assert full.cum_to_incr().grain('OYDY').val_to_dev() == full.val_to_dev().cum_to_incr().grain('OYDY')
     assert np.allclose(np.nan_to_num(full.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum().values),
             np.nan_to_num(full.val_to_dev().grain('OYDY').values), atol=1e-5)
+
+def test_broadcasting():
+    t1 = cl.load_dataset('raa')
+    t2 = tri
+    assert t1.broadcast_axis('columns', t2.columns).shape[1] == t2.shape[1]
+    assert t1.broadcast_axis('index', t2.index).shape[0] == t2.shape[0]

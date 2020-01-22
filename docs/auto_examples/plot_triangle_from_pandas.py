@@ -24,10 +24,9 @@ data = pd.read_csv(r'https://www.casact.org/research/reserve_data/wkcomp_pos.csv
 data = data[data['DevelopmentYear']<=1997]
 
 # Create a triangle
-triangle = cl.Triangle(data, origin='AccidentYear',
-                       development='DevelopmentYear',
-                       index=['GRNAME'],
-                       columns=['IncurLoss_D','CumPaidLoss_D','EarnedPremDIR_D'])
+triangle = cl.Triangle(
+    data, origin='AccidentYear', development='DevelopmentYear',
+    index=['GRNAME'], columns=['IncurLoss_D','CumPaidLoss_D','EarnedPremDIR_D'])
 
 # Output
 print('Raw data:')
@@ -39,11 +38,9 @@ print()
 print('Aggregate Paid Triangle:')
 print(triangle['CumPaidLoss_D'].sum())
 
+# Plot data
+ax = triangle['CumPaidLoss_D'].sum().T.plot(
+    marker='.', title='CAS Loss Reserve Database: Workers Compensation');
+ax.set(xlabel='Development Period', ylabel='Cumulative Paid Loss')
 
-plot_data = triangle['CumPaidLoss_D'].sum().to_frame().unstack().reset_index()
-plot_data.columns = ['Development Period', 'Accident Year', 'Cumulative Paid Loss']
-
-sns.set_style('whitegrid')
-plt.title('CAS Loss Reserve Database: Workers'' Compensation')
-g = sns.pointplot(x='Development Period', y='Cumulative Paid Loss',
-                  hue='Accident Year', data=plot_data, markers='.')
+plt.show()

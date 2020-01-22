@@ -33,12 +33,14 @@ in the CAS Loss Reserve Database for Workers' Compensation.
  .. code-block:: none
 
     Raw data:
-       GRCODE               GRNAME  AccidentYear  DevelopmentYear  DevelopmentLag  IncurLoss_D  CumPaidLoss_D  BulkLoss_D  EarnedPremDIR_D  EarnedPremCeded_D  EarnedPremNet_D  Single  PostedReserve97_D
-    0      86  Allstate Ins Co Grp          1988             1988               1       367404          70571      127737           400699               5957           394742       0             281872
-    1      86  Allstate Ins Co Grp          1988             1989               2       362988         155905       60173           400699               5957           394742       0             281872
-    2      86  Allstate Ins Co Grp          1988             1990               3       347288         220744       27763           400699               5957           394742       0             281872
-    3      86  Allstate Ins Co Grp          1988             1991               4       330648         251595       15280           400699               5957           394742       0             281872
-    4      86  Allstate Ins Co Grp          1988             1992               5       354690         274156       27689           400699               5957           394742       0             281872
+       GRCODE               GRNAME  AccidentYear  ...  EarnedPremNet_D  Single  PostedReserve97_D
+    0      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    1      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    2      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    3      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    4      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+
+    [5 rows x 13 columns]
 
     Triangle summary:
     Valuation: 1997-12
@@ -59,8 +61,6 @@ in the CAS Loss Reserve Database for Workers' Compensation.
     1995  343841.0  768575.0   962081.0        NaN        NaN        NaN        NaN        NaN        NaN        NaN
     1996  381484.0  736040.0        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN
     1997  340132.0       NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN
-    C:\Users\jboga\AppData\Local\Continuum\anaconda3\lib\site-packages\seaborn\categorical.py:1508: FutureWarning: remove_na is deprecated and is a private function. Do not use.
-      stat_data = remove_na(group_data[hue_mask])
 
 
 
@@ -84,10 +84,9 @@ in the CAS Loss Reserve Database for Workers' Compensation.
     data = data[data['DevelopmentYear']<=1997]
 
     # Create a triangle
-    triangle = cl.Triangle(data, origin='AccidentYear',
-                           development='DevelopmentYear',
-                           index=['GRNAME'],
-                           columns=['IncurLoss_D','CumPaidLoss_D','EarnedPremDIR_D'])
+    triangle = cl.Triangle(
+        data, origin='AccidentYear', development='DevelopmentYear',
+        index=['GRNAME'], columns=['IncurLoss_D','CumPaidLoss_D','EarnedPremDIR_D'])
 
     # Output
     print('Raw data:')
@@ -99,19 +98,17 @@ in the CAS Loss Reserve Database for Workers' Compensation.
     print('Aggregate Paid Triangle:')
     print(triangle['CumPaidLoss_D'].sum())
 
+    # Plot data
+    ax = triangle['CumPaidLoss_D'].sum().T.plot(
+        marker='.', title='CAS Loss Reserve Database: Workers Compensation');
+    ax.set(xlabel='Development Period', ylabel='Cumulative Paid Loss')
 
-    plot_data = triangle['CumPaidLoss_D'].sum().to_frame().unstack().reset_index()
-    plot_data.columns = ['Development Period', 'Accident Year', 'Cumulative Paid Loss']
-
-    sns.set_style('whitegrid')
-    plt.title('CAS Loss Reserve Database: Workers'' Compensation')
-    g = sns.pointplot(x='Development Period', y='Cumulative Paid Loss',
-                      hue='Accident Year', data=plot_data, markers='.')
+    plt.show()
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.494 seconds)
+   **Total running time of the script:** ( 0 minutes  2.139 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_triangle_from_pandas.py:
