@@ -17,6 +17,10 @@ another API.
 Please visit the [Documentation](https://chainladder-python.readthedocs.io/en/latest/) page for examples, how-tos, and source
 code documentation.
 
+## Tutorials
+Tutorial notebooks are available for download [here](https://github.com/casact/chainladder-python/tree/master/docs/tutorials).
+* [Working with Triangles](https://chainladder-python.readthedocs.io/en/latest/tutorials/triangle-tutorial.html)
+
 ## Have a question?
 Feel free to reach out on [Gitter](https://gitter.im/chainladder-python/community).
 
