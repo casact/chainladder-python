@@ -108,3 +108,5 @@ ENV/
 references/
 
 settings.json
+
+*.pkl
