@@ -58,7 +58,7 @@ class Development(DevelopmentBase):
         Sigma of the ldf regression
     std_err_ : Triangle
         Std_err of the ldf regression
-    w_ : Triangle
+    weight_ : pandas.DataFrame
         The weight used in the ldf regression
 
     """
@@ -72,6 +72,12 @@ class Development(DevelopmentBase):
         self.drop_low = drop_low
         self.drop_valuation = drop_valuation
         self.drop = drop
+
+    @property
+    def weight_(self):
+        return pd.DataFrame(
+            self.w_[0, 0], index=self.ldf_.origin,
+            columns=list(self.ldf_.development.values[:,0]))
 
     def _assign_n_periods_weight(self, X):
         if type(self.n_periods) is int:
