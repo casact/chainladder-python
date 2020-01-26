@@ -27,6 +27,8 @@ class CapeCod(MethodBase):
         The IBNR per the method
     apriori_ :
         The trended apriori vector developed by the Cape Cod Method
+    detrended_apriori_ :
+        The detrended apriori vector developed by the Cape Cod Method
     """
 
     def __init__(self, trend=0, decay=1):
@@ -53,7 +55,7 @@ class CapeCod(MethodBase):
         super().fit(X, y, sample_weight)
         obj = copy.deepcopy(self)
         self.sample_weight_ = sample_weight
-        self.ultimate_, self.apriori_ = \
+        self.ultimate_, self.apriori_, self.detrended_apriori_ = \
             self._get_ultimate_(X, sample_weight, obj)
         self.full_triangle_ = self._get_full_triangle_()
         return self
@@ -83,17 +85,20 @@ class CapeCod(MethodBase):
         ult.values = apriori[..., np.newaxis]
         ult.ddims = np.array([None])
         apriori_ = copy.copy(ult)
-        ibnr = apriori_.values*(1-1/cdf)*exposure
+        detrended_ultimate = apriori_.values/trend_array
+        detrended_apriori_ = copy.copy(ult)
+        detrended_apriori_.values = detrended_ultimate
+        ibnr = detrended_ultimate*(1-1/cdf)*exposure
         ult.values = latest + ibnr
         ult.ddims = np.array([None])
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          len_orig)
         apriori_._set_slicers()
-        return ult, apriori_
+        return ult, apriori_, detrended_apriori_
 
     def predict(self, X, sample_weight):
         obj = super().predict(X, sample_weight)
-        obj.ultimate_, obj.apriori_ = \
+        obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = \
             obj._get_ultimate_(X, sample_weight, obj)
         obj.full_triangle_ = obj._get_full_triangle_()
         return obj
