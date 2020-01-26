@@ -12,3 +12,4 @@ These tutorials serve as more comprehensive examples of how to use chainladder.
    triangle-tutorial
    development-tutorial
    tail-tutorial
+   deterministic-tutorial
