@@ -125,6 +125,19 @@ class Pipeline(PipelineSL, EstimatorIO):
         Read-only attribute to access any step parameter by user given name.
         Keys are step names and values are steps parameters."""
 
+    def fit(self, X, y=None, sample_weight=None, **fit_params):
+        if sample_weight:
+            fit_params = {} if not fit_params else fit_params
+            fit_params[self.steps[-1][0] + '__sample_weight'] = sample_weight
+        return super().fit(X, y, **fit_params)
+
+    def predict(self, X, sample_weight=None):
+        if sample_weight:
+            fit_params = {} if not fit_params else fit_params
+            fit_params[self.steps[-1][0] + '__sample_weight'] = sample_weight
+        return super().predict(X, y, **fit_params)
+
+
     def to_json(self):
         return json.dumps(
             [{'name': item[0],

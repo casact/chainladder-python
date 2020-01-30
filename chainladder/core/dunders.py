@@ -109,6 +109,11 @@ class TriangleDunders:
     def __pos__(self):
         return self
 
+    def __abs__(self):
+        obj = copy.deepcopy(self)
+        obj.values = abs(obj.values)
+        return obj
+
     def __mul__(self, other):
         obj, other = self._validate_arithmetic(other)
         obj.values = np.nan_to_num(obj.values)*other
