@@ -135,7 +135,7 @@ class Pipeline(PipelineSL, EstimatorIO):
         if sample_weight:
             fit_params = {} if not fit_params else fit_params
             fit_params[self.steps[-1][0] + '__sample_weight'] = sample_weight
-        return super().predict(X, y, **fit_params)
+        return super().predict(X, **fit_params)
 
 
     def to_json(self):
