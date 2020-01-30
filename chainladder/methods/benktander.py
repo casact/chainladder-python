@@ -66,7 +66,7 @@ class Benktander(MethodBase):
         return self
 
     def _get_ultimate_(self, X, sample_weight, obj):
-        ult = obj.X_
+        ult = copy.copy(obj.X_)
         origin, development = -2, -1  # Set axes by name
         latest = X.latest_diagonal.values
         apriori = sample_weight.values*self.apriori
