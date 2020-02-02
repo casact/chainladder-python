@@ -102,9 +102,9 @@ class MackChainladder(Chainladder):
         nans = 1-np.nan_to_num(nans)
         properties = self.full_triangle_
         obj.valuation = properties.valuation
-        obj.ddims = np.append(
-            properties.ddims[:len(self.X_.ddims)],
-            properties.ddims[-1])
+        obj.ddims = np.concatenate(
+            (properties.ddims[:len(self.X_.ddims)],
+            np.array([properties.ddims[-1]])))
         obj.nan_override = True
         risk_arr = np.zeros((*self.X_.shape[:3], 1))
         if est == 'param_risk':

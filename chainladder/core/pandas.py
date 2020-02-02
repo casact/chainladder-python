@@ -3,6 +3,14 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+try:
+    import cupy as cp
+    from chainladder.utils.cupy import nansum, nanmean
+    cp.nansum = nansum
+    cp.nanmean = nanmean
+
+except:
+    import chainladder.utils.cupy as cp
 import copy
 
 
@@ -16,11 +24,12 @@ class TriangleGroupBy:
             indices = {'All': np.arange(len(obj.index))}
             new_index = pd.Index(['All'], name='All')
         groups = [indices[item] for item in sorted(list(indices.keys()))]
-        old_k_by_new_k = np.zeros(
+        xp = cp.get_array_module(obj.values)
+        old_k_by_new_k = xp.zeros(
             (len(obj.index.index), len(groups)), dtype='bool')
         for num, item in enumerate(groups):
             old_k_by_new_k[:, num][item] = True
-        old_k_by_new_k = np.swapaxes(old_k_by_new_k, 0, 1)
+        old_k_by_new_k = xp.swapaxes(old_k_by_new_k, 0, 1)
         for i in range(3):
             old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
         self.old_k_by_new_k = old_k_by_new_k
@@ -45,10 +54,11 @@ class TriangleGroupBy:
             Triangle
 
         """
+        xp = cp.get_array_module(self.obj.values)
         x = self.obj.values*self.old_k_by_new_k
-        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
+        ignore_vector = xp.sum(xp.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
-        x = np.where(ignore_vector, 0, x)
+        x = xp.where(ignore_vector, 0, x)
         self.obj.values = \
             getattr(np, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
         self.obj.values[self.obj.values == 0] = np.nan
@@ -64,11 +74,12 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
+        xp = cp.get_array_module(self.values)
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if self.shape[:2] == (1, 1):
             return self._repr_format()
         elif len(axes) == 2 or len(axes) == 1:
-            tri = np.squeeze(self.values)
+            tri = xp.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: self.origin, 3: self.ddims}
             if len(axes) == 2:
@@ -94,12 +105,16 @@ class TrianglePandas:
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
         """
+        xp = cp.get_array_module(self.values)
         obj = self.sum(axis=0).sum(axis=1)
         odim = list(obj.sum(axis=-1).values[0, 0, :, 0]*0+1)
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
         if obj.shape[-1] != 1:
-            ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0])
+            if xp.__name__ == 'cupy':
+                ddim = cp.asnumpy(xp.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0]))
+            else:
+                ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0])
             ddim = obj.development.iloc[:, 0][pd.Series(ddim).astype(bool)]
             obj = self[(self.development >= ddim.min()) &
                   (self.development <= ddim.max())]
@@ -146,15 +161,16 @@ class TrianglePandas:
         -------
             New Triangle with appended data.
         """
+        xp = cp.get_array_module(self.values)
         return_obj = copy.deepcopy(self)
         return_obj.kdims = (return_obj.index.append(other.index)).values
         try:
-            return_obj.values = np.append(return_obj.values, other.values, axis=0)
+            return_obj.values = xp.concatenate((return_obj.values, other.values), axis=0)
         except:
             # For misaligned triangle support
-            self.values = np.append(
-                return_obj.values,
-                (return_obj.iloc[:, 0]*0+other.values).values, axis=1)
+            self.values = xp.concatenate(
+                (return_obj.values,
+                (return_obj.iloc[:, 0]*0+other.values).values), axis=1)
 
         return_obj._set_slicers()
         return return_obj
@@ -214,7 +230,8 @@ def add_triangle_agg_func(cls, k, v):
                 axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
             else:
                 axis = self._get_axis(axis)
-            func = getattr(np, v)
+            xp = cp.get_array_module(obj.values)
+            func = getattr(xp, v)
             kwargs.update({'keepdims': True})
             obj.values = func(obj.values, axis=axis, *args, **kwargs)
             if axis == 0 and obj.values.shape[axis] == 1:
@@ -240,16 +257,18 @@ def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
         obj = copy.deepcopy(self.obj)
-        x = np.broadcast_to(
+        xp = cp.get_array_module(obj.values)
+        x = xp.broadcast_to(
             self.obj.values,
             (self.old_k_by_new_k.shape[0], *self.obj.values.shape)) * \
             self.old_k_by_new_k
-        ignore_vector = np.sum(np.isnan(x), axis=1, keepdims=True) == \
+        ignore_vector = xp.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
-        x = np.where(ignore_vector, 0, x)
-        x[~np.isfinite(x)] = np.nan
+        print(ignore_vector.shape, x.shape)
+        x = xp.where(ignore_vector, 0, x)
+        x[~xp.isfinite(x)] = np.nan
         obj.values = \
-            getattr(np, v)(x, axis=1, *args, **kwargs)
+            getattr(xp, v)(x, axis=1, *args, **kwargs)
         obj.values[obj.values == 0] = np.nan
         return obj
     set_method(cls, agg_func, k)

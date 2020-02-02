@@ -4,6 +4,10 @@
 
 import pandas as pd
 import numpy as np
+try:
+    import cupy as cp
+except:
+    import chainladder.utils.cupy as cp
 import copy
 
 
@@ -155,6 +159,7 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
+        xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
@@ -164,7 +169,7 @@ class Triangle(TriangleBase):
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
-        if np.max(np.sum(~np.isnan(self.values[..., -1, :]), 2)-1) == 0:
+        if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) == 0:
             obj.values = obj.values[..., :-1, :]
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
@@ -189,6 +194,7 @@ class Triangle(TriangleBase):
             Whether to collapse the diagonal into a single columns
         '''
         obj = copy.deepcopy(self)
+        xp = cp.get_array_module(self.values)
         if not compress:
             offset = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                       'Q': {'Q': 1, 'Y': 4},
@@ -202,7 +208,7 @@ class Triangle(TriangleBase):
             return diagonal
         if compress:
             diagonal = obj[obj.valuation == obj.valuation_date].values
-            diagonal = np.expand_dims(np.nansum(diagonal, 3), 3)
+            diagonal = xp.expand_dims(xp.nansum(diagonal, 3), 3)
             obj.ddims = np.array([None])
             obj.valuation = pd.DatetimeIndex(
                 [pd.to_datetime(obj.valuation_date)] *
@@ -222,10 +228,10 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
-
+        xp = cp.get_array_module(self.values)
         if inplace:
             if not self.is_cumulative:
-                np.cumsum(np.nan_to_num(self.values), axis=3, out=self.values)
+                xp.cumsum(xp.nan_to_num(self.values), axis=3, out=self.values)
                 self.values = self._expand_dims(self._nan_triangle())*self.values
                 self.values[self.values == 0] = np.nan
                 self.is_cumulative = True
@@ -246,12 +252,12 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
-
+        xp = cp.get_array_module(self.values)
         if inplace:
             if self.is_cumulative:
-                temp = np.nan_to_num(self.values)[..., 1:] - \
-                    np.nan_to_num(self.values)[..., :-1]
-                temp = np.concatenate((self.values[..., 0:1], temp), axis=3)
+                temp = xp.nan_to_num(self.values)[..., 1:] - \
+                    xp.nan_to_num(self.values)[..., :-1]
+                temp = xp.concatenate((self.values[..., 0:1], temp), axis=3)
                 temp = temp*self._expand_dims(self._nan_triangle())
                 temp[temp == 0] = np.nan
                 self.values = temp
@@ -294,6 +300,7 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with development lags
         '''
+        xp = cp.get_array_module(self.values)
         if not self.is_val_tri:
             ret_val = self
         else:
@@ -306,9 +313,9 @@ class Triangle(TriangleBase):
                 max_dev = obj[obj.origin == obj.origin.max()]
                 max_dev = max_dev[max_dev.valuation == max_val].ddims[0]
                 obj = obj[obj.development <= max_dev]
-                obj.values = np.concatenate(
+                obj.values = xp.concatenate(
                     (obj.values, ultimate.values), axis=-1)
-                obj.ddims = np.append(obj.ddims, 9999)
+                obj.ddims = xp.concatenate((obj.ddims, np.array([9999])))
                 obj.valuation = obj._valuation_triangle(obj.ddims)
                 obj.valuation_date = max(obj.valuation).to_timestamp()
                 ret_val = obj
@@ -321,8 +328,9 @@ class Triangle(TriangleBase):
 
 
     def _val_dev_chg(self, kind):
+        xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
-        o_vals = obj._expand_dims(np.arange(len(obj.origin))[:, np.newaxis])
+        o_vals = obj._expand_dims(xp.arange(len(obj.origin))[:, xp.newaxis])
         if self.shape[-1] == 1:
             return obj
         if kind == 'val_to_dev':
@@ -345,20 +353,20 @@ class Triangle(TriangleBase):
                 val = np.where(obj._expand_dims(obj.valuation == item)
                                   .reshape(obj.shape, order='f'))[-2:]
             val = np.unique(np.array(list(zip(val[0], val[1]))), axis=0)
-            arr = np.expand_dims(obj.values[:, :, val[:, 0], val[:, 1]], -1)
+            arr = xp.expand_dims(obj.values[:, :, val[:, 0], val[:, 1]], -1)
             if val[0, 0] != 0:
-                prepend = obj._expand_dims(np.array([np.nan]*(val[0, 0]))[:, np.newaxis])
-                arr = np.concatenate((prepend, arr), -2)
+                prepend = obj._expand_dims(xp.array([xp.nan]*(val[0, 0]))[:, xp.newaxis])
+                arr = xp.concatenate((prepend, arr), -2)
             if len(obj.origin)-1-val[-1, 0] != 0:
                 append = obj._expand_dims(
-                    np.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, np.newaxis])
-                arr = np.concatenate((arr, append), -2)
+                    xp.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, xp.newaxis])
+                arr = xp.concatenate((arr, append), -2)
             if obj.is_cumulative and old_arr is not None:
-                arr = np.isnan(arr)*np.nan_to_num(old_arr) + np.nan_to_num(arr)
+                arr = xp.isnan(arr)*xp.nan_to_num(old_arr) + xp.nan_to_num(arr)
             old_arr = arr.copy()
-            o_vals = np.append(o_vals, arr, -1)
+            o_vals = xp.concatenate((o_vals, arr), -1)
         obj.values = o_vals[..., 1:]
-        obj.values[obj.values == 0] = np.nan
+        obj.values[obj.values == 0] = xp.nan
         if kind == 'val_to_dev':
             obj.ddims = np.array([item for item in rng])
             obj.valuation = obj._valuation_triangle()
@@ -403,6 +411,7 @@ class Triangle(TriangleBase):
         # put data in valuation mode
         ograin_new = grain[1:2]
         ograin_old = obj.origin_grain
+        xp = cp.get_array_module(self.values)
         if ograin_new != ograin_old:
             o_dt = pd.Series(obj.odims)
             if ograin_new == 'Q':
@@ -418,7 +427,7 @@ class Triangle(TriangleBase):
             o_bool = np.repeat((o == o_new)[:, np.newaxis],
                                len(obj.ddims), axis=1)
             o_bool = obj._expand_dims(o_bool)
-            new_tri = np.repeat(np.nan_to_num(obj.values)[..., np.newaxis],
+            new_tri = xp.repeat(xp.nan_to_num(obj.values)[..., xp.newaxis],
                                 o_bool.shape[-1], axis=-1)
             new_tri[~np.isfinite(new_tri)] = 0
             new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
@@ -442,7 +451,7 @@ class Triangle(TriangleBase):
             obj.ddims = obj.ddims[keeps]
         obj.origin_grain = ograin_new
         obj.development_grain = dgrain_new
-        obj.values[obj.values == 0] = np.nan
+        obj.values[obj.values == 0] = xp.nan
         obj.valuation = obj._valuation_triangle()
         if hasattr(obj, '_nan_triangle_'):
             # Force update on _nan_triangle at next access.
@@ -476,14 +485,15 @@ class Triangle(TriangleBase):
         Triangle
             updated with multiplicative trend applied.
         """
+        xp = cp.get_array_module(self.values)
         if not valuation_date:
             days = np.datetime64(self.valuation_date)
         else:
             days = np.datetime64(valuation_date)
         if axis == 'origin':
-            trend = np.array((1 + trend)**-(
+            trend = xp.array((1 + trend)**-(
                 pd.Series(self.origin.end_time.values-days).dt.days/365.25)
-                )[np.newaxis, np.newaxis, ..., np.newaxis]
+                )[xp.newaxis, xp.newaxis, ..., xp.newaxis]
         elif axis == 'valuation':
             valuation  = self.valuation
             if self.is_ultimate and ultimate_lag is not None:
@@ -512,12 +522,13 @@ class Triangle(TriangleBase):
         """
         obj = copy.deepcopy(self)
         axis = self._get_axis(axis)
+        xp = cp.get_array_module(self.values)
         if self.shape[axis] != 1:
             raise ValueError('Axis to be broadcast must be of length 1')
         elif axis > 1:
             raise ValueError('Only index and column axes are supported')
         else:
-            obj.values = np.repeat(obj.values, len(value), axis)
+            obj.values = xp.repeat(obj.values, len(value), axis)
             if axis == 0:
                 obj.key_labels = list(value.columns)
                 obj.kdims = value.values

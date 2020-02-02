@@ -36,7 +36,9 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         self.std_err_.values = np.concatenate(
             (self.std_err_.values, zeros), -1)
         self.sigma_.ddims = self.std_err_.ddims = \
-            np.append(obj.ldf_.ddims, ['{}-9999'.format(int(obj.ddims[-1]))])
+            np.concatenate(
+                (obj.ldf_.ddims,
+                 np.array(['{}-9999'.format(int(obj.ddims[-1]))])))
         val_array = self.sigma_._valuation_triangle(self.sigma_.ddims)
         self.sigma_.valuation = self.std_err_.valuation = val_array
         self.cdf_ = DevelopmentBase._get_cdf(self)

@@ -3,6 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+try:
+    import cupy as cp
+except:
+    import chainladder.utils.cupy as cp
 
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
@@ -17,7 +21,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     def __init__(self, data=None, origin=None, development=None,
                  columns=None, index=None, origin_format=None,
-                 development_format=None, cumulative=None, *args, **kwargs):
+                 development_format=None, cumulative=None,
+                 array_backend=None, *args, **kwargs):
+        if array_backend is None:
+            from chainladder import ARRAY_BACKEND
+            self.array_backend = ARRAY_BACKEND
         if data is None:
             ' Instance with nothing set'
             return
@@ -67,15 +75,17 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         self.valuation_date = development_date.max()
         self.key_labels = index
         self._set_slicers()
-        # Create 4D Triangle
-        triangle = \
-            np.reshape(np.array(data_agg), (len(self.kdims), len(self.odims),
-                       len(self.vdims), len(self.ddims)))
-        triangle = np.swapaxes(triangle, 1, 2)
-        # Set all 0s to NAN for nansafe ufunc arithmetic
-        triangle[triangle == 0] = np.nan
 
-        self.values = np.array(triangle, dtype=kwargs.get('dtype', None))
+        # Create 4D Triangle
+        xp = np if self.array_backend == 'numpy' else cp
+        triangle = \
+            xp.reshape(xp.array(data_agg), (len(self.kdims), len(self.odims),
+                       len(self.vdims), len(self.ddims)))
+        triangle = xp.swapaxes(triangle, 1, 2)
+        # Set all 0s to NAN for nansafe ufunc arithmetic
+        triangle[triangle == 0] = xp.nan
+
+        self.values = xp.array(triangle, dtype=kwargs.get('dtype', None))
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
@@ -145,17 +155,17 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
-
+        xp = cp.get_array_module(self.values)
         if min(self.values.shape[2:]) == 1 or self.nan_override:
-            return np.ones(self.values.shape[2:], dtype='float16')
+            return xp.ones(self.values.shape[2:], dtype='float16')
         if len(self.valuation) != len(self.odims)*len(self.ddims) or not \
            hasattr(self, '_nan_triangle_'):
             self.valuation = self._valuation_triangle()
             val_array = self.valuation
             val_array = val_array.to_timestamp().values.reshape(self.shape[-2:], order='f')
-            nan_triangle = np.array(
+            nan_triangle = xp.array(
                 pd.DataFrame(val_array) > self.valuation_date)
-            nan_triangle = np.array(np.where(nan_triangle, np.nan, 1), dtype='float16')
+            nan_triangle = xp.array(xp.where(nan_triangle, np.nan, 1), dtype='float16')
             self._nan_triangle_ = nan_triangle
         return self._nan_triangle_
 
@@ -210,7 +220,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     def _expand_dims(self, tri_2d):
         '''Expands from one 2D triangle to full 4D object'''
-        return np.broadcast_to(
+        xp = cp.get_array_module(tri_2d)
+        return xp.broadcast_to(
             tri_2d, (len(self.kdims), len(self.vdims), *tri_2d.shape))
 
     @staticmethod

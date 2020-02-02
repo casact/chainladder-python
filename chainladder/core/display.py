@@ -3,7 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-
+try:
+    import cupy as cp
+except:
+    import chainladder.utils.cupy as cp
 
 class TriangleDisplay():
     def __repr__(self):
@@ -62,7 +65,11 @@ class TriangleDisplay():
             ddims = list(self.vdims)
         else:
             ddims = self.ddims
-        out = pd.DataFrame(self.values[0, 0], index=origin, columns=ddims)
+        if cp.get_array_module(self.values) == cp:
+            out = cp.asnumpy(self.values[0, 0])
+        else:
+            out = self.values[0, 0]
+        out = pd.DataFrame(out, index=origin, columns=ddims)
         if str(out.columns[0]).find('-') > 0 and not \
            isinstance(out.columns, pd.PeriodIndex):
             out.columns = [item.replace('-9999', '-Ult')

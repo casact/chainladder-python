@@ -1,7 +1,10 @@
 import chainladder as cl
 import pandas as pd
 import numpy as np
-from numpy.testing import assert_equal
+try:
+    import cupy as cp
+except:
+    import chainladder.utils.cupy as cp
 import copy
 
 tri = cl.load_dataset('clrd')
@@ -32,8 +35,9 @@ def test_slice_by_loc_iloc():
 
 
 def test_repr():
-    np.testing.assert_equal(pd.read_html(cl.load_dataset('raa')._repr_html_())[0].set_index('Origin').values,
-                            cl.load_dataset('raa').to_frame().values)
+    tri = cl.load_dataset('raa')
+    np.testing.assert_array_equal(pd.read_html(tri._repr_html_())[0].set_index('Origin').values,
+                            tri.to_frame().values)
 
 
 def test_arithmetic_union():
@@ -44,16 +48,20 @@ def test_arithmetic_union():
 def test_to_frame_unusual():
     a = cl.load_dataset('clrd').groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
     b = cl.load_dataset('clrd').latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
-    np.testing.assert_equal(a, b)
+    xp = cp.get_array_module(a)
+    xp.testing.assert_array_equal(a, b)
 
 
 def test_link_ratio():
-    np.testing.assert_allclose(cl.load_dataset('RAA').link_ratio.values*cl.load_dataset('RAA').values[:,:,:-1,:-1],
-                               cl.load_dataset('RAA').values[:,:,:-1,1:], atol=1e-5)
+    tri = cl.load_dataset('RAA')
+    xp = cp.get_array_module(tri.values)
+    xp.testing.assert_allclose(tri.link_ratio.values*tri.values[:,:,:-1,:-1],
+                               tri.values[:,:,:-1,1:], atol=1e-5)
 
 
 def test_incr_to_cum():
-    np.testing.assert_equal(tri.cum_to_incr().incr_to_cum().values, tri.values)
+    xp = cp.get_array_module(tri.values)
+    xp.testing.assert_array_equal(tri.cum_to_incr().incr_to_cum().values, tri.values)
 
 
 def test_create_new_value():
@@ -73,7 +81,8 @@ def test_multilevel_index_groupby_sum2():
 
 
 def test_boolean_groupby_eq_groupby_loc():
-    np.testing.assert_equal(tri[tri['LOB']=='ppauto'].sum().values,
+    xp = cp.get_array_module(tri.values)
+    xp.testing.assert_array_equal(tri[tri['LOB']=='ppauto'].sum().values,
                         tri.groupby('LOB').sum().loc['ppauto'].values)
 
 
@@ -99,35 +108,37 @@ def test_assign_existing_col():
 
 def test_arithmetic_across_keys():
     x = cl.load_dataset('auto')
-    np.testing.assert_equal((x.sum()-x.iloc[0]).values, x.iloc[1].values)
+    xp = cp.get_array_module(x.values)
+    xp.testing.assert_array_equal((x.sum()-x.iloc[0]).values, x.iloc[1].values)
 
 def test_grain():
     actual = qtr.iloc[0,0].grain('OYDY').values[0,0,:,:]
-    expected = np.array([[  44.,  621.,  950., 1020., 1070., 1069., 1089., 1094., 1097.,
+    xp = cp.get_array_module(actual)
+    expected = xp.array([[  44.,  621.,  950., 1020., 1070., 1069., 1089., 1094., 1097.,
         1099., 1100., 1100.],
        [  42.,  541., 1052., 1169., 1238., 1249., 1266., 1269., 1296.,
-        1300., 1300.,   np.nan],
+        1300., 1300.,   xp.nan],
        [  17.,  530.,  966., 1064., 1100., 1128., 1155., 1196., 1201.,
-        1200.,   np.nan,   np.nan],
+        1200.,   xp.nan,   xp.nan],
        [  10.,  393.,  935., 1062., 1126., 1209., 1243., 1286., 1298.,
-          np.nan,   np.nan,   np.nan],
-       [  13.,  481., 1021., 1267., 1400., 1476., 1550., 1583.,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [   2.,  380.,  788.,  953., 1001., 1030., 1066.,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [   4.,  777., 1063., 1307., 1362., 1411.,   np.nan,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [   2.,  472., 1617., 1818., 1820.,   np.nan,   np.nan,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [   3.,  597., 1092., 1221.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [   4.,  583., 1212.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [  21.,  422.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan],
-       [  13.,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,   np.nan,
-          np.nan,   np.nan,   np.nan]])
-    np.testing.assert_equal(actual, expected)
+          xp.nan,   xp.nan,   xp.nan],
+       [  13.,  481., 1021., 1267., 1400., 1476., 1550., 1583.,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [   2.,  380.,  788.,  953., 1001., 1030., 1066.,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [   4.,  777., 1063., 1307., 1362., 1411.,   xp.nan,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [   2.,  472., 1617., 1818., 1820.,   xp.nan,   xp.nan,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [   3.,  597., 1092., 1221.,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [   4.,  583., 1212.,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [  21.,  422.,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan],
+       [  13.,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,   xp.nan,
+          xp.nan,   xp.nan,   xp.nan]])
+    xp.testing.assert_array_equal(actual, expected)
 
 def test_off_cycle_val_date():
     assert cl.load_dataset('quarterly').valuation_date.strftime('%Y-%m-%d') == '2006-03-31'
@@ -139,7 +150,8 @@ def test_printer():
 def test_value_order():
     a = tri[['CumPaidLoss','BulkLoss']]
     b = tri[['BulkLoss', 'CumPaidLoss']]
-    assert_equal(a.values[:,-1], b.values[:, 0])
+    xp = cp.get_array_module(a.values)
+    xp.testing.assert_array_equal(a.values[:,-1], b.values[:, 0])
 
 
 def test_trend():
@@ -149,25 +161,29 @@ def test_trend():
 
 def test_arithmetic_1():
     x = cl.load_dataset('mortgage')
-    np.testing.assert_equal(-(((x/x)+0)*x), -(+x))
+    np.testing.assert_array_equal(-(((x/x)+0)*x), -(+x))
 
 
 def test_arithmetic_2():
     x = cl.load_dataset('mortgage')
-    np.testing.assert_equal(1-(x/x), 0*x*0)
+    np.testing.assert_array_equal(1-(x/x), 0*x*0)
 
 
 def test_rtruediv():
-    assert np.nansum(abs(((1/cl.load_dataset('raa'))*cl.load_dataset('raa')).values[0,0] - cl.load_dataset('raa')._nan_triangle()))< .00001
+    raa = cl.load_dataset('raa')
+    xp = cp.get_array_module(raa.values)
+    assert xp.nansum(abs(((1/raa)*raa).values[0,0] - raa._nan_triangle()))< .00001
 
 
 def test_shift():
     x = cl.load_dataset('quarterly').iloc[0,0]
-    np.testing.assert_equal(x[x.valuation<=x.valuation_date].values, x.values)
+    xp = cp.get_array_module(x.values)
+    xp.testing.assert_array_equal(x[x.valuation<=x.valuation_date].values, x.values)
 
 def test_quantile_vs_median():
     clrd = cl.load_dataset('clrd')
-    np.testing.assert_equal(clrd.quantile(.5)['CumPaidLoss'].values,
+    xp = cp.get_array_module(clrd.values)
+    xp.testing.assert_array_equal(clrd.quantile(.5)['CumPaidLoss'].values,
                             clrd.median()['CumPaidLoss'].values)
 
 
@@ -196,48 +212,55 @@ def test_origin_and_value_setters():
 def test_grain_increm_arg():
     tri = cl.load_dataset('quarterly')['incurred']
     tri_i = tri.cum_to_incr()
-    np.testing.assert_equal(tri_i.grain('OYDY').incr_to_cum(),
+    np.testing.assert_array_equal(tri_i.grain('OYDY').incr_to_cum(),
                             tri.grain('OYDY'))
 
 
 def test_valdev1():
     a = cl.load_dataset('quarterly').dev_to_val().val_to_dev().values
     b = cl.load_dataset('quarterly').values
-    np.testing.assert_equal(a,b)
+    xp = cp.get_array_module(a)
+    xp.testing.assert_array_equal(a,b)
 
 
 def test_valdev2():
     a = cl.load_dataset('quarterly').dev_to_val().grain('OYDY').val_to_dev().values
     b = cl.load_dataset('quarterly').grain('OYDY').values
-    np.testing.assert_equal(a,b)
+    xp = cp.get_array_module(a)
+    xp.testing.assert_array_equal(a,b)
 
 
 def test_valdev3():
     a = cl.load_dataset('quarterly').grain('OYDY').dev_to_val().val_to_dev().values
     b = cl.load_dataset('quarterly').grain('OYDY').values
-    np.testing.assert_equal(a,b)
+    xp = cp.get_array_module(a)
+    xp.testing.assert_array_equal(a,b)
 
 
 #def test_valdev4():
 #    # Does not work with pandas 0.23, consider requiring only pandas>=0.24
 #    raa = cl.load_dataset('raa')
-#    np.testing.assert_equal(raa.dev_to_val()[raa.dev_to_val().development>='1989'].values,
+#    np.testing.assert_array_equal(raa.dev_to_val()[raa.dev_to_val().development>='1989'].values,
 #        raa[raa.valuation>='1989'].dev_to_val().values)
 
 
 def test_valdev5():
     raa = cl.load_dataset('raa')
-    np.testing.assert_equal(raa[raa.valuation>='1989'].latest_diagonal.values,
+    xp = cp.get_array_module(raa.values)
+    xp.testing.assert_array_equal(raa[raa.valuation>='1989'].latest_diagonal.values,
                             raa.latest_diagonal.values)
 
 def test_valdev6():
-    np.testing.assert_equal(cl.load_dataset('raa').grain('OYDY').latest_diagonal.values,
-                            cl.load_dataset('raa').latest_diagonal.grain('OYDY').values)
+    raa = cl.load_dataset('raa')
+    xp = cp.get_array_module(raa.values)
+    xp.testing.assert_array_equal(raa.grain('OYDY').latest_diagonal.values,
+                            raa.latest_diagonal.grain('OYDY').values)
 
 def test_valdev7():
     tri = cl.load_dataset('quarterly')
+    xp = cp.get_array_module(tri.values)
     x = cl.Chainladder().fit(tri).full_expectation_
-    np.testing.assert_equal(x.dev_to_val().val_to_dev().values, x.values)
+    xp.testing.assert_array_equal(x.dev_to_val().val_to_dev().values, x.values)
 
 def test_reassignment():
     raa = cl.load_dataset('clrd')

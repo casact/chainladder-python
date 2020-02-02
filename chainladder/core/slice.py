@@ -3,6 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+try:
+    import cupy as cp
+except:
+    import chainladder.utils.cupy as cp
 import copy
 
 
@@ -108,13 +112,14 @@ class TriangleSlicer:
             self.values[:, i:i+1] = value.values
         else:
             self.vdims = np.array(idx.columns.unique())
+            xp = cp.get_array_module(self.values)
             try:
-                self.values = np.append(self.values, value.values, axis=1)
+                self.values = xp.concatenate((self.values, value.values), axis=1)
             except:
                 # For misaligned triangle support
-                self.values = np.append(
-                    self.values,
-                    (self.iloc[:, 0]*0+value).values, axis=1)
+                self.values = xp.concatenate(
+                    (self.values,
+                    (self.iloc[:, 0]*0+value).values), axis=1)
 
 
     def _slice_origin(self, key):
@@ -139,14 +144,19 @@ class TriangleSlicer:
         obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
         if len(obj.ddims) > 1:
             obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
+        xp = cp.get_array_module(obj.values)
+        if xp == cp:
+            nan_tri = cp.array(nan_tri)
         obj.values = (obj.values*nan_tri)
-        obj.values = np.take(np.take(obj.values, o_idx, -2), d_idx, -1)
+        obj.values = xp.take(xp.take(obj.values, o_idx, -2), d_idx, -1)
         return self._cleanup_slice(obj)
 
     def _slice_development(self, key):
         ''' private method for handling of development slicing '''
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
+        if cp.get_array_module(obj.values) == cp:
+            key = cp.array(key)
         obj.values = obj.values[..., key]
         return self._cleanup_slice(obj)
 

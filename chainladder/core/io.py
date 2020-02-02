@@ -3,6 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+try:
+    import cupy as cp
+except:
+    import chainladder.utils.cupy as cp
 import json
 import joblib
 

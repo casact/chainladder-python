@@ -53,7 +53,7 @@ class DevelopmentConstant(DevelopmentBase):
         obj.values = np.ones(X.shape)[..., :-1]
         ldf = np.array([self.patterns[item] for item in obj.ddims[:-1]])
         if self.style == 'cdf':
-            ldf = np.append(ldf[:-1]/ldf[1:], ldf[-1])
+            ldf = np.concatenate((ldf[:-1]/ldf[1:], np.array([ldf[-1]])))
         ldf = ldf[np.newaxis, np.newaxis, np.newaxis, ...]
         obj.values = obj.values * ldf
         obj.ddims = X.link_ratio.ddims
