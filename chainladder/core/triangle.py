@@ -4,10 +4,7 @@
 
 import pandas as pd
 import numpy as np
-try:
-    import cupy as cp
-except:
-    import chainladder.utils.cupy as cp
+from chainladder.utils.cupy import cp
 import copy
 
 
@@ -315,7 +312,7 @@ class Triangle(TriangleBase):
                 obj = obj[obj.development <= max_dev]
                 obj.values = xp.concatenate(
                     (obj.values, ultimate.values), axis=-1)
-                obj.ddims = xp.concatenate((obj.ddims, np.array([9999])))
+                obj.ddims = np.concatenate((obj.ddims, np.array([9999])))
                 obj.valuation = obj._valuation_triangle(obj.ddims)
                 obj.valuation_date = max(obj.valuation).to_timestamp()
                 ret_val = obj

@@ -3,10 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-try:
-    import cupy as cp
-except:
-    import chainladder.utils.cupy as cp
+from chainladder.utils.cupy import cp
 
 class TriangleDisplay():
     def __repr__(self):
@@ -65,7 +62,7 @@ class TriangleDisplay():
             ddims = list(self.vdims)
         else:
             ddims = self.ddims
-        if cp.get_array_module(self.values) == cp:
+        if cp.get_array_module(self.values).__name__ == 'cupy':
             out = cp.asnumpy(self.values[0, 0])
         else:
             out = self.values[0, 0]

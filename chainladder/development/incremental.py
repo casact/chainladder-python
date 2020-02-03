@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import Development, DevelopmentBase
 import numpy as np
+from chainladder.utils.cupy import cp
 import copy
 
 
@@ -56,27 +57,28 @@ class IncrementalAdditive(DevelopmentBase):
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = X.cum_to_incr()/sample_weight
+        xp = cp.get_array_module(obj.values)
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
-        w_[w_ == 0] = np.nan
-        w_ = np.concatenate((w_, (w_[..., -1:]*x._nan_triangle())[..., -1:]),
+        w_[w_ == 0] = xp.nan
+        w_ = xp.concatenate((w_, (w_[..., -1:]*x._nan_triangle())[..., -1:]),
                             axis=-1)
         if self.average == 'simple':
-            y_ = np.nanmean(w_*x.values, axis=-2)
+            y_ = xp.nanmean(w_*x.values, axis=-2)
         if self.average == 'volume':
-            y_ = np.nansum(w_*x.values*sample_weight.values, axis=-2)
-            y_ = y_ / np.nansum(w_*sample_weight.values, axis=-2)
-        y_ = np.repeat(np.expand_dims(y_, -2), len(x.odims), -2)
+            y_ = xp.nansum(w_*x.values*sample_weight.values, axis=-2)
+            y_ = y_ / xp.nansum(w_*sample_weight.values, axis=-2)
+        y_ = xp.repeat(xp.expand_dims(y_, -2), len(x.odims), -2)
         obj = copy.copy(x)
-        keeps = 1-np.nan_to_num(x._nan_triangle()) + \
-            np.nan_to_num(
+        keeps = 1-xp.nan_to_num(x._nan_triangle()) + \
+            xp.nan_to_num(
                 x._get_latest_diagonal(compress=False).values[0, 0, ...]*0+1)
         obj.values = (1+self.trend) ** \
-            np.flip((np.abs(np.arange(obj.shape[-2])[np.newaxis].T -
-                     np.arange(obj.shape[-2])[np.newaxis])), 0)*y_*keeps
-        obj.values = obj.values*(X._expand_dims(1-np.nan_to_num(x._nan_triangle()))) + \
-            np.nan_to_num((X.cum_to_incr()/sample_weight).values)
-        obj.values[obj.values == 0] = np.nan
+            xp.flip((xp.abs(xp.arange(obj.shape[-2])[xp.newaxis].T -
+                     xp.arange(obj.shape[-2])[xp.newaxis])), 0)*y_*keeps
+        obj.values = obj.values*(X._expand_dims(1-xp.nan_to_num(x._nan_triangle()))) + \
+            xp.nan_to_num((X.cum_to_incr()/sample_weight).values)
+        obj.values[obj.values == 0] = xp.nan
         obj.nan_override = True
         obj._set_slicers()
         self.incremental_ = obj*sample_weight

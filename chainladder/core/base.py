@@ -3,10 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-try:
-    import cupy as cp
-except:
-    import chainladder.utils.cupy as cp
+from chainladder.utils.cupy import cp
+import warnings
 
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
@@ -26,6 +24,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         if array_backend is None:
             from chainladder import ARRAY_BACKEND
             self.array_backend = ARRAY_BACKEND
+        else:
+            self.array_backend = array_backend
         if data is None:
             ' Instance with nothing set'
             return
@@ -77,7 +77,14 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         self._set_slicers()
 
         # Create 4D Triangle
-        xp = np if self.array_backend == 'numpy' else cp
+        xp = np
+        if self.array_backend == 'numpy':
+            xp = np
+        else:
+            xp = cp
+            if cp == np:
+                warnings.warn('Unable to load CuPY.  Using numpy instead.')
+                self.array_backend = 'numpy'
         triangle = \
             xp.reshape(xp.array(data_agg), (len(self.kdims), len(self.odims),
                        len(self.vdims), len(self.ddims)))

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+from chainladder.utils.cupy import cp
 import copy
 from chainladder.methods import MethodBase
 
@@ -79,15 +80,16 @@ class Chainladder(MethodBase):
     @property
     def ultimate_(self):
         development = -1
+        xp = cp.get_array_module(self.X_.values)
         nans = self.X_._nan_triangle()
         obj = copy.copy(self.X_)
-        obj.values = np.repeat(self.X_.latest_diagonal.values,
+        obj.values = xp.repeat(self.X_.latest_diagonal.values,
                                self.cdf_.shape[development], development)
         cdf = self.cdf_.values[..., :nans.shape[development]]
         obj_tri = obj.values[..., :nans.shape[development]]
-        if np.unique(cdf, axis=2).shape[2] == 1 and \
+        if xp.unique(cdf, axis=2).shape[2] == 1 and \
            len(obj.odims) != cdf.shape[2]:
-            cdf = np.repeat(np.unique(cdf, axis=2), len(obj.odims), axis=2)
+            cdf = xp.repeat(xp.unique(cdf, axis=2), len(obj.odims), axis=2)
         obj.values = (cdf*obj_tri)*nans
         obj = obj.latest_diagonal
         obj.ddims = np.array([None])

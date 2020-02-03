@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase
 
@@ -78,11 +79,12 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
+        xp = cp.get_array_module(X.values)
         decay_range = self.ldf_.shape[-1]-X.shape[-1]+1
-        ldfs = 1+self._get_initial_ldf()*(self.decay**np.arange(1000))
+        ldfs = 1+self._get_initial_ldf(xp)*(self.decay**xp.arange(1000))
         ldfs = ldfs[:decay_range]
-        ldfs[-1] = self.tail/np.prod(ldfs[:-1])
-        ldfs = X._expand_dims(ldfs[np.newaxis])
+        ldfs[-1] = self.tail/xp.prod(ldfs[:-1])
+        ldfs = X._expand_dims(ldfs[xp.newaxis])
         self.ldf_.values[..., -decay_range:] = \
             self.ldf_.values[..., -decay_range:]*ldfs
         self.cdf_ = DevelopmentBase._get_cdf(self)
@@ -112,10 +114,10 @@ class TailConstant(TailBase):
         X.sigma_ = self.sigma_
         return X
 
-    def _get_initial_ldf(self):
+    def _get_initial_ldf(self, xp):
         ''' Quadratic series expansion solution '''
-        arr = self.decay**np.arange(1000)
-        a = np.sum(arr**2)
-        b = np.sum(arr)
-        c = -np.log(self.tail)
-        return (-b+np.sqrt(b**2-4*a*c))/(2*a)
+        arr = self.decay**xp.arange(1000)
+        a = xp.sum(arr**2)
+        b = xp.sum(arr)
+        c = -xp.log(self.tail)
+        return (-b+xp.sqrt(b**2-4*a*c))/(2*a)

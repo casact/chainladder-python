@@ -1,5 +1,6 @@
 import pytest
-from numpy.testing import assert_allclose
+import numpy as np
+from chainladder.utils.cupy import cp
 import chainladder as cl
 
 
@@ -16,7 +17,8 @@ def test_benktander_to_chainladder(data, atol):
     tri = cl.load_dataset(data)
     a = cl.Chainladder().fit(tri).ibnr_
     b = cl.Benktander(apriori=.8, n_iters=255).fit(tri, sample_weight=a).ibnr_
-    assert_allclose(a.values, b.values, atol=atol)
+    xp = cp.get_array_module(a.values)
+    xp.testing.assert_allclose(a.values, b.values, atol=atol)
 
 
 def test_bf_eq_cl_when_using_cl_apriori():
@@ -24,4 +26,5 @@ def test_bf_eq_cl_when_using_cl_apriori():
     cl_ult.rename('development', ['apriori'])
     bf_ult = cl.BornhuetterFerguson().fit(cl.load_dataset('quarterly'),
                                           sample_weight=cl_ult).ultimate_
-    assert_allclose(cl_ult.values, bf_ult.values, atol=1e-5)
+    xp = cp.get_array_module(cl_ult.values)
+    xp.testing.assert_allclose(cl_ult.values, bf_ult.values, atol=1e-5)

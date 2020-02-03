@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 import warnings
@@ -17,7 +18,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO):
             return
         else:
             obj2 = copy.copy(obj.ldf_)
-            cdf_ = np.flip(np.cumprod(np.flip(obj2.values, -1), -1), -1)
+            xp = cp.get_array_module(obj2.values)
+            cdf_ = xp.flip(xp.cumprod(xp.flip(obj2.values, -1), -1), -1)
             obj2.ddims = [item.replace(item[item.find("-")+1:], '9999')
                           for item in obj2.ddims]
             obj2.values = cdf_
@@ -93,16 +95,18 @@ class Development(DevelopmentBase):
 
     def _assign_n_periods_weight_list(self, X):
         ''' private method to standardize the n_periods input to a list '''
+        xp = cp.get_array_module(X.values)
         dict_map = {item: self._assign_n_periods_weight_int(X, item)
                     for item in set(self.n_periods)}
         conc = [dict_map[item][..., num:num+1, :]
                 for num, item in enumerate(self.n_periods)]
-        return np.swapaxes(np.concatenate(tuple(conc), -2), -2, -1)
+        return xp.swapaxes(xp.concatenate(tuple(conc), -2), -2, -1)
 
     def _assign_n_periods_weight_int(self, X, n_periods):
         ''' Zeros out weights depending on number of periods desired
             Only works for type(n_periods) == int
         '''
+        xp = cp.get_array_module(X.values)
         if n_periods < 1 or n_periods >= X.shape[-2] - 1:
             return X.values*0+1
         else:
@@ -116,7 +120,7 @@ class Development(DevelopmentBase):
                 val_date_min[-n_periods * \
                 val_offset[X.development_grain][X.origin_grain] - 1]
             w = X[X.valuation>=val_date_min]
-            return np.nan_to_num((w/w).values)*X._expand_dims(X._nan_triangle())
+            return xp.nan_to_num((w/w).values)*X._expand_dims(X._nan_triangle())
 
 
     def _drop_adjustment(self, X, link_ratio):
@@ -135,13 +139,14 @@ class Development(DevelopmentBase):
         return weight
 
     def _drop_hilo(self, kind, X, link_ratio):
-        link_ratio[link_ratio == 0] = np.nan
-        lr_valid_count = np.sum(~np.isnan(link_ratio)[0, 0], axis=0)
+        xp = cp.get_array_module(X.values)
+        link_ratio[link_ratio == 0] = xp.nan
+        lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
         if kind == 'high':
-            vals = np.nanmax(link_ratio, -2, keepdims=True)
+            vals = xp.nanmax(link_ratio, -2, keepdims=True)
             drop_hilo = self.drop_high
         else:
-            vals = np.nanmin(link_ratio, -2, keepdims=True)
+            vals = xp.nanmin(link_ratio, -2, keepdims=True)
             drop_hilo = self.drop_low
         hilo = 1*(vals != link_ratio)
         if type(drop_hilo) is bool:
@@ -158,24 +163,26 @@ class Development(DevelopmentBase):
         return hilo
 
     def _drop_valuation(self, X):
+        xp = cp.get_array_module(X.values)
         if type(self.drop_valuation) is not list:
             drop_valuation = [self.drop_valuation]
         else:
             drop_valuation = self.drop_valuation
-        arr = 1-np.nan_to_num(X[X.valuation.isin(
+        arr = 1-xp.nan_to_num(X[X.valuation.isin(
             pd.PeriodIndex(drop_valuation,
                            freq=X.origin_grain))].values[0, 0]*0+1)
         ofill = X.shape[-2]-arr.shape[-2]
         dfill = X.shape[-1]-arr.shape[-1]
         if ofill > 0:
-            arr = np.concatenate((arr, np.repeat(
-                np.ones(arr.shape[-1])[np.newaxis], ofill, 0)), 0)
+            arr = xp.concatenate((arr, xp.repeat(
+                xp.ones(arr.shape[-1])[xp.newaxis], ofill, 0)), 0)
         if dfill > 0:
-            arr = np.concatenate((arr, np.repeat(
-                np.ones(arr.shape[-2])[..., np.newaxis], dfill, -1)), -1)
+            arr = xp.concatenate((arr, xp.repeat(
+                xp.ones(arr.shape[-2])[..., xp.newaxis], dfill, -1)), -1)
         return arr[:, :-1]
 
     def _drop(self, X):
+        xp = cp.get_array_module(X.values)
         drop = [self.drop] if type(self.drop) is not list else self.drop
         arr = X._nan_triangle().copy()
         for item in drop:
@@ -198,10 +205,11 @@ class Development(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
+        xp = cp.get_array_module(X.values)
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         tri_array = X.values.copy()
-        tri_array[tri_array == 0] = np.nan
+        tri_array[tri_array == 0] = xp.nan
         if type(self.average) is str:
             average = [self.average] * (tri_array.shape[-1] - 1)
         else:
@@ -210,13 +218,16 @@ class Development(DevelopmentBase):
         self.average_ = average
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        val = np.array([weight_dict.get(item.lower(), 1)
+        val = xp.array([weight_dict.get(item.lower(), 1)
                         for item in average])
         for i in [2, 1, 0]:
-            val = np.repeat(val[np.newaxis], tri_array.shape[i], axis=0)
-        val = np.nan_to_num(val * (y * 0 + 1))
-        link_ratio = np.divide(y, x, where=np.nan_to_num(x) != 0)
-        self.w_ = np.array(self._assign_n_periods_weight(X) *
+            val = xp.repeat(val[xp.newaxis], tri_array.shape[i], axis=0)
+        val = xp.nan_to_num(val * (y * 0 + 1))
+        if xp == cp:
+            link_ratio = y / x
+        else:
+            link_ratio = xp.divide(y, x, where=xp.nan_to_num(x) != 0)
+        self.w_ = xp.array(self._assign_n_periods_weight(X) *
                            self._drop_adjustment(X, link_ratio),
                            dtype='float16')
         w = self.w_ / (x**(val))
@@ -227,14 +238,14 @@ class Development(DevelopmentBase):
             warnings.warn('Setting n_periods=1 does not allow enough degrees '
                           'of freedom to support calculation of all regression'
                           ' statistics.  Only LDFs have been calculated.')
-        params.std_err_ = np.nan_to_num(params.std_err_) + \
-            np.nan_to_num(
-                (1-np.nan_to_num(params.std_err_*0+1)) *
+        params.std_err_ = xp.nan_to_num(params.std_err_) + \
+            xp.nan_to_num(
+                (1-xp.nan_to_num(params.std_err_*0+1)) *
                 params.sigma_ /
-                np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
-        params = np.concatenate(
+                xp.swapaxes(xp.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
+        params = xp.concatenate(
             (params.slope_, params.sigma_, params.std_err_), 3)
-        params = np.swapaxes(params, 2, 3)
+        params = xp.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(X, params, 0)
         self.cdf_ = self._get_cdf(self)
         self.sigma_ = self._param_property(X, params, 1)
@@ -263,7 +274,8 @@ class Development(DevelopmentBase):
 
     def _param_property(self, X, params, idx):
         obj = copy.copy(X)
-        obj.values = np.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
+        xp = cp.get_array_module(X.values)
+        obj.values = xp.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True

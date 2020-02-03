@@ -1,4 +1,5 @@
 import chainladder as cl
+from chainladder.utils.cupy import cp
 import numpy as np
 
 def test_non_vertical_line():
@@ -14,12 +15,13 @@ def test_vertical_line():
 
 def test_triangle_json_io():
     clrd = cl.load_dataset('clrd')
+    xp = cp.get_array_module(clrd.values)
     clrd2 = cl.read_json(clrd.to_json())
-    np.testing.assert_equal(clrd.values, clrd2.values)
-    np.testing.assert_equal(clrd.kdims, clrd2.kdims)
-    np.testing.assert_equal(clrd.vdims, clrd2.vdims)
-    np.testing.assert_equal(clrd.odims, clrd2.odims)
-    np.testing.assert_equal(clrd.ddims, clrd2.ddims)
+    xp.testing.assert_array_equal(clrd.values, clrd2.values)
+    xp.testing.assert_array_equal(clrd.kdims, clrd2.kdims)
+    xp.testing.assert_array_equal(clrd.vdims, clrd2.vdims)
+    xp.testing.assert_array_equal(clrd.odims, clrd2.odims)
+    xp.testing.assert_array_equal(clrd.ddims, clrd2.ddims)
     assert np.all(clrd.valuation == clrd2.valuation)
 
 def test_estimator_json_io():

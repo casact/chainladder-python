@@ -1,10 +1,7 @@
 import chainladder as cl
 import pandas as pd
 import numpy as np
-try:
-    import cupy as cp
-except:
-    import chainladder.utils.cupy as cp
+from chainladder.utils.cupy import cp
 import copy
 
 tri = cl.load_dataset('clrd')
@@ -274,14 +271,15 @@ def test_dropna():
 
 def test_commutative():
     tri = cl.load_dataset('quarterly')
+    xp = cp.get_array_module(tri.values)
     full = cl.Chainladder().fit(tri).full_expectation_
     assert tri.grain('OYDY').val_to_dev() == tri.val_to_dev().grain('OYDY')
     assert tri.cum_to_incr().grain('OYDY').val_to_dev() == tri.val_to_dev().cum_to_incr().grain('OYDY')
     assert tri.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum() == tri.val_to_dev().grain('OYDY')
     assert full.grain('OYDY').val_to_dev() == full.val_to_dev().grain('OYDY')
     assert full.cum_to_incr().grain('OYDY').val_to_dev() == full.val_to_dev().cum_to_incr().grain('OYDY')
-    assert np.allclose(np.nan_to_num(full.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum().values),
-            np.nan_to_num(full.val_to_dev().grain('OYDY').values), atol=1e-5)
+    assert xp.allclose(xp.nan_to_num(full.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum().values),
+            xp.nan_to_num(full.val_to_dev().grain('OYDY').values), atol=1e-5)
 
 def test_broadcasting():
     t1 = cl.load_dataset('raa')

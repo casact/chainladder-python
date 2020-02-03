@@ -3,14 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-try:
-    import cupy as cp
-    from chainladder.utils.cupy import nansum, nanmean
-    cp.nansum = nansum
-    cp.nanmean = nanmean
-
-except:
-    import chainladder.utils.cupy as cp
+from chainladder.utils.cupy import cp
 import copy
 
 
@@ -60,7 +53,7 @@ class TriangleGroupBy:
             x.shape[1]
         x = xp.where(ignore_vector, 0, x)
         self.obj.values = \
-            getattr(np, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
+            getattr(xp, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
         self.obj.values[self.obj.values == 0] = np.nan
         return self.obj
 
@@ -264,7 +257,6 @@ def add_groupby_agg_func(cls, k, v):
             self.old_k_by_new_k
         ignore_vector = xp.sum(np.isnan(x), axis=1, keepdims=True) == \
             x.shape[1]
-        print(ignore_vector.shape, x.shape)
         x = xp.where(ignore_vector, 0, x)
         x[~xp.isfinite(x)] = np.nan
         obj.values = \

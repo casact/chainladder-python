@@ -4,6 +4,7 @@
 from chainladder.development.base import DevelopmentBase
 import copy
 import numpy as np
+from chainladder.utils.cupy import cp
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -50,11 +51,12 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         obj = copy.copy(X)
-        obj.values = np.ones(X.shape)[..., :-1]
-        ldf = np.array([self.patterns[item] for item in obj.ddims[:-1]])
+        xp = cp.get_array_module(obj.values)
+        obj.values = xp.ones(X.shape)[..., :-1]
+        ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
         if self.style == 'cdf':
-            ldf = np.concatenate((ldf[:-1]/ldf[1:], np.array([ldf[-1]])))
-        ldf = ldf[np.newaxis, np.newaxis, np.newaxis, ...]
+            ldf = xp.concatenate((ldf[:-1]/ldf[1:], xp.array([ldf[-1]])))
+        ldf = ldf[xp.newaxis, xp.newaxis, xp.newaxis, ...]
         obj.values = obj.values * ldf
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)

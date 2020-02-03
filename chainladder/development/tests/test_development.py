@@ -1,6 +1,6 @@
 import numpy as np
+from chainladder.utils.cupy import cp
 import pytest
-from numpy.testing import assert_allclose
 import chainladder as cl
 from rpy2.robjects.packages import importr
 from rpy2.robjects import r
@@ -48,42 +48,47 @@ def test_drop2():
 
 def test_n_periods():
     d = cl.load_dataset('usauto')['incurred']
-    return np.all(np.round(np.unique(
+    xp = cp.get_array_module(d.values)
+    return xp.all(xp.around(xp.unique(
         cl.Development(n_periods=3, average='volume').fit(d).ldf_.values,
         axis=-2), 3).flatten() ==
-        np.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0]))
+        xp.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0]))
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_ldf(data, averages, est_sigma, atol):
-    r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))[:, :-1]
     p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[0, 0, :, :]
-    p = np.unique(p, axis=-2)
-    assert_allclose(r, p, atol=atol)
+    xp = cp.get_array_module(p)
+    r = xp.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))[:, :-1]
+    p = xp.unique(p, axis=-2)
+    xp.testing.assert_allclose(r, p, atol=atol)
 
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_sigma(data, averages, est_sigma, atol):
-    r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
     p = mack_p(data, averages[0], est_sigma[0]).sigma_.values[0, 0, :, :]
-    p = np.unique(p, axis=-2)
-    assert_allclose(r, p, atol=atol)
+    xp = cp.get_array_module(p)
+    p = xp.unique(p, axis=-2)
+    r = xp.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
+    xp.testing.assert_allclose(r, p, atol=atol)
 
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_std_err(data, averages, est_sigma, atol):
-    r = np.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
     p = mack_p(data, averages[0], est_sigma[0]).std_err_.values[0, 0, :, :]
-    p = np.unique(p, axis=-2)
-    assert_allclose(r, p, atol=atol)
+    xp = cp.get_array_module(p)
+    r = xp.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
+    p = xp.unique(p, axis=-2)
+    xp.testing.assert_allclose(r, p, atol=atol)
 
 def test_assymetric_development():
     quarterly = cl.load_dataset('quarterly')['paid']
+    xp = cp.get_array_module(quarterly.values)
     dev = cl.Development(n_periods=1, average='simple').fit(quarterly)
     dev2 = cl.Development(n_periods=1, average='regression').fit(quarterly)
-    assert_allclose(dev.ldf_.values, dev2.ldf_.values, atol=1e-5)
+    xp.testing.assert_allclose(dev.ldf_.values, dev2.ldf_.values, atol=1e-5)

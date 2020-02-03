@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+from chainladder.utils.cupy import cp
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
@@ -59,14 +60,15 @@ class MethodBase(BaseEstimator, EstimatorIO):
 
         """
         obj = copy.copy(self)
+        xp = cp.get_array_module(X.values)
         obj.X_ = copy.copy(X)
         obj.sample_weight = sample_weight
-        if np.unique(self.cdf_.values, axis=-2).shape[-2] == 1:
-            obj.cdf_.values = np.repeat(
-                np.unique(self.cdf_.values, axis=-2),
+        if xp.unique(self.cdf_.values, axis=-2).shape[-2] == 1:
+            obj.cdf_.values = xp.repeat(
+                xp.unique(self.cdf_.values, axis=-2),
                 len(X.odims), -2)
-            obj.ldf_.values = np.repeat(
-                np.unique(self.ldf_.values, axis=-2),
+            obj.ldf_.values = xp.repeat(
+                xp.unique(self.ldf_.values, axis=-2),
                 len(X.odims), -2)
             obj.cdf_.odims = obj.ldf_.odims = obj.X_.odims
             obj.cdf_.valuation = obj.ldf_.valuation = \
@@ -78,16 +80,17 @@ class MethodBase(BaseEstimator, EstimatorIO):
     @property
     def full_expectation_(self):
         obj = copy.copy(self.X_)
+        xp = cp.get_array_module(obj.values)
         obj.values = (self.ultimate_.values /
-                      np.unique(self.cdf_.values, axis=-2))
-        obj.values = np.concatenate((obj.values,
+                      xp.unique(self.cdf_.values, axis=-2))
+        obj.values = xp.concatenate((obj.values,
                                     self.ultimate_.values), -1)
         ddims = [int(item[item.find('-')+1:]) for item in self.ldf_.ddims]
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.valuation_date = max(obj.valuation).to_timestamp()
         obj.nan_override = True
-        obj.values[obj.values == 0] = np.nan
+        obj.values[obj.values == 0] = xp.nan
         obj._set_slicers()
         return obj
 
@@ -104,14 +107,15 @@ class MethodBase(BaseEstimator, EstimatorIO):
 
     def _get_full_triangle_(self):
         obj = copy.copy(self.X_)
-        w = 1-np.nan_to_num(obj._nan_triangle())
+        xp = cp.get_array_module(obj.values)
+        w = 1-xp.nan_to_num(obj._nan_triangle())
         extend = len(self.ldf_.ddims) - len(self.X_.ddims)
-        ones = np.ones((w.shape[-2], extend))
-        w = np.concatenate((w, ones), -1)
+        ones = xp.ones((w.shape[-2], extend))
+        w = xp.concatenate((w, ones), -1)
         obj.nan_override = True
         e_tri = \
-            np.repeat(self.ultimate_.values, self.cdf_.values.shape[3], 3) / \
-            np.unique(self.cdf_.values, axis=-2)
+            xp.repeat(self.ultimate_.values, self.cdf_.values.shape[3], 3) / \
+            xp.unique(self.cdf_.values, axis=-2)
         e_tri = e_tri * w
         zeros = obj._expand_dims(ones - ones)
         properties = self.full_expectation_
@@ -119,9 +123,9 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj.valuation_date = properties.valuation_date
         obj.ddims = properties.ddims
         obj.values = \
-            np.concatenate((np.nan_to_num(obj.values), zeros), -1) + e_tri
-        obj.values = np.concatenate((obj.values,
+            xp.concatenate((xp.nan_to_num(obj.values), zeros), -1) + e_tri
+        obj.values = xp.concatenate((obj.values,
                                      self.ultimate_.values), 3)
-        obj.values[obj.values==0] = np.nan
+        obj.values[obj.values==0] = xp.nan
         obj._set_slicers()
         return obj

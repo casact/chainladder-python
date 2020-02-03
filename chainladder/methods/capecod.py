@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 from chainladder.methods import MethodBase
@@ -63,26 +64,27 @@ class CapeCod(MethodBase):
     def _get_ultimate_(self, X, sample_weight, obj):
         origin, development, len_orig = -2, -1, sample_weight.shape[-2]
         ult = obj.X_
+        xp = cp.get_array_module(X.values)
         latest = X.latest_diagonal.values
         ult.values = \
             obj.cdf_.values[..., :ult.shape[development]]*(ult.values*0+1)
         cdf = ult.latest_diagonal.values
         exposure = sample_weight.values
         reported_exposure = exposure/cdf
-        trend_exponent = len_orig-np.arange(len_orig)-1
+        trend_exponent = len_orig-xp.arange(len_orig)-1
         trend_array = (1+self.trend)**(trend_exponent)
-        trend_array = X._expand_dims(trend_array[..., np.newaxis])
-        decay_matrix = self.decay ** np.abs(
-            np.arange(len_orig)[np.newaxis].T -
-            np.arange(len_orig)[np.newaxis])
+        trend_array = X._expand_dims(trend_array[..., xp.newaxis])
+        decay_matrix = self.decay ** xp.abs(
+            xp.arange(len_orig)[xp.newaxis].T -
+            xp.arange(len_orig)[xp.newaxis])
         decay_matrix = X._expand_dims(decay_matrix)
         weighted_exposure = \
-            np.swapaxes(reported_exposure, development, origin)*decay_matrix
+            xp.swapaxes(reported_exposure, development, origin)*decay_matrix
         trended_ultimate = (latest*trend_array)/reported_exposure
-        trended_ultimate = np.swapaxes(trended_ultimate, development, origin)
-        apriori = np.sum(weighted_exposure*trended_ultimate, development) / \
-            np.sum(weighted_exposure, development)
-        ult.values = apriori[..., np.newaxis]
+        trended_ultimate = xp.swapaxes(trended_ultimate, development, origin)
+        apriori = xp.sum(weighted_exposure*trended_ultimate, development) / \
+            xp.sum(weighted_exposure, development)
+        ult.values = apriori[..., xp.newaxis]
         ult.ddims = np.array([None])
         apriori_ = copy.copy(ult)
         detrended_ultimate = apriori_.values/trend_array

@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 from chainladder.methods import MethodBase
@@ -67,18 +68,19 @@ class Benktander(MethodBase):
 
     def _get_ultimate_(self, X, sample_weight, obj):
         ult = copy.copy(obj.X_)
+        xp = cp.get_array_module(ult.values)
         origin, development = -2, -1  # Set axes by name
         latest = X.latest_diagonal.values
         apriori = sample_weight.values*self.apriori
         ult.values = \
             obj.cdf_.values[..., :ult.shape[development]]*(ult.values*0+1)
         cdf = ult.latest_diagonal.values
-        cdf = (1-1/cdf)[np.newaxis]
-        exponents = np.arange(self.n_iters+1)
-        exponents = np.reshape(exponents, tuple([len(exponents)]+[1]*4))
+        cdf = (1-1/cdf)[xp.newaxis]
+        exponents = xp.arange(self.n_iters+1)
+        exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents
-        ult.values = np.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
-        ult.values[~np.isfinite(ult.values)] = np.nan
+        ult.values = xp.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
+        ult.values[~xp.isfinite(ult.values)] = xp.nan
         ult.ddims = np.array([None])
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          ult.shape[origin])

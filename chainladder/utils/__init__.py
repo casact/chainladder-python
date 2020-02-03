@@ -7,4 +7,5 @@ from chainladder.utils.exhibits import (
     VSpacer, HSpacer) # noqa (API import)
 from chainladder.utils.utility_functions import ( # noqa (API import)
     load_dataset, parallelogram_olf, read_pickle, read_json)
+from chainladder.utils.cupy import cp
     
