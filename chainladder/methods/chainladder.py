@@ -72,7 +72,7 @@ class Chainladder(MethodBase):
         self.full_triangle_ = self._get_full_triangle_()
         return self
 
-    def predict(self, X):
+    def predict(self, X, sample_weight=None):
         obj = super().predict(X)
         obj.full_triangle_ = obj._get_full_triangle_()
         return obj
