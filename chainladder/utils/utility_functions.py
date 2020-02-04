@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+from scipy.sparse import coo_matrix
 import joblib
 import json
 import os
@@ -48,6 +49,17 @@ def read_pickle(path):
 
 
 def read_json(json_str):
+    def sparse_in(json_str, dtype, shape):
+        k, v, o, d = shape
+        x = json.loads(json_str)
+        y = np.array([tuple([int(idx) for idx in item[1:-1].split(',')])
+                      for item in x.keys()])
+        new = coo_matrix(
+            (np.array(list(x.values())), (y[:, 0], y[:, 1])),
+            shape=(k*v*o, d), dtype=dtype).toarray().reshape(k,v,o,d)
+        new[new==0] = np.nan
+        return new
+
     json_dict = json.loads(json_str)
     if type(json_dict) is list:
         import chainladder as cl
@@ -57,10 +69,11 @@ def read_json(json_str):
             for item in json_dict])
     elif 'kdims' in json_dict.keys():
         tri = Triangle()
-        arrays = ['values', 'kdims', 'vdims', 'odims', 'ddims']
+        arrays = ['kdims', 'vdims', 'odims', 'ddims']
         for array in arrays:
             setattr(tri, array, np.array(
                 json_dict[array]['array'], dtype=json_dict[array]['dtype']))
+        shape = (len(tri.kdims), len(tri.vdims), len(tri.odims), len(tri.ddims))
         properties = ['key_labels', 'origin_grain', 'development_grain',
                     'nan_override', 'is_cumulative']
         for prop in properties:
@@ -69,6 +82,14 @@ def read_json(json_str):
             json_dict['valuation_date'], format='%Y-%m-%d')
         tri._set_slicers()
         tri.valuation = tri._valuation_triangle()
+        if json_dict['values'].get('sparse', None):
+            tri.values = sparse_in(json_dict['values']['array'], json_dict['values']['dtype'], shape)
+            if tri.is_cumulative:
+                tri.is_cumulative = False
+                tri = tri.incr_to_cum()
+        else:
+            tri.values = np.array(json_dict['values']['array'], dtype=json_dict['values']['dtype'])
+
         return tri
     else:
         import chainladder as cl
