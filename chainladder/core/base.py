@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+import sparse
 from chainladder.utils.cupy import cp
 import warnings
 
@@ -33,8 +34,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         index, columns, origin, development = self._str_to_list(
             index, columns, origin, development)
         key_gr = origin + self._flatten(development, index)
+
         # Aggregate data
-        data_agg = data.groupby(key_gr).sum().reset_index()
+        data_agg = data.groupby(key_gr).sum().reset_index().fillna(0)
         if not index:
             index = ['Total']
             data_agg[index[0]] = 'Total'
@@ -54,28 +56,39 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 pd.tseries.offsets.MonthEnd(m_cnt[self.origin_grain])
             self.development_grain = self.origin_grain
             col = None
+
         # Prep the data for 4D Triangle
         origin_date = pd.PeriodIndex(origin_date, freq=self.origin_grain).to_timestamp()
-        data_agg = self._get_axes(data_agg, index, columns,
-                                  origin_date, development_date)
-        data_agg = pd.pivot_table(data_agg, index=index+['origin'],
-                                  columns=col, values=columns,
-                                  aggfunc='sum')
         # Assign object properties
-        self.kdims = np.array(np.array(data_agg.index.droplevel(-1).unique()).tolist())
-        self.odims = np.array(data_agg.index.levels[-1].unique())
+        date_axes = self._get_date_axes(origin_date, development_date) # cartesian product
+        dev_lag_unique = TriangleBase._development_lag(date_axes['origin'], date_axes['development'])
+        dev_lag = TriangleBase._development_lag(pd.Series(origin_date), pd.Series(development_date))
+        dev = np.sort(dev_lag_unique.unique())
+        orig = np.sort(date_axes['origin'].unique())
+        key = data_agg[index].drop_duplicates().reset_index(drop=True)
+        dev = dict(zip(dev, range(len(dev))))
+        orig = dict(zip(orig, range(len(orig))))
+        kdims = {v:k for k, v in key.sum(axis=1).to_dict().items()}
+        orig_idx = origin_date.map(orig).values[np.newaxis].T
+        dev_idx = dev_lag.map(dev).values[np.newaxis].T
+        key_idx = data_agg[index].sum(axis=1).map(kdims).values[np.newaxis].T
+        val_idx = ((np.ones(len(data_agg))[np.newaxis].T)*range(len(columns))).reshape((1,-1), order='F').T
+        coords = np.concatenate(tuple([np.concatenate((orig_idx, dev_idx), axis=1)]*len(columns)),  axis=0)
+        coords = np.concatenate((np.concatenate(tuple([key_idx]*len(columns)),  axis=0), val_idx, coords), axis=1)
+        amts = data_agg[columns].unstack().values.astype('float64')
+        values = sparse.COO(coords.T, amts, shape=(len(key), len(columns), len(orig), len(dev))).todense()
+        values[values==0.] = np.nan
+        self.kdims = np.array(key)
+        self.odims = np.sort(date_axes['origin'].unique())
         if development:
-            self.ddims = np.array(data_agg.columns.levels[-1].unique())
-            self.ddims = self.ddims*(m_cnt
-                                     [self.development_grain])
-            self.vdims = np.array(data_agg.columns.levels[0].unique())
+            self.ddims = np.sort(dev_lag_unique.unique())
+            self.ddims = self.ddims*(m_cnt[self.development_grain])
         else:
             self.ddims = np.array([None])
-            self.vdims = np.array(data_agg.columns.unique())
+        self.vdims = np.array(columns)
         self.valuation_date = development_date.max()
         self.key_labels = index
         self._set_slicers()
-
         # Create 4D Triangle
         xp = np
         if self.array_backend == 'numpy':
@@ -85,14 +98,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             if cp == np:
                 warnings.warn('Unable to load CuPY.  Using numpy instead.')
                 self.array_backend = 'numpy'
-        triangle = \
-            xp.reshape(xp.array(data_agg), (len(self.kdims), len(self.odims),
-                       len(self.vdims), len(self.ddims)))
-        triangle = xp.swapaxes(triangle, 1, 2)
-        # Set all 0s to NAN for nansafe ufunc arithmetic
-        triangle[triangle == 0] = xp.nan
-
-        self.values = xp.array(triangle, dtype=kwargs.get('dtype', None))
+        self.values = xp.array(values, dtype=kwargs.get('dtype', None))
         # Used to show NANs in lower part of triangle
         self.nan_override = False
         self.valuation = self._valuation_triangle()
@@ -140,22 +146,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         cart_prod = cart_prod[cart_prod['development'] >= cart_prod['origin']]
         return cart_prod
 
-    def _get_axes(self, data_agg, groupby, columns,
-                  origin_date, development_date):
-        ''' Preps axes for the 4D triangle
-        '''
-        date_axes = self._get_date_axes(origin_date, development_date)
-        kdims = data_agg[groupby].drop_duplicates()
-        kdims['key'] = date_axes['key'] = 1
-        all_axes = pd.merge(date_axes, kdims, on='key').drop('key', axis=1)
-        data_agg = all_axes.merge(
-            data_agg, how='left',
-            left_on=['origin', 'development'] + groupby,
-            right_on=[origin_date, development_date] + groupby)
-        data_agg = data_agg[['origin', 'development'] + groupby + columns]
-        data_agg['development'] = TriangleBase._development_lag(
-            data_agg['origin'], data_agg['development'])
-        return data_agg
 
     def _nan_triangle(self):
         '''Given the current triangle shape and grain, it determines the
@@ -195,7 +185,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 [pd.to_datetime(special_cases[ddims[0]])] *
                 len(self.origin)).to_period(self._lowest_grain())
         if type(ddims[0]) is np.str_:
-            ddims = [int(item[:item.find('-'):]) for item in ddims]
+            ddims = np.array([int(item[:item.find('-'):]) for item in ddims])
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
                    .to_timestamp(how='s')
         origin = pd.Series(origin)
@@ -205,16 +195,17 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         origin[origin > self.valuation_date] = self.valuation_date
         next_development = origin+pd.DateOffset(days=-1, months=ddims[0])
         val_array = np.array(next_development)[..., np.newaxis]
-        for item in ddims[1:]:
-            if item == 9999:
-                next_development = pd.Series([pd.to_datetime('2262-03-01')] *
-                                             len(origin))
-                next_development = np.array(next_development)[..., np.newaxis]
-            else:
-                next_development = np.array(
-                    origin+pd.DateOffset(days=-1, months=item)
-                )[..., np.newaxis]
+        ddim_arr = ddims - ddims[0]
+        if ddims[-1] == 9999:
+            val_array = (val_array.astype('datetime64[M]') +
+                         ddim_arr[:-1][np.newaxis]).astype('datetime64[D]') - 1
+            next_development = pd.Series([pd.to_datetime('2262-03-01')] *
+                                         len(origin)).values[..., np.newaxis]
             val_array = np.concatenate((val_array, next_development), -1)
+        else:
+            val_array = (val_array.astype('datetime64[M]') +
+                         ddim_arr[np.newaxis]).astype('datetime64[D]') - 1
+
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         return val_array.to_period(self._lowest_grain())
 
@@ -240,8 +231,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         2. it allows pd_to_datetime on a set of columns
         '''
         # Concat everything into one field
-        target_field = data[fields].astype(str).apply(
-            lambda x: '-'.join(x), axis=1)
+        if len(fields) > 1:
+            target_field = data[fields].astype(str).apply(
+                lambda x: '-'.join(x), axis=1)
+        else:
+            target_field = data[fields].iloc[:, 0]
         datetime_arg = target_field.unique()
         date_inference_list = \
             [{'arg': datetime_arg, 'format': '%Y%m'},
@@ -261,7 +255,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             target = target.dt.to_period(
                 TriangleBase._get_grain(target)
             ).dt.to_timestamp(how='e')
-        target.name = 'valuation'
         return target
 
     @staticmethod

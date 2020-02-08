@@ -24,9 +24,19 @@ class _LocBase:
         idx_slice = np.array(idx).flatten()
         x = tuple([np.unique(np.array(item))
                    for item in list(zip(*idx_slice))])
-        obj.values = obj.values[x[0]][:, x[1]]
+        obj.values = \
+            obj.values[self._contig_slice(x[0])][:, self._contig_slice(x[1])]
         obj.values[obj.values == 0] = np.nan
         return obj
+
+    def _contig_slice(self, arr):
+        if len(arr) == 1:
+            return arr
+        sorted_arr = np.sort(arr)
+        diff = np.diff(sorted_arr)
+        if diff.max() == diff.min() == 1:
+            return slice(sorted_arr[0], sorted_arr[-1] + 1)
+        return arr
 
 
 class Location(_LocBase):
@@ -98,7 +108,7 @@ class TriangleSlicer:
                     obj2[item] = obj[item]
                 return obj2
             else:
-                return _LocBase(self).get_idx(idx)
+                return obj
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
