@@ -286,3 +286,10 @@ def test_broadcasting():
     t2 = tri
     assert t1.broadcast_axis('columns', t2.columns).shape[1] == t2.shape[1]
     assert t1.broadcast_axis('index', t2.index).shape[0] == t2.shape[0]
+
+def test_slicers_honor_order():
+    clrd = cl.load_dataset('clrd').groupby('LOB').sum()
+    assert clrd.iloc[[1,0], :].iloc[0, 1] == clrd.iloc[1, 1] #row
+    assert clrd.iloc[[1,0], [1, 0]].iloc[0, 0] == clrd.iloc[1, 1] #col
+    assert clrd.loc[:,['CumPaidLoss','IncurLoss']].iloc[0, 0] == clrd.iloc[0,1]
+    assert clrd.loc[['ppauto', 'medmal'],['CumPaidLoss','IncurLoss']].iloc[0,0] == clrd.iloc[3]['CumPaidLoss']

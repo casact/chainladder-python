@@ -17,25 +17,28 @@ class _LocBase:
         obj = copy.deepcopy(self.obj)
         vdims = pd.Series(obj.vdims)
         obj.kdims = np.array(idx.index.unique())
-        # Honor order of column labels
         obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
         obj.key_labels = list(idx.index.names)
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
-        idx_slice = np.array(idx).flatten()
-        x = tuple([np.unique(np.array(item))
-                   for item in list(zip(*idx_slice))])
+        x_0 = list(pd.Series([item[0] for item in idx.values[:, 0]]).unique())
+        x_1 = list(pd.Series([item[1] for item in idx.values[0, :]]).unique())
         obj.values = \
-            obj.values[self._contig_slice(x[0])][:, self._contig_slice(x[1])]
+            obj.values[self._contig_slice(x_0)][:, self._contig_slice(x_1)]
         obj.values[obj.values == 0] = np.nan
         return obj
 
     def _contig_slice(self, arr):
         if len(arr) == 1:
             return arr
-        sorted_arr = np.sort(arr)
-        diff = np.diff(sorted_arr)
-        if diff.max() == diff.min() == 1:
-            return slice(sorted_arr[0], sorted_arr[-1] + 1)
+        diff = np.diff(arr)
+        step  = None if arr[0] < arr[-1] else -1
+        if diff.max() == diff.min() and diff.max() in [1, -1]:
+            # index is sorted, so use its sort for better performance
+            if not step:
+                return slice(min(arr), max(arr) + 1, step)
+            else:
+                min_arr = None if min(arr) == 0 else min(arr)
+                return slice(max(arr), min_arr, step)
         return arr
 
 
@@ -103,10 +106,7 @@ class TriangleSlicer:
             obj = _LocBase(self).get_idx(idx)
             if type(key) is not str and key != list(obj.vdims):
                 # Honor order of the slice
-                obj2 = obj[key[0]]
-                for item in key[1:]:
-                    obj2[item] = obj[item]
-                return obj2
+                return obj.loc[:, key]
             else:
                 return obj
 
