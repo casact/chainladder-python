@@ -198,14 +198,13 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         ddim_arr = ddims - ddims[0]
         if ddims[-1] == 9999:
             val_array = (val_array.astype('datetime64[M]') +
-                         ddim_arr[:-1][np.newaxis]).astype('datetime64[D]') - 1
+                         ddim_arr[:-1][np.newaxis]).astype('datetime64[D]')
             next_development = pd.Series([pd.to_datetime('2262-03-01')] *
                                          len(origin)).values[..., np.newaxis]
             val_array = np.concatenate((val_array, next_development), -1)
         else:
             val_array = (val_array.astype('datetime64[M]') +
-                         ddim_arr[np.newaxis]).astype('datetime64[D]') - 1
-
+                         ddim_arr[np.newaxis]).astype('datetime64[D]')
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
         return val_array.to_period(self._lowest_grain())
 
