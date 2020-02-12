@@ -71,8 +71,9 @@ class MackChainladder(Chainladder):
         xp = cp.get_array_module(obj.values)
         tri_array = self.full_triangle_.values
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
+        avg = list(self.average_) if type(self.average_) is not list else self.average_
         val = xp.array([weight_dict.get(item.lower(), 2)
-                        for item in list(self.average_) + ['volume']])
+                        for item in avg + [avg[-1]]])
         val = xp.broadcast_to(val, self.X_.shape)
         weight = xp.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val))
         weight[weight == 0] = xp.nan
