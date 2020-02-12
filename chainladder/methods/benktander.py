@@ -84,6 +84,7 @@ class Benktander(MethodBase):
         ult.ddims = np.array([None])
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          ult.shape[origin])
+        ult._set_slicers()
         return ult
 
     def predict(self, X, sample_weight):

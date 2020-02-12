@@ -96,6 +96,8 @@ class CapeCod(MethodBase):
         ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
                                          len_orig)
         apriori_._set_slicers()
+        ult._set_slicers()
+        detrended_apriori_._set_slicers()
         return ult, apriori_, detrended_apriori_
 
     def predict(self, X, sample_weight):
