@@ -70,13 +70,16 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         orig = dict(zip(orig, range(len(orig))))
         kdims = {v:k for k, v in key.sum(axis=1).to_dict().items()}
         orig_idx = origin_date.map(orig).values[np.newaxis].T
-        dev_idx = dev_lag.map(dev).values[np.newaxis].T
+        if development:
+            dev_idx = dev_lag.map(dev).values[np.newaxis].T
+        else:
+            dev_idx = (dev_lag*0).values[np.newaxis].T
         key_idx = data_agg[index].sum(axis=1).map(kdims).values[np.newaxis].T
         val_idx = ((np.ones(len(data_agg))[np.newaxis].T)*range(len(columns))).reshape((1,-1), order='F').T
         coords = np.concatenate(tuple([np.concatenate((orig_idx, dev_idx), axis=1)]*len(columns)),  axis=0)
         coords = np.concatenate((np.concatenate(tuple([key_idx]*len(columns)),  axis=0), val_idx, coords), axis=1)
         amts = data_agg[columns].unstack().values.astype('float64')
-        values = sparse.COO(coords.T, amts, shape=(len(key), len(columns), len(orig), len(dev))).todense()
+        values = sparse.COO(coords.T, amts, shape=(len(key), len(columns), len(orig), len(dev) if development else 1)).todense()
         values[values==0.] = np.nan
         self.kdims = np.array(key)
         self.odims = np.sort(date_axes['origin'].unique())

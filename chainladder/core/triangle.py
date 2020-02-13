@@ -279,6 +279,8 @@ class Triangle(TriangleBase):
             Updated instance of triangle with valuation periods.
         '''
         if inplace:
+            if self.is_val_tri:
+                return self
             self = self._val_dev_chg('dev_to_val') if not self.is_val_tri else self
             return self
         return self._val_dev_chg('dev_to_val') if not self.is_val_tri else copy.deepcopy(self)
@@ -327,6 +329,8 @@ class Triangle(TriangleBase):
     def _val_dev_chg(self, kind):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
+        if hasattr(obj, '_nan_triangle_'):
+            del obj._nan_triangle_
         o_vals = obj._expand_dims(xp.arange(len(obj.origin))[:, xp.newaxis])
         if self.shape[-1] == 1:
             return obj
