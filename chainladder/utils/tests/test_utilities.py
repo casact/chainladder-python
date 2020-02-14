@@ -26,7 +26,7 @@ def test_triangle_json_io():
 
 def test_json_for_val():
     x = cl.load_dataset('raa').dev_to_val().to_json()
-    cl.read_json(x) == cl.load_dataset('raa').dev_to_val()
+    assert cl.read_json(x) == cl.load_dataset('raa').dev_to_val()
 
 def test_estimator_json_io():
     assert cl.read_json(cl.Development().to_json()).get_params() == \

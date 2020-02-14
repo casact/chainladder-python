@@ -22,7 +22,12 @@ class TriangleIO():
         '''
         def sparse_out(tri):
             k, v, o, d = tri.shape
-            coo = coo_matrix(np.nan_to_num(tri.values.reshape((k*v*o, d))))
+            xp = cp.get_array_module(tri)
+            if xp == cp:
+                out = cp.asnumpy(tri)
+            else:
+                out = tri
+            coo = coo_matrix(np.nan_to_num(out.reshape((k*v*o, d))))
             return json.dumps(dict(zip([str(item) for item in zip(coo.row, coo.col)], coo.data)))
 
         json_dict = {}
@@ -38,15 +43,20 @@ class TriangleIO():
             json_dict[attribute] = {
                 'dtype': str(getattr(self, attribute).dtype),
                 'array': getattr(self, attribute).tolist()}
-        if np.sum(np.nan_to_num(self.values)==0) / np.prod(self.shape) > 0.40:
+        xp = cp.get_array_module(self.values)
+        if xp == cp:
+            out = cp.asnumpy(self.cum_to_incr().values)
+        else:
+            out = self.cum_to_incr().values
+        if np.sum(np.nan_to_num(out)==0) / np.prod(self.shape) > 0.40:
             json_dict['values'] = {
-                'dtype': str(self.values.dtype),
-                'array': sparse_out(self.cum_to_incr()),
+                'dtype': str(out.dtype),
+                'array': sparse_out(out),
                 'sparse': True}
         else:
             json_dict['values'] = {
-                'dtype': str(self.values.dtype),
-                'array': self.values.tolist(),
+                'dtype': str(out.dtype),
+                'array': out.tolist(),
                 'sparse': False}
         json_dict['key_labels'] = self.key_labels
         json_dict['origin_grain'] = self.origin_grain

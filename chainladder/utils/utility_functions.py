@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+from chainladder.utils.cupy import cp
 from scipy.sparse import coo_matrix
 import joblib
 import json
@@ -48,7 +49,7 @@ def read_pickle(path):
     return joblib.load(path)
 
 
-def read_json(json_str):
+def read_json(json_str, array_backend=None):
     def sparse_in(json_str, dtype, shape):
         k, v, o, d = shape
         x = json.loads(json_str)
@@ -60,6 +61,9 @@ def read_json(json_str):
         new[new==0] = np.nan
         return new
 
+    if array_backend is None:
+        from chainladder import ARRAY_BACKEND
+        array_backend = ARRAY_BACKEND
     json_dict = json.loads(json_str)
     if type(json_dict) is list:
         import chainladder as cl
@@ -68,7 +72,7 @@ def read_json(json_str):
              cl.__dict__[item['__class__']]().set_params(**item['params']))
             for item in json_dict])
     elif 'kdims' in json_dict.keys():
-        tri = Triangle()
+        tri = Triangle(array_backend=array_backend)
         arrays = ['kdims', 'vdims', 'odims', 'ddims']
         for array in arrays:
             setattr(tri, array, np.array(
@@ -91,7 +95,8 @@ def read_json(json_str):
                 tri = tri.incr_to_cum()
         else:
             tri.values = np.array(json_dict['values']['array'], dtype=json_dict['values']['dtype'])
-
+        if array_backend == 'cupy':
+            tri.values = cp.array(tri.values)
         return tri
     else:
         import chainladder as cl

@@ -17,7 +17,7 @@ setup(
     version=version,
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
-    packages=['{}.{}'.format(name, p) for p in find_packages(where=name)]+['chainladder'],
+    packages=['{}.{}'.format(name, p) for p in find_packages(where=name)]+[name],
     scripts=[],
     url=url,
     download_url='{}/archive/v{}.tar.gz'.format(url, version),

@@ -13,20 +13,6 @@ We figure an actuary who uses python has reasonable familiarity with pandas and
 scikit-learn, so they can spend as little mental energy as possible learning yet
 another API.
 
-##### Now with GPU support
-New in version `0.5.0` - `chainladder` now supports CUDA-based GPU computations by way of [CuPY](https://github.com/cupy/cupy).  You can now swap `array_backend` between `numpy` and `cupy` to switch between CPU and GPU-based computations.
-
-Array backends can be set globally:
-```python
-import chainladder as cl
-cl.array_backend('cupy')
-```
-Alternatively, they can be set per `Triangle` instance.
-```python
-cl.Triangle(..., array_backend='cupy')
-```
-**Note** you must have a CUDA-enabled graphics card and [CuPY](https://github.com/cupy/cupy) installed to use the GPU backend.
-
 
 ## Documentation
 Please visit the [Documentation](https://chainladder-python.readthedocs.io/en/latest/) page for examples, how-tos, and source
@@ -54,3 +40,17 @@ Alternatively, install directly from github:
 
 Note: This package requires Python 3.5 and later, numpy 1.12.0 and later,
 pandas 0.23.0 and later, scikit-learn 0.18.0 and later.
+
+##### Now with GPU support
+New in version `0.5.0` - `chainladder` now supports CUDA-based GPU computations by way of [CuPY](https://github.com/cupy/cupy).  You can now swap `array_backend` between `numpy` and `cupy` to switch between CPU and GPU-based computations.
+
+Array backends can be set globally:
+```python
+import chainladder as cl
+cl.array_backend('cupy')
+```
+Alternatively, they can be set per `Triangle` instance.
+```python
+cl.Triangle(..., array_backend='cupy')
+```
+**Note** you must have a CUDA-enabled graphics card and [CuPY](https://github.com/cupy/cupy) installed to use the GPU backend.

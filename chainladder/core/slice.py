@@ -23,7 +23,7 @@ class _LocBase:
         x_0 = list(pd.Series([item[0] for item in idx.values[:, 0]]).unique())
         x_1 = list(pd.Series([item[1] for item in idx.values[0, :]]).unique())
         obj.values = \
-            obj.values[self._contig_slice(x_0)][:, self._contig_slice(x_1)]
+            obj.values[self._contig_slice(x_0), ...][:, self._contig_slice(x_1), ...]
         obj.values[obj.values == 0] = np.nan
         return obj
 
