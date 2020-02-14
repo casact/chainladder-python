@@ -23,7 +23,7 @@ class TriangleIO():
         def sparse_out(tri):
             k, v, o, d = tri.shape
             xp = cp.get_array_module(tri)
-            if xp == cp:
+            if xp == cp != np:
                 out = cp.asnumpy(tri)
             else:
                 out = tri
@@ -44,7 +44,7 @@ class TriangleIO():
                 'dtype': str(getattr(self, attribute).dtype),
                 'array': getattr(self, attribute).tolist()}
         xp = cp.get_array_module(self.values)
-        if xp == cp:
+        if xp == cp != np:
             out = cp.asnumpy(self.cum_to_incr().values)
         else:
             out = self.cum_to_incr().values
