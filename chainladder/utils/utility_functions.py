@@ -78,6 +78,8 @@ def read_json(json_str):
                     'nan_override', 'is_cumulative']
         for prop in properties:
             setattr(tri, prop, json_dict[prop])
+        if json_dict.get('is_val_tri', False):
+            tri.ddims = pd.PeriodIndex(tri.ddims, freq=tri.development_grain)
         tri.valuation_date = pd.to_datetime(
             json_dict['valuation_date'], format='%Y-%m-%d')
         tri._set_slicers()

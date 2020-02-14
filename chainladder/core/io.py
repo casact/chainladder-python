@@ -26,7 +26,14 @@ class TriangleIO():
             return json.dumps(dict(zip([str(item) for item in zip(coo.row, coo.col)], coo.data)))
 
         json_dict = {}
-        attributes = ['kdims', 'vdims', 'odims', 'ddims']
+        if self.is_val_tri:
+            ddims = self.ddims.to_timestamp(how='e')
+            json_dict['ddims'] = {
+                'dtype': str(ddims.dtype),
+                'array': ddims.values.tolist()}
+            attributes = ['kdims', 'vdims', 'odims']
+        else:
+            attributes = ['kdims', 'vdims', 'odims', 'ddims']
         for attribute in attributes:
             json_dict[attribute] = {
                 'dtype': str(getattr(self, attribute).dtype),
@@ -46,6 +53,7 @@ class TriangleIO():
         json_dict['development_grain'] = self.development_grain
         json_dict['nan_override'] = self.nan_override
         json_dict['is_cumulative'] = self.is_cumulative
+        json_dict['is_val_tri'] = self.is_val_tri
         json_dict['valuation_date'] = self.valuation_date.strftime('%Y-%m-%d')
         return json.dumps(json_dict)
 

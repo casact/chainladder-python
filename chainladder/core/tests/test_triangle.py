@@ -293,3 +293,14 @@ def test_slicers_honor_order():
     assert clrd.iloc[[1,0], [1, 0]].iloc[0, 0] == clrd.iloc[1, 1] #col
     assert clrd.loc[:,['CumPaidLoss','IncurLoss']].iloc[0, 0] == clrd.iloc[0,1]
     assert clrd.loc[['ppauto', 'medmal'],['CumPaidLoss','IncurLoss']].iloc[0,0] == clrd.iloc[3]['CumPaidLoss']
+
+def test_exposure_tri():
+    x = cl.load_dataset('auto')
+    x= x[x.development==12]
+    x = x['paid'].to_frame().T.unstack().reset_index()
+    x.columns=['LOB', 'origin', 'paid']
+    x.origin = x.origin.astype(str)
+    y = cl.Triangle(x, origin='origin', index='LOB', columns='paid')
+    x = cl.load_dataset('auto')['paid']
+    x = x[x.development==12]
+    assert x == y
