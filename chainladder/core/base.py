@@ -238,6 +238,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 lambda x: '-'.join(x), axis=1)
         else:
             target_field = data[fields].iloc[:, 0]
+        if hasattr(target_field, 'dt'):
+            return target_field
         datetime_arg = target_field.unique()
         date_inference_list = \
             [{'arg': datetime_arg, 'format': '%Y%m'},
