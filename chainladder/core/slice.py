@@ -16,8 +16,8 @@ class _LocBase:
         ''' Returns a slice of the original Triangle '''
         obj = copy.deepcopy(self.obj)
         vdims = pd.Series(obj.vdims)
-        obj.kdims = np.array(idx.index.unique())
-        obj.vdims = np.array(vdims[vdims.isin(idx.columns.unique())])
+        obj.kdims = np.array(idx.index)
+        obj.vdims = np.array(idx.columns)
         obj.key_labels = list(idx.index.names)
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
         x_0 = list(pd.Series([item[0] for item in idx.values[:, 0]]).unique())
@@ -88,6 +88,7 @@ class TriangleSlicer:
 
     def __getitem__(self, key):
         ''' Function for pandas style column indexing'''
+
         if type(key) is pd.DataFrame and 'development' in key.columns:
             return self._slice_development(key['development'])
         elif type(key) is np.ndarray:
@@ -104,11 +105,7 @@ class TriangleSlicer:
             idx = self._idx_table()[key]
             idx = self._idx_table_format(idx)
             obj = _LocBase(self).get_idx(idx)
-            if type(key) is not str and key != list(obj.vdims):
-                # Honor order of the slice
-                return obj.loc[:, key]
-            else:
-                return obj
+            return obj
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
