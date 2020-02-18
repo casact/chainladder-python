@@ -115,6 +115,8 @@ class Triangle(TriangleBase):
     def columns(self, value):
         self._len_check(self.columns, value)
         self.vdims = [value] if type(value) is str else value
+        if type(self.vdims) is list:
+            self.vdims = np.array(self.vdims)
         self._set_slicers()
 
     @property
@@ -178,9 +180,6 @@ class Triangle(TriangleBase):
     def age_to_age(self):
         return self.link_ratio
 
-    # ---------------------------------------------------------------- #
-    # ---------------------- End User Methods ------------------------ #
-    # ---------------------------------------------------------------- #
     def _get_latest_diagonal(self, compress=True):
         ''' Method to return the latest diagonal of the triangle.  Requires
             self.nan_overide == False.
@@ -232,6 +231,7 @@ class Triangle(TriangleBase):
                 self.values = self._expand_dims(self._nan_triangle())*self.values
                 self.values[self.values == 0] = np.nan
                 self.is_cumulative = True
+                self._set_slicers()
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -259,6 +259,7 @@ class Triangle(TriangleBase):
                 temp[temp == 0] = np.nan
                 self.values = temp
                 self.is_cumulative = False
+                self._set_slicers()
             return self
         else:
             new_obj = copy.deepcopy(self)
@@ -380,6 +381,7 @@ class Triangle(TriangleBase):
             obj.valuation = pd.PeriodIndex(
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
+        obj._set_slicers()
         return obj
 
 
