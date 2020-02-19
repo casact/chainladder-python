@@ -56,7 +56,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 pd.tseries.offsets.MonthEnd(m_cnt[self.origin_grain])
             self.development_grain = self.origin_grain
             col = None
-
         # Prep the data for 4D Triangle
         origin_date = pd.PeriodIndex(origin_date, freq=self.origin_grain).to_timestamp()
         # Assign object properties
@@ -74,6 +73,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             dev_idx = dev_lag.map(dev).values[np.newaxis].T
         else:
             dev_idx = (dev_lag*0).values[np.newaxis].T
+        data_agg = data_agg[origin_date<=development_date]
+        orig_idx = orig_idx[origin_date<=development_date]
+        dev_idx = dev_idx[origin_date<=development_date]
+        if sum(origin_date>development_date) > 0:
+            warnings.warn("Observations with development before origin start have been removed.")
         key_idx = data_agg[index].sum(axis=1).map(kdims).values[np.newaxis].T
         val_idx = ((np.ones(len(data_agg))[np.newaxis].T)*range(len(columns))).reshape((1,-1), order='F').T
         coords = np.concatenate(tuple([np.concatenate((orig_idx, dev_idx), axis=1)]*len(columns)),  axis=0)
