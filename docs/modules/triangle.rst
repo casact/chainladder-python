@@ -7,40 +7,34 @@ The Triangle
 
 Structure
 ---------
+The :class:`Triangle` is the data structure of the chainladder package. Just as
+Scikit-learn likes to only consume numpy arrays, Chainladder only likes
+Triangles.  Triangle is the primary data structure in chainladder. It is a 4D
+data structure with labeled axes.  These axes are its index, columns, origin,
+development.
 
-The :class:`Triangle` is the core data structure of the chainladder package.
-Just as scikit-learn requires all datasets to be numpy arrays, the chainladder
-package requires all data to be instances of the Triangle class.
-The Triangle is a four-dimensional tabular data structure with labeled axes
-(index, columns, origin, development). Triangle is the primary data structure
-in chainladder. The notation to manipulate the triangle object borrows heavily
-from pandas and the experience should feel familiar to a practitioner versed
-in using pandas.
+``index`` (axis 0):
+    The index  is the lowest grain at which you want to manage the triangle.
+    These can be things like state or company.  Like a pandas.multiIndex, you
+    can throw more than one column into the index.
 
-The core data structure at the heart of the Triangle class is a 4D numpy
-array with dimensions defined as:
+``columns`` (axis 1):
+    Columns are where you would want to store the different numeric values of your
+    data. Paid, Incurred, Counts are all reasonable choices for the columns of your
+    triangle.
 
-Dimension 0 (``index`` dimension):
-    represents index dimensions or the lowest grain(s) at which you
-    want to manage the triangle, e.g State, Company, etc. The
-    grain supports multiple key dimensions that will behave like a
-    pandas.multiIndex
+``origin`` (axis 2):
+    The origin is the period of time from which your columns originate.  It can
+    be an Accident Month, Report Year, Policy Quarter or any other period-like vector.
 
-Dimension 1 (``columns`` dimension):
-    represents columns dimensions or numeric data to be represented
-    in each triangle, e.g. Paid, Incurred, etc.
+``development`` (axis 3):
+    Development represents the development age or date of your triangle.
+    Valuation Month, Valuation Year, Valuation Quarter in a are good choices.
 
-Dimension 2 (``origin`` dimension):
-    represents the origin dimension which will be stored as a date
-    e.g. Accident Month, Report Year, Policy Quarter, etc.
-
-Dimension 3 (``development`` dimension):
-    represents the development dimension
-    e.g. Valuation Month, Valuation Year, Valuation Quarter, etc.
-
-``index`` and ``columns`` are accessed like a pandas Dataframe.  You can think of
-the 4d structure as a pandas Dataframe where each cell (row, col) is its
-own triangle.  see :ref:`Slicing<slicing>`
+Despite this structure, you interact with it in the style of pandas. You would
+use ``index`` and ``columns`` in the same way you would for a pandas Dataframe.
+You can think of the 4D structure as a pandas Dataframe where each cell (row,
+column) is its own triangle.  see :ref:`Slicing<slicing>`
 
 You can access the ``values`` property of a triangle to get its numpy
 representation, however the Triangle class provides many helper methods to

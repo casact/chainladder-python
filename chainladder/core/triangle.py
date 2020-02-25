@@ -461,6 +461,8 @@ class Triangle(TriangleBase):
             del obj._nan_triangle_
         if not self.is_cumulative:
             obj = obj.cum_to_incr()
+        if self.is_val_tri:
+            obj = obj.dev_to_val()
         if inplace:
             self = obj
             return self
