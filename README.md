@@ -5,13 +5,10 @@
 [![codecov](https://codecov.io/gh/jbogaardt/chainladder-python/branch/master/graph/badge.svg)](https://codecov.io/gh/jbogaardt/chainladder-python)
 
 ## chainladder - Property and Casualty Loss Reserving in Python
-This package is highly inspired by the popular [R ChainLadder package](https://github.com/mages/ChainLadder) and where equivalent procedures exist, has been heavily tested against the R package.
+This package gets inpiration from the popular [R ChainLadder package](https://github.com/mages/ChainLadder).
 
-A goal of this package is to be minimalistic in needing its own API.  To that end,
-we've adopted as much of the pandas API for data manipulation and the scikit-learn API for model construction as possible.  The idea here is to allow an actuary already versed in these tools to easily pick up this package.
-We figure an actuary who uses python has reasonable familiarity with pandas and
-scikit-learn, so they can spend as little mental energy as possible learning yet
-another API.
+A goal of this package is to be minimalistic in needing its own API.
+Think in pandas for data manipulation and scikit-learn for model construction. The idea here is to allow an actuary already versed in these tools to pick up this package with ease. Save your mental energy for actuarial work.
 
 
 ## Documentation
