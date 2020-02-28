@@ -136,6 +136,19 @@ class TriangleDunders:
     def __rmul__(self, other):
         return self if other == 1 else self.__mul__(other)
 
+    def __pow__(self, other):
+        xp = cp.get_array_module(self.values)
+        obj, other = self._validate_arithmetic(other)
+        obj.values = xp.nan_to_num(obj.values)**other
+        return self._arithmetic_cleanup(obj)
+
+    def __round__(self, other):
+        xp = cp.get_array_module(self.values)
+        obj, other = self._validate_arithmetic(other)
+        obj.values = xp.nan_to_num(obj.values).round(other)
+        return self._arithmetic_cleanup(obj)
+
+
     def __truediv__(self, other):
         xp = cp.get_array_module(self.values)
         obj, other = self._validate_arithmetic(other)
