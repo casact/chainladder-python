@@ -61,7 +61,7 @@ class WeightedRegression(BaseEstimator):
         fitted_value = (fitted_value*x*(y*0+1))
         residual = (y-fitted_value)*xp.sqrt(w)
         wss_residual = xp.nansum(residual**2, axis)
-        mse_denom = xp.nansum(y*0+1, axis)-1
+        mse_denom = xp.nansum((y*0+1)*(w!=0), axis)-1
         mse_denom[mse_denom == 0] = xp.nan
         mse = wss_residual / mse_denom
         std_err = xp.sqrt(mse/xp.nansum(w*x*x*(y*0+1), axis))
