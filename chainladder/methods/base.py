@@ -94,9 +94,6 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj._set_slicers()
         return obj
 
-    def ultimate_(self):
-        raise NotImplementedError
-
     @property
     def ibnr_(self):
         obj = copy.copy(self.ultimate_)
@@ -128,4 +125,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
                                      self.ultimate_.values), 3)
         obj.values[obj.values==0] = xp.nan
         obj._set_slicers()
+        if hasattr(self.X_, '_get_process_variance'):
+            obj = self.X_._get_process_variance(obj)
+            self.ultimate_.values = obj.values[..., -1:]
         return obj

@@ -9,6 +9,7 @@ from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 from warnings import warn
+import types
 
 
 class BootstrapODPSample(DevelopmentBase):
@@ -61,7 +62,6 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        warn('Process risk not yet implemented...')
         xp = cp.get_array_module(X.values)
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
@@ -128,6 +128,7 @@ class BootstrapODPSample(DevelopmentBase):
         adj_resid_dist = adj_resid_dist[adj_resid_dist != 0]
         adj_resid_dist = adj_resid_dist - xp.mean(adj_resid_dist)
         random_state = xp.random.RandomState(self.random_state)
+        self.random_state = random_state
         resampled_residual = [xp.expand_dims(random_state.choice(adj_resid_dist,
                               size=exp_incr_triangle.shape,
                               replace=True)*(exp_incr_triangle*0+1), 0)
@@ -145,21 +146,6 @@ class BootstrapODPSample(DevelopmentBase):
         obj.values = resampled_triangles
         obj._set_slicers()
         return obj, scale_phi
-
-        # Shapland cites Verral and England 2002 in using gamma as a proxy for
-        # poisson because of computational efficiency even though poisson is
-        # the more theoretically correct choice.  Does this belong in the fit?
-
-        # Process variance adjustment
-        #lower_diagonal = (obj._nan_triangle()*0)
-        #lower_diagonal[np.isnan(lower_diagonal)]=1
-        #obj.values = Chainladder().fit(Development().fit_transform(obj)).full_expectation_.values[...,:-1]*lower_diagonal
-        #obj.nan_override = True
-        #if self.process_dist == 'gamma':
-        #    process_triangle = np.nan_to_num(np.array([random_state.gamma(shape=abs(item/scale_phi),scale=scale_phi)*np.sign(np.nan_to_num(item)) for item in sim_exp_incr_triangle]))
-        #if self.process_dist == 'od poisson':
-        #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
-        #IBNR = process_triangle.cumsum(axis=2)[:,:,-1]
 
     def _get_design_matrix(self, X):
         """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
@@ -215,4 +201,15 @@ class BootstrapODPSample(DevelopmentBase):
         X_new = copy.copy(X)
         X_new = self.resampled_triangles_
         X_new.scale_ = self.scale_
+        X_new.random_state = self.random_state
+        X_new._get_process_variance = types.MethodType(_get_process_variance, X_new)
         return X_new
+
+def _get_process_variance(self, full_triangle):
+    #if self.process_dist == 'od poisson':
+    #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
+    lower_tri = full_triangle.cum_to_incr() - self.cum_to_incr()
+    lower_tri.values = self.random_state.gamma(
+        shape=abs(lower_tri.values) / self.scale_, scale=self.scale_) * \
+        np.sign(np.nan_to_num(lower_tri.values))
+    return (lower_tri + self.cum_to_incr()).incr_to_cum()

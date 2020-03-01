@@ -69,16 +69,18 @@ class Chainladder(MethodBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
+        obj = copy.deepcopy(self)
+        self.ultimate_ = self._get_ultimate_(X, sample_weight, obj)
         self.full_triangle_ = self._get_full_triangle_()
         return self
 
     def predict(self, X, sample_weight=None):
-        obj = super().predict(X)
+        obj = super().predict(X, sample_weight)
+        obj.ultimate_ = obj._get_ultimate_(X, sample_weight, obj)
         obj.full_triangle_ = obj._get_full_triangle_()
         return obj
 
-    @property
-    def ultimate_(self):
+    def _get_ultimate_(self, X, sample_weight, obj):
         development = -1
         xp = cp.get_array_module(self.X_.values)
         nans = self.X_._nan_triangle()
