@@ -27,8 +27,6 @@ Value at Risk percentile lookups.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\bootstrap.py:64: UserWarning: Process risk not yet implemented...
-      warn('Process risk not yet implemented...')
 
     [Text(0.5,0,'VaR')]
 
@@ -66,7 +64,7 @@ Value at Risk percentile lookups.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.420 seconds)
+   **Total running time of the script:** ( 0 minutes  0.715 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_value_at_risk.py:

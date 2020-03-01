@@ -29,7 +29,7 @@ optional. This example instantiates a 'premium' triangle as a single vector.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x000001F8550FAF98>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x000002204F8134E0>
 
 
 
@@ -68,7 +68,7 @@ optional. This example instantiates a 'premium' triangle as a single vector.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.169 seconds)
+   **Total running time of the script:** ( 0 minutes  0.502 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_exposure_triangle.py:

@@ -13,6 +13,15 @@ class BornhuetterFerguson(Benktander):
         Multiplier for the sample_weight used in the Bornhuetter Ferguson
         method. If sample_weight is already an apriori measure of ultimate,
         then use 1.0
+    apriori_sigma : float, optional (default=0.0)
+        Standard deviation of the apriori.  When used in conjunction with the
+        bootstrap model, the model samples aprioris from a lognormal distribution
+        using this argument as a standard deviation.
+    random_state : int, RandomState instance or None, optional (default=None)
+        If int, random_state is the seed used by the random number generator;
+        If RandomState instance, random_state is the random number generator;
+        If None, the random number generator is the RandomState instance used
+        by np.random.
 
     Attributes
     ----------
@@ -47,8 +56,10 @@ class BornhuetterFerguson(Benktander):
     .. [1] Bornhuetter, R. and Ferguson, R. (1972) The Actuary and IBNR. In
            Proceedings of the Casualty Actuarial Society, Vol. LIX, 181 - 195
     """
-    def __init__(self, apriori=1.0):
+    def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):
         self.apriori = apriori
+        self.apriori_sigma = apriori_sigma
+        self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
         """Applies the Bornhuetter-Ferguson technique to triangle **X**

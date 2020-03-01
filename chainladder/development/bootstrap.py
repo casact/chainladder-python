@@ -128,7 +128,6 @@ class BootstrapODPSample(DevelopmentBase):
         adj_resid_dist = adj_resid_dist[adj_resid_dist != 0]
         adj_resid_dist = adj_resid_dist - xp.mean(adj_resid_dist)
         random_state = xp.random.RandomState(self.random_state)
-        self.random_state = random_state
         resampled_residual = [xp.expand_dims(random_state.choice(adj_resid_dist,
                               size=exp_incr_triangle.shape,
                               replace=True)*(exp_incr_triangle*0+1), 0)
@@ -208,8 +207,10 @@ class BootstrapODPSample(DevelopmentBase):
 def _get_process_variance(self, full_triangle):
     #if self.process_dist == 'od poisson':
     #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
+    xp = cp.get_array_module(full_triangle.values)
     lower_tri = full_triangle.cum_to_incr() - self.cum_to_incr()
-    lower_tri.values = self.random_state.gamma(
+    random_state = xp.random.RandomState(None if not self.random_state else self.random_state + 1)
+    lower_tri.values = random_state.gamma(
         shape=abs(lower_tri.values) / self.scale_, scale=self.scale_) * \
         np.sign(np.nan_to_num(lower_tri.values))
     return (lower_tri + self.cum_to_incr()).incr_to_cum()

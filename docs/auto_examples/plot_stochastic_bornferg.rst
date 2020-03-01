@@ -16,9 +16,7 @@ this example.
 
 1. We see how to use the `BootstrapODPSample` and `BornhuetterFerguson` to come
   up with a stochastic view of the Bornhuetter-Ferguson method.
-2. We see how we can use the `Triangle.values` property `numpy` to modify the
-  the data underlying the Triangle
-3. We use the `broadcast_axis` method of the triangle class (new in 0.4.7)
+2. We use the `broadcast_axis` method of the triangle class (new in 0.4.7)
 
 
 
@@ -33,10 +31,8 @@ this example.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\bootstrap.py:64: UserWarning: Process risk not yet implemented...
-      warn('Process risk not yet implemented...')
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x00000193D41DDA20>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x000002204ECCDC18>
 
 
 
@@ -48,7 +44,6 @@ this example.
 .. code-block:: default
 
     import chainladder as cl
-    import numpy as np
 
     # Simulation parameters
     random_state = 42
@@ -62,21 +57,12 @@ this example.
     sim = cl.BootstrapODPSample(random_state=random_state, n_sims=n_sims)
     sim.fit(loss, sample_weight=premium)
 
-    # Repeat the premium triangle to align with simulated losses
-    sim_p = premium.broadcast_axis('index', sim.resampled_triangles_.index)
-
-    # Simulate aprioris using numpy
-    apriori_mu = 0.65
-    apriori_sigma = .10
-    aprioris = np.random.normal(apriori_mu, apriori_sigma, n_sims)
-    sim_p.values = (sim_p.values * aprioris.reshape(n_sims,-1)[..., np.newaxis, np.newaxis])
 
     # Fit Bornhuetter-Ferguson to stochastically generated data
-    model = cl.BornhuetterFerguson().fit(sim.resampled_triangles_, sample_weight=sim_p)
+    model = cl.BornhuetterFerguson(0.65, apriori_sigma=0.10).fit(sim.resampled_triangles_, sample_weight=premium)
 
     # Grab completed triangle replacing simulated known data with actual known data
-    full_triangle = model.full_triangle_ - model.X_ + \
-                    loss.broadcast_axis('index', sim.resampled_triangles_.index)
+    full_triangle = model.full_triangle_ - model.X_ + loss.broadcast_axis('index', sim.resampled_triangles_.index)
 
     # Limiting to the current year for plotting
     current_year = full_triangle[full_triangle.origin==full_triangle.origin.max()].to_frame().T
@@ -89,7 +75,7 @@ this example.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  17.268 seconds)
+   **Total running time of the script:** ( 0 minutes  11.573 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_stochastic_bornferg.py:
