@@ -166,7 +166,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
            hasattr(self, '_nan_triangle_'):
             self.valuation = self._valuation_triangle()
             val_array = self.valuation
-            val_array = val_array.to_timestamp().values.reshape(self.shape[-2:], order='f')
+            val_array = val_array.values.reshape(self.shape[-2:], order='f')
             nan_triangle = xp.array(
                 pd.DataFrame(val_array) > self.valuation_date)
             nan_triangle = xp.array(xp.where(nan_triangle, np.nan, 1), dtype='float16')
@@ -178,19 +178,19 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         dates.
         '''
         ddims = self.ddims if ddims is None else ddims
-        if type(ddims) == pd.PeriodIndex:
+        if type(ddims) == pd.DatetimeIndex:
             return pd.DatetimeIndex(pd.DataFrame(
-                np.repeat(self.ddims.to_timestamp(how='e').values[np.newaxis],
+                np.repeat(self.ddims.values[np.newaxis],
                           len(self.odims), 0))
-                .unstack().values).to_period(self._lowest_grain())
+                .unstack().values).to_period(self._lowest_grain()).to_timestamp(how='e')
         if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
-            return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain())
+            return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain()).to_timestamp(how='e')
         special_cases = dict(Ultimate='2262-03-01', Latest=self.valuation_date)
         if ddims[0] in special_cases.keys():
             return pd.DatetimeIndex(
                 [pd.to_datetime(special_cases[ddims[0]])] *
-                len(self.origin)).to_period(self._lowest_grain())
+                len(self.origin)).to_period(self._lowest_grain()).to_timestamp(how='e')
         if type(ddims[0]) is np.str_:
             ddims = np.array([int(item[:item.find('-'):]) for item in ddims])
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
@@ -213,7 +213,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             val_array = (val_array.astype('datetime64[M]') +
                          ddim_arr[np.newaxis]).astype('datetime64[D]')
         val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
-        return val_array.to_period(self._lowest_grain())
+        return val_array.to_period('M').to_timestamp(how='e')
 
     def _lowest_grain(self):
         my_list = ['M', 'Q', 'Y']

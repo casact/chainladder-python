@@ -83,18 +83,20 @@ def read_json(json_str, array_backend=None):
         for prop in properties:
             setattr(tri, prop, json_dict[prop])
         if json_dict.get('is_val_tri', False):
-            tri.ddims = pd.PeriodIndex(tri.ddims, freq=tri.development_grain)
+            tri.ddims = pd.PeriodIndex(tri.ddims, freq=tri.development_grain).to_timestamp(how='e')
         tri.valuation_date = pd.to_datetime(
-            json_dict['valuation_date'], format='%Y-%m-%d')
+            json_dict['valuation_date'], format='%Y-%m-%d').to_period('M').to_timestamp(how='e')
         tri._set_slicers()
         tri.valuation = tri._valuation_triangle()
         if json_dict['values'].get('sparse', None):
-            tri.values = sparse_in(json_dict['values']['array'], json_dict['values']['dtype'], shape)
+            tri.values = sparse_in(json_dict['values']['array'],
+                                   json_dict['values']['dtype'], shape)
             if tri.is_cumulative:
                 tri.is_cumulative = False
                 tri = tri.incr_to_cum()
         else:
-            tri.values = np.array(json_dict['values']['array'], dtype=json_dict['values']['dtype'])
+            tri.values = np.array(json_dict['values']['array'],
+                                  dtype=json_dict['values']['dtype'])
         if array_backend == 'cupy':
             tri.values = cp.array(tri.values)
         return tri

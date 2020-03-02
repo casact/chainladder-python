@@ -88,7 +88,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
         ddims = [int(item[item.find('-')+1:]) for item in self.ldf_.ddims]
         obj.ddims = np.array([obj.ddims[0]]+ddims)
         obj.valuation = obj._valuation_triangle(obj.ddims)
-        obj.valuation_date = max(obj.valuation).to_timestamp()
+        obj.valuation_date = max(obj.valuation)
         obj.nan_override = True
         obj.values[obj.values == 0] = xp.nan
         obj._set_slicers()

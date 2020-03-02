@@ -162,7 +162,7 @@ class Triangle(TriangleBase):
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
-        val_array = obj.valuation.to_timestamp().values.reshape(
+        val_array = obj.valuation.values.reshape(
             obj.shape[-2:], order='f')[:, 1:]
         obj.values = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
@@ -317,7 +317,7 @@ class Triangle(TriangleBase):
                     (obj.values, ultimate.values), axis=-1)
                 obj.ddims = np.concatenate((obj.ddims, np.array([9999])))
                 obj.valuation = obj._valuation_triangle(obj.ddims)
-                obj.valuation_date = max(obj.valuation).to_timestamp()
+                obj.valuation_date = max(obj.valuation)
                 ret_val = obj
             else:
                 ret_val = self._val_dev_chg('val_to_dev')
@@ -338,10 +338,10 @@ class Triangle(TriangleBase):
         if kind == 'val_to_dev':
             step = {'Y': 12, 'Q': 3, 'M': 1}[obj.development_grain]
             mtrx = \
-                12*(obj.ddims.to_timestamp(how='e').year.values[np.newaxis] -
+                12*(obj.ddims.year.values[np.newaxis] -
                     obj.origin.to_timestamp(how='s')
                        .year.values[:, np.newaxis]) + \
-                   (obj.ddims.to_timestamp(how='e').month.values[np.newaxis] -
+                   (obj.ddims.month.values[np.newaxis] -
                     obj.origin.to_timestamp(how='s')
                        .month.values[:, np.newaxis]) + 1
             rng = range(mtrx[mtrx > 0].min(), mtrx.max()+1, step)
@@ -375,10 +375,9 @@ class Triangle(TriangleBase):
         else:
             obj.ddims = obj.valuation.unique().sort_values()
             obj.values = obj.values[..., :np.where(
-                obj.ddims.to_timestamp() <= obj.valuation_date)[0].max()+1]
-            obj.ddims = obj.ddims[obj.ddims.to_timestamp()
-                                  <= obj.valuation_date]
-            obj.valuation = pd.PeriodIndex(
+                obj.ddims <= obj.valuation_date)[0].max()+1]
+            obj.ddims = obj.ddims[obj.ddims <= obj.valuation_date]
+            obj.valuation = pd.DatetimeIndex(
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
         obj._set_slicers()

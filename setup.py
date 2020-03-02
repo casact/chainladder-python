@@ -9,7 +9,7 @@ from os import listdir
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/casact/chainladder-python'
-version='0.5.4' # Put this in __init__.py
+version='0.5.5' # Put this in __init__.py
 
 data_path = ''
 setup(
@@ -28,7 +28,7 @@ setup(
     description=descr,
     # long_description=open('README.md').read(),
     install_requires=[
-        "pandas<1.0",
+        "pandas>=0.23.0",
         "numpy>=1.12.0",
         "scikit-learn>=0.18.0",
         "sparse",

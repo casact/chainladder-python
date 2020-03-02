@@ -32,7 +32,7 @@ class TriangleIO():
 
         json_dict = {}
         if self.is_val_tri:
-            ddims = self.ddims.to_timestamp(how='e')
+            ddims = self.ddims
             json_dict['ddims'] = {
                 'dtype': str(ddims.dtype),
                 'array': ddims.values.tolist()}

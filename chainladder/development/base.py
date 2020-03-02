@@ -170,7 +170,7 @@ class Development(DevelopmentBase):
             drop_valuation = self.drop_valuation
         arr = 1-xp.nan_to_num(X[X.valuation.isin(
             pd.PeriodIndex(drop_valuation,
-                           freq=X.origin_grain))].values[0, 0]*0+1)
+                           freq=X.origin_grain).to_timestamp(how='e'))].values[0, 0]*0+1)
         ofill = X.shape[-2]-arr.shape[-2]
         dfill = X.shape[-1]-arr.shape[-1]
         if ofill > 0:

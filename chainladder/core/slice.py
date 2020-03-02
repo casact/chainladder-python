@@ -137,7 +137,7 @@ class TriangleSlicer:
         ''' private method for handling of valuation slicing '''
         obj = copy.deepcopy(self)
         obj.valuation_date = min(
-            obj.valuation[key].max().to_timestamp(how='e'), obj.valuation_date)
+            obj.valuation[key].max(), obj.valuation_date)
         key = key.reshape(self.shape[-2:], order='f')
         nan_tri = np.ones(self.shape[-2:])
         nan_tri = key*nan_tri
