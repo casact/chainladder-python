@@ -17,7 +17,7 @@ class TriangleDunders:
         other = other if type(other) in [int, float] else copy.deepcopy(other)
         ddims = None
         odims = None
-        if type(other) not in [int, float, np.float64, np.int64]:
+        if type(other) not in [int, float, np.float64, np.int64, xp.ndarray]:
             if len(self.vdims) != len(other.vdims):
                 raise ValueError('Triangles must have the same number of ' +
                                  'columns')
