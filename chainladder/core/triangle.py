@@ -150,7 +150,7 @@ class Triangle(TriangleBase):
 
     @property
     def is_val_tri(self):
-        return (type(self.ddims) != np.ndarray)
+        return (type(self.ddims) == pd.DatetimeIndex)
 
     @property
     def latest_diagonal(self):

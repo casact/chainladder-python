@@ -70,7 +70,7 @@ class TriangleDisplay():
             out = self.values[0, 0]
         out = pd.DataFrame(out, index=origin, columns=ddims)
         if str(out.columns[0]).find('-') > 0 and not \
-           isinstance(out.columns, pd.DatetimeIndex):
+           isinstance(out.columns, pd.PeriodIndex):
             out.columns = [item.replace('-9999', '-Ult')
                            for item in out.columns]
             if len(out.drop_duplicates()) != 1:
