@@ -293,6 +293,7 @@ def test_slicers_honor_order():
     assert clrd.iloc[[1,0], [1, 0]].iloc[0, 0] == clrd.iloc[1, 1] #col
     assert clrd.loc[:,['CumPaidLoss','IncurLoss']].iloc[0, 0] == clrd.iloc[0,1]
     assert clrd.loc[['ppauto', 'medmal'],['CumPaidLoss','IncurLoss']].iloc[0,0] == clrd.iloc[3]['CumPaidLoss']
+    assert clrd.loc[clrd['LOB']=='comauto', ['CumPaidLoss', 'IncurLoss']] == clrd[clrd['LOB']=='comauto'].iloc[:, [1,0]]
 
 def test_exposure_tri():
     x = cl.load_dataset('auto')
@@ -304,3 +305,17 @@ def test_exposure_tri():
     x = cl.load_dataset('auto')['paid']
     x = x[x.development==12]
     assert x == y
+
+def test_jagged_1_add():
+    raa = cl.load_dataset('raa')
+    raa1 = raa[raa.origin<='1984']
+    raa2 = raa[raa.origin>'1984']
+    assert raa2 + raa1 == raa
+    assert raa2.dropna() + raa1.dropna() == raa
+
+def test_jagged_2_add():
+    raa = cl.load_dataset('raa')
+    raa1 = raa[raa.development<=48]
+    raa2 = raa[raa.development>48]
+    assert raa2 + raa1 == raa
+    assert raa2.dropna() + raa1.dropna() == raa

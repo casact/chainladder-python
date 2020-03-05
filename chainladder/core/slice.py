@@ -45,6 +45,10 @@ class _LocBase:
 class Location(_LocBase):
     ''' class to generate .loc[] functionality '''
     def __getitem__(self, key):
+        if type(key) == pd.Series:
+            return self.obj[key]
+        if type(key) == tuple and type(key[0]) == pd.Series:
+            return self.obj[key[0]][key[1]]
         idx = self.obj._idx_table().loc[key]
         return self.get_idx(self.obj._idx_table_format(idx))
 
