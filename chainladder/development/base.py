@@ -141,6 +141,7 @@ class Development(DevelopmentBase):
     def _drop_hilo(self, kind, X, link_ratio):
         xp = cp.get_array_module(X.values)
         link_ratio[link_ratio == 0] = xp.nan
+        link_ratio = link_ratio + np.random.rand(*list(link_ratio.shape))/1e8
         lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
         if kind == 'high':
             vals = xp.nanmax(link_ratio, -2, keepdims=True)
