@@ -8,6 +8,7 @@ from scipy.sparse import coo_matrix
 import joblib
 import json
 import os
+import copy
 from chainladder.core.triangle import Triangle
 from chainladder.workflow import Pipeline
 
@@ -128,3 +129,37 @@ def parallelogram_olf(values, date, start_date=None, end_date=None,
     y.columns = ['Origin', 'OLF']
     y['Origin'] = y['Origin'].astype(str)
     return y.set_index('Origin')
+
+def concat(objs, axis):
+    """ Concatenate Triangle objects along a particular axis.
+
+    Parameters
+    ----------
+    objs : list or tuple
+        A list or tuple of Triangle objects to concat. All non-concat axes must
+        be identical and all elements of the concat axes must be unique.
+    axis : string or int
+        The axis along which to concatenate.
+
+    Returns
+    -------
+    Updated triangle
+    """
+    xp = cp.get_array_module(objs[0].values)
+    axis =  objs[0]._get_axis(axis)
+    mapper = {0: 'kdims', 1: 'vdims', 2: 'odims', 3: 'ddims'}
+    for k, v in mapper.items():
+        if k != axis:  # All non-concat axes must be identical
+            assert xp.all(xp.array([getattr(obj, mapper[k]) for obj in objs]) ==
+                          getattr(objs[0], mapper[k]))
+        else:  # All elements of concat axis must be unique
+            new_axis = xp.concatenate([getattr(obj, mapper[axis]) for obj in objs])
+            if axis == 0:
+                assert len(pd.DataFrame(new_axis).drop_duplicates()) == len(new_axis)
+            else:
+                assert len(new_axis) == len(set(new_axis))
+    out = copy.deepcopy(objs[0])
+    out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
+    setattr(out, mapper[axis], new_axis)
+    out._set_slicers()
+    return out

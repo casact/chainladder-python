@@ -40,3 +40,8 @@ def test_pipeline_json_io():
             for item in pipe.get_params()['steps']} == \
            {item[0]: item[1].get_params()
             for item in pipe2.get_params()['steps']}
+
+def test_concat():
+    tri = cl.load_dataset('clrd').groupby('LOB').sum()
+    assert cl.concat([tri.loc['wkcomp'], tri.loc['comauto']], axis=0) == \
+           tri.loc[['wkcomp', 'comauto']]
