@@ -48,6 +48,12 @@ class Development(DevelopmentBase):
         Drops lowest link ratio(s) from LDF calculation
     drop_valuation : str or list of str (default=None)
         Drops specific valuation periods. str must be date convertible.
+    fillna: float, (default=None)
+        Used to fill in zero or nan values of an triangle with some non-zero
+        amount.  When an link-ratio has zero as its denominator, it is automatically
+        excluded from the `ldf_` calculation.  For the specific case of 'volume'
+        averaging in a deterministic method, this may be reasonable.  For all other
+        averages and stochastic methods, this assumption should be avoided.
 
 
     Attributes
@@ -66,7 +72,8 @@ class Development(DevelopmentBase):
     """
     def __init__(self, n_periods=-1, average='volume',
                  sigma_interpolation='log-linear', drop=None,
-                 drop_high=None, drop_low=None, drop_valuation=None):
+                 drop_high=None, drop_low=None, drop_valuation=None,
+                 fillna=None):
         self.n_periods = n_periods
         self.average = average
         self.sigma_interpolation = sigma_interpolation
@@ -74,6 +81,7 @@ class Development(DevelopmentBase):
         self.drop_low = drop_low
         self.drop_valuation = drop_valuation
         self.drop = drop
+        self.fillna = fillna
 
     @property
     def weight_(self):
@@ -209,7 +217,10 @@ class Development(DevelopmentBase):
         xp = cp.get_array_module(X.values)
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
-        tri_array = X.values.copy()
+        if self.fillna:
+            tri_array = (X + self.fillna).values
+        else:
+            tri_array = X.values.copy()
         tri_array[tri_array == 0] = xp.nan
         if type(self.average) is str:
             average = [self.average] * (tri_array.shape[-1] - 1)
