@@ -26,7 +26,6 @@ data = ['RAA', 'ABC', 'GenIns', 'MW2008', 'MW2014']
 averages = [('simple', 0), ('volume', 1), ('regression', 2)]
 est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
-
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
@@ -89,3 +88,8 @@ def test_tail_doesnt_mutate_sigma_(data, averages, est_sigma):
     xp = cp.get_array_module(p)
     p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).sigma_.values
     xp.testing.assert_array_equal(p_no_tail, p)
+
+def test_fit_period():
+    tri = cl.load_dataset('tail_sample')
+    dev = cl.Development(average='simple').fit_transform(tri)
+    assert round(cl.TailCurve(fit_period=slice(-6,None,None), extrap_periods=10).fit(dev).cdf_['paid'].values[0,0,0,-2],3) == 1.044

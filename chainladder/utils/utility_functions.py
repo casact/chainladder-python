@@ -28,7 +28,7 @@ def load_dataset(key, *args, **kwargs):
     development = 'development'
     columns = ['values']
     index = None
-    if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto', 'usauto']:
+    if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto', 'usauto', 'tail_sample']:
         columns = ['incurred', 'paid']
     if key.lower() == 'clrd':
         origin = 'AccidentYear'
