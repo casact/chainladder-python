@@ -99,8 +99,8 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
 
     def _get_tail_prediction(self, tail_ldf):
         xp = cp.get_array_module(tail_ldf)
-        ave = 1 + tail_ldf[..., :self._ave_period[0]]
-        all = xp.expand_dims(
-            xp.prod(1 + tail_ldf[..., self._ave_period[0]:], -1), -1)
+        accum_point = self.ldf_.shape[-1] - 1
+        ave = 1 + tail_ldf[..., :accum_point]
+        all = xp.expand_dims(xp.prod(1 + tail_ldf[..., accum_point:], -1), -1)
         tail = xp.concatenate((ave, all), -1)
         return tail

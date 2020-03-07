@@ -25,6 +25,10 @@ class TailCurve(TailBase):
         Whether to raise an error or ignore observations that violate the
         distribution being fit.  The most common is ldfs < 1.0 will not work
         in either the ``exponential`` or ``inverse_power`` fits.
+    attachment_age: int (default=None)
+        The age at which to attach the fitted curve.  If None, then the latest
+        age is used. Measures of variability from original `ldf_` are retained
+        when being used in conjunction with the MackChainladder method.
 
     Attributes
     ----------
@@ -38,11 +42,12 @@ class TailCurve(TailBase):
         std_err with tail factor applied
     """
     def __init__(self, curve='exponential', fit_period=slice(None, None, None),
-                 extrap_periods=100, errors='ignore'):
+                 extrap_periods=100, errors='ignore', attachment_age=None):
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
         self.errors = errors
+        self.attachment_age = attachment_age
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -82,10 +87,14 @@ class TailCurve(TailBase):
         slope, intercept = coefs.slope_, coefs.intercept_
         extrapolate = xp.cumsum(
             xp.ones(tuple(list(_y.shape)[:-1] +
-                    [self.extrap_periods])), -1) + n_obs
+                    [self.extrap_periods + n_obs])), -1)
         tail = self._predict_tail(slope, intercept, extrapolate)
-        self.ldf_.values = self.ldf_.values[..., :-tail.shape[-1]]
-        self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
+        if self.attachment_age:
+            attach_idx = xp.min(xp.where(X.ddims>=self.attachment_age))
+        else:
+            attach_idx = len(X.ddims) - 1
+        self.ldf_.values = xp.concatenate(
+            (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1)
         obj = Development().fit_transform(X) if 'ldf_' not in X else X
         sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values[..., -1] = sigma[..., -1]
