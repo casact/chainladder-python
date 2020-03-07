@@ -61,7 +61,7 @@ class TailCurve(TailBase):
         """
         super().fit(X, y, sample_weight)
         xp = cp.get_array_module(self.ldf_.values)
-        _y = self.ldf_.values[..., :-1].copy()
+        _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
         _w = xp.zeros(_y.shape)
         if type(self.fit_period) is not slice:
             raise TypeError('fit_period must be slice.')
