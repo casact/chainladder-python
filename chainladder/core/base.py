@@ -191,7 +191,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             return pd.DatetimeIndex(
                 [pd.to_datetime(special_cases[ddims[0]])] *
                 len(self.origin)).to_period(self._lowest_grain()).to_timestamp(how='e')
-        if type(ddims[0]) is np.str_:
+        if type(ddims[0]) in [np.str_, str]:
             ddims = np.array([int(item[:item.find('-'):]) for item in ddims])
         origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
                    .to_timestamp(how='s')
