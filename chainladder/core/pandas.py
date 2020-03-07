@@ -138,9 +138,10 @@ class TrianglePandas:
         -------
             GroupBy object (pandas or Triangle)
         """
-        if self.shape[:2] == (1, 1):
+        try:
             return self.to_frame().groupby(*args, **kwargs)
-        return TriangleGroupBy(self, by)
+        except:
+            return TriangleGroupBy(self, by)
 
     def append(self, other):
         """ Append rows of other to the end of caller, returning a new object.
