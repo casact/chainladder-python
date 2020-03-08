@@ -4,7 +4,7 @@
 import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
-from chainladder.development import DevelopmentBase
+from chainladder.development import DevelopmentBase, Development
 
 class TailConstant(TailBase):
     """Allows for the entry of a constant tail factor to LDFs.
@@ -81,6 +81,10 @@ class TailConstant(TailBase):
         super().fit(X, y, sample_weight)
         tail = self.tail
         self = self._apply_decay(X, tail)
+        obj = Development().fit_transform(X) if 'ldf_' not in X else X
+        sigma, std_err = self._get_tail_stats(obj)
+        self.sigma_.values[..., -1] = sigma[..., -1]
+        self.std_err_.values[..., -1] = std_err[..., -1]
         return self
 
     def transform(self, X):

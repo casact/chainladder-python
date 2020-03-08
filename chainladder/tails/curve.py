@@ -104,36 +104,6 @@ class TailCurve(TailBase):
         self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
-    def _get_tail_weighted_time_period(self, X):
-        """ Method to approximate the weighted-average development age of tail
-        using log-linear extrapolation
-
-        Returns: float32
-        """
-        y = X.ldf_.values.copy()
-        xp = cp.get_array_module(y)
-        y[y <= 1] = xp.nan
-        reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
-        tail = xp.prod(self.ldf_.values[..., -self._ave_period[0]-1:],
-                       -1, keepdims=True)
-        reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
-        time_pd = (xp.log(tail-1)-reg.intercept_)/reg.slope_
-        return time_pd
-
-    def _get_tail_stats(self, X):
-        """ Method to approximate the tail sigma using
-        log-linear extrapolation applied to tail average period
-        """
-        time_pd = self._get_tail_weighted_time_period(X)
-        xp = cp.get_array_module(X.sigma_.values)
-        reg = WeightedRegression(axis=3).fit(None, xp.log(X.sigma_.values), None)
-        sigma_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
-        y = X.std_err_.values
-        y[y == 0] = xp.nan
-        reg = WeightedRegression(axis=3).fit(None, xp.log(y), None)
-        std_err_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
-        return sigma_, std_err_
-
     def _get_x(self, w, y):
         # For Exponential decay, no transformation on x is needed
         if self.curve == 'exponential':

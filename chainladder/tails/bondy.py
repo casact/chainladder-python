@@ -5,11 +5,11 @@ import numpy as np
 from scipy.optimize import least_squares
 from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
-from chainladder.development import DevelopmentBase
+from chainladder.development import DevelopmentBase, Development
 
 class TailBondy(TailBase):
     """Estimator for the Generalized Bondy tail factor.
-    
+
     .. versionadded:: 0.6.0
 
     Parameters
@@ -61,18 +61,22 @@ class TailBondy(TailBase):
         """
         super().fit(X, y, sample_weight)
         xp = cp.get_array_module(X.values)
+        obj = Development().fit_transform(X) if 'ldf_' not in X else X
         b_optimized = []
-        initial = xp.where(X.ddims==self.earliest_age)[0][0] if self.earliest_age else 0
-        for num in range(len(X.vdims)):
-            b0 = xp.ones(X.shape[0])*.5
-            data = xp.log(X.ldf_.values[:, num, 0,initial:])
+        initial = xp.where(obj.ddims==self.earliest_age)[0][0] if self.earliest_age else 0
+        for num in range(len(obj.vdims)):
+            b0 = xp.ones(obj.shape[0])*.5
+            data = xp.log(obj.ldf_.values[:, num, 0,initial:])
             b_optimized.append(least_squares(
                 TailBondy.solver, x0=b0, kwargs={'data': data}).x[:, None])
         self.b_ = xp.concatenate(b_optimized, 1)
-        tail = xp.exp(xp.log(X.ldf_.values[..., 0:1, initial:initial+1]) * \
-                      self.b_**(len(X.ldf_.ddims)-1))
+        tail = xp.exp(xp.log(obj.ldf_.values[..., 0:1, initial:initial+1]) * \
+                      self.b_**(len(obj.ldf_.ddims)-1))
         tail = (tail**(self.b_/(1-self.b_)))*tail
-        self = self._apply_decay(X, tail)
+        self = self._apply_decay(obj, tail)
+        sigma, std_err = self._get_tail_stats(obj)
+        self.sigma_.values[..., -1] = sigma[..., -1]
+        self.std_err_.values[..., -1] = std_err[..., -1]
         return self
 
     def transform(self, X):
