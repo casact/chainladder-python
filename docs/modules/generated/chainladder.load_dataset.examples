@@ -5,13 +5,13 @@ Examples using ``chainladder.load_dataset``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can create development patterns at a particular index grain a...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_industry_to_company_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_industry_to_company.py`
+     :ref:`sphx_glr_auto_examples_plot_development_periods.py`
 
 .. raw:: html
 
@@ -19,148 +19,4 @@ Examples using ``chainladder.load_dataset``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_industry_to_company.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example uses the BootstrapODPSample to simulate new triangles that are then used to simula...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_value_at_risk_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_value_at_risk.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_value_at_risk.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="All IBNR models spin off several results triangles including inbr_, ultimate_, full_expectation...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ibnr_runoff_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Although triangles have both origin and development attributes, it is often convenient to creat...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exposure_triangle_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Mack Chainladder method. ">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_mack_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_mack.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_mack.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to adjust LDFs by the relationship between Paid and Incurred usin...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_munich.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_munich.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the Excel outputs. It creates an Excel fil...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_exhibits.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_exhibits.py`
+ * :ref:`sphx_glr_auto_examples_plot_development_periods.py`

@@ -20,7 +20,10 @@ chainladder requires:
 - Python (>= 3.5),
 - NumPy (>= 1.12.0),
 - Scikit-Learn (>= 0.18.0),
-- Pandas (>= 0.23.0).
+- Pandas (>= 0.23.0),
+- SciPy,
+- Sparse,
+- XlCompose.
 
 
 

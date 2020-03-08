@@ -104,3 +104,23 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         all = xp.expand_dims(xp.prod(1 + tail_ldf[..., accum_point:], -1), -1)
         tail = xp.concatenate((ave, all), -1)
         return tail
+
+    def _get_initial_ldf(self, xp, tail):
+        ''' Quadratic series expansion solution to return seed LDF for tail'''
+        arr = self.decay**xp.arange(1000)
+        a = xp.sum(arr**2)
+        b = xp.sum(arr)
+        c = -xp.log(tail)
+        return (-b+xp.sqrt(b**2-4*a*c))/(2*a)
+
+    def _apply_decay(self, X, tail):
+        ''' Created Tail vector with decay over time '''
+        xp = cp.get_array_module(X.values)
+        decay_range = self.ldf_.shape[-1]-X.shape[-1]+1
+        ldfs = 1+self._get_initial_ldf(xp, tail)*(self.decay**xp.arange(1000))
+        ldfs = ldfs[..., :decay_range]
+        ldfs[..., -1:] = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
+        self.ldf_.values[..., -decay_range:] = \
+            self.ldf_.values[..., -decay_range:]*ldfs
+        self.cdf_ = DevelopmentBase._get_cdf(self)
+        return self

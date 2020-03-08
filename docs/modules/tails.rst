@@ -21,3 +21,9 @@ Curve Fit
 :class:`TailCurve` allows for extrapolating a tail factor using curve fitting.
 Currently, Exponential Decay of ldfs and Inverse Power curve (for slower decay)
 are supported.
+
+.. _bondy:
+Bondy
+=====
+:class:`TailBondy` allows for setting the tail factor using the Generalized Bondy
+method.

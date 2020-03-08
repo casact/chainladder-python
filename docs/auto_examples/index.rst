@@ -173,6 +173,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the TailBondy estimator as well as passing multiple scor...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bondy_sensitivity_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_bondy_sensitivity
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
 
 .. only:: html

@@ -76,6 +76,7 @@ Classes
 
   TailConstant
   TailCurve
+  TailBondy
 
 
 .. _methods_ref:

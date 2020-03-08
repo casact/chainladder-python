@@ -20,8 +20,9 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO):
             obj2 = copy.copy(obj.ldf_)
             xp = cp.get_array_module(obj2.values)
             cdf_ = xp.flip(xp.cumprod(xp.flip(obj2.values, -1), -1), -1)
-            obj2.ddims = [item.replace(item[item.find("-")+1:], '9999')
-                          for item in obj2.ddims]
+            obj2.ddims = xp.array(
+                [item.replace(item[item.find("-")+1:], '9999')
+                 for item in obj2.ddims])
             obj2.values = cdf_
             obj2._set_slicers()
             return obj2

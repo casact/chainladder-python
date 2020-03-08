@@ -2,17 +2,21 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+from scipy.optimize import least_squares
 from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase
 
-class TailConstant(TailBase):
-    """Allows for the entry of a constant tail factor to LDFs.
+class TailBondy(TailBase):
+    """Estimator for the Generalized Bondy tail factor.
+    
+    .. versionadded:: 0.6.0
 
     Parameters
     ----------
-    tail : float
-        The constant to apply to all LDFs within a triangle object.
+    earliest_age : int
+        The earliest age from which the Bondy exponent is to be calculated.
+        Defaults to earliest available in the Triangle.
     decay : float (default=0.50)
         An exponential decay constant that allows for decay over future
         development periods.  A decay rate of 0.5 sets the development portion
@@ -20,6 +24,8 @@ class TailConstant(TailBase):
 
     Attributes
     ----------
+    b_ :
+        The Bondy exponent
     ldf_ :
         ldf with tail applied.
     cdf_ :
@@ -29,38 +35,13 @@ class TailConstant(TailBase):
     std_err_ :
         std_err with tail factor applied
 
-    Examples
-    --------
-    >>> import chainladder as cl
-    >>> abc = cl.Development().fit_transform(cl.load_dataset('abc'))
-    >>> abc = cl.TailConstant(tail=1.05).fit_transform(abc)
-    >>> abc.ldf_
-             12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132  132-Ult
-    1977  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1978  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1979  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1980  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1981  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1982  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1983  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1984  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1985  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1986  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-    1987  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259     1.05
-
-    Notes
-    -----
-    The tail constant does not support the entry of variability parameters
-    necessary for stochastic approaches, so any usage of TailConstant will be
-    inherently deterministic.
-
     See also
     --------
     TailCurve
 
     """
-    def __init__(self, tail=1.0, decay=0.5):
-        self.tail = tail
+    def __init__(self, earliest_age=None, decay=0.5):
+        self.earliest_age = earliest_age
         self.decay = decay
 
     def fit(self, X, y=None, sample_weight=None):
@@ -79,7 +60,18 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        tail = self.tail
+        xp = cp.get_array_module(X.values)
+        b_optimized = []
+        initial = xp.where(X.ddims==self.earliest_age)[0][0] if self.earliest_age else 0
+        for num in range(len(X.vdims)):
+            b0 = xp.ones(X.shape[0])*.5
+            data = xp.log(X.ldf_.values[:, num, 0,initial:])
+            b_optimized.append(least_squares(
+                TailBondy.solver, x0=b0, kwargs={'data': data}).x[:, None])
+        self.b_ = xp.concatenate(b_optimized, 1)
+        tail = xp.exp(xp.log(X.ldf_.values[..., 0:1, initial:initial+1]) * \
+                      self.b_**(len(X.ldf_.ddims)-1))
+        tail = (tail**(self.b_/(1-self.b_)))*tail
         self = self._apply_decay(X, tail)
         return self
 
@@ -105,4 +97,12 @@ class TailConstant(TailBase):
         X.cdf_ = self.cdf_
         X.ldf_ = self.ldf_
         X.sigma_ = self.sigma_
+        X.b_ = self.b_
         return X
+
+    @staticmethod
+    def solver(b, data):
+        xp = cp.get_array_module(data)
+        arange = xp.repeat(xp.arange(data.shape[-1])[None, :], data.shape[0], 0)
+        out = data - (data[:, 0])[:, None]*b**(arange)
+        return out.flatten()

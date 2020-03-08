@@ -81,7 +81,7 @@
         <strong>Applications</strong>: Long-tailed lines of business</br>
         <strong>Algorithms</strong>:&nbsp;
 
-    :ref:`TailCurve<curve>`, :ref:`TailConstant <constant>`, Bondy, ...
+    :ref:`TailCurve<curve>`, :ref:`TailConstant <constant>`, :ref:`Bondy<bondy>`, ...
 
     .. raw:: html
 
