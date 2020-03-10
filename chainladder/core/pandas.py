@@ -71,10 +71,11 @@ class TrianglePandas:
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if self.shape[:2] == (1, 1):
             return self._repr_format()
-        elif len(axes) == 2 or len(axes) == 1:
+        elif len(axes) in [1, 2]:
+            odims, ddims = self._repr_date_axes()
             tri = xp.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
-                           2: self.origin, 3: self.ddims}
+                           2: odims, 3: ddims}
             if len(axes) == 2:
                 return pd.DataFrame(tri, index=axes_lookup[axes[0]],
                                     columns=axes_lookup[axes[1]]).fillna(0)

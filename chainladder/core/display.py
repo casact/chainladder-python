@@ -54,21 +54,12 @@ class TriangleDisplay():
                                 max_cols=pd.options.display.max_columns)
 
     def _repr_format(self):
-        if type(self.odims[0]) == np.datetime64:
-            origin = pd.Series(self.odims).dt.to_period(self.origin_grain)
-        else:
-            origin = pd.Series(self.odims)
-        if len(self.ddims) == 1 and self.ddims[0] is None:
-            ddims = list(self.vdims)
-        elif self.is_val_tri:
-            ddims = self.ddims.to_period(self.development_grain)
-        else:
-            ddims = self.ddims
+        odims, ddims = self._repr_date_axes()
         if cp.get_array_module(self.values).__name__ == 'cupy':
             out = cp.asnumpy(self.values[0, 0])
         else:
             out = self.values[0, 0]
-        out = pd.DataFrame(out, index=origin, columns=ddims)
+        out = pd.DataFrame(out, index=odims, columns=ddims)
         if str(out.columns[0]).find('-') > 0 and not \
            isinstance(out.columns, pd.PeriodIndex):
             out.columns = [item.replace('-9999', '-Ult')
@@ -79,3 +70,16 @@ class TriangleDisplay():
                 return out.drop_duplicates().set_index(pd.Index(['(All)']))
         else:
             return out
+
+    def _repr_date_axes(self):
+        if type(self.odims[0]) == np.datetime64:
+            odims = pd.Series(self.odims).dt.to_period(self.origin_grain)
+        else:
+            odims = pd.Series(self.odims)
+        if len(self.ddims) == 1 and self.ddims[0] is None:
+            ddims = list(self.vdims)
+        elif self.is_val_tri:
+            ddims = self.ddims.to_period(self.development_grain)
+        else:
+            ddims = self.ddims
+        return odims, ddims
