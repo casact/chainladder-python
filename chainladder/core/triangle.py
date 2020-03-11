@@ -541,3 +541,7 @@ class Triangle(TriangleBase):
                 obj.vdims = value.values
                 obj.columns = value
         return obj
+
+    def copy(self):
+        return self.iloc[:, :]
+        

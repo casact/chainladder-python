@@ -57,6 +57,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             self.development_grain = self.origin_grain
             col = None
         # Prep the data for 4D Triangle
+        self.valuation_date = development_date.max()
         origin_date = pd.PeriodIndex(origin_date, freq=self.origin_grain).to_timestamp()
         # Assign object properties
         date_axes = self._get_date_axes(origin_date, development_date) # cartesian product
@@ -93,7 +94,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         else:
             self.ddims = np.array([None])
         self.vdims = np.array(columns)
-        self.valuation_date = development_date.max()
         self.key_labels = index
         self._set_slicers()
         # Create 4D Triangle
@@ -128,7 +128,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 when the triangle has holes in it. '''
             origin_unique = pd.period_range(
                 start=origin_date.min(),
-                end=origin_date.max(),
+                end=max(origin_date.max(), self.valuation_date),
                 freq=origin_grain).to_timestamp()
             development_unique = pd.period_range(
                 start=origin_date.min(),
