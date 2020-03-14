@@ -88,6 +88,13 @@ class TrianglePandas:
         """ Passthrough of pandas functionality """
         return self.to_frame().plot(*args, **kwargs)
 
+    def hvplot(self, *args, **kwargs):
+        """ Passthrough of pandas functionality """
+        df = self.to_frame()
+        if type(df.index) == pd.PeriodIndex and len(df.columns)>1:
+            df.index = df.index.to_timestamp(how='s')
+        return df.hvplot(*args, **kwargs)
+
     def _get_axis(self, axis):
         ax = {0: 0, 1: 1,2: 2, 3: 3, -1: 3, -2: 2, -3: 1, -4: 0,
              'index': 0,'columns': 1, 'origin': 2, 'development':3}
