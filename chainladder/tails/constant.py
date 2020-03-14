@@ -82,9 +82,11 @@ class TailConstant(TailBase):
         tail = self.tail
         self = self._apply_decay(X, tail)
         obj = Development().fit_transform(X) if 'ldf_' not in X else X
-        sigma, std_err = self._get_tail_stats(obj)
-        self.sigma_.values[..., -1] = sigma[..., -1]
-        self.std_err_.values[..., -1] = std_err[..., -1]
+        xp = cp.get_array_module(X.values)
+        if xp.max(self.tail) != 1.0:
+            sigma, std_err = self._get_tail_stats(obj)
+            self.sigma_.values[..., -1] = sigma[..., -1]
+            self.std_err_.values[..., -1] = std_err[..., -1]
         return self
 
     def transform(self, X):
