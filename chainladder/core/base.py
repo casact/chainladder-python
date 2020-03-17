@@ -243,22 +243,23 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         else:
             target_field = data[fields].iloc[:, 0]
         if hasattr(target_field, 'dt'):
-            return target_field
-        datetime_arg = target_field.unique()
-        date_inference_list = \
-            [{'arg': datetime_arg, 'format': '%Y%m'},
-             {'arg': datetime_arg, 'format': '%Y'},
-             {'arg': datetime_arg, 'infer_datetime_format': True}]
-        if format is not None:
-            date_inference_list = [{'arg': datetime_arg, 'format': format}] + \
-                                  date_inference_list
-        for item in date_inference_list:
-            try:
-                arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
-                break
-            except:
-                pass
-        target = target_field.map(arr)
+            target = target_field
+        else:
+            datetime_arg = target_field.unique()
+            date_inference_list = \
+                [{'arg': datetime_arg, 'format': '%Y%m'},
+                 {'arg': datetime_arg, 'format': '%Y'},
+                 {'arg': datetime_arg, 'infer_datetime_format': True}]
+            if format is not None:
+                date_inference_list = [{'arg': datetime_arg, 'format': format}] + \
+                                      date_inference_list
+            for item in date_inference_list:
+                try:
+                    arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
+                    break
+                except:
+                    pass
+            target = target_field.map(arr)
         if period_end:
             target = target.dt.to_period(
                 TriangleBase._get_grain(target)
