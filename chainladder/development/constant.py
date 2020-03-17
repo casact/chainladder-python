@@ -65,8 +65,8 @@ class DevelopmentConstant(DevelopmentBase):
 
         self.ldf_ = obj
         self.cdf_ = self._get_cdf(self)
-        #self.sigma_ = self._param_property(X, params, 1)
-        #self.std_err_ = self._param_property(X, params, 2)
+        self.sigma_ = self.ldf_*0+1
+        self.std_err_ = self.ldf_*0+1
         return self
 
     def transform(self, X):
@@ -83,7 +83,7 @@ class DevelopmentConstant(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.copy(X)
-        triangles = ['cdf_', 'ldf_']
+        triangles = ['cdf_', 'ldf_', 'sigma_', 'std_err_']
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
