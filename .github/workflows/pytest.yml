@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest'] #, 'macos-latest', 'windows-latest']
-        python-version: ['3.7'] #, '2.7']
+        python-version: ['3.7', 3.5.2] #, '2.7']
     steps:
       - uses: actions/checkout@v1
       - uses: goanpeca/setup-miniconda@v1
