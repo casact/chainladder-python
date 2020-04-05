@@ -1,0 +1,137 @@
+Sheet:
+  name: {% if sheet_name %}{{sheet_name}}{% else %}Sheet1{% endif %}
+  set_header: {% if set_header %}{{set_header}}{% endif %}
+  layout:
+    Column:
+      - Title:
+          data: ['Triangle Summary',
+                 {% if triangle_name %}'{{triangle_name}}',{% else %}{% endif %}
+                 'Evaluated as of {{triangle.valuation_date.strftime('%B %Y')}}']
+          formats:
+            align: 'left'
+      - CSpacer:
+          height: 1
+      - Series:
+          data: 'PART 1 - Data Triangle'
+          width: 1
+          formats:
+            bold: True
+      - Row:
+        - Series:
+            data: {% if index_label %}{{index_label.split(' ')[0]}}{% else %}'Origin'{% endif %}
+            width: 1
+            formats:
+              bold: True
+              align: 'center'
+        - Series:
+            data:
+              ['{{triangle.columns[0]}} as of (months)']
+            width:
+              {{triangle.shape[-1]}}
+            formats:
+              italic: True
+              align: 'center'
+              bottom: 1
+      - DataFrame:
+          data: {% eval %}triangle{% endeval %}
+          index_label: {% if index_label %}{{''.join(index_label.split(' ')[1:])}}{% else %}'Period'{% endif %}
+          formats:
+            align: 'center'
+            num_format: '#,#'
+      - CSpacer:
+          height: 1
+      - Series:
+          data: 'PART 2 - Age-to-Age Factors'
+          width: 1
+          formats:
+            bold: True
+      - Row:
+        - Series:
+            data: {% if index_label %}{{index_label.split(' ')[0]}}{% else %}'Origin'{% endif %}
+            width: 1
+            formats:
+              bold: True
+              align: 'center'
+        - Series:
+            data:
+              ['Age to Age Factors']
+            width:
+              {{triangle.link_ratio.shape[-1]}}
+            formats:
+              italic: True
+              align: 'center'
+              bottom: 1
+      - DataFrame:
+          data: {% eval %}triangle.link_ratio{% endeval %}
+          index_label: {% if index_label %}{{''.join(index_label.split(' ')[1:])}}{% else %}'Period'{% endif %}
+          formats:
+            align: 'center'
+            num_format: '0.000'
+      {% if scenarios %}
+      - CSpacer:
+          height: 1
+      - Series:
+          data: 'PART 3 - Average Age-to-Age Factors'
+          width: 1
+          formats:
+            bold: True
+      - Series:
+          data: 'Loss Development Averages'
+          width: {{triangle.shape[-1]}}
+          formats:
+            italic: True
+            align: 'center'
+            bottom: 1
+      {% for model in scenarios.keys() %}
+      - DataFrame:
+          data: {% eval %}scenarios['{{model}}'].fit(triangle).ldf_.to_frame().rename(index={'(All)':'{{model}}'}){% endeval %}
+          header: {% if model==scenarios.keys()|first %}True{% else %}False{% endif %}
+          formats:
+            align: 'center'
+            num_format: '0.000'
+      {% endfor %}
+      {% endif %}
+
+      {% if triangle.ldf_ %}
+      - CSpacer:
+          height: 1
+      - Series:
+          data: 'PART {% if scenarios %}4{% else %}3{% endif %} - Selected Age-to-Age Factors'
+          width: 1
+          formats:
+            bold: True
+      - Series:
+          data: 'Development Factor Selection'
+          width: {{triangle.shape[-1]}}
+          formats:
+            italic: True
+            align: 'center'
+            bottom: 1
+      - DataFrame:
+          data: {% eval %}((triangle.ldf_.iloc[0,0].to_frame().iloc[:, :triangle.shape[-1]-1]*0).astype(str).replace('0.0', '') + triangle.average_).rename(index={'(All)':'Average'}){% endeval %}
+          formats:
+            align: 'center'
+            italic: True
+      - DataFrame:
+          data: {% eval %}((triangle.ldf_.iloc[0,0].to_frame().iloc[:, :triangle.shape[-1]-1]*0) + triangle.n_periods_).astype(int).astype(str).replace('-1','All').rename(index={'(All)':'No. Periods'}){% endeval %}
+          header: False
+          formats:
+            align: 'center'
+            italic: True
+      - CSpacer:
+          height: 1
+      - DataFrame:
+          data: {% eval %}triangle.ldf_.to_frame().iloc[:, :triangle.shape[-1]-1].rename(index={'(All)':'Selected'}){% endeval %}
+          header: False
+          formats:
+            align: 'center'
+            num_format: '0.000'
+      - DataFrame:
+          data: {% eval %}triangle.cdf_.to_frame().iloc[:, :triangle.shape[-1]-1].rename(index={'(All)':'Cumulative'}){% endeval %}
+          header: False
+          formats:
+            align: 'center'
+            num_format: '0.000'
+
+
+      {% endif %}

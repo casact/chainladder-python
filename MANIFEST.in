@@ -17,3 +17,5 @@ include chainladder/utils/data/cc_sample.csv
 include chainladder/utils/data/ia_sample.csv
 include chainladder/utils/data/prism.csv
 include chainladder/utils/data/tail_sample.csv
+
+include chainladder/utils/templates/triangle.yaml

@@ -23,7 +23,7 @@ chainladder requires:
 - Pandas (>= 0.23.0),
 - SciPy,
 - Sparse,
-- XlCompose.
+- XlCompose>=0.2.1.
 
 
 

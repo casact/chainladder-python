@@ -4,7 +4,7 @@
 from chainladder.utils.weighted_regression import WeightedRegression # noqa (API import)
 from chainladder.utils.exhibits import (
     DataFrame, Series, Row, Column, Tabs, CSpacer, RSpacer, Title, Image,
-    VSpacer, HSpacer) # noqa (API import)
+    VSpacer, HSpacer, Sheet, load_template) # noqa (API import)
 from chainladder.utils.utility_functions import ( # noqa (API import)
     load_dataset, parallelogram_olf, read_pickle, read_json, concat)
 from chainladder.utils.cupy import cp

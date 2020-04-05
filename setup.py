@@ -9,7 +9,7 @@ from os import listdir
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/casact/chainladder-python'
-version='0.6.0' # Put this in __init__.py
+version='0.6.1' # Put this in __init__.py
 
 data_path = ''
 setup(
@@ -34,6 +34,6 @@ setup(
         "scipy",
         "sparse",
         "joblib",
-        'xlcompose'
+        'xlcompose>=0.2.1'
     ],
 )

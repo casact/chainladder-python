@@ -223,12 +223,18 @@ class Development(DevelopmentBase):
         else:
             tri_array = X.values.copy()
         tri_array[tri_array == 0] = xp.nan
-        if type(self.average) is str:
+        if type(self.average) is not list:
             average = [self.average] * (tri_array.shape[-1] - 1)
         else:
             average = self.average
         average = np.array(average)
         self.average_ = average
+        if type(self.n_periods) is not list:
+            n_periods = [self.n_periods] * (tri_array.shape[-1] - 1)
+        else:
+            n_periods = self.n_periods
+        n_periods = np.array(n_periods)
+        self.n_periods_ = n_periods
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
         val = xp.array([weight_dict.get(item.lower(), 1)
@@ -280,7 +286,7 @@ class Development(DevelopmentBase):
         """
         X_new = copy.copy(X)
         triangles = ['std_err_', 'cdf_', 'ldf_', 'sigma_']
-        for item in triangles + ['average_', 'w_', 'sigma_interpolation']:
+        for item in triangles + ['average_', 'w_', 'sigma_interpolation', 'n_periods_']:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
         return X_new
