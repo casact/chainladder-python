@@ -88,7 +88,7 @@ class GridSearch(BaseEstimator):
 
 
 class Pipeline(PipelineSL, EstimatorIO):
-    """This is a direct of copy the scikit-learn Pipeline class.
+    """This is a near direct of copy the scikit-learn Pipeline class.
 
     Sequentially apply a list of transforms and a final estimator.
     Intermediate steps of the pipeline must be 'transforms', that is, they
@@ -134,7 +134,7 @@ class Pipeline(PipelineSL, EstimatorIO):
     def predict(self, X, sample_weight=None, **predict_params):
         if sample_weight:
             predict_params = {} if not predict_params else predict_params
-            predict_params[self.steps[-1][0] + '__sample_weight'] = sample_weight
+            predict_params['sample_weight'] = sample_weight
         return super().predict(X, **predict_params)
 
 
