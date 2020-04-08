@@ -123,6 +123,32 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
+    def drop(self, labels=None, axis=1):
+        """ Drop specified labels from rows or columns.
+
+        Remove rows or columns by specifying label names and corresponding axis,
+        or by specifying directly index or column names.
+
+        Parameters
+        -----------
+
+        label: single label or list-like
+            Index or column labels to drop.
+
+        axis: {0 or ‘index’, 1 or ‘columns’}, default 1
+            Whether to drop labels from the index (0 or ‘index’)
+            or columns (1 or ‘columns’).
+
+        Returns
+        -------
+        Triangle
+
+        """
+        if axis==1:
+            return self[list(self._idx_table().drop(labels, axis=axis).columns)]
+        else:
+            raise NotImplementedError('drop only inpemented for column axis')
+
 
     @property
     def T(self):
