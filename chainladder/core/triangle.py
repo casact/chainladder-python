@@ -395,7 +395,7 @@ class Triangle(TriangleBase):
         ----------
         grain : str
             The grain to which you want your triangle converted, specified as
-            'O<x>D<y>' where <x> and <y> can take on values of ``['Y', 'Q', 'M'
+            'OXDY' where X and Y can take on values of ``['Y', 'Q', 'M'
             ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
             for Origin quarter/Development Month, etc.
         incremental : bool
@@ -423,13 +423,22 @@ class Triangle(TriangleBase):
         xp = cp.get_array_module(self.values)
         if ograin_new != ograin_old:
             o_dt = pd.Series(obj.odims)
-            if ograin_new == 'Q':
-                o = np.array(pd.to_datetime(
-                    o_dt.dt.year.astype(str) + 'Q' + o_dt.dt.quarter.astype(str)))
-            elif ograin_new == 'Y':
-                o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
+            if trailing:
+                mn = self.origin[-1].strftime('%b').upper() if trailing else 'DEC'
+                if ograin_new == 'Q':
+                    o = np.array(pd.PeriodIndex(self.origin, freq='Q-' + mn).to_timestamp(how='s'))
+                elif ograin_new == 'Y':
+                    o = np.array(pd.PeriodIndex(self.origin, freq='A-' + mn).to_timestamp(how='s'))
+                else:
+                    o = obj.odims
             else:
-                o = obj.odims
+                if ograin_new == 'Q':
+                    o = np.array(pd.to_datetime(
+                        o_dt.dt.year.astype(str) + 'Q' + o_dt.dt.quarter.astype(str)))
+                elif ograin_new == 'Y':
+                    o = np.array(pd.to_datetime(o_dt.dt.year, format='%Y'))
+                else:
+                    o = obj.odims
             o_new = np.unique(o)
             o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
             o_new = np.repeat(o_new[np.newaxis], len(o), axis=0)
