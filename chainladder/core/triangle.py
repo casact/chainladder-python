@@ -160,6 +160,8 @@ class Triangle(TriangleBase):
     def link_ratio(self):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
+        if hasattr(obj, '_nan_triangle_'):
+            del obj._nan_triangle_
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
         val_array = obj.valuation.values.reshape(
@@ -174,6 +176,8 @@ class Triangle(TriangleBase):
             val_array = val_array[:-1, :]
         obj.valuation = pd.DatetimeIndex(
             pd.DataFrame(val_array).unstack().values).to_period(self._lowest_grain())
+        if hasattr(obj, 'w_'):
+            obj = obj*obj.w_[..., :len(obj.odims), :]
         return obj
 
     @property
@@ -384,7 +388,7 @@ class Triangle(TriangleBase):
         return obj
 
 
-    def grain(self, grain='', inplace=False):
+    def grain(self, grain='', trailing=False, inplace=False):
         """Changes the grain of a cumulative triangle.
 
         Parameters
@@ -397,6 +401,9 @@ class Triangle(TriangleBase):
         incremental : bool
             Grain does not work on incremental triangles and this argument let's
             the function know to make it cumuative before operating on the grain.
+        trailing : bool
+            For partial years/quarters, trailing will set the year/quarter end to
+            that of the latest available form the data.
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
@@ -544,4 +551,3 @@ class Triangle(TriangleBase):
 
     def copy(self):
         return self.iloc[:, :]
-        
