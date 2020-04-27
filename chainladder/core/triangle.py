@@ -177,7 +177,7 @@ class Triangle(TriangleBase):
         obj.valuation = pd.DatetimeIndex(
             pd.DataFrame(val_array).unstack().values).to_period(self._lowest_grain())
         if hasattr(obj, 'w_'):
-            obj = obj*obj.w_[..., :len(obj.odims), :]
+            obj = obj*obj.w_[..., 0:1, :len(obj.odims), :]
         return obj
 
     @property
