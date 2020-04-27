@@ -193,9 +193,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 len(self.origin)).to_period(self._lowest_grain()).to_timestamp(how='e')
         if type(ddims[0]) in [np.str_, str]:
             ddims = np.array([int(item[:item.find('-'):]) for item in ddims])
-        origin = pd.PeriodIndex(self.odims, freq=self.origin_grain) \
-                   .to_timestamp(how='s')
-        origin = pd.Series(origin)
+        origin = pd.Series(self.odims)
         if type(self.valuation_date) is not pd.Timestamp:
             self.valuation_date = self.valuation_date.to_timestamp()
         # Limit origin to valuation date
