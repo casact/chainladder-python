@@ -54,10 +54,17 @@ class Triangle(TriangleBase):
         Represents all available levels of the origin dimension.
     development : Series
         Represents all available levels of the development dimension.
+    key_labels : list
+        Represents the `index` axis labels
     valuation : DatetimeIndex
         Represents all valuation dates of each cell in the Triangle.
+    origin_grain : str
+        The grain of the origin vector ('Y', 'Q', 'M')
+    development_grain : str
+        The grain of the development vector ('Y', 'Q', 'M')
     shape : tuple
-        The 4D shape of the triangle instance
+        The 4D shape of the triangle instance with axes corresponding to (index,
+         columns, origin, development)
     link_ratio, age_to_age
         Displays age-to-age ratios for the triangle.
     valuation_date : date
@@ -72,6 +79,8 @@ class Triangle(TriangleBase):
         Whether the triangle is cumulative or not
     is_ultimate: bool
         Whether the triangle has an ultimate valuation
+    is_full: bool
+        Whether lower half of Triangle has been filled in
     is_val_tri:
         Whether the triangle development period is expressed as valuation
         periods.
@@ -154,6 +163,7 @@ class Triangle(TriangleBase):
 
     @property
     def latest_diagonal(self):
+        """ The latest diagonal of the Triangle """
         return self._get_latest_diagonal()
 
     @property
@@ -398,9 +408,6 @@ class Triangle(TriangleBase):
             'OXDY' where X and Y can take on values of ``['Y', 'Q', 'M'
             ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
             for Origin quarter/Development Month, etc.
-        incremental : bool
-            Grain does not work on incremental triangles and this argument let's
-            the function know to make it cumuative before operating on the grain.
         trailing : bool
             For partial years/quarters, trailing will set the year/quarter end to
             that of the latest available form the data.
@@ -495,6 +502,8 @@ class Triangle(TriangleBase):
             The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
+        valuation_date: date
+            The terminal date from which trend should be calculated.
         ultimate_lag : int
             If ultimate valuations are in the triangle, you can set the overall
             age of the ultimate to be some lag from the latest non-Ultimate
@@ -539,6 +548,8 @@ class Triangle(TriangleBase):
             the axis to be broadcast over.
         value : axis-like
             The value of the new axis.
+
+        TODO: Should convert value to a primitive type
         """
         obj = copy.deepcopy(self)
         axis = self._get_axis(axis)
