@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+from scipy.stats import binom
 from chainladder.utils.cupy import cp
 import copy
 
@@ -560,3 +561,75 @@ class Triangle(TriangleBase):
 
     def copy(self):
         return self.iloc[:, :]
+
+    
+    def test_development_correlation(self):
+        """ Mack (1997) test for correlations between subsequent development factors
+            results should be between -.67x and +.67x stdError otherwise too much correlation
+
+            Returns
+            -------
+                development factors correlation: float 
+                development factors correlation variance: float
+        """
+        m1=self.link_ratio.to_frame.rank() # rank the development factors by column
+        m2=self.link_ratio.to_frame.to_numpy(copy=True) #does the same but ignoring the anti-diagonal
+        np.fill_diagonal(np.fliplr(m2),np.nan)
+        m2=pd.DataFrame(np.roll(m2,1),columns=m1.columns, index=m1.index).iloc[:,1:] # roll columns and leave out the first column
+        m2=m2.rank()
+        numerator=((m1-m2) **2).sum(axis=0)
+        SpearmanFactor=pd.DataFrame(range(1,len(m1.columns)+1),index=m1.columns, columns=['colNo'])
+        I = SpearmanFactor['colNo'].max()+1
+        SpearmanFactor['divisor'] = (I-SpearmanFactor['colNo'])**3 - I +SpearmanFactor['colNo'] #(I-k)^3-I+k
+        SpearmanFactor['value']= 1-6*numerator.T/SpearmanFactor['divisor']
+        SpearmanFactor['weighted'] = SpearmanFactor['value'] * (I-SpearmanFactor['colNo']-1) / (SpearmanFactor[1:-1]['colNo']-1).sum() #weight sum excludes 1 and I
+        SpearmanCorr=SpearmanFactor['weighted'].iloc[1:-1].sum() # exlcuding 1st and last elements as not significant
+        SpearmanCorrVar = 2/((I-2)*(I-3))
+        return SpearmanCorr,SpearmanCorrVar
+
+    
+    def __pZlower(z,n,p):
+        """
+        Returns p(Zj <= z), used by test_calendar_correlation
+        """
+        
+        assert z>=0
+        
+        tot=2*binom.pmf(z,n,p)
+        if z>=int(n/2):
+            return 1
+        elif z==0:
+            return tot
+        else:
+            return tot + __pZlower(z-1,n,p) # recursive calculation
+        
+    
+    def test_calendar_correlation(self, pCritical=.1):
+        """
+        Mack (1997) test for calendar year effect
+        A calendar period has impact across developments if the probability of the number of small (or large)
+        development factors in that period occurring randomly is less than pCritical
+        NB --> self should have period as the row index, on the assumption that the first anti-diagonal is in relation to the same period (development=0) 
+        --> Could be better to combine origin with the development and grain properties to determine the index of the returned series
+
+        Parameters
+        ----------
+        pCritical: float between 0 and 1
+            the confidence level for the test, default at 10%
+            
+        Returns
+        ----------
+            Series of bool indicating whether that specific period shows statistically significant influence at pCritical confidence level
+            on the development factors
+        """
+        m1=self.link_ratio.to_frame.rank() # rank the development factors by column
+        med=m1.median(axis=0) # find the median value for each column
+        m1large=m1.apply(lambda r: r>med, axis=1) # sets to True those elements in each column which are large (above the median rank)
+        m1small=m1.apply(lambda r: r<med, axis=1)
+        m2large=m1large.to_numpy(copy=True)
+        m2small=m1small.to_numpy(copy=True)
+        S=[np.diag(m2small[:,::-1],k).sum() for k in range(min(m2small.shape),-1,-1)] # number of large elements in anti-diagonal (calendar year)
+        L=[np.diag(m2large[:,::-1],k).sum() for k in range(min(m2large.shape),-1,-1)] # number of large elements in anti-diagonal (calendar year)
+        probs=[__pZlower(min(S[i],L[i]), S[i]+L[i], 0.5) for i in range(len(S))] # probability of NOT having too many large or small items in anti-diagonal (calendar year)
+        newIndex = self.link_ratio.to_frame.index #can be improved to include development and grain
+        return pd.Series([p<pCritical for p in probs[1:]], index=newIndex)
