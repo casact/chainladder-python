@@ -4,7 +4,7 @@
 
 import pandas as pd
 import numpy as np
-from scipy.stats import binom
+from scipy.stats import binom, rankdata
 from chainladder.utils.cupy import cp
 import copy
 
@@ -392,6 +392,8 @@ class Triangle(TriangleBase):
             obj.values = obj.values[..., :np.where(
                 obj.ddims <= obj.valuation_date)[0].max()+1]
             obj.ddims = obj.ddims[obj.ddims <= obj.valuation_date]
+            if type(obj.ddims) == pd.PeriodIndex:
+                obj.ddims = obj.ddims.to_timestamp()
             obj.valuation = pd.DatetimeIndex(
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
@@ -573,20 +575,22 @@ class Triangle(TriangleBase):
     def copy(self):
         return self.iloc[:, :]
 
-    
+
     def test_development_correlation(self):
-        """ Mack (1997) test for correlations between subsequent development factors
-            results should be between -.67x and +.67x stdError otherwise too much correlation
+        """ Mack (1997) test for correlations between subsequent development
+            factors. Results should be between -.67x and +.67x stdError
+            otherwise too much correlation
 
             Returns
             -------
-                development factors correlation: float 
+                development factors correlation: float
                 development factors correlation variance: float
         """
-        m1=self.link_ratio.to_frame.rank() # rank the development factors by column
-        m2=self.link_ratio.to_frame.to_numpy(copy=True) #does the same but ignoring the anti-diagonal
-        np.fill_diagonal(np.fliplr(m2),np.nan)
-        m2=pd.DataFrame(np.roll(m2,1),columns=m1.columns, index=m1.index).iloc[:,1:] # roll columns and leave out the first column
+        xp = cp.get_array_module(self.values)
+        m1=self.link_ratio.to_frame().rank() # rank the development factors by column
+        m2=self.link_ratio.to_frame().to_numpy(copy=True) #does the same but ignoring the anti-diagonal
+        xp.fill_diagonal(xp.fliplr(m2),xp.nan)
+        m2=pd.DataFrame(xp.roll(m2,1),columns=m1.columns, index=m1.index).iloc[:,1:] # roll columns and leave out the first column
         m2=m2.rank()
         numerator=((m1-m2) **2).sum(axis=0)
         SpearmanFactor=pd.DataFrame(range(1,len(m1.columns)+1),index=m1.columns, columns=['colNo'])
@@ -598,49 +602,61 @@ class Triangle(TriangleBase):
         SpearmanCorrVar = 2/((I-2)*(I-3))
         return SpearmanCorr,SpearmanCorrVar
 
-    
-    def __pZlower(z,n,p):
+    @staticmethod
+    def _pZlower(z,n,p):
         """
         Returns p(Zj <= z), used by test_calendar_correlation
         """
-        
-        assert z>=0
-        
-        tot=2*binom.pmf(z,n,p)
-        if z>=int(n/2):
+
+        assert z >= 0
+        tot = 2 * binom.pmf(z, n, p)
+        if z >= int(n/2):
             return 1
-        elif z==0:
+        elif z == 0:
             return tot
         else:
-            return tot + __pZlower(z-1,n,p) # recursive calculation
-        
-    
-    def test_calendar_correlation(self, pCritical=.1):
+            return tot + Triangle._pZlower(z-1, n, p) # recursive calculation
+
+
+    def calendar_correlation(self, p_critical=.1):
         """
         Mack (1997) test for calendar year effect
-        A calendar period has impact across developments if the probability of the number of small (or large)
-        development factors in that period occurring randomly is less than pCritical
-        NB --> self should have period as the row index, on the assumption that the first anti-diagonal is in relation to the same period (development=0) 
+        A calendar period has impact across developments if the probability of
+        the number of small (or large) development factors in that period
+        occurring randomly is less than p_critical
+        NB --> self should have period as the row index, on the assumption that the first anti-diagonal is in relation to the same period (development=0)
         --> Could be better to combine origin with the development and grain properties to determine the index of the returned series
 
         Parameters
         ----------
-        pCritical: float between 0 and 1
-            the confidence level for the test, default at 10%
-            
+        p_critical: float (default=0.10)
+            Value between 0 and 1 representing the confidence level for the test
+
         Returns
         ----------
-            Series of bool indicating whether that specific period shows statistically significant influence at pCritical confidence level
+            Series of bool indicating whether that specific period shows
+            statistically significant influence at `p_critical` confidence level
             on the development factors
         """
-        m1=self.link_ratio.to_frame.rank() # rank the development factors by column
-        med=m1.median(axis=0) # find the median value for each column
-        m1large=m1.apply(lambda r: r>med, axis=1) # sets to True those elements in each column which are large (above the median rank)
-        m1small=m1.apply(lambda r: r<med, axis=1)
-        m2large=m1large.to_numpy(copy=True)
-        m2small=m1small.to_numpy(copy=True)
-        S=[np.diag(m2small[:,::-1],k).sum() for k in range(min(m2small.shape),-1,-1)] # number of large elements in anti-diagonal (calendar year)
-        L=[np.diag(m2large[:,::-1],k).sum() for k in range(min(m2large.shape),-1,-1)] # number of large elements in anti-diagonal (calendar year)
-        probs=[__pZlower(min(S[i],L[i]), S[i]+L[i], 0.5) for i in range(len(S))] # probability of NOT having too many large or small items in anti-diagonal (calendar year)
-        newIndex = self.link_ratio.to_frame.index #can be improved to include development and grain
-        return pd.Series([p<pCritical for p in probs[1:]], index=newIndex)
+        xp = cp.get_array_module(self.values)
+        lr = self.link_ratio
+        m1 = xp.apply_along_axis(rankdata, 2, lr.values)*(lr.values*0+1)
+        med = xp.nanmedian(m1, axis=2, keepdims=True)
+        m1large = (xp.nan_to_num(m1) > med) + (lr.values*0)
+        m1small = (xp.nan_to_num(m1) < med) + (lr.values*0)
+        m2large = self.link_ratio
+        m2large.values = m1large
+        m2small = self.link_ratio
+        m2small.values = m1small
+        S = xp.nan_to_num(m2small.dev_to_val().sum(axis=2).values)
+        L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).values)
+        initial_cy = xp.zeros(tuple(list(S.shape[:-1])+[1]))
+        z = xp.minimum(L, S)
+        n = L + S
+        # Need to generalize recursive formula to the multidimensional array
+        probs = [Triangle._pZlower(z[0, 0, 0, i], n[0, 0, 0, i], 0.5)
+                 for i in range(S.shape[3])]
+        obj = self[self.valuation>self.valuation.min()].dev_to_val().dropna().sum('origin')*0
+        obj.values = (xp.array(probs)<p_critical)[None, None, None, ...]
+        obj.odims=['(All)']
+        return obj
