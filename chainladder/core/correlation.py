@@ -1,18 +1,38 @@
-from scipy.stats import binom, rankdata
+from scipy.stats import binom, norm, rankdata
 from chainladder.utils.cupy import cp
 import copy
 
 class DevelopmentCorrelation:
-    """ Mack (1997) test for correlations between subsequent development
-        factors. Results should be between -.67x and +.67x stdError
-        otherwise too much correlation
-
-        Returns
-        -------
-            development factors correlation: float
-            development factors correlation variance: float
     """
-    def __init__(self, triangle):
+    Mack (1997) test for correlations between subsequent development
+    factors. Results should be within confidence interval range
+    otherwise too much correlation
+
+    Parameters
+    ----------
+    triangle: Triangle
+        Triangle on which to estimate correlation between subsequent development
+        factors.
+    p_critical: float (default=0.10)
+        Value between 0 and 1 representing the confidence level for the test. A
+        value of 0.1 implies 90% confidence.
+
+
+    Attributes
+    ----------
+    p_critical: float (default=0.50)
+        Value between 0 and 1 representing the confidence level for the test. A
+        value of 0.1 implies 90% confidence.
+    spearman_corr : Triangle
+        Values representing the Spearman rank correlation
+    spearman_corr_var : float
+        Variance measure of Spearman rank correlation
+    range: tuple
+        Range within which `spearman_corr` must fall for independence assumption
+        to be significant.
+    """
+    def __init__(self, triangle, p_critical=0.5):
+        self.p_critical = p_critical
         xp = cp.get_array_module(triangle.values)
         m1 = triangle.link_ratio
         m1_val = xp.apply_along_axis(rankdata, 2, m1.values)*(m1.values*0+1)
@@ -37,6 +57,8 @@ class DevelopmentCorrelation:
         obj.ddims = ['Spearman Correlation']
         self.spearman_corr = obj
         self.spearman_corr_var = spearman_corr_var
+        self.range = (norm.ppf(0.5-(1-p_critical)/2)*xp.sqrt(spearman_corr_var),
+                      norm.ppf(0.5+(1-p_critical)/2)*xp.sqrt(spearman_corr_var))
 
 class ValuationCorrelation:
     """
@@ -47,8 +69,12 @@ class ValuationCorrelation:
 
     Parameters
     ----------
+    triangle: Triangle
+        Triangle on which to test whether the calendar effects violate independence
+        requirements of the chainladder method.
     p_critical: float (default=0.10)
-        Value between 0 and 1 representing the confidence level for the test
+        Value between 0 and 1 representing the confidence level for the test. 0.1
+        implies 90% confidence.
 
     Returns
     ----------
@@ -82,3 +108,4 @@ class ValuationCorrelation:
         obj.values = (xp.array(probs)<p_critical)
         obj.odims=['(All)']
         self.z_critical = obj
+        self.z = z

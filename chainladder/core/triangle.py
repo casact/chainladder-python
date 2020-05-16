@@ -10,7 +10,7 @@ import copy
 
 
 from chainladder.core.base import TriangleBase
-from chainladder.core.correlation_tests import DevelopmentCorrelation, ValuationCorrelation
+from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 
 
 class Triangle(TriangleBase):
@@ -576,8 +576,8 @@ class Triangle(TriangleBase):
     def copy(self):
         return self.iloc[:, :]
 
-    def development_correlation(self):
-        return DevelopmentCorrelation(self)
+    def development_correlation(self, p_critical=0.5):
+        return DevelopmentCorrelation(self, p_critical)
 
     def valuation_correlation(self, p_critical=.1):
         """
