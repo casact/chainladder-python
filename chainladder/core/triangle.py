@@ -10,6 +10,7 @@ import copy
 
 
 from chainladder.core.base import TriangleBase
+from chainladder.core.correlation_tests import DevelopmentCorrelation, ValuationCorrelation
 
 
 class Triangle(TriangleBase):
@@ -575,57 +576,15 @@ class Triangle(TriangleBase):
     def copy(self):
         return self.iloc[:, :]
 
+    def development_correlation(self):
+        return DevelopmentCorrelation(self)
 
-    def test_development_correlation(self):
-        """ Mack (1997) test for correlations between subsequent development
-            factors. Results should be between -.67x and +.67x stdError
-            otherwise too much correlation
-
-            Returns
-            -------
-                development factors correlation: float
-                development factors correlation variance: float
-        """
-        xp = cp.get_array_module(self.values)
-        m1=self.link_ratio.to_frame().rank() # rank the development factors by column
-        m2=self.link_ratio.to_frame().to_numpy(copy=True) #does the same but ignoring the anti-diagonal
-        xp.fill_diagonal(xp.fliplr(m2),xp.nan)
-        m2=pd.DataFrame(xp.roll(m2,1),columns=m1.columns, index=m1.index).iloc[:,1:] # roll columns and leave out the first column
-        m2=m2.rank()
-        numerator=((m1-m2) **2).sum(axis=0)
-        SpearmanFactor=pd.DataFrame(range(1,len(m1.columns)+1),index=m1.columns, columns=['colNo'])
-        I = SpearmanFactor['colNo'].max()+1
-        SpearmanFactor['divisor'] = (I-SpearmanFactor['colNo'])**3 - I +SpearmanFactor['colNo'] #(I-k)^3-I+k
-        SpearmanFactor['value']= 1-6*numerator.T/SpearmanFactor['divisor']
-        SpearmanFactor['weighted'] = SpearmanFactor['value'] * (I-SpearmanFactor['colNo']-1) / (SpearmanFactor[1:-1]['colNo']-1).sum() #weight sum excludes 1 and I
-        SpearmanCorr=SpearmanFactor['weighted'].iloc[1:-1].sum() # exlcuding 1st and last elements as not significant
-        SpearmanCorrVar = 2/((I-2)*(I-3))
-        return SpearmanCorr,SpearmanCorrVar
-
-    @staticmethod
-    def _pZlower(z,n,p):
-        """
-        Returns p(Zj <= z), used by test_calendar_correlation
-        """
-
-        assert z >= 0
-        tot = 2 * binom.pmf(z, n, p)
-        if z >= int(n/2):
-            return 1
-        elif z == 0:
-            return tot
-        else:
-            return tot + Triangle._pZlower(z-1, n, p) # recursive calculation
-
-
-    def calendar_correlation(self, p_critical=.1):
+    def valuation_correlation(self, p_critical=.1):
         """
         Mack (1997) test for calendar year effect
         A calendar period has impact across developments if the probability of
         the number of small (or large) development factors in that period
         occurring randomly is less than p_critical
-        NB --> self should have period as the row index, on the assumption that the first anti-diagonal is in relation to the same period (development=0)
-        --> Could be better to combine origin with the development and grain properties to determine the index of the returned series
 
         Parameters
         ----------
@@ -633,30 +592,8 @@ class Triangle(TriangleBase):
             Value between 0 and 1 representing the confidence level for the test
 
         Returns
-        ----------
-            Series of bool indicating whether that specific period shows
-            statistically significant influence at `p_critical` confidence level
-            on the development factors
+        -------
+            ValuationCorrelation object
+
         """
-        xp = cp.get_array_module(self.values)
-        lr = self.link_ratio
-        m1 = xp.apply_along_axis(rankdata, 2, lr.values)*(lr.values*0+1)
-        med = xp.nanmedian(m1, axis=2, keepdims=True)
-        m1large = (xp.nan_to_num(m1) > med) + (lr.values*0)
-        m1small = (xp.nan_to_num(m1) < med) + (lr.values*0)
-        m2large = self.link_ratio
-        m2large.values = m1large
-        m2small = self.link_ratio
-        m2small.values = m1small
-        S = xp.nan_to_num(m2small.dev_to_val().sum(axis=2).values)
-        L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).values)
-        initial_cy = xp.zeros(tuple(list(S.shape[:-1])+[1]))
-        z = xp.minimum(L, S)
-        n = L + S
-        # Need to generalize recursive formula to the multidimensional array
-        probs = [Triangle._pZlower(z[0, 0, 0, i], n[0, 0, 0, i], 0.5)
-                 for i in range(S.shape[3])]
-        obj = self[self.valuation>self.valuation.min()].dev_to_val().dropna().sum('origin')*0
-        obj.values = (xp.array(probs)<p_critical)[None, None, None, ...]
-        obj.odims=['(All)']
-        return obj
+        return ValuationCorrelation(self, p_critical)
