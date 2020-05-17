@@ -1,5 +1,10 @@
-from scipy.stats import binom, norm, rankdata
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+from scipy.special import comb
 from chainladder.utils.cupy import cp
+import pandas as pd
 import copy
 
 class DevelopmentCorrelation:
@@ -17,18 +22,17 @@ class DevelopmentCorrelation:
         Value between 0 and 1 representing the confidence level for the test. A
         value of 0.1 implies 90% confidence.
 
-
     Attributes
     ----------
-    p_critical: float (default=0.50)
-        Value between 0 and 1 representing the confidence level for the test. A
-        value of 0.1 implies 90% confidence.
-    spearman_corr : Triangle
+    t_critical : DataFrame
+        Boolean value for whether correlation is too high based on `p_critical`
+        confidence level.
+    t_expectation : DataFrame
         Values representing the Spearman rank correlation
-    spearman_corr_var : float
+    t_variance : float
         Variance measure of Spearman rank correlation
-    range: tuple
-        Range within which `spearman_corr` must fall for independence assumption
+    range : tuple
+        Range within which `t_expectation` must fall for independence assumption
         to be significant.
     """
     def __init__(self, triangle, p_critical=0.5):
@@ -46,25 +50,26 @@ class DevelopmentCorrelation:
         I = triangle.shape[3]
         k = xp.array(range(2, 2+numerator.shape[3]))
         denominator = ((I - k)**3 - I + k)[None, None, None]
-        T = 1-6*numerator/denominator
+        self.t = 1-6*xp.nan_to_num(numerator.values)/denominator
         weight = (I-k-1)[None, None, None]
-        spearman_corr = (xp.sum(xp.nan_to_num(weight*T.values), axis=3) /
+        t_expectation = (xp.sum(xp.nan_to_num(weight*self.t), axis=3) /
                          xp.sum(weight, axis=3))[..., None]
-        spearman_corr_var = 2/((I-2)*(I-3))
-        obj = copy.deepcopy(triangle)
-        obj.values = spearman_corr
-        obj.odims =['(All)']
-        obj.ddims = ['Spearman Correlation']
-        self.spearman_corr = obj
-        self.spearman_corr_var = spearman_corr_var
-        self.range = (norm.ppf(0.5-(1-p_critical)/2)*xp.sqrt(spearman_corr_var),
-                      norm.ppf(0.5+(1-p_critical)/2)*xp.sqrt(spearman_corr_var))
+        idx = triangle._idx_table().index
+        self.t_variance = 2/((I-2)*(I-3))
+        self.t = pd.DataFrame(
+            self.t[..., 0, 0], columns=triangle.vdims, index=idx)
+        self.t_expectation = pd.DataFrame(
+            t_expectation[..., 0, 0], columns=triangle.vdims, index=idx)
+        self.range = (norm.ppf(0.5-(1-p_critical)/2)*xp.sqrt(self.t_variance),
+                      norm.ppf(0.5+(1-p_critical)/2)*xp.sqrt(self.t_variance))
+        self.t_critical = (self.t_expectation<self.range[0]) | \
+                          (self.t_expectation>self.range[1])
 
 class ValuationCorrelation:
     """
     Mack (1997) test for calendar year effect
     A calendar period has impact across developments if the probability of
-    the number of small (or large) development factors in that period
+    the number of small (or large) development factors, Z, in that period
     occurring randomly is less than p_critical
 
     Parameters
@@ -75,18 +80,30 @@ class ValuationCorrelation:
     p_critical: float (default=0.10)
         Value between 0 and 1 representing the confidence level for the test. 0.1
         implies 90% confidence.
+    total: boolean
+        Whether to calculate valuation correlation in total across all
+        years (True) consistent with Mack 1993 or for each year separately
+        (False) consistent with Mack 1997.
 
-    Returns
+    Attributes
     ----------
-        Series of bool indicating whether that specific period shows
-        statistically significant influence at `p_critical` confidence level
-        on the development factors
+    z : Triangle or DataFrame
+        Z values for each Valuation Period
+    z_critical : Triangle or DataFrame
+        Boolean value for whether correlation is too high based on `p_critical`
+        confidence level.
+    z_expectation : Triangle or DataFrame
+        The expected value of Z.
+    z_variance : Triangle or DataFrame
+        The variance value of Z.
     """
-    def __init__(self, triangle, p_critical=.1):
+    def __init__(self, triangle, p_critical=.1, total=True):
 
-        def pZlower(z,n,p):
+        def pZlower(z,n,p=0.5):
             return min(1, 2*binom.cdf(z,n,p))
 
+        self.p_critical = p_critical
+        self.total = total
         xp = cp.get_array_module(triangle.values)
         lr = triangle.link_ratio
         m1 = xp.apply_along_axis(rankdata, 2, lr.values)*(lr.values*0+1)
@@ -101,11 +118,36 @@ class ValuationCorrelation:
         L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).values)
         z = xp.minimum(L, S)
         n = L + S
-        probs = xp.array(
-            [[[pZlower(z[i, c, 0, d], n[i, c, 0, d], 0.5) for d in range(S.shape[3])]
-              for c in range(S.shape[1])] for i in range(S.shape[0])])[:,:,None,:]
-        obj = triangle[triangle.valuation>triangle.valuation.min()].dev_to_val().dropna().sum('origin')*0
-        obj.values = (xp.array(probs)<p_critical)
-        obj.odims=['(All)']
-        self.z_critical = obj
-        self.z = z
+        m = xp.floor((n - 1)/2)
+        VarZ = (n/2) - comb(n-1, m)*n/(2**n)
+        VarZ = n*(n - 1) / 4 - comb(n-1, m)*n * (n-1) / (2**n) + VarZ - VarZ**2
+        if not self.total:
+            self.probs = xp.array(
+                [[[pZlower(z[i, c, 0, d], n[i, c, 0, d]) for d in range(S.shape[3])]
+                  for c in range(S.shape[1])] for i in range(S.shape[0])])[:,:,None,:]
+            z_critical = triangle[triangle.valuation>triangle.valuation.min()]
+            z_critical = z_critical.dev_to_val().dropna().sum('origin')*0
+            z_critical.values = (xp.array(self.probs)<p_critical)
+            z_critical.odims=['(All)']
+            self.z_critical = z_critical
+            self.z = copy.deepcopy(self.z_critical)
+            self.z.values = z
+            self.z_expectation = copy.deepcopy(self.z_critical)
+            self.z_expectation.values = EZ
+            self.z_variance = copy.deepcopy(self.z_critical)
+            self.z_variance.values = VarZ
+        else:
+            ci2 = norm.ppf(0.5-(1-p_critical)/2)*xp.sqrt(xp.sum(VarZ, axis=-1))
+            self.range = (xp.sum(VarZ, axis=-1) + ci2,
+                          xp.sum(VarZ, axis=-1) - ci2)
+            idx = triangle._idx_table().index
+            self.z_critical = pd.DataFrame(
+                ((self.range[0] > VarZ.sum(axis=-1)) | \
+                (VarZ.sum(axis=-1) > self.range[1]))[..., 0],
+                columns=triangle.vdims, index=idx)
+            self.z =pd.DataFrame(
+                z.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)
+            self.z_expectation =pd.DataFrame(
+                VarZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)
+            self.z_variance = pd.DataFrame(
+                VarZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)

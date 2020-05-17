@@ -4,10 +4,8 @@
 
 import pandas as pd
 import numpy as np
-from scipy.stats import binom, rankdata
 from chainladder.utils.cupy import cp
 import copy
-
 
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
@@ -577,11 +575,26 @@ class Triangle(TriangleBase):
         return self.iloc[:, :]
 
     def development_correlation(self, p_critical=0.5):
+        """
+        Mack (1997) test for correlations between subsequent development
+        factors. Results should be within confidence interval range
+        otherwise too much correlation
+
+        Parameters
+        ----------
+        p_critical: float (default=0.10)
+            Value between 0 and 1 representing the confidence level for the test. A
+            value of 0.1 implies 90% confidence.
+        Returns
+        -------
+            DevelopmentCorrelation object with t, t_critical, t_expectation,
+            t_variance, and range attributes.
+        """
         return DevelopmentCorrelation(self, p_critical)
 
-    def valuation_correlation(self, p_critical=.1):
+    def valuation_correlation(self, p_critical=.1, total=False):
         """
-        Mack (1997) test for calendar year effect
+        Mack test for calendar year effect
         A calendar period has impact across developments if the probability of
         the number of small (or large) development factors in that period
         occurring randomly is less than p_critical
@@ -590,10 +603,14 @@ class Triangle(TriangleBase):
         ----------
         p_critical: float (default=0.10)
             Value between 0 and 1 representing the confidence level for the test
-
+        total:
+            Whether to calculate valuation correlation in total across all
+            years (True) consistent with Mack 1993 or for each year separately
+            (False) consistent with Mack 1997.
         Returns
         -------
-            ValuationCorrelation object
+            ValuationCorrelation object with z, z_critical, z_expectation and
+            z_variance attributes.
 
         """
         return ValuationCorrelation(self, p_critical)
