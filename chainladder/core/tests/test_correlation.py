@@ -65,7 +65,7 @@ def test_val_corr_z(data, ci, atol):
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
-def test_val_corr_z(data, ci, atol):
+def test_val_corr_e(data, ci, atol):
     p = val_corr_p(data, ci)
     xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('E')[0]
@@ -74,7 +74,7 @@ def test_val_corr_z(data, ci, atol):
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
-def test_val_corr_z(data, ci, atol):
+def test_val_corr_var(data, ci, atol):
     p = val_corr_p(data, ci)
     xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('Var')[0]

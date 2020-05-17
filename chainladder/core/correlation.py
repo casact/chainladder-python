@@ -119,8 +119,8 @@ class ValuationCorrelation:
         z = xp.minimum(L, S)
         n = L + S
         m = xp.floor((n - 1)/2)
-        VarZ = (n/2) - comb(n-1, m)*n/(2**n)
-        VarZ = n*(n - 1) / 4 - comb(n-1, m)*n * (n-1) / (2**n) + VarZ - VarZ**2
+        EZ = (n/2) - comb(n-1, m)*n/(2**n)
+        VarZ = n*(n - 1) / 4 - comb(n-1, m)*n * (n-1) / (2**n) + EZ - EZ**2
         if not self.total:
             self.probs = xp.array(
                 [[[pZlower(z[i, c, 0, d], n[i, c, 0, d]) for d in range(S.shape[3])]
@@ -148,6 +148,6 @@ class ValuationCorrelation:
             self.z =pd.DataFrame(
                 z.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)
             self.z_expectation =pd.DataFrame(
-                VarZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)
+                EZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)
             self.z_variance = pd.DataFrame(
                 VarZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx)
