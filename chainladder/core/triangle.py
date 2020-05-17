@@ -388,11 +388,11 @@ class Triangle(TriangleBase):
             obj.valuation = obj._valuation_triangle()
         else:
             obj.ddims = obj.valuation.unique().sort_values()
+            if type(obj.ddims) == pd.PeriodIndex:
+                obj.ddims = obj.ddims.to_timestamp()
             obj.values = obj.values[..., :np.where(
                 obj.ddims <= obj.valuation_date)[0].max()+1]
             obj.ddims = obj.ddims[obj.ddims <= obj.valuation_date]
-            if type(obj.ddims) == pd.PeriodIndex:
-                obj.ddims = obj.ddims.to_timestamp()
             obj.valuation = pd.DatetimeIndex(
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
