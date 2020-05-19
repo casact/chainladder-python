@@ -11,9 +11,10 @@ import os
 import copy
 from chainladder.core.triangle import Triangle
 from chainladder.workflow import Pipeline
+from sklearn.utils import deprecated
 
 
-def load_dataset(key, *args, **kwargs):
+def load_sample(key, *args, **kwargs):
     """ Function to load datasets included in the chainladder package.
 
         Arguments:
@@ -45,6 +46,9 @@ def load_dataset(key, *args, **kwargs):
     return Triangle(df, origin=origin, development=development, index=index,
                     columns=columns, cumulative=True, *args, **kwargs)
 
+@deprecated('Use load_sample instead.')
+def load_dataset(key, *args, **kwargs):
+    return load_sample(key, *args, **kwargs)
 
 def read_pickle(path):
     return joblib.load(path)
