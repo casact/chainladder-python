@@ -613,4 +613,4 @@ class Triangle(TriangleBase):
             z_variance attributes.
 
         """
-        return ValuationCorrelation(self, p_critical)
+        return ValuationCorrelation(self, p_critical, total)
