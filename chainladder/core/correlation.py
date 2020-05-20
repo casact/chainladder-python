@@ -122,9 +122,11 @@ class ValuationCorrelation:
         EZ = (n/2) - comb(n-1, m)*n/(2**n)
         VarZ = n*(n - 1) / 4 - comb(n-1, m)*n * (n-1) / (2**n) + EZ - EZ**2
         if not self.total:
-            self.probs = xp.array(
-                [[[pZlower(z[i, c, 0, d], n[i, c, 0, d]) for d in range(S.shape[3])]
-                  for c in range(S.shape[1])] for i in range(S.shape[0])])[:,:,None,:]
+            T=[]
+            for i in range(0,xp.max(m1large.shape[2:])):
+                T.append([pZlower(i,j,0.5) for j in range(0,xp.max(m1large.shape[2:]))])
+            T=xp.array(T)
+            self.probs = xp.array(T[z.astype(int),n.astype(int)])
             z_critical = triangle[triangle.valuation>triangle.valuation.min()]
             z_critical = z_critical.dev_to_val().dropna().sum('origin')*0
             z_critical.values = (xp.array(self.probs)<p_critical)
