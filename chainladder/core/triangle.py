@@ -7,8 +7,8 @@ import numpy as np
 from chainladder.utils.cupy import cp
 import copy
 
-
 from chainladder.core.base import TriangleBase
+from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 
 
 class Triangle(TriangleBase):
@@ -54,10 +54,17 @@ class Triangle(TriangleBase):
         Represents all available levels of the origin dimension.
     development : Series
         Represents all available levels of the development dimension.
+    key_labels : list
+        Represents the `index` axis labels
     valuation : DatetimeIndex
         Represents all valuation dates of each cell in the Triangle.
+    origin_grain : str
+        The grain of the origin vector ('Y', 'Q', 'M')
+    development_grain : str
+        The grain of the development vector ('Y', 'Q', 'M')
     shape : tuple
-        The 4D shape of the triangle instance
+        The 4D shape of the triangle instance with axes corresponding to (index,
+         columns, origin, development)
     link_ratio, age_to_age
         Displays age-to-age ratios for the triangle.
     valuation_date : date
@@ -72,6 +79,8 @@ class Triangle(TriangleBase):
         Whether the triangle is cumulative or not
     is_ultimate: bool
         Whether the triangle has an ultimate valuation
+    is_full: bool
+        Whether lower half of Triangle has been filled in
     is_val_tri:
         Whether the triangle development period is expressed as valuation
         periods.
@@ -154,6 +163,7 @@ class Triangle(TriangleBase):
 
     @property
     def latest_diagonal(self):
+        """ The latest diagonal of the Triangle """
         return self._get_latest_diagonal()
 
     @property
@@ -378,6 +388,8 @@ class Triangle(TriangleBase):
             obj.valuation = obj._valuation_triangle()
         else:
             obj.ddims = obj.valuation.unique().sort_values()
+            if type(obj.ddims) == pd.PeriodIndex:
+                obj.ddims = obj.ddims.to_timestamp()
             obj.values = obj.values[..., :np.where(
                 obj.ddims <= obj.valuation_date)[0].max()+1]
             obj.ddims = obj.ddims[obj.ddims <= obj.valuation_date]
@@ -398,9 +410,6 @@ class Triangle(TriangleBase):
             'OXDY' where X and Y can take on values of ``['Y', 'Q', 'M'
             ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
             for Origin quarter/Development Month, etc.
-        incremental : bool
-            Grain does not work on incremental triangles and this argument let's
-            the function know to make it cumuative before operating on the grain.
         trailing : bool
             For partial years/quarters, trailing will set the year/quarter end to
             that of the latest available form the data.
@@ -495,6 +504,8 @@ class Triangle(TriangleBase):
             The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
+        valuation_date: date
+            The terminal date from which trend should be calculated.
         ultimate_lag : int
             If ultimate valuations are in the triangle, you can set the overall
             age of the ultimate to be some lag from the latest non-Ultimate
@@ -539,6 +550,8 @@ class Triangle(TriangleBase):
             the axis to be broadcast over.
         value : axis-like
             The value of the new axis.
+
+        TODO: Should convert value to a primitive type
         """
         obj = copy.deepcopy(self)
         axis = self._get_axis(axis)
@@ -560,3 +573,44 @@ class Triangle(TriangleBase):
 
     def copy(self):
         return self.iloc[:, :]
+
+    def development_correlation(self, p_critical=0.5):
+        """
+        Mack (1997) test for correlations between subsequent development
+        factors. Results should be within confidence interval range
+        otherwise too much correlation
+
+        Parameters
+        ----------
+        p_critical: float (default=0.10)
+            Value between 0 and 1 representing the confidence level for the test. A
+            value of 0.1 implies 90% confidence.
+        Returns
+        -------
+            DevelopmentCorrelation object with t, t_critical, t_expectation,
+            t_variance, and range attributes.
+        """
+        return DevelopmentCorrelation(self, p_critical)
+
+    def valuation_correlation(self, p_critical=.1, total=False):
+        """
+        Mack test for calendar year effect
+        A calendar period has impact across developments if the probability of
+        the number of small (or large) development factors in that period
+        occurring randomly is less than p_critical
+
+        Parameters
+        ----------
+        p_critical: float (default=0.10)
+            Value between 0 and 1 representing the confidence level for the test
+        total:
+            Whether to calculate valuation correlation in total across all
+            years (True) consistent with Mack 1993 or for each year separately
+            (False) consistent with Mack 1997.
+        Returns
+        -------
+            ValuationCorrelation object with z, z_critical, z_expectation and
+            z_variance attributes.
+
+        """
+        return ValuationCorrelation(self, p_critical, total)

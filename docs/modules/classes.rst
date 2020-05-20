@@ -29,6 +29,8 @@ Classes
   :template: class.rst
 
   Triangle
+  DevelopmentCorrelation
+  ValuationCorrelation
 
 
 .. _development_ref:
