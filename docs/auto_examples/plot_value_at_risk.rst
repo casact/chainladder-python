@@ -41,11 +41,9 @@ Value at Risk percentile lookups.
 
 
     import chainladder as cl
-    import seaborn as sns
-    sns.set_style('whitegrid')
 
     # Load triangle
-    triangle = cl.load_dataset('genins')
+    triangle = cl.load_sample('genins')
 
     # Create 1000 bootstrap samples of the triangle
     resampled_triangles = cl.BootstrapODPSample().fit_transform(triangle)
@@ -59,12 +57,13 @@ Value at Risk percentile lookups.
     # Plot data
     sim_ibnr.index = [item/1000 for item in range(1000)]
     sim_ibnr.loc[0.90:].plot(
-        title='Bootstrap VaR (90% and above)', color='red').set(xlabel='VaR');
+        title='Bootstrap VaR (90% and above)', color='red', grid=True).set(
+        xlabel='VaR');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.715 seconds)
+   **Total running time of the script:** ( 0 minutes  0.691 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_value_at_risk.py:

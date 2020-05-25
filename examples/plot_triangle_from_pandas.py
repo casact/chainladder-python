@@ -15,8 +15,6 @@ in the CAS Loss Reserve Database for Workers' Compensation.
 
 import chainladder as cl
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 # Read in the data
 lobs = 'wkcomp'
@@ -39,8 +37,7 @@ print('Aggregate Paid Triangle:')
 print(triangle['CumPaidLoss_D'].sum())
 
 # Plot data
-ax = triangle['CumPaidLoss_D'].sum().T.plot(
-    marker='.', title='CAS Loss Reserve Database: Workers Compensation');
-ax.set(xlabel='Development Period', ylabel='Cumulative Paid Loss')
-
-plt.show()
+triangle['CumPaidLoss_D'].sum().T.plot(
+    marker='.', grid=True,
+    title='CAS Loss Reserve Database: Workers Compensation').set(
+    xlabel='Development Period', ylabel='Cumulative Paid Loss');

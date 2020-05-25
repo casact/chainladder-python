@@ -5,13 +5,13 @@ Examples using ``chainladder.Chainladder``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_development_periods.py`
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
 
 .. raw:: html
 
@@ -19,4 +19,4 @@ Examples using ``chainladder.Chainladder``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_development_periods.py`
+ * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`

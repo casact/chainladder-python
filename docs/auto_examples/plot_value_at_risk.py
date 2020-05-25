@@ -9,11 +9,9 @@ Value at Risk percentile lookups.
 """
 
 import chainladder as cl
-import seaborn as sns
-sns.set_style('whitegrid')
 
 # Load triangle
-triangle = cl.load_dataset('genins')
+triangle = cl.load_sample('genins')
 
 # Create 1000 bootstrap samples of the triangle
 resampled_triangles = cl.BootstrapODPSample().fit_transform(triangle)
@@ -27,4 +25,5 @@ sim_ibnr = (sim_ibnr - sim_ibnr.mean()).to_frame().sort_values()
 # Plot data
 sim_ibnr.index = [item/1000 for item in range(1000)]
 sim_ibnr.loc[0.90:].plot(
-    title='Bootstrap VaR (90% and above)', color='red').set(xlabel='VaR');
+    title='Bootstrap VaR (90% and above)', color='red', grid=True).set(
+    xlabel='VaR');

@@ -10,11 +10,9 @@ create a calendar year runoff of IBNR.
 """
 
 import chainladder as cl
-import seaborn as sns
-sns.set_style('whitegrid')
 
 # Create a triangle
-triangle = cl.load_dataset('GenIns')
+triangle = cl.load_sample('GenIns')
 
 # Fit a model
 model = cl.Chainladder().fit(triangle)
@@ -26,6 +24,7 @@ runoff = (model.full_triangle_.cum_to_incr() - triangle.cum_to_incr())
 cal_yr_runoff = runoff.dev_to_val().dropna().sum(axis='origin')
 
 # Plot results
-cal_yr_runoff.T.plot(kind='bar', legend=False, color='red',
-                     title='GenIns: IBNR Run-off', alpha=0.7) \
-               .set(xlabel='Calendar Year', ylabel='IBNR');
+cal_yr_runoff.T.plot(
+    kind='bar', legend=False, color='red', grid=True,
+    title='GenIns: IBNR Run-off', alpha=0.7).set(
+    xlabel='Calendar Year', ylabel='IBNR');

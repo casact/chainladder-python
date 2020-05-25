@@ -39,12 +39,9 @@ transformer to see its influence on the overall ultimate estimate.
 .. code-block:: default
 
 
-    import seaborn as sns
-    sns.set_style('whitegrid')
-
     import chainladder as cl
 
-    tri = cl.load_dataset('abc')
+    tri = cl.load_sample('abc')
 
     # Set up Pipeline
     steps = [('dev',cl.Development()),
@@ -53,18 +50,21 @@ transformer to see its influence on the overall ultimate estimate.
     pipe = cl.Pipeline(steps=steps)
 
     # Develop scoring function that returns an Ultimate/Incurred Ratio
-    scoring = lambda x: x.named_steps.chainladder.ultimate_.sum() / tri.latest_diagonal.sum()
+    scoring = lambda x: (x.named_steps.chainladder.ultimate_.sum() /
+                         tri.latest_diagonal.sum())
 
     # Run GridSearch
     grid = cl.GridSearch(pipe, params, scoring).fit(tri)
 
     # Plot Results
-    grid.results_.plot(x='dev__n_periods',y='score', marker='o').set(ylabel='Ultimate / Incurred');
+    grid.results_.plot(
+        x='dev__n_periods',y='score', marker='o', grid=True).set(
+        ylabel='Ultimate / Incurred');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.812 seconds)
+   **Total running time of the script:** ( 0 minutes  0.967 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_development_periods.py:

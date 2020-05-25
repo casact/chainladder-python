@@ -8,7 +8,7 @@ particular ``index`` grain and apply them to another.
 """
 import chainladder as cl
 
-clrd = cl.load_dataset('clrd')['CumPaidLoss']
+clrd = cl.load_sample('clrd')['CumPaidLoss']
 clrd = clrd[clrd['LOB'] == 'wkcomp']
 
 industry = clrd.sum()

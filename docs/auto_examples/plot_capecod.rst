@@ -21,22 +21,32 @@ and ``decay``.
     :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
 
 
+    Text(0.5,0.98,'Private Passenger Auto Cape Cod Detrended Aprioris')
+
+
+
+
+
+|
 
 
 .. code-block:: default
 
 
     import chainladder as cl
-    import seaborn as sns
     import matplotlib.pyplot as plt
-    sns.set_style('whitegrid')
 
     # Grab data
-    ppauto_loss = cl.load_dataset('clrd').groupby('LOB').sum().loc['ppauto']['CumPaidLoss']
-    ppauto_prem = cl.load_dataset('clrd').groupby('LOB').sum() \
-                    .loc['ppauto']['EarnedPremDIR'].latest_diagonal.rename('development',['Premium'])
+    ppauto_loss = cl.load_sample('clrd').groupby('LOB').sum().loc['ppauto', 'CumPaidLoss']
+    ppauto_prem = cl.load_sample('clrd').groupby('LOB').sum() \
+                    .loc['ppauto']['EarnedPremDIR'].latest_diagonal
 
     def get_apriori(decay, trend):
         """ Function to grab apriori array from cape cod method """
@@ -55,23 +65,19 @@ and ``decay``.
             detrended_aprioris[f'decay: {item}%'] = get_apriori(item/100, trend)
         return detrended_aprioris
 
-
     # Plot Data
-    fig, ((ax00, ax01), (ax10, ax11)) = plt.subplots(ncols=2, nrows=2, sharex=True, figsize=(10,10))
-    get_plot_data(-0.05).plot(ax=ax00)
-    get_plot_data(-.025).plot(ax=ax01)
-    get_plot_data(0).plot(ax=ax10)
-    get_plot_data(0.025).plot(ax=ax11)
-    ax00.set_title('Trend: -5%')
-    ax01.set_title('Trend: -2.5%')
-    ax10.set_title('Trend: 0%')
-    ax11.set_title('Trend: 2.5%')
-    g = fig.suptitle("Private Passenger Auto Cape Cod Detrended Aprioris")
+    fig, ((ax00, ax01), (ax10, ax11)) = plt.subplots(
+        ncols=2, nrows=2, sharex=True, figsize=(10,10))
+    get_plot_data(-0.05).plot(ax=ax00, grid=True, title='Trend: -5%')
+    get_plot_data(-.025).plot(ax=ax01, grid=True, title='Trend: -2.5%')
+    get_plot_data(0).plot(ax=ax10, grid=True, title='Trend: 0.0%')
+    get_plot_data(0.025).plot(ax=ax11, grid=True, title='Trend: 2.5%')
+    fig.suptitle("Private Passenger Auto Cape Cod Detrended Aprioris");
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  9.773 seconds)
+   **Total running time of the script:** ( 0 minutes  3.765 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_capecod.py:

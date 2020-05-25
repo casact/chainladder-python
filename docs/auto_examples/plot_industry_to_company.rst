@@ -47,7 +47,7 @@ particular ``index`` grain and apply them to another.
 
     import chainladder as cl
 
-    clrd = cl.load_dataset('clrd')['CumPaidLoss']
+    clrd = cl.load_sample('clrd')['CumPaidLoss']
     clrd = clrd[clrd['LOB'] == 'wkcomp']
 
     industry = clrd.sum()
@@ -60,7 +60,7 @@ particular ``index`` grain and apply them to another.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.306 seconds)
+   **Total running time of the script:** ( 0 minutes  0.876 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_industry_to_company.py:

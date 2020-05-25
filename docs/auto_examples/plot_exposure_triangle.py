@@ -11,8 +11,6 @@ optional. This example instantiates a 'premium' triangle as a single vector.
 
 import chainladder as cl
 import pandas as pd
-import seaborn as sns
-sns.set_style('whitegrid')
 
 import chainladder as cl
 
@@ -25,10 +23,11 @@ premium_df = pd.DataFrame(
 premium = cl.Triangle(premium_df, origin='AccYear', columns='premium')
 
 # Create some loss triangle
-loss = cl.load_dataset('abc')
+loss = cl.load_sample('abc')
 ultimate = cl.Chainladder().fit(loss).ultimate_
 
 # Plot
 (ultimate / premium).plot(
     kind='area', title='Loss Ratio by Accident Year',
-    alpha=0.7, color='darkgreen', legend=False);
+    alpha=0.7, color='darkgreen', legend=False, grid=True).set(
+    xlabel='Accident Year', ylabel='Loss Ratio');

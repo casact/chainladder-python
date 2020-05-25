@@ -32,7 +32,7 @@ this example.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x000002204ECCDC18>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x000001E75711BB38>
 
 
 
@@ -50,7 +50,7 @@ this example.
     n_sims = 1000
 
     # Get data
-    loss = cl.load_dataset('genins')
+    loss = cl.load_sample('genins')
     premium = loss.latest_diagonal*0+8e6
 
     # Simulate loss triangles
@@ -75,7 +75,7 @@ this example.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  11.573 seconds)
+   **Total running time of the script:** ( 0 minutes  3.025 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_stochastic_bornferg.py:

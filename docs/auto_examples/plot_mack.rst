@@ -19,32 +19,17 @@ This example demonstrates how you can can use the Mack Chainladder method.
     :class: sphx-glr-single-img
 
 
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
 
 
-    Text(0,0.5,'Loss')
-
-
-
-
-
-|
 
 
 .. code-block:: default
 
     import pandas as pd
     import chainladder as cl
-    import seaborn as sns
-    sns.set_style('whitegrid')
-
 
     # Load the data
-    data = cl.load_dataset('raa')
+    data = cl.load_sample('raa')
 
     # Compute Mack Chainladder ultimates and Std Err using 'simple' average
     mack = cl.MackChainladder()
@@ -53,18 +38,17 @@ This example demonstrates how you can can use the Mack Chainladder method.
 
     # Plotting
     plot_data = mack.summary_.to_frame()
-    g = plot_data[['Latest', 'IBNR']] \
-        .plot(kind='bar', stacked=True,
-              yerr=pd.DataFrame({'latest': plot_data['Mack Std Err']*0,
-                                 'IBNR': plot_data['Mack Std Err']}),
-              ylim=(0, None), title='Mack Chainladder Ultimate')
-    g.set_xlabel('Accident Year')
-    g.set_ylabel('Loss');
+    g = plot_data[['Latest', 'IBNR']].plot(
+        kind='bar', stacked=True, ylim=(0, None), grid=True,
+        yerr=pd.DataFrame({'latest': plot_data['Mack Std Err']*0,
+                           'IBNR': plot_data['Mack Std Err']}),
+        title='Mack Chainladder Ultimate').set(
+        xlabel='Accident Year', ylabel='Loss');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.558 seconds)
+   **Total running time of the script:** ( 0 minutes  0.463 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_mack.py:

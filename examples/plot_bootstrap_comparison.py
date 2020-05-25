@@ -9,11 +9,8 @@ BootstrapODPSample to reduce reserve variability estimates.
 """
 import chainladder as cl
 
-import seaborn as sns
-sns.set_style('whitegrid')
-
 # Load triangle
-triangle = cl.load_dataset('raa')
+triangle = cl.load_sample('raa')
 
 # Use bootstrap sampler to get resampled triangles
 s1 = cl.BootstrapODPSample(
@@ -31,4 +28,5 @@ results = cl.Chainladder().fit(s1).ibnr_.sum('origin').rename('columns', ['Origi
 results['Dropped'] = cl.Chainladder().fit(s2).ibnr_.sum('origin')
 
 # Plot both IBNR distributions
-results.to_frame().plot(kind='hist', bins=50, alpha=0.5)
+results.to_frame().plot(kind='hist', bins=50, alpha=0.5, grid=True).set(
+    xlabel='Ultimate')

@@ -33,12 +33,14 @@ in the CAS Loss Reserve Database for Workers' Compensation.
  .. code-block:: none
 
     Raw data:
-       GRCODE               GRNAME  AccidentYear  DevelopmentYear  DevelopmentLag  IncurLoss_D  CumPaidLoss_D  BulkLoss_D  EarnedPremDIR_D  EarnedPremCeded_D  EarnedPremNet_D  Single  PostedReserve97_D
-    0      86  Allstate Ins Co Grp          1988             1988               1       367404          70571      127737           400699               5957           394742       0             281872
-    1      86  Allstate Ins Co Grp          1988             1989               2       362988         155905       60173           400699               5957           394742       0             281872
-    2      86  Allstate Ins Co Grp          1988             1990               3       347288         220744       27763           400699               5957           394742       0             281872
-    3      86  Allstate Ins Co Grp          1988             1991               4       330648         251595       15280           400699               5957           394742       0             281872
-    4      86  Allstate Ins Co Grp          1988             1992               5       354690         274156       27689           400699               5957           394742       0             281872
+       GRCODE               GRNAME  AccidentYear  ...  EarnedPremNet_D  Single  PostedReserve97_D
+    0      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    1      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    2      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    3      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+    4      86  Allstate Ins Co Grp          1988  ...           394742       0             281872
+
+    [5 rows x 13 columns]
 
     Triangle summary:
     Valuation: 1997-12
@@ -60,6 +62,7 @@ in the CAS Loss Reserve Database for Workers' Compensation.
     1996  381484.0  736040.0        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN
     1997  340132.0       NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN
 
+    [Text(0,0.5,'Cumulative Paid Loss'), Text(0.5,0,'Development Period')]
 
 
 
@@ -73,8 +76,6 @@ in the CAS Loss Reserve Database for Workers' Compensation.
 
     import chainladder as cl
     import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
 
     # Read in the data
     lobs = 'wkcomp'
@@ -97,16 +98,15 @@ in the CAS Loss Reserve Database for Workers' Compensation.
     print(triangle['CumPaidLoss_D'].sum())
 
     # Plot data
-    ax = triangle['CumPaidLoss_D'].sum().T.plot(
-        marker='.', title='CAS Loss Reserve Database: Workers Compensation');
-    ax.set(xlabel='Development Period', ylabel='Cumulative Paid Loss')
-
-    plt.show()
+    triangle['CumPaidLoss_D'].sum().T.plot(
+        marker='.', grid=True,
+        title='CAS Loss Reserve Database: Workers Compensation').set(
+        xlabel='Development Period', ylabel='Cumulative Paid Loss');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.289 seconds)
+   **Total running time of the script:** ( 0 minutes  1.859 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_triangle_from_pandas.py:

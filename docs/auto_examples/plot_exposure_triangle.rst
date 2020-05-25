@@ -29,7 +29,7 @@ optional. This example instantiates a 'premium' triangle as a single vector.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x000002204F8134E0>
+    [Text(0,0.5,'Loss Ratio'), Text(0.5,0,'Accident Year')]
 
 
 
@@ -43,8 +43,6 @@ optional. This example instantiates a 'premium' triangle as a single vector.
 
     import chainladder as cl
     import pandas as pd
-    import seaborn as sns
-    sns.set_style('whitegrid')
 
     import chainladder as cl
 
@@ -57,18 +55,19 @@ optional. This example instantiates a 'premium' triangle as a single vector.
     premium = cl.Triangle(premium_df, origin='AccYear', columns='premium')
 
     # Create some loss triangle
-    loss = cl.load_dataset('abc')
+    loss = cl.load_sample('abc')
     ultimate = cl.Chainladder().fit(loss).ultimate_
 
     # Plot
     (ultimate / premium).plot(
         kind='area', title='Loss Ratio by Accident Year',
-        alpha=0.7, color='darkgreen', legend=False);
+        alpha=0.7, color='darkgreen', legend=False, grid=True).set(
+        xlabel='Accident Year', ylabel='Loss Ratio');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.502 seconds)
+   **Total running time of the script:** ( 0 minutes  0.349 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_exposure_triangle.py:

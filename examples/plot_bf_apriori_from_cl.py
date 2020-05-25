@@ -8,19 +8,16 @@ apriori selection for the Bornhuetter-Ferguson Method.
 """
 import chainladder as cl
 import pandas as pd
-import seaborn as sns
-sns.set_style('whitegrid')
 
 # Create Aprioris as the mean AY chainladder ultimate
-raa = cl.load_dataset('RAA')
+raa = cl.load_sample('RAA')
 cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
 apriori = cl_ult*0+(cl_ult.sum()/10)  # Mean Chainladder Ultimate
 bf_ult = cl.BornhuetterFerguson(apriori=1).fit(raa, sample_weight=apriori).ultimate_
 
 # Plot of Ultimates
-plot_data = cl_ult.to_frame().rename({'values': 'Chainladder'}, axis=1)
-plot_data['BornhuetterFerguson'] = bf_ult.to_frame()
-plot_data = plot_data.stack().reset_index()
-plot_data.columns = ['Accident Year', 'Method', 'Ultimate']
-plot_data['Accident Year'] = plot_data['Accident Year'].dt.year
-pd.pivot_table(plot_data, index='Accident Year', columns='Method', values='Ultimate').plot();
+pd.concat(
+    (cl_ult.to_frame().rename({'values': 'Chainladder'}, axis=1),
+     bf_ult.to_frame().rename({'values': 'BornhuetterFerguson'}, axis=1)),
+    axis=1).plot(grid=True, marker='o').set(
+    xlabel='Accident Year', ylabel='Ultimate');

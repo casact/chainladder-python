@@ -26,9 +26,7 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\bootstrap.py:64: UserWarning: Process risk not yet implemented...
-      warn('Process risk not yet implemented...')
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\core\pandas.py:219: RuntimeWarning: Mean of empty slice
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\core\pandas.py:264: RuntimeWarning: Mean of empty slice
       obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
     [Text(0.5,0,'LDF'), Text(0.5,1,'Age 12-24 LDF Distribution')]
@@ -43,14 +41,10 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 .. code-block:: default
 
     import chainladder as cl
-
-    import seaborn as sns
     import matplotlib.pyplot as plt
-    sns.set_style('whitegrid')
-
 
     #  Grab a Triangle
-    tri = cl.load_dataset('genins')
+    tri = cl.load_sample('genins')
     # Generate bootstrap samples
     sims = cl.BootstrapODPSample().fit_transform(tri)
     # Calculate LDF for each simulation
@@ -59,19 +53,24 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
     # Plot the Data
     fig, ((ax00, ax01), (ax10, ax11)) = plt.subplots(ncols=2, nrows=2, figsize=(10,10))
-    tri.T.plot(ax=ax00).set(title='Raw Data', xlabel='Development', ylabel='Incurred')
-    sims.mean().T.plot(ax=ax01).set(title='Mean Simulation', xlabel='Development', ylabel='Incurred')
-    sim_ldf.T.plot(legend=False, color='lightgray', ax=ax10) \
-           .set(title='Simulated LDF', xlabel='Development', ylabel='LDF')
-    cl.Development().fit(tri).ldf_.drop_duplicates().T \
-                    .plot(legend=False, color='red', ax=ax10)
-    sim_ldf.T.loc['12-24'].plot(kind='hist', bins=50, alpha=0.5, ax=ax11) \
-                          .set(title='Age 12-24 LDF Distribution', xlabel='LDF');
+    # Plot 1
+    tri.T.plot(ax=ax00, grid=True).set(title='Raw Data', xlabel='Development', ylabel='Incurred')
+    # Plot 2
+    sims.mean().T.plot(ax=ax01, grid=True).set(title='Mean Simulation', xlabel='Development')
+    # Plot 3
+    sim_ldf.T.plot(legend=False, color='lightgray', ax=ax10, grid=True).set(
+        title='Simulated LDF', xlabel='Development', ylabel='LDF')
+    cl.Development().fit(tri).ldf_.drop_duplicates().T.plot(
+        legend=False, color='red', ax=ax10, grid=True)
+    # Plot 4
+    sim_ldf.T.loc['12-24'].plot(
+        kind='hist', bins=50, alpha=0.5, ax=ax11 , grid=True).set(
+        title='Age 12-24 LDF Distribution', xlabel='LDF');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  13.354 seconds)
+   **Total running time of the script:** ( 0 minutes  3.559 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap.py:

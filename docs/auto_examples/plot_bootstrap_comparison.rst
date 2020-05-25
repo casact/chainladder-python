@@ -27,16 +27,14 @@ BootstrapODPSample to reduce reserve variability estimates.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\bootstrap.py:64: UserWarning: Process risk not yet implemented...
-      warn('Process risk not yet implemented...')
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:149: UserWarning: drop_high and drop_low cannot be computed when less than three LDFs are present. Ignoring exclusions in some cases.
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:170: UserWarning: drop_high and drop_low cannot be computed when less than three LDFs are present. Ignoring exclusions in some cases.
       warnings.warn('drop_high and drop_low cannot be computed '
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:58: RuntimeWarning: invalid value encountered in sqrt
-      residual = (y-fitted_value)*np.sqrt(w)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:228: RuntimeWarning: invalid value encountered in sqrt
-      np.swapaxes(np.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:62: RuntimeWarning: invalid value encountered in sqrt
+      residual = (y-fitted_value)*xp.sqrt(w)
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:264: RuntimeWarning: invalid value encountered in sqrt
+      xp.swapaxes(xp.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x000001F8552CD550>
+    [Text(0.5,0,'Ultimate')]
 
 
 
@@ -49,11 +47,8 @@ BootstrapODPSample to reduce reserve variability estimates.
 
     import chainladder as cl
 
-    import seaborn as sns
-    sns.set_style('whitegrid')
-
     # Load triangle
-    triangle = cl.load_dataset('raa')
+    triangle = cl.load_sample('raa')
 
     # Use bootstrap sampler to get resampled triangles
     s1 = cl.BootstrapODPSample(
@@ -71,12 +66,13 @@ BootstrapODPSample to reduce reserve variability estimates.
     results['Dropped'] = cl.Chainladder().fit(s2).ibnr_.sum('origin')
 
     # Plot both IBNR distributions
-    results.to_frame().plot(kind='hist', bins=50, alpha=0.5)
+    results.to_frame().plot(kind='hist', bins=50, alpha=0.5, grid=True).set(
+        xlabel='Ultimate')
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  9.323 seconds)
+   **Total running time of the script:** ( 0 minutes  3.724 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap_comparison.py:

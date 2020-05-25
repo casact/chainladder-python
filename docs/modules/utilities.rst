@@ -264,11 +264,11 @@ to will apply to all nested objects you intend to export.
 If any nested object has a default override, the override will be honored over
 this default.
 
+.. _samples:
 
-
-Datasets
-========
-A variety of datasets can be loaded using :func:`load_dataset()`.  These are
+Sample Datasets
+===============
+A variety of datasets can be loaded using :func:`load_sample()`.  These are
 sample datasets that are used in a variety of examples within this
 documentation.
 

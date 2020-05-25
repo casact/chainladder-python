@@ -5,12 +5,10 @@
 
 Computation times
 =================
-**00:00.318** total execution time for **auto_examples** files:
+**00:01.056** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py` (``plot_clarkldf_resid.py``)             | 00:00.318 | 0.0 MB |
-+-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:00.000 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:01.056 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_benktander.py` (``plot_benktander.py``)                     | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
@@ -25,6 +23,8 @@ Computation times
 | :ref:`sphx_glr_auto_examples_plot_capecod.py` (``plot_capecod.py``)                           | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_clarkldf.py` (``plot_clarkldf.py``)                         | 00:00.000 | 0.0 MB |
++-----------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py` (``plot_clarkldf_resid.py``)             | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_development_periods.py` (``plot_development_periods.py``)   | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+

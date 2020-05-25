@@ -18,7 +18,7 @@ random_state = 42
 n_sims = 1000
 
 # Get data
-loss = cl.load_dataset('genins')
+loss = cl.load_sample('genins')
 premium = loss.latest_diagonal*0+8e6
 
 # Simulate loss triangles

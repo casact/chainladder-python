@@ -27,7 +27,7 @@ passing multiple scoring functions to `GridSearch`.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x000001D07C3D0390>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x0000025C11F30A90>
 
 
 
@@ -39,13 +39,10 @@ passing multiple scoring functions to `GridSearch`.
 .. code-block:: default
 
 
-    import seaborn as sns
-    sns.set_style('whitegrid')
-
     import chainladder as cl
 
     # Fit basic development to a triangle
-    tri = cl.load_dataset('tail_sample')['paid']
+    tri = cl.load_sample('tail_sample')['paid']
     dev = cl.Development(average='simple').fit_transform(tri)
 
 
@@ -59,13 +56,15 @@ passing multiple scoring functions to `GridSearch`.
     grid = cl.GridSearch(cl.TailBondy(), param_grid, scoring)
     results = grid.fit(dev).results_
 
-    ax = results.plot(x='earliest_age', y='bondy_exponent', title='Bondy Assumption Sensitivity')
-    results.plot(x='earliest_age', y='tail_factor', secondary_y=True, ax=ax);
+    ax = results.plot(x='earliest_age', y='bondy_exponent',
+                      title='Bondy Assumption Sensitivity', marker='o')
+    results.plot(x='earliest_age', y='tail_factor', grid=True,
+                 secondary_y=True, ax=ax, marker='o');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.076 seconds)
+   **Total running time of the script:** ( 0 minutes  0.472 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bondy_sensitivity.py:

@@ -24,22 +24,30 @@ choice.
     :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
 
 
+    [Text(0,0.5,'IBNR')]
+
+
+
+
+
+|
 
 
 .. code-block:: default
 
     import chainladder as cl
 
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    sns.set_style('whitegrid')
-
     # Load Data
-    clrd = cl.load_dataset('clrd')
-    medmal_paid = clrd.groupby('LOB').sum().loc['medmal']['CumPaidLoss']
-    medmal_prem = clrd.groupby('LOB').sum().loc['medmal']['EarnedPremDIR'].latest_diagonal
+    clrd = cl.load_sample('clrd')
+    medmal_paid = clrd.groupby('LOB').sum().loc['medmal', 'CumPaidLoss']
+    medmal_prem = clrd.groupby('LOB').sum().loc['medmal', 'EarnedPremDIR'].latest_diagonal
     medmal_prem.rename('development', ['premium'])
 
     # Generate LDFs and Tail Factor
@@ -58,14 +66,13 @@ choice.
     grid.fit(medmal_paid, sample_weight=medmal_prem)
 
     # Plot data
-    grid.results_.pivot(index='n_iters', columns='apriori', values='IBNR').plot()
-    plt.title('Benktander convergence to Chainladder')
-    g = plt.ylabel('IBNR')
+    grid.results_.pivot(index='n_iters', columns='apriori', values='IBNR').plot(
+        title='Benktander convergence to Chainladder', grid=True).set(ylabel='IBNR')
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  28.456 seconds)
+   **Total running time of the script:** ( 0 minutes  7.840 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_benktander.py:

@@ -164,7 +164,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Utilities <utils>`
+    :ref:`Utilities <utils_toc>`
 
     .. raw:: html
 
@@ -173,9 +173,9 @@
         <p>Other useful tid-bits</p>
         <div class="box-links">
         <strong>Application</strong>: Reporting and Communication</br>
-        <strong>Modules</strong>:&nbsp;
+        <strong>Utilities</strong>:&nbsp;
 
-    :ref:`Exhibits<exhibits>`, On-leveling, ...
+    :ref:`Exhibits<exhibits>`, :ref:`load_sample<samples>`, ...
 
     .. raw:: html
 

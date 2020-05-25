@@ -17,7 +17,7 @@ See :ref:`Exhibits<exhibits>` for more detail.
 import chainladder as cl
 import pandas as pd
 
-clrd = cl.load_dataset('clrd').groupby('LOB').sum()['CumPaidLoss']
+clrd = cl.load_sample('clrd').groupby('LOB').sum()['CumPaidLoss']
 
 # Line of Business Dictionary for looping
 lobs = dict(comauto='Commercial Auto',

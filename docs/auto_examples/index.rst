@@ -33,26 +33,6 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates one of the attributes of the ClarkLDF. We can use the growth curve G_...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_clarkldf
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
 
 .. only:: html
@@ -70,6 +50,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_triangle_slicing
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates one of the attributes of the ClarkLDF. We can use the growth curve G_...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_clarkldf
 
 .. raw:: html
 
@@ -113,13 +113,13 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Although triangles have both origin and development attributes, it is often convenient to creat...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the output of one method as the apriori selection...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exposure_triangle_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
+     :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
 
 .. raw:: html
 
@@ -129,27 +129,7 @@ Gallery of Chainladder Functionality
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_exposure_triangle
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_development_periods.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_development_periods
+   /auto_examples/plot_bf_apriori_from_cl
 
 .. raw:: html
 
@@ -173,13 +153,13 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the output of one method as the apriori selection...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+     :ref:`sphx_glr_auto_examples_plot_development_periods.py`
 
 .. raw:: html
 
@@ -189,17 +169,17 @@ Gallery of Chainladder Functionality
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_bf_apriori_from_cl
+   /auto_examples/plot_development_periods
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the TailBondy estimator as well as passing multiple scor...">
+    <div class="sphx-glr-thumbcontainer" tooltip="Although triangles have both origin and development attributes, it is often convenient to creat...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bondy_sensitivity_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exposure_triangle_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
+     :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
 
 .. raw:: html
 
@@ -209,7 +189,7 @@ Gallery of Chainladder Functionality
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_bondy_sensitivity
+   /auto_examples/plot_exposure_triangle
 
 .. raw:: html
 
@@ -233,6 +213,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the TailBondy estimator as well as passing multiple scor...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bondy_sensitivity_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_bondy_sensitivity
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can drop the outlier link ratios from the BootstrapODPSample ...">
 
 .. only:: html
@@ -250,6 +250,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_bootstrap_comparison
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_ave_analysis
 
 .. raw:: html
 
@@ -273,13 +293,13 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
 
-     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+     :ref:`sphx_glr_auto_examples_plot_benktander.py`
 
 .. raw:: html
 
@@ -289,7 +309,7 @@ Gallery of Chainladder Functionality
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_ave_analysis
+   /auto_examples/plot_benktander
 
 .. raw:: html
 
@@ -330,26 +350,6 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_bootstrap
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
-
-     :ref:`sphx_glr_auto_examples_plot_benktander.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_benktander
 
 .. raw:: html
 

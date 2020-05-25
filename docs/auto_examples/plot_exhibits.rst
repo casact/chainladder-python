@@ -34,7 +34,7 @@ See :ref:`Exhibits<exhibits>` for more detail.
     import chainladder as cl
     import pandas as pd
 
-    clrd = cl.load_dataset('clrd').groupby('LOB').sum()['CumPaidLoss']
+    clrd = cl.load_sample('clrd').groupby('LOB').sum()['CumPaidLoss']
 
     # Line of Business Dictionary for looping
     lobs = dict(comauto='Commercial Auto',
@@ -80,7 +80,7 @@ See :ref:`Exhibits<exhibits>` for more detail.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.234 seconds)
+   **Total running time of the script:** ( 0 minutes  2.894 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_exhibits.py:
