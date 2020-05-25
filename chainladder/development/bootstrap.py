@@ -63,6 +63,8 @@ class BootstrapODPSample(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         xp = cp.get_array_module(X.values)
+        if X.shape[:2] != (1, 1):
+            raise ValueError('Only single index/column triangles are supported')
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         obj = copy.copy(X)
@@ -100,9 +102,6 @@ class BootstrapODPSample(DevelopmentBase):
     def _get_simulation(self, X, exp_incr_triangle):
         xp = cp.get_array_module(X.values)
         k_value = 1  # for ODP Poisson
-        if X.shape[:2] != (1, 1):
-            raise ValueError('Only single index/column triangles are ',
-                             'supported')
         unscaled_residuals = \
             ((X.cum_to_incr().values - exp_incr_triangle) /
              xp.sqrt(xp.abs(exp_incr_triangle**k_value)))[0, 0, ...]

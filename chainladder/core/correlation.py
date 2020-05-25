@@ -67,10 +67,10 @@ class DevelopmentCorrelation:
 
 class ValuationCorrelation:
     """
-    Mack (1997) test for calendar year effect
-    A calendar period has impact across developments if the probability of
-    the number of small (or large) development factors, Z, in that period
-    occurring randomly is less than p_critical
+    Mack (1997) test for calendar year effect.A calendar period has impact
+    across developments if the probability of the number of small (or large)
+    development factors, Z, in that period occurring randomly is less than
+    `p_critical`
 
     Parameters
     ----------

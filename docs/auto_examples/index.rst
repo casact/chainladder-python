@@ -33,6 +33,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates one of the attributes of the ClarkLDF. We can use the growth curve G_...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_clarkldf
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
 
 .. only:: html
@@ -270,6 +290,26 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_ave_analysis
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to recreate the normalized residual plots in Clarks LDF Curve-Fit...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_resid_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_clarkldf_resid
 
 .. raw:: html
 

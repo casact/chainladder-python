@@ -40,7 +40,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Development Patterns<development>`
+    :ref:`Development Patterns<development_toc>`
 
     .. raw:: html
 
@@ -70,7 +70,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Tail Factors <tails>`
+    :ref:`Tail Factors <tails_toc>`
 
     .. raw:: html
 

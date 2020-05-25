@@ -43,7 +43,8 @@ responsive than the Bornhuetter-Ferguson technique and more stable
 than the development technique. It is also known as the interated BF method.
 The generalized formula is:
 
-:math:`\\sum_{k=0}^{n-1}(1-\\frac{1}{CDF}) + Apriori\\times (1-\\frac{1}{CDF})^{n}`
+.. math::
+   \\sum_{k=0}^{n-1}(1-\\frac{1}{CDF}) + Apriori\\times (1-\\frac{1}{CDF})^{n}
 
 `n=1` yields the traditional BF method, and when `n` is sufficiently large, the
 method converges to the traditional CL method.

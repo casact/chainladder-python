@@ -56,6 +56,7 @@ Classes
   MunichAdjustment
   BootstrapODPSample
   IncrementalAdditive
+  ClarkLDF
 
 
 .. _tails_ref:
@@ -79,6 +80,7 @@ Classes
   TailConstant
   TailCurve
   TailBondy
+  TailClark
 
 
 .. _methods_ref:

@@ -11,6 +11,16 @@ import joblib
 
 class TriangleIO():
     def to_pickle(self, path, protocol=None):
+        ''' Serializes triangle object to pickle.
+
+        Parameters
+        ----------
+        path : str
+            File path and name of pickle object.
+        protocol :
+            The pickle protocol to use.
+
+        '''
         joblib.dump(self, filename=path, protocol=protocol)
 
     def to_json(self):
@@ -73,6 +83,15 @@ class EstimatorIO:
     '''
 
     def to_pickle(self, path, protocol=None):
+        ''' Serializes triangle object to pickle.
+
+        Parameters
+        ----------
+        path : str
+            File path and name of pickle object.
+        protocol :
+            The pickle protocol to use.
+        '''
         joblib.dump(self, filename=path, protocol=protocol)
 
     def to_json(self):

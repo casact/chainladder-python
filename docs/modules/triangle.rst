@@ -2,8 +2,8 @@
 
 .. currentmodule:: chainladder
 
-The Triangle
-==============
+Triangle
+========
 
 Structure
 ---------
