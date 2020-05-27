@@ -1,0 +1,61 @@
+
+
+Examples using ``chainladder.core.TriangleDunders.latest_diagonal``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates testing multiple number of periods in the development transformer to ...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
+     :alt: Basic Assumption Tuning with Pipeline and Gridsearch
+
+     :ref:`sphx_glr_auto_examples_plot_development_periods.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_development_periods.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+     :alt: Actual Vs Expected Analysis
+
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
+     :alt: Stochastic Bornhuetter Ferguson
+
+     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`

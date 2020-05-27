@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_ave_analysis.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_ave_analysis.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_ave_analysis.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_ave_analysis.py:
 
 
 ===========================
@@ -18,6 +20,7 @@ payment patterns for the demo.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_ave_analysis_001.png
+    :alt: Calendar Period 1997 Performance
     :class: sphx-glr-single-img
 
 
@@ -67,7 +70,7 @@ payment patterns for the demo.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.056 seconds)
+   **Total running time of the script:** ( 0 minutes  1.524 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_ave_analysis.py:
@@ -80,13 +83,13 @@ payment patterns for the demo.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_ave_analysis.py <plot_ave_analysis.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_ave_analysis.ipynb <plot_ave_analysis.ipynb>`
 

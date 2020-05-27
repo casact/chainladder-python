@@ -5,11 +5,50 @@ Examples using ``chainladder.Benktander``
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the output of one method as the apriori selection...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
+     :alt: Picking Bornhuetter-Ferguson Apriori
+
+     :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
+     :alt: Stochastic Bornhuetter Ferguson
+
+     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
 
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+     :alt: Benktander: Relationship between Chainladder and BornhuetterFerguson
 
      :ref:`sphx_glr_auto_examples_plot_benktander.py`
 

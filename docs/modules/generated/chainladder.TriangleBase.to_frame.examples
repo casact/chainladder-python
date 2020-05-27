@@ -1,0 +1,80 @@
+
+
+Examples using ``chainladder.TriangleBase.to_frame``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the output of one method as the apriori selection...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
+     :alt: Picking Bornhuetter-Ferguson Apriori
+
+     :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can drop the outlier link ratios from the BootstrapODPSample ...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_comparison_thumb.png
+     :alt: ODP Bootstrap Comparison
+
+     :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+     :alt: Actual Vs Expected Analysis
+
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to adjust LDFs by the relationship between Paid and Incurred usin...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_thumb.png
+     :alt: Munich Adjustment Example
+
+     :ref:`sphx_glr_auto_examples_plot_munich.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_munich.py`

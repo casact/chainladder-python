@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_ibnr_runoff.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_ibnr_runoff.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_ibnr_runoff.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_ibnr_runoff.py:
 
 
 ============
@@ -19,6 +21,7 @@ create a calendar year runoff of IBNR.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_ibnr_runoff_001.png
+    :alt: GenIns: IBNR Run-off
     :class: sphx-glr-single-img
 
 
@@ -64,7 +67,7 @@ create a calendar year runoff of IBNR.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.375 seconds)
+   **Total running time of the script:** ( 0 minutes  0.564 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_ibnr_runoff.py:
@@ -77,13 +80,13 @@ create a calendar year runoff of IBNR.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_ibnr_runoff.py <plot_ibnr_runoff.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_ibnr_runoff.ipynb <plot_ibnr_runoff.ipynb>`
 

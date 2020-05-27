@@ -25,20 +25,21 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
 
     Attributes
     ----------
-    basic_cdf_ :Triangle
+    basic_cdf_ : Triangle
         The univariate cumulative development patterns
-    basic_sigma_: Triangle
+    basic_sigma_ : Triangle
         Sigma of the univariate ldf regression
-    resids_ :
-        Residuals of the univariate ldf refression
+    resids_ : Triangle
+        Residuals of the univariate ldf regression
     q_ : Triangle
         chainladder age-to-age factors of the paid/incurred triangle and its
-        inverse.
+        inverse.  For paid measures it is (P/I) and for incurred measures it is
+        (I/P).
     q_resids_ : Triangle
         Residuals of q regression.
     rho_ : Triangle
-        Estimated conditional deviation around the q_
-    lambda_ : Triangle
+        Estimated conditional deviation around ``q_``
+    lambda_ : Series or DataFrame
         Dependency coefficient between univariate chainladder link ratios and
         `q_resids_`
     ldf_ : Triangle

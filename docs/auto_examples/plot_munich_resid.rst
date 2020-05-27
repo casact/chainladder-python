@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_munich_resid.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_munich_resid.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_munich_resid.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_munich_resid.py:
 
 
 ====================================
@@ -17,6 +19,7 @@ of the Munich Chainladder paper.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_munich_resid_001.png
+    :alt: Munich Chainladder Residual Correlations, Paid, Incurred
     :class: sphx-glr-single-img
 
 
@@ -82,7 +85,7 @@ of the Munich Chainladder paper.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.449 seconds)
+   **Total running time of the script:** ( 0 minutes  0.499 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_munich_resid.py:
@@ -95,13 +98,13 @@ of the Munich Chainladder paper.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_munich_resid.py <plot_munich_resid.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_munich_resid.ipynb <plot_munich_resid.ipynb>`
 

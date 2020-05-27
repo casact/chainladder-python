@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_munich.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_munich.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_munich.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_munich.py:
 
 
 =========================
@@ -18,6 +20,7 @@ and Incurred using the MunichAdjustment.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_munich_001.png
+    :alt: Munich Chainladder, P/I Ratio Comparison
     :class: sphx-glr-single-img
 
 
@@ -27,6 +30,8 @@ and Incurred using the MunichAdjustment.
 
  .. code-block:: none
 
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\munich.py:53: UserWarning: paid_to_incurred dict argument is deprecated, use tuple instead
+      warnings.warn("paid_to_incurred dict argument is deprecated, use tuple instead")
 
     [Text(0,0.5,'Paid Ultimate / Incurred Ultimate'), Text(0.5,0,'Accident Year')]
 
@@ -77,7 +82,7 @@ and Incurred using the MunichAdjustment.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.516 seconds)
+   **Total running time of the script:** ( 0 minutes  0.524 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_munich.py:
@@ -90,13 +95,13 @@ and Incurred using the MunichAdjustment.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_munich.py <plot_munich.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_munich.ipynb <plot_munich.ipynb>`
 

@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_triangle_slicing.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_triangle_slicing.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_triangle_slicing.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_triangle_slicing.py:
 
 
 ================================
@@ -18,6 +20,7 @@ This example demonstrates the familiarity of the pandas API applied to a
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_triangle_slicing_001.png
+    :alt: Medical Malpractice Link Ratios
     :class: sphx-glr-single-img
 
 
@@ -50,7 +53,7 @@ This example demonstrates the familiarity of the pandas API applied to a
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.101 seconds)
+   **Total running time of the script:** ( 0 minutes  1.131 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_triangle_slicing.py:
@@ -63,13 +66,13 @@ This example demonstrates the familiarity of the pandas API applied to a
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_triangle_slicing.py <plot_triangle_slicing.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_triangle_slicing.ipynb <plot_triangle_slicing.ipynb>`
 

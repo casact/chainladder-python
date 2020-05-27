@@ -1,0 +1,42 @@
+
+
+Examples using ``chainladder.TriangleBase.dev_to_val``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="All IBNR models spin off several results triangles including inbr_, ultimate_, full_expectation...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ibnr_runoff_thumb.png
+     :alt: IBNR Runoff
+
+     :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+     :alt: Actual Vs Expected Analysis
+
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`

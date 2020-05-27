@@ -1,0 +1,61 @@
+
+
+Examples using ``chainladder.core.TrianglePandas``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
+     :alt: Pandas-style slicing of Triangle
+
+     :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Although triangles have both origin and development attributes, it is often convenient to creat...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exposure_triangle_thumb.png
+     :alt: Exposure Triangle
+
+     :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
+     :alt: Basic Triangle Creation
+
+     :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`

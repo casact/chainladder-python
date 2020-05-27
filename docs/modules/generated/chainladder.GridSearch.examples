@@ -10,6 +10,7 @@ Examples using ``chainladder.GridSearch``
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
+     :alt: Basic Assumption Tuning with Pipeline and Gridsearch
 
      :ref:`sphx_glr_auto_examples_plot_development_periods.py`
 
@@ -20,3 +21,41 @@ Examples using ``chainladder.GridSearch``
 .. only:: not html
 
  * :ref:`sphx_glr_auto_examples_plot_development_periods.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the TailBondy estimator as well as passing multiple scor...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bondy_sensitivity_thumb.png
+     :alt: Testing Sensitivity of Bondy Tail Assumptions
+
+     :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+     :alt: Benktander: Relationship between Chainladder and BornhuetterFerguson
+
+     :ref:`sphx_glr_auto_examples_plot_benktander.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_benktander.py`

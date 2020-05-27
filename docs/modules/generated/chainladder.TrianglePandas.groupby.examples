@@ -1,0 +1,61 @@
+
+
+Examples using ``chainladder.TrianglePandas.groupby``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
+     :alt: Pandas-style slicing of Triangle
+
+     :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can slice triangle objects to perform a typical &#x27;Actual vs Ex...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+     :alt: Actual Vs Expected Analysis
+
+     :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+     :alt: Benktander: Relationship between Chainladder and BornhuetterFerguson
+
+     :ref:`sphx_glr_auto_examples_plot_benktander.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_benktander.py`

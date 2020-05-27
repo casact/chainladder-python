@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_bf_apriori_from_cl.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_bf_apriori_from_cl.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_bf_apriori_from_cl.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_bf_apriori_from_cl.py:
 
 
 ====================================
@@ -17,6 +19,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_bf_apriori_from_cl_001.png
+    :alt: plot bf apriori from cl
     :class: sphx-glr-single-img
 
 
@@ -57,7 +60,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.350 seconds)
+   **Total running time of the script:** ( 0 minutes  0.446 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bf_apriori_from_cl.py:
@@ -70,13 +73,13 @@ apriori selection for the Bornhuetter-Ferguson Method.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_bf_apriori_from_cl.py <plot_bf_apriori_from_cl.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_bf_apriori_from_cl.ipynb <plot_bf_apriori_from_cl.ipynb>`
 

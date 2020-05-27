@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_capecod.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_capecod.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_capecod.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_capecod.py:
 
 
 ======================================
@@ -18,6 +20,7 @@ and ``decay``.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_capecod_001.png
+    :alt: Private Passenger Auto Cape Cod Detrended Aprioris, Trend: -5%, Trend: -2.5%, Trend: 0.0%, Trend: 2.5%
     :class: sphx-glr-single-img
 
 
@@ -77,7 +80,7 @@ and ``decay``.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.765 seconds)
+   **Total running time of the script:** ( 0 minutes  3.776 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_capecod.py:
@@ -90,13 +93,13 @@ and ``decay``.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_capecod.py <plot_capecod.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_capecod.ipynb <plot_capecod.ipynb>`
 

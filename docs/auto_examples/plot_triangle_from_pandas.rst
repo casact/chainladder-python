@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_triangle_from_pandas.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_triangle_from_pandas.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_triangle_from_pandas.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_triangle_from_pandas.py:
 
 
 =======================
@@ -23,6 +25,7 @@ in the CAS Loss Reserve Database for Workers' Compensation.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_triangle_from_pandas_001.png
+    :alt: CAS Loss Reserve Database: Workers Compensation
     :class: sphx-glr-single-img
 
 
@@ -106,7 +109,7 @@ in the CAS Loss Reserve Database for Workers' Compensation.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.859 seconds)
+   **Total running time of the script:** ( 0 minutes  3.061 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_triangle_from_pandas.py:
@@ -119,13 +122,13 @@ in the CAS Loss Reserve Database for Workers' Compensation.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_triangle_from_pandas.py <plot_triangle_from_pandas.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_triangle_from_pandas.ipynb <plot_triangle_from_pandas.ipynb>`
 

@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_bootstrap_comparison.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_bootstrap_comparison.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_bootstrap_comparison.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_bootstrap_comparison.py:
 
 
 ========================
@@ -18,6 +20,7 @@ BootstrapODPSample to reduce reserve variability estimates.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_bootstrap_comparison_001.png
+    :alt: plot bootstrap comparison
     :class: sphx-glr-single-img
 
 
@@ -72,7 +75,7 @@ BootstrapODPSample to reduce reserve variability estimates.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.724 seconds)
+   **Total running time of the script:** ( 0 minutes  4.983 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap_comparison.py:
@@ -85,13 +88,13 @@ BootstrapODPSample to reduce reserve variability estimates.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_bootstrap_comparison.py <plot_bootstrap_comparison.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_bootstrap_comparison.ipynb <plot_bootstrap_comparison.ipynb>`
 

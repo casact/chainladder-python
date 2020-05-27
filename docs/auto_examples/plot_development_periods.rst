@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_development_periods.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_development_periods.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_development_periods.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_development_periods.py:
 
 
 ====================================================
@@ -17,6 +19,7 @@ transformer to see its influence on the overall ultimate estimate.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_development_periods_001.png
+    :alt: plot development periods
     :class: sphx-glr-single-img
 
 
@@ -64,7 +67,7 @@ transformer to see its influence on the overall ultimate estimate.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.967 seconds)
+   **Total running time of the script:** ( 0 minutes  1.051 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_development_periods.py:
@@ -77,13 +80,13 @@ transformer to see its influence on the overall ultimate estimate.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_development_periods.py <plot_development_periods.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_development_periods.ipynb <plot_development_periods.ipynb>`
 

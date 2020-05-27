@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_bootstrap.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_bootstrap.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_bootstrap.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_bootstrap.py:
 
 
 ======================
@@ -17,6 +19,7 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_bootstrap_001.png
+    :alt: Raw Data, Mean Simulation, Simulated LDF, Age 12-24 LDF Distribution
     :class: sphx-glr-single-img
 
 
@@ -70,7 +73,7 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.559 seconds)
+   **Total running time of the script:** ( 0 minutes  3.661 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap.py:
@@ -83,13 +86,13 @@ Bootstrap sampler and get various properties about parameter uncertainty.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_bootstrap.py <plot_bootstrap.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_bootstrap.ipynb <plot_bootstrap.ipynb>`
 

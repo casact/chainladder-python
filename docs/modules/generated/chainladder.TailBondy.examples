@@ -10,6 +10,7 @@ Examples using ``chainladder.TailBondy``
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bondy_sensitivity_thumb.png
+     :alt: Testing Sensitivity of Bondy Tail Assumptions
 
      :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
 

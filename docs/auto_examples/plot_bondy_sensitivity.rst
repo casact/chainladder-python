@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_bondy_sensitivity.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_bondy_sensitivity.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_bondy_sensitivity.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_bondy_sensitivity.py:
 
 
 ===============================================
@@ -17,6 +19,7 @@ passing multiple scoring functions to `GridSearch`.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_bondy_sensitivity_001.png
+    :alt: Bondy Assumption Sensitivity
     :class: sphx-glr-single-img
 
 
@@ -27,7 +30,7 @@ passing multiple scoring functions to `GridSearch`.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x0000025C11F30A90>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x0000018DC2419DD8>
 
 
 
@@ -64,7 +67,7 @@ passing multiple scoring functions to `GridSearch`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.472 seconds)
+   **Total running time of the script:** ( 0 minutes  1.008 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bondy_sensitivity.py:
@@ -77,13 +80,13 @@ passing multiple scoring functions to `GridSearch`.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_bondy_sensitivity.py <plot_bondy_sensitivity.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_bondy_sensitivity.ipynb <plot_bondy_sensitivity.ipynb>`
 

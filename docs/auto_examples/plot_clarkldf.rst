@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_clarkldf.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_clarkldf.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_clarkldf.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_clarkldf.py:
 
 
 ====================
@@ -18,6 +20,7 @@ age.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_clarkldf_001.png
+    :alt: Loglogistic Growth Curves
     :class: sphx-glr-single-img
 
 
@@ -61,7 +64,7 @@ age.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.185 seconds)
+   **Total running time of the script:** ( 0 minutes  1.431 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_clarkldf.py:
@@ -74,13 +77,13 @@ age.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_clarkldf.py <plot_clarkldf.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_clarkldf.ipynb <plot_clarkldf.ipynb>`
 

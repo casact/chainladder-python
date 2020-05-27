@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_benktander.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_benktander.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_benktander.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_benktander.py:
 
 
 ====================================================================
@@ -21,6 +23,7 @@ choice.
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_benktander_001.png
+    :alt: Benktander convergence to Chainladder
     :class: sphx-glr-single-img
 
 
@@ -72,7 +75,7 @@ choice.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.840 seconds)
+   **Total running time of the script:** ( 0 minutes  8.347 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_benktander.py:
@@ -85,13 +88,13 @@ choice.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_benktander.py <plot_benktander.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_benktander.ipynb <plot_benktander.ipynb>`
 

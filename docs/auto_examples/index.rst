@@ -18,6 +18,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_industry_to_company_thumb.png
+     :alt: Using Industry Patterns on a Company
 
      :ref:`sphx_glr_auto_examples_plot_industry_to_company.py`
 
@@ -38,6 +39,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_slicing_thumb.png
+     :alt: Pandas-style slicing of Triangle
 
      :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py`
 
@@ -58,6 +60,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_thumb.png
+     :alt: Clark Growth Curves
 
      :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
 
@@ -78,6 +81,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_value_at_risk_thumb.png
+     :alt: Value at Risk example
 
      :ref:`sphx_glr_auto_examples_plot_value_at_risk.py`
 
@@ -98,6 +102,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ibnr_runoff_thumb.png
+     :alt: IBNR Runoff
 
      :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
 
@@ -118,6 +123,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
+     :alt: Picking Bornhuetter-Ferguson Apriori
 
      :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
 
@@ -138,6 +144,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_mack_thumb.png
+     :alt: Mack Chainladder Example
 
      :ref:`sphx_glr_auto_examples_plot_mack.py`
 
@@ -158,6 +165,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_development_periods_thumb.png
+     :alt: Basic Assumption Tuning with Pipeline and Gridsearch
 
      :ref:`sphx_glr_auto_examples_plot_development_periods.py`
 
@@ -178,6 +186,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exposure_triangle_thumb.png
+     :alt: Exposure Triangle
 
      :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py`
 
@@ -198,6 +207,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_triangle_from_pandas_thumb.png
+     :alt: Basic Triangle Creation
 
      :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py`
 
@@ -218,6 +228,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bondy_sensitivity_thumb.png
+     :alt: Testing Sensitivity of Bondy Tail Assumptions
 
      :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py`
 
@@ -238,6 +249,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_comparison_thumb.png
+     :alt: ODP Bootstrap Comparison
 
      :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
 
@@ -258,6 +270,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ave_analysis_thumb.png
+     :alt: Actual Vs Expected Analysis
 
      :ref:`sphx_glr_auto_examples_plot_ave_analysis.py`
 
@@ -278,6 +291,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
+     :alt: Stochastic Bornhuetter Ferguson
 
      :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
 
@@ -298,6 +312,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_benktander_thumb.png
+     :alt: Benktander: Relationship between Chainladder and BornhuetterFerguson
 
      :ref:`sphx_glr_auto_examples_plot_benktander.py`
 
@@ -318,6 +333,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_resid_thumb.png
+     :alt: Clark Residual Plots
 
      :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py`
 
@@ -338,6 +354,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
+     :alt: ODP Bootstrap Example
 
      :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
 
@@ -358,6 +375,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_thumb.png
+     :alt: Munich Adjustment Example
 
      :ref:`sphx_glr_auto_examples_plot_munich.py`
 
@@ -378,6 +396,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_resid_thumb.png
+     :alt: Munich Chainladder Correlation Plots
 
      :ref:`sphx_glr_auto_examples_plot_munich_resid.py`
 
@@ -398,6 +417,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
+     :alt: Analyzing Cape Cod Apriori Sensitivity
 
      :ref:`sphx_glr_auto_examples_plot_capecod.py`
 
@@ -418,6 +438,7 @@ Gallery of Chainladder Functionality
 .. only:: html
 
  .. figure:: /auto_examples/images/thumb/sphx_glr_plot_exhibits_thumb.png
+     :alt: Sample Excel Exhibit functionality
 
      :ref:`sphx_glr_auto_examples_plot_exhibits.py`
 
@@ -442,13 +463,13 @@ Gallery of Chainladder Functionality
     :class: sphx-glr-footer-gallery
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
     :download:`Download all examples in Python source code: auto_examples_python.zip </C:/Users/jboga/OneDrive/Documents/GitHub/chainladder-python/docs/auto_examples/auto_examples_python.zip>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
     :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip </C:/Users/jboga/OneDrive/Documents/GitHub/chainladder-python/docs/auto_examples/auto_examples_jupyter.zip>`
 

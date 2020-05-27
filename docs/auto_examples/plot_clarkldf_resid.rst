@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_auto_examples_plot_clarkldf_resid.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_auto_examples_plot_clarkldf_resid.py:
+        Click :ref:`here <sphx_glr_download_auto_examples_plot_clarkldf_resid.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_auto_examples_plot_clarkldf_resid.py:
 
 
 ====================
@@ -17,6 +19,7 @@ Clarks LDF Curve-Fitting paper (2003).
 
 
 .. image:: /auto_examples/images/sphx_glr_plot_clarkldf_resid_001.png
+    :alt: Clark LDF Normalized Residual Plots
     :class: sphx-glr-single-img
 
 
@@ -71,7 +74,7 @@ Clarks LDF Curve-Fitting paper (2003).
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.318 seconds)
+   **Total running time of the script:** ( 0 minutes  0.388 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_clarkldf_resid.py:
@@ -84,13 +87,13 @@ Clarks LDF Curve-Fitting paper (2003).
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: plot_clarkldf_resid.py <plot_clarkldf_resid.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: plot_clarkldf_resid.ipynb <plot_clarkldf_resid.ipynb>`
 
