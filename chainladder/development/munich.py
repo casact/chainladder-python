@@ -8,22 +8,49 @@ from chainladder.core import EstimatorIO
 import numpy as np
 from chainladder.utils.cupy import cp
 import copy
+import warnings
 
 
 class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
     """Applies the Munich Chainladder adjustment to a set of paid/incurred
-       ldfs.
+       ldfs.  The Munich method heavily relies on the ratio of paid/incurred
+       and its inverse.
 
     Parameters
     ----------
-    paid_to_incurred : dict
+    paid_to_incurred : tuple or list of tuples
         A dictionary representing the ``values`` of paid and incurred triangles
         where ``values`` are an appropriate selection from :class:`Triangle`
-        ``.values``, such as ``{'paid':'incurred'}``
+        ``.values``, such as ``('paid', 'incurred')``
 
+    Attributes
+    ----------
+    basic_cdf_ :Triangle
+        The univariate cumulative development patterns
+    basic_sigma_: Triangle
+        Sigma of the univariate ldf regression
+    resids_ :
+        Residuals of the univariate ldf refression
+    q_ : Triangle
+        chainladder age-to-age factors of the paid/incurred triangle and its
+        inverse.
+    q_resids_ : Triangle
+        Residuals of q regression.
+    rho_ : Triangle
+        Estimated conditional deviation around the q_
+    lambda_ : Triangle
+        Dependency coefficient between univariate chainladder link ratios and
+        `q_resids_`
+    ldf_ : Triangle
+        The estimated bivariate loss development patterns
+    cdf_ : Triangle
+        The estimated bivariate cumulative development patterns
 
     """
     def __init__(self, paid_to_incurred):
+        if type(paid_to_incurred) is dict:
+            warnings.warn("paid_to_incurred dict argument is deprecated, use tuple instead")
+            paid_to_incurred = [(k, v) for k, v in paid_to_incurred.items()]
         self.paid_to_incurred = paid_to_incurred
 
     def fit(self, X, y=None, sample_weight=None):
@@ -41,9 +68,9 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         self : object
             Returns the instance itself.
         """
-        if (type(X.ddims) != np.ndarray):
-            raise ValueError('Triangle must be expressed with development lags')
-        obj = copy.copy(X)
+
+
+        obj = copy.deepcopy(X)
         xp = cp.get_array_module(obj.values)
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
@@ -51,9 +78,17 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         self.p_to_i_ldf_ = self._get_p_to_i_object(obj.ldf_)
         self.p_to_i_sigma_ = self._get_p_to_i_object(obj.sigma_)
         self.q_f_, self.rho_sigma_ = self._get_MCL_model(obj)
-        self.residual_, self.q_resid_ = self._get_MCL_residuals(obj)
+        self.residual_, self.q_resid_ = self._get_MCL_resids(obj)
         self.lambda_coef_ = self._get_MCL_lambda()
         self.cdf_ = self._get_cdf(obj)
+        self.ldf_ = self._set_ldf(X)
+        self._map = {
+            (list(X.columns).index(x)): (num%2, num//2)
+            for num, x in enumerate(np.array(self.paid_to_incurred).flatten())}
+        self.rho_ = copy.deepcopy(X)
+        self.rho_.odims = ['(All)']
+        self.rho_.values = self._reshape('rho_sigma_')
+
         return self
 
     def transform(self, X):
@@ -74,12 +109,16 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         return X
 
     def _get_p_to_i_object(self, obj):
+        if type(self.paid_to_incurred) is tuple:
+            p_to_i = [self.paid_to_incurred]
+        else:
+            p_to_i = self.paid_to_incurred
         xp = cp.get_array_module(obj.values)
-        paid = obj[list(self.paid_to_incurred.keys())[0]]
-        for item in list(self.paid_to_incurred.keys())[1:]:
+        paid = obj[[item[0] for item in p_to_i][0]]
+        for item in [item[0] for item in p_to_i][1:]:
             paid[item] = obj[item]
-        incurred = obj[list(self.paid_to_incurred.values())[0]]
-        for item in list(self.paid_to_incurred.values())[1:]:
+        incurred = obj[[item[1] for item in p_to_i][0]]
+        for item in [item[1] for item in p_to_i][1:]:
             incurred[item] = obj[item]
         paid = paid.values[xp.newaxis]
         incurred = incurred.values[xp.newaxis]
@@ -100,7 +139,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_)
         return xp.swapaxes(q_f, -1, -2), xp.swapaxes(rho_sigma, -1, -2)
 
-    def _get_MCL_residuals(self, X):
+    def _get_MCL_resids(self, X):
         xp = cp.get_array_module(X.values)
         p_to_i_ata = self._get_p_to_i_object(X.link_ratio)
         p_to_i_ldf = self.p_to_i_ldf_
@@ -108,18 +147,18 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         paid, incurred = self.p_to_i_X_[0], self.p_to_i_X_[1]
         p_to_i_ldf = xp.unique(p_to_i_ldf, axis=-2)  # May cause issues later
         p_to_i_sigma = xp.unique(p_to_i_sigma, axis=-2)  # May cause issues
-        residualP = (p_to_i_ata[0]-p_to_i_ldf[0]) / \
+        residP = (p_to_i_ata[0]-p_to_i_ldf[0]) / \
             p_to_i_sigma[0]*xp.sqrt(paid[..., :-1, :-1])
-        residualI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
+        residI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
             p_to_i_sigma[1]*xp.sqrt(incurred[..., :-1, :-1])
         nans = (X-X._get_latest_diagonal(compress=False)).values[0, 0]*0+1
         q_resid = (paid/incurred - self.q_f_[1]) / \
             self.rho_sigma_[1]*xp.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \
             self.rho_sigma_[0]*xp.sqrt(paid)*nans
-        residual = self._p_to_i_concate(residualP, residualI)
+        resid = self._p_to_i_concate(residP, residI)
         q_resid = self._p_to_i_concate(q_inv_resid, q_resid)
-        return residual, q_resid
+        return resid, q_resid
 
     def _get_MCL_lambda(self):
         xp = cp.get_array_module(self.residual_[1])
@@ -169,14 +208,18 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
             the cdf and ldf methods with
         '''
         obj = copy.copy(X.cdf_)
+        if type(self.paid_to_incurred) is tuple:
+            p_to_i = [self.paid_to_incurred]
+        else:
+            p_to_i = self.paid_to_incurred
         xp = cp.get_array_module(obj.values)
         cdf_triangle = self.munich_full_triangle_
         cdf_triangle = cdf_triangle[..., -1:]/cdf_triangle[..., :-1]
-        paid = list(self.paid_to_incurred.keys())
+        paid = [item[0] for item in p_to_i]
         for n, item in enumerate(paid):
             idx = np.where(X.cdf_.vdims == item)[0][0]
             obj.values[:, idx:idx+1, ...] = cdf_triangle[0, :, n:n+1, ...]
-        incurred = list(self.paid_to_incurred.values())
+        incurred = [item[1] for item in p_to_i]
         for n, item in enumerate(incurred):
             idx = np.where(X.cdf_.vdims == item)[0][0]
             obj.values[:, idx:idx+1, ...] = cdf_triangle[1, :, n:n+1, ...]
@@ -184,13 +227,61 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         obj._set_slicers()
         return obj
 
-    @property
-    def ldf_(self):
+    def _set_ldf(self, X):
         ldf_tri = self.cdf_.values.copy()
         xp = cp.get_array_module(ldf_tri)
         ldf_tri = xp.concatenate((ldf_tri, xp.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1]/ldf_tri[..., 1:]
         obj = copy.copy(self.cdf_)
         obj.values = ldf_tri
+        obj.ddims = X.link_ratio.ddims
         obj._set_slicers
+        return obj
+
+    def _reshape(self, measure):
+        map = self._map
+        return np.concatenate(
+            [getattr(self, measure)[map[k][0],:,map[k][1]:map[k][1]+1,...]
+             for k in range(len(map))], axis=1)
+
+    @property
+    def lambda_(self):
+        obj = copy.deepcopy(self.cdf_)
+        obj.odims = obj.ddims = ['(All)']
+        obj.values = self._reshape('lambda_coef_')
+        return obj.to_frame()
+
+    @property
+    def basic_cdf_(self):
+        obj = copy.deepcopy(self.ldf_)
+        obj.values = self._reshape('p_to_i_ldf_')
+        return obj
+
+    @property
+    def basic_sigma_(self):
+        obj = copy.deepcopy(self.ldf_)
+        obj.values = self._reshape('p_to_i_sigma_')
+        return obj
+
+    @property
+    def resids_(self):
+        obj = copy.deepcopy(self.ldf_)
+        obj.values = self._reshape('residual_')
+        obj.odims = self.cdf_.odims[:obj.values.shape[2]]
+        return obj
+
+    @property
+    def q_(self):
+        obj = copy.deepcopy(self.rho_)
+        obj.odims = self.cdf_.odims
+        obj.values = self._reshape('q_f_')
+        return obj
+
+    @property
+    def q_resids_(self):
+        obj = copy.deepcopy(self.ldf_)
+        obj.values = self._reshape('q_resid_')[
+            ..., :self.residual_.shape[-2], :self.residual_.shape[-1]]
+        obj.odims = obj.odims[:obj.values.shape[2]]
+        obj.ddims = obj.ddims[:obj.values.shape[3]]
         return obj

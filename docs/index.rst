@@ -70,7 +70,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Tail Factors <tails_toc>`
+    :ref:`Tail Estimation<tails_toc>`
 
     .. raw:: html
 

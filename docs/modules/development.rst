@@ -121,11 +121,29 @@ the triangle.
 
 Munich Adjustment
 ==================
+The :class:`MunichAdjustment` is a bivariate adjustment to loss development factors.
+There is a fundamental correlation between the paid and the case incurred data
+**(P/I)** of a triangle. The ratio of paid to incurred has information that can
+be used to simultaneously adjust the basic development factor selections for the
+two separate triangles.
 
-:class:`MunichAdjustment` combines the paid (P) and incurred (I) data types by taking the
-(P/I) ratio into account in its projections.  Intuitively, it is reasonable that
-information about case incurred data should be able to inform paid loss development
-and vice versa.
+Depending on whether the momentary **(P/I)** ratio is below or above average,
+one should use an above-average or below-average paid development factor and/or
+a below-average or above-average incurred development factor.  In doing so, the
+model replaces a set of development patterns that would be used for all
+`origins` with individualized development curves that reflect the unique levels
+of **(P/I)** per origin period.
+
+The :class:`MunichAdjustment` uses the correlation between the residuals of the
+univariate (basic) model and the (P/I) model.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_munich_resid_001.png
+   :target: ../auto_examples/plot_munich_resid.html
+   :align: center
+   :scale: 50%
+
+With the correlations, ``lambda_`` known, the basic development patterns can
+be adjusted based on the **(P/I)** ratio at any given cell of the ``Triangle``.
 
 .. topic:: References
 

@@ -373,6 +373,26 @@ Gallery of Chainladder Functionality
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to recreate the the residual correlation plots of the Munich Chai...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_munich_resid_thumb.png
+
+     :ref:`sphx_glr_auto_examples_plot_munich_resid.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_munich_resid
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the deterministic CapeCod method and shows the sensitivi...">
 
 .. only:: html
