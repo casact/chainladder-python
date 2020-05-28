@@ -65,7 +65,7 @@ if os.name == 'nt':
     extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
                   'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax',
                   'sphinx.ext.autosummary', 'sphinx_gallery.load_style']
-                
+
 else:
     extensions = ['sphinx.ext.autodoc', 'numpydoc', 'nbsphinx',
                   'sphinx.ext.mathjax', 'sphinx.ext.autosummary',
@@ -159,17 +159,12 @@ html_theme = 'scikit-learn'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'oldversion': False, 'collapsiblesidebar': False,
+html_theme_options = {'oldversion': False, 'collapsiblesidebar': True,
                       'google_analytics': False, 'surveybanner': False,
                       'sprintbanner': False}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = ['themes']
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
-
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = 'chainladder'
@@ -263,7 +258,7 @@ def make_carousel_thumbs(app, exception):
 
 # Config for sphinx_issues
 
-issues_uri = 'https://github.com/jbogaardt/chainladder-python/issues/{issue}'
+issues_uri = 'https://github.com/casact/chainladder-python/issues/{issue}'
 issues_github_path = 'chainladder-python/chainladder'
 issues_user_uri = 'https://github.com/{user}'
 
@@ -277,7 +272,7 @@ def setup(app):
 
 # The following is used by sphinx.ext.linkcode to provide links to github
 linkcode_resolve = make_linkcode_resolve('chainladder',
-                                         u'https://github.com/jbogaardt/'
+                                         u'https://github.com/casact/'
                                          'chainladder-python/blob/{revision}/'
                                          '{package}/{path}#L{lineno}')
 

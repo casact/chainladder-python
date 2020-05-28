@@ -5,9 +5,9 @@
 .. _sphx_glr_auto_examples:
 
 .. _general_examples:
-====================================
-Gallery of Chainladder Functionality
-====================================
+========
+Examples
+========
 
 
 
@@ -199,6 +199,27 @@ Gallery of Chainladder Functionality
    :hidden:
 
    /auto_examples/plot_exposure_triangle
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how the inverse_power curve generally produces more conservative tail...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tailcurve_compare_thumb.png
+     :alt: Tail Curve Fit Comparison
+
+     :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_tailcurve_compare
 
 .. raw:: html
 

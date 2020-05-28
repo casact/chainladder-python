@@ -2,9 +2,9 @@
 
 .. currentmodule:: chainladder
 
-=====
-Tails
-=====
+===============
+Tail Estimators
+===============
 The Tails module provides a variety of tail transformers that allow for the
 extrapolation of development patterns beyond the end of the triangle.  Tail
 factors are used extensively in commercial lines of business.
@@ -15,12 +15,46 @@ External Data
 :class:`TailConstant` allows you to input a tail factor as a constant.  This is
 useful when relying on tail selections from an external source like industry data.
 
+The tail factor supplied applies to all individual triangles contained within
+the Triangle object.  If this is not the desired outcome, slicing individual
+triangles and applying :class:`TailConstant` separately to each can be done.
+
+A ``decay`` factor parameter is also available to describe the run-off nature of
+the tail.  Although tail factors are generally specified as a CDF, the
+``chainladder`` package will expand it over a future calendar year so that
+run-off analyses can be performed.
+
+  >>> import chainladder as cl
+  >>> abc = cl.Development().fit_transform(cl.load_sample('abc'))
+  >>> abc = cl.TailConstant(tail=1.05, decay=0.95).fit_transform(abc)
+  >>> abc.ldf_
+            12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132   132-144   144-Ult
+  (All)  2.308599  1.421098  1.199934  1.113445  1.072736  1.047559  1.034211  1.026047  1.020188  1.016259  1.002436  1.047448
+
+As we can see in the example, the 5% tail in the example is split between the
+amount to run-off over the subsequent calendar period **132-144**, and the
+remainder, **144-Ult**.
+
+.. warning::
+   The `chainlader` package does not currently support any stochastic
+   paramters for :class:`TailConstant`.  This precludes the compatibility of
+   this estimator with stochastic methods such as :class:`MackChainladder`.
+
 .. _curve:
 LDF Curve Fitting
 =================
 :class:`TailCurve` allows for extrapolating a tail factor using curve fitting.
-Currently, Exponential Decay of ldfs and Inverse Power curve (for slower decay)
+Currently, exponential decay of LDFs and inverse power curve (for slower decay)
 are supported.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_tailcurve_compare_001.png
+   :target: ../auto_examples/plot_tailcurve_compare.html
+   :align: center
+   :scale: 50%
+
+In general, ``inverse_power`` fit produce more conservative tail estimates than
+the ``exponential`` fit.
+
 
 .. topic:: References
 

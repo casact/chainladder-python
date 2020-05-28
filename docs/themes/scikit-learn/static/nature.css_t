@@ -104,7 +104,7 @@ div.navbar div.nav-icon {
     display: none;
 }
 /* Nav bar collapses for mobile phones and shows the hamburger */
-@media screen and (max-width: 680px) {
+@media screen and (max-width: 720px) {
     div.header {
       height: 60px;
     }
@@ -540,9 +540,9 @@ div.body h3 {
     padding: 5px;
     border-radius: 10px;
 }
-div.body h4 { 
-    font-size: 110%; 
-    background-color: #F4F4F4; 
+div.body h4 {
+    font-size: 110%;
+    background-color: #F4F4F4;
     padding: 5px;
     border-radius: 10px;
 }

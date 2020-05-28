@@ -11,7 +11,7 @@
         <div class="span4 box">
         <h2 >
 
-    :ref:`Triangle <triangle>`
+    :ref:`Triangles <triangle>`
 
     .. raw:: html
 
@@ -40,7 +40,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Development Patterns<development_toc>`
+    :ref:`Development <development>`
 
     .. raw:: html
 
@@ -70,7 +70,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Tail Estimation<tails_toc>`
+    :ref:`Tail Estimation<tails>`
 
     .. raw:: html
 
@@ -104,7 +104,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`IBNR Models<methods_toc>`
+    :ref:`IBNR Models<ibnr>`
 
     .. raw:: html
 
@@ -164,15 +164,15 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Utilities <utils_toc>`
+    :ref:`Utilities <utils>`
 
     .. raw:: html
 
         </h2>
         <blockquote>
-        <p>Other useful tid-bits</p>
+        <p>Spreadsheets exports, sample data, and more</p>
         <div class="box-links">
-        <strong>Application</strong>: Reporting and Communication</br>
+        <strong>Application</strong>: Reporting and Communication, Training</br>
         <strong>Utilities</strong>:&nbsp;
 
     :ref:`Exhibits<exhibits>`, :ref:`load_sample<samples>`, ...

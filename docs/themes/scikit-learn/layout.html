@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="{{ pathto('_static/css/bootstrap.min.css', 1) }}" media="screen" />
   <link rel="stylesheet" href="{{ pathto('_static/css/bootstrap-responsive.css', 1) }}"/>
-  <link rel="stylesheet" href="{{ pathto('_static/css/gallery.css', 1) }}"/>
+
 {% endblock %}
 
 {% block extrahead %}
@@ -257,9 +257,7 @@
 
     {%- if pagename != "install" %}
       <p class="doc-version"><b>{{project}} v{{ release|e }}</b><br/>
-      <a href="http://scikit-learn.org/dev/versions.html">Other versions</a></p>
     {%- endif %}
-    <p class="citing">Please <b><a href="{{ pathto('about').replace('#', '') }}#citing-scikit-learn" style="font-size: 110%;">cite us </a></b>if you use the software.</p>
     {{ toc }}
     </div>
 </div>

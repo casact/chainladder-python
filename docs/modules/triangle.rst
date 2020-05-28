@@ -1,17 +1,17 @@
 .. _triangle:
 
 .. currentmodule:: chainladder
-
+========
 Triangle
 ========
 
 Structure
----------
+----------
+
 The :class:`Triangle` is the data structure of the chainladder package. Just as
 Scikit-learn likes to only consume numpy arrays, Chainladder only likes
-Triangles.  Triangle is the primary data structure in chainladder. It is a 4D
-data structure with labeled axes.  These axes are its index, columns, origin,
-development.
+Triangles.  It is a 4D data structure with labeled axes.  These axes are its
+index, columns, origin, development.
 
 ``index`` (axis 0):
     The index  is the lowest grain at which you want to manage the triangle.

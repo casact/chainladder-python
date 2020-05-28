@@ -1,7 +1,7 @@
 .. _development:
 
 ===========================
-Loss Development Estimators
+Development Estimators
 ===========================
 
 
