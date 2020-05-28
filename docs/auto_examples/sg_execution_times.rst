@@ -5,10 +5,10 @@
 
 Computation times
 =================
-**00:01.305** total execution time for **auto_examples** files:
+**00:04.047** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py` (``plot_tailcurve_compare.py``)       | 00:01.305 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_extrap_period.py` (``plot_extrap_period.py``)               | 00:04.047 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
@@ -45,6 +45,8 @@ Computation times
 | :ref:`sphx_glr_auto_examples_plot_munich_resid.py` (``plot_munich_resid.py``)                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py` (``plot_stochastic_bornferg.py``)   | 00:00.000 | 0.0 MB |
++-----------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py` (``plot_tailcurve_compare.py``)       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py` (``plot_triangle_from_pandas.py``) | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+

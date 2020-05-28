@@ -15,14 +15,21 @@ External Data
 :class:`TailConstant` allows you to input a tail factor as a constant.  This is
 useful when relying on tail selections from an external source like industry data.
 
+.. warning::
+   The chainlader package does not currently support any stochastic
+   paramters for :class:`TailConstant`.  This precludes the compatibility of
+   this estimator with stochastic methods such as :class:`MackChainladder`.
+
 The tail factor supplied applies to all individual triangles contained within
 the Triangle object.  If this is not the desired outcome, slicing individual
 triangles and applying :class:`TailConstant` separately to each can be done.
 
-A ``decay`` factor parameter is also available to describe the run-off nature of
-the tail.  Although tail factors are generally specified as a CDF, the
-``chainladder`` package will expand it over a future calendar year so that
-run-off analyses can be performed.
+Decay
+-----
+An exponential ``decay`` parameter is also available to describe the run-off nature of
+the tail.  Although tail factors are generally specified as scalar value, the
+``chainladder`` package will expand it over a single future calendar year so that
+run-off analyses can be performed for the upcoming year.
 
   >>> import chainladder as cl
   >>> abc = cl.Development().fit_transform(cl.load_sample('abc'))
@@ -33,12 +40,7 @@ run-off analyses can be performed.
 
 As we can see in the example, the 5% tail in the example is split between the
 amount to run-off over the subsequent calendar period **132-144**, and the
-remainder, **144-Ult**.
-
-.. warning::
-   The `chainlader` package does not currently support any stochastic
-   paramters for :class:`TailConstant`.  This precludes the compatibility of
-   this estimator with stochastic methods such as :class:`MackChainladder`.
+remainder, **144-Ult**.  The split is controlled by the ``decay`` parameter.
 
 .. _curve:
 LDF Curve Fitting
@@ -55,6 +57,17 @@ are supported.
 In general, ``inverse_power`` fit produce more conservative tail estimates than
 the ``exponential`` fit.
 
+Extrapolation Period
+---------------------
+The ``extrap_periods`` parameter allows for limiting how far beyond the edge of
+the triangle the tail should be extrapolated.  Results for the ``inverse_power``
+curve are sensitive to this parameter as it tends to converge slowly to its
+asymptotic value.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_extrap_period_001.png
+   :target: ../auto_examples/plot_extrap_period.html
+   :align: center
+   :scale: 50%
 
 .. topic:: References
 

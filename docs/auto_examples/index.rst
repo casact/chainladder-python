@@ -223,6 +223,27 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the extrap_periods functionality of the TailCurve estimator.  The est...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_extrap_period_thumb.png
+     :alt: Extrapolation Period Sensitivity
+
+     :ref:`sphx_glr_auto_examples_plot_extrap_period.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_extrap_period
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the typical way you&#x27;d ingest data into a Triangle. Data in tabular fo...">
 
 .. only:: html
