@@ -158,3 +158,12 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
         time_pd = (xp.log(tail-1)-reg.intercept_)/reg.slope_
         return time_pd
+
+    @property
+    def tail_(self):
+        df = self.cdf_[self.cdf_.development==
+                       self.cdf_.development.iloc[-1-self._ave_period[0]]]
+        if np.all(df.values.min(axis=-1) == df.values.max(axis=-1)):
+            df = df.T.drop_duplicates()
+            df.index = self.cdf_._idx_table().index
+        return df

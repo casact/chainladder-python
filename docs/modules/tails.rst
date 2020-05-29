@@ -78,7 +78,36 @@ asymptotic value.
 The Bondy Tail
 ==============
 :class:`TailBondy` allows for setting the tail factor using the Generalized Bondy
-method.
+method.  The main estimate of the method is the Bondy exponent.  The tail factor
+is can be described as a function of using an ``ldf_`` factor representative of the
+last age in the Triangle and the Bondy exponent ``b_``.
+
+More formally, the tail factor is defined as:
+
+.. math::
+   F(n)=f(n-1)^{B}f(n-1)^{B^{2}}...=f(n-1)^{\frac{B}{1-B}}
+
+Rather than using the last known development factor explicitely, we estimate the
+fitted LDF using the formula above along with the ``earliest_age`` parameter.
+
+  >>> import chainladder as cl
+  >>> # Data and initial development patterns
+  ... triangle = cl.load_sample('tail_sample')
+  >>> dev = cl.Development(average='simple').fit_transform(triangle)
+  >>> # Estimate the Bondy Tail
+  ... tail = cl.TailBondy(earliest_age=12).fit(dev)
+  >>> # Get last fitted LDF of the model
+  ... last_fitted_ldf = (tail.earliest_ldf_**(tail.b_**8))
+  >>> # Calculate the tail using the Bondy formula above
+  ... last_fitted_ldf**(tail.b_/(1-tail.b_))
+         incurred     paid
+  Total
+  Total  1.003982  1.02773
+  >>> # Compare to actual tail
+  ... tail.tail_
+         incurred     paid
+  Total
+  Total  1.003982  1.02773
 
 .. topic:: References
 

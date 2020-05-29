@@ -11,6 +11,8 @@ from chainladder.utils.cupy import cp
 class TailClark(TailBase):
     """Allows for extraploation of LDFs to form a tail factor.
 
+    .. versionadded:: 0.6.4
+
     Parameters
     ----------
     growth : {'loglogistic', 'weibull'}
