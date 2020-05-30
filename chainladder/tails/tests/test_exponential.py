@@ -16,10 +16,10 @@ def mack_r(data, alpha, est_sigma):
 
 
 def mack_p(data, average, est_sigma):
-    return cl.TailCurve(curve='exponential').fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data)))
+    return cl.TailCurve(curve='exponential').fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_sample(data)))
 
 def mack_p_no_tail(data, average, est_sigma):
-    return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))
+    return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_sample(data))
 
 data = ['RAA', 'ABC', 'GenIns', 'MW2008', 'MW2014']
 # M3IR5 in R fails silently on exponential tail. Python actually computes it.
@@ -74,7 +74,7 @@ def test_tail_doesnt_mutate_std_err(data, averages, est_sigma):
 @pytest.mark.parametrize('averages', averages[0:1])
 @pytest.mark.parametrize('est_sigma', est_sigma[0:1])
 def test_tail_doesnt_mutate_ldf_(data, averages, est_sigma):
-    p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[..., :len(cl.load_dataset(data).ddims)-1]
+    p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[..., :len(cl.load_sample(data).ddims)-1]
     xp = cp.get_array_module(p)
     p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).ldf_.values
     xp.testing.assert_array_equal(p_no_tail, p)
@@ -90,6 +90,6 @@ def test_tail_doesnt_mutate_sigma_(data, averages, est_sigma):
     xp.testing.assert_array_equal(p_no_tail, p)
 
 def test_fit_period():
-    tri = cl.load_dataset('tail_sample')
+    tri = cl.load_sample('tail_sample')
     dev = cl.Development(average='simple').fit_transform(tri)
     assert round(cl.TailCurve(fit_period=slice(-6,None,None), extrap_periods=10).fit(dev).cdf_['paid'].values[0,0,0,-2],3) == 1.044

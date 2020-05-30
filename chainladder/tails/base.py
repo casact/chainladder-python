@@ -77,6 +77,8 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         X_new.ldf_._set_slicers()
         X_new.cdf_._set_slicers()
         X_new.std_err_._set_slicers()
+        X_new._ave_period = self._ave_period
+        X_new.tail_ = TailBase._tail_(X_new)
         return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):
@@ -159,11 +161,17 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         time_pd = (xp.log(tail-1)-reg.intercept_)/reg.slope_
         return time_pd
 
-    @property
-    def tail_(self):
+    @staticmethod
+    def _tail_(self):
         df = self.cdf_[self.cdf_.development==
                        self.cdf_.development.iloc[-1-self._ave_period[0]]]
         if np.all(df.values.min(axis=-1) == df.values.max(axis=-1)):
-            df = df.T.drop_duplicates()
-            df.index = self.cdf_._idx_table().index
+            idx = self.cdf_._idx_table()
+            df = df.T.drop_duplicates().T
+            df.index = idx.index
+            df.columns = idx.columns
         return df
+
+    @property
+    def tail_(self):
+        return TailBase._tail_(self)

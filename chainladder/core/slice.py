@@ -41,6 +41,14 @@ class _LocBase:
                 return slice(max(arr), min_arr, step)
         return arr
 
+    def _update_sub_obj(self, obj):
+        sub_tris = [
+            k for k in obj.__dict__.keys()
+            if getattr(obj, k).__class__.__name__ in ['Triangle', 'DataFrame']]
+        for sub_tri in sub_tris:
+            setattr(obj, sub_tri, getattr(obj, sub_tri).loc[obj.kdims, obj.vdims])
+        return obj
+
 
 class Location(_LocBase):
     ''' class to generate .loc[] functionality '''
@@ -50,14 +58,16 @@ class Location(_LocBase):
         if type(key) == tuple and type(key[0]) == pd.Series:
             return self.obj[key[0]][key[1]]
         idx = self.obj._idx_table().loc[key]
-        return self.get_idx(self.obj._idx_table_format(idx))
+        obj = self.get_idx(self.obj._idx_table_format(idx))
+        return self._update_sub_obj(obj)
 
 
 class Ilocation(_LocBase):
     ''' class to generate .iloc[] functionality '''
     def __getitem__(self, key):
         idx = self.obj._idx_table().iloc[key]
-        return self.get_idx(self.obj._idx_table_format(idx))
+        obj = self.get_idx(self.obj._idx_table_format(idx))
+        return self._update_sub_obj(obj)
 
 
 class TriangleSlicer:
@@ -80,7 +90,7 @@ class TriangleSlicer:
 
     def _idx_table(self):
         ''' private method that generates a dataframe of triangle indices.
-            The dataframe is meant ot be sliced using pandas and the resultant
+            The dataframe is meant to be sliced using pandas and the resultant
             indices are then to be extracted from the Triangle object.
         '''
         df = pd.DataFrame(list(self.kdims), columns=self.key_labels)
@@ -95,19 +105,50 @@ class TriangleSlicer:
 
         if type(key) is pd.DataFrame and 'development' in key.columns:
             return self._slice_development(key['development'])
-        elif type(key) is np.ndarray:
+        if type(key) is np.ndarray:
             # Presumes that if I have a 1D array, I will want to slice origin.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             return self._slice_origin(key)
-        elif type(key) is pd.Series:
+        # Does triangle have sub-triangles?
+        sub_tris = [
+            k for k in self.__dict__.keys()
+            if getattr(self, k).__class__.__name__ == 'Triangle']
+        sub_dfs = [
+            k for k in self.__dict__.keys()
+            if getattr(self, k).__class__.__name__ == 'DataFrame']
+        # Dont mutate original subtriangle
+        if len(sub_tris) + len(sub_dfs) > 0:
+            self = copy.deepcopy(self)
+        if type(key) is pd.Series:
+            for sub_tri in sub_tris:
+                setattr(
+                    self, sub_tri,
+                    getattr(self, sub_tri).iloc[list(self.index[key].index)])
             return self.iloc[list(self.index[key].index)]
         elif key in self.key_labels:
             # Boolean-indexing of a particular key
+            for sub_tri in sub_tris:
+                setattr(
+                    self, sub_tri, getattr(self, sub_tri).index[key])
+            for sub_df in sub_dfs:
+                setattr(
+                    self, sub_df, getattr(self, sub_df)[key])
             return self.index[key]
         else:
             idx = self._idx_table()[key]
             idx = self._idx_table_format(idx)
+            for sub_tri in sub_tris:
+                setattr(
+                    self, sub_tri,
+                    _LocBase(getattr(self, sub_tri)).get_idx(idx))
+            for sub_df in sub_dfs:
+                if len(idx.columns) == 1:
+                    setattr(self, sub_df,
+                            getattr(self, sub_df).loc[idx.index][idx.columns[0]])
+                else:
+                    setattr(self, sub_df,
+                            getattr(self, sub_df).loc[idx.index,idx.columns])
             obj = _LocBase(self).get_idx(idx)
             return obj
 

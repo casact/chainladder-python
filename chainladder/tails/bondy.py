@@ -88,7 +88,7 @@ class TailBondy(TailBase):
         self.b_ = pd.DataFrame(
             self.b_[..., 0, 0], index=idx.index, columns=idx.columns)
         self.earliest_ldf_ = pd.DataFrame(
-            self.ldf_.values[..., initial, 0], index=idx.index, columns=idx.columns)
+            self.ldf_.values[..., 0, initial], index=idx.index, columns=idx.columns)
         return self
 
     def transform(self, X):

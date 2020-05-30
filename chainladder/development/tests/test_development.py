@@ -19,7 +19,7 @@ def mack_r(data, alpha, est_sigma):
 
 
 def mack_p(data, average, est_sigma):
-    return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))
+    return cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_sample(data))
 
 
 data = ['RAA', 'GenIns', 'MW2014']
@@ -28,26 +28,26 @@ est_sigma = [('mack', 'Mack'), ('log-linear', 'log-linear')]
 
 
 def test_full_slice():
-    assert cl.Development().fit_transform(cl.load_dataset('GenIns')).ldf_ == \
-        cl.Development(n_periods=1000).fit_transform(cl.load_dataset('GenIns')).ldf_
+    assert cl.Development().fit_transform(cl.load_sample('GenIns')).ldf_ == \
+        cl.Development(n_periods=1000).fit_transform(cl.load_sample('GenIns')).ldf_
 
 
 def test_full_slice2():
-    assert cl.Development().fit_transform(cl.load_dataset('GenIns')).ldf_ == \
-        cl.Development(n_periods=[1000]*(cl.load_dataset('GenIns').shape[3]-1)).fit_transform(cl.load_dataset('GenIns')).ldf_
+    assert cl.Development().fit_transform(cl.load_sample('GenIns')).ldf_ == \
+        cl.Development(n_periods=[1000]*(cl.load_sample('GenIns').shape[3]-1)).fit_transform(cl.load_sample('GenIns')).ldf_
 
 def test_drop1():
-    raa = cl.load_dataset('raa')
+    raa = cl.load_sample('raa')
     assert cl.Development(drop=('1982', 12)).fit(raa).ldf_.values[0, 0, 0, 0] == \
            cl.Development(drop_high=[True]+[False]*8).fit(raa).ldf_.values[0, 0, 0, 0]
 
 def test_drop2():
-    raa = cl.load_dataset('raa')
+    raa = cl.load_sample('raa')
     assert cl.Development(drop_valuation='1981').fit(raa).ldf_.values[0, 0, 0, 0] == \
            cl.Development(drop_low=[True]+[False]*8).fit(raa).ldf_.values[0, 0, 0, 0]
 
 def test_n_periods():
-    d = cl.load_dataset('usauto')['incurred']
+    d = cl.load_sample('usauto')['incurred']
     xp = cp.get_array_module(d.values)
     return xp.all(xp.around(xp.unique(
         cl.Development(n_periods=3, average='volume').fit(d).ldf_.values,
@@ -87,7 +87,7 @@ def test_mack_std_err(data, averages, est_sigma, atol):
     xp.testing.assert_allclose(r, p, atol=atol)
 
 def test_assymetric_development():
-    quarterly = cl.load_dataset('quarterly')['paid']
+    quarterly = cl.load_sample('quarterly')['paid']
     xp = cp.get_array_module(quarterly.values)
     dev = cl.Development(n_periods=1, average='simple').fit(quarterly)
     dev2 = cl.Development(n_periods=1, average='regression').fit(quarterly)

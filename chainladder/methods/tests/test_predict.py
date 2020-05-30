@@ -1,5 +1,5 @@
 import chainladder as cl
-raa = cl.load_dataset('RAA')
+raa = cl.load_sample('RAA')
 raa_1989 = raa[raa.valuation < raa.valuation_date]
 cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
 apriori = cl_ult*0+(float(cl_ult.sum())/10)  # Mean Chainladder Ultimate
@@ -21,7 +21,7 @@ def test_mack_predict():
     mack.predict(raa)
 
 def test_bs_random_state_predict():
-    tri = cl.load_dataset('clrd').groupby('LOB').sum().loc['wkcomp', ['CumPaidLoss', 'EarnedPremNet']]
+    tri = cl.load_sample('clrd').groupby('LOB').sum().loc['wkcomp', ['CumPaidLoss', 'EarnedPremNet']]
     X = cl.BootstrapODPSample(random_state=100).fit_transform(tri['CumPaidLoss'])
     bf = cl.BornhuetterFerguson(apriori=0.6, apriori_sigma=0.1, random_state=42).fit(X, sample_weight=tri['EarnedPremNet'].latest_diagonal)
     assert bf.predict(X, sample_weight=tri['EarnedPremNet'].latest_diagonal).ibnr_ == bf.ibnr_

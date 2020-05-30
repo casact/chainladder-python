@@ -2,7 +2,7 @@ import chainladder as cl
 
 def test_grid():
     # Load Data
-    clrd = cl.load_dataset('clrd')
+    clrd = cl.load_sample('clrd')
     medmal_paid = clrd.groupby('LOB').sum().loc['medmal']['CumPaidLoss']
     medmal_prem = clrd.groupby('LOB').sum().loc['medmal']['EarnedPremDIR'].latest_diagonal
     medmal_prem.rename('development',['premium'])

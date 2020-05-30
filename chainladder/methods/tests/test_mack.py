@@ -22,9 +22,9 @@ def mack_r(data, alpha, est_sigma, tail):
 
 def mack_p(data, average, est_sigma, tail):
     if tail:
-        return cl.MackChainladder().fit(cl.TailCurve(curve='exponential').fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data))))
+        return cl.MackChainladder().fit(cl.TailCurve(curve='exponential').fit_transform(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_sample(data))))
     else:
-        return cl.MackChainladder().fit(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_dataset(data)))
+        return cl.MackChainladder().fit(cl.Development(average=average, sigma_interpolation=est_sigma).fit_transform(cl.load_sample(data)))
 
 
 data = ['ABC', 'MW2008']
@@ -34,8 +34,8 @@ est_sigma = [('log-linear', 'log-linear'), ('mack', 'Mack')]
 
 
 def test_mack_to_triangle():
-    assert cl.MackChainladder().fit(cl.TailConstant().fit_transform(cl.Development().fit_transform(cl.load_dataset('ABC')))).summary_ == \
-        cl.MackChainladder().fit(cl.Development().fit_transform(cl.load_dataset('ABC'))).summary_
+    assert cl.MackChainladder().fit(cl.TailConstant().fit_transform(cl.Development().fit_transform(cl.load_sample('ABC')))).summary_ == \
+        cl.MackChainladder().fit(cl.Development().fit_transform(cl.load_sample('ABC'))).summary_
 
 
 @pytest.mark.parametrize('data', data)

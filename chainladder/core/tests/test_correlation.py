@@ -15,13 +15,13 @@ def dev_corr_r(data, ci):
     return r('out<-dfCorTest({},ci={})'.format(data, ci))
 
 def dev_corr_p(data, ci):
-    return cl.load_dataset(data).development_correlation(p_critical=ci)
+    return cl.load_sample(data).development_correlation(p_critical=ci)
 
 def val_corr_r(data, ci):
     return r('out<-cyEffTest({},ci={})'.format(data, ci))
 
 def val_corr_p(data, ci):
-    return cl.load_dataset(data).valuation_correlation(p_critical=ci, total=True)
+    return cl.load_sample(data).valuation_correlation(p_critical=ci, total=True)
 
 
 data = ['RAA', 'GenIns', 'MW2014']
