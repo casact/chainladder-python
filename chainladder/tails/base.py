@@ -116,10 +116,13 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         c = -xp.log(tail)
         return (-b+xp.sqrt(b**2-4*a*c))/(2*a)
 
-    def _apply_decay(self, X, tail):
-        ''' Created Tail vector with decay over time '''
+    def _apply_decay(self, X, tail, attach_idx=None):
+        ''' Created Tail vector with decay over time. '''
         xp = cp.get_array_module(X.values)
-        decay_range = self.ldf_.shape[-1]-X.shape[-1]+1
+        if attach_idx:
+            decay_range = self.ldf_.shape[-1] - attach_idx
+        else:
+            decay_range = self.ldf_.shape[-1]-X.shape[-1]+1
         if xp.max(tail) == 1.0:
             ldfs = 1 + 0*(self.decay**xp.arange(1000))
         else:
@@ -127,7 +130,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         ldfs = ldfs[..., :decay_range]
         ldfs[..., -1:] = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
         self.ldf_.values[..., -decay_range:] = \
-            self.ldf_.values[..., -decay_range:]*ldfs
+            (self.ldf_.values[..., -decay_range:]*0+1)*ldfs
         self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
@@ -165,11 +168,9 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
     def _tail_(self):
         df = self.cdf_[self.cdf_.development==
                        self.cdf_.development.iloc[-1-self._ave_period[0]]]
-        if np.all(df.values.min(axis=-1) == df.values.max(axis=-1)):
+        if np.all(df.values.min(axis=2) == df.values.max(axis=2)):
             idx = self.cdf_._idx_table()
-            df = df.T.drop_duplicates().T
-            df.index = idx.index
-            df.columns = idx.columns
+            df = df[df.origin==df.origin.min()].to_frame()
         return df
 
     @property

@@ -5,18 +5,16 @@
 
 Computation times
 =================
-**00:04.047** total execution time for **auto_examples** files:
+**00:00.586** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_extrap_period.py` (``plot_extrap_period.py``)               | 00:04.047 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py` (``plot_bondy_sensitivity.py``)       | 00:00.586 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_benktander.py` (``plot_benktander.py``)                     | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py` (``plot_bf_apriori_from_cl.py``)     | 00:00.000 | 0.0 MB |
-+-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py` (``plot_bondy_sensitivity.py``)       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_bootstrap.py` (``plot_bootstrap.py``)                       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
@@ -33,6 +31,8 @@ Computation times
 | :ref:`sphx_glr_auto_examples_plot_exhibits.py` (``plot_exhibits.py``)                         | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py` (``plot_exposure_triangle.py``)       | 00:00.000 | 0.0 MB |
++-----------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plot_extrap_period.py` (``plot_extrap_period.py``)               | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
 | :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py` (``plot_ibnr_runoff.py``)                   | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+

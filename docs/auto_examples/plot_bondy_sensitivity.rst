@@ -14,7 +14,9 @@ Testing Sensitivity of Bondy Tail Assumptions
 ===============================================
 
 This example demonstrates the usage of the `TailBondy` estimator as well as
-passing multiple scoring functions to `GridSearch`.
+passing multiple scoring functions to `GridSearch`.  When the `earliest_age`
+is set to the last available in the Triangle, the estimator reverts to the
+traditional Bondy method.
 
 
 
@@ -30,7 +32,7 @@ passing multiple scoring functions to `GridSearch`.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x0000018DC2419DD8>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x0000020021721358>
 
 
 
@@ -48,11 +50,10 @@ passing multiple scoring functions to `GridSearch`.
     tri = cl.load_sample('tail_sample')['paid']
     dev = cl.Development(average='simple').fit_transform(tri)
 
-
     # Return both the tail factor and the Bondy exponent in the scoring function
     scoring = {
-        'tail_factor': lambda x: x.cdf_[x.cdf_.development=='120-9999'].to_frame().values[0,0],
-        'bondy_exponent': lambda x : x.b_[0,0]}
+        'tail_factor': lambda x: x.tail_.values[0,0],
+        'bondy_exponent': lambda x : x.b_.values[0,0]}
 
     # Vary the 'earliest_age' assumption in GridSearch
     param_grid=dict(earliest_age=list(range(12, 120, 12)))
@@ -67,7 +68,7 @@ passing multiple scoring functions to `GridSearch`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.008 seconds)
+   **Total running time of the script:** ( 0 minutes  0.586 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bondy_sensitivity.py:

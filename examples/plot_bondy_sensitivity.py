@@ -4,7 +4,9 @@ Testing Sensitivity of Bondy Tail Assumptions
 ===============================================
 
 This example demonstrates the usage of the `TailBondy` estimator as well as
-passing multiple scoring functions to `GridSearch`.
+passing multiple scoring functions to `GridSearch`.  When the `earliest_age`
+is set to the last available in the Triangle, the estimator reverts to the
+traditional Bondy method.
 """
 
 import chainladder as cl
@@ -13,11 +15,10 @@ import chainladder as cl
 tri = cl.load_sample('tail_sample')['paid']
 dev = cl.Development(average='simple').fit_transform(tri)
 
-
 # Return both the tail factor and the Bondy exponent in the scoring function
 scoring = {
-    'tail_factor': lambda x: x.cdf_[x.cdf_.development=='120-9999'].to_frame().values[0,0],
-    'bondy_exponent': lambda x : x.b_[0,0]}
+    'tail_factor': lambda x: x.tail_.values[0,0],
+    'bondy_exponent': lambda x : x.b_.values[0,0]}
 
 # Vary the 'earliest_age' assumption in GridSearch
 param_grid=dict(earliest_age=list(range(12, 120, 12)))

@@ -187,8 +187,10 @@ method:
   .. [SM2016] `M Shapland, "Using the ODP Bootstrap Model: A Practitioner's Guide", CAS Monograph No.4 <https://www.casact.org/pubs/monographs/papers/04-shapland.pdf>`__
 
 
-LDF Curve Fitting
-=================
+.. _clarkldf:
+
+Growth Curve Fitting
+====================
 :class:`ClarkLDF` is an application of Maximum Likelihood Estimation (MLE) theory
 for modeling the distribution of loss development. This model is used to estimate
 future loss emergence, and the variability around that estimate. The value of

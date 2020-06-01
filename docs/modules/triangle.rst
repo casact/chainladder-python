@@ -1,6 +1,7 @@
 .. _triangle:
 
 .. currentmodule:: chainladder
+
 ========
 Triangle
 ========

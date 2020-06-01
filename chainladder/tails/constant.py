@@ -5,6 +5,7 @@ import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase, Development
+import copy
 
 class TailConstant(TailBase):
     """Allows for the entry of a constant tail factor to LDFs.
@@ -17,6 +18,10 @@ class TailConstant(TailBase):
         An exponential decay constant that allows for decay over future
         development periods.  A decay rate of 0.5 sets the development portion
         of each successive LDF to 50% of the previous LDF.
+    attachment_age: int (default=None)
+        The age at which to attach the fitted curve.  If None, then the latest
+        age is used. Measures of variability from original `ldf_` are retained
+        when being used in conjunction with the MackChainladder method.
 
     Attributes
     ----------
@@ -24,6 +29,8 @@ class TailConstant(TailBase):
         ldf with tail applied.
     cdf_ :
         cdf with tail applied.
+    tail_ : DataFrame
+        Point estimate of tail at latest maturity available in the Triangle.
     sigma_ :
         sigma with tail factor applied.
     std_err_ :
@@ -40,9 +47,10 @@ class TailConstant(TailBase):
     TailCurve
 
     """
-    def __init__(self, tail=1.0, decay=0.5):
+    def __init__(self, tail=1.0, decay=0.5, attachment_age=None):
         self.tail = tail
         self.decay = decay
+        self.attachment_age = attachment_age
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -60,8 +68,13 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
+        xp = cp.get_array_module(X.values)
         tail = self.tail
-        self = self._apply_decay(X, tail)
+        if self.attachment_age:
+            attach_idx = xp.min(xp.where(X.ddims>=self.attachment_age))
+        else:
+            attach_idx = len(X.ddims) - 1
+        self = self._apply_decay(X, tail, attach_idx)
         obj = Development().fit_transform(X) if 'ldf_' not in X else X
         xp = cp.get_array_module(X.values)
         if xp.max(self.tail) != 1.0:
@@ -69,27 +82,3 @@ class TailConstant(TailBase):
             self.sigma_.values[..., -1] = sigma[..., -1]
             self.std_err_.values[..., -1] = std_err[..., -1]
         return self
-
-    def transform(self, X):
-        """Transform X.
-        The predicted class of an input sample is a vote by the trees in
-        the forest, weighted by their probability estimates. That is,
-        the predicted class is the one with highest mean probability
-        estimate across the trees.
-
-        Parameters
-        ----------
-        X : Triangle
-            Triangle must contain the ``ldf_`` development attribute.
-
-        Returns
-        -------
-        X_new : Triangle
-            New Triangle with tail factor applied to its development
-            attributes.
-        """
-        X.std_err_ = self.std_err_
-        X.cdf_ = self.cdf_
-        X.ldf_ = self.ldf_
-        X.sigma_ = self.sigma_
-        return X
