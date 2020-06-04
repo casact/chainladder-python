@@ -4,6 +4,9 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+import warnings
+import re
+from IPython.core.display import HTML
 
 class TriangleDisplay():
     def __repr__(self):
@@ -32,10 +35,10 @@ class TriangleDisplay():
             if len(self.ddims) > 1 and type(self.ddims[0]) is int:
                 data.columns = [['Development Lag'] * len(self.ddims),
                                 self.ddims]
-            default = data.to_html(max_rows=pd.options.display.max_rows,
-                                   max_cols=pd.options.display.max_columns,
-                                   float_format=fmt_str.format) \
-                          .replace('nan', '')
+            default = data.to_html(
+                max_rows=pd.options.display.max_rows,
+               max_cols=pd.options.display.max_columns,
+               float_format=fmt_str.format).replace('nan', '')
             return default.replace(
                 '<th></th>\n      <th>{}</th>'.format(
                     list(data.columns)[0]),
@@ -49,7 +52,6 @@ class TriangleDisplay():
                              index=['Valuation:', 'Grain:', 'Shape:',
                                     'Index:', "Columns:"],
                              name='Triangle Summary').to_frame()
-            pd.options.display.precision = 0
             return data.to_html(max_rows=pd.options.display.max_rows,
                                 max_cols=pd.options.display.max_columns)
 
@@ -83,3 +85,51 @@ class TriangleDisplay():
         else:
             ddims = self.ddims
         return odims, ddims
+
+    def heatmap(self, cmap='Reds', low=0, high=0, axis=0, subset=None):
+        """ Color the background in a gradient according to the data in each
+        column (optionally row). Requires matplotlib
+
+        Parameters
+        ----------
+
+        cmap : str or colormap
+            matplotlib colormap
+        low, high : float
+            compress the range by these values.
+        axis : int or str
+            The axis along which to apply heatmap
+        subset : IndexSlice
+            a valid slice for data to limit the style application to
+
+        Returns
+        -------
+            Ipython.display.HTML
+
+        """
+        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
+            data = self._repr_format()
+            if np.nanmean(abs(data)) < 10:
+                fmt_str = '{0:,.4f}'
+            elif np.nanmean(abs(data)) < 1000:
+                fmt_str = '{0:,.2f}'
+            else:
+                fmt_str = '{:,.0f}'
+            if len(self.ddims) > 1 and type(self.ddims[0]) is int:
+                data.columns = [['Development Lag'] * len(self.ddims),
+                                self.ddims]
+            warnings.filterwarnings("ignore")
+            axis = 0 if axis == 'origin' else axis
+            axis = 1 if axis == 'development' else axis
+            axis = axis - 2 if axis > 1 else axis
+            default = data.style.format(fmt_str).background_gradient(
+                cmap=cmap, low=low, high=high, axis=axis, subset=subset).render()
+            default = re.sub('<td.*nan.*td>', '<td></td>', default)
+            warnings.filterwarnings("default")
+            return HTML(default.replace(
+                '<th></th>\n      <th>{}</th>'.format(
+                    list(data.columns)[0]),
+                '<th>Origin</th>\n      <th>{}</th>'.format(
+                    list(data.columns)[0])))
+        else:
+            raise ValueError('heatmap only works with single triangles')
