@@ -6,7 +6,11 @@ import numpy as np
 from chainladder.utils.cupy import cp
 import warnings
 import re
-from IPython.core.display import HTML
+try:
+    from IPython.core.display import HTML
+except:
+    warnings.warn('Unable to load IPython.  Heatmap funcionality will not work.')
+    HTML = None
 
 class TriangleDisplay():
     def __repr__(self):
@@ -131,5 +135,7 @@ class TriangleDisplay():
                     list(data.columns)[0]),
                 '<th>Origin</th>\n      <th>{}</th>'.format(
                     list(data.columns)[0])))
+        elif HTML is None:
+            raise ImportError('heatmap requires IPython')
         else:
             raise ValueError('heatmap only works with single triangles')
