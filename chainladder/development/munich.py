@@ -89,7 +89,6 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         self.rho_ = copy.deepcopy(X)
         self.rho_.odims = ['(All)']
         self.rho_.values = self._reshape('rho_sigma_')
-
         return self
 
     def transform(self, X):
@@ -105,9 +104,15 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X.cdf_ = self.cdf_
-        X.ldf_ = self.ldf_
-        return X
+        X_new = copy.copy(X)
+        X_new.sigma_ = self.ldf_*0+1
+        X_new.std_err_ = self.ldf_*0+1
+        triangles = ['cdf_', 'ldf_', 'rho_', 'lambda_',
+                     'lambda_coef_']
+        for item in triangles:
+            setattr(X_new, item, getattr(self, item))
+        X_new._set_slicers()
+        return X_new
 
     def _get_p_to_i_object(self, obj):
         if type(self.paid_to_incurred) is tuple:
