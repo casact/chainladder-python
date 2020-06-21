@@ -3,6 +3,8 @@
 ============
 IBNR Models
 ============
+IBNR models 
+
 
 .. _chainladder:
 .. currentmodule:: chainladder
@@ -41,6 +43,12 @@ a regression framework, statistics about the variability of the data and the par
 estimates allows for the estimation of prediciton errors.  The Mack Chainladder
 method is the most basic of stochastic methods.
 
+.. figure:: /auto_examples/images/sphx_glr_plot_mack_001.png
+   :target: ../auto_examples/plot_mack.html
+   :align: center
+   :scale: 50%
+
+
 .. topic:: References
 
    .. [M1993] T Mack. Distribution-free calculation of the standard error of chain ladder reserve estimates. Astin Bulletin. Vol. 23. No 2. 1993. pp.213:225
@@ -49,8 +57,8 @@ method is the most basic of stochastic methods.
 
 .. _bornferg:
 
-Deterministic Bornhuetter-Ferguson
-==================================
+Bornhuetter-Ferguson
+====================
 The :class:`BornhuetterFerguson` technique is essentially a blend of the
 development and expected claims techniques. In the development technique, we multiply actual
 claims by a cumulative claim development factor. This technique can lead to erratic, unreliable
@@ -70,21 +78,22 @@ gradually less important.
 
 .. _benktander:
 
-Deterministic Benktander
-==========================
+Benktander
+==========
 
 The :class:`Benktander` method, introduced in 1976, is a credibility-weighted
 average of the ``BornhuetterFerguson`` technique and the development technique.
- The advantage cited by the authors is that this method will prove more
+The advantage cited by the authors is that this method will prove more
 responsive than the Bornhuetter-Ferguson technique and more stable
-than the development technique. It is also known as the interated BF method.
+than the development technique. It is also known as the iterated BF method.
 The generalized formula is:
 
 .. math::
    \sum_{k=0}^{n-1}(1-\frac{1}{CDF}) + Apriori\times (1-\frac{1}{CDF})^{n}
 
-`n=1` yields the traditional BF method, and when `n` is sufficiently large, the
-method converges to the traditional CL method.
+`n=0` yields the expected loss method, `n=1` yields the traditional BF method,
+and finally when `n` is sufficiently large, the method converges to the
+traditional CL method.
 
 Mack noted the ``Benktander`` method is found to have almost always a smaller mean
 squared error than the other two methods and to be almost as precise as an exact
@@ -97,8 +106,8 @@ Bayesian procedure.
 
 .. _capecod:
 
-Deterministic Cape Cod
-==========================
+Cape Cod
+========
 
 The :class:`CapeCod` method, also known as the Stanard-Buhlmann method, is similar to the
 Bornhuetter-Ferguson technique. As in the Bornhuetter-Ferguson technique, the Cape Cod

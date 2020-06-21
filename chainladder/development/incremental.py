@@ -74,8 +74,8 @@ class IncrementalAdditive(DevelopmentBase):
             xp.nan_to_num(
                 x._get_latest_diagonal(compress=False).values[0, 0, ...]*0+1)
         obj.values = (1+self.trend) ** \
-            xp.flip((xp.abs(xp.arange(obj.shape[-2])[xp.newaxis].T -
-                     xp.arange(obj.shape[-2])[xp.newaxis])), 0)*y_*keeps
+            xp.flip((xp.abs(xp.arange(obj.shape[-2])[None].T -
+                     xp.arange(obj.shape[-2])[None])), 0)*y_*keeps
         obj.values = obj.values*(X._expand_dims(1-xp.nan_to_num(x._nan_triangle()))) + \
             xp.nan_to_num((X.cum_to_incr()/sample_weight).values)
         obj.values[obj.values == 0] = xp.nan

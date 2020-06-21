@@ -11,7 +11,7 @@ import chainladder as cl
 # Load the data
 data = cl.load_sample('raa')
 
-# Compute Mack Chainladder ultimates and Std Err using 'simple' average
+# Compute Mack Chainladder ultimates and Std Err using 'volume' average
 mack = cl.MackChainladder()
 dev = cl.Development(average='volume')
 mack.fit(dev.fit_transform(data))

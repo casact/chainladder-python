@@ -100,7 +100,7 @@ class MackChainladder(Chainladder):
     def _mack_recursion(self, est):
         obj = copy.copy(self.X_)
         xp = cp.get_array_module(obj.values)
-        nans = self.X_._nan_triangle()[xp.newaxis, xp.newaxis]
+        nans = self.X_._nan_triangle()[None, None]
         nans = nans * xp.ones(self.X_.shape)
         nans = xp.concatenate(
             (nans, xp.ones((*self.X_.shape[:3], 1))*xp.nan), 3)

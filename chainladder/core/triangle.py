@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
 import copy
-
+import warnings
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 
@@ -346,7 +346,7 @@ class Triangle(TriangleBase):
         obj = copy.deepcopy(self)
         if hasattr(obj, '_nan_triangle_'):
             del obj._nan_triangle_
-        o_vals = obj._expand_dims(xp.arange(len(obj.origin))[:, xp.newaxis])
+        o_vals = obj._expand_dims(xp.arange(len(obj.origin))[:, None])
         if self.shape[-1] == 1:
             return obj
         if kind == 'val_to_dev':
@@ -371,11 +371,11 @@ class Triangle(TriangleBase):
             val = np.unique(np.array(list(zip(val[0], val[1]))), axis=0)
             arr = xp.expand_dims(obj.values[:, :, val[:, 0], val[:, 1]], -1)
             if val[0, 0] != 0:
-                prepend = obj._expand_dims(xp.array([xp.nan]*(val[0, 0]))[:, xp.newaxis])
+                prepend = obj._expand_dims(xp.array([xp.nan]*(val[0, 0]))[:, None])
                 arr = xp.concatenate((prepend, arr), -2)
             if len(obj.origin)-1-val[-1, 0] != 0:
                 append = obj._expand_dims(
-                    xp.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, xp.newaxis])
+                    xp.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, None])
                 arr = xp.concatenate((arr, append), -2)
             if obj.is_cumulative and old_arr is not None:
                 arr = xp.isnan(arr)*xp.nan_to_num(old_arr) + xp.nan_to_num(arr)
@@ -454,7 +454,7 @@ class Triangle(TriangleBase):
             o_bool = np.repeat((o == o_new)[:, np.newaxis],
                                len(obj.ddims), axis=1)
             o_bool = obj._expand_dims(o_bool)
-            new_tri = xp.repeat(xp.nan_to_num(obj.values)[..., xp.newaxis],
+            new_tri = xp.repeat(xp.nan_to_num(obj.values)[..., None],
                                 o_bool.shape[-1], axis=-1)
             new_tri[~np.isfinite(new_tri)] = 0
             new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
@@ -494,9 +494,10 @@ class Triangle(TriangleBase):
             return obj
 
 
-    def trend(self, trend=0.0, axis='origin', valuation_date=None, ultimate_lag=None):
-        """  Allows for the trending of a Triangle object or an origin vector.
-        This method trends using days and assumes a years is 365.25 days long.
+    def trend(self, trend=0.0, axis='origin', start=None, end=None, ultimate_lag=None, **kwargs):
+        """  Allows for the trending of a Triangle object along either a valuation
+        or origin axis.  This method trends using days and assumes a years is
+        365.25 days long.
 
         Parameters
         ----------
@@ -504,8 +505,12 @@ class Triangle(TriangleBase):
             The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
-        valuation_date: date
-            The terminal date from which trend should be calculated.
+        start: date
+            The terminal date from which trend should be calculated. If none is
+            provided then the latest date of the triangle is used.
+        end: date
+            The terminal date to which the trend should be calculated. If none is
+            provided then the earliest period of the triangle is used.
         ultimate_lag : int
             If ultimate valuations are in the triangle, you can set the overall
             age of the ultimate to be some lag from the latest non-Ultimate
@@ -516,15 +521,33 @@ class Triangle(TriangleBase):
         Triangle
             updated with multiplicative trend applied.
         """
+        if kwargs.get('valuation_date', None):
+            start = kwargs['valuation_date']
+            warnings.warn('valuation_date is deprecated, and will be removed. Use start instead.')
+
+        def val_vector(start, end, valuation):
+            if end < start:
+                val_start = xp.maximum(valuation, start)
+                val_end = xp.maximum(valuation, end)
+            else:
+                val_start = xp.minimum(valuation, start)
+                val_end = xp.minimum(valuation, end)
+            return val_start, val_end
+
         xp = cp.get_array_module(self.values)
-        if not valuation_date:
-            days = np.datetime64(self.valuation_date)
+        if not start:
+            start = np.datetime64(self.valuation_date)
         else:
-            days = np.datetime64(valuation_date)
+            start = np.datetime64(start)
+        if not end:
+            end = np.datetime64(xp.min(self.valuation))
+        else:
+            end = np.datetime64(end)
         if axis == 'origin':
+            val_start, val_end = val_vector(start, end, self.origin.end_time.values)
             trend = xp.array((1 + trend)**-(
-                pd.Series(self.origin.end_time.values-days).dt.days/365.25)
-                )[xp.newaxis, xp.newaxis, ..., xp.newaxis]
+                pd.Series(val_end-val_start).dt.days/365.25)
+                )[None, None, ..., None]
         elif axis == 'valuation':
             valuation  = self.valuation
             if self.is_ultimate and ultimate_lag is not None:
@@ -533,8 +556,9 @@ class Triangle(TriangleBase):
                     self.valuation.values.reshape(self.shape[-2:], order='f'))
                 val_df.iloc[:, -1] = val_df.iloc[:, -2] + unit_lag * ultimate_lag
                 valuation = pd.PeriodIndex(val_df.unstack().values)
+            val_start, val_end = val_vector(start, end, valuation)
             trend = (1 + trend)**-(
-                pd.Series(valuation-days)
+                pd.Series(val_end-val_start)
                 .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend

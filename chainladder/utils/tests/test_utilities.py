@@ -14,7 +14,7 @@ def test_vertical_line():
     assert abs(olf.loc['2017'].iloc[0] - ((1-184/365)*.2+1)) < .00001
 
 def test_triangle_json_io():
-    clrd = cl.load_dataset('clrd')
+    clrd = cl.load_sample('clrd')
     xp = cp.get_array_module(clrd.values)
     clrd2 = cl.read_json(clrd.to_json())
     xp.testing.assert_array_equal(clrd.values, clrd2.values)
@@ -25,8 +25,8 @@ def test_triangle_json_io():
     assert np.all(clrd.valuation == clrd2.valuation)
 
 def test_json_for_val():
-    x = cl.load_dataset('raa').dev_to_val().to_json()
-    assert cl.read_json(x) == cl.load_dataset('raa').dev_to_val()
+    x = cl.load_sample('raa').dev_to_val().to_json()
+    assert cl.read_json(x) == cl.load_sample('raa').dev_to_val()
 
 def test_estimator_json_io():
     assert cl.read_json(cl.Development().to_json()).get_params() == \
@@ -42,6 +42,6 @@ def test_pipeline_json_io():
             for item in pipe2.get_params()['steps']}
 
 def test_concat():
-    tri = cl.load_dataset('clrd').groupby('LOB').sum()
+    tri = cl.load_sample('clrd').groupby('LOB').sum()
     assert cl.concat([tri.loc['wkcomp'], tri.loc['comauto']], axis=0) == \
            tri.loc[['wkcomp', 'comauto']]

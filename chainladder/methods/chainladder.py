@@ -34,7 +34,7 @@ class Chainladder(MethodBase):
     --------
     Comparing the ultimates for a company using company LDFs vs industry LDFs
 
-    >>> clrd = cl.load_dataset('clrd')['CumPaidLoss']
+    >>> clrd = cl.load_sample('clrd')['CumPaidLoss']
     >>> clrd = clrd[clrd['LOB'] == 'wkcomp']
     >>> industry = clrd.sum()
     >>> allstate_industry_cl = cl.Chainladder().fit(industry).predict(clrd).ultimate_.loc['Allstate Ins Co Grp']

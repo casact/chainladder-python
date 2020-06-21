@@ -23,7 +23,7 @@
         <strong>Classes</strong>:&nbsp;
 
     :ref:`Triangle<triangle>`
-
+    
     .. raw:: html
 
         <small class="float-right box-example-links">

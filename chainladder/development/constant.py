@@ -56,7 +56,7 @@ class DevelopmentConstant(DevelopmentBase):
         ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
         if self.style == 'cdf':
             ldf = xp.concatenate((ldf[:-1]/ldf[1:], xp.array([ldf[-1]])))
-        ldf = ldf[xp.newaxis, xp.newaxis, xp.newaxis, ...]
+        ldf = ldf[None, None, None, ...]
         obj.values = obj.values * ldf
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)

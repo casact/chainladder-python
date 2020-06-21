@@ -185,10 +185,10 @@ class Development(DevelopmentBase):
         dfill = X.shape[-1]-arr.shape[-1]
         if ofill > 0:
             arr = xp.concatenate((arr, xp.repeat(
-                xp.ones(arr.shape[-1])[xp.newaxis], ofill, 0)), 0)
+                xp.ones(arr.shape[-1])[None], ofill, 0)), 0)
         if dfill > 0:
             arr = xp.concatenate((arr, xp.repeat(
-                xp.ones(arr.shape[-2])[..., xp.newaxis], dfill, -1)), -1)
+                xp.ones(arr.shape[-2])[..., None], dfill, -1)), -1)
         return arr[:, :-1]
 
     def _drop(self, X):
@@ -240,7 +240,7 @@ class Development(DevelopmentBase):
         val = xp.array([weight_dict.get(item.lower(), 1)
                         for item in average])
         for i in [2, 1, 0]:
-            val = xp.repeat(val[xp.newaxis], tri_array.shape[i], axis=0)
+            val = xp.repeat(val[None], tri_array.shape[i], axis=0)
         val = xp.nan_to_num(val * (y * 0 + 1))
         if xp == cp:
             link_ratio = y / x

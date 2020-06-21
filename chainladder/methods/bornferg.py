@@ -35,7 +35,7 @@ class BornhuetterFerguson(Benktander):
     Smoothing chainladder ultimates by using them as apriori figures in the
     Bornhuetter Ferguson method.
 
-    >>> raa = cl.load_dataset('RAA')
+    >>> raa = cl.load_sample('RAA')
     >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
     >>> apriori = cl_ult*0+(cl_ult.sum()/10)[0] # Mean Chainladder Ultimate
     >>> cl.BornhuetterFerguson(apriori=1).fit(raa, sample_weight=apriori).ultimate_

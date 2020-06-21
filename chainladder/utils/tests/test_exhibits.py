@@ -4,7 +4,7 @@ import chainladder as cl
 
 
 def test_simple_exhibit():
-    raa = cl.load_dataset('raa')
+    raa = cl.load_sample('raa')
 
     col = cl.Column(
         cl.DataFrame(raa, margin=(0,0,1,0)),

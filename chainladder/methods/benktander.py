@@ -96,7 +96,7 @@ class Benktander(MethodBase):
         ult.values = \
             obj.cdf_.values[..., :ult.shape[development]]*(ult.values*0+1)
         cdf = ult.latest_diagonal.values
-        cdf = (1-1/cdf)[xp.newaxis]
+        cdf = (1-1/cdf)[None]
         exponents = xp.arange(self.n_iters+1)
         exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf**exponents

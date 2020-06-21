@@ -126,13 +126,13 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         incurred = obj[[item[1] for item in p_to_i][0]]
         for item in [item[1] for item in p_to_i][1:]:
             incurred[item] = obj[item]
-        paid = paid.values[xp.newaxis]
-        incurred = incurred.values[xp.newaxis]
+        paid = paid.values[None]
+        incurred = incurred.values[None]
         return xp.concatenate((paid, incurred), axis=0)
 
     def _p_to_i_concate(self, obj_p, obj_i):
         xp = cp.get_array_module(obj_p)
-        return xp.concatenate((obj_p[xp.newaxis], obj_i[xp.newaxis]), 0)
+        return xp.concatenate((obj_p[None], obj_i[None]), 0)
 
     def _get_MCL_model(self, X):
         xp = cp.get_array_module(X.values)
@@ -178,7 +178,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         lambdaP = WeightedRegression(thru_orig=True, axis=-1).fit(
             xp.reshape(self.q_resid_[0][..., :-1, :-1], (k, v, o*d)),
             xp.reshape(self.residual_[0], (k, v, o*d)), w).slope_
-        return self._p_to_i_concate(lambdaP, lambdaI)[..., xp.newaxis]
+        return self._p_to_i_concate(lambdaP, lambdaI)[..., None]
 
     @property
     def munich_full_triangle_(self):

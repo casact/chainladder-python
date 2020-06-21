@@ -34,7 +34,7 @@ This example demonstrates how you can can use the Mack Chainladder method.
     # Load the data
     data = cl.load_sample('raa')
 
-    # Compute Mack Chainladder ultimates and Std Err using 'simple' average
+    # Compute Mack Chainladder ultimates and Std Err using 'volume' average
     mack = cl.MackChainladder()
     dev = cl.Development(average='volume')
     mack.fit(dev.fit_transform(data))
@@ -51,7 +51,7 @@ This example demonstrates how you can can use the Mack Chainladder method.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.470 seconds)
+   **Total running time of the script:** ( 0 minutes  0.569 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_mack.py:
