@@ -145,6 +145,8 @@ This approach works for ``average``, ``n_periods``, ``drop_high`` and ``drop_low
 Notice in both cases, the you have not specified a parameter, a sensible default
 is chosen for you.
 
+.. _dropping:
+
 Omitting link ratios
 --------------------
 There are several arguments for dropping individual cells from the triangle as
@@ -282,43 +284,6 @@ be adjusted based on the **(P/I)** ratio at any given cell of the ``Triangle``.
 .. topic:: References
 
   .. [QM2004] `G Quarg, Gerhard, and T Mack, "Munich Chain Ladder: A Reserving Method that Reduces the Gap between IBNR" <http://www.variancejournal.org/issues/02-02/266.pdf>`__
-
-
-.. _bootstrap:
-
-Bootstrap Sampling
-==================
-
-:class:`BootstrapODPSample` simulates new triangles according to the ODP Bootstrap
-model. The Estimator can only apply to single triangles.  That is both the
-``index`` and ``column`` of the Triangle must be of unity length.  Upon fitting the
-Estimator, the ``index`` will contain the individual simulations.
-
-  >>> import chainladder as cl
-  >>> raa = cl.load_sample('raa')
-  >>> cl.BootstrapODPSample(n_sims=500).fit_transform(raa)
-  Valuation: 1990-12
-  Grain:     OYDY
-  Shape:     (500, 1, 10, 10)
-  Index:      ['Total']
-  Columns:    ['values']
-
-The class only simulates new triangles from which you can generate
-statistics about parameter uncertainty. Estimates of ultimate along with process
-uncertainty would occur with the various :ref:`IBNR Models<methods_toc>`.
-
-An example of using the :class:`BootstrapODPSample` with the :class:`BornhuetterFerguson`
-method:
-
-.. figure:: /auto_examples/images/sphx_glr_plot_stochastic_bornferg_001.png
-   :target: ../auto_examples/plot_stochastic_bornferg.html
-   :align: center
-   :scale: 50%
-
-
-.. topic:: References
-
-  .. [SM2016] `M Shapland, "Using the ODP Bootstrap Model: A Practitioner's Guide", CAS Monograph No.4 <https://www.casact.org/pubs/monographs/papers/04-shapland.pdf>`__
 
 
 .. _clarkldf:

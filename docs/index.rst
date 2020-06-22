@@ -22,8 +22,8 @@
         <strong>Application</strong>: Extend pandas syntax to manipulate reserving triangles</br>
         <strong>Classes</strong>:&nbsp;
 
-    :ref:`Triangle<triangle>`
-    
+    :ref:`Triangle<triangle>`,...
+
     .. raw:: html
 
         <small class="float-right box-example-links">
@@ -49,9 +49,9 @@
         <p>Tooling to generate loss development</p>
         <div class="box-links">
         <strong>Applications</strong>: comprehensive library of development techniques</br>
-        <strong>Classes</strong>:&nbsp;
+        <strong>Algorithms</strong>:&nbsp;
 
-    :ref:`Development<dev>`, :ref:`MunichAdjustment<munich>`, :ref:`BootstrapODPSample<bootstrap>`, ...
+    :ref:`Development<dev>`, :ref:`MunichAdjustment<munich>`, :ref:`ClarkLDF<clarkldf>`...
 
     .. raw:: html
 
@@ -81,7 +81,7 @@
         <strong>Applications</strong>: Long-tailed lines of business</br>
         <strong>Algorithms</strong>:&nbsp;
 
-    :ref:`TailCurve<curve>`, :ref:`TailConstant <constant>`, :ref:`Bondy<bondy>`, ...
+    :ref:`TailCurve<curve>`, :ref:`TailConstant<constant>`, :ref:`TailBondy<bondy>`, ...
 
     .. raw:: html
 
@@ -140,12 +140,12 @@
 
         </h2>
         <blockquote>
-        <p>scikit-learn style Pipelines for what-if reserving analyses</p>
+        <p>Data adjustments and workflow tools</p>
         <div class="box-links">
-        <strong>Applications</strong>: Assumption sensitivity, simulation</br>
-        <strong>Modules</strong>:&nbsp;
+        <strong>Applications</strong>: scenario testing, simulation, homogenize data</br>
+        <strong>Classes</strong>:&nbsp;
 
-    :ref:`Pipeline <pipeline>`, :ref:`GridSearch <gridsearch>`
+    :ref:`BootstrapODPSample<bootstrap>`, :ref:`BerquistSherman <berqsherm>`, :ref:`Pipeline <pipeline>`,...
 
     .. raw:: html
 

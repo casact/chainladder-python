@@ -105,6 +105,8 @@ class TriangleSlicer:
 
         if type(key) is pd.DataFrame and 'development' in key.columns:
             return self._slice_development(key['development'])
+        if type(key) is pd.Index:
+            key = key.to_list()
         if type(key) is np.ndarray:
             # Presumes that if I have a 1D array, I will want to slice origin.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:

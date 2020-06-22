@@ -7,7 +7,7 @@ import pandas as pd
 import copy
 import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
-from chainladder import WeightedRegression
+from chainladder.utils import WeightedRegression
 from chainladder.core import EstimatorIO
 
 

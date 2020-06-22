@@ -3,14 +3,20 @@
 ============
 IBNR Models
 ============
-IBNR models 
 
+Common Properties
+=================
+All IBNR estimators have ``ibnr_``, ``ultimate_``, ``full_triangle_`` and
+``full_expectation_`` attributes.  In addition, they carry over the transformed
+triangle as `X_` along with all of its properties.  Finally, the following
+estimators implement the `predict` method which allows them to be used on
+different Triangles.
 
 .. _chainladder:
 .. currentmodule:: chainladder
 
-Deterministic Chainladder
-=========================
+Basic Chainladder
+==================
 The distinguishing characteristic of the :class:`Chainladder` method is that ultimate claims for each
 accident year are produced from recorded values assuming that future claims’ development is
 similar to prior years’ development. In this method, the actuary uses the development triangles to
@@ -28,6 +34,18 @@ Other important assumptions of the development method include: consistent claim 
 stable mix of types of claims, stable policy limits, and stable reinsurance (or excess insurance)
 retention limits throughout the experience period.
 
+Though the algorithm underling the basic chainladder is trivial, the properties
+of the `Chainladder` estimator allow for a concise access to relevant information.
+
+As an example, we can use the estimator to determine actual vs expected run-off
+of a subsequent valuation period.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_ave_analysis_001.png
+   :target: ../auto_examples/plot_ave_analysis.html
+   :align: center
+   :scale: 70%
+
+
 .. topic:: References
 
   .. [F2010] J.  Friedland, "Estimating Unpaid Claims Using Basic Techniques", Version 3, Ch. 7, 2010.
@@ -43,10 +61,11 @@ a regression framework, statistics about the variability of the data and the par
 estimates allows for the estimation of prediciton errors.  The Mack Chainladder
 method is the most basic of stochastic methods.
 
+
 .. figure:: /auto_examples/images/sphx_glr_plot_mack_001.png
    :target: ../auto_examples/plot_mack.html
    :align: center
-   :scale: 50%
+   :scale: 70%
 
 
 .. topic:: References
@@ -94,6 +113,12 @@ The generalized formula is:
 `n=0` yields the expected loss method, `n=1` yields the traditional BF method,
 and finally when `n` is sufficiently large, the method converges to the
 traditional CL method.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_benktander_001.png
+   :target: ../auto_examples/plot_benktander.html
+   :align: center
+   :scale: 70%
+
 
 Mack noted the ``Benktander`` method is found to have almost always a smaller mean
 squared error than the other two methods and to be almost as precise as an exact

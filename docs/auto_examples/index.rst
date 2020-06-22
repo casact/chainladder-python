@@ -223,6 +223,27 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the adjustment to case reserves using the Berquist-Sherman method. A ...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_berqsherm_case_thumb.png
+     :alt: Berquist Sherman Case Reserve Adjustment
+
+     :ref:`sphx_glr_auto_examples_plot_berqsherm_case.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_berqsherm_case
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the extrap_periods functionality of the TailCurve estimator.  The est...">
 
 .. only:: html
@@ -409,6 +430,27 @@ Examples
    :hidden:
 
    /auto_examples/plot_bootstrap
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the adjustment to paid amounts and closed claim counts using the Berq...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_berqsherm_closure_thumb.png
+     :alt: Berquist-Sherman Disposal Rate Adjustment
+
+     :ref:`sphx_glr_auto_examples_plot_berqsherm_closure.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_berqsherm_closure
 
 .. raw:: html
 

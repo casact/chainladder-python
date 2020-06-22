@@ -196,7 +196,7 @@ class BootstrapODPSample(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.copy(X)
+        X_new = copy.deepcopy(X)
         X_new = self.resampled_triangles_
         X_new.scale_ = self.scale_
         X_new.random_state = self.random_state

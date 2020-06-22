@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
 from scipy.sparse import coo_matrix
+from sklearn.base import BaseEstimator
 import json
 import joblib
 
@@ -101,8 +102,11 @@ class EstimatorIO:
         -------
             string representation of object in json format
         '''
+        params = self.get_params(deep=False)
+        params = {k: v.to_json() if isinstance(v, BaseEstimator) else v
+                  for k, v in params.items()}
         return json.dumps(
-            {'params': self.get_params(),
+            {'params': params,
              '__class__': self.__class__.__name__})
 
     def __contains__(self, value):

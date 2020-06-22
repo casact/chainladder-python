@@ -38,6 +38,11 @@ def load_sample(key, *args, **kwargs):
         index = ['GRNAME', 'LOB']
         columns = ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR',
                    'EarnedPremCeded', 'EarnedPremNet']
+    if key.lower() == 'berqsherm':
+        origin = 'AccidentYear'
+        development = 'DevelopmentYear'
+        index = ['LOB']
+        columns = ['Incurred', 'Paid', 'Reported', 'Closed']
     if key.lower() in ['liab', 'auto']:
         index = ['lob']
     if key.lower() in ['cc_sample', 'ia_sample']:

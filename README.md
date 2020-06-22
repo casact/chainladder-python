@@ -7,15 +7,25 @@
 ## chainladder - Property and Casualty Loss Reserving in Python
 This package gets inpiration from the popular [R ChainLadder package](https://github.com/mages/ChainLadder).
 
-A goal of this package is to be minimalistic in needing its own API.
-Think in pandas for data manipulation and scikit-learn for model construction. The idea here is to allow an actuary already versed in these tools to pick up this package with ease. Save your mental energy for actuarial work.
+This package strives to be minimalistic in needing its own API.
+Think in [pandas](https://pandas.pydata.org/) for data manipulation and [scikit-learn](https://scikit-learn.org/stable/index.html) for model construction. An actuary already versed in these tools will pick up this package with ease. Save your mental energy for actuarial work.
 
+## Available Estimators
+`chainladder` has an ever growing list of estimators:
+
+|Loss Development|Tails Factors|IBNR Models|Adjustments & Workflow|
+| - | - | - | - |
+|[Development](https://chainladder-python.readthedocs.io/en/master/modules/development.html#basic-development)|[TailCurve](https://chainladder-python.readthedocs.io/en/master/modules/tails.html#ldf-curve-fitting)	   |[Chainladder](https://chainladder-python.readthedocs.io/en/master/modules/methods.html#basic-chainladder)          |[BootstrapODPSample]((https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#bootstrap-sampling))
+|[DevelopmentConstant](https://chainladder-python.readthedocs.io/en/master/modules/development.html#external-patterns)| [TailConstant](https://chainladder-python.readthedocs.io/en/master/modules/tails.html#external-data) |[MackChainladder](https://chainladder-python.readthedocs.io/en/master/modules/methods.html#mack-chainladder)      |[BerquistSherman](https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#berqu-st-sherman)
+|[MunichAdjustment](https://chainladder-python.readthedocs.io/en/master/modules/development.html#munich-adjustment)| [TailBondy](https://chainladder-python.readthedocs.io/en/master/modules/tails.html#the-bondy-tail)    |[BornhuettterFerguson](https://chainladder-python.readthedocs.io/en/master/modules/methods.html#bornhuetter-ferguson)|	[Pipeline](https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#pipeline)
+|[ClarkLDF](https://chainladder-python.readthedocs.io/en/master/modules/development.html#growth-curve-fitting)|	[TailClark](https://chainladder-python.readthedocs.io/en/master/modules/tails.html#growth-curve-extrapolation)	|[Benktander](https://chainladder-python.readthedocs.io/en/master/modules/methods.html#benktander)|[GridSearch](https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#gridsearch)
+|[IncrementalAdditive](https://chainladder-python.readthedocs.io/en/master/modules/development.html#incremental-additive)|              |[CapeCod](https://chainladder-python.readthedocs.io/en/master/modules/methods.html#cape-cod)
 
 ## Documentation
 Please visit the [Documentation](https://chainladder-python.readthedocs.io/en/latest/) page for examples, how-tos, and source
 code documentation.
 
-## Tutorials
+## Getting Started Tutorials
 Tutorial notebooks are available for download [here](https://github.com/casact/chainladder-python/tree/master/docs/tutorials).
 * [Working with Triangles](https://chainladder-python.readthedocs.io/en/latest/tutorials/triangle-tutorial.html)
 * [Selecting Development Patterns](https://chainladder-python.readthedocs.io/en/latest/tutorials/development-tutorial.html)
@@ -23,12 +33,6 @@ Tutorial notebooks are available for download [here](https://github.com/casact/c
 * [Applying Deterministic Methods](https://chainladder-python.readthedocs.io/en/latest/tutorials/deterministic-tutorial.html)
 * [Applying Stochastic Methods](https://chainladder-python.readthedocs.io/en/latest/tutorials/stochastic-tutorial.html)
 
-
-## Have a question?
-Feel free to reach out on [Gitter](https://gitter.im/chainladder-python/community).
-
-## Want to contribute?
-Check out our [contributing guidelines](https://github.com/casact/chainladder-python/blob/master/CONTRIBUTING.md).
 
 ## Installation
 To install using pip:
@@ -39,3 +43,9 @@ Alternatively, install directly from github:
 
 Note: This package requires Python 3.5 and later, numpy 1.12.0 and later,
 pandas 0.23.0 and later, scikit-learn 0.18.0 and later.
+
+## Questions?
+Feel free to reach out on [Gitter](https://gitter.im/chainladder-python/community).
+
+## Want to contribute?
+Check out our [contributing guidelines](https://github.com/casact/chainladder-python/blob/master/CONTRIBUTING.md).

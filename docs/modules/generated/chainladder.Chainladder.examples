@@ -5,14 +5,14 @@ Examples using ``chainladder.Chainladder``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Mack Chainladder method. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the adjustment to paid amounts and closed claim counts using the Berq...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_mack_thumb.png
-     :alt: Mack Chainladder Example
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_berqsherm_closure_thumb.png
+     :alt: Berquist-Sherman Disposal Rate Adjustment
 
-     :ref:`sphx_glr_auto_examples_plot_mack.py`
+     :ref:`sphx_glr_auto_examples_plot_berqsherm_closure.py`
 
 .. raw:: html
 
@@ -20,4 +20,4 @@ Examples using ``chainladder.Chainladder``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_mack.py`
+ * :ref:`sphx_glr_auto_examples_plot_berqsherm_closure.py`

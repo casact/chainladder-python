@@ -1,7 +1,7 @@
 
 
-Examples using ``chainladder.core.io.EstimatorIO.fit_transform``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Examples using ``chainladder.BerquistSherman.fit_transform``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html
 

@@ -48,7 +48,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         The estimated bivariate cumulative development patterns
 
     """
-    def __init__(self, paid_to_incurred):
+    def __init__(self, paid_to_incurred=None):
         if type(paid_to_incurred) is dict:
             warnings.warn("paid_to_incurred dict argument is deprecated, use tuple instead")
             paid_to_incurred = [(k, v) for k, v in paid_to_incurred.items()]
@@ -70,7 +70,8 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
             Returns the instance itself.
         """
 
-
+        if self.paid_to_incurred is None:
+            raise ValueError('Must enter valid value for paid_to_incurred.')
         obj = copy.deepcopy(X)
         xp = cp.get_array_module(obj.values)
         if 'ldf_' not in obj:

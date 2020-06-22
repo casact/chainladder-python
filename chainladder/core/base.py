@@ -30,6 +30,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         if data is None:
             ' Instance with nothing set'
             return
+        if columns:
+            check = data[columns].dtypes
+            check = [check] if check.__class__.__name__ == 'dtype' else check.to_list()
+            if 'object' in check:
+                raise ValueError("column attribute must be numeric.")
         # Sanitize inputs
         index, columns, origin, development = self._str_to_list(
             index, columns, origin, development)

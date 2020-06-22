@@ -44,9 +44,8 @@ allows you to select the development age to which the tail will attach.
 Regardless of ``attachment_age``, the tail development factor vector will
 always include patterns at least one year beyond the known data in the ``Triangle``.
 
-
-
 .. _constant:
+
 External Data
 =============
 :class:`TailConstant` allows you to input a tail factor as a constant.  This is
@@ -73,6 +72,7 @@ amount to run-off over the subsequent calendar period **132-144**, and the
 remainder, **144-Ult**.  The split is controlled by the ``decay`` parameter.
 
 .. _curve:
+
 LDF Curve Fitting
 =================
 :class:`TailCurve` allows for extrapolating a tail factor using curve fitting.
@@ -139,8 +139,8 @@ Deriving the `tail_` factor manually:
       Factors: A Summary Report", Casualty Actuarial Society E-Forum <https://www.casact.org/pubs/forum/13fforum/02-Tail-Factors-Working-Party.pdf>`__
 
 
-
 .. _bondy:
+
 The Bondy Tail
 ==============
 :class:`TailBondy` allows for setting the tail factor using the Generalized Bondy

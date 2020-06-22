@@ -53,7 +53,6 @@ Classes
   Development
   DevelopmentConstant
   MunichAdjustment
-  BootstrapODPSample
   IncrementalAdditive
   ClarkLDF
 
@@ -123,6 +122,8 @@ Classes
   :toctree: generated/
   :template: class.rst
 
+  BootstrapODPSample
+  BerquistSherman
   Pipeline
   GridSearch
 
