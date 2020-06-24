@@ -57,6 +57,8 @@ class Location(_LocBase):
             return self.obj[key]
         if type(key) == tuple and type(key[0]) == pd.Series:
             return self.obj[key[0]][key[1]]
+        if type(key) == pd.DataFrame:
+            key = pd.Index(key)
         idx = self.obj._idx_table().loc[key]
         obj = self.get_idx(self.obj._idx_table_format(idx))
         return self._update_sub_obj(obj)
