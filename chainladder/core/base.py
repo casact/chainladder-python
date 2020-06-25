@@ -183,11 +183,12 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         dates.
         '''
         ddims = self.ddims if ddims is None else ddims
-        if type(ddims) == pd.DatetimeIndex:
+        is_val_tri = type(ddims) == pd.DatetimeIndex
+        if is_val_tri:
             return pd.DatetimeIndex(pd.DataFrame(
                 np.repeat(self.ddims.values[np.newaxis],
                           len(self.odims), 0))
-                .unstack().values).to_period(self._lowest_grain()).to_timestamp(how='e')
+                .unstack().values)
         if ddims[0] is None:
             ddims = pd.Series([self.valuation_date]*len(self.origin))
             return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain()).to_timestamp(how='e')
@@ -308,7 +309,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         return arr
 
     def _str_to_list(self, *args):
-        return tuple([arg] if type(arg) is str else arg for arg in args)
+        return tuple([arg] if type(arg) in [str, pd.Period] else arg for arg in args)
 
     def _flatten(self, *args):
         return_list = []

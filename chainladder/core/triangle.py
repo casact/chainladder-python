@@ -164,7 +164,7 @@ class Triangle(TriangleBase):
     @property
     def latest_diagonal(self):
         """ The latest diagonal of the Triangle """
-        return self._get_latest_diagonal()
+        return self[self.valuation==self.valuation_date].dev_to_val().dropna()
 
     @property
     def link_ratio(self):
@@ -193,38 +193,6 @@ class Triangle(TriangleBase):
     @property
     def age_to_age(self):
         return self.link_ratio
-
-    def _get_latest_diagonal(self, compress=True):
-        ''' Method to return the latest diagonal of the triangle.  Requires
-            self.nan_overide == False.
-
-        Parameters
-        ----------
-        compress: bool
-            Whether to collapse the diagonal into a single columns
-        '''
-        obj = copy.deepcopy(self)
-        xp = cp.get_array_module(self.values)
-        if not compress:
-            offset = {'M': {'Y': 12, 'Q': 3, 'M': 1},
-                      'Q': {'Q': 1, 'Y': 4},
-                      'Y': {'Y': 1}}
-            val_idx = self.valuation.unique().sort_values()
-            val_idx = val_idx[val_idx <= self.valuation_date]
-            val_idx = val_idx[-offset[self.development_grain][self.origin_grain]:]
-            val_min, val_max = val_idx.min(), val_idx.max()
-            diagonal = obj[obj.valuation >= val_min]
-            diagonal = diagonal[diagonal.valuation <= val_max]
-            return diagonal
-        if compress:
-            diagonal = obj[obj.valuation == obj.valuation_date].values
-            diagonal = xp.expand_dims(xp.nansum(diagonal, 3), 3)
-            obj.ddims = np.array([None])
-            obj.valuation = pd.DatetimeIndex(
-                [pd.to_datetime(obj.valuation_date)] *
-                len(obj.odims)).to_period(self._lowest_grain()).to_timestamp(how='e')
-            obj.values = diagonal
-            return obj
 
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.

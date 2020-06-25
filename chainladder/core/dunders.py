@@ -17,19 +17,30 @@ class TriangleDunders:
         xp = cp.get_array_module(obj.values)
         other = other if type(other) in [int, float] else copy.deepcopy(other)
         if isinstance(other, TriangleDunders):
-            ddims = None
-            odims = None
             self._compatibility_check(obj, other)
             obj, other = self._prep_index_columns(obj, other)
-            # If broadcasting doesn't work, then try union of origin/developments
-            # before failure
             a, b = self.shape[-2:], other.shape[-2:]
-            if not (a[0] == 1 or b[0] == 1 or a[0] == b[0]) or \
-               not (a[1] == 1 or b[1] == 1 or a[1] == b[1]):
-                ddims = pd.concat((pd.Series(self.ddims, index=self.ddims),
-                                pd.Series(other.ddims, index=other.ddims)), axis=1)
-                odims = pd.concat((pd.Series(self.odims, index=self.odims),
-                                pd.Series(other.odims, index=other.odims)), axis=1)
+            is_broadcastable = (
+                (a[0] == 1 or b[0] == 1 or np.all(other.odims == obj.odims)) and
+                (a[1] == 1 or b[1] == 1 or np.all(other.ddims == obj.ddims)))
+            if is_broadcastable:
+                if len(other.odims) == 1 and len(obj.odims) > 1:
+                    other.odims = obj.odims
+                elif len(obj.odims) == 1 and len(other.odims) > 1:
+                    obj.odims = other.odims
+                if len(other.ddims) == 1 and len(obj.ddims) > 1:
+                    other.ddims = obj.ddims
+                elif len(obj.ddims) == 1 and len(other.ddims) > 1:
+                    obj.ddims = other.ddims
+                other = other.values
+            if not is_broadcastable:
+                # If broadcasting doesn't work, union axes similar to pandas
+                ddims = pd.concat(
+                    (pd.Series(obj.ddims, index=obj.ddims),
+                     pd.Series(other.ddims, index=other.ddims)), axis=1)
+                odims = pd.concat(
+                    (pd.Series(obj.odims, index=obj.odims),
+                     pd.Series(other.odims, index=other.odims)), axis=1)
                 other_arr = xp.zeros(
                     (other.shape[0], other.shape[1], len(odims), len(ddims)))
                 other_arr[:] = xp.nan
@@ -50,7 +61,6 @@ class TriangleDunders:
                     other_arr[:, :, ol:oh, dl:dh] = other.values
                 else:
                     other_arr[:, :, ol:oh, :] = other.values
-
                 obj_arr = xp.zeros(
                     (self.shape[0], self.shape[1], len(odims), len(ddims)))
                 obj_arr[:] = xp.nan
@@ -65,19 +75,19 @@ class TriangleDunders:
 
                 odims = np.array(odims.index)
                 ddims = np.array(ddims.index)
-                obj.ddims =  ddims
-                obj.odims =  odims
+                obj.ddims = ddims
+                obj.odims = odims
                 obj.values = obj_arr
-                other.values = other_arr
                 obj.valuation = obj._valuation_triangle()
+                other = other_arr
+                # Force update on _nan_triangle at next access.
                 if hasattr(obj, '_nan_triangle_'):
-                    # Force update on _nan_triangle at next access.
                     del obj._nan_triangle_
-            other = other.values
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
+
         obj.values = obj.values * self._expand_dims(obj._nan_triangle())
         obj.values[obj.values == 0] = np.nan
         return obj
@@ -87,14 +97,13 @@ class TriangleDunders:
             raise ValueError("Triangle arithmetic requires both triangles to have the same key_labels.")
         if x.origin_grain != y.origin_grain or x.development_grain != y.development_grain:
             raise ValueError("Triangle arithmetic requires both triangles to be the same grain.")
-        if x.is_val_tri != y.is_val_tri:
-            raise ValueError("Triangle arithmetic cannot be performed between a development triangle and a valuation Triangle.")
+        #if x.is_val_tri != y.is_val_tri:
+        #    raise ValueError("Triangle arithmetic cannot be performed between a development triangle and a valuation Triangle.")
         if x.is_cumulative != y.is_cumulative:
             warnings.warn('Arithmetic is being performed between an incremental triangle and a cumulative triangle.')
 
     def _prep_index_columns(self, x, y):
         """ Preps index and column axes for arithmetic """
-
         # Union columns
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.columns = y.columns
@@ -113,7 +122,6 @@ class TriangleDunders:
             for item in [item for item in col_union if item not in y.columns]:
                 y[item] = 0
             y = y[col_union]
-
         # Union index
         if len(x.index) == 1 and len(y.index) > 1:
             x.kdims = y.kdims

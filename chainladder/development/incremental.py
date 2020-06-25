@@ -72,7 +72,7 @@ class IncrementalAdditive(DevelopmentBase):
         obj = copy.copy(x)
         keeps = 1-xp.nan_to_num(x._nan_triangle()) + \
             xp.nan_to_num(
-                x._get_latest_diagonal(compress=False).values[0, 0, ...]*0+1)
+                x[x.valuation==x.valuation_date].values[0, 0, ...]*0+1)
         obj.values = (1+self.trend) ** \
             xp.flip((xp.abs(xp.arange(obj.shape[-2])[None].T -
                      xp.arange(obj.shape[-2])[None])), 0)*y_*keeps

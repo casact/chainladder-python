@@ -158,7 +158,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
             p_to_i_sigma[0]*xp.sqrt(paid[..., :-1, :-1])
         residI = (p_to_i_ata[1]-p_to_i_ldf[1]) / \
             p_to_i_sigma[1]*xp.sqrt(incurred[..., :-1, :-1])
-        nans = (X-X._get_latest_diagonal(compress=False)).values[0, 0]*0+1
+        nans = (X-X[X.valuation==X.valuation_date]).values[0, 0]*0+1
         q_resid = (paid/incurred - self.q_f_[1]) / \
             self.rho_sigma_[1]*xp.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \

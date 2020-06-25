@@ -192,8 +192,7 @@ def test_grain_returns_valid_tri():
 def test_base_minimum_exposure_triangle():
     raa = (cl.load_sample('raa').latest_diagonal*0+50000).to_frame().reset_index()
     raa['index'] = raa['index'].astype(str)
-    cl.Triangle(raa, origin='index',
-                columns=list(cl.load_sample('raa').columns))
+    cl.Triangle(raa, origin='index', columns=raa.columns[-1])
 
 
 def test_origin_and_value_setters():
@@ -340,7 +339,8 @@ def test_subtriangle_slice():
 
 def test_df_period_input():
     raa = cl.load_sample('raa').latest_diagonal
-    assert cl.Triangle(raa.to_frame().reset_index(), origin='index', columns='values') == raa
+    df = raa.to_frame().reset_index()
+    assert cl.Triangle(df, origin='index', columns=df.columns[-1]) == raa
 
 def test_trend_on_vector():
     raa = cl.load_sample('raa').latest_diagonal
