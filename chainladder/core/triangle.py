@@ -222,7 +222,7 @@ class Triangle(TriangleBase):
             obj.ddims = np.array([None])
             obj.valuation = pd.DatetimeIndex(
                 [pd.to_datetime(obj.valuation_date)] *
-                len(obj.odims)).to_period(self._lowest_grain())
+                len(obj.odims)).to_period(self._lowest_grain()).to_timestamp(how='e')
             obj.values = diagonal
             return obj
 
@@ -421,14 +421,19 @@ class Triangle(TriangleBase):
         -------
             Triangle
         """
+        ograin_new = grain[1:2]
+        ograin_old = self.origin_grain
+        dgrain_new = grain[-1]
+        dgrain_old = self.development_grain
+        valid = {'Y':['Y'], 'Q':['Q', 'Y'], 'M':['Y', 'Q', 'M']}
+        if ograin_new not in valid[ograin_old] or dgrain_new not in valid[dgrain_old]:
+            raise ValueError('New grain not compatible with existing grain')
         if not self.is_cumulative:
             # Must be cumulative to work
             obj = self.incr_to_cum().dev_to_val(inplace=True)
         else:
             obj = self.dev_to_val(inplace=True)
         # put data in valuation mode
-        ograin_new = grain[1:2]
-        ograin_old = obj.origin_grain
         xp = cp.get_array_module(self.values)
         if ograin_new != ograin_old:
             o_dt = pd.Series(obj.odims)
@@ -468,8 +473,6 @@ class Triangle(TriangleBase):
         dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
                           'Q': {'Y': 4, 'Q': 1},
                           'Y': {'Y': 1}}
-        dgrain_new = grain[-1]
-        dgrain_old = obj.development_grain
         if obj.shape[3] != 1:
             keeps = dev_grain_dict[dgrain_old][dgrain_new]
             keeps = np.where(np.arange(obj.shape[3]) % keeps == 0)[0]
@@ -524,7 +527,8 @@ class Triangle(TriangleBase):
         if kwargs.get('valuation_date', None):
             start = kwargs['valuation_date']
             warnings.warn('valuation_date is deprecated, and will be removed. Use start instead.')
-
+        if axis not in ['origin', 'valuation', 2, -2]:
+            raise ValueError('Only origin and valuation axes are supported for trending')
         def val_vector(start, end, valuation):
             if end < start:
                 val_start = xp.maximum(valuation, start)
@@ -533,18 +537,23 @@ class Triangle(TriangleBase):
                 val_start = xp.minimum(valuation, start)
                 val_end = xp.minimum(valuation, end)
             return val_start, val_end
-
         xp = cp.get_array_module(self.values)
         if not start:
-            start = np.datetime64(self.valuation_date)
+            if axis == 'valuation':
+                start = np.datetime64(self.valuation_date)
+            else:
+                start = np.datetime64(xp.max(self.odims))
         else:
             start = np.datetime64(start)
         if not end:
-            end = np.datetime64(xp.min(self.valuation))
+            if axis == 'valuation':
+                end = np.datetime64(xp.min(self.valuation))
+            else:
+                end = np.datetime64(xp.min(self.odims))
         else:
             end = np.datetime64(end)
-        if axis == 'origin':
-            val_start, val_end = val_vector(start, end, self.origin.end_time.values)
+        if axis in ['origin', 2, -2]:
+            val_start, val_end = val_vector(start, end, self.origin.start_time.values)
             trend = xp.array((1 + trend)**-(
                 pd.Series(val_end-val_start).dt.days/365.25)
                 )[None, None, ..., None]

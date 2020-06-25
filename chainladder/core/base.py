@@ -34,7 +34,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             check = data[columns].dtypes
             check = [check] if check.__class__.__name__ == 'dtype' else check.to_list()
             if 'object' in check:
-                raise ValueError("column attribute must be numeric.")
+                raise TypeError("column attribute must be numeric.")
         # Sanitize inputs
         index, columns, origin, development = self._str_to_list(
             index, columns, origin, development)
@@ -247,6 +247,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             target_field = data[fields].iloc[:, 0]
         if hasattr(target_field, 'dt'):
             target = target_field
+            if type(target.iloc[0]) == pd.Period:
+                if period_end:
+                    return target.dt.to_timestamp(how='e')
+                else:
+                    return target.dt.to_timestamp(how='s')
         else:
             datetime_arg = target_field.unique()
             date_inference_list = \
@@ -264,9 +269,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                     pass
             target = target_field.map(arr)
         if period_end:
-            target = target.dt.to_period(
-                TriangleBase._get_grain(target)
-            ).dt.to_timestamp(how='e')
+                target = target.dt.to_period(
+                    TriangleBase._get_grain(target)
+                ).dt.to_timestamp(how='e')
         return target
 
     @staticmethod

@@ -30,7 +30,9 @@ class TriangleDisplay():
         ''' Jupyter/Ipython HTML representation '''
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
-            if np.nanmean(abs(data)) < 10:
+            if np.all(np.isnan(data)):
+                fmt_str = ''
+            elif np.nanmean(abs(data)) < 10:
                 fmt_str = '{0:,.4f}'
             elif np.nanmean(abs(data)) < 1000:
                 fmt_str = '{0:,.2f}'

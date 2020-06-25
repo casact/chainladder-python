@@ -337,3 +337,11 @@ def test_subtriangle_slice():
     assert tail.loc['comauto', 'CumPaidLoss'].cdf_ == tail.cdf_.loc['comauto', 'CumPaidLoss']
     assert tail[['IncurLoss', 'CumPaidLoss']].cdf_ == tail.cdf_[['IncurLoss', 'CumPaidLoss']]
     assert tail.iloc[:3, 0].cdf_ == tail.cdf_.iloc[:3,0]
+
+def test_df_period_input():
+    raa = cl.load_sample('raa').latest_diagonal
+    assert cl.Triangle(raa.to_frame().reset_index(), origin='index', columns='values') == raa
+
+def test_trend_on_vector():
+    raa = cl.load_sample('raa').latest_diagonal
+    assert raa.trend(.05, axis=2).to_frame().astype(int).iloc[0,0]==29216

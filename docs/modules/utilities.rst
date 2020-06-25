@@ -277,8 +277,9 @@ Dataset   Description
 ========= =======================================================
 abc       ABC Data
 auto      Auto Data
+berqsherm Data from the Berquist Sherman paper
 cc_sample Sample Insurance Data for Cape Cod Method in Struhuss
-clrd      CAS Loss Reserving DataBase
+clrd      CAS Loss Reserving Database
 genins    General Insurance Data used in Clark
 ia_sample Sample data for Incremental Additive Method in Schmidt
 liab      more data

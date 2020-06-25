@@ -263,14 +263,13 @@ def add_triangle_agg_func(cls, k, v):
             kwargs.update({'keepdims': True})
             obj.values = func(obj.values, axis=axis, *args, **kwargs)
             if axis == 0 and obj.values.shape[axis] == 1:
-                obj.kdims = np.array([None])
-                obj.key_labels = [None]
+                obj.kdims = np.array([['(All)']*len(obj.key_labels)])
             if axis == 1 and obj.values.shape[axis] == 1:
-                obj.vdims = np.array([None])
+                obj.vdims = np.array([0])
             if axis == 2 and obj.values.shape[axis] == 1:
-                obj.odims = np.array([None])
+                obj.odims = np.array(['(All)'])
             if axis == 3 and obj.values.shape[axis] == 1:
-                obj.ddims = np.array([None])
+                obj.ddims = np.array(['(All)'])
             obj._set_slicers()
             obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
             obj.values[obj.values == 0] = np.nan
