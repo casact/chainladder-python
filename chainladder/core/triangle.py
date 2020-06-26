@@ -9,7 +9,7 @@ import copy
 import warnings
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-import datetime as dt
+
 
 class Triangle(TriangleBase):
     """
@@ -189,7 +189,7 @@ class Triangle(TriangleBase):
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
         obj.valuation = pd.DatetimeIndex(
-            pd.DataFrame(val_array).unstack().values).to_period(self._lowest_grain())
+            pd.DataFrame(val_array).unstack().values)
         if hasattr(obj, 'w_'):
             obj = obj*obj.w_[..., 0:1, :len(obj.odims), :]
         return obj
@@ -268,9 +268,30 @@ class Triangle(TriangleBase):
         if inplace:
             if self.is_val_tri:
                 return self
-            self = self._val_dev_chg('dev_to_val') if not self.is_val_tri else self
-            return self
-        return self._val_dev_chg('dev_to_val') if not self.is_val_tri else copy.deepcopy(self)
+            xp = cp.get_array_module(self.values)
+            obj = copy.deepcopy(self)
+            if hasattr(obj, '_nan_triangle_'):
+                del obj._nan_triangle_
+            if self.shape[-1] == 1:
+                return obj
+            rng = obj.valuation.unique().sort_values()
+            rng = rng[rng<=obj.valuation_date]
+            x = np.nan_to_num(obj.values)
+            val_mtrx = np.array(obj.valuation).reshape(
+                obj.shape[-2:], order='f')
+            x = [np.sum((val_mtrx==item)*x,-1, keepdims=True)
+                   for item in np.array(rng)]
+            x = np.concatenate(x, -1)
+            obj.values = x
+            obj.values[obj.values == 0] = xp.nan
+            obj.ddims = rng
+            obj.values = obj.values[..., :np.where(
+                obj.ddims <= obj.valuation_date)[0].max()+1]
+            obj.valuation = pd.DatetimeIndex(
+                np.repeat(obj.ddims.values[np.newaxis],
+                          len(obj.origin)).reshape(1, -1).flatten())
+            return obj
+        return copy.deepcopy(self).dev_to_val(inplace=True)
 
     def val_to_dev(self, inplace=False):
         ''' Converts triangle from a valuation triangle to a development lag
@@ -293,7 +314,7 @@ class Triangle(TriangleBase):
             if self.is_ultimate:
                 obj = self[self.valuation<'2262']
                 non_ultimates = obj.values
-                obj = obj._val_dev_chg('val_to_dev')
+                obj = obj._val_dev_chg()
                 ultimate = self[self.valuation>='2262']
                 max_val = self[self.valuation<'2262'][self.origin == self.origin.max()].valuation.max()
                 max_dev = obj[obj.origin == obj.origin.max()]
@@ -306,76 +327,33 @@ class Triangle(TriangleBase):
                 obj.valuation_date = max(obj.valuation)
                 ret_val = obj
             else:
-                ret_val = self._val_dev_chg('val_to_dev')
+                ret_val = self._val_dev_chg()
         ret_val.values = self._expand_dims(ret_val._nan_triangle())*ret_val.values
         if inplace:
             self = ret_val
         return ret_val
 
-
-    def _val_dev_chg(self, kind):
-        print('Initializing', dt.datetime.today())
+    def _val_dev_chg(self):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
         if hasattr(obj, '_nan_triangle_'):
             del obj._nan_triangle_
-        o_vals = obj._expand_dims(xp.arange(len(obj.origin))[:, None])
         if self.shape[-1] == 1:
             return obj
-        if kind == 'val_to_dev':
-            step = {'Y': 12, 'Q': 3, 'M': 1}[obj.development_grain]
-            mtrx = \
-                12*(obj.ddims.year.values[np.newaxis] -
-                    obj.origin.to_timestamp(how='s')
-                       .year.values[:, np.newaxis]) + \
-                   (obj.ddims.month.values[np.newaxis] -
-                    obj.origin.to_timestamp(how='s')
-                       .month.values[:, np.newaxis]) + 1
-            rng = range(mtrx[mtrx > 0].min(), mtrx.max()+1, step)
-        else:
-            rng = obj.valuation.unique().sort_values()
-            if not obj.is_full:
-                rng = rng[rng<=obj.valuation_date]
-        old_arr = None
-        print('looping', dt.datetime.today())
-        #return obj, rng, o_vals
-        for item in rng:
-            if kind == 'val_to_dev':
-                val = np.where(mtrx == item)
-            else:
-                val = np.where(obj._expand_dims(obj.valuation == item)
-                                  .reshape(obj.shape, order='f'))[-2:]
-            val = np.unique(np.array(list(zip(val[0], val[1]))), axis=0)
-            arr = xp.expand_dims(obj.values[:, :, val[:, 0], val[:, 1]], -1)
-            if val[0, 0] != 0:
-                prepend = obj._expand_dims(xp.array([xp.nan]*(val[0, 0]))[:, None])
-                arr = xp.concatenate((prepend, arr), -2)
-            if len(obj.origin)-1-val[-1, 0] != 0:
-                append = obj._expand_dims(
-                    xp.array([np.nan]*(len(obj.origin)-1-val[-1, 0]))[:, None])
-                arr = xp.concatenate((arr, append), -2)
-            if obj.is_cumulative and old_arr is not None:
-                arr = xp.isnan(arr)*xp.nan_to_num(old_arr) + xp.nan_to_num(arr)
-            old_arr = arr.copy()
-            o_vals = xp.concatenate((o_vals, arr), -1)
-        print('Finalizing', dt.datetime.today())
-        obj.values = o_vals[..., 1:]
-        obj.values[obj.values == 0] = xp.nan
-        if kind == 'val_to_dev':
-            obj.ddims = np.array([item for item in rng])
-            obj.valuation = obj._valuation_triangle()
-        else:
-            obj.ddims = obj.valuation.unique().sort_values()
-            if type(obj.ddims) == pd.PeriodIndex:
-                obj.ddims = obj.ddims.to_timestamp()
-            obj.values = obj.values[..., :np.where(
-                obj.ddims <= obj.valuation_date)[0].max()+1]
-            obj.ddims = obj.ddims[obj.ddims <= obj.valuation_date]
-            obj.valuation = pd.DatetimeIndex(
-                np.repeat(obj.ddims.values[np.newaxis],
-                          len(obj.origin)).reshape(1, -1).flatten())
+        x = np.nan_to_num(obj.values)
+        val_mtrx = \
+            (np.array(obj.valuation.year).reshape(obj.shape[-2:], order='f') -
+             np.array(pd.DatetimeIndex(obj.odims).year)[..., None])*12 + \
+            (np.array(obj.valuation.month).reshape(obj.shape[-2:], order='f') -
+             np.array(pd.DatetimeIndex(obj.odims).month)[..., None]) + 1
+        rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten()>0]))
+        x = [np.sum((val_mtrx==item)*x,-1, keepdims=True)
+               for item in np.array(rng)]
+        x = np.concatenate(x, -1)
+        obj.values = x
+        obj.ddims = np.array([item for item in rng])
+        obj.valuation = obj._valuation_triangle()
         obj._set_slicers()
-        print('Done', dt.datetime.today())
         return obj
 
 
