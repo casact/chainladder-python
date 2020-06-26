@@ -9,7 +9,7 @@ import copy
 import warnings
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-
+import datetime as dt
 
 class Triangle(TriangleBase):
     """
@@ -164,7 +164,11 @@ class Triangle(TriangleBase):
     @property
     def latest_diagonal(self):
         """ The latest diagonal of the Triangle """
-        return self[self.valuation==self.valuation_date].dev_to_val().dropna()
+        obj = self[self.valuation==self.valuation_date]
+        obj.values = np.nansum(obj.values, axis=-1, keepdims=True)
+        obj.ddims = pd.DatetimeIndex(
+            [self.valuation_date], dtype='datetime64[ns]', freq=None)
+        return obj
 
     @property
     def link_ratio(self):
@@ -310,6 +314,7 @@ class Triangle(TriangleBase):
 
 
     def _val_dev_chg(self, kind):
+        print('Initializing', dt.datetime.today())
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
         if hasattr(obj, '_nan_triangle_'):
@@ -329,7 +334,11 @@ class Triangle(TriangleBase):
             rng = range(mtrx[mtrx > 0].min(), mtrx.max()+1, step)
         else:
             rng = obj.valuation.unique().sort_values()
+            if not obj.is_full:
+                rng = rng[rng<=obj.valuation_date]
         old_arr = None
+        print('looping', dt.datetime.today())
+        #return obj, rng, o_vals
         for item in rng:
             if kind == 'val_to_dev':
                 val = np.where(mtrx == item)
@@ -349,6 +358,7 @@ class Triangle(TriangleBase):
                 arr = xp.isnan(arr)*xp.nan_to_num(old_arr) + xp.nan_to_num(arr)
             old_arr = arr.copy()
             o_vals = xp.concatenate((o_vals, arr), -1)
+        print('Finalizing', dt.datetime.today())
         obj.values = o_vals[..., 1:]
         obj.values[obj.values == 0] = xp.nan
         if kind == 'val_to_dev':
@@ -365,6 +375,7 @@ class Triangle(TriangleBase):
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
         obj._set_slicers()
+        print('Done', dt.datetime.today())
         return obj
 
 

@@ -46,7 +46,7 @@ class _LocBase:
             k for k in obj.__dict__.keys()
             if getattr(obj, k).__class__.__name__ in ['Triangle', 'DataFrame']]
         for sub_tri in sub_tris:
-            setattr(obj, sub_tri, getattr(obj, sub_tri).loc[obj.kdims, obj.vdims])
+              setattr(obj, sub_tri, getattr(obj, sub_tri).copy())
         return obj
 
 
@@ -118,44 +118,47 @@ class TriangleSlicer:
                 return self._slice_valuation(key)
             return self._slice_origin(key)
         # Does triangle have sub-triangles?
-        sub_tris = [
-            k for k in self.__dict__.keys()
-            if getattr(self, k).__class__.__name__ == 'Triangle']
-        sub_dfs = [
-            k for k in self.__dict__.keys()
-            if getattr(self, k).__class__.__name__ == 'DataFrame']
-        # Dont mutate original subtriangle
-        if len(sub_tris) + len(sub_dfs) > 0:
-            self = copy.deepcopy(self)
+        #sub_tris = [
+        #    k for k in self.__dict__.keys()
+        #    if getattr(self, k).__class__.__name__ == 'Triangle']
+        #sub_dfs = [
+        #    k for k in self.__dict__.keys()
+        #    if getattr(self, k).__class__.__name__ == 'DataFrame']
+        ## Dont mutate original subtriangle
+        #if len(sub_tris) + len(sub_dfs) > 0:
+        #    self = copy.deepcopy(self)
         if type(key) is pd.Series:
-            for sub_tri in sub_tris:
-                setattr(
-                    self, sub_tri,
-                    getattr(self, sub_tri).iloc[list(self.index[key].index)])
+            #for sub_tri in sub_tris:
+            #    setattr(
+            #        self, sub_tri,
+            #        getattr(self, sub_tri).iloc[list(self.index[key].index)])
             return self.iloc[list(self.index[key].index)]
         elif key in self.key_labels:
             # Boolean-indexing of a particular key
-            for sub_tri in sub_tris:
-                setattr(
-                    self, sub_tri, getattr(self, sub_tri).index[key])
-            for sub_df in sub_dfs:
-                setattr(
-                    self, sub_df, getattr(self, sub_df)[key])
+            #for sub_tri in sub_tris:
+            #    setattr(
+            #        self, sub_tri, getattr(self, sub_tri).index[key])
+            #for sub_df in sub_dfs:
+            #    setattr(
+            #        self, sub_df, getattr(self, sub_df)[key])
             return self.index[key]
         else:
-            idx = self._idx_table()[key]
-            idx = self._idx_table_format(idx)
-            for sub_tri in sub_tris:
-                setattr(
-                    self, sub_tri,
-                    _LocBase(getattr(self, sub_tri)).get_idx(idx))
-            for sub_df in sub_dfs:
-                if len(idx.columns) == 1:
-                    setattr(self, sub_df,
-                            getattr(self, sub_df).loc[idx.index][idx.columns[0]])
-                else:
-                    setattr(self, sub_df,
-                            getattr(self, sub_df).loc[idx.index,idx.columns])
+            idx = self._idx_table_format(self._idx_table()[key])
+            #key = [key] if type(key) is str else key
+            #for sub_tri in sub_tris:
+            #    sub_idx = list(
+            #        (set(key) if type(key) is not str else set([key])).intersection(
+            #        set(getattr(self, sub_tri).columns)))
+            #    sub_idx = getattr(self, sub_tri)._idx_table_format(getattr(self, sub_tri)._idx_table()[sub_idx])
+            #    if len(sub_idx.columns) > 0:
+            #        setattr(self, sub_tri, _LocBase(getattr(self, sub_tri)).get_idx(sub_idx))
+            #for sub_df in sub_dfs:
+            #    if len(idx.columns) == 1:
+            #        setattr(self, sub_df,
+            #                getattr(self, sub_df).loc[idx.index][idx.columns[0]])
+            #    else:
+            #        setattr(self, sub_df,
+            #                getattr(self, sub_df).loc[idx.index,idx.columns])
             obj = _LocBase(self).get_idx(idx)
             return obj
 
