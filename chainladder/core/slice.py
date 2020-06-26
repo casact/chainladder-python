@@ -20,16 +20,18 @@ class _LocBase:
         obj.vdims = np.array(idx.columns)
         obj.key_labels = list(idx.index.names)
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
-        x_0 = list(pd.Series([item[0] for item in idx.values[:, 0]]).unique())
-        x_1 = list(pd.Series([item[1] for item in idx.values[0, :]]).unique())
-        obj.values = \
-            obj.values[self._contig_slice(x_0), ...][:, self._contig_slice(x_1), ...]
+        x_0 = self._contig_slice(list(pd.Series([item[0] for item in idx.values[:, 0]]).unique()))
+        x_1 = self._contig_slice(list(pd.Series([item[1] for item in idx.values[0, :]]).unique()))
+        if type(x_0) is slice or type(x_1) is slice:
+            obj.values = obj.values[x_0, x_1, ...]
+        else:
+            obj.values = obj.values[x_0, ...][:, x_1, ...]
         obj.values[obj.values == 0] = np.nan
         return obj
 
     def _contig_slice(self, arr):
         if len(arr) == 1:
-            return arr
+            return slice(arr[0], arr[0]+1)
         diff = np.diff(arr)
         step  = None if arr[0] < arr[-1] else -1
         if diff.max() == diff.min() and diff.max() in [1, -1]:
@@ -207,7 +209,15 @@ class TriangleSlicer:
         if xp == cp:
             nan_tri = cp.array(nan_tri)
         obj.values = (obj.values*nan_tri)
-        obj.values = xp.take(xp.take(obj.values, o_idx, -2), d_idx, -1)
+        if np.all(o_idx == np.array(range(o_idx[0], o_idx[-1]+1))):
+            o_idx = slice(o_idx[0], o_idx[-1]+1)
+        if np.all(d_idx == np.array(range(d_idx[0], d_idx[-1]+1))):
+            d_idx = slice(d_idx[0], d_idx[-1]+1)
+        if type(o_idx) is slice or type(d_idx) is slice:
+            # If contiguous slices, this is faster
+            obj.values = obj.values[..., o_idx, d_idx]
+        else:
+            obj.values = xp.take(xp.take(obj.values, o_idx, -2), d_idx, -1)
         return self._cleanup_slice(obj)
 
     def _slice_development(self, key):
