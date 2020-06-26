@@ -281,22 +281,43 @@ class Triangle(TriangleBase):
                 return obj
             rng = obj.valuation.unique().sort_values()
             rng = rng[rng<=obj.valuation_date]
-            x = np.nan_to_num(obj.values)
+            if self.is_ultimate:
+                if self.is_cumulative:
+                    obj = obj.cum_to_incr()
+                u_rng = rng[-1:]
+                rng = rng[:-1]
+                k, v, o = obj.shape[:-1]
+                x = xp.concatenate(
+                    (obj.values[..., :-1],
+                     xp.repeat(xp.array([[[[xp.nan]]*o]*v]*k),
+                               len(rng)-(obj.shape[-1]-1), axis=-1)), -1)
+            else:
+                u_rng = []
+                x = xp.nan_to_num(obj.values)
             val_mtrx = np.array(obj.valuation).reshape(
-                obj.shape[-2:], order='f')
-            x = [np.sum((val_mtrx==item)*x,-1, keepdims=True)
-                   for item in np.array(rng)]
-            x = np.concatenate(x, -1)
+                obj.shape[-2:], order='f')[:, :-1]
+            rows, column_indices = xp.ogrid[:x.shape[2], :x.shape[3]]
+            r = xp.arange(
+                0, x.shape[2])*(xp.where(val_mtrx[0, :]==val_mtrx[0, -1])[0][0] -
+                 xp.where(val_mtrx[1, :]==val_mtrx[0, -1])[0][0])
+            r[r < 0] += x.shape[1]
+            column_indices = column_indices - r[..., None]
+            x = x[..., rows, column_indices]
+            if self.is_ultimate:
+                x = xp.concatenate((x, obj.values[..., -1:]), -1)
             obj.values = x
             obj.values[obj.values == 0] = xp.nan
-            obj.ddims = rng
+            obj.ddims = rng.append(u_rng)
             obj.values = obj.values[..., :np.where(
                 obj.ddims <= obj.valuation_date)[0].max()+1]
             obj.valuation = pd.DatetimeIndex(
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
+            if self.is_cumulative:
+                obj = obj.incr_to_cum()
             return obj
         return copy.deepcopy(self).dev_to_val(inplace=True)
+
 
     def val_to_dev(self, inplace=False):
         ''' Converts triangle from a valuation triangle to a development lag
