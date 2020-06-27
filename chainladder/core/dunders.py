@@ -88,7 +88,7 @@ class TriangleDunders:
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
 
-        obj.values = obj.values * self._expand_dims(obj._nan_triangle())
+        obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
         obj.values[obj.values == 0] = np.nan
         return obj
 

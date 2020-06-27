@@ -15,7 +15,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
         pass
 
     def validate_X(self, X):
-        obj = copy.copy(X)
+        obj = copy.deepcopy(X)
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
@@ -102,11 +102,11 @@ class MethodBase(BaseEstimator, EstimatorIO):
         obj._set_slicers()
         return obj
 
-    def _get_full_triangle_(self):
-        obj = copy.copy(self.X_)
+    def _get_full_triangle_(self, X):
+        obj = X
         xp = cp.get_array_module(obj.values)
         w = 1-xp.nan_to_num(obj._nan_triangle())
-        extend = len(self.ldf_.ddims) - len(self.X_.ddims)
+        extend = len(self.ldf_.ddims) - len(obj.ddims)
         ones = xp.ones((w.shape[-2], extend))
         w = xp.concatenate((w, ones), -1)
         obj.nan_override = True

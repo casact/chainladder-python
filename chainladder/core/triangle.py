@@ -103,6 +103,7 @@ class Triangle(TriangleBase):
         self._len_check(self.index, value)
         if type(value) is pd.DataFrame:
             self.kdims = value.values
+            self.key_labels = list(value.columns)
             self._set_slicers()
         else:
             raise TypeError('index must be a pandas DataFrame')
