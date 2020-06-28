@@ -30,14 +30,14 @@ BootstrapODPSample to reduce reserve variability estimates.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:170: UserWarning: drop_high and drop_low cannot be computed when less than three LDFs are present. Ignoring exclusions in some cases.
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:157: UserWarning: drop_high and drop_low cannot be computed when less than three LDFs are present. Ignoring exclusions in some cases.
       warnings.warn('drop_high and drop_low cannot be computed '
     c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\utils\weighted_regression.py:62: RuntimeWarning: invalid value encountered in sqrt
       residual = (y-fitted_value)*xp.sqrt(w)
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:264: RuntimeWarning: invalid value encountered in sqrt
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\base.py:251: RuntimeWarning: invalid value encountered in sqrt
       xp.swapaxes(xp.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
 
-    [Text(0.5,0,'Ultimate')]
+    [Text(0.5, 0, 'Ultimate')]
 
 
 
@@ -75,7 +75,7 @@ BootstrapODPSample to reduce reserve variability estimates.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  4.983 seconds)
+   **Total running time of the script:** ( 0 minutes  2.914 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bootstrap_comparison.py:

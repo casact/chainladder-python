@@ -43,14 +43,6 @@ class _LocBase:
                 return slice(max(arr), min_arr, step)
         return arr
 
-    def _update_sub_obj(self, obj):
-        sub_tris = [
-            k for k in obj.__dict__.keys()
-            if getattr(obj, k).__class__.__name__ in ['Triangle', 'DataFrame']]
-        for sub_tri in sub_tris:
-              setattr(obj, sub_tri, getattr(obj, sub_tri).copy())
-        return obj
-
 
 class Location(_LocBase):
     ''' class to generate .loc[] functionality '''
@@ -66,7 +58,7 @@ class Location(_LocBase):
                 key = pd.Index(key)
         idx = self.obj._idx_table().loc[key]
         obj = self.get_idx(self.obj._idx_table_format(idx))
-        return self._update_sub_obj(obj)
+        return obj
 
 
 class Ilocation(_LocBase):
@@ -74,7 +66,7 @@ class Ilocation(_LocBase):
     def __getitem__(self, key):
         idx = self.obj._idx_table().iloc[key]
         obj = self.get_idx(self.obj._idx_table_format(idx))
-        return self._update_sub_obj(obj)
+        return obj
 
 
 class TriangleSlicer:
@@ -119,48 +111,12 @@ class TriangleSlicer:
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             return self._slice_origin(key)
-        # Does triangle have sub-triangles?
-        #sub_tris = [
-        #    k for k in self.__dict__.keys()
-        #    if getattr(self, k).__class__.__name__ == 'Triangle']
-        #sub_dfs = [
-        #    k for k in self.__dict__.keys()
-        #    if getattr(self, k).__class__.__name__ == 'DataFrame']
-        ## Dont mutate original subtriangle
-        #if len(sub_tris) + len(sub_dfs) > 0:
-        #    self = copy.deepcopy(self)
         if type(key) is pd.Series:
-            #for sub_tri in sub_tris:
-            #    setattr(
-            #        self, sub_tri,
-            #        getattr(self, sub_tri).iloc[list(self.index[key].index)])
             return self.iloc[list(self.index[key].index)]
         elif key in self.key_labels:
-            # Boolean-indexing of a particular key
-            #for sub_tri in sub_tris:
-            #    setattr(
-            #        self, sub_tri, getattr(self, sub_tri).index[key])
-            #for sub_df in sub_dfs:
-            #    setattr(
-            #        self, sub_df, getattr(self, sub_df)[key])
             return self.index[key]
         else:
             idx = self._idx_table_format(self._idx_table()[key])
-            #key = [key] if type(key) is str else key
-            #for sub_tri in sub_tris:
-            #    sub_idx = list(
-            #        (set(key) if type(key) is not str else set([key])).intersection(
-            #        set(getattr(self, sub_tri).columns)))
-            #    sub_idx = getattr(self, sub_tri)._idx_table_format(getattr(self, sub_tri)._idx_table()[sub_idx])
-            #    if len(sub_idx.columns) > 0:
-            #        setattr(self, sub_tri, _LocBase(getattr(self, sub_tri)).get_idx(sub_idx))
-            #for sub_df in sub_dfs:
-            #    if len(idx.columns) == 1:
-            #        setattr(self, sub_df,
-            #                getattr(self, sub_df).loc[idx.index][idx.columns[0]])
-            #    else:
-            #        setattr(self, sub_df,
-            #                getattr(self, sub_df).loc[idx.index,idx.columns])
             obj = _LocBase(self).get_idx(idx)
             return obj
 
@@ -232,10 +188,6 @@ class TriangleSlicer:
     def _cleanup_slice(self, obj):
         ''' private method with common post-slicing functionality'''
         obj.valuation = obj._valuation_triangle()
-        if hasattr(obj, '_nan_triangle_'):
-            # Force update on _nan_triangle at next access.
-            del obj._nan_triangle_
-            obj._nan_triangle_ = obj._nan_triangle()
         return obj
 
     def _set_slicers(self):

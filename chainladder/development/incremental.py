@@ -56,6 +56,7 @@ class IncrementalAdditive(DevelopmentBase):
         """
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
+        sample_weight.is_cumulative = False
         obj = X.cum_to_incr()/sample_weight
         xp = cp.get_array_module(obj.values)
         x = obj.trend(self.trend)
@@ -78,12 +79,12 @@ class IncrementalAdditive(DevelopmentBase):
                      xp.arange(obj.shape[-2])[None])), 0)*y_*keeps
         obj.values = obj.values*(X._expand_dims(1-xp.nan_to_num(x._nan_triangle()))) + \
             xp.nan_to_num((X.cum_to_incr()/sample_weight).values)
+
         obj.values[obj.values == 0] = xp.nan
         obj.nan_override = True
         obj._set_slicers()
         self.incremental_ = obj*sample_weight
         self.ldf_ = obj.incr_to_cum().link_ratio
-        self.cdf_ = DevelopmentBase._get_cdf(self.ldf_)
         self.sigma_ = self.std_err_ = 0*self.ldf_
         return self
 
@@ -101,6 +102,6 @@ class IncrementalAdditive(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.copy(X)
-        for item in ['incremental_', 'cdf_', 'ldf_', 'sigma_', 'std_err_']:
+        for item in ['incremental_', 'ldf_', 'sigma_', 'std_err_']:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new

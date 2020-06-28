@@ -32,7 +32,7 @@ create a calendar year runoff of IBNR.
  .. code-block:: none
 
 
-    [Text(0,0.5,'IBNR'), Text(0.5,0,'Calendar Year')]
+    [Text(0, 0.5, 'IBNR'), Text(0.5, 0, 'Calendar Year')]
 
 
 
@@ -67,7 +67,7 @@ create a calendar year runoff of IBNR.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.564 seconds)
+   **Total running time of the script:** ( 0 minutes  0.410 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_ibnr_runoff.py:

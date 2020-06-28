@@ -92,4 +92,4 @@ def test_tail_doesnt_mutate_sigma_(data, averages, est_sigma):
 def test_fit_period():
     tri = cl.load_sample('tail_sample')
     dev = cl.Development(average='simple').fit_transform(tri)
-    assert round(cl.TailCurve(fit_period=slice(-6,None,None), extrap_periods=10).fit(dev).cdf_['paid'].values[0,0,0,-2],3) == 1.044
+    assert round(cl.TailCurve(fit_period=(tri.ddims[-7], None), extrap_periods=10).fit(dev).cdf_['paid'].values[0,0,0,-2],3) == 1.044

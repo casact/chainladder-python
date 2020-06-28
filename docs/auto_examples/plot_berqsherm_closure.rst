@@ -52,13 +52,13 @@ claim triangle as well as the paid amount triangle.
     # Load data
     triangle = cl.load_sample('berqsherm').loc['Auto']
     # Specify Berquist-Sherman model
-    self = cl.BerquistSherman(
+    berq = cl.BerquistSherman(
         paid_amount='Paid', incurred_amount='Incurred',
         reported_count='Reported', closed_count='Closed',
         reported_count_estimator=cl.Chainladder())
 
     # Adjust our triangle data
-    berq_triangle = self.fit_transform(triangle)
+    berq_triangle = berq.fit_transform(triangle)
     berq_cdf = cl.Development().fit(berq_triangle).cdf_
     orig_cdf = cl.Development().fit(triangle).cdf_
 
@@ -78,7 +78,7 @@ claim triangle as well as the paid amount triangle.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.733 seconds)
+   **Total running time of the script:** ( 0 minutes  0.981 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_berqsherm_closure.py:

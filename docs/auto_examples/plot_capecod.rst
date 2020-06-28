@@ -31,7 +31,7 @@ and ``decay``.
  .. code-block:: none
 
 
-    Text(0.5,0.98,'Private Passenger Auto Cape Cod Detrended Aprioris')
+    Text(0.5, 0.98, 'Private Passenger Auto Cape Cod Detrended Aprioris')
 
 
 
@@ -80,7 +80,7 @@ and ``decay``.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.776 seconds)
+   **Total running time of the script:** ( 0 minutes  3.731 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_capecod.py:

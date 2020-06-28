@@ -30,7 +30,7 @@ of the Munich Chainladder paper.
  .. code-block:: none
 
 
-    Text(0.5,0.98,'Munich Chainladder Residual Correlations')
+    Text(0.5, 0.98, 'Munich Chainladder Residual Correlations')
 
 
 
@@ -85,7 +85,7 @@ of the Munich Chainladder paper.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.499 seconds)
+   **Total running time of the script:** ( 0 minutes  0.427 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_munich_resid.py:

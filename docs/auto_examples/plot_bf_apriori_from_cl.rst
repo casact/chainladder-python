@@ -30,7 +30,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
  .. code-block:: none
 
 
-    [Text(0,0.5,'Ultimate'), Text(0.5,0,'Accident Year')]
+    [Text(0, 0.5, 'Ultimate'), Text(0.5, 0, 'Accident Year')]
 
 
 
@@ -60,7 +60,7 @@ apriori selection for the Bornhuetter-Ferguson Method.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.446 seconds)
+   **Total running time of the script:** ( 0 minutes  0.326 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_bf_apriori_from_cl.py:

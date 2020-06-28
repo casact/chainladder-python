@@ -30,10 +30,10 @@ and Incurred using the MunichAdjustment.
 
  .. code-block:: none
 
-    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\munich.py:53: UserWarning: paid_to_incurred dict argument is deprecated, use tuple instead
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\development\munich.py:54: UserWarning: paid_to_incurred dict argument is deprecated, use tuple instead
       warnings.warn("paid_to_incurred dict argument is deprecated, use tuple instead")
 
-    [Text(0,0.5,'Paid Ultimate / Incurred Ultimate'), Text(0.5,0,'Accident Year')]
+    [Text(0, 0.5, 'Paid Ultimate / Incurred Ultimate'), Text(0.5, 0, 'Accident Year')]
 
 
 
@@ -82,7 +82,7 @@ and Incurred using the MunichAdjustment.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.524 seconds)
+   **Total running time of the script:** ( 0 minutes  0.655 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_munich.py:

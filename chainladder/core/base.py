@@ -12,10 +12,11 @@ from chainladder.core.dunders import TriangleDunders
 from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
+from chainladder.core.common import Common
 
 
 class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
-                   TriangleDunders, TrianglePandas):
+                   TriangleDunders, TrianglePandas, Common):
     ''' This class handles the initialization of a triangle '''
 
     def __init__(self, data=None, origin=None, development=None,
@@ -167,16 +168,12 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         xp = cp.get_array_module(self.values)
         if min(self.values.shape[2:]) == 1 or self.nan_override:
             return xp.ones(self.values.shape[2:], dtype='float16')
-        if len(self.valuation) != len(self.odims)*len(self.ddims) or not \
-           hasattr(self, '_nan_triangle_'):
-            self.valuation = self._valuation_triangle()
-            val_array = self.valuation
-            val_array = val_array.values.reshape(self.shape[-2:], order='f')
+        else:
+            val_array = xp.array(self.valuation).reshape(self.shape[-2:], order='f')
             nan_triangle = xp.array(
                 pd.DataFrame(val_array) > self.valuation_date)
             nan_triangle = xp.array(xp.where(nan_triangle, np.nan, 1), dtype='float16')
-            self._nan_triangle_ = nan_triangle
-        return self._nan_triangle_
+            return nan_triangle
 
     def _valuation_triangle(self, ddims=None):
         ''' Given origin and development, develop a triangle of valuation

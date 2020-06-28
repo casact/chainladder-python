@@ -81,13 +81,12 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
                 reported_count_estimator.steps[-1][0]].ultimate_
         else:
             rep_cnt_ult = reported_count_estimator.ultimate_
-
         disposal_rate = (obj[closed_count] / rep_cnt_ult)
-
         adj_closed_clm = (
             (disposal_rate*0+1)*disposal_rate[
-                disposal_rate.valuation==disposal_rate.valuation_date].mean('origin') *
+                disposal_rate.valuation==X.valuation_date].mean('origin') *
             rep_cnt_ult)
+        adj_closed_clm.valuation_date = disposal_rate.valuation_date = X.valuation_date
 
         # Two-period exponential regression
         y = obj[paid_amount]

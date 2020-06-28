@@ -51,7 +51,7 @@ This example demonstrates how you can can use the Mack Chainladder method.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.569 seconds)
+   **Total running time of the script:** ( 0 minutes  0.658 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_mack.py:

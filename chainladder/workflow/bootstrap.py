@@ -67,12 +67,11 @@ class BootstrapODPSample(DevelopmentBase):
             raise ValueError('Only single index/column triangles are supported')
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
-        obj = copy.copy(X)
         lag = {'M': 1, 'Q': 3, 'Y': 12}[X.development_grain]
         obj = Development(
             n_periods=self.n_periods, drop=self.drop,
             drop_high=self.drop_high, drop_low=self.drop_low,
-            drop_valuation=self.drop_valuation).fit_transform(obj)
+            drop_valuation=self.drop_valuation).fit_transform(X)
         self.w_ = obj.w_
         obj = Chainladder().fit(obj)
         # Works for only a single triangle - can we generalize this
@@ -204,11 +203,13 @@ class BootstrapODPSample(DevelopmentBase):
         return X_new
 
 def _get_process_variance(self, full_triangle):
+    """ Inserts random noise into the full triangles and full expectations """
     #if self.process_dist == 'od poisson':
     #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
     xp = cp.get_array_module(full_triangle.values)
     lower_tri = full_triangle.cum_to_incr() - self.cum_to_incr()
-    random_state = xp.random.RandomState(None if not self.random_state else self.random_state + 1)
+    random_state = xp.random.RandomState(
+        None if not self.random_state else self.random_state + 1)
     lower_tri.values = random_state.gamma(
         shape=abs(lower_tri.values) / self.scale_, scale=self.scale_) * \
         np.sign(np.nan_to_num(lower_tri.values))

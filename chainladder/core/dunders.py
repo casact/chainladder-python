@@ -7,6 +7,7 @@ from chainladder.utils.cupy import cp
 import copy
 import warnings
 
+
 class TriangleDunders:
     ''' Class that implements the dunder (double underscore) methods for the
         Triangle class
@@ -18,6 +19,7 @@ class TriangleDunders:
         other = other if type(other) in [int, float] else copy.deepcopy(other)
         if isinstance(other, TriangleDunders):
             self._compatibility_check(obj, other)
+            obj.valuation_date = max(obj.valuation_date, other.valuation_date)
             obj, other = self._prep_index_columns(obj, other)
             a, b = self.shape[-2:], other.shape[-2:]
             is_broadcastable = (
@@ -72,7 +74,6 @@ class TriangleDunders:
                     obj_arr[:, :, ol:oh, dl:dh] = self.values
                 else:
                     obj_arr[:, :, ol:oh, :] = self.values
-
                 odims = np.array(odims.index)
                 ddims = np.array(ddims.index)
                 obj.ddims = ddims
@@ -80,9 +81,6 @@ class TriangleDunders:
                 obj.values = obj_arr
                 obj.valuation = obj._valuation_triangle()
                 other = other_arr
-                # Force update on _nan_triangle at next access.
-                if hasattr(obj, '_nan_triangle_'):
-                    del obj._nan_triangle_
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):

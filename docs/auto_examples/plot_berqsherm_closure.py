@@ -17,13 +17,13 @@ import matplotlib.pyplot as plt
 # Load data
 triangle = cl.load_sample('berqsherm').loc['Auto']
 # Specify Berquist-Sherman model
-self = cl.BerquistSherman(
+berq = cl.BerquistSherman(
     paid_amount='Paid', incurred_amount='Incurred',
     reported_count='Reported', closed_count='Closed',
     reported_count_estimator=cl.Chainladder())
 
 # Adjust our triangle data
-berq_triangle = self.fit_transform(triangle)
+berq_triangle = berq.fit_transform(triangle)
 berq_cdf = cl.Development().fit(berq_triangle).cdf_
 orig_cdf = cl.Development().fit(triangle).cdf_
 

@@ -31,7 +31,7 @@ payment patterns for the demo.
  .. code-block:: none
 
 
-    [Text(0,0.5,'Actual - Expected'), Text(0.5,0,'Accident Period'), Text(0.5,1,'Calendar Period 1997 Performance')]
+    [Text(0, 0.5, 'Actual - Expected'), Text(0.5, 0, 'Accident Period'), Text(0.5, 1.0, 'Calendar Period 1997 Performance')]
 
 
 
@@ -70,7 +70,7 @@ payment patterns for the demo.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.524 seconds)
+   **Total running time of the script:** ( 0 minutes  1.298 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_ave_analysis.py:

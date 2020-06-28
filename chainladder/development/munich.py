@@ -5,13 +5,14 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils.weighted_regression import WeightedRegression
 from chainladder.development import Development
 from chainladder.core import EstimatorIO
+from chainladder.core.common import Common
 import numpy as np
 from chainladder.utils.cupy import cp
 import copy
 import warnings
 
 
-class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
+class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     """Applies the Munich Chainladder adjustment to a set of paid/incurred
        ldfs.  The Munich method heavily relies on the ratio of paid/incurred
        and its inverse.
@@ -82,8 +83,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         self.q_f_, self.rho_sigma_ = self._get_MCL_model(obj)
         self.residual_, self.q_resid_ = self._get_MCL_resids(obj)
         self.lambda_coef_ = self._get_MCL_lambda()
-        self.cdf_ = self._get_cdf(obj)
-        self.ldf_ = self._set_ldf(X)
+        self.ldf_ = self._set_ldf(obj, self._get_mcl_cdf(obj, self.munich_full_triangle_))
         self._map = {
             (list(X.columns).index(x)): (num%2, num//2)
             for num, x in enumerate(np.array(self.paid_to_incurred).flatten())}
@@ -106,10 +106,17 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.copy(X)
-        X_new.sigma_ = self.ldf_*0+1
-        X_new.std_err_ = self.ldf_*0+1
-        triangles = ['cdf_', 'ldf_', 'rho_', 'lambda_',
-                     'lambda_coef_']
+        if 'ldf_' not in X_new:
+            X_new = Development().fit_transform(X_new)
+        X_new.p_to_i_X_ = self._get_p_to_i_object(X_new)
+        X_new.p_to_i_ldf_ = self._get_p_to_i_object(X_new.ldf_)
+        X_new.p_to_i_sigma_ = self._get_p_to_i_object(X_new.sigma_)
+        X_new.q_f_, X_new.rho_sigma_ = self._get_MCL_model(X_new)
+        X_new.munich_full_triangle_ = self._get_munich_full_triangle_(
+            X_new.p_to_i_X_, X_new.p_to_i_ldf_, X_new.p_to_i_sigma_,
+            self.lambda_coef_, X_new.rho_sigma_, X_new.q_f_)
+        X_new.ldf_ = self._set_ldf(X_new, self._get_mcl_cdf(X_new, X_new.munich_full_triangle_))
+        triangles = ['rho_', 'lambda_', 'lambda_coef_']
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
@@ -183,44 +190,52 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @property
     def munich_full_triangle_(self):
-        full_paid = self.p_to_i_X_[0][..., 0:1]
+        return self._get_munich_full_triangle_(
+            self.p_to_i_X_, self.p_to_i_ldf_, self.p_to_i_sigma_,
+            self.lambda_coef_, self.rho_sigma_, self.q_f_)
+
+    def _get_munich_full_triangle_(
+        self, p_to_i_X_, p_to_i_ldf_, p_to_i_sigma_, lambda_coef_, rho_sigma_, q_f_):
+        full_paid = p_to_i_X_[0][..., 0:1]
         xp = cp.get_array_module(full_paid)
-        full_incurred = self.p_to_i_X_[1][..., 0:1]
-        for i in range(self.p_to_i_X_[0].shape[-1]-1):
-            paid = (self.p_to_i_ldf_[0][..., i:i+1] +
-                    self.lambda_coef_[0] *
-                    self.p_to_i_sigma_[0][..., i:i+1] /
-                    self.rho_sigma_[0][..., i:i+1] *
+        full_incurred = p_to_i_X_[1][..., 0:1]
+        for i in range(p_to_i_X_[0].shape[-1]-1):
+            paid = (p_to_i_ldf_[0][..., i:i+1] +
+                    lambda_coef_[0] *
+                    p_to_i_sigma_[0][..., i:i+1] /
+                    rho_sigma_[0][..., i:i+1] *
                     (full_incurred[..., -1:]/full_paid[..., -1:] -
-                     self.q_f_[0][..., i:i+1]))*full_paid[..., -1:]
-            inc = (self.p_to_i_ldf_[1][..., i:i+1] + self.lambda_coef_[1] *
-                   self.p_to_i_sigma_[1][..., i:i+1] /
-                   self.rho_sigma_[1][..., i:i+1] *
+                     q_f_[0][..., i:i+1]))*full_paid[..., -1:]
+            inc = (p_to_i_ldf_[1][..., i:i+1] + self.lambda_coef_[1] *
+                   p_to_i_sigma_[1][..., i:i+1] /
+                   rho_sigma_[1][..., i:i+1] *
                    (full_paid[..., -1:]/full_incurred[..., -1:] -
-                   self.q_f_[1][..., i:i+1]))*full_incurred[..., -1:]
+                   q_f_[1][..., i:i+1]))*full_incurred[..., -1:]
             full_incurred = xp.concatenate(
                 (full_incurred,
-                 xp.nan_to_num(self.p_to_i_X_[1][..., i+1:i+2]) +
-                 (1-xp.nan_to_num(self.p_to_i_X_[1][..., i+1:i+2]*0+1)) *
+                 xp.nan_to_num(p_to_i_X_[1][..., i+1:i+2]) +
+                 (1-xp.nan_to_num(p_to_i_X_[1][..., i+1:i+2]*0+1)) *
                  inc), axis=3)
             full_paid = xp.concatenate(
                 (full_paid,
-                 xp.nan_to_num(self.p_to_i_X_[0][..., i+1:i+2]) +
-                 (1-xp.nan_to_num(self.p_to_i_X_[0][..., i+1:i+2]*0+1)) *
+                 xp.nan_to_num(p_to_i_X_[0][..., i+1:i+2]) +
+                 (1-xp.nan_to_num(p_to_i_X_[0][..., i+1:i+2]*0+1)) *
                  paid), axis=3)
         return self._p_to_i_concate(full_paid, full_incurred)
 
-    def _get_cdf(self, X):
+    def _get_mcl_cdf(self, X, munich_full_triangle_):
         ''' needs to be an attribute that gets assigned.  requires we overwrite
             the cdf and ldf methods with
         '''
+        xp = cp.get_array_module(X.values)
         obj = copy.copy(X.cdf_)
+        obj.values = xp.repeat(obj.values, len(X.odims), 2)
+        obj.odims = X.odims
         if type(self.paid_to_incurred) is tuple:
             p_to_i = [self.paid_to_incurred]
         else:
             p_to_i = self.paid_to_incurred
-        xp = cp.get_array_module(obj.values)
-        cdf_triangle = self.munich_full_triangle_
+        cdf_triangle = munich_full_triangle_
         cdf_triangle = cdf_triangle[..., -1:]/cdf_triangle[..., :-1]
         paid = [item[0] for item in p_to_i]
         for n, item in enumerate(paid):
@@ -234,12 +249,12 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO):
         obj._set_slicers()
         return obj
 
-    def _set_ldf(self, X):
-        ldf_tri = self.cdf_.values.copy()
+    def _set_ldf(self, X, cdf):
+        ldf_tri = cdf.values.copy()
         xp = cp.get_array_module(ldf_tri)
         ldf_tri = xp.concatenate((ldf_tri, xp.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1]/ldf_tri[..., 1:]
-        obj = copy.copy(self.cdf_)
+        obj = copy.copy(cdf)
         obj.values = ldf_tri
         obj.ddims = X.link_ratio.ddims
         obj._set_slicers

@@ -30,7 +30,7 @@ conservative tail factors than the ``exponential`` fit.
  .. code-block:: none
 
 
-    [Text(0,0.5,'Tail Factor'), Text(0.5,0,'Industry')]
+    [Text(0, 0.5, 'Tail Factor'), Text(0.5, 0, 'Industry')]
 
 
 
@@ -58,7 +58,7 @@ conservative tail factors than the ``exponential`` fit.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.305 seconds)
+   **Total running time of the script:** ( 0 minutes  1.263 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_tailcurve_compare.py:

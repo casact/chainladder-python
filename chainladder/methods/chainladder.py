@@ -49,39 +49,13 @@ class Chainladder(MethodBase):
         """
         super().fit(X, y, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_)
-        self.full_triangle_ = self._get_full_triangle(self)
+        self.process_variance_ = self._include_process_variance()
         return self
 
-    def predict(self, X, sample_weight=None):
-        obj = copy.deepcopy(X)
-        obj.ultimate_ = self._get_ultimate(obj)
-        obj.full_triangle_ = self._get_full_triangle(obj)
-        return obj
-
-    def _get_ultimate(self, X):
+    def _get_ultimate(self, X, sample_weight=None):
         """ Private method that uses CDFs to obtain an ultimate vector """
         xp = cp.get_array_module(X.values)
-        o, d = X.shape[-2:]
-        cdf = xp.repeat(self.cdf_.values[..., 0:1, :d], o, axis=2)
-        ultimate_ = (X * cdf).latest_diagonal
-        ultimate_.ddims = np.array(['Ult'])
-        ultimate_.valuation = pd.DatetimeIndex(
-            [pd.to_datetime('2262-04-11')]*o)
-        ultimate_._set_slicers()
-        ultimate_.valuation_date = ultimate_.valuation.max()
-        return ultimate_
-
-    def _get_full_triangle(self, X):
-        """ Private method that builds full triangle from ultimates"""
-        xp = cp.get_array_module(X.ultimate_.values)
-        o, d = X.ultimate_.shape[-2:]
-        cdf = copy.deepcopy(self.cdf_)
-        cdf.values = xp.repeat(cdf.values[..., 0:1, :], o, axis=2)
-        cdf.odims = X.ultimate_.odims
-        cdf.valuation_date = X.ultimate_.valuation_date
-        full = X.ultimate_ / cdf
-        full.values = xp.concatenate((full.values, X.ultimate_.values), -1)
-        full.ddims = xp.append(full.ddims, '9999-Ult')
-        full.ddims = xp.array([item.split('-')[0] for item in full.ddims])
-        full.valuation = full._valuation_triangle()
-        return full
+        ultimate = copy.deepcopy(X)
+        cdf = self._align_cdf(ultimate)
+        ultimate = X.latest_diagonal * cdf
+        return self._set_ult_attr(ultimate)

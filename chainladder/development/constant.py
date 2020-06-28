@@ -52,19 +52,19 @@ class DevelopmentConstant(DevelopmentBase):
         """
         obj = copy.copy(X)
         xp = cp.get_array_module(obj.values)
-        obj.values = xp.ones(X.shape)[..., :-1]
+        obj.values = xp.ones(X.shape)[..., 0:1, :-1]
         ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
         if self.style == 'cdf':
             ldf = xp.concatenate((ldf[:-1]/ldf[1:], xp.array([ldf[-1]])))
         ldf = ldf[None, None, None, ...]
         obj.values = obj.values * ldf
         obj.ddims = X.link_ratio.ddims
+        obj.odims = obj.odims[0:1]
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True
         obj._set_slicers()
 
         self.ldf_ = obj
-        self.cdf_ = self._get_cdf(self)
         self.sigma_ = self.ldf_*0+1
         self.std_err_ = self.ldf_*0+1
         return self

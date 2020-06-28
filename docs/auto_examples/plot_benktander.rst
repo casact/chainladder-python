@@ -34,7 +34,7 @@ choice.
  .. code-block:: none
 
 
-    [Text(0,0.5,'IBNR')]
+    [Text(0, 0.5, 'IBNR')]
 
 
 
@@ -75,7 +75,7 @@ choice.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  8.347 seconds)
+   **Total running time of the script:** ( 0 minutes  5.426 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_benktander.py:

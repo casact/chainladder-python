@@ -80,8 +80,8 @@ class TailCurve(TailBase):
             fit_period = self.fit_period
         else:
             grain = {'Y': 12, 'Q': 3, 'M': 1}[X.development_grain]
-            start = self.fit_period[0] if self.fit_period[0] is None else int(self.fit_period[0] / grain - 1)
-            end = self.fit_period[1] if self.fit_period[1] is None else int(self.fit_period[1] / grain - 1)
+            start = None if self.fit_period[0] is None else int(self.fit_period[0] / grain - 1)
+            end = None if self.fit_period[1] is None else int(self.fit_period[1] / grain - 1)
             fit_period = slice(start, end, None)
         super().fit(X, y, sample_weight)
         xp = cp.get_array_module(self.ldf_.values)
@@ -114,7 +114,6 @@ class TailCurve(TailBase):
         sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values[..., -1] = sigma[..., -1]
         self.std_err_.values[..., -1] = std_err[..., -1]
-        self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
     def _get_x(self, w, y):
