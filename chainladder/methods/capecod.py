@@ -54,55 +54,60 @@ class CapeCod(MethodBase):
         if sample_weight is None:
             raise ValueError('sample_weight is required.')
         super().fit(X, y, sample_weight)
-        obj = copy.deepcopy(self)
         self.sample_weight_ = sample_weight
         self.ultimate_, self.apriori_, self.detrended_apriori_ = \
-            self._get_ultimate_(X, sample_weight, obj)
-        self.full_triangle_ = self._get_full_triangle_()
+            self._get_ultimate(X, sample_weight)
+        self.process_variance_ = self._include_process_variance()
         return self
 
-    def _get_ultimate_(self, X, sample_weight, obj):
-        origin, development, len_orig = -2, -1, sample_weight.shape[-2]
-        ult = obj.X_
+    def _get_ultimate(self, X, sample_weight):
         xp = cp.get_array_module(X.values)
+        ult = copy.deepcopy(X)
         latest = X.latest_diagonal.values
-        ult.values = \
-            obj.cdf_.values[..., :ult.shape[development]]*(ult.values*0+1)
-        cdf = ult.latest_diagonal.values
+        len_orig = sample_weight.shape[-2]
+        cdf = self._align_cdf(ult)
         exposure = sample_weight.values
-        reported_exposure = exposure/cdf
-        trend_exponent = len_orig-xp.arange(len_orig)-1
-        trend_array = (1+self.trend)**(trend_exponent)
+        reported_exposure = exposure / cdf
+        trend_exponent = len_orig - xp.arange(len_orig) - 1
+        trend_array = (1 + self.trend)**(trend_exponent)
         trend_array = X._expand_dims(trend_array[..., None])
         decay_matrix = self.decay ** xp.abs(
-            xp.arange(len_orig)[None].T -
-            xp.arange(len_orig)[None])
+            xp.arange(len_orig)[None].T - xp.arange(len_orig)[None])
         decay_matrix = X._expand_dims(decay_matrix)
-        weighted_exposure = \
-            xp.swapaxes(reported_exposure, development, origin)*decay_matrix
+        weighted_exposure = xp.swapaxes(reported_exposure, -1, -2) * decay_matrix
         trended_ultimate = (latest*trend_array)/reported_exposure
-        trended_ultimate = xp.swapaxes(trended_ultimate, development, origin)
-        apriori = xp.sum(weighted_exposure*trended_ultimate, development) / \
-            xp.sum(weighted_exposure, development)
+        trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
+        apriori = (xp.sum(weighted_exposure*trended_ultimate, -1) /
+                   xp.sum(weighted_exposure, -1))
         ult.values = apriori[..., None]
-        ult.ddims = np.array([None])
         apriori_ = copy.copy(ult)
         detrended_ultimate = apriori_.values/trend_array
         detrended_apriori_ = copy.copy(ult)
         detrended_apriori_.values = detrended_ultimate
-        ibnr = detrended_ultimate*(1-1/cdf)*exposure
-        ult.values = latest + ibnr
-        ult.ddims = np.array([None])
-        ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
-                                         len_orig)
-        apriori_._set_slicers()
-        ult._set_slicers()
-        detrended_apriori_._set_slicers()
+        ult.values = latest + detrended_ultimate*(1-1/cdf)*exposure
+        ult = self._set_ult_attr(ult)
+        apriori_ = self._set_ult_attr(apriori_)
+        detrended_apriori_ = self._set_ult_attr(detrended_apriori_)
         return ult, apriori_, detrended_apriori_
 
-    def predict(self, X, sample_weight):
-        obj = super().predict(X, sample_weight)
+    def predict(self, X, sample_weight=None):
+        """Predicts the chainladder ultimate on a new triangle **X**
+
+        Parameters
+        ----------
+        X : Triangle
+            The data used to compute the mean and standard deviation
+            used for later scaling along the features axis.
+        sample_weight : Triangle
+            For exposure-based methods, the exposure to be used for predictions
+
+        Returns
+        -------
+        X_new: Triangle
+
+        """
+        obj = copy.deepcopy(X)
+        obj.ldf_ = self.ldf_
         obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = \
-            obj._get_ultimate_(X, sample_weight, obj)
-        obj.full_triangle_ = obj._get_full_triangle_()
+            self._get_ultimate(obj, sample_weight)
         return obj

@@ -31,8 +31,10 @@ optional. This example instantiates a 'premium' triangle as a single vector.
 
  .. code-block:: none
 
+    c:\users\jboga\onedrive\documents\github\chainladder-python\chainladder\core\dunders.py:101: UserWarning: Arithmetic is being performed between an incremental triangle and a cumulative triangle.
+      warnings.warn('Arithmetic is being performed between an incremental triangle and a cumulative triangle.')
 
-    [Text(0,0.5,'Loss Ratio'), Text(0.5,0,'Accident Year')]
+    [Text(0, 0.5, 'Loss Ratio'), Text(0.5, 0, 'Accident Year')]
 
 
 
@@ -70,7 +72,7 @@ optional. This example instantiates a 'premium' triangle as a single vector.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.426 seconds)
+   **Total running time of the script:** ( 0 minutes  0.340 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_exposure_triangle.py:

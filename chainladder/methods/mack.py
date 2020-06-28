@@ -7,7 +7,6 @@ import pandas as pd
 import copy
 from chainladder.methods import Chainladder
 
-
 class MackChainladder(Chainladder):
     """ Basic stochastic chainladder method popularized by Thomas Mack
 
@@ -60,9 +59,14 @@ class MackChainladder(Chainladder):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
+        # Caching full_triangle_ for fit as it is called a lot
+        self._full_triangle_ = self.full_triangle_
+        self.average_ = self.X_.average_
         self._mack_recursion('param_risk')
         self._mack_recursion('process_risk')
         self._mack_recursion('total_param_risk')
+        del self._full_triangle_
+        self.process_variance_ = self._include_process_variance()
         return self
 
     @property
@@ -105,7 +109,7 @@ class MackChainladder(Chainladder):
         nans = xp.concatenate(
             (nans, xp.ones((*self.X_.shape[:3], 1))*xp.nan), 3)
         nans = 1-xp.nan_to_num(nans)
-        properties = self.full_triangle_
+        properties = self._full_triangle_
         obj.valuation = properties.valuation
         obj.ddims = np.concatenate(
             (properties.ddims[:len(self.X_.ddims)],
@@ -130,8 +134,8 @@ class MackChainladder(Chainladder):
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
-        xp = cp.get_array_module(self.full_triangle_.values)
-        full_tri = xp.nan_to_num(self.full_triangle_.values)[..., :len(self.X_.ddims)]
+        xp = cp.get_array_module(self._full_triangle_.values)
+        full_tri = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)]
         t1_t = (full_tri * std_err)**2
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
@@ -147,8 +151,8 @@ class MackChainladder(Chainladder):
 
     def _get_tot_param_risk(self, risk_arr):
         """ This assumes triangle symmertry """
-        xp = cp.get_array_module(self.full_triangle_.values)
-        t1 = xp.nan_to_num(self.full_triangle_.values)[..., :len(self.X_.ddims)] - \
+        xp = cp.get_array_module(self._full_triangle_.values)
+        t1 = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)] - \
             xp.nan_to_num(self.X_.values) + \
             xp.nan_to_num(self.X_[self.X_.valuation==self.X_.valuation_date].values)
         t1 = xp.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
@@ -158,7 +162,7 @@ class MackChainladder(Chainladder):
             (ldf, xp.prod(self.X_.ldf_.values[..., -extend:], -1,
              keepdims=True)), -1)
         ldf = xp.unique(ldf, axis=-2)
-        for i in range(self.full_triangle_.shape[-1]-1):
+        for i in range(self._full_triangle_.shape[-1]-1):
             t_tot = xp.sqrt((t1[..., i:i+1])**2 + (ldf[..., i:i+1] *
                             risk_arr[..., -1:])**2)
             risk_arr = xp.concatenate((risk_arr, t_tot), -1)

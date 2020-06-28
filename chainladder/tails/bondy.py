@@ -112,7 +112,6 @@ class TailBondy(TailBase):
             (self.ldf_.values[..., :sum(X.ddims<=attachment_age)],
              fitted[..., -sum(X.ddims>=attachment_age):]),
             axis=-1)
-        self.cdf_ = DevelopmentBase._get_cdf(self)
         sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values[..., -1] = sigma[..., -1]
         self.std_err_.values[..., -1] = std_err[..., -1]

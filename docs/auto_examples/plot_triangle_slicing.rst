@@ -53,7 +53,7 @@ This example demonstrates the familiarity of the pandas API applied to a
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.131 seconds)
+   **Total running time of the script:** ( 0 minutes  1.202 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_triangle_slicing.py:

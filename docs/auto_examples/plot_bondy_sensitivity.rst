@@ -32,7 +32,7 @@ traditional Bondy method.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x0000020021721358>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x000001A8C2169DD8>
 
 
 

@@ -103,6 +103,7 @@ class Triangle(TriangleBase):
         self._len_check(self.index, value)
         if type(value) is pd.DataFrame:
             self.kdims = value.values
+            self.key_labels = list(value.columns)
             self._set_slicers()
         else:
             raise TypeError('index must be a pandas DataFrame')
@@ -179,8 +180,6 @@ class Triangle(TriangleBase):
     def link_ratio(self):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
-        if hasattr(obj, '_nan_triangle_'):
-            del obj._nan_triangle_
         temp = obj.values.copy()
         temp[temp == 0] = np.nan
         val_array = obj.valuation.values.reshape(
@@ -196,7 +195,8 @@ class Triangle(TriangleBase):
         obj.valuation = pd.DatetimeIndex(
             pd.DataFrame(val_array).unstack().values)
         if hasattr(obj, 'w_'):
-            obj = obj*obj.w_[..., 0:1, :len(obj.odims), :]
+            if obj.shape == obj.w_[..., 0:1, :len(obj.odims), :].shape:
+                obj = obj*obj.w_[..., 0:1, :len(obj.odims), :]
         return obj
 
     @property
@@ -242,7 +242,7 @@ class Triangle(TriangleBase):
         """
         xp = cp.get_array_module(self.values)
         if inplace:
-            if self.is_cumulative:
+            if self.is_cumulative or self.is_cumulative is None:
                 temp = xp.nan_to_num(self.values)[..., 1:] - \
                     xp.nan_to_num(self.values)[..., :-1]
                 temp = xp.concatenate((self.values[..., 0:1], temp), axis=3)
@@ -275,15 +275,13 @@ class Triangle(TriangleBase):
                 return self
             xp = cp.get_array_module(self.values)
             obj = copy.deepcopy(self)
-            if hasattr(obj, '_nan_triangle_'):
-                del obj._nan_triangle_
             if self.shape[-1] == 1:
                 return obj
             rng = obj.valuation.unique().sort_values()
             rng = rng[rng<=obj.valuation_date]
             if self.is_ultimate:
                 if self.is_cumulative:
-                    obj = obj.cum_to_incr()
+                    obj = obj.cum_to_incr(inplace=True)
                 u_rng = rng[-1:]
                 rng = rng[:-1]
                 k, v, o = obj.shape[:-1]
@@ -303,6 +301,7 @@ class Triangle(TriangleBase):
             r[r < 0] += x.shape[1]
             column_indices = column_indices - r[..., None]
             x = x[..., rows, column_indices]
+
             if self.is_ultimate:
                 x = xp.concatenate((x, obj.values[..., -1:]), -1)
             obj.values = x
@@ -314,7 +313,7 @@ class Triangle(TriangleBase):
                 np.repeat(obj.ddims.values[np.newaxis],
                           len(obj.origin)).reshape(1, -1).flatten())
             if self.is_cumulative:
-                obj = obj.incr_to_cum()
+                obj = obj.incr_to_cum(inplace=True)
             return obj
         return copy.deepcopy(self).dev_to_val(inplace=True)
 
@@ -362,8 +361,6 @@ class Triangle(TriangleBase):
     def _val_dev_chg(self):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
-        if hasattr(obj, '_nan_triangle_'):
-            del obj._nan_triangle_
         if self.shape[-1] == 1:
             return obj
         x = np.nan_to_num(obj.values)
@@ -449,8 +446,6 @@ class Triangle(TriangleBase):
             obj.values = new_tri
             obj.odims = np.unique(o)
             obj.valuation = obj._valuation_triangle()
-            if hasattr(obj, '_nan_triangle_'):
-                del obj._nan_triangle_
         obj = obj.val_to_dev(inplace=True)
         # Now do development
         dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
@@ -466,9 +461,6 @@ class Triangle(TriangleBase):
         obj.development_grain = dgrain_new
         obj.values[obj.values == 0] = xp.nan
         obj.valuation = obj._valuation_triangle()
-        if hasattr(obj, '_nan_triangle_'):
-            # Force update on _nan_triangle at next access.
-            del obj._nan_triangle_
         if not self.is_cumulative:
             obj = obj.cum_to_incr()
         if self.is_val_tri:

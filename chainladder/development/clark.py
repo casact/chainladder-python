@@ -173,7 +173,6 @@ class ClarkLDF(DevelopmentBase):
         obj.nan_override = True
         obj._set_slicers()
         self.ldf_ = obj
-        self.cdf_ = self._get_cdf(self)
         self.sigma_ = self.ldf_*0+1
         self.std_err_ = self.ldf_*0+1
         table = X._idx_table()
@@ -209,7 +208,7 @@ class ClarkLDF(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.copy(X)
-        triangles = ['cdf_', 'ldf_', 'sigma_', 'std_err_', 'omega_', 'theta_',
+        triangles = ['ldf_', 'sigma_', 'std_err_', 'omega_', 'theta_',
                      'incremental_fits_', 'G_', '_G', 'growth', 'scale_']
         for item in triangles:
             setattr(X_new, item, getattr(self, item))

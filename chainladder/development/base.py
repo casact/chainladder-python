@@ -9,24 +9,11 @@ import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils import WeightedRegression
 from chainladder.core import EstimatorIO
+from chainladder.core.common import Common
 
 
-class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO):
-    @staticmethod
-    def _get_cdf(obj):
-        if 'ldf_' not in obj:
-            return
-        else:
-            obj2 = copy.copy(obj.ldf_)
-            xp = cp.get_array_module(obj2.values)
-            cdf_ = xp.flip(xp.cumprod(xp.flip(obj2.values, -1), -1), -1)
-            obj2.ddims = xp.array(
-                [item.replace(item[item.find("-")+1:], '9999')
-                 for item in obj2.ddims])
-            obj2.values = cdf_
-            obj2._set_slicers()
-            return obj2
-
+class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
+    pass
 
 class Development(DevelopmentBase):
     """ A Transformer that allows for basic loss development pattern selection.
@@ -266,7 +253,6 @@ class Development(DevelopmentBase):
             (params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(X, params, 0)
-        self.cdf_ = self._get_cdf(self)
         self.sigma_ = self._param_property(X, params, 1)
         self.std_err_ = self._param_property(X, params, 2)
         return self
@@ -285,16 +271,16 @@ class Development(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.copy(X)
-        triangles = ['std_err_', 'cdf_', 'ldf_', 'sigma_']
+        triangles = ['std_err_', 'ldf_', 'sigma_']
         for item in triangles + ['average_', 'w_', 'sigma_interpolation', 'n_periods_']:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
         return X_new
 
     def _param_property(self, X, params, idx):
-        obj = copy.copy(X)
+        obj = X[X.origin==X.origin.min()]
         xp = cp.get_array_module(X.values)
-        obj.values = xp.ones(X.shape)[..., :-1]*params[..., idx:idx+1, :]
+        obj.values = xp.ones(obj.shape)[..., :-1]*params[..., idx:idx+1, :]
         obj.ddims = X.link_ratio.ddims
         obj.valuation = obj._valuation_triangle(obj.ddims)
         obj.nan_override = True

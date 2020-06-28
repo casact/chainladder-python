@@ -91,6 +91,26 @@ two components: actual reported (or paid) claims and expected unreported (or unp
 experience matures, more weight is given to the actual claims and the expected claims become
 gradually less important.
 
+
+Smoothing chainladder ultimates by using them as apriori figures in the
+Bornhuetter Ferguson method.
+
+  >>> raa = cl.load_sample('RAA')
+  >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
+  >>> apriori = cl_ult*0+(cl_ult.sum()/10)[0] # Mean Chainladder Ultimate
+  >>> cl.BornhuetterFerguson(apriori=1).fit(raa, sample_weight=apriori).ultimate_
+            Ultimate
+  1981  18834.000000
+  1982  16898.632172
+  1983  24012.333266
+  1984  28281.843524
+  1985  28203.700714
+  1986  19840.005163
+  1987  18840.362337
+  1988  22789.948877
+  1989  19541.155136
+  1990  20986.022826
+
 .. topic:: References
 
  .. [F2010] J.  Friedland, "Estimating Unpaid Claims Using Basic Techniques", Version 3, Ch. 9, 2010.

@@ -31,7 +31,7 @@ age.
  .. code-block:: none
 
 
-    [Text(0,0.5,'% of Ultimate'), Text(0.5,0,'Age')]
+    [Text(0, 0.5, '% of Ultimate'), Text(0.5, 0, 'Age')]
 
 
 
@@ -64,7 +64,7 @@ age.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.431 seconds)
+   **Total running time of the script:** ( 0 minutes  1.304 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_clarkldf.py:

@@ -35,7 +35,7 @@ this example.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x0000018DC2419B70>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x000001A8C2500438>
 
 
 
@@ -78,7 +78,7 @@ this example.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.606 seconds)
+   **Total running time of the script:** ( 0 minutes  1.986 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_stochastic_bornferg.py:

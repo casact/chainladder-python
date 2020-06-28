@@ -8,9 +8,10 @@ from chainladder.utils import WeightedRegression
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development import DevelopmentBase, Development
 from chainladder.core import EstimatorIO
+from chainladder.core.common import Common
 
 
-class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
+class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     ''' Base class for all tail methods.  Tail objects are equivalent
         to development objects with an additional set of tail statistics'''
     def fit(self, X, y=None, sample_weight=None):
@@ -33,7 +34,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         self.ldf_.valuation = self.ldf_._valuation_triangle()
         self.sigma_ = copy.copy(getattr(obj, 'sigma_', obj.cdf_*0))
         self.std_err_ = copy.copy(getattr(obj, 'std_err_', obj.cdf_*0))
-        zeros = tail[..., -1:]*0
+        zeros = tail[..., 0:1, -1:]*0
         self.sigma_.values = xp.concatenate(
             (self.sigma_.values, zeros), -1)
         self.std_err_.values = xp.concatenate(
@@ -44,8 +45,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
                  np.array(['{}-9999'.format(int(obj.ddims[-1]))])))
         val_array = self.sigma_._valuation_triangle(self.sigma_.ddims)
         self.sigma_.valuation = self.std_err_.valuation = val_array
-        self.cdf_ = DevelopmentBase._get_cdf(self)
-        self.cdf_._set_slicers()
         self.ldf_._set_slicers()
         self.sigma_._set_slicers()
         self.std_err_._set_slicers()
@@ -131,7 +130,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO):
         ldfs[..., -1:] = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
         self.ldf_.values[..., -decay_range:] = \
             (self.ldf_.values[..., -decay_range:]*0+1)*ldfs
-        self.cdf_ = DevelopmentBase._get_cdf(self)
         return self
 
     def _get_tail_stats(self, X):

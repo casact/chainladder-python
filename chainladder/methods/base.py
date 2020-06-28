@@ -2,27 +2,56 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+import pandas as pd
 from chainladder.utils.cupy import cp
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
 from chainladder.core import EstimatorIO
+from chainladder.core.common import Common
 
 
-class MethodBase(BaseEstimator, EstimatorIO):
+class MethodBase(BaseEstimator, EstimatorIO, Common):
+    ULT_VAL = '2262-03-31 23:59:59.999999999'
     def __init__(self):
         pass
 
     def validate_X(self, X):
-        obj = copy.copy(X)
+        obj = copy.deepcopy(X)
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
             obj = TailConstant().fit_transform(obj)
-        for item in ['cdf_', 'ldf_', 'average_']:
-            setattr(self, item, getattr(obj, item, None))
         return obj
+
+    def _align_cdf(self, ultimate):
+        """ Vertically align CDF to ultimate vector """
+        xp = cp.get_array_module(ultimate.values)
+        o, d = ultimate.shape[-2:]
+        #cdf = xp.repeat(self.cdf_.values[..., 0:1, :d], o, axis=2)
+        ultimate.values = self.cdf_.values[..., :d]*(ultimate.values*0+1)
+        cdf = ultimate.latest_diagonal.values
+        return cdf
+
+    def _set_ult_attr(self, ultimate):
+        """ Ultimate scaffolding """
+        xp = cp.get_array_module(ultimate.values)
+        ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
+        ultimate.ddims = np.array([9999])
+        ultimate.valuation = pd.DatetimeIndex(
+            [pd.to_datetime(self.ULT_VAL)]*len(ultimate.odims))
+        ultimate._set_slicers()
+        ultimate.valuation_date = ultimate.valuation.max()
+        return ultimate
+
+    @property
+    def ldf_(self):
+        return self.X_.ldf_
+
+    @property
+    def latest_diagonal(self):
+        return self.X_.latest_diagonal
 
     def fit(self, X, y=None, sample_weight=None):
         """Applies the chainladder technique to triangle **X**
@@ -41,6 +70,7 @@ class MethodBase(BaseEstimator, EstimatorIO):
             Returns the instance itself.
         """
         self.X_ = self.validate_X(X)
+        self.sample_weight_ = sample_weight
         return self
 
     def predict(self, X, sample_weight=None):
@@ -59,73 +89,17 @@ class MethodBase(BaseEstimator, EstimatorIO):
         X_new: Triangle
 
         """
-        obj = copy.copy(self)
-        xp = cp.get_array_module(X.values)
-        obj.X_ = copy.copy(X)
-        obj.sample_weight = sample_weight
-        if xp.unique(self.cdf_.values, axis=-2).shape[-2] == 1:
-            obj.cdf_.values = xp.repeat(
-                xp.unique(self.cdf_.values, axis=-2),
-                len(X.odims), -2)
-            obj.ldf_.values = xp.repeat(
-                xp.unique(self.ldf_.values, axis=-2),
-                len(X.odims), -2)
-            obj.cdf_.odims = obj.ldf_.odims = obj.X_.odims
-            obj.cdf_.valuation = obj.ldf_.valuation = \
-                Development().fit(X).cdf_.valuation
-        obj.cdf_._set_slicers()
-        obj.ldf_._set_slicers()
+        obj = copy.deepcopy(X)
+        obj.ldf_ = self.ldf_
+        obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj
 
-    @property
-    def full_expectation_(self):
-        obj = copy.copy(self.X_)
-        xp = cp.get_array_module(obj.values)
-        obj.values = (self.ultimate_.values /
-                      xp.unique(self.cdf_.values, axis=-2))
-        obj.values = xp.concatenate((obj.values,
-                                    self.ultimate_.values), -1)
-        ddims = [int(item[item.find('-')+1:]) for item in self.ldf_.ddims]
-        obj.ddims = np.array([obj.ddims[0]]+ddims)
-        obj.valuation = obj._valuation_triangle(obj.ddims)
-        obj.valuation_date = max(obj.valuation)
-        obj.nan_override = True
-        obj.values[obj.values == 0] = xp.nan
-        obj._set_slicers()
-        return obj
-
-    @property
-    def ibnr_(self):
-        obj = copy.copy(self.ultimate_)
-        obj.values = self.ultimate_.values-self.X_.latest_diagonal.values
-        obj.ddims = [None]
-        obj._set_slicers()
-        return obj
-
-    def _get_full_triangle_(self):
-        obj = copy.copy(self.X_)
-        xp = cp.get_array_module(obj.values)
-        w = 1-xp.nan_to_num(obj._nan_triangle())
-        extend = len(self.ldf_.ddims) - len(self.X_.ddims)
-        ones = xp.ones((w.shape[-2], extend))
-        w = xp.concatenate((w, ones), -1)
-        obj.nan_override = True
-        e_tri = \
-            xp.repeat(self.ultimate_.values, self.cdf_.values.shape[3], 3) / \
-            xp.unique(self.cdf_.values, axis=-2)
-        e_tri = e_tri * w
-        zeros = obj._expand_dims(ones - ones)
-        properties = self.full_expectation_
-        obj.valuation = properties.valuation
-        obj.valuation_date = properties.valuation_date
-        obj.ddims = properties.ddims
-        obj.values = \
-            xp.concatenate((xp.nan_to_num(obj.values), zeros), -1) + e_tri
-        obj.values = xp.concatenate((obj.values,
-                                     self.ultimate_.values), 3)
-        obj.values[obj.values==0] = xp.nan
-        obj._set_slicers()
+    def _include_process_variance(self):
         if hasattr(self.X_, '_get_process_variance'):
-            obj = self.X_._get_process_variance(obj)
+            full = self.full_triangle_
+            obj = self.X_._get_process_variance(full)
             self.ultimate_.values = obj.values[..., -1:]
-        return obj
+            process_var = obj - full
+        else:
+            process_var = None
+        return process_var

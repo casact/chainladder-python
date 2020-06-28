@@ -30,7 +30,7 @@ transformer to see its influence on the overall ultimate estimate.
  .. code-block:: none
 
 
-    [Text(0,0.5,'Ultimate / Incurred')]
+    [Text(0, 0.5, 'Ultimate / Incurred')]
 
 
 
@@ -67,7 +67,7 @@ transformer to see its influence on the overall ultimate estimate.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.051 seconds)
+   **Total running time of the script:** ( 0 minutes  1.292 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_development_periods.py:

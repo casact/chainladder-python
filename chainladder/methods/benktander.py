@@ -38,12 +38,8 @@ class Benktander(MethodBase):
         The ultimate losses per the method
     ibnr_ : Triangle
         The IBNR per the method
-
-    References
-    ----------
-    .. [2] Benktander, G. (1976) An Approach to Credibility in Calculating IBNR
-           for Casualty Excess Reinsurance. In The Actuarial Review, April 1976, p.7
     """
+
     def __init__(self, apriori=1.0, n_iters=1, apriori_sigma=0, random_state=None):
         self.apriori = apriori
         self.n_iters = n_iters
@@ -74,42 +70,32 @@ class Benktander(MethodBase):
         if hasattr(X, '_get_process_variance'):
             if X.shape[0] != sample_weight.shape[0]:
                 sample_weight = sample_weight.broadcast_axis('index', X.index)
-        obj = copy.deepcopy(self)
         self.sample_weight_ = sample_weight
-        self.ultimate_ = self._get_ultimate_(X, sample_weight, obj)
-        self.full_triangle_ = self._get_full_triangle_()
+        self.ultimate_ = self._get_ultimate(X, sample_weight)
+        self.process_variance_ = self._include_process_variance()
         return self
 
-    def _get_ultimate_(self, X, sample_weight, obj):
-        ult = copy.copy(obj.X_)
-        xp = cp.get_array_module(ult.values)
-        origin, development = -2, -1  # Set axes by name
-        latest = X.latest_diagonal.values
+    def _get_ultimate(self, X, sample_weight):
+        xp = cp.get_array_module(X.values)
+        ultimate = copy.deepcopy(X)
+
+        # Apriori
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)
             apriori = random_state.normal(
                 self.apriori, self.apriori_sigma, X.shape[0])
-            apriori = apriori.reshape(X.shape[0],-1)[..., np.newaxis, np.newaxis]
+            apriori = apriori.reshape(X.shape[0],-1)[..., None, None]
             apriori = sample_weight.values * apriori
         else:
             apriori = sample_weight.values*self.apriori
-        ult.values = \
-            obj.cdf_.values[..., :ult.shape[development]]*(ult.values*0+1)
-        cdf = ult.latest_diagonal.values
+        # Benktander formula -> Triangle
+        cdf = self._align_cdf(ultimate)
         cdf = (1-1/cdf)[None]
         exponents = xp.arange(self.n_iters+1)
         exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
-        cdf = cdf**exponents
-        ult.values = xp.sum(cdf[:-1, ...], 0)*latest+cdf[-1, ...]*apriori
-        ult.values[~xp.isfinite(ult.values)] = xp.nan
-        ult.ddims = np.array([None])
-        ult.valuation = pd.DatetimeIndex([pd.to_datetime('2262-04-11')] *
-                                         ult.shape[origin])
-        ult._set_slicers()
-        return ult
+        cdf = cdf ** exponents
+        ultimate.values = (
+            xp.sum(cdf[:-1, ...], 0) * X.latest_diagonal.values +
+            cdf[-1, ...] * xp.nan_to_num(apriori))
 
-    def predict(self, X, sample_weight):
-        obj = super().predict(X, sample_weight)
-        obj.ultimate_ = self._get_ultimate_(X, sample_weight, obj)
-        obj.full_triangle_ = obj._get_full_triangle_()
-        return obj
+        return self._set_ult_attr(ultimate)

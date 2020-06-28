@@ -31,7 +31,7 @@ Value at Risk percentile lookups.
  .. code-block:: none
 
 
-    [Text(0.5,0,'VaR')]
+    [Text(0.5, 0, 'VaR')]
 
 
 
@@ -66,7 +66,7 @@ Value at Risk percentile lookups.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.747 seconds)
+   **Total running time of the script:** ( 0 minutes  0.794 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_value_at_risk.py:

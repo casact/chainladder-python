@@ -29,32 +29,6 @@ class BornhuetterFerguson(Benktander):
         The ultimate losses per the method
     ibnr_ : Triangle
         The IBNR per the method
-
-    Examples
-    --------
-    Smoothing chainladder ultimates by using them as apriori figures in the
-    Bornhuetter Ferguson method.
-
-    >>> raa = cl.load_sample('RAA')
-    >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
-    >>> apriori = cl_ult*0+(cl_ult.sum()/10)[0] # Mean Chainladder Ultimate
-    >>> cl.BornhuetterFerguson(apriori=1).fit(raa, sample_weight=apriori).ultimate_
-              Ultimate
-    1981  18834.000000
-    1982  16898.632172
-    1983  24012.333266
-    1984  28281.843524
-    1985  28203.700714
-    1986  19840.005163
-    1987  18840.362337
-    1988  22789.948877
-    1989  19541.155136
-    1990  20986.022826
-
-    References
-    ----------
-    .. [1] Bornhuetter, R. and Ferguson, R. (1972) The Actuary and IBNR. In
-           Proceedings of the Casualty Actuarial Society, Vol. LIX, 181 - 195
     """
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):
         self.apriori = apriori

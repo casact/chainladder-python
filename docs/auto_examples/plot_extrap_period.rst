@@ -33,7 +33,7 @@ value.
  .. code-block:: none
 
 
-    [Text(0,0.5,'Tail Factor')]
+    [Text(0, 0.5, 'Tail Factor')]
 
 
 
@@ -70,7 +70,7 @@ value.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  4.047 seconds)
+   **Total running time of the script:** ( 0 minutes  5.060 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_extrap_period.py:

@@ -75,14 +75,12 @@ class TailClark(TailBase):
              fitted.values[..., -1:]), -1)
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
         attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
-        print(self.ldf_.values[..., :sum(X.ddims<=attachment_age)].shape, fitted[..., -sum(X.ddims>=attachment_age):].shape)
         self.ldf_.values = xp.concatenate(
             (self.ldf_.values[..., :sum(X.ddims<=attachment_age)],
              fitted[..., -sum(X.ddims>=attachment_age):]),
             axis=-1)
 
 
-        self.cdf_ = DevelopmentBase._get_cdf(self)
         self.omega_ = model.omega_
         self.theta_ = model.theta_
         self.G_ = model.G_
