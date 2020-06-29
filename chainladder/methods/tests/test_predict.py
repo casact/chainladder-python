@@ -23,7 +23,7 @@ def test_bs_random_state_predict():
     tri = cl.load_sample('clrd').groupby('LOB').sum().loc['wkcomp', ['CumPaidLoss', 'EarnedPremNet']]
     X = cl.BootstrapODPSample(random_state=100).fit_transform(tri['CumPaidLoss'])
     bf = cl.BornhuetterFerguson(apriori=0.6, apriori_sigma=0.1, random_state=42).fit(X, sample_weight=tri['EarnedPremNet'].latest_diagonal)
-    assert abs(bf.predict(X, sample_weight=tri['EarnedPremNet'].latest_diagonal).ibnr_.sum().sum()/bf.ibnr_.sum().sum()-1)<1e-3
+    assert abs(bf.predict(X, sample_weight=tri['EarnedPremNet'].latest_diagonal).ibnr_.sum().sum()/bf.ibnr_.sum().sum()-1)<5e-3
 
 def test_basic_transform():
     tri = cl.load_sample('raa')
