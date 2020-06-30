@@ -76,11 +76,15 @@ class TrianglePandas:
             tri = xp.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: odims, 3: ddims}
+            if axes[0] == 0:
+                idx = self._idx_table().index
+            else:
+                idx = axes_lookup[axes[0]]
             if len(axes) == 2:
-                return pd.DataFrame(tri, index=axes_lookup[axes[0]],
+                return pd.DataFrame(tri, index=idx,
                                     columns=axes_lookup[axes[1]]).fillna(0)
             if len(axes) == 1:
-                return pd.Series(tri, index=axes_lookup[axes[0]]).fillna(0)
+                return pd.Series(tri, index=idx).fillna(0)
         else:
             raise ValueError('len(index) and len(columns) must be 1.')
 

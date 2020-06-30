@@ -23,6 +23,10 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         A dictionary representing the ``values`` of paid and incurred triangles
         where ``values`` are an appropriate selection from :class:`Triangle`
         ``.values``, such as ``('paid', 'incurred')``
+    fillna : boolean
+        The MunichAdjustment will fail when P/I or I/P ratios cannot be calculated.
+        Setting fillna to True will fill the triangle with expected amounts using
+        the simple chainladder.
 
     Attributes
     ----------
@@ -49,11 +53,12 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         The estimated bivariate cumulative development patterns
 
     """
-    def __init__(self, paid_to_incurred=None):
+    def __init__(self, paid_to_incurred=None, fillna=False):
         if type(paid_to_incurred) is dict:
             warnings.warn("paid_to_incurred dict argument is deprecated, use tuple instead")
             paid_to_incurred = [(k, v) for k, v in paid_to_incurred.items()]
         self.paid_to_incurred = paid_to_incurred
+        self.fillna = fillna
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -74,6 +79,19 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         if self.paid_to_incurred is None:
             raise ValueError('Must enter valid value for paid_to_incurred.')
         obj = copy.deepcopy(X)
+        if len(np.where(np.nan_to_num(X.values)*X._nan_triangle()==0)) > 0:
+            if self.fillna:
+                from chainladder.methods import Chainladder
+                filler = Chainladder().fit(obj).full_expectation_
+                obj.values = np.where(
+                    np.nan_to_num(obj.values)*obj._nan_triangle()==0,
+                    filler[filler.valuation<=obj.valuation_date].values,
+                    obj.values)
+            else:
+                raise ValueError(
+                    "MunichAdjustment cannot be performed when P/I or I/P " +
+                    "ratios cannot be computed. Use `fillna=True` to impute zero" +
+                    " values of the triangle with simple chainladder expectation.")
         xp = cp.get_array_module(obj.values)
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
@@ -196,9 +214,10 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _get_munich_full_triangle_(
         self, p_to_i_X_, p_to_i_ldf_, p_to_i_sigma_, lambda_coef_, rho_sigma_, q_f_):
-        full_paid = p_to_i_X_[0][..., 0:1]
+        full_paid = np.nan_to_num(p_to_i_X_[0][..., 0:1])
         xp = cp.get_array_module(full_paid)
         full_incurred = p_to_i_X_[1][..., 0:1]
+
         for i in range(p_to_i_X_[0].shape[-1]-1):
             paid = (p_to_i_ldf_[0][..., i:i+1] +
                     lambda_coef_[0] *
