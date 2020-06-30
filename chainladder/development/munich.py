@@ -75,24 +75,23 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self : object
             Returns the instance itself.
         """
-
+        xp = cp.get_array_module(X.values)
         if self.paid_to_incurred is None:
             raise ValueError('Must enter valid value for paid_to_incurred.')
         obj = copy.deepcopy(X)
-        if len(np.where(np.nan_to_num(X.values)*X._nan_triangle()==0)) > 0:
+        missing = xp.nan_to_num(X.values)*X._nan_triangle()==0
+        if len(xp.where(missing)[0]) > 0:
             if self.fillna:
                 from chainladder.methods import Chainladder
                 filler = Chainladder().fit(obj).full_expectation_
-                obj.values = np.where(
-                    np.nan_to_num(obj.values)*obj._nan_triangle()==0,
-                    filler[filler.valuation<=obj.valuation_date].values,
-                    obj.values)
+                filler = filler[filler.valuation<=obj.valuation_date].values
+                obj.values = xp.where(missing, filler, obj.values)
             else:
                 raise ValueError(
                     "MunichAdjustment cannot be performed when P/I or I/P " +
                     "ratios cannot be computed. Use `fillna=True` to impute zero" +
                     " values of the triangle with simple chainladder expectation.")
-        xp = cp.get_array_module(obj.values)
+
         if 'ldf_' not in obj:
             obj = Development().fit_transform(obj)
         self.p_to_i_X_ = self._get_p_to_i_object(obj)
