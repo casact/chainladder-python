@@ -94,6 +94,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj
 
+    def fit_predict(self, X, y=None, sample_weight=None):
+        self.fit(X, y, sample_weight)
+        return self.predict(X, sample_weight)
+
     def _include_process_variance(self):
         if hasattr(self.X_, '_get_process_variance'):
             full = self.full_triangle_

@@ -76,6 +76,9 @@ class TriangleIO():
         json_dict['is_cumulative'] = self.is_cumulative
         json_dict['is_val_tri'] = self.is_val_tri
         json_dict['valuation_date'] = self.valuation_date.strftime('%Y-%m-%d')
+        sub_tris = [k for k, v in vars(self).items() if isinstance(v, TriangleIO)]
+        json_dict['sub_tris'] = {
+            sub_tri: getattr(self, sub_tri).to_json() for sub_tri in sub_tris}
         return json.dumps(json_dict)
 
 

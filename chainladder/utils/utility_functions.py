@@ -101,14 +101,17 @@ def read_json(json_str, array_backend=None):
         if json_dict['values'].get('sparse', None):
             tri.values = sparse_in(json_dict['values']['array'],
                                    json_dict['values']['dtype'], shape)
-            if tri.is_cumulative:
-                tri.is_cumulative = False
-                tri = tri.incr_to_cum()
         else:
             tri.values = np.array(json_dict['values']['array'],
                                   dtype=json_dict['values']['dtype'])
+        if tri.is_cumulative:
+            tri.is_cumulative = False
+            tri = tri.incr_to_cum()
         if array_backend == 'cupy':
             tri.values = cp.array(tri.values)
+        if 'sub_tris' in json_dict.keys():
+            for k, v in json_dict['sub_tris'].items():
+                setattr(tri, k, read_json(v, array_backend))
         return tri
     else:
         import chainladder as cl

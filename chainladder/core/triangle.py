@@ -170,10 +170,6 @@ class Triangle(TriangleBase):
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
         obj.valuation = obj._valuation_triangle()
-        #obj = self[self.valuation==self.valuation_date]
-        #obj.values = np.nansum(obj.values, axis=-1, keepdims=True)
-        #obj.ddims = pd.DatetimeIndex(
-        #    [self.valuation_date], dtype='datetime64[ns]', freq=None)
         return obj
 
     @property
@@ -188,7 +184,7 @@ class Triangle(TriangleBase):
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
         # Check whether we want to eliminate the last origin period
-        if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) == 0:
+        if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) <= 0:
             obj.values = obj.values[..., :-1, :]
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
