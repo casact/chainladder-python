@@ -41,6 +41,14 @@ def test_pipeline_json_io():
            {item[0]: item[1].get_params()
             for item in pipe2.get_params()['steps']}
 
+def test_json_subtri():
+    assert cl.read_json(cl.Chainladder().fit_predict(cl.load_sample('raa')).to_json()).full_triangle_ == \
+           cl.Chainladder().fit_predict(cl.load_sample('raa')).full_triangle_
+
+def test_json_df():
+    x = cl.MunichAdjustment(paid_to_incurred=('paid', 'incurred')).fit_transform(cl.load_sample('mcl'))
+    assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum()<1e-5
+
 def test_concat():
     tri = cl.load_sample('clrd').groupby('LOB').sum()
     assert cl.concat([tri.loc['wkcomp'], tri.loc['comauto']], axis=0) == \

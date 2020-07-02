@@ -104,8 +104,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self._map = {
             (list(X.columns).index(x)): (num%2, num//2)
             for num, x in enumerate(np.array(self.paid_to_incurred).flatten())}
-        self.rho_ = copy.deepcopy(X)
-        self.rho_.odims = ['(All)']
+        self.rho_ = X[X.origin==X.origin.min()]
         self.rho_.values = self._reshape('rho_sigma_')
         return self
 

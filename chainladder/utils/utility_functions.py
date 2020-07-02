@@ -112,6 +112,12 @@ def read_json(json_str, array_backend=None):
         if 'sub_tris' in json_dict.keys():
             for k, v in json_dict['sub_tris'].items():
                 setattr(tri, k, read_json(v, array_backend))
+        if 'dfs' in json_dict.keys():
+            for k, v in json_dict['dfs'].items():
+                df = pd.read_json(v)
+                if len(df.columns)==1:
+                    df = df.iloc[:, 0]
+                setattr(tri, k, df)
         return tri
     else:
         import chainladder as cl

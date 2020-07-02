@@ -79,6 +79,10 @@ class TriangleIO():
         sub_tris = [k for k, v in vars(self).items() if isinstance(v, TriangleIO)]
         json_dict['sub_tris'] = {
             sub_tri: getattr(self, sub_tri).to_json() for sub_tri in sub_tris}
+        dfs = [k for k, v in vars(self).items() if isinstance(v, pd.DataFrame)]
+        json_dict['dfs'] = {df: getattr(self, df).to_json() for df in dfs}
+        dfs = [k for k, v in vars(self).items() if isinstance(v, pd.Series)]
+        json_dict['dfs'].update({df: getattr(self, df).to_frame().to_json() for df in dfs})
         return json.dumps(json_dict)
 
 

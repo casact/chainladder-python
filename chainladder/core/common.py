@@ -32,7 +32,7 @@ def _get_full_triangle(full_expectation_, triangle_):
 
 def _get_cdf(ldf_):
     """ Private method that computes CDFs"""
-    cdf = copy.copy(ldf_)
+    cdf = copy.deepcopy(ldf_)
     xp = cp.get_array_module(cdf.values)
     cdf.values = xp.flip(xp.cumprod(xp.flip(cdf.values, -1), -1), -1)
     cdf.ddims = xp.array(
