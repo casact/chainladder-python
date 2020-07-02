@@ -30,10 +30,12 @@ class TriangleDunders:
                     other.odims = obj.odims
                 elif len(obj.odims) == 1 and len(other.odims) > 1:
                     obj.odims = other.odims
+                    obj.valuation = other.valuation
                 if len(other.ddims) == 1 and len(obj.ddims) > 1:
                     other.ddims = obj.ddims
                 elif len(obj.ddims) == 1 and len(other.ddims) > 1:
                     obj.ddims = other.ddims
+                    obj.valuation = other.valuation
                 other = other.values
             if not is_broadcastable:
                 # If broadcasting doesn't work, union axes similar to pandas
@@ -85,7 +87,6 @@ class TriangleDunders:
 
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
-
         obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
         obj.values[obj.values == 0] = np.nan
         return obj

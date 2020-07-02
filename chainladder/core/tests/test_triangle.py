@@ -327,3 +327,11 @@ def test_df_period_input():
 def test_trend_on_vector():
     raa = cl.load_sample('raa').latest_diagonal
     assert raa.trend(.05, axis=2).to_frame().astype(int).iloc[0,0]==29216
+
+def latest_diagonal_val_to_dev():
+    raa = cl.load_sample('raa')
+    assert raa.latest_diagonal.val_to_dev()==raa[raa.valuation==raa.valuation_date]
+
+def vector_division():
+    raa = cl.load_sample('raa')
+    raa.latest_diagonal/raa

@@ -357,8 +357,6 @@ class Triangle(TriangleBase):
     def _val_dev_chg(self):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
-        if self.shape[-1] == 1:
-            return obj
         x = np.nan_to_num(obj.values)
         val_mtrx = \
             (np.array(obj.valuation.year).reshape(obj.shape[-2:], order='f') -
@@ -366,14 +364,15 @@ class Triangle(TriangleBase):
             (np.array(obj.valuation.month).reshape(obj.shape[-2:], order='f') -
              np.array(pd.DatetimeIndex(obj.odims).month)[..., None]) + 1
         rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten()>0]))
-        x = [np.sum((val_mtrx==item)*x,-1, keepdims=True)
-               for item in np.array(rng)]
+        x = [np.sum((val_mtrx==item)*x, -1, keepdims=True)
+             for item in np.array(rng)]
         x = np.concatenate(x, -1)
         obj.values = x
+        obj.values[obj.values == 0] = xp.nan
         obj.ddims = np.array([item for item in rng])
         obj.valuation = obj._valuation_triangle()
         obj._set_slicers()
-        return obj
+        return obj.dropna()
 
 
     def grain(self, grain='', trailing=False, inplace=False):
@@ -460,7 +459,7 @@ class Triangle(TriangleBase):
         if not self.is_cumulative:
             obj = obj.cum_to_incr()
         if self.is_val_tri:
-            obj = obj.dev_to_val()
+            obj = obj.dev_to_val().dropna()
         if inplace:
             self = obj
             return self
