@@ -80,7 +80,7 @@ class TrianglePandas:
         """
         xp = cp.get_array_module(self.values)
         obj = self.sum(axis=0).sum(axis=1)
-        odim = list(obj.sum(axis=-1).values[0, 0, :, 0]*0+1)
+        odim = list((xp.nansum(obj.values[0, 0, :], -1) != 0).astype('int'))
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
         if obj.shape[-1] != 1:
@@ -88,7 +88,7 @@ class TrianglePandas:
                 ddim = cp.asnumpy(xp.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0]))
             else:
                 ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0])
-            ddim = obj.development.iloc[:, 0][pd.Series(ddim).astype(bool)]
+            ddim = obj.development[pd.Series(ddim).astype(bool)]
             obj = self[(self.development >= ddim.min()) &
                   (self.development <= ddim.max())]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
@@ -120,7 +120,6 @@ class TrianglePandas:
             return self[list(self._idx_table().drop(labels, axis=axis).columns)]
         else:
             raise NotImplementedError('drop only inpemented for column axis')
-
 
     @property
     def T(self):
@@ -234,18 +233,17 @@ def add_triangle_agg_func(cls, k, v):
             func = getattr(xp, v)
             kwargs.update({'keepdims': True})
             obj.values = func(obj.values, axis=axis, *args, **kwargs)
+
             if axis == 0 and obj.values.shape[axis] == 1:
                 obj.kdims = np.array([['(All)']*len(obj.key_labels)])
             if axis == 1 and obj.values.shape[axis] == 1:
                 obj.vdims = np.array([0])
             if axis == 2 and obj.values.shape[axis] == 1:
                 obj.odims = obj.odims[0:1]
-                obj.valuation = obj.valuation[::len(obj.ddims)]
             if axis == 3 and obj.values.shape[axis] == 1:
                 obj.ddims = obj.ddims[-1:]
-                obj.valuation = obj.valuation[-len(obj.odims):]
             obj._set_slicers()
-            obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
+            obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
             obj.values[obj.values == 0] = np.nan
             if obj.shape == (1, 1, 1, 1):
                 return obj.values[0, 0, 0, 0]

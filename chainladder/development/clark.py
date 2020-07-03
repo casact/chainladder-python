@@ -112,13 +112,14 @@ class ClarkLDF(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
+        from chainladder import ULT_VAL
         obj = copy.copy(X)
         self.incremental_act_ = X.cum_to_incr()
         xp = cp.get_array_module(obj.values)
         self.method_ = 'ldf' if sample_weight is None else 'cape_cod'
         age_offset = {'Y':6., 'Q':1.5, 'M':0.5}[X.development_grain]
         age_interval = {'Y':12., 'Q':3., 'M':1.}[X.development_grain]
-        nans = X._nan_triangle().reshape(1, -1)[0]
+        nans = X.nan_triangle.reshape(1, -1)[0]
         age = X._expand_dims(
             xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)]).astype('float64')
         age_end = age - age_offset
@@ -169,10 +170,9 @@ class ClarkLDF(DevelopmentBase):
                      omega=params[..., 0:1])
         obj.values = xp.repeat(cdf[..., :-1]/cdf[..., 1:], len(obj.odims), 2)
         obj.ddims = X.link_ratio.ddims
-        obj.valuation = obj._valuation_triangle(obj.ddims)
-        obj.nan_override = True
         obj._set_slicers()
         self.ldf_ = obj
+        self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
         self.sigma_ = self.ldf_*0+1
         self.std_err_ = self.ldf_*0+1
         table = X._idx_table()
@@ -190,7 +190,7 @@ class ClarkLDF(DevelopmentBase):
         self.incremental_fits_.values = (
             1/self._G(X.ddims - age_offset) -
             1/self._G(xp.maximum(X.ddims - age_offset - age_interval,0))) * \
-            self.ultimate_[..., ::-1]*X._nan_triangle()
+            self.ultimate_[..., ::-1]*X.nan_triangle
         self.incremental_fits_.is_cumulative = False
         return self
 
@@ -222,7 +222,7 @@ class ClarkLDF(DevelopmentBase):
         xp = cp.get_array_module(self.incremental_fits_.values)
         scale = (((self.incremental_fits_ - self.incremental_act_)**2) /
             self.incremental_fits_).sum('origin').sum('development')
-        df = np.nansum(self.incremental_fits_._nan_triangle()) - 2
+        df = np.nansum(self.incremental_fits_.nan_triangle) - 2
         if self.method_ == 'ldf':
             df = df - len(self.incremental_fits_.odims)
         else:

@@ -143,7 +143,7 @@ class Triangle(TriangleBase):
 
     @property
     def development(self):
-        return pd.Series(list(self.ddims), name='development').to_frame()
+        return pd.Series(list(self.ddims), name='development')
 
     @development.setter
     def development(self, value):
@@ -152,11 +152,12 @@ class Triangle(TriangleBase):
 
     @property
     def is_full(self):
-        return self._nan_triangle().sum().sum() == np.prod(self.shape[-2:])
+        return self.nan_triangle.sum().sum() == np.prod(self.shape[-2:])
 
     @property
     def is_ultimate(self):
-        return sum(self.valuation >= '2262') > 0
+        from chainladder import ULT_VAL
+        return sum(self.valuation >= ULT_VAL[:4]) > 0
 
     @property
     def is_val_tri(self):
@@ -170,7 +171,6 @@ class Triangle(TriangleBase):
             self.shape[-2:], order='F')*self.values, axis=-1, keepdims=True)
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
-        obj.valuation = obj._valuation_triangle()
         return obj
 
     @property
@@ -189,8 +189,6 @@ class Triangle(TriangleBase):
             obj.values = obj.values[..., :-1, :]
             obj.odims = obj.odims[:-1]
             val_array = val_array[:-1, :]
-        obj.valuation = pd.DatetimeIndex(
-            pd.DataFrame(val_array).unstack().values)
         if hasattr(obj, 'w_'):
             if obj.shape == obj.w_[..., 0:1, :len(obj.odims), :].shape:
                 obj = obj*obj.w_[..., 0:1, :len(obj.odims), :]
@@ -199,6 +197,31 @@ class Triangle(TriangleBase):
     @property
     def age_to_age(self):
         return self.link_ratio
+
+    @property
+    def valuation(self):
+        from chainladder import ULT_VAL
+        ddims = self.ddims
+        is_val_tri = type(ddims) == pd.DatetimeIndex
+        if is_val_tri:
+            return pd.DatetimeIndex(pd.DataFrame(
+                np.repeat(self.ddims.values[np.newaxis],
+                          len(self.odims), 0))
+                .unstack().values)
+        if type(ddims[0]) in [np.str_, str]:
+            ddims = np.array([int(item[:item.find('-'):]) for item in ddims])
+        ddim_arr = ddims - ddims[0]
+        origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
+        val_array = ((origin.astype('datetime64[M]') +
+              np.timedelta64(ddims[0], 'M')).astype('datetime64[ns]') -
+              np.timedelta64(1,'ns'))[:, None]
+        s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
+        val_array = (val_array.astype('datetime64[M]') + ddim_arr[s][None, :] + 1).astype('datetime64[ns]') -  np.timedelta64(1,'ns')
+        if ddims[-1] == 9999:
+            val_array = np.concatenate(
+                (val_array, np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]),
+                axis=1)
+        return pd.DatetimeIndex(val_array.reshape(1,-1, order='F')[0])
 
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
@@ -216,7 +239,7 @@ class Triangle(TriangleBase):
         if inplace:
             if not self.is_cumulative:
                 xp.cumsum(xp.nan_to_num(self.values), axis=3, out=self.values)
-                self.values = self._expand_dims(self._nan_triangle())*self.values
+                self.values = self._expand_dims(self.nan_triangle)*self.values
                 self.values[self.values == 0] = np.nan
                 self.is_cumulative = True
                 self._set_slicers()
@@ -243,7 +266,7 @@ class Triangle(TriangleBase):
                 temp = xp.nan_to_num(self.values)[..., 1:] - \
                     xp.nan_to_num(self.values)[..., :-1]
                 temp = xp.concatenate((self.values[..., 0:1], temp), axis=3)
-                temp = temp*self._expand_dims(self._nan_triangle())
+                temp = temp*self._expand_dims(self.nan_triangle)
                 temp[temp == 0] = np.nan
                 self.values = temp
                 self.is_cumulative = False
@@ -272,6 +295,7 @@ class Triangle(TriangleBase):
                 return self
             xp = cp.get_array_module(self.values)
             obj = copy.deepcopy(self)
+            #print('a', obj.valuation.shape)
             if self.shape[-1] == 1:
                 return obj
             rng = obj.valuation.unique().sort_values()
@@ -298,19 +322,20 @@ class Triangle(TriangleBase):
             r[r < 0] += x.shape[1]
             column_indices = column_indices - r[..., None]
             x = x[..., rows, column_indices]
-
+            #print('b', x.shape)
             if self.is_ultimate:
                 x = xp.concatenate((x, obj.values[..., -1:]), -1)
             obj.values = x
             obj.values[obj.values == 0] = xp.nan
             obj.ddims = rng.append(u_rng)
+            #print(obj.ddims)
+            #print(obj.valuation_date)
             obj.values = obj.values[..., :np.where(
                 obj.ddims <= obj.valuation_date)[0].max()+1]
-            obj.valuation = pd.DatetimeIndex(
-                np.repeat(obj.ddims.values[np.newaxis],
-                          len(obj.origin)).reshape(1, -1).flatten())
+            #print('c', obj.valuation.shape)
             if self.is_cumulative:
                 obj = obj.incr_to_cum(inplace=True)
+            #print('d', obj.valuation.shape)
             return obj
         return copy.deepcopy(self).dev_to_val(inplace=True)
 
@@ -329,28 +354,29 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with development lags
         '''
+        from chainladder import ULT_VAL
         xp = cp.get_array_module(self.values)
         if not self.is_val_tri:
             ret_val = self
         else:
             if self.is_ultimate:
-                obj = self[self.valuation<'2262']
+                obj = self[self.valuation<ULT_VAL[:4]]
                 non_ultimates = obj.values
                 obj = obj._val_dev_chg()
-                ultimate = self[self.valuation>='2262']
-                max_val = self[self.valuation<'2262'][self.origin == self.origin.max()].valuation.max()
+                ultimate = self[self.valuation>=ULT_VAL[:4]]
+                max_val = self[self.valuation<ULT_VAL[:4]][
+                    self.origin == self.origin.max()].valuation.max()
                 max_dev = obj[obj.origin == obj.origin.max()]
                 max_dev = max_dev[max_dev.valuation == max_val].ddims[0]
                 obj = obj[obj.development <= max_dev]
                 obj.values = xp.concatenate(
                     (obj.values, ultimate.values), axis=-1)
                 obj.ddims = np.concatenate((obj.ddims, np.array([9999])))
-                obj.valuation = obj._valuation_triangle(obj.ddims)
                 obj.valuation_date = max(obj.valuation)
                 ret_val = obj
             else:
                 ret_val = self._val_dev_chg()
-        ret_val.values = self._expand_dims(ret_val._nan_triangle())*ret_val.values
+        ret_val.values = self._expand_dims(ret_val.nan_triangle)*ret_val.values
         if inplace:
             self = ret_val
         return ret_val
@@ -371,9 +397,8 @@ class Triangle(TriangleBase):
         obj.values = x
         obj.values[obj.values == 0] = xp.nan
         obj.ddims = np.array([item for item in rng])
-        obj.valuation = obj._valuation_triangle()
         obj._set_slicers()
-        return obj.dropna()
+        return obj
 
 
     def grain(self, grain='', trailing=False, inplace=False):
@@ -441,7 +466,6 @@ class Triangle(TriangleBase):
             new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
             obj.values = new_tri
             obj.odims = np.unique(o)
-            obj.valuation = obj._valuation_triangle()
         obj = obj.val_to_dev(inplace=True)
         # Now do development
         dev_grain_dict = {'M': {'Y': 12, 'Q': 3, 'M': 1},
@@ -456,7 +480,6 @@ class Triangle(TriangleBase):
         obj.origin_grain = ograin_new
         obj.development_grain = dgrain_new
         obj.values[obj.values == 0] = xp.nan
-        obj.valuation = obj._valuation_triangle()
         if not self.is_cumulative:
             obj = obj.cum_to_incr()
         if self.is_val_tri:

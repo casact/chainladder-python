@@ -34,6 +34,27 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how the inverse_power curve generally produces more conservative tail...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tailcurve_compare_thumb.png
+     :alt: Tail Curve Fit Comparison
+
+     :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_tailcurve_compare
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the familiarity of the pandas API applied to a Triangle instance.">
 
 .. only:: html
@@ -202,27 +223,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how the inverse_power curve generally produces more conservative tail...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tailcurve_compare_thumb.png
-     :alt: Tail Curve Fit Comparison
-
-     :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_tailcurve_compare
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the adjustment to case reserves using the Berquist-Sherman method. A ...">
 
 .. only:: html
@@ -349,27 +349,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
-     :alt: Stochastic Bornhuetter Ferguson
-
-     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_stochastic_bornferg
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the relationship between the Chainladder and BornhuetterFerguson meth...">
 
 .. only:: html
@@ -388,6 +367,27 @@ Examples
    :hidden:
 
    /auto_examples/plot_benktander
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
+     :alt: Stochastic Bornhuetter Ferguson
+
+     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_stochastic_bornferg
 
 .. raw:: html
 

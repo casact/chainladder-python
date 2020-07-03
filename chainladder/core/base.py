@@ -112,9 +112,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 warnings.warn('Unable to load CuPY.  Using numpy instead.')
                 self.array_backend = 'numpy'
         self.values = xp.array(values, dtype=kwargs.get('dtype', None))
-        # Used to show NANs in lower part of triangle
-        self.nan_override = False
-        self.valuation = self._valuation_triangle()
         self.is_cumulative = cumulative
 
     def _len_check(self, x, y):
@@ -159,66 +156,20 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         cart_prod = cart_prod[cart_prod['development'] >= cart_prod['origin']]
         return cart_prod
 
-
-    def _nan_triangle(self):
+    @property
+    def nan_triangle(self):
         '''Given the current triangle shape and grain, it determines the
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
         xp = cp.get_array_module(self.values)
-        if min(self.values.shape[2:]) == 1 or self.nan_override:
+        if min(self.values.shape[2:]) == 1:
             return xp.ones(self.values.shape[2:], dtype='float16')
-        else:
-            val_array = xp.array(self.valuation).reshape(self.shape[-2:], order='f')
-            nan_triangle = xp.array(
-                pd.DataFrame(val_array) > self.valuation_date)
-            nan_triangle = xp.array(xp.where(nan_triangle, np.nan, 1), dtype='float16')
-            return nan_triangle
-
-    def _valuation_triangle(self, ddims=None):
-        ''' Given origin and development, develop a triangle of valuation
-        dates.
-        '''
-        ddims = self.ddims if ddims is None else ddims
-        is_val_tri = type(ddims) == pd.DatetimeIndex
-        if is_val_tri:
-            return pd.DatetimeIndex(pd.DataFrame(
-                np.repeat(self.ddims.values[np.newaxis],
-                          len(self.odims), 0))
-                .unstack().values)
-        if ddims[0] is None:
-            ddims = pd.Series([self.valuation_date]*len(self.origin))
-            return pd.DatetimeIndex(ddims.values).to_period(self._lowest_grain()).to_timestamp(how='e')
-        special_cases = dict(Ultimate='2262-03-01', Latest=self.valuation_date)
-        if ddims[0] in special_cases.keys():
-            return pd.DatetimeIndex(
-                [pd.to_datetime(special_cases[ddims[0]])] *
-                len(self.origin)).to_period(self._lowest_grain()).to_timestamp(how='e')
-        if type(ddims[0]) in [np.str_, str]:
-            ddims = np.array([int(item[:item.find('-'):]) for item in ddims])
-        origin = pd.Series(self.odims)
-        if type(self.valuation_date) is not pd.Timestamp:
-            self.valuation_date = self.valuation_date.to_timestamp()
-        # Limit origin to valuation date
-        origin[origin > self.valuation_date] = self.valuation_date
-        next_development = origin+pd.DateOffset(days=-1, months=ddims[0])
-        val_array = np.array(next_development)[..., np.newaxis]
-        ddim_arr = ddims - ddims[0]
-        if ddims[-1] == 9999:
-            val_array = (val_array.astype('datetime64[M]') +
-                         ddim_arr[:-1][np.newaxis]).astype('datetime64[D]')
-            next_development = pd.Series([pd.to_datetime('2262-03-01')] *
-                                         len(origin)).values[..., np.newaxis]
-            val_array = np.concatenate((val_array, next_development), -1)
-        else:
-            val_array = (val_array.astype('datetime64[M]') +
-                         ddim_arr[np.newaxis]).astype('datetime64[D]')
-        return pd.DatetimeIndex(
-            ((val_array.astype('datetime64[M]') +
-              np.timedelta64(1,'M')).astype('datetime64[ns]') -
-              np.timedelta64(1,'ns')
-            ).reshape(1,-1, order='F')[0])
-
+        val_array = xp.array(self.valuation).reshape(self.shape[-2:], order='f')
+        nan_triangle = xp.array(
+            pd.DataFrame(val_array) > self.valuation_date)
+        nan_triangle = xp.array(xp.where(nan_triangle, np.nan, 1), dtype='float16')
+        return nan_triangle
 
     def _lowest_grain(self):
         my_list = ['M', 'Q', 'Y']

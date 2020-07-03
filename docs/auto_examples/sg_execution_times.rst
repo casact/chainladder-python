@@ -5,56 +5,56 @@
 
 Computation times
 =================
-**00:40.604** total execution time for **auto_examples** files:
+**00:02.058** total execution time for **auto_examples** files:
 
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_benktander.py` (``plot_benktander.py``)                     | 00:05.426 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py` (``plot_stochastic_bornferg.py``)   | 00:01.796 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_extrap_period.py` (``plot_extrap_period.py``)               | 00:05.060 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py` (``plot_bf_apriori_from_cl.py``)     | 00:00.261 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_capecod.py` (``plot_capecod.py``)                           | 00:03.731 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_exhibits.py` (``plot_exhibits.py``)                         | 00:03.215 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_benktander.py` (``plot_benktander.py``)                     | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py` (``plot_bootstrap_comparison.py``) | 00:02.914 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_berqsherm_case.py` (``plot_berqsherm_case.py``)             | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_bootstrap.py` (``plot_bootstrap.py``)                       | 00:02.300 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_berqsherm_closure.py` (``plot_berqsherm_closure.py``)       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py` (``plot_stochastic_bornferg.py``)   | 00:01.986 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py` (``plot_bondy_sensitivity.py``)       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py` (``plot_triangle_from_pandas.py``) | 00:01.782 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_bootstrap.py` (``plot_bootstrap.py``)                       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_clarkldf.py` (``plot_clarkldf.py``)                         | 00:01.304 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py` (``plot_bootstrap_comparison.py``) | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_ave_analysis.py` (``plot_ave_analysis.py``)                 | 00:01.298 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_capecod.py` (``plot_capecod.py``)                           | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_development_periods.py` (``plot_development_periods.py``)   | 00:01.292 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_clarkldf.py` (``plot_clarkldf.py``)                         | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py` (``plot_tailcurve_compare.py``)       | 00:01.263 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py` (``plot_clarkldf_resid.py``)             | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py` (``plot_triangle_slicing.py``)         | 00:01.202 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_development_periods.py` (``plot_development_periods.py``)   | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_berqsherm_case.py` (``plot_berqsherm_case.py``)             | 00:01.163 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_exhibits.py` (``plot_exhibits.py``)                         | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_industry_to_company.py` (``plot_industry_to_company.py``)   | 00:01.118 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py` (``plot_exposure_triangle.py``)       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_berqsherm_closure.py` (``plot_berqsherm_closure.py``)       | 00:00.981 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_extrap_period.py` (``plot_extrap_period.py``)               | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_value_at_risk.py` (``plot_value_at_risk.py``)               | 00:00.794 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py` (``plot_ibnr_runoff.py``)                   | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_mack.py` (``plot_mack.py``)                                 | 00:00.658 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_industry_to_company.py` (``plot_industry_to_company.py``)   | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_munich.py` (``plot_munich.py``)                             | 00:00.655 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_mack.py` (``plot_mack.py``)                                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_bondy_sensitivity.py` (``plot_bondy_sensitivity.py``)       | 00:00.586 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_munich.py` (``plot_munich.py``)                             | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_munich_resid.py` (``plot_munich_resid.py``)                 | 00:00.427 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_munich_resid.py` (``plot_munich_resid.py``)                 | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py` (``plot_ibnr_runoff.py``)                   | 00:00.410 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_tailcurve_compare.py` (``plot_tailcurve_compare.py``)       | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py` (``plot_clarkldf_resid.py``)             | 00:00.376 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_triangle_from_pandas.py` (``plot_triangle_from_pandas.py``) | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_exposure_triangle.py` (``plot_exposure_triangle.py``)       | 00:00.340 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_triangle_slicing.py` (``plot_triangle_slicing.py``)         | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py` (``plot_bf_apriori_from_cl.py``)     | 00:00.326 | 0.0 MB |
+| :ref:`sphx_glr_auto_examples_plot_value_at_risk.py` (``plot_value_at_risk.py``)               | 00:00.000 | 0.0 MB |
 +-----------------------------------------------------------------------------------------------+-----------+--------+

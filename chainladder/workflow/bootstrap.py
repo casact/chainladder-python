@@ -78,7 +78,7 @@ class BootstrapODPSample(DevelopmentBase):
         exp_incr_triangle = obj.full_expectation_.cum_to_incr() \
                                .values[0, 0, :, :X.shape[-1]]
         exp_incr_triangle = xp.nan_to_num(exp_incr_triangle) * \
-            obj.X_._nan_triangle()
+            obj.X_.nan_triangle
         self.design_matrix_ = self._get_design_matrix(X)
         if self.hat_adj:
             try:
@@ -114,7 +114,7 @@ class BootstrapODPSample(DevelopmentBase):
         else:
             standardized_residuals = self.hat_ * unscaled_residuals
         n_params = self.design_matrix_.shape[1]
-        degree_freedom = xp.nansum(X._nan_triangle()) - n_params
+        degree_freedom = xp.nansum(X.nan_triangle) - n_params
         # Shapland has a hetero adjustment to degree_freedom here
         # He also adjusts the residuals for the hetero adjustment
         scale_phi = pearson_chi_sq / degree_freedom
@@ -148,7 +148,7 @@ class BootstrapODPSample(DevelopmentBase):
         """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
         """
         xp = cp.get_array_module(X.values)
-        w = X._nan_triangle()
+        w = X.nan_triangle
         arr = xp.diag(w[:, 0])
         intra_beta = xp.zeros((w.shape[0], w.shape[1]-1))
         arr = xp.concatenate((arr, intra_beta), axis=1)
@@ -168,9 +168,9 @@ class BootstrapODPSample(DevelopmentBase):
         design_matrix = self.design_matrix_
         hat = xp.matmul(xp.matmul(xp.matmul(design_matrix,xp.linalg.inv(xp.matmul(design_matrix.T, xp.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
         hat = xp.diagonal(xp.sqrt(xp.divide(1, abs(1-hat), where=(1-hat)!=0)))
-        total_length = X._nan_triangle().shape[0]
+        total_length = X.nan_triangle.shape[0]
         reshaped_hat = xp.reshape(hat[:total_length],(1, total_length))
-        indices = xp.nansum(X._nan_triangle(), axis=0).cumsum().astype(int)
+        indices = xp.nansum(X.nan_triangle, axis=0).cumsum().astype(int)
         for num, item in enumerate(indices[:-1]):
             col_length = int(indices[num+1]-indices[num])
             col = xp.reshape(hat[int(indices[num]):int(indices[num+1])],(1,col_length))

@@ -16,7 +16,6 @@ def _get_full_expectation(cdf_, ultimate_, process_variance_):
     full.values = xp.concatenate((full.values / cdf.values, full.values), -1)
     full.ddims = xp.append(cdf_.ddims, '9999-Ult')
     full.ddims = xp.array([int(item.split('-')[0]) for item in full.ddims])
-    full.valuation = full._valuation_triangle()
     full.vdim = ultimate_.vdims
     if process_variance_:
         full.values = (xp.nan_to_num(full.values) +

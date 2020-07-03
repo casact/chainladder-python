@@ -73,7 +73,8 @@ class MackChainladder(Chainladder):
     def full_std_err_(self):
         obj = copy.copy(self.X_)
         xp = cp.get_array_module(obj.values)
-        tri_array = self.full_triangle_.values
+        full = self.full_triangle_
+        tri_array = full.values
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         avg = list(self.average_) if type(self.average_) is not list else self.average_
         val = xp.array([weight_dict.get(item.lower(), 2)
@@ -86,7 +87,7 @@ class MackChainladder(Chainladder):
             (self.X_.w_, xp.ones((*val.shape[:3], 1))*xp.nan), axis=3)
         w[xp.isnan(w)] = 1
         obj.values = xp.nan_to_num(obj.values) * w
-        obj.nan_override = True
+        obj.valuation_date = full.valuation_date
         obj._set_slicers()
         return obj
 
@@ -104,17 +105,16 @@ class MackChainladder(Chainladder):
     def _mack_recursion(self, est):
         obj = copy.copy(self.X_)
         xp = cp.get_array_module(obj.values)
-        nans = self.X_._nan_triangle()[None, None]
+        nans = self.X_.nan_triangle[None, None]
         nans = nans * xp.ones(self.X_.shape)
         nans = xp.concatenate(
             (nans, xp.ones((*self.X_.shape[:3], 1))*xp.nan), 3)
         nans = 1-xp.nan_to_num(nans)
         properties = self._full_triangle_
-        obj.valuation = properties.valuation
         obj.ddims = np.concatenate(
             (properties.ddims[:len(self.X_.ddims)],
             np.array([properties.ddims[-1]])))
-        obj.nan_override = True
+        obj.valuation_date = self._full_triangle_.valuation_date
         risk_arr = xp.zeros((*self.X_.shape[:3], 1))
         if est == 'param_risk':
             obj.values = self._get_risk(nans, risk_arr,
@@ -199,6 +199,6 @@ class MackChainladder(Chainladder):
              self.ultimate_.values,
              self.mack_std_err_.values[..., -1:]), 3)
         obj.ddims = ['Latest', 'IBNR', 'Ultimate', 'Mack Std Err']
-        obj.nan_override = True
+        obj.valuation_date = self.ultimate_.valuation_date
         obj._set_slicers()
         return obj

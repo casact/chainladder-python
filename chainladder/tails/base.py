@@ -31,7 +31,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
         self.ldf_.ddims = np.array(['{}-{}'.format(ddims[i], ddims[i+1])
                                     for i in range(len(ddims)-1)])
-        self.ldf_.valuation = self.ldf_._valuation_triangle()
         self.sigma_ = copy.copy(getattr(obj, 'sigma_', obj.cdf_*0))
         self.std_err_ = copy.copy(getattr(obj, 'std_err_', obj.cdf_*0))
         zeros = tail[..., 0:1, -1:]*0
@@ -43,8 +42,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             np.concatenate(
                 (obj.ldf_.ddims,
                  np.array(['{}-9999'.format(int(obj.ddims[-1]))])))
-        val_array = self.sigma_._valuation_triangle(self.sigma_.ddims)
-        self.sigma_.valuation = self.std_err_.valuation = val_array
         self.ldf_._set_slicers()
         self.sigma_._set_slicers()
         self.std_err_._set_slicers()
@@ -69,9 +66,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             (X_new.sigma_.values, self.sigma_.values[..., -1:]), -1)
         X_new.cdf_.ddims = X_new.ldf_.ddims = self.ldf_.ddims
         X_new.sigma_.ddims = X_new.std_err_.ddims = self.sigma_.ddims
-        X_new.cdf_.valuation = X_new.ldf_.valuation = self.ldf_.valuation
-        X_new.sigma_.valuation = \
-            X_new.std_err_.valuation = self.sigma_.valuation
         X_new.sigma_._set_slicers()
         X_new.ldf_._set_slicers()
         X_new.cdf_._set_slicers()

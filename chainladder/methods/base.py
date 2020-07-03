@@ -13,7 +13,6 @@ from chainladder.core.common import Common
 
 
 class MethodBase(BaseEstimator, EstimatorIO, Common):
-    ULT_VAL = '2262-03-31 23:59:59.999999999'
     def __init__(self):
         pass
 
@@ -28,9 +27,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
     def _align_cdf(self, ultimate):
         """ Vertically align CDF to ultimate vector """
         xp = cp.get_array_module(ultimate.values)
-        o, d = ultimate.shape[-2:]
-        #cdf = xp.repeat(self.cdf_.values[..., 0:1, :d], o, axis=2)
-        ultimate.values = self.cdf_.values[..., :d]*(ultimate.values*0+1)
+        ultimate.values = \
+            self.cdf_.values[..., :ultimate.shape[-1]]*(ultimate.values*0+1)
         cdf = ultimate.latest_diagonal.values
         return cdf
 
@@ -39,8 +37,6 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         xp = cp.get_array_module(ultimate.values)
         ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
         ultimate.ddims = np.array([9999])
-        ultimate.valuation = pd.DatetimeIndex(
-            [pd.to_datetime(self.ULT_VAL)]*len(ultimate.odims))
         ultimate._set_slicers()
         ultimate.valuation_date = ultimate.valuation.max()
         return ultimate
@@ -94,7 +90,6 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj.ldf_ = self.ldf_
         if obj.ldf_.shape[0] != obj.shape[0]:
             obj.ldf_.values = xp.repeat(obj.ldf_.values, len(obj.index), 0)
-            obj.ldf_.valuation = obj.ldf_._valuation_triangle()
             obj.ldf_.kdims = obj.kdims
             obj.ldf_.key_labels = obj.key_labels
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)

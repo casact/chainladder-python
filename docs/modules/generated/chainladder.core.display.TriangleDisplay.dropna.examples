@@ -1,0 +1,23 @@
+
+
+Examples using ``chainladder.core.display.TriangleDisplay.dropna``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="All IBNR models spin off several results triangles including inbr_, ultimate_, full_expectation...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_ibnr_runoff_thumb.png
+     :alt: IBNR Runoff
+
+     :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_ibnr_runoff.py`

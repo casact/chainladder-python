@@ -116,11 +116,11 @@ class Development(DevelopmentBase):
                 val_date_min[-n_periods * \
                 val_offset[X.development_grain][X.origin_grain] - 1]
             w = X[X.valuation>=val_date_min]
-            return xp.nan_to_num((w/w).values)*X._expand_dims(X._nan_triangle())
+            return xp.nan_to_num((w/w).values)*X._expand_dims(X.nan_triangle)
 
 
     def _drop_adjustment(self, X, link_ratio):
-        weight = X._nan_triangle()[:, :-1]
+        weight = X.nan_triangle[:, :-1]
         if self.drop_high == self.drop_low == \
            self.drop == self.drop_valuation is None:
             return weight
@@ -181,7 +181,7 @@ class Development(DevelopmentBase):
     def _drop(self, X):
         xp = cp.get_array_module(X.values)
         drop = [self.drop] if type(self.drop) is not list else self.drop
-        arr = X._nan_triangle().copy()
+        arr = X.nan_triangle.copy()
         for item in drop:
             arr[np.where(X.origin == item[0])[0][0],
                 np.where(X.development == item[1])[0][0]] = 0
@@ -278,11 +278,11 @@ class Development(DevelopmentBase):
         return X_new
 
     def _param_property(self, X, params, idx):
+        from chainladder import ULT_VAL
         obj = X[X.origin==X.origin.min()]
         xp = cp.get_array_module(X.values)
         obj.values = xp.ones(obj.shape)[..., :-1]*params[..., idx:idx+1, :]
         obj.ddims = X.link_ratio.ddims
-        obj.valuation = obj._valuation_triangle(obj.ddims)
-        obj.nan_override = True
+        obj.valuation_date = pd.to_datetime(ULT_VAL)
         obj._set_slicers()
         return obj

@@ -5,44 +5,6 @@ Examples using ``chainladder.BootstrapODPSample``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example uses the BootstrapODPSample to simulate new triangles that are then used to simula...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_value_at_risk_thumb.png
-     :alt: Value at Risk example
-
-     :ref:`sphx_glr_auto_examples_plot_value_at_risk.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_value_at_risk.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can drop the outlier link ratios from the BootstrapODPSample ...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_comparison_thumb.png
-     :alt: ODP Bootstrap Comparison
-
-     :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_bootstrap_comparison.py`
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
 
 .. only:: html
@@ -59,22 +21,3 @@ Examples using ``chainladder.BootstrapODPSample``
 .. only:: not html
 
  * :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
-     :alt: ODP Bootstrap Example
-
-     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_bootstrap.py`

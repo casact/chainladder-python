@@ -72,7 +72,6 @@ class TriangleIO():
         json_dict['key_labels'] = self.key_labels
         json_dict['origin_grain'] = self.origin_grain
         json_dict['development_grain'] = self.development_grain
-        json_dict['nan_override'] = self.nan_override
         json_dict['is_cumulative'] = self.is_cumulative
         json_dict['is_val_tri'] = self.is_val_tri
         json_dict['valuation_date'] = self.valuation_date.strftime('%Y-%m-%d')

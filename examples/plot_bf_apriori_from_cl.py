@@ -17,7 +17,7 @@ bf_ult = cl.BornhuetterFerguson(apriori=1).fit(raa, sample_weight=apriori).ultim
 
 # Plot of Ultimates
 pd.concat(
-    (cl_ult.to_frame().rename({'values': 'Chainladder'}, axis=1),
-     bf_ult.to_frame().rename({'values': 'BornhuetterFerguson'}, axis=1)),
+    (cl_ult.to_frame().rename({9999: 'Chainladder'}, axis=1),
+     bf_ult.to_frame().rename({9999: 'BornhuetterFerguson'}, axis=1)),
     axis=1).plot(grid=True, marker='o').set(
     xlabel='Accident Year', ylabel='Ultimate');

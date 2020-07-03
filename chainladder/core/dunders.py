@@ -30,12 +30,10 @@ class TriangleDunders:
                     other.odims = obj.odims
                 elif len(obj.odims) == 1 and len(other.odims) > 1:
                     obj.odims = other.odims
-                    obj.valuation = other.valuation
                 if len(other.ddims) == 1 and len(obj.ddims) > 1:
                     other.ddims = obj.ddims
                 elif len(obj.ddims) == 1 and len(other.ddims) > 1:
                     obj.ddims = other.ddims
-                    obj.valuation = other.valuation
                 other = other.values
             if not is_broadcastable:
                 # If broadcasting doesn't work, union axes similar to pandas
@@ -76,18 +74,15 @@ class TriangleDunders:
                     obj_arr[:, :, ol:oh, dl:dh] = self.values
                 else:
                     obj_arr[:, :, ol:oh, :] = self.values
-                odims = np.array(odims.index)
-                ddims = np.array(ddims.index)
-                obj.ddims = ddims
-                obj.odims = odims
+                obj.odims = np.array(odims.index)
+                obj.ddims = np.array(ddims.index)
                 obj.values = obj_arr
-                obj.valuation = obj._valuation_triangle()
                 other = other_arr
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
-        obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
+        obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
         obj.values[obj.values == 0] = np.nan
         return obj
 
@@ -98,8 +93,8 @@ class TriangleDunders:
             raise ValueError("Triangle arithmetic requires both triangles to be the same grain.")
         #if x.is_val_tri != y.is_val_tri:
         #    raise ValueError("Triangle arithmetic cannot be performed between a development triangle and a valuation Triangle.")
-        if x.is_cumulative != y.is_cumulative:
-            warnings.warn('Arithmetic is being performed between an incremental triangle and a cumulative triangle.')
+        #if x.is_cumulative != y.is_cumulative:
+        #    warnings.warn('Arithmetic is being performed between an incremental triangle and a cumulative triangle.')
 
     def _prep_index_columns(self, x, y):
         """ Preps index and column axes for arithmetic """
@@ -213,7 +208,7 @@ class TriangleDunders:
     def __truediv__(self, other):
         xp = cp.get_array_module(self.values)
         obj, other = self._validate_arithmetic(other)
-        obj.values = xp.nan_to_num(obj.values)/other
+        obj.values = xp.nan_to_num(obj.values) / other
         return self._arithmetic_cleanup(obj, other)
 
     def __rtruediv__(self, other):
@@ -224,13 +219,7 @@ class TriangleDunders:
 
     def __eq__(self, other):
         xp = cp.get_array_module(self.values)
-        if xp.all(xp.nan_to_num(self.values) ==
-           xp.nan_to_num(other.values)):
-            return True
-        else:
-            return False
+        return xp.all(xp.nan_to_num(self.values) == xp.nan_to_num(other.values))
 
     def __contains__(self, value):
-        if self.__dict__.get(value, None) is None:
-            return False
-        return True
+        return self.__dict__.get(value, None) is not None

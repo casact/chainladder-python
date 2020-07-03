@@ -35,7 +35,7 @@ this example.
  .. code-block:: none
 
 
-    <matplotlib.axes._subplots.AxesSubplot object at 0x000001A8C2500438>
+    <matplotlib.axes._subplots.AxesSubplot object at 0x00000183B28CB358>
 
 
 
@@ -62,10 +62,12 @@ this example.
 
 
     # Fit Bornhuetter-Ferguson to stochastically generated data
-    model = cl.BornhuetterFerguson(0.65, apriori_sigma=0.10).fit(sim.resampled_triangles_, sample_weight=premium)
+    model = cl.BornhuetterFerguson(0.65, apriori_sigma=0.10)
+    model.fit(sim.resampled_triangles_, sample_weight=premium)
 
     # Grab completed triangle replacing simulated known data with actual known data
-    full_triangle = model.full_triangle_ - model.X_ + loss.broadcast_axis('index', sim.resampled_triangles_.index)
+    full_triangle = model.full_triangle_ - model.X_ + \
+                    loss.broadcast_axis('index', sim.resampled_triangles_.index)
 
     # Limiting to the current year for plotting
     current_year = full_triangle[full_triangle.origin==full_triangle.origin.max()].to_frame().T
@@ -78,7 +80,7 @@ this example.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.986 seconds)
+   **Total running time of the script:** ( 0 minutes  1.796 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_stochastic_bornferg.py:

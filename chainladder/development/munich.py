@@ -7,6 +7,7 @@ from chainladder.development import Development
 from chainladder.core import EstimatorIO
 from chainladder.core.common import Common
 import numpy as np
+import pandas as pd
 from chainladder.utils.cupy import cp
 import copy
 import warnings
@@ -75,11 +76,12 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self : object
             Returns the instance itself.
         """
+        from chainladder import ULT_VAL
         xp = cp.get_array_module(X.values)
         if self.paid_to_incurred is None:
             raise ValueError('Must enter valid value for paid_to_incurred.')
         obj = copy.deepcopy(X)
-        missing = xp.nan_to_num(X.values)*X._nan_triangle()==0
+        missing = xp.nan_to_num(X.values)*X.nan_triangle==0
         if len(xp.where(missing)[0]) > 0:
             if self.fillna:
                 from chainladder.methods import Chainladder
@@ -101,6 +103,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.residual_, self.q_resid_ = self._get_MCL_resids(obj)
         self.lambda_coef_ = self._get_MCL_lambda()
         self.ldf_ = self._set_ldf(obj, self._get_mcl_cdf(obj, self.munich_full_triangle_))
+        self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
         self._map = {
             (list(X.columns).index(x)): (num%2, num//2)
             for num, x in enumerate(np.array(self.paid_to_incurred).flatten())}
@@ -262,7 +265,6 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         for n, item in enumerate(incurred):
             idx = np.where(X.cdf_.vdims == item)[0][0]
             obj.values[:, idx:idx+1, ...] = cdf_triangle[1, :, n:n+1, ...]
-        obj.nan_override = True
         obj._set_slicers()
         return obj
 

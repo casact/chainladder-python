@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import Development, DevelopmentBase
 import numpy as np
+import pandas as pd
 from chainladder.utils.cupy import cp
 import copy
 
@@ -54,6 +55,7 @@ class IncrementalAdditive(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
+        from chainladder import ULT_VAL
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         sample_weight.is_cumulative = False
@@ -62,7 +64,7 @@ class IncrementalAdditive(DevelopmentBase):
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
         w_[w_ == 0] = xp.nan
-        w_ = xp.concatenate((w_, (w_[..., -1:]*x._nan_triangle())[..., -1:]),
+        w_ = xp.concatenate((w_, (w_[..., -1:]*x.nan_triangle)[..., -1:]),
                             axis=-1)
         if self.average == 'simple':
             y_ = xp.nanmean(w_*x.values, axis=-2)
@@ -71,20 +73,20 @@ class IncrementalAdditive(DevelopmentBase):
             y_ = y_ / xp.nansum(w_*sample_weight.values, axis=-2)
         y_ = xp.repeat(xp.expand_dims(y_, -2), len(x.odims), -2)
         obj = copy.copy(x)
-        keeps = 1-xp.nan_to_num(x._nan_triangle()) + \
+        keeps = 1-xp.nan_to_num(x.nan_triangle) + \
             xp.nan_to_num(
                 x[x.valuation==x.valuation_date].values[0, 0, ...]*0+1)
         obj.values = (1+self.trend) ** \
             xp.flip((xp.abs(xp.arange(obj.shape[-2])[None].T -
                      xp.arange(obj.shape[-2])[None])), 0)*y_*keeps
-        obj.values = obj.values*(X._expand_dims(1-xp.nan_to_num(x._nan_triangle()))) + \
+        obj.values = obj.values*(X._expand_dims(1-xp.nan_to_num(x.nan_triangle))) + \
             xp.nan_to_num((X.cum_to_incr()/sample_weight).values)
 
         obj.values[obj.values == 0] = xp.nan
-        obj.nan_override = True
         obj._set_slicers()
-        self.incremental_ = obj*sample_weight
+        obj.valuation_date = pd.to_datetime(ULT_VAL)
         self.ldf_ = obj.incr_to_cum().link_ratio
+        self.incremental_ = obj*sample_weight
         self.sigma_ = self.std_err_ = 0*self.ldf_
         return self
 

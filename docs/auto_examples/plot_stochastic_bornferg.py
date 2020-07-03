@@ -27,10 +27,12 @@ sim.fit(loss, sample_weight=premium)
 
 
 # Fit Bornhuetter-Ferguson to stochastically generated data
-model = cl.BornhuetterFerguson(0.65, apriori_sigma=0.10).fit(sim.resampled_triangles_, sample_weight=premium)
+model = cl.BornhuetterFerguson(0.65, apriori_sigma=0.10)
+model.fit(sim.resampled_triangles_, sample_weight=premium)
 
 # Grab completed triangle replacing simulated known data with actual known data
-full_triangle = model.full_triangle_ - model.X_ + loss.broadcast_axis('index', sim.resampled_triangles_.index)
+full_triangle = model.full_triangle_ - model.X_ + \
+                loss.broadcast_axis('index', sim.resampled_triangles_.index)
 
 # Limiting to the current year for plotting
 current_year = full_triangle[full_triangle.origin==full_triangle.origin.max()].to_frame().T

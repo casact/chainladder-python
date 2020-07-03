@@ -102,8 +102,8 @@ class TriangleSlicer:
     def __getitem__(self, key):
         ''' Function for pandas style column indexing'''
 
-        if type(key) is pd.DataFrame and 'development' in key.columns:
-            return self._slice_development(key['development'])
+        if type(key) is pd.Series and key.name == 'development':
+            return self._slice_development(key)
         if type(key) is pd.Index:
             key = key.to_list()
         if type(key) is np.ndarray:
@@ -144,7 +144,7 @@ class TriangleSlicer:
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
         obj.values = obj.values[..., key, :]
-        return self._cleanup_slice(obj)
+        return obj
 
     def _slice_valuation(self, key):
         ''' private method for handling of valuation slicing '''
@@ -174,7 +174,7 @@ class TriangleSlicer:
             obj.values = obj.values[..., o_idx, d_idx]
         else:
             obj.values = xp.take(xp.take(obj.values, o_idx, -2), d_idx, -1)
-        return self._cleanup_slice(obj)
+        return obj
 
     def _slice_development(self, key):
         ''' private method for handling of development slicing '''
@@ -183,11 +183,6 @@ class TriangleSlicer:
         if cp.get_array_module(obj.values) == cp:
             key = cp.array(key)
         obj.values = obj.values[..., key]
-        return self._cleanup_slice(obj)
-
-    def _cleanup_slice(self, obj):
-        ''' private method with common post-slicing functionality'''
-        obj.valuation = obj._valuation_triangle()
         return obj
 
     def _set_slicers(self):

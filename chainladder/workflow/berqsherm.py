@@ -110,11 +110,11 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         a = np.concatenate(
             [a[..., i, lookup[0, 0, i:i+1, :]]
              for i in range(lookup.shape[-2])], -2) * \
-            adj_closed_clm._nan_triangle()[None,None,...]
+            adj_closed_clm.nan_triangle[None,None,...]
         b = np.concatenate(
             [b[..., i, lookup[0, 0, i:i+1, :]]
              for i in range(lookup.shape[-2])], -2) * \
-            adj_closed_clm._nan_triangle()[None,None,...]
+            adj_closed_clm.nan_triangle[None,None,...]
         # Adjust paids
         adj_paid_claims = adj_closed_clm*0+np.exp(adj_closed_clm.values*b)*a
         adj_paid_claims = (

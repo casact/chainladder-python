@@ -170,7 +170,7 @@ def test_arithmetic_2():
 def test_rtruediv():
     raa = cl.load_sample('raa')
     xp = cp.get_array_module(raa.values)
-    assert xp.nansum(abs(((1/raa)*raa).values[0,0] - raa._nan_triangle()))< .00001
+    assert xp.nansum(abs(((1/raa)*raa).values[0,0] - raa.nan_triangle))< .00001
 
 
 def test_shift():

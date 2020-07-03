@@ -56,10 +56,10 @@ create a calendar year runoff of IBNR.
     runoff = (model.full_triangle_.cum_to_incr() - triangle.cum_to_incr())
 
     # Convert to calendar period and aggregate across all accident years
-    cal_yr_runoff = runoff.dev_to_val().dropna().sum(axis='origin')
+    cal_yr_runoff = runoff[runoff.valuation>triangle.valuation_date].dev_to_val().sum(axis='origin')
 
     # Plot results
-    cal_yr_runoff.T.plot(
+    cal_yr_runoff.dropna().T.plot(
         kind='bar', legend=False, color='red', grid=True,
         title='GenIns: IBNR Run-off', alpha=0.7).set(
         xlabel='Calendar Year', ylabel='IBNR');
@@ -67,7 +67,7 @@ create a calendar year runoff of IBNR.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.410 seconds)
+   **Total running time of the script:** ( 0 minutes  0.298 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_ibnr_runoff.py:

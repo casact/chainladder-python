@@ -16,8 +16,7 @@ tri = cl.load_sample('clrd').groupby('LOB').sum().loc['medmal', 'CumPaidLoss']
 # Create a fuction to grab the scalar tail value.
 def scoring(model):
     """ Scoring functions must return a scalar """
-    cdf = model.cdf_
-    return cdf[cdf.development==cdf.development.iloc[-2]].to_frame().iloc[0,0]
+    return model.tail_.iloc[0, 0]
 
 # Create a grid of scenarios
 param_grid = dict(

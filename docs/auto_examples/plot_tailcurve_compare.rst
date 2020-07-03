@@ -45,20 +45,18 @@ conservative tail factors than the ``exponential`` fit.
     import pandas as pd
 
     clrd = cl.load_sample('clrd').groupby('LOB').sum()['CumPaidLoss']
-    cdf_ip = cl.TailCurve(curve='inverse_power').fit(clrd).cdf_
-    cdf_xp = cl.TailCurve(curve='exponential').fit(clrd).cdf_
-    tail_ip = cdf_ip[cdf_ip.development==cdf_ip.development.iloc[-2]][cdf_ip.origin==cdf_ip.origin.max()]
-    tail_xp = cdf_xp[cdf_xp.development==cdf_xp.development.iloc[-2]][cdf_xp.origin==cdf_xp.origin.max()]
+    cdf_ip = cl.TailCurve(curve='inverse_power').fit(clrd)
+    cdf_xp = cl.TailCurve(curve='exponential').fit(clrd)
 
-    pd.concat((tail_ip.to_frame().rename("Inverse Power"),
-               tail_xp.to_frame().rename("Exponential")), axis=1).plot(
+    pd.concat((cdf_ip.tail_.rename("Inverse Power"),
+               cdf_xp.tail_.rename("Exponential")), axis=1).plot(
             kind='bar', grid=True, title='Curve Fit Comparison').set(
             xlabel='Industry', ylabel='Tail Factor');
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.263 seconds)
+   **Total running time of the script:** ( 0 minutes  0.929 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_tailcurve_compare.py:

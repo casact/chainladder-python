@@ -89,7 +89,7 @@ def read_json(json_str, array_backend=None):
                 json_dict[array]['array'], dtype=json_dict[array]['dtype']))
         shape = (len(tri.kdims), len(tri.vdims), len(tri.odims), len(tri.ddims))
         properties = ['key_labels', 'origin_grain', 'development_grain',
-                    'nan_override', 'is_cumulative']
+                      'is_cumulative']
         for prop in properties:
             setattr(tri, prop, json_dict[prop])
         if json_dict.get('is_val_tri', False):
@@ -97,7 +97,6 @@ def read_json(json_str, array_backend=None):
         tri.valuation_date = pd.to_datetime(
             json_dict['valuation_date'], format='%Y-%m-%d').to_period('M').to_timestamp(how='e')
         tri._set_slicers()
-        tri.valuation = tri._valuation_triangle()
         if json_dict['values'].get('sparse', None):
             tri.values = sparse_in(json_dict['values']['array'],
                                    json_dict['values']['dtype'], shape)

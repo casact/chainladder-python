@@ -51,8 +51,7 @@ value.
     # Create a fuction to grab the scalar tail value.
     def scoring(model):
         """ Scoring functions must return a scalar """
-        cdf = model.cdf_
-        return cdf[cdf.development==cdf.development.iloc[-2]].to_frame().iloc[0,0]
+        return model.tail_.iloc[0, 0]
 
     # Create a grid of scenarios
     param_grid = dict(
@@ -70,7 +69,7 @@ value.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.060 seconds)
+   **Total running time of the script:** ( 0 minutes  1.848 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_extrap_period.py:
