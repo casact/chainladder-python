@@ -213,8 +213,12 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         else:
             val_array = (val_array.astype('datetime64[M]') +
                          ddim_arr[np.newaxis]).astype('datetime64[D]')
-        val_array = pd.DatetimeIndex(pd.DataFrame(val_array).unstack().values)
-        return val_array.to_period('M').to_timestamp(how='e')
+        return pd.DatetimeIndex(
+            ((val_array.astype('datetime64[M]') +
+              np.timedelta64(1,'M')).astype('datetime64[ns]') -
+              np.timedelta64(1,'ns')
+            ).reshape(1,-1, order='F')[0])
+
 
     def _lowest_grain(self):
         my_list = ['M', 'Q', 'Y']

@@ -90,7 +90,13 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         obj = copy.deepcopy(X)
+        xp = cp.get_array_module(obj.values)
         obj.ldf_ = self.ldf_
+        if obj.ldf_.shape[0] != obj.shape[0]:
+            obj.ldf_.values = xp.repeat(obj.ldf_.values, len(obj.index), 0)
+            obj.ldf_.valuation = obj.ldf_._valuation_triangle()
+            obj.ldf_.kdims = obj.kdims
+            obj.ldf_.key_labels = obj.key_labels
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj
 

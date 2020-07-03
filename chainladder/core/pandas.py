@@ -9,53 +9,21 @@ import copy
 
 class TriangleGroupBy:
     def __init__(self, old_obj, by):
-        obj = copy.deepcopy(old_obj)
+        self.orig_obj = copy.deepcopy(old_obj)
         if by != -1:
-            indices = obj.index.groupby(by).indices
-            new_index = obj.index.groupby(by).count().index
+            self.idx = self.orig_obj.index.set_index(by).index
         else:
-            indices = {'All': np.arange(len(obj.index))}
-            new_index = pd.Index(['All'], name='All')
-        groups = [indices[item] for item in sorted(list(indices.keys()))]
-        xp = cp.get_array_module(obj.values)
-        old_k_by_new_k = xp.zeros(
-            (len(obj.index.index), len(groups)), dtype='bool')
-        for num, item in enumerate(groups):
-            old_k_by_new_k[:, num][item] = True
-        old_k_by_new_k = xp.swapaxes(old_k_by_new_k, 0, 1)
-        for i in range(3):
-            old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
-        self.old_k_by_new_k = old_k_by_new_k
-        obj.kdims = np.array(list(new_index))
-        obj.key_labels = list(new_index.names)
-        self.obj = obj
-
-    def quantile(self, q, axis=1, *args, **kwargs):
-        """ Return values at the given quantile over requested axis.  If
-            Triangle is convertible to DataFrame then pandas quantile
-            functionality is used instead.
-
-        Parameters
-        ----------
-        q: float or array-like, default 0.5 (50% quantile)
-            Value between 0 <= q <= 1, the quantile(s) to compute.
-        axis:  {0, 1, ‘index’, ‘columns’} (default 1)
-            Equals 0 or ‘index’ for row-wise, 1 or ‘columns’ for column-wise.
-
-        Returns
-        -------
-            Triangle
-
-        """
-        xp = cp.get_array_module(self.obj.values)
-        x = self.obj.values*self.old_k_by_new_k
-        ignore_vector = xp.sum(xp.isnan(x), axis=1, keepdims=True) == \
-            x.shape[1]
-        x = xp.where(ignore_vector, 0, x)
-        self.obj.values = \
-            getattr(xp, 'nanpercentile')(x, q*100, axis=1, *args, **kwargs)
-        self.obj.values[self.obj.values == 0] = np.nan
-        return self.obj
+            self.idx = pd.DataFrame(
+                np.repeat(np.repeat(
+                    np.array([['All']]), old_obj.shape[0], 0),
+                    len(old_obj.key_labels), 1),
+                columns=old_obj.key_labels).set_index(old_obj.key_labels).index
+            by = old_obj.key_labels
+        df = pd.DataFrame(
+            self.orig_obj.values.reshape(
+                (self.orig_obj.shape[0], 1, 1, -1))[:, 0, 0, :],
+            index=self.idx)
+        self.obj = df.reset_index().groupby(by)
 
 
 class TrianglePandas:
@@ -161,7 +129,7 @@ class TrianglePandas:
     def quantile(self, q, *args, **kwargs):
         if self.shape[:2] == (1, 1):
             return self.to_frame().quantile(q, *args, **kwargs)
-        return TriangleGroupBy(self, by=-1).quantile(q, axis=1)
+        return TriangleGroupBy(self, by=-1).quantile(q)
 
     def groupby(self, by, *args, **kwargs):
         """ Group Triangle by index values.  If the triangle is convertable to a
@@ -271,9 +239,11 @@ def add_triangle_agg_func(cls, k, v):
             if axis == 1 and obj.values.shape[axis] == 1:
                 obj.vdims = np.array([0])
             if axis == 2 and obj.values.shape[axis] == 1:
-                obj.odims = np.array(['(All)'])
+                obj.odims = obj.odims[0:1]
+                obj.valuation = obj.valuation[::len(obj.ddims)]
             if axis == 3 and obj.values.shape[axis] == 1:
-                obj.ddims = np.array(['(All)'])
+                obj.ddims = obj.ddims[-1:]
+                obj.valuation = obj.valuation[-len(obj.odims):]
             obj._set_slicers()
             obj.values = obj.values * obj._expand_dims(obj._nan_triangle())
             obj.values[obj.values == 0] = np.nan
@@ -288,19 +258,13 @@ def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
         obj = copy.deepcopy(self.obj)
-        xp = cp.get_array_module(obj.values)
-        x = xp.broadcast_to(
-            self.obj.values,
-            (self.old_k_by_new_k.shape[0], *self.obj.values.shape)) * \
-            self.old_k_by_new_k
-        ignore_vector = xp.sum(np.isnan(x), axis=1, keepdims=True) == \
-            x.shape[1]
-        x = xp.where(ignore_vector, 0, x)
-        x[~xp.isfinite(x)] = np.nan
-        obj.values = \
-            getattr(xp, v)(x, axis=1, *args, **kwargs)
-        obj.values[obj.values == 0] = np.nan
-        return obj
+        obj = getattr(self.obj, v)(*args, **kwargs)
+        self.orig_obj.values = obj.values.reshape(
+            len(self.idx.unique()), *self.orig_obj.shape[1:])
+        self.orig_obj.values[self.orig_obj.values == 0] = np.nan
+        self.orig_obj.kdims = np.array(obj.index)
+        self.orig_obj.key_labels = list(self.idx.names)
+        return self.orig_obj
     set_method(cls, agg_func, k)
 
 
@@ -323,6 +287,8 @@ df_passthru = ['to_clipboard', 'to_csv', 'to_excel', 'to_json',
                'describe', 'melt', 'pct_chg', 'round']
 agg_funcs = ['sum', 'mean', 'median', 'max', 'min', 'prod',
              'var', 'std', 'cumsum']
+for k in agg_funcs + ['quantile']:
+    add_groupby_agg_func(TriangleGroupBy, k, k)
 agg_funcs = {item: 'nan'+item for item in agg_funcs}
 more_aggs= ['diff']
 agg_funcs = {**agg_funcs, **{item: item for item in more_aggs}}
@@ -332,4 +298,3 @@ for item in df_passthru:
 
 for k, v in agg_funcs.items():
     add_triangle_agg_func(TrianglePandas, k, v)
-    add_groupby_agg_func(TriangleGroupBy, k, v)

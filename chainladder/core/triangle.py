@@ -166,7 +166,8 @@ class Triangle(TriangleBase):
     def latest_diagonal(self):
         """ The latest diagonal of the Triangle """
         obj = copy.deepcopy(self)
-        obj.values = np.nansum((self.valuation==self.valuation_date).reshape(self.shape[-2:], order='F')*self.values, axis=-1, keepdims=True)
+        obj.values = np.nansum((self.valuation==self.valuation_date).reshape(
+            self.shape[-2:], order='F')*self.values, axis=-1, keepdims=True)
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
         obj.valuation = obj._valuation_triangle()

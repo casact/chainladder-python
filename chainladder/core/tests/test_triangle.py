@@ -43,8 +43,9 @@ def test_arithmetic_union():
 
 
 def test_to_frame_unusual():
-    a = cl.load_sample('clrd').groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
-    b = cl.load_sample('clrd').latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
+    clrd = cl.load_sample('clrd')
+    a = clrd.groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
+    b = clrd.latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
     xp = cp.get_array_module(a)
     xp.testing.assert_array_equal(a, b)
 
