@@ -126,18 +126,17 @@ class BootstrapODPSample(DevelopmentBase):
         adj_resid_dist = adj_resid_dist[adj_resid_dist != 0]
         adj_resid_dist = adj_resid_dist - xp.mean(adj_resid_dist)
         random_state = xp.random.RandomState(self.random_state)
-        resampled_residual = [xp.expand_dims(random_state.choice(adj_resid_dist,
+        resampled_residual = [(random_state.choice(adj_resid_dist,
                               size=exp_incr_triangle.shape,
-                              replace=True)*(exp_incr_triangle*0+1), 0)
+                              replace=True)*(exp_incr_triangle*0+1))[None, ...]
                               for item in range(self.n_sims)]
         resampled_residual = xp.concatenate(tuple(resampled_residual), 0) \
                                .reshape(self.n_sims, exp_incr_triangle.shape[0],
                                         exp_incr_triangle.shape[1])
         resampled_residual = resampled_residual
-        b = xp.repeat(xp.expand_dims(exp_incr_triangle, 0), self.n_sims, 0)
+        b = xp.repeat(exp_incr_triangle[None, ...], self.n_sims, 0)
         resampled_triangles = (resampled_residual*xp.sqrt(abs(b))+b).cumsum(2)
-        resampled_triangles = xp.swapaxes(
-            xp.expand_dims(resampled_triangles, 0), 0, 1)
+        resampled_triangles = xp.swapaxes(resampled_triangles[None, ...], 0, 1)
         obj = copy.copy(X)
         obj.kdims = np.arange(self.n_sims)
         obj.values = resampled_triangles
@@ -174,7 +173,7 @@ class BootstrapODPSample(DevelopmentBase):
         for num, item in enumerate(indices[:-1]):
             col_length = int(indices[num+1]-indices[num])
             col = xp.reshape(hat[int(indices[num]):int(indices[num+1])],(1,col_length))
-            nans = xp.repeat(xp.expand_dims(xp.array([xp.nan]),0),total_length-col_length, axis=1)
+            nans = xp.repeat(xp.array([xp.nan])[None, :],total_length-col_length, axis=1)
             col = xp.concatenate((col, nans), axis=1)
             reshaped_hat = xp.concatenate((reshaped_hat,col),axis=0)
         return reshaped_hat.T

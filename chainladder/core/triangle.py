@@ -5,6 +5,7 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 import warnings
 from chainladder.core.base import TriangleBase
@@ -167,8 +168,13 @@ class Triangle(TriangleBase):
     def latest_diagonal(self):
         """ The latest diagonal of the Triangle """
         obj = copy.deepcopy(self)
-        obj.values = np.nansum((self.valuation==self.valuation_date).reshape(
-            self.shape[-2:], order='F')*self.values, axis=-1, keepdims=True)
+        xp = cp.get_array_module(self.values)
+        val = (self.valuation==self.valuation_date).reshape(
+            self.shape[-2:], order='F')
+        if xp == sp:
+            val = sp(val)
+
+        obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
         return obj
@@ -178,7 +184,8 @@ class Triangle(TriangleBase):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
-        temp[temp == 0] = np.nan
+        if xp != sp:
+            temp[temp == 0] = np.nan
         val_array = obj.valuation.values.reshape(
             obj.shape[-2:], order='f')[:, 1:]
         obj.values = temp[..., 1:]/temp[..., :-1]
@@ -205,7 +212,7 @@ class Triangle(TriangleBase):
         is_val_tri = type(ddims) == pd.DatetimeIndex
         if is_val_tri:
             return pd.DatetimeIndex(pd.DataFrame(
-                np.repeat(self.ddims.values[np.newaxis],
+                np.repeat(self.ddims.values[None],
                           len(self.odims), 0))
                 .unstack().values)
         if type(ddims[0]) in [np.str_, str]:
@@ -216,7 +223,9 @@ class Triangle(TriangleBase):
               np.timedelta64(ddims[0], 'M')).astype('datetime64[ns]') -
               np.timedelta64(1,'ns'))[:, None]
         s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
-        val_array = (val_array.astype('datetime64[M]') + ddim_arr[s][None, :] + 1).astype('datetime64[ns]') -  np.timedelta64(1,'ns')
+        val_array = (val_array.astype('datetime64[M]') +
+                     ddim_arr[s][None, :] + 1).astype('datetime64[ns]') - \
+                     np.timedelta64(1,'ns')
         if ddims[-1] == 9999:
             val_array = np.concatenate(
                 (val_array, np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]),
@@ -238,9 +247,10 @@ class Triangle(TriangleBase):
         xp = cp.get_array_module(self.values)
         if inplace:
             if not self.is_cumulative:
-                xp.cumsum(xp.nan_to_num(self.values), axis=3, out=self.values)
+                print(xp.nan_to_num(self.values).shape)
+                self.values = xp.cumsum(xp.nan_to_num(self.values), axis=3)
                 self.values = self._expand_dims(self.nan_triangle)*self.values
-                self.values[self.values == 0] = np.nan
+                self.num_to_nan()
                 self.is_cumulative = True
                 self._set_slicers()
             return self
@@ -266,8 +276,9 @@ class Triangle(TriangleBase):
                 temp = xp.nan_to_num(self.values)[..., 1:] - \
                     xp.nan_to_num(self.values)[..., :-1]
                 temp = xp.concatenate((self.values[..., 0:1], temp), axis=3)
-                temp = temp*self._expand_dims(self.nan_triangle)
-                temp[temp == 0] = np.nan
+                temp = temp * self._expand_dims(self.nan_triangle)
+                if xp != sp:
+                    temp[temp == 0] = np.nan
                 self.values = temp
                 self.is_cumulative = False
                 self._set_slicers()
@@ -295,7 +306,6 @@ class Triangle(TriangleBase):
                 return self
             xp = cp.get_array_module(self.values)
             obj = copy.deepcopy(self)
-            #print('a', obj.valuation.shape)
             if self.shape[-1] == 1:
                 return obj
             rng = obj.valuation.unique().sort_values()
@@ -315,27 +325,33 @@ class Triangle(TriangleBase):
                 x = xp.nan_to_num(obj.values)
             val_mtrx = np.array(obj.valuation).reshape(
                 obj.shape[-2:], order='f')[:, :-1]
-            rows, column_indices = xp.ogrid[:x.shape[2], :x.shape[3]]
-            r = xp.arange(
-                0, x.shape[2])*(xp.where(val_mtrx[0, :]==val_mtrx[0, -1])[0][0] -
-                 xp.where(val_mtrx[1, :]==val_mtrx[0, -1])[0][0])
+            rows, column_indices = np.ogrid[:x.shape[2], :x.shape[3]]
+            r = np.arange(
+                0, x.shape[2])*(np.where(val_mtrx[0, :]==val_mtrx[0, -1])[0][0] -
+                 np.where(val_mtrx[1, :]==val_mtrx[0, -1])[0][0])
             r[r < 0] += x.shape[1]
             column_indices = column_indices - r[..., None]
-            x = x[..., rows, column_indices]
-            #print('b', x.shape)
+            if xp == sp:
+                b = (np.arange(x.shape[3])[None]/x.shape[3] +
+                     np.arange(x.shape[2])[:, None])[rows, column_indices]
+                c10 = (b-b%1).astype('int64').flatten()
+                c11_new = (np.arange(x.shape[3])[None] +
+                           np.zeros(x.shape[2])[:, None]).astype('int64').flatten()
+                c11 = np.round(
+                    ((b - np.arange(x.shape[2])[:, None])*x.shape[3]),0).astype('int64').flatten()
+                mapper = dict(zip(list(zip(c10, c11)), c11_new))
+                x.coords[-1, :] = pd.Series(zip(x.coords[-2:, :][0], x.coords[-2:, :][1])).map(mapper).values
+            else:
+                x = x[..., rows, column_indices]
             if self.is_ultimate:
                 x = xp.concatenate((x, obj.values[..., -1:]), -1)
             obj.values = x
-            obj.values[obj.values == 0] = xp.nan
+            obj.num_to_nan()
             obj.ddims = rng.append(u_rng)
-            #print(obj.ddims)
-            #print(obj.valuation_date)
             obj.values = obj.values[..., :np.where(
                 obj.ddims <= obj.valuation_date)[0].max()+1]
-            #print('c', obj.valuation.shape)
             if self.is_cumulative:
                 obj = obj.incr_to_cum(inplace=True)
-            #print('d', obj.valuation.shape)
             return obj
         return copy.deepcopy(self).dev_to_val(inplace=True)
 
@@ -384,18 +400,20 @@ class Triangle(TriangleBase):
     def _val_dev_chg(self):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
-        x = np.nan_to_num(obj.values)
+        x = xp.nan_to_num(obj.values)
         val_mtrx = \
             (np.array(obj.valuation.year).reshape(obj.shape[-2:], order='f') -
              np.array(pd.DatetimeIndex(obj.odims).year)[..., None])*12 + \
             (np.array(obj.valuation.month).reshape(obj.shape[-2:], order='f') -
              np.array(pd.DatetimeIndex(obj.odims).month)[..., None]) + 1
         rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten()>0]))
-        x = [np.sum((val_mtrx==item)*x, -1, keepdims=True)
-             for item in np.array(rng)]
-        x = np.concatenate(x, -1)
+        if sp == xp:
+            val_mtrx = sp(val_mtrx)
+        x = [xp.sum((val_mtrx==item)*x, -1, keepdims=True)
+             for item in xp.array(rng)]
+        x = xp.concatenate(x, -1)
         obj.values = x
-        obj.values[obj.values == 0] = xp.nan
+        obj.num_to_nan()
         obj.ddims = np.array([item for item in rng])
         obj._set_slicers()
         return obj
@@ -455,9 +473,9 @@ class Triangle(TriangleBase):
                 else:
                     o = obj.odims
             o_new = np.unique(o)
-            o = np.repeat(np.expand_dims(o, axis=1), len(o_new), axis=1)
-            o_new = np.repeat(o_new[np.newaxis], len(o), axis=0)
-            o_bool = np.repeat((o == o_new)[:, np.newaxis],
+            o = np.repeat(o[:, None, ...], len(o_new), axis=1)
+            o_new = np.repeat(o_new[None], len(o), axis=0)
+            o_bool = np.repeat((o == o_new)[:, None],
                                len(obj.ddims), axis=1)
             o_bool = obj._expand_dims(o_bool)
             new_tri = xp.repeat(xp.nan_to_num(obj.values)[..., None],
@@ -479,7 +497,7 @@ class Triangle(TriangleBase):
             obj.ddims = obj.ddims[keeps]
         obj.origin_grain = ograin_new
         obj.development_grain = dgrain_new
-        obj.values[obj.values == 0] = xp.nan
+        obj.num_to_nan()
         if not self.is_cumulative:
             obj = obj.cum_to_incr()
         if self.is_val_tri:
@@ -525,11 +543,11 @@ class Triangle(TriangleBase):
             raise ValueError('Only origin and valuation axes are supported for trending')
         def val_vector(start, end, valuation):
             if end < start:
-                val_start = xp.maximum(valuation, start)
-                val_end = xp.maximum(valuation, end)
+                val_start = np.maximum(valuation, start)
+                val_end = np.maximum(valuation, end)
             else:
-                val_start = xp.minimum(valuation, start)
-                val_end = xp.minimum(valuation, end)
+                val_start = np.minimum(valuation, start)
+                val_end = np.minimum(valuation, end)
             return val_start, val_end
         xp = cp.get_array_module(self.values)
         if not start:

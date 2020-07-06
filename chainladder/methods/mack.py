@@ -93,11 +93,10 @@ class MackChainladder(Chainladder):
 
     @property
     def total_process_risk_(self):
-        origin = 2
         obj = copy.copy(self.process_risk_)
         xp = cp.get_array_module(obj.values)
-        obj.values = xp.sqrt(xp.nansum(self.process_risk_.values**2, origin))
-        obj.values = xp.expand_dims(obj.values, origin)
+        obj.values = xp.sqrt(xp.nansum(self.process_risk_.values**2, 2))
+        obj.values = obj.values[:, :, None,...]
         obj.odims = ['tot_proc_risk']
         obj._set_slicers()
         return obj

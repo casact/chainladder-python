@@ -4,26 +4,44 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 
 
 class TriangleGroupBy:
     def __init__(self, old_obj, by):
+        xp = cp.get_array_module(old_obj.values)
         self.orig_obj = copy.deepcopy(old_obj)
-        if by != -1:
-            self.idx = self.orig_obj.index.set_index(by).index
+        if xp == sp:
+            if by != -1:
+                self.idx = self.orig_obj.index.iloc[self.orig_obj.values.coords[0]].reset_index(drop=True)
+            else:
+                self.idx = pd.DataFrame(
+                    np.repeat(np.repeat(
+                        np.array([['All']]), old_obj.values.coords.shape[1], 0),
+                        len(old_obj.key_labels), 1), columns=old_obj.key_labels)
+                by = old_obj.key_labels
+            groupby = pd.concat(
+                (pd.DataFrame(self.orig_obj.values.coords[1:].T, columns=[1,2,3]),
+                 self.idx), axis=1)
+            groupby['values'] = self.orig_obj.values.data
+            by = [by] if type(by) is str else by
+            self.obj = groupby.groupby(by+[1,2,3])
         else:
-            self.idx = pd.DataFrame(
-                np.repeat(np.repeat(
-                    np.array([['All']]), old_obj.shape[0], 0),
-                    len(old_obj.key_labels), 1),
-                columns=old_obj.key_labels).set_index(old_obj.key_labels).index
-            by = old_obj.key_labels
-        df = pd.DataFrame(
-            self.orig_obj.values.reshape(
-                (self.orig_obj.shape[0], 1, 1, -1))[:, 0, 0, :],
-            index=self.idx)
-        self.obj = df.reset_index().groupby(by)
+            if by != -1:
+                self.idx = self.orig_obj.index.set_index(by).index
+            else:
+                self.idx = pd.DataFrame(
+                    np.repeat(np.repeat(
+                        np.array([['All']]), old_obj.shape[0], 0),
+                        len(old_obj.key_labels), 1),
+                    columns=old_obj.key_labels).set_index(old_obj.key_labels).index
+                by = old_obj.key_labels
+            groupby = pd.DataFrame(
+                self.orig_obj.values.reshape(
+                    (self.orig_obj.shape[0], 1, 1, -1))[:, 0, 0, :],
+                index=self.idx)
+            self.obj = groupby.reset_index().groupby(by)
 
 
 class TrianglePandas:
@@ -41,7 +59,10 @@ class TrianglePandas:
             return self._repr_format()
         elif len(axes) in [1, 2]:
             odims, ddims = self._repr_date_axes()
-            tri = xp.squeeze(self.values)
+            if xp == sp:
+                tri = np.squeeze(self.values.todense())
+            else:
+                tri = xp.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: odims, 3: ddims}
             if axes[0] == 0:
@@ -49,8 +70,8 @@ class TrianglePandas:
             else:
                 idx = axes_lookup[axes[0]]
             if len(axes) == 2:
-                return pd.DataFrame(tri, index=idx,
-                                    columns=axes_lookup[axes[1]]).fillna(0)
+                return pd.DataFrame(
+                    tri, index=idx, columns=axes_lookup[axes[1]]).fillna(0)
             if len(axes) == 1:
                 return pd.Series(tri, index=idx).fillna(0)
         else:
@@ -84,10 +105,7 @@ class TrianglePandas:
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
         if obj.shape[-1] != 1:
-            if xp.__name__ == 'cupy':
-                ddim = cp.asnumpy(xp.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0]))
-            else:
-                ddim = np.nan_to_num((obj.sum(axis=-2).values*0+1)[0, 0, 0])
+            ddim = list((xp.nansum(obj.values[0, 0, :], -2) != 0).astype('int'))
             ddim = obj.development[pd.Series(ddim).astype(bool)]
             obj = self[(self.development >= ddim.min()) &
                   (self.development <= ddim.max())]
@@ -244,7 +262,7 @@ def add_triangle_agg_func(cls, k, v):
                 obj.ddims = obj.ddims[-1:]
             obj._set_slicers()
             obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
-            obj.values[obj.values == 0] = np.nan
+            obj.num_to_nan()
             if obj.shape == (1, 1, 1, 1):
                 return obj.values[0, 0, 0, 0]
             else:
@@ -256,12 +274,23 @@ def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
         obj = copy.deepcopy(self.obj)
+        xp = cp.get_array_module(self.orig_obj.values)
         obj = getattr(self.obj, v)(*args, **kwargs)
-        self.orig_obj.values = obj.values.reshape(
-            len(self.idx.unique()), *self.orig_obj.shape[1:])
-        self.orig_obj.values[self.orig_obj.values == 0] = np.nan
-        self.orig_obj.kdims = np.array(obj.index)
-        self.orig_obj.key_labels = list(self.idx.names)
+        if xp == sp:
+            obj = obj.reset_index()
+            new_idx = obj[obj.columns[:-4]].drop_duplicates().reset_index(drop=True).reset_index().set_index(list(obj.columns[:-4]))
+            obj = obj.set_index(list(obj.columns[:-4])).merge(new_idx, how='inner', left_index=True, right_index=True)
+            self.orig_obj.values.coords = obj[['index', 1,2,3]].values.T
+            self.orig_obj.values.data = obj['values'].values
+            self.orig_obj.values.shape = tuple([len(new_idx)] + list(self.orig_obj.values.shape[1:]))
+            self.orig_obj.kdims = np.array(new_idx.index)
+            self.orig_obj.key_labels = list(new_idx.index.names)
+        else:
+            self.orig_obj.values = obj.values.reshape(
+                len(self.idx.unique()), *self.orig_obj.shape[1:])
+            self.orig_obj.values[self.orig_obj.values == 0] = np.nan
+            self.orig_obj.kdims = np.array(obj.index)
+            self.orig_obj.key_labels = list(self.idx.names)
         return self.orig_obj
     set_method(cls, agg_func, k)
 

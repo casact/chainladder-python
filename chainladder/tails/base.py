@@ -97,7 +97,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         xp = cp.get_array_module(tail_ldf)
         accum_point = self.ldf_.shape[-1] - 1
         ave = 1 + tail_ldf[..., :accum_point]
-        all = xp.expand_dims(xp.prod(1 + tail_ldf[..., accum_point:], -1), -1)
+        all = xp.prod(1 + tail_ldf[..., accum_point:], -1)[..., None]
         tail = xp.concatenate((ave, all), -1)
         return tail
 

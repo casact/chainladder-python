@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import pandas as pd
 import copy
 import warnings
@@ -209,7 +210,8 @@ class Development(DevelopmentBase):
             tri_array = (X + self.fillna).values
         else:
             tri_array = X.values.copy()
-        tri_array[tri_array == 0] = xp.nan
+        if xp != sp:
+            tri_array[tri_array == 0] = xp.nan
         if type(self.average) is not list:
             average = [self.average] * (tri_array.shape[-1] - 1)
         else:

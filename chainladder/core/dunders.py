@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 import warnings
 
@@ -43,37 +44,32 @@ class TriangleDunders:
                 odims = pd.concat(
                     (pd.Series(obj.odims, index=obj.odims),
                      pd.Series(other.odims, index=other.odims)), axis=1)
-                other_arr = xp.zeros(
-                    (other.shape[0], other.shape[1], len(odims), len(ddims)))
-                other_arr[:] = xp.nan
-                o_arr1 = odims[1].isna().values
-                o_arr0 = odims[0].isna().values
-                d_arr1 = ddims[1].isna().values
-                d_arr0 = ddims[0].isna().values
-                if xp == cp:
-                    o_arr1 = cp.array(o_arr1)
-                    o_arr0 = cp.array(o_arr0)
-                    d_arr1 = cp.array(d_arr1)
-                    d_arr0 = cp.array(d_arr0)
-                ol = int(xp.where(~o_arr1 == 1)[0].min())
-                oh = int(xp.where(~o_arr1 == 1)[0].max()+1)
-                if np.any(self.ddims != other.ddims):
-                    dl = int(xp.where(~d_arr1 == 1)[0].min())
-                    dh = int(xp.where(~d_arr1 == 1)[0].max()+1)
-                    other_arr[:, :, ol:oh, dl:dh] = other.values
+                o_arr0, o_arr1 = odims[0].isna().values, odims[1].isna().values
+                d_arr0, d_arr1 = ddims[0].isna().values, ddims[1].isna().values
+                # rol = right hand side, origin, lower
+                rol = int(np.where(~o_arr1 == 1)[0].min())
+                roh = int(np.where(~o_arr1 == 1)[0].max()+1)
+                rdl = int(np.where(~d_arr1 == 1)[0].min())
+                rdh = int(np.where(~d_arr1 == 1)[0].max()+1)
+                lol = int(np.where(~o_arr0 == 1)[0].min())
+                loh = int(np.where(~o_arr0 == 1)[0].max()+1)
+                ldl = int(np.where(~d_arr0 == 1)[0].min())
+                ldh = int(np.where(~d_arr0 == 1)[0].max()+1)
+                new_shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
+                if xp != sp:
+                    other_arr = xp.zeros(new_shape)
+                    other_arr[:] = xp.nan
+                    other_arr[:, :, rol:roh, rdl:rdh] = other.values
+                    obj_arr = xp.zeros(new_shape)
+                    obj_arr[:] = xp.nan
+                    obj_arr[:, :, lol:loh, ldl:ldh] = self.values
                 else:
-                    other_arr[:, :, ol:oh, :] = other.values
-                obj_arr = xp.zeros(
-                    (self.shape[0], self.shape[1], len(odims), len(ddims)))
-                obj_arr[:] = xp.nan
-                ol = int(xp.where(~o_arr0 == 1)[0].min())
-                oh = int(xp.where(~o_arr0 == 1)[0].max()+1)
-                if np.any(self.ddims != other.ddims):
-                    dl = int(xp.where(~d_arr0 == 1)[0].min())
-                    dh = int(xp.where(~d_arr0 == 1)[0].max()+1)
-                    obj_arr[:, :, ol:oh, dl:dh] = self.values
-                else:
-                    obj_arr[:, :, ol:oh, :] = self.values
+                    obj_arr, other_arr = obj.values, other.values
+                    other_arr.coords[2] = other_arr.coords[2] + rol
+                    other_arr.coords[3] = other_arr.coords[3] + rdl
+                    obj_arr.coords[2] = obj_arr.coords[2] + lol
+                    obj_arr.coords[3] = obj_arr.coords[3] + ldl
+                    other_arr.shape = obj_arr.shape = new_shape
                 obj.odims = np.array(odims.index)
                 obj.ddims = np.array(ddims.index)
                 obj.values = obj_arr
@@ -83,7 +79,7 @@ class TriangleDunders:
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
         obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
-        obj.values[obj.values == 0] = np.nan
+        obj.num_to_nan()
         return obj
 
     def _compatibility_check(self, x, y):
@@ -214,7 +210,7 @@ class TriangleDunders:
     def __rtruediv__(self, other):
         obj = copy.deepcopy(self)
         obj.values = other / self.values
-        obj.values[obj.values == 0] = np.nan
+        obj.num_to_nan()
         return obj
 
     def __eq__(self, other):

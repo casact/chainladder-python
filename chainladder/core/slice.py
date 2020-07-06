@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 
 
@@ -26,7 +27,7 @@ class _LocBase:
             obj.values = obj.values[x_0, x_1, ...]
         else:
             obj.values = obj.values[x_0, ...][:, x_1, ...]
-        obj.values[obj.values == 0] = np.nan
+        obj.num_to_nan()
         return obj
 
     def _contig_slice(self, arr):
@@ -164,6 +165,8 @@ class TriangleSlicer:
         xp = cp.get_array_module(obj.values)
         if xp == cp:
             nan_tri = cp.array(nan_tri)
+        if xp == sp:
+            nan_tri = sp(nan_tri)
         obj.values = (obj.values*nan_tri)
         if np.all(o_idx == np.array(range(o_idx[0], o_idx[-1]+1))):
             o_idx = slice(o_idx[0], o_idx[-1]+1)

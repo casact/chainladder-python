@@ -86,7 +86,7 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     p = mack_p(data, averages[0], est_sigma[0], tail).total_process_risk_.values[0, 0, :, :]
     p = p[:, :-1] if not tail else p
     xp = cp.get_array_module(p)
-    r = xp.expand_dims(np.array(df[0]), 0)
+    r = np.array(df[0])[None, ...]
     xp.testing.assert_allclose(r, p, atol=atol)
 
 

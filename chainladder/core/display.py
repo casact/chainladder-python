@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import warnings
 import re
 try:
@@ -65,6 +66,9 @@ class TriangleDisplay():
         odims, ddims = self._repr_date_axes()
         if cp.get_array_module(self.values).__name__ == 'cupy':
             out = cp.asnumpy(self.values[0, 0])
+        elif isinstance(self.values, sp):
+            out = self.values[0, 0].todense()
+            out[out == 0] = np.nan
         else:
             out = self.values[0, 0]
         out = pd.DataFrame(out, index=odims, columns=ddims)

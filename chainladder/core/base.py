@@ -3,8 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import sparse
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import warnings
 
 from chainladder.core.display import TriangleDisplay
@@ -75,23 +75,22 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         dev = dict(zip(dev, range(len(dev))))
         orig = dict(zip(orig, range(len(orig))))
         kdims = {v:k for k, v in key.sum(axis=1).to_dict().items()}
-        orig_idx = origin_date.map(orig).values[np.newaxis].T
+        orig_idx = origin_date.map(orig).values[None].T
         if development:
-            dev_idx = dev_lag.map(dev).values[np.newaxis].T
+            dev_idx = dev_lag.map(dev).values[None].T
         else:
-            dev_idx = (dev_lag*0).values[np.newaxis].T
+            dev_idx = (dev_lag*0).values[None].T
         data_agg = data_agg[origin_date<=development_date]
         orig_idx = orig_idx[origin_date<=development_date]
         dev_idx = dev_idx[origin_date<=development_date]
         if sum(origin_date>development_date) > 0:
             warnings.warn("Observations with development before origin start have been removed.")
-        key_idx = data_agg[index].sum(axis=1).map(kdims).values[np.newaxis].T
-        val_idx = ((np.ones(len(data_agg))[np.newaxis].T)*range(len(columns))).reshape((1,-1), order='F').T
+        key_idx = data_agg[index].sum(axis=1).map(kdims).values[None].T
+        val_idx = ((np.ones(len(data_agg))[None].T)*range(len(columns))).reshape((1,-1), order='F').T
         coords = np.concatenate(tuple([np.concatenate((orig_idx, dev_idx), axis=1)]*len(columns)),  axis=0)
         coords = np.concatenate((np.concatenate(tuple([key_idx]*len(columns)),  axis=0), val_idx, coords), axis=1)
         amts = data_agg[columns].unstack().values.astype('float64')
-        values = sparse.COO(coords.T, amts, shape=(len(key), len(columns), len(orig), len(dev) if development else 1)).todense()
-        values[values==0.] = np.nan
+        values = sp(coords.T.astype('int32'), amts, shape=(len(key), len(columns), len(orig), len(dev) if development else 1), prune=True)
         self.kdims = np.array(key)
         self.odims = np.sort(date_axes['origin'].unique())
         if development:
@@ -103,15 +102,17 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         self.key_labels = index
         self._set_slicers()
         # Create 4D Triangle
-        xp = np
         if self.array_backend == 'numpy':
-            xp = np
+            self.values = np.array(values.todense(), dtype=kwargs.get('dtype', None))
+            self.values[self.values==0.] = np.nan
+        elif self.array_backend == 'sparse':
+            self.values=values
         else:
             xp = cp
             if cp == np:
                 warnings.warn('Unable to load CuPY.  Using numpy instead.')
                 self.array_backend = 'numpy'
-        self.values = xp.array(values, dtype=kwargs.get('dtype', None))
+            self.values = xp.array(values, dtype=kwargs.get('dtype', None))
         self.is_cumulative = cumulative
 
     def _len_check(self, x, y):
@@ -158,17 +159,17 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     @property
     def nan_triangle(self):
-        '''Given the current triangle shape and grain, it determines the
+        '''Given the current triangle shape and valuation, it determines the
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
         xp = cp.get_array_module(self.values)
         if min(self.values.shape[2:]) == 1:
             return xp.ones(self.values.shape[2:], dtype='float16')
-        val_array = xp.array(self.valuation).reshape(self.shape[-2:], order='f')
-        nan_triangle = xp.array(
+        val_array = np.array(self.valuation).reshape(self.shape[-2:], order='f')
+        nan_triangle = np.array(
             pd.DataFrame(val_array) > self.valuation_date)
-        nan_triangle = xp.array(xp.where(nan_triangle, np.nan, 1), dtype='float16')
+        nan_triangle = xp.array(np.where(nan_triangle, xp.nan, 1), dtype='float16')
         return nan_triangle
 
     def _lowest_grain(self):
@@ -269,3 +270,10 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             if item:
                 return_list = return_list + item
         return return_list
+
+    def num_to_nan(self):
+        xp = cp.get_array_module(self.values)
+        if xp == sp:
+            pass
+        else:
+            self.values[self.values == 0] = xp.nan

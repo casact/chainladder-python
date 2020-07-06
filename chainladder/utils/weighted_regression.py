@@ -48,8 +48,8 @@ class WeightedRegression(BaseEstimator):
             (xp.nansum(w*x*y, axis)-xp.nansum(x*w, axis)*xp.nanmean(y, axis)) /
             (xp.nansum(w*x*x, axis)-xp.nanmean(x, axis)*xp.nansum(w*x, axis)))
         intercept = xp.nanmean(y, axis) - slope * xp.nanmean(x, axis)
-        self.slope_ = xp.expand_dims(slope, -1)
-        self.intercept_ = xp.expand_dims(intercept, -1)
+        self.slope_ = slope[..., None]
+        self.intercept_ = intercept[..., None]
         return self
 
     def _fit_OLS_thru_orig(self):
@@ -65,10 +65,10 @@ class WeightedRegression(BaseEstimator):
         mse_denom[mse_denom == 0] = xp.nan
         mse = wss_residual / mse_denom
         std_err = xp.sqrt(mse/xp.nansum(w*x*x*(y*0+1), axis))
-        std_err = xp.expand_dims(std_err, -1)
+        std_err = std_err[..., None]
         std_err[std_err == 0] = xp.nan
-        coef = xp.expand_dims(coef, -1)
-        sigma = xp.expand_dims(xp.sqrt(mse), -1)
+        coef = coef[..., None]
+        sigma = xp.sqrt(mse)[..., None]
         self.slope_ = coef
         self.sigma_ = sigma
         self.std_err_ = std_err

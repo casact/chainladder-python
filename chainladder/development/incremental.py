@@ -71,7 +71,7 @@ class IncrementalAdditive(DevelopmentBase):
         if self.average == 'volume':
             y_ = xp.nansum(w_*x.values*sample_weight.values, axis=-2)
             y_ = y_ / xp.nansum(w_*sample_weight.values, axis=-2)
-        y_ = xp.repeat(xp.expand_dims(y_, -2), len(x.odims), -2)
+        y_ = xp.repeat(y_[..., None, :], len(x.odims), -2)
         obj = copy.copy(x)
         keeps = 1-xp.nan_to_num(x.nan_triangle) + \
             xp.nan_to_num(
