@@ -238,6 +238,9 @@ class TrianglePandas:
         obj.values = obj.values.astype(dtype)
         return obj
 
+def sort_index(self, *args, **kwargs):
+    return self.loc[self._idx_table().sort_index(*args, **kwargs) \
+                        .reset_index()[self.key_labels]]
 
 def add_triangle_agg_func(cls, k, v):
     ''' Aggregate Overrides in Triangle '''

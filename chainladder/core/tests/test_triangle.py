@@ -53,9 +53,9 @@ def test_to_frame_unusual():
 def test_link_ratio():
     tri = cl.load_sample('RAA')
     xp = cp.get_array_module(tri.values)
-    xp.testing.assert_allclose(tri.link_ratio.values*tri.values[:,:,:-1,:-1],
-                               tri.values[:,:,:-1,1:], atol=1e-5)
-
+    assert xp.sum(xp.nan_to_num(tri.link_ratio.values*tri.values[:,:,:-1,:-1]) -
+                  xp.nan_to_num(tri.values[:,:,:-1,1:]))<1e-5
+                      
 
 def test_incr_to_cum():
     xp = cp.get_array_module(tri.values)

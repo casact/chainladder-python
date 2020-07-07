@@ -184,18 +184,25 @@ class Triangle(TriangleBase):
         xp = cp.get_array_module(self.values)
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
-        if xp != sp:
-            temp[temp == 0] = np.nan
         val_array = obj.valuation.values.reshape(
             obj.shape[-2:], order='f')[:, 1:]
-        obj.values = temp[..., 1:]/temp[..., :-1]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
-        # Check whether we want to eliminate the last origin period
-        if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) <= 0:
-            obj.values = obj.values[..., :-1, :]
-            obj.odims = obj.odims[:-1]
-            val_array = val_array[:-1, :]
+        if xp != sp:
+            temp[temp == 0] = np.nan
+            obj.values = temp[..., 1:]/temp[..., :-1]
+            # Check whether we want to eliminate the last origin period
+            if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) <= 0:
+                obj.values = obj.values[..., :-1, :]
+        else:
+            temp.fill_value = np.nan
+            temp = temp[..., 1:]/temp[..., :-1]
+            temp.fill_value = 0.0
+            temp.coords = temp.coords[:, temp.data!=0]
+            temp.data = temp.data[temp.data!=0]
+            temp.shape = tuple(temp.coords.max(1)+1)
+            obj.values = sp(temp)
+        obj.odims = obj.odims[:obj.values.shape[2]]
         if hasattr(obj, 'w_'):
             if obj.shape == obj.w_[..., 0:1, :len(obj.odims), :].shape:
                 obj = obj*obj.w_[..., 0:1, :len(obj.odims), :]
@@ -247,7 +254,6 @@ class Triangle(TriangleBase):
         xp = cp.get_array_module(self.values)
         if inplace:
             if not self.is_cumulative:
-                print(xp.nan_to_num(self.values).shape)
                 self.values = xp.cumsum(xp.nan_to_num(self.values), axis=3)
                 self.values = self._expand_dims(self.nan_triangle)*self.values
                 self.num_to_nan()
@@ -445,7 +451,8 @@ class Triangle(TriangleBase):
         dgrain_new = grain[-1]
         dgrain_old = self.development_grain
         valid = {'Y':['Y'], 'Q':['Q', 'Y'], 'M':['Y', 'Q', 'M']}
-        if ograin_new not in valid[ograin_old] or dgrain_new not in valid[dgrain_old]:
+        if ograin_new not in valid.get(ograin_old, []) or \
+           dgrain_new not in valid.get(dgrain_old, []):
             raise ValueError('New grain not compatible with existing grain')
         if not self.is_cumulative:
             # Must be cumulative to work

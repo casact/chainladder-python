@@ -19,6 +19,7 @@ sp.diagonal = sparse.diagonal
 sp.zeros = sparse.zeros
 sp.testing.assert_array_equal = np.testing.assert_equal
 
+
 def nan_to_num(a):
     return a
 sp.nan_to_num = nan_to_num
@@ -49,18 +50,26 @@ def arange(*args, **kwargs):
 sp.arange = arange
 
 def cumsum(a, axis):
-    """ specific to 3 axis array """
     a = copy.deepcopy(a)
     x = pd.DataFrame(a.coords.T)
     x.columns = ['0', '1', '2', '3']
+    cols = [item for item in x.columns if item != str(axis)]
     x['y']=a.data
-    x = pd.pivot_table(x , index=['0', '1', '2'], columns=str(axis), values='y').T.unstack().reset_index().fillna(0)
-    x.columns = [0,1,2,3,'y']
-    x = x.set_index([0,1,2,3]).groupby(level=axis).cumsum().reset_index()
+    x = pd.pivot_table(
+        x , columns=cols,
+        index=str(axis), values='y')
+    missing = list(set(np.arange(a.shape[axis])) - set(x.index))
+    if len(missing) > 0:
+        x = x.append(pd.DataFrame(
+            np.repeat((x.iloc[0:1]*0).values, len(missing), axis=0),
+            index=missing, columns=x.columns))
+    x = x.unstack().reset_index().fillna(0)
+    x.columns = [0, 1, 2, 3, 'y']
+    x = x.set_index([0, 1, 2, 3]).groupby(level=2).cumsum().reset_index()
     x = x[x['y']>0]
-    a.coords = x[[0,1,2,3]].values.T
+    a.coords = x[[0, 1, 2, 3]].values.T
     a.data = x['y'].values
-    return a
+    return sp(a)
 sp.cumsum = cumsum
 
 def where(*args, **kwargs):
@@ -79,5 +88,20 @@ def swapaxes(a, axis1, axis2):
     print(l)
     a.coords = a.coords[l,:]
     return a
-
 sp.swapaxes = swapaxes
+
+def repeat(a, repeats, axis):
+    """Repeat elements of an array"""
+    r = []
+    for item in range(1, repeats+1):
+        coords = a.coords.copy()
+        coords[axis] = coords[axis]+item
+        r.append(coords)
+    v = np.repeat(a.data, repeats, 0)
+    a.coords = np.concatenate(r, axis=1)
+    a.data = v
+    a.shape = tuple(
+        [item if num!=axis else item*repeats
+         for num, item in enumerate(a.shape)])
+    return a
+sp.repeat = repeat

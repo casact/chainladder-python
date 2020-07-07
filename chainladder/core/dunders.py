@@ -78,7 +78,11 @@ class TriangleDunders:
 
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
-        obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
+        xp = cp.get_array_module(obj.values)
+        if xp == sp:
+            obj.values = sp(obj.values) * sp(obj._expand_dims(obj.nan_triangle))
+        else:
+            obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
         obj.num_to_nan()
         return obj
 
@@ -204,7 +208,12 @@ class TriangleDunders:
     def __truediv__(self, other):
         xp = cp.get_array_module(self.values)
         obj, other = self._validate_arithmetic(other)
-        obj.values = xp.nan_to_num(obj.values) / other
+        if xp == sp:
+            other.fill_value = xp.nan
+            obj.values = sp(xp.nan_to_num(obj.values)) / sp(other)
+            obj.values.fill_value = 0.0
+        else:
+            obj.values = xp.nan_to_num(obj.values) / other
         return self._arithmetic_cleanup(obj, other)
 
     def __rtruediv__(self, other):
