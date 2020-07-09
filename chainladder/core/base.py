@@ -40,16 +40,20 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         index, columns, origin, development = self._str_to_list(
             index, columns, origin, development)
         key_gr = origin + self._flatten(development, index)
-
         # Aggregate data
+
         data_agg = data.groupby(key_gr).sum().reset_index().fillna(0)
         if not index:
             index = ['Total']
             data_agg[index[0]] = 'Total'
+        for item in index:
+            if pd.api.types.is_numeric_dtype(data_agg[item]):
+                data_agg[item] = data_agg[item].astype(str)
         # Initialize origin and development dates and grains
         origin_date = TriangleBase._to_datetime(
             data_agg, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
+
         m_cnt = {'Y': 12, 'Q': 3, 'M': 1}
         if development:
             development_date = TriangleBase._to_datetime(
@@ -92,6 +96,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         amts = data_agg[columns].unstack().values.astype('float64')
         values = sp(coords.T.astype('int32'), amts, shape=(len(key), len(columns), len(orig), len(dev) if development else 1), prune=True)
         self.kdims = np.array(key)
+        self.key_labels = index
+        for num, item in enumerate(index):
+            if item in data.columns:
+                if pd.api.types.is_numeric_dtype(data[item]):
+                    self.kdims[:, num] = self.kdims[:, num].astype(data[item].dtype)
         self.odims = np.sort(date_axes['origin'].unique())
         if development:
             self.ddims = np.sort(dev_lag_unique.unique())
@@ -99,7 +108,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         else:
             self.ddims = np.array([None])
         self.vdims = np.array(columns)
-        self.key_labels = index
         self._set_slicers()
         # Create 4D Triangle
         if self.array_backend == 'numpy':

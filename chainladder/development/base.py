@@ -231,13 +231,16 @@ class Development(DevelopmentBase):
         for i in [2, 1, 0]:
             val = xp.repeat(val[None], tri_array.shape[i], axis=0)
         val = xp.nan_to_num(val * (y * 0 + 1))
-        if xp == cp:
+        if xp in [cp, sp]:
             link_ratio = y / x
         else:
             link_ratio = xp.divide(y, x, where=xp.nan_to_num(x) != 0)
-        self.w_ = xp.array(self._assign_n_periods_weight(X) *
-                           self._drop_adjustment(X, link_ratio),
-                           dtype='float16')
+        if xp == sp:
+            self.w_ = sp(self._assign_n_periods_weight(X) *
+                         self._drop_adjustment(X, link_ratio))
+        else:
+            self.w_ = xp.array(self._assign_n_periods_weight(X) *
+                               self._drop_adjustment(X, link_ratio))
         w = self.w_ / (x**(val))
         params = WeightedRegression(axis=2, thru_orig=True).fit(x, y, w)
         if self.n_periods != 1:

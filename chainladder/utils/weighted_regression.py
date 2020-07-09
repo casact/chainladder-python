@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 from sklearn.base import BaseEstimator
 
 class WeightedRegression(BaseEstimator):
@@ -42,8 +43,9 @@ class WeightedRegression(BaseEstimator):
         '''
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
         xp = cp.get_array_module(x)
-        x[w == 0] = xp.nan
-        y[w == 0] = xp.nan
+        if xp != sp:
+            x[w == 0] = xp.nan
+            y[w == 0] = xp.nan
         slope = (
             (xp.nansum(w*x*y, axis)-xp.nansum(x*w, axis)*xp.nanmean(y, axis)) /
             (xp.nansum(w*x*x, axis)-xp.nanmean(x, axis)*xp.nansum(w*x, axis)))
@@ -62,11 +64,13 @@ class WeightedRegression(BaseEstimator):
         residual = (y-fitted_value)*xp.sqrt(w)
         wss_residual = xp.nansum(residual**2, axis)
         mse_denom = xp.nansum((y*0+1)*(w!=0), axis)-1
-        mse_denom[mse_denom == 0] = xp.nan
+        if xp != sp:
+            mse_denom[mse_denom == 0] = xp.nan
         mse = wss_residual / mse_denom
         std_err = xp.sqrt(mse/xp.nansum(w*x*x*(y*0+1), axis))
         std_err = std_err[..., None]
-        std_err[std_err == 0] = xp.nan
+        if xp != sp:
+            std_err[std_err == 0] = xp.nan
         coef = coef[..., None]
         sigma = xp.sqrt(mse)[..., None]
         self.slope_ = coef
@@ -92,7 +96,8 @@ class WeightedRegression(BaseEstimator):
         ''' Use Cases: generally for filling in last element of sigma_
         '''
         xp = cp.get_array_module(y)
-        y[y == 0] = xp.nan
+        if xp != sp:
+            y[y == 0] = xp.nan
         ly = xp.log(y)
         w = xp.nan_to_num(ly*0+1)
         reg = WeightedRegression(self.axis, False).fit(None, ly, w)

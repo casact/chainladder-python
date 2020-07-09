@@ -18,6 +18,8 @@ sp.concatenate = sparse.concatenate
 sp.diagonal = sparse.diagonal
 sp.zeros = sparse.zeros
 sp.testing.assert_array_equal = np.testing.assert_equal
+sp.sqrt = np.sqrt
+sp.log = np.log
 
 
 def nan_to_num(a):
@@ -93,7 +95,7 @@ sp.swapaxes = swapaxes
 def repeat(a, repeats, axis):
     """Repeat elements of an array"""
     r = []
-    for item in range(1, repeats+1):
+    for item in range(repeats):
         coords = a.coords.copy()
         coords[axis] = coords[axis]+item
         r.append(coords)
