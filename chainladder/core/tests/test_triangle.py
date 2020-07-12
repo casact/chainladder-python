@@ -6,11 +6,12 @@ import copy
 
 tri = cl.load_sample('clrd')
 qtr = cl.load_sample('quarterly')
+raa = cl.load_sample('raa')
 
 # Test Triangle slicing
 def test_slice_by_boolean():
     assert tri[tri['LOB'] == 'ppauto'].loc['Wolverine Mut Ins Co']['CumPaidLoss'] == \
-                            tri.loc['Wolverine Mut Ins Co'].loc['ppauto']['CumPaidLoss']
+           tri.loc['Wolverine Mut Ins Co'].loc['ppauto']['CumPaidLoss']
 
 
 def test_slice_by_loc():
@@ -18,13 +19,11 @@ def test_slice_by_loc():
 
 
 def test_slice_origin():
-    assert cl.load_sample('raa')[cl.load_sample('raa').origin>'1985'].shape == \
-        (1, 1, 5, 10)
+    assert raa[raa.origin>'1985'].shape == (1, 1, 5, 10)
 
 
 def test_slice_development():
-    assert cl.load_sample('raa')[cl.load_sample('raa').development<72].shape == \
-        (1, 1, 10, 5)
+    assert raa[raa.development<72].shape == (1, 1, 10, 5)
 
 
 def test_slice_by_loc_iloc():
@@ -32,30 +31,27 @@ def test_slice_by_loc_iloc():
 
 
 def test_repr():
-    tri = cl.load_sample('raa')
-    np.testing.assert_array_equal(pd.read_html(tri._repr_html_())[0].set_index('Origin').values,
-                            tri.to_frame().values)
+    np.testing.assert_array_equal(
+        pd.read_html(raa._repr_html_())[0].set_index('Origin').values,
+        raa.to_frame().values)
 
 
 def test_arithmetic_union():
-    raa = cl.load_sample('raa')
     assert raa.shape == (raa-raa[raa.valuation<'1987']).shape
 
 
 def test_to_frame_unusual():
-    clrd = cl.load_sample('clrd')
-    a = clrd.groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
-    b = clrd.latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
+    a = tri.groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
+    b = tri.latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
     xp = cp.get_array_module(a)
     xp.testing.assert_array_equal(a, b)
 
 
 def test_link_ratio():
-    tri = cl.load_sample('RAA')
-    xp = cp.get_array_module(tri.values)
-    assert xp.sum(xp.nan_to_num(tri.link_ratio.values*tri.values[:,:,:-1,:-1]) -
-                  xp.nan_to_num(tri.values[:,:,:-1,1:]))<1e-5
-                      
+    xp = cp.get_array_module(raa.values)
+    assert xp.sum(xp.nan_to_num(raa.link_ratio.values*raa.values[:,:,:-1,:-1]) -
+                  xp.nan_to_num(raa.values[:,:,:-1,1:]))<1e-5
+
 
 def test_incr_to_cum():
     xp = cp.get_array_module(tri.values)
@@ -94,7 +90,7 @@ def test_sum_of_diff_eq_diff_of_sum():
 
 
 def test_append():
-    assert cl.load_sample('raa').append(cl.load_sample('raa')).sum() == 2*cl.load_sample('raa')
+    assert raa.append(raa).sum() == 2*raa
 
 
 def test_assign_existing_col():
@@ -168,7 +164,6 @@ def test_arithmetic_2():
 
 
 def test_rtruediv():
-    raa = cl.load_sample('raa')
     xp = cp.get_array_module(raa.values)
     assert xp.nansum(abs(((1/raa)*raa).values[0,0] - raa.nan_triangle))< .00001
 
@@ -191,14 +186,13 @@ def test_grain_returns_valid_tri():
 
 
 def test_base_minimum_exposure_triangle():
-    raa = (cl.load_sample('raa').latest_diagonal*0+50000).to_frame().reset_index()
-    raa['index'] = raa['index'].astype(str)
-    cl.Triangle(raa, origin='index', columns=raa.columns[-1])
+    d = (raa.latest_diagonal*0+50000).to_frame().reset_index()
+    d['index'] = d['index'].astype(str)
+    cl.Triangle(d, origin='index', columns=d.columns[-1])
 
 
 def test_origin_and_value_setters():
-    raa = cl.load_sample('raa')
-    raa2 = cl.load_sample('raa')
+    raa2 = raa.copy()
     raa.columns = list(raa.columns)
     raa.origin = list(raa.origin)
     assert np.all((np.all(raa2.origin == raa.origin),
@@ -236,19 +230,17 @@ def test_valdev3():
 
 #def test_valdev4():
 #    # Does not work with pandas 0.23, consider requiring only pandas>=0.24
-#    raa = cl.load_sample('raa')
+#    raa = raa
 #    np.testing.assert_array_equal(raa.dev_to_val()[raa.dev_to_val().development>='1989'].values,
 #        raa[raa.valuation>='1989'].dev_to_val().values)
 
 
 def test_valdev5():
-    raa = cl.load_sample('raa')
     xp = cp.get_array_module(raa.values)
     xp.testing.assert_array_equal(raa[raa.valuation>='1989'].latest_diagonal.values,
                             raa.latest_diagonal.values)
 
 def test_valdev6():
-    raa = cl.load_sample('raa')
     xp = cp.get_array_module(raa.values)
     xp.testing.assert_array_equal(raa.grain('OYDY').latest_diagonal.values,
                             raa.latest_diagonal.grain('OYDY').values)
@@ -282,7 +274,7 @@ def test_commutative():
             xp.nan_to_num(full.val_to_dev().grain('OYDY').values), atol=1e-5)
 
 def test_broadcasting():
-    t1 = cl.load_sample('raa')
+    t1 = raa
     t2 = tri
     assert t1.broadcast_axis('columns', t2.columns).shape[1] == t2.shape[1]
     assert t1.broadcast_axis('index', t2.index).shape[0] == t2.shape[0]
@@ -307,32 +299,28 @@ def test_exposure_tri():
     assert x == y
 
 def test_jagged_1_add():
-    raa = cl.load_sample('raa')
     raa1 = raa[raa.origin<='1984']
     raa2 = raa[raa.origin>'1984']
     assert raa2 + raa1 == raa
     assert raa2.dropna() + raa1.dropna() == raa
 
 def test_jagged_2_add():
-    raa = cl.load_sample('raa')
     raa1 = raa[raa.development<=48]
     raa2 = raa[raa.development>48]
     assert raa2 + raa1 == raa
     assert raa2.dropna() + raa1.dropna() == raa
 
 def test_df_period_input():
-    raa = cl.load_sample('raa').latest_diagonal
-    df = raa.to_frame().reset_index()
-    assert cl.Triangle(df, origin='index', columns=df.columns[-1]) == raa
+    d = raa.latest_diagonal
+    df = d.to_frame().reset_index()
+    assert cl.Triangle(df, origin='index', columns=df.columns[-1]) == d
 
 def test_trend_on_vector():
-    raa = cl.load_sample('raa').latest_diagonal
-    assert raa.trend(.05, axis=2).to_frame().astype(int).iloc[0,0]==29216
+    d = raa.latest_diagonal
+    assert d.trend(.05, axis=2).to_frame().astype(int).iloc[0,0]==29216
 
 def latest_diagonal_val_to_dev():
-    raa = cl.load_sample('raa')
     assert raa.latest_diagonal.val_to_dev()==raa[raa.valuation==raa.valuation_date]
 
 def vector_division():
-    raa = cl.load_sample('raa')
     raa.latest_diagonal/raa

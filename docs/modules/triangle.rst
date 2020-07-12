@@ -31,7 +31,7 @@ index, columns, origin, development.
 
 ``development`` (axis 3):
     Development represents the development age or date of your triangle.
-    Valuation Month, Valuation Year, Valuation Quarter in a are good choices.
+    Valuation Month, Valuation Year, Valuation Quarter are good choices.
 
 Despite this structure, you interact with it in the style of pandas. You would
 use ``index`` and ``columns`` in the same way you would for a pandas DataFrame.

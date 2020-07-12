@@ -4,7 +4,7 @@
 import copy
 from chainladder.utils.cupy import cp
 
-def _get_full_expectation(cdf_, ultimate_, process_variance_):
+def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
     xp = cp.get_array_module(ultimate_.values)
     o, d = ultimate_.shape[-2:]
@@ -17,9 +17,6 @@ def _get_full_expectation(cdf_, ultimate_, process_variance_):
     full.ddims = xp.append(cdf_.ddims, '9999-Ult')
     full.ddims = xp.array([int(item.split('-')[0]) for item in full.ddims])
     full.vdim = ultimate_.vdims
-    if process_variance_:
-        full.values = (xp.nan_to_num(full.values) +
-                       xp.nan_to_num(process_variance_.values))
     return full
 
 def _get_full_triangle(full_expectation_, triangle_):
@@ -62,10 +59,7 @@ class Common:
         if not hasattr(self, 'ultimate_'):
             raise AttributeError("'" + self.__class__.__name__ + "'" +
                                  " object has no attribute 'full_expectation_'")
-        if hasattr(self, 'process_variance_'):
-            return _get_full_expectation(self.cdf_, self.ultimate_, self.process_variance_)
-        else:
-            return _get_full_expectation(self.cdf_, self.ultimate_, None)
+        return _get_full_expectation(self.cdf_, self.ultimate_)
 
     @property
     def full_triangle_(self):
