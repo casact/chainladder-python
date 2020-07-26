@@ -121,7 +121,7 @@ class TriangleDunders:
             x.kdims = y.kdims
         elif len(y.index) == 1 and len(x.index) > 1:
             y.kdims = x.kdims
-        elif len(y.index) == 1 and len(x.index) == 1:
+        elif len(y.index) == 1 and len(x.index) == 1 and np.all(x.index != y.index):
             y.kdims = x.kdims = np.array([0])
         elif np.all(x.index == y.index):
             pass
@@ -208,8 +208,8 @@ class TriangleDunders:
     def __truediv__(self, other):
         xp = cp.get_array_module(self.values)
         obj, other = self._validate_arithmetic(other)
-        if xp == sp:
-            other.fill_value = xp.nan
+        if xp == sp and type(other) not in [int, float]:
+            other.fill_value = np.nan
             obj.values = sp(xp.nan_to_num(obj.values)) / sp(other)
             obj.values.fill_value = 0.0
         else:

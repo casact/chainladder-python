@@ -123,14 +123,27 @@ class TriangleSlicer:
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
+        xp = cp.get_array_module(self.values)
         idx = self._idx_table()
         idx[key] = 1
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
-            self.values[:, i:i+1] = value.values
+            if xp == sp:
+                before = self.drop(key).values
+                # Need to increment axis 1 by 1 AFTER key
+                before.coords[1] = np.where(
+                    before.coords[1, :]>i, before.coords[1, :] + 1,
+                    before.coords[1, :])
+                # Need to update axis 1 on values
+                value.values.coords[1] = i
+                # Need to append coords and data
+                coords = np.concatenate((before.coords, value.values.coords), axis=1)
+                data = np.concatenate((before.data, value.values.data))
+                self.values = sp(coords, data, shape=self.shape, prune=True)
+            else:
+                self.values[:, i:i+1] = value.values
         else:
             self.vdims = np.array(idx.columns.unique())
-            xp = cp.get_array_module(self.values)
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
             except:
@@ -166,6 +179,7 @@ class TriangleSlicer:
         if xp == cp:
             nan_tri = cp.array(nan_tri)
         if xp == sp:
+            nan_tri = np.nan_to_num(nan_tri)
             nan_tri = sp(nan_tri)
         obj.values = (obj.values*nan_tri)
         if np.all(o_idx == np.array(range(o_idx[0], o_idx[-1]+1))):

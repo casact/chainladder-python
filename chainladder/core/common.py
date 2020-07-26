@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import copy
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
+import numpy as np
 
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
@@ -13,9 +15,10 @@ def _get_full_expectation(cdf_, ultimate_):
     cdf.odims = ultimate_.odims
     cdf.valuation_date = ultimate_.valuation_date
     full = copy.deepcopy(ultimate_)
-    full.values = xp.concatenate((full.values / cdf.values, full.values), -1)
-    full.ddims = xp.append(cdf_.ddims, '9999-Ult')
-    full.ddims = xp.array([int(item.split('-')[0]) for item in full.ddims])
+    r = full.values / cdf.values
+    full.values = xp.concatenate((r, full.values), -1)
+    full.ddims = np.append(cdf_.ddims, '9999-Ult')
+    full.ddims = np.array([int(item.split('-')[0]) for item in full.ddims])
     full.vdim = ultimate_.vdims
     return full
 
@@ -31,7 +34,7 @@ def _get_cdf(ldf_):
     cdf = copy.deepcopy(ldf_)
     xp = cp.get_array_module(cdf.values)
     cdf.values = xp.flip(xp.cumprod(xp.flip(cdf.values, -1), -1), -1)
-    cdf.ddims = xp.array(
+    cdf.ddims = np.array(
         [item.replace(item[item.find("-")+1:], '9999')
          for item in cdf.ddims])
     return cdf
@@ -41,15 +44,17 @@ class Common:
     @property
     def cdf_(self):
         if not hasattr(self, 'ldf_'):
-            raise AttributeError("'" + self.__class__.__name__ + "'" +
-                                 " object has no attribute 'cdf_'")
+            raise AttributeError(
+                "'" + self.__class__.__name__ + "'" +
+                " object has no attribute 'cdf_'")
         return _get_cdf(self.ldf_)
 
     @property
     def ibnr_(self):
         if not hasattr(self, 'ultimate_'):
-            raise AttributeError("'" + self.__class__.__name__ + "'" +
-                                 " object has no attribute 'ibnr_'")
+            raise AttributeError(
+                "'" + self.__class__.__name__ + "'" +
+                " object has no attribute 'ibnr_'")
         ibnr =  self.ultimate_ - self.latest_diagonal
         ibnr.vdims = self.ultimate_.vdims
         return ibnr

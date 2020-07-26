@@ -4,6 +4,7 @@
 from scipy.stats import binom, norm, rankdata
 from scipy.special import comb
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import pandas as pd
 import copy
 
@@ -56,10 +57,16 @@ class DevelopmentCorrelation:
                          xp.sum(weight, axis=3))[..., None]
         idx = triangle._idx_table().index
         self.t_variance = 2/((I-2)*(I-3))
-        self.t = pd.DataFrame(
-            self.t[..., 0, 0], columns=triangle.vdims, index=idx)
-        self.t_expectation = pd.DataFrame(
-            t_expectation[..., 0, 0], columns=triangle.vdims, index=idx)
+        if xp == sp:
+            self.t = pd.DataFrame(
+                self.t[..., 0, 0].todense(), columns=triangle.vdims, index=idx)
+            self.t_expectation = pd.DataFrame(
+                t_expectation[..., 0, 0].todense(), columns=triangle.vdims, index=idx)
+        else:
+            self.t = pd.DataFrame(
+                self.t[..., 0, 0], columns=triangle.vdims, index=idx)
+            self.t_expectation = pd.DataFrame(
+                t_expectation[..., 0, 0], columns=triangle.vdims, index=idx)
         self.range = (norm.ppf(0.5-(1-p_critical)/2)*xp.sqrt(self.t_variance),
                       norm.ppf(0.5+(1-p_critical)/2)*xp.sqrt(self.t_variance))
         self.t_critical = (self.t_expectation<self.range[0]) | \

@@ -46,6 +46,10 @@ class WeightedRegression(BaseEstimator):
         if xp != sp:
             x[w == 0] = xp.nan
             y[w == 0] = xp.nan
+        else:
+            w2 = w.copy()
+            w2.fill_value = sp.nan
+            x, y  = x*sp(w2), y*sp(w2)
         slope = (
             (xp.nansum(w*x*y, axis)-xp.nansum(x*w, axis)*xp.nanmean(y, axis)) /
             (xp.nansum(w*x*x, axis)-xp.nanmean(x, axis)*xp.nansum(w*x, axis)))
@@ -66,6 +70,10 @@ class WeightedRegression(BaseEstimator):
         mse_denom = xp.nansum((y*0+1)*(w!=0), axis)-1
         if xp != sp:
             mse_denom[mse_denom == 0] = xp.nan
+        else:
+            mse_denom.fill_value = sp.nan
+            mse_denom.data[mse_denom.data==0] = sp.nan
+            mse_denom = sp(mse_denom, prune=True)
         mse = wss_residual / mse_denom
         std_err = xp.sqrt(mse/xp.nansum(w*x*x*(y*0+1), axis))
         std_err = std_err[..., None]
@@ -98,12 +106,20 @@ class WeightedRegression(BaseEstimator):
         xp = cp.get_array_module(y)
         if xp != sp:
             y[y == 0] = xp.nan
+        else:
+            y.fill_value = sp.nan
+            y  = sp(y)
         ly = xp.log(y)
         w = xp.nan_to_num(ly*0+1)
         reg = WeightedRegression(self.axis, False).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
         fill_ = xp.exp(reg.x*slope+intercept)*(1-w)
-        return xp.nan_to_num(y) + fill_
+        out = xp.nan_to_num(y) + xp.nan_to_num(fill_)
+        if xp == sp:
+            out.fill_value = sp.nan
+            return sp(out)
+        else:
+            return out
 
     def mack_interpolation(self, y):
         ''' Use Mack's approximation to fill last element of sigma_ which is the
@@ -121,5 +137,10 @@ class WeightedRegression(BaseEstimator):
         fill_ = xp.sqrt(
             abs(xp.minimum((y[slicer_n]**4 / y[slicer_d]**2),
                 xp.minimum(y[slicer_d]**2, y[slicer_n]**2))))
-        fill_ = xp.concatenate((w[slicer_a], fill_), axis=self.axis)*(1-w)
-        return xp.nan_to_num(y) + fill_
+        fill_ = xp.concatenate((w[slicer_a], xp.nan_to_num(fill_)), axis=self.axis)*(1-w)
+        if xp == sp:
+            out = xp.nan_to_num(y) + fill_
+            out.fill_value = sp.nan
+            return sp(out)
+        else:
+            return xp.nan_to_num(y) + fill_

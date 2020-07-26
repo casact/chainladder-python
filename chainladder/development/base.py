@@ -137,8 +137,11 @@ class Development(DevelopmentBase):
 
     def _drop_hilo(self, kind, X, link_ratio):
         xp = cp.get_array_module(X.values)
-        link_ratio[link_ratio == 0] = xp.nan
-        link_ratio = link_ratio + np.random.rand(*list(link_ratio.shape))/1e8
+        if xp != sp:
+            link_ratio[link_ratio == 0] = xp.nan
+            link_ratio = link_ratio + np.random.rand(*list(link_ratio.shape))/1e8
+        else:
+            link_ratio.data = link_ratio.data + np.random.rand(*list(link_ratio.data.shape))/1e8
         lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
         if kind == 'high':
             vals = xp.nanmax(link_ratio, -2, keepdims=True)
@@ -150,6 +153,9 @@ class Development(DevelopmentBase):
         if type(drop_hilo) is bool:
             drop_hilo = [drop_hilo]*(len(X.development)-1)
         for num, item in enumerate(self.average_):
+            if xp == sp:
+                fv = hilo.fill_value
+                hilo = hilo.todense()
             if not drop_hilo[num]:
                 hilo[..., num] = hilo[..., num]*0+1
             else:
@@ -158,6 +164,8 @@ class Development(DevelopmentBase):
                     warnings.warn('drop_high and drop_low cannot be computed '
                                   'when less than three LDFs are present. '
                                   'Ignoring exclusions in some cases.')
+            if xp == sp:
+                hilo = sp(hilo, fill_value=fv)
         return hilo
 
     def _drop_valuation(self, X):
@@ -169,6 +177,9 @@ class Development(DevelopmentBase):
         arr = 1-xp.nan_to_num(X[X.valuation.isin(
             pd.PeriodIndex(drop_valuation,
                            freq=X.origin_grain).to_timestamp(how='e'))].values[0, 0]*0+1)
+        if xp==sp:
+            arr.fill_value = sp.nan
+            arr = sp(arr)
         ofill = X.shape[-2]-arr.shape[-2]
         dfill = X.shape[-1]-arr.shape[-1]
         if ofill > 0:
@@ -183,9 +194,14 @@ class Development(DevelopmentBase):
         xp = cp.get_array_module(X.values)
         drop = [self.drop] if type(self.drop) is not list else self.drop
         arr = X.nan_triangle.copy()
+        if xp == sp:
+            fv = arr.fill_value
+            arr = arr.todense()
         for item in drop:
             arr[np.where(X.origin == item[0])[0][0],
                 np.where(X.development == item[1])[0][0]] = 0
+        if xp == sp:
+            arr = sp(arr, fill_value=fv)
         return arr[:, :-1]
 
     def fit(self, X, y=None, sample_weight=None):
@@ -226,8 +242,11 @@ class Development(DevelopmentBase):
         self.n_periods_ = n_periods
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        val = xp.array([weight_dict.get(item.lower(), 1)
-                        for item in average])
+        if xp == sp:
+            val = sp(np.array([weight_dict.get(item.lower(), 1) for item in average]))
+        else:
+            val = xp.array([weight_dict.get(item.lower(), 1)
+                            for item in average])
         for i in [2, 1, 0]:
             val = xp.repeat(val[None], tri_array.shape[i], axis=0)
         val = xp.nan_to_num(val * (y * 0 + 1))
@@ -238,10 +257,14 @@ class Development(DevelopmentBase):
         if xp == sp:
             self.w_ = sp(self._assign_n_periods_weight(X) *
                          self._drop_adjustment(X, link_ratio))
+            val = val*(X.nan_triangle[-val.shape[-2]:, -val.shape[-1]:])
+            w = self.w_ / (x**(val))
+            w.fill_value = x.fill_value = y.fill_value = np.nan
+            w, x, y = sp(w), sp(x), sp(y)
         else:
             self.w_ = xp.array(self._assign_n_periods_weight(X) *
                                self._drop_adjustment(X, link_ratio))
-        w = self.w_ / (x**(val))
+            w = self.w_ / (x**(val))
         params = WeightedRegression(axis=2, thru_orig=True).fit(x, y, w)
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
@@ -254,8 +277,10 @@ class Development(DevelopmentBase):
                 (1-xp.nan_to_num(params.std_err_*0+1)) *
                 params.sigma_ /
                 xp.swapaxes(xp.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
-        params = xp.concatenate(
-            (params.slope_, params.sigma_, params.std_err_), 3)
+        if xp == sp:
+            params.std_err_.fill_value = params.sigma_.fill_value = sp.nan
+            params.std_err_, params.sigma_ = sp(params.std_err_), sp(params.sigma_)
+        params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(X, params, 0)
         self.sigma_ = self._param_property(X, params, 1)

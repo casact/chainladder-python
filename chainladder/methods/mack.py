@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import pandas as pd
 import copy
 from chainladder.methods import Chainladder
@@ -81,11 +82,19 @@ class MackChainladder(Chainladder):
                         for item in avg + [avg[-1]]])
         val = xp.broadcast_to(val, self.X_.shape)
         weight = xp.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val))
-        weight[weight == 0] = xp.nan
+        if xp == sp:
+            weight.fill_value = np.nan
+            weight = sp(weight)
+        else:
+            weight[weight == 0] = xp.nan
         obj.values = self.X_.sigma_.values / weight
         w = xp.concatenate(
             (self.X_.w_, xp.ones((*val.shape[:3], 1))*xp.nan), axis=3)
-        w[xp.isnan(w)] = 1
+        if xp == sp:
+            w.fill_value = 1
+            w = sp(w)
+        else:
+            w[xp.isnan(w)] = 1
         obj.values = xp.nan_to_num(obj.values) * w
         obj.valuation_date = full.valuation_date
         obj._set_slicers()

@@ -24,12 +24,13 @@ def load_sample(key, *args, **kwargs):
         Returns:
     	pandas.DataFrame of the loaded dataset.
 
-   """
+    """
     path = os.path.dirname(os.path.abspath(__file__))
     origin = 'origin'
     development = 'development'
     columns = ['values']
     index = None
+    cumulative = True
     if key.lower() in ['mcl', 'usaa', 'quarterly', 'auto', 'usauto', 'tail_sample']:
         columns = ['incurred', 'paid']
     if key.lower() == 'clrd':
@@ -37,7 +38,7 @@ def load_sample(key, *args, **kwargs):
         development = 'DevelopmentYear'
         index = ['GRNAME', 'LOB']
         columns = ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR',
-                   'EarnedPremCeded', 'EarnedPremNet']
+                  'EarnedPremCeded', 'EarnedPremNet']
     if key.lower() == 'berqsherm':
         origin = 'AccidentYear'
         development = 'DevelopmentYear'
@@ -47,9 +48,16 @@ def load_sample(key, *args, **kwargs):
         index = ['lob']
     if key.lower() in ['cc_sample', 'ia_sample']:
         columns = ['loss', 'exposure']
+    if key.lower() in ['prism']:
+        columns = ['reportedCount', 'closedPaidCount', 'Paid', 'Incurred']
+        index = ['ClaimNo', 'Line', 'Type', 'ClaimLiability', 'Limit', 'Deductible']
+        origin = 'AccidentDate'
+        development = 'PaymentDate'
+        kwargs['array_backend'] = 'sparse'
+        cumulative = False
     df = pd.read_csv(os.path.join(path, 'data', key.lower() + '.csv'))
     return Triangle(df, origin=origin, development=development, index=index,
-                    columns=columns, cumulative=True, *args, **kwargs)
+                   columns=columns, cumulative=cumulative, *args, **kwargs)
 
 @deprecated('Use load_sample instead.')
 def load_dataset(key, *args, **kwargs):

@@ -93,8 +93,12 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         val_idx = ((np.ones(len(data_agg))[None].T)*range(len(columns))).reshape((1,-1), order='F').T
         coords = np.concatenate(tuple([np.concatenate((orig_idx, dev_idx), axis=1)]*len(columns)),  axis=0)
         coords = np.concatenate((np.concatenate(tuple([key_idx]*len(columns)),  axis=0), val_idx, coords), axis=1)
-        amts = data_agg[columns].unstack().values.astype('float64')
-        values = sp(coords.T.astype('int32'), amts, shape=(len(key), len(columns), len(orig), len(dev) if development else 1), prune=True)
+        amts = data_agg[columns].unstack()
+        amts.loc[amts==0] = np.nan
+        amts = amts.values.astype('float64')
+        values = sp(coords.T, amts, prune=True, fill_value=np.nan,
+                    shape=(len(key), len(columns), len(orig),
+                           len(dev) if development else 1))
         self.kdims = np.array(key)
         self.key_labels = index
         for num, item in enumerate(index):
@@ -112,7 +116,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # Create 4D Triangle
         if self.array_backend == 'numpy':
             self.values = np.array(values.todense(), dtype=kwargs.get('dtype', None))
-            self.values[self.values==0.] = np.nan
         elif self.array_backend == 'sparse':
             self.values=values
         else:
@@ -282,6 +285,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
     def num_to_nan(self):
         xp = cp.get_array_module(self.values)
         if xp == sp:
-            pass
+            self.values.fill_value = sp.nan
+            self.values = sp(self.values)
         else:
             self.values[self.values == 0] = xp.nan

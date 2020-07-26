@@ -7,6 +7,7 @@ from chainladder.development import DevelopmentBase, Development
 import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 import warnings
 
@@ -85,14 +86,20 @@ class TailCurve(TailBase):
             fit_period = slice(start, end, None)
         super().fit(X, y, sample_weight)
         xp = cp.get_array_module(self.ldf_.values)
-        _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
-        _w = xp.zeros(_y.shape)
+        if xp == sp:
+            _y = self.ldf_.values[..., :X.shape[-1]-1].todense()
+        else:
+            _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
+        _w = np.zeros(_y.shape)
         _w[..., fit_period] = 1.0
         if self.errors == 'ignore':
             _w[_y <= 1.0] = 0
             _y[_y <= 1.0] = 1.01
         elif self.errors == 'raise' and xp.any(y < 1.0):
             raise ZeroDivisionError('Tail fit requires all LDFs to be greater than 1.0')
+        if xp == sp:
+            _w = sp(_w)
+            _y = sp(_y)
         _y = xp.log(_y - 1)
         n_obs = X.shape[-1]-1
         k, v = X.shape[:2]

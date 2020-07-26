@@ -4,6 +4,7 @@
 import copy
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 from chainladder.utils import WeightedRegression
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development import DevelopmentBase, Development
@@ -34,6 +35,8 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.sigma_ = copy.copy(getattr(obj, 'sigma_', obj.cdf_*0))
         self.std_err_ = copy.copy(getattr(obj, 'std_err_', obj.cdf_*0))
         zeros = tail[..., 0:1, -1:]*0
+        if xp == sp:
+            zeros = sp(zeros)
         self.sigma_.values = xp.concatenate(
             (self.sigma_.values, zeros), -1)
         self.std_err_.values = xp.concatenate(
@@ -53,12 +56,14 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         X_new.std_err_.values = xp.concatenate(
             (X_new.std_err_.values,
              self.std_err_.values[..., -1:]), -1)
-        X_new.cdf_.values = xp.concatenate(
-            (X_new.cdf_.values,
-             self.cdf_.values[..., -self._ave_period[0]-1:]*0+1), -1)
+        extend = self.cdf_.values[..., -self._ave_period[0]-1:]*0+1
+        if xp == sp:
+            extend = sp(extend.todense(), fill_value=sp.nan)
+        X_new.cdf_.values = xp.concatenate((X_new.cdf_.values, extend), -1)
         X_new.cdf_.values = X_new.cdf_.values * \
             self.cdf_.values[..., -self._ave_period[0]-1:-self._ave_period[0]]
-        X_new.cdf_.values[..., -1] = self.cdf_.values[..., -1]
+        X_new.cdf_.values = xp.concatenate(
+            (X_new.cdf_.values[..., :-1], self.cdf_.values[..., -1:]), axis=-1)
         X_new.ldf_.values = xp.concatenate(
             (X_new.ldf_.values,
              self.ldf_.values[..., -self._ave_period[0]-1:]), -1)
@@ -121,9 +126,16 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         else:
             ldfs = 1+self._get_initial_ldf(xp, tail)*(self.decay**xp.arange(1000))
         ldfs = ldfs[..., :decay_range]
-        ldfs[..., -1:] = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
-        self.ldf_.values[..., -decay_range:] = \
-            (self.ldf_.values[..., -decay_range:]*0+1)*ldfs
+        if xp == sp:
+            tail = sp(tail/np.prod(ldfs[..., :-1].todense(), axis=-1, keepdims=True))
+            ldfs = sp(ldfs.todense())
+            tail, ldfs = sp(tail), sp(ldfs)
+        else:
+            tail = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
+        ldfs = xp.concatenate((ldfs[..., :-1], tail), axis=-1)
+        self.ldf_.values = xp.concatenate(
+            (self.ldf_.values[..., :-decay_range],
+            (self.ldf_.values[..., -decay_range:]*0+1)*ldfs), axis=-1)
         return self
 
     def _get_tail_stats(self, X):
@@ -135,9 +147,15 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         reg = WeightedRegression(axis=3).fit(None, xp.log(X.sigma_.values), None)
         sigma_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
         y = X.std_err_.values
-        y[y == 0] = xp.nan
+        if xp == sp:
+            y.fill_value = np.nan
+            y = sp(y)
+        else:
+            y[y == 0] = xp.nan
         reg = WeightedRegression(axis=3).fit(None, xp.log(y), None)
         std_err_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
+        if xp == sp:
+            sigma_, std_err_ = sp(sigma_), sp(std_err_)
         return sigma_, std_err_
 
     def _get_tail_weighted_time_period(self, X):
@@ -148,12 +166,16 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         """
         y = X.ldf_.values.copy()
         xp = cp.get_array_module(y)
+        if xp == sp:
+            y = y.todense()
         y[y <= 1] = xp.nan
         reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
         tail = xp.prod(self.ldf_.values[..., -self._ave_period[0]-1:],
                        -1, keepdims=True)
         reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
         time_pd = (xp.log(tail-1)-reg.intercept_)/reg.slope_
+        if xp == sp:
+            y = sp(y)
         return time_pd
 
     @staticmethod

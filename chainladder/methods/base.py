@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
@@ -35,7 +36,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
         xp = cp.get_array_module(ultimate.values)
-        ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
+        if xp != sp:
+            ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
         ultimate.ddims = np.array([9999])
         ultimate._set_slicers()
         ultimate.valuation_date = ultimate.valuation.max()

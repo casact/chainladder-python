@@ -10,6 +10,7 @@ import copy
 import warnings
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
+import datetime as dt
 
 
 class Triangle(TriangleBase):
@@ -195,12 +196,13 @@ class Triangle(TriangleBase):
             if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) <= 0:
                 obj.values = obj.values[..., :-1, :]
         else:
-            temp.fill_value = np.nan
+            temp.fill_value = sp.nan
             temp = temp[..., 1:]/temp[..., :-1]
             temp.fill_value = 0.0
             temp.coords = temp.coords[:, temp.data!=0]
             temp.data = temp.data[temp.data!=0]
             temp.shape = tuple(temp.coords.max(1)+1)
+            temp.fill_value = sp.nan
             obj.values = sp(temp)
         obj.odims = obj.odims[:obj.values.shape[2]]
         if hasattr(obj, 'w_'):
@@ -255,7 +257,19 @@ class Triangle(TriangleBase):
         if inplace:
             if not self.is_cumulative:
                 self.values = xp.cumsum(xp.nan_to_num(self.values), axis=3)
-                self.values = self._expand_dims(self.nan_triangle)*self.values
+
+                if xp != sp:
+
+                    self.values = self._expand_dims(self.nan_triangle)*self.values
+                else:
+                    valid = self.nan_triangle.coords
+                    valid = pd.Series(list(zip(valid[-2], valid[-1])))
+                    available = pd.Series(list(zip(self.values.coords[-2], self.values.coords[-1])))
+                    df = pd.DataFrame(self.values.coords.T)
+                    df['values'] = self.values.data
+                    df = df[pd.Series(zip(df[2],df[3])).isin(valid)]
+                    self.values.coords = df.iloc[:, :4].values.T
+                    self.values.data = df.iloc[:, -1].values
                 self.num_to_nan()
                 self.is_cumulative = True
                 self._set_slicers()
@@ -281,10 +295,14 @@ class Triangle(TriangleBase):
             if self.is_cumulative or self.is_cumulative is None:
                 temp = xp.nan_to_num(self.values)[..., 1:] - \
                     xp.nan_to_num(self.values)[..., :-1]
-                temp = xp.concatenate((self.values[..., 0:1], temp), axis=3)
-                temp = temp * self._expand_dims(self.nan_triangle)
+                temp = xp.concatenate((xp.nan_to_num(self.values[..., 0:1]), temp), axis=3)
                 if xp != sp:
+                    temp = temp * self._expand_dims(self.nan_triangle)
                     temp[temp == 0] = np.nan
+                else:
+                    temp.fill_value = sp.nan
+                    temp = sp(temp)
+                    temp = temp * self._expand_dims(self.nan_triangle)
                 self.values = temp
                 self.is_cumulative = False
                 self._set_slicers()
@@ -415,8 +433,9 @@ class Triangle(TriangleBase):
         rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten()>0]))
         if sp == xp:
             val_mtrx = sp(val_mtrx)
-        x = [xp.sum((val_mtrx==item)*x, -1, keepdims=True)
-             for item in xp.array(rng)]
+        # Can be slow on very large triangles
+        x = [xp.sum((val_mtrx==item)*x, -1, keepdims=True) for item in rng]
+        # End slow
         x = xp.concatenate(x, -1)
         obj.values = x
         obj.num_to_nan()
@@ -482,13 +501,20 @@ class Triangle(TriangleBase):
             o_new = np.unique(o)
             o = np.repeat(o[:, None, ...], len(o_new), axis=1)
             o_new = np.repeat(o_new[None], len(o), axis=0)
-            o_bool = np.repeat((o == o_new)[:, None],
-                               len(obj.ddims), axis=1)
-            o_bool = obj._expand_dims(o_bool)
+            if xp == sp:
+                o_bool = xp.repeat(sp(o == o_new)[:, None],
+                                   len(obj.ddims), axis=1)
+                o_bool = (o_bool*1.0)[None, None, ...]
+            else:
+                o_bool = xp.repeat((o == o_new)[:, None],
+                                   len(obj.ddims), axis=1)
+                o_bool = obj._expand_dims(o_bool)
             new_tri = xp.repeat(xp.nan_to_num(obj.values)[..., None],
                                 o_bool.shape[-1], axis=-1)
-            new_tri[~np.isfinite(new_tri)] = 0
-            new_tri = np.swapaxes(np.sum(new_tri*o_bool, axis=2), -1, -2)
+            if xp != sp:
+                new_tri[~np.isfinite(new_tri)] = 0
+            new_tri = xp.nansum(new_tri*o_bool, axis=2)
+            new_tri = xp.swapaxes(new_tri, -1, -2)
             obj.values = new_tri
             obj.odims = np.unique(o)
         obj = obj.val_to_dev(inplace=True)
@@ -506,7 +532,7 @@ class Triangle(TriangleBase):
         obj.development_grain = dgrain_new
         obj.num_to_nan()
         if not self.is_cumulative:
-            obj = obj.cum_to_incr()
+            obj = obj.cum_to_incr(inplace=True)
         if self.is_val_tri:
             obj = obj.dev_to_val().dropna()
         if inplace:
@@ -666,3 +692,49 @@ class Triangle(TriangleBase):
 
         """
         return ValuationCorrelation(self, p_critical, total)
+
+    def to_sparse(self, inplace=False):
+        ''' Converts triangle array_backend to a sparse representation.
+
+        Parameters
+        ----------
+        inplace : bool
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+            Triangle with updated array_backend
+        '''
+        if inplace:
+            xp = cp.get_array_module(self.values)
+            if xp != sp:
+                self.values = sp(self.values, fill_value=sp.nan, prune=True)
+                self.array_backend = 'sparse'
+            return self
+        else:
+            obj = copy.deepcopy(self)
+            return obj.to_sparse(inplace=True)
+
+    def to_dense(self, inplace=False):
+        ''' Converts triangle array_backend to a dense representation.
+
+        Parameters
+        ----------
+        inplace : bool
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+            Triangle with updated array_backend
+        '''
+        if inplace:
+            xp = cp.get_array_module(self.values)
+            if xp == sp:
+                self.values = self.values.todense()
+                self.array_backend = 'numpy'
+            return self
+        else:
+            obj = copy.deepcopy(self)
+            return obj.to_dense(inplace=True)

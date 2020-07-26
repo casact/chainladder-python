@@ -79,6 +79,8 @@ class TailConstant(TailBase):
         xp = cp.get_array_module(X.values)
         if xp.max(self.tail) != 1.0:
             sigma, std_err = self._get_tail_stats(obj)
-            self.sigma_.values[..., -1] = sigma[..., -1]
-            self.std_err_.values[..., -1] = std_err[..., -1]
+            self.sigma_.values = xp.concatenate(
+                (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1)
+            self.std_err_.values = xp.concatenate(
+                (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1)
         return self

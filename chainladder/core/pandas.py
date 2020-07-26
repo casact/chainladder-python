@@ -21,12 +21,13 @@ class TriangleGroupBy:
                         np.array([['All']]), old_obj.values.coords.shape[1], 0),
                         len(old_obj.key_labels), 1), columns=old_obj.key_labels)
                 by = old_obj.key_labels
+
             groupby = pd.concat(
                 (pd.DataFrame(self.orig_obj.values.coords[1:].T, columns=[1,2,3]),
                  self.idx), axis=1)
             groupby['values'] = self.orig_obj.values.data
             by = [by] if type(by) is str else by
-            self.obj = groupby.groupby(by+[1,2,3])
+            self.obj = groupby.groupby(by+[1,2,3])['values']
         else:
             if by != -1:
                 self.idx = self.orig_obj.index.set_index(by).index
@@ -238,9 +239,23 @@ class TrianglePandas:
         obj.values = obj.values.astype(dtype)
         return obj
 
-def sort_index(self, *args, **kwargs):
-    return self.loc[self._idx_table().sort_index(*args, **kwargs) \
-                        .reset_index()[self.key_labels]]
+    def head(self, *args, **kwargs):
+        out = self._idx_table()
+        return pd.DataFrame(
+            np.broadcast_to(np.array(['...']), out.shape),
+            index=out.index, columns=out.columns).head(*args, **kwargs)
+
+    def tail(self, *args, **kwargs):
+        out = self._idx_table()
+        return pd.DataFrame(
+            np.broadcast_to(np.array(['...']), out.shape),
+            index=out.index, columns=out.columns).tail(*args, **kwargs)
+
+    def sort_index(self, *args, **kwargs):
+        return self.loc[self._idx_table().sort_index(*args, **kwargs) \
+                            .reset_index()[self.key_labels]]
+
+
 
 def add_triangle_agg_func(cls, k, v):
     ''' Aggregate Overrides in Triangle '''
