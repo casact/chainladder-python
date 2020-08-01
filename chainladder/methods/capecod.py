@@ -65,7 +65,7 @@ class CapeCod(MethodBase):
         ult = copy.deepcopy(X)
         latest = X.latest_diagonal.values
         len_orig = sample_weight.shape[-2]
-        cdf = self._align_cdf(ult)
+        cdf = self._align_cdf(ult, sample_weight)
         exposure = sample_weight.values
         reported_exposure = exposure / cdf
         trend_exponent = len_orig - xp.arange(len_orig) - 1

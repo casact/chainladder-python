@@ -191,7 +191,7 @@ class TriangleSlicer:
             obj.values = obj.values[..., o_idx, d_idx]
         else:
             obj.values = xp.take(xp.take(obj.values, o_idx, -2), d_idx, -1)
-        return obj
+        return obj.num_to_nan()
 
     def _slice_development(self, key):
         ''' private method for handling of development slicing '''

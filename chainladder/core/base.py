@@ -36,6 +36,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             check = [check] if check.__class__.__name__ == 'dtype' else check.to_list()
             if 'object' in check:
                 raise TypeError("column attribute must be numeric.")
+            if data[columns].shape[1] != len(columns):
+                raise AttributeError("Columns are required to have unique names")
         # Sanitize inputs
         index, columns, origin, development = self._str_to_list(
             index, columns, origin, development)
@@ -89,10 +91,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             dev_idx = dev_lag.map(dev).values[None].T
         else:
             dev_idx = (dev_lag*0).values[None].T
-
-        data_agg = data_agg[data_agg['origin']<=data_agg['development']]
-        orig_idx = orig_idx[data_agg['origin']<=data_agg['development']]
-        dev_idx = dev_idx[data_agg['origin']<=data_agg['development']]
+        valid = data_agg['origin']<=data_agg['development']
+        data_agg, orig_idx, dev_idx = data_agg[valid], orig_idx[valid], dev_idx[valid]
         if sum(data_agg['origin']>data_agg['development']) > 0:
             warnings.warn("Observations with development before origin start have been removed.")
         key_idx = data_agg[index].sum(axis=1).map(kdims).values[None].T
@@ -292,6 +292,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         xp = cp.get_array_module(self.values)
         if xp == sp:
             self.values.fill_value = sp.nan
+            self.values.coords = self.values.coords[:, self.values.data!=0]
+            self.values.data = self.values.data[self.values.data!=0]
+            self.fill_value = sp.nan
             self.values = sp(self.values)
         else:
             self.values[self.values == 0] = xp.nan

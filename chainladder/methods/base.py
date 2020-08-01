@@ -25,11 +25,28 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             obj = TailConstant().fit_transform(obj)
         return obj
 
-    def _align_cdf(self, ultimate):
+    def _align_cdf(self, ultimate, sample_weight=None):
         """ Vertically align CDF to ultimate vector """
         xp = cp.get_array_module(ultimate.values)
+
+        if self.cdf_.key_labels != ultimate.key_labels:
+            level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
+            idx = ultimate.index[level].merge(
+                self.cdf_.index[level].reset_index(), how='left', on=level)['index'].values
+            cdf = self.cdf_.values[list(idx.astype(int)), ...]
+        else:
+            cdf = self.cdf_.values
+        if sample_weight:
+            x = (ultimate.sum(0) + sample_weight.sum(0))
+        else:
+            x = ultimate.sum(0)
+        x = x[x.valuation==x.valuation_date].values
+        if xp == sp:
+            x.data = x.data*0+1
+        else:
+            x = x*0+1
         ultimate.values = \
-            self.cdf_.values[..., :ultimate.shape[-1]]*(ultimate.values*0+1)
+            cdf[..., :ultimate.shape[-1]]*(x)
         cdf = ultimate.latest_diagonal.values
         return cdf
 
@@ -90,10 +107,6 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = copy.deepcopy(X)
         xp = cp.get_array_module(obj.values)
         obj.ldf_ = self.ldf_
-        if obj.ldf_.shape[0] != obj.shape[0]:
-            obj.ldf_.values = xp.repeat(obj.ldf_.values, len(obj.index), 0)
-            obj.ldf_.kdims = obj.kdims
-            obj.ldf_.key_labels = obj.key_labels
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj
 

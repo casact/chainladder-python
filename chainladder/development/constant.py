@@ -6,7 +6,7 @@ import copy
 import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
-
+from chainladder.utils.sparse import sp
 
 class DevelopmentConstant(DevelopmentBase):
     """ A Estimator that allows for including of external patterns into a
@@ -69,6 +69,8 @@ class DevelopmentConstant(DevelopmentBase):
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
             ldf = ldf[None, None, None, :]
+        if xp == sp:
+            ldf = sp(ldf, fill_value=sp.nan)
         if self.style == 'cdf':
             ldf = xp.concatenate((ldf[..., :-1]/ldf[..., 1:], ldf[..., -1:]), -1)
         obj.values = obj.values * ldf

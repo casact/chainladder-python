@@ -173,9 +173,11 @@ class Triangle(TriangleBase):
         val = (self.valuation==self.valuation_date).reshape(
             self.shape[-2:], order='F')
         if xp == sp:
-            val = sp(val)
-
-        obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
+            obj.values = xp.nansum(sp(val)*self.values, axis=-1, keepdims=True)
+            obj.values.fill_value = sp.nan
+            obj.values = sp(obj.values)
+        else:
+            obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
         return obj
@@ -473,11 +475,15 @@ class Triangle(TriangleBase):
         if ograin_new not in valid.get(ograin_old, []) or \
            dgrain_new not in valid.get(dgrain_old, []):
             raise ValueError('New grain not compatible with existing grain')
-        if not self.is_cumulative:
+        if self.is_cumulative is None:
+            raise AttributeError("""
+                The is_cumulative attribute must be set before using grain
+                method.""")
+        if self.is_cumulative:
+            obj = self.dev_to_val(inplace=True)
+        else:
             # Must be cumulative to work
             obj = self.incr_to_cum().dev_to_val(inplace=True)
-        else:
-            obj = self.dev_to_val(inplace=True)
         # put data in valuation mode
         xp = cp.get_array_module(self.values)
         if ograin_new != ograin_old:

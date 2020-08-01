@@ -89,13 +89,13 @@ class Benktander(MethodBase):
         else:
             apriori = sample_weight.values*self.apriori
         # Benktander formula -> Triangle
-        cdf = self._align_cdf(ultimate)
+        cdf = self._align_cdf(ultimate, sample_weight)
         cdf = (1-1/cdf)[None]
         exponents = xp.arange(self.n_iters+1)
         exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
         cdf = cdf ** exponents
         ultimate.values = (
-            xp.sum(cdf[:-1, ...], 0) * X.latest_diagonal.values +
+            xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(X.latest_diagonal.values) +
             cdf[-1, ...] * xp.nan_to_num(apriori))
 
         return self._set_ult_attr(ultimate)
