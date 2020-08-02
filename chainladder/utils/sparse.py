@@ -23,6 +23,7 @@ sp.testing.assert_array_equal = np.testing.assert_equal
 sp.sqrt = np.sqrt
 sp.log = np.log
 sp.exp = np.exp
+sp.abs = np.abs
 
 
 def nan_to_num(a):
@@ -172,7 +173,7 @@ def repeat(a, repeats, axis):
 sp.repeat = repeat
 
 def allclose(a, b, *args, **kwargs):
-    return np.allclose(a.todense(), b.todense(), *args, **kwargs)
+    return np.allclose(np.nan_to_num(a.todense()), np.nan_to_num(b.todense()), *args, **kwargs)
 sp.allclose = allclose
 
 
@@ -200,10 +201,21 @@ def floor(x, *args, **kwargs):
 sp.floor = floor
 
 def minimum(x1, x2):
-    if np.all(x1.coords != x2.coords):
-        raise ValueError('Shapes are not equal')
-    else:
+    if np.all(x1.coords == x2.coords):
         out = x1.copy()
         out.data = np.minimum(x1.data, x2.data)
         return out
+    if x1.shape != x2.shape:
+        raise ValueError('Shapes are not equal')
+    return ((x1<x2)*x1+(x1>=x2)*x2)
 sp.minimum = minimum
+
+def maximum(x1, x2):
+    if np.all(x1.coords == x2.coords):
+        out = x1.copy()
+        out.data = np.maximum(x1.data, x2.data)
+        return out
+    if x1.shape != x2.shape:
+        raise ValueError('Shapes are not equal')
+    return ((x1<x2)*x2+(x1>=x2)*x1)
+sp.maximum = maximum

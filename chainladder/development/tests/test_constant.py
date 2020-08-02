@@ -9,7 +9,7 @@ def test_constant_cdf():
                    for num, item in enumerate(dev.ldf_.values[0,0,0,:])}
     dev_c = cl.DevelopmentConstant(
         patterns=link_ratios, style='ldf').fit(cl.load_sample('raa'))
-    xp.testing.assert_allclose(dev.cdf_.values, dev_c.cdf_.values, atol=1e-5)
+    assert xp.allclose(dev.cdf_.values, dev_c.cdf_.values, atol=1e-5)
 
 
 def test_constant_ldf():
@@ -19,4 +19,4 @@ def test_constant_ldf():
                    for num, item in enumerate(dev.ldf_.values[0, 0, 0, :])}
     dev_c = cl.DevelopmentConstant(
         patterns=link_ratios, style='ldf').fit(cl.load_sample('raa'))
-    xp.testing.assert_allclose(dev.ldf_.values, dev_c.ldf_.values, atol=1e-5)
+    assert xp.allclose(dev.ldf_.values, dev_c.ldf_.values, atol=1e-5)

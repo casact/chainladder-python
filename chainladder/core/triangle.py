@@ -173,11 +173,9 @@ class Triangle(TriangleBase):
         val = (self.valuation==self.valuation_date).reshape(
             self.shape[-2:], order='F')
         if xp == sp:
-            obj.values = xp.nansum(sp(val)*self.values, axis=-1, keepdims=True)
-            obj.values.fill_value = sp.nan
-            obj.values = sp(obj.values)
-        else:
-            obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
+            val = sp(val)
+        obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
+        obj.num_to_nan()
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
         return obj

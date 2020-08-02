@@ -34,7 +34,7 @@ def test_dev_corr(data, ci, atol):
     xp = cp.get_array_module(p.t_expectation.values)
     r = dev_corr_r(data, ci).rx('T_stat')[0]
     p = p.t_expectation.values[0]
-    xp.testing.assert_allclose(r, p, atol=atol)
+    assert xp.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
@@ -43,7 +43,7 @@ def test_dev_corr_var(data, ci, atol):
     xp = cp.get_array_module(p.t_expectation.values)
     r = dev_corr_r(data, ci).rx('Var')[0]
     p = xp.array([p.t_variance])
-    xp.testing.assert_allclose(r, p, atol=atol)
+    assert xp.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
@@ -52,7 +52,7 @@ def test_dev_corr_range(data, ci, atol):
     xp = cp.get_array_module(p.t_expectation.values)
     r = dev_corr_r(data, ci).rx('Range')[0]
     p = xp.array(p.range)
-    xp.testing.assert_allclose(r, p, atol=atol)
+    assert xp.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
@@ -61,7 +61,7 @@ def test_val_corr_z(data, ci, atol):
     xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('Z')[0]
     p = p.z.values[0]
-    xp.testing.assert_allclose(r, p, atol=atol)
+    assert xp.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
@@ -70,7 +70,7 @@ def test_val_corr_e(data, ci, atol):
     xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('E')[0]
     p = p.z_expectation.values[0]
-    xp.testing.assert_allclose(r, p, atol=atol)
+    assert xp.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
@@ -79,4 +79,4 @@ def test_val_corr_var(data, ci, atol):
     xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('Var')[0]
     p = p.z_variance.values[0]
-    xp.testing.assert_allclose(r, p, atol=atol)
+    assert xp.allclose(r, p, atol=atol)

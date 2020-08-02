@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 from scipy.sparse import coo_matrix
 from sklearn.base import BaseEstimator
 import json
@@ -36,9 +37,11 @@ class TriangleIO():
             xp = cp.get_array_module(tri)
             if xp == cp != np:
                 out = cp.asnumpy(tri)
+                coo = coo_matrix(np.nan_to_num(out.reshape((k*v*o, d))))
+            elif xp == sp:
+                coo = sp.nan_to_num(tri.reshape((k*v*o, d))).to_scipy_sparse()
             else:
-                out = tri
-            coo = coo_matrix(np.nan_to_num(out.reshape((k*v*o, d))))
+                coo = coo_matrix(np.nan_to_num(tri.reshape((k*v*o, d))))
             return json.dumps(dict(zip([str(item) for item in zip(coo.row, coo.col)], coo.data)))
 
         json_dict = {}
@@ -57,9 +60,11 @@ class TriangleIO():
         xp = cp.get_array_module(self.values)
         if xp == cp != np:
             out = cp.asnumpy(self.cum_to_incr().values)
+            xp = np
         else:
             out = self.cum_to_incr().values
-        if np.sum(np.nan_to_num(out)==0) / np.prod(self.shape) > 0.40:
+        if xp.sum(xp.nan_to_num(out)==0) / xp.prod(self.shape) > 0.40 or \
+            self.array_backend == 'sparse':
             json_dict['values'] = {
                 'dtype': str(out.dtype),
                 'array': sparse_out(out),

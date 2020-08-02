@@ -56,6 +56,7 @@ class IncrementalAdditive(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
+        from chainladder.utils.utility_functions import num_to_nan
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         sample_weight.is_cumulative = False
@@ -63,7 +64,7 @@ class IncrementalAdditive(DevelopmentBase):
         xp = cp.get_array_module(obj.values)
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
-        w_[w_ == 0] = xp.nan
+        w_ = num_to_nan(w_)
         w_ = xp.concatenate((w_, (w_[..., -1:]*x.nan_triangle)[..., -1:]),
                             axis=-1)
         if self.average == 'simple':

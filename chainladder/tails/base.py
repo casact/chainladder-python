@@ -142,20 +142,18 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         """ Method to approximate the tail sigma using
         log-linear extrapolation applied to tail average period
         """
+        from chainladder.utils.utility_functions import num_to_nan
         time_pd = self._get_tail_weighted_time_period(X)
         xp = cp.get_array_module(X.sigma_.values)
         reg = WeightedRegression(axis=3).fit(None, xp.log(X.sigma_.values), None)
         sigma_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
         y = X.std_err_.values
-        if xp == sp:
-            y.fill_value = np.nan
-            y = sp(y)
-        else:
-            y[y == 0] = xp.nan
+        y = num_to_nan(y)
         reg = WeightedRegression(axis=3).fit(None, xp.log(y), None)
         std_err_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
         if xp == sp:
-            sigma_, std_err_ = sp(sigma_), sp(std_err_)
+            sigma_ = sp(sigma_, fill_value=X.values.fill_value)
+            std_err_ = sp(std_err_, fill_value=X.values.fill_value)
         return sigma_, std_err_
 
     def _get_tail_weighted_time_period(self, X):

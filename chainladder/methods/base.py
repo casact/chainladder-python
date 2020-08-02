@@ -26,9 +26,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return obj
 
     def _align_cdf(self, ultimate, sample_weight=None):
-        """ Vertically align CDF to ultimate vector """
+        """ Vertically align CDF to ultimate vector to origin period latest
+        diagonal.
+        """
         xp = cp.get_array_module(ultimate.values)
-
         if self.cdf_.key_labels != ultimate.key_labels:
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
             idx = ultimate.index[level].merge(
@@ -37,10 +38,16 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         else:
             cdf = self.cdf_.values
         if sample_weight:
-            x = (ultimate.sum(0) + sample_weight.sum(0))
+            x = (ultimate.sum(0) + sample_weight.sum(0).values)
         else:
             x = ultimate.sum(0)
-        x = x[x.valuation==x.valuation_date].values
+        val = x.valuation.unique().sort_values()
+        offset = {
+            'Y':{'Q': 4, 'M': 12, 'Y': 1},
+            'Q':{'Q': 1, 'M': 3},
+            'M': {'M': 1}}
+        x = x[x.valuation>=val[list(val==x.valuation_date).index(True) -
+              offset[x.origin_grain][x.development_grain]]].values
         if xp == sp:
             x.data = x.data*0+1
         else:

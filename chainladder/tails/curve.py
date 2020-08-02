@@ -75,7 +75,7 @@ class TailCurve(TailBase):
         self : object
             Returns the instance itself.
         """
-
+        from chainladder.utils.utility_functions import num_to_nan
         if type(self.fit_period) == slice:
             warnings.warn("Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age).")
             fit_period = self.fit_period
@@ -98,8 +98,8 @@ class TailCurve(TailBase):
         elif self.errors == 'raise' and xp.any(y < 1.0):
             raise ZeroDivisionError('Tail fit requires all LDFs to be greater than 1.0')
         if xp == sp:
-            _w = sp(_w)
-            _y = sp(_y)
+            _w = num_to_nan(sp(_w))
+            _y = num_to_nan(sp(_y))
         _y = xp.log(_y - 1)
         n_obs = X.shape[-1]-1
         k, v = X.shape[:2]
@@ -119,8 +119,10 @@ class TailCurve(TailBase):
             (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1)
         obj = Development().fit_transform(X) if 'ldf_' not in X else X
         sigma, std_err = self._get_tail_stats(obj)
-        self.sigma_.values[..., -1] = sigma[..., -1]
-        self.std_err_.values[..., -1] = std_err[..., -1]
+        self.sigma_.values = xp.concatenate(
+            (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1)
+        self.std_err_.values = xp.concatenate(
+            (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1)
         return self
 
     def _get_x(self, w, y):

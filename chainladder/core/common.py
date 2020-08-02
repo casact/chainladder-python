@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import copy
 from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
 import numpy as np
 
 def _get_full_expectation(cdf_, ultimate_):

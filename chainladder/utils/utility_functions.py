@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 from scipy.sparse import coo_matrix
 import joblib
 import json
@@ -188,3 +189,16 @@ def concat(objs, axis):
     setattr(out, mapper[axis], new_axis)
     out._set_slicers()
     return out
+
+
+def num_to_nan(arr):
+    """ Function that turns all zeros to nan values in an array """
+    xp = cp.get_array_module(arr)
+    if xp == sp:
+        arr.fill_value = sp.nan
+        arr.coords = arr.coords[:, arr.data!=0]
+        arr.data = arr.data[arr.data!=0]
+        arr = sp(arr)
+    else:
+        arr[arr == 0] = xp.nan
+    return arr

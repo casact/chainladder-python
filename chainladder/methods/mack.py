@@ -72,6 +72,7 @@ class MackChainladder(Chainladder):
 
     @property
     def full_std_err_(self):
+        from chainladder.utils.utility_functions import num_to_nan
         obj = copy.copy(self.X_)
         xp = cp.get_array_module(obj.values)
         full = self.full_triangle_
@@ -81,12 +82,7 @@ class MackChainladder(Chainladder):
         val = xp.array([weight_dict.get(item.lower(), 2)
                         for item in avg + [avg[-1]]])
         val = xp.broadcast_to(val, self.X_.shape)
-        weight = xp.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val))
-        if xp == sp:
-            weight.fill_value = np.nan
-            weight = sp(weight)
-        else:
-            weight[weight == 0] = xp.nan
+        weight = num_to_nan(xp.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val)))
         obj.values = self.X_.sigma_.values / weight
         w = xp.concatenate(
             (self.X_.w_, xp.ones((*val.shape[:3], 1))*xp.nan), axis=3)
@@ -154,7 +150,7 @@ class MackChainladder(Chainladder):
             t1 = t1_t[..., i:i+1]
             t2 = (ldf[..., i:i+1] * risk_arr[..., i:i+1])**2
             t_tot = xp.sqrt(t1+t2)*nans[..., i+1:i+2]
-            risk_arr = xp.concatenate((risk_arr, t_tot), 3)
+            risk_arr = xp.concatenate((risk_arr, xp.nan_to_num(t_tot)), 3)
         return risk_arr
 
     def _get_tot_param_risk(self, risk_arr):
@@ -173,7 +169,7 @@ class MackChainladder(Chainladder):
         for i in range(self._full_triangle_.shape[-1]-1):
             t_tot = xp.sqrt((t1[..., i:i+1])**2 + (ldf[..., i:i+1] *
                             risk_arr[..., -1:])**2)
-            risk_arr = xp.concatenate((risk_arr, t_tot), -1)
+            risk_arr = xp.concatenate((risk_arr, xp.nan_to_num(t_tot)), -1)
         return risk_arr
 
     @property

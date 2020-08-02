@@ -9,6 +9,7 @@ from chainladder.core.common import Common
 import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 import copy
 import warnings
 
@@ -77,10 +78,12 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        xp = cp.get_array_module(X.values)
+        oxp = cp.get_array_module(X.values)
+        X = X.to_dense()
         if self.paid_to_incurred is None:
             raise ValueError('Must enter valid value for paid_to_incurred.')
         obj = copy.deepcopy(X)
+        xp = cp.get_array_module(obj.values)
         missing = xp.nan_to_num(X.values)*X.nan_triangle==0
         if len(xp.where(missing)[0]) > 0:
             if self.fillna:
@@ -109,6 +112,11 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             for num, x in enumerate(np.array(self.paid_to_incurred).flatten())}
         self.rho_ = X[X.origin==X.origin.min()]
         self.rho_.values = self._reshape('rho_sigma_')
+        if oxp == sp:
+            tris = ['ldf_', 'rho_', 'basic_cdf_', 'basic_sigma_',
+                    'resids_', 'q_resids_']
+            for item in tris:
+                setattr(self, item, getattr(self, item).to_sparse())
         return self
 
     def transform(self, X):

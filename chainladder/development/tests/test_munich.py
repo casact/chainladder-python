@@ -12,7 +12,7 @@ def test_mcl_paid():
     p = cl.MunichAdjustment(paid_to_incurred=('paid','incurred')).fit(cl.Development(sigma_interpolation='mack').fit_transform(cl.load_sample('mcl'))).munich_full_triangle_[0,0,0,:,:]
     xp = cp.get_array_module(p)
     arr = xp.array(df[0])
-    xp.testing.assert_allclose(arr, p, atol=1e-5)
+    assert xp.allclose(arr, p, atol=1e-5)
 
 
 def test_mcl_incurred():
@@ -20,7 +20,7 @@ def test_mcl_incurred():
     p = cl.MunichAdjustment(paid_to_incurred=[('paid','incurred')]).fit(cl.Development(sigma_interpolation='mack').fit_transform(cl.load_sample('mcl'))).munich_full_triangle_[1,0,0,:,:]
     xp = cp.get_array_module(p)
     arr = xp.array(df[0])
-    xp.testing.assert_allclose(arr, p, atol=1e-5)
+    assert xp.allclose(arr, p, atol=1e-5)
 
 def test_mcl_ult():
     mcl = cl.load_sample('mcl')

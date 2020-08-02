@@ -6,6 +6,7 @@ from scipy.special import comb
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import pandas as pd
+import numpy as np
 import copy
 
 class DevelopmentCorrelation:
@@ -126,17 +127,25 @@ class ValuationCorrelation:
         z = xp.minimum(L, S)
         n = L + S
         m = xp.floor((n - 1)/2)
-        EZ = (n/2) - comb(n-1, m)*n/(2**n)
-        VarZ = n*(n - 1) / 4 - comb(n-1, m)*n * (n-1) / (2**n) + EZ - EZ**2
+        if xp == sp:
+            c = sp(comb(n.todense()-1, m.todense()))
+        else:
+            c = comb(n-1, m)
+        EZ = (n/2) - c*n/(2**n)
+        VarZ = n*(n - 1) / 4 - c*n * (n-1) / (2**n) + EZ - EZ**2
         if not self.total:
             T=[]
             for i in range(0,xp.max(m1large.shape[2:])+1):
                 T.append([pZlower(i,j,0.5) for j in range(0,xp.max(m1large.shape[2:])+1)])
-            T=xp.array(T)
-            self.probs = xp.array(T[z.astype(int),n.astype(int)])
+            T=np.array(T)
+            if xp == sp:
+                z_idx, n_idx = z.todense().astype(int), n.todense().astype(int)
+            else:
+                z_idx, n_idx =  z.astype(int), n.astype(int)
+            self.probs = T[z_idx, n_idx]
             z_critical = triangle[triangle.valuation>triangle.valuation.min()]
             z_critical = z_critical.dev_to_val().dropna().sum('origin')*0
-            z_critical.values = (xp.array(self.probs)<p_critical)
+            z_critical.values = (np.array(self.probs)<p_critical)
             z_critical.odims=['(All)']
             self.z_critical = z_critical
             self.z = copy.deepcopy(self.z_critical)

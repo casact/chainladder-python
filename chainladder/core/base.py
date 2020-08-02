@@ -15,6 +15,7 @@ from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 
 
+
 class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas, Common):
     ''' This class handles the initialization of a triangle '''
@@ -34,6 +35,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         if columns:
             check = data[columns].dtypes
             check = [check] if check.__class__.__name__ == 'dtype' else check.to_list()
+            columns = [columns] if type(columns) is not list else columns
             if 'object' in check:
                 raise TypeError("column attribute must be numeric.")
             if data[columns].shape[1] != len(columns):
@@ -289,12 +291,5 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         return return_list
 
     def num_to_nan(self):
-        xp = cp.get_array_module(self.values)
-        if xp == sp:
-            self.values.fill_value = sp.nan
-            self.values.coords = self.values.coords[:, self.values.data!=0]
-            self.values.data = self.values.data[self.values.data!=0]
-            self.fill_value = sp.nan
-            self.values = sp(self.values)
-        else:
-            self.values[self.values == 0] = xp.nan
+        from chainladder.utils.utility_functions import num_to_nan
+        self.values = num_to_nan(self.values)

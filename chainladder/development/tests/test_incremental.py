@@ -12,4 +12,4 @@ def test_schmidt():
     answer = answer.incremental_.incr_to_cum().values[0, 0, :, -1]
     check = xp.array([3483., 4007.84795031, 4654.36196862, 5492.00685523,
                       6198.10197128, 7152.82539296])
-    xp.testing.assert_allclose(answer, check, atol=1e-5)
+    assert xp.allclose(answer, check, atol=1e-5)

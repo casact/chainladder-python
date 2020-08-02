@@ -93,8 +93,8 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         x = obj[closed_count]
         x0 = x.values[...,:-1]
         x1 = x.values[..., 1:]
-        y0 = np.log(y.values[...,:-1])
-        y1 = np.log(y.values[..., 1:])
+        y0 = xp.log(y.values[...,:-1])
+        y1 = xp.log(y.values[..., 1:])
         b = ((x0*y0+x1*y1)/2-(x0+x1)/2*(y0+y1)/2) / \
             ((x0**2+x1**2)/2-((x0+x1)/2)**2)
         a = np.exp((y0+y1)/2-b*(x0+x1)/2)
@@ -103,20 +103,20 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             lookup = np.maximum(
-                np.concatenate(
+                xp.concatenate(
                     [(adj_closed_clm.values[...,i:i+1]>obj[closed_count].values).sum(
                         axis=-1, keepdims=True)
                      for i in range(adj_closed_clm.shape[-1])], axis=-1),1)-1
-        a = np.concatenate(
+        a = xp.concatenate(
             [a[..., i, lookup[0, 0, i:i+1, :]]
              for i in range(lookup.shape[-2])], -2) * \
             adj_closed_clm.nan_triangle[None,None,...]
-        b = np.concatenate(
+        b = xp.concatenate(
             [b[..., i, lookup[0, 0, i:i+1, :]]
              for i in range(lookup.shape[-2])], -2) * \
             adj_closed_clm.nan_triangle[None,None,...]
         # Adjust paids
-        adj_paid_claims = adj_closed_clm*0+np.exp(adj_closed_clm.values*b)*a
+        adj_paid_claims = adj_closed_clm*0+xp.exp(adj_closed_clm.values*b)*a
         adj_paid_claims = (
             y[y.valuation==y.valuation_date] +
             adj_paid_claims[adj_paid_claims.valuation<adj_paid_claims.valuation_date])

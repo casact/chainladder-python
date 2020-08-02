@@ -195,13 +195,12 @@ class Development(DevelopmentBase):
         drop = [self.drop] if type(self.drop) is not list else self.drop
         arr = X.nan_triangle.copy()
         if xp == sp:
-            fv = arr.fill_value
             arr = arr.todense()
         for item in drop:
             arr[np.where(X.origin == item[0])[0][0],
                 np.where(X.development == item[1])[0][0]] = 0
         if xp == sp:
-            arr = sp(arr, fill_value=fv)
+            arr = sp(arr, fill_value=X.values.fill_value)
         return arr[:, :-1]
 
     def fit(self, X, y=None, sample_weight=None):
@@ -259,8 +258,6 @@ class Development(DevelopmentBase):
                          self._drop_adjustment(X, link_ratio))
             val = val*(X.nan_triangle[-val.shape[-2]:, -val.shape[-1]:])
             w = self.w_ / (x**(val))
-            w.fill_value = x.fill_value = y.fill_value = np.nan
-            w, x, y = sp(w), sp(x), sp(y)
         else:
             self.w_ = xp.array(self._assign_n_periods_weight(X) *
                                self._drop_adjustment(X, link_ratio))
@@ -278,8 +275,8 @@ class Development(DevelopmentBase):
                 params.sigma_ /
                 xp.swapaxes(xp.sqrt(x**(2-val))[..., 0:1, :], -1, -2))
         if xp == sp:
-            params.std_err_.fill_value = params.sigma_.fill_value = sp.nan
-            params.std_err_, params.sigma_ = sp(params.std_err_), sp(params.sigma_)
+            params.std_err_.fill_value  = sp.nan
+            params.std_err_ = sp(params.std_err_)
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(X, params, 0)

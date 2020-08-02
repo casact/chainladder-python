@@ -6,6 +6,7 @@ import copy
 import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 from scipy.optimize import minimize
 
 
@@ -113,9 +114,12 @@ class ClarkLDF(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
+        oxp = cp.get_array_module(X.values)
+        X = X.to_dense()
+        xp = cp.get_array_module(X.values)
         obj = copy.copy(X)
-        self.incremental_act_ = X.cum_to_incr()
-        xp = cp.get_array_module(obj.values)
+        obj = obj.to_dense()
+        self.incremental_act_ = obj.cum_to_incr()
         self.method_ = 'ldf' if sample_weight is None else 'cape_cod'
         age_offset = {'Y':6., 'Q':1.5, 'M':0.5}[X.development_grain]
         age_interval = {'Y':12., 'Q':3., 'M':1.}[X.development_grain]
@@ -183,15 +187,20 @@ class ClarkLDF(DevelopmentBase):
         if sample_weight:
             self.elr_ = pd.DataFrame(
                 params[...,0, 2], index=table.index, columns=table.columns)
-        self.ultimate_ = xp.swapaxes(
+        ultimate_ = xp.swapaxes(
             self._G(age=(latest_age-age_offset)[::-1]), -1, -2) * \
              X.latest_diagonal.values
         self.incremental_fits_ = copy.deepcopy(X)
         self.incremental_fits_.values = (
             1/self._G(X.ddims - age_offset) -
             1/self._G(xp.maximum(X.ddims - age_offset - age_interval,0))) * \
-            self.ultimate_[..., ::-1]*X.nan_triangle
+            ultimate_[..., ::-1]*X.nan_triangle
         self.incremental_fits_.is_cumulative = False
+        if oxp == sp:
+            self.incremental_fits_ = self.incremental_fits_.to_sparse()
+            self.ldf_ = self.ldf_.to_sparse()
+            self.sigma_ = self.sigma_.to_sparse()
+            self.std_err_ = self.std_err_.to_sparse()
         return self
 
     def transform(self, X):
@@ -222,7 +231,7 @@ class ClarkLDF(DevelopmentBase):
         xp = cp.get_array_module(self.incremental_fits_.values)
         scale = (((self.incremental_fits_ - self.incremental_act_)**2) /
             self.incremental_fits_).sum('origin').sum('development')
-        df = np.nansum(self.incremental_fits_.nan_triangle) - 2
+        df = xp.nansum(self.incremental_fits_.nan_triangle) - 2
         if self.method_ == 'ldf':
             df = df - len(self.incremental_fits_.odims)
         else:

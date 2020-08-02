@@ -18,7 +18,7 @@ def test_benktander_to_chainladder(data, atol):
     a = cl.Chainladder().fit(tri).ibnr_
     b = cl.Benktander(apriori=.8, n_iters=255).fit(tri, sample_weight=a).ibnr_
     xp = cp.get_array_module(a.values)
-    xp.testing.assert_allclose(a.values, b.values, atol=atol)
+    assert xp.allclose(xp.nan_to_num(a.values), xp.nan_to_num(b.values), atol=atol)
 
 
 def test_bf_eq_cl_when_using_cl_apriori():
@@ -27,4 +27,4 @@ def test_bf_eq_cl_when_using_cl_apriori():
     bf_ult = cl.BornhuetterFerguson().fit(cl.load_sample('quarterly'),
                                           sample_weight=cl_ult).ultimate_
     xp = cp.get_array_module(cl_ult.values)
-    xp.testing.assert_allclose(cl_ult.values, bf_ult.values, atol=1e-5)
+    assert xp.allclose(cl_ult.values, bf_ult.values, atol=1e-5)

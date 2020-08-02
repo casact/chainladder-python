@@ -58,7 +58,7 @@ def test_n_periods():
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_ldf(data, averages, est_sigma, atol):
-    p = mack_p(data, averages[0], est_sigma[0]).ldf_.values[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).ldf_.to_dense().values[0, 0, :, :]
     xp = cp.get_array_module(p)
     r = xp.array(mack_r(data, averages[1], est_sigma[1]).rx('f'))[:, :-1]
     assert xp.allclose(r, p, atol=atol)
@@ -68,7 +68,7 @@ def test_mack_ldf(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_sigma(data, averages, est_sigma, atol):
-    p = mack_p(data, averages[0], est_sigma[0]).sigma_.values[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).sigma_.to_dense().values[0, 0, :, :]
     xp = cp.get_array_module(p)
     r = xp.array(mack_r(data, averages[1], est_sigma[1]).rx('sigma'))
     assert xp.allclose(r, p, atol=atol)
@@ -78,7 +78,7 @@ def test_mack_sigma(data, averages, est_sigma, atol):
 @pytest.mark.parametrize('averages', averages)
 @pytest.mark.parametrize('est_sigma', est_sigma)
 def test_mack_std_err(data, averages, est_sigma, atol):
-    p = mack_p(data, averages[0], est_sigma[0]).std_err_.values[0, 0, :, :]
+    p = mack_p(data, averages[0], est_sigma[0]).std_err_.to_dense().values[0, 0, :, :]
     xp = cp.get_array_module(p)
     r = xp.array(mack_r(data, averages[1], est_sigma[1]).rx('f.se'))
     assert xp.allclose(r, p, atol=atol)
