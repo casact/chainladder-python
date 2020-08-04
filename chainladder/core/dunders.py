@@ -80,9 +80,7 @@ class TriangleDunders:
         ''' Common functionality AFTER arithmetic operations '''
         from chainladder.utils.utility_functions import num_to_nan
         xp = cp.get_array_module(obj.values)
-        if xp == sp:
-            obj.values = sp(obj.values) * sp(obj._expand_dims(obj.nan_triangle))
-        else:
+        if xp != sp:
             obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
         obj.num_to_nan()
         return obj

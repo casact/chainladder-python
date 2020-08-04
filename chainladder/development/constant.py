@@ -63,9 +63,9 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = obj.index.apply(self.patterns, axis=self.callable_axis).iloc[:, 0]
             ldf = pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0).fillna(1)[obj.ddims[:-1]].values
             if self.callable_axis==0:
-                ldf = ldf[:, None, None, :]
+                ldf = xp.array(ldf[:, None, None, :])
             else:
-                ldf = ldf[None, :, None, :]
+                ldf = xp.array(ldf[None, :, None, :])
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
             ldf = ldf[None, None, None, :]

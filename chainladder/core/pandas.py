@@ -12,21 +12,29 @@ class TriangleGroupBy:
     def __init__(self, old_obj, by):
         xp = cp.get_array_module(old_obj.values)
         self.orig_obj = copy.deepcopy(old_obj)
+        missing = None
         if xp == sp:
             if by != -1:
                 self.idx = self.orig_obj.index.iloc[self.orig_obj.values.coords[0]].reset_index(drop=True)
+                self.idx['missing'] = 0
+                missing = old_obj.index.merge(
+                    self.idx, how='left', on=list(old_obj.index.columns))
+                missing = missing[missing['missing'].isna()][list(old_obj.index.columns)]
+                self.idx = self.idx.drop('missing', 1)
+                missing['values'] = missing[1] = missing[2] = missing[3] = 0
             else:
                 self.idx = pd.DataFrame(
                     np.repeat(np.repeat(
                         np.array([['All']]), old_obj.values.coords.shape[1], 0),
                         len(old_obj.key_labels), 1), columns=old_obj.key_labels)
                 by = old_obj.key_labels
-
             groupby = pd.concat(
                 (pd.DataFrame(self.orig_obj.values.coords[1:].T, columns=[1,2,3]),
                  self.idx), axis=1)
             groupby['values'] = self.orig_obj.values.data
             by = [by] if type(by) is str else by
+            if missing is not None:
+                groupby = groupby.append(missing[groupby.columns])
             self.obj = groupby.groupby(by+[1,2,3])['values']
         else:
             if by != -1:
