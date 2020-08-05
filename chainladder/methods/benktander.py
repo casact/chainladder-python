@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
-from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 from chainladder.methods import MethodBase
@@ -76,7 +75,7 @@ class Benktander(MethodBase):
         return self
 
     def _get_ultimate(self, X, sample_weight):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         ultimate = copy.deepcopy(X)
 
         # Apriori

@@ -5,7 +5,7 @@ import numpy as np
 
 def test_schmidt():
     tri = cl.load_sample('ia_sample')
-    xp = cp.get_array_module(tri.values)
+    xp = tri.get_array_module()
     ia = cl.IncrementalAdditive()
     answer = ia.fit_transform(tri.iloc[0, 0],
                               sample_weight=tri.iloc[0, 1].latest_diagonal)

@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import copy
-from chainladder.utils.cupy import cp
 import numpy as np
 
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
-    xp = cp.get_array_module(ultimate_.values)
+    xp = ultimate_.get_array_module()
     o, d = ultimate_.shape[-2:]
     cdf = copy.deepcopy(cdf_)
     cdf.values = xp.repeat(cdf.values[..., 0:1, :], o, axis=2)
@@ -31,7 +30,7 @@ def _get_full_triangle(full_expectation_, triangle_):
 def _get_cdf(ldf_):
     """ Private method that computes CDFs"""
     cdf = copy.deepcopy(ldf_)
-    xp = cp.get_array_module(cdf.values)
+    xp = ldf_.get_array_module()
     cdf.values = xp.flip(xp.cumprod(xp.flip(cdf.values, -1), -1), -1)
     cdf.ddims = np.array(
         [item.replace(item[item.find("-")+1:], '9999')

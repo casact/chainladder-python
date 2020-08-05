@@ -123,7 +123,7 @@ class TriangleSlicer:
 
     def __setitem__(self, key, value):
         ''' Function for pandas style column indexing setting '''
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         idx = self._idx_table()
         idx[key] = 1
         if key in self.vdims:
@@ -175,7 +175,7 @@ class TriangleSlicer:
         obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
         if len(obj.ddims) > 1:
             obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         if xp == cp:
             nan_tri = cp.array(nan_tri)
         if xp == sp:
@@ -198,7 +198,7 @@ class TriangleSlicer:
         ''' private method for handling of development slicing '''
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
-        if cp.get_array_module(obj.values) == cp:
+        if obj.get_array_module() == cp:
             key = cp.array(key)
         obj.values = obj.values[..., key]
         return obj

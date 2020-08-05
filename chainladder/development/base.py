@@ -92,7 +92,7 @@ class Development(DevelopmentBase):
 
     def _assign_n_periods_weight_list(self, X):
         ''' private method to standardize the n_periods input to a list '''
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         dict_map = {item: self._assign_n_periods_weight_int(X, item)
                     for item in set(self.n_periods)}
         conc = [dict_map[item][..., num:num+1, :]
@@ -103,7 +103,7 @@ class Development(DevelopmentBase):
         ''' Zeros out weights depending on number of periods desired
             Only works for type(n_periods) == int
         '''
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if n_periods < 1 or n_periods >= X.shape[-2] - 1:
             return X.values*0+1
         else:
@@ -128,6 +128,7 @@ class Development(DevelopmentBase):
         if self.drop_high is not None:
             weight = weight*self._drop_hilo('high', X, link_ratio)
         if self.drop_low is not None:
+            print(type(weight), type(self._drop_hilo('low', X, link_ratio)))
             weight = weight*self._drop_hilo('low', X, link_ratio)
         if self.drop is not None:
             weight = weight*self._drop(X)
@@ -136,10 +137,10 @@ class Development(DevelopmentBase):
         return weight
 
     def _drop_hilo(self, kind, X, link_ratio):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if xp != sp:
             link_ratio[link_ratio == 0] = xp.nan
-            link_ratio = link_ratio + np.random.rand(*list(link_ratio.shape))/1e8
+            link_ratio = link_ratio + xp.random.rand(*list(link_ratio.shape))/1e8
         else:
             link_ratio.data = link_ratio.data + np.random.rand(*list(link_ratio.data.shape))/1e8
         lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
@@ -169,7 +170,7 @@ class Development(DevelopmentBase):
         return hilo
 
     def _drop_valuation(self, X):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if type(self.drop_valuation) is not list:
             drop_valuation = [self.drop_valuation]
         else:
@@ -191,7 +192,7 @@ class Development(DevelopmentBase):
         return arr[:, :-1]
 
     def _drop(self, X):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         drop = [self.drop] if type(self.drop) is not list else self.drop
         arr = X.nan_triangle.copy()
         if xp == sp:
@@ -218,15 +219,14 @@ class Development(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
+        from chainladder.utils.utility_functions import num_to_nan
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
         if self.fillna:
-            tri_array = (X + self.fillna).values
+            tri_array = num_to_nan((X + self.fillna).values)
         else:
-            tri_array = X.values.copy()
-        if xp != sp:
-            tri_array[tri_array == 0] = xp.nan
+            tri_array = num_to_nan(X.values.copy())
         if type(self.average) is not list:
             average = [self.average] * (tri_array.shape[-1] - 1)
         else:
@@ -262,7 +262,7 @@ class Development(DevelopmentBase):
             self.w_ = xp.array(self._assign_n_periods_weight(X) *
                                self._drop_adjustment(X, link_ratio))
             w = self.w_ / (x**(val))
-        params = WeightedRegression(axis=2, thru_orig=True).fit(x, y, w)
+        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
         else:
@@ -307,7 +307,7 @@ class Development(DevelopmentBase):
     def _param_property(self, X, params, idx):
         from chainladder import ULT_VAL
         obj = X[X.origin==X.origin.min()]
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         obj.values = xp.ones(obj.shape)[..., :-1]*params[..., idx:idx+1, :]
         obj.ddims = X.link_ratio.ddims
         obj.valuation_date = pd.to_datetime(ULT_VAL)

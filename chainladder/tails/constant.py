@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase, Development
 import copy
@@ -68,7 +67,7 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         tail = self.tail
         if self.attachment_age:
             attach_idx = xp.min(xp.where(X.ddims>=self.attachment_age))
@@ -76,8 +75,8 @@ class TailConstant(TailBase):
             attach_idx = len(X.ddims) - 1
         self = self._apply_decay(X, tail, attach_idx)
         obj = Development().fit_transform(X) if 'ldf_' not in X else X
-        xp = cp.get_array_module(X.values)
-        if xp.max(self.tail) != 1.0:
+        xp = X.get_array_module()
+        if xp.max(xp.array(self.tail)) != 1.0:
             sigma, std_err = self._get_tail_stats(obj)
             self.sigma_.values = xp.concatenate(
                 (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1)

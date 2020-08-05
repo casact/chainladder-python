@@ -6,7 +6,6 @@ from chainladder.utils import WeightedRegression
 from chainladder.development import DevelopmentBase, Development
 import numpy as np
 import pandas as pd
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import copy
 import warnings
@@ -85,12 +84,12 @@ class TailCurve(TailBase):
             end = None if self.fit_period[1] is None else int(self.fit_period[1] / grain - 1)
             fit_period = slice(start, end, None)
         super().fit(X, y, sample_weight)
-        xp = cp.get_array_module(self.ldf_.values)
+        xp = X.get_array_module()
         if xp == sp:
             _y = self.ldf_.values[..., :X.shape[-1]-1].todense()
         else:
             _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
-        _w = np.zeros(_y.shape)
+        _w = xp.zeros(_y.shape)
         _w[..., fit_period] = 1.0
         if self.errors == 'ignore':
             _w[_y <= 1.0] = 0
@@ -105,7 +104,7 @@ class TailCurve(TailBase):
         k, v = X.shape[:2]
         _x = self._get_x(_w, _y)
         # Get LDFs
-        coefs = WeightedRegression(axis=3).fit(_x, _y, _w)
+        coefs = WeightedRegression(axis=3, xp=xp).fit(_x, _y, _w)
         self._slope_, self._intercept_ = coefs.slope_, coefs.intercept_
         extrapolate = xp.cumsum(
             xp.ones(tuple(list(_y.shape)[:-1] +
@@ -130,12 +129,12 @@ class TailCurve(TailBase):
         if self.curve == 'exponential':
             return None
         if self.curve == 'inverse_power':
-            reg = WeightedRegression(3, False).fit(None, y, w).infer_x_w()
-            xp = cp.get_array_module(reg.x)
+            reg = WeightedRegression(3, False, xp=xp).fit(None, y, w).infer_x_w()
+            xp = self.ldf_.get_array_module()
             return xp.log(reg.x)
 
     def _predict_tail(self, extrapolate):
-        xp = cp.get_array_module(extrapolate)
+        xp = self.ldf_.get_array_module()
         if self.curve == 'exponential':
             tail_ldf = xp.exp(self._slope_*extrapolate + self._intercept_)
         if self.curve == 'inverse_power':

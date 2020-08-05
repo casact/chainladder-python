@@ -4,7 +4,6 @@
 from chainladder.development.base import Development, DevelopmentBase
 import numpy as np
 import pandas as pd
-from chainladder.utils.cupy import cp
 import copy
 
 
@@ -61,7 +60,7 @@ class IncrementalAdditive(DevelopmentBase):
             raise ValueError('Triangle must be expressed with development lags')
         sample_weight.is_cumulative = False
         obj = X.cum_to_incr()/sample_weight
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
         w_ = num_to_nan(w_)

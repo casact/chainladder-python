@@ -171,7 +171,7 @@ def concat(objs, axis):
     -------
     Updated triangle
     """
-    xp = cp.get_array_module(objs[0].values)
+    xp = objs[0].get_array_module()
     axis =  objs[0]._get_axis(axis)
     mapper = {0: 'kdims', 1: 'vdims', 2: 'odims', 3: 'ddims'}
     for k, v in mapper.items():
@@ -193,12 +193,13 @@ def concat(objs, axis):
 
 def num_to_nan(arr):
     """ Function that turns all zeros to nan values in an array """
-    xp = cp.get_array_module(arr)
-    if xp == sp:
+    backend = arr.__class__.__module__.split('.')[0]
+    if backend == 'sparse':
         arr.fill_value = sp.nan
         arr.coords = arr.coords[:, arr.data!=0]
         arr.data = arr.data[arr.data!=0]
         arr = sp(arr)
     else:
-        arr[arr == 0] = xp.nan
+        nan = np.nan if backend == 'numpy' else cp.nan
+        arr[arr == 0] = nan
     return arr

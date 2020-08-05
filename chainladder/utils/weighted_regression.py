@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from sklearn.base import BaseEstimator
 
@@ -11,12 +10,13 @@ class WeightedRegression(BaseEstimator):
         simultaneously on a multi-dimensional array.  Look into
         SUR as a replacement.
     '''
-    def __init__(self, axis=None, thru_orig=False):
+    def __init__(self, axis=None, thru_orig=False, xp=None):
         self.axis = axis
         self.thru_orig = thru_orig
+        self.xp = xp
 
     def infer_x_w(self):
-        xp = cp.get_array_module(self.y)
+        xp = self.xp
         if self.w is None:
             self.w = xp.ones(self.y.shape)
         if self.x is None:
@@ -43,7 +43,7 @@ class WeightedRegression(BaseEstimator):
         '''
         from chainladder.utils.utility_functions import num_to_nan
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
-        xp = cp.get_array_module(x)
+        xp = self.xp
         if xp != sp:
             x[w == 0] = xp.nan
             y[w == 0] = xp.nan
@@ -62,7 +62,7 @@ class WeightedRegression(BaseEstimator):
     def _fit_OLS_thru_orig(self):
         from chainladder.utils.utility_functions import num_to_nan
         w, x, y, axis = self.w, self.x, self.y, self.axis
-        xp = cp.get_array_module(x)
+        xp = self.xp
         d = num_to_nan(xp.nansum((y*0+1)*w*x*x, axis))
         coef = num_to_nan(xp.nansum(w*x*y, axis))/d
         fitted_value = xp.repeat(xp.expand_dims(coef, axis),
@@ -102,10 +102,10 @@ class WeightedRegression(BaseEstimator):
         ''' Use Cases: generally for filling in last element of sigma_
         '''
         from chainladder.utils.utility_functions import num_to_nan
-        xp = cp.get_array_module(y)
+        xp = self.xp
         ly = xp.log(num_to_nan(y))
         w = xp.nan_to_num(ly*0+1)
-        reg = WeightedRegression(self.axis, False).fit(None, ly, w)
+        reg = WeightedRegression(self.axis, False, xp=xp).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
         fill_ = xp.exp(reg.x*slope+intercept)*(1-w)
         out = xp.nan_to_num(y) + xp.nan_to_num(fill_)
@@ -118,7 +118,7 @@ class WeightedRegression(BaseEstimator):
             the missing value. This function needs a recursive definition...
         '''
         from chainladder.utils.utility_functions import num_to_nan
-        xp = cp.get_array_module(y)
+        xp = self.xp
         w = xp.nan_to_num(y*0+1)
         slicer_n, slicer_d, slicer_a = \
             ([slice(None)]*4), ([slice(None)]*4), ([slice(None)]*4)

@@ -8,7 +8,6 @@ from chainladder.core import EstimatorIO
 from chainladder.core.common import Common
 import numpy as np
 import pandas as pd
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import copy
 import warnings
@@ -78,12 +77,13 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        oxp = cp.get_array_module(X.values)
-        X = X.to_dense()
+        oxp = X.get_array_module()
+        X = X.set_backend('numpy', inplace=True)
         if self.paid_to_incurred is None:
             raise ValueError('Must enter valid value for paid_to_incurred.')
         obj = copy.deepcopy(X)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
+        self.xp = xp
         missing = xp.nan_to_num(X.values)*X.nan_triangle==0
         if len(xp.where(missing)[0]) > 0:
             if self.fillna:
@@ -104,7 +104,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.p_to_i_sigma_ = self._get_p_to_i_object(obj.sigma_)
         self.q_f_, self.rho_sigma_ = self._get_MCL_model(obj)
         self.residual_, self.q_resid_ = self._get_MCL_resids(obj)
-        self.lambda_coef_ = self._get_MCL_lambda()
+        self.lambda_coef_ = self._get_MCL_lambda(obj)
         self.ldf_ = self._set_ldf(obj, self._get_mcl_cdf(obj, self.munich_full_triangle_))
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
         self._map = {
@@ -117,6 +117,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                     'resids_', 'q_resids_']
             for item in tris:
                 setattr(self, item, getattr(self, item).to_sparse())
+        del self.xp
         return self
 
     def transform(self, X):
@@ -139,10 +140,12 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         X_new.p_to_i_ldf_ = self._get_p_to_i_object(X_new.ldf_)
         X_new.p_to_i_sigma_ = self._get_p_to_i_object(X_new.sigma_)
         X_new.q_f_, X_new.rho_sigma_ = self._get_MCL_model(X_new)
+        self.xp = X_new.get_array_module()
         X_new.munich_full_triangle_ = self._get_munich_full_triangle_(
             X_new.p_to_i_X_, X_new.p_to_i_ldf_, X_new.p_to_i_sigma_,
             self.lambda_coef_, X_new.rho_sigma_, X_new.q_f_)
         X_new.ldf_ = self._set_ldf(X_new, self._get_mcl_cdf(X_new, X_new.munich_full_triangle_))
+        del self.xp
         triangles = ['rho_', 'lambda_', 'lambda_coef_']
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
@@ -154,7 +157,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             p_to_i = [self.paid_to_incurred]
         else:
             p_to_i = self.paid_to_incurred
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         paid = obj[[item[0] for item in p_to_i][0]]
         for item in [item[0] for item in p_to_i][1:]:
             paid[item] = obj[item]
@@ -165,23 +168,22 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         incurred = incurred.values[None]
         return xp.concatenate((paid, incurred), axis=0)
 
-    def _p_to_i_concate(self, obj_p, obj_i):
-        xp = cp.get_array_module(obj_p)
+    def _p_to_i_concate(self, obj_p, obj_i, xp):
         return xp.concatenate((obj_p[None], obj_i[None]), 0)
 
     def _get_MCL_model(self, X):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         p, i = self.p_to_i_X_[0], self.p_to_i_X_[1]
-        modelsP = WeightedRegression(axis=2, thru_orig=True)
+        modelsP = WeightedRegression(axis=2, thru_orig=True, xp=xp)
         modelsP = modelsP.fit(p, i, 1/p).sigma_fill(X.sigma_interpolation)
-        modelsI = WeightedRegression(axis=2, thru_orig=True)
+        modelsI = WeightedRegression(axis=2, thru_orig=True, xp=xp)
         modelsI = modelsI.fit(i, p, 1/i).sigma_fill(X.sigma_interpolation)
-        q_f = self._p_to_i_concate(modelsP.slope_, modelsI.slope_)
-        rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_)
+        q_f = self._p_to_i_concate(modelsP.slope_, modelsI.slope_, xp)
+        rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_, xp)
         return xp.swapaxes(q_f, -1, -2), xp.swapaxes(rho_sigma, -1, -2)
 
     def _get_MCL_resids(self, X):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         p_to_i_ata = self._get_p_to_i_object(X.link_ratio)
         p_to_i_ldf = self.p_to_i_ldf_
         p_to_i_sigma = self.p_to_i_sigma_
@@ -197,23 +199,23 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             self.rho_sigma_[1]*xp.sqrt(incurred)*nans
         q_inv_resid = (incurred/paid - 1/self.q_f_[1]) / \
             self.rho_sigma_[0]*xp.sqrt(paid)*nans
-        resid = self._p_to_i_concate(residP, residI)
-        q_resid = self._p_to_i_concate(q_inv_resid, q_resid)
+        resid = self._p_to_i_concate(residP, residI, xp)
+        q_resid = self._p_to_i_concate(q_inv_resid, q_resid, xp)
         return resid, q_resid
 
-    def _get_MCL_lambda(self):
-        xp = cp.get_array_module(self.residual_[1])
+    def _get_MCL_lambda(self, obj):
+        xp = obj.get_array_module()
         k, v, o, d = self.residual_[1].shape
         w = xp.reshape(self.residual_[1], (k, v, o*d))
         w[w == 0] = xp.nan
         w = w*0+1
-        lambdaI = WeightedRegression(thru_orig=True, axis=-1).fit(
+        lambdaI = WeightedRegression(thru_orig=True, axis=-1, xp=xp).fit(
             xp.reshape(self.q_resid_[1][..., :-1, :-1], (k, v, o*d)),
             xp.reshape(self.residual_[1], (k, v, o*d)), w).slope_
-        lambdaP = WeightedRegression(thru_orig=True, axis=-1).fit(
+        lambdaP = WeightedRegression(thru_orig=True, axis=-1, xp=xp).fit(
             xp.reshape(self.q_resid_[0][..., :-1, :-1], (k, v, o*d)),
             xp.reshape(self.residual_[0], (k, v, o*d)), w).slope_
-        return self._p_to_i_concate(lambdaP, lambdaI)[..., None]
+        return self._p_to_i_concate(lambdaP, lambdaI, xp)[..., None]
 
     @property
     def munich_full_triangle_(self):
@@ -224,9 +226,8 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def _get_munich_full_triangle_(
         self, p_to_i_X_, p_to_i_ldf_, p_to_i_sigma_, lambda_coef_, rho_sigma_, q_f_):
         full_paid = np.nan_to_num(p_to_i_X_[0][..., 0:1])
-        xp = cp.get_array_module(full_paid)
+        xp = self.xp if hasattr(self, 'xp') else self.ldf_.get_array_module() 
         full_incurred = p_to_i_X_[1][..., 0:1]
-
         for i in range(p_to_i_X_[0].shape[-1]-1):
             paid = (p_to_i_ldf_[0][..., i:i+1] +
                     lambda_coef_[0] *
@@ -249,13 +250,13 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                  xp.nan_to_num(p_to_i_X_[0][..., i+1:i+2]) +
                  (1-xp.nan_to_num(p_to_i_X_[0][..., i+1:i+2]*0+1)) *
                  paid), axis=3)
-        return self._p_to_i_concate(full_paid, full_incurred)
+        return self._p_to_i_concate(full_paid, full_incurred, xp)
 
     def _get_mcl_cdf(self, X, munich_full_triangle_):
         ''' needs to be an attribute that gets assigned.  requires we overwrite
             the cdf and ldf methods with
         '''
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         obj = copy.copy(X.cdf_)
         obj.values = xp.repeat(obj.values, len(X.odims), 2)
         obj.odims = X.odims
@@ -278,7 +279,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _set_ldf(self, X, cdf):
         ldf_tri = cdf.values.copy()
-        xp = cp.get_array_module(ldf_tri)
+        xp = X.get_array_module()
         ldf_tri = xp.concatenate((ldf_tri, xp.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1]/ldf_tri[..., 1:]
         obj = copy.copy(cdf)

@@ -169,11 +169,13 @@ class Triangle(TriangleBase):
     def latest_diagonal(self):
         """ The latest diagonal of the Triangle """
         obj = copy.deepcopy(self)
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         val = (self.valuation==self.valuation_date).reshape(
             self.shape[-2:], order='F')
         if xp == sp:
             val = sp(val)
+        if xp == cp:
+            val = cp.array(val)
         obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
         obj.num_to_nan()
         obj.ddims = pd.DatetimeIndex(
@@ -182,7 +184,7 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj = copy.deepcopy(self)
         temp = obj.values.copy()
         val_array = obj.valuation.values.reshape(
@@ -241,6 +243,7 @@ class Triangle(TriangleBase):
                 axis=1)
         return pd.DatetimeIndex(val_array.reshape(1,-1, order='F')[0])
 
+
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
 
@@ -253,7 +256,7 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if inplace:
             if not self.is_cumulative:
                 self.values = xp.cumsum(xp.nan_to_num(self.values), axis=3)
@@ -290,7 +293,7 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if inplace:
             if self.is_cumulative or self.is_cumulative is None:
                 temp = xp.nan_to_num(self.values)[..., 1:] - \
@@ -328,7 +331,7 @@ class Triangle(TriangleBase):
         if inplace:
             if self.is_val_tri:
                 return self
-            xp = cp.get_array_module(self.values)
+            xp = self.get_array_module()
             obj = copy.deepcopy(self)
             if self.shape[-1] == 1:
                 return obj
@@ -395,7 +398,7 @@ class Triangle(TriangleBase):
             Updated instance of triangle with development lags
         '''
         from chainladder import ULT_VAL
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if not self.is_val_tri:
             ret_val = self
         else:
@@ -422,7 +425,7 @@ class Triangle(TriangleBase):
         return ret_val
 
     def _val_dev_chg(self):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj = copy.deepcopy(self)
         x = xp.nan_to_num(obj.values)
         val_mtrx = \
@@ -431,8 +434,10 @@ class Triangle(TriangleBase):
             (np.array(obj.valuation.month).reshape(obj.shape[-2:], order='f') -
              np.array(pd.DatetimeIndex(obj.odims).month)[..., None]) + 1
         rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten()>0]))
-        if sp == xp:
+        if self.array_backend == 'sparse':
             val_mtrx = sp(val_mtrx)
+        else:
+            val_mtrx = xp.array(val_mtrx)
         # Can be slow on very large triangles
         x = [xp.sum((val_mtrx==item)*x, -1, keepdims=True) for item in rng]
         # End slow
@@ -483,7 +488,7 @@ class Triangle(TriangleBase):
             # Must be cumulative to work
             obj = self.incr_to_cum().dev_to_val(inplace=True)
         # put data in valuation mode
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if ograin_new != ograin_old:
             o_dt = pd.Series(obj.odims)
             if trailing:
@@ -586,19 +591,19 @@ class Triangle(TriangleBase):
                 val_start = np.minimum(valuation, start)
                 val_end = np.minimum(valuation, end)
             return val_start, val_end
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if not start:
             if axis == 'valuation':
                 start = np.datetime64(self.valuation_date)
             else:
-                start = np.datetime64(xp.max(self.odims))
+                start = np.datetime64(np.max(self.odims))
         else:
             start = np.datetime64(start)
         if not end:
             if axis == 'valuation':
-                end = np.datetime64(xp.min(self.valuation))
+                end = np.datetime64(np.min(self.valuation))
             else:
-                end = np.datetime64(xp.min(self.odims))
+                end = np.datetime64(np.min(self.odims))
         else:
             end = np.datetime64(end)
         if axis in ['origin', 2, -2]:
@@ -637,7 +642,7 @@ class Triangle(TriangleBase):
         """
         obj = copy.deepcopy(self)
         axis = self._get_axis(axis)
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if self.shape[axis] != 1:
             raise ValueError('Axis to be broadcast must be of length 1')
         elif axis > 1:
@@ -697,11 +702,14 @@ class Triangle(TriangleBase):
         """
         return ValuationCorrelation(self, p_critical, total)
 
-    def to_sparse(self, inplace=False):
-        ''' Converts triangle array_backend to a sparse representation.
+
+    def set_backend(self, backend, inplace=False):
+        ''' Converts triangle array_backend.
 
         Parameters
         ----------
+        backend : str
+            Currently supported options are 'numpy', 'sparse', and 'cupy'
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
@@ -710,35 +718,28 @@ class Triangle(TriangleBase):
         -------
             Triangle with updated array_backend
         '''
+        from chainladder.utils.utility_functions import num_to_nan
         if inplace:
-            xp = cp.get_array_module(self.values)
-            if xp != sp:
-                self.values = sp(self.values, fill_value=sp.nan, prune=True)
-                self.array_backend = 'sparse'
+            if backend in ['numpy', 'sparse', 'cupy']:
+                if backend == 'numpy':
+                    if self.array_backend == 'sparse':
+                        self.values = self.values.todense()
+                    if self.array_backend == 'cupy':
+                        self.values = cp.asnumpy(self.values)
+                if backend == 'cupy':
+                    if self.array_backend == 'numpy':
+                        self.values = cp.array(self.values)
+                    if self.array_backend == 'sparse':
+                        self.values = cp.array(self.values.todense())
+                if backend == 'sparse':
+                    if self.array_backend == 'numpy':
+                        self.values = num_to_nan(sp(self.values))
+                    if self.array_backend == 'cupy':
+                        self.values = num_to_nan(sp(cp.asnumpy(self.values)))
+                self.array_backend = backend
+            else:
+                raise AttributeError(backend, 'backend is not supported.')
             return self
         else:
             obj = copy.deepcopy(self)
-            return obj.to_sparse(inplace=True)
-
-    def to_dense(self, inplace=False):
-        ''' Converts triangle array_backend to a dense representation.
-
-        Parameters
-        ----------
-        inplace : bool
-            Whether to mutate the existing Triangle instance or return a new
-            one.
-
-        Returns
-        -------
-            Triangle with updated array_backend
-        '''
-        if inplace:
-            xp = cp.get_array_module(self.values)
-            if xp == sp:
-                self.values = self.values.todense()
-                self.array_backend = 'numpy'
-            return self
-        else:
-            obj = copy.deepcopy(self)
-            return obj.to_dense(inplace=True)
+            return obj.set_backend(backend=backend, inplace=True)

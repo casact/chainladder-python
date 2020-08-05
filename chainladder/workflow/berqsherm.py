@@ -5,7 +5,6 @@
 from chainladder.methods.chainladder import Chainladder
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
-from chainladder.utils.cupy import cp
 import copy
 import warnings
 from chainladder.core import EstimatorIO
@@ -54,7 +53,7 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
 
 
     def fit(self, X, y=None, sample_weight=None):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if not (self.paid_amount in X.columns and self.incurred_amount in X.columns
                 and self.reported_count in X.columns and self.closed_count in X.columns):
             raise ValueError('Must enter values valid columns for paid_amount, incurred_amount, reported_count and closed_count')

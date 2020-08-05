@@ -5,7 +5,6 @@
 from chainladder.methods.chainladder import Chainladder
 from chainladder.development.base import DevelopmentBase, Development
 import numpy as np
-from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 from warnings import warn
@@ -62,7 +61,7 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if X.shape[:2] != (1, 1):
             raise ValueError('Only single index/column triangles are supported')
         if (type(X.ddims) != np.ndarray):
@@ -99,7 +98,7 @@ class BootstrapODPSample(DevelopmentBase):
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         k_value = 1  # for ODP Poisson
         unscaled_residuals = \
             ((X.cum_to_incr().values - exp_incr_triangle) /
@@ -146,7 +145,7 @@ class BootstrapODPSample(DevelopmentBase):
     def _get_design_matrix(self, X):
         """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
         """
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         w = X.nan_triangle
         arr = xp.diag(w[:, 0])
         intra_beta = xp.zeros((w.shape[0], w.shape[1]-1))
@@ -162,7 +161,7 @@ class BootstrapODPSample(DevelopmentBase):
 
     def _get_hat(self, X, exp_incr_triangle):
         """ The hat matrix adjustment (Shapland eq3.23)"""
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         weight_matrix = xp.diag(pd.DataFrame(exp_incr_triangle).unstack().dropna().values)
         design_matrix = self.design_matrix_
         hat = xp.matmul(xp.matmul(xp.matmul(design_matrix,xp.linalg.inv(xp.matmul(design_matrix.T, xp.matmul(weight_matrix, design_matrix)))), design_matrix.T), weight_matrix)
@@ -205,11 +204,11 @@ def _get_process_variance(self, full_triangle):
     """ Inserts random noise into the full triangles and full expectations """
     #if self.process_dist == 'od poisson':
     #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
-    xp = cp.get_array_module(full_triangle.values)
+    xp = full_triangle.get_array_module()
     lower_tri = full_triangle.cum_to_incr() - self.cum_to_incr()
     random_state = xp.random.RandomState(
         None if not self.random_state else self.random_state + 1)
     lower_tri.values = random_state.gamma(
         shape=abs(lower_tri.values) / self.scale_, scale=self.scale_) * \
-        np.sign(np.nan_to_num(lower_tri.values))
+        xp.sign(xp.nan_to_num(lower_tri.values))
     return (lower_tri + self.cum_to_incr()).incr_to_cum()

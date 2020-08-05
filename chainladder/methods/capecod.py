@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 from chainladder.methods import MethodBase
@@ -61,7 +60,7 @@ class CapeCod(MethodBase):
         return self
 
     def _get_ultimate(self, X, sample_weight):
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         ult = copy.deepcopy(X)
         latest = X.latest_diagonal.values
         len_orig = sample_weight.shape[-2]

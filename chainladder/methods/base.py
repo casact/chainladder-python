@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import copy
 from sklearn.base import BaseEstimator
@@ -29,7 +28,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """ Vertically align CDF to ultimate vector to origin period latest
         diagonal.
         """
-        xp = cp.get_array_module(ultimate.values)
+        xp = ultimate.get_array_module()
         if self.cdf_.key_labels != ultimate.key_labels:
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
             idx = ultimate.index[level].merge(
@@ -59,7 +58,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
-        xp = cp.get_array_module(ultimate.values)
+        xp = ultimate.get_array_module()
         if xp != sp:
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
         ultimate.ddims = np.array([9999])
@@ -112,7 +111,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         obj = copy.deepcopy(X)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj

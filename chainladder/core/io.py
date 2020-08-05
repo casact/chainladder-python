@@ -34,7 +34,7 @@ class TriangleIO():
         '''
         def sparse_out(tri):
             k, v, o, d = tri.shape
-            xp = cp.get_array_module(tri)
+            xp = self.get_array_module(tri)
             if xp == cp != np:
                 out = cp.asnumpy(tri)
                 coo = coo_matrix(np.nan_to_num(out.reshape((k*v*o, d))))
@@ -57,7 +57,7 @@ class TriangleIO():
             json_dict[attribute] = {
                 'dtype': str(getattr(self, attribute).dtype),
                 'array': getattr(self, attribute).tolist()}
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if xp == cp != np:
             out = cp.asnumpy(self.cum_to_incr().values)
             xp = np

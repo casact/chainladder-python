@@ -64,9 +64,9 @@ class TriangleDisplay():
 
     def _repr_format(self):
         odims, ddims = self._repr_date_axes()
-        if cp.get_array_module(self.values).__name__ == 'cupy':
+        if self.array_backend == 'cupy':
             out = cp.asnumpy(self.values[0, 0])
-        elif isinstance(self.values, sp):
+        elif self.array_backend == 'sparse':
             out = self.values[0, 0].todense()
             out[out == 0] = np.nan
         else:

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import copy
 from scipy.optimize import least_squares
-from chainladder.utils.cupy import cp
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase, Development
 
@@ -72,7 +71,7 @@ class TailBondy(TailBase):
         if self.attachment_age and self.attachment_age < self.earliest_age:
             raise ValueError('attachment_age must not be before earliest_age.')
         super().fit(X, y, sample_weight)
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if self.earliest_age is None:
             earliest_age = X.ddims[0]
         else:
@@ -87,7 +86,7 @@ class TailBondy(TailBase):
             data = xp.log(obj.ldf_.values[:, num, 0, initial:])
             b0 = xp.concatenate((b0, data[..., 0:1]), axis=1)
             b_optimized.append(least_squares(
-                TailBondy._solver, x0=b0.flatten(), kwargs={'data': data}).x)
+                TailBondy._solver, x0=b0.flatten(), kwargs={'data': data, 'xp': xp}).x)
         self.b_ = xp.concatenate(
             [item.reshape(-1,2)[:, 0:1]
              for item in b_optimized], axis=1)[..., None, None]
@@ -139,9 +138,8 @@ class TailBondy(TailBase):
         return X_new
 
     @staticmethod
-    def _solver(b, data):
+    def _solver(b, data, xp):
         b = b.reshape(-1, 2)
-        xp = cp.get_array_module(data)
         arange = xp.repeat(xp.arange(data.shape[-1])[None, :], data.shape[0], 0)
         out = data - (b[:, 1:2])*b[:, 0:1]**(arange)
         return out.flatten()

@@ -1,5 +1,4 @@
 import numpy as np
-from chainladder.utils.cupy import cp
 import pytest
 import chainladder as cl
 from rpy2.robjects.packages import importr
@@ -31,52 +30,46 @@ ci = [0.5, 0.75]
 @pytest.mark.parametrize('ci', ci)
 def test_dev_corr(data, ci, atol):
     p = dev_corr_p(data, ci)
-    xp = cp.get_array_module(p.t_expectation.values)
     r = dev_corr_r(data, ci).rx('T_stat')[0]
     p = p.t_expectation.values[0]
-    assert xp.allclose(r, p, atol=atol)
+    assert np.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
 def test_dev_corr_var(data, ci, atol):
     p = dev_corr_p(data, ci)
-    xp = cp.get_array_module(p.t_expectation.values)
     r = dev_corr_r(data, ci).rx('Var')[0]
-    p = xp.array([p.t_variance])
-    assert xp.allclose(r, p, atol=atol)
+    p = np.array([p.t_variance])
+    assert np.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
 def test_dev_corr_range(data, ci, atol):
     p = dev_corr_p(data, 1-ci)
-    xp = cp.get_array_module(p.t_expectation.values)
     r = dev_corr_r(data, ci).rx('Range')[0]
-    p = xp.array(p.range)
-    assert xp.allclose(r, p, atol=atol)
+    p = np.array(p.range)
+    assert np.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
 def test_val_corr_z(data, ci, atol):
     p = val_corr_p(data, ci)
-    xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('Z')[0]
     p = p.z.values[0]
-    assert xp.allclose(r, p, atol=atol)
+    assert np.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
 def test_val_corr_e(data, ci, atol):
     p = val_corr_p(data, ci)
-    xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('E')[0]
     p = p.z_expectation.values[0]
-    assert xp.allclose(r, p, atol=atol)
+    assert np.allclose(r, p, atol=atol)
 
 @pytest.mark.parametrize('data', data)
 @pytest.mark.parametrize('ci', ci)
 def test_val_corr_var(data, ci, atol):
     p = val_corr_p(data, ci)
-    xp = cp.get_array_module(p.z_expectation.values)
     r = val_corr_r(data, ci).rx('Var')[0]
     p = p.z_variance.values[0]
-    assert xp.allclose(r, p, atol=atol)
+    assert np.allclose(r, p, atol=atol)

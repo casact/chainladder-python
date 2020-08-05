@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import copy
 import numpy as np
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from chainladder.utils import WeightedRegression
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -17,7 +16,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         to development objects with an additional set of tail statistics'''
     def fit(self, X, y=None, sample_weight=None):
         obj = copy.copy(X)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         if 'ldf_'not in obj:
             obj = Development().fit_transform(obj)
         self._ave_period = {'Y': (1, 12),
@@ -52,7 +51,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def transform(self, X):
         X_new = copy.deepcopy(X)
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         X_new.std_err_.values = xp.concatenate(
             (X_new.std_err_.values,
              self.std_err_.values[..., -1:]), -1)
@@ -99,7 +98,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         return self.transform(X)
 
     def _get_tail_prediction(self, tail_ldf):
-        xp = cp.get_array_module(tail_ldf)
+        xp = self.ldf_.get_array_module()
         accum_point = self.ldf_.shape[-1] - 1
         ave = 1 + tail_ldf[..., :accum_point]
         all = xp.prod(1 + tail_ldf[..., accum_point:], -1)[..., None]
@@ -116,12 +115,12 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _apply_decay(self, X, tail, attach_idx=None):
         ''' Created Tail vector with decay over time. '''
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         if attach_idx:
             decay_range = self.ldf_.shape[-1] - attach_idx
         else:
             decay_range = self.ldf_.shape[-1]-X.shape[-1]+1
-        if xp.max(tail) == 1.0:
+        if xp.max(xp.array(tail)) == 1.0:
             ldfs = 1 + 0*(self.decay**xp.arange(1000))
         else:
             ldfs = 1+self._get_initial_ldf(xp, tail)*(self.decay**xp.arange(1000))
@@ -144,12 +143,12 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         """
         from chainladder.utils.utility_functions import num_to_nan
         time_pd = self._get_tail_weighted_time_period(X)
-        xp = cp.get_array_module(X.sigma_.values)
-        reg = WeightedRegression(axis=3).fit(None, xp.log(X.sigma_.values), None)
+        xp = X.sigma_.get_array_module()
+        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(X.sigma_.values), None)
         sigma_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
         y = X.std_err_.values
         y = num_to_nan(y)
-        reg = WeightedRegression(axis=3).fit(None, xp.log(y), None)
+        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y), None)
         std_err_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
         if xp == sp:
             sigma_ = sp(sigma_, fill_value=X.values.fill_value)
@@ -163,14 +162,14 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         Returns: float32
         """
         y = X.ldf_.values.copy()
-        xp = cp.get_array_module(y)
+        xp = X.ldf_.get_array_module()
         if xp == sp:
             y = y.todense()
         y[y <= 1] = xp.nan
-        reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
+        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
         tail = xp.prod(self.ldf_.values[..., -self._ave_period[0]-1:],
                        -1, keepdims=True)
-        reg = WeightedRegression(axis=3).fit(None, xp.log(y - 1), None)
+        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
         time_pd = (xp.log(tail-1)-reg.intercept_)/reg.slope_
         if xp == sp:
             y = sp(y)

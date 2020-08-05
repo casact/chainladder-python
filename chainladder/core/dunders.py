@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import copy
 import warnings
@@ -15,8 +14,8 @@ class TriangleDunders:
     '''
     def _validate_arithmetic(self, other):
         ''' Common functionality BEFORE arithmetic operations '''
+        xp = self.get_array_module()
         obj = copy.deepcopy(self)
-        xp = cp.get_array_module(obj.values)
         other = other if type(other) in [int, float] else copy.deepcopy(other)
         if isinstance(other, TriangleDunders):
             self._compatibility_check(obj, other)
@@ -79,7 +78,7 @@ class TriangleDunders:
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
         from chainladder.utils.utility_functions import num_to_nan
-        xp = cp.get_array_module(obj.values)
+        xp = self.get_array_module(obj.values)
         if xp != sp:
             obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
         obj.num_to_nan()
@@ -144,7 +143,7 @@ class TriangleDunders:
         return x, y
 
     def __add__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(obj.values) + xp.nan_to_num(other)
         return self._arithmetic_cleanup(obj, other)
@@ -153,14 +152,14 @@ class TriangleDunders:
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(obj.values) - \
             xp.nan_to_num(other)
         return self._arithmetic_cleanup(obj, other)
 
     def __rsub__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(other) - \
             xp.nan_to_num(obj.values)
@@ -183,7 +182,7 @@ class TriangleDunders:
         return obj
 
     def __mul__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(obj.values)*other
         return self._arithmetic_cleanup(obj, other)
@@ -192,20 +191,20 @@ class TriangleDunders:
         return self if other == 1 else self.__mul__(other)
 
     def __pow__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(obj.values)**other
         return self._arithmetic_cleanup(obj, other)
 
     def __round__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(obj.values).round(other)
         return self._arithmetic_cleanup(obj, other)
 
 
     def __truediv__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
         obj.values = xp.nan_to_num(obj.values) / other
         return self._arithmetic_cleanup(obj, other)
@@ -217,7 +216,7 @@ class TriangleDunders:
         return obj
 
     def __eq__(self, other):
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         return xp.all(xp.nan_to_num(self.values) == xp.nan_to_num(other.values))
 
     def __contains__(self, value):

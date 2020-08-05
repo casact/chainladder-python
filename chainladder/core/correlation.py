@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from scipy.stats import binom, norm, rankdata
 from scipy.special import comb
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import pandas as pd
 import numpy as np
@@ -39,7 +38,7 @@ class DevelopmentCorrelation:
     """
     def __init__(self, triangle, p_critical=0.5):
         self.p_critical = p_critical
-        xp = cp.get_array_module(triangle.values)
+        xp = triangle.get_array_module()
         m1 = triangle.link_ratio
         m1_val = xp.apply_along_axis(rankdata, 2, m1.values)*(m1.values*0+1)
         m2 = triangle[triangle.valuation<triangle.valuation_date].link_ratio
@@ -112,7 +111,7 @@ class ValuationCorrelation:
 
         self.p_critical = p_critical
         self.total = total
-        xp = cp.get_array_module(triangle.values)
+        xp = triangle.get_array_module()
         lr = triangle.link_ratio
         m1 = xp.apply_along_axis(rankdata, 2, lr.values)*(lr.values*0+1)
         med = xp.nanmedian(m1, axis=2, keepdims=True)

@@ -5,7 +5,6 @@ from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase
 from chainladder.development.clark import ClarkLDF
 import numpy as np
-from chainladder.utils.cupy import cp
 
 
 class TailClark(TailBase):
@@ -65,7 +64,7 @@ class TailClark(TailBase):
         """
         super().fit(X, y, sample_weight)
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
-        xp = cp.get_array_module(X.values)
+        xp = X.get_array_module()
         age_offset = {'Y':6., 'Q':1.5, 'M':0.5}[X.development_grain]
         fitted = 1/model.G_(xp.array(
             [self._ave_period[1]+X.ddims-age_offset

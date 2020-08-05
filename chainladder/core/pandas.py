@@ -10,7 +10,7 @@ import copy
 
 class TriangleGroupBy:
     def __init__(self, old_obj, by):
-        xp = cp.get_array_module(old_obj.values)
+        xp = old_obj.get_array_module()
         self.orig_obj = copy.deepcopy(old_obj)
         missing = None
         if xp == sp:
@@ -36,6 +36,28 @@ class TriangleGroupBy:
             if missing is not None:
                 groupby = groupby.append(missing[groupby.columns])
             self.obj = groupby.groupby(by+[1,2,3])['values']
+        elif xp == cp != np:
+            obj = copy.deepcopy(old_obj)
+            obj.values = xp.nan_to_num(obj.values)
+            if by != -1:
+                indices = obj.index.groupby(by).indices
+                new_index = obj.index.groupby(by).count().index
+            else:
+                indices = {'All': np.arange(len(obj.index))}
+                new_index = pd.Index(['All'], name='All')
+            groups = [indices[item] for item in sorted(list(indices.keys()))]
+            xp = obj.get_array_module()
+            old_k_by_new_k = xp.zeros(
+                (len(obj.index.index), len(groups)), dtype='bool')
+            for num, item in enumerate(groups):
+                old_k_by_new_k[:, num][item] = True
+            old_k_by_new_k = xp.swapaxes(old_k_by_new_k, 0, 1)
+            for i in range(3):
+                old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
+            self.old_k_by_new_k = old_k_by_new_k
+            obj.kdims = np.array(list(new_index))
+            obj.key_labels = list(new_index.names)
+            self.obj = obj
         else:
             if by != -1:
                 self.idx = self.orig_obj.index.set_index(by).index
@@ -62,14 +84,16 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if self.shape[:2] == (1, 1):
             return self._repr_format()
         elif len(axes) in [1, 2]:
             odims, ddims = self._repr_date_axes()
-            if xp == sp:
+            if self.array_backend == 'sparse':
                 tri = np.squeeze(self.values.todense())
+            elif self.array_backend == 'cupy':
+                tri = np.squeeze(cp.asnumpy(self.values))
             else:
                 tri = xp.squeeze(self.values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
@@ -108,7 +132,7 @@ class TrianglePandas:
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
         """
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         obj = self.sum(axis=0).sum(axis=1)
         odim = list((xp.nansum(obj.values[0, 0, :], -1) != 0).astype('int'))
         min_odim = obj.origin[odim.index(1)]
@@ -187,7 +211,7 @@ class TrianglePandas:
         -------
             New Triangle with appended data.
         """
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         return_obj = copy.deepcopy(self)
         return_obj.kdims = (return_obj.index.append(other.index)).values
         try:
@@ -273,11 +297,10 @@ def add_triangle_agg_func(cls, k, v):
                 axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
             else:
                 axis = self._get_axis(axis)
-            xp = cp.get_array_module(obj.values)
+            xp = obj.get_array_module()
             func = getattr(xp, v)
             kwargs.update({'keepdims': True})
             obj.values = func(obj.values, axis=axis, *args, **kwargs)
-
             if axis == 0 and obj.values.shape[axis] == 1:
                 obj.kdims = np.array([['(All)']*len(obj.key_labels)])
             if axis == 1 and obj.values.shape[axis] == 1:
@@ -300,7 +323,7 @@ def add_groupby_agg_func(cls, k, v):
     ''' Aggregate Overrides in GroupBy '''
     def agg_func(self, axis=1, *args, **kwargs):
         obj = copy.deepcopy(self.obj)
-        xp = cp.get_array_module(self.orig_obj.values)
+        xp = self.orig_obj.get_array_module()
         obj = getattr(self.obj, v)(*args, **kwargs)
         if xp == sp:
             obj = obj.reset_index()
@@ -311,6 +334,20 @@ def add_groupby_agg_func(cls, k, v):
             self.orig_obj.values.shape = tuple([len(new_idx)] + list(self.orig_obj.values.shape[1:]))
             self.orig_obj.kdims = np.array(new_idx.index)
             self.orig_obj.key_labels = list(new_idx.index.names)
+        elif xp == cp != np:
+            obj = copy.deepcopy(self.obj)
+            x = xp.broadcast_to(
+                self.obj.values,
+                (self.old_k_by_new_k.shape[0], *self.obj.values.shape)) * \
+                self.old_k_by_new_k
+            ignore_vector = xp.sum(np.isnan(x), axis=1, keepdims=True) == \
+                x.shape[1]
+            x = xp.where(ignore_vector, 0, x)
+            x[~xp.isfinite(x)] = np.nan
+            obj.values = \
+                getattr(xp, v)(x, axis=1, *args, **kwargs)
+            obj.values[obj.values == 0] = np.nan
+            return obj
         else:
             self.orig_obj.values = obj.values.reshape(
                 len(self.idx.unique()), *self.orig_obj.shape[1:])

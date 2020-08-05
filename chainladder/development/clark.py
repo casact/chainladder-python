@@ -5,7 +5,6 @@ from chainladder.development.base import DevelopmentBase
 import copy
 import numpy as np
 import pandas as pd
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from scipy.optimize import minimize
 
@@ -57,7 +56,7 @@ class ClarkLDF(DevelopmentBase):
 
     def _G(self, age, theta=None, omega=None):
         """ Growth function """
-        xp = cp.get_array_module(age)
+        xp = self.incremental_act_.get_array_module()
         if theta is None:
             theta = self.theta_.values[..., None, None]
         if omega is None:
@@ -86,7 +85,7 @@ class ClarkLDF(DevelopmentBase):
         Triangle
             A Triangle object with growth curve values
         """
-        xp = cp.get_array_module(self.incremental_act_.values)
+        xp = self.incremental_act_.get_array_module()
         if type(age) in [int, float, xp.int64, xp.float64]:
             age = xp.array([age]).astype('float64')
         if type(age) == list:
@@ -114,11 +113,11 @@ class ClarkLDF(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        oxp = cp.get_array_module(X.values)
-        X = X.to_dense()
-        xp = cp.get_array_module(X.values)
+        oxp = X.get_array_module()
+        X = X.set_backend('numpy', inplace=True)
+        xp = X.get_array_module()
         obj = copy.copy(X)
-        obj = obj.to_dense()
+        obj = obj.set_backend('numpy', inplace=True)
         self.incremental_act_ = obj.cum_to_incr()
         self.method_ = 'ldf' if sample_weight is None else 'cape_cod'
         age_offset = {'Y':6., 'Q':1.5, 'M':0.5}[X.development_grain]
@@ -128,7 +127,7 @@ class ClarkLDF(DevelopmentBase):
             xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)]).astype('float64')
         age_end = age - age_offset
         age_start = xp.maximum(age_end - age_interval,0).astype('float64')
-        origin = xp.repeat(X.odims, len(X.ddims))[~xp.isnan(nans)]
+        origin = np.repeat(X.odims, len(X.ddims))[~xp.isnan(nans)]
 
         latest_diagonal = X[X.valuation==X.valuation_date].sum('origin')
         latest_age = latest_diagonal.ddims.astype('float64')
@@ -228,7 +227,7 @@ class ClarkLDF(DevelopmentBase):
 
     @property
     def scale_(self):
-        xp = cp.get_array_module(self.incremental_fits_.values)
+        xp = self.incremental_fits_.get_array_module()
         scale = (((self.incremental_fits_ - self.incremental_act_)**2) /
             self.incremental_fits_).sum('origin').sum('development')
         df = xp.nansum(self.incremental_fits_.nan_triangle) - 2

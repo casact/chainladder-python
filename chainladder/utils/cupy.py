@@ -17,13 +17,6 @@ except:
     import numpy as cp
     module = 'numpy'
 
-def get_array_module(*args, **kwargs):
-    """ default array module when cupy is not present """
-    if isinstance(args[0], sp):
-        return sp
-    else:
-        return np
-
 def nansum(a, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
     return cp.sum(cp.nan_to_num(a), *args, **kwargs)
@@ -51,9 +44,3 @@ if module == 'cupy' and int(cp.__version__.split('.')[0]) < 7:
     cp.nanmedian = nanmedian
     cp.nanpercentile = nanpercentile
     cp.unique = unique
-
-if module == 'numpy':
-    cp.get_array_module = get_array_module
-
-if module == 'sparse':
-    cp.get_array_module = sp

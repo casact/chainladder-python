@@ -131,6 +131,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             if cp == np:
                 warnings.warn('Unable to load CuPY.  Using numpy instead.')
                 self.array_backend = 'numpy'
+            values = values.todense()
             self.values = xp.array(values, dtype=kwargs.get('dtype', None))
         self.is_cumulative = cumulative
 
@@ -182,7 +183,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
            appropriate placement of NANs in the triangle for future valuations.
            This becomes useful when managing array arithmetic.
         '''
-        xp = cp.get_array_module(self.values)
+        xp = self.get_array_module()
         if min(self.values.shape[2:]) == 1:
             return xp.ones(self.values.shape[2:], dtype='float16')
         val_array = np.array(self.valuation).reshape(self.shape[-2:], order='f')
@@ -200,7 +201,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     def _expand_dims(self, tri_2d):
         '''Expands from one 2D triangle to full 4D object'''
-        xp = cp.get_array_module(tri_2d)
+        xp = self.get_array_module(tri_2d)
         return xp.broadcast_to(
             tri_2d, (len(self.kdims), len(self.vdims), *tri_2d.shape))
 
@@ -293,3 +294,19 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
     def num_to_nan(self):
         from chainladder.utils.utility_functions import num_to_nan
         self.values = num_to_nan(self.values)
+
+    def get_array_module(self, arr=None):
+        import numpy as np
+        backend = self.array_backend if arr is None else \
+                  arr.__class__.__module__.split('.')[0]
+        if backend == 'cupy':
+            from chainladder.utils.cupy import cp
+            return cp
+        elif backend == 'sparse':
+            from chainladder.utils.sparse import sp
+            return sp
+        elif backend == 'numpy':
+            import numpy as np
+            return np
+        else:
+            raise ValueError('Array backend is invalid or not properly set.')

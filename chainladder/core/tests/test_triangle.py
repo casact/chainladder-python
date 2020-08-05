@@ -1,7 +1,6 @@
 import chainladder as cl
 import pandas as pd
 import numpy as np
-from chainladder.utils.cupy import cp
 import copy
 
 tri = cl.load_sample('clrd')
@@ -43,18 +42,17 @@ def test_arithmetic_union():
 def test_to_frame_unusual():
     a = tri.groupby(['LOB']).sum().latest_diagonal['CumPaidLoss'].to_frame().values
     b = tri.latest_diagonal['CumPaidLoss'].groupby(['LOB']).sum().to_frame().values
-    xp = cp.get_array_module(a)
-    xp.testing.assert_array_equal(a, b)
+    np.testing.assert_array_equal(a, b)
 
 
 def test_link_ratio():
-    xp = cp.get_array_module(raa.values)
+    xp = raa.get_array_module()
     assert xp.sum(xp.nan_to_num(raa.link_ratio.values*raa.values[:,:,:-1,:-1]) -
                   xp.nan_to_num(raa.values[:,:,:-1,1:]))<1e-5
 
 
 def test_incr_to_cum():
-    xp = cp.get_array_module(tri.values)
+    xp = tri.get_array_module()
     xp.testing.assert_array_equal(tri.cum_to_incr().incr_to_cum().values, tri.values)
 
 
@@ -75,7 +73,7 @@ def test_multilevel_index_groupby_sum2():
 
 
 def test_boolean_groupby_eq_groupby_loc():
-    xp = cp.get_array_module(tri.values)
+    xp = tri.get_array_module()
     xp.testing.assert_array_equal(tri[tri['LOB']=='ppauto'].sum().values,
                         tri.groupby('LOB').sum().loc['ppauto'].values)
 
@@ -102,12 +100,12 @@ def test_assign_existing_col():
 
 def test_arithmetic_across_keys():
     x = cl.load_sample('auto')
-    xp = cp.get_array_module(x.values)
+    xp = x.get_array_module()
     xp.testing.assert_array_equal((x.sum()-x.iloc[0]).values, x.iloc[1].values)
 
 def test_grain():
     actual = qtr.iloc[0,0].grain('OYDY').values[0,0,:,:]
-    xp = cp.get_array_module(actual)
+    xp = qtr.get_array_module()
     expected = xp.array([[  44.,  621.,  950., 1020., 1070., 1069., 1089., 1094., 1097.,
         1099., 1100., 1100.],
        [  42.,  541., 1052., 1169., 1238., 1249., 1266., 1269., 1296.,
@@ -144,7 +142,7 @@ def test_printer():
 def test_value_order():
     a = tri[['CumPaidLoss','BulkLoss']]
     b = tri[['BulkLoss', 'CumPaidLoss']]
-    xp = cp.get_array_module(a.values)
+    xp = a.get_array_module()
     xp.testing.assert_array_equal(a.values[:,-1], b.values[:, 0])
 
 
@@ -164,18 +162,18 @@ def test_arithmetic_2():
 
 
 def test_rtruediv():
-    xp = cp.get_array_module(raa.values)
+    xp = raa.get_array_module()
     assert xp.nansum(abs(((1/raa)*raa).values[0,0] - raa.nan_triangle))< .00001
 
 
 def test_shift():
     x = cl.load_sample('quarterly').iloc[0,0]
-    xp = cp.get_array_module(x.values)
+    xp = x.get_array_module()
     xp.testing.assert_array_equal(x[x.valuation<=x.valuation_date].values, x.values)
 
 def test_quantile_vs_median():
     clrd = cl.load_sample('clrd')
-    xp = cp.get_array_module(clrd.values)
+    xp = clrd.get_array_module()
     xp.testing.assert_array_equal(clrd.quantile(.5)['CumPaidLoss'].values,
                             clrd.median()['CumPaidLoss'].values)
 
@@ -208,24 +206,24 @@ def test_grain_increm_arg():
 
 
 def test_valdev1():
-    a = cl.load_sample('quarterly').dev_to_val().val_to_dev().values
-    b = cl.load_sample('quarterly').values
-    xp = cp.get_array_module(a)
-    xp.testing.assert_array_equal(a,b)
+    a = cl.load_sample('quarterly').dev_to_val().val_to_dev()
+    b = cl.load_sample('quarterly')
+    xp = a.get_array_module()
+    xp.testing.assert_array_equal(a.values, b.values)
 
 
 def test_valdev2():
-    a = cl.load_sample('quarterly').dev_to_val().grain('OYDY').val_to_dev().values
-    b = cl.load_sample('quarterly').grain('OYDY').values
-    xp = cp.get_array_module(a)
-    xp.testing.assert_array_equal(a,b)
+    a = cl.load_sample('quarterly').dev_to_val().grain('OYDY').val_to_dev()
+    b = cl.load_sample('quarterly').grain('OYDY')
+    xp = a.get_array_module()
+    xp.testing.assert_array_equal(a.values, b.values)
 
 
 def test_valdev3():
-    a = cl.load_sample('quarterly').grain('OYDY').dev_to_val().val_to_dev().values
-    b = cl.load_sample('quarterly').grain('OYDY').values
-    xp = cp.get_array_module(a)
-    xp.testing.assert_array_equal(a,b)
+    a = cl.load_sample('quarterly').grain('OYDY').dev_to_val().val_to_dev()
+    b = cl.load_sample('quarterly').grain('OYDY')
+    xp = a.get_array_module()
+    xp.testing.assert_array_equal(a.values ,b.values)
 
 
 #def test_valdev4():
@@ -236,18 +234,18 @@ def test_valdev3():
 
 
 def test_valdev5():
-    xp = cp.get_array_module(raa.values)
+    xp = raa.get_array_module()
     xp.testing.assert_array_equal(raa[raa.valuation>='1989'].latest_diagonal.values,
                             raa.latest_diagonal.values)
 
 def test_valdev6():
-    xp = cp.get_array_module(raa.values)
+    xp = raa.get_array_module()
     xp.testing.assert_array_equal(raa.grain('OYDY').latest_diagonal.values,
                             raa.latest_diagonal.grain('OYDY').values)
 
 def test_valdev7():
     tri = cl.load_sample('quarterly')
-    xp = cp.get_array_module(tri.values)
+    xp = tri.get_array_module()
     x = cl.Chainladder().fit(tri).full_expectation_
     assert xp.sum(x.dev_to_val().val_to_dev().values-x.values) < 1e-5
 
@@ -263,7 +261,7 @@ def test_dropna():
 
 def test_commutative():
     tri = cl.load_sample('quarterly')
-    xp = cp.get_array_module(tri.values)
+    xp = tri.get_array_module()
     full = cl.Chainladder().fit(tri).full_expectation_
     assert tri.grain('OYDY').val_to_dev() == tri.val_to_dev().grain('OYDY')
     assert tri.cum_to_incr().grain('OYDY').val_to_dev() == tri.val_to_dev().cum_to_incr().grain('OYDY')

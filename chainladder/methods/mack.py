@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import pandas as pd
 import copy
@@ -74,7 +73,7 @@ class MackChainladder(Chainladder):
     def full_std_err_(self):
         from chainladder.utils.utility_functions import num_to_nan
         obj = copy.copy(self.X_)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         full = self.full_triangle_
         tri_array = full.values
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
@@ -99,7 +98,7 @@ class MackChainladder(Chainladder):
     @property
     def total_process_risk_(self):
         obj = copy.copy(self.process_risk_)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         obj.values = xp.sqrt(xp.nansum(self.process_risk_.values**2, 2))
         obj.values = obj.values[:, :, None,...]
         obj.odims = ['tot_proc_risk']
@@ -108,7 +107,7 @@ class MackChainladder(Chainladder):
 
     def _mack_recursion(self, est):
         obj = copy.copy(self.X_)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         nans = self.X_.nan_triangle[None, None]
         nans = nans * xp.ones(self.X_.shape)
         nans = xp.concatenate(
@@ -138,7 +137,7 @@ class MackChainladder(Chainladder):
             self.total_parameter_risk_ = obj
 
     def _get_risk(self, nans, risk_arr, std_err):
-        xp = cp.get_array_module(self._full_triangle_.values)
+        xp = self._full_triangle_.get_array_module()
         full_tri = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)]
         t1_t = (full_tri * std_err)**2
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
@@ -155,7 +154,7 @@ class MackChainladder(Chainladder):
 
     def _get_tot_param_risk(self, risk_arr):
         """ This assumes triangle symmertry """
-        xp = cp.get_array_module(self._full_triangle_.values)
+        xp = self._full_triangle_.get_array_module()
         t1 = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)] - \
             xp.nan_to_num(self.X_.values) + \
             xp.nan_to_num(self.X_[self.X_.valuation==self.X_.valuation_date].values)
@@ -175,7 +174,7 @@ class MackChainladder(Chainladder):
     @property
     def mack_std_err_(self):
         obj = copy.copy(self.parameter_risk_)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         obj.values = xp.sqrt(self.parameter_risk_.values**2 +
                              self.process_risk_.values**2)
         obj._set_slicers()
@@ -184,7 +183,7 @@ class MackChainladder(Chainladder):
     @property
     def total_mack_std_err_(self):
         obj = copy.copy(self.X_.latest_diagonal)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         obj.values = xp.sqrt(self.total_process_risk_.values**2 +
                              self.total_parameter_risk_.values**2)
         obj.values = obj.values[..., -1:]
@@ -196,7 +195,7 @@ class MackChainladder(Chainladder):
     def summary_(self):
         # This might be better as a dataframe
         obj = copy.copy(self.X_)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         obj.values = xp.concatenate(
             (self.X_.latest_diagonal.values,
              self.ibnr_.values,

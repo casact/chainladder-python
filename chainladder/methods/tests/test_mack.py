@@ -1,5 +1,4 @@
 import numpy as np
-from chainladder.utils.cupy import cp
 import pytest
 import chainladder as cl
 from rpy2.robjects.packages import importr
@@ -44,9 +43,9 @@ def test_mack_to_triangle():
 @pytest.mark.parametrize('tail', tail)
 def test_mack_full_std_err(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('F.se')
-    p = mack_p(data, averages[0], est_sigma[0], tail).full_std_err_.to_dense().values[0, 0, :, :]
-    p = p[:, :-1] if not tail else p
-    xp = cp.get_array_module(p)
+    p = mack_p(data, averages[0], est_sigma[0], tail).full_std_err_
+    xp = p.get_array_module()
+    p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
@@ -57,9 +56,9 @@ def test_mack_full_std_err(data, averages, est_sigma, tail, atol):
 @pytest.mark.parametrize('tail', tail)
 def test_mack_process_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Mack.ProcessRisk')
-    p = mack_p(data, averages[0], est_sigma[0], tail).process_risk_.to_dense().values[0, 0, :, :]
-    p = p[:, :-1] if not tail else p
-    xp = cp.get_array_module(p)
+    p = mack_p(data, averages[0], est_sigma[0], tail).process_risk_
+    xp = p.get_array_module()
+    p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
@@ -70,9 +69,9 @@ def test_mack_process_risk(data, averages, est_sigma, tail, atol):
 @pytest.mark.parametrize('tail', tail)
 def test_mack_parameter_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Mack.ParameterRisk')
-    p = mack_p(data, averages[0], est_sigma[0], tail).parameter_risk_.to_dense().values[0, 0, :, :]
-    p = p[:, :-1] if not tail else p
-    xp = cp.get_array_module(p)
+    p = mack_p(data, averages[0], est_sigma[0], tail).parameter_risk_
+    xp = p.get_array_module()
+    p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
@@ -83,9 +82,9 @@ def test_mack_parameter_risk(data, averages, est_sigma, tail, atol):
 @pytest.mark.parametrize('tail', tail)
 def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Total.ProcessRisk')
-    p = mack_p(data, averages[0], est_sigma[0], tail).total_process_risk_.to_dense().values[0, 0, :, :]
-    p = p[:, :-1] if not tail else p
-    xp = cp.get_array_module(p)
+    p = mack_p(data, averages[0], est_sigma[0], tail).total_process_risk_
+    xp = p.get_array_module()
+    p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = np.array(df[0])[None, ...]
     assert xp.allclose(r, p, atol=atol)
 
@@ -96,9 +95,9 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
 @pytest.mark.parametrize('tail', tail)
 def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Total.ParameterRisk')
-    p = mack_p(data, averages[0], est_sigma[0], tail).total_parameter_risk_.to_dense().values[0, 0, :, :]
-    p = p[:, :-1] if not tail else p
-    xp = cp.get_array_module(p)
+    p = mack_p(data, averages[0], est_sigma[0], tail).total_parameter_risk_
+    xp = p.get_array_module()
+    p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.expand_dims(np.array(df[0]),0)
     assert xp.allclose(r, p, atol=atol)
 
@@ -109,8 +108,8 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
 @pytest.mark.parametrize('tail', tail)
 def test_mack_mack_std_err_(data, averages, est_sigma, tail, atol):
     df = mack_r(data, averages[1], est_sigma[1], tail).rx('Mack.S.E')
-    p = mack_p(data, averages[0], est_sigma[0], tail).mack_std_err_.to_dense().values[0, 0, :, :]
-    p = p[:, :-1] if not tail else p
-    xp = cp.get_array_module(p)
+    p = mack_p(data, averages[0], est_sigma[0], tail).mack_std_err_
+    xp = p.get_array_module()
+    p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
