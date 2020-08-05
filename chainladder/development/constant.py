@@ -54,7 +54,7 @@ class DevelopmentConstant(DevelopmentBase):
         """
         from chainladder import ULT_VAL
         obj = copy.copy(X)
-        xp = cp.get_array_module(obj.values)
+        xp = obj.get_array_module()
         obj.values = xp.ones(X.shape)[..., 0:1, :-1]
         if callable(self.patterns):
             if len(obj.key_labels) == 1 and self.callable_axis==0:
