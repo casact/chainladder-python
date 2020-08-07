@@ -89,16 +89,13 @@ class TailCurve(TailBase):
             _y = self.ldf_.values[..., :X.shape[-1]-1].todense()
         else:
             _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
-        _w = xp.zeros(_y.shape)
+        _w = np.zeros(_y.shape)
         _w[..., fit_period] = 1.0
         if self.errors == 'ignore':
             _w[_y <= 1.0] = 0
             _y[_y <= 1.0] = 1.01
         elif self.errors == 'raise' and xp.any(y < 1.0):
             raise ZeroDivisionError('Tail fit requires all LDFs to be greater than 1.0')
-        if xp == sp:
-            _w = num_to_nan(sp(_w))
-            _y = num_to_nan(sp(_y))
         _y = xp.log(_y - 1)
         n_obs = X.shape[-1]-1
         k, v = X.shape[:2]

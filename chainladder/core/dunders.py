@@ -16,7 +16,10 @@ class TriangleDunders:
         ''' Common functionality BEFORE arithmetic operations '''
         xp = self.get_array_module()
         obj = copy.deepcopy(self)
-        other = other if type(other) in [int, float] else copy.deepcopy(other)
+        if type(other) in [int, float]:
+            other = other*self.nan_triangle
+        else:
+            other = copy.deepcopy(other)
         if isinstance(other, TriangleDunders):
             self._compatibility_check(obj, other)
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
@@ -78,9 +81,6 @@ class TriangleDunders:
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
         from chainladder.utils.utility_functions import num_to_nan
-        xp = self.get_array_module(obj.values)
-        if xp != sp:
-            obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
         obj.num_to_nan()
         return obj
 

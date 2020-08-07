@@ -195,10 +195,13 @@ def num_to_nan(arr):
     """ Function that turns all zeros to nan values in an array """
     backend = arr.__class__.__module__.split('.')[0]
     if backend == 'sparse':
-        arr.fill_value = sp.nan
-        arr.coords = arr.coords[:, arr.data!=0]
-        arr.data = arr.data[arr.data!=0]
-        arr = sp(arr)
+        if arr.fill_value == 0  or sp.isnan(arr.fill_value):
+            arr.fill_value = sp.nan
+            arr.coords = arr.coords[:, arr.data!=0]
+            arr.data = arr.data[arr.data!=0]
+            arr = sp(arr)
+        else:
+            arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=sp.nan)
     else:
         nan = np.nan if backend == 'numpy' else cp.nan
         arr[arr == 0] = nan

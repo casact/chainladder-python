@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import copy
 import numpy as np
+from chainladder.utils.cupy import cp
+from chainladder.utils.sparse import sp
 
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
@@ -73,3 +75,79 @@ class Common:
             return _get_full_triangle(self.full_expectation_, self.X_)
         else:
             return _get_full_triangle(self.full_expectation_, self)
+
+    def set_backend(self, backend, inplace=False):
+        ''' Converts triangle array_backend.
+
+        Parameters
+        ----------
+        backend : str
+            Currently supported options are 'numpy', 'sparse', and 'cupy'
+        inplace : bool
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+            Triangle with updated array_backend
+        '''
+        from chainladder.utils.utility_functions import num_to_nan
+        if hasattr(self, 'array_backend'):
+            old_backend = self.array_backend
+        else:
+            if hasattr(self, 'ldf_'):
+                old_backend = self.ldf_.array_backend
+            else:
+                raise ValueError('Unable to determine array backend.')
+        if inplace:
+            if backend in ['numpy', 'sparse', 'cupy']:
+                if backend == 'numpy':
+                    if old_backend == 'sparse':
+                        if hasattr(self, 'values'):
+                            self.values = self.values.todense()
+                        for k, v in vars(self).items():
+                            if isinstance(v, Common):
+                                v.values = v.values.todense()
+                    if old_backend == 'cupy':
+                        if hasattr(self, 'values'):
+                            self.values = cp.asnumpy(self.values)
+                        for k, v in vars(self).items():
+                            if isinstance(v, Common):
+                                v.values = cp.asnumpy(v.values)
+                if backend == 'cupy':
+                    if old_backend == 'numpy':
+                        if hasattr(self, 'values'):
+                            self.values = cp.array(self.values)
+                        for k, v in vars(self).items():
+                            if isinstance(v, Common):
+                                v.values = cp.array(v.values)
+                    if old_backend == 'sparse':
+                        if hasattr(self, 'values'):
+                            self.values = cp.array(self.values.todense())
+                        for k, v in vars(self).items():
+                            if isinstance(v, Common):
+                                v.values = cp.array(v.values.todense())
+                if backend == 'sparse':
+                    if old_backend == 'numpy':
+                        if hasattr(self, 'values'):
+                            self.values = num_to_nan(sp(self.values))
+                        for k, v in vars(self).items():
+                            if isinstance(v, Common):
+                                v.values = num_to_nan(sp(v.values))
+                    if old_backend == 'cupy':
+                        if hasattr(self, 'values'):
+                            self.values = num_to_nan(sp(cp.asnumpy(self.values)))
+                        for k, v in vars(self).items():
+                            if isinstance(v, Common):
+                                v.values = num_to_nan(sp(cp.asnumpy(v.values)))
+                if hasattr(self, 'array_backend'):
+                    self.array_backend = backend
+                for k, v in vars(self).items():
+                    if isinstance(v, Common):
+                        v.array_backend = backend
+            else:
+                raise AttributeError(backend, 'backend is not supported.')
+            return self
+        else:
+            obj = copy.deepcopy(self)
+            return obj.set_backend(backend=backend, inplace=True)

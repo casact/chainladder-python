@@ -287,6 +287,18 @@ class TrianglePandas:
         return self.loc[self._idx_table().sort_index(*args, **kwargs) \
                             .reset_index()[self.key_labels]]
 
+    def exp(self):
+        xp = self.get_array_module()
+        obj = copy.deepcopy(self)
+        obj.values = xp.exp(obj.values)
+        return obj
+
+    def log(self):
+        xp = self.get_array_module()
+        obj = copy.deepcopy(self)
+        obj.values = xp.log(obj.values)
+        return obj
+
 
 
 def add_triangle_agg_func(cls, k, v):
