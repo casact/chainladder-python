@@ -73,15 +73,21 @@ class TriangleDunders:
                     obj_arr.coords[3] = obj_arr.coords[3] + ldl
                     other_arr.shape = obj_arr.shape = new_shape
                 obj.odims = np.array(odims.index)
-                obj.ddims = np.array(ddims.index)
+                if type(obj.ddims) == pd.DatetimeIndex:
+                    obj.ddims = pd.DatetimeIndex(ddims.index)
+                else:
+                    obj.ddims = np.array(ddims.index)
                 obj.values = obj_arr
                 other = other_arr
+        else:
+            other = xp.nan_to_num(other)
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
         from chainladder.utils.utility_functions import num_to_nan
         obj.num_to_nan()
+        obj.values = obj.values * obj.nan_triangle
         return obj
 
     def _compatibility_check(self, x, y):

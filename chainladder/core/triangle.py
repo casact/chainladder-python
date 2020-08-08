@@ -256,23 +256,13 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
+        from chainladder.utils.utility_functions import num_to_nan
         xp = self.get_array_module()
         if inplace:
             if not self.is_cumulative:
-                self.values = xp.cumsum(xp.nan_to_num(self.values), axis=3)
-
-                if xp != sp:
-
-                    self.values = self._expand_dims(self.nan_triangle)*self.values
-                else:
-                    valid = self.nan_triangle.coords
-                    valid = pd.Series(list(zip(valid[-2], valid[-1])))
-                    available = pd.Series(list(zip(self.values.coords[-2], self.values.coords[-1])))
-                    df = pd.DataFrame(self.values.coords.T)
-                    df['values'] = self.values.data
-                    df = df[pd.Series(zip(df[2],df[3])).isin(valid)]
-                    self.values.coords = df.iloc[:, :4].values.T
-                    self.values.data = df.iloc[:, -1].values
+                self.values = num_to_nan(
+                    xp.cumsum(xp.nan_to_num(self.values), axis=3)) * \
+                    self.nan_triangle[None, None, ...]
                 self.num_to_nan()
                 self.is_cumulative = True
                 self._set_slicers()

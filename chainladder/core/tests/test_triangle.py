@@ -317,8 +317,12 @@ def test_trend_on_vector():
     d = raa.latest_diagonal
     assert d.trend(.05, axis=2).to_frame().astype(int).iloc[0,0]==29216
 
-def latest_diagonal_val_to_dev():
+def test_latest_diagonal_val_to_dev():
     assert raa.latest_diagonal.val_to_dev()==raa[raa.valuation==raa.valuation_date]
 
-def vector_division():
+def test_vector_division():
     raa.latest_diagonal/raa
+
+def test_sumdiff_to_diffsum():
+    tri = cl.load_sample('clrd')['CumPaidLoss']
+    assert tri.cum_to_incr().incr_to_cum().sum() == tri.sum()

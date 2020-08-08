@@ -33,27 +33,15 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
             idx = ultimate.index[level].merge(
                 self.cdf_.index[level].reset_index(), how='left', on=level)['index'].values
-            cdf = self.cdf_.values[list(idx.astype(int)), ...]
+            cdf = self.cdf_.values[list(idx.astype(int)), ..., :ultimate.shape[-1]]
         else:
-            cdf = self.cdf_.values
+            cdf = self.cdf_.values[..., :ultimate.shape[-1]]
         if sample_weight:
-            x = (ultimate.sum(0) + sample_weight.sum(0).values)
-        else:
-            x = ultimate.sum(0)
-        val = x.valuation.unique().sort_values()
-        offset = {
-            'Y':{'Q': 4, 'M': 12, 'Y': 1},
-            'Q':{'Q': 1, 'M': 3},
-            'M': {'M': 1}}
-        x = x[x.valuation>=val[list(val==x.valuation_date).index(True) -
-              offset[x.origin_grain][x.development_grain]]].values
-        if xp == sp:
-            x.data = x.data*0+1
-        else:
-            x = x*0+1
-        ultimate.values = \
-            cdf[..., :ultimate.shape[-1]]*(x)
-        cdf = ultimate.latest_diagonal.values
+            ultimate = ultimate + sample_weight.values
+        ultimate = ultimate-ultimate[ultimate.valuation!=ultimate.valuation_date]
+        ultimate = ultimate / ultimate
+        cdf = ultimate * cdf
+        cdf = cdf.latest_diagonal.values
         return cdf
 
     def _set_ult_attr(self, ultimate):

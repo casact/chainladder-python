@@ -76,6 +76,7 @@ class Benktander(MethodBase):
 
     def _get_ultimate(self, X, sample_weight):
         xp = X.get_array_module()
+        from chainladder.utils.utility_functions import num_to_nan
         ultimate = copy.deepcopy(X)
 
         # Apriori
@@ -92,9 +93,9 @@ class Benktander(MethodBase):
         cdf = (1-1/cdf)[None]
         exponents = xp.arange(self.n_iters+1)
         exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
-        cdf = cdf ** exponents
+        cdf = num_to_nan(xp.nan_to_num(cdf) ** exponents) # High RAM
+        cdf = xp.nan_to_num(cdf)
         ultimate.values = (
             xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(X.latest_diagonal.values) +
             cdf[-1, ...] * xp.nan_to_num(apriori))
-
         return self._set_ult_attr(ultimate)

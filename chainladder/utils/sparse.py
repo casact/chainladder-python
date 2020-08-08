@@ -119,7 +119,7 @@ def cumfunc(a, axis, func):
         x = x.cumsum().reset_index()
     if func == 'cumprod':
         x = x.cumprod().reset_index()
-    x = x[x['y']>0]
+    x = x[x['y']!=0]
     a.coords = x[['0', '1', '2', '3']].values.T
     a.data = x['y'].values
     return sp(a)
