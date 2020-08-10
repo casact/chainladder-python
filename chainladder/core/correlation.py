@@ -38,7 +38,12 @@ class DevelopmentCorrelation:
     """
     def __init__(self, triangle, p_critical=0.5):
         self.p_critical = p_critical
+        if triangle.array_backend != 'numpy':
+            triangle = triangle.set_backend('numpy')
+        else:
+            triangle = copy.deepcopy(triangle)
         xp = triangle.get_array_module()
+
         m1 = triangle.link_ratio
         m1_val = xp.apply_along_axis(rankdata, 2, m1.values)*(m1.values*0+1)
         m2 = triangle[triangle.valuation<triangle.valuation_date].link_ratio
@@ -57,16 +62,10 @@ class DevelopmentCorrelation:
                          xp.sum(weight, axis=3))[..., None]
         idx = triangle._idx_table().index
         self.t_variance = 2/((I-2)*(I-3))
-        if xp == sp:
-            self.t = pd.DataFrame(
-                self.t[..., 0, 0].todense(), columns=triangle.vdims, index=idx)
-            self.t_expectation = pd.DataFrame(
-                t_expectation[..., 0, 0].todense(), columns=triangle.vdims, index=idx)
-        else:
-            self.t = pd.DataFrame(
-                self.t[..., 0, 0], columns=triangle.vdims, index=idx)
-            self.t_expectation = pd.DataFrame(
-                t_expectation[..., 0, 0], columns=triangle.vdims, index=idx)
+        self.t = pd.DataFrame(
+            self.t[..., 0, 0], columns=triangle.vdims, index=idx)
+        self.t_expectation = pd.DataFrame(
+            t_expectation[..., 0, 0], columns=triangle.vdims, index=idx)
         self.range = (norm.ppf(0.5-(1-p_critical)/2)*xp.sqrt(self.t_variance),
                       norm.ppf(0.5+(1-p_critical)/2)*xp.sqrt(self.t_variance))
         self.t_critical = (self.t_expectation<self.range[0]) | \
@@ -111,6 +110,10 @@ class ValuationCorrelation:
 
         self.p_critical = p_critical
         self.total = total
+        if triangle.array_backend != 'numpy':
+            triangle = triangle.set_backend('numpy')
+        else:
+            triangle = copy.deepcopy(triangle)
         xp = triangle.get_array_module()
         lr = triangle.link_ratio
         m1 = xp.apply_along_axis(rankdata, 2, lr.values)*(lr.values*0+1)

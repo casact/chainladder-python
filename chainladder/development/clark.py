@@ -113,23 +113,25 @@ class ClarkLDF(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        oxp = X.get_array_module()
-        X = X.set_backend('numpy', inplace=True)
-        xp = X.get_array_module()
-        obj = copy.copy(X)
-        obj = obj.set_backend('numpy', inplace=True)
+        backend = X.array_backend
+        if backend != 'numpy':
+            obj = X.set_backend('numpy')
+        else:
+            obj = copy.deepcopy(X)
+        xp = obj.get_array_module()
+        nan_triangle = obj.nan_triangle
+        ld = obj.latest_diagonal
         self.incremental_act_ = obj.cum_to_incr()
         self.method_ = 'ldf' if sample_weight is None else 'cape_cod'
         age_offset = {'Y':6., 'Q':1.5, 'M':0.5}[X.development_grain]
         age_interval = {'Y':12., 'Q':3., 'M':1.}[X.development_grain]
-        nans = X.nan_triangle.reshape(1, -1)[0]
+        nans = nan_triangle.reshape(1, -1)[0]
         age = X._expand_dims(
             xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)]).astype('float64')
         age_end = age - age_offset
         age_start = xp.maximum(age_end - age_interval,0).astype('float64')
         origin = np.repeat(X.odims, len(X.ddims))[~xp.isnan(nans)]
-
-        latest_diagonal = X[X.valuation==X.valuation_date].sum('origin')
+        latest_diagonal = obj[X.valuation==X.valuation_date].sum('origin')
         latest_age = latest_diagonal.ddims.astype('float64')
         latest_origin = X.odims
         latest_diagonal = latest_diagonal.values[..., 0, :]
@@ -139,7 +141,7 @@ class ClarkLDF(DevelopmentBase):
         sorted_index = xp.searchsorted(sorted_latest_origin, origin)
         map_index = xp.take(index, sorted_index, mode="clip")
 
-        increments = X.cum_to_incr().values.reshape(
+        increments = obj.cum_to_incr().values.reshape(
             X.shape[0], X.shape[1], -1, 1)[:,:, ~xp.isnan(nans), 0]
 
         params = []
@@ -187,19 +189,16 @@ class ClarkLDF(DevelopmentBase):
             self.elr_ = pd.DataFrame(
                 params[...,0, 2], index=table.index, columns=table.columns)
         ultimate_ = xp.swapaxes(
-            self._G(age=(latest_age-age_offset)[::-1]), -1, -2) * \
-             X.latest_diagonal.values
+            self._G(age=(latest_age-age_offset)[::-1]), -1, -2) * ld.values
         self.incremental_fits_ = copy.deepcopy(X)
+        self.incremental_fits_.array_backend = 'numpy'
         self.incremental_fits_.values = (
             1/self._G(X.ddims - age_offset) -
             1/self._G(xp.maximum(X.ddims - age_offset - age_interval,0))) * \
-            ultimate_[..., ::-1]*X.nan_triangle
+            ultimate_[..., ::-1]*nan_triangle
         self.incremental_fits_.is_cumulative = False
-        if oxp == sp:
-            self.incremental_fits_ = self.incremental_fits_.to_sparse()
-            self.ldf_ = self.ldf_.to_sparse()
-            self.sigma_ = self.sigma_.to_sparse()
-            self.std_err_ = self.std_err_.to_sparse()
+        if backend == 'cupy':
+            self = self.set_backend('cupy')
         return self
 
     def transform(self, X):

@@ -5,8 +5,7 @@ from chainladder.development.base import DevelopmentBase
 import copy
 import numpy as np
 import pandas as pd
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
+
 
 class DevelopmentConstant(DevelopmentBase):
     """ A Estimator that allows for including of external patterns into a
@@ -53,7 +52,10 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        obj = copy.copy(X)
+        if X.array_backend == 'sparse':
+            obj = X.set_backend('numpy')
+        else:
+            obj = copy.deepcopy(X)
         xp = obj.get_array_module()
         obj.values = xp.ones(X.shape)[..., 0:1, :-1]
         if callable(self.patterns):

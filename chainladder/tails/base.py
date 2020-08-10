@@ -15,8 +15,12 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     ''' Base class for all tail methods.  Tail objects are equivalent
         to development objects with an additional set of tail statistics'''
     def fit(self, X, y=None, sample_weight=None):
-        obj = copy.copy(X)
-        xp = obj.get_array_module()
+        if X.array_backend == 'sparse':
+            obj = X.set_backend('numpy')
+            xp = np
+        else:
+            xp = X.get_array_module()
+            obj = copy.copy(X)
         if 'ldf_'not in obj:
             obj = Development().fit_transform(obj)
         self._ave_period = {'Y': (1, 12),
@@ -34,8 +38,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.sigma_ = copy.copy(getattr(obj, 'sigma_', obj.cdf_*0))
         self.std_err_ = copy.copy(getattr(obj, 'std_err_', obj.cdf_*0))
         zeros = tail[..., 0:1, -1:]*0
-        if xp == sp:
-            zeros = sp(zeros)
         self.sigma_.values = xp.concatenate(
             (self.sigma_.values, zeros), -1)
         self.std_err_.values = xp.concatenate(
@@ -50,14 +52,15 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         return self
 
     def transform(self, X):
-        X_new = copy.deepcopy(X)
-        xp = X.get_array_module()
+        if 'ldf_'not in X:
+            X_new = Development().fit_transform(X)
+        else:
+            X_new = copy.deepcopy(X)
+        xp = X_new.ldf_.get_array_module() if X_new.ldf_.array_backend != 'sparse' else np
         X_new.std_err_.values = xp.concatenate(
             (X_new.std_err_.values,
              self.std_err_.values[..., -1:]), -1)
         extend = self.cdf_.values[..., -self._ave_period[0]-1:]*0+1
-        if xp == sp:
-            extend = sp(extend.todense(), fill_value=sp.nan)
         X_new.cdf_.values = xp.concatenate((X_new.cdf_.values, extend), -1)
         X_new.cdf_.values = X_new.cdf_.values * \
             self.cdf_.values[..., -self._ave_period[0]-1:-self._ave_period[0]]
@@ -78,25 +81,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         X_new.tail_ = TailBase._tail_(X_new)
         return X_new
 
-    def fit_transform(self, X, y=None, sample_weight=None):
-        """ Equivalent to fit(X).transform(X)
-
-        Parameters
-        ----------
-        X : Triangle-like
-            Set of LDFs based on the model.
-        y : Ignored
-        sample_weight : Ignored
-
-        Returns
-        -------
-            X_new : New triangle with transformed attributes.
-        """
-        self.fit(X)
-        if 'std_err_' not in X:
-            X = Development().fit_transform(X)
-        return self.transform(X)
-
     def _get_tail_prediction(self, tail_ldf):
         xp = self.ldf_.get_array_module()
         accum_point = self.ldf_.shape[-1] - 1
@@ -115,7 +99,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _apply_decay(self, X, tail, attach_idx=None):
         ''' Created Tail vector with decay over time. '''
-        xp = X.get_array_module()
+        xp = self.ldf_.get_array_module()
         if attach_idx:
             decay_range = self.ldf_.shape[-1] - attach_idx
         else:

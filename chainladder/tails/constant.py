@@ -67,7 +67,7 @@ class TailConstant(TailBase):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        xp = X.get_array_module()
+        xp = self.ldf_.get_array_module()
         tail = self.tail
         if self.attachment_age:
             attach_idx = xp.min(xp.where(X.ddims>=self.attachment_age))
@@ -75,7 +75,6 @@ class TailConstant(TailBase):
             attach_idx = len(X.ddims) - 1
         self = self._apply_decay(X, tail, attach_idx)
         obj = Development().fit_transform(X) if 'ldf_' not in X else X
-        xp = X.get_array_module()
         if xp.max(xp.array(self.tail)) != 1.0:
             sigma, std_err = self._get_tail_stats(obj)
             self.sigma_.values = xp.concatenate(

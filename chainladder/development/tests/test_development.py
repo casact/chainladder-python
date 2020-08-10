@@ -47,7 +47,7 @@ def test_drop2():
 
 def test_n_periods():
     d = cl.load_sample('usauto')['incurred']
-    xp = d.get_array_module()
+    xp = np if d.array_backend == 'sparse' else d.get_array_module()
     return xp.all(xp.around(xp.unique(
         cl.Development(n_periods=3, average='volume').fit(d).ldf_.values,
         axis=-2), 3).flatten() ==
@@ -84,7 +84,7 @@ def test_mack_std_err(data, averages, est_sigma, atol):
 
 def test_assymetric_development():
     quarterly = cl.load_sample('quarterly')['paid']
-    xp = quarterly.get_array_module()
+    xp = np if quarterly.array_backend == 'sparse' else quarterly.get_array_module()
     dev = cl.Development(n_periods=1, average='simple').fit(quarterly)
     dev2 = cl.Development(n_periods=1, average='regression').fit(quarterly)
     assert xp.allclose(dev.ldf_.values, dev2.ldf_.values, atol=1e-5)

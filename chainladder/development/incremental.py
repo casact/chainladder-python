@@ -58,9 +58,17 @@ class IncrementalAdditive(DevelopmentBase):
         from chainladder.utils.utility_functions import num_to_nan
         if (type(X.ddims) != np.ndarray):
             raise ValueError('Triangle must be expressed with development lags')
+        if X.array_backend == 'sparse':
+            X = X.set_backend('numpy')
+        else:
+            X = copy.deepcopy(X)
+        if sample_weight.array_backend == 'sparse':
+            sample_weight = sample_weight.set_backend('numpy')
+        else:
+            sample_weight = copy.deepcopy(sample_weight)
+        xp = X.get_array_module()
         sample_weight.is_cumulative = False
         obj = X.cum_to_incr()/sample_weight
-        xp = obj.get_array_module()
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods-1).fit(x).w_
         w_ = num_to_nan(w_)

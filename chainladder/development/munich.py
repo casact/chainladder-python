@@ -77,14 +77,16 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        oxp = X.get_array_module()
-        X = X.set_backend('numpy', inplace=True)
         if self.paid_to_incurred is None:
             raise ValueError('Must enter valid value for paid_to_incurred.')
-        obj = copy.deepcopy(X)
+        if X.array_backend == 'sparse':
+            obj = X.set_backend('numpy')
+        else:
+            obj = copy.deepcopy(X)
         xp = obj.get_array_module()
         self.xp = xp
-        missing = xp.nan_to_num(X.values)*X.nan_triangle==0
+        missing = xp.nan_to_num(obj.values)*obj.nan_triangle==0
+        self.rho_ = obj[obj.origin==obj.origin.min()]
         if len(xp.where(missing)[0]) > 0:
             if self.fillna:
                 from chainladder.methods import Chainladder
@@ -110,14 +112,7 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self._map = {
             (list(X.columns).index(x)): (num%2, num//2)
             for num, x in enumerate(np.array(self.paid_to_incurred).flatten())}
-        self.rho_ = X[X.origin==X.origin.min()]
         self.rho_.values = self._reshape('rho_sigma_')
-        if oxp == sp:
-            tris = ['ldf_', 'rho_', 'basic_cdf_', 'basic_sigma_',
-                    'resids_', 'q_resids_']
-            for item in tris:
-                setattr(self, item, getattr(self, item).to_sparse())
-        del self.xp
         return self
 
     def transform(self, X):
@@ -225,8 +220,8 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _get_munich_full_triangle_(
         self, p_to_i_X_, p_to_i_ldf_, p_to_i_sigma_, lambda_coef_, rho_sigma_, q_f_):
-        full_paid = np.nan_to_num(p_to_i_X_[0][..., 0:1])
-        xp = self.xp if hasattr(self, 'xp') else self.ldf_.get_array_module() 
+        xp = self.xp if hasattr(self, 'xp') else self.ldf_.get_array_module()
+        full_paid = xp.nan_to_num(p_to_i_X_[0][..., 0:1])
         full_incurred = p_to_i_X_[1][..., 0:1]
         for i in range(p_to_i_X_[0].shape[-1]-1):
             paid = (p_to_i_ldf_[0][..., i:i+1] +
@@ -289,8 +284,9 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         return obj
 
     def _reshape(self, measure):
+        xp = self.xp if hasattr(self, 'xp') else self.ldf_.get_array_module()
         map = self._map
-        return np.concatenate(
+        return xp.concatenate(
             [getattr(self, measure)[map[k][0],:,map[k][1]:map[k][1]+1,...]
              for k in range(len(map))], axis=1)
 

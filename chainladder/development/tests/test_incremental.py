@@ -1,11 +1,10 @@
 import chainladder as cl
-from chainladder.utils.cupy import cp
 import numpy as np
 
 
 def test_schmidt():
     tri = cl.load_sample('ia_sample')
-    xp = tri.get_array_module()
+    xp = np if tri.array_backend == 'sparse' else tri.get_array_module()
     ia = cl.IncrementalAdditive()
     answer = ia.fit_transform(tri.iloc[0, 0],
                               sample_weight=tri.iloc[0, 1].latest_diagonal)

@@ -610,9 +610,9 @@ class Triangle(TriangleBase):
                 val_df.iloc[:, -1] = val_df.iloc[:, -2] + unit_lag * ultimate_lag
                 valuation = pd.PeriodIndex(val_df.unstack().values)
             val_start, val_end = val_vector(start, end, valuation)
-            trend = (1 + trend)**-(
+            trend = xp.array((1 + trend)**-(
                 pd.Series(val_end-val_start)
-                .dt.days.values.reshape(self.shape[-2:], order='f')/365.25)
+                .dt.days.values.reshape(self.shape[-2:], order='f')/365.25))
         obj = copy.deepcopy(self)
         obj.values = obj.values*trend
         return obj

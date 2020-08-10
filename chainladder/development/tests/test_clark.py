@@ -1,5 +1,4 @@
 import numpy as np
-from chainladder.utils.cupy import cp
 import chainladder as cl
 from rpy2.robjects.packages import importr
 from rpy2.robjects import r

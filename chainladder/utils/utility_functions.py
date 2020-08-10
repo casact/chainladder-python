@@ -112,11 +112,11 @@ def read_json(json_str, array_backend=None):
         else:
             tri.values = np.array(json_dict['values']['array'],
                                   dtype=json_dict['values']['dtype'])
+        if array_backend == 'cupy':
+            tri.values = cp.array(tri.values)
         if tri.is_cumulative:
             tri.is_cumulative = False
             tri = tri.incr_to_cum()
-        if array_backend == 'cupy':
-            tri.values = cp.array(tri.values)
         if 'sub_tris' in json_dict.keys():
             for k, v in json_dict['sub_tris'].items():
                 setattr(tri, k, read_json(v, array_backend))
@@ -176,10 +176,10 @@ def concat(objs, axis):
     mapper = {0: 'kdims', 1: 'vdims', 2: 'odims', 3: 'ddims'}
     for k, v in mapper.items():
         if k != axis:  # All non-concat axes must be identical
-            assert xp.all(xp.array([getattr(obj, mapper[k]) for obj in objs]) ==
+            assert np.all(np.array([getattr(obj, mapper[k]) for obj in objs]) ==
                           getattr(objs[0], mapper[k]))
         else:  # All elements of concat axis must be unique
-            new_axis = xp.concatenate([getattr(obj, mapper[axis]) for obj in objs])
+            new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
             if axis == 0:
                 assert len(pd.DataFrame(new_axis).drop_duplicates()) == len(new_axis)
             else:

@@ -5,6 +5,7 @@ from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase
 from chainladder.development.clark import ClarkLDF
 import numpy as np
+import copy
 
 
 class TailClark(TailBase):
@@ -62,6 +63,12 @@ class TailClark(TailBase):
         self : object
             Returns the instance itself.
         """
+        backend = X.array_backend
+        if backend != 'numpy':
+            X = X.set_backend('numpy')
+        else:
+            X = copy.deepcopy(X)
+        xp = X.get_array_module()
         super().fit(X, y, sample_weight)
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
@@ -78,8 +85,6 @@ class TailClark(TailBase):
             (self.ldf_.values[..., :sum(X.ddims<=attachment_age)],
              fitted[..., -sum(X.ddims>=attachment_age):]),
             axis=-1)
-
-
         self.omega_ = model.omega_
         self.theta_ = model.theta_
         self.G_ = model.G_
@@ -89,6 +94,8 @@ class TailClark(TailBase):
         if hasattr(model, 'elr_'):
             self.elr_ = model.elr_
         self.norm_resid_ = model.norm_resid_
+        if backend == 'cupy':
+            self = self.set_backend('cupy')
         return self
 
     def transform(self, X):

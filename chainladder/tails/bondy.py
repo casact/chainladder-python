@@ -70,8 +70,12 @@ class TailBondy(TailBase):
         """
         if self.attachment_age and self.attachment_age < self.earliest_age:
             raise ValueError('attachment_age must not be before earliest_age.')
-        super().fit(X, y, sample_weight)
+        backend = X.array_backend
+        if X.array_backend != 'numpy':
+            X = X.set_backend('numpy')
         xp = X.get_array_module()
+        super().fit(X, y, sample_weight)
+
         if self.earliest_age is None:
             earliest_age = X.ddims[0]
         else:
@@ -116,6 +120,8 @@ class TailBondy(TailBase):
             (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1)
         self.std_err_.values = xp.concatenate(
             (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1)
+        if backend == 'cupy':
+            self = self.set_backend(backend)
         return self
 
     def transform(self, X):

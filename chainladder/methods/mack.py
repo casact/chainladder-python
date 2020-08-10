@@ -74,6 +74,7 @@ class MackChainladder(Chainladder):
         from chainladder.utils.utility_functions import num_to_nan
         obj = copy.copy(self.X_)
         xp = obj.get_array_module()
+        lxp = self.X_.ldf_.get_array_module()
         full = self.full_triangle_
         tri_array = full.values
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
@@ -83,14 +84,10 @@ class MackChainladder(Chainladder):
         val = xp.broadcast_to(val, self.X_.shape)
         weight = num_to_nan(xp.sqrt(tri_array[..., :len(self.X_.ddims)]**(2-val)))
         obj.values = self.X_.sigma_.values / weight
-        w = xp.concatenate(
-            (self.X_.w_, xp.ones((*val.shape[:3], 1))*xp.nan), axis=3)
-        if xp == sp:
-            w.fill_value = 1
-            w = sp(w)
-        else:
-            w[xp.isnan(w)] = 1
-        obj.values = xp.nan_to_num(obj.values) * w
+        w = lxp.concatenate(
+            (self.X_.w_, lxp.ones((*val.shape[:3], 1))*xp.nan), axis=3)
+        w[xp.isnan(w)] = 1
+        obj.values = xp.nan_to_num(obj.values) * xp.array(w)
         obj.valuation_date = full.valuation_date
         obj._set_slicers()
         return obj
@@ -138,12 +135,13 @@ class MackChainladder(Chainladder):
 
     def _get_risk(self, nans, risk_arr, std_err):
         xp = self._full_triangle_.get_array_module()
+        lxp = self.X_.ldf_.get_array_module()
         full_tri = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)]
         t1_t = (full_tri * std_err)**2
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
-        ldf = xp.concatenate(
-            (ldf, xp.prod(self.X_.ldf_.values[..., -extend:], -1,
+        ldf = lxp.concatenate(
+            (ldf, lxp.prod(self.X_.ldf_.values[..., -extend:], -1,
              keepdims=True)), -1)
         for i in range(len(self.X_.ddims)):
             t1 = t1_t[..., i:i+1]
@@ -155,16 +153,17 @@ class MackChainladder(Chainladder):
     def _get_tot_param_risk(self, risk_arr):
         """ This assumes triangle symmertry """
         xp = self._full_triangle_.get_array_module()
+        lxp = self.X_.ldf_.get_array_module()
         t1 = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)] - \
             xp.nan_to_num(self.X_.values) + \
             xp.nan_to_num(self.X_[self.X_.valuation==self.X_.valuation_date].values)
         t1 = xp.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
-        ldf = xp.concatenate(
-            (ldf, xp.prod(self.X_.ldf_.values[..., -extend:], -1,
+        ldf = lxp.concatenate(
+            (ldf, lxp.prod(self.X_.ldf_.values[..., -extend:], -1,
              keepdims=True)), -1)
-        ldf = xp.unique(ldf, axis=-2)
+        ldf = lxp.unique(ldf, axis=-2)
         for i in range(self._full_triangle_.shape[-1]-1):
             t_tot = xp.sqrt((t1[..., i:i+1])**2 + (ldf[..., i:i+1] *
                             risk_arr[..., -1:])**2)

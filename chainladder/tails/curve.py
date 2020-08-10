@@ -75,6 +75,11 @@ class TailCurve(TailBase):
             Returns the instance itself.
         """
         from chainladder.utils.utility_functions import num_to_nan
+        if X.array_backend == 'sparse':
+            X = X.set_backend('numpy')
+        else:
+            X = copy.deepcopy(X)
+        xp = X.get_array_module()
         if type(self.fit_period) == slice:
             warnings.warn("Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age).")
             fit_period = self.fit_period
@@ -84,12 +89,9 @@ class TailCurve(TailBase):
             end = None if self.fit_period[1] is None else int(self.fit_period[1] / grain - 1)
             fit_period = slice(start, end, None)
         super().fit(X, y, sample_weight)
-        xp = X.get_array_module()
-        if xp == sp:
-            _y = self.ldf_.values[..., :X.shape[-1]-1].todense()
-        else:
-            _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
-        _w = np.zeros(_y.shape)
+        xp = self.ldf_.get_array_module()
+        _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
+        _w = xp.zeros(_y.shape)
         _w[..., fit_period] = 1.0
         if self.errors == 'ignore':
             _w[_y <= 1.0] = 0

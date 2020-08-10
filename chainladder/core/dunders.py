@@ -14,14 +14,12 @@ class TriangleDunders:
     '''
     def _validate_arithmetic(self, other):
         ''' Common functionality BEFORE arithmetic operations '''
-        xp = self.get_array_module()
-        obj = copy.deepcopy(self)
         if type(other) in [int, float]:
+            obj = copy.deepcopy(self)
             other = other*self.nan_triangle
-        else:
-            other = copy.deepcopy(other)
-        if isinstance(other, TriangleDunders):
-            self._compatibility_check(obj, other)
+        elif isinstance(other, TriangleDunders):
+            obj, other = self._compatibility_check(self, other)
+            xp = obj.get_array_module()
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
             obj, other = self._prep_index_columns(obj, other)
             a, b = self.shape[-2:], other.shape[-2:]
@@ -80,6 +78,8 @@ class TriangleDunders:
                 obj.values = obj_arr
                 other = other_arr
         else:
+            obj = copy.deepcopy(self)
+            xp = obj.get_array_module()
             other = xp.nan_to_num(other)
         return obj, other
 
@@ -91,6 +91,12 @@ class TriangleDunders:
         return obj
 
     def _compatibility_check(self, x, y):
+        from chainladder import ARRAY_PRIORITY
+        backend = ARRAY_PRIORITY[
+            min([ARRAY_PRIORITY.index(x)
+            for x in [x.array_backend, y.array_backend]])]
+        x = x.set_backend(backend)
+        y = y.set_backend(backend)
         if x.key_labels != y.key_labels:
             raise ValueError("Triangle arithmetic requires both triangles to have the same key_labels.")
         if x.origin_grain != y.origin_grain or x.development_grain != y.development_grain:
@@ -99,6 +105,7 @@ class TriangleDunders:
         #    raise ValueError("Triangle arithmetic cannot be performed between a development triangle and a valuation Triangle.")
         #if x.is_cumulative != y.is_cumulative:
         #    warnings.warn('Arithmetic is being performed between an incremental triangle and a cumulative triangle.')
+        return x, y
 
     def _prep_index_columns(self, x, y):
         """ Preps index and column axes for arithmetic """
@@ -149,8 +156,8 @@ class TriangleDunders:
         return x, y
 
     def __add__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values) + xp.nan_to_num(other)
         return self._arithmetic_cleanup(obj, other)
 
@@ -158,15 +165,15 @@ class TriangleDunders:
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values) - \
             xp.nan_to_num(other)
         return self._arithmetic_cleanup(obj, other)
 
     def __rsub__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(other) - \
             xp.nan_to_num(obj.values)
         return self._arithmetic_cleanup(obj, other)
@@ -188,8 +195,8 @@ class TriangleDunders:
         return obj
 
     def __mul__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values)*other
         return self._arithmetic_cleanup(obj, other)
 
@@ -197,21 +204,21 @@ class TriangleDunders:
         return self if other == 1 else self.__mul__(other)
 
     def __pow__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values)**other
         return self._arithmetic_cleanup(obj, other)
 
     def __round__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values).round(other)
         return self._arithmetic_cleanup(obj, other)
 
 
     def __truediv__(self, other):
-        xp = self.get_array_module()
         obj, other = self._validate_arithmetic(other)
+        xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values) / other
         return self._arithmetic_cleanup(obj, other)
 

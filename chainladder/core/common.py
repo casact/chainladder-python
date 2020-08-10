@@ -9,14 +9,13 @@ from chainladder.utils.sparse import sp
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
     xp = ultimate_.get_array_module()
-    o, d = ultimate_.shape[-2:]
     cdf = copy.deepcopy(cdf_)
-    cdf.values = xp.repeat(cdf.values[..., 0:1, :], o, axis=2)
+    cdf.values = cdf_.get_array_module().repeat(
+        cdf.values[..., 0:1, :], ultimate_.shape[-2], 2)
     cdf.odims = ultimate_.odims
     cdf.valuation_date = ultimate_.valuation_date
     full = copy.deepcopy(ultimate_)
-    r = full.values / cdf.values
-    full.values = xp.concatenate((r, full.values), -1)
+    full.values = xp.concatenate(((full / cdf).values, full.values), -1)
     full.ddims = np.append(cdf_.ddims, '9999-Ult')
     full.ddims = np.array([int(item.split('-')[0]) for item in full.ddims])
     full.vdim = ultimate_.vdims
@@ -101,50 +100,21 @@ class Common:
                 raise ValueError('Unable to determine array backend.')
         if inplace:
             if backend in ['numpy', 'sparse', 'cupy']:
-                if backend == 'numpy':
-                    if old_backend == 'sparse':
-                        if hasattr(self, 'values'):
-                            self.values = self.values.todense()
-                        for k, v in vars(self).items():
-                            if isinstance(v, Common):
-                                v.values = v.values.todense()
-                    if old_backend == 'cupy':
-                        if hasattr(self, 'values'):
-                            self.values = cp.asnumpy(self.values)
-                        for k, v in vars(self).items():
-                            if isinstance(v, Common):
-                                v.values = cp.asnumpy(v.values)
-                if backend == 'cupy':
-                    if old_backend == 'numpy':
-                        if hasattr(self, 'values'):
-                            self.values = cp.array(self.values)
-                        for k, v in vars(self).items():
-                            if isinstance(v, Common):
-                                v.values = cp.array(v.values)
-                    if old_backend == 'sparse':
-                        if hasattr(self, 'values'):
-                            self.values = cp.array(self.values.todense())
-                        for k, v in vars(self).items():
-                            if isinstance(v, Common):
-                                v.values = cp.array(v.values.todense())
-                if backend == 'sparse':
-                    if old_backend == 'numpy':
-                        if hasattr(self, 'values'):
-                            self.values = num_to_nan(sp(self.values))
-                        for k, v in vars(self).items():
-                            if isinstance(v, Common):
-                                v.values = num_to_nan(sp(v.values))
-                    if old_backend == 'cupy':
-                        if hasattr(self, 'values'):
-                            self.values = num_to_nan(sp(cp.asnumpy(self.values)))
-                        for k, v in vars(self).items():
-                            if isinstance(v, Common):
-                                v.values = num_to_nan(sp(cp.asnumpy(v.values)))
-                if hasattr(self, 'array_backend'):
-                    self.array_backend = backend
+                lookup = {
+                    'numpy': {'sparse': lambda x: x.todense(),
+                              'cupy': lambda x: cp.asnumpy(x)},
+                    'cupy': {'numpy': lambda x: cp.array(x),
+                             'sparse': lambda x: cp.array(x.todense())},
+                    'sparse': {'numpy': lambda x: num_to_nan(sp(np.nan_to_num(x))),
+                               'cupy': lambda x: num_to_nan(sp(np.nan_to_num(cp.asnumpy(x))))}}
+                if hasattr(self, 'values'):
+                    self.values = lookup[backend].get(
+                        old_backend, lambda x: x)(self.values)
                 for k, v in vars(self).items():
                     if isinstance(v, Common):
-                        v.array_backend = backend
+                        v.set_backend(backend, inplace=True)
+                if hasattr(self, 'array_backend'):
+                    self.array_backend = backend
             else:
                 raise AttributeError(backend, 'backend is not supported.')
             return self
