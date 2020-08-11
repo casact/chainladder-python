@@ -86,8 +86,8 @@ class TriangleDunders:
     def _arithmetic_cleanup(self, obj, other):
         ''' Common functionality AFTER arithmetic operations '''
         from chainladder.utils.utility_functions import num_to_nan
+        obj.values = obj.values * obj.get_array_module().nan_to_num(obj.nan_triangle)
         obj.num_to_nan()
-        obj.values = obj.values * obj.nan_triangle
         return obj
 
     def _compatibility_check(self, x, y):
@@ -97,8 +97,25 @@ class TriangleDunders:
             for x in [x.array_backend, y.array_backend]])]
         x = x.set_backend(backend)
         y = y.set_backend(backend)
+
+        def apply_axis(common, x, y):
+            idx = y.index[common].merge(
+                x.index[common].reset_index(), how='left',
+                on=common)['index'].values
+            x.values = x.values[idx]
+            x.kdims = y.kdims
+            x.key_labels = y.key_labels
+            x.index = y.index
+            return x
+
         if x.key_labels != y.key_labels:
-            raise ValueError("Triangle arithmetic requires both triangles to have the same key_labels.")
+            common = list(set(x.key_labels).intersection(set(y.key_labels)))
+            if len(common) == len(x.key_labels):
+                x = apply_axis(common, x, y)
+            elif len(common) == len(y.key_labels):
+                y = apply_axis(common, y, x)
+            else:
+                raise ValueError("Triangle arithmetic along index is ambiguous.")
         if x.origin_grain != y.origin_grain or x.development_grain != y.development_grain:
             raise ValueError("Triangle arithmetic requires both triangles to be the same grain.")
         #if x.is_val_tri != y.is_val_tri:

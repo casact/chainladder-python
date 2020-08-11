@@ -29,6 +29,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         diagonal.
         """
         xp = ultimate.get_array_module()
+        from chainladder.utils.utility_functions import num_to_nan
         if self.cdf_.key_labels != ultimate.key_labels:
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
             idx = ultimate.index[level].merge(
@@ -36,9 +37,14 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             cdf = self.cdf_.values[list(idx.astype(int)), ..., :ultimate.shape[-1]]
         else:
             cdf = self.cdf_.values[..., :ultimate.shape[-1]]
+        a = ultimate.iloc[0,0]*0 + ultimate.nan_triangle
+        a = a-a[a.valuation<a.valuation_date]
         if sample_weight:
-            ultimate = ultimate + sample_weight.values
-        ultimate = ultimate-ultimate[ultimate.valuation!=ultimate.valuation_date]
+            ultimate.values = xp.nan_to_num(ultimate.values*a.values) + \
+                              xp.nan_to_num(sample_weight.values*a.values)
+        else:
+            ultimate.values = xp.nan_to_num(ultimate.values*a.values)
+        ultimate.values = num_to_nan(ultimate.values)
         ultimate = ultimate / ultimate
         cdf = ultimate * cdf
         cdf = cdf.latest_diagonal.values

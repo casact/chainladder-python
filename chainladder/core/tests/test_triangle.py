@@ -326,3 +326,7 @@ def test_vector_division():
 def test_sumdiff_to_diffsum():
     tri = cl.load_sample('clrd')['CumPaidLoss']
     assert tri.cum_to_incr().incr_to_cum().sum() == tri.sum()
+
+def test_multiindex_broadcast():
+    clrd = cl.load_sample('clrd')['CumPaidLoss']
+    clrd / clrd.groupby('LOB').sum()

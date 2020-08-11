@@ -35,8 +35,14 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
         self.ldf_.ddims = np.array(['{}-{}'.format(ddims[i], ddims[i+1])
                                     for i in range(len(ddims)-1)])
-        self.sigma_ = copy.copy(getattr(obj, 'sigma_', obj.cdf_*0))
-        self.std_err_ = copy.copy(getattr(obj, 'std_err_', obj.cdf_*0))
+        if hasattr(obj, 'sigma_'):
+            self.sigma_ = copy.copy(getattr(obj, 'sigma_'))
+        else:
+            self.sigma_ = obj.ldf_ - obj.ldf_
+        if hasattr(obj, 'std_err_'):
+            self.std_err_ = copy.copy(getattr(obj, 'std_err_'))
+        else:
+            self.std_err_ = obj.ldf_ - obj.ldf_
         zeros = tail[..., 0:1, -1:]*0
         self.sigma_.values = xp.concatenate(
             (self.sigma_.values, zeros), -1)
