@@ -128,8 +128,8 @@ class TailCurve(TailBase):
         if self.curve == 'exponential':
             return None
         if self.curve == 'inverse_power':
-            reg = WeightedRegression(3, False, xp=xp).fit(None, y, w).infer_x_w()
             xp = self.ldf_.get_array_module()
+            reg = WeightedRegression(3, False, xp=xp).fit(None, y, w).infer_x_w()
             return xp.log(reg.x)
 
     def _predict_tail(self, extrapolate):

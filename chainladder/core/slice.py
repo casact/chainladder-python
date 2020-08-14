@@ -21,8 +21,9 @@ class _LocBase:
         obj.vdims = np.array(idx.columns)
         obj.key_labels = list(idx.index.names)
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
-        x_0 = self._contig_slice(list(pd.Series([item[0] for item in idx.values[:, 0]]).unique()))
-        x_1 = self._contig_slice(list(pd.Series([item[1] for item in idx.values[0, :]]).unique()))
+        x_0 = _LocBase._contig_slice(list(pd.Series([item[0] for item in idx.values[:, 0]]).unique()))
+        x_1 = _LocBase._contig_slice(list(pd.Series([item[1] for item in idx.values[0, :]]).unique()))
+        print(list(pd.Series([item[1] for item in idx.values[0, :]]).unique()))
         if type(x_0) is slice or type(x_1) is slice:
             obj.values = obj.values[x_0, x_1, ...]
         else:
@@ -30,20 +31,18 @@ class _LocBase:
         obj.num_to_nan()
         return obj
 
-    def _contig_slice(self, arr):
+    @staticmethod
+    def _contig_slice(arr):
         if len(arr) == 1:
             return slice(arr[0], arr[0]+1)
         diff = np.diff(arr)
-        step  = None if arr[0] < arr[-1] else -1
-        if diff.max() == diff.min() and diff.max() in [1, -1]:
-            # index is sorted, so use its sort for better performance
-            if not step:
-                return slice(min(arr), max(arr) + 1, step)
-            else:
-                min_arr = None if min(arr) == 0 else min(arr)
-                return slice(max(arr), min_arr, step)
-        return arr
-
+        if max(diff) == min(diff):
+            step = max(diff)
+        else:
+            raise ValueError('Sequence cannot be converted to slice')
+        step = None if step == 1 else step
+        min_arr = None if min(arr) == 0 else min(arr)
+        return slice(min_arr, max(arr) + 1, step)
 
 class Location(_LocBase):
     ''' class to generate .loc[] functionality '''
@@ -157,6 +156,7 @@ class TriangleSlicer:
         ''' private method for handling of origin slicing '''
         obj = copy.deepcopy(self)
         obj.odims = obj.odims[key]
+        key = _LocBase._contig_slice(np.arange(len(key))[key])
         obj.values = obj.values[..., key, :]
         return obj
 
@@ -198,7 +198,8 @@ class TriangleSlicer:
         ''' private method for handling of development slicing '''
         obj = copy.deepcopy(self)
         obj.ddims = obj.ddims[key]
-        if obj.get_array_module() == cp:
+        key = _LocBase._contig_slice(np.arange(len(key))[key])
+        if obj.get_array_module() == cp and type(key) is not slice:
             key = cp.array(key)
         obj.values = obj.values[..., key]
         return obj
