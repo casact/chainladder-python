@@ -23,7 +23,6 @@ class _LocBase:
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
         x_0 = _LocBase._contig_slice(list(pd.Series([item[0] for item in idx.values[:, 0]]).unique()))
         x_1 = _LocBase._contig_slice(list(pd.Series([item[1] for item in idx.values[0, :]]).unique()))
-        print(list(pd.Series([item[1] for item in idx.values[0, :]]).unique()))
         if type(x_0) is slice or type(x_1) is slice:
             obj.values = obj.values[x_0, x_1, ...]
         else:
@@ -39,10 +38,13 @@ class _LocBase:
         if max(diff) == min(diff):
             step = max(diff)
         else:
-            raise ValueError('Sequence cannot be converted to slice')
+            return arr
         step = None if step == 1 else step
         min_arr = None if min(arr) == 0 else min(arr)
-        return slice(min_arr, max(arr) + 1, step)
+        max_arr = max(arr) + 1
+        if step and step < 0:
+            min_arr, max_arr = max_arr - 1, min_arr - 1 if min_arr else min_arr
+        return slice(min_arr, max_arr, step)
 
 class Location(_LocBase):
     ''' class to generate .loc[] functionality '''
@@ -131,7 +133,7 @@ class TriangleSlicer:
                 before = self.drop(key).values
                 # Need to increment axis 1 by 1 AFTER key
                 before.coords[1] = np.where(
-                    before.coords[1, :]>i, before.coords[1, :] + 1,
+                    before.coords[1, :]>=i, before.coords[1, :] + 1,
                     before.coords[1, :])
                 # Need to update axis 1 on values
                 value.values.coords[1] = i

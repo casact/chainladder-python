@@ -177,6 +177,8 @@ class MackChainladder(Chainladder):
         obj.values = xp.sqrt(self.parameter_risk_.values**2 +
                              self.process_risk_.values**2)
         obj._set_slicers()
+        if obj.array_backend=='sparse':
+            obj.num_to_nan()
         return obj
 
     @property

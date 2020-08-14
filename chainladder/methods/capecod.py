@@ -55,7 +55,7 @@ class CapeCod(MethodBase):
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
         self.ultimate_, self.apriori_, self.detrended_apriori_ = \
-            self._get_ultimate(X, sample_weight)
+            self._get_ultimate(X, self.sample_weight_)
         self.process_variance_ = self._include_process_variance()
         return self
 

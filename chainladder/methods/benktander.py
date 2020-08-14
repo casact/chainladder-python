@@ -69,8 +69,7 @@ class Benktander(MethodBase):
         if hasattr(X, '_get_process_variance'):
             if X.shape[0] != sample_weight.shape[0]:
                 sample_weight = sample_weight.broadcast_axis('index', X.index)
-        self.sample_weight_ = sample_weight
-        self.ultimate_ = self._get_ultimate(X, sample_weight)
+        self.ultimate_ = self._get_ultimate(self.X_, self.sample_weight_)
         self.process_variance_ = self._include_process_variance()
         return self
 
@@ -90,10 +89,10 @@ class Benktander(MethodBase):
             apriori = sample_weight.values*self.apriori
         # Benktander formula -> Triangle
         cdf = self._align_cdf(ultimate, sample_weight)
-        cdf = num_to_nan((1-1/cdf)[None])
+        cdf = (1-1/num_to_nan(cdf))[None]
         exponents = xp.arange(self.n_iters+1)
         exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
-        cdf = cdf ** ((cdf/cdf)*exponents)
+        cdf = cdf ** (((cdf+1e-16)/(cdf+1e-16)*exponents))
         cdf = xp.nan_to_num(cdf)
         ultimate.values = (
             xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(X.latest_diagonal.values) +

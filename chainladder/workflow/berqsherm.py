@@ -53,11 +53,15 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
 
 
     def fit(self, X, y=None, sample_weight=None):
-        xp = X.get_array_module()
+        backend = X.array_backend
+        if backend == 'sparse':
+            obj = X.set_backend('numpy')
+        else:
+            obj  = copy.deepcopy(X)
+        xp = obj.get_array_module()
         if not (self.paid_amount in X.columns and self.incurred_amount in X.columns
                 and self.reported_count in X.columns and self.closed_count in X.columns):
             raise ValueError('Must enter values valid columns for paid_amount, incurred_amount, reported_count and closed_count')
-        obj = copy.copy(X)
         paid_amount = self.paid_amount
         incurred_amount = self.incurred_amount
         reported_count = self.reported_count
@@ -120,12 +124,13 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
             y[y.valuation==y.valuation_date] +
             adj_paid_claims[adj_paid_claims.valuation<adj_paid_claims.valuation_date])
 
-        adjusted_triangle_ = copy.deepcopy(X)
+        adjusted_triangle_ = copy.deepcopy(obj)
         adjusted_triangle_[paid_amount] = adj_paid_claims
         adjusted_triangle_[incurred_amount] = adj_incurred_amount
         adjusted_triangle_[closed_count] = adj_closed_clm
-        self.adjusted_triangle_ = adjusted_triangle_
-        self.disposal_rate_ = disposal_rate
+        adjusted_triangle_ = adjusted_triangle_[adjusted_triangle_.valuation<=obj.valuation_date]
+        self.adjusted_triangle_ = adjusted_triangle_.set_backend(backend)
+        self.disposal_rate_ = disposal_rate.set_backend(backend)
         self.a_ = a
         self.b_ = b
         return self

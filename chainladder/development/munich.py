@@ -128,14 +128,20 @@ class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.copy(X)
+        backend = X.array_backend
+        if backend == 'sparse':
+            X_new = X.set_backend('numpy')
+        else:
+            X_new = copy.deepcopy(X)
+        xp = X_new.get_array_module()
+        self.xp = xp
         if 'ldf_' not in X_new:
             X_new = Development().fit_transform(X_new)
+        self.xp = X_new.get_array_module()
         X_new.p_to_i_X_ = self._get_p_to_i_object(X_new)
         X_new.p_to_i_ldf_ = self._get_p_to_i_object(X_new.ldf_)
         X_new.p_to_i_sigma_ = self._get_p_to_i_object(X_new.sigma_)
         X_new.q_f_, X_new.rho_sigma_ = self._get_MCL_model(X_new)
-        self.xp = X_new.get_array_module()
         X_new.munich_full_triangle_ = self._get_munich_full_triangle_(
             X_new.p_to_i_X_, X_new.p_to_i_ldf_, X_new.p_to_i_sigma_,
             self.lambda_coef_, X_new.rho_sigma_, X_new.q_f_)

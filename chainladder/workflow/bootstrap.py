@@ -61,6 +61,11 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
+        backend = X.array_backend
+        if backend == 'sparse':
+            X = X.set_backend('numpy')
+        else:
+            X = copy.deepcopy(X)
         xp = X.get_array_module()
         if X.shape[:2] != (1, 1):
             raise ValueError('Only single index/column triangles are supported')
@@ -94,7 +99,7 @@ class BootstrapODPSample(DevelopmentBase):
         n_origin_params = X.shape[2]
         n_dev_params = X.shape[3] - 1
         deg_free = n_obs - n_origin_params - n_dev_params
-        deg_free_adj_fctr = np.sqrt(n_obs/deg_free)
+        deg_free_adj_fctr = xp.sqrt(n_obs/deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):

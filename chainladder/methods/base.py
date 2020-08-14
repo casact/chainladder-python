@@ -85,7 +85,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             Returns the instance itself.
         """
         self.X_ = self.validate_X(X)
-        self.sample_weight_ = sample_weight
+        if sample_weight:
+            self.sample_weight_ = sample_weight.set_backend(self.X_.array_backend)
+        else:
+            self.sample_weight_ = sample_weight
         return self
 
     def predict(self, X, sample_weight=None):
@@ -107,6 +110,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = copy.deepcopy(X)
         xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
+        if sample_weight:
+            sample_weight = sample_weight.set_backend(self.X_.array_backend)
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj
 
