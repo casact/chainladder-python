@@ -30,6 +30,7 @@ setup(
     install_requires=[
         "pandas>=0.23.0",
         "numpy>=1.12.0",
+        "numba==0.49",
         "scikit-learn>=0.18.0",
         "scipy",
         "sparse",
