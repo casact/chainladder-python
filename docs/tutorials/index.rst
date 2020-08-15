@@ -15,3 +15,4 @@ These tutorials serve as more comprehensive examples of how to use chainladder.
    deterministic-tutorial
    stochastic-tutorial
    template-tutorial
+   large-datasets
