@@ -54,7 +54,6 @@ def load_sample(key, *args, **kwargs):
         index = ['ClaimNo', 'Line', 'Type', 'ClaimLiability', 'Limit', 'Deductible']
         origin = 'AccidentDate'
         development = 'PaymentDate'
-        kwargs['array_backend'] = 'sparse'
         cumulative = False
     df = pd.read_csv(os.path.join(path, 'data', key.lower() + '.csv'))
     return Triangle(df, origin=origin, development=development, index=index,
@@ -105,7 +104,6 @@ def read_json(json_str, array_backend=None):
             tri.ddims = pd.PeriodIndex(tri.ddims, freq=tri.development_grain).to_timestamp(how='e')
         tri.valuation_date = pd.to_datetime(
             json_dict['valuation_date'], format='%Y-%m-%d').to_period('M').to_timestamp(how='e')
-        tri._set_slicers()
         if json_dict['values'].get('sparse', None):
             tri.values = sparse_in(json_dict['values']['array'],
                                    json_dict['values']['dtype'], shape)
@@ -126,6 +124,7 @@ def read_json(json_str, array_backend=None):
                 if len(df.columns)==1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
+        tri._set_slicers()
         return tri
     else:
         import chainladder as cl
@@ -206,3 +205,9 @@ def num_to_nan(arr):
         nan = np.nan if backend == 'numpy' else cp.nan
         arr[arr == 0] = nan
     return arr
+
+def minimum(x1, x2):
+    return x1.minimum(x2)
+
+def maximum(x1, x2):
+    return x1.maximum(x2)

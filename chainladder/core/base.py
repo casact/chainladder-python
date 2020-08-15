@@ -24,6 +24,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                  columns=None, index=None, origin_format=None,
                  development_format=None, cumulative=None,
                  array_backend=None, *args, **kwargs):
+        from chainladder import AUTO_SPARSE
         if array_backend is None:
             from chainladder import ARRAY_BACKEND
             self.array_backend = ARRAY_BACKEND
@@ -65,7 +66,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         development_date.name = 'development'
 
         # Aggregate data
-
         key_gr = [origin_date, development_date] + \
                  [data[item] for item in self._flatten(index)]
         data_agg = data[columns].groupby(key_gr).sum().reset_index().fillna(0)
@@ -120,12 +120,20 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         else:
             self.ddims = np.array([None])
         self.vdims = np.array(columns)
-        self._set_slicers()
         # Create 4D Triangle
-        if self.array_backend == 'numpy':
-            self.values = np.array(values.todense(), dtype=kwargs.get('dtype', None))
-        elif self.array_backend == 'sparse':
-            self.values=values
+        if self.array_backend in ['numpy', 'sparse']:
+            if AUTO_SPARSE:
+                if not(values.density < 0.2 and np.prod(values.shape)/1e6*8>30):
+                    self.array_backend = 'numpy'
+                    self.values = np.array(values.todense(), dtype=kwargs.get('dtype', None))
+                else:
+                    self.array_backend = 'sparse'
+                    self.values=values
+            else:
+                if self.array_backend == 'numpy':
+                    self.values = np.array(values.todense(), dtype=kwargs.get('dtype', None))
+                elif self.array_backend == 'sparse':
+                    self.values=values
         else:
             xp = cp
             if cp == np:
@@ -134,6 +142,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             values = values.todense()
             self.values = xp.array(values, dtype=kwargs.get('dtype', None))
         self.is_cumulative = cumulative
+        self._set_slicers()
 
     def _len_check(self, x, y):
         if len(x) != len(y):
@@ -310,3 +319,19 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             return np
         else:
             raise ValueError('Array backend is invalid or not properly set.')
+
+    def _auto_sparse(self):
+        """ Auto sparsifies at 30Mb or more and 20% density or less """
+        from chainladder import AUTO_SPARSE
+        if not AUTO_SPARSE:
+            return self
+        if self.array_backend == 'numpy' and np.prod(self.shape)/1e6*8>30 and \
+           np.isnan(self.values).sum() / np.prod(self.shape) < 0.2:
+            self.set_backend('sparse', inplace=True)
+            return self
+        if self.array_backend == 'sparse' and \
+           not(self.values.density < 0.2 and np.prod(self.shape)/1e6*8>30):
+            self.set_backend('numpy', inplace=True)
+            return self
+        else:
+            return self

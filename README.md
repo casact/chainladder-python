@@ -32,7 +32,7 @@ Tutorial notebooks are available for download [here](https://github.com/casact/c
 * [Extending Development Patterns with Tails](https://chainladder-python.readthedocs.io/en/latest/tutorials/tail-tutorial.html)
 * [Applying Deterministic Methods](https://chainladder-python.readthedocs.io/en/latest/tutorials/deterministic-tutorial.html)
 * [Applying Stochastic Methods](https://chainladder-python.readthedocs.io/en/latest/tutorials/stochastic-tutorial.html)
-
+* [Large Datasets](https://chainladder-python.readthedocs.io/en/latest/tutorials/large-datasets.html)
 
 ## Installation
 To install using pip:

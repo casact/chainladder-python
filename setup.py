@@ -34,6 +34,6 @@ setup(
         "scipy",
         "sparse",
         "joblib",
-        'xlcompose>=0.2.1'
+        'xlcompose>=0.2.4'
     ],
 )

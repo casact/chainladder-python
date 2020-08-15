@@ -201,7 +201,11 @@ def floor(x, *args, **kwargs):
 sp.floor = floor
 
 def minimum(x1, x2):
-    if np.all(x1.coords == x2.coords):
+    if type(x2) in [int, float]:
+        out = x1.copy()
+        out.data = np.minimum(x1.data, x2)
+        return out
+    elif np.all(x1.coords == x2.coords):
         out = x1.copy()
         out.data = np.minimum(x1.data, x2.data)
         return out

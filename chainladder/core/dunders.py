@@ -19,9 +19,9 @@ class TriangleDunders:
             other = other*self.nan_triangle
         elif isinstance(other, TriangleDunders):
             obj, other = self._compatibility_check(self, other)
-            xp = obj.get_array_module()
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
             obj, other = self._prep_index_columns(obj, other)
+            xp = obj.get_array_module()
             a, b = self.shape[-2:], other.shape[-2:]
             is_broadcastable = (
                 (a[0] == 1 or b[0] == 1 or np.all(other.odims == obj.odims)) and
@@ -62,7 +62,7 @@ class TriangleDunders:
                     other_arr[:, :, rol:roh, rdl:rdh] = other.values
                     obj_arr = xp.zeros(new_shape)
                     obj_arr[:] = xp.nan
-                    obj_arr[:, :, lol:loh, ldl:ldh] = self.values
+                    obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
                 else:
                     obj_arr, other_arr = obj.values, other.values
                     other_arr.coords[2] = other_arr.coords[2] + rol
@@ -227,7 +227,7 @@ class TriangleDunders:
         return self._arithmetic_cleanup(obj, other)
 
     def __round__(self, other):
-        obj, other = self._validate_arithmetic(other)
+        obj = copy.deepcopy(self)
         xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values).round(other)
         return self._arithmetic_cleanup(obj, other)
@@ -251,3 +251,27 @@ class TriangleDunders:
 
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None
+
+    def __lt__(self, value):
+        obj = copy.deepcopy(self)
+        xp = self.get_array_module()
+        obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
+        return obj
+
+    def __le__(self, value):
+        obj = copy.deepcopy(self)
+        xp = self.get_array_module()
+        obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
+        return obj
+
+    def minimum(self, other):
+        obj = copy.deepcopy(self)
+        xp = self.get_array_module()
+        obj.values = xp.minimum(self.values, other)
+        return obj
+
+    def maximum(self, other):
+        obj = copy.deepcopy(self)
+        xp = self.get_array_module()
+        obj.values = xp.maximum(self.values, other)
+        return obj

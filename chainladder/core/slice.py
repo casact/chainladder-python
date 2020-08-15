@@ -209,3 +209,4 @@ class TriangleSlicer:
     def _set_slicers(self):
         ''' Call any time the shape of index or column changes '''
         self.iloc, self.loc = Ilocation(self), Location(self)
+        self = self._auto_sparse()

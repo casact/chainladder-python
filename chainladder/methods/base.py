@@ -39,6 +39,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             cdf = self.cdf_.values[..., :ultimate.shape[-1]]
         a = ultimate.iloc[0,0]*0 + ultimate.nan_triangle
         a = a-a[a.valuation<a.valuation_date]
+        a = a.set_backend(ultimate.array_backend)
         if sample_weight:
             ultimate.values = xp.nan_to_num(ultimate.values*a.values) + \
                               xp.nan_to_num(sample_weight.values*a.values)
