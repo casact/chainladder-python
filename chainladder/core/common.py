@@ -90,7 +90,6 @@ class Common:
         -------
             Triangle with updated array_backend
         '''
-        from chainladder.utils.utility_functions import num_to_nan
         if hasattr(self, 'array_backend'):
             old_backend = self.array_backend
         else:
@@ -105,8 +104,8 @@ class Common:
                               'cupy': lambda x: cp.asnumpy(x)},
                     'cupy': {'numpy': lambda x: cp.array(x),
                              'sparse': lambda x: cp.array(x.todense())},
-                    'sparse': {'numpy': lambda x: num_to_nan(sp(np.nan_to_num(x))),
-                               'cupy': lambda x: num_to_nan(sp(np.nan_to_num(cp.asnumpy(x))))}}
+                    'sparse': {'numpy': lambda x: sp.array(x),
+                               'cupy': lambda x: sp.array(cp.asnumpy(x))}}
                 if hasattr(self, 'values'):
                     self.values = lookup[backend].get(
                         old_backend, lambda x: x)(self.values)

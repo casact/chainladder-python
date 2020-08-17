@@ -3,8 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
 import copy
 
 
@@ -13,7 +11,7 @@ class TriangleGroupBy:
         xp = old_obj.get_array_module()
         self.orig_obj = copy.deepcopy(old_obj)
         missing = None
-        if xp == sp:
+        if self.orig_obj.array_backend == 'sparse':
             if by != -1:
                 self.idx = self.orig_obj.index.iloc[self.orig_obj.values.coords[0]].reset_index(drop=True)
                 self.idx['missing'] = 0
@@ -36,7 +34,7 @@ class TriangleGroupBy:
             if missing is not None:
                 groupby = groupby.append(missing[groupby.columns])
             self.obj = groupby.groupby(by+[1,2,3])['values']
-        elif xp == cp != np:
+        elif self.orig_obj.array_backend == 'cupy':
             obj = copy.deepcopy(old_obj)
             obj.values = xp.nan_to_num(obj.values)
             if by != -1:
@@ -84,18 +82,12 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
-        xp = self.get_array_module()
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if self.shape[:2] == (1, 1):
             return self._repr_format()
         elif len(axes) in [1, 2]:
             odims, ddims = self._repr_date_axes()
-            if self.array_backend == 'sparse':
-                tri = np.squeeze(self.values.todense())
-            elif self.array_backend == 'cupy':
-                tri = np.squeeze(cp.asnumpy(self.values))
-            else:
-                tri = xp.squeeze(self.values)
+            tri = np.squeeze(self.set_backend('numpy').values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: odims, 3: ddims}
             if axes[0] == 0:
@@ -322,7 +314,7 @@ def add_triangle_agg_func(cls, k, v):
             if axis == 3 and obj.values.shape[axis] == 1:
                 obj.ddims = obj.ddims[-1:]
             obj._set_slicers()
-            obj.values = obj.values * obj._expand_dims(obj.nan_triangle)
+            obj.values = obj.values * obj.nan_triangle
             obj.num_to_nan()
             if obj.shape == (1, 1, 1, 1):
                 return obj.values[0, 0, 0, 0]
@@ -337,7 +329,7 @@ def add_groupby_agg_func(cls, k, v):
         obj = copy.deepcopy(self.obj)
         xp = self.orig_obj.get_array_module()
         obj = getattr(self.obj, v)(*args, **kwargs)
-        if xp == sp:
+        if self.orig_obj.array_backend == 'sparse':
             obj = obj.reset_index()
             new_idx = obj[obj.columns[:-4]].drop_duplicates().reset_index(drop=True).reset_index().set_index(list(obj.columns[:-4]))
             obj = obj.set_index(list(obj.columns[:-4])).merge(new_idx, how='inner', left_index=True, right_index=True)
@@ -346,7 +338,7 @@ def add_groupby_agg_func(cls, k, v):
             self.orig_obj.values.shape = tuple([len(new_idx)] + list(self.orig_obj.values.shape[1:]))
             self.orig_obj.kdims = np.array(new_idx.index)
             self.orig_obj.key_labels = list(new_idx.index.names)
-        elif xp == cp != np:
+        elif self.orig_obj.array_backend == 'cupy':
             obj = copy.deepcopy(self.obj)
             x = xp.broadcast_to(
                 self.obj.values,

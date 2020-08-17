@@ -25,13 +25,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                  development_format=None, cumulative=None,
                  array_backend=None, *args, **kwargs):
         from chainladder import AUTO_SPARSE
-        if array_backend is None:
-            from chainladder import ARRAY_BACKEND
-            self.array_backend = ARRAY_BACKEND
-        else:
-            self.array_backend = array_backend
+        self._set_array_backend(array_backend)
         if data is None:
-            # Instance with nothing set - Useful for piecemeal triangle creation
             return
         if columns:
             check = data[columns].dtypes
@@ -42,7 +37,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             if data[columns].shape[1] != len(columns):
                 raise AttributeError("Columns are required to have unique names")
         # Sanitize inputs
-        index, columns, origin, development = self._str_to_list(
+        str_to_list = lambda *args : tuple(
+            [arg] if type(arg) in [str, pd.Period] else arg for arg in args)
+        index, columns, origin, development = str_to_list(
             index, columns, origin, development)
 
         # Initialize origin and development dates and grains
@@ -201,19 +198,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         nan_triangle = xp.array(np.where(nan_triangle, xp.nan, 1), dtype='float16')
         return nan_triangle
 
-    def _lowest_grain(self):
-        my_list = ['M', 'Q', 'Y']
-        my_dict = {item: num for num, item in enumerate(my_list)}
-        lowest_grain = my_list[min(my_dict[self.origin_grain],
-                                   my_dict[self.development_grain])]
-        return lowest_grain
-
-    def _expand_dims(self, tri_2d):
-        '''Expands from one 2D triangle to full 4D object'''
-        xp = self.get_array_module(tri_2d)
-        return xp.broadcast_to(
-            tri_2d, (len(self.kdims), len(self.vdims), *tri_2d.shape))
-
     @staticmethod
     def _to_datetime(data, fields, period_end=False, format=None):
         '''For tabular form, this will take a set of data
@@ -290,9 +274,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def _str_to_list(self, *args):
-        return tuple([arg] if type(arg) in [str, pd.Period] else arg for arg in args)
-
     def _flatten(self, *args):
         return_list = []
         for item in args:
@@ -303,6 +284,13 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
     def num_to_nan(self):
         from chainladder.utils.utility_functions import num_to_nan
         self.values = num_to_nan(self.values)
+
+    def _set_array_backend(self, array_backend):
+        if array_backend is None:
+            from chainladder import ARRAY_BACKEND
+            self.array_backend = ARRAY_BACKEND
+        else:
+            self.array_backend = array_backend
 
     def get_array_module(self, arr=None):
         import numpy as np

@@ -70,12 +70,15 @@ def flip(m, axis=None):
 sp.flip = flip
 
 
-def array(*args, **kwargs):
+def array(a, *args, **kwargs):
     if kwargs.get('fill_value', None) is not None:
         fill_value = kwargs.pop('fill_value')
     else:
         fill_value = sp.nan
-    return sp(np.array(*args, **kwargs), fill_value=fill_value)
+    if type(a)==sp:
+        return sp(a, *args, **kwargs, fill_value=fill_value)
+    else:
+        return sp(np.array(a, *args, **kwargs), fill_value=fill_value)
 sp.array = array
 
 def expand_dims(a, axis):

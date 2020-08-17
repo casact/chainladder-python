@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from chainladder.utils.sparse import sp
 import copy
 import warnings
 
@@ -14,13 +13,11 @@ class TriangleDunders:
     '''
     def _validate_arithmetic(self, other):
         ''' Common functionality BEFORE arithmetic operations '''
-        if type(other) in [int, float]:
-            obj = copy.deepcopy(self)
-            other = other*self.nan_triangle
-        elif isinstance(other, TriangleDunders):
+        if isinstance(other, TriangleDunders):
             obj, other = self._compatibility_check(self, other)
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
-            obj, other = self._prep_index_columns(obj, other)
+            obj, other = self._prep_index(obj, other)
+            obj, other = self._prep_columns(obj, other)
             xp = obj.get_array_module()
             a, b = self.shape[-2:], other.shape[-2:]
             is_broadcastable = (
@@ -56,7 +53,7 @@ class TriangleDunders:
                 ldl = int(np.where(~d_arr0 == 1)[0].min())
                 ldh = int(np.where(~d_arr0 == 1)[0].max()+1)
                 new_shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
-                if xp != sp:
+                if obj.array_backend != 'sparse':
                     other_arr = xp.zeros(new_shape)
                     other_arr[:] = xp.nan
                     other_arr[:, :, rol:roh, rdl:rdh] = other.values
@@ -79,8 +76,6 @@ class TriangleDunders:
                 other = other_arr
         else:
             obj = copy.deepcopy(self)
-            xp = obj.get_array_module()
-            other = xp.nan_to_num(other)
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):
@@ -92,12 +87,18 @@ class TriangleDunders:
 
     def _compatibility_check(self, x, y):
         from chainladder import ARRAY_PRIORITY
-        backend = ARRAY_PRIORITY[
-            min([ARRAY_PRIORITY.index(x)
-            for x in [x.array_backend, y.array_backend]])]
-        x = x.set_backend(backend)
-        y = y.set_backend(backend)
+        backend = ARRAY_PRIORITY[min([ARRAY_PRIORITY.index(x)
+                                 for x in [x.array_backend, y.array_backend]])]
+        x, y = x.set_backend(backend), y.set_backend(backend)
+        if (x.origin_grain != y.origin_grain or
+            x.development_grain != y.development_grain):
+            raise ValueError("Triangle arithmetic requires both triangles to",
+                             "be the same grain.")
+        return x, y
 
+    def _prep_index(self, x, y):
+        """ Preps index and column axes for arithmetic """
+        # Set index axes for x, y
         def apply_axis(common, x, y):
             idx = y.index[common].merge(
                 x.index[common].reset_index(), how='left',
@@ -116,22 +117,15 @@ class TriangleDunders:
                 y = apply_axis(common, y, x)
             else:
                 raise ValueError("Triangle arithmetic along index is ambiguous.")
-        if x.origin_grain != y.origin_grain or x.development_grain != y.development_grain:
-            raise ValueError("Triangle arithmetic requires both triangles to be the same grain.")
-        #if x.is_val_tri != y.is_val_tri:
-        #    raise ValueError("Triangle arithmetic cannot be performed between a development triangle and a valuation Triangle.")
-        #if x.is_cumulative != y.is_cumulative:
-        #    warnings.warn('Arithmetic is being performed between an incremental triangle and a cumulative triangle.')
         return x, y
 
-    def _prep_index_columns(self, x, y):
-        """ Preps index and column axes for arithmetic """
-        # Union columns
+    def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.columns = y.columns
         elif len(y.columns) == 1 and len(x.columns) > 1:
             y.columns = x.columns
-        elif len(y.columns) == 1 and len(x.columns) == 1:
+        elif (len(y.columns) == 1 and len(x.columns) == 1 and
+              x.columns != y.columns):
             y.columns = x.columns = [0]
         elif np.all(x.columns == y.columns):
             pass
@@ -144,32 +138,6 @@ class TriangleDunders:
             for item in [item for item in col_union if item not in y.columns]:
                 y[item] = 0
             y = y[col_union]
-        # Union index
-        if len(x.index) == 1 and len(y.index) > 1:
-            x.kdims = y.kdims
-        elif len(y.index) == 1 and len(x.index) > 1:
-            y.kdims = x.kdims
-        elif len(y.index) == 1 and len(x.index) == 1 and np.all(x.index != y.index):
-            y.kdims = x.kdims = np.array([0])
-        elif np.all(x.index == y.index):
-            pass
-        else:
-            x_index = x.index.set_index(x.key_labels)
-            y_index = y.index.set_index(y.key_labels)
-            ind_union = (x_index + y_index).index
-            not_in_x = pd.DataFrame(set(ind_union)-set(x_index.index), columns=x.key_labels)
-            not_in_y = pd.DataFrame(set(ind_union)-set(y_index.index), columns=y.key_labels)
-
-            y.values = np.append(
-                y.values, np.repeat((y.iloc[-1:]*0).values, len(not_in_y), 0), 0)
-            y.kdims = y.index.append(not_in_y).values
-            y._set_slicers()
-            y = y.loc[ind_union]
-            x.values = np.append(
-                x.values, np.repeat((x.iloc[-1:]*0).values, len(not_in_x), 0), 0)
-            x.kdims = x.index.append(not_in_x).values
-            x._set_slicers()
-            x = x.loc[ind_union]
         return x, y
 
     def __add__(self, other):

@@ -4,8 +4,6 @@
 
 import pandas as pd
 import numpy as np
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
 import copy
 import warnings
 from chainladder.core.base import TriangleBase
@@ -172,10 +170,7 @@ class Triangle(TriangleBase):
         xp = self.get_array_module()
         val = (self.valuation==self.valuation_date).reshape(
             self.shape[-2:], order='F')
-        if xp == sp:
-            val = sp(val)
-        if xp == cp:
-            val = cp.array(val)
+        val = xp.array(np.nan_to_num(val))
         obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
         obj.num_to_nan()
         obj.ddims = pd.DatetimeIndex(
@@ -184,28 +179,20 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
+        from chainladder.utils.utility_functions import num_to_nan
         xp = self.get_array_module()
         obj = copy.deepcopy(self)
-        temp = obj.values.copy()
+        temp = num_to_nan(obj.values.copy())
         val_array = obj.valuation.values.reshape(
             obj.shape[-2:], order='f')[:, 1:]
         obj.ddims = np.array(['{}-{}'.format(obj.ddims[i], obj.ddims[i+1])
                               for i in range(len(obj.ddims)-1)])
-        if xp != sp:
-            temp[temp == 0] = np.nan
-            obj.values = temp[..., 1:]/temp[..., :-1]
-            # Check whether we want to eliminate the last origin period
+        obj.values = temp[..., 1:] / temp[..., :-1]
+        if self.array_backend == 'sparse':
+            obj.values.shape = tuple(obj.values.coords.max(1)+1)
+        else:
             if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2)-1) <= 0:
                 obj.values = obj.values[..., :-1, :]
-        else:
-            temp.fill_value = sp.nan
-            temp = temp[..., 1:]/temp[..., :-1]
-            temp.fill_value = 0.0
-            temp.coords = temp.coords[:, temp.data!=0]
-            temp.data = temp.data[temp.data!=0]
-            temp.shape = tuple(temp.coords.max(1)+1)
-            temp.fill_value = sp.nan
-            obj.values = sp(temp)
         obj.odims = obj.odims[:obj.values.shape[2]]
         if hasattr(obj, 'w_'):
             if obj.shape == obj.w_[..., 0:1, :len(obj.odims), :].shape:
@@ -263,7 +250,6 @@ class Triangle(TriangleBase):
                 self.values = num_to_nan(
                     xp.cumsum(xp.nan_to_num(self.values), axis=3)) * \
                     self.nan_triangle[None, None, ...]
-                self.num_to_nan()
                 self.is_cumulative = True
                 self._set_slicers()
             return self
@@ -284,19 +270,14 @@ class Triangle(TriangleBase):
             Updated instance of triangle accumulated along the origin
         """
         xp = self.get_array_module()
+        from chainladder.utils.utility_functions import num_to_nan
         if inplace:
             if self.is_cumulative or self.is_cumulative is None:
                 temp = xp.nan_to_num(self.values)[..., 1:] - \
                     xp.nan_to_num(self.values)[..., :-1]
-                temp = xp.concatenate((xp.nan_to_num(self.values[..., 0:1]), temp), axis=3)
-                if xp != sp:
-                    temp = temp * self._expand_dims(self.nan_triangle)
-                    temp[temp == 0] = np.nan
-                else:
-                    temp.fill_value = sp.nan
-                    temp = sp(temp)
-                    temp = temp * self._expand_dims(self.nan_triangle)
-                self.values = temp
+                temp = xp.concatenate(
+                    (xp.nan_to_num(self.values[..., 0:1]), temp), axis=3)
+                self.values = num_to_nan(temp * self.nan_triangle)
                 self.is_cumulative = False
                 self._set_slicers()
             return self
@@ -348,7 +329,7 @@ class Triangle(TriangleBase):
                  np.where(val_mtrx[1, :]==val_mtrx[0, -1])[0][0])
             r[r < 0] += x.shape[1]
             column_indices = column_indices - r[..., None]
-            if xp == sp:
+            if self.array_backend == 'sparse':
                 b = (np.arange(x.shape[3])[None]/x.shape[3] +
                      np.arange(x.shape[2])[:, None])[rows, column_indices]
                 c10 = (b-b%1).astype('int64').flatten()
@@ -409,7 +390,7 @@ class Triangle(TriangleBase):
                 ret_val = obj
             else:
                 ret_val = self._val_dev_chg()
-        ret_val.values = self._expand_dims(ret_val.nan_triangle)*ret_val.values
+        ret_val.values = ret_val.nan_triangle*ret_val.values
         if inplace:
             self = ret_val
         return ret_val
@@ -424,17 +405,14 @@ class Triangle(TriangleBase):
             (np.array(obj.valuation.month).reshape(obj.shape[-2:], order='f') -
              np.array(pd.DatetimeIndex(obj.odims).month)[..., None]) + 1
         rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten()>0]))
-        if self.array_backend == 'sparse':
-            val_mtrx = sp(val_mtrx)
-        else:
-            val_mtrx = xp.array(val_mtrx)
+        val_mtrx = xp.nan_to_num(xp.array(val_mtrx))
         # Can be slow on very large triangles
         x = [xp.sum((val_mtrx==item)*x, -1, keepdims=True) for item in rng]
         # End slow
         x = xp.concatenate(x, -1)
         obj.values = x
-        obj.num_to_nan()
         obj.ddims = np.array([item for item in rng])
+        obj.num_to_nan()
         obj._set_slicers()
         return obj
 
@@ -500,18 +478,10 @@ class Triangle(TriangleBase):
             o_new = np.unique(o)
             o = np.repeat(o[:, None, ...], len(o_new), axis=1)
             o_new = np.repeat(o_new[None], len(o), axis=0)
-            if xp == sp:
-                o_bool = xp.repeat(sp(o == o_new)[:, None],
-                                   len(obj.ddims), axis=1)
-                o_bool = (o_bool*1.0)[None, None, ...]
-            else:
-                o_bool = xp.repeat((o == o_new)[:, None],
-                                   len(obj.ddims), axis=1)
-                o_bool = obj._expand_dims(o_bool)
+            o_bool = xp.repeat(xp.array(o == o_new)[:, None],
+                               len(obj.ddims), axis=1)
             new_tri = xp.repeat(xp.nan_to_num(obj.values)[..., None],
                                 o_bool.shape[-1], axis=-1)
-            if xp != sp:
-                new_tri[~np.isfinite(new_tri)] = 0
             new_tri = xp.nansum(new_tri*o_bool, axis=2)
             new_tri = xp.swapaxes(new_tri, -1, -2)
             obj.values = new_tri

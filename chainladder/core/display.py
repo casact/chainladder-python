@@ -3,14 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
 import warnings
 import re
 try:
     from IPython.core.display import HTML
 except:
-    warnings.warn('Unable to load IPython.  Heatmap funcionality will not work.')
     HTML = None
 
 class TriangleDisplay():
@@ -31,14 +28,7 @@ class TriangleDisplay():
         ''' Jupyter/Ipython HTML representation '''
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
-            if np.all(np.isnan(data)):
-                fmt_str = ''
-            elif np.nanmean(abs(data)) < 10:
-                fmt_str = '{0:,.4f}'
-            elif np.nanmean(abs(data)) < 1000:
-                fmt_str = '{0:,.2f}'
-            else:
-                fmt_str = '{:,.0f}'
+            fmt_str = self._get_format_str(data)
             if len(self.ddims) > 1 and type(self.ddims[0]) is int:
                 data.columns = [['Development Lag'] * len(self.ddims),
                                 self.ddims]
@@ -62,26 +52,27 @@ class TriangleDisplay():
             return data.to_html(max_rows=pd.options.display.max_rows,
                                 max_cols=pd.options.display.max_columns)
 
+    def _get_format_str(self, data):
+        if np.all(np.isnan(data)):
+            return ''
+        elif np.nanmean(abs(data)) < 10:
+            return '{0:,.4f}'
+        elif np.nanmean(abs(data)) < 1000:
+            return '{0:,.2f}'
+        else:
+            return '{:,.0f}'
+
     def _repr_format(self):
         odims, ddims = self._repr_date_axes()
-        if self.array_backend == 'cupy':
-            out = cp.asnumpy(self.values[0, 0])
-        elif self.array_backend == 'sparse':
-            out = self.values[0, 0].todense()
-            out[out == 0] = np.nan
-        else:
-            out = self.values[0, 0]
+        out = self.set_backend('numpy').values[0, 0]
         out = pd.DataFrame(out, index=odims, columns=ddims)
         if str(out.columns[0]).find('-') > 0 and not \
            isinstance(out.columns, pd.PeriodIndex):
             out.columns = [item.replace('-9999', '-Ult')
                            for item in out.columns]
-            if len(out.drop_duplicates()) != 1:
-                return out
-            else:
-                return out.drop_duplicates().set_index(pd.Index(['(All)']))
-        else:
-            return out
+            if len(out) == 1:
+                return out.set_index(pd.Index(['(All)']))
+        return out
 
     def _repr_date_axes(self):
         if type(self.odims[0]) == np.datetime64:
@@ -119,19 +110,12 @@ class TriangleDisplay():
         """
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
-            if np.nanmean(abs(data)) < 10:
-                fmt_str = '{0:,.4f}'
-            elif np.nanmean(abs(data)) < 1000:
-                fmt_str = '{0:,.2f}'
-            else:
-                fmt_str = '{:,.0f}'
+            fmt_str = self._get_format_str(data)
             if len(self.ddims) > 1 and type(self.ddims[0]) is int:
                 data.columns = [['Development Lag'] * len(self.ddims),
                                 self.ddims]
             warnings.filterwarnings("ignore")
-            axis = 0 if axis == 'origin' else axis
-            axis = 1 if axis == 'development' else axis
-            axis = axis - 2 if axis > 1 else axis
+            axis = self._get_axis(axis)
             default = data.style.format(fmt_str).background_gradient(
                 cmap=cmap, low=low, high=high, axis=axis, subset=subset).render()
             default = re.sub('<td.*nan.*td>', '<td></td>', default)

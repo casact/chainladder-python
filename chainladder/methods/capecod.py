@@ -69,10 +69,9 @@ class CapeCod(MethodBase):
         reported_exposure = exposure / cdf
         trend_exponent = len_orig - xp.arange(len_orig) - 1
         trend_array = (1 + self.trend)**(trend_exponent)
-        trend_array = X._expand_dims(trend_array[..., None])
+        trend_array = trend_array[..., None]
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None])
-        decay_matrix = X._expand_dims(decay_matrix)
         weighted_exposure = xp.swapaxes(reported_exposure, -1, -2) * decay_matrix
         trended_ultimate = (latest*trend_array)/reported_exposure
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)

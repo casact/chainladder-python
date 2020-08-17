@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from scipy.stats import binom, norm, rankdata
 from scipy.special import comb
-from chainladder.utils.sparse import sp
 import pandas as pd
 import numpy as np
 import copy
@@ -129,10 +128,7 @@ class ValuationCorrelation:
         z = xp.minimum(L, S)
         n = L + S
         m = xp.floor((n - 1)/2)
-        if xp == sp:
-            c = sp(comb(n.todense()-1, m.todense()))
-        else:
-            c = comb(n-1, m)
+        c = comb(n-1, m)
         EZ = (n/2) - c*n/(2**n)
         VarZ = n*(n - 1) / 4 - c*n * (n-1) / (2**n) + EZ - EZ**2
         if not self.total:
@@ -140,10 +136,7 @@ class ValuationCorrelation:
             for i in range(0,xp.max(m1large.shape[2:])+1):
                 T.append([pZlower(i,j,0.5) for j in range(0,xp.max(m1large.shape[2:])+1)])
             T=np.array(T)
-            if xp == sp:
-                z_idx, n_idx = z.todense().astype(int), n.todense().astype(int)
-            else:
-                z_idx, n_idx =  z.astype(int), n.astype(int)
+            z_idx, n_idx =  z.astype(int), n.astype(int)
             self.probs = T[z_idx, n_idx]
             z_critical = triangle[triangle.valuation>triangle.valuation.min()]
             z_critical = z_critical.dev_to_val().dropna().sum('origin')*0

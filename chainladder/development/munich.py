@@ -1,19 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils.weighted_regression import WeightedRegression
-from chainladder.development import Development
-from chainladder.core import EstimatorIO
-from chainladder.core.common import Common
+from chainladder.development import Development, DevelopmentBase
 import numpy as np
 import pandas as pd
-from chainladder.utils.sparse import sp
 import copy
 import warnings
 
 
-class MunichAdjustment(BaseEstimator, TransformerMixin, EstimatorIO, Common):
+class MunichAdjustment(DevelopmentBase):
     """Applies the Munich Chainladder adjustment to a set of paid/incurred
        ldfs.  The Munich method heavily relies on the ratio of paid/incurred
        and its inverse.

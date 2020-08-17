@@ -3,8 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
 from scipy.sparse import coo_matrix
 from sklearn.base import BaseEstimator
 import json
@@ -35,11 +33,11 @@ class TriangleIO():
         def sparse_out(tri):
             k, v, o, d = tri.shape
             xp = self.get_array_module(tri)
-            if xp == cp != np:
-                out = cp.asnumpy(tri)
+            if self.array_backend == 'cupy':
+                out = xp.asnumpy(tri)
                 coo = coo_matrix(np.nan_to_num(out.reshape((k*v*o, d))))
-            elif xp == sp:
-                coo = sp.nan_to_num(tri.reshape((k*v*o, d))).to_scipy_sparse()
+            elif self.array_backend == 'sparse':
+                coo = xp.nan_to_num(tri.reshape((k*v*o, d))).to_scipy_sparse()
             else:
                 coo = coo_matrix(np.nan_to_num(tri.reshape((k*v*o, d))))
             return json.dumps(dict(zip([str(item) for item in zip(coo.row, coo.col)], coo.data)))
@@ -58,8 +56,8 @@ class TriangleIO():
                 'dtype': str(getattr(self, attribute).dtype),
                 'array': getattr(self, attribute).tolist()}
         xp = self.get_array_module()
-        if xp == cp != np:
-            out = cp.asnumpy(self.cum_to_incr().values)
+        if self.array_backend == 'cupy':
+            out = xp.asnumpy(self.cum_to_incr().values)
             xp = np
         else:
             out = self.cum_to_incr().values

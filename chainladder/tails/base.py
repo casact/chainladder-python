@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import copy
 import numpy as np
-from chainladder.utils.sparse import sp
 from chainladder.utils import WeightedRegression
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development import DevelopmentBase, Development
@@ -115,12 +114,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         else:
             ldfs = 1+self._get_initial_ldf(xp, tail)*(self.decay**xp.arange(1000))
         ldfs = ldfs[..., :decay_range]
-        if xp == sp:
-            tail = sp(tail/np.prod(ldfs[..., :-1].todense(), axis=-1, keepdims=True))
-            ldfs = sp(ldfs.todense())
-            tail, ldfs = sp(tail), sp(ldfs)
-        else:
-            tail = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
+        tail = tail/xp.prod(ldfs[..., :-1], axis=-1, keepdims=True)
         ldfs = xp.concatenate((ldfs[..., :-1], tail), axis=-1)
         self.ldf_.values = xp.concatenate(
             (self.ldf_.values[..., :-decay_range],
@@ -140,9 +134,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         y = num_to_nan(y)
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y), None)
         std_err_ = xp.exp(time_pd*reg.slope_+reg.intercept_)
-        if xp == sp:
-            sigma_ = sp(sigma_, fill_value=X.values.fill_value)
-            std_err_ = sp(std_err_, fill_value=X.values.fill_value)
         return sigma_, std_err_
 
     def _get_tail_weighted_time_period(self, X):
@@ -153,16 +144,12 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         """
         y = X.ldf_.values.copy()
         xp = X.ldf_.get_array_module()
-        if xp == sp:
-            y = y.todense()
         y[y <= 1] = xp.nan
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
         tail = xp.prod(self.ldf_.values[..., -self._ave_period[0]-1:],
                        -1, keepdims=True)
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
         time_pd = (xp.log(tail-1)-reg.intercept_)/reg.slope_
-        if xp == sp:
-            y = sp(y)
         return time_pd
 
     @staticmethod

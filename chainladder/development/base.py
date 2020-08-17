@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-from chainladder.utils.cupy import cp
 import pandas as pd
 import copy
 import warnings
@@ -116,7 +115,7 @@ class Development(DevelopmentBase):
                 val_date_min[-n_periods * \
                 val_offset[X.development_grain][X.origin_grain] - 1]
             w = X[X.valuation>=val_date_min]
-            return xp.nan_to_num((w/w).values)*X._expand_dims(X.nan_triangle)
+            return xp.nan_to_num((w/w).values)*X.nan_triangle
 
 
     def _drop_adjustment(self, X, link_ratio):
@@ -127,7 +126,6 @@ class Development(DevelopmentBase):
         if self.drop_high is not None:
             weight = weight*self._drop_hilo('high', X, link_ratio)
         if self.drop_low is not None:
-            print(type(weight), type(self._drop_hilo('low', X, link_ratio)))
             weight = weight*self._drop_hilo('low', X, link_ratio)
         if self.drop is not None:
             weight = weight*self._drop(X)
@@ -139,7 +137,6 @@ class Development(DevelopmentBase):
         xp = X.get_array_module()
         link_ratio[link_ratio == 0] = xp.nan
         link_ratio = link_ratio + xp.random.rand(*list(link_ratio.shape))/1e8
-
         lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
         if kind == 'high':
             vals = xp.nanmax(link_ratio, -2, keepdims=True)
@@ -235,10 +232,7 @@ class Development(DevelopmentBase):
         for i in [2, 1, 0]:
             val = xp.repeat(val[None], tri_array.shape[i], axis=0)
         val = xp.nan_to_num(val * (y * 0 + 1))
-        if xp == cp:
-            link_ratio = y / x
-        else:
-            link_ratio = xp.divide(y, x, where=xp.nan_to_num(x) != 0)
+        link_ratio = y / x
         self.w_ = xp.array(self._assign_n_periods_weight(X) *
                            self._drop_adjustment(X, link_ratio))
         w = self.w_ / (x**(val))

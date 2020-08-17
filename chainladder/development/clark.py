@@ -5,7 +5,6 @@ from chainladder.development.base import DevelopmentBase
 import copy
 import numpy as np
 import pandas as pd
-from chainladder.utils.sparse import sp
 from scipy.optimize import minimize
 
 
@@ -126,8 +125,7 @@ class ClarkLDF(DevelopmentBase):
         age_offset = {'Y':6., 'Q':1.5, 'M':0.5}[X.development_grain]
         age_interval = {'Y':12., 'Q':3., 'M':1.}[X.development_grain]
         nans = nan_triangle.reshape(1, -1)[0]
-        age = X._expand_dims(
-            xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)]).astype('float64')
+        age = xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)].astype('float64')
         age_end = age - age_offset
         age_start = xp.maximum(age_end - age_interval,0).astype('float64')
         origin = np.repeat(X.odims, len(X.ddims))[~xp.isnan(nans)]
