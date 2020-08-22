@@ -117,7 +117,6 @@ class Development(DevelopmentBase):
             w = X[X.valuation>=val_date_min]
             return xp.nan_to_num((w/w).values)*X.nan_triangle
 
-
     def _drop_adjustment(self, X, link_ratio):
         weight = X.nan_triangle[:, :-1]
         if self.drop_high == self.drop_low == \
@@ -214,11 +213,9 @@ class Development(DevelopmentBase):
         else:
             tri_array = num_to_nan(X.values.copy())
         if type(self.average) is not list:
-            average = [self.average] * (tri_array.shape[-1] - 1)
+            self.average_ = np.array([self.average] * (tri_array.shape[-1] - 1))
         else:
-            average = self.average
-        average = np.array(average)
-        self.average_ = average
+            self.average_ = np.array(self.average)
         if type(self.n_periods) is not list:
             n_periods = [self.n_periods] * (tri_array.shape[-1] - 1)
         else:
@@ -227,11 +224,9 @@ class Development(DevelopmentBase):
         self.n_periods_ = n_periods
         weight_dict = {'regression': 0, 'volume': 1, 'simple': 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        val = xp.array([weight_dict.get(item.lower(), 1)
-                        for item in average])
-        for i in [2, 1, 0]:
-            val = xp.repeat(val[None], tri_array.shape[i], axis=0)
-        val = xp.nan_to_num(val * (y * 0 + 1))
+        val = xp.nan_to_num(xp.array(
+            [weight_dict.get(item.lower(), 1)
+             for item in self.average_])[None, None, None] * (y * 0 + 1))
         link_ratio = y / x
         self.w_ = xp.array(self._assign_n_periods_weight(X) *
                            self._drop_adjustment(X, link_ratio))

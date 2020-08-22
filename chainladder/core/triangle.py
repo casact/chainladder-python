@@ -166,13 +166,14 @@ class Triangle(TriangleBase):
     @property
     def latest_diagonal(self):
         """ The latest diagonal of the Triangle """
+        from chainladder.utils.utility_functions import num_to_nan
         obj = copy.deepcopy(self)
         xp = self.get_array_module()
         val = (self.valuation==self.valuation_date).reshape(
             self.shape[-2:], order='F')
         val = xp.array(np.nan_to_num(val))
-        obj.values = xp.nansum(val*self.values, axis=-1, keepdims=True)
-        obj.num_to_nan()
+        obj.values = num_to_nan(
+            xp.nansum(num_to_nan(val*1.0)*self.values, axis=-1, keepdims=True))
         obj.ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype='datetime64[ns]', freq=None)
         return obj

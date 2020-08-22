@@ -15,7 +15,6 @@ from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 
 
-
 class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas, Common):
     ''' This class handles the initialization of a triangle '''

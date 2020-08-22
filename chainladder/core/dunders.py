@@ -216,9 +216,12 @@ class TriangleDunders:
     def __eq__(self, other):
         if not isinstance(other, TriangleDunders):
             return False
-        a, b = self._compatibility_check(self, other)
-        xp = self.get_array_module()
-        return xp.all(xp.nan_to_num(a.values) == xp.nan_to_num(b.values))
+        from chainladder import ARRAY_PRIORITY
+        backend = ARRAY_PRIORITY[min([ARRAY_PRIORITY.index(x)
+                                 for x in [self.array_backend, other.array_backend]])]
+        x, y = self.set_backend(backend), other.set_backend(backend)
+        xp = x.get_array_module()
+        return xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values))
 
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None
