@@ -27,3 +27,9 @@ def test_bf_eq_cl_when_using_cl_apriori():
                                           sample_weight=cl_ult).ultimate_
     xp = cl_ult.get_array_module()
     assert xp.allclose(cl_ult.values, bf_ult.values, atol=1e-5)
+
+def test_different_backends():
+    clrd = cl.load_sample('clrd')[['CumPaidLoss', 'EarnedPremDIR']]
+    clrd = clrd[clrd['LOB']=='wkcomp']
+    model = cl.BornhuetterFerguson().fit(clrd['CumPaidLoss'].sum().set_backend('numpy'), sample_weight=clrd['EarnedPremDIR'].sum().latest_diagonal.set_backend('numpy'))
+    assert abs((model.predict(clrd['CumPaidLoss'].set_backend('sparse'), sample_weight=clrd['EarnedPremDIR'].latest_diagonal.set_backend('sparse')).ibnr_.sum() - model.ibnr_).sum()) < 1

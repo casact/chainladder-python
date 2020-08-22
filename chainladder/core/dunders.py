@@ -214,8 +214,11 @@ class TriangleDunders:
         return obj
 
     def __eq__(self, other):
+        if not isinstance(other, TriangleDunders):
+            return False
+        a, b = self._compatibility_check(self, other)
         xp = self.get_array_module()
-        return xp.all(xp.nan_to_num(self.values) == xp.nan_to_num(other.values))
+        return xp.all(xp.nan_to_num(a.values) == xp.nan_to_num(b.values))
 
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None

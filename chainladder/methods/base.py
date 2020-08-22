@@ -112,7 +112,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
         if sample_weight:
-            sample_weight = sample_weight.set_backend(self.X_.array_backend)
+            sample_weight = sample_weight.set_backend(obj.array_backend)
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
         return obj
 

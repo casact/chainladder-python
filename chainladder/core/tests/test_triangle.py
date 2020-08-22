@@ -330,3 +330,9 @@ def test_sumdiff_to_diffsum():
 def test_multiindex_broadcast():
     clrd = cl.load_sample('clrd')['CumPaidLoss']
     clrd / clrd.groupby('LOB').sum()
+
+def test_backends():
+    clrd = tri[['CumPaidLoss', 'EarnedPremDIR']]
+    a = clrd.iloc[1,0].set_backend('sparse').dropna()
+    b = clrd.iloc[1,0].dropna()
+    assert a == b

@@ -124,8 +124,8 @@ class TrianglePandas:
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
         """
-        xp = self.get_array_module()
         obj = self.sum(axis=0).sum(axis=1)
+        xp = obj.get_array_module()
         odim = list((xp.nansum(obj.values[0, 0, :], -1) != 0).astype('int'))
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
