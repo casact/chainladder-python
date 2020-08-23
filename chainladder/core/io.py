@@ -33,10 +33,7 @@ class TriangleIO():
         def sparse_out(tri):
             k, v, o, d = tri.shape
             xp = self.get_array_module(tri)
-            if self.array_backend == 'cupy':
-                out = xp.asnumpy(tri)
-                coo = coo_matrix(np.nan_to_num(out.reshape((k*v*o, d))))
-            elif self.array_backend == 'sparse':
+            if self.array_backend == 'sparse':
                 coo = xp.nan_to_num(tri.reshape((k*v*o, d))).to_scipy_sparse()
             else:
                 coo = coo_matrix(np.nan_to_num(tri.reshape((k*v*o, d))))

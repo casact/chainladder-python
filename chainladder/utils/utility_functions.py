@@ -90,7 +90,8 @@ def read_json(json_str, array_backend=None):
              cl.__dict__[item['__class__']]().set_params(**item['params']))
             for item in json_dict])
     elif 'kdims' in json_dict.keys():
-        tri = Triangle(array_backend=array_backend)
+        tri = Triangle()
+        tri.array_backend = array_backend
         arrays = ['kdims', 'vdims', 'odims', 'ddims']
         for array in arrays:
             setattr(tri, array, np.array(

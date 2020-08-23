@@ -336,3 +336,11 @@ def test_backends():
     a = clrd.iloc[1,0].set_backend('sparse').dropna()
     b = clrd.iloc[1,0].dropna()
     assert a == b
+
+def test_union_columns():
+    assert tri.iloc[:, :3]+tri.iloc[:, 3:] == tri
+
+def test_4loc():
+    clrd = tri.groupby('LOB').sum()
+    assert clrd.iloc[:3, :2, 0,0] == clrd[clrd.origin==tri.origin.min()][clrd.development==clrd.development.min()].loc['comauto':'othliab', :'CumPaidLoss', :, :]
+    assert clrd.iloc[:3, :2, 0:1, -1] == clrd[clrd.development==tri.development.max()].loc['comauto':'othliab', :'CumPaidLoss', '1988', :]
