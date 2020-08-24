@@ -120,6 +120,7 @@ class TriangleDunders:
         return x, y
 
     def _prep_columns(self, x, y):
+        x_backend, y_backend = x.array_backend, y.array_backend
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.columns = y.columns
         elif len(y.columns) == 1 and len(x.columns) > 1:
@@ -138,7 +139,7 @@ class TriangleDunders:
             for item in [item for item in col_union if item not in y.columns]:
                 y[item] = 0
             y = y[col_union]
-        return x, y
+        return x.set_backend(x_backend), y.set_backend(y_backend)
 
     def __add__(self, other):
         obj, other = self._validate_arithmetic(other)

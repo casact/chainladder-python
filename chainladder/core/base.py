@@ -84,8 +84,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         dev_lag_unique = np.sort(TriangleBase._development_lag(
             date_axes['origin'], date_axes['development']).unique())
         orig_unique = np.sort(date_axes['origin'].unique())
-        kdims = data_agg[index].drop_duplicates(ignore_index=True).reset_index()
-
+        kdims = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
         # Map index, origin, development indices to data
         set_idx = lambda col, unique : col.map(
             dict(zip(unique, range(len(unique))))).values[None].T
@@ -96,7 +95,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # origin <= development is required - truncate bad records if not true
         valid = data_agg['origin'] <= data_agg['development']
         if sum(~valid) > 0:
-            warnings.warn("Observations with development before",
+            warnings.warn("Observations with development before " +
                           "origin start have been removed.")
         data_agg, orig_idx = data_agg[valid], orig_idx[valid]
         dev_idx, key_idx = dev_idx[valid], key_idx[valid]
