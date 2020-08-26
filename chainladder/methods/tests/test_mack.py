@@ -113,3 +113,12 @@ def test_mack_mack_std_err_(data, averages, est_sigma, tail, atol):
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
+
+def test_mack_asymmetric():
+    r('Paid <- matrix(NA, 45, 45)')
+    r('Paid[seq(1,45,4),] <- qpaid')
+    out = r('M <- MackChainLadder(Paid)')
+    tri = cl.load_sample('quarterly')['paid']
+    xp = tri.get_array_module()
+    assert round(xp.array(out.rx('Mack.S.E')[0])[-1,-1],2) == \
+           round(cl.MackChainladder().fit(tri).summary_.to_frame().iloc[-1,-1], 2)

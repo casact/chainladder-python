@@ -156,7 +156,7 @@ class MackChainladder(Chainladder):
         lxp = self.X_.ldf_.get_array_module()
         t1 = xp.nan_to_num(self._full_triangle_.values)[..., :len(self.X_.ddims)] - \
             xp.nan_to_num(self.X_.values) + \
-            xp.nan_to_num(self.X_[self.X_.valuation==self.X_.valuation_date].values)
+            xp.nan_to_num((self.X_-self.X_[self.X_.valuation<self.X_.valuation_date]).values)
         t1 = xp.sum(t1*self.X_.std_err_.values, axis=2, keepdims=True)
         extend = self.X_.ldf_.shape[-1]-self.X_.shape[-1]+1
         ldf = self.X_.ldf_.values[..., :len(self.X_.ddims)-1]
