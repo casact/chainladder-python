@@ -62,8 +62,8 @@ class TriangleDisplay():
         else:
             return '{:,.0f}'
 
-    def _repr_format(self):
-        odims, ddims = self._repr_date_axes()
+    def _repr_format(self, origin_as_datetime=False):
+        odims, ddims = self._repr_date_axes(origin_as_datetime)
         out = self.set_backend('numpy').values[0, 0]
         out = pd.DataFrame(out, index=odims, columns=ddims)
         if str(out.columns[0]).find('-') > 0 and not \
@@ -74,11 +74,14 @@ class TriangleDisplay():
                 return out.set_index(pd.Index(['(All)']))
         return out
 
-    def _repr_date_axes(self):
+    def _repr_date_axes(self, origin_as_datetime=False):
         if type(self.odims[0]) == np.datetime64:
             odims = pd.Series(self.odims).dt.to_period(self.origin_grain)
         else:
             odims = pd.Series(self.odims)
+
+        if origin_as_datetime:
+            odims = odims.dt.to_timestamp()
         if len(self.ddims) == 1 and self.ddims[0] is None:
             ddims = list(self.vdims)
         elif self.is_val_tri:

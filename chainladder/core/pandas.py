@@ -83,10 +83,15 @@ class TrianglePandas:
             pandas.DataFrame representation of the Triangle.
         """
         axes = [num for num, item in enumerate(self.shape) if item > 1]
+        origin_as_datetime=False
+        if 'origin_as_datetime' in kwargs:
+                origin_as_datetime = kwargs.get('origin_as_datetime')
+
         if self.shape[:2] == (1, 1):
-            return self._repr_format()
-        elif len(axes) in [1, 2]:
-            odims, ddims = self._repr_date_axes()
+            return self._repr_format(origin_as_datetime)
+
+        elif len(axes) in [1, 2]:            
+            odims, ddims = self._repr_date_axes(origin_as_datetime)
             tri = np.squeeze(self.set_backend('numpy').values)
             axes_lookup = {0: self.kdims, 1: self.vdims,
                            2: odims, 3: ddims}
