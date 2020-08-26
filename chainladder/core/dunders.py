@@ -112,9 +112,9 @@ class TriangleDunders:
         if x.key_labels != y.key_labels:
             common = list(set(x.key_labels).intersection(set(y.key_labels)))
             if len(common) == len(x.key_labels):
-                x = apply_axis(common, x, y)
+                x = apply_axis(common, x, y) if len(x.index) > 1 else x
             elif len(common) == len(y.key_labels):
-                y = apply_axis(common, y, x)
+                y = apply_axis(common, y, x) if len(y.index) > 1 else y
             else:
                 raise ValueError("Triangle arithmetic along index is ambiguous.")
         return x, y

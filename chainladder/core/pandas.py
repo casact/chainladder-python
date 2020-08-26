@@ -78,6 +78,11 @@ class TrianglePandas:
         """ Converts a triangle to a pandas.DataFrame.  Requires an individual
         index and column selection to appropriately grab the 2D DataFrame.
 
+        Parameters
+        ----------
+        origin_as_datetime : bool
+            Whether the origin vector should be converted from PeriodIndex
+            into a datetime dtype. Default is False.
         Returns
         -------
             pandas.DataFrame representation of the Triangle.
