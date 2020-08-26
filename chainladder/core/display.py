@@ -81,7 +81,7 @@ class TriangleDisplay():
             odims = pd.Series(self.odims)
 
         if origin_as_datetime:
-            odims = odims.dt.to_timestamp()
+            odims = odims.dt.to_timestamp(how='e')
         if len(self.ddims) == 1 and self.ddims[0] is None:
             ddims = list(self.vdims)
         elif self.is_val_tri:
