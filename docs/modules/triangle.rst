@@ -392,6 +392,14 @@ of the object using pandas-style ``loc``/``iloc`` or boolean filtering.
    need for ``reset_index()`` or trying to boolean-filter a ``MultiIndex``. This is
    a divergence from the pandas API.
 
+As of version ``0.7.6``, four-dimensional slicing is supported:
+**Example:**
+  >>> import chainladder as cl
+  >>> clrd = cl.load_sample('clrd')
+  >>> clrd.iloc[[0, 10, 3], 1:8, :5, :]
+  >>> clrd.loc[:'Aegis Grp', 'CumPaidLoss':, '1990':'1994', :48]
+
+
 
 Arithmetic
 ----------

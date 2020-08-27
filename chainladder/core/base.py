@@ -62,8 +62,10 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 format=development_format)
             self.development_grain = TriangleBase._get_grain(development_date)
         else:
-            development_date = origin_date + \
-                pd.tseries.offsets.MonthEnd(m_cnt[self.origin_grain])
+            development_date = pd.PeriodIndex(
+                origin_date + pd.tseries.offsets.MonthEnd(m_cnt[self.origin_grain]),
+                freq={'Y': 'A'}.get(self.origin_grain, self.origin_grain)
+                ).to_timestamp(how='e')
             self.development_grain = self.origin_grain
         development_date.name = 'development'
         # Summarize dataframe to the level specified in axes
@@ -116,7 +118,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # Set all axis values
         self.kdims = kdims.drop('index', 1).values
         self.odims = orig_unique
-        self.ddims = dev_lag_unique*m_cnt[self.development_grain]
+        self.ddims = dev_lag_unique if development else dev_lag[0:1].values
+        self.ddims = self.ddims*(m_cnt[self.development_grain])
         self.vdims = np.array(columns)
 
         # Set remaining triangle properties

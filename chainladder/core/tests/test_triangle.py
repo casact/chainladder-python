@@ -344,3 +344,12 @@ def test_4loc():
     clrd = tri.groupby('LOB').sum()
     assert clrd.iloc[:3, :2, 0,0] == clrd[clrd.origin==tri.origin.min()][clrd.development==clrd.development.min()].loc['comauto':'othliab', :'CumPaidLoss', :, :]
     assert clrd.iloc[:3, :2, 0:1, -1] == clrd[clrd.development==tri.development.max()].loc['comauto':'othliab', :'CumPaidLoss', '1988', :]
+
+def test_init_vector():
+    a = raa[raa.development==12]
+    b = pd.DataFrame(
+        {'AccYear':[item for item in range(1981, 1991)],
+         'premium': [3000000]*10})
+    b = cl.Triangle(b, origin='AccYear', columns='premium')
+    assert np.all(a.valuation==b.valuation)
+    assert a.valuation_date == b.valuation_date
