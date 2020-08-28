@@ -8,37 +8,47 @@ from chainladder.utils.sparse import sp
 
 try:
     import cupy as cp
+
     cp.array([1])
-    module = 'cupy'
+    module = "cupy"
 except:
-    if ARRAY_BACKEND == 'cupy':
+    if ARRAY_BACKEND == "cupy":
         import warnings
-        warnings.warn('Unable to load CuPY.  Using numpy instead.')
+
+        warnings.warn("Unable to load CuPY.  Using numpy instead.")
     import numpy as cp
-    module = 'numpy'
+
+    module = "numpy"
+
 
 def nansum(a, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
     return cp.sum(cp.nan_to_num(a), *args, **kwargs)
 
+
 def nanmean(a, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
-    return cp.sum(cp.nan_to_num(a), *args, **kwargs) / \
-           cp.sum(~cp.isnan(a), *args, **kwargs)
+    return cp.sum(cp.nan_to_num(a), *args, **kwargs) / cp.sum(
+        ~cp.isnan(a), *args, **kwargs
+    )
+
 
 def nanmedian(a, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
     return cp.array(np.nanmedian(cp.asnumpy(a), *args, **kwargs))
 
+
 def nanpercentile(a, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
     return cp.array(np.nanpercentile(cp.asnumpy(a), *args, **kwargs))
+
 
 def unique(ar, axis=None, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
     return cp.array(np.unique(cp.asnumpy(ar), axis=axis, *args, **kwargs))
 
-if module == 'cupy' and int(cp.__version__.split('.')[0]) < 7:
+
+if module == "cupy" and int(cp.__version__.split(".")[0]) < 7:
     cp.nansum = nansum
     cp.nanmean = nanmean
     cp.nanmedian = nanmedian

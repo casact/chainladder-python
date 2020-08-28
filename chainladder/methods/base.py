@@ -18,7 +18,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def validate_X(self, X):
         obj = copy.deepcopy(X)
-        if 'ldf_' not in obj:
+        if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
             obj = TailConstant().fit_transform(obj)
@@ -30,21 +30,28 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """
         xp = ultimate.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
+
         if self.cdf_.key_labels != ultimate.key_labels and len(self.ldf_.index) > 1:
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
-            idx = ultimate.index[level].merge(
-                self.cdf_.index[level].reset_index(), how='left', on=level)['index'].values
-            cdf = self.cdf_.values[list(idx.astype(int)), ..., :ultimate.shape[-1]]
+            idx = (
+                ultimate.index[level]
+                .merge(self.cdf_.index[level].reset_index(), how="left", on=level)[
+                    "index"
+                ]
+                .values
+            )
+            cdf = self.cdf_.values[list(idx.astype(int)), ..., : ultimate.shape[-1]]
         else:
-            cdf = self.cdf_.values[..., :ultimate.shape[-1]]
-        a = ultimate.iloc[0,0]*0 + ultimate.nan_triangle
-        a = a-a[a.valuation<a.valuation_date]
+            cdf = self.cdf_.values[..., : ultimate.shape[-1]]
+        a = ultimate.iloc[0, 0] * 0 + ultimate.nan_triangle
+        a = a - a[a.valuation < a.valuation_date]
         a = a.set_backend(ultimate.array_backend)
         if sample_weight:
-            ultimate.values = xp.nan_to_num(ultimate.values*a.values) + \
-                              xp.nan_to_num(sample_weight.values*a.values)
+            ultimate.values = xp.nan_to_num(ultimate.values * a.values) + xp.nan_to_num(
+                sample_weight.values * a.values
+            )
         else:
-            ultimate.values = xp.nan_to_num(ultimate.values*a.values)
+            ultimate.values = xp.nan_to_num(ultimate.values * a.values)
         ultimate.values = num_to_nan(ultimate.values)
         ultimate = ultimate / ultimate
         cdf = ultimate * cdf
@@ -121,7 +128,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return self.predict(X, sample_weight)
 
     def _include_process_variance(self):
-        if hasattr(self.X_, '_get_process_variance'):
+        if hasattr(self.X_, "_get_process_variance"):
             full = self.full_triangle_
             obj = self.X_._get_process_variance(full)
             self.ultimate_.values = obj.values[..., -1:]

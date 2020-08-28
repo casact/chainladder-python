@@ -64,11 +64,11 @@ class Benktander(MethodBase):
         """
 
         if sample_weight is None:
-            raise ValueError('sample_weight is required.')
+            raise ValueError("sample_weight is required.")
         super().fit(X, y, sample_weight)
-        if hasattr(X, '_get_process_variance'):
+        if hasattr(X, "_get_process_variance"):
             if X.shape[0] != sample_weight.shape[0]:
-                sample_weight = sample_weight.broadcast_axis('index', X.index)
+                sample_weight = sample_weight.broadcast_axis("index", X.index)
         self.ultimate_ = self._get_ultimate(self.X_, self.sample_weight_)
         self.process_variance_ = self._include_process_variance()
         return self
@@ -76,25 +76,25 @@ class Benktander(MethodBase):
     def _get_ultimate(self, X, sample_weight):
         xp = X.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
+
         ultimate = copy.deepcopy(X)
 
         # Apriori
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)
-            apriori = random_state.normal(
-                self.apriori, self.apriori_sigma, X.shape[0])
-            apriori = apriori.reshape(X.shape[0],-1)[..., None, None]
+            apriori = random_state.normal(self.apriori, self.apriori_sigma, X.shape[0])
+            apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight.values * apriori
         else:
-            apriori = sample_weight.values*self.apriori
+            apriori = sample_weight.values * self.apriori
         # Benktander formula -> Triangle
         cdf = self._align_cdf(ultimate, sample_weight)
-        cdf = (1-1/num_to_nan(cdf))[None]
-        exponents = xp.arange(self.n_iters+1)
-        exponents = xp.reshape(exponents, tuple([len(exponents)]+[1]*4))
-        cdf = cdf ** (((cdf+1e-16)/(cdf+1e-16)*exponents))
+        cdf = (1 - 1 / num_to_nan(cdf))[None]
+        exponents = xp.arange(self.n_iters + 1)
+        exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))
+        cdf = cdf ** (((cdf + 1e-16) / (cdf + 1e-16) * exponents))
         cdf = xp.nan_to_num(cdf)
-        ultimate.values = (
-            xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(X.latest_diagonal.values) +
-            cdf[-1, ...] * xp.nan_to_num(apriori))
+        ultimate.values = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(
+            X.latest_diagonal.values
+        ) + cdf[-1, ...] * xp.nan_to_num(apriori)
         return self._set_ult_attr(ultimate)

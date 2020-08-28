@@ -31,7 +31,8 @@ class DevelopmentConstant(DevelopmentBase):
         The estimated cumulative development patterns
 
     """
-    def __init__(self, patterns=None, style='ldf', callable_axis=0):
+
+    def __init__(self, patterns=None, style="ldf", callable_axis=0):
         self.patterns = patterns
         self.style = style
         self.callable_axis = callable_axis
@@ -52,35 +53,40 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        if X.array_backend == 'sparse':
-            obj = X.set_backend('numpy')
+
+        if X.array_backend == "sparse":
+            obj = X.set_backend("numpy")
         else:
             obj = copy.deepcopy(X)
         xp = obj.get_array_module()
         obj.values = xp.ones(X.shape)[..., 0:1, :-1]
         if callable(self.patterns):
-            if len(obj.key_labels) == 1 and self.callable_axis==0:
+            if len(obj.key_labels) == 1 and self.callable_axis == 0:
                 ldf = obj.index.iloc[:, 0].apply(self.patterns)
             else:
                 ldf = obj.index.apply(self.patterns, axis=self.callable_axis).iloc[:, 0]
-            ldf = pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0).fillna(1)[obj.ddims[:-1]].values
-            if self.callable_axis==0:
+            ldf = (
+                pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                .fillna(1)[obj.ddims[:-1]]
+                .values
+            )
+            if self.callable_axis == 0:
                 ldf = xp.array(ldf[:, None, None, :])
             else:
                 ldf = xp.array(ldf[None, :, None, :])
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
             ldf = ldf[None, None, None, :]
-        if self.style == 'cdf':
-            ldf = xp.concatenate((ldf[..., :-1]/ldf[..., 1:], ldf[..., -1:]), -1)
+        if self.style == "cdf":
+            ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
         obj.values = obj.values * ldf
         obj.ddims = X.link_ratio.ddims
         obj.odims = obj.odims[0:1]
         obj._set_slicers()
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
-        self.sigma_ = self.ldf_*0+1
-        self.std_err_ = self.ldf_*0+1
+        self.sigma_ = self.ldf_ * 0 + 1
+        self.std_err_ = self.ldf_ * 0 + 1
         return self
 
     def transform(self, X):
@@ -97,7 +103,7 @@ class DevelopmentConstant(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = copy.copy(X)
-        triangles = ['ldf_', 'sigma_', 'std_err_']
+        triangles = ["ldf_", "sigma_", "std_err_"]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()

@@ -51,8 +51,15 @@ class TailCurve(TailBase):
     std_err_ : Triangle
         std_err with tail factor applied
     """
-    def __init__(self, curve='exponential', fit_period=(None, None),
-                 extrap_periods=100, errors='ignore', attachment_age=None):
+
+    def __init__(
+        self,
+        curve="exponential",
+        fit_period=(None, None),
+        extrap_periods=100,
+        errors="ignore",
+        attachment_age=None,
+    ):
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
@@ -75,81 +82,97 @@ class TailCurve(TailBase):
             Returns the instance itself.
         """
         from chainladder.utils.utility_functions import num_to_nan
-        if X.array_backend == 'sparse':
-            X = X.set_backend('numpy')
+
+        if X.array_backend == "sparse":
+            X = X.set_backend("numpy")
         else:
             X = copy.deepcopy(X)
         xp = X.get_array_module()
         if type(self.fit_period) == slice:
-            warnings.warn("Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age).")
+            warnings.warn(
+                "Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age)."
+            )
             fit_period = self.fit_period
         else:
-            grain = {'Y': 12, 'Q': 3, 'M': 1}[X.development_grain]
-            start = None if self.fit_period[0] is None else int(self.fit_period[0] / grain - 1)
-            end = None if self.fit_period[1] is None else int(self.fit_period[1] / grain - 1)
+            grain = {"Y": 12, "Q": 3, "M": 1}[X.development_grain]
+            start = (
+                None
+                if self.fit_period[0] is None
+                else int(self.fit_period[0] / grain - 1)
+            )
+            end = (
+                None
+                if self.fit_period[1] is None
+                else int(self.fit_period[1] / grain - 1)
+            )
             fit_period = slice(start, end, None)
         super().fit(X, y, sample_weight)
         xp = self.ldf_.get_array_module()
-        _y = self.ldf_.values[..., :X.shape[-1]-1].copy()
+        _y = self.ldf_.values[..., : X.shape[-1] - 1].copy()
         _w = xp.zeros(_y.shape)
         _w[..., fit_period] = 1.0
-        if self.errors == 'ignore':
+        if self.errors == "ignore":
             _w[_y <= 1.0] = 0
             _y[_y <= 1.0] = 1.01
-        elif self.errors == 'raise' and xp.any(y < 1.0):
-            raise ZeroDivisionError('Tail fit requires all LDFs to be greater than 1.0')
+        elif self.errors == "raise" and xp.any(y < 1.0):
+            raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
         _y = xp.log(_y - 1)
-        n_obs = X.shape[-1]-1
+        n_obs = X.shape[-1] - 1
         k, v = X.shape[:2]
         _x = self._get_x(_w, _y)
         # Get LDFs
         coefs = WeightedRegression(axis=3, xp=xp).fit(_x, _y, _w)
         self._slope_, self._intercept_ = coefs.slope_, coefs.intercept_
         extrapolate = xp.cumsum(
-            xp.ones(tuple(list(_y.shape)[:-1] +
-                    [self.extrap_periods + n_obs])), -1)
+            xp.ones(tuple(list(_y.shape)[:-1] + [self.extrap_periods + n_obs])), -1
+        )
         tail = self._predict_tail(extrapolate)
         if self.attachment_age:
-            attach_idx = xp.min(xp.where(X.ddims>=self.attachment_age))
+            attach_idx = xp.min(xp.where(X.ddims >= self.attachment_age))
         else:
             attach_idx = len(X.ddims) - 1
         self.ldf_.values = xp.concatenate(
-            (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1)
-        obj = Development().fit_transform(X) if 'ldf_' not in X else X
+            (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1
+        )
+        obj = Development().fit_transform(X) if "ldf_" not in X else X
         sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values = xp.concatenate(
-            (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1)
+            (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1
+        )
         self.std_err_.values = xp.concatenate(
-            (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1)
+            (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1
+        )
         return self
 
     def _get_x(self, w, y):
         # For Exponential decay, no transformation on x is needed
-        if self.curve == 'exponential':
+        if self.curve == "exponential":
             return None
-        if self.curve == 'inverse_power':
+        if self.curve == "inverse_power":
             xp = self.ldf_.get_array_module()
             reg = WeightedRegression(3, False, xp=xp).fit(None, y, w).infer_x_w()
             return xp.log(reg.x)
 
     def _predict_tail(self, extrapolate):
         xp = self.ldf_.get_array_module()
-        if self.curve == 'exponential':
-            tail_ldf = xp.exp(self._slope_*extrapolate + self._intercept_)
-        if self.curve == 'inverse_power':
-            tail_ldf = xp.exp(self._intercept_)*(extrapolate**self._slope_)
+        if self.curve == "exponential":
+            tail_ldf = xp.exp(self._slope_ * extrapolate + self._intercept_)
+        if self.curve == "inverse_power":
+            tail_ldf = xp.exp(self._intercept_) * (extrapolate ** self._slope_)
         return self._get_tail_prediction(tail_ldf)
 
     @property
     def slope_(self):
         """ Does not work with munich """
         idx = self.cdf_._idx_table()
-        return pd.DataFrame(self._slope_[..., 0, 0],
-                            index=idx.index, columns=idx.columns)
+        return pd.DataFrame(
+            self._slope_[..., 0, 0], index=idx.index, columns=idx.columns
+        )
 
     @property
     def intercept_(self):
         """ Does not work with munich """
         idx = self.cdf_._idx_table()
-        return pd.DataFrame(self._intercept_[..., 0, 0],
-                            index=idx.index, columns=idx.columns)
+        return pd.DataFrame(
+            self._intercept_[..., 0, 0], index=idx.index, columns=idx.columns
+        )

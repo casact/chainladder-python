@@ -30,6 +30,7 @@ class BornhuetterFerguson(Benktander):
     ibnr_ : Triangle
         The IBNR per the method
     """
+
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):
         self.apriori = apriori
         self.apriori_sigma = apriori_sigma

@@ -51,11 +51,12 @@ class CapeCod(MethodBase):
             Returns the instance itself.
         """
         if sample_weight is None:
-            raise ValueError('sample_weight is required.')
+            raise ValueError("sample_weight is required.")
         super().fit(X, y, sample_weight)
         self.sample_weight_ = sample_weight
-        self.ultimate_, self.apriori_, self.detrended_apriori_ = \
-            self._get_ultimate(X, self.sample_weight_)
+        self.ultimate_, self.apriori_, self.detrended_apriori_ = self._get_ultimate(
+            X, self.sample_weight_
+        )
         self.process_variance_ = self._include_process_variance()
         return self
 
@@ -68,21 +69,23 @@ class CapeCod(MethodBase):
         exposure = sample_weight.values
         reported_exposure = exposure / cdf
         trend_exponent = len_orig - xp.arange(len_orig) - 1
-        trend_array = (1 + self.trend)**(trend_exponent)
+        trend_array = (1 + self.trend) ** (trend_exponent)
         trend_array = trend_array[..., None]
         decay_matrix = self.decay ** xp.abs(
-            xp.arange(len_orig)[None].T - xp.arange(len_orig)[None])
+            xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
+        )
         weighted_exposure = xp.swapaxes(reported_exposure, -1, -2) * decay_matrix
-        trended_ultimate = (latest*trend_array)/reported_exposure
+        trended_ultimate = (latest * trend_array) / reported_exposure
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
-        apriori = (xp.sum(weighted_exposure*trended_ultimate, -1) /
-                   xp.sum(weighted_exposure, -1))
+        apriori = xp.sum(weighted_exposure * trended_ultimate, -1) / xp.sum(
+            weighted_exposure, -1
+        )
         ult.values = apriori[..., None]
         apriori_ = copy.copy(ult)
-        detrended_ultimate = apriori_.values/trend_array
+        detrended_ultimate = apriori_.values / trend_array
         detrended_apriori_ = copy.copy(ult)
         detrended_apriori_.values = detrended_ultimate
-        ult.values = latest + detrended_ultimate*(1-1/cdf)*exposure
+        ult.values = latest + detrended_ultimate * (1 - 1 / cdf) * exposure
         ult = self._set_ult_attr(ult)
         apriori_ = self._set_ult_attr(apriori_)
         detrended_apriori_ = self._set_ult_attr(detrended_apriori_)
@@ -106,6 +109,7 @@ class CapeCod(MethodBase):
         """
         obj = copy.deepcopy(X)
         obj.ldf_ = self.ldf_
-        obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = \
-            self._get_ultimate(obj, sample_weight)
+        obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = self._get_ultimate(
+            obj, sample_weight
+        )
         return obj

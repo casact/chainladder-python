@@ -9,6 +9,7 @@ import copy
 import pandas as pd
 import json
 
+
 class GridSearch(BaseEstimator):
     """Exhaustive search over specified parameter values for an estimator.
     Important members are fit, predict.
@@ -47,8 +48,8 @@ class GridSearch(BaseEstimator):
         A DataFrame with each param_grid key as a column and the ``scoring``
         score as the last column
     """
-    def __init__(self, estimator, param_grid, scoring, verbose=0,
-                 error_score='raise'):
+
+    def __init__(self, estimator, param_grid, scoring, verbose=0, error_score="raise"):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
@@ -128,23 +129,27 @@ class Pipeline(PipelineSL, EstimatorIO):
     def fit(self, X, y=None, sample_weight=None, **fit_params):
         if sample_weight:
             fit_params = {} if not fit_params else fit_params
-            fit_params[self.steps[-1][0] + '__sample_weight'] = sample_weight
+            fit_params[self.steps[-1][0] + "__sample_weight"] = sample_weight
         return super().fit(X, y, **fit_params)
 
     def predict(self, X, sample_weight=None, **predict_params):
         if sample_weight:
             predict_params = {} if not predict_params else predict_params
-            predict_params['sample_weight'] = sample_weight
+            predict_params["sample_weight"] = sample_weight
         return super().predict(X, **predict_params)
 
     def fit_predict(self, X, y=None, sample_weight=None, **fit_params):
         self.fit(X, y, sample_weight, **fit_params)
         return self.predict(X, sample_weight, **fit_params)
 
-
     def to_json(self):
         return json.dumps(
-            [{'name': item[0],
-              'params': item[1].get_params(),
-              '__class__': item[1].__class__.__name__}
-             for item in self.steps])
+            [
+                {
+                    "name": item[0],
+                    "params": item[1].get_params(),
+                    "__class__": item[1].__class__.__name__,
+                }
+                for item in self.steps
+            ]
+        )

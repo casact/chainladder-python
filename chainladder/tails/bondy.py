@@ -8,6 +8,7 @@ from scipy.optimize import least_squares
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase, Development
 
+
 class TailBondy(TailBase):
     """Estimator for the Generalized Bondy tail factor.
 
@@ -49,6 +50,7 @@ class TailBondy(TailBase):
     TailCurve
 
     """
+
     def __init__(self, earliest_age=None, attachment_age=None):
         self.earliest_age = earliest_age
         self.attachment_age = attachment_age
@@ -69,58 +71,76 @@ class TailBondy(TailBase):
             Returns the instance itself.
         """
         if self.attachment_age and self.attachment_age < self.earliest_age:
-            raise ValueError('attachment_age must not be before earliest_age.')
+            raise ValueError("attachment_age must not be before earliest_age.")
         backend = X.array_backend
-        if X.array_backend != 'numpy':
-            X = X.set_backend('numpy')
+        if X.array_backend != "numpy":
+            X = X.set_backend("numpy")
         xp = X.get_array_module()
         super().fit(X, y, sample_weight)
 
         if self.earliest_age is None:
             earliest_age = X.ddims[0]
         else:
-            earliest_age = X.ddims[int(
-                self.earliest_age / ({'Y': 12,'Q': 3,'M': 1}[X.development_grain])) - 1]
+            earliest_age = X.ddims[
+                int(
+                    self.earliest_age / ({"Y": 12, "Q": 3, "M": 1}[X.development_grain])
+                )
+                - 1
+            ]
         attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
-        obj = Development().fit_transform(X) if 'ldf_' not in X else X
+        obj = Development().fit_transform(X) if "ldf_" not in X else X
         b_optimized = []
-        initial = xp.where(obj.ddims==earliest_age)[0][0] if earliest_age else 0
+        initial = xp.where(obj.ddims == earliest_age)[0][0] if earliest_age else 0
         for num in range(len(obj.vdims)):
-            b0 = (xp.ones(obj.shape[0])*.5)[:, None]
+            b0 = (xp.ones(obj.shape[0]) * 0.5)[:, None]
             data = xp.log(obj.ldf_.values[:, num, 0, initial:])
             b0 = xp.concatenate((b0, data[..., 0:1]), axis=1)
-            b_optimized.append(least_squares(
-                TailBondy._solver, x0=b0.flatten(), kwargs={'data': data, 'xp': xp}).x)
+            b_optimized.append(
+                least_squares(
+                    TailBondy._solver, x0=b0.flatten(), kwargs={"data": data, "xp": xp}
+                ).x
+            )
         self.b_ = xp.concatenate(
-            [item.reshape(-1,2)[:, 0:1]
-             for item in b_optimized], axis=1)[..., None, None]
-        self.earliest_ldf_ = xp.exp(xp.concatenate(
-            [item.reshape(-1,2)[:, 1:2]
-             for item in b_optimized], axis=1)[..., None, None])
-        if sum(X.ddims>earliest_age) > 1:
-            tail = xp.exp(self.earliest_ldf_ * self.b_**(len(obj.ldf_.ddims)-1))
+            [item.reshape(-1, 2)[:, 0:1] for item in b_optimized], axis=1
+        )[..., None, None]
+        self.earliest_ldf_ = xp.exp(
+            xp.concatenate(
+                [item.reshape(-1, 2)[:, 1:2] for item in b_optimized], axis=1
+            )[..., None, None]
+        )
+        if sum(X.ddims > earliest_age) > 1:
+            tail = xp.exp(self.earliest_ldf_ * self.b_ ** (len(obj.ldf_.ddims) - 1))
         else:
             tail = self.ldf_.values[..., 0, initial]
-        tail = (tail**(self.b_/(1-self.b_)))
-        f0 = self.ldf_.values[..., 0:1, initial:initial+1]
-        fitted = (f0**(self.b_**(np.arange(sum(X.ddims>=earliest_age))[None, None, None, :])))
-        fitted = xp.concatenate((fitted, fitted[..., -1:]**(self.b_/(1-self.b_))), axis=-1)
+        tail = tail ** (self.b_ / (1 - self.b_))
+        f0 = self.ldf_.values[..., 0:1, initial : initial + 1]
+        fitted = f0 ** (
+            self.b_ ** (np.arange(sum(X.ddims >= earliest_age))[None, None, None, :])
+        )
+        fitted = xp.concatenate(
+            (fitted, fitted[..., -1:] ** (self.b_ / (1 - self.b_))), axis=-1
+        )
         fitted = xp.repeat(fitted, self.ldf_.shape[2], axis=2)
         idx = X._idx_table()
-        self.b_ = pd.DataFrame(
-            self.b_[..., 0, 0], index=idx.index, columns=idx.columns)
+        self.b_ = pd.DataFrame(self.b_[..., 0, 0], index=idx.index, columns=idx.columns)
         self.earliest_ldf_ = pd.DataFrame(
-            self.earliest_ldf_[..., 0, 0], index=idx.index, columns=idx.columns)
+            self.earliest_ldf_[..., 0, 0], index=idx.index, columns=idx.columns
+        )
         self.ldf_.values = xp.concatenate(
-            (self.ldf_.values[..., :sum(X.ddims<=attachment_age)],
-             fitted[..., -sum(X.ddims>=attachment_age):]),
-            axis=-1)
+            (
+                self.ldf_.values[..., : sum(X.ddims <= attachment_age)],
+                fitted[..., -sum(X.ddims >= attachment_age) :],
+            ),
+            axis=-1,
+        )
         sigma, std_err = self._get_tail_stats(obj)
         self.sigma_.values = xp.concatenate(
-            (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1)
+            (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1
+        )
         self.std_err_.values = xp.concatenate(
-            (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1)
-        if backend == 'cupy':
+            (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1
+        )
+        if backend == "cupy":
             self = self.set_backend(backend)
         return self
 
@@ -147,5 +167,5 @@ class TailBondy(TailBase):
     def _solver(b, data, xp):
         b = b.reshape(-1, 2)
         arange = xp.repeat(xp.arange(data.shape[-1])[None, :], data.shape[0], 0)
-        out = data - (b[:, 1:2])*b[:, 0:1]**(arange)
+        out = data - (b[:, 1:2]) * b[:, 0:1] ** (arange)
         return out.flatten()
