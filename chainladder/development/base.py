@@ -108,10 +108,10 @@ class Development(DevelopmentBase):
             for item in set(self.n_periods)
         }
         conc = [
-            dict_map[item][..., num : num + 1, :]
+            dict_map[item][..., num : num + 1]
             for num, item in enumerate(self.n_periods)
         ]
-        return xp.swapaxes(xp.concatenate(tuple(conc), -2), -2, -1)
+        return xp.concatenate(tuple(conc), -1)
 
     def _assign_n_periods_weight_int(self, X, n_periods):
         """ Zeros out weights depending on number of periods desired
