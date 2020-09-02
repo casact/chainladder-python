@@ -77,7 +77,6 @@ class TailBondy(TailBase):
         elif X.array_backend == "cupy":
             X = X.set_backend("numpy", deep=True)
         xp = X.get_array_module()
-        print(type(X.cdf_.values), type(X.values))
         super().fit(X, y, sample_weight)
 
         if self.earliest_age is None:
