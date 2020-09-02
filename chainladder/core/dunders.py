@@ -155,7 +155,10 @@ class TriangleDunders:
             for item in [item for item in col_union if item not in y.columns]:
                 y[item] = 0
             y = y[col_union]
-        x, y = x.set_backend(x_backend, inplace=True), y.set_backend(y_backend, inplace=True)
+        x, y = (
+            x.set_backend(x_backend, inplace=True),
+            y.set_backend(y_backend, inplace=True),
+        )
         return x, y
 
     def __add__(self, other):

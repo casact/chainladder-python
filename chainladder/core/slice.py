@@ -99,18 +99,6 @@ class Ilocation(_LocBase):
 class TriangleSlicer:
     """ Slicer functionality """
 
-    def _idx_table(self):
-        """ private method that generates a dataframe of triangle indices.
-            The dataframe is meant to be sliced using pandas and the resultant
-            indices are then to be extracted from the Triangle object."""
-        df = self.index
-        for num, item in enumerate(self.vdims):
-            df[item] = list(
-                zip(np.arange(len(df)), (np.ones(len(df)) * num).astype(int))
-            )
-        df.set_index(self.key_labels, inplace=True)
-        return df
-
     def __getitem__(self, key):
         """ Function for pandas style column indexing"""
         if type(key) is pd.Series and key.name == "development":
@@ -132,8 +120,6 @@ class TriangleSlicer:
     def __setitem__(self, key, value):
         """ Function for pandas style column indexing setting """
         xp = self.get_array_module()
-        idx = self._idx_table()
-        idx[key] = 1
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
             if self.array_backend == "sparse":
@@ -150,7 +136,7 @@ class TriangleSlicer:
             else:
                 self.values[:, i : i + 1] = value.values
         else:
-            self.vdims = np.array(idx.columns.unique())
+            self.vdims = self.vdims if key in self.vdims else np.append(self.vdims, key)
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
             except:

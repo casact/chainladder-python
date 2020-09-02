@@ -59,7 +59,7 @@ class DevelopmentCorrelation:
         t_expectation = (
             xp.sum(xp.nan_to_num(weight * self.t), axis=3) / xp.sum(weight, axis=3)
         )[..., None]
-        idx = triangle._idx_table().index
+        idx = triangle.index.set_index(triangle.key_labels).index
         self.t_variance = 2 / ((I - 2) * (I - 3))
         self.t = pd.DataFrame(self.t[..., 0, 0], columns=triangle.vdims, index=idx)
         self.t_expectation = pd.DataFrame(
@@ -159,7 +159,7 @@ class ValuationCorrelation:
         else:
             ci2 = norm.ppf(0.5 - (1 - p_critical) / 2) * xp.sqrt(xp.sum(VarZ, axis=-1))
             self.range = (xp.sum(VarZ, axis=-1) + ci2, xp.sum(VarZ, axis=-1) - ci2)
-            idx = triangle._idx_table().index
+            idx = triangle.index.set_index(triangle.key_labels).index
             self.z_critical = pd.DataFrame(
                 (
                     (self.range[0] > VarZ.sum(axis=-1))

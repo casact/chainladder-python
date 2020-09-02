@@ -49,7 +49,7 @@ sp.ones = ones
 
 def nanmedian(a, axis=None, keepdims=None, *args, **kwargs):
     new_a = np.nanmedian(a.todense(), axis=axis, keepdims=keepdims, *args, **kwargs)
-    return sp(np.nan_to_num(new_a), fill_value = np.nan)
+    return sp(np.nan_to_num(new_a), fill_value=np.nan)
 
 
 sp.nanmedian = nanmedian

@@ -123,7 +123,7 @@ class TrianglePandas:
             tri = np.squeeze(self.set_backend("numpy").values)
             axes_lookup = {0: self.kdims, 1: self.vdims, 2: odims, 3: ddims}
             if axes[0] == 0:
-                idx = self._idx_table().index
+                idx = self.index.set_index(self.key_labels).index
             else:
                 idx = axes_lookup[axes[0]]
             if len(axes) == 2:
@@ -206,7 +206,7 @@ class TrianglePandas:
 
         """
         if axis == 1:
-            return self[list(self._idx_table().drop(labels, axis=axis).columns)]
+            return self[[item for item in self.columns if item not in labels]]
         else:
             raise NotImplementedError("drop only inpemented for column axis")
 
@@ -313,24 +313,24 @@ class TrianglePandas:
         return obj
 
     def head(self, *args, **kwargs):
-        out = self._idx_table()
         return pd.DataFrame(
-            np.broadcast_to(np.array(["..."]), out.shape),
-            index=out.index,
-            columns=out.columns,
+            np.broadcast_to(np.array(["..."]), self.shape[:2]),
+            index=self.index.set_index(self.key_labels).index,
+            columns=self.vdims,
         ).head(*args, **kwargs)
 
     def tail(self, *args, **kwargs):
-        out = self._idx_table()
         return pd.DataFrame(
-            np.broadcast_to(np.array(["..."]), out.shape),
-            index=out.index,
-            columns=out.columns,
+            np.broadcast_to(np.array(["..."]), self.shape[:2]),
+            index=self.index.set_index(self.key_labels).index,
+            columns=self.vdims,
         ).tail(*args, **kwargs)
 
     def sort_index(self, *args, **kwargs):
         return self.loc[
-            self._idx_table().sort_index(*args, **kwargs).reset_index()[self.key_labels]
+            self.index.set_index(self.key_labels)
+            .sort_index(*args, **kwargs)
+            .reset_index()[self.key_labels]
         ]
 
     def exp(self):

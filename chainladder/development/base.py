@@ -92,7 +92,9 @@ class Development(DevelopmentBase):
         elif type(self.n_periods) is list:
             if len(self.n_periods) != X.values.shape[-1] - 1:
                 raise ValueError(
-                    "n_periods list must be of length {}.".format(X.values.shape[-1] - 1)
+                    "n_periods list must be of length {}.".format(
+                        X.values.shape[-1] - 1
+                    )
                 )
             else:
                 return self._assign_n_periods_weight_list(X)

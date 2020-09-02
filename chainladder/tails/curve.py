@@ -161,15 +161,15 @@ class TailCurve(TailBase):
     @property
     def slope_(self):
         """ Does not work with munich """
-        idx = self.cdf_._idx_table()
+        rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._slope_[..., 0, 0], index=idx.index, columns=idx.columns
+            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.vdims
         )
 
     @property
     def intercept_(self):
         """ Does not work with munich """
-        idx = self.cdf_._idx_table()
+        rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._intercept_[..., 0, 0], index=idx.index, columns=idx.columns
+            self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.vdims
         )

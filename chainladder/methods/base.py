@@ -24,6 +24,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """
         xp = ultimate.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
+
         if self.cdf_.key_labels != ultimate.key_labels and len(self.ldf_.index) > 1:
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
             idx = (

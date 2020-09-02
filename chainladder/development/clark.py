@@ -192,17 +192,11 @@ class ClarkLDF(DevelopmentBase):
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
         self.sigma_ = self.ldf_ * 0 + 1
         self.std_err_ = self.ldf_ * 0 + 1
-        table = X._idx_table()
-        self.omega_ = pd.DataFrame(
-            params[..., 0, 0], index=table.index, columns=table.columns
-        )
-        self.theta_ = pd.DataFrame(
-            params[..., 0, 1], index=table.index, columns=table.columns
-        )
+        rows = X.index.set_index(X.key_labels).index
+        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
+        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)
         if sample_weight:
-            self.elr_ = pd.DataFrame(
-                params[..., 0, 2], index=table.index, columns=table.columns
-            )
+            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
         ultimate_ = (
             xp.swapaxes(self._G(age=(latest_age - age_offset)[::-1]), -1, -2)
             * ld.values
@@ -277,8 +271,10 @@ class ClarkLDF(DevelopmentBase):
             scale = [[scale / df]]
         return pd.DataFrame(
             scale,
-            index=self.incremental_fits_._idx_table().index,
-            columns=self.incremental_fits_._idx_table().columns,
+            index=self.incremental_fits_.index.set_index(
+                self.incremental_fits_.key_labels
+            ).index,
+            columns=self.incremental_fits_.columns,
         )
 
     @property

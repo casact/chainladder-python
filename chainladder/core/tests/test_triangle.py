@@ -124,7 +124,7 @@ def test_append():
 
 
 def test_assign_existing_col():
-    qtr = cl.load_sample('quarterly')
+    qtr = cl.load_sample("quarterly")
     before = qtr.shape
     qtr["paid"] = 1 / qtr["paid"]
     assert qtr.shape == before
@@ -317,9 +317,7 @@ def test_grain():
 
 def test_off_cycle_val_date():
     assert qtr == qtr_gt
-    assert (
-        qtr.valuation_date.strftime("%Y-%m-%d") == "2006-03-31"
-    )
+    assert qtr.valuation_date.strftime("%Y-%m-%d") == "2006-03-31"
 
 
 def test_printer():
@@ -409,7 +407,9 @@ def test_origin_and_value_setters():
 def test_grain_increm_arg():
     assert qtr == qtr_gt
     tri_i = qtr["incurred"].cum_to_incr()
-    np.testing.assert_array_equal(tri_i.grain("OYDY").incr_to_cum(), qtr["incurred"].grain("OYDY"))
+    np.testing.assert_array_equal(
+        tri_i.grain("OYDY").incr_to_cum(), qtr["incurred"].grain("OYDY")
+    )
 
 
 def test_valdev1():

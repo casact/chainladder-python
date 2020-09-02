@@ -162,7 +162,6 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             == self.cdf_.development.iloc[-1 - self._ave_period[0]]
         ]
         if np.all(df.values.min(axis=2) == df.values.max(axis=2)):
-            idx = self.cdf_._idx_table()
             df = df[df.origin == df.origin.min()].to_frame()
         return df
 
