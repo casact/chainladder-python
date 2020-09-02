@@ -3,11 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
-from chainladder.development import DevelopmentBase, Development
-import numpy as np
+from chainladder.development import Development
 import pandas as pd
-from chainladder.utils.sparse import sp
-import copy
 import warnings
 
 
@@ -86,7 +83,7 @@ class TailCurve(TailBase):
         if X.array_backend == "sparse":
             X = X.set_backend("numpy")
         else:
-            X = copy.deepcopy(X)
+            X = X.copy()
         xp = X.get_array_module()
         if type(self.fit_period) == slice:
             warnings.warn(

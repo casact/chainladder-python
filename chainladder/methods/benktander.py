@@ -1,10 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
-import numpy as np
-import pandas as pd
-import copy
 from chainladder.methods import MethodBase
 
 
@@ -77,8 +73,7 @@ class Benktander(MethodBase):
         xp = X.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
 
-        ultimate = copy.deepcopy(X)
-
+        ultimate = X.copy()
         # Apriori
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)

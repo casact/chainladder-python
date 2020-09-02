@@ -2,22 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-import pandas as pd
-from chainladder.utils.sparse import sp
-import copy
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
-from chainladder.core import EstimatorIO
+from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
 
 
 class MethodBase(BaseEstimator, EstimatorIO, Common):
-    def __init__(self):
-        pass
-
     def validate_X(self, X):
-        obj = copy.deepcopy(X)
+        obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
@@ -30,7 +24,6 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """
         xp = ultimate.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
-
         if self.cdf_.key_labels != ultimate.key_labels and len(self.ldf_.index) > 1:
             level = list(set(self.cdf_.key_labels).intersection(ultimate.key_labels))
             idx = (
@@ -44,7 +37,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         else:
             cdf = self.cdf_.values[..., : ultimate.shape[-1]]
         a = ultimate.iloc[0, 0] * 0 + ultimate.nan_triangle
-        a = a - a[a.valuation < a.valuation_date]
+        if a.array_backend == "sparse":
+            a = a - a[a.valuation < a.valuation_date]
         a = a.set_backend(ultimate.array_backend)
         if sample_weight:
             ultimate.values = xp.nan_to_num(ultimate.values * a.values) + xp.nan_to_num(
@@ -61,7 +55,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
         xp = ultimate.get_array_module()
-        if xp != sp:
+        if ultimate.array_backend != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
         ultimate.ddims = np.array([9999])
         ultimate._set_slicers()
@@ -115,7 +109,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new: Triangle
 
         """
-        obj = copy.deepcopy(X)
+        obj = X.copy()
         xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
         if sample_weight:

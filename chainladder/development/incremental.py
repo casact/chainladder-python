@@ -4,7 +4,6 @@
 from chainladder.development.base import Development, DevelopmentBase
 import numpy as np
 import pandas as pd
-import copy
 
 
 class IncrementalAdditive(DevelopmentBase):
@@ -63,11 +62,9 @@ class IncrementalAdditive(DevelopmentBase):
         if X.array_backend == "sparse":
             X = X.set_backend("numpy")
         else:
-            X = copy.deepcopy(X)
+            X = X.copy()
         if sample_weight.array_backend == "sparse":
             sample_weight = sample_weight.set_backend("numpy")
-        else:
-            sample_weight = copy.deepcopy(sample_weight)
         xp = X.get_array_module()
         sample_weight.is_cumulative = False
         obj = X.cum_to_incr() / sample_weight
@@ -81,7 +78,7 @@ class IncrementalAdditive(DevelopmentBase):
             y_ = xp.nansum(w_ * x.values * sample_weight.values, axis=-2)
             y_ = y_ / xp.nansum(w_ * sample_weight.values, axis=-2)
         y_ = xp.repeat(y_[..., None, :], len(x.odims), -2)
-        obj = copy.copy(x)
+        obj = x.copy()
         keeps = (
             1
             - xp.nan_to_num(x.nan_triangle)
@@ -128,7 +125,7 @@ class IncrementalAdditive(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.copy(X)
+        X_new = X.copy()
         for item in ["incremental_", "ldf_", "sigma_", "std_err_"]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new

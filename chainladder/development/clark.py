@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
-import copy
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
@@ -90,7 +89,7 @@ class ClarkLDF(DevelopmentBase):
             age = xp.array([age]).astype("float64")
         if type(age) == list:
             age = xp.array([age]).astype("float64")
-        obj = copy.deepcopy(self.incremental_act_)
+        obj = self.incremental_act_.copy()
         obj.odims = xp.array(["(All)"])
         obj.values = 1 / self._G(age)
         obj.ddims = age
@@ -116,9 +115,9 @@ class ClarkLDF(DevelopmentBase):
 
         backend = X.array_backend
         if backend != "numpy":
-            obj = X.set_backend("numpy")
+            obj = X.set_backend("numpy", deep=True)
         else:
-            obj = copy.deepcopy(X)
+            obj = X.copy()
         xp = obj.get_array_module()
         nan_triangle = obj.nan_triangle
         ld = obj.latest_diagonal
@@ -208,7 +207,7 @@ class ClarkLDF(DevelopmentBase):
             xp.swapaxes(self._G(age=(latest_age - age_offset)[::-1]), -1, -2)
             * ld.values
         )
-        self.incremental_fits_ = copy.deepcopy(X)
+        self.incremental_fits_ = X.copy()
         self.incremental_fits_.array_backend = "numpy"
         self.incremental_fits_.values = (
             (
@@ -220,7 +219,7 @@ class ClarkLDF(DevelopmentBase):
         )
         self.incremental_fits_.is_cumulative = False
         if backend == "cupy":
-            self = self.set_backend("cupy")
+            self.set_backend("cupy", inplace=True)
         return self
 
     def transform(self, X):
@@ -236,7 +235,7 @@ class ClarkLDF(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.copy(X)
+        X_new = X.copy()
         triangles = [
             "ldf_",
             "sigma_",
@@ -287,6 +286,6 @@ class ClarkLDF(DevelopmentBase):
         resid = (self.incremental_act_.values - self.incremental_fits_.values) / (
             np.sqrt(self.scale_.values[..., None, None] * self.incremental_fits_.values)
         )
-        obj = copy.copy(self.incremental_fits_)
+        obj = self.incremental_fits_.copy()
         obj.values = resid
         return obj

@@ -4,7 +4,7 @@
 from sklearn.model_selection import ParameterGrid
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline as PipelineSL
-from chainladder.core import EstimatorIO
+from chainladder.core.io import EstimatorIO
 import copy
 import pandas as pd
 import json

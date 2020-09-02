@@ -114,7 +114,7 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     xp = p.get_array_module()
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])[None, ...]
-    assert xp.allclose(r, p, atol=atol)
+    assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
 
 @pytest.mark.parametrize("data", data)
@@ -127,7 +127,7 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     xp = p.get_array_module()
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.expand_dims(xp.array(df[0]), 0)
-    assert xp.allclose(r, p, atol=atol)
+    assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
 
 @pytest.mark.parametrize("data", data)
@@ -140,7 +140,7 @@ def test_mack_mack_std_err_(data, averages, est_sigma, tail, atol):
     xp = p.get_array_module()
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
-    assert xp.allclose(r, p, atol=atol)
+    assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
 
 def test_mack_asymmetric():
@@ -150,5 +150,5 @@ def test_mack_asymmetric():
     tri = cl.load_sample("quarterly")["paid"]
     xp = tri.get_array_module()
     assert round(xp.array(out.rx("Mack.S.E")[0])[-1, -1], 2) == round(
-        cl.MackChainladder().fit(tri).summary_.to_frame().iloc[-1, -1], 2
+        float(cl.MackChainladder().fit(tri).summary_.to_frame().iloc[-1, -1]), 2
     )

@@ -57,6 +57,8 @@ class TriangleBase(
         index, columns, origin, development = str_to_list(
             index, columns, origin, development
         )
+
+        # Determine desired array backend of the Triangle
         if array_backend is None:
             from chainladder import ARRAY_BACKEND
 
@@ -85,6 +87,7 @@ class TriangleBase(
             ).to_timestamp(how="e")
             self.development_grain = self.origin_grain
         development_date.name = "development"
+
         # Summarize dataframe to the level specified in axes
         key_gr = [origin_date, development_date] + [
             data[item] for item in self._flatten(index)
@@ -110,6 +113,7 @@ class TriangleBase(
         )
         orig_unique = np.sort(date_axes["origin"].unique())
         kdims = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
+
         # Map index, origin, development indices to data
         set_idx = (
             lambda col, unique: col.map(dict(zip(unique, range(len(unique)))))
@@ -121,6 +125,7 @@ class TriangleBase(
         key_idx = (
             data_agg[index].merge(kdims, how="left", on=index)["index"].values[None].T
         )
+
         # origin <= development is required - truncate bad records if not true
         valid = data_agg["origin"] <= data_agg["development"]
         if sum(~valid) > 0:
@@ -130,6 +135,7 @@ class TriangleBase(
             )
         data_agg, orig_idx = data_agg[valid], orig_idx[valid]
         dev_idx, key_idx = dev_idx[valid], key_idx[valid]
+
         # All Triangles start out as sparse arrays
         val_idx = (
             ((np.ones(len(data_agg))[None].T) * range(len(columns)))
@@ -170,7 +176,7 @@ class TriangleBase(
         self.key_labels = index
         self.is_cumulative = cumulative
         self.valuation_date = data_agg["development"].max()
-        if array_backend == "cupy":
+        if array_backend != "sparse":
             self.set_backend(array_backend, inplace=True)
         self._set_slicers()
 
@@ -349,14 +355,15 @@ class TriangleBase(
 
         if not AUTO_SPARSE:
             return self
+        n = np.prod(self.shape)
         if (
             self.array_backend == "numpy"
-            and np.prod(self.shape) / 1e6 * 8 > 30
-            and np.isnan(self.values).sum() / np.prod(self.shape) < 0.2
+            and n / 8e6 > 30
+            and np.isnan(self.values).sum() / n < 0.2
         ):
             self.set_backend("sparse", inplace=True)
         if self.array_backend == "sparse" and not (
-            self.values.density < 0.2 and np.prod(self.shape) / 1e6 * 8 > 30
+            self.values.density < 0.2 and n / 8e6 > 30
         ):
             self.set_backend("numpy", inplace=True)
         return self

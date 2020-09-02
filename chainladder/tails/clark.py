@@ -2,10 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.tails import TailBase
-from chainladder.development import DevelopmentBase
 from chainladder.development.clark import ClarkLDF
-import numpy as np
-import copy
 
 
 class TailClark(TailBase):
@@ -68,7 +65,7 @@ class TailClark(TailBase):
         if backend != "numpy":
             X = X.set_backend("numpy")
         else:
-            X = copy.deepcopy(X)
+            X = X.copy()
         xp = X.get_array_module()
         super().fit(X, y, sample_weight)
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
@@ -108,7 +105,7 @@ class TailClark(TailBase):
             self.elr_ = model.elr_
         self.norm_resid_ = model.norm_resid_
         if backend == "cupy":
-            self = self.set_backend("cupy")
+            self = self.set_backend("cupy", inplace=True)
         return self
 
     def transform(self, X):

@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
-import copy
 from scipy.optimize import least_squares
 from chainladder.tails import TailBase
 from chainladder.development import DevelopmentBase, Development
@@ -73,9 +72,12 @@ class TailBondy(TailBase):
         if self.attachment_age and self.attachment_age < self.earliest_age:
             raise ValueError("attachment_age must not be before earliest_age.")
         backend = X.array_backend
-        if X.array_backend != "numpy":
+        if X.array_backend == "numpy":
             X = X.set_backend("numpy")
+        elif X.array_backend == "cupy":
+            X = X.set_backend("numpy", deep=True)
         xp = X.get_array_module()
+        print(type(X.cdf_.values), type(X.values))
         super().fit(X, y, sample_weight)
 
         if self.earliest_age is None:

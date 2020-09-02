@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import copy
 
 
 class _LocBase:
@@ -12,31 +11,23 @@ class _LocBase:
     def __init__(self, obj):
         self.obj = obj
 
-    def get_idx(self, idx, key=None):
+    def get_idx(self, idx, filter_idx=None):
         """ Returns a slice of the original Triangle """
-        obj = copy.deepcopy(self.obj)
-        i_idx = _LocBase._contig_slice(
-            pd.unique([item[0] for item in idx.values[:, 0]])
-        )
-        c_idx = _LocBase._contig_slice(
-            pd.unique([item[1] for item in idx.values[0, :]])
-        )
-        if key:
-            o_idx = _LocBase._contig_slice(key[0])
-            d_idx = _LocBase._contig_slice(key[1])
-            if type(o_idx) != slice or type(d_idx) != slice:
-                raise ValueError(
-                    "Fancy indexing on origin/development is not supported."
-                )
-        else:
-            o_idx = d_idx = slice(None)
+        obj = self.obj.copy()
+        if filter_idx is not None:
+            obj.index = filter_idx
+        i_idx = _LocBase._contig_slice(idx[0])
+        c_idx = _LocBase._contig_slice(idx[1])
+        o_idx = _LocBase._contig_slice(idx[2])
+        d_idx = _LocBase._contig_slice(idx[3])
+        if type(o_idx) != slice or type(d_idx) != slice:
+            raise ValueError("Fancy indexing on origin/development is not supported.")
         if type(i_idx) is slice or type(c_idx) is slice:
             obj.values = obj.values[i_idx, c_idx, o_idx, d_idx]
         else:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
-        obj.kdims = np.array(idx.index)
-        obj.vdims = np.array(idx.columns)
-        obj.key_labels = list(idx.index.names)
+        obj.kdims = obj.kdims[i_idx]
+        obj.vdims = obj.vdims[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
         return obj
@@ -45,7 +36,7 @@ class _LocBase:
     def _contig_slice(arr):
         if type(arr) is slice:
             return arr
-        if type(arr) == int:
+        if type(arr) in [int, np.int64, np.int32]:
             arr = [arr]
         if len(arr) == 1:
             return slice(arr[0], arr[0] + 1)
@@ -75,61 +66,44 @@ class Location(_LocBase):
                 key = pd.Index(key.iloc[:, 0])
             else:
                 key = pd.Index(key)
-        key = (key,) if type(key) not in [list, tuple] else key
-        idx = self.obj._idx_table().loc[key[: min(len(key), 2)]]
-        key = [slice(None), slice(None)] if len(key) <= 2 else list(key[2:])
-        key = key + [slice(None)] if len(key) == 1 else key
-        key[0] = (
-            pd.Series(self.obj.origin)
-            .to_frame()
-            .reset_index()
-            .set_index("origin")
-            .loc[key[0]]["index"]
-        )
-        key[1] = (
-            pd.Series(self.obj.development)
-            .to_frame()
-            .reset_index()
-            .set_index("development")
-            .loc[key[1]]["index"]
-        )
-        key = [[item] if type(item) is not pd.Series else item.values for item in key]
-        obj = self.get_idx(self.obj._idx_table_format(idx), key)
-        return obj
+        key = (key,) if type(key) is not tuple else key
+        key = list(key) + [slice(None)] * (4 - len(key))
+        idx = self.obj.index.reset_index().set_index(self.obj.key_labels)
+        sliced = idx.loc[key[0]]
+        if type(sliced) is pd.Series:
+            sliced = sliced.to_frame().T
+            sliced.index.rename(idx.index.name, inplace=True)
+        sliced = sliced.iloc[:, 0]
+        key[0] = sliced.to_list()
+        filter_idx = idx.reset_index()[
+            list(sliced.reset_index().drop("index", 1).columns)
+        ]
+        s = pd.Series(self.obj.columns).to_frame().reset_index()
+        key[1] = s.set_index(0).loc[key[1]].values.flatten()
+        s = pd.Series(self.obj.origin).to_frame().reset_index()
+        key[2] = s.set_index("origin").loc[key[2]].values.flatten()
+        s = pd.Series(self.obj.development).to_frame().reset_index()
+        key[3] = s.set_index("development").loc[key[3]].values.flatten()
+        return self.get_idx(key, filter_idx)
 
 
 class Ilocation(_LocBase):
     """ class to generate .iloc[] functionality """
 
     def __getitem__(self, key):
-        key = (key,) if type(key) not in [list, tuple] else key
-        idx = self.obj._idx_table().iloc[key[: min(len(key), 2)]]
-        key = [slice(None), slice(None)] if len(key) < 2 else list(key[2:])
-        key = key + [slice(None)] if len(key) == 1 else key
-        obj = self.get_idx(self.obj._idx_table_format(idx), key)
-        return obj
+        key = (key,) if type(key) is not tuple else key
+        key = list(key) + [slice(None)] * (4 - len(key))
+        return self.get_idx(key)
 
 
 class TriangleSlicer:
     """ Slicer functionality """
 
-    def _idx_table_format(self, idx):
-        if type(idx) is pd.Series:
-            if len(set(idx.index).intersection(set(self.vdims))) == len(idx):
-                # One column selection
-                idx = idx.to_frame().T
-                idx.index.names = self.key_labels
-            else:  # One row selection
-                idx = idx.to_frame()
-        elif type(idx) is tuple:  # Single cell selection
-            idx = self._idx_table().iloc[idx[0] : idx[0] + 1, idx[1] : idx[1] + 1]
-        return idx
-
     def _idx_table(self):
         """ private method that generates a dataframe of triangle indices.
             The dataframe is meant to be sliced using pandas and the resultant
             indices are then to be extracted from the Triangle object."""
-        df = pd.DataFrame(list(self.kdims), columns=self.key_labels)
+        df = self.index
         for num, item in enumerate(self.vdims):
             df[item] = list(
                 zip(np.arange(len(df)), (np.ones(len(df)) * num).astype(int))
@@ -151,9 +125,9 @@ class TriangleSlicer:
         elif key in self.key_labels:
             return self.index[key]
         else:
-            idx = self._idx_table_format(self._idx_table()[key])
-            obj = _LocBase(self).get_idx(idx)
-            return obj
+            key = [key] if type(key) is str else key
+            idx = [list(self.vdims).index(item) for item in key]
+            return self.iloc[:, idx]
 
     def __setitem__(self, key, value):
         """ Function for pandas style column indexing setting """
@@ -187,7 +161,7 @@ class TriangleSlicer:
 
     def _slice_valuation(self, key):
         """ private method for handling of valuation slicing """
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
         key = key.reshape(self.shape[-2:], order="f")
         nan_tri = np.ones(self.shape[-2:])
@@ -200,7 +174,6 @@ class TriangleSlicer:
         d_idx = _LocBase._contig_slice(d_idx)
         obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
         obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
-        # if len(obj.ddims) > 1:
         obj.values = obj.values * obj.get_array_module().array(nan_tri)
         if type(o_idx) is slice or type(d_idx) is slice:
             obj.values = obj.values[..., o_idx, d_idx]
@@ -210,7 +183,7 @@ class TriangleSlicer:
 
     def _slice(self, key, axis):
         """ private method for handling of origin/development slicing """
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         setattr(obj, axis, getattr(obj, axis)[key])
         slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
         if axis == "odims":

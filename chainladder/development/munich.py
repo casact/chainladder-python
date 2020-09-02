@@ -5,7 +5,6 @@ from chainladder.utils.weighted_regression import WeightedRegression
 from chainladder.development import Development, DevelopmentBase
 import numpy as np
 import pandas as pd
-import copy
 import warnings
 
 
@@ -82,7 +81,7 @@ class MunichAdjustment(DevelopmentBase):
         if X.array_backend == "sparse":
             obj = X.set_backend("numpy")
         else:
-            obj = copy.deepcopy(X)
+            obj = X.copy()
         xp = obj.get_array_module()
         self.xp = xp
         missing = xp.nan_to_num(obj.values) * obj.nan_triangle == 0
@@ -137,7 +136,7 @@ class MunichAdjustment(DevelopmentBase):
         if backend == "sparse":
             X_new = X.set_backend("numpy")
         else:
-            X_new = copy.deepcopy(X)
+            X_new = X.copy()
         xp = X_new.get_array_module()
         self.xp = xp
         if "ldf_" not in X_new:
@@ -319,7 +318,7 @@ class MunichAdjustment(DevelopmentBase):
             the cdf and ldf methods with
         """
         xp = X.get_array_module()
-        obj = copy.copy(X.cdf_)
+        obj = X.cdf_.copy()
         obj.values = xp.repeat(obj.values, len(X.odims), 2)
         obj.odims = X.odims
         if type(self.paid_to_incurred) is tuple:
@@ -344,7 +343,7 @@ class MunichAdjustment(DevelopmentBase):
         xp = X.get_array_module()
         ldf_tri = xp.concatenate((ldf_tri, xp.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1] / ldf_tri[..., 1:]
-        obj = copy.copy(cdf)
+        obj = cdf.copy()
         obj.values = ldf_tri
         obj.ddims = X.link_ratio.ddims
         obj._set_slicers
@@ -363,40 +362,40 @@ class MunichAdjustment(DevelopmentBase):
 
     @property
     def lambda_(self):
-        obj = copy.deepcopy(self.cdf_)
+        obj = self.ldf_.copy()
         obj.odims = obj.ddims = ["(All)"]
         obj.values = self._reshape("lambda_coef_")
         return obj.to_frame()
 
     @property
     def basic_cdf_(self):
-        obj = copy.deepcopy(self.ldf_)
+        obj = self.ldf_.copy()
         obj.values = self._reshape("p_to_i_ldf_")
         return obj
 
     @property
     def basic_sigma_(self):
-        obj = copy.deepcopy(self.ldf_)
+        obj = self.ldf_.copy()
         obj.values = self._reshape("p_to_i_sigma_")
         return obj
 
     @property
     def resids_(self):
-        obj = copy.deepcopy(self.ldf_)
+        obj = self.ldf_.copy()
         obj.values = self._reshape("residual_")
         obj.odims = self.cdf_.odims[: obj.values.shape[2]]
         return obj
 
     @property
     def q_(self):
-        obj = copy.deepcopy(self.rho_)
+        obj = self.rho_.copy()
         obj.odims = self.cdf_.odims
         obj.values = self._reshape("q_f_")
         return obj
 
     @property
     def q_resids_(self):
-        obj = copy.deepcopy(self.ldf_)
+        obj = self.ldf_.copy()
         obj.values = self._reshape("q_resid_")[
             ..., : self.residual_.shape[-2], : self.residual_.shape[-1]
         ]

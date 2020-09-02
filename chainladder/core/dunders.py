@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import copy
 import warnings
 
 
@@ -70,7 +69,7 @@ class TriangleDunders:
                     obj_arr[:] = xp.nan
                     obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
                 else:
-                    obj_arr, other_arr = obj.values, other.values
+                    obj_arr, other_arr = obj.values.copy(), other.values.copy()
                     other_arr.coords[2] = other_arr.coords[2] + rol
                     other_arr.coords[3] = other_arr.coords[3] + rdl
                     obj_arr.coords[2] = obj_arr.coords[2] + lol
@@ -84,7 +83,7 @@ class TriangleDunders:
                 obj.values = obj_arr
                 other = other_arr
         else:
-            obj = copy.deepcopy(self)
+            obj = self.copy()
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):
@@ -156,7 +155,8 @@ class TriangleDunders:
             for item in [item for item in col_union if item not in y.columns]:
                 y[item] = 0
             y = y[col_union]
-        return x.set_backend(x_backend), y.set_backend(y_backend)
+        x, y = x.set_backend(x_backend, inplace=True), y.set_backend(y_backend, inplace=True)
+        return x, y
 
     def __add__(self, other):
         obj, other = self._validate_arithmetic(other)
@@ -183,7 +183,7 @@ class TriangleDunders:
         return self.shape[0]
 
     def __neg__(self):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = -obj.values
         return obj
 
@@ -191,7 +191,7 @@ class TriangleDunders:
         return self
 
     def __abs__(self):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = abs(obj.values)
         return obj
 
@@ -211,7 +211,7 @@ class TriangleDunders:
         return self._arithmetic_cleanup(obj, other)
 
     def __round__(self, other):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values).round(other)
         return self._arithmetic_cleanup(obj, other)
@@ -223,7 +223,7 @@ class TriangleDunders:
         return self._arithmetic_cleanup(obj, other)
 
     def __rtruediv__(self, other):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = other / self.values
         obj.num_to_nan()
         return obj
@@ -249,25 +249,31 @@ class TriangleDunders:
         return self.__dict__.get(value, None) is not None
 
     def __lt__(self, value):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         xp = self.get_array_module()
         obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
         return obj
 
     def __le__(self, value):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         xp = self.get_array_module()
         obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
         return obj
 
     def minimum(self, other):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         xp = self.get_array_module()
         obj.values = xp.minimum(self.values, other)
         return obj
 
     def maximum(self, other):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         xp = self.get_array_module()
         obj.values = xp.maximum(self.values, other)
+        return obj
+
+    def sqrt(self):
+        obj = self.copy()
+        xp = self.get_array_module()
+        obj.values = xp.sqrt(self.values)
         return obj

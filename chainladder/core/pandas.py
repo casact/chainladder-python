@@ -250,7 +250,7 @@ class TrianglePandas:
             New Triangle with appended data.
         """
         xp = self.get_array_module()
-        return_obj = copy.deepcopy(self)
+        return_obj = self.copy()
         return_obj.kdims = (return_obj.index.append(other.index)).values
         try:
             return_obj.values = xp.concatenate(
@@ -308,7 +308,7 @@ class TrianglePandas:
         -------
             Triangle as new datatype.
         """
-        obj = copy.deepcopy(self) if inplace is True else self
+        obj = self.copy() if inplace is True else self
         obj.values = obj.values.astype(dtype)
         return obj
 
@@ -335,13 +335,13 @@ class TrianglePandas:
 
     def exp(self):
         xp = self.get_array_module()
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = xp.exp(obj.values)
         return obj
 
     def log(self):
         xp = self.get_array_module()
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = xp.log(obj.values)
         return obj
 
@@ -350,7 +350,7 @@ def add_triangle_agg_func(cls, k, v):
     """ Aggregate Overrides in Triangle """
 
     def agg_func(self, axis=None, *args, **kwargs):
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         if axis is None:
             axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
         else:
@@ -405,7 +405,7 @@ def add_groupby_agg_func(cls, k, v):
             self.orig_obj.kdims = np.array(new_idx.index)
             self.orig_obj.key_labels = list(new_idx.index.names)
         elif self.orig_obj.array_backend == "cupy":
-            obj = copy.deepcopy(self.obj)
+            obj = self.obj.copy()
             x = (
                 xp.broadcast_to(
                     self.obj.values,

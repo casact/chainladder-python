@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
-import copy
-import numpy as np
 import pandas as pd
 
 
@@ -57,7 +55,7 @@ class DevelopmentConstant(DevelopmentBase):
         if X.array_backend == "sparse":
             obj = X.set_backend("numpy")
         else:
-            obj = copy.deepcopy(X)
+            obj = X.copy()
         xp = obj.get_array_module()
         obj.values = xp.ones(X.shape)[..., 0:1, :-1]
         if callable(self.patterns):
@@ -102,7 +100,7 @@ class DevelopmentConstant(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.copy(X)
+        X_new = X.copy()
         triangles = ["ldf_", "sigma_", "std_err_"]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))

@@ -1,9 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import numpy as np
-import pandas as pd
-import copy
 from chainladder.methods import MethodBase
 
 
@@ -54,7 +51,7 @@ class Chainladder(MethodBase):
     def _get_ultimate(self, X, sample_weight=None):
         """ Private method that uses CDFs to obtain an ultimate vector """
         xp = X.get_array_module()
-        ultimate = copy.deepcopy(X)
+        ultimate = X.copy()
         cdf = self._align_cdf(ultimate, sample_weight)
         ultimate = X.latest_diagonal * cdf
         return self._set_ult_attr(ultimate)

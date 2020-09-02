@@ -6,7 +6,6 @@ from chainladder.methods.chainladder import Chainladder
 from chainladder.development.base import DevelopmentBase, Development
 import numpy as np
 import pandas as pd
-import copy
 from warnings import warn
 import types
 
@@ -74,7 +73,7 @@ class BootstrapODPSample(DevelopmentBase):
         if backend == "sparse":
             X = X.set_backend("numpy")
         else:
-            X = copy.deepcopy(X)
+            X = X.copy()
         xp = X.get_array_module()
         if X.shape[:2] != (1, 1):
             raise ValueError("Only single index/column triangles are supported")
@@ -160,7 +159,7 @@ class BootstrapODPSample(DevelopmentBase):
         b = xp.repeat(exp_incr_triangle[None, ...], self.n_sims, 0)
         resampled_triangles = (resampled_residual * xp.sqrt(abs(b)) + b).cumsum(2)
         resampled_triangles = xp.swapaxes(resampled_triangles[None, ...], 0, 1)
-        obj = copy.copy(X)
+        obj = X.copy()
         obj.kdims = np.arange(self.n_sims)
         obj.values = resampled_triangles
         obj._set_slicers()
@@ -236,7 +235,7 @@ class BootstrapODPSample(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.deepcopy(X)
+        X_new = X.copy()
         X_new = self.resampled_triangles_
         X_new.scale_ = self.scale_
         X_new.random_state = self.random_state

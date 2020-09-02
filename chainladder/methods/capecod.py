@@ -1,9 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import numpy as np
-import pandas as pd
-import copy
 from chainladder.methods import MethodBase
 
 
@@ -62,7 +59,7 @@ class CapeCod(MethodBase):
 
     def _get_ultimate(self, X, sample_weight):
         xp = X.get_array_module()
-        ult = copy.deepcopy(X)
+        ult = X.copy()
         latest = X.latest_diagonal.values
         len_orig = sample_weight.shape[-2]
         cdf = self._align_cdf(ult, sample_weight)
@@ -81,9 +78,9 @@ class CapeCod(MethodBase):
             weighted_exposure, -1
         )
         ult.values = apriori[..., None]
-        apriori_ = copy.copy(ult)
+        apriori_ = ult.copy()
         detrended_ultimate = apriori_.values / trend_array
-        detrended_apriori_ = copy.copy(ult)
+        detrended_apriori_ = ult.copy()
         detrended_apriori_.values = detrended_ultimate
         ult.values = latest + detrended_ultimate * (1 - 1 / cdf) * exposure
         ult = self._set_ult_attr(ult)
@@ -107,7 +104,7 @@ class CapeCod(MethodBase):
         X_new: Triangle
 
         """
-        obj = copy.deepcopy(X)
+        obj = X.copy()
         obj.ldf_ = self.ldf_
         obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = self._get_ultimate(
             obj, sample_weight

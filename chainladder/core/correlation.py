@@ -5,7 +5,6 @@ from scipy.stats import binom, norm, rankdata
 from scipy.special import comb
 import pandas as pd
 import numpy as np
-import copy
 
 
 class DevelopmentCorrelation:
@@ -41,15 +40,13 @@ class DevelopmentCorrelation:
         self.p_critical = p_critical
         if triangle.array_backend != "numpy":
             triangle = triangle.set_backend("numpy")
-        else:
-            triangle = copy.deepcopy(triangle)
         xp = triangle.get_array_module()
 
         m1 = triangle.link_ratio
         m1_val = xp.apply_along_axis(rankdata, 2, m1.values) * (m1.values * 0 + 1)
         m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
         m2.values = xp.apply_along_axis(rankdata, 2, m2.values) * (m2.values * 0 + 1)
-        m1 = copy.deepcopy(m2)
+        m1 = m2.copy()
         m1.values = m1_val[..., : m2.shape[2], 1:]
         numerator = ((m1 - m2) ** 2).sum("origin")
         numerator.values = numerator.values[..., :-1]
@@ -118,8 +115,6 @@ class ValuationCorrelation:
         self.total = total
         if triangle.array_backend != "numpy":
             triangle = triangle.set_backend("numpy")
-        else:
-            triangle = copy.deepcopy(triangle)
         xp = triangle.get_array_module()
         lr = triangle.link_ratio
         m1 = xp.apply_along_axis(rankdata, 2, lr.values) * (lr.values * 0 + 1)
@@ -155,11 +150,11 @@ class ValuationCorrelation:
             z_critical.values = np.array(self.probs) < p_critical
             z_critical.odims = ["(All)"]
             self.z_critical = z_critical
-            self.z = copy.deepcopy(self.z_critical)
+            self.z = self.z_critical.copy()
             self.z.values = z
-            self.z_expectation = copy.deepcopy(self.z_critical)
+            self.z_expectation = self.z_critical.copy()
             self.z_expectation.values = EZ
-            self.z_variance = copy.deepcopy(self.z_critical)
+            self.z_variance = self.z_critical.copy()
             self.z_variance.values = VarZ
         else:
             ci2 = norm.ppf(0.5 - (1 - p_critical) / 2) * xp.sqrt(xp.sum(VarZ, axis=-1))

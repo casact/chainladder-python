@@ -3,11 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
-import copy
 import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils import WeightedRegression
-from chainladder.core import EstimatorIO
+from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
 
 
@@ -93,7 +92,7 @@ class Development(DevelopmentBase):
         elif type(self.n_periods) is list:
             if len(self.n_periods) != X.values.shape[-1] - 1:
                 raise ValueError(
-                    "n_periods list must be of lenth {}.".format(X.values.shape[-1] - 1)
+                    "n_periods list must be of length {}.".format(X.values.shape[-1] - 1)
                 )
             else:
                 return self._assign_n_periods_weight_list(X)
@@ -236,7 +235,7 @@ class Development(DevelopmentBase):
         if X.array_backend == "sparse":
             X = X.set_backend("numpy")
         else:
-            X = copy.deepcopy(X)
+            X = X.copy()
         xp = X.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
 
@@ -303,7 +302,7 @@ class Development(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = copy.copy(X)
+        X_new = X.copy()
         triangles = ["std_err_", "ldf_", "sigma_"]
         for item in triangles + ["average_", "w_", "sigma_interpolation", "n_periods_"]:
             setattr(X_new, item, getattr(self, item))

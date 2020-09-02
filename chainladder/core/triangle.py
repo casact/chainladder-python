@@ -115,7 +115,7 @@ class Triangle(TriangleBase):
             self.index = value
             return self
         else:
-            new_obj = copy.deepcopy(self)
+            new_obj = self.copy()
             return new_obj.set_index(value=value, inplace=True)
 
     @property
@@ -170,7 +170,7 @@ class Triangle(TriangleBase):
         """ The latest diagonal of the Triangle """
         from chainladder.utils.utility_functions import num_to_nan
 
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         xp = self.get_array_module()
         val = (self.valuation == self.valuation_date).reshape(
             self.shape[-2:], order="F"
@@ -189,7 +189,7 @@ class Triangle(TriangleBase):
         from chainladder.utils.utility_functions import num_to_nan
 
         xp = self.get_array_module()
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         temp = num_to_nan(obj.values.copy())
         val_array = obj.valuation.values.reshape(obj.shape[-2:], order="f")[:, 1:]
         obj.ddims = np.array(
@@ -275,7 +275,7 @@ class Triangle(TriangleBase):
                 self._set_slicers()
             return self
         else:
-            new_obj = copy.deepcopy(self)
+            new_obj = self.copy()
             return new_obj.incr_to_cum(inplace=True)
 
     def cum_to_incr(self, inplace=False):
@@ -307,7 +307,7 @@ class Triangle(TriangleBase):
                 self._set_slicers()
             return self
         else:
-            new_obj = copy.deepcopy(self)
+            new_obj = self.copy()
             return new_obj.cum_to_incr(inplace=True)
 
     def dev_to_val(self, inplace=False):
@@ -328,7 +328,7 @@ class Triangle(TriangleBase):
             if self.is_val_tri:
                 return self
             xp = self.get_array_module()
-            obj = copy.deepcopy(self)
+            obj = self.copy()
             if self.shape[-1] == 1:
                 return obj
             rng = obj.valuation.unique().sort_values()
@@ -398,7 +398,7 @@ class Triangle(TriangleBase):
             if self.is_cumulative:
                 obj = obj.incr_to_cum(inplace=True)
             return obj
-        return copy.deepcopy(self).dev_to_val(inplace=True)
+        return self.copy().dev_to_val(inplace=True)
 
     def val_to_dev(self, inplace=False):
         """ Converts triangle from a valuation triangle to a development lag
@@ -444,7 +444,7 @@ class Triangle(TriangleBase):
 
     def _val_dev_chg(self):
         xp = self.get_array_module()
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         x = xp.nan_to_num(obj.values)
         val_mtrx = (
             (
@@ -672,7 +672,7 @@ class Triangle(TriangleBase):
                     / 365.25
                 )
             )
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         obj.values = obj.values * trend
         return obj
 
@@ -689,7 +689,7 @@ class Triangle(TriangleBase):
 
         TODO: Should convert value to a primitive type
         """
-        obj = copy.deepcopy(self)
+        obj = self.copy()
         axis = self._get_axis(axis)
         xp = self.get_array_module()
         if self.shape[axis] != 1:
@@ -697,7 +697,7 @@ class Triangle(TriangleBase):
         elif axis > 1:
             raise ValueError("Only index and column axes are supported")
         else:
-            obj.values = xp.repeat(obj.values, len(value), axis)
+            obj.values = xp.repeat(obj.values.copy(), len(value), axis)
             if axis == 0:
                 obj.key_labels = list(value.columns)
                 obj.kdims = value.values
@@ -708,7 +708,10 @@ class Triangle(TriangleBase):
         return obj
 
     def copy(self):
-        return self.iloc[:, :]
+        X = Triangle()
+        X.__dict__.update(vars(self))
+        X._set_slicers()
+        return X
 
     def development_correlation(self, p_critical=0.5):
         """

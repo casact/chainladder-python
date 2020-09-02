@@ -1,7 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import copy
 import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
@@ -10,13 +9,13 @@ from chainladder.utils.sparse import sp
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
     xp = ultimate_.get_array_module()
-    cdf = copy.deepcopy(cdf_)
+    cdf = cdf_.copy()
     cdf.values = cdf_.get_array_module().repeat(
         cdf.values[..., 0:1, :], ultimate_.shape[-2], 2
     )
     cdf.odims = ultimate_.odims
     cdf.valuation_date = ultimate_.valuation_date
-    full = copy.deepcopy(ultimate_)
+    full = ultimate_.copy()
     full.values = xp.concatenate(((full / cdf).values, full.values), -1)
     full.ddims = np.append(cdf_.ddims, "9999-Ult")
     full.ddims = np.array([int(item.split("-")[0]) for item in full.ddims])
@@ -34,7 +33,7 @@ def _get_full_triangle(full_expectation_, triangle_):
 
 def _get_cdf(ldf_):
     """ Private method that computes CDFs"""
-    cdf = copy.deepcopy(ldf_)
+    cdf = ldf_.copy()
     xp = ldf_.get_array_module()
     cdf.values = xp.flip(xp.cumprod(xp.flip(cdf.values, -1), -1), -1)
     cdf.ddims = np.array(
@@ -89,7 +88,7 @@ class Common:
         else:
             return _get_full_triangle(self.full_expectation_, self)
 
-    def set_backend(self, backend, inplace=False):
+    def set_backend(self, backend, inplace=False, deep=False):
         """ Converts triangle array_backend.
 
         Parameters
@@ -131,14 +130,15 @@ class Common:
                     self.values = lookup[backend].get(old_backend, lambda x: x)(
                         self.values
                     )
-                for k, v in vars(self).items():
-                    if isinstance(v, Common):
-                        v.set_backend(backend, inplace=True)
+                if deep:
+                    for k, v in vars(self).items():
+                        if isinstance(v, Common):
+                            v.set_backend(backend, inplace=True, deep=True)
                 if hasattr(self, "array_backend"):
                     self.array_backend = backend
             else:
                 raise AttributeError(backend, "backend is not supported.")
             return self
         else:
-            obj = copy.deepcopy(self)
+            obj = self.copy()
             return obj.set_backend(backend=backend, inplace=True)

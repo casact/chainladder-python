@@ -6,9 +6,12 @@ import copy
 tri = cl.load_sample("clrd")
 qtr = cl.load_sample("quarterly")
 raa = cl.load_sample("raa")
-
+tri_gt = copy.deepcopy(tri)
+qtr_gt = copy.deepcopy(qtr)
+raa_gt = copy.deepcopy(raa)
 # Test Triangle slicing
 def test_slice_by_boolean():
+    assert tri == tri_gt
     assert (
         tri[tri["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
         == tri.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"]
@@ -16,22 +19,27 @@ def test_slice_by_boolean():
 
 
 def test_slice_by_loc():
+    assert tri == tri_gt
     assert tri.loc["Aegis Grp"].loc["comauto"].index.iloc[0, 0] == "comauto"
 
 
 def test_slice_origin():
+    assert raa == raa_gt
     assert raa[raa.origin > "1985"].shape == (1, 1, 5, 10)
 
 
 def test_slice_development():
+    assert raa == raa_gt
     assert raa[raa.development < 72].shape == (1, 1, 10, 5)
 
 
 def test_slice_by_loc_iloc():
+    assert tri == tri_gt
     assert tri.groupby("LOB").sum().loc["comauto"].index.iloc[0, 0] == "comauto"
 
 
 def test_repr():
+    assert raa == raa_gt
     np.testing.assert_array_equal(
         pd.read_html(raa._repr_html_())[0].set_index("Origin").values,
         raa.to_frame().values,
@@ -39,16 +47,19 @@ def test_repr():
 
 
 def test_arithmetic_union():
+    assert raa == raa_gt
     assert raa.shape == (raa - raa[raa.valuation < "1987"]).shape
 
 
 def test_to_frame_unusual():
+    assert tri == tri_gt
     a = tri.groupby(["LOB"]).sum().latest_diagonal["CumPaidLoss"].to_frame().values
     b = tri.latest_diagonal["CumPaidLoss"].groupby(["LOB"]).sum().to_frame().values
     np.testing.assert_array_equal(a, b)
 
 
 def test_link_ratio():
+    assert raa == raa_gt
     xp = raa.get_array_module()
     assert (
         xp.sum(
@@ -60,27 +71,32 @@ def test_link_ratio():
 
 
 def test_incr_to_cum():
+    assert tri == tri_gt
     xp = tri.get_array_module()
     xp.testing.assert_array_equal(tri.cum_to_incr().incr_to_cum().values, tri.values)
 
 
 def test_create_new_value():
-    tri2 = copy.deepcopy(tri)
+    assert tri == tri_gt
+    tri2 = tri.copy()
     tri2["lr"] = tri2["CumPaidLoss"] / tri2["EarnedPremDIR"]
     assert (tri.shape[0], tri.shape[1] + 1, tri.shape[2], tri.shape[3]) == tri2.shape
 
 
 def test_multilevel_index_groupby_sum1():
+    assert tri == tri_gt
     assert tri.groupby("LOB").sum().sum() == tri.sum()
 
 
 def test_multilevel_index_groupby_sum2():
+    assert tri == tri_gt
     a = tri.groupby("GRNAME").sum().sum()
     b = tri.groupby("LOB").sum().sum()
     assert a == b
 
 
 def test_boolean_groupby_eq_groupby_loc():
+    assert tri == tri_gt
     xp = tri.get_array_module()
     xp.testing.assert_array_equal(
         tri[tri["LOB"] == "ppauto"].sum().values,
@@ -89,26 +105,29 @@ def test_boolean_groupby_eq_groupby_loc():
 
 
 def test_latest_diagonal_two_routes():
+    assert tri == tri_gt
     assert (
         tri.latest_diagonal.sum()["BulkLoss"] == tri.sum().latest_diagonal["BulkLoss"]
     )
 
 
 def test_sum_of_diff_eq_diff_of_sum():
+    assert tri == tri_gt
     assert (tri["BulkLoss"] - tri["CumPaidLoss"]).latest_diagonal == (
         tri.latest_diagonal["BulkLoss"] - tri.latest_diagonal["CumPaidLoss"]
     )
 
 
 def test_append():
+    assert raa == raa_gt
     assert raa.append(raa).sum() == 2 * raa
 
 
 def test_assign_existing_col():
-    tri = cl.load_sample("quarterly")
-    before = tri.shape
-    tri["paid"] = 1 / tri["paid"]
-    assert tri.shape == before
+    qtr = cl.load_sample('quarterly')
+    before = qtr.shape
+    qtr["paid"] = 1 / qtr["paid"]
+    assert qtr.shape == before
 
 
 def test_arithmetic_across_keys():
@@ -118,6 +137,7 @@ def test_arithmetic_across_keys():
 
 
 def test_grain():
+    assert qtr == qtr_gt
     actual = qtr.iloc[0, 0].grain("OYDY").values[0, 0, :, :]
     xp = qtr.get_array_module()
     expected = xp.array(
@@ -296,8 +316,9 @@ def test_grain():
 
 
 def test_off_cycle_val_date():
+    assert qtr == qtr_gt
     assert (
-        cl.load_sample("quarterly").valuation_date.strftime("%Y-%m-%d") == "2006-03-31"
+        qtr.valuation_date.strftime("%Y-%m-%d") == "2006-03-31"
     )
 
 
@@ -306,6 +327,7 @@ def test_printer():
 
 
 def test_value_order():
+    assert tri == tri_gt
     a = tri[["CumPaidLoss", "BulkLoss"]]
     b = tri[["BulkLoss", "CumPaidLoss"]]
     xp = a.get_array_module()
@@ -337,36 +359,40 @@ def test_arithmetic_2():
 
 
 def test_rtruediv():
+    assert raa == raa_gt
     xp = raa.get_array_module()
     assert xp.nansum(abs(((1 / raa) * raa).values[0, 0] - raa.nan_triangle)) < 0.00001
 
 
 def test_shift():
-    x = cl.load_sample("quarterly").iloc[0, 0]
+    assert qtr == qtr_gt
+    x = qtr.iloc[0, 0]
     xp = x.get_array_module()
     xp.testing.assert_array_equal(x[x.valuation <= x.valuation_date].values, x.values)
 
 
 def test_quantile_vs_median():
-    clrd = cl.load_sample("clrd")
-    xp = clrd.get_array_module()
+    assert tri == tri_gt
+    xp = tri.get_array_module()
     xp.testing.assert_array_equal(
-        clrd.quantile(0.5)["CumPaidLoss"].values, clrd.median()["CumPaidLoss"].values
+        tri.quantile(0.5)["CumPaidLoss"].values, tri.median()["CumPaidLoss"].values
     )
 
 
 def test_grain_returns_valid_tri():
-    tri = cl.load_sample("quarterly")
-    assert tri.grain("OYDY").latest_diagonal == tri.latest_diagonal
+    assert qtr == qtr_gt
+    assert qtr.grain("OYDY").latest_diagonal == qtr.latest_diagonal
 
 
 def test_base_minimum_exposure_triangle():
+    assert raa == raa_gt
     d = (raa.latest_diagonal * 0 + 50000).to_frame().reset_index()
     d["index"] = d["index"].astype(str)
     cl.Triangle(d, origin="index", columns=d.columns[-1])
 
 
 def test_origin_and_value_setters():
+    assert raa == raa_gt
     raa2 = raa.copy()
     raa.columns = list(raa.columns)
     raa.origin = list(raa.origin)
@@ -381,28 +407,31 @@ def test_origin_and_value_setters():
 
 
 def test_grain_increm_arg():
-    tri = cl.load_sample("quarterly")["incurred"]
-    tri_i = tri.cum_to_incr()
-    np.testing.assert_array_equal(tri_i.grain("OYDY").incr_to_cum(), tri.grain("OYDY"))
+    assert qtr == qtr_gt
+    tri_i = qtr["incurred"].cum_to_incr()
+    np.testing.assert_array_equal(tri_i.grain("OYDY").incr_to_cum(), qtr["incurred"].grain("OYDY"))
 
 
 def test_valdev1():
-    a = cl.load_sample("quarterly").dev_to_val().val_to_dev()
-    b = cl.load_sample("quarterly")
+    assert qtr == qtr_gt
+    a = qtr.dev_to_val().val_to_dev()
+    b = qtr
     xp = a.get_array_module()
     xp.testing.assert_array_equal(a.values, b.values)
 
 
 def test_valdev2():
-    a = cl.load_sample("quarterly").dev_to_val().grain("OYDY").val_to_dev()
-    b = cl.load_sample("quarterly").grain("OYDY")
+    assert qtr == qtr_gt
+    a = qtr.dev_to_val().grain("OYDY").val_to_dev()
+    b = qtr.grain("OYDY")
     xp = a.get_array_module()
     xp.testing.assert_array_equal(a.values, b.values)
 
 
 def test_valdev3():
-    a = cl.load_sample("quarterly").grain("OYDY").dev_to_val().val_to_dev()
-    b = cl.load_sample("quarterly").grain("OYDY")
+    assert qtr == qtr_gt
+    a = qtr.grain("OYDY").dev_to_val().val_to_dev()
+    b = qtr.grain("OYDY")
     xp = a.get_array_module()
     xp.testing.assert_array_equal(a.values, b.values)
 
@@ -415,6 +444,7 @@ def test_valdev3():
 
 
 def test_valdev5():
+    assert raa == raa_gt
     xp = raa.get_array_module()
     xp.testing.assert_array_equal(
         raa[raa.valuation >= "1989"].latest_diagonal.values, raa.latest_diagonal.values
@@ -422,6 +452,7 @@ def test_valdev5():
 
 
 def test_valdev6():
+    assert raa == raa_gt
     xp = raa.get_array_module()
     xp.testing.assert_array_equal(
         raa.grain("OYDY").latest_diagonal.values,
@@ -430,22 +461,23 @@ def test_valdev6():
 
 
 def test_valdev7():
-    tri = cl.load_sample("quarterly")
-    xp = tri.get_array_module()
-    x = cl.Chainladder().fit(tri).full_expectation_
+    assert qtr == qtr_gt
+    xp = qtr.get_array_module()
+    x = cl.Chainladder().fit(qtr).full_expectation_
     assert xp.sum(x.dev_to_val().val_to_dev().values - x.values) < 1e-5
 
 
 def test_reassignment():
-    raa = cl.load_sample("clrd")
-    raa["values"] = raa["CumPaidLoss"]
-    raa["values"] = raa["values"] + raa["CumPaidLoss"]
+    assert tri == tri_gt
+    clrd = tri.copy()
+    clrd["values"] = clrd["CumPaidLoss"]
+    clrd["values"] = clrd["values"] + clrd["CumPaidLoss"]
 
 
 def test_dropna():
-    clrd = cl.load_sample("clrd")
-    assert clrd.shape == clrd.dropna().shape
-    assert clrd[clrd["LOB"] == "wkcomp"].iloc[-5]["CumPaidLoss"].dropna().shape == (
+    assert tri == tri_gt
+    assert tri.shape == tri.dropna().shape
+    assert tri[tri["LOB"] == "wkcomp"].iloc[-5]["CumPaidLoss"].dropna().shape == (
         1,
         1,
         2,
@@ -454,16 +486,16 @@ def test_dropna():
 
 
 def test_commutative():
-    tri = cl.load_sample("quarterly")
-    xp = tri.get_array_module()
-    full = cl.Chainladder().fit(tri).full_expectation_
-    assert tri.grain("OYDY").val_to_dev() == tri.val_to_dev().grain("OYDY")
-    assert tri.cum_to_incr().grain(
+    assert qtr == qtr_gt
+    xp = qtr.get_array_module()
+    full = cl.Chainladder().fit(qtr).full_expectation_
+    assert qtr.grain("OYDY").val_to_dev() == qtr.val_to_dev().grain("OYDY")
+    assert qtr.cum_to_incr().grain(
         "OYDY"
-    ).val_to_dev() == tri.val_to_dev().cum_to_incr().grain("OYDY")
-    assert tri.grain(
+    ).val_to_dev() == qtr.val_to_dev().cum_to_incr().grain("OYDY")
+    assert qtr.grain(
         "OYDY"
-    ).cum_to_incr().val_to_dev().incr_to_cum() == tri.val_to_dev().grain("OYDY")
+    ).cum_to_incr().val_to_dev().incr_to_cum() == qtr.val_to_dev().grain("OYDY")
     assert full.grain("OYDY").val_to_dev() == full.val_to_dev().grain("OYDY")
     assert full.cum_to_incr().grain(
         "OYDY"
@@ -478,14 +510,18 @@ def test_commutative():
 
 
 def test_broadcasting():
+    assert tri == tri_gt
+    assert raa == raa_gt
     t1 = raa
     t2 = tri
     assert t1.broadcast_axis("columns", t2.columns).shape[1] == t2.shape[1]
     assert t1.broadcast_axis("index", t2.index).shape[0] == t2.shape[0]
+    raa.latest_diagonal.to_frame()
 
 
 def test_slicers_honor_order():
-    clrd = cl.load_sample("clrd").groupby("LOB").sum()
+    assert tri == tri_gt
+    clrd = tri.groupby("LOB").sum()
     assert clrd.iloc[[1, 0], :].iloc[0, 1] == clrd.iloc[1, 1]  # row
     assert clrd.iloc[[1, 0], [1, 0]].iloc[0, 0] == clrd.iloc[1, 1]  # col
     assert clrd.loc[:, ["CumPaidLoss", "IncurLoss"]].iloc[0, 0] == clrd.iloc[0, 1]
@@ -512,6 +548,7 @@ def test_exposure_tri():
 
 
 def test_jagged_1_add():
+    assert raa == raa_gt
     raa1 = raa[raa.origin <= "1984"]
     raa2 = raa[raa.origin > "1984"]
     assert raa2 + raa1 == raa
@@ -519,6 +556,7 @@ def test_jagged_1_add():
 
 
 def test_jagged_2_add():
+    assert raa == raa_gt
     raa1 = raa[raa.development <= 48]
     raa2 = raa[raa.development > 48]
     assert raa2 + raa1 == raa
@@ -526,35 +564,42 @@ def test_jagged_2_add():
 
 
 def test_df_period_input():
+    assert raa == raa_gt
     d = raa.latest_diagonal
     df = d.to_frame().reset_index()
     assert cl.Triangle(df, origin="index", columns=df.columns[-1]) == d
 
 
 def test_trend_on_vector():
+    assert raa == raa_gt
     d = raa.latest_diagonal
     assert d.trend(0.05, axis=2).to_frame().astype(int).iloc[0, 0] == 29216
 
 
 def test_latest_diagonal_val_to_dev():
+    assert raa == raa_gt
     assert raa.latest_diagonal.val_to_dev() == raa[raa.valuation == raa.valuation_date]
 
 
 def test_vector_division():
+    assert raa == raa_gt
     raa.latest_diagonal / raa
 
 
 def test_sumdiff_to_diffsum():
-    tri = cl.load_sample("clrd")["CumPaidLoss"]
-    assert tri.cum_to_incr().incr_to_cum().sum() == tri.sum()
+    assert tri == tri_gt
+    out = tri["CumPaidLoss"]
+    assert out.cum_to_incr().incr_to_cum().sum() == out.sum()
 
 
 def test_multiindex_broadcast():
-    clrd = cl.load_sample("clrd")["CumPaidLoss"]
+    assert tri == tri_gt
+    clrd = tri["CumPaidLoss"]
     clrd / clrd.groupby("LOB").sum()
 
 
 def test_backends():
+    assert tri == tri_gt
     clrd = tri[["CumPaidLoss", "EarnedPremDIR"]]
     a = clrd.iloc[1, 0].set_backend("sparse").dropna()
     b = clrd.iloc[1, 0].dropna()
@@ -562,10 +607,12 @@ def test_backends():
 
 
 def test_union_columns():
+    assert tri == tri_gt
     assert tri.iloc[:, :3] + tri.iloc[:, 3:] == tri
 
 
 def test_4loc():
+    assert tri == tri_gt
     clrd = tri.groupby("LOB").sum()
     assert (
         clrd.iloc[:3, :2, 0, 0]
@@ -582,6 +629,7 @@ def test_4loc():
 
 
 def test_init_vector():
+    assert raa == raa_gt
     a = raa[raa.development == 12]
     b = pd.DataFrame(
         {"AccYear": [item for item in range(1981, 1991)], "premium": [3000000] * 10}
