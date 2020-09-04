@@ -18,8 +18,8 @@ def test_bf_predict():
 
 
 def test_mack_predict():
-    pass
-    # mack = cl.MackChainladder().fit(raa_1989)
+    mack = cl.MackChainladder().fit(raa_1989)
+    mack.predict(raa_1989)
     # mack.predict(raa)
 
 

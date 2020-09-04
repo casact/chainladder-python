@@ -79,12 +79,12 @@ class MackChainladder(Chainladder):
         X_new._full_triangle_ = X_new.full_triangle_
         X_new.parameter_risk_ = self._mack_recursion("parameter_risk_", X_new)
         X_new.process_risk_ = self._mack_recursion("process_risk_", X_new)
+        X_new.total_process_risk_ = (X_new.process_risk_ ** 2).sum(axis="origin").sqrt()
         X_new.total_parameter_risk_ = self._mack_recursion(
             "total_parameter_risk_", X_new
         )
         X_new.full_std_err_ = self._get_full_std_err_(X_new)
         X_new.total_mack_std_err_ = self._get_total_mack_std_err_(X_new)
-        X_new.total_process_risk_ = (X_new.process_risk_ ** 2).sum(axis="origin").sqrt()
         X_new.mack_std_err_ = (
             X_new.parameter_risk_ ** 2 + X_new.process_risk_ ** 2
         ).sqrt()
@@ -160,13 +160,16 @@ class MackChainladder(Chainladder):
         return (self.parameter_risk_ ** 2 + self.process_risk_ ** 2).sqrt()
 
     @property
-    def _get_total_mack_std_err_(self, obj):
-        return total_mack_std_err_(self)
+    def total_mack_std_err_(self):
+        return self._get_total_mack_std_err_(self)
 
-    def total_mack_std_err_(self, obj):
+    def _get_total_mack_std_err_(self, obj):
         obj = obj.total_process_risk_ ** 2 + obj.total_parameter_risk_ ** 2
-        obj = obj.sqrt().values[..., 0, -1]
-        return pd.DataFrame(obj, index=obj.index, columns=obj.columns)
+        if obj.array_backend == 'sparse':
+            out = obj.set_backend('numpy').sqrt().values[..., 0, -1]
+        else:
+            out = obj.sqrt().values[..., 0, -1]
+        return pd.DataFrame(out, index=obj.index, columns=obj.columns)
 
     @property
     def summary_(self):

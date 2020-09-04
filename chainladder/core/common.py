@@ -141,4 +141,4 @@ class Common:
             return self
         else:
             obj = self.copy()
-            return obj.set_backend(backend=backend, inplace=True)
+            return obj.set_backend(backend=backend, inplace=True, deep=deep)

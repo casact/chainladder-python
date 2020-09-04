@@ -149,6 +149,6 @@ def test_mack_asymmetric():
     out = r("M <- MackChainLadder(Paid)")
     tri = cl.load_sample("quarterly")["paid"]
     xp = tri.get_array_module()
-    assert round(xp.array(out.rx("Mack.S.E")[0])[-1, -1], 2) == round(
+    assert round(float(xp.array(out.rx("Mack.S.E")[0])[-1, -1]), 2) == round(
         float(cl.MackChainladder().fit(tri).summary_.to_frame().iloc[-1, -1]), 2
     )

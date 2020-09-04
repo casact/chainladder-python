@@ -34,8 +34,8 @@ class TriangleBase(
         *args,
         **kwargs
     ):
-        import datetime as dt
         from chainladder.utils.utility_functions import num_to_nan
+        from chainladder import AUTO_SPARSE
 
         # Allow Empty Triangle so that we can piece it together programatically
         if data is None:
@@ -176,8 +176,10 @@ class TriangleBase(
         self.key_labels = index
         self.is_cumulative = cumulative
         self.valuation_date = data_agg["development"].max()
-        if array_backend != "sparse":
+        if not AUTO_SPARSE or array_backend == 'cupy':
             self.set_backend(array_backend, inplace=True)
+        else:
+            self = self._auto_sparse()
         self._set_slicers()
 
     def _len_check(self, x, y):
