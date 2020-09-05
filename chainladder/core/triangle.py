@@ -120,7 +120,7 @@ class Triangle(TriangleBase):
 
     @property
     def columns(self):
-        return pd.Index(self.vdims)
+        return pd.Index(self.vdims, name="columns")
 
     @columns.setter
     def columns(self, value):

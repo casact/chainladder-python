@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+from sparse._slicing import normalize_index
 
 
 class _LocBase:
@@ -57,33 +58,41 @@ class Location(_LocBase):
     """ class to generate .loc[] functionality """
 
     def __getitem__(self, key):
-        if type(key) == pd.Series:
-            return self.obj[key]
-        if type(key) == tuple and type(key[0]) == pd.Series:
-            return self.obj[key[0]][key[1]]
-        if type(key) == pd.DataFrame:
-            if len(self.obj.key_labels) == 1:
-                key = pd.Index(key.iloc[:, 0])
-            else:
-                key = pd.Index(key)
         key = (key,) if type(key) is not tuple else key
-        key = list(key) + [slice(None)] * (4 - len(key))
-        idx = self.obj.index.reset_index().set_index(self.obj.key_labels)
-        sliced = idx.loc[key[0]]
-        if type(sliced) is pd.Series:
-            sliced = sliced.to_frame().T
-            sliced.index.rename(idx.index.name, inplace=True)
-        sliced = sliced.iloc[:, 0]
-        key[0] = sliced.to_list()
-        filter_idx = idx.reset_index()[
-            list(sliced.reset_index().drop("index", 1).columns)
-        ]
-        s = pd.Series(self.obj.columns).to_frame().reset_index()
-        key[1] = s.set_index(0).loc[key[1]].values.flatten()
-        s = pd.Series(self.obj.origin).to_frame().reset_index()
-        key[2] = s.set_index("origin").loc[key[2]].values.flatten()
-        s = pd.Series(self.obj.development).to_frame().reset_index()
-        key[3] = s.set_index("development").loc[key[3]].values.flatten()
+        key_mask = tuple([i if i is Ellipsis else 0 for i in key])
+        if len(key_mask) < len(self.obj.shape) and Ellipsis not in key_mask:
+            key_mask = tuple(list(key_mask) + [Ellipsis])
+        key_mask = list(normalize_index(key_mask, self.obj.shape))
+        key = [item for item in key if item is not Ellipsis]
+        for i in range(len(self.obj.shape)):
+            if key_mask[i] == 0:
+                key_mask[i] = key[0]
+                key.pop(0)
+        key = key_mask
+        # Support for multi-index
+        default = slice(None, None, None)
+        norm = lambda k: type(k) is slice and (k.start == 0 or k == default)
+        filter_idx = None
+        if not norm(key[0]) and not type(key[0]) is pd.Series:
+            idx = self.obj.index.reset_index().set_index(self.obj.key_labels)
+            sliced = idx.loc[key[0]]
+            if type(sliced) is pd.Series:
+                sliced = sliced.to_frame().T
+                sliced.index.rename(idx.index.name, inplace=True)
+            sliced = sliced.iloc[:, 0]
+            key[0] = sliced.to_list()
+            filter_idx = list(sliced.reset_index().drop("index", 1).columns)
+            filter_idx = idx.reset_index()[filter_idx]
+
+        def normalize(key, idx):
+            mapper = {1: "columns", 2: "origin", 3: "development"}
+            out = key[idx]
+            if not norm(key[idx]) and not isinstance(key, pd.Series):
+                s = pd.Series(getattr(self.obj, mapper[idx])).to_frame().reset_index()
+                out = s.set_index(mapper[idx]).loc[key[idx]].values.flatten()
+            return out
+
+        key = [key[0]] + [normalize(key, 1), normalize(key, 2), normalize(key, 3)]
         return self.get_idx(key, filter_idx)
 
 
@@ -91,25 +100,20 @@ class Ilocation(_LocBase):
     """ class to generate .iloc[] functionality """
 
     def __getitem__(self, key):
-        key = (key,) if type(key) is not tuple else key
-        key = list(key) + [slice(None)] * (4 - len(key))
-        return self.get_idx(key)
+        return self.get_idx(normalize_index(key, self.obj.shape))
 
 
 class TriangleSlicer:
-    """ Slicer functionality """
-
     def __getitem__(self, key):
-        """ Function for pandas style column indexing"""
+        """ Boolean Slicer functionality """
         if type(key) is pd.Series and key.name == "development":
             return self._slice(key, "ddims")
         if type(key) is np.ndarray:
-            # Presumes that if I have a 1D array, I will want to slice origin.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             return self._slice(key, "odims")
         if type(key) is pd.Series:
-            return self.iloc[list(self.index[key].index), :]
+            return self.iloc[self.index[key].index]
         elif key in self.key_labels:
             return self.index[key]
         else:
@@ -118,17 +122,14 @@ class TriangleSlicer:
             return self.iloc[:, idx]
 
     def __setitem__(self, key, value):
-        """ Function for pandas style column indexing setting """
+        """ Function for pandas style column setting """
         xp = self.get_array_module()
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
             if self.array_backend == "sparse":
                 before = self.drop(key).values
-                before.coords[1] = np.where(
-                    before.coords[1, :] >= i,
-                    before.coords[1, :] + 1,
-                    before.coords[1, :],
-                )
+                bc = before.coords[1, :]
+                before.coords[1] = np.where(bc >= i, bc + 1, bc,)
                 value.values.coords[1] = i
                 coords = np.concatenate((before.coords, value.values.coords), axis=1)
                 data = np.concatenate((before.data, value.values.data))
@@ -141,9 +142,8 @@ class TriangleSlicer:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
             except:
                 # For misaligned triangle support
-                self.values = xp.concatenate(
-                    (self.values, (self.iloc[:, 0] * 0 + value).values), axis=1
-                )
+                conc = (self.values, (self.iloc[:, 0] * 0 + value).values)
+                self.values = xp.concatenate(conc, axis=1)
 
     def _slice_valuation(self, key):
         """ private method for handling of valuation slicing """
