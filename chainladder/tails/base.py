@@ -57,7 +57,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.sigma_.ddims = self.std_err_.ddims = np.concatenate(
             (obj.ldf_.ddims, np.array(["{}-9999".format(int(obj.ddims[-1]))]))
         )
-        if hasattr(obj, 'average_'):
+        if hasattr(obj, "average_"):
             self.average_ = obj.average_
         else:
             self.average_ = None

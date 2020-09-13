@@ -53,11 +53,31 @@ class _LocBase:
             min_arr, max_arr = max_arr - 1, min_arr - 1 if min_arr else min_arr
         return slice(min_arr, max_arr, step)
 
+    def __setitem__(self, key, values):
+        if isinstance(values, TriangleSlicer):
+            if values.array_backend == "sparse":
+                values = values.set_backend("numpy").values
+            else:
+                values = values.values
+        key = tuple(
+            [slice(item, item + 1) if type(item) is int else item for item in key]
+        )
+        if self.obj.array_backend == "sparse":
+            self.obj.set_backend("numpy", inplace=True)
+            print(self.obj.values)
+            self.obj.values.__setitem__(normalize_index(key, self.obj.shape), values)
+            self.obj.set_backend("sparse", inplace=True)
+        else:
+            self.obj.values.__setitem__(normalize_index(key, self.obj.shape), values)
+
 
 class Location(_LocBase):
     """ class to generate .loc[] functionality """
 
     def __getitem__(self, key):
+        return self.get_idx(*self.format_key(key))
+
+    def format_key(self, key):
         key = (key,) if type(key) is not tuple else key
         key_mask = tuple([i if i is Ellipsis else 0 for i in key])
         if len(key_mask) < len(self.obj.shape) and Ellipsis not in key_mask:
@@ -93,7 +113,11 @@ class Location(_LocBase):
             return out
 
         key = [key[0]] + [normalize(key, 1), normalize(key, 2), normalize(key, 3)]
-        return self.get_idx(key, filter_idx)
+        return key, filter_idx
+
+    def __setitem__(self, key, values):
+        key = self.format_key(key)[0]
+        super().__setitem__(key, values)
 
 
 class Ilocation(_LocBase):
@@ -101,6 +125,10 @@ class Ilocation(_LocBase):
 
     def __getitem__(self, key):
         return self.get_idx(normalize_index(key, self.obj.shape))
+
+    def __setitem__(self, key, values):
+        key = normalize_index(key, self.obj.shape)
+        super().__setitem__(key, values)
 
 
 class TriangleSlicer:

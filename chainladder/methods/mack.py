@@ -103,7 +103,7 @@ class MackChainladder(Chainladder):
         lxp = X.ldf_.get_array_module()
         full = getattr(X, "_full_triangle_", self.full_triangle_)
         avg = {"regression": 0, "volume": 1, "simple": 2}
-        avg = [avg[item] for item in X.average_]
+        avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
         weight = xp.sqrt(full.values[..., : len(X.ddims)] ** (2 - val))
         obj.values = X.sigma_.values / num_to_nan(weight)
@@ -165,8 +165,8 @@ class MackChainladder(Chainladder):
 
     def _get_total_mack_std_err_(self, obj):
         obj = obj.total_process_risk_ ** 2 + obj.total_parameter_risk_ ** 2
-        if obj.array_backend == 'sparse':
-            out = obj.set_backend('numpy').sqrt().values[..., 0, -1]
+        if obj.array_backend == "sparse":
+            out = obj.set_backend("numpy").sqrt().values[..., 0, -1]
         else:
             out = obj.sqrt().values[..., 0, -1]
         return pd.DataFrame(out, index=obj.index, columns=obj.columns)

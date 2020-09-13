@@ -74,7 +74,7 @@ class TailBondy(TailBase):
         backend = X.array_backend
         if X.array_backend == "cupy":
             X = X.set_backend("numpy", deep=True)
-        else :
+        else:
             X = X.set_backend("numpy")
         xp = X.get_array_module()
         super().fit(X, y, sample_weight)

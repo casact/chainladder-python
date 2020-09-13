@@ -22,9 +22,11 @@ class Development(DevelopmentBase):
     n_periods : integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    average : string, optional (default='volume')
+    average : string or float, optional (default='volume')
         type of averaging to use for ldf average calculation.  Options include
-        'volume', 'simple', and 'regression'
+        'volume', 'simple', and 'regression'. If numeric values are supplied,
+        then (2-average) in the style of Zehnwirth & Barnett is used
+        for the exponent of the regression weights.
     sigma_interpolation : string optional (default='log-linear')
         Options include 'log-linear' and 'mack'
     drop : tuple or list of tuples
@@ -260,7 +262,7 @@ class Development(DevelopmentBase):
         weight_dict = {"regression": 0, "volume": 1, "simple": 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
         val = xp.nan_to_num(
-            xp.array([weight_dict.get(item.lower(), 1) for item in self.average_])[
+            xp.array([weight_dict.get(item, item) for item in self.average_])[
                 None, None, None
             ]
             * (y * 0 + 1)

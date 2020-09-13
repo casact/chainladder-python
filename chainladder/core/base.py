@@ -176,7 +176,7 @@ class TriangleBase(
         self.key_labels = index
         self.is_cumulative = cumulative
         self.valuation_date = data_agg["development"].max()
-        if not AUTO_SPARSE or array_backend == 'cupy':
+        if not AUTO_SPARSE or array_backend == "cupy":
             self.set_backend(array_backend, inplace=True)
         else:
             self = self._auto_sparse()

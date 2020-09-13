@@ -638,11 +638,14 @@ def test_init_vector():
     assert np.all(a.valuation == b.valuation)
     assert a.valuation_date == b.valuation_date
 
+
 def test_loc_ellipsis():
     assert tri == tri_gt
-    assert tri.loc['Aegis Grp'] == tri.loc['Adriatic Ins Co':'Aegis Grp'].loc['Aegis Grp']
-    assert tri.loc['Aegis Grp', ... , :] == tri.loc['Aegis Grp']
+    assert (
+        tri.loc["Aegis Grp"] == tri.loc["Adriatic Ins Co":"Aegis Grp"].loc["Aegis Grp"]
+    )
+    assert tri.loc["Aegis Grp", ..., :] == tri.loc["Aegis Grp"]
     assert tri.loc[..., 24:] == tri.loc[..., :, 24:]
     assert tri.loc[:, ..., 24:] == tri.loc[..., :, 24:]
-    assert tri.loc[:, 'CumPaidLoss'] == tri.loc[:, 'CumPaidLoss', ...]
-    assert tri.loc[..., 'CumPaidLoss', :, :] == tri.loc[:, 'CumPaidLoss', :, :]
+    assert tri.loc[:, "CumPaidLoss"] == tri.loc[:, "CumPaidLoss", ...]
+    assert tri.loc[..., "CumPaidLoss", :, :] == tri.loc[:, "CumPaidLoss", :, :]
