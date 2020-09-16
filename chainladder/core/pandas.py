@@ -368,7 +368,7 @@ def add_triangle_agg_func(cls, k, v):
         if axis == 3 and obj.values.shape[axis] == 1:
             obj.ddims = obj.ddims[-1:]
         obj._set_slicers()
-        obj.values = obj.values * obj.nan_triangle
+        obj.values = obj.values
         obj.num_to_nan()
         if obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
@@ -418,6 +418,7 @@ def add_groupby_agg_func(cls, k, v):
             x[~xp.isfinite(x)] = np.nan
             obj.values = getattr(xp, v)(x, axis=1, *args, **kwargs)
             obj.values[obj.values == 0] = np.nan
+            obj._set_slicers()
             return obj
         else:
             self.orig_obj.values = obj.values.reshape(
@@ -426,6 +427,7 @@ def add_groupby_agg_func(cls, k, v):
             self.orig_obj.values[self.orig_obj.values == 0] = np.nan
             self.orig_obj.kdims = np.array(obj.index)
             self.orig_obj.key_labels = list(self.idx.names)
+        self.orig_obj._set_slicers()
         return self.orig_obj
 
     set_method(cls, agg_func, k)

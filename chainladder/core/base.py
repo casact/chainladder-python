@@ -360,12 +360,12 @@ class TriangleBase(
         n = np.prod(self.shape)
         if (
             self.array_backend == "numpy"
-            and n / 8e6 > 30
+            and n / 1e6 * 8 > 30
             and np.isnan(self.values).sum() / n < 0.2
         ):
             self.set_backend("sparse", inplace=True)
         if self.array_backend == "sparse" and not (
-            self.values.density < 0.2 and n / 8e6 > 30
+            self.values.density < 0.2 and n / 1e6 * 8 > 30
         ):
             self.set_backend("numpy", inplace=True)
         return self
