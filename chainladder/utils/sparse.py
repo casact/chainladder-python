@@ -37,22 +37,20 @@ def nan_to_num(a):
     return sp(a)
 
 
-sp.nan_to_num = nan_to_num
-
-
 def ones(*args, **kwargs):
     return sp(np.ones(*args, **kwargs), fill_value=sp.nan)
 
 
-sp.ones = ones
+def nanquantile(a, q, axis=None, keepdims=None, *args, **kwargs):
+    new_a = np.nanquantile(
+        a.todense(), q=q, axis=axis, keepdims=keepdims, *args, **kwargs
+    )
+    return sp(np.nan_to_num(new_a), fill_value=np.nan)
 
 
 def nanmedian(a, axis=None, keepdims=None, *args, **kwargs):
     new_a = np.nanmedian(a.todense(), axis=axis, keepdims=keepdims, *args, **kwargs)
     return sp(np.nan_to_num(new_a), fill_value=np.nan)
-
-
-sp.nanmedian = nanmedian
 
 
 def nanmean(a, axis=None, keepdims=None, *args, **kwargs):
@@ -67,9 +65,6 @@ def nanmean(a, axis=None, keepdims=None, *args, **kwargs):
     return sp(out)
 
 
-sp.nanmean = nanmean
-
-
 def flip(m, axis=None):
     m = m.copy()
     if axis is not None:
@@ -78,9 +73,6 @@ def flip(m, axis=None):
         for i in range(m.coords.shape[0]):
             m.coords[i] = m.shape[i] - m.coords[i] - 1
     return m
-
-
-sp.flip = flip
 
 
 def array(a, *args, **kwargs):
@@ -92,9 +84,6 @@ def array(a, *args, **kwargs):
         return sp(a, *args, **kwargs, fill_value=fill_value)
     else:
         return sp(np.array(a, *args, **kwargs), fill_value=fill_value)
-
-
-sp.array = array
 
 
 def expand_dims(a, axis):
@@ -110,14 +99,8 @@ def expand_dims(a, axis):
     return a.__getitem__(tuple(shape))
 
 
-sp.expand_dims = expand_dims
-
-
 def arange(*args, **kwargs):
     return sparse.COO.from_numpy(np.arange(*args, **kwargs))
-
-
-sp.arange = arange
 
 
 def cumfunc(a, axis, func):
@@ -157,21 +140,12 @@ def cumsum(a, axis):
     return cumfunc(a, axis, "cumsum")
 
 
-sp.cumsum = cumsum
-
-
 def cumprod(a, axis):
     return cumfunc(a, axis, "cumprod")
 
 
-sp.cumprod = cumprod
-
-
 def where(*args, **kwargs):
     return elemwise(np.where, *args, **kwargs)
-
-
-sp.where = where
 
 
 def swapaxes(a, axis1, axis2):
@@ -197,9 +171,6 @@ def swapaxes(a, axis1, axis2):
     )
 
 
-sp.swapaxes = swapaxes
-
-
 def repeat(a, repeats, axis):
     """Repeat elements of an array"""
     ax = np.arange(a.ndim)
@@ -218,16 +189,10 @@ def repeat(a, repeats, axis):
     return a
 
 
-sp.repeat = repeat
-
-
 def allclose(a, b, *args, **kwargs):
     return np.allclose(
         np.nan_to_num(a.todense()), np.nan_to_num(b.todense()), *args, **kwargs
     )
-
-
-sp.allclose = allclose
 
 
 def unique(a, *args, **kwargs):
@@ -236,16 +201,10 @@ def unique(a, *args, **kwargs):
     return sp(a, fill_value=fv)
 
 
-sp.unique = unique
-
-
 def around(a, *args, **kwargs):
     fv = a.fill_value
     a = np.around(a.todense(), *args, **kwargs)
     return sp(a, fill_value=fv)
-
-
-sp.around = around
 
 
 def apply_along_axis(func1d, axis, arr, *args, **kwargs):
@@ -254,15 +213,9 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     return sp(arr, fill_value=fv)
 
 
-sp.apply_along_axis = apply_along_axis
-
-
 def floor(x, *args, **kwargs):
     x.data = np.floor(x.data)
     return x
-
-
-sp.floor = floor
 
 
 def minimum(x1, x2):
@@ -279,9 +232,6 @@ def minimum(x1, x2):
     return (x1 < x2) * x1 + (x1 >= x2) * x2
 
 
-sp.minimum = minimum
-
-
 def maximum(x1, x2):
     if np.all(x1.coords == x2.coords):
         out = x1.copy()
@@ -292,4 +242,24 @@ def maximum(x1, x2):
     return (x1 < x2) * x2 + (x1 >= x2) * x1
 
 
+sp.minimum = minimum
 sp.maximum = maximum
+sp.unique = unique
+sp.around = around
+sp.apply_along_axis = apply_along_axis
+sp.floor = floor
+sp.repeat = repeat
+sp.where = where
+sp.cumprod = cumprod
+sp.cumsum = cumsum
+sp.arange = arange
+sp.array = array
+sp.nan_to_num = nan_to_num
+sp.ones = ones
+sp.nanquantile = nanquantile
+sp.nanmedian = nanmedian
+sp.nanmean = nanmean
+sp.flip = flip
+sp.expand_dims = expand_dims
+sp.swapaxes = swapaxes
+sp.allclose = allclose

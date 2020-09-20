@@ -3,97 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import copy
 
 
 class TriangleGroupBy:
-    def __init__(self, old_obj, by):
-        xp = old_obj.get_array_module()
-        self.orig_obj = copy.deepcopy(old_obj)
-        missing = None
-        if self.orig_obj.array_backend == "sparse":
-            if by != -1:
-                self.idx = self.orig_obj.index.iloc[
-                    self.orig_obj.values.coords[0]
-                ].reset_index(drop=True)
-                self.idx["missing"] = 0
-                missing = old_obj.index.merge(
-                    self.idx, how="left", on=list(old_obj.index.columns)
-                )
-                missing = missing[missing["missing"].isna()][
-                    list(old_obj.index.columns)
-                ]
-                self.idx = self.idx.drop("missing", 1)
-                missing["values"] = missing[1] = missing[2] = missing[3] = 0
-            else:
-                self.idx = pd.DataFrame(
-                    np.repeat(
-                        np.repeat(
-                            np.array([["All"]]), old_obj.values.coords.shape[1], 0
-                        ),
-                        len(old_obj.key_labels),
-                        1,
-                    ),
-                    columns=old_obj.key_labels,
-                )
-                by = old_obj.key_labels
-            groupby = pd.concat(
-                (
-                    pd.DataFrame(self.orig_obj.values.coords[1:].T, columns=[1, 2, 3]),
-                    self.idx,
-                ),
-                axis=1,
-            )
-            groupby["values"] = self.orig_obj.values.data
-            by = [by] if type(by) is str else by
-            if missing is not None:
-                groupby = groupby.append(missing[groupby.columns])
-            self.obj = groupby.groupby(by + [1, 2, 3])["values"]
-        elif self.orig_obj.array_backend == "cupy":
-            obj = copy.deepcopy(old_obj)
-            obj.values = xp.nan_to_num(obj.values)
-            if by != -1:
-                indices = obj.index.groupby(by).indices
-                new_index = obj.index.groupby(by).count().index
-            else:
-                indices = {"All": np.arange(len(obj.index))}
-                new_index = pd.Index(["All"], name="All")
-            groups = [indices[item] for item in sorted(list(indices.keys()))]
-            xp = obj.get_array_module()
-            old_k_by_new_k = xp.zeros((len(obj.index.index), len(groups)), dtype="bool")
-            for num, item in enumerate(groups):
-                old_k_by_new_k[:, num][item] = True
-            old_k_by_new_k = xp.swapaxes(old_k_by_new_k, 0, 1)
-            for i in range(3):
-                old_k_by_new_k = old_k_by_new_k[..., np.newaxis]
-            self.old_k_by_new_k = old_k_by_new_k
-            obj.kdims = np.array(list(new_index))
-            obj.key_labels = list(new_index.names)
-            self.obj = obj
-        else:
-            if by != -1:
-                self.idx = self.orig_obj.index.set_index(by).index
-            else:
-                self.idx = (
-                    pd.DataFrame(
-                        np.repeat(
-                            np.repeat(np.array([["All"]]), old_obj.shape[0], 0),
-                            len(old_obj.key_labels),
-                            1,
-                        ),
-                        columns=old_obj.key_labels,
-                    )
-                    .set_index(old_obj.key_labels)
-                    .index
-                )
-                by = old_obj.key_labels
-            groupby = pd.DataFrame(
-                self.orig_obj.values.reshape((self.orig_obj.shape[0], 1, 1, -1))[
-                    :, 0, 0, :
-                ],
-                index=self.idx,
-            )
-            self.obj = groupby.reset_index().groupby(by)
+    def __init__(self, obj, by):
+        self.obj = obj.copy()
+        self.by = [by] if type(by) is str else by
+        self.groups = obj.index.groupby(self.by)
 
 
 class TrianglePandas:
@@ -114,10 +30,8 @@ class TrianglePandas:
         origin_as_datetime = False
         if "origin_as_datetime" in kwargs:
             origin_as_datetime = kwargs.get("origin_as_datetime")
-
         if self.shape[:2] == (1, 1):
             return self._repr_format(origin_as_datetime)
-
         elif len(axes) in [1, 2]:
             odims, ddims = self._repr_date_axes(origin_as_datetime)
             tri = np.squeeze(self.set_backend("numpy").values)
@@ -148,18 +62,9 @@ class TrianglePandas:
 
     def _get_axis(self, axis):
         ax = {
-            0: 0,
-            1: 1,
-            2: 2,
-            3: 3,
-            -1: 3,
-            -2: 2,
-            -3: 1,
-            -4: 0,
-            "index": 0,
-            "columns": 1,
-            "origin": 2,
-            "development": 3,
+            **{0: 0, 1: 1, 2: 2, 3: 3},
+            **{-1: 3, -2: 2, -3: 1, -4: 0},
+            **{"index": 0, "columns": 1, "origin": 2, "development": 3},
         }
         return ax.get(axis, 0)
 
@@ -214,11 +119,6 @@ class TrianglePandas:
     def T(self):
         return self.to_frame().T
 
-    def quantile(self, q, *args, **kwargs):
-        if self.shape[:2] == (1, 1):
-            return self.to_frame().quantile(q, *args, **kwargs)
-        return TriangleGroupBy(self, by=-1).quantile(q)
-
     def groupby(self, by, *args, **kwargs):
         """ Group Triangle by index values.  If the triangle is convertable to a
         DataFrame, then it defaults to pandas groupby functionality.
@@ -258,11 +158,10 @@ class TrianglePandas:
             )
         except:
             # For misaligned triangle support
-            self.values = xp.concatenate(
+            return_obj.values = xp.concatenate(
                 (return_obj.values, (return_obj.iloc[:, 0] * 0 + other.values).values),
                 axis=1,
             )
-
         return_obj._set_slicers()
         return return_obj
 
@@ -312,19 +211,11 @@ class TrianglePandas:
         obj.values = obj.values.astype(dtype)
         return obj
 
-    def head(self, *args, **kwargs):
-        return pd.DataFrame(
-            np.broadcast_to(np.array(["..."]), self.shape[:2]),
-            index=self.index.set_index(self.key_labels).index,
-            columns=self.vdims,
-        ).head(*args, **kwargs)
+    def head(self, n=5):
+        return self.iloc[:n]
 
-    def tail(self, *args, **kwargs):
-        return pd.DataFrame(
-            np.broadcast_to(np.array(["..."]), self.shape[:2]),
-            index=self.index.set_index(self.key_labels).index,
-            columns=self.vdims,
-        ).tail(*args, **kwargs)
+    def tail(self, n=5):
+        return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs):
         return self.loc[
@@ -351,6 +242,7 @@ def add_triangle_agg_func(cls, k, v):
 
     def agg_func(self, axis=None, *args, **kwargs):
         obj = self.copy()
+        auto_sparse = kwargs.pop("auto_sparse", True)
         if axis is None:
             axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
         else:
@@ -367,8 +259,8 @@ def add_triangle_agg_func(cls, k, v):
             obj.odims = obj.odims[0:1]
         if axis == 3 and obj.values.shape[axis] == 1:
             obj.ddims = obj.ddims[-1:]
-        obj._set_slicers()
-        obj.values = obj.values
+        if auto_sparse:
+            obj._set_slicers()
         obj.num_to_nan()
         if obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
@@ -381,54 +273,17 @@ def add_triangle_agg_func(cls, k, v):
 def add_groupby_agg_func(cls, k, v):
     """ Aggregate Overrides in GroupBy """
 
-    def agg_func(self, axis=1, *args, **kwargs):
-        obj = copy.deepcopy(self.obj)
-        xp = self.orig_obj.get_array_module()
-        obj = getattr(self.obj, v)(*args, **kwargs)
-        if self.orig_obj.array_backend == "sparse":
-            obj = obj.reset_index()
-            new_idx = (
-                obj[obj.columns[:-4]]
-                .drop_duplicates()
-                .reset_index(drop=True)
-                .reset_index()
-                .set_index(list(obj.columns[:-4]))
-            )
-            obj = obj.set_index(list(obj.columns[:-4])).merge(
-                new_idx, how="inner", left_index=True, right_index=True
-            )
-            self.orig_obj.values.coords = obj[["index", 1, 2, 3]].values.T
-            self.orig_obj.values.data = obj["values"].values
-            self.orig_obj.values.shape = tuple(
-                [len(new_idx)] + list(self.orig_obj.values.shape[1:])
-            )
-            self.orig_obj.kdims = np.array(new_idx.index)
-            self.orig_obj.key_labels = list(new_idx.index.names)
-        elif self.orig_obj.array_backend == "cupy":
-            obj = self.obj.copy()
-            x = (
-                xp.broadcast_to(
-                    self.obj.values,
-                    (self.old_k_by_new_k.shape[0], *self.obj.values.shape),
-                )
-                * self.old_k_by_new_k
-            )
-            ignore_vector = xp.sum(np.isnan(x), axis=1, keepdims=True) == x.shape[1]
-            x = xp.where(ignore_vector, 0, x)
-            x[~xp.isfinite(x)] = np.nan
-            obj.values = getattr(xp, v)(x, axis=1, *args, **kwargs)
-            obj.values[obj.values == 0] = np.nan
-            obj._set_slicers()
-            return obj
-        else:
-            self.orig_obj.values = obj.values.reshape(
-                len(self.idx.unique()), *self.orig_obj.shape[1:]
-            )
-            self.orig_obj.values[self.orig_obj.values == 0] = np.nan
-            self.orig_obj.kdims = np.array(obj.index)
-            self.orig_obj.key_labels = list(self.idx.names)
-        self.orig_obj._set_slicers()
-        return self.orig_obj
+    def agg_func(self):
+        xp = self.obj.get_array_module()
+        values = [
+            getattr(self.obj.iloc[i], v)(0, auto_sparse=False).values
+            for i in self.groups.indices.values()
+        ]
+        self.obj.values = xp.concatenate(values, 0)
+        self.obj.key_labels = self.by
+        self.obj.kdims = np.array(list(self.groups.groups.keys()))
+        self.obj._set_slicers()
+        return self.obj
 
     set_method(cls, agg_func, k)
 
@@ -449,30 +304,20 @@ def set_method(cls, func, k):
     setattr(cls, func.__name__, func)
 
 
-df_passthru = [
-    "to_clipboard",
-    "to_csv",
-    "to_excel",
-    "to_json",
-    "to_html",
-    "to_dict",
-    "unstack",
-    "pivot",
-    "drop_duplicates",
-    "describe",
-    "melt",
-    "pct_chg",
-    "round",
-]
-agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var", "std", "cumsum"]
-for k in agg_funcs + ["quantile"]:
+df_passthru = (
+    ["to_clipboard", "to_csv", "to_excel", "to_json", "to_html",]
+    + ["to_dict", "unstack", "pivot", "drop_duplicates", "describe", "melt",]
+    + ["pct_chg", "round",]
+)
+for item in df_passthru:
+    add_df_passthru(TrianglePandas, item)
+
+agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var"]
+agg_funcs = agg_funcs + ["std", "cumsum", "quantile"]
+for k in agg_funcs:
     add_groupby_agg_func(TriangleGroupBy, k, k)
 agg_funcs = {item: "nan" + item for item in agg_funcs}
 more_aggs = ["diff"]
 agg_funcs = {**agg_funcs, **{item: item for item in more_aggs}}
-
-for item in df_passthru:
-    add_df_passthru(TrianglePandas, item)
-
 for k, v in agg_funcs.items():
     add_triangle_agg_func(TrianglePandas, k, v)

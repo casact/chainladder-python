@@ -38,9 +38,9 @@ def nanmedian(a, *args, **kwargs):
     return cp.array(np.nanmedian(cp.asnumpy(a), *args, **kwargs))
 
 
-def nanpercentile(a, *args, **kwargs):
+def nanquantile(a, *args, **kwargs):
     """ For cupy v0.6.0 compatibility """
-    return cp.array(np.nanpercentile(cp.asnumpy(a), *args, **kwargs))
+    return cp.array(np.nanquantile(cp.asnumpy(a), *args, **kwargs))
 
 
 def unique(ar, axis=None, *args, **kwargs):
@@ -52,5 +52,6 @@ if module == "cupy" and int(cp.__version__.split(".")[0]) < 7:
     cp.nansum = nansum
     cp.nanmean = nanmean
     cp.nanmedian = nanmedian
-    cp.nanpercentile = nanpercentile
     cp.unique = unique
+
+cp.nanquantile = nanquantile

@@ -373,7 +373,7 @@ def test_quantile_vs_median():
     assert tri == tri_gt
     xp = tri.get_array_module()
     xp.testing.assert_array_equal(
-        tri.quantile(0.5)["CumPaidLoss"].values, tri.median()["CumPaidLoss"].values
+        tri.quantile(q=0.5)["CumPaidLoss"].values, tri.median()["CumPaidLoss"].values
     )
 
 

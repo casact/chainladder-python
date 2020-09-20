@@ -35,6 +35,8 @@ class _LocBase:
 
     @staticmethod
     def _contig_slice(arr):
+        if type(arr) is pd.Series:
+            arr = arr[arr].index.tolist()
         if type(arr) is slice:
             return arr
         if type(arr) in [int, np.int64, np.int32]:
@@ -42,6 +44,8 @@ class _LocBase:
         if len(arr) == 1:
             return slice(arr[0], arr[0] + 1)
         diff = np.diff(arr)
+        if len(diff) == 0:
+            raise ValueError("Slice returns empty Triangle")
         if max(diff) == min(diff):
             step = max(diff)
         else:
