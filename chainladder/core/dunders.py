@@ -95,12 +95,8 @@ class TriangleDunders:
         return obj
 
     def _compatibility_check(self, x, y):
-        from chainladder import ARRAY_PRIORITY
-
-        backend = ARRAY_PRIORITY[
-            min([ARRAY_PRIORITY.index(x) for x in [x.array_backend, y.array_backend]])
-        ]
-        x, y = x.set_backend(backend), y.set_backend(backend)
+        from chainladder.utils.utility_functions import set_common_backend
+        x, y = set_common_backend([x, y])
         if (
             x.origin_grain != y.origin_grain
             or x.development_grain != y.development_grain

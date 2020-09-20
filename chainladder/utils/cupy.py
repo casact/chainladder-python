@@ -48,10 +48,11 @@ def unique(ar, axis=None, *args, **kwargs):
     return cp.array(np.unique(cp.asnumpy(ar), axis=axis, *args, **kwargs))
 
 
-if module == "cupy" and int(cp.__version__.split(".")[0]) < 7:
-    cp.nansum = nansum
-    cp.nanmean = nanmean
-    cp.nanmedian = nanmedian
-    cp.unique = unique
-
-cp.nanquantile = nanquantile
+if module == "cupy":
+    if int(cp.__version__.split(".")[0]) < 7:
+        cp.nansum = nansum
+        cp.nanmean = nanmean
+        cp.nanmedian = nanmedian
+        cp.unique = unique
+    if int(cp.__version__.split(".")[0]) >= 7:
+        cp.nanquantile = nanquantile

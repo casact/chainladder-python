@@ -149,8 +149,10 @@ class TrianglePandas:
         -------
             New Triangle with appended data.
         """
+        from chainladder.utils.utility_functions import set_common_backend
+
         xp = self.get_array_module()
-        return_obj = self.copy()
+        return_obj, other = set_common_backend([self, other])
         return_obj.kdims = (return_obj.index.append(other.index)).values
         try:
             return_obj.values = xp.concatenate(

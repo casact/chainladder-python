@@ -201,6 +201,13 @@ def parallelogram_olf(
     return y.set_index("Origin")
 
 
+def set_common_backend(objs):
+    from chainladder import ARRAY_PRIORITY as priority
+
+    backend = priority[np.min([priority.index(i.array_backend) for i in objs])]
+    return [i.set_backend(backend) for i in objs]
+
+
 def concat(objs, axis):
     """ Concatenate Triangle objects along a particular axis.
 
@@ -216,6 +223,7 @@ def concat(objs, axis):
     -------
     Updated triangle
     """
+    objs = set_common_backend(objs)
     xp = objs[0].get_array_module()
     axis = objs[0]._get_axis(axis)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
