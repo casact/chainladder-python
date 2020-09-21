@@ -96,6 +96,7 @@ class TriangleDunders:
 
     def _compatibility_check(self, x, y):
         from chainladder.utils.utility_functions import set_common_backend
+
         x, y = set_common_backend([x, y])
         if (
             x.origin_grain != y.origin_grain

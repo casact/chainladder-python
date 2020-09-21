@@ -260,7 +260,9 @@ def add_triangle_agg_func(cls, k, v):
         if axis == 2 and obj.values.shape[axis] == 1:
             obj.odims = obj.odims[0:1]
         if axis == 3 and obj.values.shape[axis] == 1:
-            obj.ddims = obj.ddims[-1:]
+            obj.ddims = pd.DatetimeIndex(
+                [self.valuation_date], dtype="datetime64[ns]", freq=None
+            )
         if auto_sparse:
             obj._set_slicers()
         obj.num_to_nan()

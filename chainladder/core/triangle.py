@@ -441,30 +441,23 @@ class Triangle(TriangleBase):
         return ret_val
 
     def _val_dev_chg(self):
-        xp = self.get_array_module()
-        obj = self.copy()
-        x = xp.nan_to_num(obj.values)
-        val_mtrx = (
-            (
-                np.array(obj.valuation.year).reshape(obj.shape[-2:], order="f")
-                - np.array(pd.DatetimeIndex(obj.odims).year)[..., None]
-            )
-            * 12
-            + (
-                np.array(obj.valuation.month).reshape(obj.shape[-2:], order="f")
-                - np.array(pd.DatetimeIndex(obj.odims).month)[..., None]
-            )
-            + 1
-        )
+        backend = self.array_backend
+        obj = self.set_backend('sparse')
+        x = obj.get_array_module().nan_to_num(obj.values)
+        d = {"M": 1, "Q": 3, "Y": 12}[obj.development_grain]
+        vyear = np.array(obj.valuation.year).reshape(obj.shape[-2:], order="f")
+        oyear = np.array(pd.DatetimeIndex(obj.odims).year)[..., None]
+        vmonth = np.array(obj.valuation.month).reshape(obj.shape[-2:], order="f")
+        omonth = np.array(pd.DatetimeIndex(obj.odims).month)[..., None]
+        val_mtrx = (vyear - oyear) * 12 + (vmonth - omonth) + 1
         rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten() > 0]))
-        val_mtrx = xp.nan_to_num(xp.array(val_mtrx))
-        # Can be slow on very large triangles
-        x = [xp.sum((val_mtrx == item) * x, -1, keepdims=True) for item in rng]
-        # End slow
-        x = xp.concatenate(x, -1)
+        val_mtrx = (val_mtrx - rng[0]) / d
+        x.coords[-1] = x.coords[-1] + val_mtrx[:, 0][x.coords[-2]]
+        x.shape = tuple(list(x.shape[:-1]) + [len(rng)])
         obj.values = x
         obj.ddims = np.array([item for item in rng])
         obj.num_to_nan()
+        obj.set_backend(backend, inplace=True)
         obj._set_slicers()
         return obj
 
