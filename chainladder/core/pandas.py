@@ -277,10 +277,10 @@ def add_triangle_agg_func(cls, k, v):
 def add_groupby_agg_func(cls, k, v):
     """ Aggregate Overrides in GroupBy """
 
-    def agg_func(self):
+    def agg_func(self, *args, **kwargs):
         xp = self.obj.get_array_module()
         values = [
-            getattr(self.obj.iloc[i], v)(0, auto_sparse=False).values
+            getattr(self.obj.iloc[i], 'sum')(0, auto_sparse=False).set_backend(self.obj.array_backend).values
             for i in self.groups.indices.values()
         ]
         self.obj.values = xp.concatenate(values, 0)
