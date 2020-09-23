@@ -198,7 +198,7 @@ class TriangleDunders:
     def __mul__(self, other):
         obj, other = self._validate_arithmetic(other)
         xp = obj.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) * other
+        obj.values = obj.values * other
         return self._arithmetic_cleanup(obj, other)
 
     def __rmul__(self, other):
@@ -219,7 +219,7 @@ class TriangleDunders:
     def __truediv__(self, other):
         obj, other = self._validate_arithmetic(other)
         xp = obj.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) / other
+        obj.values = obj.values / other
         return self._arithmetic_cleanup(obj, other)
 
     def __rtruediv__(self, other):

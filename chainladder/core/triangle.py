@@ -457,7 +457,8 @@ class Triangle(TriangleBase):
         obj.values = x
         obj.ddims = np.array([item for item in rng])
         obj.num_to_nan()
-        obj.set_backend(backend, inplace=True)
+        if backend == 'cupy':
+            obj.set_backend(backend, inplace=True)
         obj._set_slicers()
         return obj
 
@@ -544,31 +545,31 @@ class Triangle(TriangleBase):
             new_tri = xp.swapaxes(new_tri, -1, -2)
             obj.values = new_tri
             obj.odims = np.unique(o)
-        obj = obj.val_to_dev(inplace=True)
-        # Now do development
-        dev_grain_dict = {
-            "M": {"Y": 12, "Q": 3, "M": 1},
-            "Q": {"Y": 4, "Q": 1},
-            "Y": {"Y": 1},
-        }
-        if obj.shape[3] != 1:
-            keeps = dev_grain_dict[dgrain_old][dgrain_new]
-            keeps = np.where(np.arange(obj.shape[3]) % keeps == 0)[0]
-            keeps = -(keeps + 1)[::-1]
-            obj.values = obj.values[..., keeps]
-            obj.ddims = obj.ddims[keeps]
-        obj.origin_grain = ograin_new
-        obj.development_grain = dgrain_new
-        obj.num_to_nan()
-        if not self.is_cumulative:
-            obj = obj.cum_to_incr(inplace=True)
-        if self.is_val_tri:
-            obj = obj.dev_to_val().dropna()
-        if inplace:
-            self = obj
-            return self
-        else:
-            return obj
+        if len(obj.ddims) > 1:
+            obj = obj.val_to_dev(inplace=True)
+            # Now do development
+            dev_grain_dict = {
+                "M": {"Y": 12, "Q": 3, "M": 1},
+                "Q": {"Y": 4, "Q": 1},
+                "Y": {"Y": 1},
+            }
+            if obj.shape[3] != 1:
+                keeps = dev_grain_dict[dgrain_old][dgrain_new]
+                keeps = np.where(np.arange(obj.shape[3]) % keeps == 0)[0]
+                keeps = -(keeps + 1)[::-1]
+                obj.values = obj.values[..., keeps]
+                obj.ddims = obj.ddims[keeps]
+            obj.origin_grain = ograin_new
+            obj.development_grain = dgrain_new
+            obj.num_to_nan()
+            if not self.is_cumulative:
+                obj = obj.cum_to_incr(inplace=True)
+            if self.is_val_tri:
+                obj = obj.dev_to_val().dropna()
+            if inplace:
+                self = obj
+                return self
+        return obj
 
     def trend(
         self,
