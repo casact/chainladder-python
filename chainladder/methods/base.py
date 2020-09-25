@@ -38,7 +38,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         else:
             cdf = self.cdf_.values[..., : ultimate.shape[-1]]
         a = ultimate.iloc[0, 0] * 0 + ultimate.nan_triangle
-        if a.array_backend == "sparse":
+        if ultimate.array_backend == "sparse":
             a = a - a[a.valuation < a.valuation_date]
         a = a.set_backend(ultimate.array_backend)
         if sample_weight:

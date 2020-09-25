@@ -119,7 +119,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.ldf_.values = xp.concatenate(
             (
                 self.ldf_.values[..., :-decay_range],
-                (self.ldf_.values[..., -decay_range:] * 0 + 1) * ldfs,
+                (xp.nan_to_num(self.ldf_.values[..., -decay_range:]) * 0 + 1) * ldfs,
             ),
             axis=-1,
         )
