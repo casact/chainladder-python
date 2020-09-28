@@ -31,6 +31,7 @@ class _LocBase:
         obj.vdims = obj.vdims[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
+        obj.valuation_date = np.minimum(obj.valuation.max(), obj.valuation_date)
         return obj
 
     @staticmethod

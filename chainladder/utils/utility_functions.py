@@ -242,6 +242,9 @@ def concat(objs, axis):
     out = copy.deepcopy(objs[0])
     out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
     setattr(out, mapper[axis], new_axis)
+    out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
+    if out.ddims.dtype == "datetime64[ns]" and type(out.ddims) == np.ndarray:
+        out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     return out
 

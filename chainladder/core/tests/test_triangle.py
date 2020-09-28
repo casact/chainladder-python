@@ -120,7 +120,10 @@ def test_sum_of_diff_eq_diff_of_sum():
 
 def test_append():
     assert raa == raa_gt
-    assert raa.append(raa).sum() == 2 * raa
+    raa2 = raa.copy()
+    raa2.kdims = np.array([["P2"]])
+    raa.append(raa2).sum() == raa * 2
+    assert raa.append(raa2).sum() == 2 * raa
 
 
 def test_assign_existing_col():

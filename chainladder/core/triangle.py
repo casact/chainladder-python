@@ -204,8 +204,8 @@ class Triangle(TriangleBase):
                 obj.values = obj.values[..., :-1, :]
         obj.odims = obj.odims[: obj.values.shape[2]]
         if hasattr(obj, "w_"):
-            if obj.shape == obj.w_[..., 0:1, : len(obj.odims), :].shape:
-                obj = obj * obj.w_[..., 0:1, : len(obj.odims), :]
+            w_ = obj.w_[..., 0:1, : len(obj.odims), :]
+            obj = obj * w_ if obj.shape == w_.shape else obj
         return obj
 
     @property
@@ -219,11 +219,8 @@ class Triangle(TriangleBase):
         ddims = self.ddims
         is_val_tri = type(ddims) == pd.DatetimeIndex
         if is_val_tri:
-            return pd.DatetimeIndex(
-                pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
-                .unstack()
-                .values
-            )
+            out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
+            return pd.DatetimeIndex(out.unstack().values)
         if type(ddims[0]) in [np.str_, str]:
             ddims = np.array([int(item[: item.find("-") :]) for item in ddims])
         ddim_arr = ddims - ddims[0]
@@ -308,6 +305,29 @@ class Triangle(TriangleBase):
             new_obj = self.copy()
             return new_obj.cum_to_incr(inplace=True)
 
+    def _val_dev(self, sign, inplace=False):
+        backend = self.array_backend
+        obj = self.set_backend("sparse")
+        if not inplace:
+            obj.values = obj.values.copy()
+        scale = {
+            "M": {"Y": 12, "Q": 3, "M": 1},
+            "Q": {"Y": 4, "Q": 1},
+            "Y": {"Y": 1},
+        }
+        scale = scale[obj.development_grain][obj.origin_grain]
+        offset = np.arange(obj.shape[-2]) * scale
+        offset = offset[obj.values.coords[-2]] * sign
+        obj.values.coords[-1] = obj.values.coords[-1] + offset
+        ddims = obj.valuation[obj.valuation <= obj.valuation_date]
+        ddims = len(ddims.drop_duplicates())
+        if obj.values.coords[-1].min() < 0:
+            obj.values.coords[-1] = obj.values.coords[-1] - obj.values.coords[-1].min()
+            ddims = np.max((len(np.unique(obj.values.coords[-1])), ddims))
+        obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
+        obj = obj.set_backend(backend)
+        return obj
+
     def dev_to_val(self, inplace=False):
         """ Converts triangle from a development lag triangle to a valuation
         triangle.
@@ -322,81 +342,30 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with valuation periods.
         """
-        if inplace:
-            if self.is_val_tri:
+        from chainladder.utils.utility_functions import concat
+
+        if self.is_val_tri:
+            if inplace:
                 return self
-            xp = self.get_array_module()
-            obj = self.copy()
-            if self.shape[-1] == 1:
-                return obj
-            rng = obj.valuation.unique().sort_values()
-            rng = rng[rng <= obj.valuation_date]
-            if self.is_ultimate:
-                if self.is_cumulative:
-                    obj = obj.cum_to_incr(inplace=True)
-                u_rng = rng[-1:]
-                rng = rng[:-1]
-                k, v, o = obj.shape[:-1]
-                x = xp.concatenate(
-                    (
-                        obj.values[..., :-1],
-                        xp.repeat(
-                            xp.array([[[[xp.nan]] * o] * v] * k),
-                            len(rng) - (obj.shape[-1] - 1),
-                            axis=-1,
-                        ),
-                    ),
-                    -1,
-                )
             else:
-                u_rng = []
-                x = xp.nan_to_num(obj.values)
-            val_mtrx = np.array(obj.valuation).reshape(obj.shape[-2:], order="f")[
-                :, :-1
-            ]
-            rows, column_indices = np.ogrid[: x.shape[2], : x.shape[3]]
-            r = np.arange(0, x.shape[2]) * (
-                np.where(val_mtrx[0, :] == val_mtrx[0, -1])[0][0]
-                - np.where(val_mtrx[1, :] == val_mtrx[0, -1])[0][0]
-            )
-            r[r < 0] += x.shape[1]
-            column_indices = column_indices - r[..., None]
-            if self.array_backend == "sparse":
-                b = (
-                    np.arange(x.shape[3])[None] / x.shape[3]
-                    + np.arange(x.shape[2])[:, None]
-                )[rows, column_indices]
-                c10 = (b - b % 1).astype("int64").flatten()
-                c11_new = (
-                    (np.arange(x.shape[3])[None] + np.zeros(x.shape[2])[:, None])
-                    .astype("int64")
-                    .flatten()
-                )
-                c11 = (
-                    np.round(((b - np.arange(x.shape[2])[:, None]) * x.shape[3]), 0)
-                    .astype("int64")
-                    .flatten()
-                )
-                mapper = dict(zip(list(zip(c10, c11)), c11_new))
-                x.coords[-1, :] = (
-                    pd.Series(zip(x.coords[-2:, :][0], x.coords[-2:, :][1]))
-                    .map(mapper)
-                    .values
-                )
-            else:
-                x = x[..., rows, column_indices]
-            if self.is_ultimate:
-                x = xp.concatenate((x, obj.values[..., -1:]), -1)
-            obj.values = x
-            obj.num_to_nan()
-            obj.ddims = rng.append(u_rng)
-            obj.values = obj.values[
-                ..., : np.where(obj.ddims <= obj.valuation_date)[0].max() + 1
-            ]
-            if self.is_cumulative:
-                obj = obj.incr_to_cum(inplace=True)
-            return obj
-        return self.copy().dev_to_val(inplace=True)
+                return self.copy()
+        is_cumulative = self.is_cumulative
+        if self.is_ultimate:
+            if is_cumulative:
+                obj = self.cum_to_incr(inplace=inplace)
+                ultimate = obj.iloc[..., -1:]
+            obj = obj.iloc[..., :-1]
+        else:
+            obj = self
+        obj = obj._val_dev(1, inplace)
+        ddims = obj.valuation[obj.valuation <= obj.valuation_date]
+        obj.ddims = ddims.drop_duplicates().sort_values()
+        if self.is_ultimate:
+            ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
+            obj = concat((obj, ultimate), -1)
+            if is_cumulative:
+                obj = obj.incr_to_cum(inplace=inplace)
+        return obj
 
     def val_to_dev(self, inplace=False):
         """ Converts triangle from a valuation triangle to a development lag
@@ -412,54 +381,31 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with development lags
         """
-        from chainladder import ULT_VAL
+        from chainladder.utils.utility_functions import concat
 
-        xp = self.get_array_module()
         if not self.is_val_tri:
-            ret_val = self
-        else:
-            if self.is_ultimate:
-                obj = self[self.valuation < ULT_VAL[:4]]
-                non_ultimates = obj.values
-                obj = obj._val_dev_chg()
-                ultimate = self[self.valuation >= ULT_VAL[:4]]
-                max_val = self[self.valuation < ULT_VAL[:4]][
-                    self.origin == self.origin.max()
-                ].valuation.max()
-                max_dev = obj[obj.origin == obj.origin.max()]
-                max_dev = max_dev[max_dev.valuation == max_val].ddims[0]
-                obj = obj[obj.development <= max_dev]
-                obj.values = xp.concatenate((obj.values, ultimate.values), axis=-1)
-                obj.ddims = np.concatenate((obj.ddims, np.array([9999])))
-                obj.valuation_date = max(obj.valuation)
-                ret_val = obj
+            if inplace:
+                return self
             else:
-                ret_val = self._val_dev_chg()
-        ret_val.values = ret_val.nan_triangle * ret_val.values
-        if inplace:
-            self = ret_val
-        return ret_val
-
-    def _val_dev_chg(self):
-        backend = self.array_backend
-        obj = self.set_backend('sparse')
-        x = obj.get_array_module().nan_to_num(obj.values)
-        d = {"M": 1, "Q": 3, "Y": 12}[obj.development_grain]
-        vyear = np.array(obj.valuation.year).reshape(obj.shape[-2:], order="f")
-        oyear = np.array(pd.DatetimeIndex(obj.odims).year)[..., None]
-        vmonth = np.array(obj.valuation.month).reshape(obj.shape[-2:], order="f")
-        omonth = np.array(pd.DatetimeIndex(obj.odims).month)[..., None]
-        val_mtrx = (vyear - oyear) * 12 + (vmonth - omonth) + 1
-        rng = np.sort(np.unique(val_mtrx.flatten()[val_mtrx.flatten() > 0]))
-        val_mtrx = (val_mtrx - rng[0]) / d
-        x.coords[-1] = x.coords[-1] + val_mtrx[:, 0][x.coords[-2]]
-        x.shape = tuple(list(x.shape[:-1]) + [len(rng)])
-        obj.values = x
-        obj.ddims = np.array([item for item in rng])
-        obj.num_to_nan()
-        if backend == 'cupy':
-            obj.set_backend(backend, inplace=True)
-        obj._set_slicers()
+                return self.copy()
+        if self.is_ultimate:
+            ultimate = self.iloc[..., -1:]
+            ultimate.ddims = np.array([9999])
+            obj = self.iloc[..., :-1]._val_dev(-1, inplace)
+        else:
+            obj = self._val_dev(-1, inplace)
+        val_0 = obj.valuation[0]
+        if self.ddims.shape[-1] == 1 and self.ddims[0] == self.valuation_date:
+            origin_0 = pd.to_datetime(obj.odims[-1])
+        else:
+            origin_0 = pd.to_datetime(obj.odims[0])
+        lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
+        scale = {"Y": 12, "Q": 3, "M": 1}[obj.development_grain]
+        obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
+        prune = obj[obj.origin == obj.origin.max()]
+        if self.is_ultimate:
+            obj = obj.iloc[..., : (prune.valuation <= prune.valuation_date).sum()]
+            obj = concat((obj, ultimate), -1)
         return obj
 
     def grain(self, grain="", trailing=False, inplace=False):
@@ -474,7 +420,7 @@ class Triangle(TriangleBase):
             for Origin quarter/Development Month, etc.
         trailing : bool
             For partial years/quarters, trailing will set the year/quarter end to
-            that of the latest available form the data.
+            that of the latest available from the data.
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
@@ -499,10 +445,10 @@ class Triangle(TriangleBase):
                 method."""
             )
         if self.is_cumulative:
-            obj = self.dev_to_val(inplace=True)
+            obj = self.dev_to_val()
         else:
             # Must be cumulative to work
-            obj = self.incr_to_cum().dev_to_val(inplace=True)
+            obj = self.incr_to_cum().dev_to_val()
         # put data in valuation mode
         xp = self.get_array_module()
         if ograin_new != ograin_old:
@@ -545,6 +491,7 @@ class Triangle(TriangleBase):
             new_tri = xp.swapaxes(new_tri, -1, -2)
             obj.values = new_tri
             obj.odims = np.unique(o)
+            obj.origin_grain = ograin_new
         if len(obj.ddims) > 1:
             obj = obj.val_to_dev(inplace=True)
             # Now do development
@@ -559,7 +506,6 @@ class Triangle(TriangleBase):
                 keeps = -(keeps + 1)[::-1]
                 obj.values = obj.values[..., keeps]
                 obj.ddims = obj.ddims[keeps]
-            obj.origin_grain = ograin_new
             obj.development_grain = dgrain_new
             obj.num_to_nan()
             if not self.is_cumulative:

@@ -149,23 +149,9 @@ class TrianglePandas:
         -------
             New Triangle with appended data.
         """
-        from chainladder.utils.utility_functions import set_common_backend
+        from chainladder.utils.utility_functions import concat
 
-        xp = self.get_array_module()
-        return_obj, other = set_common_backend([self, other])
-        return_obj.kdims = (return_obj.index.append(other.index)).values
-        try:
-            return_obj.values = xp.concatenate(
-                (return_obj.values, other.values), axis=0
-            )
-        except:
-            # For misaligned triangle support
-            return_obj.values = xp.concatenate(
-                (return_obj.values, (return_obj.iloc[:, 0] * 0 + other.values).values),
-                axis=1,
-            )
-        return_obj._set_slicers()
-        return return_obj
+        return concat((self, other), 0)
 
     def rename(self, axis, value):
         """ Alter axes labels.
@@ -280,7 +266,9 @@ def add_groupby_agg_func(cls, k, v):
     def agg_func(self, *args, **kwargs):
         xp = self.obj.get_array_module()
         values = [
-            getattr(self.obj.iloc[i], 'sum')(0, auto_sparse=False).set_backend(self.obj.array_backend).values
+            getattr(self.obj.iloc[i], "sum")(0, auto_sparse=False)
+            .set_backend(self.obj.array_backend)
+            .values
             for i in self.groups.indices.values()
         ]
         self.obj.values = xp.concatenate(values, 0)
