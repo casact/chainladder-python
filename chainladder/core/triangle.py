@@ -167,20 +167,7 @@ class Triangle(TriangleBase):
 
     @property
     def latest_diagonal(self):
-        """ The latest diagonal of the Triangle """
-        from chainladder.utils.utility_functions import num_to_nan
-
-        obj = self.copy()
-        xp = obj.get_array_module()
-        val = self.valuation == self.valuation_date
-        val = val.reshape(self.shape[-2:], order="F")
-        val = xp.array(np.nan_to_num(val))
-        values = num_to_nan(val * 1.0) * obj.values
-        obj.values = num_to_nan(xp.nansum(values, axis=-1, keepdims=True))
-        obj.ddims = pd.DatetimeIndex(
-            [self.valuation_date], dtype="datetime64[ns]", freq=None
-        )
-        return obj
+        return self.dev_to_val().iloc[..., -1]
 
     @property
     def link_ratio(self):
@@ -190,12 +177,9 @@ class Triangle(TriangleBase):
         obj = self.copy()
         temp = num_to_nan(obj.values.copy())
         val_array = obj.valuation.values.reshape(obj.shape[-2:], order="f")[:, 1:]
-        obj.ddims = np.array(
-            [
-                "{}-{}".format(obj.ddims[i], obj.ddims[i + 1])
-                for i in range(len(obj.ddims) - 1)
-            ]
-        )
+        d = obj.ddims
+        obj.ddims = ["{}-{}".format(d[i], d[i + 1]) for i in range(len(d) - 1)]
+        obj.ddims = np.array(obj.ddims)
         obj.values = temp[..., 1:] / temp[..., :-1]
         if self.array_backend == "sparse":
             obj.values.shape = tuple(obj.values.coords.max(1) + 1)
@@ -225,24 +209,16 @@ class Triangle(TriangleBase):
             ddims = np.array([int(item[: item.find("-") :]) for item in ddims])
         ddim_arr = ddims - ddims[0]
         origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
-        val_array = (
-            (origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")).astype(
-                "datetime64[ns]"
-            )
-            - np.timedelta64(1, "ns")
-        )[:, None]
+        val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
+        val_array = val_array.astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        val_array = val_array[:, None]
         s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
         val_array = (
             val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
         ).astype("datetime64[ns]") - np.timedelta64(1, "ns")
         if ddims[-1] == 9999:
-            val_array = np.concatenate(
-                (
-                    val_array,
-                    np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None],
-                ),
-                axis=1,
-            )
+            ult = np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]
+            val_array = np.concatenate((val_array, ult,), axis=1,)
         return pd.DatetimeIndex(val_array.reshape(1, -1, order="F")[0])
 
     def incr_to_cum(self, inplace=False):
@@ -492,8 +468,9 @@ class Triangle(TriangleBase):
             obj.values = new_tri
             obj.odims = np.unique(o)
             obj.origin_grain = ograin_new
+        obj.num_to_nan()
         if len(obj.ddims) > 1:
-            obj = obj.val_to_dev(inplace=True)
+            obj = obj.val_to_dev()
             # Now do development
             dev_grain_dict = {
                 "M": {"Y": 12, "Q": 3, "M": 1},
@@ -507,9 +484,8 @@ class Triangle(TriangleBase):
                 obj.values = obj.values[..., keeps]
                 obj.ddims = obj.ddims[keeps]
             obj.development_grain = dgrain_new
-            obj.num_to_nan()
             if not self.is_cumulative:
-                obj = obj.cum_to_incr(inplace=True)
+                obj = obj.cum_to_incr()
             if self.is_val_tri:
                 obj = obj.dev_to_val().dropna()
             if inplace:

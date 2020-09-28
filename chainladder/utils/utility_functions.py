@@ -229,10 +229,8 @@ def concat(objs, axis):
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k, v in mapper.items():
         if k != axis:  # All non-concat axes must be identical
-            assert np.all(
-                np.array([getattr(obj, mapper[k]) for obj in objs])
-                == getattr(objs[0], mapper[k])
-            )
+            a = np.array([getattr(obj, mapper[k]) for obj in objs])
+            assert np.all(a == a[0])
         else:  # All elements of concat axis must be unique
             new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
             if axis == 0:
