@@ -281,17 +281,19 @@ class Triangle(TriangleBase):
             new_obj = self.copy()
             return new_obj.cum_to_incr(inplace=True)
 
+    def _dstep(self):
+        return {
+            "M": {"Y": 12, "Q": 3, "M": 1},
+            "Q": {"Y": 4, "Q": 1},
+            "Y": {"Y": 1},
+        }
+
     def _val_dev(self, sign, inplace=False):
         backend = self.array_backend
         obj = self.set_backend("sparse")
         if not inplace:
             obj.values = obj.values.copy()
-        scale = {
-            "M": {"Y": 12, "Q": 3, "M": 1},
-            "Q": {"Y": 4, "Q": 1},
-            "Y": {"Y": 1},
-        }
-        scale = scale[obj.development_grain][obj.origin_grain]
+        scale = self._dstep()[obj.development_grain][obj.origin_grain]
         offset = np.arange(obj.shape[-2]) * scale
         offset = offset[obj.values.coords[-2]] * sign
         obj.values.coords[-1] = obj.values.coords[-1] + offset
@@ -329,7 +331,9 @@ class Triangle(TriangleBase):
         if self.is_ultimate:
             if is_cumulative:
                 obj = self.cum_to_incr(inplace=inplace)
-                ultimate = obj.iloc[..., -1:]
+            else:
+                obj = self.copy()
+            ultimate = obj.iloc[..., -1:]
             obj = obj.iloc[..., :-1]
         else:
             obj = self
@@ -405,10 +409,8 @@ class Triangle(TriangleBase):
         -------
             Triangle
         """
-        ograin_new = grain[1:2]
-        ograin_old = self.origin_grain
-        dgrain_new = grain[-1]
-        dgrain_old = self.development_grain
+        ograin_old, ograin_new = self.origin_grain, grain[1:2]
+        dgrain_old, dgrain_new = self.development_grain, grain[-1]
         valid = {"Y": ["Y"], "Q": ["Q", "Y"], "M": ["Y", "Q", "M"]}
         if ograin_new not in valid.get(ograin_old, []) or dgrain_new not in valid.get(
             dgrain_old, []
@@ -416,81 +418,54 @@ class Triangle(TriangleBase):
             raise ValueError("New grain not compatible with existing grain")
         if self.is_cumulative is None:
             raise AttributeError(
-                """
-                The is_cumulative attribute must be set before using grain
-                method."""
+                "The is_cumulative attribute must be set before using grain method."
             )
-        if self.is_cumulative:
-            obj = self.dev_to_val()
-        else:
-            # Must be cumulative to work
-            obj = self.incr_to_cum().dev_to_val()
-        # put data in valuation mode
-        xp = self.get_array_module()
+        if valid["M"].index(ograin_new) > valid["M"].index(dgrain_new):
+            raise ValueError("Origin grain must be coarser than development grain")
+        # Start with origin
+        obj = self.dev_to_val()
+        xp = obj.get_array_module()
         if ograin_new != ograin_old:
-            o_dt = pd.Series(obj.odims)
             if trailing:
                 mn = self.origin[-1].strftime("%b").upper() if trailing else "DEC"
-                if ograin_new == "Q":
-                    o = np.array(
-                        pd.PeriodIndex(self.origin, freq="Q-" + mn).to_timestamp(
-                            how="s"
-                        )
-                    )
-                elif ograin_new == "Y":
-                    o = np.array(
-                        pd.PeriodIndex(self.origin, freq="A-" + mn).to_timestamp(
-                            how="s"
-                        )
-                    )
-                else:
-                    o = obj.odims
+                freq = "Q-" if ograin_new == "Q" else "A-"
+                o = pd.PeriodIndex(self.origin, freq=freq + mn)
+                o = np.array(o.to_timestamp(how="s"))
             else:
-                if ograin_new == "Q":
-                    o = np.array(
-                        pd.to_datetime(
-                            o_dt.dt.year.astype(str) + "Q" + o_dt.dt.quarter.astype(str)
-                        )
-                    )
-                elif ograin_new == "Y":
-                    o = np.array(pd.to_datetime(o_dt.dt.year, format="%Y"))
-                else:
-                    o = obj.odims
-            o_new = np.unique(o)
-            o = np.repeat(o[:, None, ...], len(o_new), axis=1)
-            o_new = np.repeat(o_new[None], len(o), axis=0)
-            o_bool = xp.repeat(xp.array(o == o_new)[:, None], len(obj.ddims), axis=1)
-            new_tri = xp.repeat(
-                xp.nan_to_num(obj.values)[..., None], o_bool.shape[-1], axis=-1
-            )
-            new_tri = xp.nansum(new_tri * o_bool, axis=2)
-            new_tri = xp.swapaxes(new_tri, -1, -2)
-            obj.values = new_tri
+                freq = "%YQ%q" if ograin_new == "Q" else "%Y"
+                o = pd.to_datetime(self.origin.strftime("freq")).values
+            values = [
+                getattr(obj.loc[..., i, :], "sum")(2, auto_sparse=False)
+                .set_backend(self.array_backend)
+                .values
+                for i in self.origin.groupby(o).values()
+            ]
+            obj.values = xp.concatenate(values, 2)
             obj.odims = np.unique(o)
             obj.origin_grain = ograin_new
-        obj.num_to_nan()
-        if len(obj.ddims) > 1:
-            obj = obj.val_to_dev()
-            # Now do development
-            dev_grain_dict = {
-                "M": {"Y": 12, "Q": 3, "M": 1},
-                "Q": {"Y": 4, "Q": 1},
-                "Y": {"Y": 1},
-            }
-            if obj.shape[3] != 1:
-                keeps = dev_grain_dict[dgrain_old][dgrain_new]
-                keeps = np.where(np.arange(obj.shape[3]) % keeps == 0)[0]
-                keeps = -(keeps + 1)[::-1]
-                obj.values = obj.values[..., keeps]
-                obj.ddims = obj.ddims[keeps]
+        if dgrain_old != dgrain_new and obj.shape[-1] > 1:
+            step = self._dstep()[dgrain_old][dgrain_new]
+            d = np.arange(0, len(obj.development), step)
+            if obj.is_cumulative:
+                obj = obj.iloc[..., d]
+            else:
+                obj = obj.val_to_dev()
+                d = np.arange(0, len(obj.development), step)
+                length = self._dstep()["M"][dgrain_old]
+                d = np.repeat(((d + 1) * length)[::-1], step)[: len(obj.ddims)][::-1]
+                values = [
+                    getattr(obj.iloc[..., i], "sum")(3, auto_sparse=False)
+                    .set_backend(self.array_backend)
+                    .values
+                    for i in obj.development.groupby(d).groups.values()
+                ]
+                obj.values = xp.concatenate(values, 3)
+                obj.ddims = np.unique(d)
             obj.development_grain = dgrain_new
-            if not self.is_cumulative:
-                obj = obj.cum_to_incr()
-            if self.is_val_tri:
-                obj = obj.dev_to_val().dropna()
-            if inplace:
-                self = obj
-                return self
+        obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
+        if inplace:
+            self = obj
+            return self
         return obj
 
     def trend(

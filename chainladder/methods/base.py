@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
@@ -55,10 +56,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
+        from chainladder import ULT_VAL
+
         xp = ultimate.get_array_module()
         if ultimate.array_backend != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
-        ultimate.ddims = np.array([9999])
+        ultimate.ddims = pd.DatetimeIndex([ULT_VAL])
         ultimate._set_slicers()
         ultimate.valuation_date = ultimate.valuation.max()
         return ultimate

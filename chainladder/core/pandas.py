@@ -8,8 +8,7 @@ import numpy as np
 class TriangleGroupBy:
     def __init__(self, obj, by):
         self.obj = obj.copy()
-        self.by = [by] if type(by) is str else by
-        self.groups = obj.index.groupby(self.by)
+        self.groups = obj.index.groupby([by] if type(by) is str else by)
 
 
 class TrianglePandas:
@@ -272,8 +271,9 @@ def add_groupby_agg_func(cls, k, v):
             for i in self.groups.indices.values()
         ]
         self.obj.values = xp.concatenate(values, 0)
-        self.obj.key_labels = self.by
-        self.obj.kdims = np.array(list(self.groups.groups.keys()))
+        index = pd.DataFrame(self.groups.dtypes.index)
+        self.obj.key_labels = index.columns.tolist()
+        self.obj.kdims = index.values
         self.obj._set_slicers()
         return self.obj
 
