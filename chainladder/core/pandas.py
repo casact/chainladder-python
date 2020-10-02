@@ -20,23 +20,35 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
-    def to_frame(self, *args, **kwargs):
-        """ Converts a triangle to a pandas.DataFrame.  Requires an individual
-        index and column selection to appropriately grab the 2D DataFrame.
+    def to_frame(self, origin_as_datetime=False, keepdims=False, *args, **kwargs):
+        """ Converts a triangle to a pandas.DataFrame.
 
         Parameters
         ----------
         origin_as_datetime : bool
             Whether the origin vector should be converted from PeriodIndex
             into a datetime dtype. Default is False.
+        keepdims : bool
+            If True, the triangle will be converted to a DataFrame with all
+            dimensions intact.  The argument will force a consistent DataFrame
+            format regardless of whether any dimensions are of length 1.
         Returns
         -------
             pandas.DataFrame representation of the Triangle.
         """
         axes = [num for num, item in enumerate(self.shape) if item > 1]
-        origin_as_datetime = False
-        if "origin_as_datetime" in kwargs:
-            origin_as_datetime = kwargs.get("origin_as_datetime")
+        if keepdims:
+            obj = self.copy().set_backend('sparse')
+            odims, ddims = obj._repr_date_axes(origin_as_datetime)
+            out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
+            out['columns'] = obj.columns[obj.values.coords[1]]
+            out['origin'] = odims.values[obj.values.coords[2]]
+            out['development'] = ddims[obj.values.coords[3]]
+            out['values'] = obj.values.data
+            out = pd.pivot_table(out, index=obj.key_labels + ['origin', 'development'], columns='columns')
+            out = out.reset_index().set_index(obj.key_labels)
+            out.columns = ['origin', 'development'] + list(out.columns.get_level_values(1)[2:])
+            return out
         if self.shape[:2] == (1, 1):
             return self._repr_format(origin_as_datetime)
         elif len(axes) in [1, 2]:
@@ -54,7 +66,7 @@ class TrianglePandas:
             if len(axes) == 1:
                 return pd.Series(tri, index=idx).fillna(0)
         else:
-            raise ValueError("len(index) and len(columns) must be 1.")
+            return self.to_frame(origin_as_datetime=origin_as_datetime, keepdims=True)
 
     def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
