@@ -6,9 +6,17 @@ import numpy as np
 
 
 class TriangleGroupBy:
-    def __init__(self, obj, by):
+    def __init__(self, obj, by, axis=0):
         self.obj = obj.copy()
-        self.groups = obj.index.groupby([by] if type(by) is str else by)
+        self.axis = self.obj._get_axis(axis)
+        if self.axis == 0:
+            self.groups = obj.index.groupby(by)
+        if self.axis == 1:
+            self.groups = obj.columns.groupby(by)
+        if self.axis == 2:
+            self.groups = obj.origin.groupby(by)
+        if self.axis == 3:
+            self.groups = obj.development.groupby(by)
 
 
 class TrianglePandas:
@@ -118,7 +126,7 @@ class TrianglePandas:
     def T(self):
         return self.to_frame().T
 
-    def groupby(self, by, *args, **kwargs):
+    def groupby(self, by, axis=0, *args, **kwargs):
         """ Group Triangle by index values.  If the triangle is convertable to a
         DataFrame, then it defaults to pandas groupby functionality.
 
@@ -131,10 +139,7 @@ class TrianglePandas:
         -------
             GroupBy object (pandas or Triangle)
         """
-        try:
-            return self.to_frame().groupby(*args, **kwargs)
-        except:
-            return TriangleGroupBy(self, by)
+        return TriangleGroupBy(self, by, axis)
 
     def append(self, other):
         """ Append rows of other to the end of caller, returning a new object.
@@ -264,13 +269,16 @@ def add_groupby_agg_func(cls, k, v):
 
     def agg_func(self, *args, **kwargs):
         xp = self.obj.get_array_module()
+
         values = [
-            getattr(self.obj.iloc[i], "sum")(0, auto_sparse=False)
+            getattr(
+                self.obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
+            )(self.axis, auto_sparse=False)
             .set_backend(self.obj.array_backend)
             .values
             for i in self.groups.indices.values()
         ]
-        self.obj.values = xp.concatenate(values, 0)
+        self.obj.values = xp.concatenate(values, self.axis)
         index = pd.DataFrame(self.groups.dtypes.index)
         self.obj.key_labels = index.columns.tolist()
         self.obj.kdims = index.values

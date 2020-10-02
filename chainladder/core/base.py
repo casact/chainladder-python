@@ -357,15 +357,15 @@ class TriangleBase(
 
         if not AUTO_SPARSE:
             return self
-        n = np.prod(self.shape)
+        n = np.prod(list(self.shape) + [8 / 1e6])
         if (
             self.array_backend == "numpy"
-            and n / 1e6 * 8 > 30
-            and np.isnan(self.values).sum() / n < 0.2
+            and n > 30
+            and 1 - np.isnan(self.values).sum() / n * (8 / 1e6 ) < 0.2
         ):
             self.set_backend("sparse", inplace=True)
         if self.array_backend == "sparse" and not (
-            self.values.density < 0.2 and n / 1e6 * 8 > 30
+            self.values.density < 0.2 and n > 30
         ):
             self.set_backend("numpy", inplace=True)
         return self

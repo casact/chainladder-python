@@ -173,15 +173,15 @@ class Triangle(TriangleBase):
     def link_ratio(self):
         from chainladder.utils.utility_functions import num_to_nan
 
-        xp = self.get_array_module()
         obj = self.copy()
+        xp = obj.get_array_module()
         temp = num_to_nan(obj.values.copy())
         val_array = obj.valuation.values.reshape(obj.shape[-2:], order="f")[:, 1:]
         d = obj.ddims
         obj.ddims = ["{}-{}".format(d[i], d[i + 1]) for i in range(len(d) - 1)]
         obj.ddims = np.array(obj.ddims)
         obj.values = temp[..., 1:] / temp[..., :-1]
-        if self.array_backend == "sparse":
+        if obj.array_backend == "sparse":
             obj.values.shape = tuple(obj.values.coords.max(1) + 1)
         else:
             if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2) - 1) <= 0:
@@ -299,11 +299,14 @@ class Triangle(TriangleBase):
         obj.values.coords[-1] = obj.values.coords[-1] + offset
         ddims = obj.valuation[obj.valuation <= obj.valuation_date]
         ddims = len(ddims.drop_duplicates())
+        if ddims == 1 and sign == -1:
+            ddims = len(obj.odims)
         if obj.values.coords[-1].min() < 0:
             obj.values.coords[-1] = obj.values.coords[-1] - obj.values.coords[-1].min()
-            ddims = np.max((len(np.unique(obj.values.coords[-1])), ddims))
+            ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        obj = obj.set_backend(backend)
+        if backend == "cupy":
+            obj = obj.set_backend(backend)
         return obj
 
     def dev_to_val(self, inplace=False):
@@ -373,7 +376,7 @@ class Triangle(TriangleBase):
             ultimate.ddims = np.array([9999])
             obj = self.iloc[..., :-1]._val_dev(-1, inplace)
         else:
-            obj = self._val_dev(-1, inplace)
+            obj = self.copy()._val_dev(-1, inplace)
         val_0 = obj.valuation[0]
         if self.ddims.shape[-1] == 1 and self.ddims[0] == self.valuation_date:
             origin_0 = pd.to_datetime(obj.odims[-1])
@@ -455,7 +458,7 @@ class Triangle(TriangleBase):
                 d = np.repeat(((d + 1) * length)[::-1], step)[: len(obj.ddims)][::-1]
                 values = [
                     getattr(obj.iloc[..., i], "sum")(3, auto_sparse=False)
-                    .set_backend(self.array_backend)
+                    .set_backend(obj.array_backend)
                     .values
                     for i in obj.development.groupby(d).groups.values()
                 ]

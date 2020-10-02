@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
+import warnings
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
@@ -91,6 +92,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             Returns the instance itself.
         """
         self.X_ = self.validate_X(X)
+        self.validate_weight(X, sample_weight)
         if sample_weight:
             self.sample_weight_ = sample_weight.set_backend(self.X_.array_backend)
         else:
@@ -116,6 +118,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X.copy()
         xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
+        self.validate_weight(X, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(obj.array_backend)
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
@@ -134,3 +137,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         else:
             process_var = None
         return process_var
+
+    def validate_weight(self, X, sample_weight):
+        if sample_weight and X.shape[:-1] != sample_weight.shape[:-1]:
+            warnings.warn('X and sample_weight are not aligned.  Broadcasting may occur.\n')

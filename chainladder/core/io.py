@@ -62,20 +62,20 @@ class TriangleIO:
             out = xp.asnumpy(self.cum_to_incr().values)
             xp = np
         else:
-            out = self.cum_to_incr().values
+            out = self.cum_to_incr()
         if (
-            xp.sum(xp.nan_to_num(out) == 0) / xp.prod(self.shape) > 0.40
-            or self.array_backend == "sparse"
+            xp.sum(xp.nan_to_num(out.values) == 0) / xp.prod(self.shape) > 0.40
+            or out.array_backend == "sparse"
         ):
             json_dict["values"] = {
-                "dtype": str(out.dtype),
-                "array": sparse_out(out),
+                "dtype": str(out.values.dtype),
+                "array": sparse_out(out.values),
                 "sparse": True,
             }
         else:
             json_dict["values"] = {
-                "dtype": str(out.dtype),
-                "array": out.tolist(),
+                "dtype": str(out.values.dtype),
+                "array": out.values.tolist(),
                 "sparse": False,
             }
         json_dict["key_labels"] = self.key_labels

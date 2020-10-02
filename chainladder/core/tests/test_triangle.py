@@ -141,8 +141,8 @@ def test_arithmetic_across_keys():
 
 def test_grain():
     assert qtr == qtr_gt
-    actual = qtr.iloc[0, 0].grain("OYDY").values[0, 0, :, :]
-    xp = qtr.get_array_module()
+    actual = qtr.iloc[0, 0].grain("OYDY")
+    xp = actual.get_array_module()
     expected = xp.array(
         [
             [
@@ -315,7 +315,7 @@ def test_grain():
             ],
         ]
     )
-    xp.testing.assert_array_equal(actual, expected)
+    xp.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
 
 
 def test_off_cycle_val_date():
@@ -410,33 +410,29 @@ def test_origin_and_value_setters():
 def test_grain_increm_arg():
     assert qtr == qtr_gt
     tri_i = qtr["incurred"].cum_to_incr()
-    np.testing.assert_array_equal(
-        tri_i.grain("OYDY").incr_to_cum(), qtr["incurred"].grain("OYDY")
-    )
+    a = tri_i.grain("OYDY").incr_to_cum()
+    assert a == qtr["incurred"].grain("OYDY").set_backend(a.array_backend)
 
 
 def test_valdev1():
     assert qtr == qtr_gt
     a = qtr.dev_to_val().val_to_dev()
     b = qtr
-    xp = a.get_array_module()
-    xp.testing.assert_array_equal(a.values, b.values)
+    assert a == b
 
 
 def test_valdev2():
     assert qtr == qtr_gt
     a = qtr.dev_to_val().grain("OYDY").val_to_dev()
     b = qtr.grain("OYDY")
-    xp = a.get_array_module()
-    xp.testing.assert_array_equal(a.values, b.values)
+    assert a == b
 
 
 def test_valdev3():
     assert qtr == qtr_gt
     a = qtr.grain("OYDY").dev_to_val().val_to_dev()
     b = qtr.grain("OYDY")
-    xp = a.get_array_module()
-    xp.testing.assert_array_equal(a.values, b.values)
+    assert a == b
 
 
 # def test_valdev4():
@@ -480,12 +476,8 @@ def test_reassignment():
 def test_dropna():
     assert tri == tri_gt
     assert tri.shape == tri.dropna().shape
-    assert tri[tri["LOB"] == "wkcomp"].iloc[-5]["CumPaidLoss"].dropna().shape == (
-        1,
-        1,
-        2,
-        2,
-    )
+    a = tri[tri["LOB"] == "wkcomp"].iloc[-5]["CumPaidLoss"].dropna().shape
+    assert a == (1, 1, 2, 2)
 
 
 def test_commutative():
@@ -503,13 +495,9 @@ def test_commutative():
     assert full.cum_to_incr().grain(
         "OYDY"
     ).val_to_dev() == full.val_to_dev().cum_to_incr().grain("OYDY")
-    assert xp.allclose(
-        xp.nan_to_num(
-            full.grain("OYDY").cum_to_incr().val_to_dev().incr_to_cum().values
-        ),
-        xp.nan_to_num(full.val_to_dev().grain("OYDY").values),
-        atol=1e-5,
-    )
+    a = full.grain("OYDY").cum_to_incr().val_to_dev().incr_to_cum()
+    b = full.val_to_dev().grain("OYDY")
+    assert abs(a - b).max().max().max() < 1e-5
 
 
 def test_broadcasting():
