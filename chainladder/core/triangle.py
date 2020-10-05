@@ -8,6 +8,7 @@ import copy
 import warnings
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
+from chainladder.utils.utility_functions import concat
 import datetime as dt
 
 
@@ -92,10 +93,6 @@ class Triangle(TriangleBase):
     """
 
     @property
-    def shape(self):
-        return self.values.shape
-
-    @property
     def index(self):
         return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
@@ -132,7 +129,12 @@ class Triangle(TriangleBase):
 
     @property
     def origin(self):
-        return pd.DatetimeIndex(self.odims, name="origin").to_period(self.origin_grain)
+        if self.is_pattern and len(self.odims) == 1:
+            return pd.Series(["(All)"])
+        else:
+            return pd.DatetimeIndex(self.odims, name="origin").to_period(
+                self.origin_grain
+            )
 
     @origin.setter
     def origin(self, value):
@@ -144,7 +146,24 @@ class Triangle(TriangleBase):
 
     @property
     def development(self):
-        return pd.Series(list(self.ddims), name="development")
+        ddims = self.ddims.copy()
+        if self.is_val_tri:
+            formats = {"Y": "%Y", "Q": "%YQ%q", "M": "%Y-%m"}
+            ddims = ddims.to_period(freq=self.development_grain).strftime(
+                formats[self.development_grain]
+            )
+        elif self.is_pattern:
+            offset = {"Y": 12, "Q": 3, "M": 1}[self.development_grain]
+            if self.is_ultimate:
+                ddims[-1] = ddims[-2] + offset
+            if self.is_cumulative:
+                ddims = ["{}-Ult".format(ddims[i] - offset) for i in range(len(ddims))]
+            else:
+                ddims = [
+                    "{}-{}".format(ddims[i] - offset, ddims[i])
+                    for i in range(len(ddims))
+                ]
+        return pd.Series(list(ddims), name="development")
 
     @development.setter
     def development(self, value):
@@ -171,55 +190,17 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
-        from chainladder.utils.utility_functions import num_to_nan
-
-        obj = self.copy()
-        xp = obj.get_array_module()
-        temp = num_to_nan(obj.values.copy())
-        val_array = obj.valuation.values.reshape(obj.shape[-2:], order="f")[:, 1:]
-        d = obj.ddims
-        obj.ddims = ["{}-{}".format(d[i], d[i + 1]) for i in range(len(d) - 1)]
-        obj.ddims = np.array(obj.ddims)
-        obj.values = temp[..., 1:] / temp[..., :-1]
-        if obj.array_backend == "sparse":
-            obj.values.shape = tuple(obj.values.coords.max(1) + 1)
-        else:
-            if xp.max(xp.sum(~xp.isnan(self.values[..., -1, :]), 2) - 1) <= 0:
-                obj.values = obj.values[..., :-1, :]
-        obj.odims = obj.odims[: obj.values.shape[2]]
+        obj = (self.iloc[..., 1:] / self.iloc[..., :-1].values).dropna()
         if hasattr(obj, "w_"):
             w_ = obj.w_[..., 0:1, : len(obj.odims), :]
             obj = obj * w_ if obj.shape == w_.shape else obj
+        obj.is_pattern = True
+        obj.is_cumulative = False
         return obj
 
     @property
     def age_to_age(self):
         return self.link_ratio
-
-    @property
-    def valuation(self):
-        from chainladder import ULT_VAL
-
-        ddims = self.ddims
-        is_val_tri = type(ddims) == pd.DatetimeIndex
-        if is_val_tri:
-            out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
-            return pd.DatetimeIndex(out.unstack().values)
-        if type(ddims[0]) in [np.str_, str]:
-            ddims = np.array([int(item[: item.find("-") :]) for item in ddims])
-        ddim_arr = ddims - ddims[0]
-        origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
-        val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
-        val_array = val_array.astype("datetime64[ns]") - np.timedelta64(1, "ns")
-        val_array = val_array[:, None]
-        s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
-        val_array = (
-            val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
-        ).astype("datetime64[ns]") - np.timedelta64(1, "ns")
-        if ddims[-1] == 9999:
-            ult = np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]
-            val_array = np.concatenate((val_array, ult,), axis=1,)
-        return pd.DatetimeIndex(val_array.reshape(1, -1, order="F")[0])
 
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
@@ -233,17 +214,24 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
-        from chainladder.utils.utility_functions import num_to_nan
-
-        xp = self.get_array_module()
         if inplace:
             if not self.is_cumulative:
-                self.values = (
-                    num_to_nan(xp.cumsum(xp.nan_to_num(self.values), axis=3))
-                    * self.nan_triangle[None, None, ...]
-                )
+                if self.is_pattern:
+                    xp = self.get_array_module()
+                    values = xp.nan_to_num(self.values[..., ::-1])
+                    values[values == 0] = 1.0
+                    values = xp.cumprod(values, -1)[..., ::-1]
+                    self.values = values = values * self.nan_triangle
+                else:
+                    ddims = self.ddims
+                    l1 = lambda i: self.iloc[..., 0 : (i + 1)]
+                    l2 = lambda i: l1(i) * self.nan_triangle[..., i : i + 1]
+                    l3 = lambda i: l2(i).sum(3, auto_sparse=False, keepdims=True)
+                    self = concat(
+                        [l3(i).rename(3, [i]) for i in range(self.shape[-1])], 3,
+                    )
+                    self.ddims = ddims
                 self.is_cumulative = True
-                self._set_slicers()
             return self
         else:
             new_obj = self.copy()
@@ -261,21 +249,19 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle accumulated along the origin
         """
-        xp = self.get_array_module()
-        from chainladder.utils.utility_functions import num_to_nan
-
         if inplace:
             if self.is_cumulative or self.is_cumulative is None:
-                temp = (
-                    xp.nan_to_num(self.values)[..., 1:]
-                    - xp.nan_to_num(self.values)[..., :-1]
-                )
-                temp = xp.concatenate(
-                    (xp.nan_to_num(self.values[..., 0:1]), temp), axis=3
-                )
-                self.values = num_to_nan(temp * self.nan_triangle)
+                if self.is_pattern:
+                    xp = self.get_array_module()
+                    self.values = xp.nan_to_num(self.values)
+                    self.values[self.values == 0] = 1
+                    diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
+                    self = concat((diff, self.iloc[..., -1],), axis=3,)
+                    self.values = self.values * self.nan_triangle
+                else:
+                    diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
+                    self = concat((self.iloc[..., 0], diff,), axis=3,)
                 self.is_cumulative = False
-                self._set_slicers()
             return self
         else:
             new_obj = self.copy()
@@ -289,6 +275,8 @@ class Triangle(TriangleBase):
         }
 
     def _val_dev(self, sign, inplace=False):
+        from chainladder import AUTO_SPARSE
+
         backend = self.array_backend
         obj = self.set_backend("sparse")
         if not inplace:
@@ -305,7 +293,7 @@ class Triangle(TriangleBase):
             obj.values.coords[-1] = obj.values.coords[-1] - obj.values.coords[-1].min()
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        if backend == "cupy":
+        if AUTO_SPARSE == False or backend == "cupy":
             obj = obj.set_backend(backend)
         return obj
 
@@ -323,8 +311,6 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with valuation periods.
         """
-        from chainladder.utils.utility_functions import concat
-
         if self.is_val_tri:
             if inplace:
                 return self
@@ -364,8 +350,6 @@ class Triangle(TriangleBase):
         -------
             Updated instance of triangle with development lags
         """
-        from chainladder.utils.utility_functions import concat
-
         if not self.is_val_tri:
             if inplace:
                 return self
@@ -419,15 +403,17 @@ class Triangle(TriangleBase):
             dgrain_old, []
         ):
             raise ValueError("New grain not compatible with existing grain")
-        if self.is_cumulative is None:
+        if (
+            self.is_cumulative is None
+            and dgrain_old != dgrain_new
+            and self.shape[-1] > 1
+        ):
             raise AttributeError(
                 "The is_cumulative attribute must be set before using grain method."
             )
         if valid["M"].index(ograin_new) > valid["M"].index(dgrain_new):
             raise ValueError("Origin grain must be coarser than development grain")
-        # Start with origin
         obj = self.dev_to_val()
-        xp = obj.get_array_module()
         if ograin_new != ograin_old:
             if trailing:
                 mn = self.origin[-1].strftime("%b").upper() if trailing else "DEC"
@@ -436,16 +422,13 @@ class Triangle(TriangleBase):
                 o = np.array(o.to_timestamp(how="s"))
             else:
                 freq = "%YQ%q" if ograin_new == "Q" else "%Y"
-                o = pd.to_datetime(self.origin.strftime("freq")).values
+                o = pd.to_datetime(self.origin.strftime(freq)).values
             values = [
-                getattr(obj.loc[..., i, :], "sum")(2, auto_sparse=False)
-                .set_backend(self.array_backend)
-                .values
+                getattr(obj.loc[..., i, :], "sum")(2, auto_sparse=False, keepdims=True)
                 for i in self.origin.groupby(o).values()
             ]
-            obj.values = xp.concatenate(values, 2)
+            obj = cl.concat(values, axis=2, ignore_index=True)
             obj.odims = np.unique(o)
-            obj.origin_grain = ograin_new
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.arange(0, len(obj.development), step)
@@ -457,12 +440,12 @@ class Triangle(TriangleBase):
                 length = self._dstep()["M"][dgrain_old]
                 d = np.repeat(((d + 1) * length)[::-1], step)[: len(obj.ddims)][::-1]
                 values = [
-                    getattr(obj.iloc[..., i], "sum")(3, auto_sparse=False)
-                    .set_backend(obj.array_backend)
-                    .values
+                    getattr(obj.iloc[..., i], "sum")(
+                        3, auto_sparse=False, keepdims=True
+                    )
                     for i in obj.development.groupby(d).groups.values()
                 ]
-                obj.values = xp.concatenate(values, 3)
+                obj = concat(values, axis=3, ignore_index=True)
                 obj.ddims = np.unique(d)
             obj.development_grain = dgrain_new
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()

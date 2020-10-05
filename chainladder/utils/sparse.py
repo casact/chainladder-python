@@ -65,16 +65,6 @@ def nanmean(a, axis=None, keepdims=None, *args, **kwargs):
     return sp(out)
 
 
-def flip(m, axis=None):
-    m = m.copy()
-    if axis is not None:
-        m.coords[axis] = m.shape[axis] - m.coords[axis] - 1
-    else:
-        for i in range(m.coords.shape[0]):
-            m.coords[i] = m.shape[i] - m.coords[i] - 1
-    return m
-
-
 def array(a, *args, **kwargs):
     if kwargs.get("fill_value", None) is not None:
         fill_value = kwargs.pop("fill_value")
@@ -101,47 +91,6 @@ def expand_dims(a, axis):
 
 def arange(*args, **kwargs):
     return sparse.COO.from_numpy(np.arange(*args, **kwargs))
-
-
-def cumfunc(a, axis, func):
-    a = copy.deepcopy(a)
-    ax = np.arange(a.ndim)
-    axis = ax[axis]
-    x = pd.DataFrame(a.coords.T)
-    x.columns = ["0", "1", "2", "3"]
-    cols = [item for item in x.columns if item != str(axis)]
-    x["y"] = a.data
-    x = pd.pivot_table(x, columns=cols, index=str(axis), values="y")
-    missing = pd.Int64Index(
-        set(np.arange(a.shape[axis])) - set(x.index), name=str(axis)
-    )
-    if len(missing) > 0:
-        x = x.append(
-            pd.DataFrame(
-                np.repeat((x.iloc[0:1] * 0).values, len(missing), axis=0),
-                index=missing,
-                columns=x.columns,
-            )
-        )
-    x = x.unstack().reset_index().fillna(0)
-    x.columns = [item for item in x.columns[:-1]] + ["y"]
-    x = x.set_index(list(x.columns[:-1])).groupby(level=[0, 1, 2])
-    if func == "cumsum":
-        x = x.cumsum().reset_index()
-    if func == "cumprod":
-        x = x.cumprod().reset_index()
-    x = x[x["y"] != 0]
-    a.coords = x[["0", "1", "2", "3"]].values.T
-    a.data = x["y"].values
-    return sp(a)
-
-
-def cumsum(a, axis):
-    return cumfunc(a, axis, "cumsum")
-
-
-def cumprod(a, axis):
-    return cumfunc(a, axis, "cumprod")
 
 
 def where(*args, **kwargs):
@@ -250,8 +199,6 @@ sp.apply_along_axis = apply_along_axis
 sp.floor = floor
 sp.repeat = repeat
 sp.where = where
-sp.cumprod = cumprod
-sp.cumsum = cumsum
 sp.arange = arange
 sp.array = array
 sp.nan_to_num = nan_to_num
@@ -259,7 +206,6 @@ sp.ones = ones
 sp.nanquantile = nanquantile
 sp.nanmedian = nanmedian
 sp.nanmean = nanmean
-sp.flip = flip
 sp.expand_dims = expand_dims
 sp.swapaxes = swapaxes
 sp.allclose = allclose

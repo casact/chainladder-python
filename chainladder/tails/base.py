@@ -25,24 +25,16 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self._ave_period = {"Y": (1, 12), "Q": (4, 3), "M": (12, 1)}[
             obj.development_grain
         ]
-        ddims = np.concatenate(
-            (
-                obj.ddims,
-                [
-                    (item + 1) * self._ave_period[1] + obj.ddims[-1]
-                    for item in range(self._ave_period[0])
-                ],
-                [9999],
-            ),
-            0,
-        )
+        t_ddims = [
+            (item + 1) * self._ave_period[1] + obj.ldf_.ddims[-1]
+            for item in range(self._ave_period[0])
+        ]
+        ddims = np.concatenate((obj.ldf_.ddims, t_ddims, np.array([9999])), 0,)
         self.ldf_ = obj.ldf_.copy()
         tail = xp.ones(self.ldf_.shape)[..., -1:]
         tail = xp.repeat(tail, self._ave_period[0] + 1, -1)
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
-        self.ldf_.ddims = np.array(
-            ["{}-{}".format(ddims[i], ddims[i + 1]) for i in range(len(ddims) - 1)]
-        )
+        self.ldf_.ddims = ddims
         if hasattr(obj, "sigma_"):
             self.sigma_ = getattr(obj, "sigma_").copy()
         else:
@@ -54,9 +46,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         zeros = tail[..., 0:1, -1:] * 0
         self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
         self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-        self.sigma_.ddims = self.std_err_.ddims = np.concatenate(
-            (obj.ldf_.ddims, np.array(["{}-9999".format(int(obj.ddims[-1]))]))
-        )
+        self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims
         if hasattr(obj, "average_"):
             self.average_ = obj.average_
         else:
@@ -165,7 +155,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             == self.cdf_.development.iloc[-1 - self._ave_period[0]]
         ]
         if np.all(df.values.min(axis=2) == df.values.max(axis=2)):
-            df = df[df.origin == df.origin.min()].to_frame()
+            df = df.iloc[..., 0, :].to_frame()
         return df
 
     @property

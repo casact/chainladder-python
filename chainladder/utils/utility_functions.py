@@ -10,8 +10,6 @@ import joblib
 import json
 import os
 import copy
-from chainladder.core.triangle import Triangle
-from chainladder.workflow import Pipeline
 from sklearn.utils import deprecated
 
 
@@ -26,6 +24,8 @@ def load_sample(key, *args, **kwargs):
     	pandas.DataFrame of the loaded dataset.
 
     """
+    from chainladder import Triangle
+
     path = os.path.dirname(os.path.abspath(__file__))
     origin = "origin"
     development = "development"
@@ -84,23 +84,8 @@ def read_pickle(path):
 
 
 def read_json(json_str, array_backend=None):
-    def sparse_in(json_str, dtype, shape):
-        k, v, o, d = shape
-        x = json.loads(json_str)
-        y = np.array(
-            [tuple([int(idx) for idx in item[1:-1].split(",")]) for item in x.keys()]
-        )
-        new = (
-            coo_matrix(
-                (np.array(list(x.values())), (y[:, 0], y[:, 1])),
-                shape=(k * v * o, d),
-                dtype=dtype,
-            )
-            .toarray()
-            .reshape(k, v, o, d)
-        )
-        new[new == 0] = np.nan
-        return new
+    from chainladder import Triangle
+    from chainladder.workflow import Pipeline
 
     if array_backend is None:
         from chainladder import ARRAY_BACKEND
@@ -119,45 +104,26 @@ def read_json(json_str, array_backend=None):
                 for item in json_dict
             ]
         )
-    elif "kdims" in json_dict.keys():
-        tri = Triangle()
-        tri.array_backend = array_backend
-        arrays = ["kdims", "vdims", "odims", "ddims"]
-        for array in arrays:
-            setattr(
-                tri,
-                array,
-                np.array(json_dict[array]["array"], dtype=json_dict[array]["dtype"]),
-            )
-        shape = (len(tri.kdims), len(tri.vdims), len(tri.odims), len(tri.ddims))
-        properties = [
-            "key_labels",
-            "origin_grain",
-            "development_grain",
-            "is_cumulative",
-        ]
-        for prop in properties:
-            setattr(tri, prop, json_dict[prop])
-        if json_dict.get("is_val_tri", False):
-            tri.ddims = pd.DatetimeIndex(tri.ddims)
-        tri.valuation_date = (
-            pd.to_datetime(json_dict["valuation_date"], format="%Y-%m-%d")
-            .to_period("M")
-            .to_timestamp(how="e")
+    elif "metadata" in json_dict.keys():
+        j = json.loads(json_str)
+        y = pd.read_json(j["data"], orient="split", date_unit="ns")
+        y["origin"] = pd.to_datetime(y["origin"])
+        y["development"] = pd.to_datetime(y["development"])
+        index = list(y.columns[: list(y.columns).index("origin")])
+        columns = list(y.columns[list(y.columns).index("development") + 1 :])
+        tri = Triangle(
+            y,
+            origin="origin",
+            development="development",
+            index=index,
+            columns=columns,
+            pattern=json.loads(j["metadata"])["is_pattern"],
         )
-        if json_dict["values"].get("sparse", None):
-            tri.values = sparse_in(
-                json_dict["values"]["array"], json_dict["values"]["dtype"], shape
-            )
-        else:
-            tri.values = np.array(
-                json_dict["values"]["array"], dtype=json_dict["values"]["dtype"]
-            )
-        if array_backend == "cupy":
-            tri.values = cp.array(tri.values)
-        if tri.is_cumulative:
-            tri.is_cumulative = False
+        if json.loads(j["metadata"])["is_val_tri"]:
+            tri = tri.dev_to_val()
+        if json.loads(j["metadata"])["is_cumulative"]:
             tri = tri.incr_to_cum()
+        tri = tri[json.loads(j["metadata"])["columns"]].sort_index()
         if "sub_tris" in json_dict.keys():
             for k, v in json_dict["sub_tris"].items():
                 setattr(tri, k, read_json(v, array_backend))
@@ -167,8 +133,10 @@ def read_json(json_str, array_backend=None):
                 if len(df.columns) == 1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
-        tri._set_slicers()
-        return tri
+        if array_backend:
+            return tri.set_backend(array_backend)
+        else:
+            return tri
     else:
         import chainladder as cl
 
@@ -206,7 +174,7 @@ def set_common_backend(objs):
     return [i.set_backend(backend) for i in objs]
 
 
-def concat(objs, axis):
+def concat(objs, axis, ignore_index=False):
     """ Concatenate Triangle objects along a particular axis.
 
     Parameters
@@ -215,7 +183,13 @@ def concat(objs, axis):
         A list or tuple of Triangle objects to concat. All non-concat axes must
         be identical and all elements of the concat axes must be unique.
     axis : string or int
-        The axis along which to concatenate.
+        The axis to concatenate along.
+    ignore_index : bool, default False
+        If True, do not use the index values along the concatenation axis. The
+        resulting axis will be labeled 0, …, n - 1. This is useful if you are
+        concatenating objects where the concatenation axis does not have
+        meaningful indexing information. Note the index values on the other
+        axes are still respected in the join.
 
     Returns
     -------
@@ -230,7 +204,13 @@ def concat(objs, axis):
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
             assert np.all(a == a[0])
         else:  # All elements of concat axis must be unique
-            new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
+            if ignore_index:
+                new_axis = np.arange(
+                    np.sum([len(getattr(obj, mapper[axis])) for obj in objs])
+                )
+                new_axis = new_axis[:, None] if axis == 0 else new_axis
+            else:
+                new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
             if axis == 0:
                 assert len(pd.DataFrame(new_axis).drop_duplicates()) == len(new_axis)
             else:
@@ -238,6 +218,8 @@ def concat(objs, axis):
     out = copy.deepcopy(objs[0])
     out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
     setattr(out, mapper[axis], new_axis)
+    if ignore_index and axis == 0:
+        out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
     if out.ddims.dtype == "datetime64[ns]" and type(out.ddims) == np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)

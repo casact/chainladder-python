@@ -346,6 +346,7 @@ class MunichAdjustment(DevelopmentBase):
         obj = cdf.copy()
         obj.values = ldf_tri
         obj.ddims = X.link_ratio.ddims
+        obj.is_pattern = True
         obj._set_slicers
         return obj
 
@@ -363,7 +364,8 @@ class MunichAdjustment(DevelopmentBase):
     @property
     def lambda_(self):
         obj = self.ldf_.copy()
-        obj.odims = obj.ddims = ["(All)"]
+        obj.odims = obj.odims[0:1]
+        obj.ddims = obj.ddims[0:1]
         obj.values = self._reshape("lambda_coef_")
         return obj.to_frame()
 

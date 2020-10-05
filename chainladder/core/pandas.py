@@ -38,23 +38,30 @@ class TrianglePandas:
         """
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if keepdims:
-            obj = self.copy().set_backend('sparse')
-            odims, ddims = obj._repr_date_axes(origin_as_datetime)
+            obj = self.copy().set_backend("sparse")
             out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
-            out['columns'] = obj.columns[obj.values.coords[1]]
-            out['origin'] = odims.values[obj.values.coords[2]]
-            out['development'] = ddims[obj.values.coords[3]]
-            out['values'] = obj.values.data
-            out = pd.pivot_table(out, index=obj.key_labels + ['origin', 'development'], columns='columns')
+            out["columns"] = obj.columns[obj.values.coords[1]]
+            out["origin"] = self.odims[obj.values.coords[2]]
+            out["development"] = self.ddims[obj.values.coords[3]]
+            out["values"] = obj.values.data
+            out = pd.pivot_table(
+                out, index=obj.key_labels + ["origin", "development"], columns="columns"
+            )
             out = out.reset_index().set_index(obj.key_labels)
-            out.columns = ['origin', 'development'] + list(out.columns.get_level_values(1)[2:])
+            out.columns = ["origin", "development"] + list(
+                out.columns.get_level_values(1)[2:]
+            )
             return out
         if self.shape[:2] == (1, 1):
             return self._repr_format(origin_as_datetime)
         elif len(axes) in [1, 2]:
-            odims, ddims = self._repr_date_axes(origin_as_datetime)
             tri = np.squeeze(self.set_backend("numpy").values)
-            axes_lookup = {0: self.kdims, 1: self.vdims, 2: odims, 3: ddims}
+            axes_lookup = {
+                0: self.kdims,
+                1: self.vdims,
+                2: self.origin,
+                3: self.development,
+            }
             if axes[0] == 0:
                 idx = self.index.set_index(self.key_labels).index
             else:
@@ -222,11 +229,7 @@ class TrianglePandas:
         return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs):
-        return self.loc[
-            self.index.set_index(self.key_labels)
-            .sort_index(*args, **kwargs)
-            .reset_index()[self.key_labels]
-        ]
+        return self.iloc[self.index.sort_values(self.key_labels).index]
 
     def exp(self):
         xp = self.get_array_module()
@@ -245,6 +248,7 @@ def add_triangle_agg_func(cls, k, v):
     """ Aggregate Overrides in Triangle """
 
     def agg_func(self, axis=None, *args, **kwargs):
+        keepdims = kwargs.get("keepdims", None)
         obj = self.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
         if axis is None:
@@ -255,20 +259,20 @@ def add_triangle_agg_func(cls, k, v):
         func = getattr(xp, v)
         kwargs.update({"keepdims": True})
         obj.values = func(obj.values, axis=axis, *args, **kwargs)
-        if axis == 0 and obj.values.shape[axis] == 1:
+        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.kdims) > 1:
             obj.kdims = np.array([["(All)"] * len(obj.key_labels)])
-        if axis == 1 and obj.values.shape[axis] == 1:
+        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.vdims) > 1:
             obj.vdims = np.array([0])
-        if axis == 2 and obj.values.shape[axis] == 1:
+        if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
-        if axis == 3 and obj.values.shape[axis] == 1:
+        if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
             obj.ddims = pd.DatetimeIndex(
                 [self.valuation_date], dtype="datetime64[ns]", freq=None
             )
         if auto_sparse:
             obj._set_slicers()
         obj.num_to_nan()
-        if obj.shape == (1, 1, 1, 1):
+        if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
         else:
             return obj
@@ -280,17 +284,17 @@ def add_groupby_agg_func(cls, k, v):
     """ Aggregate Overrides in GroupBy """
 
     def agg_func(self, *args, **kwargs):
+        from chainladder.utils import concat
+
         xp = self.obj.get_array_module()
 
         values = [
             getattr(
                 self.obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
-            )(self.axis, auto_sparse=False)
-            .set_backend(self.obj.array_backend)
-            .values
+            )(self.axis, auto_sparse=False, keepdims=True)
             for i in self.groups.indices.values()
         ]
-        self.obj.values = xp.concatenate(values, self.axis)
+        self.obj = concat(values, axis=self.axis, ignore_index=True)
         index = pd.DataFrame(self.groups.dtypes.index)
         self.obj.key_labels = index.columns.tolist()
         self.obj.kdims = index.values

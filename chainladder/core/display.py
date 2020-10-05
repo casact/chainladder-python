@@ -18,22 +18,20 @@ class TriangleDisplay:
             data = self._repr_format()
             return data.to_string()
         else:
-            data = (
-                "Valuation: "
-                + self.valuation_date.strftime("%Y-%m")
-                + "\nGrain:     "
-                + "O"
-                + self.origin_grain
-                + "D"
-                + self.development_grain
-                + "\nShape:     "
-                + str(self.shape)
-                + "\nIndex:      "
-                + str(self.key_labels)
-                + "\nColumns:    "
-                + str(list(self.vdims))
-            )
-            return data
+            return self._summary_frame().__repr__()
+
+    def _summary_frame(self):
+        return pd.Series(
+            [
+                self.valuation_date.strftime("%Y-%m"),
+                "O" + self.origin_grain + "D" + self.development_grain,
+                self.shape,
+                self.key_labels,
+                list(self.vdims),
+            ],
+            index=["Valuation:", "Grain:", "Shape:", "Index:", "Columns:"],
+            name="Triangle Summary",
+        ).to_frame()
 
     def _repr_html_(self):
         """ Jupyter/Ipython HTML representation """
@@ -47,23 +45,9 @@ class TriangleDisplay:
                 max_cols=pd.options.display.max_columns,
                 float_format=fmt_str.format,
             ).replace("nan", "")
-            return default.replace(
-                "<th></th>\n      <th>{}</th>".format(list(data.columns)[0]),
-                "<th>Origin</th>\n      <th>{}</th>".format(list(data.columns)[0]),
-            )
+            return default
         else:
-            data = pd.Series(
-                [
-                    self.valuation_date.strftime("%Y-%m"),
-                    "O" + self.origin_grain + "D" + self.development_grain,
-                    self.shape,
-                    self.key_labels,
-                    list(self.vdims),
-                ],
-                index=["Valuation:", "Grain:", "Shape:", "Index:", "Columns:"],
-                name="Triangle Summary",
-            ).to_frame()
-            return data.to_html(
+            return self._summary_frame().to_html(
                 max_rows=pd.options.display.max_rows,
                 max_cols=pd.options.display.max_columns,
             )
@@ -79,32 +63,12 @@ class TriangleDisplay:
             return "{:,.0f}"
 
     def _repr_format(self, origin_as_datetime=False):
-        odims, ddims = self._repr_date_axes(origin_as_datetime)
         out = self.set_backend("numpy").values[0, 0]
-        out = pd.DataFrame(out, index=odims, columns=ddims)
-        if str(out.columns[0]).find("-") > 0 and not isinstance(
-            out.columns, pd.PeriodIndex
-        ):
-            out.columns = [item.replace("-9999", "-Ult") for item in out.columns]
-            if len(out) == 1:
-                return out.set_index(pd.Index(["(All)"]))
-        return out
-
-    def _repr_date_axes(self, origin_as_datetime=False):
-        if type(self.odims[0]) == np.datetime64:
-            odims = pd.Series(self.odims).dt.to_period(self.origin_grain)
-        else:
-            odims = pd.Series(self.odims)
-
-        if origin_as_datetime:
-            odims = odims.dt.to_timestamp(how="e")
-        if len(self.ddims) == 1 and self.ddims[0] is None:
-            ddims = list(self.vdims)
-        elif self.is_val_tri:
-            ddims = self.ddims.to_period(self.development_grain)
-        else:
-            ddims = self.ddims
-        return odims, ddims
+        origin = self.origin.copy()
+        origin.name = None
+        development = self.development.copy()
+        development.name = None
+        return pd.DataFrame(out, index=origin, columns=development)
 
     def heatmap(self, cmap="Reds", low=0, high=0, axis=0, subset=None):
         """ Color the background in a gradient according to the data in each
@@ -143,12 +107,7 @@ class TriangleDisplay:
             )
             default = re.sub("<td.*nan.*td>", "<td></td>", default)
             warnings.filterwarnings("default")
-            return HTML(
-                default.replace(
-                    "<th></th>\n      <th>{}</th>".format(list(data.columns)[0]),
-                    "<th>Origin</th>\n      <th>{}</th>".format(list(data.columns)[0]),
-                )
-            )
+            return HTML(default)
         elif HTML is None:
             raise ImportError("heatmap requires IPython")
         else:

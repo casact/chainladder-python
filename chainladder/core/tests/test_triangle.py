@@ -41,7 +41,7 @@ def test_slice_by_loc_iloc():
 def test_repr():
     assert raa == raa_gt
     np.testing.assert_array_equal(
-        pd.read_html(raa._repr_html_())[0].set_index("Origin").values,
+        pd.read_html(raa._repr_html_())[0].set_index("Unnamed: 0").values,
         raa.to_frame().values,
     )
 
@@ -524,6 +524,7 @@ def test_slicers_honor_order():
         clrd.loc[clrd["LOB"] == "comauto", ["CumPaidLoss", "IncurLoss"]]
         == clrd[clrd["LOB"] == "comauto"].iloc[:, [1, 0]]
     )
+    assert clrd.groupby("LOB").sum() == clrd
 
 
 def test_exposure_tri():

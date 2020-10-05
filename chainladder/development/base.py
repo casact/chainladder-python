@@ -321,5 +321,7 @@ class Development(DevelopmentBase):
         obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
         obj.ddims = X.link_ratio.ddims
         obj.valuation_date = pd.to_datetime(ULT_VAL)
+        obj.is_pattern = True
+        obj.is_cumulative = False
         obj._set_slicers()
         return obj

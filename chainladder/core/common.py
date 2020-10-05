@@ -17,9 +17,9 @@ def _get_full_expectation(cdf_, ultimate_):
     cdf.valuation_date = ultimate_.valuation_date
     full = ultimate_.copy()
     full.values = xp.concatenate(((full / cdf).values, full.values), -1)
-    full.ddims = np.append(cdf_.ddims, "9999-Ult")
-    full.ddims = np.array([int(item.split("-")[0]) for item in full.ddims])
-    full.vdim = ultimate_.vdims
+    offset = {"Y": 12, "Q": 3, "M": 1}[cdf_.development_grain]
+    ddims = ([cdf_.ddims[0] - offset], list(cdf_.ddims[:-1]), [9999])
+    full.ddims = np.concatenate(ddims)
     return full
 
 
@@ -31,34 +31,21 @@ def _get_full_triangle(full_expectation_, triangle_):
     return full
 
 
-def _get_cdf(ldf_):
-    """ Private method that computes CDFs"""
-    cdf = ldf_.copy()
-    xp = ldf_.get_array_module()
-    cdf.values = xp.flip(xp.cumprod(xp.flip(cdf.values, -1), -1), -1)
-    cdf.ddims = np.array(
-        [item.replace(item[item.find("-") + 1 :], "9999") for item in cdf.ddims]
-    )
-    return cdf
-
-
 class Common:
     """ Class that contains common properties of a "fitted" Triangle. """
 
     @property
     def cdf_(self):
         if not hasattr(self, "ldf_"):
-            raise AttributeError(
-                "'" + self.__class__.__name__ + "'" + " object has no attribute 'cdf_'"
-            )
-        return _get_cdf(self.ldf_)
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'cdf_'")
+        return self.ldf_.incr_to_cum()
 
     @property
     def ibnr_(self):
         if not hasattr(self, "ultimate_"):
-            raise AttributeError(
-                "'" + self.__class__.__name__ + "'" + " object has no attribute 'ibnr_'"
-            )
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'ibnr_'")
         ibnr = self.ultimate_ - self.latest_diagonal
         ibnr.vdims = self.ultimate_.vdims
         return ibnr
@@ -66,11 +53,9 @@ class Common:
     @property
     def full_expectation_(self):
         if not hasattr(self, "ultimate_"):
+            x = self.__class__.__name__
             raise AttributeError(
-                "'"
-                + self.__class__.__name__
-                + "'"
-                + " object has no attribute 'full_expectation_'"
+                "'" + x + "' object has no attribute 'full_expectation_'"
             )
         return _get_full_expectation(self.cdf_, self.ultimate_)
 

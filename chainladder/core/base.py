@@ -13,6 +13,7 @@ from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
+from chainladder import AUTO_SPARSE, ULT_VAL
 
 
 class TriangleBase(
@@ -31,11 +32,11 @@ class TriangleBase(
         development_format=None,
         cumulative=None,
         array_backend=None,
+        pattern=False,
         *args,
         **kwargs
     ):
-        from chainladder.utils.utility_functions import num_to_nan
-        from chainladder import AUTO_SPARSE
+        from chainladder.utils.utility_functions import num_to_nan, concat
 
         # Allow Empty Triangle so that we can piece it together programatically
         if data is None:
@@ -63,7 +64,25 @@ class TriangleBase(
             from chainladder import ARRAY_BACKEND
 
             array_backend = ARRAY_BACKEND
-
+        if (
+            development
+            and len(development) == 1
+            and data[development[0]].dtype == "<M8[ns]"
+        ):
+            u = data[data[development[0]] == ULT_VAL].copy()
+            if len(u) > 0 and len(u) != len(data):
+                u = TriangleBase(
+                    u,
+                    origin=origin,
+                    development=development,
+                    columns=columns,
+                    index=index,
+                )
+                data = data[data[development[0]] != ULT_VAL]
+            else:
+                u = None
+        else:
+            u = None
         # Initialize origin and its grain
         origin_date = TriangleBase._to_datetime(data, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
@@ -75,7 +94,8 @@ class TriangleBase(
 
         # Initialize development and its grain
         m_cnt = {"Y": 12, "Q": 3, "M": 1}
-        if development:
+        has_dev = development and len(np.unique(data[development])) > 1
+        if has_dev:
             development_date = TriangleBase._to_datetime(
                 data, development, period_end=True, format=development_format
             )
@@ -160,27 +180,48 @@ class TriangleBase(
                     len(kdims),
                     len(columns),
                     len(orig_unique),
-                    len(dev_lag_unique) if development else 1,
+                    len(dev_lag_unique) if has_dev else 1,
                 ),
             )
         )
 
         # Set all axis values
+        self.valuation_date = data_agg["development"].max()
         self.kdims = kdims.drop("index", 1).values
         self.odims = orig_unique
-        self.ddims = dev_lag_unique if development else dev_lag[0:1].values
+        self.ddims = dev_lag_unique if has_dev else dev_lag[0:1].values
         self.ddims = self.ddims * (m_cnt[self.development_grain])
+        if development and not has_dev:
+            self.ddims = pd.DatetimeIndex(data[development].iloc[0:1, 0].values)
+            self.valuation_date = self.ddims[0]
         self.vdims = np.array(columns)
 
         # Set remaining triangle properties
         self.key_labels = index
         self.is_cumulative = cumulative
-        self.valuation_date = data_agg["development"].max()
+
+        self.is_pattern = pattern
         if not AUTO_SPARSE or array_backend == "cupy":
             self.set_backend(array_backend, inplace=True)
         else:
             self = self._auto_sparse()
         self._set_slicers()
+        if self.is_pattern:
+            obj = self.dropna()
+            self.odims = obj.odims
+            self.ddims = obj.ddims
+            self.values = obj.values
+        if u:
+            obj = concat((self.dev_to_val().iloc[..., : len(u.odims), :], u), -1)
+            obj = obj.val_to_dev()
+            self.odims = obj.odims
+            self.ddims = obj.ddims
+            self.values = obj.values
+            self.valuation_date = pd.Timestamp(ULT_VAL)
+
+    @property
+    def shape(self):
+        return self.values.shape
 
     def _len_check(self, x, y):
         if len(x) != len(y):
@@ -312,9 +353,7 @@ class TriangleBase(
 
     @staticmethod
     def _get_grain(array):
-        months = set(array.dt.month)
-        grain = {**{1: "Y", 4: "Q"}, **{item: "M" for item in range(5, 13)}}
-        return grain[len(months)]
+        return {1: "Y", 4: "Q"}.get(len(set(array.dt.month)), "M")
 
     @staticmethod
     def _cartesian_product(*arrays):
@@ -361,7 +400,7 @@ class TriangleBase(
         if (
             self.array_backend == "numpy"
             and n > 30
-            and 1 - np.isnan(self.values).sum() / n * (8 / 1e6 ) < 0.2
+            and 1 - np.isnan(self.values).sum() / n * (8 / 1e6) < 0.2
         ):
             self.set_backend("sparse", inplace=True)
         if self.array_backend == "sparse" and not (
@@ -369,3 +408,29 @@ class TriangleBase(
         ):
             self.set_backend("numpy", inplace=True)
         return self
+
+    def copy(self):
+        X = TriangleBase()
+        X.__dict__.update(vars(self))
+        X._set_slicers()
+        return X
+
+    @property
+    def valuation(self):
+        ddims = self.ddims
+        if self.is_val_tri:
+            out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
+            return pd.DatetimeIndex(out.unstack().values)
+        ddim_arr = ddims - ddims[0]
+        origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
+        val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
+        val_array = val_array.astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        val_array = val_array[:, None]
+        s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
+        val_array = (
+            val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
+        ).astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        if ddims[-1] == 9999:
+            ult = np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]
+            val_array = np.concatenate((val_array, ult,), axis=1,)
+        return pd.DatetimeIndex(val_array.reshape(1, -1, order="F")[0])

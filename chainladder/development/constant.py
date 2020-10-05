@@ -82,6 +82,8 @@ class DevelopmentConstant(DevelopmentBase):
         obj.odims = obj.odims[0:1]
         obj._set_slicers()
         self.ldf_ = obj
+        self.ldf_.is_pattern = True
+        self.ldf_.is_cumulative = False
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
         self.sigma_ = self.ldf_ * 0 + 1
         self.std_err_ = self.ldf_ * 0 + 1
