@@ -76,19 +76,6 @@ def array(a, *args, **kwargs):
         return sp(np.array(a, *args, **kwargs), fill_value=fill_value)
 
 
-def expand_dims(a, axis):
-    a = a.copy()
-    shape = [slice(None, None)] * a.ndim
-    if axis == -1:
-        shape.append(None)
-    elif axis < -1:
-        axis = axis + 1
-        shape.insert(axis, None)
-    else:
-        shape.insert(axis, None)
-    return a.__getitem__(tuple(shape))
-
-
 def arange(*args, **kwargs):
     return sparse.COO.from_numpy(np.arange(*args, **kwargs))
 
@@ -206,6 +193,5 @@ sp.ones = ones
 sp.nanquantile = nanquantile
 sp.nanmedian = nanmedian
 sp.nanmean = nanmean
-sp.expand_dims = expand_dims
 sp.swapaxes = swapaxes
 sp.allclose = allclose

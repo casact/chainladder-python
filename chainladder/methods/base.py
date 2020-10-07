@@ -39,7 +39,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             cdf = self.cdf_.values[list(idx.astype(int)), ..., : ultimate.shape[-1]]
         else:
             cdf = self.cdf_.values[..., : ultimate.shape[-1]]
-        a = ultimate.iloc[0, 0] * 0 + ultimate.nan_triangle
+        a = ultimate.iloc[0, 0] * 0
+        a = a + a.nan_triangle
         if ultimate.array_backend == "sparse":
             a = a - a[a.valuation < a.valuation_date]
         a = a.set_backend(ultimate.array_backend)

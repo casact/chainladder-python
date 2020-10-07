@@ -8,8 +8,8 @@ import copy
 import warnings
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-from chainladder.utils.utility_functions import concat
-import datetime as dt
+from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder import ULT_VAL
 
 
 class Triangle(TriangleBase):
@@ -176,8 +176,6 @@ class Triangle(TriangleBase):
 
     @property
     def is_ultimate(self):
-        from chainladder import ULT_VAL
-
         return sum(self.valuation >= ULT_VAL[:4]) > 0
 
     @property
@@ -215,21 +213,27 @@ class Triangle(TriangleBase):
             Updated instance of triangle accumulated along the origin
         """
         if inplace:
+            xp = self.get_array_module()
             if not self.is_cumulative:
                 if self.is_pattern:
-                    xp = self.get_array_module()
                     values = xp.nan_to_num(self.values[..., ::-1])
                     values[values == 0] = 1.0
                     values = xp.cumprod(values, -1)[..., ::-1]
                     self.values = values = values * self.nan_triangle
                 else:
                     ddims = self.ddims
-                    l1 = lambda i: self.iloc[..., 0 : (i + 1)]
-                    l2 = lambda i: l1(i) * self.nan_triangle[..., i : i + 1]
-                    l3 = lambda i: l2(i).sum(3, auto_sparse=False, keepdims=True)
-                    self = concat(
-                        [l3(i).rename(3, [i]) for i in range(self.shape[-1])], 3,
-                    )
+                    if self.array_backend != "sparse":
+                        self.values = (
+                            num_to_nan(xp.cumsum(xp.nan_to_num(self.values), 3))
+                            * self.nan_triangle[None, None, ...]
+                        )
+                    else:
+                        l1 = lambda i: self.iloc[..., 0 : (i + 1)]
+                        l2 = lambda i: l1(i) * self.nan_triangle[..., i : i + 1]
+                        l3 = lambda i: l2(i).sum(3, auto_sparse=False, keepdims=True)
+                        self = concat(
+                            [l3(i).rename(3, [i]) for i in range(self.shape[-1])], 3,
+                        )
                     self.ddims = ddims
                 self.is_cumulative = True
             return self
@@ -427,8 +431,9 @@ class Triangle(TriangleBase):
                 getattr(obj.loc[..., i, :], "sum")(2, auto_sparse=False, keepdims=True)
                 for i in self.origin.groupby(o).values()
             ]
-            obj = cl.concat(values, axis=2, ignore_index=True)
+            obj = concat(values, axis=2, ignore_index=True)
             obj.odims = np.unique(o)
+            obj.origin_grain = ograin_new
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.arange(0, len(obj.development), step)

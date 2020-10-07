@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
-import numpy as np
-from scipy.sparse import coo_matrix
 from sklearn.base import BaseEstimator
 import json
 import joblib
@@ -53,8 +51,7 @@ class TriangleIO:
 
 
 class EstimatorIO:
-    """ Class intended to allow persistence of estimator objects
-    """
+    """ Class intended to allow persistence of estimator objects """
 
     def to_pickle(self, path, protocol=None):
         """ Serializes triangle object to pickle.
@@ -76,13 +73,6 @@ class EstimatorIO:
             string representation of object in json format
         """
         params = self.get_params(deep=False)
-        params = {
-            k: v.to_json() if isinstance(v, BaseEstimator) else v
-            for k, v in params.items()
-        }
+        j = lambda v: v.to_json() if isinstance(v, BaseEstimator) else v
+        params = {k: j(v) for k, v in params.items()}
         return json.dumps({"params": params, "__class__": self.__class__.__name__})
-
-    def __contains__(self, value):
-        if self.__dict__.get(value, None) is None:
-            return False
-        return True

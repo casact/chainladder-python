@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+from chainladder.utils.utility_functions import num_to_nan
 
 
 class TriangleDunders:
@@ -88,10 +89,8 @@ class TriangleDunders:
 
     def _arithmetic_cleanup(self, obj, other):
         """ Common functionality AFTER arithmetic operations """
-        from chainladder.utils.utility_functions import num_to_nan
-
         obj.values = obj.values * obj.get_array_module().nan_to_num(obj.nan_triangle)
-        obj.num_to_nan()
+        obj.values = num_to_nan(obj.values)
         return obj
 
     def _compatibility_check(self, x, y):
@@ -225,7 +224,7 @@ class TriangleDunders:
     def __rtruediv__(self, other):
         obj = self.copy()
         obj.values = other / self.values
-        obj.num_to_nan()
+        obj.values = num_to_nan(obj.values)
         return obj
 
     def __eq__(self, other):
@@ -260,20 +259,7 @@ class TriangleDunders:
         obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
         return obj
 
-    def minimum(self, other):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.minimum(self.values, other)
-        return obj
-
-    def maximum(self, other):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.maximum(self.values, other)
-        return obj
-
-    def sqrt(self):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.sqrt(self.values)
-        return obj
+    def __contains__(self, value):
+        if self.__dict__.get(value, None) is None:
+            return False
+        return True

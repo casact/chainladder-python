@@ -126,7 +126,7 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     p = mack_p(data, averages[0], est_sigma[0], tail).total_parameter_risk_
     xp = p.get_array_module()
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
-    r = xp.expand_dims(xp.array(df[0]), 0)
+    r = xp.array(df[0])[None]
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
 

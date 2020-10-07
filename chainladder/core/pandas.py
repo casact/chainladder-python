@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+from chainladder.utils.utility_functions import num_to_nan
 
 
 class TriangleGroupBy:
@@ -243,6 +244,24 @@ class TrianglePandas:
         obj.values = xp.log(obj.values)
         return obj
 
+    def minimum(self, other):
+        obj = self.copy()
+        xp = self.get_array_module()
+        obj.values = xp.minimum(self.values, other)
+        return obj
+
+    def maximum(self, other):
+        obj = self.copy()
+        xp = self.get_array_module()
+        obj.values = xp.maximum(self.values, other)
+        return obj
+
+    def sqrt(self):
+        obj = self.copy()
+        xp = self.get_array_module()
+        obj.values = xp.sqrt(self.values)
+        return obj
+
 
 def add_triangle_agg_func(cls, k, v):
     """ Aggregate Overrides in Triangle """
@@ -271,7 +290,7 @@ def add_triangle_agg_func(cls, k, v):
             )
         if auto_sparse:
             obj._set_slicers()
-        obj.num_to_nan()
+        obj.values = num_to_nan(obj.values)
         if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
         else:

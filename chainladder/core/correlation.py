@@ -148,7 +148,7 @@ class ValuationCorrelation:
             z_critical = triangle[triangle.valuation > triangle.valuation.min()]
             z_critical = z_critical.dev_to_val().dropna().sum("origin") * 0
             z_critical.values = np.array(self.probs) < p_critical
-            z_critical.odims = ["(All)"]
+            z_critical.odims = triangle.odims[0:1]
             self.z_critical = z_critical
             self.z = self.z_critical.copy()
             self.z.values = z

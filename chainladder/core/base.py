@@ -14,6 +14,7 @@ from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 from chainladder import AUTO_SPARSE, ULT_VAL
+from chainladder.utils.utility_functions import num_to_nan, concat
 
 
 class TriangleBase(
@@ -36,8 +37,6 @@ class TriangleBase(
         *args,
         **kwargs
     ):
-        from chainladder.utils.utility_functions import num_to_nan, concat
-
         # Allow Empty Triangle so that we can piece it together programatically
         if data is None:
             return
@@ -110,7 +109,7 @@ class TriangleBase(
 
         # Summarize dataframe to the level specified in axes
         key_gr = [origin_date, development_date] + [
-            data[item] for item in self._flatten(index)
+            data[item] for item in ([] if not index else index)
         ]
         data_agg = data[columns].groupby(key_gr).sum().reset_index().fillna(0)
         if not index:
@@ -366,17 +365,6 @@ class TriangleBase(
             arr[..., i] = a
         arr = arr.reshape(-1, len(arrays))
         return arr
-
-    def _flatten(self, *args):
-        return_list = []
-        for item in args:
-            return_list = return_list + item if item else []
-        return return_list
-
-    def num_to_nan(self):
-        from chainladder.utils.utility_functions import num_to_nan
-
-        self.values = num_to_nan(self.values)
 
     def get_array_module(self, arr=None):
         backend = (
