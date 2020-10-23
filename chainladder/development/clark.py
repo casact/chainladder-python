@@ -90,7 +90,7 @@ class ClarkLDF(DevelopmentBase):
         if type(age) == list:
             age = xp.array([age]).astype("float64")
         obj = self.incremental_act_.copy()
-        obj.odims = xp.array(["(All)"])
+        obj.odims = obj.odims[0:1]
         obj.values = 1 / self._G(age)
         obj.ddims = age
         return obj
@@ -185,8 +185,11 @@ class ClarkLDF(DevelopmentBase):
         cdf = self._G(
             latest_age - age_offset, theta=params[..., 1:2], omega=params[..., 0:1]
         )
-        obj.values = xp.repeat(cdf[..., :-1] / cdf[..., 1:], len(obj.odims), 2)
+        obj.values = cdf[..., :-1] / cdf[..., 1:]
         obj.ddims = X.link_ratio.ddims
+        obj.odims = obj.odims[0:1]
+        obj.is_pattern = True
+        obj.is_cumulative = False
         obj._set_slicers()
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)

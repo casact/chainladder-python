@@ -5,14 +5,14 @@ Examples using ``chainladder.EstimatorIO``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the output of one method as the apriori selection...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates one of the attributes of the ClarkLDF. We can use the growth curve G_...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bf_apriori_from_cl_thumb.png
-     :alt: Picking Bornhuetter-Ferguson Apriori
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_thumb.png
+     :alt: Clark Growth Curves
 
-     :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+     :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
 
 .. raw:: html
 
@@ -20,18 +20,18 @@ Examples using ``chainladder.EstimatorIO``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_bf_apriori_from_cl.py`
+ * :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_stochastic_bornferg_thumb.png
-     :alt: Stochastic Bornhuetter Ferguson
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
+     :alt: ODP Bootstrap Example
 
-     :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
+     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
 
 .. raw:: html
 
@@ -39,4 +39,23 @@ Examples using ``chainladder.EstimatorIO``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_stochastic_bornferg.py`
+ * :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to recreate the normalized residual plots in Clarks LDF Curve-Fit...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_resid_thumb.png
+     :alt: Clark Residual Plots
+
+     :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+ * :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py`

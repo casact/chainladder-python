@@ -92,7 +92,7 @@ Sheet:
       {% endfor %}
       {% endif %}
 
-      {% if triangle.ldf_ %}
+      {% if triangle.has_ldf %}
       - CSpacer:
           height: 1
       - Series:

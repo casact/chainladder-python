@@ -217,24 +217,28 @@ class Triangle(TriangleBase):
             if not self.is_cumulative:
                 if self.is_pattern:
                     values = xp.nan_to_num(self.values[..., ::-1])
+                    if self.array_backend == "sparse":
+                        xp = np
+                        values = self.set_backend('numpy').values
                     values[values == 0] = 1.0
                     values = xp.cumprod(values, -1)[..., ::-1]
                     self.values = values = values * self.nan_triangle
+                    if self.array_backend == "sparse":
+                        self.values = self.get_array_module()(self.values)
                 else:
-                    ddims = self.ddims
                     if self.array_backend != "sparse":
                         self.values = (
                             num_to_nan(xp.cumsum(xp.nan_to_num(self.values), 3))
                             * self.nan_triangle[None, None, ...]
                         )
                     else:
-                        l1 = lambda i: self.iloc[..., 0 : (i + 1)]
-                        l2 = lambda i: l1(i) * self.nan_triangle[..., i : i + 1]
-                        l3 = lambda i: l2(i).sum(3, auto_sparse=False, keepdims=True)
-                        self = concat(
-                            [l3(i).rename(3, [i]) for i in range(self.shape[-1])], 3,
-                        )
-                    self.ddims = ddims
+                        values = xp.nan_to_num(self.values)
+                        nan_triangle = xp.nan_to_num(self.nan_triangle)
+                        l1 = lambda i: values[..., 0 : (i + 1)]
+                        l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
+                        l3 = lambda i: l2(i).sum(3, keepdims=True)
+                        out = [l3(i) for i in range(self.shape[-1])]
+                        self.values = num_to_nan(xp.concatenate(out, axis=3))
                 self.is_cumulative = True
             return self
         else:

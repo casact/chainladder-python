@@ -74,7 +74,7 @@ Clarks LDF Curve-Fitting paper (2003).
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.376 seconds)
+   **Total running time of the script:** ( 0 minutes  0.345 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_clarkldf_resid.py:

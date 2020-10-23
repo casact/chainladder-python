@@ -370,6 +370,27 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
+     :alt: ODP Bootstrap Example
+
+     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_bootstrap
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="There are several aspects of the chainladder module that are demonstrated with this example.">
 
 .. only:: html
@@ -409,27 +430,6 @@ Examples
    :hidden:
 
    /auto_examples/plot_clarkldf_resid
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
-     :alt: ODP Bootstrap Example
-
-     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_bootstrap
 
 .. raw:: html
 

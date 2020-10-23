@@ -15,7 +15,6 @@ tri = cl.load_sample('genins')
 sims = cl.BootstrapODPSample().fit_transform(tri)
 # Calculate LDF for each simulation
 sim_ldf = cl.Development().fit(sims).ldf_
-sim_ldf = sim_ldf[sim_ldf.origin==sim_ldf.origin.max()]
 
 # Plot the Data
 fig, ((ax00, ax01), (ax10, ax11)) = plt.subplots(ncols=2, nrows=2, figsize=(10,10))
