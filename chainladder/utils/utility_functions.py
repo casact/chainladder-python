@@ -51,6 +51,10 @@ def load_sample(key, *args, **kwargs):
         development = "DevelopmentYear"
         index = ["LOB"]
         columns = ["Incurred", "Paid", "Reported", "Closed"]
+    if key.lower() == "xyz":
+        origin = "AccidentYear"
+        development = "DevelopmentYear"
+        columns = ["Incurred", "Paid", "Reported", "Closed", "Premium"]
     if key.lower() in ["liab", "auto"]:
         index = ["lob"]
     if key.lower() in ["cc_sample", "ia_sample"]:
@@ -146,21 +150,27 @@ def read_json(json_str, array_backend=None):
 def parallelogram_olf(
     values, date, start_date=None, end_date=None, grain="M", vertical_line=False
 ):
-    """ Parallelogram approach to on-leveling.  Need to fix return grain
+    """ Parallelogram approach to on-leveling.
+
+    Ar
     """
     date = pd.to_datetime(date)
     if not start_date:
-        start_date = "{}-01-01".format(date.min().year - 1)
+        start_date = "{}-01-01".format(date.min().year)
     if not end_date:
-        end_date = "{}-12-31".format(date.max().year + 1)
-    date_idx = pd.date_range(start_date, end_date)
+        end_date = "{}-12-31".format(date.max().year)
+    start_date = pd.to_datetime(start_date)-pd.tseries.offsets.DateOffset(days=1)
+    date_idx = pd.date_range(start_date-pd.tseries.offsets.DateOffset(years=1), end_date)
     y = pd.Series(np.array(values), np.array(date))
     y = y.reindex(date_idx, fill_value=0)
     idx = np.cumprod(y.values + 1)
     idx = idx[-1] / idx
     y = pd.Series(idx, y.index)
+    y = y[~((y.index.day==29)&(y.index.month==2))]
     if not vertical_line:
-        y = y.to_frame().rolling(365).mean()
+        y = y.rolling(365).mean()
+        y = (y + y.shift(1).values) / 2
+    y = y.iloc[366:]
     y = y.groupby(y.index.to_period(grain)).mean().reset_index()
     y.columns = ["Origin", "OLF"]
     y["Origin"] = y["Origin"].astype(str)

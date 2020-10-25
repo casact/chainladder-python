@@ -68,21 +68,30 @@ class CapeCod(MethodBase):
         trend_exponent = len_orig - xp.arange(len_orig) - 1
         trend_array = (1 + self.trend) ** (trend_exponent)
         trend_array = trend_array[..., None]
+        if hasattr(sample_weight, 'olf_'):
+            sw_olf_array = sample_weight.olf_.values
+        else:
+            sw_olf_array = 1
+        if hasattr(X, 'olf_'):
+            X_olf_array = X.olf_.values
+        else:
+            X_olf_array = 1
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
         weighted_exposure = xp.swapaxes(reported_exposure, -1, -2) * decay_matrix
-        trended_ultimate = (latest * trend_array) / reported_exposure
+        trended_ultimate = (latest * trend_array * X_olf_array) / (reported_exposure * sw_olf_array)
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
         apriori = xp.sum(weighted_exposure * trended_ultimate, -1) / xp.sum(
             weighted_exposure, -1
         )
         ult.values = apriori[..., None]
         apriori_ = ult.copy()
-        detrended_ultimate = apriori_.values / trend_array
+        detrended_ultimate = apriori_.values / trend_array / X_olf_array * sw_olf_array
         detrended_apriori_ = ult.copy()
         detrended_apriori_.values = detrended_ultimate
         ult.values = latest + detrended_ultimate * (1 - 1 / cdf) * exposure
+
         ult = self._set_ult_attr(ult)
         apriori_ = self._set_ult_attr(apriori_)
         detrended_apriori_ = self._set_ult_attr(detrended_apriori_)
