@@ -5,14 +5,14 @@ Examples using ``chainladder.core.io.EstimatorIO``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates one of the attributes of the ClarkLDF. We can use the growth curve G_...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to incorporate on-leveling into the CapeCod estimator.  The on-le...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_thumb.png
-     :alt: Clark Growth Curves
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_onlevel_thumb.png
+     :alt: Include On-leveling into Cape Cod
 
-     :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
+     :ref:`sphx_glr_auto_examples_plot_capecod_onlevel.py`
 
 .. raw:: html
 
@@ -20,42 +20,4 @@ Examples using ``chainladder.core.io.EstimatorIO``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_clarkldf.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how you can can use the Overdispersed Poisson Bootstrap sampler and g...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_bootstrap_thumb.png
-     :alt: ODP Bootstrap Example
-
-     :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_bootstrap.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to recreate the normalized residual plots in Clarks LDF Curve-Fit...">
-
-.. only:: html
-
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_clarkldf_resid_thumb.png
-     :alt: Clark Residual Plots
-
-     :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
- * :ref:`sphx_glr_auto_examples_plot_clarkldf_resid.py`
+ * :ref:`sphx_glr_auto_examples_plot_capecod_onlevel.py`

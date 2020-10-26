@@ -2,3 +2,4 @@ from chainladder.workflow.gridsearch import GridSearch, Pipeline  # noqa (API im
 from chainladder.workflow.bootstrap import BootstrapODPSample  # noqa (API import)
 from chainladder.workflow.berqsherm import BerquistSherman  # noqa (API import)
 from chainladder.workflow.parallelogram import ParallelogramOLF # noqa (API import)
+from chainladder.workflow.trend import Trend # noqa (API import)

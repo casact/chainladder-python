@@ -5,14 +5,14 @@ Examples using ``chainladder.CapeCod``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates the usage of the deterministic CapeCod method and shows the sensitivi...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to incorporate on-leveling into the CapeCod estimator.  The on-le...">
 
 .. only:: html
 
- .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_thumb.png
-     :alt: Analyzing Cape Cod Apriori Sensitivity
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_onlevel_thumb.png
+     :alt: Include On-leveling into Cape Cod
 
-     :ref:`sphx_glr_auto_examples_plot_capecod.py`
+     :ref:`sphx_glr_auto_examples_plot_capecod_onlevel.py`
 
 .. raw:: html
 
@@ -20,4 +20,4 @@ Examples using ``chainladder.CapeCod``
 
 .. only:: not html
 
- * :ref:`sphx_glr_auto_examples_plot_capecod.py`
+ * :ref:`sphx_glr_auto_examples_plot_capecod_onlevel.py`

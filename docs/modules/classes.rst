@@ -124,6 +124,8 @@ Classes
 
   BootstrapODPSample
   BerquistSherman
+  ParallelogramOLF
+  Trend
   Pipeline
   GridSearch
 

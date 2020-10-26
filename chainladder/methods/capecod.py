@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.methods import MethodBase
-
+import warnings
 
 class CapeCod(MethodBase):
     """Applies the CapeCod technique to triangle **X**
@@ -10,7 +10,8 @@ class CapeCod(MethodBase):
     Parameters
     ----------
     trend : float (default=0.0)
-        The cape cod trend assumption
+        The cape cod trend assumption.  Any Trend transformer on X will override
+        this argument.
     decay : float (defaut=1.0)
         The cape cod decay assumption
 
@@ -65,9 +66,12 @@ class CapeCod(MethodBase):
         cdf = self._align_cdf(ult, sample_weight)
         exposure = sample_weight.values
         reported_exposure = exposure / cdf
-        trend_exponent = len_orig - xp.arange(len_orig) - 1
-        trend_array = (1 + self.trend) ** (trend_exponent)
-        trend_array = trend_array[..., None]
+        if hasattr(X, 'trend_'):
+            if self.trend != 0:
+                warnings.warn("CapeCod Trend assumption is ignored when X has a trend_ property.")
+            trend_array = X.trend_.latest_diagonal.values
+        else:
+            trend_array = (X.trend(self.trend) / X).latest_diagonal.values
         if hasattr(sample_weight, 'olf_'):
             sw_olf_array = sample_weight.olf_.values
         else:
@@ -90,6 +94,7 @@ class CapeCod(MethodBase):
         detrended_ultimate = apriori_.values / trend_array / X_olf_array * sw_olf_array
         detrended_apriori_ = ult.copy()
         detrended_apriori_.values = detrended_ultimate
+
         ult.values = latest + detrended_ultimate * (1 - 1 / cdf) * exposure
 
         ult = self._set_ult_attr(ult)

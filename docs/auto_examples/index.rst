@@ -517,6 +517,27 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates how to incorporate on-leveling into the CapeCod estimator.  The on-le...">
+
+.. only:: html
+
+ .. figure:: /auto_examples/images/thumb/sphx_glr_plot_capecod_onlevel_thumb.png
+     :alt: Include On-leveling into Cape Cod
+
+     :ref:`sphx_glr_auto_examples_plot_capecod_onlevel.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_capecod_onlevel
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example demonstrates some of the flexibility of the Excel outputs. It creates an Excel fil...">
 
 .. only:: html
