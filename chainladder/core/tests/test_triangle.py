@@ -641,3 +641,9 @@ def test_loc_ellipsis():
     assert tri.loc[:, ..., 24:] == tri.loc[..., :, 24:]
     assert tri.loc[:, "CumPaidLoss"] == tri.loc[:, "CumPaidLoss", ...]
     assert tri.loc[..., "CumPaidLoss", :, :] == tri.loc[:, "CumPaidLoss", :, :]
+
+def missing_first_lag():
+    x = raa.copy()
+    x.values[:,:,:, 0] = 0
+    x=x.sum(0)
+    x.link_ratio.shape == (1,1,9,9)

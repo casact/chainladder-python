@@ -188,7 +188,8 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
-        obj = (self.iloc[..., 1:] / self.iloc[..., :-1].values).dropna()
+        obj = (self.iloc[..., 1:] / self.iloc[..., :-1].values)
+        obj = obj[obj.valuation<=obj.valuation_date]
         if hasattr(obj, "w_"):
             w_ = obj.w_[..., 0:1, : len(obj.odims), :]
             obj = obj * w_ if obj.shape == w_.shape else obj
