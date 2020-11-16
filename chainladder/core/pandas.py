@@ -314,9 +314,14 @@ def add_groupby_agg_func(cls, k, v):
             for i in self.groups.indices.values()
         ]
         self.obj = concat(values, axis=self.axis, ignore_index=True)
-        index = pd.DataFrame(self.groups.dtypes.index)
-        self.obj.key_labels = index.columns.tolist()
-        self.obj.kdims = index.values
+
+        if isinstance(self.groups.dtypes.index, pd.MultiIndex):
+            index = pd.DataFrame(np.zeros(len(self.groups.dtypes.index)), index=self.groups.dtypes.index, columns=['_']).reset_index().iloc[:, :-1]
+            self.obj.index = index
+        else:
+            index = pd.DataFrame(self.groups.dtypes.index)
+            self.obj.key_labels = index.columns.tolist()
+            self.obj.kdims = index.values
         self.obj._set_slicers()
         return self.obj
 
