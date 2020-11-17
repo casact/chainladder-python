@@ -38,6 +38,9 @@ Tutorial notebooks are available for download [here](https://github.com/casact/c
 To install using pip:
 `pip install chainladder`
 
+To instal using conda:
+`conda install -c conda-forge chainladder`
+
 Alternatively, install directly from github:
 `pip install git+https://github.com/casact/chainladder-python/`
 

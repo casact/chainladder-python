@@ -30,3 +30,7 @@ chainladder requires:
 The easiest way to install chainladder is using ``pip`` ::
 
     pip install chainladder
+
+Alternatively, use ``conda`` ::
+
+  conda install -c conda-forge chainladder
