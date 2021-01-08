@@ -7,4 +7,5 @@ xlsxwriter
 joblib
 xlrd
 lxml
-numpy
+numpy<=1.16.4
+pandas<=1.1.5

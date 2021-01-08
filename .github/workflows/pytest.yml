@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest'] #, 'macos-latest', 'windows-latest']
-        python-version: ['3.7'] #, '2.7']
+        python-version: ['3.7', '3.6'] #, '2.7']
     steps:
       - uses: actions/checkout@v1
       - uses: conda-incubator/setup-miniconda@v2
@@ -27,7 +27,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python setup.py develop
-          conda install -q -c r --file requirements.txt;
+          conda install -q -c r --file requirements-dev.txt;
           conda install -q -c r --file r_requirements.txt;
           R -e "options(repos = c(CRAN = 'http://cran.rstudio.com'))"
           R -e "install.packages('ChainLadder', repo='http://cran.rstudio.com')";
