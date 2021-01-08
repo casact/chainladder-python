@@ -647,3 +647,12 @@ def missing_first_lag():
     x.values[:,:,:, 0] = 0
     x=x.sum(0)
     x.link_ratio.shape == (1,1,9,9)
+
+def test_reverse_slice_integrity():
+    assert tri == tri_gt
+    assert tri.iloc[::-1, ::-1].shape == tri.shape
+    assert np.all(tri.iloc[:, ::-1].columns.values == tri.columns[::-1])
+
+def test_loc_tuple():
+    assert len(tri.loc[('Adriatic Ins Co', 'othliab')]) == 1
+    assert tri.loc[tri.index] == tri

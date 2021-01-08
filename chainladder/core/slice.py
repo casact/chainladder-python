@@ -69,45 +69,74 @@ class _LocBase:
         )
         if self.obj.array_backend == "sparse":
             self.obj.set_backend("numpy", inplace=True)
-            print(self.obj.values)
-            self.obj.values.__setitem__(normalize_index(key, self.obj.shape), values)
+            self.obj.values.__setitem__(self._normalize_index(key), values)
             self.obj.set_backend("sparse", inplace=True)
         else:
-            self.obj.values.__setitem__(normalize_index(key, self.obj.shape), values)
+            self.obj.values.__setitem__(self._normalize_index(key), values)
+
+    def _normalize_index(self, key):
+        key = normalize_index(key, self.obj.shape)
+        l = []
+        for n, i in enumerate(key):
+            if type(i) is slice:
+                start = i.start if i.start > 0 else None
+                stop = i.stop if i.stop > -1 else None
+                stop = None if stop == self.obj.shape[n] else stop
+                step = None if start is None and stop is None else i.step
+                l.append(slice(start, stop, step))
+            else:
+                l.append(i)
+        key = tuple(l)
+        return key
 
 
 class Location(_LocBase):
     """ class to generate .loc[] functionality """
 
     def __getitem__(self, key):
-        return self.get_idx(*self.format_key(key))
+        obj = self.get_idx(self.format_key(key))
+        if len(obj) > 1 and obj.index.iloc[:,0].nunique() == 1:
+            idx = obj.index.iloc[:, 1:]
+            obj.index = idx
+        return obj
 
     def format_key(self, key):
-        key = (key,) if type(key) is not tuple else key
+        if (type(key) is tuple and len(key) > 1 and
+            len(self.obj.key_labels) > 1 and
+            key[1] in self.obj.index[self.obj.key_labels[1]].unique()):
+            key = (key,)
+        else:
+            key = (key,) if type(key) is not tuple else key
         key_mask = tuple([i if i is Ellipsis else 0 for i in key])
         if len(key_mask) < len(self.obj.shape) and Ellipsis not in key_mask:
             key_mask = tuple(list(key_mask) + [Ellipsis])
-        key_mask = list(normalize_index(key_mask, self.obj.shape))
+        key_mask = list(self._normalize_index(key_mask))
         key = [item for item in key if item is not Ellipsis]
         for i in range(len(self.obj.shape)):
             if key_mask[i] == 0:
                 key_mask[i] = key[0]
                 key.pop(0)
         key = key_mask
-        # Support for multi-index
+        if type(key[0]) == pd.Series:
+            idx = key[0][key[0]].index
+        elif type(key[0]) == pd.DataFrame:
+            idx = self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key[0].set_index(list(key[0].columns)).index]
+        else:
+            idx = self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key[0]]
+        idx = idx.iloc[:, 0] if type(idx) is pd.DataFrame else idx
+        key[0] = _LocBase._contig_slice(idx.to_list())
         default = slice(None, None, None)
         norm = lambda k: type(k) is slice and (k.start == 0 or k == default)
-        filter_idx = None
-        if not norm(key[0]) and not type(key[0]) is pd.Series:
-            idx = self.obj.index.reset_index().set_index(self.obj.key_labels)
-            sliced = idx.loc[key[0]]
-            if type(sliced) is pd.Series:
-                sliced = sliced.to_frame().T
-                sliced.index.rename(idx.index.name, inplace=True)
-            sliced = sliced.iloc[:, 0]
-            key[0] = sliced.to_list()
-            filter_idx = list(sliced.reset_index().drop("index", 1).columns)
-            filter_idx = idx.reset_index()[filter_idx]
+        def normalize(key, idx):
+            mapper = {1: "columns", 2: "origin", 3: "development"}
+            out = key[idx]
+            if not norm(key[idx]) and not isinstance(key, pd.Series):
+                s = pd.Series(getattr(self.obj, mapper[idx])).to_frame().reset_index()
+                out = s.set_index(mapper[idx]).loc[key[idx]].values.flatten()
+            return out
+
+        key = [key[0]] + [normalize(key, 1), normalize(key, 2), normalize(key, 3)]
+        return key
 
         def normalize(key, idx):
             mapper = {1: "columns", 2: "origin", 3: "development"}
@@ -129,11 +158,10 @@ class Ilocation(_LocBase):
     """ class to generate .iloc[] functionality """
 
     def __getitem__(self, key):
-        return self.get_idx(normalize_index(key, self.obj.shape))
+        return self.get_idx(self._normalize_index(key))
 
     def __setitem__(self, key, values):
-        key = normalize_index(key, self.obj.shape)
-        super().__setitem__(key, values)
+        super().__setitem__(self._normalize_index(key), values)
 
 
 class TriangleSlicer:
