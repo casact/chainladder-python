@@ -133,6 +133,8 @@ class TriangleDunders:
             len(x) == len(y) and len(y) > 1
             and not np.all(x.index == y.index)):
             y = y.loc[x.index]
+        if len(x) == 1 and len(y) > 1:
+            x.kdims = y.kdims
         return x, y
 
     def _prep_columns(self, x, y):

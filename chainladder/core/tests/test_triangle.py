@@ -655,5 +655,10 @@ def test_reverse_slice_integrity():
     assert tri.iloc[tri.index.index[::-1]] + tri == 2*tri.iloc[::-1]
 
 def test_loc_tuple():
+    assert tri == tri_gt
     assert len(tri.loc[('Adriatic Ins Co', 'othliab')]) == 1
     assert tri.loc[tri.index] == tri
+
+def test_index_broadcasting():
+    assert tri == tri_gt
+    assert ((tri/tri.sum()) - ((1 / tri.sum())*tri)).sum().sum().sum() < 1e-4

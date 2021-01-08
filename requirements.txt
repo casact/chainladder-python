@@ -7,4 +7,4 @@ xlsxwriter
 joblib
 xlrd
 lxml
-numpy<=1.16.4
+numpy
