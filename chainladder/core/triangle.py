@@ -298,7 +298,7 @@ class Triangle(TriangleBase):
         ddims = len(ddims.drop_duplicates())
         if ddims == 1 and sign == -1:
             ddims = len(obj.odims)
-        if obj.values.coords[-1].min() < 0:
+        if obj.values.density > 0 and obj.values.coords[-1].min() < 0:
             obj.values.coords[-1] = obj.values.coords[-1] - obj.values.coords[-1].min()
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
