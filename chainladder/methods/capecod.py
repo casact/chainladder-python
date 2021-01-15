@@ -103,21 +103,22 @@ class CapeCod(MethodBase):
         return ult, apriori_, detrended_apriori_
 
     def predict(self, X, sample_weight=None):
-        """Predicts the chainladder ultimate on a new triangle **X**
+        """Predicts the CapeCod ultimate on a new triangle **X**
 
         Parameters
         ----------
         X : Triangle
-            The data used to compute the mean and standard deviation
-            used for later scaling along the features axis.
+            Loss data to which the model will be applied.
         sample_weight : Triangle
             For exposure-based methods, the exposure to be used for predictions
 
         Returns
         -------
         X_new: Triangle
-
+            Loss data with CapeCod ultimate applied
         """
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
         obj = X.copy()
         obj.ldf_ = self.ldf_
         obj.ultimate_, obj.apriori_, obj.detrended_apriori_ = self._get_ultimate(
