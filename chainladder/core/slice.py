@@ -178,6 +178,8 @@ class TriangleSlicer:
         elif key in self.key_labels:
             return self.index[key]
         else:
+            if type(key) is str and self.virtual_columns.columns.get(key, None):
+                return self.virtual_columns[key]
             key = [key] if type(key) is str else key
             idx = [list(self.vdims).index(item) for item in key]
             return self.iloc[:, idx]
@@ -185,6 +187,11 @@ class TriangleSlicer:
     def __setitem__(self, key, value):
         """ Function for pandas style column setting """
         xp = self.get_array_module()
+        if callable(value):
+            self.virtual_columns[key] = value
+            value = xp.nan
+        else:
+            self.virtual_columns.pop(key)
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
             if self.array_backend == "sparse":
@@ -196,7 +203,9 @@ class TriangleSlicer:
                 data = np.concatenate((before.data, value.values.data))
                 self.values = xp(coords, data, shape=self.shape, prune=True)
             else:
-                self.values[:, i : i + 1] = value.values
+                if isinstance(value, TriangleSlicer):
+                    value = value.values
+                self.values[:, i : i + 1] = value
         else:
             self.vdims = self.vdims if key in self.vdims else np.append(self.vdims, key)
             try:
@@ -241,4 +250,23 @@ class TriangleSlicer:
     def _set_slicers(self):
         """ Call any time the shape of index or column changes """
         self.iloc, self.loc = Ilocation(self), Location(self)
+        self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
         self = self._auto_sparse()
+
+class VirtualColumns:
+    def __init__(self, triangle, columns=None):
+        self.triangle = triangle
+        self.columns = {} if not columns else columns
+
+    def __getitem__(self, value):
+        return self.columns[value](self.triangle).rename('columns', [value])
+
+    def __setitem__(self, name, value):
+        self.columns[name] = value
+
+    def __repr__(self):
+        return str(pd.Index(self.columns.keys()))
+
+    def pop(self, key):
+        if key in list(self.columns.keys()):
+            self.columns.pop(key)

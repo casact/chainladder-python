@@ -10,7 +10,7 @@ import warnings
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
 from chainladder.core.pandas import TrianglePandas
-from chainladder.core.slice import TriangleSlicer
+from chainladder.core.slice import TriangleSlicer, VirtualColumns
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 from chainladder import AUTO_SPARSE, ULT_VAL
@@ -198,7 +198,7 @@ class TriangleBase(
         # Set remaining triangle properties
         self.key_labels = index
         self.is_cumulative = cumulative
-
+        self.virtual_columns = VirtualColumns(self)
         self.is_pattern = pattern
         if not AUTO_SPARSE or array_backend == "cupy":
             self.set_backend(array_backend, inplace=True)
