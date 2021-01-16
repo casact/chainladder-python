@@ -19,7 +19,9 @@ class TriangleIO:
             The pickle protocol to use.
 
         """
-        joblib.dump(self, filename=path, protocol=protocol)
+        out = self[list(self.columns[~self.columns.isin(self.virtual_columns.columns.keys())])]
+        out.virtual_columns.columns = {}
+        joblib.dump(out, filename=path, protocol=protocol)
 
     def to_json(self):
         """ Serializes triangle object to json format

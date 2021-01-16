@@ -323,5 +323,6 @@ class Development(DevelopmentBase):
         obj.valuation_date = pd.to_datetime(ULT_VAL)
         obj.is_pattern = True
         obj.is_cumulative = False
+        obj.virtual_columns.columns = {}
         obj._set_slicers()
         return obj

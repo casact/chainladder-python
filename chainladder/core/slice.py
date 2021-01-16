@@ -189,7 +189,7 @@ class TriangleSlicer:
         xp = self.get_array_module()
         if callable(value):
             self.virtual_columns[key] = value
-            value = xp.nan
+            value = (self.iloc[:, 0].copy()*xp.nan).set_backend(self.array_backend)
         else:
             self.virtual_columns.pop(key)
         if key in self.vdims:
@@ -201,7 +201,7 @@ class TriangleSlicer:
                 value.values.coords[1] = i
                 coords = np.concatenate((before.coords, value.values.coords), axis=1)
                 data = np.concatenate((before.data, value.values.data))
-                self.values = xp(coords, data, shape=self.shape, prune=True)
+                self.values = xp(coords, data, shape=self.shape, prune=True, fill_value=xp.nan)
             else:
                 if isinstance(value, TriangleSlicer):
                     value = value.values

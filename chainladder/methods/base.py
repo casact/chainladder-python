@@ -64,6 +64,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         if ultimate.array_backend != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
         ultimate.ddims = pd.DatetimeIndex([ULT_VAL])
+        ultimate.virtual_columns.columns = {}
         ultimate._set_slicers()
         ultimate.valuation_date = ultimate.valuation.max()
         return ultimate
