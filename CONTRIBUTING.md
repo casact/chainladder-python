@@ -14,7 +14,7 @@ There are tons of ways to improve and shape the direction of this project.
 
 ### Why contribute?
 1. Contributing to an open-source project is an incredibly rewarding learning
- experience. Whether your interests are in learning python, implementing functionality you need, or interested in software development, or gaining a deeper appreciation for how actuarial methods work, you will learn a ton.
+ experience. Whether your interests are in learning python, implementing functionality you need, software development, or gaining a deeper appreciation for how actuarial methods work, you will learn a ton.
 2. Actuarial literature has a history of being free and open source, but we're
  barely scratching the surface on reproducible research or a similar level of freedom with regard to tools.
 3. It's fun.
