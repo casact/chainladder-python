@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 import json
 import joblib
+import dill
 
 
 class TriangleIO:
@@ -19,8 +20,8 @@ class TriangleIO:
             The pickle protocol to use.
 
         """
-        out = self[list(self.columns[~self.columns.isin(self.virtual_columns.columns.keys())])]
-        out.virtual_columns.columns = {}
+        out = self.copy()
+        out.virtual_columns = dill.dumps(out.virtual_columns)
         joblib.dump(out, filename=path, protocol=protocol)
 
     def to_json(self):

@@ -7,6 +7,7 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from scipy.sparse import coo_matrix
 import joblib
+import dill
 import json
 import os
 import copy
@@ -84,7 +85,9 @@ def load_dataset(key, *args, **kwargs):
 
 
 def read_pickle(path):
-    return joblib.load(path)
+    out = joblib.load(path)
+    out.virtual_columns = dill.loads(out.virtual_columns)
+    return out
 
 
 def read_json(json_str, array_backend=None):

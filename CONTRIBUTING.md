@@ -14,7 +14,7 @@ There are tons of ways to improve and shape the direction of this project.
 
 ### Why contribute?
 1. Contributing to an open-source project is an incredibly rewarding learning
- experience. Whether your interests are in learning python, implementing functionality you need, or interested in software development, or gaining a deeper appreciation for how actuarial methods work, you will learn a ton.
+ experience. Whether your interests are in learning python, implementing functionality you need, software development, or gaining a deeper appreciation for how actuarial methods work, you will learn a ton.
 2. Actuarial literature has a history of being free and open source, but we're
  barely scratching the surface on reproducible research or a similar level of freedom with regard to tools.
 3. It's fun.
@@ -30,28 +30,35 @@ If you are interested in contributing.  Here are a few helpful hints to make the
 
 Occasionally, there will be cases where domain-specific functionality does not fit neatly into the existing API and these should be discussed in [issue](https://github.com/casact/chainladder-python/issues).
 
+
+### Setting Up Development Environment
+Once you've forked the repository, you'll need a development environment.
+A conda development environment `chainladder` including all testing and documentation dependencies can be set up as follows:
+```
+conda create env --file environment-dev.yaml
+conda activate cl_dev
+```
+Because R's ChainLadder package is not available through conda, you will need to install this manually in your environment.
+```
+R -e "install.packages('ChainLadder', repo='http://cran.rstudio.com')";
+```
+Lastly, set up the python chainladder package in develop mode.
+```
+python setup.py develop
+```
+
+### Updating the Documentation
+Write something about docs here.
+
 ### Pull Requests
-1. Pull requests (PR) should be tied to an [issue](https://github.com/casact/chainladder-python/issues).  It's generally a good idea to keep issues and
+Pull requests (PR) should be tied to an [issue](https://github.com/casact/chainladder-python/issues).  It's generally a good idea to keep issues and
 pull requests small.  Like all projects, the larger the PR, the less likely
 it will be merged.
-2. All pull requests must pass existing unit tests.  On occassion, existing unit tests can be in violation of the API guidelines.  These unit tests should be refined to accomodate the API ethos set forth above.  
-3. New functionality should include new unit tests with a reasonable level of code coverage.
 
-### Environment
-There are several developer tools that are worth having when contributing to
-python.
+All pull requests must pass existing unit tests.  On occasion, existing unit tests can be in violation of the API guidelines.  These unit tests should be refined to accomodate the API ethos set forth above. It is a good practice to run tests ahead of pushing changes to Github.  That said, these unit tests will
+be run by Github.
+```
+pytest chainladder
+```
 
-#### Documents
-To build the documents, you should have sphinx and a few other packages
-`nbsphinx`, `matplotlib`, `numpydoc`, `sphinx_gallery`.  The complete list is in `docs/rtfd-requirements.txt`
-
-
-#### Unit tests
-Unit tests rely on `pytest`. Every module has a `tests` directory where the unit tests can be found.  All unit tests can be run from the root directory
-of the project with `pytest chainladder`.
-
-#### Functionality in R
- Several of the unit tests use `rpy2` to call into R's version of
-`chainladder`.  In general, if the functionality exists in R, it is worth
-liberally writing tests that directly compares the two softwares.  The R dependencies
-are available in `r_requirements.txt`.
+New functionality should include new unit tests with a reasonable level of code coverage.
