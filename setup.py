@@ -4,7 +4,9 @@
 
 from setuptools import setup, find_packages
 from os import listdir
-# import chainladder
+
+with open('requirements.txt', 'r') as f:
+    dependencies = f.read().splitlines()
 
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
@@ -17,23 +19,15 @@ setup(
     version=version,
     maintainer='John Bogaardt',
     maintainer_email='jbogaardt@gmail.com',
-    packages=['{}.{}'.format(name, p) for p in find_packages(where=name)]+[name],
+    packages=find_packages(include=["chainladder", "chainladder.*"]),
     scripts=[],
     url=url,
     download_url='{}/archive/v{}.tar.gz'.format(url, version),
     license='LICENSE',
     include_package_data=True,
-    package_data={'data': [data_path+item
+    package_data={'data': [data_path + item
                            for item in listdir('chainladder{}'.format(data_path))]},
     description=descr,
-    # long_description=open('README.md').read(),
-    install_requires=[
-        "pandas>=0.23.0",
-        "numpy>=1.12.0",
-        "scikit-learn>=0.18.0",
-        "scipy",
-        "sparse",
-        "joblib",
-        'xlcompose>=0.2.4'
-    ],
+    long_description=open('README.md').read(),
+    install_requires=dependencies,
 )

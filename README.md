@@ -1,8 +1,10 @@
 # chainladder (python)
 [![PyPI version](https://badge.fury.io/py/chainladder.svg)](https://badge.fury.io/py/chainladder)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/chainladder.svg)](https://anaconda.org/conda-forge/chainladder)
 ![Build Status](https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/chainladder-python/badge/?version=latest)](http://chainladder-python.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/jbogaardt/chainladder-python/branch/master/graph/badge.svg)](https://codecov.io/gh/jbogaardt/chainladder-python)
+[![codecov.io](https://codecov.io/github/casact/chainladder-python/coverage.svg?branch=master)](https://codecov.io/github/casact/chainladder-python?branch=master)
+
 
 ## chainladder - Property and Casualty Loss Reserving in Python
 This package gets inpiration from the popular [R ChainLadder package](https://github.com/mages/ChainLadder).
@@ -11,7 +13,7 @@ This package strives to be minimalistic in needing its own API.
 Think in [pandas](https://pandas.pydata.org/) for data manipulation and [scikit-learn](https://scikit-learn.org/stable/index.html) for model construction. An actuary already versed in these tools will pick up this package with ease. Save your mental energy for actuarial work.
 
 ## Available Estimators
-`chainladder` has an ever growing list of estimators:
+`chainladder` has an ever growing list of estimators that work seemlessly together:
 
 |Loss Development|Tails Factors|IBNR Models|Adjustments & Workflow|
 | - | - | - | - |
@@ -19,7 +21,8 @@ Think in [pandas](https://pandas.pydata.org/) for data manipulation and [scikit-
 |[DevelopmentConstant](https://chainladder-python.readthedocs.io/en/latest/modules/development.html#external-patterns)| [TailConstant](https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#external-data) |[MackChainladder](https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#mack-chainladder)      |[BerquistSherman](https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#berquist-sherman)
 |[MunichAdjustment](https://chainladder-python.readthedocs.io/en/latest/modules/development.html#munich-adjustment)| [TailBondy](https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#the-bondy-tail)    |[BornhuettterFerguson](https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#bornhuetter-ferguson)|	[Pipeline](https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#pipeline)
 |[ClarkLDF](https://chainladder-python.readthedocs.io/en/latest/modules/development.html#growth-curve-fitting)|	[TailClark](https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#growth-curve-extrapolation)	|[Benktander](https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#benktander)|[GridSearch](https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#gridsearch)
-|[IncrementalAdditive](https://chainladder-python.readthedocs.io/en/latest/modules/development.html#incremental-additive)|              |[CapeCod](https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#cape-cod)
+|[IncrementalAdditive](https://chainladder-python.readthedocs.io/en/latest/modules/development.html#incremental-additive)|              |[CapeCod](https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#cape-cod)|[ParallelogramOLF](https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.ParallelogramOLF.html#chainladder.ParallelogramOLF)
+||||[Trend](https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.Trend.html#chainladder.Trend)
 
 ## Documentation
 Please visit the [Documentation](https://chainladder-python.readthedocs.io/en/latest/) page for examples, how-tos, and source

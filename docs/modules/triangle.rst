@@ -110,15 +110,15 @@ These triangles can be called by name using the `load_sample` function.
 
 Some of the more commmonly references samples are:
 
-=============== =================
+=============== ====================
 Name            Shape
-=============== =================
+=============== ====================
 ``abc``         (1, 1, 11, 11)
 ``clrd``        (775, 6, 10, 10)
 ``genins``      (1, 1, 10, 10)
 ``quarterly``   (1, 2, 12, 45)
 ``raa``         (1, 1, 10, 10)
-=============== =================
+=============== ====================
 
 For a complete list, see :ref:`samples<samples>`.
 
@@ -138,11 +138,11 @@ property with the ``cumulative`` parameter.
   call on the `cum_to_incr` or `incr_to_cum` methods discussed below.  Some methods
   may not work until the cumulative/incremental status is known.
 
-Backend
--------
+Backends
+--------
 :class:`Triangle` is built on numpy which serves as the array backend by default.
-Howver, you can now swap array_backend between numpy and cupy to switch between
-CPU and GPU-based computations.
+Howver, you can now swap array_backend between numpy, cupy, and sparse to switch
+between CPU and GPU-based computations or dense and sparse backends.
 
 Array backends can be set globally:
 
@@ -156,6 +156,30 @@ Alternatively, they can be set per Triangle instance.
 .. note::
    You must have a CUDA-enabled graphics card and CuPY installed to use the GPU
    backend.  These are optional dependencies of chainladder.
+
+Virtual Columns
+---------------
+There are instances where we want to defer calculations, we can create "virtual"
+columns that re-execute on demand.
+
+  >>> import chainladder as cl
+  >>> clrd = cl.load_sample('clrd')
+  >>> # Create a virtual column by passing a function.
+  >>> clrd['PaidLossRatio'] = lambda x : x['CumPaidLoss'] / x['EarnedPremDIR']
+  >>> # Good - Defer loss ratio calculation until after summing premiums and losses
+  >>> clrd.sum()['PaidLossRatio']
+  >>> # Bad - Calculates loss ratios and then sums them
+  >>> clrd['PaidLossRatio'].sum()
+
+Virtual column expressions should only reference other columns in the same triangle.
+A Triangle without all the underlying columns will fail.
+
+  >>> # Eliminating EarnedPremDIR will result in a calculation failure
+  >>> clrd[['CumPaidLoss', 'PaidLossRatio']].sum()['PaidLossRatio']
+
+When used in tandem with the 'sparse' backend, virtual columns can also substantially
+reduce the memory footprint of your Triangle.  This is because the calculation
+expression is the only thing in memory.
 
 Basic Functionality
 ===================

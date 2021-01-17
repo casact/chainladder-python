@@ -59,19 +59,13 @@ class DevelopmentConstant(DevelopmentBase):
         xp = obj.get_array_module()
         obj.values = xp.ones(X.shape)[..., 0:1, :-1]
         if callable(self.patterns):
-            if len(obj.key_labels) == 1 and self.callable_axis == 0:
-                ldf = obj.index.iloc[:, 0].apply(self.patterns)
-            else:
-                ldf = obj.index.apply(self.patterns, axis=self.callable_axis).iloc[:, 0]
+            ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
             ldf = (
                 pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                 .fillna(1)[obj.ddims[:-1]]
                 .values
             )
-            if self.callable_axis == 0:
-                ldf = xp.array(ldf[:, None, None, :])
-            else:
-                ldf = xp.array(ldf[None, :, None, :])
+            ldf = xp.array(ldf[:, None, None, :])
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
             ldf = ldf[None, None, None, :]
