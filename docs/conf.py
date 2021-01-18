@@ -39,15 +39,11 @@ import chainladder as cl
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-if os.name == 'nt':
-    extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
-                  'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax',
-                  'sphinx.ext.autosummary', 'sphinx_gallery.load_style']
 
-else:
-    extensions = ['sphinx.ext.autodoc', 'numpydoc', 'nbsphinx',
-                  'sphinx.ext.mathjax', 'sphinx.ext.autosummary',
-                  'sphinx_gallery.load_style']
+extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
+              'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax',
+              'sphinx.ext.autosummary', 'sphinx_gallery.load_style']
+
 numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
