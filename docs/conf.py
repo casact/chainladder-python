@@ -28,28 +28,6 @@ import sphinx_gallery
 import chainladder as cl
 
 
-class Mock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
-    @classmethod
-    def __getattr__(cls, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            return type(name, (), {})
-        else:
-            return Mock()
-
-if os.name != 'nt':
-    MOCK_MODULES = ['numpy', 'scipy', 'pandas', 'bokeh', 'sklearn', 'matplotlib.pyplot', 'sparse', 'numba']
-    for mod_name in MOCK_MODULES:
-        sys.modules[mod_name] = Mock()
-
-
 # this is needed for some reason...
 # see https://github.com/numpy/numpydoc/issues/69
 # -- General configuration ------------------------------------------------

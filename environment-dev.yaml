@@ -9,7 +9,7 @@ dependencies:
   - python
   - pip
   - git
-  - jupyterlab
+  - ipykernel
 
   # Downgrade numpy for rpy2 support
   - numpy<=1.16.4

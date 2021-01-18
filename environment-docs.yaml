@@ -1,0 +1,26 @@
+# The basic requirements for developing chainladder
+name: cl_docs
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python
+  - pip
+  - git
+
+  - pandas
+  - scikit-learn
+  - sparse
+  - dill
+  - xlcompose
+
+  # Docs
+  - seaborn
+  - nbsphinx
+  - numpydoc
+
+  - pip:
+    - git+https://github.com/casact/chainladder-python/
+    - sphinx_gallery
