@@ -28,6 +28,6 @@ setup(
     package_data={'data': [data_path + item
                            for item in listdir('chainladder{}'.format(data_path))]},
     description=descr,
-    long_description=open('README.md').read(),
+    #long_description=open('README.md').read(),
     install_requires=dependencies,
 )
