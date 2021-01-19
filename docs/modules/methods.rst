@@ -8,8 +8,8 @@ Common Properties
 =================
 All IBNR estimators have ``ibnr_``, ``ultimate_``, ``full_triangle_`` and
 ``full_expectation_`` attributes.  In addition, they carry over the transformed
-triangle as `X_` along with all of its properties.  Finally, the following
-estimators implement the `predict` method which allows them to be used on
+triangle as ``X_`` along with all of its properties.  Finally, the following
+estimators implement the ``predict`` method which allows them to be used on
 different Triangles.
 
 .. _chainladder:
@@ -58,7 +58,7 @@ Mack Chainladder
 The :class:`MackChainladder` model can be regarded as a special form of a
 weighted linear regression through the origin for each development period. By using
 a regression framework, statistics about the variability of the data and the parameter
-estimates allows for the estimation of prediciton errors.  The Mack Chainladder
+estimates allows for the estimation of prediction errors. The Mack Chainladder
 method is the most basic of stochastic methods.
 
 
@@ -130,8 +130,8 @@ The generalized formula is:
 .. math::
    \sum_{k=0}^{n-1}(1-\frac{1}{CDF}) + Apriori\times (1-\frac{1}{CDF})^{n}
 
-`n=0` yields the expected loss method, `n=1` yields the traditional BF method,
-and finally when `n` is sufficiently large, the method converges to the
+``n=0`` yields the expected loss method, ``n=1`` yields the traditional BF method,
+and finally when ``n`` is sufficiently large, the method converges to the
 traditional CL method.
 
 .. figure:: /auto_examples/images/sphx_glr_plot_benktander_001.png

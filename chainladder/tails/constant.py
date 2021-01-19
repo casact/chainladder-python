@@ -18,7 +18,7 @@ class TailConstant(TailBase):
         of each successive LDF to 50% of the previous LDF.
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
-        age is used. Measures of variability from original `ldf_` are retained
+        age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
 
     Attributes

@@ -6,6 +6,7 @@
 
 .. autoclass:: {{ objname }}
    :members:
+   :inherited-members:
 
    {% block methods %}
    .. automethod:: __init__

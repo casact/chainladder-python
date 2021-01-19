@@ -17,7 +17,7 @@ Example output of Exhibits
 --------------------------
 The following example highlights the general look of the outputs when using
 chainladder to output to Excel.  This functionality comes from the companion
-library `xlcompose` which can be independently installed using `pip`
+library ``xlcompose`` which can be independently installed using ``pip``
 
 .. image:: ../_static/images/exhibits.PNG
 
@@ -25,7 +25,7 @@ DataFrame
 ---------
 
 **chainladder** comes with a :class:`chainladder.DataFrame` class that has a supercharged version of
-`pd.DataFrame.to_excel`.  This version allows for the export of any number of
+``pd.DataFrame.to_excel``.  This version allows for the export of any number of
 DataFrames in any layout desired with formats of your choosing.  Simply wrap a
 pandas dataframe the **chainladder** Dataframe to get access to this supercharged version.
 
@@ -36,7 +36,7 @@ pandas dataframe the **chainladder** Dataframe to get access to this supercharge
    >>> cl.DataFrame(df).to_excel('workbook.xlsx')
 
 Immediately, we get better default formatting and better column fitting. The
-`DataFrame` class is used exclusively for exporting to Excel and the normal
+``DataFrame`` class is used exclusively for exporting to Excel and the normal
 ``pd.DataFrame`` should be used for any other purpose.
 
 There are commonalities between ``cl.DataFrame.to_excel()`` and
@@ -74,8 +74,8 @@ nested dictionary.
    >>> formats={'Quantity':{'num_format':'#,#', 'font_color':'red'},
    ...          'Cost':  {'num_format':'#,0.00', 'bold':True}}
 
-Formatting options exist for the `index` and `header`.  Simply pass the desired
-formats through using `index_formats` and `header_formats`.
+Formatting options exist for the ``index`` and ``header``.  Simply pass the desired
+formats through using ``index_formats`` and ``header_formats``.
 
 **Example:**
    >>> index_formats={'italic':True, 'font_color':'red'}
@@ -92,8 +92,8 @@ Series
 ------
 A Series is a single column of data.  While the DataFrame assigns each of its
 columns to a column in a spreadsheet, you can have the Series column of data span
-multiple columns in a spreadsheet by passing a `width` argument.  Additionally,
-there is a `column_width` argument which determines the column
+multiple columns in a spreadsheet by passing a ``width`` argument.  Additionally,
+there is a ``column_width`` argument which determines the column
 width of each spreadsheet column used by the Series.
 
 **Example:**
@@ -110,7 +110,7 @@ Title
 -----
 Title is a convenience class that behaves like a Series.  It has its own default
 formatting style that looks title-esque.  When passed to other objects as the
-`title` argument, its width will take on the width of the containing object.
+``title`` argument, its width will take on the width of the containing object.
 However, it can be used as a stand-alone object much like the Series.
 
 **Example:**
@@ -118,7 +118,7 @@ However, it can be used as a stand-alone object much like the Series.
    ...        'ACME Grocery Company']
    >>> cl.DataFrame(df, title=cl.Title(title)).to_excel('workbook.xlsx')
 
-As with everything else, formats are adjustable through the `formats` argument.
+As with everything else, formats are adjustable through the ``formats`` argument.
 
 **Example:**
    >>> title_formats = [{'font_color': 'red'},
@@ -128,14 +128,14 @@ As with everything else, formats are adjustable through the `formats` argument.
 Image
 -----
 Embedding images in Excel can be done with the `Image` class.  However, because
-images are not embedded in cells directly, you must specify the `width` and
-`height` of the image (in cells) for **chainladder** to know how much room the image
+images are not embedded in cells directly, you must specify the ``width`` and
+``height`` of the image (in cells) for **chainladder** to know how much room the image
 consumes.
 
 **Example:**
    >>> cl.Image('logo.png', width=1, height=5).to_excel('workbook.xlsx')
 
-All objects have a `width` and `height` property.  These properties are used
+All objects have a ``width`` and ``height`` property.  These properties are used
 by **chainladder** to manage placement in the spreadsheet using layout objects.
 
 `Image` also takes a format argument, and as expected, it takes the form of a
@@ -195,7 +195,7 @@ Nesting can be a deep as you want allowing for a highly customized layout.
 **Example:**
    >>> cl.Row(col, col).to_excel('workbook.xlsx')
 
-``Row`` and ``Column`` optionally take `title` keywords that function the same
+``Row`` and ``Column`` optionally take ``title`` keywords that function the same
 as those in ``DataFrame``.
 
 **Example:**
@@ -210,7 +210,7 @@ CSpacer and RSpacer
 -------------------
 Often spacing between separate components in our layout is desired.  For columns
 you can insert a CSpacer object and for rows you can insert an RSpacer object.
-Like the `Series` the spacer objects have optional `width` and `column_widths`
+Like the `Series` the spacer objects have optional ``width`` and ``column_widths``
 arguments for further customization.
 
 **Example:**
@@ -252,7 +252,7 @@ The object itself can be any of the above objects.
 Modifying defaults for all objects
 ----------------------------------
 You may choose to override all defaults.  For example, by default, the font is
-set to 'Calibri'.  `to_excel()` takes an additional parameter `default_formats`
+set to 'Calibri'.  ``to_excel()`` takes an additional parameter ``default_formats``
 to will apply to all nested objects you intend to export.
 
 **Example:**

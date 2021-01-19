@@ -42,9 +42,8 @@ import chainladder as cl
 
 extensions = ['sphinx.ext.autodoc', 'numpydoc', 'sphinx_gallery.gen_gallery',
               'sphinx.ext.githubpages', 'nbsphinx', 'sphinx.ext.mathjax',
-              'sphinx.ext.autosummary', 'sphinx_gallery.load_style']
-
-numpydoc_class_members_toctree = False
+              'sphinx.ext.autosummary', 'sphinx_gallery.load_style',
+              'IPython.sphinxext.ipython_console_highlighting']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -146,7 +145,7 @@ html_short_title = 'chainladder'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['images']
+html_static_path = ['_static/images']
 
 # -- Options for HTMLHelp output ------------------------------------------
 # If false, no module index is generated.
@@ -239,8 +238,8 @@ issues_user_uri = 'https://github.com/{user}'
 
 def setup(app):
     # to hide/show the prompt in code examples:
-    app.add_javascript('js/copybutton.js')
-    app.add_javascript('js/extra.js')
+    app.add_js_file('js/copybutton.js')
+    app.add_js_file('js/extra.js')
     app.connect('build-finished', make_carousel_thumbs)
 
 

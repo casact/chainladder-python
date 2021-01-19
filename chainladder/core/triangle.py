@@ -42,8 +42,8 @@ class Triangle(TriangleBase):
         omitted then date format will be inferred by pandas.
     cumulative : bool
         Whether the triangle is cumulative or incremental.  This attribute is
-        required to use the `grain` and `dev_to_val` methods and will be
-        automatically set when invoking `cum_to_incr` or `incr_to_cum` methods.
+        required to use the ``grain`` and ``dev_to_val`` methods and will be
+        automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
 
     Attributes
     ----------
@@ -56,7 +56,9 @@ class Triangle(TriangleBase):
     development : Series
         Represents all available levels of the development dimension.
     key_labels : list
-        Represents the `index` axis labels
+        Represents the ``index`` axis labels
+    virtual_columns : Series
+        Represents the subset of columns of the triangle that are virtual.
     valuation : DatetimeIndex
         Represents all valuation dates of each cell in the Triangle.
     origin_grain : str
@@ -64,8 +66,7 @@ class Triangle(TriangleBase):
     development_grain : str
         The grain of the development vector ('Y', 'Q', 'M')
     shape : tuple
-        The 4D shape of the triangle instance with axes corresponding to (index,
-         columns, origin, development)
+        The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
     link_ratio, age_to_age
         Displays age-to-age ratios for the triangle.
     valuation_date : date
@@ -318,7 +319,9 @@ class Triangle(TriangleBase):
 
         Returns
         -------
-            Updated instance of triangle with valuation periods.
+        Triangle
+            Updated instance of the triangle with valuation periods.
+
         """
         if self.is_val_tri:
             if inplace:

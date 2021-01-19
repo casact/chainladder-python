@@ -25,7 +25,7 @@ Classes
 
 .. autosummary::
   :toctree: generated/
-  :template: class.rst
+  :template: class_inherited.rst
 
   Triangle
   DevelopmentCorrelation
@@ -155,3 +155,19 @@ Classes
    Tabs
    CSpacer
    RSpacer
+
+Functions
+---------
+.. currentmodule:: chainladder
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   load_sample
+   read_pickle
+   read_json
+   concat
+   load_sample
+   minimum
+   maximum

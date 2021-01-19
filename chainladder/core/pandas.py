@@ -230,7 +230,7 @@ class TrianglePandas:
         return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs):
-        return self.iloc[self.index.sort_values(self.key_labels).index]
+        return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
     def exp(self):
         xp = self.get_array_module()

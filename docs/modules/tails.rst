@@ -86,10 +86,10 @@ are supported.
 
 In general, ``inverse_power`` fit produce more conservative tail estimates than
 the ``exponential`` fit.  Both are fit using basic OLS regression on transformed
-`X` and `y` values.
+``X`` and ``y`` values.
 
 For exponential curve fitting, we use fit a regression to the natural log of
-the development portion of a link-ratio, `f`.
+the development portion of a link-ratio, ``f``.
 
 
 Extrapolation Period
@@ -106,22 +106,22 @@ asymptotic value.
 
 Regression parameters
 ----------------------
-Underlying the curve fit is an OLS regression which generates both a `slope_`
-and `intercept_` term.
+Underlying the curve fit is an OLS regression which generates both a ``slope_``
+and ``intercept_`` term.
 
-For the `exponential` curve fit with slope, b and intercept a, the tail factor
+For the ``exponential`` curve fit with slope, b and intercept a, the tail factor
 is:
 
 .. math::
    \prod_{i}^{N}1+exp(\beta X+\alpha )
 
-For the `inverse_power` curve, the tail factor is:
+For the ``inverse_power`` curve, the tail factor is:
 
 .. math::
    \prod_{i}^{N}1+exp(\alpha) X^{\beta}
 
 
-Deriving the `tail_` factor manually:
+Deriving the ``tail_`` factor manually:
 
   >>> import chainladder as cl
   >>> import numpy as np

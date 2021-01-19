@@ -105,13 +105,13 @@ development, exponential tail curve fitting, and get the 95%-ile IBNR estimate.
   NaN  2.606327e+07
 
 Each estimator contained within a pipelines ``steps`` can be accessed by name
-using the `named_steps` attribute of the `Pipeline`.
+using the ``named_steps`` attribute of the `Pipeline`.
 
 Chainladder Persistence
 ========================
 
 The `Pipeline` along with all estimators can be persisted to disk or database
-using `to_json` or `to_pickle`.  Restoring the pipeline is as simple as
+using ``to_json`` or ``to_pickle``.  Restoring the pipeline is as simple as
 ``cl.read_json`` or ``cl.read_pickle``.
 
   >>> # Persisting the pipe to JSON

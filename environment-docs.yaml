@@ -17,6 +17,8 @@ dependencies:
   - xlcompose
 
   # Docs
+  - ipython
+  - parso>=0.8
   - seaborn
   - nbsphinx
   - numpydoc

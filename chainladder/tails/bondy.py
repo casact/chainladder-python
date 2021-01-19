@@ -21,7 +21,7 @@ class TailBondy(TailBase):
         age can be used.
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
-        age is used. Measures of variability from original `ldf_` are retained
+        age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
 
     Attributes
@@ -41,7 +41,7 @@ class TailBondy(TailBase):
     std_err_ : Triangle
         std_err with tail factor applied
     earliest_ldf_ : DataFrame
-        Based on the `earliest_age` selection, this shows the seed `ldf_` used
+        Based on the ``earliest_age`` selection, this shows the seed ``ldf_`` used
         in fitting the Bondy exponent.
 
     See also

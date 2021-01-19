@@ -6,10 +6,23 @@
 Triangle
 ========
 
+Introduction
+============
+Why not Pandas?
+---------------
+The chainladder package has its own :class:`Triangle` data structure that behaves much
+like a pandas ``DataFrame``.  This begs the question, why not just use pandas?
+There are several advantages over having a dedicated Triangle object:
+  * Actuaries work with sets of triangles.  DataFrames, being two dimensional, support single triangles with grace but become unwieldy with multiple triangles.
+  * We can carry through the meaningful pandas functionality while also supporting triangle specific methods not found in pandas
+  * Improved memory footprint with sparse array representation in backend
+  * Calculated fields with "virtual" columns allows for lazy column evaluation of Triangles as well as improved memory footprint for larger triangles.
+  * Ability to support GPU-based backends.
+
+
+
 Structure
-=========
-Intro
------
+----------
 The :class:`Triangle` is the data structure of the chainladder package. Just as
 Scikit-learn likes to only consume numpy arrays, Chainladder only likes
 Triangles.  It is a 4D data structure with labeled axes.  These axes are its
@@ -17,7 +30,7 @@ index, columns, origin, development.
 
 ``index`` (axis 0):
     The index  is the lowest grain at which you want to manage the triangle.
-    These can be things like state or company.  Like a pandas.multiIndex, you
+    These can be things like state or company.  Like a ``pandas.multiIndex``, you
     can throw more than one column into the index.
 
 ``columns`` (axis 1):
@@ -103,7 +116,7 @@ Sample Data
 The ``chainladder`` package has several sample triangles.  Many of these come
 from exiting papers and can be used to verify the results of those papers.
 Additionally, They are a quick way of exploring the functionality of the package.
-These triangles can be called by name using the `load_sample` function.
+These triangles can be called by name using the :func:`~chainladder.load_sample` function.
 
 **Example:**
   >>> cl.load_sample('clrd')
@@ -157,36 +170,53 @@ Alternatively, they can be set per Triangle instance.
    You must have a CUDA-enabled graphics card and CuPY installed to use the GPU
    backend.  These are optional dependencies of chainladder.
 
-Virtual Columns
----------------
-There are instances where we want to defer calculations, we can create "virtual"
-columns that re-execute on demand.
+Chainladder by default will swap between the ``numpy`` and ``sparse`` backends.  This
+substantially improves the memory footprint of chainladder substantially beyond
+what can be achieved with pandas alone.  When a Triangle becomes sufficiently large
+and has a lot of 0 or null entries, the triangle will silently swap between the
+``numpy`` and ``sparse`` backends.
 
+**Example**
   >>> import chainladder as cl
-  >>> clrd = cl.load_sample('clrd')
-  >>> # Create a virtual column by passing a function.
-  >>> clrd['PaidLossRatio'] = lambda x : x['CumPaidLoss'] / x['EarnedPremDIR']
-  >>> # Good - Defer loss ratio calculation until after summing premiums and losses
-  >>> clrd.sum()['PaidLossRatio']
-  >>> # Bad - Calculates loss ratios and then sums them
-  >>> clrd['PaidLossRatio'].sum()
+  >>> prism = cl.load_sample('prism')
+  >>> prism
+                                               Triangle Summary
+  Valuation:                                            2017-12
+  Grain:                                                   OMDM
+  Shape:                                   (34244, 4, 120, 120)
+  Index:      [ClaimNo, Line, Type, ClaimLiability, Limit, D...
+  Columns:     [reportedCount, closedPaidCount, Paid, Incurred]
+  >>> prism.array_backend
+  'sparse'
+  >>> prism.sum().array_backend
+  'numpy'
 
-Virtual column expressions should only reference other columns in the same triangle.
-A Triangle without all the underlying columns will fail.
+You can globally disable the backend swapping by invoking ``auto_sparse(False)``.
+Any triangle with a cupy backend will not invoke auto_sparse.  In the future it may be supported
+when there is better sparse-GPU array support.:
 
-  >>> # Eliminating EarnedPremDIR will result in a calculation failure
-  >>> clrd[['CumPaidLoss', 'PaidLossRatio']].sum()['PaidLossRatio']
+**Example**
+  >>> import chainladder as cl
+  >>> cl.auto_sparse(False)
+  >>> prism = cl.load_sample('prism', array_backend='sparse')
+  >>> prism.array_backend
+  'sparse'
+  >>> prism.sum().array_backend
+  'sparse'
 
-When used in tandem with the 'sparse' backend, virtual columns can also substantially
-reduce the memory footprint of your Triangle.  This is because the calculation
-expression is the only thing in memory.
+.. warning::
+   Loading 'prism' with the numpy backend will consume all of your systems memory.
+
+
+
+
 
 Basic Functionality
 ===================
 Representation
 --------------
 The :class:`Triangle` has two different representations.  When only a single
-`index` AND single `column` is selected.  The triangle is the typical 2-dimensional
+``index`` AND single ``column`` is selected.  The triangle is the typical 2-dimensional
 representation we typically think of.
 
 **Example:**
@@ -203,7 +233,7 @@ representation we typically think of.
   2012  5102.0  9650.0      NaN      NaN      NaN      NaN      NaN
   2013  6283.0     NaN      NaN      NaN      NaN      NaN      NaN
 
-If more than one `index` or more than one column is present, then the Triangle
+If more than one ``index`` or more than one column is present, then the Triangle
 takes on more of a summary view.
 
 **Example:**
@@ -330,7 +360,7 @@ See :class:`Triangle` for the complete API specification of methods and attribut
 Trend
 -----
 A uniform `trend` factor can also be applied to a Triangle.  The trend can
-be applied along the `origin` or `valuation` axes.
+be applied along the ``origin`` or ``valuation`` axes.
 
   >>> import chainladder as cl
   >>> tri = cl.load_sample('ukmotor')
@@ -346,7 +376,7 @@ be applied along the `origin` or `valuation` axes.
   2013  1.000000       NaN       NaN       NaN       NaN       NaN  NaN
 
 While the `trend` method only allows for a single trend, you can create
-compound trends using `start` and `end` arguments and chaining them together.
+compound trends using ``start`` and ``end`` arguments and chaining them together.
 
   >>> tri.trend(0.05, axis='valuation', start=tri.valuation_date, end='2011-12-31') \
   ...    .trend(0.10, axis='valuation', start='2011-12-31')/tri
@@ -366,7 +396,7 @@ The multiplicative chainladder method is based on the strong assumptions of
 independence across origin years and across valuation years. Mack developed
 tests to verify if these assumptions hold.
 
-These tests are included as methods on the triangle class `valuation_correlation`
+These tests are included as methods on the triangle class ``\valuation_correlation`
 and `development_correlation`. ``False`` indicates that correlation between years
 is not sufficiently large.
 
@@ -417,6 +447,7 @@ of the object using pandas-style ``loc``/``iloc`` or boolean filtering.
    a divergence from the pandas API.
 
 As of version ``0.7.6``, four-dimensional slicing is supported:
+
 **Example:**
   >>> import chainladder as cl
   >>> clrd = cl.load_sample('clrd')
@@ -453,6 +484,49 @@ rules.  If broadcasting fails, arithmetic operations will rely on ``origin`` and
   >>> # Numpy broadcasting equivalent fails
   >>> raa[raa.origin<'1985'].values+raa[raa.origin>='1985'].values
 
+Arithmetic between two Triangles with different labels will align the axes
+of each Triangle consistent with arithmetic of a pandas Series.  Bypassing
+index matching can be accomplished with arithmetic between an Triangle and an array.
+
+**Example:**
+  >>> import chainladder as cl
+  >>> s1 = cl.load_sample('clrd').iloc[:3]
+  >>> s2 = s1.sort_index(ascending=False)
+  >>> s1 + s2 == 2 * s1
+  True
+  >>> s1 + s2.values == 2 * s1
+  False
+  >>> s3 = s1.iloc[:, ::-1]
+  >>> s1 + s3 == 2 * s1
+  True
+
+Virtual Columns
+---------------
+There are instances where we want to defer calculations, we can create "virtual"
+columns that defer calculation to when needed.  These columns can be created by wrapping a
+normal column in a function.  Lambda expressions work as a tidy representation of
+virtual columns.
+
+  >>> import chainladder as cl
+  >>> clrd = cl.load_sample('clrd')
+  >>> # A physical column with immediate evaluation
+  >>> clrd['PaidLossRatio'] = clrd['CumPaidLoss'] / clrd['EarnedPremDIR']
+  >>> # A virtual column with deferred evaluation
+  >>> clrd['PaidLossRatio'] = lambda clrd : clrd['CumPaidLoss'] / clrd['EarnedPremDIR']
+  >>> # Good - Defer loss ratio calculation until after summing premiums and losses
+  >>> clrd.sum()['PaidLossRatio']
+  >>> # Bad - Calculates loss ratios and then sums
+  >>> clrd['PaidLossRatio'].sum()
+
+Virtual column expressions should only reference other columns in the same triangle.
+A Triangle without all the underlying columns will fail.
+
+  >>> # Eliminating EarnedPremDIR will result in a calculation failure
+  >>> clrd[['CumPaidLoss', 'PaidLossRatio']].sum()['PaidLossRatio']
+
+When used in tandem with the 'sparse' backend, virtual columns can also substantially
+reduce the memory footprint of your Triangle.  This is because the calculation
+expression is the only thing in memory.
 
 Aggregations
 ------------
@@ -460,8 +534,8 @@ It is generally good practice to bring your data into ``chainladder`` at a ganul
 that is comfortably supported by your system RAM.  This provides the greatest flexibility
 in analyzing your data within the ``chainladder`` framework.  However, not everything
 needs to be analyzed at the most granular level. Like pandas, you can aggregate
-multiple triangles within a :class:`Triangle` by using ``sum()`` which can
-optionally be coupled with ``groupby()``.
+multiple triangles within a :class:`Triangle` by using `sum()` which can
+optionally be coupled with `groupby()`.
 
 **Example:**
    >>> clrd = cl.load_sample('clrd')
@@ -512,7 +586,7 @@ using the `to_frame` method.
   1997  5754249.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN        NaN        NaN
 
 From this point the results can be operated on directly in pandas.  The
-`to_frame()` functionality works when a Triangle is sliced down to any two axes
+`to_frame` functionality works when a Triangle is sliced down to any two axes
 and is not limited to just the ``index`` and ``column``.
 
 **Example:**
@@ -533,12 +607,55 @@ and is not limited to just the ``index`` and ``column``.
   prodliab   110973.0   112614.0    121255.0    100276.0     76059.0     94462.0    111264.0     62018.0    28107.0    10682.0
   wkcomp    1241715.0  1308706.0   1394675.0   1414747.0   1328801.0   1187581.0   1114842.0    962081.0   736040.0   340132.0
 
+The entire 4D triangle can be flattened to a DataFrame in long format.  This can
+be handy for moving back and forth between pandas and chainladder.
+
+Because ``chainladder`` only supports valuation dates when creating new triangles,
+it is often helpful converting to a valuation format before moving to pandas.
+
+**Example:**
+  >>> import chainladder as cl
+  >>> clrd = cl.load_sample('clrd')
+  >>> df = clrd.dev_to_val().cum_to_incr().to_frame()
+  >>> df.head()
+                              origin                   development  BulkLoss  CumPaidLoss  EarnedPremCeded  EarnedPremDIR  EarnedPremNet  IncurLoss
+  GRNAME          LOB
+  Adriatic Ins Co othliab 1995-01-01 1995-12-31 23:59:59.999999999       8.0          NaN            131.0          139.0            8.0        8.0
+                  othliab 1995-01-01 1996-12-31 23:59:59.999999999      -4.0          NaN              NaN            NaN            NaN        3.0
+                  othliab 1995-01-01 1997-12-31 23:59:59.999999999       NaN          3.0              NaN            NaN            NaN       -4.0
+                  othliab 1996-01-01 1996-12-31 23:59:59.999999999      40.0          NaN            359.0          410.0           51.0       40.0
+                  othliab 1997-01-01 1997-12-31 23:59:59.999999999      31.0          NaN            425.0          458.0           33.0       67.0
+  >>> cl.Triangle(
+  ...     df.reset_index(), index=['GRNAME', 'LOB'], origin='origin', development='development',
+  ...     columns=['BulkLoss', 'CumPaidLoss', 'EarnedPremCeded', 'EarnedPremDIR', 'EarnedPremNet', 'IncurLoss']
+  ... ).incr_to_cum()
+                                               Triangle Summary
+  Valuation:                                            1997-12
+  Grain:                                                   OYDY
+  Shape:                                       (775, 6, 10, 10)
+  Index:                                          [GRNAME, LOB]
+  Columns:    [BulkLoss, CumPaidLoss, EarnedPremCeded, Earne...
+
+To enforce long format when moving to pandas the ``keepdims`` argument guarantees
+that all 4 dimensions of the Triangle will be preserved when moving to pandas.
+
+**Example:**
+  >>> import chainladder as cl
+  >>> cl.load_sample('raa').to_frame(keepdims=True).head()
+            origin  development   values
+  Total
+  Total 1981-01-01           12   5012.0
+  Total 1981-01-01           24   8269.0
+  Total 1981-01-01           36  10907.0
+  Total 1981-01-01           48  11805.0
+  Total 1981-01-01           60  13539.0
+
 
 Exposing Pandas functionality
 -----------------------------
-The ability to move from a 2D triangle to a pandas DataFrame opens up the full
+The ability to move from a triangle to a pandas DataFrame opens up the full
 suite of pandas functionality to you.  For the more commonly used
-functionality, we handle the ``to_frame()`` for you.  For example,
+functionality, we handle the `to_frame()` for you.  For example,
 ``triangle.to_frame().plot()`` is equivalent to ``triangle.plot()``.
 
 **Example**
@@ -555,20 +672,20 @@ functionality, we handle the ``to_frame()`` for you.  For example,
 Many of the more commonly used pandas methods are passed through in this way
 allowing for working with triangles as DataFrames.
 
-============ ================ =========== ==================
-Aggregations IO               Shaping     Other
-============ ================ =========== ==================
-`sum`        `to_clipboard`   `unstack`   `plot`
-`mean`       `to_csv`         `pivot`     `rename`
-`median`     `to_excel`       `melt`      `pct_chg`
-`max`        `to_json`        `T`         `round`
-`min`        `to_html`        `drop`      `hvplot`
-`prod`       `to_dict`        `dropna`    `drop_duplicates`
-`var`                                     `describe`
+============= ================= ============ ===================
+Aggregations  IO                Shaping       Other
+============= ================= ============ ===================
+`sum`         `to_clipboard`    `unstack`    `plot`
+`mean`        `to_csv`          `pivot`      `rename`
+`median`      `to_excel`        `melt`       `pct_chg`
+`max`         `to_json`         `T`          `round`
+`min`         `to_html`         `drop`       `hvplot`
+`prod`        `to_dict`         `dropna`     `drop_duplicates`
+`var`                                        `describe`
 `std`
 `cumsum`
 `quantile`
-============ ================ =========== ==================
+============= ================= ============ ===================
 
 .. note::
    While some of these methods have been rewritten to return a Triangle, Many

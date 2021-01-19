@@ -17,7 +17,7 @@ class TailClark(TailBase):
         Options are 'loglogistic' and 'weibull'
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
-        age is used. Measures of variability from original `ldf_` are retained
+        age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
 
     Attributes
@@ -33,7 +33,7 @@ class TailClark(TailBase):
     omega_ : DataFrame
         Estimates of the omega parameter of the growth curve.
     elr_ : DataFrame
-        The Expected Loss Ratio parameter. This only exists when a `sample_weight`
+        The Expected Loss Ratio parameter. This only exists when a ``sample_weight``
         is provided to the Estimator.
     scale_ : DataFrame
         The scale parameter of the model.
