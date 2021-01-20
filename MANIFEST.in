@@ -1,4 +1,6 @@
 include LICENSE
+include requirements.txt
+include README.rst
 
 include chainladder/utils/data/abc.csv
 include chainladder/utils/data/auto.csv

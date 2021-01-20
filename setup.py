@@ -8,10 +8,13 @@ from os import listdir
 with open('requirements.txt', 'r') as f:
     dependencies = f.read().splitlines()
 
+with open("README.rst") as f:
+    long_desc = f.read()
+
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/casact/chainladder-python'
-version='0.7.11' # Put this in __init__.py
+version='0.7.12' # Put this in __init__.py
 
 data_path = ''
 setup(
@@ -28,6 +31,6 @@ setup(
     package_data={'data': [data_path + item
                            for item in listdir('chainladder{}'.format(data_path))]},
     description=descr,
-    #long_description=open('README.md').read(),
+    long_description=long_desc,
     install_requires=dependencies,
 )
