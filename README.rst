@@ -3,8 +3,7 @@
 chainladder (python)
 ====================
 
-|PyPI version| |Conda Version| |Build Status| |Documentation Status|
-|codecov.io|
+|PyPI version| |Conda Version| |Build Status| |codecov io| |Documentation Status|
 
 chainladder - Property and Casualty Loss Reserving in Python
 ------------------------------------------------------------
@@ -19,8 +18,7 @@ package with ease. Save your mental energy for actuarial work.
 Available Estimators
 --------------------
 
-``chainladder`` has an ever growing list of estimators that work
-seemlessly together:
+``chainladder`` has an ever growing list of estimators that work seemlessly together:
 
 .. _R ChainLadder package: https://github.com/mages/ChainLadder
 .. _pandas: https://pandas.pydata.org/
@@ -28,36 +26,36 @@ seemlessly together:
 
 .. |PyPI version| image:: https://badge.fury.io/py/chainladder.svg
    :target: https://badge.fury.io/py/chainladder
+
 .. |Conda Version| image:: https://img.shields.io/conda/vn/conda-forge/chainladder.svg
    :target: https://anaconda.org/conda-forge/chainladder
+
 .. |Build Status| image:: https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg
+
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
    :target: http://chainladder-python.readthedocs.io/en/latest/?badge=latest
-.. |codecov.io| image:: https://codecov.io/github/casact/chainladder-python/coverage.svg?branch=master
+
+.. |codecov io| image:: https://codecov.io/github/casact/chainladder-python/coverage.svg?branch=master
    :target: https://codecov.io/github/casact/chainladder-python?branch=master
 
 
 
- +----------------+----------------+----------------+----------------+
- | Loss           | Tails Factors  | IBNR Models    | Adjustments &  |
- | Development    |                |                | Workflow       |
- +================+================+================+================+
- | `Development`_ | `TailCurve`_   | `Chainladder`_ | `Bootst        |
- |                |                |                | rapODPSample`_ |
- +----------------+----------------+----------------+----------------+
- | `Develop       | `              | `Mac           | `Ber           |
- | mentConstant`_ | TailConstant`_ | kChainladder`_ | quistSherman`_ |
- +----------------+----------------+----------------+----------------+
- | `Muni          | `TailBondy`_   | `Bornhuet      | `Pipeline`_    |
- | chAdjustment`_ |                | tterFerguson`_ |                |
- +----------------+----------------+----------------+----------------+
- | `ClarkLDF`_    | `TailClark`_   | `Benktander`_  | `GridSearch`_  |
- +----------------+----------------+----------------+----------------+
- | `Increme       |                | `CapeCod`_     | `Para          |
- | ntalAdditive`_ |                |                | llelogramOLF`_ |
- +----------------+----------------+----------------+----------------+
- |                |                |                | `Trend`_       |
- +----------------+----------------+----------------+----------------+
++------------------------------+------------------+-------------------------+-----------------------+
+| Loss                         | Tails Factors    | IBNR Models             | Adjustments &         |
+| Development                  |                  |                         | Workflow              |
++==============================+==================+=========================+=======================+
+| `Development`_               | `TailCurve`_     | `Chainladder`_          | `BootstrapODPSample`_ |
++------------------------------+------------------+-------------------------+-----------------------+
+| `DevelopmentConstant`_       | `TailConstant`_  | `MackChainladder`_      | `BerquistSherman`_    |
++------------------------------+------------------+-------------------------+-----------------------+
+| `MunichAdjustment`_          | `TailBondy`_     | `BornhuettterFerguson`_ | `Pipeline`_           |
++------------------------------+------------------+-------------------------+-----------------------+
+| `ClarkLDF`_                  | `TailClark`_     | `Benktander`_           | `GridSearch`_         |
++------------------------------+------------------+-------------------------+-----------------------+
+| `IncrementalAdditive`_       |                  | `CapeCod`_              | `ParallelogramOLF`_   |
++------------------------------+------------------+-------------------------+-----------------------+
+|                              |                  |                         | `Trend`_              |
++------------------------------+------------------+-------------------------+-----------------------+
 
 Documentation
 -------------
@@ -90,10 +88,14 @@ code documentation.
 Getting Started Tutorials
 -------------------------
 
-Tutorial notebooks are available for download `here`_. \* `Working with
-Triangles`_ \* `Selecting Development Patterns`_ \* `Extending
-Development Patterns with Tails`_ \* `Applying Deterministic Methods`_
-\* `Applying Stochastic Methods`_ \* `Large Datasets`_
+Tutorial notebooks are available for download `here`_.
+
+* `Working with Triangles`_
+* `Selecting Development Patterns`_
+* `Extending Development Patterns with Tails`_
+* `Applying Deterministic Methods`_
+* `Applying Stochastic Methods`_
+* `Large Datasets`_
 
 Installation
 ------------
