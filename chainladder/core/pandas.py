@@ -13,11 +13,11 @@ class TriangleGroupBy:
         if self.axis == 0:
             self.groups = obj.index.groupby(by)
         if self.axis == 1:
-            self.groups = obj.columns.groupby(by)
+            self.groups = pd.DataFrame(obj.columns).groupby(by)
         if self.axis == 2:
-            self.groups = obj.origin.groupby(by)
+            self.groups = pd.DataFrame(obj.origin).groupby(by)
         if self.axis == 3:
-            self.groups = obj.development.groupby(by)
+            self.groups = pd.DataFrame(obj.development).groupby(by)
 
 
 class TrianglePandas:
@@ -306,24 +306,33 @@ def add_groupby_agg_func(cls, k, v):
         from chainladder.utils import concat
 
         xp = self.obj.get_array_module()
-
+        obj = self.obj.copy()
         values = [
             getattr(
-                self.obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
+                obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
             )(self.axis, auto_sparse=False, keepdims=True)
             for i in self.groups.indices.values()
         ]
-        self.obj = concat(values, axis=self.axis, ignore_index=True)
-
-        if isinstance(self.groups.dtypes.index, pd.MultiIndex):
-            index = pd.DataFrame(np.zeros(len(self.groups.dtypes.index)), index=self.groups.dtypes.index, columns=['_']).reset_index().iloc[:, :-1]
-            self.obj.index = index
+        obj = concat(values, axis=self.axis, ignore_index=True)
+        print(self.axis)
+        if self.axis == 0:
+            if isinstance(self.groups.dtypes.index, pd.MultiIndex):
+                index = pd.DataFrame(np.zeros(len(self.groups.dtypes.index)), index=self.groups.dtypes.index, columns=['_']).reset_index().iloc[:, :-1]
+                obj.index = index
+            else:
+                index = pd.DataFrame(self.groups.dtypes.index)
+                obj.key_labels = index.columns.tolist()
+                obj.kdims = index.values
         else:
-            index = pd.DataFrame(self.groups.dtypes.index)
-            self.obj.key_labels = index.columns.tolist()
-            self.obj.kdims = index.values
-        self.obj._set_slicers()
-        return self.obj
+            index = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
+        if self.axis == 1:
+            obj.vdims = index
+        if self.axis == 2:
+            obj.odims = index
+        if self.axis == 3:
+            obj.ddims = index
+        obj._set_slicers()
+        return obj
 
     set_method(cls, agg_func, k)
 

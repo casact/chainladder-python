@@ -26,7 +26,7 @@ setup(
     scripts=[],
     url=url,
     download_url='{}/archive/v{}.tar.gz'.format(url, version),
-    license='LICENSE',
+    license='MPL-2.0',
     include_package_data=True,
     package_data={'data': [data_path + item
                            for item in listdir('chainladder{}'.format(data_path))]},

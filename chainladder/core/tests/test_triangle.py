@@ -662,3 +662,10 @@ def test_loc_tuple():
 def test_index_broadcasting():
     assert tri == tri_gt
     assert ((tri/tri.sum()) - ((1 / tri.sum())*tri)).sum().sum().sum() < 1e-4
+
+def test_groupby_axis1():
+    assert tri == tri_gt
+    clrd = tri.sum('origin').sum('development')
+    groups = [i.find('Loss')>=0 for i in clrd.columns]
+    assert np.all(clrd.to_frame().groupby(groups, axis=1).sum() == clrd.groupby(groups, axis=1).sum().to_frame())
+    assert np.all(clrd.to_frame().groupby('LOB').sum() == clrd.groupby('LOB').sum().to_frame())
