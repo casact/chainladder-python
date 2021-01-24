@@ -31,7 +31,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         A triangle representation of the trend factors
     """
 
-    def __init__(self, trend=0.0, end_date=None,  axis='origin'):
+    def __init__(self, trend=0.0, end_date=None, axis="origin"):
         self.trend = trend if type(trend) is list else [trend]
         self.end_date = end_date if type(end_date) is list else [end_date]
         self.axis = axis
@@ -51,12 +51,15 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         self : object
             Returns the instance itself.
         """
-        date = [item if item else X.valuation_date.strftime('%Y-%m-%d') for item in self.end_date]
+        date = [
+            item if item else X.valuation_date.strftime("%Y-%m-%d")
+            for item in self.end_date
+        ]
         date = pd.to_datetime(date).tolist()
         self.trend_ = X.copy()
         for i, trend in enumerate(self.trend):
             self.trend_ = self.trend_.trend(trend, self.axis, date[i])
-        self.trend_  = self.trend_ / X
+        self.trend_ = self.trend_ / X
         return self
 
     def transform(self, X, y=None, sample_weight=None):

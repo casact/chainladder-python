@@ -35,7 +35,9 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         A triangle representation of the on-level factors
     """
 
-    def __init__(self, rate_history=None, change_col='', date_col='', vertical_line=False):
+    def __init__(
+        self, rate_history=None, change_col="", date_col="", vertical_line=False
+    ):
         self.rate_history = rate_history
         self.change_col = change_col
         self.date_col = date_col
@@ -71,33 +73,35 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             idx = obj.groupby(groups).sum()
 
         kw = dict(
-            start_date = X.origin[0].to_timestamp(how='s'),
-            end_date = X.origin[-1].to_timestamp(how='e'),
-            grain = X.origin_grain,
-            vertical_line = self.vertical_line
+            start_date=X.origin[0].to_timestamp(how="s"),
+            end_date=X.origin[-1].to_timestamp(how="e"),
+            grain=X.origin_grain,
+            vertical_line=self.vertical_line,
         )
 
         if len(groups) > 0:
             tris = []
             for item in idx.index.set_index(groups).iterrows():
                 r = self.rate_history.set_index(groups).loc[item[0]].copy()
-                r[self.change_col] = r[self.change_col]+1
-                r = (r.groupby(self.date_col)[self.change_col].prod()-1).reset_index()
+                r[self.change_col] = r[self.change_col] + 1
+                r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
                 date = r[self.date_col]
                 values = r[self.change_col]
-                olf = parallelogram_olf(values=values, date=date, **kw).values[None, None]
-                if X.array_backend == 'cupy':
+                olf = parallelogram_olf(values=values, date=date, **kw).values[
+                    None, None
+                ]
+                if X.array_backend == "cupy":
                     olf = X.get_array_module().array(olf)
-                tris.append((idx.loc[item[0]]*0+1)*olf)
+                tris.append((idx.loc[item[0]] * 0 + 1) * olf)
             self.olf_ = concat(tris, 0).latest_diagonal
         else:
             r = self.rate_history.copy()
-            r[self.change_col] = r[self.change_col]+1
-            r = (r.groupby(self.date_col)[self.change_col].prod()-1).reset_index()
+            r[self.change_col] = r[self.change_col] + 1
+            r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
             date = r[self.date_col]
             values = r[self.change_col]
             olf = parallelogram_olf(values=values, date=date, **kw)
-            self.olf_ = ((idx*0+1)*olf.values[None, None]).latest_diagonal
+            self.olf_ = ((idx * 0 + 1) * olf.values[None, None]).latest_diagonal
         return self
 
     def transform(self, X, y=None, sample_weight=None):

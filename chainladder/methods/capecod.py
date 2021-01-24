@@ -4,6 +4,7 @@
 from chainladder.methods import MethodBase
 import warnings
 
+
 class CapeCod(MethodBase):
     """Applies the CapeCod technique to triangle **X**
 
@@ -66,17 +67,19 @@ class CapeCod(MethodBase):
         cdf = self._align_cdf(ult, sample_weight)
         exposure = sample_weight.values
         reported_exposure = exposure / cdf
-        if hasattr(X, 'trend_'):
+        if hasattr(X, "trend_"):
             if self.trend != 0:
-                warnings.warn("CapeCod Trend assumption is ignored when X has a trend_ property.")
+                warnings.warn(
+                    "CapeCod Trend assumption is ignored when X has a trend_ property."
+                )
             trend_array = X.trend_.latest_diagonal.values
         else:
             trend_array = (X.trend(self.trend) / X).latest_diagonal.values
-        if hasattr(sample_weight, 'olf_'):
+        if hasattr(sample_weight, "olf_"):
             sw_olf_array = sample_weight.olf_.values
         else:
             sw_olf_array = 1
-        if hasattr(X, 'olf_'):
+        if hasattr(X, "olf_"):
             X_olf_array = X.olf_.values
         else:
             X_olf_array = 1
@@ -84,7 +87,9 @@ class CapeCod(MethodBase):
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
         weighted_exposure = xp.swapaxes(reported_exposure, -1, -2) * decay_matrix
-        trended_ultimate = (latest * trend_array * X_olf_array) / (reported_exposure * sw_olf_array)
+        trended_ultimate = (latest * trend_array * X_olf_array) / (
+            reported_exposure * sw_olf_array
+        )
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
         apriori = xp.sum(weighted_exposure * trended_ultimate, -1) / xp.sum(
             weighted_exposure, -1

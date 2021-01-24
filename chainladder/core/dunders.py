@@ -129,9 +129,12 @@ class TriangleDunders:
                 y = apply_axis(common, y, x) if len(y.index) > 1 else y
             else:
                 raise ValueError("Triangle arithmetic along index is ambiguous.")
-        if (x.key_labels == y.key_labels and
-            len(x) == len(y) and len(y) > 1
-            and not np.all(x.index == y.index)):
+        if (
+            x.key_labels == y.key_labels
+            and len(x) == len(y)
+            and len(y) > 1
+            and not np.all(x.index == y.index)
+        ):
             y = y.loc[x.index]
         if len(x) == 1 and len(y) > 1:
             x.kdims = y.kdims

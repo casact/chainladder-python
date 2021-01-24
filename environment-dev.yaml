@@ -28,6 +28,7 @@ dependencies:
   - lxml
   - pytest
   - pytest-cov
+  - black
 
   # R ChainLadder unit testing
   - rpy2

@@ -33,13 +33,13 @@ def _get_full_triangle(full_expectation_, triangle_):
 
 class Common:
     """ Class that contains common properties of a "fitted" Triangle. """
+
     @property
     def has_ldf(self):
         if hasattr(self, "ldf_"):
             return True
         else:
             return False
-            
 
     @property
     def cdf_(self):

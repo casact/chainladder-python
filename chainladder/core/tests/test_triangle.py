@@ -642,30 +642,179 @@ def test_loc_ellipsis():
     assert tri.loc[:, "CumPaidLoss"] == tri.loc[:, "CumPaidLoss", ...]
     assert tri.loc[..., "CumPaidLoss", :, :] == tri.loc[:, "CumPaidLoss", :, :]
 
+
 def missing_first_lag():
     x = raa.copy()
-    x.values[:,:,:, 0] = 0
-    x=x.sum(0)
-    x.link_ratio.shape == (1,1,9,9)
+    x.values[:, :, :, 0] = 0
+    x = x.sum(0)
+    x.link_ratio.shape == (1, 1, 9, 9)
+
 
 def test_reverse_slice_integrity():
     assert tri == tri_gt
     assert tri.iloc[::-1, ::-1].shape == tri.shape
     assert np.all(tri.iloc[:, ::-1].columns.values == tri.columns[::-1])
-    assert tri.iloc[tri.index.index[::-1]] + tri == 2*tri.iloc[::-1]
+    assert tri.iloc[tri.index.index[::-1]] + tri == 2 * tri.iloc[::-1]
+
 
 def test_loc_tuple():
     assert tri == tri_gt
-    assert len(tri.loc[('Adriatic Ins Co', 'othliab')]) == 1
+    assert len(tri.loc[("Adriatic Ins Co", "othliab")]) == 1
     assert tri.loc[tri.index] == tri
+
 
 def test_index_broadcasting():
     assert tri == tri_gt
-    assert ((tri/tri.sum()) - ((1 / tri.sum())*tri)).sum().sum().sum() < 1e-4
+    assert ((tri / tri.sum()) - ((1 / tri.sum()) * tri)).sum().sum().sum() < 1e-4
+
 
 def test_groupby_axis1():
     assert tri == tri_gt
-    clrd = tri.sum('origin').sum('development')
-    groups = [i.find('Loss')>=0 for i in clrd.columns]
-    assert np.all(clrd.to_frame().groupby(groups, axis=1).sum() == clrd.groupby(groups, axis=1).sum().to_frame())
-    assert np.all(clrd.to_frame().groupby('LOB').sum() == clrd.groupby('LOB').sum().to_frame())
+    clrd = tri.sum("origin").sum("development")
+    groups = [i.find("Loss") >= 0 for i in clrd.columns]
+    assert np.all(
+        clrd.to_frame().groupby(groups, axis=1).sum()
+        == clrd.groupby(groups, axis=1).sum().to_frame()
+    )
+    assert np.all(
+        clrd.to_frame().groupby("LOB").sum() == clrd.groupby("LOB").sum().to_frame()
+    )
+    cl.load_sample("prism").sum().grain("OYDY")
+
+
+def test_different_forms_of_grain():
+    t = cl.load_sample("prism").sum()["Paid"]
+    assert (
+        abs(t.grain("OYDY") - t.incr_to_cum().grain("OYDY").cum_to_incr()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.grain("OYDY", trailing=True)
+            - t.incr_to_cum().grain("OYDY", trailing=True).cum_to_incr()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    assert (
+        abs(t.incr_to_cum().grain("OYDY") - t.grain("OYDY").incr_to_cum()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.incr_to_cum().grain("OYDY", trailing=True)
+            - t.grain("OYDY", trailing=True).incr_to_cum()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    assert (
+        abs(t.grain("OYDQ") - t.incr_to_cum().grain("OYDQ").cum_to_incr()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.grain("OYDQ", trailing=True)
+            - t.incr_to_cum().grain("OYDQ", trailing=True).cum_to_incr()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    assert (
+        abs(t.incr_to_cum().grain("OQDM") - t.grain("OQDM").incr_to_cum()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.incr_to_cum().grain("OQDM", trailing=True)
+            - t.grain("OQDM", trailing=True).incr_to_cum()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    t = t.dev_to_val()
+    assert (
+        abs(t.grain("OYDY") - t.incr_to_cum().grain("OYDY").cum_to_incr()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.grain("OYDY", trailing=True)
+            - t.incr_to_cum().grain("OYDY", trailing=True).cum_to_incr()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    assert (
+        abs(t.incr_to_cum().grain("OYDY") - t.grain("OYDY").incr_to_cum()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.incr_to_cum().grain("OYDY", trailing=True)
+            - t.grain("OYDY", trailing=True).incr_to_cum()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    t = t.val_to_dev()
+    t = t[t.valuation < "2017-09"]
+    assert (
+        abs(t.grain("OYDY") - t.incr_to_cum().grain("OYDY").cum_to_incr()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.grain("OYDY", trailing=True)
+            - t.incr_to_cum().grain("OYDY", trailing=True).cum_to_incr()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    assert (
+        abs(t.incr_to_cum().grain("OYDY") - t.grain("OYDY").incr_to_cum()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.incr_to_cum().grain("OYDY", trailing=True)
+            - t.grain("OYDY", trailing=True).incr_to_cum()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    t = t.dev_to_val()
+    assert (
+        abs(t.grain("OYDY") - t.incr_to_cum().grain("OYDY").cum_to_incr()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.grain("OYDY", trailing=True)
+            - t.incr_to_cum().grain("OYDY", trailing=True).cum_to_incr()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )
+    assert (
+        abs(t.incr_to_cum().grain("OYDY") - t.grain("OYDY").incr_to_cum()).sum().sum()
+        < 1e-4
+    )
+    assert (
+        abs(
+            t.incr_to_cum().grain("OYDY", trailing=True)
+            - t.grain("OYDY", trailing=True).incr_to_cum()
+        )
+        .sum()
+        .sum()
+        < 1e-4
+    )

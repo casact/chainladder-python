@@ -189,8 +189,8 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
-        obj = (self.iloc[..., 1:] / self.iloc[..., :-1].values)
-        obj = obj[obj.valuation<=obj.valuation_date]
+        obj = self.iloc[..., 1:] / self.iloc[..., :-1].values
+        obj = obj[obj.valuation <= obj.valuation_date]
         if hasattr(obj, "w_"):
             w_ = obj.w_[..., 0:1, : len(obj.odims), :]
             obj = obj * w_ if obj.shape == w_.shape else obj
@@ -221,7 +221,7 @@ class Triangle(TriangleBase):
                     values = xp.nan_to_num(self.values[..., ::-1])
                     if self.array_backend == "sparse":
                         xp = np
-                        values = self.set_backend('numpy').values
+                        values = self.set_backend("numpy").values
                     values[values == 0] = 1.0
                     values = xp.cumprod(values, -1)[..., ::-1]
                     self.values = values = values * self.nan_triangle
@@ -442,24 +442,35 @@ class Triangle(TriangleBase):
             obj = concat(values, axis=2, ignore_index=True)
             obj.odims = np.unique(o)
             obj.origin_grain = ograin_new
+            if len(obj.ddims) > 1 and pd.Timestamp(obj.odims[0]).strftime(
+                "%Y%m"
+            ) != obj.valuation[0].strftime("%Y%m"):
+                addl_ts = (
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq="M")[:-1]
+                    .to_timestamp()
+                    .values
+                )
+                addl = obj.iloc[..., -len(addl_ts) :] * 0
+                addl.ddims = addl_ts
+                obj = concat((addl, obj), axis=-1)
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
-            d = np.arange(0, len(obj.development), step)
+            d = np.sort(
+                len(obj.development) - np.arange(0, len(obj.development), step) - 1
+            )
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
-                obj = obj.val_to_dev()
-                d = np.arange(0, len(obj.development), step)
-                length = self._dstep()["M"][dgrain_old]
-                d = np.repeat(((d + 1) * length)[::-1], step)[: len(obj.ddims)][::-1]
+                ddims = obj.ddims[d]
+                d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
                 values = [
                     getattr(obj.iloc[..., i], "sum")(
                         3, auto_sparse=False, keepdims=True
                     )
-                    for i in obj.development.groupby(d).groups.values()
+                    for i in obj.development.groupby(d2).groups.values()
                 ]
                 obj = concat(values, axis=3, ignore_index=True)
-                obj.ddims = np.unique(d)
+                obj.ddims = ddims
             obj.development_grain = dgrain_new
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
         if inplace:

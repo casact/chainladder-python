@@ -141,7 +141,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return process_var
 
     def validate_weight(self, X, sample_weight):
-        if sample_weight and X.shape[:-1] != sample_weight.shape[:-1] and sample_weight.shape[2] != 1 and sample_weight.shape[0] > 1:
+        if (
+            sample_weight
+            and X.shape[:-1] != sample_weight.shape[:-1]
+            and sample_weight.shape[2] != 1
+            and sample_weight.shape[0] > 1
+        ):
             warnings.warn(
                 "X and sample_weight are not aligned.  Broadcasting may occur.\n"
             )

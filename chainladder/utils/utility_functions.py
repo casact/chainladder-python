@@ -162,14 +162,16 @@ def parallelogram_olf(
         start_date = "{}-01-01".format(date.min().year)
     if not end_date:
         end_date = "{}-12-31".format(date.max().year)
-    start_date = pd.to_datetime(start_date)-pd.tseries.offsets.DateOffset(days=1)
-    date_idx = pd.date_range(start_date-pd.tseries.offsets.DateOffset(years=1), end_date)
+    start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+    date_idx = pd.date_range(
+        start_date - pd.tseries.offsets.DateOffset(years=1), end_date
+    )
     y = pd.Series(np.array(values), np.array(date))
     y = y.reindex(date_idx, fill_value=0)
     idx = np.cumprod(y.values + 1)
     idx = idx[-1] / idx
     y = pd.Series(idx, y.index)
-    y = y[~((y.index.day==29)&(y.index.month==2))]
+    y = y[~((y.index.day == 29) & (y.index.month == 2))]
     if not vertical_line:
         y = y.rolling(365).mean()
         y = (y + y.shift(1).values) / 2

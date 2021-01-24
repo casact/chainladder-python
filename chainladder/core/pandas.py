@@ -9,15 +9,16 @@ from chainladder.utils.utility_functions import num_to_nan
 class TriangleGroupBy:
     def __init__(self, obj, by, axis=0):
         self.obj = obj.copy()
+        axis = self.obj._get_axis(axis)
+        if axis > 1:
+            raise ValueError(
+                "Use grain method to group by origin and development axes."
+            )
         self.axis = self.obj._get_axis(axis)
         if self.axis == 0:
             self.groups = obj.index.groupby(by)
         if self.axis == 1:
             self.groups = pd.DataFrame(obj.columns).groupby(by)
-        if self.axis == 2:
-            self.groups = pd.DataFrame(obj.origin).groupby(by)
-        if self.axis == 3:
-            self.groups = pd.DataFrame(obj.development).groupby(by)
 
 
 class TrianglePandas:
@@ -308,16 +309,23 @@ def add_groupby_agg_func(cls, k, v):
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
         values = [
-            getattr(
-                obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
-            )(self.axis, auto_sparse=False, keepdims=True)
+            getattr(obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v)(
+                self.axis, auto_sparse=False, keepdims=True
+            )
             for i in self.groups.indices.values()
         ]
         obj = concat(values, axis=self.axis, ignore_index=True)
-        print(self.axis)
         if self.axis == 0:
             if isinstance(self.groups.dtypes.index, pd.MultiIndex):
-                index = pd.DataFrame(np.zeros(len(self.groups.dtypes.index)), index=self.groups.dtypes.index, columns=['_']).reset_index().iloc[:, :-1]
+                index = (
+                    pd.DataFrame(
+                        np.zeros(len(self.groups.dtypes.index)),
+                        index=self.groups.dtypes.index,
+                        columns=["_"],
+                    )
+                    .reset_index()
+                    .iloc[:, :-1]
+                )
                 obj.index = index
             else:
                 index = pd.DataFrame(self.groups.dtypes.index)
@@ -327,10 +335,6 @@ def add_groupby_agg_func(cls, k, v):
             index = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
         if self.axis == 1:
             obj.vdims = index
-        if self.axis == 2:
-            obj.odims = index
-        if self.axis == 3:
-            obj.ddims = index
         obj._set_slicers()
         return obj
 

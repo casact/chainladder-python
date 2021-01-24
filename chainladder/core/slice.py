@@ -95,15 +95,19 @@ class Location(_LocBase):
 
     def __getitem__(self, key):
         obj = self.get_idx(self.format_key(key))
-        if len(obj) > 1 and obj.index.iloc[:,0].nunique() == 1:
+        if len(obj) > 1 and obj.index.iloc[:, 0].nunique() == 1:
             idx = obj.index.iloc[:, 1:]
             obj.index = idx
         return obj
 
     def format_key(self, key):
-        if (type(key) is tuple and len(key) > 1 and
-            len(self.obj.key_labels) > 1 and
-            key[1] in self.obj.index[self.obj.key_labels[1]].unique()):
+        if (
+            type(key) is tuple
+            and len(key) > 1
+            and len(self.obj.key_labels) > 1
+            and type(key[1]) is str
+            and key[1] in self.obj.index[self.obj.key_labels[1]].unique()
+        ):
             key = (key,)
         else:
             key = (key,) if type(key) is not tuple else key
@@ -120,13 +124,20 @@ class Location(_LocBase):
         if type(key[0]) == pd.Series:
             idx = key[0][key[0]].index
         elif type(key[0]) == pd.DataFrame:
-            idx = self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key[0].set_index(list(key[0].columns)).index]
+            idx = (
+                self.obj.index.reset_index()
+                .set_index(self.obj.key_labels)
+                .loc[key[0].set_index(list(key[0].columns)).index]
+            )
         else:
-            idx = self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key[0]]
+            idx = (
+                self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key[0]]
+            )
         idx = idx.iloc[:, 0] if type(idx) is pd.DataFrame else idx
         key[0] = _LocBase._contig_slice(idx.to_list())
         default = slice(None, None, None)
         norm = lambda k: type(k) is slice and (k.start == 0 or k == default)
+
         def normalize(key, idx):
             mapper = {1: "columns", 2: "origin", 3: "development"}
             out = key[idx]
@@ -189,7 +200,7 @@ class TriangleSlicer:
         xp = self.get_array_module()
         if callable(value):
             self.virtual_columns[key] = value
-            value = (self.iloc[:, 0].copy()*xp.nan).set_backend(self.array_backend)
+            value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
         else:
             self.virtual_columns.pop(key)
         if key in self.vdims:
@@ -201,7 +212,9 @@ class TriangleSlicer:
                 value.values.coords[1] = i
                 coords = np.concatenate((before.coords, value.values.coords), axis=1)
                 data = np.concatenate((before.data, value.values.data))
-                self.values = xp(coords, data, shape=self.shape, prune=True, fill_value=xp.nan)
+                self.values = xp(
+                    coords, data, shape=self.shape, prune=True, fill_value=xp.nan
+                )
             else:
                 if isinstance(value, TriangleSlicer):
                     value = value.values
@@ -253,13 +266,14 @@ class TriangleSlicer:
         self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
         self = self._auto_sparse()
 
+
 class VirtualColumns:
     def __init__(self, triangle, columns=None):
         self.triangle = triangle
         self.columns = {} if not columns else columns
 
     def __getitem__(self, value):
-        return self.columns[value](self.triangle).rename('columns', [value])
+        return self.columns[value](self.triangle).rename("columns", [value])
 
     def __setitem__(self, name, value):
         self.columns[name] = value
