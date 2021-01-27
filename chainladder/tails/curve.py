@@ -30,6 +30,10 @@ class TailCurve(TailBase):
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
+    reg_threshold : float (default=1.00001)
+        The treshold below which the ldfs are not considered any longer in the
+        tail curve fitting to avoid distortion of the estimation caused by
+        value close to but still larger than 1.
 
     Attributes
     ----------
@@ -56,12 +60,14 @@ class TailCurve(TailBase):
         extrap_periods=100,
         errors="ignore",
         attachment_age=None,
+        reg_threshold=1.00001,
     ):
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
         self.errors = errors
         self.attachment_age = attachment_age
+        self.reg_threshold = reg_threshold
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -109,8 +115,8 @@ class TailCurve(TailBase):
         _w = xp.zeros(_y.shape)
         _w[..., fit_period] = 1.0
         if self.errors == "ignore":
-            _w[_y <= 1.0] = 0
-            _y[_y <= 1.0] = 1.01
+            _w[_y <= reg_threshold] = 0
+            _y[_y <= reg_threshold] = 1.01
         elif self.errors == "raise" and xp.any(y < 1.0):
             raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
         _y = xp.log(_y - 1)
