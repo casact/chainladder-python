@@ -4,13 +4,12 @@
 from abc import abstractmethod
 
 import numpy as np
-from joblib import Parallel
 from chainladder.methods.base import MethodBase
+from joblib import Parallel, delayed
 from sklearn.base import clone
 from sklearn.ensemble._base import _fit_single_estimator
 from sklearn.ensemble._voting import _BaseVoting
 from sklearn.utils import Bunch
-from sklearn.utils.fixes import delayed
 from sklearn.utils.validation import (_deprecate_positional_args,
                                       check_is_fitted)
 
@@ -55,7 +54,6 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
                                  ' estimators.')
         else:
             self.weights = np.ones(X.shape[:3] + (len(self.estimators), 1))
-
 
         self.estimators_ = Parallel(n_jobs=self.n_jobs)(
                 delayed(_fit_single_estimator)(
