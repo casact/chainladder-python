@@ -422,3 +422,17 @@ class TriangleBase(
             ult = np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate((val_array, ult,), axis=1,)
         return pd.DatetimeIndex(val_array.reshape(1, -1, order="F")[0])
+
+
+def is_chainladder(estimator):
+    """Return True if the given estimator is a chainladder based method.
+    Parameters
+    ----------
+    estimator : object
+        Estimator object to test.
+    Returns
+    -------
+    out : bool
+        True if estimator is a chainladder based method and False otherwise.
+    """
+    return getattr(estimator, "_estimator_type", None) == "chainladder"

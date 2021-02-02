@@ -12,6 +12,9 @@ from chainladder.core.common import Common
 
 
 class MethodBase(BaseEstimator, EstimatorIO, Common):
+
+    _estimator_type = "chainladder"
+
     def validate_X(self, X):
         obj = X.copy()
         if "ldf_" not in obj:
