@@ -30,6 +30,12 @@ class TailCurve(TailBase):
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
+    reg_threshold : tuple (lower, upper)
+        A tuple representing the lower and upper thresholds for the ldfs to be
+        considered in the log regression of the tail fitting. Default lower
+        threshold set to 1.00001 to avoid distortion caused by ldfs close to 1.
+        Upper threshold can be used as an alternative to the fit_period start,
+        to make the selection value based rather then period based.
 
     Attributes
     ----------
@@ -56,12 +62,14 @@ class TailCurve(TailBase):
         extrap_periods=100,
         errors="ignore",
         attachment_age=None,
+        reg_threshold=(1.00001,None)
     ):
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
         self.errors = errors
         self.attachment_age = attachment_age
+        self.reg_threshold = reg_threshold
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -108,9 +116,31 @@ class TailCurve(TailBase):
         _y = self.ldf_.values[..., : X.shape[-1] - 1].copy()
         _w = xp.zeros(_y.shape)
         _w[..., fit_period] = 1.0
+        if self.reg_threshold[0] is None:
+            warnings.warn("Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure" \
+                          "valid inputs for regression.")
+            lower_threshold = 1
+        elif self.reg_threshold[0] < 1:
+            warnings.warn("Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure" \
+                          "valid inputs for regression.")
+            lower_threshold = 1
+        else:
+            lower_threshold = self.reg_threshold[0]
+        if self.reg_threshold[1] is not None:
+            if self.reg_threshold[1] <= lower_threshold:
+                warnings.warn("Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'.")
+                upper_threshold = None
+            else:
+                upper_threshold = self.reg_threshold[1]
+        else:
+            upper_threshold = self.reg_threshold[1]
         if self.errors == "ignore":
-            _w[_y <= 1.0] = 0
-            _y[_y <= 1.0] = 1.01
+            if upper_threshold is None:
+                _w[_y <= lower_threshold] = 0
+                _y[_y <= lower_threshold] = 1.01
+            else:
+                _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
+                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
         elif self.errors == "raise" and xp.any(y < 1.0):
             raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
         _y = xp.log(_y - 1)
