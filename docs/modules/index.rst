@@ -78,4 +78,5 @@ Chainladder User guide
    tails
    methods
    workflow
+   ensemble
    utilities

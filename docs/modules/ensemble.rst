@@ -22,7 +22,7 @@ and the :class:`CapeCod` method for the final 3.
 
    >>> raa = cl.load_sample('RAA')
    >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
-   >>> apriori = cl_ult*0+(cl_ult.sum()/10)[0] # Mean Chainladder Ultimate
+   >>> apriori = cl_ult*0+(cl_ult.sum()/10) # Mean Chainladder Ultimate
    >>>
    >>> bcl = cl.Chainladder()
    >>> bf = cl.BornhuetterFerguson()
@@ -34,7 +34,6 @@ and the :class:`CapeCod` method for the final 3.
    >>> vot = cl.VotingChainladder(estimators=estimators, weights=weights)
    >>> vot.fit(raa, sample_weight=apriori)
    >>> vot.ultimate_
-
                  2262
    1981  18834.000000
    1982  16857.953917
@@ -63,7 +62,6 @@ the weights parameter results in the average of all predictions assuming a weigh
    >>> vot = cl.VotingChainladder(estimators=estimators)
    >>> vot.fit(raa, sample_weight=apriori)
    >>> vot.ultimate_
-
                  2262
    1981  18834.000000
    1982  16887.197765

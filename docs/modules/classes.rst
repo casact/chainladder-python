@@ -128,6 +128,7 @@ Classes
   Trend
   Pipeline
   GridSearch
+  VotingChainladder
 
 
 .. _utils_ref:

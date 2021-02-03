@@ -8,7 +8,7 @@ chainladder (python)
 chainladder - Property and Casualty Loss Reserving in Python
 ------------------------------------------------------------
 
-This package gets inpiration from the popular `R ChainLadder package`_.
+This package gets inspiration from the popular `R ChainLadder package`_.
 
 This package strives to be minimalistic in needing its own API. Think in
 `pandas`_ for data manipulation and `scikit-learn`_ for model
@@ -40,22 +40,20 @@ Available Estimators
 
 
 
-+------------------------------+------------------+-------------------------+-----------------------+
-| Loss                         | Tails Factors    | IBNR Models             | Adjustments &         |
-| Development                  |                  |                         | Workflow              |
-+==============================+==================+=========================+=======================+
-| `Development`_               | `TailCurve`_     | `Chainladder`_          | `BootstrapODPSample`_ |
-+------------------------------+------------------+-------------------------+-----------------------+
-| `DevelopmentConstant`_       | `TailConstant`_  | `MackChainladder`_      | `BerquistSherman`_    |
-+------------------------------+------------------+-------------------------+-----------------------+
-| `MunichAdjustment`_          | `TailBondy`_     | `BornhuettterFerguson`_ | `Pipeline`_           |
-+------------------------------+------------------+-------------------------+-----------------------+
-| `ClarkLDF`_                  | `TailClark`_     | `Benktander`_           | `GridSearch`_         |
-+------------------------------+------------------+-------------------------+-----------------------+
-| `IncrementalAdditive`_       |                  | `CapeCod`_              | `ParallelogramOLF`_   |
-+------------------------------+------------------+-------------------------+-----------------------+
-|                              |                  |                         | `Trend`_              |
-+------------------------------+------------------+-------------------------+-----------------------+
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| Loss                         | Tails Factors    | IBNR Models             | Adjustments           | Workflow              |
+| Development                  |                  |                         |                       |                       |
++==============================+==================+=========================+=======================+=======================+
+| `Development`_               | `TailCurve`_     | `Chainladder`_          | `BootstrapODPSample`_ | `VotingChainladder`_  |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `DevelopmentConstant`_       | `TailConstant`_  | `MackChainladder`_      | `BerquistSherman`_    |  `Pipeline`_          |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `MunichAdjustment`_          | `TailBondy`_     | `BornhuettterFerguson`_ | `ParallelogramOLF`_   | `GridSearch`_         |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `ClarkLDF`_                  | `TailClark`_     | `Benktander`_           | `Trend`_              |                       |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `IncrementalAdditive`_       |                  | `CapeCod`_              |                       |                       |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
 Documentation
 -------------
@@ -82,6 +80,7 @@ code documentation.
 .. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#incremental-additive
 .. _CapeCod: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#cape-cod
 .. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.ParallelogramOLF.html#chainladder.ParallelogramOLF
+.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.VotingChainladder.html#chainladder.VotingChainladder
 .. _Trend: https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.Trend.html#chainladder.Trend
 .. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
 
@@ -104,7 +103,7 @@ To install using pip: ``pip install chainladder``
 
 To instal using conda: ``conda install -c conda-forge chainladder``
 
-Alternatively, install directly from github:
+Alternatively for pre-release functionality, install directly from github:
 ``pip install git+https://github.com/casact/chainladder-python/``
 
 Note: This package requires Python 3.5 and later, numpy 1.12.0 and
