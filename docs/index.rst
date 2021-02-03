@@ -134,18 +134,18 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Workflow <workflow>`
+    :ref:`Adjustments <adjustments>`
 
     .. raw:: html
 
         </h2>
         <blockquote>
-        <p>Data adjustments and workflow tools</p>
+        <p>Common actuarial data adjustments</p>
         <div class="box-links">
-        <strong>Applications</strong>: scenario testing, simulation, homogenize data</br>
+        <strong>Applications</strong>: Simulation, trending, on-leveling</br>
         <strong>Classes</strong>:&nbsp;
 
-    :ref:`BootstrapODPSample<bootstrap>`, :ref:`BerquistSherman <berqsherm>`, :ref:`Pipeline <pipeline>`,...
+    :ref:`BootstrapODPSample<bootstrap>`, :ref:`BerquistSherman <berqsherm>`, :ref:`Trend <trend>`,...
 
     .. raw:: html
 
@@ -164,18 +164,18 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Utilities <utils>`
+    :ref:`Workflow <workflow>`
 
     .. raw:: html
 
         </h2>
         <blockquote>
-        <p>Spreadsheets exports, sample data, and more</p>
+        <p>Workflow tools for complex analyses</p>
         <div class="box-links">
-        <strong>Application</strong>: Reporting and Communication, Training</br>
+        <strong>Application</strong>: scenario testing, simulation, ensembling</br>
         <strong>Utilities</strong>:&nbsp;
 
-    :ref:`Exhibits<exhibits>`, :ref:`load_sample<samples>`, ...
+    :ref:`Pipeline <pipeline>`, :ref:`VotingChainladder <voting>`, ...
 
     .. raw:: html
 

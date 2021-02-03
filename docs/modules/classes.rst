@@ -105,6 +105,26 @@ Classes
    Benktander
    CapeCod
 
+.. _adjustments_ref:
+
+:mod:`chainladder.workflow`: Asjustment
+========================================
+.. automodule:: chainladder.workflow
+ :no-members:
+ :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: chainladder
+
+.. autosummary::
+ :toctree: generated/
+ :template: class.rst
+
+ BootstrapODPSample
+ BerquistSherman
+ Trend
+ ParallelogramOLF
 
 .. _workflow_ref:
 
@@ -122,13 +142,9 @@ Classes
   :toctree: generated/
   :template: class.rst
 
-  BootstrapODPSample
-  BerquistSherman
-  ParallelogramOLF
-  Trend
   Pipeline
-  GridSearch
   VotingChainladder
+  GridSearch
 
 
 .. _utils_ref:

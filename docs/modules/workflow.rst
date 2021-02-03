@@ -8,79 +8,6 @@ Workflow
 ``chainladder`` facilitates practical reserving workflows.
 
 
-.. _bootstrap:
-
-Bootstrap Sampling
-==================
-
-:class:`BootstrapODPSample` is a transformer that simulates new triangles
-according to the ODP Bootstrap model.  That is both the ``index`` and ``column``
-of the Triangle must be of unity length.  Upon fitting the Estimator, the
-``index`` will contain the individual simulations.
-
-  >>> import chainladder as cl
-  >>> raa = cl.load_sample('raa')
-  >>> cl.BootstrapODPSample(n_sims=500).fit_transform(raa)
-  Valuation: 1990-12
-  Grain:     OYDY
-  Shape:     (500, 1, 10, 10)
-  Index:      ['Total']
-  Columns:    ['values']
-
-.. note::
-   The `BootstrapODPSample` can only apply to single triangles as it needs the
-   ``index`` axis to be free to hold the different triangle simluations.
-
-The class only simulates new triangles from which you can generate
-statistics about parameter and process uncertainty.  This allows for converting
-the various deterministic :ref:`IBNR Models<methods_toc>` into stochastic
-methods.
-
-An example of using the :class:`BootstrapODPSample` with the :class:`BornhuetterFerguson`
-method:
-
-.. figure:: /auto_examples/images/sphx_glr_plot_stochastic_bornferg_001.png
-   :target: ../auto_examples/plot_stochastic_bornferg.html
-   :align: center
-   :scale: 70%
-
-Like the `Development` estimators, The `BootstrapODPSample` allows for ommission
-of certain residuals from its sampling algorithm with a suite of "dropping"
-parameters.  See :ref:`Omitting Link Ratios<dropping>`.
-
-.. topic:: References
-
-  .. [SM2016] `M Shapland, "Using the ODP Bootstrap Model: A Practitioner's Guide", CAS Monograph No.4 <https://www.casact.org/pubs/monographs/papers/04-shapland.pdf>`__
-
-
-.. _berqsherm:
-
-Berquist Sherman
-================
-:class:`BerquistSherman` provides a mechanism of restating the inner diagonals of a
-triangle for changes in claims practices.  These adjustments can materialize in
-case incurred and paid amounts as well as closed claims count development.
-
-In all cases, the adjustments retain the unadjusted latest diagonal of the
-triangle.  For the Incurred adjustment, an assumption of the trend rate in
-average open case reserves must be supplied.  For the adjustments to paid
-amounts and closed claim counts, an estimator, such as `Chainladder` is needed
-to calulate ultimate reported count so that the ``disposal_rate_`` of the
-model can be calculated.
-
-`BerquistSherman` is strictly a data adjustment to the `Triangle` and it does
-not attempt to estimate development patterns, tails, or ultimate values.
-
-.. figure:: /auto_examples/images/sphx_glr_plot_berqsherm_closure_001.png
-   :target: ../auto_examples/plot_berqsherm_closure.html
-   :align: center
-   :scale: 50%
-
-.. topic:: References
-
-  .. [F2010] J.  Friedland, "Estimating Unpaid Claims Using Basic Techniques", Version 3, Ch. 13, 2010.
-
-
 .. _pipeline:
 
 Pipeline
@@ -107,48 +34,71 @@ development, exponential tail curve fitting, and get the 95%-ile IBNR estimate.
 Each estimator contained within a pipelines ``steps`` can be accessed by name
 using the ``named_steps`` attribute of the `Pipeline`.
 
-Chainladder Persistence
-========================
 
-The `Pipeline` along with all estimators can be persisted to disk or database
-using ``to_json`` or ``to_pickle``.  Restoring the pipeline is as simple as
-``cl.read_json`` or ``cl.read_pickle``.
+.. _voting:
 
-  >>> # Persisting the pipe to JSON
-  >>> pipe_json = pipe.to_json()
-  >>> pipe_json
-  '[{"name": "sample", "params": {"drop": null, "drop_high": null, "drop_low": null, "drop_valuation": null, "hat_adj": true, "n_periods": -1, "n_sims": 1000, "random_state": 42}, "__class__": "BootstrapODPSample"}, {"name": "dev", "params": {"average": "volume", "drop": null, "drop_high": null, "drop_low": null, "drop_valuation": null, "fillna": null, "n_periods": -1, "sigma_interpolation": "log-linear"}, "__class__": "Development"}, {"name": "tail", "params": {"attachment_age": null, "curve": "exponential", "errors": "ignore", "extrap_periods": 100, "fit_period": [null, null]}, "__class__": "TailCurve"}, {"name": "model", "params": {}, "__class__": "Chainladder"}]'
-  >>> # Rehydrating the pipeline from JSON.
-  >>> cl.read_json(pipe_json)
-  Pipeline(memory=None,
-           steps=[('sample',
-                   BootstrapODPSample(drop=None, drop_high=None, drop_low=None,
-                                      drop_valuation=None, hat_adj=True,
-                                      n_periods=-1, n_sims=1000,
-                                      random_state=42)),
-                  ('dev',
-                   Development(average='volume', drop=None, drop_high=None,
-                               drop_low=None, drop_valuation=None, fillna=None,
-                               n_periods=-1, sigma_interpolation='log-linear')),
-                  ('tail',
-                   TailCurve(attachment_age=None, curve='exponential',
-                             errors='ignore', extrap_periods=100,
-                             fit_period=[None, None])),
-                  ('model', Chainladder())],
-           verbose=False)
+VotingChainladder
+==================
+The :class:`VotingChainladder` ensemble method allows the actuary to vote between
+different underlying :ref:`_ibnr` by way of a matrix of weights.
 
-The saved Estimator does not retain any fitted attributes, nor does it retain
-the data on which it was fit.  It is simply the model definition.  However,
-the Triangle itself can also be saved allowing for a full rehydration of the
-original model.
+For example, the actuary may choose the :class:`Chainladder` method for the first
+4 origin periods, the :class:`BornhuetterFerguson` method for the next 3 origin periods,
+and the :class:`CapeCod` method for the final 3.
 
-  >>> # Dumping triangle to JSON
-  >>> triangle_json = cl.load_sample('genins').to_json()
-  >>> # Recalling model and Triangle and rehydrating the results
-  >>> cl.read_json(pipe_json).fit(cl.read_json(triangle_json)) \
-  ...                        .named_steps.model.ibnr_.sum('origin').quantile(.95)
-             values
-  NaN  2.606327e+07
+   >>> raa = cl.load_sample('RAA')
+   >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
+   >>> apriori = cl_ult*0+(cl_ult.sum()/10) # Mean Chainladder Ultimate
+   >>>
+   >>> bcl = cl.Chainladder()
+   >>> bf = cl.BornhuetterFerguson()
+   >>> cc = cl.CapeCod()
+   >>>
+   >>> estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
+   >>> weights = np.array([[1, 0, 0]] * 4 + [[0, 1, 0]] * 3 + [[0, 0, 1]] * 3)
+   >>>
+   >>> vot = cl.VotingChainladder(estimators=estimators, weights=weights)
+   >>> vot.fit(raa, sample_weight=apriori)
+   >>> vot.ultimate_
+                 2262
+   1981  18834.000000
+   1982  16857.953917
+   1983  24083.370924
+   1984  28703.142163
+   1985  28203.700714
+   1986  19840.005163
+   1987  18840.362337
+   1988  23106.943030
+   1989  20004.502125
+   1990  21605.832631
+
+Alternatively, the actuary may choose to combine all methods using weights. Omitting
+the weights parameter results in the average of all predictions assuming a weight of 1.
+
+   >>> raa = cl.load_sample('RAA')
+   >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
+   >>> apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10) # Mean Chainladder Ultimate
+   >>>
+   >>> bcl = cl.Chainladder()
+   >>> bf = cl.BornhuetterFerguson()
+   >>> cc = cl.CapeCod()
+   >>>
+   >>> estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
+   >>>
+   >>> vot = cl.VotingChainladder(estimators=estimators)
+   >>> vot.fit(raa, sample_weight=apriori)
+   >>> vot.ultimate_
+                 2262
+   1981  18834.000000
+   1982  16887.197765
+   1983  24041.977401
+   1984  28435.540175
+   1985  28466.807537
+   1986  19770.579236
+   1987  18547.931167
+   1988  23305.361472
+   1989  18530.213787
+   1990  20331.432662
 
 
 .. _gridsearch:

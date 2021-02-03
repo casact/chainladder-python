@@ -1,1 +1,0 @@
-from chainladder.ensemble.voting import VotingChainladder  # noqa (API import)
