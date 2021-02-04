@@ -55,7 +55,7 @@ Pull requests (PR) should be tied to an [issue](https://github.com/casact/chainl
 pull requests small.  Like all projects, the larger the PR, the less likely
 it will be merged.
 
-All pull requests must pass existing unit tests.  On occasion, existing unit tests can be in violation of the API guidelines.  These unit tests should be refined to accomodate the API ethos set forth above. It is a good practice to run tests ahead of pushing changes to Github.  That said, these unit tests will
+All pull requests must pass existing unit tests.  On occasion, existing unit tests can be in violation of the API guidelines.  These unit tests should be refined to accommodate the API ethos set forth above. It is a good practice to run tests ahead of pushing changes to Github.  That said, these unit tests will
 be run by Github.
 ```
 pytest chainladder

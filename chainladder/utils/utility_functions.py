@@ -86,7 +86,11 @@ def load_dataset(key, *args, **kwargs):
 
 def read_pickle(path):
     out = joblib.load(path)
-    out.virtual_columns = dill.loads(out.virtual_columns)
+    try:
+        out.virtual_columns = dill.loads(out.virtual_columns)
+    except:
+        from chainladder.core.slice import VirtualColumns
+        out.virtual_columns = VirtualColumns(out)
     return out
 
 
