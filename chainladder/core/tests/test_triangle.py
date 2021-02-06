@@ -565,7 +565,7 @@ def test_df_period_input():
 def test_trend_on_vector():
     assert raa == raa_gt
     d = raa.latest_diagonal
-    assert d.trend(0.05, axis=2).to_frame().astype(int).iloc[0, 0] == 29216
+    assert d.trend(0.05, axis=2).to_frame().astype(int).iloc[0, 0] == 29217
 
 
 def test_latest_diagonal_val_to_dev():
