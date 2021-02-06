@@ -9,18 +9,18 @@ import pandas as pd
 
 class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
     """
-    Estimator to create and apply trend factors to a Triangle object.  This
-    is commonly used for estimators like `CapeCod`.
+    Estimator to create and apply trend factors to a Triangle object.  Allows
+    for compound trends as well as storage of the trend matrix to be used in
+    other estimators, such as `CapeCod`.
 
     Parameters
     ----------
 
-    trend : list-like
+    trends : list-like
         The list containing the annual trends expressed as a decimal. For example,
         5% decrease should be stated as -0.05
-    date : str
-        A list-like set of dates at which trends start. If None then the valuation
-        date of the triangle is assumed.
+    dates : list of date-likes
+        A list-like of (start, end) dates to correspond to the `trend` list.
     axis : str (options: [‘origin’, ‘valuation’])
         The axis on which to apply the trend
 
@@ -29,11 +29,12 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
 
     trend_ :
         A triangle representation of the trend factors
+
     """
 
-    def __init__(self, trend=0.0, end_date=None, axis="origin"):
-        self.trend = trend if type(trend) is list else [trend]
-        self.end_date = end_date if type(end_date) is list else [end_date]
+    def __init__(self, trends=0.0, dates=None, axis="origin"):
+        self.trends = trends
+        self.dates = dates
         self.axis = axis
 
     def fit(self, X, y=None, sample_weight=None):
@@ -51,14 +52,17 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         self : object
             Returns the instance itself.
         """
-        date = [
-            item if item else X.valuation_date.strftime("%Y-%m-%d")
-            for item in self.end_date
-        ]
-        date = pd.to_datetime(date).tolist()
+        trends = self.trends if type(self.trends) is list else [self.trends]
+        dates = [(None, None)] if self.dates is None else self.dates
+        dates = [dates] if type(dates) is not list else dates
+        if type(dates[0]) is not tuple:
+            raise AttributeError(
+                'Dates must be specified as a tuple of start and end dates')
         self.trend_ = X.copy()
-        for i, trend in enumerate(self.trend):
-            self.trend_ = self.trend_.trend(trend, self.axis, date[i])
+        for i, trend in enumerate(trends):
+            self.trend_ = self.trend_.trend(
+                trend, self.axis,
+                start=dates[i][0], end=dates[i][0])
         self.trend_ = self.trend_ / X
         return self
 

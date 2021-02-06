@@ -498,14 +498,14 @@ class Triangle(TriangleBase):
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
         start: date
-            The terminal date from which trend should be calculated. If none is
+            The start date from which trend should be calculated. If none is
             provided then the latest date of the triangle is used.
         end: date
-            The terminal date to which the trend should be calculated. If none is
+            The end date to which the trend should be calculated. If none is
             provided then the earliest period of the triangle is used.
         ultimate_lag : int
-            If ultimate valuations are in the triangle, you can set the overall
-            age of the ultimate to be some lag from the latest non-Ultimate
+            If ultimate valuations are in the triangle, optionally set the overall
+            age (in months) of the ultimate to be some lag from the latest non-Ultimate
             development
 
         Returns
@@ -513,64 +513,30 @@ class Triangle(TriangleBase):
         Triangle
             updated with multiplicative trend applied.
         """
-        if kwargs.get("valuation_date", None):
-            start = kwargs["valuation_date"]
-            warnings.warn(
-                "valuation_date is deprecated, and will be removed. Use start instead."
-            )
         if axis not in ["origin", "valuation", 2, -2]:
             raise ValueError(
                 "Only origin and valuation axes are supported for trending"
             )
-
-        def val_vector(start, end, valuation):
-            if end < start:
-                val_start = np.maximum(valuation, start)
-                val_end = np.maximum(valuation, end)
-            else:
-                val_start = np.minimum(valuation, start)
-                val_end = np.minimum(valuation, end)
-            return val_start, val_end
-
         xp = self.get_array_module()
-        if not start:
-            if axis == "valuation":
-                start = np.datetime64(self.valuation_date)
-            else:
-                start = np.datetime64(np.max(self.odims))
-        else:
-            start = np.datetime64(start)
-        if not end:
-            if axis == "valuation":
-                end = np.datetime64(np.min(self.valuation))
-            else:
-                end = np.datetime64(np.min(self.odims))
-        else:
-            end = np.datetime64(end)
+        start = pd.to_datetime(start) if type(start) is str else start
+        start = self.valuation_date if start is None else start
+        end = pd.to_datetime(end) if type(end) is str else end
+        end = self.origin[0].to_timestamp() if end is None else end
         if axis in ["origin", 2, -2]:
-            val_start, val_end = val_vector(start, end, self.origin.start_time.values)
-            trend = xp.array(
-                (1 + trend) ** -(pd.Series(val_end - val_start).dt.days / 365.25)
-            )[None, None, ..., None]
-        elif axis == "valuation":
-            valuation = self.valuation
-            if self.is_ultimate and ultimate_lag is not None:
-                unit_lag = self.valuation[1] - self.valuation[0]
-                val_df = pd.DataFrame(
-                    self.valuation.values.reshape(self.shape[-2:], order="f")
-                )
-                val_df.iloc[:, -1] = val_df.iloc[:, -2] + unit_lag * ultimate_lag
-                valuation = pd.PeriodIndex(val_df.unstack().values)
-            val_start, val_end = val_vector(start, end, valuation)
-            trend = xp.array(
-                (1 + trend)
-                ** -(
-                    pd.Series(val_end - val_start).dt.days.values.reshape(
-                        self.shape[-2:], order="f"
-                    )
-                    / 365.25
-                )
-            )
+            vector = pd.DatetimeIndex(np.tile(
+                self.origin.to_timestamp(how='e').values,
+                self.shape[-1]).flatten())
+        else:
+            vector = self.valuation
+        lower, upper = (end, start) if end > start else (start, end)
+        vector = pd.DatetimeIndex(np.maximum(
+            np.minimum(np.datetime64(lower), vector.values), np.datetime64(upper)))
+        vector = ((
+                start.year - vector.year)*12+(start.month-vector.month)
+               ).values.reshape(self.shape[-2:], order="f")
+        if self.is_ultimate and ultimate_lag is not None and vector.shape[-1] > 1:
+            vector[:, -1] = vector[:, -2] + ultimate_lag
+        trend = xp.array((1 + trend) **(vector/12))[None, None, ...] * self.nan_triangle
         obj = self.copy()
         obj.values = obj.values * trend
         return obj

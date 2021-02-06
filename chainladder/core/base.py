@@ -175,6 +175,8 @@ class TriangleBase(
                 coords.T,
                 amts,
                 prune=True,
+                has_duplicates=False,
+                sorted=True,
                 shape=(
                     len(kdims),
                     len(columns),
