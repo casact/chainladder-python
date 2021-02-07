@@ -383,3 +383,51 @@ parameter and process uncertainty of our model.
 
   .. [CD2003] `Clark, David R., "LDF Curve-Fitting and Stochastic Reserving: A Maximum Likelihood Approach",
                Casualty Actuarial Society Forum, Fall, 2003 <https://www.casact.org/pubs/forum/03fforum/03ff041.pdf>`__
+
+
+CaseOutstanding
+================
+
+The :class:`CaseOutstanding` method is a deterministic method that estimates
+incremental payment patterns from prior lag carried case reserves.  Included
+in this is also patterns for the carried case reserves based on the prior lag
+carried case reserve.
+
+Like the :class:`MunichAdjustment` and :class:`BerquistSherman`, this estimator
+is useful when you want to incorporate information about case reserves into paid
+ultimates.
+
+To use it, a triangle with both paid and incurred amounts must be available.
+
+  >>> import chainladder as cl
+  >>> tri = cl.load_sample('usauto')
+  >>> model = cl.CaseOutstanding(paid_to_incurred=('paid', 'incurred')).fit(tri)
+  >>> model.paid_ldf_
+            12-24     24-36    36-48     48-60     60-72     72-84     84-96    96-108   108-120
+  (All)  0.842814  0.709981  0.70835  0.696826  0.637589  0.622016  0.553385  0.437373  0.524347
+
+In the example above, the incremental paid losses during the period 12-24 is expected to be
+84.28% of the outstanding case reserve at lag 12.  The set of patterns produced by
+:class:`CaseOutstanding` don't follow the multiplicative approach commonly used in the
+various IBNR methods making them not directly usable.  Because of this, the estimator
+determines the 'implied' multiplicative pattern so that a broader set of IBNR
+methods can be used.  Due to the origin period specifics on case reserves, each
+origin gets its own set of multiplicative ``ldf_`` patterns.
+
+  >>> model.ldf_['paid']
+           12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120
+  1998  1.792469  1.205560  1.095603  1.045669  1.018931  1.009749  1.004777  1.002288  1.001866
+  1999  1.768268  1.198631  1.090150  1.043455  1.019377  1.009244  1.004998  1.002392  1.001904
+  2000  1.761959  1.190201  1.089958  1.042975  1.019054  1.010127  1.004585  1.002444  1.001969
+  2001  1.743900  1.191331  1.090565  1.043566  1.018677  1.009022  1.004171  1.002074  1.001672
+  2002  1.734765  1.194005  1.089153  1.044183  1.018551  1.008452  1.004106  1.002042  1.001646
+  2003  1.718935  1.185285  1.091988  1.043790  1.018635  1.009171  1.004452  1.002213  1.001784
+  2004  1.702514  1.186716  1.092167  1.041492  1.017863  1.008798  1.004272  1.002124  1.001712
+  2005  1.701237  1.186004  1.085897  1.041211  1.017746  1.008741  1.004245  1.002111  1.001701
+  2006  1.702795  1.179664  1.085678  1.041114  1.017706  1.008722  1.004236  1.002106  1.001698
+  2007  1.669287  1.180366  1.085961  1.041239  1.017758  1.008747  1.004248  1.002112  1.001702
+
+
+.. topic:: References
+
+  .. [F2010] J.  Friedland, "Estimating Unpaid Claims Using Basic Techniques", Version 3, Ch. 12, 2010.

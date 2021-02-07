@@ -260,6 +260,7 @@ class Triangle(TriangleBase):
             Updated instance of triangle accumulated along the origin
         """
         if inplace:
+            v = self.valuation_date
             if self.is_cumulative or self.is_cumulative is None:
                 if self.is_pattern:
                     xp = self.get_array_module()
@@ -272,6 +273,7 @@ class Triangle(TriangleBase):
                     diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
                     self = concat((self.iloc[..., 0], diff,), axis=3,)
                 self.is_cumulative = False
+            self.valuation_date = v
             return self
         else:
             new_obj = self.copy()

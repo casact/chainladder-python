@@ -43,7 +43,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             self.std_err_ = getattr(obj, "std_err_").copy()
         else:
             self.std_err_ = obj.ldf_ - obj.ldf_
-        zeros = tail[..., 0:1, -1:] * 0
+        zeros = tail[..., 0:obj.ldf_.shape[2], -1:] * 0
         self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
         self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
         self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims

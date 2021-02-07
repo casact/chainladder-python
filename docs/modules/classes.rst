@@ -55,6 +55,7 @@ Classes
   MunichAdjustment
   IncrementalAdditive
   ClarkLDF
+  CaseOutstanding
 
 
 .. _tails_ref:

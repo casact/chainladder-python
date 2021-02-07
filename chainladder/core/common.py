@@ -10,10 +10,11 @@ def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
     xp = ultimate_.get_array_module()
     cdf = cdf_.copy()
-    cdf.values = cdf_.get_array_module().repeat(
-        cdf.values[..., 0:1, :], ultimate_.shape[-2], 2
-    )
-    cdf.odims = ultimate_.odims
+    if cdf.shape[2] == 1:
+        cdf.values = cdf_.get_array_module().repeat(
+            cdf.values[..., 0:1, :], ultimate_.shape[-2], 2
+        )
+        cdf.odims = ultimate_.odims
     cdf.valuation_date = ultimate_.valuation_date
     full = ultimate_.copy()
     full.values = xp.concatenate(((full / cdf).values, full.values), -1)

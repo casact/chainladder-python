@@ -16,9 +16,8 @@ class MunichAdjustment(DevelopmentBase):
     Parameters
     ----------
     paid_to_incurred : tuple or list of tuples
-        A dictionary representing the ``values`` of paid and incurred triangles
-        where ``values`` are an appropriate selection from :class:`Triangle`
-        ``.values``, such as ``('paid', 'incurred')``
+        A tuple representing the paid and incurred ``columns`` of the triangles
+        such as ``('paid', 'incurred')``
     fillna : boolean
         The MunichAdjustment will fail when P/I or I/P ratios cannot be calculated.
         Setting fillna to True will fill the triangle with expected amounts using
@@ -163,6 +162,7 @@ class MunichAdjustment(DevelopmentBase):
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
+        X_new.sigma_ = X_new.std_err_ = X_new.ldf_ * 0 + 1
         return X_new
 
     def _get_p_to_i_object(self, obj):
