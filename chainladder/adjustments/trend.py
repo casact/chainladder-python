@@ -62,7 +62,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         for i, trend in enumerate(trends):
             self.trend_ = self.trend_.trend(
                 trend, self.axis,
-                start=dates[i][0], end=dates[i][0])
+                start=dates[i][0], end=dates[i][1])
         self.trend_ = self.trend_ / X
         return self
 

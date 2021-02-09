@@ -193,7 +193,8 @@ class TriangleBase(
         self.ddims = dev_lag_unique if has_dev else dev_lag[0:1].values
         self.ddims = self.ddims * (m_cnt[self.development_grain])
         if development and not has_dev:
-            self.ddims = pd.DatetimeIndex(data[development].iloc[0:1, 0].values)
+            self.ddims = pd.DatetimeIndex(TriangleBase._to_datetime(
+                data, development, period_end=True, format=development_format)[0:1])
             self.valuation_date = self.ddims[0]
         self.vdims = np.array(columns)
 

@@ -1,7 +1,7 @@
 ARRAY_BACKEND = "numpy"
 AUTO_SPARSE = True
 ARRAY_PRIORITY = ["sparse", "cupy", "numpy"]
-ULT_VAL = "2262-03-31 23:59:59.999999999"
+ULT_VAL = "2261-12-31 23:59:59.999999999"
 
 
 def array_backend(array_backend="numpy"):
