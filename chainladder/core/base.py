@@ -43,7 +43,7 @@ class TriangleBase(
 
         # Check whether all columns are unique and numeric
         check = data[columns].dtypes
-        check = [check] if check.__class__.__name__ == "dtype" else check.to_list()
+        check = [check] if isinstance(check, np.dtype) else check.to_list()
         columns = [columns] if type(columns) is not list else columns
         if "object" in check:
             raise TypeError("column attribute must be numeric.")
