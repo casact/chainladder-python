@@ -6,7 +6,7 @@ Include On-leveling into Cape Cod
 This example demonstrates how to incorporate on-leveling into the `CapeCod`
 estimator.  The on-level approach emulates the approach taken by Friedland in
 "Estimating Unpaid Claims Using Basic Techniques" Chapter 10.  The `ParallelogramOLF`
-estimator is new in chainladder 0.7.9 as is the `xyz` triangle.
+estimator is new in chainladder 0.7.9 as is the ``xyz`` triangle.
 """
 
 import chainladder as cl

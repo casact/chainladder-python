@@ -3,9 +3,9 @@
 Clark Growth Curves
 ====================
 
-This example demonstrates one of the attributes of the `ClarkLDF`. We can
-use the growth curve `G_` to estimate the percent of ultimate at any given
-age.   
+This example demonstrates one of the attributes of the :class:`ClarkLDF`. We can
+use the growth curve ``G_`` to estimate the percent of ultimate at any given
+age.
 """
 import chainladder as cl
 import numpy as np

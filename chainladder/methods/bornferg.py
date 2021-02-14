@@ -59,13 +59,14 @@ class BornhuetterFerguson(Benktander):
 
     def predict(self, X, sample_weight=None):
         """Predicts the Bornhuetter-Ferguson ultimate on a new triangle **X**
+        
         Parameters
         ----------
         X : Triangle
             Loss data to which the model will be applied.
         sample_weight : Triangle
             Required exposure to be used in the calculation.
-        
+
         Returns
         -------
         X_new: Triangle

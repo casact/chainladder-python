@@ -109,7 +109,7 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
     individual predictions based on a matrix of weights to form a
     final prediction.
 
-    Read more in the :ref:`User Guide <voting_chainladder>`.
+    Read more in the :ref:`User Guide <voting>`.
 
     .. versionadded:: 0.7.12
 
@@ -129,7 +129,7 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
     n_jobs : int, default=None
         The number of jobs to run in parallel for ``fit``.
         ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
-        ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
+        ``-1`` means using all processors.
         for more details.
 
     verbose : bool, default=False

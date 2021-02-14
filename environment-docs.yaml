@@ -1,4 +1,4 @@
-# The basic requirements for developing chainladder
+# The basic requirements for building the hosted docs
 name: cl_docs
 
 channels:

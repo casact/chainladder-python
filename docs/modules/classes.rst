@@ -156,23 +156,6 @@ Classes
    :no-members:
    :no-inherited-members:
 
-Classes
--------
-.. currentmodule:: chainladder
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   DataFrame
-   Series
-   Title
-   Image
-   Row
-   Column
-   Tabs
-   CSpacer
-   RSpacer
 
 Functions
 ---------

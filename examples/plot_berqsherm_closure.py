@@ -4,8 +4,8 @@ Berquist-Sherman Disposal Rate Adjustment
 ==========================================
 
 This example demonstrates the adjustment to paid amounts and closed claim
-counts using the Berquist-Sherman method.  The method calculates a `disposal_rate_`
-using the `report_count_estimator`.  The disposal rates of the latest diagonal
+counts using the Berquist-Sherman method.  The method calculates a ``disposal_rate_``
+using the ``reported_count_estimator``.  The disposal rates of the latest diagonal
 are then used to infer adjustments to the inner diagonals of both the closed
 claim triangle as well as the paid amount triangle.
 

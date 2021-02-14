@@ -41,7 +41,7 @@ class MunichAdjustment(DevelopmentBase):
         Estimated conditional deviation around ``q_``
     lambda_ : Series or DataFrame
         Dependency coefficient between univariate chainladder link ratios and
-        `q_resids_`
+        ``q_resids_``
     ldf_ : Triangle
         The estimated bivariate loss development patterns
     cdf_ : Triangle

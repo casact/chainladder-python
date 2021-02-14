@@ -10,7 +10,7 @@ Data Adjustments
 
 .. _bootstrap:
 
-Bootstrap Sampling
+BootstrapODPSample
 ==================
 
 :class:`BootstrapODPSample` is a transformer that simulates new triangles
@@ -33,7 +33,7 @@ of the Triangle must be of unity length.  Upon fitting the Estimator, the
 
 The class only simulates new triangles from which you can generate
 statistics about parameter and process uncertainty.  This allows for converting
-the various deterministic :ref:`IBNR Models<methods_toc>` into stochastic
+the various deterministic :ref:`IBNR Models <methods_toc>` into stochastic
 methods.
 
 An example of using the :class:`BootstrapODPSample` with the :class:`BornhuetterFerguson`
@@ -55,7 +55,7 @@ parameters.  See :ref:`Omitting Link Ratios<dropping>`.
 
 .. _berqsherm:
 
-Berquist Sherman
+BerquistSherman
 ================
 :class:`BerquistSherman` provides a mechanism of restating the inner diagonals of a
 triangle for changes in claims practices.  These adjustments can materialize in
@@ -81,7 +81,7 @@ not attempt to estimate development patterns, tails, or ultimate values.
   .. [F2010] J.  Friedland, "Estimating Unpaid Claims Using Basic Techniques", Version 3, Ch. 13, 2010.
 
 
-.. _parallelogramolf:
+.. _parallelogramolf_docs:
 
 ParallelogramOLF
 =================
@@ -98,7 +98,7 @@ such as the :class:`CapeCod` method.
    :scale: 70%
 
 
-.. _trend:
+.. _trend_docs:
 
 Trend
 ======

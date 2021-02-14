@@ -6,8 +6,8 @@
 Tail Estimators
 ===============
 
-The Basics
-==========
+Basics and Commonalities
+=========================
 
 The Tails module provides a variety of tail transformers that allow for the
 extrapolation of development patterns beyond the end of the triangle.  Tail
@@ -34,6 +34,19 @@ include two additional patterns.
 For quarterly grain, there are five additional development patterns and for monthly
 there are thirteen.
 
+**Example:**
+  >>> triangle = cl.load_sample('quarterly')['paid']
+  >>> tail = cl.TailCurve().fit(triangle)
+  >>> # Slice just the tail entries
+  >>> tail.cdf_[~tail.ldf_.development.isin(triangle.link_ratio.development)]
+         135-Ult   138-Ult   141-Ult   144-Ult  147-Ult
+  (All)  1.00065  1.000531  1.000434  1.000355  1.00029
+
+  .. note::
+     The point estimate ``tail_`` of the tail is the CDF for 135-Ult. The remaining
+     CDFs simply represent the run-off of this tail.
+
+
 Attachment Age
 --------------
 By default, tail estimators attach to the oldest ``development`` age of the ``Triangle``.
@@ -41,12 +54,25 @@ In practice, the last several known development factors of a ``Triangle`` can be
 unreliable and attaching the tail earlier and using it as a smoothing mechanism
 is preferred.  All tail estimators have an ``attachment_age`` parameter that
 allows you to select the development age to which the tail will attach.
-Regardless of ``attachment_age``, the tail development factor vector will
-always include patterns at least one year beyond the known data in the ``Triangle``.
+
+  >>> import chainladder as cl
+  >>> import pandas as pd
+  >>> raa = cl.load_sample('raa')
+  >>> pd.concat((
+  ...     cl.TailCurve().fit(raa).ldf_.T.iloc[:, 0].rename('Unsmoothed'),
+  ...     cl.TailCurve(attachment_age=12).fit(raa).ldf_.T.iloc[:, 0].rename('Curve Fit')
+  ... ), 1).plot(grid=True, title='Exponential Smoothing of LDF');
+
+.. figure:: /auto_examples/images/sphx_glr_plot_exponential_smoothing_001.png
+   :target: ../auto_examples/plot_exponential_smoothing.html
+   :align: center
+   :scale: 70%
+
+
 
 .. _constant:
 
-External Data
+TailConstant
 =============
 :class:`TailConstant` allows you to input a tail factor as a constant.  This is
 useful when relying on tail selections from an external source like industry data.
@@ -57,8 +83,9 @@ triangles and applying :class:`TailConstant` separately to each can be done.
 
 Decay
 -----
-An exponential ``decay`` parameter is also available to facilitate the run off
-analysis described above.
+For run-off analysis, you can control the decay of your tail.  An exponential
+``decay`` parameter is also available to facilitate the run off analysis described
+above.
 
   >>> import chainladder as cl
   >>> abc = cl.Development().fit_transform(cl.load_sample('abc'))
@@ -69,15 +96,33 @@ analysis described above.
 
 As we can see in the example, the 5% tail in the example is split between the
 amount to run-off over the subsequent calendar period **132-144**, and the
-remainder, **144-Ult**.  The split is controlled by the ``decay`` parameter.
+remainder, **144-Ult**.  The split is controlled by the ``decay`` parameter. We
+can always reference our ``tail_`` point estimate.
+
+  >>> abc.tail_
+         132-Ult
+  (All)     1.05
+
+
 
 .. _curve:
 
-LDF Curve Fitting
-=================
+TailCurve
+==========
 :class:`TailCurve` allows for extrapolating a tail factor using curve fitting.
 Currently, exponential decay of LDFs and inverse power curve (for slower decay)
 are supported.
+
+
+  >>> import chainladder as cl
+  >>> import pandas as pd
+  >>> clrd = cl.load_sample('clrd').groupby('LOB').sum()['CumPaidLoss']
+  >>> cdf_ip = cl.TailCurve(curve='inverse_power').fit(clrd)
+  >>> cdf_xp = cl.TailCurve(curve='exponential').fit(clrd)
+  >>> pd.concat((cdf_ip.tail_.rename("Inverse Power"),
+  ...            cdf_xp.tail_.rename("Exponential")), axis=1).plot(
+  ...         kind='bar', grid=True, title='Curve Fit Comparison').set(
+  ...         xlabel='Industry', ylabel='Tail Factor');
 
 .. figure:: /auto_examples/images/sphx_glr_plot_tailcurve_compare_001.png
    :target: ../auto_examples/plot_tailcurve_compare.html
@@ -85,11 +130,9 @@ are supported.
    :scale: 50%
 
 In general, ``inverse_power`` fit produce more conservative tail estimates than
-the ``exponential`` fit.  Both are fit using basic OLS regression on transformed
-``X`` and ``y`` values.
+the ``exponential`` fit.  Both are fit using basic OLS regression on your selected
+development patterns.
 
-For exponential curve fitting, we use fit a regression to the natural log of
-the development portion of a link-ratio, ``f``.
 
 
 Extrapolation Period
@@ -141,8 +184,8 @@ Deriving the ``tail_`` factor manually:
 
 .. _bondy:
 
-The Bondy Tail
-==============
+TailBondy
+==========
 :class:`TailBondy` allows for setting the tail factor using the Generalized Bondy
 method.  The main estimate of the method is the Bondy exponent.  The tail factor
 is can be described as a function of using an ``ldf_`` factor representative of the
@@ -184,8 +227,9 @@ tail factor from ``b_``, the Bondy exponent.
 
 
 .. _tailclark:
-Growth Curve Extrapolation
-==========================
+
+TailClark
+==========
 :class:`TailClark` is a continuation of the :class:`ClarkLDF` model.  Familiarity
 with :ref:`Growth Curve Fitting<clarkldf>` will aid in understanding this Estimator.
 The growth curve approach used by Clark produces development patterns for any

@@ -207,18 +207,18 @@ class TrianglePandas:
         return self
 
     def astype(self, dtype, inplace=True):
-        """
-        Copy of the array, cast to a specified type.
+        """ Copy of the array, cast to a specified type.
 
         Parameters
         ----------
-            dtype : str or dtype
-                Typecode or data-type to which the array is cast.
-            copy : bool, optional
-                By default, astype always returns a newly allocated array.
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast.
+        copy : bool, optional
+            By default, astype always returns a newly allocated array.
+
         Returns
         -------
-            Triangle as new datatype.
+        Triangle as new datatype
         """
         obj = self.copy() if inplace is True else self
         obj.values = obj.values.astype(dtype)

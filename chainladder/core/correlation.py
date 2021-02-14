@@ -25,14 +25,14 @@ class DevelopmentCorrelation:
     Attributes
     ----------
     t_critical : DataFrame
-        Boolean value for whether correlation is too high based on `p_critical`
+        Boolean value for whether correlation is too high based on ``p_critical``
         confidence level.
     t_expectation : DataFrame
         Values representing the Spearman rank correlation
     t_variance : float
         Variance measure of Spearman rank correlation
     range : tuple
-        Range within which `t_expectation` must fall for independence assumption
+        Range within which ``t_expectation`` must fall for independence assumption
         to be significant.
     """
 
@@ -79,7 +79,7 @@ class ValuationCorrelation:
     Mack (1997) test for calendar year effect.A calendar period has impact
     across developments if the probability of the number of small (or large)
     development factors, Z, in that period occurring randomly is less than
-    `p_critical`
+    ``p_critical``
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ class ValuationCorrelation:
     z : Triangle or DataFrame
         Z values for each Valuation Period
     z_critical : Triangle or DataFrame
-        Boolean value for whether correlation is too high based on `p_critical`
+        Boolean value for whether correlation is too high based on ``p_critical``
         confidence level.
     z_expectation : Triangle or DataFrame
         The expected value of Z.

@@ -3,8 +3,8 @@
 IBNR Runoff
 ============
 
-All IBNR models spin off several results triangles including `inbr_`,
-`ultimate_`, `full_expectation`, and `full_triangle_`.  These can be
+All IBNR models spin off several results triangles including ``inbr_``,
+``ultimate_``, ``full_expectation``, and ``full_triangle_``.  These can be
 manipulated into a variety of formats. This example demonstrates how to
 create a calendar year runoff of IBNR.
 """

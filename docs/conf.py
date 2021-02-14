@@ -202,18 +202,17 @@ intersphinx_mapping = {
 sphinx_gallery_conf = {
     'doc_module': 'chainladder',
     'backreferences_dir': os.path.join('modules', 'generated'),
-    'reference_url': {'chainladder': None}
+    'reference_url': {'chainladder': None},
+    'capture_repr': ()
 }
 
 # The following dictionary contains the information used to create the
 # thumbnails for the front page of the scikit-learn home page.
 # key: first image in set
 # values: (number of plot in set, height of thumbnail)
-carousel_thumbs = {'sphx_glr_plot_classifier_comparison_001.png': 600,
-                   'sphx_glr_plot_anomaly_comparison_001.png': 372,
-                   'sphx_glr_plot_gpr_co2_001.png': 350,
-                   'sphx_glr_plot_adaboost_twoclass_001.png': 372,
-                   'sphx_glr_plot_compare_methods_001.png': 349}
+carousel_thumbs = {'sphx_glr_plot_asvanced_triangle_001.png': 600,
+                   'sphx_glr_plot_ave_analysis_001.png': 372,
+}
 
 
 def make_carousel_thumbs(app, exception):

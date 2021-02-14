@@ -8,7 +8,7 @@ Workflow
 ``chainladder`` facilitates practical reserving workflows.
 
 
-.. _pipeline:
+.. _pipeline_docs:
 
 Pipeline
 ========
@@ -40,7 +40,7 @@ using the ``named_steps`` attribute of the `Pipeline`.
 VotingChainladder
 ==================
 The :class:`VotingChainladder` ensemble method allows the actuary to vote between
-different underlying :ref:`_ibnr` by way of a matrix of weights.
+different underlying ``ibnr_`` by way of a matrix of weights.
 
 For example, the actuary may choose the :class:`Chainladder` method for the first
 4 origin periods, the :class:`BornhuetterFerguson` method for the next 3 origin periods,
@@ -101,17 +101,17 @@ the weights parameter results in the average of all predictions assuming a weigh
    1990  20331.432662
 
 
-.. _gridsearch:
+.. _gridsearch_docs:
 
 GridSearch
 ==========
 The grid search provided by :class:`GridSearch` exhaustively generates
 candidates from a grid of parameter values specified with the ``param_grid``
-parameter.  Like `Pipeline`, `Gridsearch` borrows from its scikit-learn counterpart
-`GridSearchCV`.
+parameter.  Like `Pipeline`, `GridSearch` borrows from its scikit-learn counterpart
+``GridSearchCV``.
 
 Because reserving techniques are different from supervised machine learning,
-`Gridsearch` does not try to pick optimal hyperparameters for you. It is more of
+`GridSearch` does not try to pick optimal hyperparameters for you. It is more of
 a scenario-testing estimator.
 
 `GridSearch` can be applied to all other estimators, including the `Pipeline`

@@ -40,7 +40,7 @@ class Development(DevelopmentBase):
     fillna: float, (default=None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
-        excluded from the `ldf_` calculation.  For the specific case of 'volume'
+        excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
         averaging in a deterministic method, this may be reasonable.  For all other
         averages and stochastic methods, this assumption should be avoided.
 
@@ -228,8 +228,10 @@ class Development(DevelopmentBase):
         ----------
         X : Triangle-like
             Set of LDFs to which the munich adjustment will be applied.
-        y : Ignored
-        sample_weight : Ignored
+        y : None
+            Ignored
+        sample_weight :
+            Ignored
 
         Returns
         -------

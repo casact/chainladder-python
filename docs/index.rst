@@ -11,7 +11,7 @@
         <div class="span4 box">
         <h2 >
 
-    :ref:`Triangles <triangle>`
+    :ref:`Triangles <triangle_docs>`
 
     .. raw:: html
 
@@ -22,7 +22,7 @@
         <strong>Application</strong>: Extend pandas syntax to manipulate reserving triangles</br>
         <strong>Classes</strong>:&nbsp;
 
-    :ref:`Triangle<triangle>`,...
+    :ref:`Triangle<triangle_docs>`,...
 
     .. raw:: html
 
@@ -40,7 +40,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`Development <development>`
+    :ref:`Development <development_docs>`
 
     .. raw:: html
 
@@ -104,7 +104,7 @@
         <div class="span4 box">
         <h2>
 
-    :ref:`IBNR Models<ibnr>`
+    :ref:`IBNR Models<methods_toc>`
 
     .. raw:: html
 
@@ -115,7 +115,7 @@
         <strong>Applications</strong>: constructing reserve estimates</br>
         <strong>Algorithms</strong>:&nbsp;
 
-    :ref:`Chainladder<chainladder>`, :ref:`BornhuetterFerguson<bornferg>`, :ref:`CapeCod<capecod>`, ...
+    :ref:`Chainladder<chainladder_docs>`, :ref:`BornhuetterFerguson<bornferg>`, :ref:`CapeCod<capecod_docs>`, ...
 
     .. raw:: html
 
@@ -145,7 +145,7 @@
         <strong>Applications</strong>: Simulation, trending, on-leveling</br>
         <strong>Classes</strong>:&nbsp;
 
-    :ref:`BootstrapODPSample<bootstrap>`, :ref:`BerquistSherman <berqsherm>`, :ref:`Trend <trend>`,...
+    :ref:`BootstrapODPSample<bootstrap>`, :ref:`BerquistSherman <berqsherm>`, :ref:`Trend <trend_docs>`,...
 
     .. raw:: html
 
@@ -175,7 +175,7 @@
         <strong>Application</strong>: scenario testing, simulation, ensembling</br>
         <strong>Utilities</strong>:&nbsp;
 
-    :ref:`Pipeline <pipeline>`, :ref:`VotingChainladder <voting>`, ...
+    :ref:`Pipeline <pipeline_docs>`, :ref:`VotingChainladder <voting>`, ...
 
     .. raw:: html
 

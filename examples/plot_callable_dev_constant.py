@@ -8,7 +8,7 @@ in a development estimator.  This example demonstrates how a function can be
 passed into `DevelopmentConstant` rather than a static dictionary of patterns.
 The function should return development patterns for each element of the Triangle's
 index. When passing a function to the estimator, it behaves as if calling the
-pandas `apply` method on the Triangle's index.
+pandas ``apply`` method on the Triangle's index.
 
 """
 

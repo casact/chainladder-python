@@ -1,4 +1,4 @@
-.. _triangle:
+.. _triangle_docs:
 
 .. currentmodule:: chainladder
 
@@ -13,6 +13,7 @@ Why not Pandas?
 The chainladder package has its own :class:`Triangle` data structure that behaves much
 like a pandas ``DataFrame``.  This begs the question, why not just use pandas?
 There are several advantages over having a dedicated Triangle object:
+
   * Actuaries work with sets of triangles.  DataFrames, being two dimensional, support single triangles with grace but become unwieldy with multiple triangles.
   * We can carry through the meaningful pandas functionality while also supporting triangle specific methods not found in pandas
   * Improved memory footprint with sparse array representation in backend
@@ -208,9 +209,6 @@ when there is better sparse-GPU array support.:
    Loading 'prism' with the numpy backend will consume all of your systems memory.
 
 
-
-
-
 Basic Functionality
 ===================
 Representation
@@ -247,26 +245,6 @@ takes on more of a summary view.
   Index:      ['GRNAME', 'LOB']
   Columns:    ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
 
-Link Ratios
------------
-The age-to-age factors or link ratios of a Triangle can be accessed with the
-``link_ratio`` property.  Triangles also have a `heatmap` method that can optionally
-be called to apply conditional formatting to triangle values along an axis.  The
-heatmap method requires IPython/Jupyter notebook to render.
-
-**Example:**
-  >>> import chainladder as cl
-  >>> triangle = cl.load_sample('abc')
-  >>> triangle.link_ratio.heatmap()
-
-If executed in a notebook environment should produce:
-
-
-.. figure:: ../_static/images/heatmap.PNG
-   :align: center
-   :scale: 40%
-
-
 Valuation vs Development
 ------------------------
 While most Estimators that use triangles expect the development period to be
@@ -291,6 +269,12 @@ accomplished with the method `dev_to_val` and its inverse `val_to_dev`.
    1989     NaN     NaN      NaN      NaN      NaN      NaN      NaN      NaN   3133.0   5395.0
    1990     NaN     NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN   2063.0
 
+Triangles have the ``is_val_tri`` property that denotes whether a triangle is in valuation
+mode. The latest diagonal of a Triangle is a valuation triangle.
+
+**Example:**
+  >>> cl.load_sample('raa').latest_diagonal.is_val_tri
+  True
 
 Incremental vs Cumulative
 --------------------------
@@ -341,6 +325,49 @@ Monthly (M) grains for both the origin period and development period.
 It is generally a good practice to bring your data in at the lowest grain available,
 so that you have full flexibility in aggregating to the grain of your choosing for
 analysis and separately, the grain of your choosing for reporting and communication.
+
+Link Ratios
+-----------
+The age-to-age factors or link ratios of a Triangle can be accessed with the
+``link_ratio`` property.  Triangles also have a `heatmap` method that can optionally
+be called to apply conditional formatting to triangle values along an axis.  The
+heatmap method requires IPython/Jupyter notebook to render.
+
+**Example:**
+  >>> import chainladder as cl
+  >>> triangle = cl.load_sample('abc')
+  >>> triangle.link_ratio.heatmap()
+
+If executed in a notebook environment should produce:
+
+
+.. figure:: ../_static/images/heatmap.PNG
+   :align: center
+   :scale: 40%
+
+The Triangle ``link_ratio`` property has unique properties from regular triangles.
+They are considered patterns.
+
+  >>> triangle.link_ratio.is_pattern
+  True
+
+They are considered incremental, and accumulate in a multiplicative fashion.
+
+  >>> import chainladder as cl
+  >>> triangle = cl.load_sample('abc')
+  >>> triangle.link_ratio.incr_to_cum()
+          12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult
+  1977  4.963251  2.229335  1.600020  1.351932  1.221266  1.143601  1.092423  1.060146  1.036200  1.016259
+  1978  4.979511  2.195398  1.576722  1.329820  1.201420  1.128249  1.079510  1.047930  1.020665       NaN
+  1979  4.852844  2.173120  1.550690  1.306262  1.180228  1.108299  1.063799  1.027606       NaN       NaN
+  1980  4.739387  2.155451  1.545787  1.285875  1.167534  1.090977  1.039414       NaN       NaN       NaN
+  1981  4.559365  2.061644  1.472161  1.251394  1.128033  1.053617       NaN       NaN       NaN       NaN
+  1982  4.593220  2.060676  1.485462  1.234099  1.095568       NaN       NaN       NaN       NaN       NaN
+  1983  4.530235  1.976722  1.382740  1.133654       NaN       NaN       NaN       NaN       NaN       NaN
+  1984  4.271461  1.799967  1.228344       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+  1985  3.596180  1.470398       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+  1986  2.403115       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+
 
 Commutativity
 -------------
@@ -428,6 +455,7 @@ gives us two benefits.  This not only allows for easier adoption, but also provi
 stability to the ``chainladder`` API.
 
 .. _slicing:
+
 Slicing and Filtering
 ---------------------
 With a newly minted :class:`Triangle`, individual triangles can be sliced out
@@ -556,6 +584,26 @@ By default, the aggregation will apply to the first axis with a length greater
 than 1. Alternatively, you can specify the axis using the ``axis`` argument of
 the aggregate method.
 
+Like pandas, the `groupby` method supports any groupable list.  This allows for
+complex groupings that can be derived dynamically.
+
+**Example:**
+  >>> import chainladder as cl
+  >>> clrd = cl.load_sample('clrd')
+  >>> clrd = clrd[clrd['LOB']=='comauto']
+  >>> # Identify the largest commercial auto carriers (by premium) for 1997
+  >>> top_10 = clrd['EarnedPremDIR'].groupby('GRNAME').sum().latest_diagonal.loc[..., '1997', :].to_frame().nlargest(10)
+  >>> # Group any companies together that are not in the top 10
+  >>> clrd.groupby(clrd.index['GRNAME'].map(lambda x: x if x in top_10.index else 'Remainder')).sum()
+                                               Triangle Summary
+  Valuation:                                            1997-12
+  Grain:                                                   OYDY
+  Shape:                                        (11, 6, 10, 10)
+  Index:                                               [GRNAME]
+  Columns:    [IncurLoss, CumPaidLoss, BulkLoss, EarnedPremD...
+
+
+
 Converting to DataFrame
 -----------------------
 When a triangle is presented with a single index level and single column, it
@@ -675,16 +723,16 @@ allowing for working with triangles as DataFrames.
 ============= ================= ============ ===================
 Aggregations  IO                Shaping       Other
 ============= ================= ============ ===================
-`sum`         `to_clipboard`    `unstack`    `plot`
-`mean`        `to_csv`          `pivot`      `rename`
-`median`      `to_excel`        `melt`       `pct_chg`
-`max`         `to_json`         `T`          `round`
-`min`         `to_html`         `drop`       `hvplot`
-`prod`        `to_dict`         `dropna`     `drop_duplicates`
-`var`                                        `describe`
-`std`
-`cumsum`
-`quantile`
+``sum``       ``to_clipboard``  ``unstack``  ``plot``
+``mean``      ``to_csv``        ``pivot``    ``rename``
+``median``    ``to_excel``      ``melt``     ``pct_chg``
+``max``       ``to_json``       ``T``        ``round``
+``min``       ``to_html``       ``drop``     ``hvplot``
+``prod``      ``to_dict``       ``dropna``   ``drop_duplicates``
+``var``                                      ``describe``
+``std``
+``cumsum``
+``quantile``
 ============= ================= ============ ===================
 
 .. note::

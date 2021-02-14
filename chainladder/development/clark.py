@@ -10,9 +10,9 @@ from scipy.optimize import minimize
 class ClarkLDF(DevelopmentBase):
     """ A Estimator that allows for curve fitting development pattterns according
     to Clark 2003.  The method fits incremental triangle amounts to one of
-    `loglogistic` or `weibull` growth curves.  Both Clarks methods, LDF and Cape
+    ``loglogistic`` or ``weibull`` growth curves.  Both Clarks methods, LDF and Cape
     Cod, can be estimated.  To invoke the Cape Cod method, include
-    `sample_weight` in when fitting the estimator.
+    ``sample_weight`` in when fitting the estimator.
 
 
     Parameters
@@ -35,7 +35,7 @@ class ClarkLDF(DevelopmentBase):
     omega_ : DataFrame
         Estimates of the omega parameter of the growth curve.
     elr_ : DataFrame
-        The Expected Loss Ratio parameter. This only exists when a `sample_weight`
+        The Expected Loss Ratio parameter. This only exists when a ``sample_weight``
         is provided to the Estimator.
     scale_ : DataFrame
         The scale parameter of the model.

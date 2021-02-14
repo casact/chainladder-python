@@ -103,7 +103,7 @@ class Pipeline(PipelineSL, EstimatorIO):
     A step's estimator may be replaced entirely by setting the parameter
     with its name to another estimator, or a transformer removed by setting
     to None.
-    Read more in the :ref:`User Guide <pipeline>`.
+    Read more in the :ref:`User Guide <pipeline_docs>`.
 
     Parameters
     ----------

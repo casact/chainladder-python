@@ -1,4 +1,4 @@
-.. _development:
+.. _development_docs:
 
 ===========================
 Development Estimators
@@ -6,8 +6,8 @@ Development Estimators
 
 .. currentmodule:: chainladder
 
-Estimator Basics
-================
+Basics and Commonalities
+=========================
 
 Before stepping into fitting development patterns, its worth reviewing the basics
 of Estimators. The main modeling API implemented by chainladder follows that of
@@ -19,7 +19,7 @@ The scikit-learn API is a common modeling interface that is used to construct an
 fit a countless variety of machine learning algorithms.  The common interface
 allows for very quick swapping between models with minimal code changes.  The
 ``chainladder`` package has adopted the interface to promote a standardized approach
-to fitting reserving models.  The general
+to fitting reserving models.
 
 All estimator objects can optionally be configured with parameters to uniquely
 specify the model being built.  This is done ahead of pushing any data through
@@ -27,21 +27,21 @@ the model.
 
   >>> estimator = Estimator(param1=1, param2=2)
 
-All estimator objects expose a `fit` method that takes a `Triangle` as input, **X**:
+All estimator objects expose a ``fit`` method that takes a `Triangle` as input, ``X``:
 
   >>> estimator.fit(X=data)
 
-All estimators include a `sample_weight` option to the `fit` method to specify
+All estimators include a ``sample_weight`` option to the ``fit`` method to specify
 an exposure basis.  If an exposure base is not applicable, then this argument is
 ignored.
 
   >>> estimator.fit(X=data, sample_weight=weight)
 
-All estimators either `transform` the input Triangle or `predict` an outcome.
+All estimators either ``transform`` the input Triangle or ``predict`` an outcome.
 
 Transformers
 ------------
-All transformers include a `transform` method.  The method is used to transform a
+All transformers include a ``transform`` method.  The method is used to transform a
 Triangle and it will always return a Triangle with added features based on the
 specifics of the transformer.
 
@@ -52,19 +52,19 @@ Other than final IBNR models, most ``chainladder`` estimators are transformers.
 Transforming can be done at the time of fit.
 
   >>> # Fitting and Transforming
-  >>> estimator.fit_transform(data)
+  >>> estimator.fit(data)
   >>> transformed_data = estimator.transform(data)
   >>> # One line equivalent
   >>> transformed_data = estimator.fit_transform(data)
 
 Predictors
 ----------
-All predictors include a `predict` method.
+All predictors include a ``predict`` method.
 
   >>> prediction = estimator.predict(new_data)
 
 Predictors are intended to create new predictions. All IBNR models are predictors
-though the `predict` method is seldom invoked.  This is because actuarial reserving
+though the ``predict`` method is seldom invoked.  This is because actuarial reserving
 techniques tend to not hold out data when parameterizing a model.  Additionally,
 we're typically not trying to generalize the model to any reserving time period,
 but rather to the specific reserve valuation under review.
@@ -96,17 +96,28 @@ manipulated using the same methods we learned about in the :class:`Triangle` cla
   >>> type(dev.cdf_)
   <class 'chainladder.core.triangle.Triangle'>
 
-Development Estimator Commonalities
-===================================
+Commonalities
+--------------
+
 All "Development Estimators" reveal common a set of properties when they are fit.
 
 1. ``ldf_`` represents the fitted age-to-age factors of the model.
 2. ``cdf_`` represents the fitted age-to-ultimate factors of the model.
-3. All "Development estimators" implement the `transform` method.
+3. All "Development estimators" implement the ``transform`` method.
+
+
+``cdf_`` is nothing more than the cumulative representation of the ``ldf_`` vectors.
+
+  >>> import chainladder as cl
+  >>> dev = cl.Development().fit(cl.load_sample('raa'))
+  >>> dev.ldf_.incr_to_cum() == dev.cdf_
+  True
+
 
 .. _dev:
-Basic Development
-==================
+
+Development
+============
 
 :class:`Development` allows for the selection of loss development patterns. Many
 of the typical averaging techniques are available in this class: ``simple``,
@@ -142,7 +153,7 @@ the same length as your triangles ``link_ratio`` development axis.
 
 This approach works for ``average``, ``n_periods``, ``drop_high`` and ``drop_low``.
 
-Notice in both cases, the you have not specified a parameter, a sensible default
+Notice in both cases, where you have not specified a parameter, a sensible default
 is chosen for you.
 
 .. _dropping:
@@ -198,7 +209,7 @@ version recognizes any ommissions you specify.
    :align: center
    :scale: 40%
 
-By decoupling the `fit` and `transform` methods, we can apply our `Development`
+By decoupling the ``fit`` and ``transform`` methods, we can apply our :class:`Development`
 estimator to new data.  This is a common pattern of the scikit-learn API. In this
 example we generate development patterns at an industry level and apply those
 patterns to individual companies.
@@ -218,10 +229,14 @@ patterns to individual companies.
 
 
 .. _dev_const:
-External patterns
-=================
 
-The `DevelopmentConstant` estimator simply allows you to hard code development
+DevelopmentConstant
+===================
+
+External patterns
+------------------
+
+The :class:`DevelopmentConstant` estimator simply allows you to hard code development
 patterns into a Development Estimator.  A common example would be to include a
 set of industry development patterns in your workflow that are not directly
 estimated from any of your own data.
@@ -233,13 +248,26 @@ estimated from any of your own data.
   (All)    2.0   1.25    1.1   1.08   1.05   1.02
 
 
-For more info refer to the docstring of `DevelopmentConstant`.
+By wrapping patterns in the :class:`DevelopmentConstant` estimator, we can integrate
+into a larger workflow with tail extrapolation and IBNR calculations.
+
+Function of patterns
+--------------------
+
+:class:`DevelopmentConstant` doesn't have to be limited to one set of fixed patterns.
+It can take any arbitrary function similar to how ``pandas.DataFrame.apply`` works. Refer
+to this link for a detailed example:
+
+.. figure:: /auto_examples/images/sphx_glr_plot_callable_dev_constant_001.png
+   :target: ../auto_examples/plot_callable_dev_constant.html
+   :align: center
+   :scale: 75%
 
 
 .. _incremental:
 
-Incremental Additive
-====================
+IncrementalAdditive
+===================
 
 The :class:`IncrementalAdditive` method uses both the triangle of incremental
 losses and the exposure vector for each accident year as a base. Incremental
@@ -255,8 +283,8 @@ the triangle.
 
 .. _munich:
 
-Munich Adjustment
-==================
+MunichAdjustment
+=================
 The :class:`MunichAdjustment` is a bivariate adjustment to loss development factors.
 There is a fundamental correlation between the paid and the case incurred data
 **(P/I)** of a triangle. The ratio of paid to incurred has information that can
@@ -267,7 +295,7 @@ Depending on whether the momentary **(P/I)** ratio is below or above average,
 one should use an above-average or below-average paid development factor and/or
 a below-average or above-average incurred development factor.  In doing so, the
 model replaces a set of development patterns that would be used for all
-`origins` with individualized development curves that reflect the unique levels
+``origins`` with individualized development curves that reflect the unique levels
 of **(P/I)** per origin period.
 
 The :class:`MunichAdjustment` uses the correlation between the residuals of the
@@ -288,8 +316,8 @@ be adjusted based on the **(P/I)** ratio at any given cell of the ``Triangle``.
 
 .. _clarkldf:
 
-Growth Curve Fitting
-====================
+ClarkLDF
+=========
 :class:`ClarkLDF` is an application of Maximum Likelihood Estimation (MLE) theory
 for modeling the distribution of loss development. This model is used to estimate
 future loss emergence, and the variability around that estimate. The value of
@@ -304,12 +332,12 @@ monotonic increasing and are more relevant for paid data.  While the model can
 be used for case incurred data, if there is too much "negative" development,
 other Estimators should be used.
 
-The `Loglogistic` Growth Function:
+The ``Loglogistic`` Growth Function:
 
 .. math::
    G(x|\omega, \theta) =\frac{x^{\omega }}{x^{\omega } + \theta^{\omega }}
 
-The `Weibull` Growth Function:
+The ``Weibull`` Growth Function:
 
 .. math::
   G(x|\omega, \theta) =1-exp(-\left (\frac{x}{\theta}  \right )^\omega)
@@ -321,7 +349,7 @@ The `Weibull` Growth Function:
 
 Parameterized growth curves can produce patterns for any age and can even be used
 to estimate a tail beyond the latest age in a Triangle.  In general, the
-`loglogistic` growth curve produces a larger tail than the `weibull` growth curve.
+``loglogistic`` growth curve produces a larger tail than the ``weibull`` growth curve.
 
 LDF and Cape Cod methods
 ------------------------
@@ -426,6 +454,32 @@ origin gets its own set of multiplicative ``ldf_`` patterns.
   2005  1.701237  1.186004  1.085897  1.041211  1.017746  1.008741  1.004245  1.002111  1.001701
   2006  1.702795  1.179664  1.085678  1.041114  1.017706  1.008722  1.004236  1.002106  1.001698
   2007  1.669287  1.180366  1.085961  1.041239  1.017758  1.008747  1.004248  1.002112  1.001702
+
+Incremental patterns
+---------------------
+
+The incremental patterns of the :class:`CaseOutstanding` method are avilable as
+additional properties for review. They are the ``paid_to_prior_case_`` and the
+``case_to_prior_case_``. These are useful to review when deciding on the appropriate
+hyperparameters for ``paid_n_periods`` and ``case_n_periods``.  Once you are satisfied
+with your hyperparameter tuning, you can see the fitted selections in the
+``paid_ldf_`` and ``case_ldf_`` incremental patterns.
+
+  >>> model.case_to_prior_case_
+           12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120
+  1998  0.537820  0.554128  0.525253  0.498107  0.532934  0.537997  0.587702  0.697024  0.579812
+  1999  0.536825  0.564892  0.544220  0.496910  0.502864  0.579975  0.641971  0.650552       NaN
+  2000  0.546126  0.574211  0.539091  0.487208  0.537598  0.543222  0.665505       NaN       NaN
+  2001  0.540564  0.566029  0.514819  0.501324  0.507736  0.541364       NaN       NaN       NaN
+  2002  0.540900  0.554610  0.540609  0.480216  0.488133       NaN       NaN       NaN       NaN
+  2003  0.526510  0.576514  0.536276  0.476418       NaN       NaN       NaN       NaN       NaN
+  2004  0.529775  0.566523  0.506884       NaN       NaN       NaN       NaN       NaN       NaN
+  2005  0.521531  0.553888       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+  2006  0.526122       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+  2007       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+  >>> model.case_ldf_
+            12-24    24-36     36-48     48-60     60-72    72-84     84-96    96-108   108-120
+  (All)  0.534019  0.56385  0.529593  0.490031  0.513853  0.55064  0.631726  0.673788  0.579812
 
 
 .. topic:: References

@@ -4,7 +4,7 @@ Testing Sensitivity of Bondy Tail Assumptions
 ===============================================
 
 This example demonstrates the usage of the `TailBondy` estimator as well as
-passing multiple scoring functions to `GridSearch`.  When the `earliest_age`
+passing multiple scoring functions to `GridSearch`.  When the ``earliest_age``
 is set to the last available in the Triangle, the estimator reverts to the
 traditional Bondy method.
 """

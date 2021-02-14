@@ -6,9 +6,9 @@ Stochastic Bornhuetter Ferguson
 There are several aspects of the chainladder module that are demonstrated with
 this example.
 
-1. We see how to use the `BootstrapODPSample` and `BornhuetterFerguson` to come
-  up with a stochastic view of the Bornhuetter-Ferguson method.
-2. We use the `broadcast_axis` method of the triangle class (new in 0.4.7)
+    1. We see how to use the :class:`BootstrapODPSample` and :class:`BornhuetterFerguson` to come
+      up with a stochastic view of the Bornhuetter-Ferguson method.
+    2. We use the ``broadcast_axis`` method of the triangle class
 
 """
 import chainladder as cl
