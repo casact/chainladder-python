@@ -5,6 +5,7 @@
 from chainladder.methods.chainladder import Chainladder
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
+import copy
 import warnings
 from chainladder.core.io import EstimatorIO
 
@@ -168,7 +169,7 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
             ]
         )
 
-        adjusted_triangle_ = obj.copy()
+        adjusted_triangle_ = copy.deepcopy(obj)
         adjusted_triangle_[paid_amount] = adj_paid_claims
         adjusted_triangle_[incurred_amount] = adj_incurred_amount
         adjusted_triangle_[closed_count] = adj_closed_clm
@@ -194,7 +195,7 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         -------
             X_new : New triangle with transformed attributes.
         """
-        X_new = X.copy()
+        X_new = copy.deepcopy(X)
         X_new[self.paid_amount] = self.adjusted_triangle_[self.paid_amount]
         X_new[self.incurred_amount] = self.adjusted_triangle_[self.incurred_amount]
         X_new[self.reported_count] = self.adjusted_triangle_[self.reported_count]
