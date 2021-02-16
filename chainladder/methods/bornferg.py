@@ -18,6 +18,8 @@ class BornhuetterFerguson(Benktander):
         bootstrap model, the model samples aprioris from a lognormal distribution
         using this argument as a standard deviation.
     random_state : int, RandomState instance or None, optional (default=None)
+        Seed for sampling from the apriori distribution.  This is ignored when
+        using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
@@ -59,7 +61,7 @@ class BornhuetterFerguson(Benktander):
 
     def predict(self, X, sample_weight=None):
         """Predicts the Bornhuetter-Ferguson ultimate on a new triangle **X**
-        
+
         Parameters
         ----------
         X : Triangle
@@ -72,6 +74,4 @@ class BornhuetterFerguson(Benktander):
         X_new: Triangle
             Loss data with Bornhuetter-Ferguson ultimate applied
         """
-        if sample_weight is None:
-            raise ValueError("sample_weight is required.")
         return super().predict(X, sample_weight)

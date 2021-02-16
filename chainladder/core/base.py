@@ -83,6 +83,7 @@ class TriangleBase(
         else:
             u = None
         # Initialize origin and its grain
+        origin = development if origin is None else origin
         origin_date = TriangleBase._to_datetime(data, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
         origin_date = (

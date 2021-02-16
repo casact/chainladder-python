@@ -82,19 +82,19 @@ def test_weight_broadcasting():
 
     estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
     min_dim_weights = np.array([[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
-    mid_dim_weights = np.array([[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3] * 2)
-    max_dim_weights = np.array([[[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3] * 2] * 132)
+    mid_dim_weights = np.array([[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3] * 1)
+    max_dim_weights = np.array([[[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3] * 1] * 132)
 
     min_dim_ult = cl.VotingChainladder(estimators=estimators, weights=min_dim_weights).fit(
-        clrd,
+        clrd['CumPaidLoss'],
         sample_weight=clrd["EarnedPremDIR"].latest_diagonal,
     ).ultimate_.sum()
     mid_dim_ult = cl.VotingChainladder(estimators=estimators, weights=mid_dim_weights).fit(
-        clrd,
+        clrd['CumPaidLoss'],
         sample_weight=clrd["EarnedPremDIR"].latest_diagonal,
     ).ultimate_.sum()
     max_dim_ult = cl.VotingChainladder(estimators=estimators, weights=max_dim_weights).fit(
-        clrd,
+        clrd['CumPaidLoss'],
         sample_weight=clrd["EarnedPremDIR"].latest_diagonal,
     ).ultimate_.sum()
     assert (abs(min_dim_ult - mid_dim_ult - max_dim_ult) < 1)

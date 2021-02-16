@@ -336,6 +336,10 @@ implicit in the CapeCod estimate.
   >>> m2.ibnr_.sum()
   3030598.384680113
 
+A parameter `apriori_sigma` can also be specified to give sampling variance to the
+estimated apriori.  This along with `random_state` can be used in conjuction with
+the `BootstrapODPSample` estimator to build a stochastic `CapeCod` estimate.
+
 Trend and On-level
 -------------------
 When using data implicit in the Triangle to derive the apriori, it is desirable

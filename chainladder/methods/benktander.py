@@ -14,14 +14,14 @@ class Benktander(MethodBase):
         method. If sample_weight is already an apriori measure of ultimate,
         then use 1.0
     n_iters : int, optional (default=1)
-        Multiplier for the sample_weight used in the Bornhuetter Ferguson
-        method. If sample_weight is already an apriori measure of ultimate,
-        then use 1.0
+        Number of iterations to use in the Benktander model.
     apriori_sigma : float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal distribution
         using this argument as a standard deviation.
     random_state : int, RandomState instance or None, optional (default=None)
+        Seed for sampling from the apriori distribution.  This is ignored when
+        using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
