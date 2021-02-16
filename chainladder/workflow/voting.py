@@ -48,10 +48,10 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
     """
 
     def _broadcast_weights(self, X):
-        if self.weights.ndim == 3:
-            weights = np.repeat(self.weights[np.newaxis, ...], X.shape[1], axis=0)
-        if self.weights.ndim == 4:
-            weights = np.repeat(self.weights[np.newaxis, ...], X.shape[0], axis=0)
+        if self.weights_.ndim == 3:
+            weights = np.repeat(self.weights_[np.newaxis, ...], X.shape[1], axis=0)
+        if self.weights_.ndim == 4:
+            weights = np.repeat(self.weights_[np.newaxis, ...], X.shape[0], axis=0)
         return weights
 
     def _predict(self, X, sample_weight=None):
@@ -62,22 +62,22 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
     def fit(self, X, y, sample_weight=None):
         """Get common fit operations."""
         names, clfs = self._validate_estimators()
-
-        if self.weights is not None:
-            self.weights = self.weights[..., np.newaxis]
-            if self.weights.shape[-3] != X.shape[2]:
+        self.weights_ = self.weights
+        if self.weights_ is not None:
+            self.weights_ = self.weights_[..., np.newaxis]
+            if self.weights_.shape[-3] != X.shape[2]:
                 raise ValueError('Length of weight arrays do not equal'
                                  f' number of accident periods; found'
-                                 f' {self.weights.shape[-3]} weights'
+                                 f' {self.weights_.shape[-3]} weights'
                                  f' and {X.shape[2]} accident periods.')
-            if self.weights.shape[-2] != len(self.estimators):
+            if self.weights_.shape[-2] != len(self.estimators):
                 raise ValueError('Number of weight arrays does not equal'
                                  f' number of estimators array; '
-                                 f' found {self.weights.shape[-2]} weights'
+                                 f' found {self.weights_.shape[-2]} weights'
                                  f' arrays and {len(self.estimators)}'
                                  ' estimators.')
         else:
-            self.weights = np.ones(X.shape[:3] + (len(self.estimators), 1))
+            self.weights_ = np.ones(X.shape[:3] + (len(self.estimators), 1))
 
         self.estimators_ = Parallel(n_jobs=self.n_jobs)(
                 delayed(_fit_single_estimator)(
@@ -111,7 +111,7 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
 
     Read more in the :ref:`User Guide <voting>`.
 
-    .. versionadded:: 0.7.12
+    .. versionadded:: 0.8.0
 
     Parameters
     ----------
@@ -275,20 +275,20 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         return self.fit(X, y, sample_weight).transform(X, sample_weight=sample_weight)
 
     def _get_ultimate(self, X, sample_weight=None):
-        if self.weights.ndim < 5:
+        if self.weights_.ndim < 5:
             weights = self._broadcast_weights(X)
-        elif self.weights.ndim == 5:
-            if self.weights.shape[0] != X.shape[0]:
+        elif self.weights_.ndim == 5:
+            if self.weights_.shape[0] != X.shape[0]:
                 raise ValueError('Index length (axis 0) of weights does'
                                  ' not equal index length of X; found'
-                                 f' {self.weights.shape[0]} for weights'
+                                 f' {self.weights_.shape[0]} for weights'
                                  f' and {X.shape[0]} for X.')
-            if self.weights.shape[1] != X.shape[1]:
+            if self.weights_.shape[1] != X.shape[1]:
                 raise ValueError('Column length (axis 1) of weights does'
                                  f' not equal column length of X; found'
-                                 f' {self.weights.shape[1]} for weights'
+                                 f' {self.weights_.shape[1]} for weights'
                                  f' and {X.shape[1]} for X.')
-            weights = self.weights
+            weights = self.weights_
 
         ultimate = sum([
                 est.predict(X, sample_weight).ultimate_ * weights[..., i, :]

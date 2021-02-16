@@ -54,6 +54,8 @@ Available Estimators
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 | `IncrementalAdditive`_       |                  | `CapeCod`_              |                       |                       |
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `CaseOutstanding`_           |                  |                         |                       |                       |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
 Documentation
 -------------
@@ -79,9 +81,10 @@ code documentation.
 .. _GridSearch: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#gridsearch
 .. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#incremental-additive
 .. _CapeCod: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#cape-cod
-.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.ParallelogramOLF.html#chainladder.ParallelogramOLF
-.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.VotingChainladder.html#chainladder.VotingChainladder
-.. _Trend: https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.Trend.html#chainladder.Trend
+.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#parallelogramolf
+.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#votingchainladder
+.. _Trend: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#trend
+.. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#caseoutstanding
 .. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
 
 Getting Started Tutorials

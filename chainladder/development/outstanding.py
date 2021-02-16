@@ -17,6 +17,8 @@ class CaseOutstanding(DevelopmentBase):
     into comparable multiplicative patterns for usage with the various IBNR
     methods.
 
+    .. versionadded:: 0.8.0
+
     Parameters
     ----------
     paid_to_incurred : tuple or list of tuples

@@ -22,4 +22,4 @@ from chainladder.tails import *  # noqa (API Import)
 from chainladder.methods import *  # noqa (API Import)
 from chainladder.workflow import *  # noqa (API Import)
 
-__version__ = "0.7.13"
+__version__ = "0.8.0"
