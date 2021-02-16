@@ -46,8 +46,10 @@ class IncrementalAdditive(DevelopmentBase):
         X : Triangle-like
             Triangle to which the incremental method is applied.  Triangle must
             be cumulative.
-        y : Ignored
-        sample_weight : Exposure used in the method.
+        y : None
+            Ignored
+        sample_weight :
+            Exposure used in the method.
 
         Returns
         -------
@@ -67,7 +69,7 @@ class IncrementalAdditive(DevelopmentBase):
             sample_weight = sample_weight.set_backend("numpy")
         xp = X.get_array_module()
         sample_weight.is_cumulative = False
-        obj = X.cum_to_incr() / sample_weight
+        obj = X.cum_to_incr() / sample_weight.values
         x = obj.trend(self.trend)
         w_ = Development(n_periods=self.n_periods - 1).fit(x).w_
         w_ = num_to_nan(w_)
@@ -101,14 +103,14 @@ class IncrementalAdditive(DevelopmentBase):
             * keeps
         )
         obj.values = obj.values * (1 - xp.nan_to_num(x.nan_triangle)) + xp.nan_to_num(
-            (X.cum_to_incr() / sample_weight).values
+            (X.cum_to_incr().values / sample_weight.values)
         )
 
         obj.values[obj.values == 0] = xp.nan
         obj._set_slicers()
         obj.valuation_date = pd.to_datetime(ULT_VAL)
         self.ldf_ = obj.incr_to_cum().link_ratio
-        self.incremental_ = obj * sample_weight
+        self.incremental_ = obj * sample_weight.values
         self.sigma_ = self.std_err_ = 0 * self.ldf_
         return self
 

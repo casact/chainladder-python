@@ -1,5 +1,5 @@
 import chainladder as cl
-
+import itertools
 
 def test_grid():
     # Load Data
@@ -34,3 +34,24 @@ def test_grid():
         )
         .ibnr_.sum()
     )
+
+def test_pipeline():
+    tri = cl.load_sample('clrd').groupby('LOB').sum()[['CumPaidLoss', 'IncurLoss', 'EarnedPremDIR']]
+    tri['CaseIncurredLoss'] = tri['IncurLoss'] - tri['CumPaidLoss']
+
+    X = tri[['CumPaidLoss', 'CaseIncurredLoss']]
+    sample_weight = tri['EarnedPremDIR'].latest_diagonal
+
+    dev = [cl.Development(), cl.ClarkLDF(), cl.Trend(), cl.IncrementalAdditive(),
+             cl.MunichAdjustment(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss')),
+             cl.CaseOutstanding(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss'))]
+    tail = [cl.TailCurve(), cl.TailConstant(), cl.TailBondy(), cl.TailClark()]
+    ibnr = [cl.Chainladder(),  cl.BornhuetterFerguson(), cl.Benktander(n_iters=2), cl.CapeCod()]
+
+    for model in list(itertools.product(dev, tail, ibnr)):
+        print(model)
+        cl.Pipeline(
+            steps=[('dev', model[0]),
+                   ('tail', model[1]),
+                   ('ibnr', model[2])]
+        ).fit_predict(X, sample_weight=sample_weight).ibnr_.sum('origin').sum('columns').sum()
