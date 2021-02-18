@@ -68,7 +68,8 @@ allows you to select the development age to which the tail will attach.
    :align: center
    :scale: 70%
 
-
+Regardless of where you attach a tail, there will be incremental patterns to at
+least one year past the end of the `Triangle` to support run-off analysis.
 
 .. _constant:
 
@@ -170,9 +171,17 @@ Deriving the ``tail_`` factor manually:
   >>> import numpy as np
   >>> raa = cl.load_sample('raa')
   >>> tail = cl.TailCurve('exponential').fit(raa)
+  >>> tail.tail_
+          120-Ult
+  (All)  1.009436
+  >>> # Manual calculation
   >>> np.prod((1+np.exp(np.arange(10, 10+tail.extrap_periods)*tail.slope_.values+tail.intercept_.values)))
   1.0094357515812302
   >>> tail = cl.TailCurve('inverse_power').fit(raa)
+  >>> tail.tail_
+          120-Ult
+  (All)  1.101482
+  >>> # Manual calculation
   >>> np.prod(1+np.exp(tail.intercept_.values)*(np.arange(10, 10+tail.extrap_periods)**tail.slope_.values))
   1.1014821181181595
 
@@ -203,19 +212,19 @@ tail factor from ``b_``, the Bondy exponent.
 
   >>> import chainladder as cl
   >>> # Data and initial development patterns
-  ... triangle = cl.load_sample('tail_sample')
+  >>> triangle = cl.load_sample('tail_sample')
   >>> dev = cl.Development(average='simple').fit_transform(triangle)
   >>> # Estimate the Bondy Tail
-  ... tail = cl.TailBondy(earliest_age=12).fit(dev)
+  >>> tail = cl.TailBondy(earliest_age=12).fit(dev)
   >>> # Get last fitted LDF of the model
-  ... last_fitted_ldf = (tail.earliest_ldf_**(tail.b_**8))
+  >>> last_fitted_ldf = (tail.earliest_ldf_**(tail.b_**8))
   >>> # Calculate the tail using the Bondy formula above
-  ... last_fitted_ldf**(tail.b_/(1-tail.b_))
+  >>> last_fitted_ldf**(tail.b_/(1-tail.b_))
          incurred     paid
   Total
   Total  1.003982  1.02773
   >>> # Compare to actual tail
-  ... tail.tail_
+  >>> tail.tail_
          incurred     paid
   Total
   Total  1.003982  1.02773

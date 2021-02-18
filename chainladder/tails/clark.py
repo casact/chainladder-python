@@ -15,10 +15,13 @@ class TailClark(TailBase):
     growth : {'loglogistic', 'weibull'}
         The growth function to be used in curve fitting development patterns.
         Options are 'loglogistic' and 'weibull'
+    truncation_age : int
+        The age at which you wish to stop extrapolating development
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
+
 
     Attributes
     ----------
@@ -41,8 +44,9 @@ class TailClark(TailBase):
         The "Normalized" Residuals of the model according to Clark.
     """
 
-    def __init__(self, growth="loglogistic", attachment_age=None):
+    def __init__(self, growth="loglogistic", truncation_age=None, attachment_age=None):
         self.growth = growth
+        self.truncation_age = truncation_age
         self.attachment_age = attachment_age
 
     def fit(self, X, y=None, sample_weight=None):
@@ -104,6 +108,8 @@ class TailClark(TailBase):
         if hasattr(model, "elr_"):
             self.elr_ = model.elr_
         self.norm_resid_ = model.norm_resid_
+        if self.truncation_age:
+            self.ldf_.values[..., -1:] = self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
         if backend == "cupy":
             self = self.set_backend("cupy", inplace=True)
         return self

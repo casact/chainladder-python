@@ -353,6 +353,7 @@ to estimate a tail beyond the latest age in a Triangle.  In general, the
 
 LDF and Cape Cod methods
 ------------------------
+
 Clark approaches curve fitting with two different methods, an LDF approach and
 a Cape Cod approach.  The LDF approach only requires a loss triangle whereas
 the Cape Cod approach would also need a premium vector.  Choosing between the
@@ -364,15 +365,30 @@ we obtain both ``omega_`` and ``theta_``.
 
   >>> import chainladder as cl
   >>> clrd = cl.load_sample('clrd').groupby('LOB').sum()
-  >>> cl.ClarkLDF(growth='weibull').fit(clrd['CumPaidLoss']).omega_
+  >>> dev = cl.ClarkLDF(growth='weibull').fit(clrd['CumPaidLoss'])
+  >>> dev.omega_
             CumPaidLoss
   LOB
-  comauto      0.928921
+  comauto      0.928925
   medmal       1.569647
-  othliab      1.330084
-  ppauto       0.831528
-  prodliab     1.456167
-  wkcomp       0.898282
+  othliab      1.330080
+  ppauto       0.831530
+  prodliab     1.456174
+  wkcomp       0.898277
+
+Perhaps more useful than the parameters is the growth curve ``G_`` function they
+represent which can be used to deetermine the development factor at any age.
+
+  >>> 1/dev.G_(37.5).to_frame()
+  LOB
+  comauto     1.270909
+  medmal      1.707244
+  othliab     1.619175
+  ppauto      1.118799
+  prodliab    2.126134
+  wkcomp      1.311591
+  dtype: float64
+
 
 Another example showing the usage of the :class:`ClarkLDF` Cape Cod approach. With
 the Cape Cod, an Expected Loss Ratio is included as an extra feature in the
