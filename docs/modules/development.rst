@@ -47,7 +47,8 @@ specifics of the transformer.
 
   >>> transformed_data = estimator.transform(data)
 
-Other than final IBNR models, most ``chainladder`` estimators are transformers.
+Other than final IBNR models, ``chainladder`` estimators are transformers.
+That is, they return your `Triangle` back to you with additional properties.
 
 Transforming can be done at the time of fit.
 
@@ -56,6 +57,7 @@ Transforming can be done at the time of fit.
   >>> transformed_data = estimator.transform(data)
   >>> # One line equivalent
   >>> transformed_data = estimator.fit_transform(data)
+  >>> assert isinstance(transformed_data, cl.Triangle)
 
 Predictors
 ----------
@@ -63,11 +65,10 @@ All predictors include a ``predict`` method.
 
   >>> prediction = estimator.predict(new_data)
 
-Predictors are intended to create new predictions. All IBNR models are predictors
-though the ``predict`` method is seldom invoked.  This is because actuarial reserving
-techniques tend to not hold out data when parameterizing a model.  Additionally,
-we're typically not trying to generalize the model to any reserving time period,
-but rather to the specific reserve valuation under review.
+Predictors are intended to create new predictions. It is not uncommon to fit a
+model on a more aggregate view, say national level, of data and predict on a
+more granular triangle, state or provincial.
+
 
 Parameter Types
 ---------------
@@ -75,7 +76,8 @@ Estimator parameters: All the parameters of an estimator can be set when it is
 instantiated or by modifying the corresponding attribute.  These parameters
 define how you'd like to fit an estimator and are chosen before the fitting
 process.  These are often referred to as hyperparameters in the context of
-Machine Learning:
+Machine Learning, and throughout these documents.  Most of the hyperparameters
+of the ``chainladder`` package take on sensible defaults.
 
   >>> estimator = Estimator(param1=1, param2=2)
   >>> estimator.param1
@@ -99,7 +101,8 @@ manipulated using the same methods we learned about in the :class:`Triangle` cla
 Commonalities
 --------------
 
-All "Development Estimators" reveal common a set of properties when they are fit.
+All "Development Estimators" are transformers and reveal common a set of properties
+when they are fit.
 
 1. ``ldf_`` represents the fitted age-to-age factors of the model.
 2. ``cdf_`` represents the fitted age-to-ultimate factors of the model.
@@ -153,7 +156,7 @@ the same length as your triangles ``link_ratio`` development axis.
 
 This approach works for ``average``, ``n_periods``, ``drop_high`` and ``drop_low``.
 
-Notice in both cases, where you have not specified a parameter, a sensible default
+Notice where you have not specified a parameter, a sensible default
 is chosen for you.
 
 .. _dropping:
@@ -256,7 +259,7 @@ Function of patterns
 
 :class:`DevelopmentConstant` doesn't have to be limited to one set of fixed patterns.
 It can take any arbitrary function similar to how ``pandas.DataFrame.apply`` works. Refer
-to this link for a detailed example:
+to this detailed example:
 
 .. figure:: /auto_examples/images/sphx_glr_plot_callable_dev_constant_001.png
    :target: ../auto_examples/plot_callable_dev_constant.html
@@ -275,7 +278,96 @@ additive ratios are computed by taking the ratio of incremental loss to the
 exposure (which has been adjusted for the measurable effect of inflation), for
 each accident year. This gives the amount of incremental loss in each year and
 at each age expressed as a percentage of exposure, which we then use to square
-the triangle.
+the incremental triangle.
+
+  >>> import chainladder as cl
+  >>> tri = cl.load_sample("ia_sample")
+  >>> ia = cl.IncrementalAdditive().fit(
+  ...     tri['loss'], sample_weight=tri['exposure'].latest_diagonal)
+  >>> ia.incremental_.round(0)
+            12      24      36      48     60     72
+  2000  1001.0   854.0   568.0   565.0  347.0  148.0
+  2001  1113.0   990.0   671.0   648.0  422.0  164.0
+  2002  1265.0  1168.0   800.0   744.0  482.0  195.0
+  2003  1490.0  1383.0  1007.0   849.0  543.0  220.0
+  2004  1725.0  1536.0  1068.0   984.0  629.0  255.0
+  2005  1889.0  1811.0  1256.0  1157.0  740.0  300.0
+
+These ``incremental_`` values are then used to determine an implied set of
+mutiplicative development patterns.  Because incremental additive values are
+unique for each ``origin``, so too will be the ``ldf_``.
+
+  >>> ia.ldf_
+           12-24     24-36     36-48     48-60     60-72
+  2000  1.853147  1.306199  1.233182  1.116131  1.044378
+  2001  1.889488  1.319068  1.233598  1.123320  1.042624
+  2002  1.923320  1.328812  1.230127  1.121179  1.043830
+  2003  1.928188  1.350505  1.218848  1.114772  1.041751
+  2004  1.890435  1.327647  1.227353  1.118406  1.042933
+  2005  1.958577  1.339524  1.233506  1.121004  1.043773
+
+Incremental calculation
+------------------------
+The estimation of the incremental triangle can be done with varying hyperparameters
+of ``n_period`` and ``average`` similar to the `Development` estimator.  Additionally,
+a ``trend`` in the origin period can also be selected.
+
+Suppose there is a vector ``zeta_`` that represents an estimate of the incremental
+losses, ``X`` for a development period as a percentage of some exposure or ``sample_weight``.
+Using a 'volume' weighted estimate for all origin periods, we can manually estimate ``zeta_``
+
+  >>> zeta_ = tri['loss'].cum_to_incr().sum('origin') / tri['exposure'].sum('origin')
+  >>> zeta_
+              12       24        36        48        60       72
+  2000  0.243212  0.22196  0.153978  0.141853  0.090673  0.03677
+
+The ``zeta_`` vector along with the ``sample_weight`` and optionally a `trend`
+are used to propagate incremental losses to the lower half of the `Triangle`.
+In the trivial case of no trend, we can estimate the incrementals for age 72.
+
+  >>> zeta_.loc[..., 72] * tri['exposure'].latest_diagonal
+                72
+  2000  148.000000
+  2001  163.847950
+  2002  195.433540
+  2003  220.106335
+  2004  255.148323
+  2005  299.971180
+  >>> # These are the same incrementals that the IncrementalAdditive method produces
+  >>> zeta_.loc[..., 72]*tri['exposure'].latest_diagonal == ia.incremental_.loc[..., 72]
+  True
+
+Trending
+---------
+The `IncrementalAdditive` method supports trending through the ``trend``
+and the ``future_trend`` hyperparameters.  The ``trend`` parameter is used in the
+fitting of ``zeta_`` and it trends all inner diagonals of the `Triangle` to its
+``latest_diagonal`` before estimating ``zeta_``.
+
+The ``future_trend`` hyperparameter is used to trend beyond the ``latest_diagonal``
+into the lower half of the `Triangle`.  If no future trend is supplied, then
+the ``future_trend`` is assumed to be that of the ``trend`` parameter.
+
+  >>> cl.IncrementalAdditive(trend=0.02, future_trend=0.05).fit(
+  ...     tri['loss'], sample_weight=tri['exposure'].latest_diagonal).incremental_.round(0)
+            12      24      36      48     60     72
+  2000  1001.0   854.0   568.0   565.0  347.0  148.0
+  2001  1113.0   990.0   671.0   648.0  422.0  172.0
+  2002  1265.0  1168.0   800.0   744.0  511.0  215.0
+  2003  1490.0  1383.0  1007.0   908.0  604.0  255.0
+  2004  1725.0  1536.0  1151.0  1105.0  735.0  310.0
+  2005  1889.0  1967.0  1420.0  1364.0  907.0  383.0
+
+
+.. note::
+   These trend assumptions are applied to the incremental Triangle which produces
+   drastically different answers from the same trends applied to a cumulative Triangle.
+
+
+A nice property of this estimator is that it really only requires incremental amounts
+so a `Triangle` that has cumulative data censored data in earlier diagonals can
+leverage this method.  Another nice property is that it allows for more explicit recognition
+of future inflation in your estimate via the `trend` factor.
 
 .. topic:: References
 
@@ -285,6 +377,7 @@ the triangle.
 
 MunichAdjustment
 =================
+
 The :class:`MunichAdjustment` is a bivariate adjustment to loss development factors.
 There is a fundamental correlation between the paid and the case incurred data
 **(P/I)** of a triangle. The ratio of paid to incurred has information that can
@@ -308,6 +401,19 @@ univariate (basic) model and the (P/I) model.
 
 With the correlations, ``lambda_`` known, the basic development patterns can
 be adjusted based on the **(P/I)** ratio at any given cell of the ``Triangle``.
+
+
+BerquistSherman Comparison
+---------------------------
+
+This method is similar to the `BerquistSherman` approach in that it tries to
+adjust for case reserve adequacy.  However it is different in two distinct ways.
+
+  1.  The `BerquistSherman` method is a direct adjustment to the data whereas
+      the `MunichAdjustment` keeps the `Triangle` intact and adjusts the development
+      patterns.
+  2.  The `MunichAdjustment` is built in the context of a stochastic framework.
+
 
 .. topic:: References
 

@@ -254,6 +254,20 @@ An example completing Clark's model:
             12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult   132-Ult
   (All)  21.086776  5.149415  2.993038  2.229544  1.857163  1.642623  1.505601  1.411711  1.344001  1.293236  1.253992
 
+Truncated pattterns
+--------------------
+
+Clark warns of the dangers of extrapolating too far beyond the edge of a Triangle,
+particularly with a heavy tailed distribution.  In these cases, it is suggested that
+a suitable cut-off age or ``truncation_age`` be established where losses are considered
+fully developed.
+
+  >>> tail = cl.TailClark(truncation_age=245)
+  >>> tail.fit(dev.fit_transform(genins)).cdf_
+            12-Ult   24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult   132-Ult
+  (All)  19.209306  4.69099  2.726575  2.031041  1.691804  1.496359  1.371531  1.285997  1.224313  1.178065  1.142313
+
+
 
 .. topic:: References
 

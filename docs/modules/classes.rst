@@ -108,7 +108,7 @@ Classes
 
 .. _adjustments_ref:
 
-:mod:`chainladder.workflow`: Asjustment
+:mod:`chainladder.workflow`: Adjustments
 ========================================
 .. automodule:: chainladder.workflow
  :no-members:

@@ -372,7 +372,7 @@ They are considered incremental, and accumulate in a multiplicative fashion.
 Commutativity
 -------------
 Where possible, the triangle methods are designed to be commutative.  For example,
-each of these operations is functionally equivalent..
+each of these operations is functionally equivalent.
 
 **Example:**
    >>> import chainladder as cl
@@ -382,7 +382,35 @@ each of these operations is functionally equivalent..
    >>> tri.cum_to_incr().grain('OYDY').val_to_dev() == tri.val_to_dev().cum_to_incr().grain('OYDY')
    >>> tri.grain('OYDY').cum_to_incr().val_to_dev().incr_to_cum() == tri.val_to_dev().grain('OYDY')
 
-See :class:`Triangle` for the complete API specification of methods and attributes.
+Performance Tips
+-----------------
+
+Being mindful of commutativity and computational intensity can really help improve
+the performance of the package, particularly for really large triangles.  Consider
+these examples that produce identical outputs but with drastically different
+performance. In general, aggregations reduce the number of cells in a Triangle
+and should come as early in your method chain as possible.
+
+  >>> import timeit
+  >>> prism = cl.load_sample('prism')
+  >>> # Accumulation before aggregation - BAD
+  >>> timeit.timeit(lambda : prism.incr_to_cum().sum(), number=1)
+  14.496003599999995
+  >>> # Aggregation before accumulation - GOOD
+  >>> timeit.timeit(lambda : prism.sum().incr_to_cum(), number=1)
+  0.1343398999999863
+
+In other cases, querying the Triangle in clever ways can improve performance.
+Consider that the ``latest_diagonal`` of a cumulative Triangle is equal to the
+sum of its incremental values along the 'development' axis.
+
+  >>> # Accumulating a large triangle to get latest_diagonal - BAD
+  >>> timeit.timeit(lambda : prism.incr_to_cum().latest_diagonal, number=1)
+  9.424795199999949
+  >>> # Summing incrementals of a large triangle to get latest_diagonal - GOOD
+  >>> timeit.timeit(lambda : prism.sum('development'), number=1)
+  0.12809949999996206
+
 
 Trend
 -----
@@ -423,7 +451,7 @@ The multiplicative chainladder method is based on the strong assumptions of
 independence across origin years and across valuation years. Mack developed
 tests to verify if these assumptions hold.
 
-These tests are included as methods on the triangle class ``\valuation_correlation`
+These tests are included as methods on the triangle class `valuation_correlation`
 and `development_correlation`. ``False`` indicates that correlation between years
 is not sufficiently large.
 
