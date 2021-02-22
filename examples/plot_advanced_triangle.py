@@ -26,7 +26,8 @@ top_10 = clrd['EarnedPremDIR'].groupby('GRNAME').sum().latest_diagonal
 top_10 = top_10.loc[..., '1997', :].to_frame().nlargest(10)
 
 # Group any companies together that are not in the top 10
-clrd = clrd.groupby(clrd.index['GRNAME'].map(lambda x: x if x in top_10.index else 'Remainder')).sum()
+clrd = clrd.groupby(clrd.index['GRNAME'].map(
+    lambda x: x if x in top_10.index else 'Remainder')).sum()
 
 # Sort by company volume, but keep Remainder as last entry
 clrd = clrd.loc[top_10.index.to_list() + ['Remainder']].iloc[::-1]

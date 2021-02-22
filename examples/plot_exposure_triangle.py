@@ -11,8 +11,7 @@ optional. This example instantiates a 'premium' triangle as a single vector.
 
 import chainladder as cl
 import pandas as pd
-
-import chainladder as cl
+import matplotlib.pyplot as plt
 
 # Raw premium data in pandas
 premium_df = pd.DataFrame(
@@ -26,8 +25,12 @@ premium = cl.Triangle(premium_df, origin='AccYear', columns='premium')
 loss = cl.load_sample('abc')
 ultimate = cl.Chainladder().fit(loss).ultimate_
 
+loss_ratios = (ultimate / premium).to_frame()
+
 # Plot
-(ultimate / premium).plot(
-    kind='area', title='Loss Ratio by Accident Year',
-    alpha=0.7, color='darkgreen', legend=False, grid=True).set(
-    xlabel='Accident Year', ylabel='Loss Ratio');
+fig, ax = plt.subplots()
+plt.stem(loss_ratios.index.astype(str), loss_ratios.iloc[:, 0])
+ax.grid(axis='y')
+for spine in ax.spines:
+    ax.spines[spine].set_visible(False)
+plt.show();

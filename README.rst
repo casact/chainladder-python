@@ -130,4 +130,4 @@ Check out our `contributing guidelines`_.
 .. _Applying Stochastic Methods: https://chainladder-python.readthedocs.io/en/latest/tutorials/stochastic-tutorial.html
 .. _Large Datasets: https://chainladder-python.readthedocs.io/en/latest/tutorials/large-datasets.html
 .. _Gitter: https://gitter.im/chainladder-python/community
-.. _contributing guidelines: https://github.com/casact/chainladder-python/blob/master/CONTRIBUTING.md
+.. _contributing guidelines: https://chainladder-python.readthedocs.io/en/latest/contributing.html

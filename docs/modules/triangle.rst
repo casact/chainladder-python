@@ -155,7 +155,7 @@ property with the ``cumulative`` parameter.
 Backends
 --------
 :class:`Triangle` is built on numpy which serves as the array backend by default.
-Howver, you can now swap array_backend between numpy, cupy, and sparse to switch
+However, you can now swap array_backend between numpy, cupy, and sparse to switch
 between CPU and GPU-based computations or dense and sparse backends.
 
 Array backends can be set globally:

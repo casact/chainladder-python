@@ -76,10 +76,24 @@
         <div class="navbar" id="scikit-navbar">
             <ul>
                 <li><a href="{{pathto('index')}}">Home</a></li>
-                <li><a href="{{pathto('modules/index')}}">User Guide</a></li>
-                <li><a href="{{ pathto('modules/classes') }}">API Reference</a></li>
+                <li><a href="{{pathto('user_guide')}}">User Guide</a></li>
+                <li><a href="{{ pathto('modules/classes') }}">API</a></li>
                 <li><a href="{{pathto('auto_examples/index')}}">Examples</a></li>
+                <li class="btn-li"><div class="btn-group">
+                <a class="btn dropdown-toggle" data-toggle="dropdown">
+                   <span style="text-shadow: None">More </span><span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                <li class="link-title">Chainladder <script>document.write(DOCUMENTATION_OPTIONS.VERSION + (VERSION_SUBDIR ? " (" + VERSION_SUBDIR + ")" : ""));</script></li>
+                <li><a href="{{ pathto('install') }}">Installation</a></li>
                 <li><a href="{{pathto('tutorials/index')}}">Tutorials</a></li>
+                <li><a href="{{ pathto('glossary') }}">Glossary</a></li>
+                <li><a href="{{ pathto('contributing') }}">Contributing</a></li>
+                <li><a href="{{ pathto('roadmap') }}">Roadmap</a></li>
+                
+              </ul>
+            </div>
+        </li>
             </ul>
             <a href="javascript:void(0);" onclick="showMenu()">
                 <div class="nav-icon">

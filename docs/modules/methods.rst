@@ -167,6 +167,17 @@ method is the most basic of stochastic methods.
    :align: center
    :scale: 70%
 
+Compatibility
+--------------
+Because of the regression framework underlying the `MackChainladder`, it is not
+compatible with all development and tail estimators of the library.  In fact,
+it really should only be used with the `Development` estimator and `TailCurve`
+tail estimator.
+
+.. warning::
+   While the MackChainladder might not error with other options for development and
+   tail, the stochastic properties should be ignored, in which case the basic
+   `Chainladder` should be used.
 
 .. topic:: References
 

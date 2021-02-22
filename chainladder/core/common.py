@@ -81,6 +81,9 @@ class Common:
         else:
             return _get_full_triangle(self.full_expectation_, self)
 
+    def pipe(self, func, *args, **kwargs):
+        return func(self, *args, **kwargs)
+
     def set_backend(self, backend, inplace=False, deep=False):
         """ Converts triangle array_backend.
 

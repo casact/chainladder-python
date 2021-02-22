@@ -2,12 +2,9 @@
 
     .. raw:: html
 
-        <!-- Block section -->
         <div class="container-index">
         <div class="container index-upper">
         <div class="row-fluid">
-
-        <!-- Classification -->
         <div class="span4 box">
         <h2 >
 
@@ -95,8 +92,6 @@
         </div>
         </blockquote>
         </div>
-
-        <!-- row -->
         </div>
         <div class="row-fluid">
 
@@ -129,8 +124,6 @@
         </div>
         </blockquote>
         </div>
-
-        <!-- Model selection -->
         <div class="span4 box">
         <h2>
 
@@ -159,8 +152,6 @@
         </div>
         </blockquote>
         </div>
-
-
         <div class="span4 box">
         <h2>
 

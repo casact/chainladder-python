@@ -52,7 +52,6 @@ pipe2 = cl.Pipeline(steps=[
     ('model', cl.CapeCod(trend=0.034))
 ])
 
-
 # Finally fit Cod Estimator without on-leveling
 pipe2.fit(X, sample_weight=xyz['Premium'].latest_diagonal).named_steps.model.ultimate_
 
@@ -60,4 +59,4 @@ pipe2.fit(X, sample_weight=xyz['Premium'].latest_diagonal).named_steps.model.ult
 cl.concat((
     pipe.named_steps.model.ultimate_.rename('columns', ['With On-level']),
     pipe2.named_steps.model.ultimate_.rename('columns', ['Without On-level'])), 1).T.plot(
-    title='Cape Cod sensitivity to on-leveling', grid=True);
+    kind='bar', title='Cape Cod sensitivity to on-leveling', grid=True, subplots=True, legend=False);

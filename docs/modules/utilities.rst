@@ -82,3 +82,7 @@ original model.
   ...                        .named_steps.model.ibnr_.sum('origin').quantile(.95)
              values
   NaN  2.606327e+07
+
+.. warning::
+   Some features of estimators may not be json-serializable, such as a `virtual_column`
+   or a callable hyperparameter. In these cases, JSON serialization will fail.

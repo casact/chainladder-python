@@ -3,12 +3,9 @@
 Stochastic Bornhuetter Ferguson
 ================================
 
-There are several aspects of the chainladder module that are demonstrated with
-this example.
-
-    1. We see how to use the :class:`BootstrapODPSample` and :class:`BornhuetterFerguson` to come
-      up with a stochastic view of the Bornhuetter-Ferguson method.
-    2. We use the ``broadcast_axis`` method of the triangle class
+We see how to use the :class:`BootstrapODPSample` and :class:`BornhuetterFerguson`
+to come up with a stochastic view of the Bornhuetter-Ferguson method.  This can
+be done with any deterministic IBNR method which makes bootstraping so versatile.
 
 """
 import chainladder as cl
@@ -31,13 +28,13 @@ model = cl.BornhuetterFerguson(0.65, apriori_sigma=0.10)
 model.fit(sim.resampled_triangles_, sample_weight=premium)
 
 # Grab completed triangle replacing simulated known data with actual known data
-full_triangle = model.full_triangle_ - model.X_ + \
-                loss.broadcast_axis('index', sim.resampled_triangles_.index)
+full_triangle = (model.full_triangle_ - model.X_ + loss) / premium
 
 # Limiting to the current year for plotting
 current_year = full_triangle[full_triangle.origin==full_triangle.origin.max()].to_frame().T
 
 # Plot the data
-current_year.reset_index(drop=True).plot(
-    color='orange', legend=False, alpha=0.1,
-    title='Current Accident Year BornFerg Distribution', grid=True);
+current_year.iloc[:-1].plot(
+    color='orange', legend=False, alpha=0.1, grid=True,
+    xlabel='Development Age', ylabel='Loss Ratio',
+    title='Current Accident Year BornFerg Distribution');
