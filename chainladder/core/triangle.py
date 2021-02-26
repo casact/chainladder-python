@@ -620,3 +620,52 @@ class Triangle(TriangleBase):
 
         """
         return ValuationCorrelation(self, p_critical, total)
+
+    def shift(self, periods=-1, axis=3):
+        """ Shift elements along an axis by desired number of periods.
+
+        Data that falls beyond the existing shape of the Triangle is eliminated
+        and new cells default to zero.
+
+        Parameters
+        ----------
+        periods : int
+            Number of periods to shift. Can be positive or negative.
+        axis : {2 or 'origin', 3 or 'development', None}, default 3
+            Shift direction.
+
+        Returns
+        -------
+        Triangle
+            updated with shifted elements
+
+        """
+        axis = self._get_axis(axis)
+        if axis < 2:
+           raise AttributeError("Lagging only supported for origin and development axes")
+        if periods == 0:
+           return self
+        if periods > 0:
+           if axis == 3:
+               out = concat((
+                   self.iloc[..., 1:].rename('development', self.development[:-1]),
+                   (self.iloc[..., -1:]*0)), axis=axis)
+           else:
+                out = concat((
+                   self.iloc[..., 1:, :].rename('origin', self.origin[:-1]),
+                   (self.iloc[..., -1:, :]*0)), axis=axis)
+        else:
+           if axis == 3:
+               out = concat((
+                   (self.iloc[..., :1]*0),
+                   self.iloc[..., :-1].rename('development', self.development[1:]),
+                   ), axis=axis)
+           else:
+                out = concat((
+                   (self.iloc[..., :1, :]*0),
+                   self.iloc[..., :-1, :].rename('origin', self.origin[1:]),
+                   ), axis=axis)
+        if abs(periods) == 1:
+           return out
+        else:
+           return self.shift(out, periods-1, axis)

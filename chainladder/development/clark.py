@@ -9,7 +9,9 @@ from scipy.optimize import minimize
 
 class ClarkLDF(DevelopmentBase):
     """ A Estimator that allows for curve fitting development pattterns according
-    to Clark 2003.  The method fits incremental triangle amounts to one of
+    to Clark 2003.
+
+    The method fits incremental triangle amounts to one of
     ``loglogistic`` or ``weibull`` growth curves.  Both Clarks methods, LDF and Cape
     Cod, can be estimated.  To invoke the Cape Cod method, include
     ``sample_weight`` in when fitting the estimator.
