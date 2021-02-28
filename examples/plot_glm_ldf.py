@@ -3,38 +3,26 @@
 GLM Reserving
 ===========================
 
-This example demonstrates how you can use the `DevelopmentML` estimator to incorporate
-a Tweedie GLM into ``chainladder``.  The specific case of the Over-dispersed
+This example demonstrates how you can use the `TweedieGLM` estimator to incorporate
+the GLM framework into a ``chainladder`` workflow.  The specific case of the Over-dispersed
 poisson GLM fit to incremental paids.  It is further shown to match the basic
-chainladder `Development` estimator as described by England and Verall.
+chainladder `Development` estimator.
 
 """
 
 import chainladder as cl
 import pandas as pd
 
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import TweedieRegressor
-
 genins = cl.load_sample('genins')
 
-# Create a sklearn transformer that preps the X Matrix
-prep_X = ColumnTransformer(transformers=[
-    ('dummy', OneHotEncoder(drop='first'), ['origin', 'development']),
-])
+# Fit an ODP GLM
+dev = cl.TweedieGLM(
+    design_matrix='C(development) + C(origin)',
+    link='log', power=1).fit(genins)
 
-# Create a sklearn Pipeline for a Model fit
-estimator_ml=Pipeline(steps=[
-        ('prep X', prep_X),
-        ('model', TweedieRegressor(link='log', power=1))],)
-
-dev = cl.DevelopmentML(
-    estimator_ml=estimator_ml, y_ml='values',
-    fit_incrementals=True).fit(genins)
-
+# Grab LDFs vs traditional approach
 glm = dev.ldf_.iloc[..., 0, :].T.iloc[:, 0].rename('GLM')
 traditional = cl.Development().fit(genins).ldf_.T.iloc[:, 0].rename('Traditional')
 
+# Plot data
 pd.concat((glm,traditional), 1).plot(kind='bar', title='LDF: Poisson GLM vs Traditional');

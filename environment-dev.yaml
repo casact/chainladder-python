@@ -18,6 +18,7 @@ dependencies:
   - sparse
   - dill
   - xlcompose
+  - patsy
 
   # Docs
   - seaborn

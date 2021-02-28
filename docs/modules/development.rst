@@ -610,3 +610,125 @@ with your hyperparameter tuning, you can see the fitted selections in the
 .. topic:: References
 
   .. [F2010] J.  Friedland, "Estimating Unpaid Claims Using Basic Techniques", Version 3, Ch. 12, 2010.
+
+TweedieGLM
+================
+The `TweedieGLM` implements the GLM reserving structure discussed by Taylor and McGuire.
+A nice property of the GLM framework is that it is highly flexible in terms of including
+covariates that may be predictive of loss reserves while maintaining a close relationship
+to traditional methods.  Additionally, the framework can be extended in a straightforward
+way to incorporate various approaches to measuring prediction errors.
+
+
+Long Format
+-------------
+GLMs are fit to triangles in "Long Format".  That is, they are converted to pandas
+DataFrames behind the scenes.  Each axis of the `Triangle` is included in the
+dataframe. The ``origin`` and ```development`` axes are in columns of the same name.
+You can inspect what your `Triangle` looks like in long format by calling `to_frame`
+with ``keepdims=True``
+
+
+  >>> cl.load_sample('clrd').to_frame(keepdims=True).reset_index().head()
+              GRNAME      LOB     origin  development  ...  EarnedPremCeded  EarnedPremDIR  EarnedPremNet  IncurLoss
+  0  Adriatic Ins Co  othliab 1995-01-01           12  ...            131.0          139.0            8.0        8.0
+  1  Adriatic Ins Co  othliab 1995-01-01           24  ...            131.0          139.0            8.0       11.0
+  2  Adriatic Ins Co  othliab 1995-01-01           36  ...            131.0          139.0            8.0        7.0
+  3  Adriatic Ins Co  othliab 1996-01-01           12  ...            359.0          410.0           51.0       40.0
+  4  Adriatic Ins Co  othliab 1996-01-01           24  ...            359.0          410.0           51.0       40.0
+
+  [5 rows x 10 columns]
+
+.. warning::
+  'origin', 'development', and 'valuation' are reserved keywords for the dataframe.  Declaring columns with these names separately will result in error.
+
+While you can inspect the `Triangle` in long format, you will not directly convert
+to long format yourself.  The `TweedieGLM` does this for you.  Additionally, it
+the `origin` of the design matrix is restated in years from the earliest origin
+period.  Finally, the `TweedieGLM` will automatically convert the response to an
+incremental basis.
+
+R-style formulas
+-----------------
+We use the ``patsy`` library to allow formulation of the the feature set ``X``
+of the GLM.  Because ``X`` is a parameter that used extensively throughout
+``chainladder``, the `TweedieGLM` refers to it as the ``design_matrix``.  Those
+familiar with the R programming language will be familiar with the notation
+used by ``patsy``.  For example, we can include both ``origin`` and ``development``
+as terms in a model.
+
+  >>> glm = cl.TweedieGLM(design_matrix='development + origin').fit(genins)
+  >>> glm.coef_
+                   coef_
+  Intercept    13.516322
+  development  -0.006251
+  origin        0.033863
+
+
+ODP Chainladder
+-----------------
+Replicating the results of the volume weighted chainladder development patterns
+can be done by fitting a Poisson-log GLM to incremental paids.  To do this, we
+can specify the ``power`` and ``link`` of the estimator as well as the ``design_matrix``.
+The volume-weighted chainladder method can be replicated by including both
+``origin`` and ``development`` as categorical features.
+
+  >>> genins = cl.load_sample('genins')
+  >>> dev = cl.TweedieGLM(
+  ...     design_matrix='C(development) + C(origin)',
+  ...     power=1, link='log'
+  ...     ).fit(genins)
+
+A trivial comparison against the traditional `Development` estimator shows
+a comparable set of ``ldf_`` patterns.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_glm_ldf_001.png
+   :target: ../auto_examples/plot_glm_ldf.html
+   :align: center
+   :scale: 75%
+
+Parsimonious modeling
+-----------------------
+Having full access to all axes of the `Triangle` along with the powerful formulation
+of ``patsy`` allows for substantial customization of the model fit.  For example,
+we can include 'LOB' interactions, and
+
+  >>> clrd = cl.load_sample('clrd')['CumPaidLoss'].groupby('LOB').sum()
+  >>> clrd=clrd[clrd['LOB'].isin(['ppauto', 'comauto'])]
+  >>> dev = cl.TweedieGLM(
+  ...     design_matrix='LOB+LOB:C(np.minimum(development, 36))+LOB:development+LOB:origin',
+  ...     max_iter=1000).fit(clrd)
+  >>> dev.coef_
+                                                         coef_
+  Intercept                                          12.549945
+  LOB[T.ppauto]                                       3.202703
+  LOB[comauto]:C(np.minimum(development, 36))[T.24]   0.578694
+  LOB[ppauto]:C(np.minimum(development, 36))[T.24]    0.449832
+  LOB[comauto]:C(np.minimum(development, 36))[T.36]   0.790516
+  LOB[ppauto]:C(np.minimum(development, 36))[T.36]    0.321206
+  LOB[comauto]:development                           -0.044627
+  LOB[ppauto]:development                            -0.054814
+  LOB[comauto]:origin                                 0.054581
+  LOB[ppauto]:origin                                  0.057790
+
+This model is limited to 10 coefficients across two lines of business.  The basic
+chainladder model is known to be overparameterized with at least 18 parameters
+requiring estimation. Despite drastically simplifying the model, the ``cdf_``
+patterns of the GLM are within 1% of the traditional chainladder for every lag
+and for both lines of business:
+
+  >>> ((dev.cdf_.iloc[..., 0, :]/cl.Development().fit(clrd).cdf_)-1).to_frame().round(3)
+  development  12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult
+  LOB
+  comauto       0.002   0.003   -0.01   0.003   0.011   0.008   0.005  -0.000   -0.002
+  ppauto        0.006   0.003   -0.00   0.001   0.002   0.001   0.001   0.001    0.001
+
+
+Like every other Development estimator, the `TweedieGLM` produces a set of ``ldf_``
+patterns and can be used in a larger workflow with tail extrapolation and reserve
+estimation.
+
+
+.. topic:: References
+
+  .. [T2016] Taylor, G. and McGuire G., "Stochastic Loss Reserving Using Generalized Linear Models", CAS Monograph #3

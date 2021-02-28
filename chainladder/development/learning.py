@@ -1,3 +1,6 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
 import pandas as pd
@@ -80,13 +83,14 @@ class DevelopmentML(DevelopmentBase):
         preds = self.estimator_ml.predict(df)
         X_r = [df]
         y_r = [preds]
-        latest_filter = df['origin']+(df['development']-12)/12
+        dgrain = {'Y':12, 'Q':3, 'M': 1}[self.development_grain_]
+        latest_filter = df['origin']+(df['development']-dgrain)/dgrain
         latest_filter = latest_filter == latest_filter.max()
         preds=pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
         dev_lags = df['development'].drop_duplicates().sort_values()
         for d in dev_lags[1:]:
-            out['development'] = out['development'] + 12
+            out['development'] = out['development'] + dgrain
             if len(preds.shape) == 1:
                 preds = preds[:, None]
             if self.y_features:
@@ -101,7 +105,8 @@ class DevelopmentML(DevelopmentBase):
             X_r = X_r.drop(self._get_y_names(), 1)
         out = pd.concat((X_r,
                          pd.DataFrame(np.concatenate(y_r, 0), columns=self._get_y_names())),1)
-        out['valuation']=out['origin']+(out['development']-12)/12
+        out['origin'] = out['origin'].map({v: k for k, v in self.origin_encoder_.items()})
+        out = out.merge(self.valuation_vector_, how='left', on=['origin', 'development'])
         return Triangle(
             out, origin='origin', development='valuation', index=self._key_labels, columns=self._get_y_names()).dropna()
 
@@ -130,7 +135,15 @@ class DevelopmentML(DevelopmentBase):
             X_ = X.copy()
         self._columns = list(X.columns)
         self._key_labels = X.key_labels
-
+        self.origin_grain_ = X.origin_grain
+        self.development_grain_ = X.development_grain
+        self.origin_encoder_ = dict(zip(
+            X.origin.to_timestamp(how='s'),
+            (pd.Series(X.origin).rank()-1)/{'Y':1, 'Q':4, 'M': 12}[X.origin_grain]))
+        self.valuation_vector_ = pd.DataFrame(
+            X.valuation.values.reshape(X.shape[-2:], order='F'),
+            index=X.odims, columns=X.ddims).unstack().reset_index()
+        self.valuation_vector_.columns=['development', 'origin', 'valuation']
         # response as a feature
         if self.y_features:
             for i in self.y_features:
@@ -138,7 +151,7 @@ class DevelopmentML(DevelopmentBase):
                 X_[i[0]] = lag[lag.valuation<=X.valuation_date]
 
         df = X_.to_frame(keepdims=True).reset_index().fillna(0)
-        df['origin'] = df['origin'].dt.year # sklearn doesnt like datetimes
+        df['origin'] = df['origin'].map(self.origin_encoder_)
         self.df_ = df # Unncecessary, used for debugging
 
         # Fit model

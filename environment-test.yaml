@@ -15,6 +15,7 @@ dependencies:
   - sparse
   - dill
   - xlcompose
+  - patsy
 
   # testing
   - lxml

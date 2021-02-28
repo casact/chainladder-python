@@ -3,3 +3,4 @@ scikit-learn
 sparse
 dill
 xlcompose
+patsy

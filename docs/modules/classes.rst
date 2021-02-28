@@ -56,6 +56,8 @@ Classes
   IncrementalAdditive
   ClarkLDF
   CaseOutstanding
+  TweedieGLM
+  DevelopmentML
 
 
 .. _tails_ref:

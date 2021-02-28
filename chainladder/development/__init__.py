@@ -8,3 +8,4 @@ from chainladder.development.constant import DevelopmentConstant  # noqa (API im
 from chainladder.development.clark import ClarkLDF  # noqa (API import)
 from chainladder.development.outstanding import CaseOutstanding  # noqa (API import)
 from chainladder.development.learning import DevelopmentML  # noqa (API import)
+from chainladder.development.glm import TweedieGLM  # noqa (API import)
