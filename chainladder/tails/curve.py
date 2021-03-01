@@ -162,13 +162,7 @@ class TailCurve(TailBase):
             (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1
         )
         obj = Development().fit_transform(X) if "ldf_" not in X else X
-        sigma, std_err = self._get_tail_stats(obj)
-        self.sigma_.values = xp.concatenate(
-            (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1
-        )
-        self.std_err_.values = xp.concatenate(
-            (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1
-        )
+        self._get_tail_stats(obj)
         return self
 
     def _get_x(self, w, y):

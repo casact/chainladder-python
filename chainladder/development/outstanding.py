@@ -105,7 +105,6 @@ class CaseOutstanding(DevelopmentBase):
         dev.is_pattern=True
         dev.is_cumulative=True
         self.ldf_ = dev.cum_to_incr()
-        self.std_err_ = self.sigma_ = self.ldf_ * 0 + 1
         return self
 
     @property
@@ -142,7 +141,7 @@ class CaseOutstanding(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        triangles = ["ldf_", "sigma_", "std_err_"]
+        triangles = ["ldf_"]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()

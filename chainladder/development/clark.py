@@ -195,8 +195,6 @@ class ClarkLDF(DevelopmentBase):
         obj._set_slicers()
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
-        self.sigma_ = self.ldf_ * 0 + 1
-        self.std_err_ = self.ldf_ * 0 + 1
         rows = X.index.set_index(X.key_labels).index
         self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
         self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)
@@ -237,8 +235,6 @@ class ClarkLDF(DevelopmentBase):
         X_new = X.copy()
         triangles = [
             "ldf_",
-            "sigma_",
-            "std_err_",
             "omega_",
             "theta_",
             "incremental_fits_",

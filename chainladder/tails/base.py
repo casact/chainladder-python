@@ -36,24 +36,19 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
         self.ldf_.ddims = ddims
         if hasattr(obj, "sigma_"):
+            zeros = tail[..., 0:obj.ldf_.shape[2], -1:] * 0
             self.sigma_ = getattr(obj, "sigma_").copy()
-        else:
-            self.sigma_ = obj.ldf_ - obj.ldf_
-        if hasattr(obj, "std_err_"):
+            self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()
-        else:
-            self.std_err_ = obj.ldf_ - obj.ldf_
-        zeros = tail[..., 0:obj.ldf_.shape[2], -1:] * 0
-        self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
-        self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-        self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims
+            self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
+            self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims
+            self.sigma_._set_slicers()
+            self.std_err_._set_slicers()
         if hasattr(obj, "average_"):
             self.average_ = obj.average_
         else:
             self.average_ = None
         self.ldf_._set_slicers()
-        self.sigma_._set_slicers()
-        self.std_err_._set_slicers()
         return self
 
     def transform(self, X):
@@ -70,7 +65,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        triangles = ["std_err_", "ldf_", "sigma_"]
+        triangles = ["ldf_", "std_err_", "sigma_"]
         for item in triangles + ["tail_", "_ave_period", "average_"]:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
@@ -120,16 +115,25 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         log-linear extrapolation applied to tail average period
         """
         from chainladder.utils.utility_functions import num_to_nan
+        if not hasattr(X, 'sigma_'):
+            self.sigma_ = None
+            self.std_err_ = None
+        else:
+            time_pd = self._get_tail_weighted_time_period(X)
+            xp = X.sigma_.get_array_module()
+            reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(X.sigma_.values), None)
+            sigma_ = xp.exp(time_pd * reg.slope_ + reg.intercept_)
+            y = X.std_err_.values
+            y = num_to_nan(y)
+            reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y), None)
+            std_err_ = xp.exp(time_pd * reg.slope_ + reg.intercept_)
 
-        time_pd = self._get_tail_weighted_time_period(X)
-        xp = X.sigma_.get_array_module()
-        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(X.sigma_.values), None)
-        sigma_ = xp.exp(time_pd * reg.slope_ + reg.intercept_)
-        y = X.std_err_.values
-        y = num_to_nan(y)
-        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y), None)
-        std_err_ = xp.exp(time_pd * reg.slope_ + reg.intercept_)
-        return sigma_, std_err_
+            self.sigma_.values = xp.concatenate(
+                (self.sigma_.values[..., :-1], sigma_[..., -1:]), axis=-1
+            )
+            self.std_err_.values = xp.concatenate(
+                (self.std_err_.values[..., :-1], std_err_[..., -1:]), axis=-1
+            )
 
     def _get_tail_weighted_time_period(self, X):
         """ Method to approximate the weighted-average development age of tail
@@ -145,6 +149,7 @@ class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             self.ldf_.values[..., -self._ave_period[0] - 1 :], -1, keepdims=True
         )
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
+        tail = tail if tail.max() > 1 else 1.001
         time_pd = (xp.log(tail - 1) - reg.intercept_) / reg.slope_
         return time_pd
 

@@ -110,6 +110,7 @@ class TailClark(TailBase):
         self.norm_resid_ = model.norm_resid_
         if self.truncation_age:
             self.ldf_.values[..., -1:] = self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
+        # self._get_tail_stats(self)
         if backend == "cupy":
             self = self.set_backend("cupy", inplace=True)
         return self

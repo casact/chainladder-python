@@ -12,6 +12,8 @@ import json
 import os
 import copy
 from sklearn.utils import deprecated
+from patsy import dmatrix
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 def load_sample(key, *args, **kwargs):
@@ -269,3 +271,39 @@ def minimum(x1, x2):
 
 def maximum(x1, x2):
     return x1.maximum(x2)
+
+class PatsyFormula(BaseEstimator, TransformerMixin):
+    """ A sklearn-style Transformer for patsy formulas.
+
+    PatsyFormula allows for R-style formula preprocessing of the ``design_matrix``
+    of a machine learning algorithm. It's particularly useful with the `DevelopmentML`
+    and `TweedieGLM` estimators.
+
+    Parameters
+    -----------
+
+    formula : str
+        A string representation of the regression model X features.
+
+    Attributes
+    ------------
+    design_info_ :
+        The patsy instructions for generating the design_matrix, X.
+
+    """
+    def __init__(self, formula=None):
+        self.formula = formula
+
+    def _check_X(self, X):
+        from chainladder.core import Triangle
+        if isinstance(X, Triangle):
+            raise AttributeError("X must be a pandas dataframe, not a Triangle")
+
+    def fit(self, X, y=None, sample_weight=None):
+        self._check_X(X)
+        self.design_info_ = dmatrix(self.formula, X).design_info
+        return self
+
+    def transform(self, X):
+        self._check_X(X)
+        return dmatrix(self.design_info_, X)

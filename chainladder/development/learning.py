@@ -8,13 +8,18 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, PolynomialFeatures
 from sklearn.compose import ColumnTransformer
 from chainladder.development.base import DevelopmentBase
+from chainladder import ULT_VAL
 
 
 class DevelopmentML(DevelopmentBase):
     """ A Estimator that interfaces with machine learning (ML) tools that implement
     the scikit-learn API.
 
+    The `DevelopmentML` estimator is used to generate ``ldf_`` patterns from
+    the data.
+
     .. versionadded:: 0.8.1
+
 
     Parameters
     ----------
@@ -23,10 +28,11 @@ class DevelopmentML(DevelopmentBase):
     y_ml : list or str or sklearn_transformer
         The response column(s) for the machine learning algorithm. It must be
         present within the Triangle.
-    y_features :
+    autoregressive : tuple, (autoregressive_col_name, lag, source_col_name)
         The subset of response column(s) to use as lagged features for the
         Time Series aspects of the model. Predictions from one development period
-        get used as featues in the next development period.
+        get used as featues in the next development period. Lags should be negative
+        integers.
     fit_incrementals :
         Whether the response variable should be converted to an incremental basis
         for fitting.
@@ -34,16 +40,19 @@ class DevelopmentML(DevelopmentBase):
 
     Attributes
     ----------
+    estimator_ml : Estimator
+        An sklearn-style estimator to predict development patterns
     ldf_ : Triangle
         The estimated loss development patterns.
     cdf_ : Triangle
         The estimated cumulative development patterns.
     """
-    def __init__(self, estimator_ml=None,
-                 y_ml=None, y_features=False, fit_incrementals=True):
+    def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
+                 weight_ml=None, fit_incrementals=True):
         self.estimator_ml=estimator_ml
         self.y_ml=y_ml
-        self.y_features=y_features
+        self.weight_ml = weight_ml
+        self.autoregressive=autoregressive
         self.fit_incrementals=fit_incrementals
 
     def _get_y_names(self):
@@ -77,14 +86,16 @@ class DevelopmentML(DevelopmentBase):
         else:
             return transformer
 
-    def _get_triangle_ml(self, df):
+    def _get_triangle_ml(self, df, preds=None):
         """ Create fitted Triangle """
         from chainladder.core import Triangle
-        preds = self.estimator_ml.predict(df)
+        if preds is None:
+            preds = self.estimator_ml.predict(df)
         X_r = [df]
         y_r = [preds]
         dgrain = {'Y':12, 'Q':3, 'M': 1}[self.development_grain_]
-        latest_filter = df['origin']+(df['development']-dgrain)/dgrain
+        ograin = {'Y':1, 'Q':4, 'M': 12}[self.origin_grain_]
+        latest_filter = (df['origin']+1)*ograin+(df['development']-dgrain)/dgrain
         latest_filter = latest_filter == latest_filter.max()
         preds=pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
@@ -93,10 +104,12 @@ class DevelopmentML(DevelopmentBase):
             out['development'] = out['development'] + dgrain
             if len(preds.shape) == 1:
                 preds = preds[:, None]
-            if self.y_features:
-                for num, col in enumerate(self.y_features):
+            if self.autoregressive:
+                for num, col in enumerate(self.autoregressive):
                     out[col[0]]=preds[:, num]
             out = out[out['development']<=dev_lags.max()]
+            if len(out) == 0:
+                continue
             X_r.append(out.copy())
             preds = self.estimator_ml.predict(out)
             y_r.append(preds.copy())
@@ -108,8 +121,26 @@ class DevelopmentML(DevelopmentBase):
         out['origin'] = out['origin'].map({v: k for k, v in self.origin_encoder_.items()})
         out = out.merge(self.valuation_vector_, how='left', on=['origin', 'development'])
         return Triangle(
-            out, origin='origin', development='valuation', index=self._key_labels, columns=self._get_y_names()).dropna()
+            out, origin='origin', development='valuation',
+            index=self._key_labels, columns=self._get_y_names(),
+            cumulative=not self.fit_incrementals).dropna()
 
+    def _prep_X_ml(self, X):
+        """ Preps Triangle data ahead of the pipeline """
+        if self.fit_incrementals:
+            X_ = X.cum_to_incr()
+        else:
+            X_ = X.copy()
+        if self.autoregressive:
+            for i in self.autoregressive:
+                lag = X[i[2]].shift(i[1])
+                X_[i[0]] = lag[lag.valuation<=X.valuation_date]
+        df_base = X.incr_to_cum().to_frame(keepdims=True).reset_index().iloc[:, :-1]
+        df = df_base.merge(
+            X.cum_to_incr().to_frame(keepdims=True).reset_index(), how='left',
+            on=list(df_base.columns)).fillna(0)
+        df['origin'] = df['origin'].map(self.origin_encoder_)
+        return df
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -129,10 +160,6 @@ class DevelopmentML(DevelopmentBase):
             Returns the instance itself.
         """
 
-        if self.fit_incrementals:
-            X_ = X.cum_to_incr()
-        else:
-            X_ = X.copy()
         self._columns = list(X.columns)
         self._key_labels = X.key_labels
         self.origin_grain_ = X.origin_grain
@@ -144,24 +171,16 @@ class DevelopmentML(DevelopmentBase):
             X.valuation.values.reshape(X.shape[-2:], order='F'),
             index=X.odims, columns=X.ddims).unstack().reset_index()
         self.valuation_vector_.columns=['development', 'origin', 'valuation']
-        # response as a feature
-        if self.y_features:
-            for i in self.y_features:
-                lag = X[i[2]].shift(i[1])
-                X_[i[0]] = lag[lag.valuation<=X.valuation_date]
-
-        df = X_.to_frame(keepdims=True).reset_index().fillna(0)
-        df['origin'] = df['origin'].map(self.origin_encoder_)
-        self.df_ = df # Unncecessary, used for debugging
-
+        df = self._prep_X_ml(X)
+        self.df_ = df
         # Fit model
         self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze())
+        #return self
         self.triangle_ml_ = self._get_triangle_ml(df)
         return self
 
     @property
     def ldf_(self):
-        from chainladder import ULT_VAL
         ldf = self.triangle_ml_.incr_to_cum().link_ratio
         ldf.valuation_date = pd.to_datetime(ULT_VAL)
         return ldf
@@ -179,13 +198,11 @@ class DevelopmentML(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-
         X_new = X.copy()
-        triangles = [
-            "ldf_",
-        ]
-        for item in triangles:
-            setattr(X_new, item, getattr(self, item))
-        X_new.sigma_ = X_new.std_err_ = X_new.ldf_ * 0 + 1
+        X_ml = self._prep_X_ml(X)
+        y_ml=self.estimator_ml.predict(X_ml)
+        triangle_ml = self._get_triangle_ml(X_ml, y_ml)
+        X_new.ldf_ = triangle_ml.incr_to_cum().link_ratio
+        X_new.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
         X_new._set_slicers()
         return X_new

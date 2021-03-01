@@ -1,45 +1,35 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
 import pandas as pd
 import numpy as np
-from patsy import dmatrix
-from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development.base import DevelopmentBase
 from chainladder.development.learning import DevelopmentML
 from sklearn.linear_model import TweedieRegressor
 from sklearn.pipeline import Pipeline
-
-
-class PatsyFormula(BaseEstimator, TransformerMixin):
-    """ A sklearn-style wrapper for patsy formulas """
-    def __init__(self, formula=None):
-        self.formula = formula
-
-    def fit(self, X, y=None, sample_weight=None):
-        self.design_info_ = dmatrix(self.formula, X).design_info
-        return self
-
-    def transform(self, X):
-        return dmatrix(self.design_info_, X)
+from chainladder.utils.utility_functions import PatsyFormula
 
 
 class TweedieGLM(DevelopmentBase):
     """ This estimator creates development patterns with a GLM using a Tweedie distribution.
-
 
     The Tweedie family includes several of the more popular distributions including
     the normal, ODP poisson, and gamma distributions.  This class is a special case
     of `DevleopmentML`.  It restricts to just GLM using a TweedieRegressor and
     provides an R-like formulation of the design matrix.
 
+    .. versionadded:: 0.8.1
+
     Parameters
     -----------
     design_matrix : formula-like
         A patsy formula describing the independent variables, X of the GLM
-    response : str, default None
-        Name of the response column.
+    response :  str
+        Column name for the reponse variable of the GLM.  If ommitted, then the
+        first column of the Triangle will be used.
+    weight : str
+        Column name of any weight to use in the GLM. If none specified, then an
+        unweighted regression will be performed.
     power : float, default=0
             The power determines the underlying target distribution according
             to the following table:
@@ -84,9 +74,10 @@ class TweedieGLM(DevelopmentBase):
     """
 
     def __init__(self, design_matrix='C(development) + C(origin)',
-                 response=None, power=1.0, alpha=1.0, link='log',
+                 response=None, weight=None, power=1.0, alpha=1.0, link='log',
                  max_iter=100, tol=0.0001, warm_start=False, verbose=0):
         self.response=response
+        self.weight=weight
         self.design_matrix = design_matrix
         self.power=power
         self.alpha=alpha
@@ -104,7 +95,7 @@ class TweedieGLM(DevelopmentBase):
                     link=self.link, power=self.power, max_iter=self.max_iter,
                     tol=self.tol, warm_start=self.warm_start,
                     verbose=self.verbose, fit_intercept=False))]),
-                    y_ml=response).fit(X)
+                    y_ml=response, weight_ml=self.weight).fit(X)
         return self
 
     @property
@@ -119,7 +110,8 @@ class TweedieGLM(DevelopmentBase):
     def coef_(self):
         return pd.Series(
             self.model.estimator_ml.named_steps.model.coef_, name='coef_',
-            index=list(self.model.estimator_ml.named_steps.design_matrix.design_info_.column_name_indexes.keys())
+            index=list(self.model.estimator_ml.named_steps.design_matrix.
+                            design_info_.column_name_indexes.keys())
         ).to_frame()
 
     def transform(self, X):

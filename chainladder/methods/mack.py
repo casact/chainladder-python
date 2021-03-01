@@ -57,7 +57,7 @@ class MackChainladder(Chainladder):
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)
-        if not ("average_" in self.X_ and "w_" in self.X_):
+        if "sigma_" not in self.X_:
             raise ValueError("Triangle not compatible with MackChainladder")
         # Caching full_triangle_ for fit as it is called a lot
         self.X_._full_triangle_ = self.full_triangle_

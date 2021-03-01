@@ -79,8 +79,6 @@ class DevelopmentConstant(DevelopmentBase):
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
         self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
-        self.sigma_ = self.ldf_ * 0 + 1
-        self.std_err_ = self.ldf_ * 0 + 1
         return self
 
     def transform(self, X):
@@ -97,7 +95,7 @@ class DevelopmentConstant(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        triangles = ["ldf_", "sigma_", "std_err_"]
+        triangles = ["ldf_"]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()

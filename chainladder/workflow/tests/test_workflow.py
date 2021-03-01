@@ -41,6 +41,8 @@ def test_pipeline():
 
     X = tri[['CumPaidLoss', 'CaseIncurredLoss']]
     sample_weight = tri['EarnedPremDIR'].latest_diagonal
+    X_gt = X.copy()
+    sample_weight_gt = sample_weight.copy()
 
     dev = [cl.Development(), cl.ClarkLDF(), cl.Trend(), cl.IncrementalAdditive(),
              cl.MunichAdjustment(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss')),
@@ -49,7 +51,8 @@ def test_pipeline():
     ibnr = [cl.Chainladder(),  cl.BornhuetterFerguson(), cl.Benktander(n_iters=2), cl.CapeCod()]
 
     for model in list(itertools.product(dev, tail, ibnr)):
-        print(model)
+        assert X == X_gt
+        assert sample_weight == sample_weight_gt
         cl.Pipeline(
             steps=[('dev', model[0]),
                    ('tail', model[1]),

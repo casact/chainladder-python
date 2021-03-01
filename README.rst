@@ -56,6 +56,10 @@ Available Estimators
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 | `CaseOutstanding`_           |                  |                         |                       |                       |
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `TweedieGLM`_                |                  |                         |                       |                       |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `DevelopmentML`_             |                  |                         |                       |                       |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
 Documentation
 -------------
@@ -85,6 +89,8 @@ code documentation.
 .. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#votingchainladder
 .. _Trend: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#trend
 .. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#caseoutstanding
+.. _TweedieGLM: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#tweedieglm
+.. _DevelopmentML: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#developmentml
 .. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
 
 Getting Started Tutorials

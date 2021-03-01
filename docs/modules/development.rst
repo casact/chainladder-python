@@ -617,14 +617,14 @@ The `TweedieGLM` implements the GLM reserving structure discussed by Taylor and 
 A nice property of the GLM framework is that it is highly flexible in terms of including
 covariates that may be predictive of loss reserves while maintaining a close relationship
 to traditional methods.  Additionally, the framework can be extended in a straightforward
-way to incorporate various approaches to measuring prediction errors.
-
+way to incorporate various approaches to measuring prediction errors.  Behind the
+scenes, `TweedieGLM` is using scikit-learn's ``TweedieRegressor`` estimator.
 
 Long Format
 -------------
 GLMs are fit to triangles in "Long Format".  That is, they are converted to pandas
 DataFrames behind the scenes.  Each axis of the `Triangle` is included in the
-dataframe. The ``origin`` and ```development`` axes are in columns of the same name.
+dataframe. The ``origin`` and ``development`` axes are in columns of the same name.
 You can inspect what your `Triangle` looks like in long format by calling `to_frame`
 with ``keepdims=True``
 
@@ -643,10 +643,12 @@ with ``keepdims=True``
   'origin', 'development', and 'valuation' are reserved keywords for the dataframe.  Declaring columns with these names separately will result in error.
 
 While you can inspect the `Triangle` in long format, you will not directly convert
-to long format yourself.  The `TweedieGLM` does this for you.  Additionally, it
+to long format yourself.  The `TweedieGLM` does this for you.  Additionally,
 the `origin` of the design matrix is restated in years from the earliest origin
-period.  Finally, the `TweedieGLM` will automatically convert the response to an
-incremental basis.
+period.  That is, is if the earliest origin is '1995-01-01' then it gets replaced with
+0.  Consequently, '1996-04-01' would be replaced with 1.25. This is done because
+datetimes have limited support in scikit-learn. Finally, the `TweedieGLM`
+will automatically convert the response to an incremental basis.
 
 R-style formulas
 -----------------
@@ -691,7 +693,8 @@ Parsimonious modeling
 -----------------------
 Having full access to all axes of the `Triangle` along with the powerful formulation
 of ``patsy`` allows for substantial customization of the model fit.  For example,
-we can include 'LOB' interactions, and
+we can include 'LOB' interactions with piecewise linear coefficients to reduce
+model complexity.
 
   >>> clrd = cl.load_sample('clrd')['CumPaidLoss'].groupby('LOB').sum()
   >>> clrd=clrd[clrd['LOB'].isin(['ppauto', 'comauto'])]
@@ -732,3 +735,88 @@ estimation.
 .. topic:: References
 
   .. [T2016] Taylor, G. and McGuire G., "Stochastic Loss Reserving Using Generalized Linear Models", CAS Monograph #3
+
+DevelopmentML
+==============
+`DevelopmentML` is a general development estimator that works as an interface to
+scikit-learn compliant machine learning (ML) estimators.  The `TweedieGLM` is
+a special case of `DevelopmentML` with the ML algorithm limited to scikit-learn's
+``TweedieRegressor`` estimator.
+
+The Interface
+--------------
+ML algorithms are designed to be fit against tabular data like a pandas DataFrame
+or a 2D numpy array.  A `Triangle` does not meet the definition and so ``DevelopmentML``
+is provided to incorporate ML into a broader reserving workflow. This includes:
+
+  1. Automatic conversion of Triangle to a dataframe for fitting
+  2. Flexibility in expressing any preprocessing as part of a scikit-learn ``Pipeline``
+  3. Predictions through the terminal development age of a `Triangle` to fill in the
+     lower half
+  4. Predictions converted to ``ldf_`` patterns so that the results of the estimator
+     are compliant with the rest of ``chainladder``, like tail selection and IBNR modeling.
+
+Features
+---------
+Data from any axis of a `Triangle` is available to be used in the `DevelopmentML`
+estimator.  For example, we can use many of the scikit-learn components to
+generate development patterns from both the time axes as well as the ``index`` of
+the `Triangle`.
+
+  >>> import chainladder as cl
+  >>> from sklearn.ensemble import RandomForestRegressor
+  >>> from sklearn.pipeline import Pipeline
+  >>> from sklearn.preprocessing import OneHotEncoder
+  >>> from sklearn.compose import ColumnTransformer
+  >>> clrd = cl.load_sample('clrd').groupby('LOB').sum()['CumPaidLoss']
+  >>> # Decide how to preprocess the X (ML) dataset using sklearn
+  >>> design_matrix = ColumnTransformer(transformers=[
+  ...     ('dummy', OneHotEncoder(drop='first'), ['LOB', 'development']),
+  ...     ('passthrough', 'passthrough', ['origin'])
+  ... ])
+  >>> # Wrap preprocessing and model in a larger sklearn Pipeline
+  >>> estimator_ml = Pipeline(steps=[
+  ...     ('design_matrix', design_matrix),
+  ...     ('model', RandomForestRegressor())
+  ... ])
+  >>> # Fitting DevelopmentML fits the underlying ML model and gives access to ldf_
+  >>> cl.DevelopmentML(estimator_ml=estimator_ml, y_ml='CumPaidLoss').fit(clrd).ldf_
+             Triangle Summary
+  Valuation:          2261-12
+  Grain:                 OYDY
+  Shape:        (6, 1, 10, 9)
+  Index:                [LOB]
+  Columns:      [CumPaidLoss]
+
+
+Autoregressive
+---------------
+The time-series nature of loss development naturally lends to an urge for autoregressive
+features.  That is, features that are based on predictions, albeit on a lagged basis.
+`DevelopmentML` includes an ``autoregressive`` parameter that can be used to
+express the response as a lagged feature as well.
+
+.. note::
+   When using ``autoregressive`` features, you must also declare it as a column
+   in your ``estimator_ml`` Pipeline.
+
+PatsyFormula
+-------------
+While the sklearn preprocessing API is powerful, it can be tedious work with in
+some instances. In particular, modeling complex interactions is much easier to do
+with Patsy.  The  ``chainladder`` package includes a custom sklearn estimator
+to gain access to the patsy API.  This is done through the `PatsyFormula` estimator.
+
+  >>> estimator_ml = Pipeline(steps=[
+  ...     ('design_matrix', cl.PatsyFormula('LOB:C(origin)+LOB:C(development)+development')),
+  ...     ('model', RandomForestRegressor())
+  ... ])
+  >>> cl.DevelopmentML(estimator_ml=estimator_ml, y_ml='CumPaidLoss').fit(clrd).ldf_.iloc[0, 0, 0].round(2)
+         12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
+  (All)   2.64   1.42   1.19   1.09   1.04   1.02   1.01    1.01     1.01
+
+
+  .. note::
+     `PatsyFormula` is not an estimator designed to work with triangles.  It is an sklearn
+     transformer designed to work with pandas DataFrames allowing it to work directly
+     in an sklearn Pipeline.

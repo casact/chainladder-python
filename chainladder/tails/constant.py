@@ -75,12 +75,5 @@ class TailConstant(TailBase):
             attach_idx = len(X.ddims) - 1
         self = self._apply_decay(X, tail, attach_idx)
         obj = Development().fit_transform(X) if "ldf_" not in X else X
-        if xp.max(xp.array(self.tail)) != 1.0:
-            sigma, std_err = self._get_tail_stats(obj)
-            self.sigma_.values = xp.concatenate(
-                (self.sigma_.values[..., :-1], sigma[..., -1:]), axis=-1
-            )
-            self.std_err_.values = xp.concatenate(
-                (self.std_err_.values[..., :-1], std_err[..., -1:]), axis=-1
-            )
+        self._get_tail_stats(obj)
         return self

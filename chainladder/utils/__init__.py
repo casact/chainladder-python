@@ -54,6 +54,7 @@ from chainladder.utils.utility_functions import (  # noqa (API import)
     load_sample,
     minimum,
     maximum,
+    PatsyFormula,
 )
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp

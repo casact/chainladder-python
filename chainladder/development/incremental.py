@@ -91,6 +91,8 @@ class IncrementalAdditive(DevelopmentBase):
             X = X.copy()
         if sample_weight.array_backend == "sparse":
             sample_weight = sample_weight.set_backend("numpy")
+        else:
+            sample_weight = sample_weight.copy()
         xp = X.get_array_module()
         sample_weight.is_cumulative = False
         obj = X.cum_to_incr() / sample_weight.values
@@ -141,7 +143,6 @@ class IncrementalAdditive(DevelopmentBase):
             1/(1+future_trend)-1, axis='valuation', start=X.valuation_date,
             end=self.incremental_.valuation_date)
         self.ldf_ = obj.incr_to_cum().link_ratio
-        self.sigma_ = self.std_err_ = 0 * self.ldf_
         return self
 
     def transform(self, X):
@@ -158,6 +159,6 @@ class IncrementalAdditive(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        for item in ["incremental_", "ldf_", "sigma_", "std_err_"]:
+        for item in ["ldf_"]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new

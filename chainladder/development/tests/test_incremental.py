@@ -9,7 +9,7 @@ def test_schmidt():
     answer = ia.fit_transform(
         tri.iloc[0, 0], sample_weight=tri.iloc[0, 1].latest_diagonal
     )
-    answer = answer.incremental_.incr_to_cum().values[0, 0, :, -1]
+    answer = ia.incremental_.incr_to_cum().values[0, 0, :, -1]
     check = xp.array(
         [
             3483.0,

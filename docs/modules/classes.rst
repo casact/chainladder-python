@@ -174,3 +174,13 @@ Functions
    load_sample
    minimum
    maximum
+
+Classes
+-------
+.. currentmodule:: chainladder
+
+.. autosummary::
+ :toctree: generated/
+ :template: class.rst
+
+ PatsyFormula
