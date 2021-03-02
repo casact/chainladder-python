@@ -272,7 +272,10 @@ def add_triangle_agg_func(cls, k, v):
         obj = self.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
         if axis is None:
-            axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
+            if max(obj.shape) == 1:
+                axis = 0
+            else:
+                axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
         else:
             axis = self._get_axis(axis)
         xp = obj.get_array_module()
