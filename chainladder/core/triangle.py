@@ -369,7 +369,7 @@ class Triangle(TriangleBase):
                 return self
             else:
                 return self.copy()
-        if self.is_ultimate:
+        if self.is_ultimate and self.shape[-1] > 1:
             ultimate = self.iloc[..., -1:]
             ultimate.ddims = np.array([9999])
             obj = self.iloc[..., :-1]._val_dev(-1, inplace)
@@ -384,7 +384,7 @@ class Triangle(TriangleBase):
         scale = {"Y": 12, "Q": 3, "M": 1}[obj.development_grain]
         obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
         prune = obj[obj.origin == obj.origin.max()]
-        if self.is_ultimate:
+        if self.is_ultimate and self.shape[-1] > 1:
             obj = obj.iloc[..., : (prune.valuation <= prune.valuation_date).sum()]
             obj = concat((obj, ultimate), -1)
         return obj

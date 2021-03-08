@@ -121,6 +121,8 @@ def read_json(json_str, array_backend=None):
         j = json.loads(json_str)
         y = pd.read_json(j["data"], orient="split", date_unit="ns")
         y["origin"] = pd.to_datetime(y["origin"])
+        y.columns= [
+            c if c != 'valuation' else 'development' for c in y.columns]
         y["development"] = pd.to_datetime(y["development"])
         index = list(y.columns[: list(y.columns).index("origin")])
         columns = list(y.columns[list(y.columns).index("development") + 1 :])
