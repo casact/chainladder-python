@@ -182,14 +182,38 @@ For example, use ``12`` to drop the ``12-24`` ratio.
   ``drop_high`` and ``drop_low`` are ignored in cases where the number of link
   ratios available for a given development period is less than 3.
 
+.. _ELRF:
+
+Extended Link Ratio Family
+-----------------------------
+The `Development` estimator is based on the regression framework known as the
+Extended Link Ratio Family (ELRF).  A nice property of this family is that we
+not only get estimates for our patterns (``cdf_``, and ``ldf_``), but also
+measures of variability of our estimates (``sigma_``, ``std_err_`` and ``std_residuals_``
+).  These variability properties are used to develop the stochastic features in the
+`MackChainladder` method, but even for deterministic methods these variability
+estimates can be used as a diagnostic tool to validate the appropriateness of using
+multiplicative link ratios.
+
+.. figure:: /auto_examples/images/sphx_glr_plot_elrf_resid_001.png
+   :target: ../auto_examples/plot_elrf_resid.html
+   :align: center
+   :scale: 50%
+
+These residual plots which should should look random are used to highlight whether
+the chainladder model is violated.  Violations generally occur due to trends in the
+valuation axis which are not accounted for in the basic chainladder method.
+
+
+.. topic:: References
+
+  .. [B2000] Barnett, G. and Zehnwirth, B., "Best Estimates for Reserves", Proceedings of the CAS, Volume LXXXVII, 2000
+
+
 Properties
 ----------
 :class:`Development` uses the regression approach suggested by Mack to estimate
-development patterns.  Using the regression framework, we not only get estimates
-for our patterns (``cdf_``, and ``ldf_``), but also measures of variability of
-our estimates (``sigma_``, ``std_err_``).  These variability properties are
-used to develop the stochastic features in the `MackChainladder` method, but for
-deterministic exercises, can be ignored.
+development patterns.  Using the regression framework,
 
 Transforming
 ------------
@@ -232,6 +256,8 @@ patterns to individual companies.
 
 
 .. _dev_const:
+
+
 
 DevelopmentConstant
 ===================
@@ -820,3 +846,57 @@ to gain access to the patsy API.  This is done through the `PatsyFormula` estima
      `PatsyFormula` is not an estimator designed to work with triangles.  It is an sklearn
      transformer designed to work with pandas DataFrames allowing it to work directly
      in an sklearn Pipeline.
+
+BarnettZehnwirth
+=================
+The `BarnettZehnwirth` estimator solves for development patterns using the
+Probabilistic Trend Family (PTF) regression framework.  Unlike the ELRF framework,
+which assumes no ``valuation`` covariate, the PTF framework allows for this.
+
+.. figure:: ../_static/images/prob_trend_family.PNG
+   :align: center
+   :scale: 40%
+
+Structurally, the PTF regression is different from the `ELRF` (ELRF) regression framework in
+two distinct ways:
+
+  1. Where the ELRF fits independent regressions to each adjacent development lag, the PTF
+     regression is fit to the entire triangle
+  2. Where the ELRF is fit to cumulative amounts, the PTF is fit to the log of
+     the incremental amounts of the `Triangle`.
+
+Formulation
+------------
+The PTF framework is an ordinary least squares (OLS) model with the response, ``y``
+being the log of the incremental amounts of a Triangle. These are assumed to be
+normally distributed which implies the incrementals themselves are log-normal
+distributed.
+
+The framework includes coefficients for origin periods (alpha), development periods (gamma)
+and calendar period (iota).
+
+.. math::
+   y(i, j) = \alpha _{i} + \sum_{k=1}^{j}\gamma _{k}+ \sum_{\iota =1}^{i+j}\gamma _{\iota}+ \varepsilon  _{i,j}
+
+These coefficients can be categorical or continuous, and to support a wide range of
+model forms, patsy formulas are used.
+
+  >>> import chainladder as cl
+  >>> abc = cl.load_sample('abc')
+  >>> # Discrete origin, development, valuation
+  >>> cl.BarnettZehnwirth(formula='C(origin)+C(development)-1').fit(abc).coef_.T
+         C(origin)[0.0]  C(origin)[1.0]  ...  C(development)[T.120]  C(development)[T.132]
+  coef_       -0.565778       -0.386953  ...              -2.238333              -2.427672
+  [1 rows x 21 columns]
+  >>> # Linear coefficients for origin, development, and valuation
+  >>> cl.BarnettZehnwirth(formula='origin+development+valuation-1').fit(abc).coef_.T
+           origin  development  valuation
+  coef_  0.050865    -0.027805   0.048548
+
+The PTF framework is particularly useful when there is calendar period inflation
+influences on loss development.
+
+
+.. topic:: References
+
+ .. [B2000] Barnett, G. and Zehnwirth, B., "Best Estimates for Reserves", Proceedings of the CAS, Volume LXXXVII, 2000

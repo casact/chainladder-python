@@ -102,6 +102,7 @@ class DevelopmentML(DevelopmentBase):
         dev_lags = df['development'].drop_duplicates().sort_values()
         for d in dev_lags[1:]:
             out['development'] = out['development'] + dgrain
+            out['valuation'] = out['valuation'] + dgrain / 12
             if len(preds.shape) == 1:
                 preds = preds[:, None]
             if self.autoregressive:
@@ -119,7 +120,7 @@ class DevelopmentML(DevelopmentBase):
         out = pd.concat((X_r,
                          pd.DataFrame(np.concatenate(y_r, 0), columns=self._get_y_names())),1)
         out['origin'] = out['origin'].map({v: k for k, v in self.origin_encoder_.items()})
-        out = out.merge(self.valuation_vector_, how='left', on=['origin', 'development'])
+        out['valuation'] = out['valuation'].map({v: k for k, v in self.valuation_encoder_.items()})
         return Triangle(
             out, origin='origin', development='valuation',
             index=self._key_labels, columns=self._get_y_names(),
@@ -135,11 +136,12 @@ class DevelopmentML(DevelopmentBase):
             for i in self.autoregressive:
                 lag = X[i[2]].shift(i[1])
                 X_[i[0]] = lag[lag.valuation<=X.valuation_date]
-        df_base = X.incr_to_cum().to_frame(keepdims=True).reset_index().iloc[:, :-1]
+        df_base = X.incr_to_cum().to_frame(keepdims=True, implicit_axis=True).reset_index().iloc[:, :-1]
         df = df_base.merge(
-            X.cum_to_incr().to_frame(keepdims=True).reset_index(), how='left',
+            X.cum_to_incr().to_frame(keepdims=True, implicit_axis=True).reset_index(), how='left',
             on=list(df_base.columns)).fillna(0)
         df['origin'] = df['origin'].map(self.origin_encoder_)
+        df['valuation'] = df['valuation'].map(self.valuation_encoder_)
         return df
 
     def fit(self, X, y=None, sample_weight=None):
@@ -167,10 +169,10 @@ class DevelopmentML(DevelopmentBase):
         self.origin_encoder_ = dict(zip(
             X.origin.to_timestamp(how='s'),
             (pd.Series(X.origin).rank()-1)/{'Y':1, 'Q':4, 'M': 12}[X.origin_grain]))
-        self.valuation_vector_ = pd.DataFrame(
-            X.valuation.values.reshape(X.shape[-2:], order='F'),
-            index=X.odims, columns=X.ddims).unstack().reset_index()
-        self.valuation_vector_.columns=['development', 'origin', 'valuation']
+        val = X.valuation.sort_values().unique()
+        self.valuation_encoder_ = dict(zip(
+            val,
+            (pd.Series(val).rank()-1)/{'Y':1, 'Q':4, 'M': 12}[X.development_grain]))
         df = self._prep_X_ml(X)
         self.df_ = df
         # Fit model

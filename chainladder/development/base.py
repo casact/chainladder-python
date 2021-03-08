@@ -57,6 +57,9 @@ class Development(DevelopmentBase):
         Std_err of the ldf regression
     weight_ : pandas.DataFrame
         The weight used in the ldf regression
+    std_residuals_ : Triangle
+        A Triangle representing the weighted standardized residuals of the
+        estimator as described in Barnett and Zehnwirth.
 
     """
 
@@ -293,6 +296,11 @@ class Development(DevelopmentBase):
         self.ldf_ = self._param_property(X, params, 0)
         self.sigma_ = self._param_property(X, params, 1)
         self.std_err_ = self._param_property(X, params, 2)
+
+        resid = -X.iloc[..., :-1]*self.ldf_.values+X.iloc[..., 1:].values
+        std = xp.sqrt((1/w)*(self.sigma_**2).values)
+        resid = resid/std
+        self.std_residuals_ = resid[resid.valuation < X.valuation_date]
         return self
 
     def transform(self, X):

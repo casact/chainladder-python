@@ -71,6 +71,10 @@ class TweedieGLM(DevelopmentBase):
     verbose : int, default=0
         For the lbfgs solver set verbose to any positive number for verbosity.
 
+    Attributes
+    -----------
+    model_ : sklearn.Pipeline
+        A scikit-learn Pipeline of the GLM
     """
 
     def __init__(self, design_matrix='C(development) + C(origin)',
@@ -89,7 +93,7 @@ class TweedieGLM(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         response = X.columns[0] if not self.response else self.response
-        self.model = DevelopmentML(Pipeline(steps=[
+        self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.design_matrix)),
             ('model', TweedieRegressor(
                     link=self.link, power=self.power, max_iter=self.max_iter,
@@ -100,19 +104,19 @@ class TweedieGLM(DevelopmentBase):
 
     @property
     def ldf_(self):
-        return self.model.ldf_
+        return self.model_.ldf_
 
     @property
-    def triangle_glm_(self):
-        return self.model.triangle_ml_
+    def triangle_ml_(self):
+        return self.model_.triangle_ml_
 
     @property
     def coef_(self):
         return pd.Series(
-            self.model.estimator_ml.named_steps.model.coef_, name='coef_',
-            index=list(self.model.estimator_ml.named_steps.design_matrix.
+            self.model_.estimator_ml.named_steps.model.coef_, name='coef_',
+            index=list(self.model_.estimator_ml.named_steps.design_matrix.
                             design_info_.column_name_indexes.keys())
         ).to_frame()
 
     def transform(self, X):
-        return self.model.transform(X)
+        return self.model_.transform(X)

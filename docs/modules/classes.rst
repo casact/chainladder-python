@@ -58,6 +58,7 @@ Classes
   CaseOutstanding
   TweedieGLM
   DevelopmentML
+  BarnettZehnwirth
 
 
 .. _tails_ref:

@@ -22,7 +22,8 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
-    def to_frame(self, origin_as_datetime=False, keepdims=False, *args, **kwargs):
+    def to_frame(self, origin_as_datetime=False, keepdims=False, implicit_axis=False,
+                 *args, **kwargs):
         """ Converts a triangle to a pandas.DataFrame.
 
         Parameters
@@ -34,17 +35,21 @@ class TrianglePandas:
             If True, the triangle will be converted to a DataFrame with all
             dimensions intact.  The argument will force a consistent DataFrame
             format regardless of whether any dimensions are of length 1.
+        implicit_axis : bool
+            When keepdims is True, this denotes whether to include the implicit
+            valuation axis in addition to the origin and development.
         Returns
         -------
             pandas.DataFrame representation of the Triangle.
         """
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if keepdims:
-            obj = self.copy().set_backend("sparse")
+            is_val_tri = self.is_val_tri
+            obj = self.val_to_dev().set_backend("sparse")
             out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
             out["columns"] = obj.columns[obj.values.coords[1]]
-            out["origin"] = self.odims[obj.values.coords[2]]
-            out["development"] = self.ddims[obj.values.coords[3]]
+            out["origin"] = obj.odims[obj.values.coords[2]]
+            out["development"] = obj.ddims[obj.values.coords[3]]
             out["values"] = obj.values.data
             out = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
@@ -53,7 +58,27 @@ class TrianglePandas:
             out.columns = ["origin", "development"] + list(
                 out.columns.get_level_values(1)[2:]
             )
-            return out
+
+            valuation = pd.DataFrame(
+                obj.valuation.values.reshape(obj.shape[-2:], order='F'),
+                index=obj.odims, columns=obj.ddims
+            ).unstack().rename('valuation').reset_index().rename(
+                columns={'level_0': 'development', 'level_1': 'origin'})
+
+            val_dict = dict(zip(list(zip(
+                valuation['origin'], valuation['development'])),
+                valuation['valuation']))
+            out['valuation'] = out.apply(
+                lambda x: val_dict[(x['origin'], x['development'])], axis=1)
+            col_order = list(out.columns)
+            if implicit_axis:
+                col_order = ['origin', 'development', 'valuation'] + col_order[2:-1]
+            else:
+                if is_val_tri:
+                    col_order = ['origin', 'valuation'] + col_order[2:-1]
+                else:
+                    col_order = ['origin', 'development'] + col_order[2:-1]
+            return out[col_order]
         if self.shape[:2] == (1, 1):
             return self._repr_format(origin_as_datetime)
         elif len(axes) in [1, 2]:
@@ -75,7 +100,9 @@ class TrianglePandas:
             if len(axes) == 1:
                 return pd.Series(tri, index=idx).fillna(0)
         else:
-            return self.to_frame(origin_as_datetime=origin_as_datetime, keepdims=True)
+            return self.to_frame(
+                origin_as_datetime=origin_as_datetime, keepdims=True,
+                implicit_axis=implicit_axis)
 
     def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
