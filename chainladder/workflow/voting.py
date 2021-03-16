@@ -15,11 +15,11 @@ from sklearn.utils.validation import (_deprecate_positional_args,
 
 from ..core.base import is_chainladder
 
+
 class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
     """Base class for ensemble of triangle methods."""
     def __init__(self, estimators):
         super().__init__(estimators)
-
 
     def _validate_estimators(self):
         if self.estimators is None or len(self.estimators) == 0:
@@ -40,12 +40,55 @@ class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
 
         return names, estimators
 
+
 class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
     """Base class for voting between chainladder methods.
 
     Warning: This class should not be used directly. Use derived classes
     instead.
     """
+    def _assum_vector_is_none(self, X, assum_vector):
+        # return np.ones(X.shape[:3] + (len(self.estimators), ))
+        return np.repeat(
+            np.array(self.default_weighting)[np.newaxis, :],
+            repeats=X.shape[-1],
+            axis=0
+            )
+
+    def _assum_vector_is_array(self, X, assum_vector):
+        assum_vector_ = assum_vector
+        return assum_vector_
+
+    def _assum_vector_is_list(self, X, assum_vector):
+        assum_vector_ = np.array(assum_vector)
+        return assum_vector_
+
+    def _assum_vector_is_callable(self, X, assum_vector):
+        assum_vector_ = np.array([*self.X_.origin.map(assum_vector)])
+        return assum_vector_
+
+    def _assum_vector_is_dict(self, X, assum_vector):
+        mapping_dict = {X.origin[X.origin == k][0]: v for k, v in assum_vector.items()}
+        missing = {k: self.default_weighting for k in X.origin[~X.origin.isin(mapping_dict.keys())]}
+        assum_vector_ = np.array([*self.X_.origin.map({**mapping_dict, **missing})])
+        return assum_vector_
+
+    def _coerce_assum_vector_to_array(self, X, assum_vector):
+        if assum_vector is None:
+            assum_vector_ = self._assum_vector_is_none(X, assum_vector)
+        elif isinstance(assum_vector, np.ndarray):
+            assum_vector_ = self._assum_vector_is_array(X, assum_vector)
+        elif isinstance(assum_vector, list):
+            assum_vector_ = self._assum_vector_is_list(X, assum_vector)
+        elif callable(assum_vector):
+            assum_vector_ = self._assum_vector_is_callable(X, assum_vector)
+        elif isinstance(assum_vector, dict):
+            assum_vector_ = self._assum_vector_is_dict(X, assum_vector)
+        else:
+            raise ValueError("The vector assumption provided must be a "
+                             "numpy array, list, dict or callable. Got a "
+                             f"{type(assum_vector)} instead.")
+        return assum_vector_
 
     def _broadcast_weights(self, X):
         if self.weights_.ndim == 3:
@@ -62,22 +105,21 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
     def fit(self, X, y, sample_weight=None):
         """Get common fit operations."""
         names, clfs = self._validate_estimators()
-        self.weights_ = self.weights
-        if self.weights_ is not None:
-            self.weights_ = self.weights_[..., np.newaxis]
-            if self.weights_.shape[-3] != X.shape[2]:
-                raise ValueError('Length of weight arrays do not equal'
-                                 f' number of accident periods; found'
-                                 f' {self.weights_.shape[-3]} weights'
-                                 f' and {X.shape[2]} accident periods.')
-            if self.weights_.shape[-2] != len(self.estimators):
-                raise ValueError('Number of weight arrays does not equal'
-                                 f' number of estimators array; '
-                                 f' found {self.weights_.shape[-2]} weights'
-                                 f' arrays and {len(self.estimators)}'
-                                 ' estimators.')
-        else:
-            self.weights_ = np.ones(X.shape[:3] + (len(self.estimators), 1))
+        if self.default_weighting is None:
+            self.default_weighting = (1, ) * len(self.estimators)
+        self.weights_ = self._coerce_assum_vector_to_array(X, self.weights)
+        self.weights_ = self.weights_[..., np.newaxis]
+        if self.weights_.shape[-3] != X.shape[2]:
+            raise ValueError('Length of weight arrays do not equal'
+                             f' number of accident periods; found'
+                             f' {self.weights_.shape[-3]} weights'
+                             f' and {X.shape[2]} accident periods.')
+        if self.weights_.shape[-2] != len(self.estimators):
+            raise ValueError('Number of weight arrays does not equal'
+                             f' number of estimators array; '
+                             f' found {self.weights_.shape[-2]} weights'
+                             f' arrays and {len(self.estimators)}'
+                             ' estimators.')
 
         self.estimators_ = Parallel(n_jobs=self.n_jobs)(
                 delayed(_fit_single_estimator)(
@@ -121,10 +163,20 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         ``self.estimators_``. An estimator can be set to ``'drop'`` using
         ``set_params``.
 
-    weights : array-like of shape (index, columns, origin, n_estimators), default=None
-        Minimum shape required is (origin, n_estimators). Lower dimensional weight arrays
-        will have missing dimensions repeated to match the shape of the triangle. If None,
-        takes the average of all predictions.
+    weights : array callable or dict, default=None
+        ``array``: Numpy array of shape (index, columns, origin, n_estimators). Minimum
+        shape required is (origin, n_estimators). Lower dimensional weight arrays
+        will have missing dimensions repeated to match the shape of the triangle.
+        ``list``: List of weights where each weight is a list of length n_estimators.
+        ``dict``: A dictionary where the origin is mapped to a weighting tuple. Missing
+        origin periods will be given ``default_weighting``.
+        ``callable``: A callable that returns weighting tuples.
+        ``None`` uses ``default_weighting``.
+
+    default_weighting : tuple of shape (n_estimators, ), default=None
+        Default weighting to use where a weight was not provided or if ``weights`` is None.
+        ``None`` uses a typle of all ones which is equivalent to averaging the predictions
+        of the estimators.
 
     n_jobs : int, default=None
         The number of jobs to run in parallel for ``fit``.
@@ -173,10 +225,11 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         1990  21605.832631
     """
     @_deprecate_positional_args
-    def __init__(self, estimators, *, weights=None, n_jobs=None,
-                 verbose=False):
+    def __init__(self, estimators, *, weights=None, default_weighting=None,
+                 n_jobs=None, verbose=False):
         super().__init__(estimators=estimators)
         self.weights = weights
+        self.default_weighting = default_weighting
         self.n_jobs = n_jobs
         self.verbose = verbose
 
