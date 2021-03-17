@@ -74,6 +74,7 @@ and the :class:`CapeCod` method for the final 3.
 
 Alternatively, the actuary may choose to combine all methods using weights. Omitting
 the weights parameter results in the average of all predictions assuming a weight of 1.
+Alternatively, a default weight can be enforced through the `default_weight` parameter.
 
    >>> raa = cl.load_sample('RAA')
    >>> cl_ult = cl.Chainladder().fit(raa).ultimate_ # Chainladder Ultimate
@@ -100,6 +101,17 @@ the weights parameter results in the average of all predictions assuming a weigh
    1989  18530.213787
    1990  20331.432662
 
+The weights can take the form of an array (as above), a dict, or a callable:
+
+   >>> callable_weight = lambda origin : np.where(origin.year < 1985, (1, 0, 0), np.where(origin.year > 1987, (0, 0, 1), (0, 1, 0)))
+   >>> dict_weight = {
+         '1992': (0, 1, 0),
+         '1993': (0, 1, 0),
+         '1994': (0, 1, 0),
+         '1995': (0, 0, 1),
+         '1996': (0, 0, 1),
+         '1997': (0, 0, 1),
+         }  # Unmapped origins will get `default_weight`
 
 .. _gridsearch_docs:
 
