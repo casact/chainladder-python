@@ -17,14 +17,12 @@ import chainladder as cl
 import pandas as pd
 
 # Read in the data
-lobs = 'wkcomp'
-data = pd.read_csv(r'https://www.casact.org/research/reserve_data/wkcomp_pos.csv')
-data = data[data['DevelopmentYear']<=1997]
+data = pd.read_csv(r'https://raw.githubusercontent.com/casact/chainladder-python/master/chainladder/utils/data/clrd.csv')
 
 # Create a triangle
 triangle = cl.Triangle(
     data, origin='AccidentYear', development='DevelopmentYear',
-    index=['GRNAME'], columns=['IncurLoss_D','CumPaidLoss_D','EarnedPremDIR_D'])
+    index=['GRNAME'], columns=['IncurLoss','CumPaidLoss','EarnedPremDIR'])
 
 # Output
 print('Raw data:')
@@ -34,10 +32,10 @@ print('Triangle summary:')
 print(triangle)
 print()
 print('Aggregate Paid Triangle:')
-print(triangle['CumPaidLoss_D'].sum())
+print(triangle['CumPaidLoss'].sum())
 
 # Plot data
-triangle['CumPaidLoss_D'].sum().T.plot(
+triangle['CumPaidLoss'].sum().T.plot(
     marker='.', grid=True,
     title='CAS Loss Reserve Database: Workers Compensation').set(
     xlabel='Development Period', ylabel='Cumulative Paid Loss');

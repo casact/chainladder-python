@@ -188,7 +188,7 @@ Deriving the ``tail_`` factor manually:
 .. topic:: References
 
   .. [CAS2013] `CAS Tail Factor Working Party, "The Estimation of Loss Development Tail
-      Factors: A Summary Report", Casualty Actuarial Society E-Forum <https://www.casact.org/pubs/forum/13fforum/02-Tail-Factors-Working-Party.pdf>`__
+      Factors: A Summary Report", Casualty Actuarial Society E-Forum <https://www.casact.org/sites/default/files/database/forum_13fforum_02-tail-factors-working-party.pdf>`__
 
 
 .. _bondy:
@@ -232,7 +232,7 @@ tail factor from ``b_``, the Bondy exponent.
 .. topic:: References
 
   .. [CAS2013] `CAS Tail Factor Working Party, "The Estimation of Loss Development Tail
-      Factors: A Summary Report", Casualty Actuarial Society E-Forum <https://www.casact.org/pubs/forum/13fforum/02-Tail-Factors-Working-Party.pdf>`__
+      Factors: A Summary Report", Casualty Actuarial Society E-Forum <https://www.casact.org/sites/default/files/database/forum_13fforum_02-tail-factors-working-party.pdf>`__
 
 
 .. _tailclark:
@@ -272,4 +272,4 @@ fully developed.
 .. topic:: References
 
   .. [CD2003] `Clark, David R., "LDF Curve-Fitting and Stochastic Reserving: A Maximum Likelihood Approach",
-               Casualty Actuarial Society Forum, Fall, 2003 <https://www.casact.org/pubs/forum/03fforum/03ff041.pdf>`__
+               Casualty Actuarial Society Forum, Fall, 2003 <https://www.casact.org/sites/default/files/database/forum_03fforum_03ff041.pdf>`__

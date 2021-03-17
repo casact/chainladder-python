@@ -72,7 +72,7 @@ parameters.  See :ref:`Omitting Link Ratios<dropping>`.
 
 .. topic:: References
 
-  .. [SM2016] `M Shapland, "Using the ODP Bootstrap Model: A Practitioner's Guide", CAS Monograph No.4 <https://www.casact.org/pubs/monographs/papers/04-shapland.pdf>`__
+  .. [SM2016] `M Shapland, "Using the ODP Bootstrap Model: A Practitioner's Guide", CAS Monograph No.4 <https://live-casact.pantheonsite.io/sites/default/files/2021-02/04-shapland.pdf>`__
 
 
 .. _berqsherm:

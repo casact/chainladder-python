@@ -561,7 +561,7 @@ parameter and process uncertainty of our model.
 .. topic:: References
 
   .. [CD2003] `Clark, David R., "LDF Curve-Fitting and Stochastic Reserving: A Maximum Likelihood Approach",
-               Casualty Actuarial Society Forum, Fall, 2003 <https://www.casact.org/pubs/forum/03fforum/03ff041.pdf>`__
+               Casualty Actuarial Society Forum, Fall, 2003 <https://www.casact.org/sites/default/files/database/forum_03fforum_03ff041.pdf>`__
 
 
 CaseOutstanding
