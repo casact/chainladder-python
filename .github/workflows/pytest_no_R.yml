@@ -27,6 +27,6 @@ jobs:
         shell: bash -l {0}
         run: |
           conda env create --file ./ci/environment-latest.yaml;
-          conda activate cl_test;
+          conda activate cl_latest;
           python setup.py develop
           pytest chainladder/core/tests/test_triangle.py
