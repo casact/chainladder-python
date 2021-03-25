@@ -173,7 +173,7 @@ class TriangleBase(
         self.array_backend = "sparse"
         self.values = num_to_nan(
             sp(
-                coords.T,
+                coords.T.astype('int64'),
                 amts,
                 prune=True,
                 has_duplicates=False,
