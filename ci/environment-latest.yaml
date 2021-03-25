@@ -1,0 +1,13 @@
+name: cl_latest
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - pandas
+  - scikit-learn
+  - sparse
+  - dill
+  - xlcompose
+  - patsy
