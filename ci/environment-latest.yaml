@@ -11,3 +11,8 @@ dependencies:
   - dill
   - xlcompose
   - patsy
+
+  # testing
+  - lxml
+  - pytest
+  - pytest-cov
