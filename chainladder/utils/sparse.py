@@ -32,9 +32,7 @@ def nan_to_num(a):
     if hasattr(a, "fill_value"):
         a = a.copy()
         a.data[np.isnan(a.data)] = 0.0
-        if a.fill_value != 0.0:
-            a.fill_value = 0.0
-    return sp(a)
+    return sp(coords=a.coords, data=a.data, fill_value=0.0, shape=a.shape)
 
 
 def ones(*args, **kwargs):
@@ -56,13 +54,10 @@ def nanmedian(a, axis=None, keepdims=None, *args, **kwargs):
 def nanmean(a, axis=None, keepdims=None, *args, **kwargs):
     n = sp.nansum(a, axis=axis, keepdims=keepdims)
     d = sp.nansum(sp.nan_to_num(a) != 0, axis=axis, keepdims=keepdims).astype(n.dtype)
-    n.fill_value = np.nan
-    d.fill_value = np.nan
-    n = sp(n)
-    d = sp(d)
+    n = sp(data=n.data, coords=n.coords, fill_value=np.nan, shape=n.shape)
+    d = sp(data=d.data, coords=d.coords, fill_value=np.nan, shape=d.shape)
     out = n / d
-    out.fill_value = 0
-    return sp(out)
+    return sp(data=out.data, coords=out.coords, fill_value=0, shape=out.shape)
 
 
 def array(a, *args, **kwargs):

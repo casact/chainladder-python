@@ -115,8 +115,8 @@ To instal using conda: ``conda install -c conda-forge chainladder``
 Alternatively for pre-release functionality, install directly from github:
 ``pip install git+https://github.com/casact/chainladder-python/``
 
-Note: This package requires Python>=3.5 to Python<3.9, numpy 1.12.0 and
-later, pandas 0.23.0 and later, scikit-learn 0.18.0 and later.
+Note: This package requires Python>=3.5 pandas 0.23.0 and later,
+sparse 0.9 and later, scikit-learn 0.23.0 and later.
 
 Questions?
 ----------

@@ -1,6 +1,6 @@
-pandas
-scikit-learn
-sparse
+pandas>=0.23
+scikit-learn>=0.23
+sparse>=0.9
 dill
 xlcompose
 patsy
