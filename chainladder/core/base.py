@@ -131,6 +131,7 @@ class TriangleBase(
                 date_axes["origin"], date_axes["development"]
             ).unique()
         )
+
         orig_unique = np.sort(date_axes["origin"].unique())
         kdims = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
 
@@ -333,7 +334,7 @@ class TriangleBase(
             target = target_field.map(arr)
         if period_end:
             target = target.dt.to_period(
-                TriangleBase._get_grain(target)
+                "M" if len(target.unique()) == 1 else TriangleBase._get_grain(target),
             ).dt.to_timestamp(how="e")
         return target
 
