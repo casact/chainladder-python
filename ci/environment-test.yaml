@@ -1,0 +1,51 @@
+# The basic requirements for CI testing of chainladder
+name: cl_test
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python
+
+  # Downgrade numpy for rpy2 support
+  - numpy<=1.16.4
+  - pandas<=1.1.5
+  - scikit-learn
+  - sparse
+  - dill
+  - xlcompose
+  - patsy
+
+  # testing
+  - lxml
+  - pytest
+  - pytest-cov
+
+  # R ChainLadder unit testing
+  - rpy2
+  - tzlocal
+  - libiconv
+  - r-nloptr
+  - r-matrix
+  - r-reshape2
+  - r-lattice
+  - r-latticeextra
+  - r-gridbase
+  - r-gridextra
+  - r-ggplot2
+  - r-mass
+  - r-rcppeigen
+  - r-lme4
+  - r-sparsem
+  - r-matrixmodels
+  - r-mgcv
+  - r-nnet
+  - r-pbkrtest
+  - r-quantreg
+  - r-zoo
+  - r-car
+  - r-lmtest
+  - r-sandwich
+  - r-coda
+  - r-minqa
