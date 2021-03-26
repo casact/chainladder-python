@@ -255,10 +255,9 @@ def num_to_nan(arr):
     backend = arr.__class__.__module__.split(".")[0]
     if backend == "sparse":
         if arr.fill_value == 0 or sp.isnan(arr.fill_value):
-            arr.fill_value = sp.nan
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
-            arr = sp(arr)
+            arr = sp(coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape)
         else:
             arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=sp.nan)
     else:

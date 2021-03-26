@@ -52,8 +52,8 @@ class WeightedRegression(BaseEstimator):
             y[w == 0] = xp.nan
         else:
             w2 = w.copy()
-            w2.fill_value = sp.nan
-            x, y = x * sp(w2), y * sp(w2)
+            w2 = sp(data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape)
+            x, y = x * w2, y * w2
         slope = num_to_nan(
             xp.nansum(w * x * y, axis) - xp.nansum(x * w, axis) * xp.nanmean(y, axis)
         ) / num_to_nan(

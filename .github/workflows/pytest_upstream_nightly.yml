@@ -32,3 +32,4 @@ jobs:
           conda activate cl_latest;
           python setup.py develop
           pytest chainladder/core/tests/test_triangle.py
+          pytest chainladder/methods/tests/test_workflow.py
