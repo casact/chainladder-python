@@ -20,10 +20,9 @@ class TriangleDunders:
             obj, other = self._prep_index(obj, other)
             obj, other = self._prep_columns(obj, other)
             xp = obj.get_array_module()
-            a, b = self.shape[-2:], other.shape[-2:]
-            is_broadcastable = (
-                a[0] == 1 or b[0] == 1 or np.all(other.odims == obj.odims)
-            ) and (a[1] == 1 or b[1] == 1 or np.all(other.ddims == obj.ddims))
+            is_broadcastable = all(
+                (m == n) or (m == 1) or (n == 1)
+                for m, n in zip(obj.shape[::-1], other.shape[::-1]))
             if is_broadcastable:
                 if len(other.odims) == 1 and len(obj.odims) > 1:
                     other.odims = obj.odims
