@@ -331,21 +331,23 @@ class Triangle(TriangleBase):
             else:
                 return self.copy()
         is_cumulative = self.is_cumulative
-        if self.is_ultimate:
+        if self.is_full:
             if is_cumulative:
                 obj = self.cum_to_incr(inplace=inplace)
             else:
                 obj = self.copy()
-            ultimate = obj.iloc[..., -1:]
-            obj = obj.iloc[..., :-1]
+            if self.is_ultimate:
+                ultimate = obj.iloc[..., -1:]
+                obj = obj.iloc[..., :-1]
         else:
             obj = self
         obj = obj._val_dev(1, inplace)
         ddims = obj.valuation[obj.valuation <= obj.valuation_date]
         obj.ddims = ddims.drop_duplicates().sort_values()
-        if self.is_ultimate:
-            ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
-            obj = concat((obj, ultimate), -1)
+        if self.is_full:
+            if self.is_ultimate:
+                ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
+                obj = concat((obj, ultimate), -1)
             if is_cumulative:
                 obj = obj.incr_to_cum(inplace=inplace)
         return obj
@@ -427,6 +429,10 @@ class Triangle(TriangleBase):
             )
         if valid["M"].index(ograin_new) > valid["M"].index(dgrain_new):
             raise ValueError("Origin grain must be coarser than development grain")
+        if self.is_full and not self.is_ultimate and not self.is_val_tri:
+            warnings.warn('Triangle includes extraneous development lags')
+        else:
+            d_limit = None
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
             if trailing:

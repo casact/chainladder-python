@@ -60,6 +60,8 @@ Available Estimators
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 | `DevelopmentML`_             |                  |                         |                       |                       |
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
+| `BarnettZehnwirth`_          |                  |                         |                       |                       |
++------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
 Documentation
 -------------
@@ -91,6 +93,7 @@ code documentation.
 .. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#caseoutstanding
 .. _TweedieGLM: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#tweedieglm
 .. _DevelopmentML: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#developmentml
+.. _BarnettZehnwirth: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#barnettzehnwirth
 .. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
 
 Getting Started Tutorials

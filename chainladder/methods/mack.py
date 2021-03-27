@@ -141,7 +141,7 @@ class MackChainladder(Chainladder):
         extend = X.ldf_.shape[-1] - X.shape[-1] + 1
         ldf = X.ldf_.values[..., : len(X.ddims) - 1]
         tail = X.cdf_.values[..., -extend : -extend + 1]
-        ldf = X.ldf_.get_array_module().concatenate((ldf, tail), -1)
+        ldf = xp.array(X.ldf_.get_array_module().concatenate((ldf, tail), -1))
         # Recursive Mack Formula
         for i in range(t1_t.shape[-1]):
             t1 = t1_t[..., i : i + 1] ** 2

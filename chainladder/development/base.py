@@ -297,8 +297,9 @@ class Development(DevelopmentBase):
         self.sigma_ = self._param_property(X, params, 1)
         self.std_err_ = self._param_property(X, params, 2)
 
-        resid = -X.iloc[..., :-1]*self.ldf_.values+X.iloc[..., 1:].values
-        std = xp.sqrt((1/w)*(self.sigma_**2).values)
+        resid = -X.iloc[..., :-1] * self.ldf_.values + X.iloc[..., 1:].values
+
+        std = xp.sqrt((1/num_to_nan(w))*(self.sigma_**2).values)
         resid = resid/std
         self.std_residuals_ = resid[resid.valuation < X.valuation_date]
         return self

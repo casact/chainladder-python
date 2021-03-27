@@ -66,6 +66,7 @@ class CaseOutstanding(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
+        backend = "cupy" if X.array_backend == "cupy" else "numpy"
         self.X_ = X.copy()
         paid_tri = self.X_[self.paid_to_incurred[0]]
         incurred_tri = self.X_[self.paid_to_incurred[1]]
@@ -104,7 +105,8 @@ class CaseOutstanding(DevelopmentBase):
         dev.ddims = self.X_.link_ratio.ddims
         dev.is_pattern=True
         dev.is_cumulative=True
-        self.ldf_ = dev.cum_to_incr()
+
+        self.ldf_ = dev.cum_to_incr().set_backend(backend)
         return self
 
     @property

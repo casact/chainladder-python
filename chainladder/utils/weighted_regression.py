@@ -8,8 +8,8 @@ from sklearn.base import BaseEstimator
 
 class WeightedRegression(BaseEstimator):
     """ Helper class that fits a system of regression equations
-        simultaneously on a multi-dimensional array.  Look into
-        SUR as a replacement.
+        as a closed-form solution.  This greatly speeds up
+        the implementation of the Mack stochastic properties.
     """
 
     def __init__(self, axis=None, thru_orig=False, xp=None):

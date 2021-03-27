@@ -38,7 +38,7 @@ class BarnettZehnwirth(TweedieGLM):
         response = X.columns[0] if not self.response else self.response
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
-            ('model', LinearRegression(fit_intercept=True))]),
+            ('model', LinearRegression(fit_intercept=False))]),
                     y_ml=response, fit_incrementals=False).fit(tri)
         resid = tri - self.model_.triangle_ml_[
             self.model_.triangle_ml_.valuation <= tri.valuation_date]
