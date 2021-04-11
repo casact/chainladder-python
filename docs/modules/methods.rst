@@ -272,10 +272,10 @@ The `Benktander` method is also known as the iterated :class:`BornhuetterFerguso
 method.  This is because it is a generalization of the :class:`BornhuetterFerguson`
 technique.
 
-The generalized formula is:
+The generalized formula based on ``n_iters``, n is:
 
 .. math::
-   \sum_{k=0}^{n-1}(1-\frac{1}{CDF}) + Apriori\times (1-\frac{1}{CDF})^{n}
+   Ultimate = Apriori\times (1-\frac{1}{CDF})^{n} + Latest\times \sum_{k=0}^{n-1}(1-\frac{1}{CDF})^{k}
 
 ``n=0`` yields the expected loss method, ``n=1`` yields the traditional :class:`BornhuetterFerguson`
 method, and finally when ``n`` is sufficiently large, the method converges to the
@@ -307,7 +307,7 @@ of businesses.
   2012  5102.0   9650.0  13801.0  15832.0  17363.0  18248.0  18750.0  18750.0  18750.0
   2013  6283.0  10762.0  13801.0  15832.0  17363.0  18248.0  18750.0  18750.0  18750.0
 
-Mack noted the ``Benktander`` method is found to have almost always a smaller mean
+Mack noted the `Benktander` method is found to have almost always a smaller mean
 squared error than the other two methods and to be almost as precise as an exact
 Bayesian procedure.
 

@@ -4,6 +4,23 @@ Releases
 
 Version 0.8
 ===========
+Version 0.8.2
+--------------
+Release Date: Mar 27, 2021
+
+**Enhancements**
+
+- `#131 <https://github.com/casact/chainladder-python/issues/131>`__ - Added a BarnettZenwirth development estimator
+- `#117 <https://github.com/casact/chainladder-python/issues/117>`__ - VotingChainladder enhancements to allow for more flexibility in defining weights (courtesy of @cbalona)
+
+**Bug Fixes**
+
+- `#130 <https://github.com/casact/chainladder-python/issues/130>`__ - Fixed bug in triangle aggregation
+- `#134 <https://github.com/casact/chainladder-python/issues/134>`__ - Fixed a bug in triangle broadcasting
+- `#137 <https://github.com/casact/chainladder-python/issues/137>`__ - Fixed ``valuation_date`` bug occuring when partial year Triangle is instantiated as a vector.
+- `#138 <https://github.com/casact/chainladder-python/issues/138>`__ - Introduced fix for incompatibility with ``sparse>=0.12.0``
+- `#122 <https://github.com/casact/chainladder-python/issues/122>`__ - Implemented nightly continuous integration to identify new bugs associated with verion bumps of dependencies.
+
 
 Version 0.8.1
 --------------

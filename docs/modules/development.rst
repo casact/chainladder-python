@@ -884,12 +884,12 @@ model forms, patsy formulas are used.
   >>> import chainladder as cl
   >>> abc = cl.load_sample('abc')
   >>> # Discrete origin, development, valuation
-  >>> cl.BarnettZehnwirth(formula='C(origin)+C(development)-1').fit(abc).coef_.T
+  >>> cl.BarnettZehnwirth(formula='C(origin)+C(development)').fit(abc).coef_.T
          C(origin)[0.0]  C(origin)[1.0]  ...  C(development)[T.120]  C(development)[T.132]
   coef_       -0.565778       -0.386953  ...              -2.238333              -2.427672
   [1 rows x 21 columns]
   >>> # Linear coefficients for origin, development, and valuation
-  >>> cl.BarnettZehnwirth(formula='origin+development+valuation-1').fit(abc).coef_.T
+  >>> cl.BarnettZehnwirth(formula='origin+development+valuation').fit(abc).coef_.T
            origin  development  valuation
   coef_  0.050865    -0.027805   0.048548
 

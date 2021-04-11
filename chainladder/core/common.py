@@ -24,12 +24,28 @@ def _get_full_expectation(cdf_, ultimate_):
     return full
 
 
-def _get_full_triangle(full_expectation_, triangle_):
-    """ Private method that builds full triangle"""
-    full = full_expectation_
-    full = triangle_ + full - full[full.valuation <= triangle_.valuation_date]
-    full.vdims = triangle_.vdims
-    return full
+def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
+    cdf = X.ldf_.copy()
+    xp = cdf.get_array_module()
+    if cdf.shape[2] == 1:
+        cdf.values = xp.repeat(cdf.values, len(X.origin), 2)
+    cdf.odims = X.odims
+    cdf = cdf[cdf.valuation<=X.valuation_date] * 0 + 1 + cdf[cdf.valuation>X.valuation_date]
+    cdf.values = cdf.values.cumprod(3)
+    cdf = (1 - 1 / cdf)
+    ld = X.copy()
+    ld.valuation_date = ld.valuation.max()
+    ld = cdf * 0 + X.latest_diagonal.set_backend(cdf.array_backend).values
+    if n_iters is not None:
+        a = (X.latest_diagonal * 0 + expectation) / X.cdf_ * X.ldf_
+        complement = xp.nansum(cdf.values[None] ** xp.arange(n_iters)[:, None, None, None, None], 0)
+        new_run_off = (( a * (cdf ** n_iters)) + (ld * complement).values)
+    else:
+        complement = (1 / (1 - cdf))
+        new_run_off = (ld * complement)
+    new_run_off = new_run_off[new_run_off.valuation>X.valuation_date] + X
+    new_run_off.is_pattern = False
+    return new_run_off
 
 
 class Common:
@@ -77,9 +93,13 @@ class Common:
                 + " object has no attribute 'full_triangle_'"
             )
         if hasattr(self, "X_"):
-            return _get_full_triangle(self.full_expectation_, self.X_)
+            X = self.X_
         else:
-            return _get_full_triangle(self.full_expectation_, self)
+            X = self
+        if hasattr(self, 'n_iters'):
+            return _get_full_triangle(X, self.ultimate_, self.expectation_, self.n_iters)
+        else:
+            return _get_full_triangle(X, self.ultimate_)
 
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)

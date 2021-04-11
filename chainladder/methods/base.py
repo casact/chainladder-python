@@ -89,7 +89,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             The data used to compute the mean and standard deviation
             used for later scaling along the features axis.
         y : Ignored
-        sample_weight : Ignored
+        sample_weight : Triangle
+            For exposure-based methods, the exposure to be used for fitting
 
         Returns
         -------

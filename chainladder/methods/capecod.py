@@ -67,20 +67,19 @@ class CapeCod(Benktander):
         self : object
             Returns the instance itself.
         """
-        self.apriori=1.0
+
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
+        self.apriori = 1.0
         self.X_ = self.validate_X(X)
         self.validate_weight(X, sample_weight)
-        if sample_weight:
-            self.sample_weight_ = sample_weight.set_backend(self.X_.array_backend)
-        else:
-            self.sample_weight_ = sample_weight
-        self.apriori_, self.detrended_apriori_ = self._get_aprioris(X, sample_weight)
-        self.sample_weight = self.detrended_apriori_ * sample_weight.values
-        super().fit(X, y, self.sample_weight)
-        del self.sample_weight
+        sample_weight = sample_weight.set_backend(self.X_.array_backend)
+        self.apriori_, self.detrended_apriori_ = self._get_capecod_aprioris(X, sample_weight)
+        self.expectation_ = self.detrended_apriori_ * sample_weight.values
+        super().fit(X, y, self.expectation_)
         return self
 
-    def _get_aprioris(self, X, sample_weight):
+    def _get_capecod_aprioris(self, X, sample_weight):
         """ Private method to establish CapeCod Apriori """
         xp = X.get_array_module()
         ult = X.copy()
@@ -138,9 +137,14 @@ class CapeCod(Benktander):
         X_new: Triangle
             Loss data with CapeCod ultimate applied
         """
-        apriori_, detrended_apriori_ = self._get_aprioris(
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
+        apriori_, detrended_apriori_ = self._get_capecod_aprioris(
             X, sample_weight
         )
-        obj = super().predict(X,  detrended_apriori_ * sample_weight.values)
-        obj.apriori_, obj.detrended_apriori_ = apriori_, detrended_apriori_
-        return obj
+        expectation_ = detrended_apriori_ * sample_weight.values
+        X_new = super().predict(X,  expectation_)
+        X_new.apriori_ = apriori_
+        X_new.detrended_apriori_ = detrended_apriori_
+        X_new.expectation_ = expectation_
+        return X_new

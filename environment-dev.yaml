@@ -11,11 +11,9 @@ dependencies:
   - git
   - ipykernel
 
-  # Downgrade numpy for rpy2 support
-  - numpy<=1.16.4
-  - pandas<=1.1.5
-  - scikit-learn
-  - sparse
+  - pandas>=0.23
+  - scikit-learn>=0.23
+  - sparse>=0.9
   - dill
   - xlcompose
   - patsy
@@ -30,34 +28,9 @@ dependencies:
   - pytest
   - pytest-cov
   - black
-
-  # R ChainLadder unit testing
   - rpy2
-  - tzlocal
-  - libiconv
-  - r-nloptr
-  - r-matrix
-  - r-reshape2
-  - r-lattice
-  - r-latticeextra
-  - r-gridbase
-  - r-gridextra
-  - r-ggplot2
-  - r-mass
-  - r-rcppeigen
-  - r-lme4
-  - r-sparsem
-  - r-matrixmodels
-  - r-mgcv
-  - r-nnet
-  - r-pbkrtest
-  - r-quantreg
-  - r-zoo
-  - r-car
-  - r-lmtest
-  - r-sandwich
-  - r-coda
-  - r-minqa
+  - r-foreign
+
 
   - pip:
     - sphinx_gallery

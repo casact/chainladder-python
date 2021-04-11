@@ -65,8 +65,10 @@ class Benktander(MethodBase):
         if hasattr(X, "_get_process_variance"):
             if X.shape[0] != sample_weight.shape[0]:
                 sample_weight = sample_weight.broadcast_axis("index", X.index)
-        self.ultimate_ = self._get_ultimate(self.X_, self.sample_weight_)
+        self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
         self.process_variance_ = self._include_process_variance()
+        del self.sample_weight_
         return self
 
     def predict(self, X, sample_weight=None):
@@ -86,23 +88,31 @@ class Benktander(MethodBase):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
-        return super().predict(X, sample_weight)
+        expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        X_new = super().predict(X, expectation_)
+        X_new.expectation_ = sample_weight * self.apriori
+        X_new.n_iters = self.n_iters
+        X_new.apriori = self.apriori
+        return X_new
 
-    def _get_ultimate(self, X, sample_weight):
+    def _get_benktander_aprioris(self, X, sample_weight):
+        """ Private method to establish Benktander Apriori """
         xp = X.get_array_module()
-        from chainladder.utils.utility_functions import num_to_nan
-
-        ultimate = X.copy()
-        # Apriori
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)
             apriori = random_state.normal(self.apriori, self.apriori_sigma, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
-            apriori = sample_weight.values * apriori
+            apriori = sample_weight * apriori
         else:
-            apriori = sample_weight.values * self.apriori
-        # Benktander formula -> Triangle
-        cdf = self._align_cdf(ultimate, sample_weight)
+            apriori = sample_weight * self.apriori
+        return apriori #self._set_ult_attr(apriori)
+
+
+    def _get_ultimate(self, X, expectation):
+        xp = X.get_array_module()
+        from chainladder.utils.utility_functions import num_to_nan
+        ultimate = X.copy()
+        cdf = self._align_cdf(ultimate, expectation)
         cdf = (1 - 1 / num_to_nan(cdf))[None]
         exponents = xp.arange(self.n_iters + 1)
         exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))
@@ -110,5 +120,5 @@ class Benktander(MethodBase):
         cdf = xp.nan_to_num(cdf)
         ultimate.values = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(
             X.latest_diagonal.values
-        ) + cdf[-1, ...] * xp.nan_to_num(apriori)
+        ) + cdf[-1, ...] * xp.nan_to_num(expectation.values)
         return self._set_ult_attr(ultimate)
