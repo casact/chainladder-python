@@ -90,7 +90,7 @@ class Benktander(MethodBase):
             raise ValueError("sample_weight is required.")
         expectation_ = self._get_benktander_aprioris(X, sample_weight)
         X_new = super().predict(X, expectation_)
-        X_new.expectation_ = sample_weight * self.apriori
+        X_new.expectation_ = expectation_ * self.apriori
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
@@ -105,7 +105,7 @@ class Benktander(MethodBase):
             apriori = sample_weight * apriori
         else:
             apriori = sample_weight * self.apriori
-        return apriori #self._set_ult_attr(apriori)
+        return apriori
 
 
     def _get_ultimate(self, X, expectation):

@@ -37,7 +37,7 @@ def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
     ld.valuation_date = ld.valuation.max()
     ld = cdf * 0 + X.latest_diagonal.set_backend(cdf.array_backend).values
     if n_iters is not None:
-        a = (X.latest_diagonal * 0 + expectation) / X.cdf_ * X.ldf_
+        a = (X.latest_diagonal * 0 + expectation.values) / X.cdf_ * X.ldf_
         complement = xp.nansum(cdf.values[None] ** xp.arange(n_iters)[:, None, None, None, None], 0)
         new_run_off = (( a * (cdf ** n_iters)) + (ld * complement).values)
     else:
