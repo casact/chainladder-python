@@ -107,7 +107,10 @@ class TriangleBase(
             ).to_timestamp(how="e")
             self.development_grain = self.origin_grain
         development_date.name = "development"
-
+        if pd.Series(development_date).dt.year.min() == pd.Series(development_date).dt.year.max() == 1970:
+            raise ValueError(
+                'Development lags could not be determined. This may be because development'
+                ' is expressed as an age where a date-like vector is required')
         # Summarize dataframe to the level specified in axes
         key_gr = [origin_date, development_date] + [
             data[item] for item in ([] if not index else index)
