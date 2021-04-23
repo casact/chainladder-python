@@ -203,6 +203,8 @@ class TriangleSlicer:
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
         else:
             self.virtual_columns.pop(key)
+        if isinstance(value, TriangleSlicer) and value.array_backend != self.array_backend:
+            value = value.set_backend(self.array_backend)    
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
             if self.array_backend == "sparse":
