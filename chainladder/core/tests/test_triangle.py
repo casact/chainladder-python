@@ -818,3 +818,34 @@ def test_different_forms_of_grain():
         .sum()
         < 1e-4
     )
+
+
+def test_partial_year():
+    before = cl.load_sample('prism')['Paid'].sum().incr_to_cum()
+    before=before[before.valuation<='2017-08'].latest_diagonal
+
+    after = cl.Triangle(
+        before.to_frame(keepdims=True).reset_index(),
+        origin='origin', development='valuation', columns='Paid', index=before.key_labels)
+
+    assert after.valuation_date == before.valuation_date
+
+
+def test_at_iat():
+    raa1 = cl.load_sample('raa')
+    raa2 = cl.load_sample('raa')
+    raa1.at['Total','values', '1985', 120] = 5
+    raa1.at['Total','values', '1985', 12] = 5
+    raa2.iat[0, 0, 4, -1] = 5
+    raa2.iat[-1, -1, 4, 0] = 5
+    assert raa1 == raa2
+
+
+def test_at_iat_sparse():
+    raa1 = cl.load_sample('raa').set_backend('sparse')
+    raa2 = cl.load_sample('raa').set_backend('sparse')
+    raa1.at['Total','values', '1985', 120] = 5
+    raa1.at['Total','values', '1985', 12] = 5
+    raa2.iat[0, 0, 4, -1] = 5
+    raa2.iat[-1, -1, 4, 0] = 5
+    assert raa1 == raa2

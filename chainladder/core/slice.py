@@ -59,20 +59,14 @@ class _LocBase:
         return slice(min_arr, max_arr, step)
 
     def __setitem__(self, key, values):
+        if self.obj.array_backend == "sparse":
+            raise ValueError('Setting values with sparse backend requires .at or .iat')
         if isinstance(values, TriangleSlicer):
-            if values.array_backend == "sparse":
-                values = values.set_backend("numpy").values
-            else:
-                values = values.values
+            values = values.values
         key = tuple(
             [slice(item, item + 1) if type(item) is int else item for item in key]
         )
-        if self.obj.array_backend == "sparse":
-            self.obj.set_backend("numpy", inplace=True)
-            self.obj.values.__setitem__(self._normalize_index(key), values)
-            self.obj.set_backend("sparse", inplace=True)
-        else:
-            self.obj.values.__setitem__(self._normalize_index(key), values)
+        self.obj.values.__setitem__(self._normalize_index(key), values)
 
     def _normalize_index(self, key):
         key = normalize_index(key, self.obj.shape)
@@ -88,6 +82,21 @@ class _LocBase:
                 l.append(i)
         key = tuple(l)
         return key
+
+    def _sparse_setitem(self, key, values):
+        check = (
+            (self.obj.values.coords[0]==key[0])*
+            (self.obj.values.coords[1]==key[1])*
+            (self.obj.values.coords[2]==key[2])*
+            (self.obj.values.coords[3]==key[3]))
+        if check.max():
+            data_index = np.where(check==True)[0][0]
+            self.obj.values.data[data_index] = values
+        else:
+            self.obj.values.coords = np.concatenate(
+                (self.obj.values.coords, np.array(key)[:, None]), 1)
+            self.obj.values.data = np.concatenate(
+                (self.obj.values.data, np.array([values])), 0)
 
 
 class Location(_LocBase):
@@ -161,7 +170,7 @@ class Location(_LocBase):
         return key, filter_idx
 
     def __setitem__(self, key, values):
-        key = self.format_key(key)[0]
+        key = self.format_key(key)
         super().__setitem__(key, values)
 
 
@@ -204,7 +213,7 @@ class TriangleSlicer:
         else:
             self.virtual_columns.pop(key)
         if isinstance(value, TriangleSlicer) and value.array_backend != self.array_backend:
-            value = value.set_backend(self.array_backend)    
+            value = value.set_backend(self.array_backend)
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
             if self.array_backend == "sparse":
@@ -265,8 +274,64 @@ class TriangleSlicer:
     def _set_slicers(self):
         """ Call any time the shape of index or column changes """
         self.iloc, self.loc = Ilocation(self), Location(self)
+        self.iat, self.at = Iat(self), At(self)
         self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
         self = self._auto_sparse()
+
+
+class At(Location):
+    def _check_index(self, key):
+        idx = self.format_key(key)
+        for item in idx:
+            if type(item) is slice:
+                if item.stop - item.start == 1:
+                    next
+                else:
+                    raise ValueError('Invalid Index in At slicer')
+            else:
+                if len(item) == 1:
+                    next
+                else:
+                    raise ValueError('Invalid Index in At slicer')
+        return idx
+
+    def __getitem__(self, key):
+        obj = self.get_idx(self._check_index(key))
+        if len(obj) > 1 and obj.index.iloc[:, 0].nunique() == 1:
+            idx = obj.index.iloc[:, 1:]
+            obj.index = idx
+        return obj.values[0, 0, 0, 0]
+
+    def __setitem__(self, key, values):
+        key = self._check_index(key)
+        if self.obj.array_backend == 'sparse':
+            key = (key[0].start, key[1][0], key[2][0], key[3][0])
+            self._sparse_setitem(key, values)
+        else:
+            if isinstance(values, TriangleSlicer):
+                values = values.values
+            key = tuple(
+                [slice(item, item + 1) if type(item) is int else item for item in key]
+            )
+            self.obj.values.__setitem__(self._normalize_index(key), values)
+
+class Iat(Ilocation):
+    def _check_index(self, key):
+        idx = self._normalize_index(key)
+        types = {type(i) for i in idx}
+        if len(types) > 1 or list(types)[0] != int:
+            raise ValueError('iAt based indexing can only have integer indexers')
+        return idx
+
+    def __getitem__(self, key):
+        return self.get_idx(self._check_index(key)).values[0,0,0,0]
+
+    def __setitem__(self, key, values):
+        key = self._normalize_index(key)
+        if self.obj.array_backend == 'sparse':
+            self._sparse_setitem(key, values)
+        else:
+            super().__setitem__(key, values)
 
 
 class VirtualColumns:
