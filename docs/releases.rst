@@ -4,6 +4,22 @@ Releases
 
 Version 0.8
 ===========
+Version 0.8.3
+--------------
+Release Date: Apr 25, 2021
+
+**Enhancements**
+
+- `#135 <https://github.com/casact/chainladder-python/issues/135>`__ - Added ``.at`` and ``.iat`` slicing and value assignment
+
+
+**Bug Fixes**
+
+- `#144 <https://github.com/casact/chainladder-python/issues/144>`__ - Eliminated error when trying to assign a column from a different array backend.
+- `#134 <https://github.com/casact/chainladder-python/issues/134>`__ - Clearer error handling when attempting to instantiate a triangle with ages instead of date-likes
+- `#143 <https://github.com/casact/chainladder-python/issues/143>`__ - Reworked ``full_triangle_`` run-off for expected loss methods.
+
+
 Version 0.8.2
 --------------
 Release Date: Mar 27, 2021

@@ -510,6 +510,17 @@ As of version ``0.7.6``, four-dimensional slicing is supported:
   >>> clrd.iloc[[0, 10, 3], 1:8, :5, :]
   >>> clrd.loc[:'Aegis Grp', 'CumPaidLoss':, '1990':'1994', :48]
 
+As of version ``0.8.3``, ``.iat`` and ``at`` functionality have been added.  Similar
+to pandas, one can use these for value assignment for a single cell of a `Triangle`.
+When a 'sparse' backend is in use, these accessors are the only way to modify individual
+cells of a triangle.
+
+**Example:**
+  >>> import chainladder as cl
+  >>> raa = cl.load_sample('raa').set_backend('sparse')
+  >>> # To modify a sparse triangle, we need to use at or iat
+  >>> raa.at['Total', 'values', '1985', 12] = 10000
+
 
 
 Arithmetic
