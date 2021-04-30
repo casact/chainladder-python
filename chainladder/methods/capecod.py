@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.methods import Benktander
+import pandas as pd
 import warnings
 
 
@@ -28,6 +29,10 @@ class CapeCod(Benktander):
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
         by np.random.
+    groupby :
+        An option to group levels of the triangle index together for the purposes
+        of deriving the apriori measures.  If omitted, each level of the triangle
+        index will receive its own apriori computation.
 
 
     Attributes
@@ -44,12 +49,14 @@ class CapeCod(Benktander):
         The detrended apriori vector developed by the Cape Cod Method
     """
 
-    def __init__(self, trend=0, decay=1, n_iters=1, apriori_sigma=0.0, random_state=None):
+    def __init__(self, trend=0, decay=1, n_iters=1, apriori_sigma=0.0,
+                 random_state=None, groupby=None):
         self.trend = trend
         self.decay = decay
         self.n_iters = n_iters
         self.apriori_sigma = apriori_sigma
         self.random_state = random_state
+        self.groupby = groupby
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -74,10 +81,31 @@ class CapeCod(Benktander):
         self.X_ = self.validate_X(X)
         self.validate_weight(X, sample_weight)
         sample_weight = sample_weight.set_backend(self.X_.array_backend)
-        self.apriori_, self.detrended_apriori_ = self._get_capecod_aprioris(X, sample_weight)
+        self.apriori_, self.detrended_apriori_ = self._handle_aprioris(X, sample_weight)
         self.expectation_ = self.detrended_apriori_ * sample_weight.values
         super().fit(X, y, self.expectation_)
         return self
+
+    def _handle_aprioris(self, X, sample_weight):
+        if self.groupby is not None:
+            grouped = CapeCod(
+                decay=self.decay, trend=self.trend, n_iters=self.n_iters,
+                apriori_sigma=self.apriori_sigma, random_state=self.random_state).fit(
+                X.groupby(self.groupby).sum(), sample_weight=sample_weight.groupby(self.groupby).sum())
+            gb_apriori_ = grouped.apriori_
+            gb_detrended_apriori_ = grouped.detrended_apriori_
+            indices = sample_weight.groupby(self.groupby).groups.indices
+            index_map = {vi: k for k,v in indices.items() for vi in v}
+            gb_map = {i[1][0]: i[0] for i in gb_apriori_.index.iterrows()}
+            triangle_map = pd.Series({
+                k: gb_map[v] for k, v in index_map.items()}).sort_index().values
+            apriori_ = sample_weight.copy()
+            apriori_.values = gb_apriori_.values[triangle_map]
+            detrended_apriori_ = sample_weight.copy()
+            detrended_apriori_.values = gb_detrended_apriori_.values[triangle_map]
+            return apriori_, detrended_apriori_
+        else:
+            return self._get_capecod_aprioris(X, sample_weight)
 
     def _get_capecod_aprioris(self, X, sample_weight):
         """ Private method to establish CapeCod Apriori """
