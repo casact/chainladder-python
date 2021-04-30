@@ -15,6 +15,14 @@ This package strives to be minimalistic in needing its own API. Think in
 construction. An actuary already versed in these tools will pick up this
 package with ease. Save your mental energy for actuarial work.
 
+
+Documentation
+-------------
+
+Please visit the `Documentation`_ page for examples, how-tos, and source
+code documentation.
+
+
 Available Estimators
 --------------------
 
@@ -37,7 +45,6 @@ Available Estimators
 
 .. |codecov io| image:: https://codecov.io/github/casact/chainladder-python/coverage.svg?branch=master
    :target: https://codecov.io/github/casact/chainladder-python?branch=master
-
 
 
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
@@ -63,11 +70,6 @@ Available Estimators
 | `BarnettZehnwirth`_          |                  |                         |                       |                       |
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
-Documentation
--------------
-
-Please visit the `Documentation`_ page for examples, how-tos, and source
-code documentation.
 
 .. _Development: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#basic-development
 .. _TailCurve: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#ldf-curve-fitting
@@ -121,10 +123,13 @@ Alternatively for pre-release functionality, install directly from github:
 Note: This package requires Python>=3.5 pandas 0.23.0 and later,
 sparse 0.9 and later, scikit-learn 0.23.0 and later.
 
-Questions?
-----------
+Questions or Ideas?
+--------------------
 
-Feel free to reach out on `Gitter`_.
+Join in on the `github discussions`_.  Your question is more likely to get answered
+here than on Stack Overflow.  We're always happy to answer any usage
+questions or hear ideas on how to make ``chainladder`` better.
+
 
 Want to contribute?
 -------------------
@@ -138,5 +143,5 @@ Check out our `contributing guidelines`_.
 .. _Applying Deterministic Methods: https://chainladder-python.readthedocs.io/en/latest/tutorials/deterministic-tutorial.html
 .. _Applying Stochastic Methods: https://chainladder-python.readthedocs.io/en/latest/tutorials/stochastic-tutorial.html
 .. _Large Datasets: https://chainladder-python.readthedocs.io/en/latest/tutorials/large-datasets.html
-.. _Gitter: https://gitter.im/chainladder-python/community
+.. _github discussions: https://github.com/casact/chainladder-python/discussions
 .. _contributing guidelines: https://chainladder-python.readthedocs.io/en/latest/contributing.html

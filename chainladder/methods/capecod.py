@@ -110,7 +110,7 @@ class CapeCod(Benktander):
             reported_exposure * sw_olf_array
         )
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
-        apriori = xp.sum(weighted_exposure * trended_ultimate, -1) / xp.sum(
+        apriori = xp.nansum(weighted_exposure * trended_ultimate, -1) / xp.nansum(
             weighted_exposure, -1
         )
         ult.values = apriori[..., None]
