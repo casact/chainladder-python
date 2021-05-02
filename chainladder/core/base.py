@@ -431,6 +431,21 @@ class TriangleBase(
             val_array = np.concatenate((val_array, ult,), axis=1,)
         return pd.DatetimeIndex(val_array.reshape(1, -1, order="F")[0])
 
+    def _drop_subtriangles(self):
+        """ Removes subtriangles from a Triangle instance """
+        sub_tris = [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
+        if 'ldf_' in sub_tris:
+            del self.ldf_
+        if 'sigma_' in sub_tris:
+            del self.sigma_
+        if 'std_err_' in sub_tris:
+            del self.std_err_
+
+    @property
+    def subtriangles(self):
+        """ Removes subtriangles from a Triangle instance """
+        return  [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
+
 
 def is_chainladder(estimator):
     """Return True if the given estimator is a chainladder based method.

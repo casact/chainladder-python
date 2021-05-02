@@ -88,13 +88,19 @@ class CapeCod(Benktander):
 
     def _handle_aprioris(self, X, sample_weight):
         if self.groupby is not None:
+            if callable(self.groupby):
+                X_gb = X.groupby(self.groupby(X))
+                sw_gb = sample_weight.groupby(self.groupby(sample_weight))
+            else:
+                X_gb = X.groupby(self.groupby)
+                sw_gb = sample_weight.groupby(self.groupby)
             grouped = CapeCod(
                 decay=self.decay, trend=self.trend, n_iters=self.n_iters,
                 apriori_sigma=self.apriori_sigma, random_state=self.random_state).fit(
-                X.groupby(self.groupby).sum(), sample_weight=sample_weight.groupby(self.groupby).sum())
+                X_gb.sum(), sample_weight=sw_gb.sum())
             gb_apriori_ = grouped.apriori_
             gb_detrended_apriori_ = grouped.detrended_apriori_
-            indices = sample_weight.groupby(self.groupby).groups.indices
+            indices = sw_gb.groups.indices
             index_map = {vi: k for k,v in indices.items() for vi in v}
             gb_map = {i[1][0]: i[0] for i in gb_apriori_.index.iterrows()}
             triangle_map = pd.Series({

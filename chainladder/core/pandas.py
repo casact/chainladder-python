@@ -10,6 +10,7 @@ class TriangleGroupBy:
     def __init__(self, obj, by, axis=0):
         self.obj = obj.copy()
         axis = self.obj._get_axis(axis)
+        self.by = by
         if axis > 1:
             raise ValueError(
                 "Use grain method to group by origin and development axes."
@@ -335,6 +336,7 @@ def add_groupby_agg_func(cls, k, v):
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
+        from chainladder.methods import Chainladder
 
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
@@ -366,6 +368,16 @@ def add_groupby_agg_func(cls, k, v):
         if self.axis == 1:
             obj.vdims = index
         obj._set_slicers()
+        if hasattr(obj, 'ldf_'):
+            if len(obj.ldf_) > 1: # Bypass grouped ldf_ if there is only one anyway
+                new_ldf = Chainladder().fit(self.obj).full_expectation_
+                new_ldf = new_ldf.groupby(self.by).sum()  # Need to generalize sum
+                new_ldf = new_ldf.link_ratio.iloc[..., :self.obj.ldf_.shape[-1]]
+                if new_ldf.get_array_module().all(
+                    (out.values.max(2) - out.values.min(2)) < 1e-6):
+                    # if after grouping there is still only one, then compress to 1
+                    new_ldf = new_ldf.iloc[..., 0, :]
+                obj.ldf_ = new_ldf
         return obj
 
     set_method(cls, agg_func, k)

@@ -9,18 +9,23 @@ from chainladder.utils.sparse import sp
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
     xp = ultimate_.get_array_module()
-    cdf = cdf_.copy()
-    if cdf.shape[2] == 1:
-        cdf.values = cdf_.get_array_module().repeat(
-            cdf.values[..., 0:1, :], ultimate_.shape[-2], 2
-        )
-        cdf.odims = ultimate_.odims
-    cdf.valuation_date = ultimate_.valuation_date
     full = ultimate_.copy()
-    full.values = xp.concatenate(((full / cdf).values, full.values), -1)
+    full.values = xp.repeat(ultimate_.values, cdf_.shape[-1], -1)
     offset = {"Y": 12, "Q": 3, "M": 1}[cdf_.development_grain]
     ddims = ([cdf_.ddims[0] - offset], list(cdf_.ddims[:-1]), [9999])
     full.ddims = np.concatenate(ddims)
+    if len(cdf_) != len(ultimate_) and len(cdf_.index) > 1:
+        level = list(
+            set(ultimate_.group_index.columns).intersection(
+            set(ultimate_.ldf_.key_labels)))
+        idx = ultimate_.group_index.merge(
+            cdf_.index.reset_index(),
+            how='left', on=level)['index'].values.astype(int)
+        cdf = cdf_.values[list(idx), ...]
+    else:
+        cdf = cdf_.values
+    full.values = full.values / cdf
+    full.values = xp.concatenate((full.values, ultimate_.values), -1)
     return full
 
 
@@ -99,7 +104,7 @@ class Common:
         if hasattr(self, 'n_iters'):
             return _get_full_triangle(X, self.ultimate_, self.expectation_, self.n_iters)
         else:
-            return _get_full_triangle(X, self.ultimate_)
+            return _get_full_triangle(X, self.ultimate_)        
 
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
