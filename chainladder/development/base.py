@@ -11,7 +11,28 @@ from chainladder.core.common import Common
 
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
-    pass
+    def _set_fit_groups(self, X):
+        """ Used for assigning group_index in fit """
+        if self.groupby is None:
+            return X
+        if callable(self.groupby):
+            return X.groupby(self.groupby(X)).sum()
+        elif type(self.groupby) in [list, str, pd.Series]:
+            return X.groupby(self.groupby).sum()
+        else:
+            raise ValueError("Cannot determine groupings.")
+
+    def _set_transform_groups(self, X):
+        """ Used for assigning group_index in transform """
+        if self.groupby is None:
+            return X.index
+        if callable(self.groupby):
+            indices = X.groupby(self.groupby(X)).groups.indices
+        else:
+            indices = X.groupby(self.groupby).groups.indices
+        return pd.Series(
+            {vi: k for k,v in indices.items() for vi in v},
+            name=self.ldf_.key_labels[0]).sort_index().to_frame()
 
 
 class Development(DevelopmentBase):
@@ -43,6 +64,10 @@ class Development(DevelopmentBase):
         excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
         averaging in a deterministic method, this may be reasonable.  For all other
         averages and stochastic methods, this assumption should be avoided.
+    groupby :
+        An option to group levels of the triangle index together for the purposes
+        of estimating patterns.  If omitted, each level of the triangle
+        index will receive its own patterns.
 
 
     Attributes
@@ -73,6 +98,7 @@ class Development(DevelopmentBase):
         drop_low=None,
         drop_valuation=None,
         fillna=None,
+        groupby=None
     ):
         self.n_periods = n_periods
         self.average = average
@@ -82,6 +108,7 @@ class Development(DevelopmentBase):
         self.drop_valuation = drop_valuation
         self.drop = drop
         self.fillna = fillna
+        self.groupby = groupby
 
     @property
     def weight_(self):
@@ -245,6 +272,7 @@ class Development(DevelopmentBase):
             X = X.set_backend("numpy")
         else:
             X = X.copy()
+        X = self._set_fit_groups(X)
         xp = X.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
 
@@ -318,6 +346,7 @@ class Development(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
+        X_new.group_index = self._set_transform_groups(X_new)
         triangles = ["std_err_", "ldf_", "sigma_"]
         for item in triangles + ["average_", "w_", "sigma_interpolation", "n_periods_"]:
             setattr(X_new, item, getattr(self, item))

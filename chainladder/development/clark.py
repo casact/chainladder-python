@@ -22,6 +22,10 @@ class ClarkLDF(DevelopmentBase):
     growth : {'loglogistic', 'weibull'}
         The growth function to be used in curve fitting development patterns.
         Options are 'loglogistic' and 'weibull'
+    groupby :
+        An option to group levels of the triangle index together for the purposes
+        of estimating patterns.  If omitted, each level of the triangle
+        index will receive its own patterns.
 
 
     Attributes
@@ -52,8 +56,9 @@ class ClarkLDF(DevelopmentBase):
 
     """
 
-    def __init__(self, growth="loglogistic"):
+    def __init__(self, growth="loglogistic", groupby=None):
         self.growth = growth
+        self.groupby = groupby
 
     def _G(self, age, theta=None, omega=None):
         """ Growth function """
@@ -120,11 +125,17 @@ class ClarkLDF(DevelopmentBase):
             obj = X.set_backend("numpy", deep=True)
         else:
             obj = X.copy()
+        obj = self._set_fit_groups(obj)
+        X = self._set_fit_groups(X)
         xp = obj.get_array_module()
         nan_triangle = obj.nan_triangle
         ld = obj.latest_diagonal
         self.incremental_act_ = obj.cum_to_incr()
-        self.method_ = "ldf" if sample_weight is None else "cape_cod"
+        if sample_weight:
+            self.method_ = "cape_cod"
+            sample_weight = self._set_fit_groups(sample_weight)
+        else:
+            self.method_ = "ldf"
         age_offset = {"Y": 6.0, "Q": 1.5, "M": 0.5}[X.development_grain]
         age_interval = {"Y": 12.0, "Q": 3.0, "M": 1.0}[X.development_grain]
         nans = nan_triangle.reshape(1, -1)[0]
@@ -243,6 +254,7 @@ class ClarkLDF(DevelopmentBase):
             "growth",
             "scale_",
         ]
+        X_new.group_index = self._set_transform_groups(X_new)
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()

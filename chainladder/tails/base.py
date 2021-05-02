@@ -3,13 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 from chainladder.utils import WeightedRegression
-from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.development import DevelopmentBase, Development
-from chainladder.core.io import EstimatorIO
-from chainladder.core.common import Common
 
 
-class TailBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
+class TailBase(DevelopmentBase):
     """ Base class for all tail methods.  Tail objects are equivalent
         to development objects with an additional set of tail statistics"""
 
