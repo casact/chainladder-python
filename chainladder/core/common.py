@@ -50,6 +50,7 @@ def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
         new_run_off = (ld * complement)
     new_run_off = new_run_off[new_run_off.valuation>X.valuation_date] + X
     new_run_off.is_pattern = False
+    new_run_off.is_cumulative = True
     return new_run_off
 
 
