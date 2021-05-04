@@ -115,9 +115,8 @@ class TriangleDunders:
                 .values
             )
             x.values = x.values[idx]
-            x.kdims = y.kdims
+            x.kdims = y.index.values
             x.key_labels = y.key_labels
-            x.index = y.index
             return x
 
         if x.key_labels != y.key_labels:

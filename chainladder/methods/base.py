@@ -30,8 +30,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         xp = ultimate.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
         if len(self.ldf_) != len(ultimate) and len(self.ldf_.index) > 1:
+            if hasattr(ultimate, 'group_index'):
+                group_index = ultimate.group_index
+            else:
+                group_index = ultimate.index
             level = list(
-                set(ultimate.group_index.columns).intersection(
+                set(group_index.columns).intersection(
                 set(self.ldf_.key_labels)))
             idx = ultimate.group_index.merge(
                 self.ldf_.index.reset_index(),

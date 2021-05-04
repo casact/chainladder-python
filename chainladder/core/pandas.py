@@ -374,7 +374,7 @@ def add_groupby_agg_func(cls, k, v):
                 new_ldf = new_ldf.groupby(self.by).sum()  # Need to generalize sum
                 new_ldf = new_ldf.link_ratio.iloc[..., :self.obj.ldf_.shape[-1]]
                 if new_ldf.get_array_module().all(
-                    (out.values.max(2) - out.values.min(2)) < 1e-6):
+                    (new_ldf.values.max(2) - new_ldf.values.min(2)) < 1e-6):
                     # if after grouping there is still only one, then compress to 1
                     new_ldf = new_ldf.iloc[..., 0, :]
                 obj.ldf_ = new_ldf
