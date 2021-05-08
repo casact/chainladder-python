@@ -40,6 +40,18 @@ def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
     if cdf.shape[2] == 1:
         cdf.values = xp.repeat(cdf.values, len(X.origin), 2)
     cdf.odims = X.odims
+    if len(cdf) != len(ultimate) and len(cdf.index) > 1:
+        level = list(
+            set(ultimate.group_index.columns).intersection(
+            set(cdf.key_labels)))
+        idx = ultimate.group_index.merge(
+            cdf.index.reset_index(),
+            how='left', on=level)['index'].values.astype(int)
+        cdf.values = cdf.values[list(idx), ...]
+    else:
+        cdf.values = cdf.values
+    cdf.kdims = ultimate.kdims
+    cdf.key_labels = ultimate.key_labels
     cdf = cdf[cdf.valuation<=X.valuation_date] * 0 + 1 + cdf[cdf.valuation>X.valuation_date]
     cdf.values = cdf.values.cumprod(3)
 

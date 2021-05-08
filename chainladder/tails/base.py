@@ -33,12 +33,12 @@ class TailBase(DevelopmentBase):
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
         self.ldf_.ddims = ddims
         if hasattr(obj, "sigma_"):
-            zeros = tail[..., 0:obj.ldf_.shape[2], -1:] * 0
+            zeros = tail[..., :obj.shape[2], -1:] * 0
             self.sigma_ = getattr(obj, "sigma_").copy()
             self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()
             self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-            self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims
+            self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims[:obj.shape[2]]
             self.sigma_._set_slicers()
             self.std_err_._set_slicers()
         if hasattr(obj, "average_"):
