@@ -120,5 +120,5 @@ class Benktander(MethodBase):
         cdf = xp.nan_to_num(cdf)
         ultimate.values = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(
             X.latest_diagonal.values
-        ) + cdf[-1, ...] * xp.nan_to_num(expectation.values)
+        ) + cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(X.array_backend).values)
         return self._set_ult_attr(ultimate)

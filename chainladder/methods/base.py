@@ -37,7 +37,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             level = list(
                 set(group_index.columns).intersection(
                 set(self.ldf_.key_labels)))
-            idx = ultimate.group_index.merge(
+            idx = group_index.merge(
                 self.ldf_.index.reset_index(),
                 how='left', on=level)['index'].values.astype(int)
             cdf = self.cdf_.values[list(idx), ..., : ultimate.shape[-1]]
