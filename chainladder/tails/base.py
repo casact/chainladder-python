@@ -33,7 +33,7 @@ class TailBase(DevelopmentBase):
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
         self.ldf_.ddims = ddims
         if hasattr(obj, "sigma_"):
-            zeros = tail[..., :obj.shape[2], -1:] * 0
+            zeros = (obj.sigma_.iloc[..., -1:] * 0).values
             self.sigma_ = getattr(obj, "sigma_").copy()
             self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()

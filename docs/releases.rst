@@ -4,6 +4,23 @@ Releases
 
 Version 0.8
 ===========
+Version 0.8.4
+--------------
+Release Date: May 9, 2021
+
+**Enhancements**
+
+- `#153 <https://github.com/casact/chainladder-python/issues/153>`__ - Introduced CapeCod ``groupby`` parameter that allows for apriori computation at user-specified grain for granular triangles
+- `#154 <https://github.com/casact/chainladder-python/issues/154>`__ - Introduced ``groupby`` support in key development estimators
+
+**Bug Fixes**
+
+- `#152 <https://github.com/casact/chainladder-python/issues/152>`__ - CapeCod apriori is not supporting nans effectively
+- `#157 <https://github.com/casact/chainladder-python/issues/157>`__ - ``cum_to_incr()`` not working as expected on ``full_triangle_``
+- `#155 <https://github.com/casact/chainladder-python/issues/155>`__ - ``full_triangle_`` cdf broadcasting bug
+- `#156 <https://github.com/casact/chainladder-python/issues/156>`__ - Unable to inspect ``sigma_`` or ``std_err_`` properties after tail fit
+
+
 Version 0.8.3
 --------------
 Release Date: Apr 25, 2021
