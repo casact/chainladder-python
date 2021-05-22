@@ -16,6 +16,8 @@ class TriangleDunders:
         """ Common functionality BEFORE arithmetic operations """
         if isinstance(other, TriangleDunders):
             obj, other = self._compatibility_check(self, other)
+            if obj.is_pattern != other.is_pattern:
+                obj.is_pattern = other.is_pattern = False
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
             obj, other = self._prep_index(obj, other)
             obj, other = self._prep_columns(obj, other)
@@ -23,17 +25,17 @@ class TriangleDunders:
             is_broadcastable = all(
                 (m == n) or (m == 1) or (n == 1)
                 for m, n in zip(obj.shape[::-1], other.shape[::-1]))
+            if len(other.odims) == 1 and len(obj.odims) > 1:
+                other.odims = obj.odims
+            elif len(obj.odims) == 1 and len(other.odims) > 1:
+                obj.odims = other.odims
+            if len(other.ddims) == 1 and len(obj.ddims) > 1:
+                other.ddims = obj.ddims
+            elif len(obj.ddims) == 1 and len(other.ddims) > 1:
+                obj.ddims = other.ddims
             if is_broadcastable:
-                if len(other.odims) == 1 and len(obj.odims) > 1:
-                    other.odims = obj.odims
-                elif len(obj.odims) == 1 and len(other.odims) > 1:
-                    obj.odims = other.odims
-                if len(other.ddims) == 1 and len(obj.ddims) > 1:
-                    other.ddims = obj.ddims
-                elif len(obj.ddims) == 1 and len(other.ddims) > 1:
-                    obj.ddims = other.ddims
                 other = other.values
-            if not is_broadcastable:
+            else:
                 # If broadcasting doesn't work, union axes similar to pandas
                 ddims = pd.concat(
                     (
@@ -133,6 +135,7 @@ class TriangleDunders:
             and len(y) > 1
             and not np.all(x.index == y.index)
         ):
+            x = x.sort_index()
             y = y.loc[x.index]
         if len(x) == 1 and len(y) > 1:
             x.kdims = y.kdims
@@ -145,8 +148,8 @@ class TriangleDunders:
         elif len(y.columns) == 1 and len(x.columns) > 1:
             y.columns = x.columns
         elif len(y.columns) == 1 and len(x.columns) == 1 and x.columns != y.columns:
-            y.columns = x.columns = [0]
-        elif np.all(x.columns == y.columns):
+            y.columns = x.columns = pd.RangeIndex(start=0, stop=1, step=1)
+        elif x.shape[1] == y.shape[1] and np.all(x.columns == y.columns):
             pass
         else:
             col_union = list(x.columns) + [

@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from chainladder.methods.chainladder import Chainladder
-from chainladder.development.base import DevelopmentBase, Development
+from chainladder.development import DevelopmentBase, Development
 import numpy as np
 import pandas as pd
 from warnings import warn

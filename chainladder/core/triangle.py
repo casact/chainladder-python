@@ -158,10 +158,10 @@ class Triangle(TriangleBase):
             if self.is_ultimate:
                 ddims[-1] = ddims[-2] + offset
             if self.is_cumulative:
-                ddims = ["{}-Ult".format(ddims[i] - offset) for i in range(len(ddims))]
+                ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
             else:
                 ddims = [
-                    "{}-{}".format(ddims[i] - offset, ddims[i])
+                    "{}-{}".format(ddims[i], ddims[i] + offset)
                     for i in range(len(ddims))
                 ]
         return pd.Series(list(ddims), name="development")
@@ -189,14 +189,18 @@ class Triangle(TriangleBase):
 
     @property
     def link_ratio(self):
-        obj = self.iloc[..., 1:] / self.iloc[..., :-1].values
-        obj = obj[obj.valuation <= obj.valuation_date]
-        if hasattr(obj, "w_"):
-            w_ = obj.w_[..., 0:1, : len(obj.odims), :]
-            obj = obj * w_ if obj.shape == w_.shape else obj
-        obj.is_pattern = True
-        obj.is_cumulative = False
-        return obj
+        if not self.is_pattern:
+            obj = (1 / self.iloc[..., :-1]) * self.iloc[..., 1:].values
+            if not obj.is_full:
+                obj = obj[obj.valuation < obj.valuation_date]
+            if hasattr(obj, "w_"):
+                w_ = obj.w_[..., 0:1, : len(obj.odims), :]
+                obj = obj * w_ if obj.shape == w_.shape else obj
+            obj.is_pattern = True
+            obj.is_cumulative = False
+            return obj
+        else:
+            return self
 
     @property
     def age_to_age(self):

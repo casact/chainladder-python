@@ -1,4 +1,5 @@
-from chainladder.development.base import Development, DevelopmentBase  # noqa (API import)
+from chainladder.development.base import DevelopmentBase  # noqa (API import)
+from chainladder.development.development import Development  # noqa (API import)
 from chainladder.development.munich import MunichAdjustment  # noqa (API import)
 from chainladder.development.incremental import IncrementalAdditive  # noqa (API import)
 from chainladder.development.constant import DevelopmentConstant  # noqa (API import)

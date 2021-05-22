@@ -12,7 +12,7 @@ def _get_full_expectation(cdf_, ultimate_):
     xp = full.get_array_module()
     full.values = xp.repeat(full.values, cdf_.shape[-1], -1)
     offset = {"Y": 12, "Q": 3, "M": 1}[cdf_.development_grain]
-    ddims = ([cdf_.ddims[0] - offset], list(cdf_.ddims[:-1]), [9999])
+    ddims = ([cdf_.ddims[0]], list((cdf_.ddims + offset)[:-1]), [9999])
     full.ddims = np.concatenate(ddims)
     if len(cdf_) != len(ultimate_) and len(cdf_.index) > 1:
         if hasattr(ultimate_, 'group_index'):
@@ -52,9 +52,8 @@ def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
         cdf.values = cdf.values
     cdf.kdims = ultimate.kdims
     cdf.key_labels = ultimate.key_labels
-    cdf = cdf[cdf.valuation<=X.valuation_date] * 0 + 1 + cdf[cdf.valuation>X.valuation_date]
+    cdf = cdf[cdf.valuation<X.valuation_date] * 0 + 1 + cdf[cdf.valuation>=X.valuation_date]
     cdf.values = cdf.values.cumprod(3)
-
     if len(cdf) != len(ultimate) and len(cdf.index) > 1:
         if hasattr(ultimate, 'group_index'):
             group_index = ultimate.group_index
@@ -82,10 +81,12 @@ def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
     else:
         complement = (1 / (1 - cdf))
         new_run_off = (ld * complement)
-    new_run_off = new_run_off[new_run_off.valuation>X.valuation_date] + X
     new_run_off.is_pattern = False
     new_run_off.is_cumulative = True
-    return new_run_off
+    new_run_off = new_run_off[new_run_off.valuation>=X.valuation_date]
+    offset = {"Y": 12, "Q": 3, "M": 1}[new_run_off.development_grain]
+    new_run_off.ddims = np.minimum(new_run_off.ddims + offset, 9999)
+    return new_run_off + X
 
 
 class Common:
