@@ -7,73 +7,67 @@ import pandas as pd
 
 class DevelopmentConstant(DevelopmentBase):
     """ A Estimator that allows for including of external patterns into a
-    Development style model.  When this estimator is fit against a triangle,
-    only the grain of the existing triangle is retained.
+        Development style model.  When this estimator is fit against a triangle,
+        only the grain of the existing triangle is retained.
 
     Parameters
     ----------
     patterns : dict or callable
-        A dictionary key:value representation of age(in months):value. If callable
-        is supplied, callable must return a dict for each element of the callable axis
+        A dictionary key:value representation of age(in months):value. If callable
+        is supplied, callable must return a dict for each element of the callable axis
     style : string, optional (default='ldf')
-        Type of pattern given to the Estimator.  Options include 'cdf' or 'ldf'.
+        Type of pattern given to the Estimator.  Options include 'cdf' or 'ldf'.
     callable_axis : 0 or 1
-        If a callable is supplied, the axis (index or column) along which to apply
-        the callable.  If patterns is not a callable, then this parameter is ignored.
+        If a callable is supplied, the axis (index or column) along which to apply
+        the callable.  If patterns is not a callable, then this parameter is ignored.
+    groupby :
+        option to group levels of the triangle index together for the purposes
+        estimating patterns.  If omitted, each level of the triangle
+        index will receive its own patterns.
 
     Attributes
     ----------
     ldf_ : Triangle
-        The estimated loss development patterns
+        The estimated loss development patterns
     cdf_ : Triangle
-        The estimated cumulative development patterns
-
+        The estimated cumulative development patterns
     """
 
-    def __init__(self, patterns=None, style="ldf", callable_axis=0):
+    def __init__(self, patterns=None, style="ldf", callable_axis=0, groupby=None):
         self.patterns = patterns
         self.style = style
         self.callable_axis = callable_axis
+        self.groupby = groupby
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
-
         Parameters
         ----------
         X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
+            Set of LDFs to which the munich adjustment will be applied.
         y : Ignored
         sample_weight : Ignored
-
         Returns
         -------
         self : object
-            Returns the instance itself.
+            Returns the instance itself.
         """
         from chainladder import ULT_VAL
-
-        if X.array_backend == "sparse":
-            obj = X.set_backend("numpy")
-        else:
-            obj = X.copy()
+        obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp = obj.get_array_module()
-        obj.values = xp.ones(X.shape)[..., 0:1, :-1]
+        obj = obj.iloc[..., :1, :-1]*0+1
         if callable(self.patterns):
             ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
             ldf = (
                 pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                .fillna(1)[obj.ddims[:-1]]
-                .values
-            )
+                  .fillna(1)[obj.ddims].values)
             ldf = xp.array(ldf[:, None, None, :])
         else:
-            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims[:-1]])
+            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
-        obj.values = obj.values * ldf
-        obj.ddims = X.link_ratio.ddims
-        obj.odims = obj.odims[0:1]
+        obj = obj * ldf
         obj._set_slicers()
         self.ldf_ = obj
         self.ldf_.is_pattern = True
@@ -88,13 +82,14 @@ class DevelopmentConstant(DevelopmentBase):
         Parameters
         ----------
         X : Triangle
-            The triangle to be transformed
+            The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+            X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
+        X_new.group_index = self._set_transform_groups(X_new)
         triangles = ["ldf_"]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))

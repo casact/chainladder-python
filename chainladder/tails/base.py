@@ -11,14 +11,10 @@ class TailBase(DevelopmentBase):
         to development objects with an additional set of tail statistics"""
 
     def fit(self, X, y=None, sample_weight=None):
-        if X.array_backend == "sparse":
-            obj = X.set_backend("numpy")
-            xp = np
-        else:
-            xp = X.get_array_module()
-            obj = X.copy()
+        obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
+        xp = obj.ldf_.get_array_module()
         self._ave_period = {"Y": (1, 12), "Q": (4, 3), "M": (12, 1)}[
             obj.development_grain
         ]

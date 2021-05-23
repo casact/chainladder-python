@@ -44,7 +44,7 @@ class TriangleDisplay:
                 max_rows=pd.options.display.max_rows,
                 max_cols=pd.options.display.max_columns,
                 float_format=fmt_str.format,
-            ).replace("nan", "")
+            ).replace("nan", "").replace("NaN", "")
             return default
         else:
             return self._summary_frame().to_html(

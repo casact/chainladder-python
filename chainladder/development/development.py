@@ -106,35 +106,31 @@ class Development(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        # Validate inputs
-        if X.array_backend == "sparse":
-            X = X.set_backend("numpy")
-        else:
-            X = X.copy()
-        # set groupby
-        X = self._set_fit_groups(X)
-        xp = X.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
 
+        # Validate inputs
+        obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
+        xp = obj.get_array_module()
+
         # Make sure it is a dev tri
-        if type(X.ddims) != np.ndarray:
+        if type(obj.ddims) != np.ndarray:
             raise ValueError("Triangle must be expressed with development lags")
         # validate hyperparameters
         if self.fillna:
-            tri_array = num_to_nan((X + self.fillna).values)
+            tri_array = num_to_nan((obj + self.fillna).values)
         else:
-            tri_array = num_to_nan(X.values.copy())
+            tri_array = num_to_nan(obj.values.copy())
         self.average_ = np.array(
-            self._validate_axis_assumption(self.average, X.development[:-1]))
-        n_periods_ = self._validate_axis_assumption(self.n_periods, X.development[:-1])
+            self._validate_axis_assumption(self.average, obj.development[:-1]))
+        n_periods_ = self._validate_axis_assumption(self.n_periods, obj.development[:-1])
         weight_dict = {"regression": 0, "volume": 1, "simple": 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
         exponent = xp.array([weight_dict.get(item, item) for item in self.average_])
         exponent = xp.nan_to_num(exponent[None, None, None] * (y * 0 + 1))
         link_ratio = y / x
         self.w_ = xp.array(
-            self._assign_n_periods_weight(X, n_periods_) *
-            self._drop_adjustment(X, link_ratio))
+            self._assign_n_periods_weight(obj, n_periods_) *
+            self._drop_adjustment(obj, link_ratio))
         w = self.w_ / (x ** (exponent))
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
         if self.n_periods != 1:
@@ -152,15 +148,15 @@ class Development(DevelopmentBase):
         )
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
-        self.ldf_ = self._param_property(X, params, 0)
-        self.sigma_ = self._param_property(X, params, 1)
-        self.std_err_ = self._param_property(X, params, 2)
+        self.ldf_ = self._param_property(obj, params, 0)
+        self.sigma_ = self._param_property(obj, params, 1)
+        self.std_err_ = self._param_property(obj, params, 2)
 
-        resid = -X.iloc[..., :-1] * self.ldf_.values + X.iloc[..., 1:].values
+        resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
 
         std = xp.sqrt((1/num_to_nan(w))*(self.sigma_**2).values)
         resid = resid/std
-        self.std_residuals_ = resid[resid.valuation < X.valuation_date]
+        self.std_residuals_ = resid[resid.valuation < obj.valuation_date]
         return self
 
     def transform(self, X):
