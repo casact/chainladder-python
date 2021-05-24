@@ -56,5 +56,6 @@ class Chainladder(MethodBase):
         else:
             ultimate = X.sum('development').val_to_dev()
         cdf = self._align_cdf(ultimate, sample_weight)
-        ultimate = ultimate.latest_diagonal * cdf
+        #ultimate = ultimate.latest_diagonal * cdf
+        ultimate = X.latest_diagonal * cdf
         return self._set_ult_attr(ultimate)
