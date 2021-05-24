@@ -27,7 +27,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """ Vertically align CDF to ultimate vector to origin period latest
         diagonal.
         """
-        xp = ultimate.get_array_module()
+        xp, backend = ultimate.get_array_module(), ultimate.array_backend
         from chainladder.utils.utility_functions import num_to_nan
         if len(self.ldf_) != len(ultimate) and len(self.ldf_.index) > 1:
             if hasattr(ultimate, 'group_index'):
@@ -57,7 +57,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         ultimate.values = num_to_nan(ultimate.values)
         ultimate = ultimate / ultimate
         cdf = ultimate * cdf
-        cdf = cdf.latest_diagonal.values
+        cdf = (cdf.latest_diagonal).set_backend(backend).values
         return cdf
 
     def _set_ult_attr(self, ultimate):

@@ -15,9 +15,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         """ Used for assigning group_index in fit """
         if self.groupby is None:
             return X
-        if callable(self.groupby):
-            return X.groupby(self.groupby(X)).sum()
-        elif type(self.groupby) in [list, str, pd.Series]:
+        if callable(self.groupby) or type(self.groupby) in [list, str, pd.Series]:
             return X.groupby(self.groupby).sum()
         else:
             raise ValueError("Cannot determine groupings.")
@@ -26,8 +24,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         """ Used for assigning group_index in transform """
         if self.groupby is None:
             return X.index
-        if callable(self.groupby):
-            indices = X.groupby(self.groupby(X)).groups.indices
         else:
             indices = X.groupby(self.groupby).groups.indices
         return pd.Series(

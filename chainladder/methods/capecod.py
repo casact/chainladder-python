@@ -88,12 +88,8 @@ class CapeCod(Benktander):
 
     def _handle_aprioris(self, X, sample_weight):
         if self.groupby is not None:
-            if callable(self.groupby):
-                X_gb = X.groupby(self.groupby(X))
-                sw_gb = sample_weight.groupby(self.groupby(sample_weight))
-            else:
-                X_gb = X.groupby(self.groupby)
-                sw_gb = sample_weight.groupby(self.groupby)
+            X_gb = X.groupby(self.groupby)
+            sw_gb = sample_weight.groupby(self.groupby)
             grouped = CapeCod(
                 decay=self.decay, trend=self.trend, n_iters=self.n_iters,
                 apriori_sigma=self.apriori_sigma, random_state=self.random_state).fit(
@@ -108,7 +104,8 @@ class CapeCod(Benktander):
             apriori_ = sample_weight.copy()
             apriori_.values = gb_apriori_.values[triangle_map]
             detrended_apriori_ = sample_weight.copy()
-            detrended_apriori_.values = gb_detrended_apriori_.values[triangle_map]
+            detrended_apriori_.values = gb_detrended_apriori_.set_backend(
+                detrended_apriori_.array_backend).values[triangle_map]
             return apriori_, detrended_apriori_
         else:
             return self._get_capecod_aprioris(X, sample_weight)

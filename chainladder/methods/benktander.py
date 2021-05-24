@@ -109,16 +109,25 @@ class Benktander(MethodBase):
 
 
     def _get_ultimate(self, X, expectation):
-        xp = X.get_array_module()
         from chainladder.utils.utility_functions import num_to_nan
-        ultimate = X.copy()
+
+        if X.is_cumulative:
+            ultimate = X.copy()
+        else:
+            ultimate = X.sum('development').val_to_dev()
+        xp = ultimate.get_array_module()
         cdf = self._align_cdf(ultimate, expectation)
         cdf = (1 - 1 / num_to_nan(cdf))[None]
         exponents = xp.arange(self.n_iters + 1)
         exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))
         cdf = cdf ** (((cdf + 1e-16) / (cdf + 1e-16) * exponents))
         cdf = xp.nan_to_num(cdf)
-        ultimate.values = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(
-            X.latest_diagonal.values
-        ) + cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(X.array_backend).values)
+        a = ultimate.iloc[0, 0] * 0
+        a = a + a.nan_triangle
+        if ultimate.array_backend == "sparse":
+            a = a - a[a.valuation < a.valuation_date]
+        a = a.set_backend(ultimate.array_backend)
+        b = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(ultimate.values)
+        c = cdf[-1, ...] * xp.nan_to_num(expectation.values * a.values)
+        ultimate.values =  b + c
         return self._set_ult_attr(ultimate)
