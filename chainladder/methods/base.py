@@ -27,22 +27,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """ Vertically align CDF to ultimate vector to origin period latest
         diagonal.
         """
-        xp, backend = ultimate.get_array_module(), ultimate.array_backend
         from chainladder.utils.utility_functions import num_to_nan
-        if len(self.ldf_) != len(ultimate) and len(self.ldf_.index) > 1:
-            if hasattr(ultimate, 'group_index'):
-                group_index = ultimate.group_index
-            else:
-                group_index = ultimate.index
-            level = list(
-                set(group_index.columns).intersection(
-                set(self.ldf_.key_labels)))
-            idx = group_index.merge(
-                self.ldf_.index.reset_index(),
-                how='left', on=level)['index'].values.astype(int)
-            cdf = self.cdf_.values[list(idx), ..., : ultimate.shape[-1]]
-        else:
-            cdf = self.cdf_.values[..., : ultimate.shape[-1]]
+
+        xp, backend = ultimate.get_array_module(), ultimate.array_backend
+        cdf = self.cdf_.iloc[..., : ultimate.shape[-1]]
         a = ultimate.iloc[0, 0] * 0
         a = a + a.nan_triangle
         if ultimate.array_backend == "sparse":

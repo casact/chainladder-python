@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import warnings
 from chainladder.utils.utility_functions import num_to_nan
+from chainladder.utils.sparse import sp
 
 
 class TriangleDunders:
@@ -85,7 +86,12 @@ class TriangleDunders:
                 obj.values = obj_arr
                 other = other_arr
         else:
-            obj = self.copy()
+            if isinstance(other, np.ndarray) and self.array_backend != 'numpy':
+                other = self.get_array_module().array(other)
+            elif isinstance(other, sp) and self.array_backend != 'sparse':
+                obj = self.set_backend('sparse')
+            else:
+                obj = self.copy()
         return obj, other
 
     def _arithmetic_cleanup(self, obj, other):
@@ -121,6 +127,16 @@ class TriangleDunders:
             x.key_labels = y.key_labels
             return x
 
+        if len(x) == 1 and len(y) > 1:
+            x.kdims = y.kdims
+            return x, y
+        if len(x) > 1 and len(y) == 1:
+            y.kdims = x.kdims
+            return x, y
+        if len(x) == len(y) == 1 and x.key_labels != y.key_labels:
+            kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
+            y.kdims = x.kdims = kdims
+            return x, y
         if x.key_labels != y.key_labels:
             common = list(set(x.key_labels).intersection(set(y.key_labels)))
             if len(common) == len(x.key_labels):
@@ -137,8 +153,6 @@ class TriangleDunders:
         ):
             x = x.sort_index()
             y = y.loc[x.index]
-        if len(x) == 1 and len(y) > 1:
-            x.kdims = y.kdims
         return x, y
 
     def _prep_columns(self, x, y):

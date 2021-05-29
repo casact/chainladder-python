@@ -17,6 +17,8 @@ class TriangleGroupBy:
             )
         self.axis = self.obj._get_axis(axis)
         if self.axis == 0:
+            if callable(by):
+                by = self.obj.index.apply(by, axis=1)
             self.groups = obj.index.groupby(by)
         if self.axis == 1:
             self.groups = pd.DataFrame(obj.columns).groupby(by)
@@ -368,16 +370,6 @@ def add_groupby_agg_func(cls, k, v):
         if self.axis == 1:
             obj.vdims = index
         obj._set_slicers()
-        if hasattr(obj, 'ldf_'):
-            if len(obj.ldf_) > 1: # Bypass grouped ldf_ if there is only one anyway
-                new_ldf = Chainladder().fit(self.obj).full_expectation_
-                new_ldf = new_ldf.groupby(self.by).sum()  # Need to generalize sum
-                new_ldf = new_ldf.link_ratio.iloc[..., :self.obj.ldf_.shape[-1]]
-                if new_ldf.get_array_module().all(
-                    (new_ldf.values.max(2) - new_ldf.values.min(2)) < 1e-6):
-                    # if after grouping there is still only one, then compress to 1
-                    new_ldf = new_ldf.iloc[..., 0, :]
-                obj.ldf_ = new_ldf
         return obj
 
     set_method(cls, agg_func, k)
