@@ -17,8 +17,6 @@ class TriangleGroupBy:
             )
         self.axis = self.obj._get_axis(axis)
         if self.axis == 0:
-            if callable(by):
-                by = self.obj.index.apply(by, axis=1)
             self.groups = obj.index.groupby(by)
         if self.axis == 1:
             self.groups = pd.DataFrame(obj.columns).groupby(by)

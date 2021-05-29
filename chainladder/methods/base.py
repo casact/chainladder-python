@@ -45,6 +45,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         ultimate.values = num_to_nan(ultimate.values)
         ultimate = ultimate / ultimate
         cdf = ultimate * cdf
+        cdf.valuation_date = ultimate.valuation_date
         cdf = (cdf.latest_diagonal).set_backend(backend).values
         return cdf
 
@@ -68,7 +69,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     @property
     def latest_diagonal(self):
-        return self.X_.latest_diagonal
+        if self.X_.is_cumulative:
+            return self.X_.latest_diagonal
+        else:
+            return self.X_.sum('development')
 
     def fit(self, X, y=None, sample_weight=None):
         """Applies the chainladder technique to triangle **X**

@@ -68,7 +68,6 @@ class Benktander(MethodBase):
         self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
         self.process_variance_ = self._include_process_variance()
-        del self.sample_weight_
         return self
 
     def predict(self, X, sample_weight=None):

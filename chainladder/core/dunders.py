@@ -7,7 +7,6 @@ import warnings
 from chainladder.utils.utility_functions import num_to_nan
 from chainladder.utils.sparse import sp
 
-
 class TriangleDunders:
     """ Class that implements the dunder (double underscore) methods for the
         Triangle class
@@ -88,6 +87,7 @@ class TriangleDunders:
         else:
             if isinstance(other, np.ndarray) and self.array_backend != 'numpy':
                 other = self.get_array_module().array(other)
+                obj = self.copy()
             elif isinstance(other, sp) and self.array_backend != 'sparse':
                 obj = self.set_backend('sparse')
             else:
