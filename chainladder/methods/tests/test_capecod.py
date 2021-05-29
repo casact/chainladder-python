@@ -16,17 +16,21 @@ def test_struhuss():
 def test_groupby():
     clrd = cl.load_sample('clrd')
     clrd = clrd[clrd['LOB']=='comauto']
+    # But only the top 10 get their own CapeCod aprioris. Smaller companies get grouped together
+    top_10 = clrd['EarnedPremDIR'].groupby('GRNAME').sum().latest_diagonal
+    top_10 = top_10.loc[..., '1997', :].to_frame().nlargest(10)
+    cc_groupby = clrd.index['GRNAME'].map(lambda x: x if x in top_10.index else 'Remainder')
+    idx = clrd.index
+    idx['Top 10'] = cc_groupby
+    clrd.index = idx
 
     # All companies share the same development factors regardless of size
     X = cl.Development().fit(clrd['CumPaidLoss'].sum()).transform(clrd['CumPaidLoss'])
     sample_weight=clrd['EarnedPremDIR'].latest_diagonal
 
-    # But only the top 10 get their own CapeCod aprioris. Smaller companies get grouped together
-    top_10 = clrd['EarnedPremDIR'].groupby('GRNAME').sum().latest_diagonal
-    top_10 = top_10.loc[..., '1997', :].to_frame().nlargest(10)
-    cc_groupby = clrd.index['GRNAME'].map(lambda x: x if x in top_10.index else 'Remainder')
-    a = cl.CapeCod(groupby=cc_groupby, decay=0.98, trend=0.02).fit(X, sample_weight=sample_weight).ibnr_.groupby(cc_groupby).sum().sort_index()
-    b = cl.CapeCod(decay=0.98, trend=0.02).fit(X.groupby(cc_groupby).sum(), sample_weight=sample_weight.groupby(cc_groupby).sum()).ibnr_.sort_index()
+
+    a = cl.CapeCod(groupby='Top 10', decay=0.98, trend=0.02).fit(X, sample_weight=sample_weight).ibnr_.groupby('Top 10').sum().sort_index()
+    b = cl.CapeCod(decay=0.98, trend=0.02).fit(X.groupby('Top 10').sum(), sample_weight=sample_weight.groupby('Top 10').sum()).ibnr_.sort_index()
     xp = a.get_array_module()
     b = b.set_backend(a.array_backend)
     xp.allclose(xp.nan_to_num(a.values), xp.nan_to_num(b.values), atol=1e-5)

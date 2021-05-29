@@ -19,7 +19,7 @@ project.
      tracker <https://github.com/casact/chainladder-python/issues>`__.
   2. Volunteer to draft code changes for existing
      `issues <https://github.com/casact/chainladder-python/issues>`__.
-  3. Ask questions through `gitter <https://gitter.im/chainladder-python/community>`__.
+  3. Ask questions through the `Discussion Forum <https://github.com/casact/chainladder-python/discussions>`__.
   4. Improve the `documents <https://chainladder-python.readthedocs.io/en/latest/>`__
      where they are unclear.
   5. Make new `examples <https://chainladder-python.readthedocs.io/en/latest/auto_examples/index.html>`__.
@@ -73,7 +73,7 @@ all testing and documentation dependencies can be set up as follows:
 
 ::
 
-   conda create env --file environment-dev.yaml
+   conda env create --file environment-dev.yaml
    conda activate cl_dev
 
 Because R’s ChainLadder package is not available through conda, you will
