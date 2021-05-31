@@ -4,6 +4,7 @@ name: cl_test
 channels:
   - defaults
   - conda-forge
+  - r
 
 dependencies:
   - python
@@ -49,3 +50,5 @@ dependencies:
   - r-sandwich
   - r-coda
   - r-minqa
+  - r-foreign
+  - r-actuar

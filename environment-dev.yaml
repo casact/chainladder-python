@@ -4,6 +4,7 @@ name: cl_dev
 channels:
   - defaults
   - conda-forge
+  - r
 
 dependencies:
   - python
@@ -30,6 +31,10 @@ dependencies:
   - black
   - rpy2
   - r-foreign
+  - r-ggplot2
+  - r-car
+  - r-actuar
+  - r-sandwich
 
 
   - pip:
