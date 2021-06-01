@@ -52,3 +52,8 @@ dependencies:
   - r-minqa
   - r-foreign
   - r-actuar
+  - r-biglm
+  - r-tweedie
+  - r-statmod
+  - r-cplm
+  
