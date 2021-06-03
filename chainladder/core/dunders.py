@@ -4,7 +4,8 @@
 import pandas as pd
 import numpy as np
 import warnings
-from chainladder.utils.utility_functions import num_to_nan
+from chainladder.utils.utility_functions import num_to_nan, concat
+from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
 
 class TriangleDunders:
@@ -19,71 +20,13 @@ class TriangleDunders:
             if obj.is_pattern != other.is_pattern:
                 obj.is_pattern = other.is_pattern = False
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
-            obj, other = self._prep_index(obj, other)
             obj, other = self._prep_columns(obj, other)
-            xp = obj.get_array_module()
-            is_broadcastable = all(
-                (m == n) or (m == 1) or (n == 1)
-                for m, n in zip(obj.shape[::-1], other.shape[::-1]))
-            if len(other.odims) == 1 and len(obj.odims) > 1:
-                other.odims = obj.odims
-            elif len(obj.odims) == 1 and len(other.odims) > 1:
-                obj.odims = other.odims
-            if len(other.ddims) == 1 and len(obj.ddims) > 1:
-                other.ddims = obj.ddims
-            elif len(obj.ddims) == 1 and len(other.ddims) > 1:
-                obj.ddims = other.ddims
-            if is_broadcastable:
+            obj, other = self._prep_origin_development(obj, other)
+            # This can return two lists, if so, then apply math to each set of arrays
+            # The cl.concat in math cleanup
+            obj, other = self._prep_index(obj, other)
+            if isinstance(other, TriangleDunders):
                 other = other.values
-            else:
-                # If broadcasting doesn't work, union axes similar to pandas
-                ddims = pd.concat(
-                    (
-                        pd.Series(obj.ddims, index=obj.ddims),
-                        pd.Series(other.ddims, index=other.ddims),
-                    ),
-                    axis=1,
-                )
-                odims = pd.concat(
-                    (
-                        pd.Series(obj.odims, index=obj.odims),
-                        pd.Series(other.odims, index=other.odims),
-                    ),
-                    axis=1,
-                )
-                o_arr0, o_arr1 = odims[0].isna().values, odims[1].isna().values
-                d_arr0, d_arr1 = ddims[0].isna().values, ddims[1].isna().values
-                # rol = right hand side, origin, lower
-                rol = int(np.where(~o_arr1 == 1)[0].min())
-                roh = int(np.where(~o_arr1 == 1)[0].max() + 1)
-                rdl = int(np.where(~d_arr1 == 1)[0].min())
-                rdh = int(np.where(~d_arr1 == 1)[0].max() + 1)
-                lol = int(np.where(~o_arr0 == 1)[0].min())
-                loh = int(np.where(~o_arr0 == 1)[0].max() + 1)
-                ldl = int(np.where(~d_arr0 == 1)[0].min())
-                ldh = int(np.where(~d_arr0 == 1)[0].max() + 1)
-                new_shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
-                if obj.array_backend != "sparse":
-                    other_arr = xp.zeros(new_shape)
-                    other_arr[:] = xp.nan
-                    other_arr[:, :, rol:roh, rdl:rdh] = other.values
-                    obj_arr = xp.zeros(new_shape)
-                    obj_arr[:] = xp.nan
-                    obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
-                else:
-                    obj_arr, other_arr = obj.values.copy(), other.values.copy()
-                    other_arr.coords[2] = other_arr.coords[2] + rol
-                    other_arr.coords[3] = other_arr.coords[3] + rdl
-                    obj_arr.coords[2] = obj_arr.coords[2] + lol
-                    obj_arr.coords[3] = obj_arr.coords[3] + ldl
-                    other_arr.shape = obj_arr.shape = new_shape
-                obj.odims = np.array(odims.index)
-                if type(obj.ddims) == pd.DatetimeIndex:
-                    obj.ddims = pd.DatetimeIndex(ddims.index)
-                else:
-                    obj.ddims = np.array(ddims.index)
-                obj.values = obj_arr
-                other = other_arr
         else:
             if isinstance(other, np.ndarray) and self.array_backend != 'numpy':
                 other = self.get_array_module().array(other)
@@ -94,8 +37,9 @@ class TriangleDunders:
                 obj = self.copy()
         return obj, other
 
-    def _arithmetic_cleanup(self, obj, other):
+    def _arithmetic_cleanup(self, obj):
         """ Common functionality AFTER arithmetic operations """
+        # If we have a list, can we cl.concat right here?
         obj.values = obj.values * obj.get_array_module().nan_to_num(obj.nan_triangle)
         obj.values = num_to_nan(obj.values)
         return obj
@@ -109,7 +53,7 @@ class TriangleDunders:
             or x.development_grain != y.development_grain
         ):
             raise ValueError(
-                "Triangle arithmetic requires both triangles to", "be the same grain."
+                "Triangle arithmetic requires both triangles to be the same grain."
             )
         return x, y
 
@@ -122,6 +66,7 @@ class TriangleDunders:
                 .merge(x.index[common].reset_index(), how="left", on=common)["index"]
                 .values
             )
+            # This should be a split-apply-comnine strategy, else its wasteful
             x.values = x.values[idx]
             x.kdims = y.index.values
             x.key_labels = y.key_labels
@@ -138,13 +83,17 @@ class TriangleDunders:
             y.kdims = x.kdims = kdims
             return x, y
         if x.key_labels != y.key_labels:
+            # can we split-apply-combine here?
             common = list(set(x.key_labels).intersection(set(y.key_labels)))
-            if len(common) == len(x.key_labels):
-                x = apply_axis(common, x, y) if len(x.index) > 1 else x
-            elif len(common) == len(y.key_labels):
-                y = apply_axis(common, y, x) if len(y.index) > 1 else y
-            else:
-                raise ValueError("Triangle arithmetic along index is ambiguous.")
+            x = x.groupby(common)
+            y = y.groupby(common)
+            return x, y
+            #if len(common) == len(x.key_labels):
+            #    x = apply_axis(common, x, y) if len(x.index) > 1 else x
+            #elif len(common) == len(y.key_labels):
+            #    y = apply_axis(common, y, x) if len(y.index) > 1 else y
+            #else:
+            #    raise ValueError("Triangle arithmetic along index is ambiguous.")
         if (
             x.key_labels == y.key_labels
             and len(x) == len(y)
@@ -181,26 +130,110 @@ class TriangleDunders:
         )
         return x, y
 
+    def _prep_origin_development(self, obj, other):
+        xp = obj.get_array_module()
+        is_broadcastable = all(
+            (m == n) or (m == 1) or (n == 1)
+            for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1]))
+        if len(other.odims) == 1 and len(obj.odims) > 1:
+            other.odims = obj.odims
+        elif len(obj.odims) == 1 and len(other.odims) > 1:
+            obj.odims = other.odims
+        if len(other.ddims) == 1 and len(obj.ddims) > 1:
+            other.ddims = obj.ddims
+        elif len(obj.ddims) == 1 and len(other.ddims) > 1:
+            obj.ddims = other.ddims
+        if not is_broadcastable:
+            # If broadcasting doesn't work, union axes similar to pandas
+            ddims = pd.concat(
+                (
+                    pd.Series(obj.ddims, index=obj.ddims),
+                    pd.Series(other.ddims, index=other.ddims),
+                ),
+                axis=1,
+            )
+            odims = pd.concat(
+                (
+                    pd.Series(obj.odims, index=obj.odims),
+                    pd.Series(other.odims, index=other.odims),
+                ),
+                axis=1,
+            )
+            o_arr0, o_arr1 = odims[0].isna().values, odims[1].isna().values
+            d_arr0, d_arr1 = ddims[0].isna().values, ddims[1].isna().values
+            # rol = right hand side, origin, lower
+            rol = int(np.where(~o_arr1 == 1)[0].min())
+            roh = int(np.where(~o_arr1 == 1)[0].max() + 1)
+            rdl = int(np.where(~d_arr1 == 1)[0].min())
+            rdh = int(np.where(~d_arr1 == 1)[0].max() + 1)
+            lol = int(np.where(~o_arr0 == 1)[0].min())
+            loh = int(np.where(~o_arr0 == 1)[0].max() + 1)
+            ldl = int(np.where(~d_arr0 == 1)[0].min())
+            ldh = int(np.where(~d_arr0 == 1)[0].max() + 1)
+            new_shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
+            if obj.array_backend != "sparse":
+                other_arr = xp.zeros(new_shape)
+                other_arr[:] = xp.nan
+                other_arr[:, :, rol:roh, rdl:rdh] = other.values
+                obj_arr = xp.zeros(new_shape)
+                obj_arr[:] = xp.nan
+                obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
+            else:
+                obj_arr, other_arr = obj.values.copy(), other.values.copy()
+                other_arr.coords[2] = other_arr.coords[2] + rol
+                other_arr.coords[3] = other_arr.coords[3] + rdl
+                obj_arr.coords[2] = obj_arr.coords[2] + lol
+                obj_arr.coords[3] = obj_arr.coords[3] + ldl
+                other_arr.shape = obj_arr.shape = new_shape
+            obj.odims = np.array(odims.index)
+            if type(obj.ddims) == pd.DatetimeIndex:
+                obj.ddims = pd.DatetimeIndex(ddims.index)
+            else:
+                obj.ddims = np.array(ddims.index)
+            obj.values = obj_arr
+            other.values = other_arr
+        return obj, other
+
     def __add__(self, other):
         obj, other = self._validate_arithmetic(other)
-        xp = obj.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) + xp.nan_to_num(other)
-        return self._arithmetic_cleanup(obj, other)
+        if isinstance(obj, TriangleGroupBy):
+            if len(obj.obj) < len(other.obj):
+                obj, other = other, obj
+            obj = concat(
+                [obj.obj.iloc[v] + other.obj.iloc[other.groups.indices[k]].values
+                for k, v in obj.groups.indices.items()], 0
+            ).sort_index()
+        else:
+            xp = obj.get_array_module()
+            obj.values = xp.nan_to_num(obj.values) + xp.nan_to_num(other)
+        return self._arithmetic_cleanup(obj)
 
     def __radd__(self, other):
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
         obj, other = self._validate_arithmetic(other)
-        xp = obj.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) - xp.nan_to_num(other)
-        return self._arithmetic_cleanup(obj, other)
+        if isinstance(obj, TriangleGroupBy):
+            if len(obj.obj) < len(other.obj):
+                obj = concat(
+                    [-other.obj.iloc[other.groups.indices[k]] + obj.obj.iloc[v].values
+                    for k, v in obj.groups.indices.items()], 0
+                ).sort_index()
+            else:
+                obj = concat(
+                    [obj.obj.iloc[v] - other.obj.iloc[other.groups.indices[k]].values
+                    for k, v in obj.groups.indices.items()], 0
+                ).sort_index()
+        else:
+            xp = obj.get_array_module()
+            obj.values = xp.nan_to_num(obj.values) - xp.nan_to_num(other)
+        return self._arithmetic_cleanup(obj)
 
     def __rsub__(self, other):
         obj, other = self._validate_arithmetic(other)
         xp = obj.get_array_module()
         obj.values = xp.nan_to_num(other) - xp.nan_to_num(obj.values)
-        return self._arithmetic_cleanup(obj, other)
+        return self._arithmetic_cleanup(obj)
 
     def __len__(self):
         return self.shape[0]
@@ -220,30 +253,62 @@ class TriangleDunders:
 
     def __mul__(self, other):
         obj, other = self._validate_arithmetic(other)
-        xp = obj.get_array_module()
-        obj.values = obj.values * other
-        return self._arithmetic_cleanup(obj, other)
+        if isinstance(obj, TriangleGroupBy):
+            if len(obj.obj) < len(other.obj):
+                obj, other = other, obj
+            obj = concat(
+                [obj.obj.iloc[v]*other.obj.iloc[other.groups.indices[k]].values
+                for k, v in obj.groups.indices.items()], 0
+            ).sort_index()
+        else:
+            xp = obj.get_array_module()
+            obj.values = obj.values * other
+        return self._arithmetic_cleanup(obj)
 
     def __rmul__(self, other):
         return self if other == 1 else self.__mul__(other)
 
     def __pow__(self, other):
         obj, other = self._validate_arithmetic(other)
-        xp = obj.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) ** other
-        return self._arithmetic_cleanup(obj, other)
+        if isinstance(obj, TriangleGroupBy):
+            if len(obj.obj) < len(other.obj):
+                obj = concat(
+                    [obj.obj.iloc[v].values ** other.obj.iloc[other.groups.indices[k]]
+                    for k, v in obj.groups.indices.items()], 0
+                ).sort_index()
+            else:
+                obj = concat(
+                    [obj.obj.iloc[v] ** other.obj.iloc[other.groups.indices[k]].values
+                    for k, v in obj.groups.indices.items()], 0
+                ).sort_index()
+        else:
+            xp = obj.get_array_module()
+            obj.values = xp.nan_to_num(obj.values) ** other
+        return self._arithmetic_cleanup(obj)
 
     def __round__(self, other):
         obj = self.copy()
         xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values).round(other)
-        return self._arithmetic_cleanup(obj, other)
+        return self._arithmetic_cleanup(obj)
 
     def __truediv__(self, other):
         obj, other = self._validate_arithmetic(other)
-        xp = obj.get_array_module()
-        obj.values = obj.values / other
-        return self._arithmetic_cleanup(obj, other)
+        if isinstance(obj, TriangleGroupBy):
+            if len(obj.obj) < len(other.obj):
+                obj = concat(
+                    [(1 / other.obj.iloc[other.groups.indices[k]])*obj.obj.iloc[v].values
+                    for k, v in obj.groups.indices.items()], 0
+                ).sort_index()
+            else:
+                obj = concat(
+                    [obj.obj.iloc[v] / other.obj.iloc[other.groups.indices[k]].values
+                    for k, v in obj.groups.indices.items()], 0
+                ).sort_index()
+        else:
+            xp = obj.get_array_module()
+            obj.values = obj.values / other
+        return self._arithmetic_cleanup(obj)
 
     def __rtruediv__(self, other):
         obj = self.copy()
