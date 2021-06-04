@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.methods import MethodBase
-
+import numpy as np
 
 class Benktander(MethodBase):
     """ The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
@@ -114,17 +114,17 @@ class Benktander(MethodBase):
         else:
             ultimate = X.sum('development').val_to_dev()
         ld = ultimate.latest_diagonal
-
-        xp = ultimate.get_array_module()
-        cdf = self._align_cdf(ultimate, expectation)
-        cdf = (1 - 1 / num_to_nan(cdf))[None]
+        cdf = self._align_cdf(ultimate, expectation).loc[X.index]
+        backend = cdf.array_backend
+        xp = cdf.get_array_module()
+        cdf = (1 - 1 / num_to_nan(cdf.values))[None]
         exponents = xp.arange(self.n_iters + 1)
         exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))
         cdf = cdf ** (((cdf + 1e-16) / (cdf + 1e-16) * exponents))
         cdf = xp.nan_to_num(cdf)
-        a = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(ld.set_backend(ultimate.array_backend).values)
-        b = cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(ultimate.array_backend).values)
-        ultimate.values = a + b
+        a = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(ld.set_backend(backend).values)
+        b = cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(backend).values)
+        ultimate.values = num_to_nan(a + b)
+        ultimate.array_backend = backend
         ultimate.ddims = self.cdf_.ddims[:ultimate.shape[-1]]
-
         return self._set_ult_attr(ultimate)

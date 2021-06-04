@@ -46,7 +46,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         ultimate = ultimate / ultimate
         cdf = ultimate * cdf
         cdf.valuation_date = ultimate.valuation_date
-        cdf = (cdf.latest_diagonal).set_backend(backend).values
+        cdf = (cdf.latest_diagonal).set_backend(backend)
         return cdf
 
     def _set_ult_attr(self, ultimate):

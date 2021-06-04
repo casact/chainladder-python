@@ -59,19 +59,6 @@ class TriangleDunders:
 
     def _prep_index(self, x, y):
         """ Preps index and column axes for arithmetic """
-        # Set index axes for x, y
-        def apply_axis(common, x, y):
-            idx = (
-                y.index[common]
-                .merge(x.index[common].reset_index(), how="left", on=common)["index"]
-                .values
-            )
-            # This should be a split-apply-comnine strategy, else its wasteful
-            x.values = x.values[idx]
-            x.kdims = y.index.values
-            x.key_labels = y.key_labels
-            return x
-
         if len(x) == 1 and len(y) > 1:
             x.kdims = y.kdims
             return x, y
@@ -83,17 +70,10 @@ class TriangleDunders:
             y.kdims = x.kdims = kdims
             return x, y
         if x.key_labels != y.key_labels:
-            # can we split-apply-combine here?
             common = list(set(x.key_labels).intersection(set(y.key_labels)))
             x = x.groupby(common)
             y = y.groupby(common)
             return x, y
-            #if len(common) == len(x.key_labels):
-            #    x = apply_axis(common, x, y) if len(x.index) > 1 else x
-            #elif len(common) == len(y.key_labels):
-            #    y = apply_axis(common, y, x) if len(y.index) > 1 else y
-            #else:
-            #    raise ValueError("Triangle arithmetic along index is ambiguous.")
         if (
             x.key_labels == y.key_labels
             and len(x) == len(y)
