@@ -87,11 +87,11 @@ class TriangleDunders:
     def _prep_columns(self, x, y):
         x_backend, y_backend = x.array_backend, y.array_backend
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x.columns = y.columns
+            x.vdims = y.vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y.columns = x.columns
+            y.vdims = x.vdims
         elif len(y.columns) == 1 and len(x.columns) == 1 and x.columns != y.columns:
-            y.columns = x.columns = pd.RangeIndex(start=0, stop=1, step=1)
+            y.vdims = x.vdims = pd.RangeIndex(start=0, stop=1, step=1)
         elif x.shape[1] == y.shape[1] and np.all(x.columns == y.columns):
             pass
         else:
