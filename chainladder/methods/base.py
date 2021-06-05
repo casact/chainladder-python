@@ -23,31 +23,21 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             obj = TailConstant().fit_transform(obj)
         return obj
 
-    def _align_cdf(self, ultimate, sample_weight=None):
-        """ Vertically align CDF to ultimate vector to origin period latest
-        diagonal.
-        """
-        from chainladder.utils.utility_functions import num_to_nan
-
-        xp, backend = ultimate.get_array_module(), ultimate.array_backend
-        cdf = self.cdf_.iloc[..., : ultimate.shape[-1]]
-        a = ultimate.iloc[0, 0] * 0
+    def _align_cdf(self, X, sample_weight=None):
+        """ Vertically align CDF to origin period latest diagonal. """
+        valuation = X.valuation_date
+        cdf = self.cdf_.iloc[..., : X.shape[-1]]
+        a = X.iloc[0, 0] * 0
         a = a + a.nan_triangle
-        if ultimate.array_backend == "sparse":
+        if X.array_backend == "sparse":
             a = a - a[a.valuation < a.valuation_date]
-        a = a.set_backend(ultimate.array_backend)
         if sample_weight:
-            ultimate.values = xp.nan_to_num(ultimate.values * a.values) + xp.nan_to_num(
-                sample_weight.values * a.values
-            )
+            X = X * a + sample_weight * a
         else:
-            ultimate.values = xp.nan_to_num(ultimate.values * a.values)
-        ultimate.values = num_to_nan(ultimate.values)
-        ultimate = ultimate / ultimate
-        cdf = ultimate * cdf
-        cdf.valuation_date = ultimate.valuation_date
-        cdf = (cdf.latest_diagonal).set_backend(backend)
-        return cdf
+            X = X * a
+        cdf = X / X * cdf
+        cdf.valuation_date = valuation
+        return cdf.latest_diagonal
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """

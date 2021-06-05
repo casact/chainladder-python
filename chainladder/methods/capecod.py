@@ -102,44 +102,19 @@ class CapeCod(Benktander):
         if self.groupby is not None:
             latest = latest.groupby(self.groupby).sum()
             reported_exposure = reported_exposure.groupby(self.groupby).sum()
-        if self.groupby is None:
-            if hasattr(X, "trend_"):
-                if self.trend != 0:
-                    warnings.warn(
-                        "CapeCod Trend assumption is ignored when X has a trend_ property."
-                    )
-                trend_array = X.trend_.latest_diagonal.values
-            else:
-                trend_array = (X.trend(self.trend) / X).latest_diagonal.values
-        else:
-            if hasattr(X, "trend_"):
-                if self.trend != 0:
-                    warnings.warn(
-                        "CapeCod Trend assumption is ignored when X has a trend_ property."
-                    )
-                trend_array = X.trend_.groupby(self.groupby).latest_diagonal.sum().values
-            else:
-                trend_array = (X.groupby(self.groupby).sum().trend(self.trend) / X.groupby(self.groupby).sum()).latest_diagonal.values
-        #if hasattr(sample_weight, "olf_"):
-        #    sw_olf_array = sample_weight.olf_.values
-        #else:
-        sw_olf_array = 1.0
-        #if hasattr(X, "olf_"):
-        #    X_olf_array = X.olf_.values
-        #else:
+        trend_array = self._trend(X)
+        X_olf_array = self._onlevel(X)
+        sw_olf_array = self._onlevel(sample_weight)
         xp = reported_exposure.get_array_module()
-        X_olf_array = 1.0
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
         weighted_exposure = xp.swapaxes(reported_exposure.values, -1, -2) * decay_matrix
-        trended_ultimate = (latest.values * trend_array * X_olf_array) / (
-            reported_exposure.values * sw_olf_array
-        )
+        trended_ultimate = ((latest.values * trend_array * X_olf_array) /
+                            (reported_exposure.values * sw_olf_array))
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
-        apriori = xp.nansum(weighted_exposure * trended_ultimate, -1) / xp.nansum(
-            weighted_exposure, -1
-        )
+        apriori = (xp.nansum(weighted_exposure * trended_ultimate, -1) /
+                   xp.nansum(weighted_exposure, -1))
         apriori_ = reported_exposure.copy()
         apriori_.values = apriori[..., None]
         detrended_apriori_ = apriori_ / trend_array / X_olf_array * sw_olf_array
@@ -172,3 +147,38 @@ class CapeCod(Benktander):
         X_new.detrended_apriori_ = detrended_apriori_
         X_new.expectation_ = expectation_
         return X_new
+
+    def _trend(self, X):
+        if self.groupby is None:
+            if hasattr(X, "trend_"):
+                if self.trend != 0:
+                    warnings.warn(
+                        "CapeCod Trend assumption is ignored when X has a trend_ property."
+                    )
+                trend_array = X.trend_.latest_diagonal.values
+            else:
+                trend_array = (X.trend(self.trend) / X).latest_diagonal.values
+        else:
+            if hasattr(X, "trend_"):
+                if self.trend != 0:
+                    warnings.warn(
+                        "CapeCod Trend assumption is ignored when X has a trend_ property."
+                    )
+                trend_array = X.trend_.groupby(self.groupby).latest_diagonal.sum().values
+            else:
+                trend_array = (X.groupby(self.groupby).sum().trend(self.trend) /
+                               X.groupby(self.groupby).sum()).latest_diagonal.values
+        return trend_array
+
+    def _onlevel(self, X):
+        if self.groupby is None:
+            if hasattr(X, "olf_"):
+                olf_array = X.olf_.values
+            else:
+                olf_array = 1.0
+        else:
+            if hasattr(X, "olf_"):
+                olf_array = (X.olf_ * X).groupby(self.groupby).sum().values
+            else:
+                olf_array = 1.0
+        return olf_array

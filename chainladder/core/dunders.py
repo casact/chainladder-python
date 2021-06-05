@@ -22,8 +22,6 @@ class TriangleDunders:
             obj.valuation_date = max(obj.valuation_date, other.valuation_date)
             obj, other = self._prep_columns(obj, other)
             obj, other = self._prep_origin_development(obj, other)
-            # This can return two lists, if so, then apply math to each set of arrays
-            # The cl.concat in math cleanup
             obj, other = self._prep_index(obj, other)
             if isinstance(other, TriangleDunders):
                 other = other.values
@@ -39,7 +37,6 @@ class TriangleDunders:
 
     def _arithmetic_cleanup(self, obj):
         """ Common functionality AFTER arithmetic operations """
-        # If we have a list, can we cl.concat right here?
         obj.values = obj.values * obj.get_array_module().nan_to_num(obj.nan_triangle)
         obj.values = num_to_nan(obj.values)
         return obj
@@ -78,7 +75,8 @@ class TriangleDunders:
             x.key_labels == y.key_labels
             and len(x) == len(y)
             and len(y) > 1
-            and not np.all(x.index == y.index)
+            and not x.kdims is y.kdims
+            and not x.index.equals(y.index)
         ):
             x = x.sort_index()
             y = y.loc[x.index]
@@ -243,7 +241,7 @@ class TriangleDunders:
         else:
             xp = obj.get_array_module()
             obj.values = obj.values * other
-        return self._arithmetic_cleanup(obj)
+        return obj
 
     def __rmul__(self, other):
         return self if other == 1 else self.__mul__(other)
@@ -264,13 +262,13 @@ class TriangleDunders:
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) ** other
-        return self._arithmetic_cleanup(obj)
+        return obj
 
     def __round__(self, other):
         obj = self.copy()
         xp = obj.get_array_module()
         obj.values = xp.nan_to_num(obj.values).round(other)
-        return self._arithmetic_cleanup(obj)
+        return obj
 
     def __truediv__(self, other):
         obj, other = self._validate_arithmetic(other)
@@ -288,7 +286,7 @@ class TriangleDunders:
         else:
             xp = obj.get_array_module()
             obj.values = obj.values / other
-        return self._arithmetic_cleanup(obj)
+        return obj
 
     def __rtruediv__(self, other):
         obj = self.copy()

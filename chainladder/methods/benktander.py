@@ -87,9 +87,14 @@ class Benktander(MethodBase):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
-        expectation_ = self._get_benktander_aprioris(X, sample_weight)
-        X_new = super().predict(X, expectation_)
-        X_new.expectation_ = expectation_ * self.apriori
+        X_new = X.copy()
+        xp = X_new.get_array_module()
+        X_new.ldf_ = self.ldf_
+        self.validate_weight(X, sample_weight)
+        if sample_weight:
+            sample_weight = sample_weight.set_backend(X_new.array_backend)
+        X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
@@ -102,6 +107,7 @@ class Benktander(MethodBase):
             apriori = random_state.normal(self.apriori, self.apriori_sigma, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
+            apriori.kdims = X.kdims
         else:
             apriori = sample_weight * self.apriori
         return apriori
