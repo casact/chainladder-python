@@ -56,13 +56,15 @@ class TriangleDunders:
 
     def _prep_index(self, x, y):
         """ Preps index and column axes for arithmetic """
-        if len(x) == 1 and len(y) > 1:
+        if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
             x.kdims = y.kdims
+            x.key_labels = y.key_labels
             return x, y
-        if len(x) > 1 and len(y) == 1:
+        if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
             y.kdims = x.kdims
+            y.key_labels = x.key_labels
             return x, y
-        if len(x) == len(y) == 1 and x.key_labels != y.key_labels:
+        if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
             kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
             y.kdims = x.kdims = kdims
             return x, y
@@ -73,8 +75,8 @@ class TriangleDunders:
             return x, y
         if (
             x.key_labels == y.key_labels
-            and len(x) == len(y)
-            and len(y) > 1
+            and x.kdims.shape[0] == y.kdims.shape[0]
+            and y.kdims.shape[0] > 1
             and not x.kdims is y.kdims
             and not x.index.equals(y.index)
         ):
@@ -148,12 +150,11 @@ class TriangleDunders:
             loh = int(np.where(~o_arr0 == 1)[0].max() + 1)
             ldl = int(np.where(~d_arr0 == 1)[0].min())
             ldh = int(np.where(~d_arr0 == 1)[0].max() + 1)
-            new_shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             if obj.array_backend != "sparse":
-                other_arr = xp.zeros(new_shape)
+                other_arr = xp.zeros((other.shape[0], other.shape[1], len(odims), len(ddims)))
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
-                obj_arr = xp.zeros(new_shape)
+                obj_arr = xp.zeros((self.shape[0], self.shape[1], len(odims), len(ddims)))
                 obj_arr[:] = xp.nan
                 obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
             else:
@@ -162,7 +163,8 @@ class TriangleDunders:
                 other_arr.coords[3] = other_arr.coords[3] + rdl
                 obj_arr.coords[2] = obj_arr.coords[2] + lol
                 obj_arr.coords[3] = obj_arr.coords[3] + ldl
-                other_arr.shape = obj_arr.shape = new_shape
+                other_arr.shape = (other.shape[0], other.shape[1], len(odims), len(ddims))
+                obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
             if type(obj.ddims) == pd.DatetimeIndex:
                 obj.ddims = pd.DatetimeIndex(ddims.index)

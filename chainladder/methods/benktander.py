@@ -58,13 +58,9 @@ class Benktander(MethodBase):
         self : object
             Returns the instance itself.
         """
-
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         super().fit(X, y, sample_weight)
-        if hasattr(X, "_get_process_variance"):
-            if X.shape[0] != sample_weight.shape[0]:
-                sample_weight = sample_weight.broadcast_axis("index", X.index)
         self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
         self.process_variance_ = self._include_process_variance()
@@ -108,6 +104,7 @@ class Benktander(MethodBase):
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
             apriori.kdims = X.kdims
+            apriori.key_labels = X.key_labels
         else:
             apriori = sample_weight * self.apriori
         return apriori
@@ -120,7 +117,13 @@ class Benktander(MethodBase):
         else:
             ultimate = X.sum('development').val_to_dev()
         ld = ultimate.latest_diagonal
-        cdf = self._align_cdf(ultimate, expectation).loc[X.index]
+        cdf = self._align_cdf(ultimate, expectation)
+        if not cdf.index.equals(ld.index):
+            ld = ld.loc[cdf.index]
+        if not cdf.index.equals(expectation.index):
+            expectation = expectation.loc[cdf.index]
+        if not cdf.index.equals(ultimate.index):
+            ultimate = ultimate.loc[cdf.index]
         backend = cdf.array_backend
         xp = cdf.get_array_module()
         cdf = (1 - 1 / num_to_nan(cdf.values))[None]
