@@ -107,6 +107,7 @@ class Benktander(MethodBase):
             apriori.key_labels = X.key_labels
         else:
             apriori = sample_weight * self.apriori
+        apriori.columns = sample_weight.columns
         return apriori
 
 
@@ -120,8 +121,8 @@ class Benktander(MethodBase):
         cdf = self._align_cdf(ultimate, expectation)
         if not cdf.index.equals(ld.index):
             ld = ld.loc[cdf.index]
-        if not cdf.index.equals(expectation.index):
-            expectation = expectation.loc[cdf.index]
+        if len(expectation) > 1 and not cdf.index.equals(expectation.index):
+            expectation = expectation*(cdf/cdf).iloc[..., 0, 0]
         if not cdf.index.equals(ultimate.index):
             ultimate = ultimate.loc[cdf.index]
         backend = cdf.array_backend

@@ -271,7 +271,7 @@ class Triangle(TriangleBase):
                     self.values = xp.nan_to_num(self.values)
                     self.values[self.values == 0] = 1
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
-                    self = concat((diff, self.iloc[..., -1],), axis=3,)
+                    self = concat((diff, self.iloc[..., -1],), axis=3)
                     self.values = self.values * self.nan_triangle
                 else:
                     diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
@@ -679,3 +679,43 @@ class Triangle(TriangleBase):
            return out
         else:
            return self.shift(out, periods-1, axis)
+
+    def sort_axis(self, axis):
+        """ Method to sort a Triangle along a given axis
+
+        Parameters
+        ----------
+        axis : in or str
+            The axis for sorting
+
+        Returns
+        -------
+        Triangle
+            updated with shifted elements
+        """
+
+        axis = self._get_axis(axis)
+        if axis == 0:
+            return self.sort_index()
+        if axis == 1:
+            sort = pd.Series(self.vdims).sort_values().index
+            if np.all(sort != pd.Series(self.vdims).index):
+                obj = self.copy()
+                obj.values = obj.values[:, list(sort), ...]
+                obj.vdims = obj.vdims[list(sort)]
+                return obj
+        if axis == 2:
+            sort = pd.Series(self.odims).sort_values().index
+            if np.all(sort != pd.Series(self.odims).index):
+                obj = self.copy()
+                obj.values = obj.values[..., list(sort), :]
+                obj.odims = obj.odims[list(sort)]
+                return obj
+        if axis == 3:
+            sort = self.development.sort_values().index
+            if np.all(sort != self.development.index):
+                obj = self.copy()
+                obj.values = obj.values[..., list(sort)]
+                obj.ddims = obj.ddims[list(sort)]
+                return obj
+        return self

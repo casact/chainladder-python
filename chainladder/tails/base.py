@@ -20,9 +20,9 @@ class TailBase(DevelopmentBase):
         ]
         t_ddims = [
             (item + 1) * self._ave_period[1] + obj.ldf_.ddims[-1]
-            for item in range(self._ave_period[0])
+            for item in range(self._ave_period[0]+1)
         ]
-        ddims = np.concatenate((obj.ldf_.ddims, t_ddims, np.array([9999])), 0,)
+        ddims = np.concatenate((obj.ldf_.ddims, t_ddims), 0,)
         self.ldf_ = obj.ldf_.copy()
         tail = xp.ones(self.ldf_.shape)[..., -1:]
         tail = xp.repeat(tail, self._ave_period[0] + 1, -1)

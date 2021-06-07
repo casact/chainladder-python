@@ -2,90 +2,41 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
+import pandas as pd
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 
 
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
-    full = ultimate_.copy()
-    xp = full.get_array_module()
-    full.values = xp.repeat(full.values, cdf_.shape[-1], -1)
-    offset = {"Y": 12, "Q": 3, "M": 1}[cdf_.development_grain]
-    ddims = ([cdf_.ddims[0]], list((cdf_.ddims + offset)[:-1]), [9999])
-    full.ddims = np.concatenate(ddims)
-    if len(cdf_) != len(ultimate_) and len(cdf_.index) > 1:
-        if hasattr(ultimate_, 'group_index'):
-            group_index = ultimate_.group_index
-        else:
-            group_index = ultimate_.index
-        level = list(
-            set(group_index.columns).intersection(
-            set(cdf_.key_labels)))
-        idx = group_index.merge(
-            cdf_.index.reset_index(),
-            how='left', on=level)['index'].values.astype(int)
-        cdf = cdf_.values[list(idx), ...]
-    else:
-        cdf = cdf_.values
-    full.values = full.values / cdf
-    full.values = xp.concatenate((full.values, ultimate_.set_backend(full.array_backend).values), -1)
-    return full
+    from chainladder.utils.utility_functions import concat
+    full = ultimate_ / cdf_
+    return concat((full, ultimate_.rename('development', [9999])), axis=3)
 
 
 def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
     """ Private method that builds full triangle"""
+    from chainladder import ULT_VAL
     cdf = X.ldf_.copy()
     xp = cdf.get_array_module()
-    if cdf.shape[2] == 1:
-        cdf.values = xp.repeat(cdf.values, len(X.origin), 2)
-    cdf.odims = X.odims
-    if len(cdf) != len(ultimate) and len(cdf.index) > 1:
-        level = list(
-            set(ultimate.group_index.columns).intersection(
-            set(cdf.key_labels)))
-        idx = ultimate.group_index.merge(
-            cdf.index.reset_index(),
-            how='left', on=level)['index'].values.astype(int)
-        cdf.values = cdf.values[list(idx), ...]
-    else:
-        cdf.values = cdf.values
-    cdf.kdims = ultimate.kdims
-    cdf.key_labels = ultimate.key_labels
+    cdf = cdf * (ultimate / ultimate)
     cdf = cdf[cdf.valuation<X.valuation_date] * 0 + 1 + cdf[cdf.valuation>=X.valuation_date]
     cdf.values = cdf.values.cumprod(3)
-    if len(cdf) != len(ultimate) and len(cdf.index) > 1:
-        if hasattr(ultimate, 'group_index'):
-            group_index = ultimate.group_index
-        else:
-            group_index = ultimate.index
-        level = list(
-            set(group_index.columns).intersection(
-            set(cdf.key_labels)))
-        idx = group_index.merge(
-            cdf.index.reset_index(),
-            how='left', on=level)['index'].values.astype(int)
-        cdf.values = cdf.values[list(idx), ...]
-    else:
-        cdf.values = cdf.values
-    cdf.kdims = ultimate.kdims
-    cdf.key_labels = ultimate.key_labels
+    cdf.valuation_date = pd.to_datetime(ULT_VAL)
     cdf = (1 - 1 / cdf)
+    cdf.ddims = cdf.ddims + {'Y': 12, 'Q': 3, 'M':1}[cdf.development_grain]
+    cdf.ddims[-1] = 9999
     ld = X.latest_diagonal
-    ld.valuation_date = ld.valuation.max()
-    ld = cdf * 0 + ld.values
     if n_iters is not None:
-        a = (X.latest_diagonal * 0 + expectation.values) / X.cdf_ * X.ldf_
+        cdf_ = X.cdf_
+        cdf_.ddims = cdf.ddims
+        a = (X.latest_diagonal * 0 + expectation) / cdf_ * X.ldf_.values
         complement = xp.nansum(cdf.values[None] ** xp.arange(n_iters)[:, None, None, None, None], 0)
-        new_run_off = (( a * (cdf ** n_iters)) + (ld * complement).values)
+        new_run_off = ((a * (cdf ** n_iters)) + (ld * complement))
     else:
         complement = (1 / (1 - cdf))
         new_run_off = (ld * complement)
-    new_run_off.is_pattern = False
-    new_run_off.is_cumulative = True
-    new_run_off = new_run_off[new_run_off.valuation>=X.valuation_date]
-    offset = {"Y": 12, "Q": 3, "M": 1}[new_run_off.development_grain]
-    new_run_off.ddims = np.minimum(new_run_off.ddims + offset, 9999)
+    new_run_off = new_run_off[new_run_off.valuation>X.valuation_date]
     return new_run_off + X
 
 

@@ -83,7 +83,7 @@ class CapeCod(Benktander):
         sample_weight = sample_weight.set_backend(self.X_.array_backend)
         self.apriori_, self.detrended_apriori_ = \
             self._get_capecod_aprioris(self.X_, sample_weight)
-        self.expectation_ = self.detrended_apriori_ * sample_weight
+        self.expectation_ =  sample_weight * self.detrended_apriori_
         super().fit(X, y, self.expectation_)
         return self
 

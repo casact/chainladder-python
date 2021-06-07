@@ -197,7 +197,7 @@ def set_common_backend(objs):
     return [i.set_backend(backend) for i in objs]
 
 
-def concat(objs, axis, ignore_index=False):
+def concat(objs, axis, ignore_index=False, sort=False):
     """ Concatenate Triangle objects along a particular axis.
 
     Parameters
@@ -221,9 +221,20 @@ def concat(objs, axis, ignore_index=False):
     objs = set_common_backend(objs)
     xp = objs[0].get_array_module()
     axis = objs[0]._get_axis(axis)
+
+    if axis != 1:
+        all_columns = []
+        for obj in objs:
+            for col in obj.columns:
+                if col not in all_columns:
+                    all_columns.append(col)
+        for obj in objs:
+            for col in all_columns:
+                if col not in obj.columns:
+                    obj[col] = xp.nan
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k, v in mapper.items():
-        if k != axis:  # All non-concat axes must be identical
+        if k != axis and k !=1:  # All non-concat axes must be identical
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
             assert np.all(a == a[0])
         else:  # All elements of concat axis must be unique
@@ -247,7 +258,10 @@ def concat(objs, axis, ignore_index=False):
     if out.ddims.dtype == "datetime64[ns]" and type(out.ddims) == np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
-    return out
+    if sort:
+        return out.sort_axis(axis)
+    else:
+        return out
 
 
 def num_to_nan(arr):
