@@ -19,12 +19,14 @@ from sklearn.base import BaseEstimator, TransformerMixin
 def load_sample(key, *args, **kwargs):
     """ Function to load datasets included in the chainladder package.
 
-        Arguments:
+        Parameters
+        ----------
         key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
+            The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
 
-        Returns:
-    	pandas.DataFrame of the loaded dataset.
+        Returns
+        --------
+            pandas.DataFrame of the loaded dataset.
 
     """
     from chainladder import Triangle
@@ -322,3 +324,64 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     def transform(self, X):
         self._check_X(X)
         return dmatrix(self.design_info_, X)
+
+
+def model_diagnostics(model, name=None,  groupby=None):
+    """ A helper function that summarizes various vectors of an
+    IBNR model as columns of a Triangle
+
+    Parameters
+    ----------
+    model :
+        A chainladder IBNR estimator or Pipeline
+    name :
+        An alias to give the model. This will be added to the index of the return
+        triangle.
+    groupby :
+        The index level at which the model should be summarized
+
+    Returns
+    -------
+    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
+    """
+    from chainladder import Pipeline
+
+    if isinstance(model, Pipeline):
+        obj = copy.deepcopy(model.steps[-1][-1])
+    else:
+        obj = copy.deepcopy(model)
+    if groupby is not None:
+        obj.X_ = obj.X_.groupby(groupby).sum().cum_to_incr()
+        obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
+        if hasattr(obj, 'expectation_'):
+            obj.expectation_ = obj.expectation_.groupby(groupby).sum()
+    else:
+        obj.X_ = obj.X_.incr_to_cum()
+    val = obj.X_.valuation
+    latest = obj.X_.sum('development')
+    run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
+    run_off = run_off[run_off.development>str(obj.X_.valuation_date)]
+    run_off = run_off.iloc[..., :{'M': 12, 'Q': 4, 'Y': 1}[obj.X_.development_grain]]
+
+    triangles = []
+    for col in obj.ultimate_.columns:
+        idx = latest.index
+        idx['Measure'] = col
+        idx['Model'] = obj.__class__.__name__ if name is None else name
+        idx = idx[list(idx.columns[-2:]) + list(idx.columns[:-2])]
+
+        out = latest.iloc[:, 0].rename('columns', ['Latest'])
+        if obj.X_.development_grain in ['M']:
+            out['Month Incremental'] = obj.X_[col][val==obj.X_.valuation_date].sum('development')
+        if obj.X_.development_grain in ['M', 'Q']:
+            out['Quarter Incremental'] = (obj.X_ - obj.X_[val < pd.Timestamp(np.sort(val[val<=obj.X_.valuation_date].unique())[-3])]).sum('development')[col]
+        out['Year Incremental'] = (obj.X_ - obj.X_[val<str(obj.X_.valuation_date.year)]).sum('development')[col]
+        out['IBNR'] = obj.ibnr_[col]
+        out['Ultimate'] = obj.ultimate_[col]
+        for i in range(run_off.shape[-1]):
+            out['Run Off ' + str(i+1)] = run_off[col].iloc[..., i]
+        if hasattr(obj, 'expectation_'):
+            out['Apriori'] = obj.expectation_ if obj.expectation_.shape[1] == 1 else obj.expectation_[col]
+        out.index = idx
+        triangles.append(out)
+    return concat(triangles,0)

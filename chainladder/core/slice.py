@@ -199,8 +199,8 @@ class TriangleSlicer:
             return self.index[key]
         else:
             if type(key) is str and self.virtual_columns.columns.get(key, None):
-                out = self.virtual_columns[key]
-                out.virtual_columns.pop(key)
+                out = self.virtual_columns[key].copy()
+                out.virtual_columns.columns = {}
                 return out
             key = [key] if type(key) is str else key
             idx = [list(self.vdims).index(item) for item in key]

@@ -74,3 +74,6 @@ def test_concat():
         cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0)
         == tri.loc[["wkcomp", "comauto"]]
     )
+
+def test_model_diagnostics():
+    cl.model_diagnostics(cl.Chainladder().fit(cl.load_sample('quarterly')))

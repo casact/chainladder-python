@@ -11,7 +11,7 @@ def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
     from chainladder.utils.utility_functions import concat
     full = ultimate_ / cdf_
-    return concat((full, ultimate_.rename('development', [9999])), axis=3)
+    return concat((full, ultimate_.copy().rename('development', [9999])), axis=3)
 
 
 def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
