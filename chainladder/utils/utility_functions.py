@@ -220,7 +220,6 @@ def concat(objs, axis, ignore_index=False, sort=False):
     -------
     Updated triangle
     """
-    objs = set_common_backend(objs)
     xp = objs[0].get_array_module()
     axis = objs[0]._get_axis(axis)
 
@@ -234,6 +233,7 @@ def concat(objs, axis, ignore_index=False, sort=False):
             for col in all_columns:
                 if col not in obj.columns:
                     obj[col] = xp.nan
+    objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k, v in mapper.items():
         if k != axis and k !=1:  # All non-concat axes must be identical

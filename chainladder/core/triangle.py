@@ -185,7 +185,7 @@ class Triangle(TriangleBase):
 
     @property
     def latest_diagonal(self):
-        return self.dev_to_val().iloc[..., -1]
+        return self[self.valuation==self.valuation_date].sum('development')
 
     @property
     def link_ratio(self):

@@ -110,13 +110,12 @@ class CaseOutstanding(DevelopmentBase):
         nans = case_ldf_/case_ldf_
         case_ldf_.values = xp.concatenate((backward, (case.latest_diagonal*0+1).values,  forward), -1)
         case = (case_ldf_*nans.values*case.latest_diagonal.values).val_to_dev().iloc[..., :len(case.ddims)]
-        ld = case.latest_diagonal.sum('origin')
+        ld = case[case.valuation==X.valuation_date].sum('development').sum('origin')
         ld = ld / ld
         patterns = ((1-np.nan_to_num(X.nan_triangle[..., 1:]))*(self.paid_ldf_*ld).values)
         paid = (case.iloc[..., :-1]*patterns)
         paid.ddims = case.ddims[1:]
         paid.valuation_date = pd.Timestamp(ULT_VAL)
-        print(paid_tri.kdims)
         #Create a full triangle of incurrds to support a multiplicative LDF
         paid = (paid_tri.cum_to_incr() + paid).incr_to_cum()
         inc = (case[case.valuation>X.valuation_date] +
