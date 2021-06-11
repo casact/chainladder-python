@@ -109,7 +109,10 @@ class Development(DevelopmentBase):
         from chainladder.utils.utility_functions import num_to_nan
 
         # Validate inputs
-        obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
+        if X.is_cumulative == False:
+            obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
+        else:
+            obj = self._set_fit_groups(X).val_to_dev().copy()
         xp = obj.get_array_module()
 
         # Make sure it is a dev tri

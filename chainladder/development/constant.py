@@ -53,7 +53,10 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import ULT_VAL
-        obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
+        if X.is_cumulative == False:
+            obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
+        else:
+            obj = self._set_fit_groups(X).val_to_dev().copy()
         xp = obj.get_array_module()
         obj = obj.iloc[..., :1, :-1]*0+1
         if callable(self.patterns):

@@ -94,7 +94,7 @@ class CapeCod(Benktander):
             groupby = self.groupby
         else:
             groupby = X.key_labels
-        if not X.is_cumulative:
+        if X.is_cumulative == False:
             X = X.sum('development').val_to_dev()
         latest = X.latest_diagonal
         len_orig = sample_weight.shape[-2]
