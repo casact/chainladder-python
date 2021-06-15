@@ -465,6 +465,7 @@ class Triangle(TriangleBase):
                 addl = obj.iloc[..., -len(addl_ts) :] * 0
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
+            obj.values = num_to_nan(obj.values)
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
