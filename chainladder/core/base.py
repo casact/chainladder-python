@@ -446,6 +446,30 @@ class TriangleBase(
         """ Removes subtriangles from a Triangle instance """
         return  [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
 
+    def __array__(self):
+        return self.values
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        obj = self.copy()
+        if method == '__call__':
+            inputs = [i.values if hasattr(i, 'values') else i for i in inputs]
+            obj.values = ufunc(*inputs, **kwargs)
+            return obj
+        else:
+            raise NotImplementedError()
+
+    def __array_function__(self, func, types, args, kwargs):
+        from chainladder.utils.utility_functions import concat
+        HANDLED_FUNCTIONS = {
+            np.concatenate: concat
+        }
+        if func not in HANDLED_FUNCTIONS:
+           return NotImplemented
+        if not all(issubclass(t, self.__class__) for t in types):
+           return NotImplemented
+        return HANDLED_FUNCTIONS[func](*args, **kwargs)
+
+
 
 def is_chainladder(estimator):
     """Return True if the given estimator is a chainladder based method.
