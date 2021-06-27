@@ -1,6 +1,6 @@
 ARRAY_BACKEND = "numpy"
 AUTO_SPARSE = True
-ARRAY_PRIORITY = ["sparse", "cupy", "numpy"]
+ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
 ULT_VAL = "2261-12-31 23:59:59.999999999"
 
 

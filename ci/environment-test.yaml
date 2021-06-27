@@ -17,6 +17,7 @@ dependencies:
   - dill
   - xlcompose
   - patsy
+  - dask
 
   # testing
   - lxml
@@ -56,4 +57,3 @@ dependencies:
   - r-tweedie
   - r-statmod
   - r-cplm
-  

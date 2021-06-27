@@ -63,7 +63,7 @@ class TriangleDisplay:
             return "{:,.0f}"
 
     def _repr_format(self, origin_as_datetime=False):
-        out = self.set_backend("numpy").values[0, 0]
+        out = self.compute().set_backend("numpy").values[0, 0]
         origin = self.origin.copy()
         origin.name = None
         development = self.development.copy()

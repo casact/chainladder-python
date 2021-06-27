@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
+from chainladder.utils.dask import dp
 
 
 def _get_full_expectation(cdf_, ultimate_):
@@ -96,7 +97,7 @@ class Common:
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
 
-    def set_backend(self, backend, inplace=False, deep=False):
+    def set_backend(self, backend, inplace=False, deep=False, **kwargs):
         """ Converts triangle array_backend.
 
         Parameters
@@ -119,7 +120,12 @@ class Common:
             else:
                 raise ValueError("Unable to determine array backend.")
         if inplace:
-            if backend in ["numpy", "sparse", "cupy"]:
+            # Coming from dask - compute and then recall this method
+            # going to dask  -
+            if old_backend == 'dask' and backend != 'dask':
+                self = self.compute()
+                old_backend = self.array_backend
+            if backend in ["numpy", "sparse", "cupy", "dask"]:
                 lookup = {
                     "numpy": {
                         "sparse": lambda x: x.todense(),
@@ -133,6 +139,12 @@ class Common:
                         "numpy": lambda x: sp.array(x),
                         "cupy": lambda x: sp.array(cp.asnumpy(x)),
                     },
+                    "dask": {
+                        # should this be chunked?
+                        "numpy": lambda x: dp.from_array(x, **kwargs),
+                        "cupy": lambda x: dp.from_array(x, **kwargs),
+                        "sparse": lambda x: dp.from_array(x, **kwargs),
+                    }
                 }
                 if hasattr(self, "values"):
                     self.values = lookup[backend].get(old_backend, lambda x: x)(
@@ -149,4 +161,4 @@ class Common:
             return self
         else:
             obj = self.copy()
-            return obj.set_backend(backend=backend, inplace=True, deep=deep)
+            return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)

@@ -232,7 +232,7 @@ class Triangle(TriangleBase):
                     if self.array_backend == "sparse":
                         self.values = self.get_array_module()(self.values)
                 else:
-                    if self.array_backend != "sparse":
+                    if self.array_backend not in ["sparse", "dask"]:
                         self.values = (
                             num_to_nan(xp.cumsum(xp.nan_to_num(self.values), 3))
                             * self.nan_triangle[None, None, ...]

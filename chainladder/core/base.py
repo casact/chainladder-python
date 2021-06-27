@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
+from chainladder.utils.dask import dp
 import warnings
 
 from chainladder.core.display import TriangleDisplay
@@ -380,7 +381,7 @@ class TriangleBase(
             if arr is None
             else arr.__class__.__module__.split(".")[0]
         )
-        modules = {"cupy": cp, "sparse": sp, "numpy": np}
+        modules = {"cupy": cp, "sparse": sp, "numpy": np, "dask": dp}
         if modules.get(backend, None):
             return modules.get(backend, None)
         else:
@@ -469,7 +470,19 @@ class TriangleBase(
            return NotImplemented
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
-
+    def compute(self, *args, **kwargs):
+        if hasattr(self.values, 'chunks'):
+            obj = self.copy()
+            obj.values = obj.values.compute(*args, **kwargs)
+            m = obj.get_array_module(obj.values)
+            if m == sp:
+                obj.array_backend = 'sparse'
+            if m == cp:
+                obj.array_backend = 'cupy'
+            if m == np:
+                obj.array_backend = 'numpy'
+            return obj
+        return self
 
 def is_chainladder(estimator):
     """Return True if the given estimator is a chainladder based method.

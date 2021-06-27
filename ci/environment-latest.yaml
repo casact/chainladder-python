@@ -11,7 +11,7 @@ dependencies:
   - dill
   - xlcompose
   - patsy
-
+  - dask
   # testing
   - lxml
   - pytest
