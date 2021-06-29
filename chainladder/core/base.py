@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
+from chainladder.utils.dask import dp
 import warnings
 
 from chainladder.core.display import TriangleDisplay
@@ -380,7 +381,7 @@ class TriangleBase(
             if arr is None
             else arr.__class__.__module__.split(".")[0]
         )
-        modules = {"cupy": cp, "sparse": sp, "numpy": np}
+        modules = {"cupy": cp, "sparse": sp, "numpy": np, "dask": dp}
         if modules.get(backend, None):
             return modules.get(backend, None)
         else:
@@ -446,6 +447,42 @@ class TriangleBase(
         """ Removes subtriangles from a Triangle instance """
         return  [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
 
+    def __array__(self):
+        return self.values
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        obj = self.copy()
+        if method == '__call__':
+            inputs = [i.values if hasattr(i, 'values') else i for i in inputs]
+            obj.values = ufunc(*inputs, **kwargs)
+            return obj
+        else:
+            raise NotImplementedError()
+
+    def __array_function__(self, func, types, args, kwargs):
+        from chainladder.utils.utility_functions import concat
+        HANDLED_FUNCTIONS = {
+            np.concatenate: concat
+        }
+        if func not in HANDLED_FUNCTIONS:
+           return NotImplemented
+        if not all(issubclass(t, self.__class__) for t in types):
+           return NotImplemented
+        return HANDLED_FUNCTIONS[func](*args, **kwargs)
+
+    def compute(self, *args, **kwargs):
+        if hasattr(self.values, 'chunks'):
+            obj = self.copy()
+            obj.values = obj.values.compute(*args, **kwargs)
+            m = obj.get_array_module(obj.values)
+            if m == sp:
+                obj.array_backend = 'sparse'
+            if m == cp:
+                obj.array_backend = 'cupy'
+            if m == np:
+                obj.array_backend = 'numpy'
+            return obj
+        return self
 
 def is_chainladder(estimator):
     """Return True if the given estimator is a chainladder based method.

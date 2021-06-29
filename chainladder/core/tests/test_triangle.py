@@ -849,3 +849,12 @@ def test_at_iat_sparse():
     raa2.iat[0, 0, 4, -1] = 5
     raa2.iat[-1, -1, 4, 0] = 5
     assert raa1 == raa2
+
+def test_array_protocol():
+    assert np.sqrt(raa) == raa.sqrt()
+    assert np.concatenate((tri.iloc[:200], tri.iloc[200:]),0) == cl.concat((tri.iloc[:200], tri.iloc[200:]),0)
+
+def test_dask_backend():
+    raa1 = cl.Chainladder().fit(cl.load_sample('raa').set_backend('dask')).ultimate_
+    raa2 = cl.Chainladder().fit(cl.load_sample('raa')).ultimate_
+    assert (raa1 == raa2).compute()
