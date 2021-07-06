@@ -88,10 +88,7 @@ class TailCurve(TailBase):
         """
         from chainladder.utils.utility_functions import num_to_nan
 
-        if X.array_backend == "sparse":
-            X = X.set_backend("numpy")
-        else:
-            X = X.copy()
+        X = X.copy()
         xp = X.get_array_module()
         if type(self.fit_period) == slice:
             warnings.warn(
