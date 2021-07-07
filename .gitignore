@@ -113,6 +113,6 @@ settings.json
 
 *.pkl
 
-# mac related files
+# macOS related files
 *.DS_Store
 *Icon
