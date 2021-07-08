@@ -20,9 +20,8 @@ class TriangleIO:
             The pickle protocol to use.
 
         """
-        out = self.copy()
-        out.virtual_columns = dill.dumps(out.virtual_columns)
-        joblib.dump(out, filename=path, protocol=protocol)
+        with open(path, "wb") as pkl:
+            dill.dump(self, pkl)
 
     def to_json(self):
         """ Serializes triangle object to json format
@@ -66,7 +65,8 @@ class EstimatorIO:
         protocol :
             The pickle protocol to use.
         """
-        joblib.dump(self, filename=path, protocol=protocol)
+        with open(path, "wb") as pkl:
+            dill.dump(self, pkl)
 
     def to_json(self):
         """ Serializes triangle object to json format
