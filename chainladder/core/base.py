@@ -87,11 +87,12 @@ class TriangleBase(
         origin = development if origin is None else origin
         origin_date = TriangleBase._to_datetime(data, origin, format=origin_format)
         self.origin_grain = TriangleBase._get_grain(origin_date)
-        origin_date = (
-            pd.PeriodIndex(origin_date, freq=self.origin_grain)
-            .to_timestamp()
-            .rename("origin")
-        )
+        date_offset = {
+            'M': (pd.offsets.MonthEnd(0), pd.offsets.MonthBegin(1)),
+            'Q': (pd.offsets.QuarterEnd(0), pd.offsets.MonthBegin(3)),
+            'Y': (pd.offsets.YearEnd(0), pd.offsets.MonthBegin(12))
+        }[self.origin_grain]
+        origin_date = origin_date + date_offset[0] - date_offset[1]
 
         # Initialize development and its grain
         m_cnt = {"Y": 12, "Q": 3, "M": 1}
@@ -112,31 +113,35 @@ class TriangleBase(
             raise ValueError(
                 'Development lags could not be determined. This may be because development'
                 ' is expressed as an age where a date-like vector is required')
+
         # Summarize dataframe to the level specified in axes
-        key_gr = [origin_date, development_date] + [
+        data["__origin__"] = origin_date
+        data["__development__"] = development_date
+        key_gr = ["__origin__", "__development__"] + [
             data[item] for item in ([] if not index else index)
         ]
-        data_agg = data[columns].groupby(key_gr).sum().reset_index().fillna(0)
+        data_agg = data.groupby(key_gr)[columns].sum().reset_index().fillna(0)
+        data = data.drop(['__origin__', '__development__'], 1)
         if not index:
             index = ["Total"]
             data_agg[index[0]] = "Total"
 
         # Fill in any gaps in origin/development
         date_axes = self._get_date_axes(
-            data_agg["origin"], data_agg["development"]
+            data_agg["__origin__"], data_agg["__development__"]
         )  # cartesian product
         dev_lag = TriangleBase._development_lag(
-            data_agg["origin"], data_agg["development"]
+            data_agg["__origin__"], data_agg["__development__"]
         )
 
         # Grab unique index, origin, development
         dev_lag_unique = np.sort(
             TriangleBase._development_lag(
-                date_axes["origin"], date_axes["development"]
+                date_axes["__origin__"], date_axes["__development__"]
             ).unique()
         )
 
-        orig_unique = np.sort(date_axes["origin"].unique())
+        orig_unique = np.sort(date_axes["__origin__"].unique())
         kdims = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
 
         # Map index, origin, development indices to data
@@ -145,19 +150,20 @@ class TriangleBase(
             .values[None]
             .T
         )
-        orig_idx = set_idx(data_agg["origin"], orig_unique)
+        orig_idx = set_idx(data_agg["__origin__"], orig_unique)
         dev_idx = set_idx(dev_lag, dev_lag_unique)
         key_idx = (
             data_agg[index].merge(kdims, how="left", on=index)["index"].values[None].T
         )
 
         # origin <= development is required - truncate bad records if not true
-        valid = data_agg["origin"] <= data_agg["development"]
+        valid = data_agg["__origin__"] <= data_agg["__development__"]
         if sum(~valid) > 0:
             warnings.warn(
                 "Observations with development before "
                 + "origin start have been removed."
             )
+        valid = valid.compute() if hasattr(valid, 'compute') else valid
         data_agg, orig_idx = data_agg[valid], orig_idx[valid]
         dev_idx, key_idx = dev_idx[valid], key_idx[valid]
 
@@ -173,8 +179,7 @@ class TriangleBase(
         coords = np.concatenate(
             (np.concatenate(tuple([key_idx] * len(columns)), 0), val_idx, coords), 1
         )
-        amts = data_agg[columns].unstack()
-        amts = amts.values.astype("float64")
+        amts = np.concatenate([data_agg[col].fillna(0).values for col in data_agg[columns]]).astype("float64")
         self.array_backend = "sparse"
         self.values = num_to_nan(
             sp(
@@ -193,7 +198,9 @@ class TriangleBase(
         )
 
         # Set all axis values
-        self.valuation_date = data_agg["development"].max()
+        val_date = data_agg["__development__"].max()
+        val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
+        self.valuation_date = val_date
         self.kdims = kdims.drop("index", 1).values
         self.odims = orig_unique
         self.ddims = dev_lag_unique if has_dev else dev_lag[0:1].values
@@ -249,23 +256,23 @@ class TriangleBase(
         ):
             """ Determines origin/development combinations in full.  Useful for
                 when the triangle has holes in it. """
-
+            o_min = origin_date.min()
+            o_max = origin_date.max()
+            d_max = development_date.max()
+            c = lambda x : x.compute() if hasattr(x, 'compute') else x
             origin_unique = pd.period_range(
-                start=origin_date.min(),
-                end=max(origin_date.max(), development_date.max()),
-                freq=origin_grain,
+                start=c(o_min), end=max(c(o_max), c(d_max)), freq=origin_grain,
             ).to_timestamp()
             development_unique = pd.period_range(
-                start=origin_date.min(),
-                end=development_date.max(),
-                freq=development_grain,
+                start=c(o_min), end=c(d_max), freq=development_grain,
             ).to_timestamp(how="e")
             # Let's get rid of any development periods before origin periods
             cart_prod = TriangleBase._cartesian_product(
                 origin_unique, development_unique
             )
             cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
-            return pd.DataFrame(cart_prod, columns=["origin", "development"])
+            return pd.DataFrame(cart_prod, columns=["__origin__", "__development__"])
+
 
         cart_prod_o = complete_date_range(
             pd.Series(origin_date.min()),
@@ -280,14 +287,14 @@ class TriangleBase(
             self.development_grain,
         )
         cart_prod_t = pd.DataFrame(
-            {"origin": origin_date, "development": development_date}
+            {"__origin__": origin_date, "__development__": development_date}
         )
         cart_prod = (
             cart_prod_o.append(cart_prod_d, sort=True)
             .append(cart_prod_t, sort=True)
             .drop_duplicates()
         )
-        cart_prod = cart_prod[cart_prod["development"] >= cart_prod["origin"]]
+        cart_prod = cart_prod[cart_prod["__development__"] >= cart_prod["__origin__"]]
         return cart_prod
 
     @property
@@ -349,7 +356,8 @@ class TriangleBase(
         year_diff = development.dt.year - origin.dt.year
         quarter_diff = development.dt.quarter - origin.dt.quarter
         month_diff = development.dt.month - origin.dt.month
-        if np.all(origin != development):
+        all = dp.all if hasattr(origin, 'compute') else np.all
+        if all(origin != development):
             development_grain = TriangleBase._get_grain(development)
         else:
             development_grain = "M"

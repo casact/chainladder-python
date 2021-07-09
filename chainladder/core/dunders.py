@@ -27,8 +27,8 @@ class TriangleDunders:
                 other = other.values
         else:
             if isinstance(other, np.ndarray) and self.array_backend != 'numpy':
-                other = self.get_array_module().array(other)
                 obj = self.copy()
+                other = obj.get_array_module().array(other)
             elif isinstance(other, sp) and self.array_backend != 'sparse':
                 obj = self.set_backend('sparse')
             else:
@@ -91,7 +91,7 @@ class TriangleDunders:
         elif len(y.columns) == 1 and len(x.columns) > 1:
             y.vdims = x.vdims
         elif len(y.columns) == 1 and len(x.columns) == 1 and x.columns != y.columns:
-            y.vdims = x.vdims = pd.RangeIndex(start=0, stop=1, step=1)
+            y.vdims = x.vdims
         elif x.shape[1] == y.shape[1] and np.all(x.columns == y.columns):
             pass
         else:
