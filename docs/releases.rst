@@ -4,6 +4,35 @@ Releases
 
 Version 0.8
 ===========
+
+Version 0.8.5
+--------------
+Release Date: Jul 11, 2021
+
+**Enhancements**
+
+* `#154 <https://github.com/casact/chainladder-python/issues/154>`__  - Added `groupby` hyperparameter to several more estimators including the widely used `Development` estimator.  This allows fitting development patterns at a higher grain than the Triangle all within the estiamtor or Pipeline.
+- Improved index broadcasting for sparse arrays.  Prior to `0.8.5`, this code would
+inappropriately consume too much memory.  For example:
+
+  >>> prism = cl.load_sample('prism')
+  >>> prism / prism.groupby('Line').sum()
+
+- Arithmetic label matching improved for all axes to align more with pandas
+- Added ``model_diagnostics`` utility function to be used on fitted estimators.
+- Initial support for ``dask`` arrays. Current support is basic, but will eventually allow for distributed computations on massive triangles.
+- added numpy array protocol support to the Triangle class. Now numpy functions can be called on Triangles.  For example:
+
+  >>> np.sin(cl.load_sample('raa'))
+
+* `#169 <https://github.com/casact/chainladder-python/issues/169>`__ - Made Triangle tutorial more beginner friendly - courtesy of @kennethhsu
+
+**Bug Fixes**
+
+- Better Estimator pickling support when callables are included in estimators.
+- Minor bug fix in `grain` estimator.
+
+
 Version 0.8.4
 --------------
 Release Date: May 9, 2021
