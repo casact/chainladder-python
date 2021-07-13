@@ -6,8 +6,8 @@ Contributing
 
 ``chainladder-python`` welcomes volunteers for all aspects of the
 project. Whether you’re new to actuarial reserving, new to python, or
-both, feedback, questions, suggestions and, of course, contributions as
-all welcome.
+both, feedback, questions, suggestions and, of course, contributions are
+all welcomed.
 
 How do I Contribute?
 ~~~~~~~~~~~~~~~~~~~~
@@ -19,7 +19,7 @@ project.
    tracker <https://github.com/casact/chainladder-python/issues>`__.
 2. Volunteer to draft code changes for existing
    `issues <https://github.com/casact/chainladder-python/issues>`__.
-3. Ask questions through the `Discussion Forum <https://github.com/casact/chainladder-python/discussions>`__.
+3. Ask questions through the `discussion forum <https://github.com/casact/chainladder-python/discussions>`__.
 4. Improve the `documents <https://chainladder-python.readthedocs.io/en/latest/>`__
    where they are unclear.
 5. Make new `examples <https://chainladder-python.readthedocs.io/en/latest/auto_examples/index.html>`__.
