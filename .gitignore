@@ -116,3 +116,4 @@ settings.json
 # macOS related files
 *.DS_Store
 *Icon
+*r
