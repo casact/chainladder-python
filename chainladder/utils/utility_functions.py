@@ -364,8 +364,7 @@ def model_diagnostics(model, name=None,  groupby=None):
         idx['Measure'] = col
         idx['Model'] = obj.__class__.__name__ if name is None else name
         idx = idx[list(idx.columns[-2:]) + list(idx.columns[:-2])]
-
-        out = latest.iloc[:, 0].rename('columns', ['Latest'])
+        out = latest[col].rename('columns', ['Latest'])
         if obj.X_.development_grain in ['M']:
             out['Month Incremental'] = obj.X_[col][val==obj.X_.valuation_date].sum('development')
         if obj.X_.development_grain in ['M', 'Q']:
