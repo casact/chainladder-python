@@ -9,7 +9,7 @@ project. Whether you’re new to actuarial reserving, new to python, or
 both, feedback, questions, suggestions and, of course, contributions are
 all welcomed.
 
-How do I Contribute?
+How Do I Contribute?
 ~~~~~~~~~~~~~~~~~~~~
 
 There are tons of ways to improve and shape the direction of this
