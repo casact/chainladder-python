@@ -6,25 +6,25 @@ Contributing
 
 ``chainladder-python`` welcomes volunteers for all aspects of the
 project. Whether you’re new to actuarial reserving, new to python, or
-both, feedback, questions, suggestions and, of course, contributions as
-all welcome.
+both, feedback, questions, suggestions and, of course, contributions are
+all welcomed.
 
-How do I contribute?
+How Do I Contribute?
 ~~~~~~~~~~~~~~~~~~~~
 
 There are tons of ways to improve and shape the direction of this
 project.
 
-  1. Submitting bugs or enhancements to the `issue
-     tracker <https://github.com/casact/chainladder-python/issues>`__.
-  2. Volunteer to draft code changes for existing
-     `issues <https://github.com/casact/chainladder-python/issues>`__.
-  3. Ask questions through the `Discussion Forum <https://github.com/casact/chainladder-python/discussions>`__.
-  4. Improve the `documents <https://chainladder-python.readthedocs.io/en/latest/>`__
-     where they are unclear.
-  5. Make new `examples <https://chainladder-python.readthedocs.io/en/latest/auto_examples/index.html>`__.
+1. Submitting bugs or enhancements to the `issue
+   tracker <https://github.com/casact/chainladder-python/issues>`__.
+2. Volunteer to draft code changes for existing
+   `issues <https://github.com/casact/chainladder-python/issues>`__.
+3. Ask questions through the `discussion forum <https://github.com/casact/chainladder-python/discussions>`__.
+4. Improve the `documents <https://chainladder-python.readthedocs.io/en/latest/>`__
+   where they are unclear.
+5. Make new `examples <https://chainladder-python.readthedocs.io/en/latest/auto_examples/index.html>`__.
 
-Why contribute?
+Why Contribute?
 ~~~~~~~~~~~~~~~
 
 1. Contributing to an open-source project is an incredibly rewarding
@@ -40,7 +40,7 @@ Why contribute?
 If you are interested in contributing. Here are a few helpful hints to
 make the journey enjoyable.
 
-API guidelines
+API Guidelines
 ~~~~~~~~~~~~~~
 
 ``chainladder-python`` by design is intended to mimic the API styles of
@@ -73,6 +73,7 @@ all testing and documentation dependencies can be set up as follows:
 
 ::
 
+   conda config --set channel_priority strict
    conda env create --file environment-dev.yaml
    conda activate cl_dev
 
@@ -88,6 +89,12 @@ Lastly, set up the python chainladder package in develop mode.
 ::
 
    python setup.py develop
+
+When you are done with development, you should exit ``cl_dev``.
+
+::
+
+   conda deactivate
 
 Updating the Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +115,13 @@ Editing of the documentation happens in one of four places:
    added by simply adding an additional example file to the
    ``/examples`` folder. To show up in the gallery, the file must
    begin with “plot\_” and the gallery thumbnails are auto-generated
-   from the plot output of your example.
+   from the plot output of your example. You may need to install ``sphinx_gallery``
+   and ``nbsphinx`` first.
+
+::
+
+   pip install sphinx-gallery
+   pip install nbsphinx
 
 4. The tutorials are jupyter notebooks stored at ‘docs/tutorials’.
 
