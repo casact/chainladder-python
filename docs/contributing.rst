@@ -75,6 +75,7 @@ all testing and documentation dependencies can be set up as follows:
 
    conda config --set channel_priority strict
    conda env create --file environment-dev.yaml
+   conda config --set channel_priority false
    conda activate cl_dev
 
 Because R’s ChainLadder package is not available through conda, you will
