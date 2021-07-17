@@ -858,3 +858,8 @@ def test_dask_backend():
     raa1 = cl.Chainladder().fit(cl.load_sample('raa').set_backend('dask')).ultimate_
     raa2 = cl.Chainladder().fit(cl.load_sample('raa')).ultimate_
     assert (raa1 == raa2).compute()
+
+def test_partial_val_dev():
+    raa = cl.load_sample('raa').latest_diagonal
+    raa.iloc[..., -3:, :] = np.nan
+    raa.val_to_dev().iloc[0, 0, 0, -1] == raa.iloc[0, 0, 0, -1]

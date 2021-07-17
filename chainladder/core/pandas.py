@@ -49,6 +49,7 @@ class TrianglePandas:
             obj = self.val_to_dev().set_backend("sparse")
             out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
             out["columns"] = obj.columns[obj.values.coords[1]]
+            missing_cols = list(set(self.columns) - set(out['columns']))
             out["origin"] = obj.odims[obj.values.coords[2]]
             out["development"] = obj.ddims[obj.values.coords[3]]
             out["values"] = obj.values.data
@@ -71,14 +72,19 @@ class TrianglePandas:
                 valuation['valuation']))
             out['valuation'] = out.apply(
                 lambda x: val_dict[(x['origin'], x['development'])], axis=1)
-            col_order = list(out.columns)
+            col_order = list(self.columns)
             if implicit_axis:
-                col_order = ['origin', 'development', 'valuation'] + col_order[2:-1]
+                col_order = ['origin', 'development', 'valuation'] + col_order
             else:
                 if is_val_tri:
-                    col_order = ['origin', 'valuation'] + col_order[2:-1]
+                    col_order = ['origin', 'valuation'] + col_order
                 else:
-                    col_order = ['origin', 'development'] + col_order[2:-1]
+                    col_order = ['origin', 'development'] + col_order
+            for col in set(missing_cols) - self.virtual_columns.columns.keys():
+                out[col] = np.nan
+            for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
+                out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+                out.loc[out[col] == 0, col] = np.nan           
             return out[col_order]
         if self.shape[:2] == (1, 1):
             return self._repr_format(origin_as_datetime)

@@ -299,6 +299,7 @@ class Triangle(TriangleBase):
             obj.values = obj.values.copy()
         scale = self._dstep()[obj.development_grain][obj.origin_grain]
         offset = np.arange(obj.shape[-2]) * scale
+        min_slide = -offset.max()
         offset = offset[obj.values.coords[-2]] * sign
         obj.values.coords[-1] = obj.values.coords[-1] + offset
         ddims = obj.valuation[obj.valuation <= obj.valuation_date]
@@ -306,7 +307,7 @@ class Triangle(TriangleBase):
         if ddims == 1 and sign == -1:
             ddims = len(obj.odims)
         if obj.values.density > 0 and obj.values.coords[-1].min() < 0:
-            obj.values.coords[-1] = obj.values.coords[-1] - obj.values.coords[-1].min()
+            obj.values.coords[-1] = obj.values.coords[-1] - min(obj.values.coords[-1].min(), min_slide) 
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if AUTO_SPARSE == False or backend == "cupy":
