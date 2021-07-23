@@ -121,7 +121,7 @@ class TriangleBase(
             data[item] for item in ([] if not index else index)
         ]
         data_agg = data.groupby(key_gr)[columns].sum().reset_index().fillna(0)
-        data = data.drop(['__origin__', '__development__'], 1)
+        data = data.drop(['__origin__', '__development__'], axis=1)
         if not index:
             index = ["Total"]
             data_agg[index[0]] = "Total"
@@ -201,7 +201,7 @@ class TriangleBase(
         val_date = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
         self.valuation_date = val_date
-        self.kdims = kdims.drop("index", 1).values
+        self.kdims = kdims.drop("index", axis=1).values
         self.odims = orig_unique
         self.ddims = dev_lag_unique if has_dev else dev_lag[0:1].values
         self.ddims = self.ddims * (m_cnt[self.development_grain])

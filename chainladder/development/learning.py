@@ -114,11 +114,11 @@ class DevelopmentML(DevelopmentBase):
             X_r.append(out.copy())
             preds = self.estimator_ml.predict(out)
             y_r.append(preds.copy())
-        X_r = pd.concat(X_r, 0).reset_index(drop=True)
+        X_r = pd.concat(X_r, axis=0).reset_index(drop=True)
         if True:
-            X_r = X_r.drop(self._get_y_names(), 1)
+            X_r = X_r.drop(self._get_y_names(), axis=1)
         out = pd.concat((X_r,
-                         pd.DataFrame(np.concatenate(y_r, 0), columns=self._get_y_names())),1)
+                         pd.DataFrame(np.concatenate(y_r, 0), columns=self._get_y_names())), axis=1)
         out['origin'] = out['origin'].map({v: k for k, v in self.origin_encoder_.items()})
         out['valuation'] = out['valuation'].map({v: k for k, v in self.valuation_encoder_.items()})
         return Triangle(
