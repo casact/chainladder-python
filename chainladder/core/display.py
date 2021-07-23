@@ -96,7 +96,6 @@ class TriangleDisplay:
             fmt_str = self._get_format_str(data)
             if len(self.ddims) > 1 and type(self.ddims[0]) is int:
                 data.columns = [["Development Lag"] * len(self.ddims), self.ddims]
-            warnings.filterwarnings("ignore")
             axis = self._get_axis(axis)
             default = (
                 data.style.format(fmt_str)
@@ -106,7 +105,6 @@ class TriangleDisplay:
                 .render()
             )
             default = re.sub("<td.*nan.*td>", "<td></td>", default)
-            warnings.filterwarnings("default")
             return HTML(default)
         elif HTML is None:
             raise ImportError("heatmap requires IPython")
