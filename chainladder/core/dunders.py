@@ -73,7 +73,7 @@ class TriangleDunders:
             return x, y
         a, b = set(x.key_labels), set(y.key_labels)
         common = a.intersection(b)
-        if common in [a, b] and a != b:
+        if common in [a, b] and (a != b or (a == b and x.kdims.shape[0] != y.kdims.shape[0])):
             # If index labels are subset of other triangle index labels
             x = x.groupby(list(common))
             y = y.groupby(list(common))
@@ -197,13 +197,13 @@ class TriangleDunders:
 
     @staticmethod
     def _get_key_union(obj, other):
-        return set(list(obj.groups.indices.keys()) + 
+        return set(list(obj.groups.indices.keys()) +
                    list(other.groups.indices.keys()))
-            
+
     def __add__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) + 
+            c = [self._slice_or_nan(obj, other, k) +
                  self._slice_or_nan(other, obj, k)
                  for k in self._get_key_union(obj, other)]
             obj = concat(c, 0).sort_index()
@@ -218,7 +218,7 @@ class TriangleDunders:
     def __sub__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) - 
+            c = [self._slice_or_nan(obj, other, k) -
                  self._slice_or_nan(other, obj, k)
                  for k in self._get_key_union(obj, other)]
             obj = concat(c, 0).sort_index()
@@ -252,7 +252,7 @@ class TriangleDunders:
     def __mul__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) * 
+            c = [self._slice_or_nan(obj, other, k) *
                  self._slice_or_nan(other, obj, k)
                  for k in self._get_key_union(obj, other)]
             obj = concat(c, 0).sort_index()
@@ -267,7 +267,7 @@ class TriangleDunders:
     def __pow__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) ** 
+            c = [self._slice_or_nan(obj, other, k) **
                  self._slice_or_nan(other, obj, k)
                 for k in self._get_key_union(obj, other)]
             obj = concat(c, 0).sort_index()
@@ -285,7 +285,7 @@ class TriangleDunders:
     def __truediv__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) / 
+            c = [self._slice_or_nan(obj, other, k) /
                  self._slice_or_nan(other, obj, k)
                  for k in self._get_key_union(obj, other)]
             obj = concat(c, 0).sort_index()

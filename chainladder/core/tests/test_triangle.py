@@ -868,3 +868,16 @@ def test_index_broadcasting2():
     clrd = tri['CumPaidLoss'].iloc[...,0,0]
     clrd2 = clrd.groupby('LOB').sum().iloc[:-1]
     clrd + clrd2
+
+def test_sort_axis():
+    assert tri.iloc[::-1, ::-1, ::-1, ::-1].sort_axis(0).sort_axis(1).sort_axis(2).sort_axis(3) == tri.sort_axis(1)
+
+def test_shift():
+    assert (
+        raa.iloc[..., 1:-1, 1:-1] -
+        raa.shift(-1, axis=2).shift(-1, axis=3).shift(2, axis=2).shift(2, axis=3).dropna().values
+    ).to_frame().fillna(0).sum().sum() == 0
+
+def test_array_protocol2():
+    import numpy as np
+    assert raa.log().exp() == np.exp(np.log(raa))

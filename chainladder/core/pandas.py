@@ -268,34 +268,19 @@ class TrianglePandas:
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
     def exp(self):
-        xp = self.get_array_module()
-        obj = self.copy()
-        obj.values = xp.exp(obj.values)
-        return obj
+        return self.get_array_module().exp(self)
 
     def log(self):
-        xp = self.get_array_module()
-        obj = self.copy()
-        obj.values = xp.log(obj.values)
-        return obj
+        return self.get_array_module().log(self)
 
     def minimum(self, other):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.minimum(self.values, other)
-        return obj
+        return self.get_array_module().minimum(self, other)
 
     def maximum(self, other):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.maximum(self.values, other)
-        return obj
+        return self.get_array_module().maximum(self, other)
 
     def sqrt(self):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.sqrt(self.values)
-        return obj
+        return self.get_array_module().sqrt(self)
 
 
 def add_triangle_agg_func(cls, k, v):

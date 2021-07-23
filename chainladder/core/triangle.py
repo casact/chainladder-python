@@ -307,7 +307,9 @@ class Triangle(TriangleBase):
         if ddims == 1 and sign == -1:
             ddims = len(obj.odims)
         if obj.values.density > 0 and obj.values.coords[-1].min() < 0:
-            obj.values.coords[-1] = obj.values.coords[-1] - min(obj.values.coords[-1].min(), min_slide) 
+            obj.values.coords[-1] = (
+                obj.values.coords[-1] -
+                min(obj.values.coords[-1].min(), min_slide))
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if AUTO_SPARSE == False or backend == "cupy":
@@ -678,9 +680,9 @@ class Triangle(TriangleBase):
                    self.iloc[..., :-1, :].rename('origin', self.origin[1:]),
                    ), axis=axis)
         if abs(periods) == 1:
-           return out
+            return out
         else:
-           return self.shift(out, periods-1, axis)
+            return out.shift(periods-1 if periods > 0 else periods + 1, axis)
 
     def sort_axis(self, axis):
         """ Method to sort a Triangle along a given axis
@@ -701,21 +703,21 @@ class Triangle(TriangleBase):
             return self.sort_index()
         if axis == 1:
             sort = pd.Series(self.vdims).sort_values().index
-            if np.all(sort != pd.Series(self.vdims).index):
+            if np.any(sort != pd.Series(self.vdims).index):
                 obj = self.copy()
                 obj.values = obj.values[:, list(sort), ...]
                 obj.vdims = obj.vdims[list(sort)]
                 return obj
         if axis == 2:
             sort = pd.Series(self.odims).sort_values().index
-            if np.all(sort != pd.Series(self.odims).index):
+            if np.any(sort != pd.Series(self.odims).index):
                 obj = self.copy()
                 obj.values = obj.values[..., list(sort), :]
                 obj.odims = obj.odims[list(sort)]
                 return obj
         if axis == 3:
             sort = self.development.sort_values().index
-            if np.all(sort != self.development.index):
+            if np.any(sort != self.development.index):
                 obj = self.copy()
                 obj.values = obj.values[..., list(sort)]
                 obj.ddims = obj.ddims[list(sort)]
