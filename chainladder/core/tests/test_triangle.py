@@ -863,3 +863,8 @@ def test_partial_val_dev():
     raa = cl.load_sample('raa').latest_diagonal
     raa.iloc[..., -3:, :] = np.nan
     raa.val_to_dev().iloc[0, 0, 0, -1] == raa.iloc[0, 0, 0, -1]
+
+def test_index_broadcasting2():
+    clrd = tri['CumPaidLoss'].iloc[...,0,0]
+    clrd2 = clrd.groupby('LOB').sum().iloc[:-1]
+    clrd + clrd2

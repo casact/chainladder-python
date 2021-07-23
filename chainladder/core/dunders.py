@@ -57,22 +57,29 @@ class TriangleDunders:
     def _prep_index(self, x, y):
         """ Preps index and column axes for arithmetic """
         if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
+            # Broadcast x to y
             x.kdims = y.kdims
             x.key_labels = y.key_labels
             return x, y
         if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
+            # Broadcast y to x
             y.kdims = x.kdims
             y.key_labels = x.key_labels
             return x, y
         if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
+            # Broadcast to the triangle with a larger multi-index
             kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
             y.kdims = x.kdims = kdims
             return x, y
-        if x.key_labels != y.key_labels:
-            common = list(set(x.key_labels).intersection(set(y.key_labels)))
-            x = x.groupby(common)
-            y = y.groupby(common)
+        a, b = set(x.key_labels), set(y.key_labels)
+        common = a.intersection(b)
+        if common in [a, b] and a != b:
+            # If index labels are subset of other triangle index labels
+            x = x.groupby(list(common))
+            y = y.groupby(list(common))
             return x, y
+        if common not in [a, b]:
+            raise ValueError('Index broadcasting is ambiguous between', str(a), 'and', str(b))
         if (
             x.key_labels == y.key_labels
             and x.kdims.shape[0] == y.kdims.shape[0]
@@ -80,6 +87,7 @@ class TriangleDunders:
             and not x.kdims is y.kdims
             and not x.index.equals(y.index)
         ):
+            # Make sure exact but unsorted index labels works
             x = x.sort_index()
             y = y.loc[x.index]
         return x, y
@@ -174,15 +182,31 @@ class TriangleDunders:
             other.values = other_arr
         return obj, other
 
+    @staticmethod
+    def _slice_or_nan(obj, other, k):
+        if k in obj.groups.indices.keys():
+            return obj.obj.iloc[obj.groups.indices[k]]
+        else:
+            if len(other.obj.key_labels) < len(obj.obj.key_labels):
+                raise ValueError("Unable to determine non-broadcasted key_labels in Triangle")
+            else:
+                new_obj = obj.obj.iloc[:1] * 0
+                new_obj.kdims = other.obj.iloc[other.groups.indices[k]].kdims
+                new_obj.key_labels = other.obj.key_labels
+                return new_obj
+
+    @staticmethod
+    def _get_key_union(obj, other):
+        return set(list(obj.groups.indices.keys()) + 
+                   list(other.groups.indices.keys()))
+            
     def __add__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            if len(obj.obj) < len(other.obj):
-                obj, other = other, obj
-            obj = concat(
-                [obj.obj.iloc[v] + other.obj.iloc[other.groups.indices[k]].values
-                for k, v in obj.groups.indices.items()], 0
-            ).sort_index()
+            c = [self._slice_or_nan(obj, other, k) + 
+                 self._slice_or_nan(other, obj, k)
+                 for k in self._get_key_union(obj, other)]
+            obj = concat(c, 0).sort_index()
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) + xp.nan_to_num(other)
@@ -194,16 +218,10 @@ class TriangleDunders:
     def __sub__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            if len(obj.obj) < len(other.obj):
-                obj = concat(
-                    [-other.obj.iloc[other.groups.indices[k]] + obj.obj.iloc[v].values
-                    for k, v in obj.groups.indices.items()], 0
-                ).sort_index()
-            else:
-                obj = concat(
-                    [obj.obj.iloc[v] - other.obj.iloc[other.groups.indices[k]].values
-                    for k, v in obj.groups.indices.items()], 0
-                ).sort_index()
+            c = [self._slice_or_nan(obj, other, k) - 
+                 self._slice_or_nan(other, obj, k)
+                 for k in self._get_key_union(obj, other)]
+            obj = concat(c, 0).sort_index()
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) - xp.nan_to_num(other)
@@ -234,12 +252,10 @@ class TriangleDunders:
     def __mul__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            if len(obj.obj) < len(other.obj):
-                obj, other = other, obj
-            obj = concat(
-                [obj.obj.iloc[v]*other.obj.iloc[other.groups.indices[k]].values
-                for k, v in obj.groups.indices.items()], 0
-            ).sort_index()
+            c = [self._slice_or_nan(obj, other, k) * 
+                 self._slice_or_nan(other, obj, k)
+                 for k in self._get_key_union(obj, other)]
+            obj = concat(c, 0).sort_index()
         else:
             xp = obj.get_array_module()
             obj.values = obj.values * other
@@ -251,16 +267,10 @@ class TriangleDunders:
     def __pow__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            if len(obj.obj) < len(other.obj):
-                obj = concat(
-                    [obj.obj.iloc[v].values ** other.obj.iloc[other.groups.indices[k]]
-                    for k, v in obj.groups.indices.items()], 0
-                ).sort_index()
-            else:
-                obj = concat(
-                    [obj.obj.iloc[v] ** other.obj.iloc[other.groups.indices[k]].values
-                    for k, v in obj.groups.indices.items()], 0
-                ).sort_index()
+            c = [self._slice_or_nan(obj, other, k) ** 
+                 self._slice_or_nan(other, obj, k)
+                for k in self._get_key_union(obj, other)]
+            obj = concat(c, 0).sort_index()
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) ** other
@@ -275,16 +285,10 @@ class TriangleDunders:
     def __truediv__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            if len(obj.obj) < len(other.obj):
-                obj = concat(
-                    [(1 / other.obj.iloc[other.groups.indices[k]])*obj.obj.iloc[v].values
-                    for k, v in obj.groups.indices.items()], 0
-                ).sort_index()
-            else:
-                obj = concat(
-                    [obj.obj.iloc[v] / other.obj.iloc[other.groups.indices[k]].values
-                    for k, v in obj.groups.indices.items()], 0
-                ).sort_index()
+            c = [self._slice_or_nan(obj, other, k) / 
+                 self._slice_or_nan(other, obj, k)
+                 for k in self._get_key_union(obj, other)]
+            obj = concat(c, 0).sort_index()
         else:
             xp = obj.get_array_module()
             obj.values = obj.values / other
