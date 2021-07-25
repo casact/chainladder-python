@@ -8,6 +8,11 @@ from chainladder.utils.utility_functions import num_to_nan, concat
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
 
+try:
+    import dask.bag as db
+except:
+    db = None
+
 class TriangleDunders:
     """ Class that implements the dunder (double underscore) methods for the
         Triangle class
@@ -200,13 +205,23 @@ class TriangleDunders:
         return set(list(obj.groups.indices.keys()) +
                    list(other.groups.indices.keys()))
 
+    def _arithmetic_mapper(self, obj, other, f):
+        """ Use Dask if available, otherwise basic list comprehension """
+        if db and obj.obj.array_backend == 'sparse':
+            bag = db.from_sequence(self._get_key_union(obj, other))
+            bag = bag.map(f, self, obj, other)
+            c = bag.compute(scheduler='threads')
+        else:
+            c = [f(k, self, obj, other) for k in self._get_key_union(obj, other)]
+        return concat(c, 0).sort_index()
+
     def __add__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) +
-                 self._slice_or_nan(other, obj, k)
-                 for k in self._get_key_union(obj, other)]
-            obj = concat(c, 0).sort_index()
+            def f(k, self, obj, other):
+                return (self._slice_or_nan(obj, other, k) +
+                        self._slice_or_nan(other, obj, k))
+            obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) + xp.nan_to_num(other)
@@ -218,10 +233,10 @@ class TriangleDunders:
     def __sub__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) -
-                 self._slice_or_nan(other, obj, k)
-                 for k in self._get_key_union(obj, other)]
-            obj = concat(c, 0).sort_index()
+            def f(k, self, obj, other):
+                return (self._slice_or_nan(obj, other, k) -
+                        self._slice_or_nan(other, obj, k))
+            obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) - xp.nan_to_num(other)
@@ -252,10 +267,10 @@ class TriangleDunders:
     def __mul__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) *
-                 self._slice_or_nan(other, obj, k)
-                 for k in self._get_key_union(obj, other)]
-            obj = concat(c, 0).sort_index()
+            def f(k, self, obj, other):
+                return (self._slice_or_nan(obj, other, k) *
+                        self._slice_or_nan(other, obj, k))
+            obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
             obj.values = obj.values * other
@@ -267,10 +282,10 @@ class TriangleDunders:
     def __pow__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) **
-                 self._slice_or_nan(other, obj, k)
-                for k in self._get_key_union(obj, other)]
-            obj = concat(c, 0).sort_index()
+            def f(k, self, obj, other):
+                return (self._slice_or_nan(obj, other, k) **
+                        self._slice_or_nan(other, obj, k))
+            obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
             obj.values = xp.nan_to_num(obj.values) ** other
@@ -285,10 +300,10 @@ class TriangleDunders:
     def __truediv__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
-            c = [self._slice_or_nan(obj, other, k) /
-                 self._slice_or_nan(other, obj, k)
-                 for k in self._get_key_union(obj, other)]
-            obj = concat(c, 0).sort_index()
+            def f(k, self, obj, other):
+                return (self._slice_or_nan(obj, other, k) /
+                        self._slice_or_nan(other, obj, k))
+            obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
             obj.values = obj.values / other

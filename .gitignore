@@ -117,3 +117,8 @@ settings.json
 *.DS_Store
 *Icon
 *r
+
+# asv environments
+.asv
+
+coverage_html_report

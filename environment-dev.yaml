@@ -39,3 +39,4 @@ dependencies:
 
   - pip:
     - sphinx_gallery
+    - asv
