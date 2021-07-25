@@ -4,7 +4,10 @@
 import pandas as pd
 import numpy as np
 from chainladder.utils.utility_functions import num_to_nan
-
+try:
+    import dask.bag as db
+except:
+    db = None
 
 class TriangleGroupBy:
     def __init__(self, obj, by, axis=0):
@@ -84,7 +87,7 @@ class TrianglePandas:
                 out[col] = np.nan
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
-                out.loc[out[col] == 0, col] = np.nan           
+                out.loc[out[col] == 0, col] = np.nan
             return out[col_order]
         if self.shape[:2] == (1, 1):
             return self._repr_format(origin_as_datetime)
@@ -331,12 +334,21 @@ def add_groupby_agg_func(cls, k, v):
 
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
-        values = [
-            getattr(obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v)(
-                self.axis, auto_sparse=False, keepdims=True
-            )
-            for i in self.groups.indices.values()
-        ]
+        if db and obj.array_backend == 'sparse':
+            def aggregate(i, obj, axis, v):
+                return getattr(
+                    obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v
+                )(axis, auto_sparse=False, keepdims=True)
+            bag = db.from_sequence(self.groups.indices.values())
+            bag = bag.map(aggregate, obj, self.axis, v)
+            values = bag.compute(scheduler='threads')
+        else:
+            values = [
+                getattr(obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v)(
+                    self.axis, auto_sparse=False, keepdims=True
+                )
+                for i in self.groups.indices.values()
+            ]
         obj = concat(values, axis=self.axis, ignore_index=True)
         if self.axis == 0:
             if isinstance(self.groups.dtypes.index, pd.MultiIndex):

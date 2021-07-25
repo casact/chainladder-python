@@ -10,6 +10,10 @@ from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import concat, num_to_nan
 from chainladder import ULT_VAL
+try:
+    import dask.bag as db
+except:
+    db = None
 
 
 class Triangle(TriangleBase):
@@ -243,7 +247,12 @@ class Triangle(TriangleBase):
                         l1 = lambda i: values[..., 0 : (i + 1)]
                         l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
                         l3 = lambda i: l2(i).sum(3, keepdims=True)
-                        out = [l3(i) for i in range(self.shape[-1])]
+                        if db:
+                            bag = db.from_sequence(range(self.shape[-1]))
+                            bag = bag.map(l3)
+                            out = bag.compute(scheduler='threads')
+                        else:
+                            out = [l3(i) for i in range(self.shape[-1])]
                         self.values = num_to_nan(xp.concatenate(out, axis=3))
                 self.is_cumulative = True
             return self
@@ -450,10 +459,16 @@ class Triangle(TriangleBase):
             else:
                 freq = "%YQ%q" if ograin_new == "Q" else "%Y"
                 o = pd.to_datetime(self.origin.strftime(freq)).values
-            values = [
-                getattr(obj.loc[..., i, :], "sum")(2, auto_sparse=False, keepdims=True)
-                for i in self.origin.groupby(o).values()
-            ]
+            def f(i, obj):
+                out = getattr(obj.iloc[..., i, :], "sum")
+                return out(2, auto_sparse=False, keepdims=True)
+            if db and obj.array_backend == 'sparse':
+                bag = db.from_sequence(
+                    pd.Series(self.origin).groupby(o).groups.values())
+                bag = bag.map(f, obj)
+                values = bag.compute(scheduler='threads')
+            else:
+                values = [f(i, obj) for i in pd.Series(self.origin).groupby(o).groups.values()]
             obj = concat(values, axis=2, ignore_index=True)
             obj.odims = np.unique(o)
             obj.origin_grain = ograin_new
@@ -479,12 +494,15 @@ class Triangle(TriangleBase):
             else:
                 ddims = obj.ddims[d]
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
-                values = [
-                    getattr(obj.iloc[..., i], "sum")(
-                        3, auto_sparse=False, keepdims=True
-                    )
-                    for i in obj.development.groupby(d2).groups.values()
-                ]
+                def f(i, obj):
+                    return getattr(obj.iloc[..., i], "sum")(
+                        3, auto_sparse=False, keepdims=True)
+                if db and obj.array_backend == 'sparse':
+                    bag = db.from_sequence(obj.development.groupby(d2).groups.values())
+                    bag = bag.map(f, obj)
+                    values = bag.compute(scheduler='threads')
+                else:
+                    values = [f(i, obj) for i in obj.development.groupby(d2).groups.values()]
                 obj = concat(values, axis=3, ignore_index=True)
                 obj.ddims = ddims
             obj.development_grain = dgrain_new
