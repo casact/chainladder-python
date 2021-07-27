@@ -106,13 +106,17 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new: Triangle
 
         """
-        obj = X.copy()
+        obj = X.val_to_dev()
+        if X.is_cumulative is not None:
+            obj = obj.incr_to_cum()
         xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
         self.validate_weight(X, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(obj.array_backend)
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
+        if len(obj.ultimate_) > len(obj):
+            obj.ultimate_ = obj.ultimate_.loc[obj.index]
         return obj
 
     def fit_predict(self, X, y=None, sample_weight=None):

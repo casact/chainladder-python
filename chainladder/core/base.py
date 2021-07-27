@@ -355,11 +355,9 @@ class TriangleBase(
                 except:
                     pass
             target = target_field.map(arr)
-        if period_end:
-            target = target.dt.to_period(
-                "M" if len(target.unique()) == 1 else TriangleBase._get_grain(target),
-            ).dt.to_timestamp(how="e")
-        return target
+        return target.dt.to_period(
+            "M" if len(target.unique()) == 1 else TriangleBase._get_grain(target),
+        ).dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
 
     @staticmethod
     def _development_lag(origin, development):
