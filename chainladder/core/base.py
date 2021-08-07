@@ -45,20 +45,20 @@ class TriangleBase(
         # Check whether all columns are unique and numeric
         check = data[columns].dtypes
         check = [check] if isinstance(check, np.dtype) else check.to_list()
-        columns = [columns] if type(columns) is not list else columns
+        
+        # Sanitize all axis inputs to lists
+        str_to_list = lambda *args: tuple(
+            [arg] if type(arg) in [str, pd.Period] 
+            else (None if arg is None else list(arg)) 
+            for arg in args)
+        index, columns, origin, development = str_to_list(
+            index, columns, origin, development
+        )
         if "object" in check:
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
-
-        # Sanitize all axis inputs to lists
-        str_to_list = lambda *args: tuple(
-            [arg] if type(arg) in [str, pd.Period] else arg for arg in args
-        )
-        index, columns, origin, development = str_to_list(
-            index, columns, origin, development
-        )
-
+            
         # Determine desired array backend of the Triangle
         if array_backend is None:
             from chainladder import ARRAY_BACKEND
@@ -133,7 +133,6 @@ class TriangleBase(
             data_agg["__origin__"] = data_agg[origin_date.name]
             data_agg["__development__"] = data_agg[development_date.name]
 
-
         if not index:
             index = ["Total"]
             data_agg[index[0]] = "Total"
@@ -152,7 +151,7 @@ class TriangleBase(
                 date_axes["__origin__"], date_axes["__development__"]
             ).unique()
         )
-
+        
         orig_unique = np.sort(date_axes["__origin__"].unique())
         kdims = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
 
@@ -216,7 +215,6 @@ class TriangleBase(
         self.kdims = kdims.drop("index", axis=1).values
         self.odims = orig_unique
         self.ddims = dev_lag_unique if has_dev else dev_lag[0:1].values
-        self.ddims = self.ddims * (m_cnt[self.development_grain])
         if development and not has_dev:
             self.ddims = pd.DatetimeIndex(TriangleBase._to_datetime(
                 data, development, period_end=True, format=development_format)[0:1])
@@ -364,18 +362,8 @@ class TriangleBase(
         """ For tabular format, this will convert the origin/development
             difference to a development lag """
         year_diff = development.dt.year - origin.dt.year
-        quarter_diff = development.dt.quarter - origin.dt.quarter
         month_diff = development.dt.month - origin.dt.month
-        all = dp.all if hasattr(origin, 'compute') else np.all
-        if all(origin != development):
-            development_grain = TriangleBase._get_grain(development)
-        else:
-            development_grain = "M"
-        return dict(
-            Y=year_diff + 1,
-            Q=year_diff * 4 + quarter_diff + 1,
-            M=year_diff * 12 + month_diff + 1,
-        )[development_grain]
+        return year_diff * 12 + month_diff + 1
 
     @staticmethod
     def _get_grain(array):
@@ -483,9 +471,9 @@ class TriangleBase(
             np.concatenate: concat
         }
         if func not in HANDLED_FUNCTIONS:
-           return NotImplemented
+            return NotImplemented
         if not all(issubclass(t, self.__class__) for t in types):
-           return NotImplemented
+            return NotImplemented
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
