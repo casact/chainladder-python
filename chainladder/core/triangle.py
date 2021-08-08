@@ -137,17 +137,14 @@ class Triangle(TriangleBase):
         if self.is_pattern and len(self.odims) == 1:
             return pd.Series(["(All)"])
         else:
-            return pd.DatetimeIndex(self.odims, name="origin").to_period(
-                self.origin_grain
-            )
+            return (pd.DatetimeIndex(self.odims, name="origin")
+                      .to_period(self.origin_grain))
 
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
-        value = pd.PeriodIndex(
-            [item for item in list(value)], freq=self.origin_grain
-        ).to_timestamp()
-        self.odims = value.values
+        value = pd.PeriodIndex(list(value), freq=self.origin_grain)
+        self.odims = value.to_timestamp().values
 
     @property
     def development(self):
@@ -173,7 +170,7 @@ class Triangle(TriangleBase):
     @development.setter
     def development(self, value):
         self._len_check(self.development, value)
-        self.ddims = [value] if type(value) is str else value
+        self.ddims = np.array([value] if type(value) is str else value)
 
     @property
     def is_full(self):
@@ -227,13 +224,14 @@ class Triangle(TriangleBase):
             if not self.is_cumulative:
                 if self.is_pattern:
                     values = xp.nan_to_num(self.values[..., ::-1])
-                    if self.array_backend == "sparse":
-                        xp = np
-                        values = self.set_backend("numpy").values
-                    values[values == 0] = 1.0
+                    if self.array_backend == 'sparse':
+                        values = xp.set_fill_value(values, 1.0)
+                    else:
+                        values[values == 0] = 1.0
                     values = xp.cumprod(values, -1)[..., ::-1]
-                    self.values = values = values * self.nan_triangle
+                    self.values = values * self.nan_triangle
                     if self.array_backend == "sparse":
+                        values = xp.set_fill_value(values, np.nan)
                         self.values = self.get_array_module()(self.values)
                 else:
                     if self.array_backend not in ["sparse", "dask"]:
@@ -278,7 +276,10 @@ class Triangle(TriangleBase):
                 if self.is_pattern:
                     xp = self.get_array_module()
                     self.values = xp.nan_to_num(self.values)
-                    self.values[self.values == 0] = 1
+                    if self.array_backend == 'sparse':
+                        self.values = xp.set_fill_value(self.values, 1.0)
+                    else:
+                        self.values[self.values == 0] = 1
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
                     self = concat((diff, self.iloc[..., -1],), axis=3)
                     self.values = self.values * self.nan_triangle

@@ -454,8 +454,8 @@ def test_valdev6():
     assert raa == raa_gt
     xp = raa.get_array_module()
     xp.testing.assert_array_equal(
-        raa.grain("OYDY").latest_diagonal.values,
-        raa.latest_diagonal.grain("OYDY").values,
+        raa.grain("OYDY").latest_diagonal.set_backend('numpy').values,
+        raa.latest_diagonal.grain("OYDY").set_backend('numpy').values,
     )
 
 
@@ -622,7 +622,7 @@ def test_4loc():
 
 def test_init_vector():
     assert raa == raa_gt
-    a = raa[raa.development == 12]
+    a = raa.latest_diagonal
     b = pd.DataFrame(
         {"AccYear": [item for item in range(1981, 1991)], "premium": [3000000] * 10}
     )

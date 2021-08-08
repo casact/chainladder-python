@@ -278,7 +278,6 @@ class TriangleSlicer:
         self.iloc, self.loc = Ilocation(self), Location(self)
         self.iat, self.at = Iat(self), At(self)
         self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
-        self = self._auto_sparse()
 
 
 class At(Location):
