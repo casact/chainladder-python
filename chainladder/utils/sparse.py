@@ -38,6 +38,12 @@ def nan_to_num(a):
 def ones(*args, **kwargs):
     return sp(np.ones(*args, **kwargs), fill_value=sp.nan)
 
+def nansum(a, axis=None, keepdims=None, *args, **kwargs):
+    return sp(data=a.data, coords=a.coords, fill_value=0.0, shape=a.shape).sum(
+        axis=axis, keepdims=keepdims, *args, **kwargs
+    )
+sp.nansum = nansum
+
 
 def nanquantile(a, q, axis=None, keepdims=None, *args, **kwargs):
     new_a = np.nanquantile(
@@ -59,6 +65,8 @@ def nanmean(a, axis=None, keepdims=None, *args, **kwargs):
     out = n / d
     return sp(data=out.data, coords=out.coords, fill_value=0, shape=out.shape)
 
+def set_fill_value(a, fill_value):
+    return sp(data=a.data, coords=a.coords, fill_value=fill_value, shape=a.shape)
 
 def array(a, *args, **kwargs):
     if kwargs.get("fill_value", None) is not None:
@@ -77,6 +85,10 @@ def arange(*args, **kwargs):
 
 def where(*args, **kwargs):
     return elemwise(np.where, *args, **kwargs)
+
+
+def cumprod(a, axis=None, dtype=None, out=None):
+    return array(np.cumprod(a.todense(), axis=axis, dtype=dtype, out=out))
 
 
 def swapaxes(a, axis1, axis2):
@@ -190,3 +202,5 @@ sp.nanmedian = nanmedian
 sp.nanmean = nanmean
 sp.swapaxes = swapaxes
 sp.allclose = allclose
+sp.set_fill_value = set_fill_value
+sp.cumprod = cumprod

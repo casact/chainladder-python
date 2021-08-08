@@ -454,8 +454,8 @@ def test_valdev6():
     assert raa == raa_gt
     xp = raa.get_array_module()
     xp.testing.assert_array_equal(
-        raa.grain("OYDY").latest_diagonal.values,
-        raa.latest_diagonal.grain("OYDY").values,
+        raa.grain("OYDY").latest_diagonal.set_backend('numpy').values,
+        raa.latest_diagonal.grain("OYDY").set_backend('numpy').values,
     )
 
 
@@ -622,7 +622,7 @@ def test_4loc():
 
 def test_init_vector():
     assert raa == raa_gt
-    a = raa[raa.development == 12]
+    a = raa.latest_diagonal
     b = pd.DataFrame(
         {"AccYear": [item for item in range(1981, 1991)], "premium": [3000000] * 10}
     )
@@ -878,6 +878,15 @@ def test_shift():
         raa.shift(-1, axis=2).shift(-1, axis=3).shift(2, axis=2).shift(2, axis=3).dropna().values
     ).to_frame().fillna(0).sum().sum() == 0
 
+
 def test_array_protocol2():
     import numpy as np
     assert raa.log().exp() == np.exp(np.log(raa))
+
+
+def test_create_full_triangle():
+    a = cl.Chainladder().fit(cl.load_sample('raa')).full_triangle_
+    b = cl.Triangle(
+        a.to_frame(keepdims=True, implicit_axis=True),
+        origin='origin', development='valuation', columns='values')
+    assert a == b

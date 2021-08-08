@@ -113,8 +113,7 @@ class ValuationCorrelation:
 
         self.p_critical = p_critical
         self.total = total
-        if triangle.array_backend != "numpy":
-            triangle = triangle.set_backend("numpy")
+        triangle = triangle.set_backend("numpy")
         xp = triangle.get_array_module()
         lr = triangle.link_ratio
         m1 = xp.apply_along_axis(rankdata, 2, lr.values) * (lr.values * 0 + 1)
@@ -125,8 +124,8 @@ class ValuationCorrelation:
         m2large.values = m1large
         m2small = triangle.link_ratio
         m2small.values = m1small
-        S = xp.nan_to_num(m2small.dev_to_val().sum(axis=2).values)
-        L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).values)
+        S = xp.nan_to_num(m2small.dev_to_val().sum(axis=2).set_backend('numpy').values)
+        L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).set_backend('numpy').values)
         z = xp.minimum(L, S)
         n = L + S
         m = xp.floor((n - 1) / 2)

@@ -176,7 +176,7 @@ class CaseOutstanding(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        X_new.ldf_ = self._set_ldf(X_new)
+        X_new.ldf_ = self._set_ldf(X_new).set_backend(self.ldf_.array_backend)
         X_new._set_slicers()
         X_new.paid_ldf_ = self.paid_ldf_
         X_new.case_ldf_ = self.case_ldf_
