@@ -121,68 +121,12 @@ class Triangle(TriangleBase):
             return new_obj.set_index(value=value, inplace=True)
 
     @property
-    def columns(self):
-        return pd.Index(self.vdims, name="columns")
-
-    @columns.setter
-    def columns(self, value):
-        self._len_check(self.columns, value)
-        self.vdims = [value] if type(value) is str else value
-        if type(self.vdims) is list:
-            self.vdims = np.array(self.vdims)
-        self._set_slicers()
-
-    @property
-    def origin(self):
-        if self.is_pattern and len(self.odims) == 1:
-            return pd.Series(["(All)"])
-        else:
-            return (pd.DatetimeIndex(self.odims, name="origin")
-                      .to_period(self.origin_grain))
-
-    @origin.setter
-    def origin(self, value):
-        self._len_check(self.origin, value)
-        value = pd.PeriodIndex(list(value), freq=self.origin_grain)
-        self.odims = value.to_timestamp().values
-
-    @property
-    def development(self):
-        ddims = self.ddims.copy()
-        if self.is_val_tri:
-            formats = {"Y": "%Y", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(freq=self.development_grain).strftime(
-                formats[self.development_grain]
-            )
-        elif self.is_pattern:
-            offset = {"Y": 12, "Q": 3, "M": 1}[self.development_grain]
-            if self.is_ultimate:
-                ddims[-1] = ddims[-2] + offset
-            if self.is_cumulative:
-                ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
-            else:
-                ddims = [
-                    "{}-{}".format(ddims[i], ddims[i] + offset)
-                    for i in range(len(ddims))
-                ]
-        return pd.Series(list(ddims), name="development")
-
-    @development.setter
-    def development(self, value):
-        self._len_check(self.development, value)
-        self.ddims = np.array([value] if type(value) is str else value)
-
-    @property
     def is_full(self):
         return self.nan_triangle.sum().sum() == np.prod(self.shape[-2:])
 
     @property
     def is_ultimate(self):
         return sum(self.valuation >= ULT_VAL[:4]) > 0
-
-    @property
-    def is_val_tri(self):
-        return type(self.ddims) == pd.DatetimeIndex
 
     @property
     def latest_diagonal(self):
@@ -324,6 +268,8 @@ class Triangle(TriangleBase):
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if AUTO_SPARSE == False or backend == "cupy":
             obj = obj.set_backend(backend)
+        else:
+            obj = obj._auto_sparse()
         return obj
 
     def dev_to_val(self, inplace=False):

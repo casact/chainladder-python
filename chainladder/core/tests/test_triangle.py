@@ -878,6 +878,15 @@ def test_shift():
         raa.shift(-1, axis=2).shift(-1, axis=3).shift(2, axis=2).shift(2, axis=3).dropna().values
     ).to_frame().fillna(0).sum().sum() == 0
 
+
 def test_array_protocol2():
     import numpy as np
     assert raa.log().exp() == np.exp(np.log(raa))
+
+
+def test_create_full_triangle():
+    a = cl.Chainladder().fit(cl.load_sample('raa')).full_triangle_
+    b = cl.Triangle(
+        a.to_frame(keepdims=True, implicit_axis=True),
+        origin='origin', development='valuation', columns='values')
+    assert a == b

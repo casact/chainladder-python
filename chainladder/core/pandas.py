@@ -314,8 +314,9 @@ def add_triangle_agg_func(cls, k, v):
             obj.ddims = pd.DatetimeIndex(
                 [self.valuation_date], dtype="datetime64[ns]", freq=None
             )
+        obj._set_slicers()
         if auto_sparse:
-            obj._set_slicers()
+            obj = obj._auto_sparse()
         obj.values = num_to_nan(obj.values)
         if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
@@ -334,6 +335,7 @@ def add_groupby_agg_func(cls, k, v):
 
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
+        auto_sparse = kwargs.pop("auto_sparse", True)
         if db and obj.array_backend == 'sparse':
             def aggregate(i, obj, axis, v):
                 return getattr(
@@ -371,6 +373,8 @@ def add_groupby_agg_func(cls, k, v):
         if self.axis == 1:
             obj.vdims = index
         obj._set_slicers()
+        if auto_sparse:
+            obj = obj._auto_sparse()
         return obj
 
     set_method(cls, agg_func, k)

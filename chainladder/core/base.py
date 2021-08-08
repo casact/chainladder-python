@@ -128,6 +128,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 ult = TriangleBase(
                     u, origin=origin, development=development,
                     columns=columns, index=index)
+                ult.ddims = pd.DatetimeIndex([ULT_VAL])
                 data = data[data[development[0]] != ULT_VAL]
         return data, ult
 
@@ -447,6 +448,63 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 obj.array_backend = 'numpy'
             return obj
         return self
+
+    @property
+    def origin(self):
+        if self.is_pattern and len(self.odims) == 1:
+            return pd.Series(["(All)"])
+        else:
+            return (pd.DatetimeIndex(self.odims, name="origin")
+                      .to_period(self.origin_grain))
+
+    @origin.setter
+    def origin(self, value):
+        self._len_check(self.origin, value)
+        value = pd.PeriodIndex(list(value), freq=self.origin_grain)
+        self.odims = value.to_timestamp().values
+
+    @property
+    def development(self):
+        ddims = self.ddims.copy()
+        if self.is_val_tri:
+            formats = {"Y": "%Y", "Q": "%YQ%q", "M": "%Y-%m"}
+            ddims = ddims.to_period(freq=self.development_grain).strftime(
+                formats[self.development_grain]
+            )
+        elif self.is_pattern:
+            offset = {"Y": 12, "Q": 3, "M": 1}[self.development_grain]
+            if self.is_ultimate:
+                ddims[-1] = ddims[-2] + offset
+            if self.is_cumulative:
+                ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
+            else:
+                ddims = [
+                    "{}-{}".format(ddims[i], ddims[i] + offset)
+                    for i in range(len(ddims))
+                ]
+        return pd.Series(list(ddims), name="development")
+
+    @development.setter
+    def development(self, value):
+        self._len_check(self.development, value)
+        self.ddims = np.array([value] if type(value) is str else value)
+
+    @property
+    def is_val_tri(self):
+        return type(self.ddims) == pd.DatetimeIndex
+
+    @property
+    def columns(self):
+        return pd.Index(self.vdims, name="columns")
+
+    @columns.setter
+    def columns(self, value):
+        self._len_check(self.columns, value)
+        self.vdims = [value] if type(value) is str else value
+        if type(self.vdims) is list:
+            self.vdims = np.array(self.vdims)
+        self._set_slicers()
+
 
 def is_chainladder(estimator):
     """Return True if the given estimator is a chainladder based method.

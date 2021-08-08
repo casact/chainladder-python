@@ -346,8 +346,3 @@ class TriangleDunders:
         xp = self.get_array_module()
         obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
         return obj
-
-    def __contains__(self, value):
-        if self.__dict__.get(value, None) is None:
-            return False
-        return True
