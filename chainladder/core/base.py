@@ -11,7 +11,7 @@ import warnings
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
 from chainladder.core.pandas import TrianglePandas
-from chainladder.core.slice import TriangleSlicer, VirtualColumns
+from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 from chainladder import AUTO_SPARSE, ULT_VAL
@@ -21,75 +21,6 @@ from chainladder.utils.utility_functions import num_to_nan, concat
 class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                    TriangleDunders, TrianglePandas, Common):
     """ This class handles the initialization of a triangle """
-
-    def __init__(self, data=None, origin=None, development=None, columns=None,
-                 index=None, origin_format=None, development_format=None,
-                 cumulative=None, array_backend=None, pattern=False, *args, **kwargs):
-        if data is None:
-            return
-        index, columns, origin, development = self._input_validation(
-            data, index, columns, origin, development)
-        data, ult = self._split_ult(data, index, columns, origin, development)
-        origin_date = self._to_datetime(data, origin, format=origin_format)
-        self.origin_grain = self._get_grain(origin_date)
-        development_date = self._set_development(
-            data, development or origin, development_format)
-        self.development_grain = self._get_grain(development_date)
-        data_agg = self._aggregate_data(
-            data, origin_date, development_date, index, columns)
-        date_axes = self._get_date_axes(
-            data_agg["__origin__"], data_agg["__development__"])
-        # Deal with labels
-        if not index:
-            index = ["Total"]
-            data_agg[index[0]] = "Total"
-
-        self.kdims, key_idx = self._set_kdims(data_agg, index)
-        self.vdims = np.array(columns)
-        self.odims, orig_idx = self._set_odims(data_agg, date_axes)
-        self.ddims, dev_idx = self._set_ddims(data_agg, date_axes, development)
-
-        # Set the Triangle values
-        coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
-        self.values = num_to_nan(
-            sp(coords, amts, prune=True,
-               has_duplicates=False, sorted=True,
-               shape=(len(self.kdims), len(self.vdims),
-                      len(self.odims), len(self.ddims))))
-
-        # Set remaining triangle properties
-        val_date = data_agg["__development__"].max()
-        val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
-        self.key_labels = index
-        self.valuation_date = val_date
-        self.is_cumulative = cumulative
-        self.virtual_columns = VirtualColumns(self)
-        self.is_pattern = pattern
-
-        # Deal with array backend
-        self.array_backend = "sparse"
-        if array_backend is None:
-            from chainladder import ARRAY_BACKEND
-            array_backend = ARRAY_BACKEND
-        if not AUTO_SPARSE or array_backend == "cupy":
-            self.set_backend(array_backend, inplace=True)
-        else:
-            self = self._auto_sparse()
-        self._set_slicers()
-
-        # Deal with special properties
-        if self.is_pattern:
-            obj = self.dropna()
-            self.odims = obj.odims
-            self.ddims = obj.ddims
-            self.values = obj.values
-        if ult:
-            obj = concat((self.dev_to_val().iloc[..., :len(ult.odims), :], ult), -1)
-            obj = obj.val_to_dev()
-            self.odims = obj.odims
-            self.ddims = obj.ddims
-            self.values = obj.values
-            self.valuation_date = pd.Timestamp(ULT_VAL)
 
     @property
     def shape(self):
@@ -116,21 +47,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
         return index, columns, origin, development
-
-    @staticmethod
-    def _split_ult(data, index, columns, origin, development):
-        """ Deal with triangles with ultimate values """
-        ult = None
-        if (development and len(development) == 1
-            and data[development[0]].dtype == "<M8[ns]"):
-            u = data[data[development[0]] == ULT_VAL].copy()
-            if len(u) > 0 and len(u) != len(data):
-                ult = TriangleBase(
-                    u, origin=origin, development=development,
-                    columns=columns, index=index)
-                ult.ddims = pd.DatetimeIndex([ULT_VAL])
-                data = data[data[development[0]] != ULT_VAL]
-        return data, ult
 
     @staticmethod
     def _set_development(data, development, development_format):
@@ -231,46 +147,16 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         """ Function to find any missing origin dates or development dates that
             would otherwise mess up the origin/development dimensions.
         """
+        o = pd.period_range(
+            start=origin_date.min(), end=origin_date.max(),
+            freq=self._get_grain(origin_date)).to_timestamp(how='s')
+        d = pd.period_range(
+            start=development_date.min(), end=development_date.max(),
+            freq=self._get_grain(development_date)).to_timestamp(how='e')
+        c = pd.DataFrame(TriangleBase._cartesian_product(o, d),
+                         columns=['__origin__', '__development__'])
+        return c[c['__development__']>c['__origin__']]
 
-        def complete_date_range(
-            origin_date, development_date, origin_grain, development_grain
-        ):
-            """ Determines origin/development combinations in full.  Useful for
-                when the triangle has holes in it. """
-            o_min = origin_date.min()
-            o_max = origin_date.max()
-            d_max = development_date.max()
-            c = lambda x : x.compute() if hasattr(x, 'compute') else x
-            origin_unique = pd.period_range(
-                start=c(o_min), end=max(c(o_max), c(d_max)), freq=origin_grain,
-            ).to_timestamp()
-            development_unique = pd.period_range(
-                start=c(o_min), end=c(d_max), freq=development_grain,
-            ).to_timestamp(how="e")
-            # Let's get rid of any development periods before origin periods
-            cart_prod = TriangleBase._cartesian_product(
-                origin_unique, development_unique)
-            cart_prod = cart_prod[cart_prod[:, 0] <= cart_prod[:, 1], :]
-            return pd.DataFrame(cart_prod, columns=["__origin__", "__development__"])
-
-        cart_prod_o = complete_date_range(
-            pd.Series(origin_date.min()),
-            development_date,
-            self.origin_grain,
-            self.development_grain)
-        cart_prod_d = complete_date_range(
-            origin_date,
-            pd.Series(origin_date.max()),
-            self.origin_grain,
-            self.development_grain)
-        cart_prod_t = pd.DataFrame(
-            {"__origin__": origin_date, "__development__": development_date})
-        cart_prod = (
-            cart_prod_o.append(cart_prod_d, sort=True)
-            .append(cart_prod_t, sort=True)
-            .drop_duplicates())
-        cart_prod = cart_prod[cart_prod["__development__"] >= cart_prod["__origin__"]]
-        return cart_prod
 
     @property
     def nan_triangle(self):
@@ -371,11 +257,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             self.set_backend("numpy", inplace=True)
         return self
 
-    def copy(self):
-        X = TriangleBase()
-        X.__dict__.update(vars(self))
-        X._set_slicers()
-        return X
+    #def copy(self):
+    #    X = TriangleBase()
+    #    X.__dict__.update(vars(self))
+    #    X._set_slicers()
+    #    return X
 
     @property
     def valuation(self):
@@ -448,62 +334,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 obj.array_backend = 'numpy'
             return obj
         return self
-
-    @property
-    def origin(self):
-        if self.is_pattern and len(self.odims) == 1:
-            return pd.Series(["(All)"])
-        else:
-            return (pd.DatetimeIndex(self.odims, name="origin")
-                      .to_period(self.origin_grain))
-
-    @origin.setter
-    def origin(self, value):
-        self._len_check(self.origin, value)
-        value = pd.PeriodIndex(list(value), freq=self.origin_grain)
-        self.odims = value.to_timestamp().values
-
-    @property
-    def development(self):
-        ddims = self.ddims.copy()
-        if self.is_val_tri:
-            formats = {"Y": "%Y", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(freq=self.development_grain).strftime(
-                formats[self.development_grain]
-            )
-        elif self.is_pattern:
-            offset = {"Y": 12, "Q": 3, "M": 1}[self.development_grain]
-            if self.is_ultimate:
-                ddims[-1] = ddims[-2] + offset
-            if self.is_cumulative:
-                ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
-            else:
-                ddims = [
-                    "{}-{}".format(ddims[i], ddims[i] + offset)
-                    for i in range(len(ddims))
-                ]
-        return pd.Series(list(ddims), name="development")
-
-    @development.setter
-    def development(self, value):
-        self._len_check(self.development, value)
-        self.ddims = np.array([value] if type(value) is str else value)
-
-    @property
-    def is_val_tri(self):
-        return type(self.ddims) == pd.DatetimeIndex
-
-    @property
-    def columns(self):
-        return pd.Index(self.vdims, name="columns")
-
-    @columns.setter
-    def columns(self, value):
-        self._len_check(self.columns, value)
-        self.vdims = [value] if type(value) is str else value
-        if type(self.vdims) is list:
-            self.vdims = np.array(self.vdims)
-        self._set_slicers()
 
 
 def is_chainladder(estimator):
