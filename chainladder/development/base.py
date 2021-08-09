@@ -26,9 +26,14 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             return X.index
         else:
             indices = X.groupby(self.groupby).groups.indices
-        return pd.Series(
-            {vi: k for k,v in indices.items() for vi in v},
-            name=self.ldf_.key_labels[0]).sort_index().to_frame()
+        return (
+            pd.Series(
+                {vi: k for k, v in indices.items() for vi in v},
+                name=self.ldf_.key_labels[0],
+            )
+            .sort_index()
+            .to_frame()
+        )
 
     def _assign_n_periods_weight(self, X, n_periods):
         """ Used to apply the n_periods weight """
@@ -38,7 +43,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             val_offset = {
                 "Y": {"Y": 1},
                 "Q": {"Y": 4, "Q": 1},
-                "M": {"Y": 12, "Q": 3, "M": 1}}
+                "M": {"Y": 12, "Q": 3, "M": 1},
+            }
             if n_periods < 1 or n_periods >= X.shape[-2] - 1:
                 return X.values * 0 + 1
             else:
@@ -51,12 +57,12 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         xp = X.get_array_module()
         dict_map = {
-            item: _assign_n_periods_weight_int(X, item)
-            for item in set(n_periods)}
-        conc = [dict_map[item][..., num : num + 1]
-                for num, item in enumerate(n_periods)]
+            item: _assign_n_periods_weight_int(X, item) for item in set(n_periods)
+        }
+        conc = [
+            dict_map[item][..., num : num + 1] for num, item in enumerate(n_periods)
+        ]
         return xp.concatenate(tuple(conc), -1)
-
 
     def _drop_adjustment(self, X, link_ratio):
         weight = X.nan_triangle[:, :-1]
@@ -94,9 +100,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 if lr_valid_count[num] < 3:
                     hilo[..., num] = hilo[..., num] * 0 + 1
                     warnings.warn(
-                        "drop_high and drop_low cannot be computed "
-                        "when less than three LDFs are present. "
-                        "Ignoring exclusions in some cases."
+                        "drop_high and drop_low cannot be computed when less than three LDFs are present, exclusions are ignored."
                     )
         return hilo
 
