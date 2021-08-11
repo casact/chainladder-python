@@ -99,7 +99,7 @@ class CapeCod(Benktander):
         latest = X.latest_diagonal
         len_orig = sample_weight.shape[-2]
         reported_exposure = sample_weight / self._align_cdf(X.copy(), sample_weight)
-
+        reported_exposure = reported_exposure.set_backend(latest.array_backend)
         if self.groupby is not None:
             latest = latest.groupby(self.groupby).sum()
             reported_exposure = reported_exposure.groupby(self.groupby).sum()
