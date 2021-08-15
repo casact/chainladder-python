@@ -665,35 +665,10 @@ class Triangle(TriangleBase):
         return obj
 
     def broadcast_axis(self, axis, value):
-        """ Broadcasts (i.e. repeats) triangles along an axis.  The axis to be
-        broadcast must be of length 1.
-
-        Parameters
-        ----------
-        axis : str or int
-            the axis to be broadcast over.
-        value : axis-like
-            The value of the new axis.
-
-        TODO: Should convert value to a primitive type
-        """
-        obj = self.copy()
-        axis = self._get_axis(axis)
-        xp = self.get_array_module()
-        if self.shape[axis] != 1:
-            raise ValueError("Axis to be broadcast must be of length 1")
-        elif axis > 1:
-            raise ValueError("Only index and column axes are supported")
-        else:
-            obj.values = xp.repeat(obj.values.copy(), len(value), axis)
-            if axis == 0:
-                obj.key_labels = list(value.columns)
-                obj.kdims = value.values
-                obj.index = value
-            if axis == 1:
-                obj.vdims = value.values
-                obj.columns = value
-        return obj
+        warnings.warn("""
+            Broadcast axis is deprecated in favor of broadcasting
+            using Triangle arithmetic.""")
+        return self
 
     def copy(self):
         X = Triangle()
@@ -808,25 +783,20 @@ class Triangle(TriangleBase):
         axis = self._get_axis(axis)
         if axis == 0:
             return self.sort_index()
+        obj = self.copy()
         if axis == 1:
             sort = pd.Series(self.vdims).sort_values().index
             if np.any(sort != pd.Series(self.vdims).index):
-                obj = self.copy()
                 obj.values = obj.values[:, list(sort), ...]
                 obj.vdims = obj.vdims[list(sort)]
-                return obj
         if axis == 2:
             sort = pd.Series(self.odims).sort_values().index
             if np.any(sort != pd.Series(self.odims).index):
-                obj = self.copy()
                 obj.values = obj.values[..., list(sort), :]
                 obj.odims = obj.odims[list(sort)]
-                return obj
         if axis == 3:
             sort = self.development.sort_values().index
             if np.any(sort != self.development.index):
-                obj = self.copy()
                 obj.values = obj.values[..., list(sort)]
                 obj.ddims = obj.ddims[list(sort)]
-                return obj
-        return self
+        return obj

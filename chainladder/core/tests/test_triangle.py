@@ -500,16 +500,6 @@ def test_commutative():
     assert abs(a - b).max().max().max() < 1e-5
 
 
-def test_broadcasting():
-    assert tri == tri_gt
-    assert raa == raa_gt
-    t1 = raa
-    t2 = tri
-    assert t1.broadcast_axis("columns", t2.columns).shape[1] == t2.shape[1]
-    assert t1.broadcast_axis("index", t2.index).shape[0] == t2.shape[0]
-    raa.latest_diagonal.to_frame()
-
-
 def test_slicers_honor_order():
     assert tri == tri_gt
     clrd = tri.groupby("LOB").sum()

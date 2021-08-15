@@ -314,11 +314,18 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     def __array_function__(self, func, types, args, kwargs):
         from chainladder.utils.utility_functions import concat
-        HANDLED_FUNCTIONS = {np.concatenate: concat}
+        methods_as_funcs = list(set(dir(np)).intersection(set(dir(self))) -
+                                {'__dir__', '__doc__'})
+        methods_as_funcs = {getattr(np, i): getattr(self, i)
+                            for i in methods_as_funcs}
+        HANDLED_FUNCTIONS = {np.concatenate: concat, np.round: self.__round__}
+        HANDLED_FUNCTIONS = {**HANDLED_FUNCTIONS, **methods_as_funcs}
         if func not in HANDLED_FUNCTIONS:
             return NotImplemented
         if not all(issubclass(t, self.__class__) for t in types):
             return NotImplemented
+        if func in methods_as_funcs:
+            args = args[1:]
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
