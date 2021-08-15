@@ -368,8 +368,14 @@ def model_diagnostics(model, name=None,  groupby=None):
         if obj.X_.development_grain in ['M']:
             out['Month Incremental'] = obj.X_[col][val==obj.X_.valuation_date].sum('development')
         if obj.X_.development_grain in ['M', 'Q']:
-            out['Quarter Incremental'] = (obj.X_ - obj.X_[val < pd.Timestamp(np.sort(val[val<=obj.X_.valuation_date].unique())[-3])]).sum('development')[col]
-        out['Year Incremental'] = (obj.X_ - obj.X_[val<str(obj.X_.valuation_date.year)]).sum('development')[col]
+            out['Quarter Incremental'] = (
+                obj.X_ - 
+                obj.X_[val<pd.Period(out.valuation_date, freq='Q').to_timestamp(how='s').strftime('%Y-%m')]
+            ).sum('development')[col]
+        out['Year Incremental'] = (
+            obj.X_ - 
+            obj.X_[val<str(obj.X_.valuation_date.year)]
+        ).sum('development')[col]
         out['IBNR'] = obj.ibnr_[col]
         out['Ultimate'] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
