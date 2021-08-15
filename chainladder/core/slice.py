@@ -202,7 +202,7 @@ class TriangleSlicer:
                 out = self.virtual_columns[key].copy()
                 out.virtual_columns.columns = {}
                 return out
-            key = [key] if type(key) is str else key
+            key = [key] if not hasattr(key, '__iter__') or type(key) is str else key
             idx = [list(self.vdims).index(item) for item in key]
             return self.iloc[:, idx]
 
