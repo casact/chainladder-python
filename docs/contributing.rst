@@ -85,7 +85,7 @@ need to install this manually in your environment.
 
    R -e "install.packages('ChainLadder', repo='http://cran.rstudio.com')";
 
-Lastly, set up the python chainladder package in develop mode.
+Lastly, set up the python chainladder package in development mode.
 
 ::
 

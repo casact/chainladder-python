@@ -70,7 +70,7 @@ class TriangleDisplay:
         development.name = None
         return pd.DataFrame(out, index=origin, columns=development)
 
-    def heatmap(self, cmap="RdBu", low=0, high=0, axis=0, subset=None):
+    def heatmap(self, cmap="coolwarm", low=0, high=0, axis=0, subset=None):
         """ Color the background in a gradient according to the data in each
         column (optionally row). Requires matplotlib
 
