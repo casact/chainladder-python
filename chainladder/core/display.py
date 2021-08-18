@@ -70,7 +70,7 @@ class TriangleDisplay:
         development.name = None
         return pd.DataFrame(out, index=origin, columns=development)
 
-    def heatmap(self, cmap="RdBu", low=0, high=0, axis=0, subset=None):
+    def heatmap(self, cmap="coolwarm", low=0, high=0, axis=0, subset=None):
         """ Color the background in a gradient according to the data in each
         column (optionally row). Requires matplotlib
 
@@ -94,18 +94,28 @@ class TriangleDisplay:
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
-            if len(self.ddims) > 1 and type(self.ddims[0]) is int:
-                data.columns = [["Development Lag"] * len(self.ddims), self.ddims]
+
             axis = self._get_axis(axis)
-            default = (
-                data.style.format(fmt_str)
-                .background_gradient(
-                    cmap=cmap, low=low, high=high, axis=axis, subset=subset
+            
+            raw_rank = data.rank(axis=axis)
+            shape_size = data.shape[axis]
+            rank_size = data.rank(axis=axis).max(axis=axis)
+            gmap = (raw_rank-1).div(rank_size-1, axis=not axis)*(shape_size-1) + 1
+            gmap = gmap.replace(np.nan, (shape_size+1)/2)
+
+            default_output = (
+                data.style.format(fmt_str).background_gradient(
+                    cmap=cmap, 
+                    low=low, 
+                    high=high, 
+                    axis=None,
+                    subset=subset,
+                    gmap=gmap
                 )
                 .render()
             )
-            default = re.sub("<td.*nan.*td>", "<td></td>", default)
-            return HTML(default)
+            output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
+            return HTML(output_xnan)
         elif HTML is None:
             raise ImportError("heatmap requires IPython")
         else:
