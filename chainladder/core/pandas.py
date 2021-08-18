@@ -10,19 +10,25 @@ except:
     db = None
 
 class TriangleGroupBy:
-    def __init__(self, obj, by, axis=0):
+    def __init__(self, obj, by, axis=0, **kwargs):
         self.obj = obj.copy()
-        axis = self.obj._get_axis(axis)
+        self.axis = self.obj._get_axis(axis)
         self.by = by
         if axis > 1:
             raise ValueError(
                 "Use grain method to group by origin and development axes."
             )
-        self.axis = self.obj._get_axis(axis)
-        if self.axis == 0:
+        if kwargs.get('groups', None):
+            self.groups = kwargs.get('groups', None)
+        elif self.axis == 0:
             self.groups = obj.index.groupby(by)
-        if self.axis == 1:
+        else:
             self.groups = pd.DataFrame(obj.columns).groupby(by)
+
+    def __getitem__(self, key):
+        return TriangleGroupBy(obj=self.obj.__getitem__(key), by=self.by,
+                               axis=self.axis, groups=self.groups)
+
 
 
 class TrianglePandas:

@@ -880,3 +880,6 @@ def test_create_full_triangle():
         a.to_frame(keepdims=True, implicit_axis=True),
         origin='origin', development='valuation', columns='values')
     assert a == b
+
+def test_groupby_getitem():
+    assert tri.groupby('LOB')['CumPaidLoss'].sum() == tri['CumPaidLoss'].groupby('LOB').sum()
