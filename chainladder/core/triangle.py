@@ -50,6 +50,11 @@ class Triangle(TriangleBase):
         Whether the triangle is cumulative or incremental.  This attribute is
         required to use the ``grain`` and ``dev_to_val`` methods and will be
         automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
+    trailing : bool
+        When partial origin periods are present, setting trailing to True will
+        ensure the most recent origin period is a full period and the oldest
+        origin is partial. If full origin periods are present in the data, then
+        trailing has no effect.
 
     Attributes
     ----------
@@ -101,7 +106,8 @@ class Triangle(TriangleBase):
 
     def __init__(self, data=None, origin=None, development=None, columns=None,
                  index=None, origin_format=None, development_format=None,
-                 cumulative=None, array_backend=None, pattern=False, *args, **kwargs):
+                 cumulative=None, array_backend=None, pattern=False,
+                 trailing=False, *args, **kwargs):
         if data is None:
             return
         index, columns, origin, development = self._input_validation(
@@ -142,7 +148,9 @@ class Triangle(TriangleBase):
         self.is_cumulative = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern = pattern
-
+        self.origin_close = 'DEC'
+        if self.origin_grain != 'M' and trailing:
+            self.origin_close = pd.to_datetime(self.odims[-1]).strftime('%b').upper()
         # Deal with array backend
         self.array_backend = "sparse"
         if array_backend is None:
@@ -214,25 +222,29 @@ class Triangle(TriangleBase):
         if self.is_pattern and len(self.odims) == 1:
             return pd.Series(["(All)"])
         else:
+            freq = {"Y": "A", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
+            freq = freq if freq == 'M' else freq + '-' + self.origin_close
             return (pd.DatetimeIndex(self.odims, name="origin")
-                      .to_period(self.origin_grain))
+                      .to_period(freq=freq))
 
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
-        value = pd.PeriodIndex(list(value), freq=self.origin_grain)
+        freq = {"Y": "A", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
+        freq = freq if freq == 'M' else freq + '-' + self.origin_close
+        value = pd.PeriodIndex(list(value), freq=freq)
         self.odims = value.to_timestamp().values
 
     @property
     def development(self):
         ddims = self.ddims.copy()
         if self.is_val_tri:
-            formats = {"Y": "%Y", "Q": "%YQ%q", "M": "%Y-%m"}
+            formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
             ddims = ddims.to_period(freq=self.development_grain).strftime(
                 formats[self.development_grain]
             )
         elif self.is_pattern:
-            offset = {"Y": 12, "Q": 3, "M": 1}[self.development_grain]
+            offset = {"Y": 12, "S": 6, "Q": 3, "M": 1}[self.development_grain]
             if self.is_ultimate:
                 ddims[-1] = ddims[-2] + offset
             if self.is_cumulative:
@@ -381,8 +393,9 @@ class Triangle(TriangleBase):
 
     def _dstep(self):
         return {
-            "M": {"Y": 12, "Q": 3, "M": 1},
-            "Q": {"Y": 4, "Q": 1},
+            "M": {"Y": 12, "S": 6, "Q": 3, "M": 1},
+            "Q": {"Y": 4, "S": 2, "Q": 1},
+            "S": {"Y": 2, "S": 1},
             "Y": {"Y": 1},
         }
 
@@ -488,7 +501,7 @@ class Triangle(TriangleBase):
         else:
             origin_0 = pd.to_datetime(obj.odims[0])
         lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
-        scale = {"Y": 12, "Q": 3, "M": 1}[obj.development_grain]
+        scale = {"Y": 12, "S": 6, "Q": 3, "M": 1}[obj.development_grain]
         obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
         prune = obj[obj.origin == obj.origin.max()]
         if self.is_ultimate and self.shape[-1] > 1:
@@ -503,12 +516,12 @@ class Triangle(TriangleBase):
         ----------
         grain : str
             The grain to which you want your triangle converted, specified as
-            'OXDY' where X and Y can take on values of ``['Y', 'Q', 'M'
+            'OXDY' where X and Y can take on values of ``['Y', 'S', 'Q', 'M'
             ]`` For example, 'OYDY' for Origin Year/Development Year, 'OQDM'
             for Origin quarter/Development Month, etc.
         trailing : bool
-            For partial years/quarters, trailing will set the year/quarter end to
-            that of the latest available from the data.
+            For partial origin years/quarters, trailing will set the year/quarter
+            end to that of the latest available from the origin data.
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
@@ -519,7 +532,8 @@ class Triangle(TriangleBase):
         """
         ograin_old, ograin_new = self.origin_grain, grain[1:2]
         dgrain_old, dgrain_new = self.development_grain, grain[-1]
-        valid = {"Y": ["Y"], "Q": ["Q", "Y"], "M": ["Y", "Q", "M"]}
+        valid = {"Y": ["Y"], "Q": ["Q", "S", "Y"], "M": ["Y", "S", "Q", "M"],
+                 "S": ["S", "Y"]}
         if ograin_new not in valid.get(ograin_old, []) or dgrain_new not in valid.get(
             dgrain_old, []
         ):
@@ -540,59 +554,26 @@ class Triangle(TriangleBase):
             d_limit = None
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
-            if trailing:
-                mn = self.origin[-1].strftime("%b").upper() if trailing else "DEC"
-                freq = "Q-" if ograin_new == "Q" else "A-"
-                o = pd.PeriodIndex(self.origin, freq=freq + mn)
-                o = np.array(o.to_timestamp(how="s"))
-            else:
-                freq = "%YQ%q" if ograin_new == "Q" else "%Y"
-                o = pd.to_datetime(self.origin.strftime(freq)).values
-            def f(i, obj):
-                out = getattr(obj.iloc[..., i, :], "sum")
-                return out(2, auto_sparse=False, keepdims=True)
-            if db and obj.array_backend == 'sparse':
-                bag = db.from_sequence(
-                    pd.Series(self.origin).groupby(o).groups.values())
-                bag = bag.map(f, obj)
-                values = bag.compute(scheduler='threads')
-            else:
-                values = [f(i, obj) for i in pd.Series(self.origin).groupby(o).groups.values()]
-            obj = concat(values, axis=2, ignore_index=True)
-            obj.odims = np.unique(o)
-            obj.origin_grain = ograin_new
-            if len(obj.ddims) > 1 and pd.Timestamp(obj.odims[0]).strftime(
-                "%Y%m"
-            ) != obj.valuation[0].strftime("%Y%m"):
-                addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq="M")[:-1]
-                    .to_timestamp()
-                    .values
-                )
-                addl = obj.iloc[..., -len(addl_ts) :] * 0
-                addl.ddims = addl_ts
-                obj = concat((addl, obj), axis=-1)
-            obj.values = num_to_nan(obj.values)
+            freq = {"Y": "A", "S": "2Q"}.get(ograin_new, ograin_new)
+            mn = self.origin[-1].strftime("%b").upper() if trailing else "DEC"
+            indices = pd.Series(
+                range(len(self.origin)), index=self.origin).resample(
+                    '-'.join([freq, mn])).indices
+            groups = pd.concat([
+                pd.Series([k]*len(v), index=v)
+                 for k, v in indices.items()], axis=0).values
+            obj = obj.groupby(groups, axis=2).sum()
+            obj.origin_close = mn
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
-            d = np.sort(
-                len(obj.development) - np.arange(0, len(obj.development), step) - 1
-            )
+            d = np.sort(len(obj.development) -
+                        np.arange(0, len(obj.development), step) - 1)
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
                 ddims = obj.ddims[d]
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
-                def f(i, obj):
-                    return getattr(obj.iloc[..., i], "sum")(
-                        3, auto_sparse=False, keepdims=True)
-                if db and obj.array_backend == 'sparse':
-                    bag = db.from_sequence(obj.development.groupby(d2).groups.values())
-                    bag = bag.map(f, obj)
-                    values = bag.compute(scheduler='threads')
-                else:
-                    values = [f(i, obj) for i in obj.development.groupby(d2).groups.values()]
-                obj = concat(values, axis=3, ignore_index=True)
+                obj = obj.groupby(d2, axis=3).sum()
                 obj.ddims = ddims
             obj.development_grain = dgrain_new
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()

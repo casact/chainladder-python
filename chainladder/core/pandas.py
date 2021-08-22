@@ -14,16 +14,14 @@ class TriangleGroupBy:
         self.obj = obj.copy()
         self.axis = self.obj._get_axis(axis)
         self.by = by
-        if axis > 1:
-            raise ValueError(
-                "Use grain method to group by origin and development axes."
-            )
         if kwargs.get('groups', None):
             self.groups = kwargs.get('groups', None)
         elif self.axis == 0:
             self.groups = obj.index.groupby(by)
-        else:
+        elif axis == 1:
             self.groups = pd.DataFrame(obj.columns).groupby(by)
+        else:
+            self.groups = pd.DataFrame(by).groupby(by)
 
     def __getitem__(self, key):
         return TriangleGroupBy(obj=self.obj.__getitem__(key), by=self.by,
@@ -337,7 +335,6 @@ def add_groupby_agg_func(cls, k, v):
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
-        from chainladder.methods import Chainladder
 
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
@@ -374,10 +371,13 @@ def add_groupby_agg_func(cls, k, v):
                 index = pd.DataFrame(self.groups.dtypes.index)
                 obj.key_labels = index.columns.tolist()
                 obj.kdims = index.values
-        else:
-            index = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
         if self.axis == 1:
-            obj.vdims = index
+            obj.vdims = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
+        if self.axis == 2:
+            odims = self.obj._to_datetime(
+                pd.Series(self.groups.indices.keys()).to_frame(), [0])
+            obj.origin_grain = self.obj._get_grain(odims)
+            obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()
