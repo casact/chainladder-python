@@ -4,7 +4,7 @@
 import pandas as pd
 import numpy as np
 from sparse._slicing import normalize_index
-
+from chainladder.utils.utility_functions import num_to_nan
 
 class _LocBase:
     """ Base class for pandas style loc/iloc indexing """
@@ -12,11 +12,9 @@ class _LocBase:
     def __init__(self, obj):
         self.obj = obj
 
-    def get_idx(self, idx, filter_idx=None):
+    def get_idx(self, idx):
         """ Returns a slice of the original Triangle """
         obj = self.obj.copy()
-        if filter_idx is not None:
-            obj.index = filter_idx
         i_idx = _LocBase._contig_slice(idx[0])
         c_idx = _LocBase._contig_slice(idx[1])
         o_idx = _LocBase._contig_slice(idx[2])
@@ -36,8 +34,7 @@ class _LocBase:
 
     @staticmethod
     def _contig_slice(arr):
-        if type(arr) is pd.Series:
-            arr = arr[arr].index.tolist()
+        """ Try to make a contiguous slicer from an array of indices """
         if type(arr) is slice:
             return arr
         if type(arr) in [int, np.int64, np.int32]:
@@ -85,12 +82,12 @@ class _LocBase:
 
     def _sparse_setitem(self, key, values):
         check = (
-            (self.obj.values.coords[0]==key[0])*
-            (self.obj.values.coords[1]==key[1])*
-            (self.obj.values.coords[2]==key[2])*
-            (self.obj.values.coords[3]==key[3]))
+            (self.obj.values.coords[0] == key[0]) *
+            (self.obj.values.coords[1] == key[1]) *
+            (self.obj.values.coords[2] == key[2]) *
+            (self.obj.values.coords[3] == key[3]))
         if check.max():
-            data_index = np.where(check==True)[0][0]
+            data_index = np.where(check == True)[0][0]
             self.obj.values.data[data_index] = values
         else:
             self.obj.values.coords = np.concatenate(
@@ -103,20 +100,16 @@ class Location(_LocBase):
     """ class to generate .loc[] functionality """
 
     def __getitem__(self, key):
-        obj = self.get_idx(self.format_key(key))
+        obj = self.get_idx(self.key_to_slice(key))
         if len(obj) > 1 and obj.index.iloc[:, 0].nunique() == 1:
-            idx = obj.index.iloc[:, 1:]
-            obj.index = idx
+            obj.set_index(obj.index.iloc[:, 1:], inplace=True)
         return obj
 
     def format_key(self, key):
-        if (
-            type(key) is tuple
-            and len(key) > 1
-            and len(self.obj.key_labels) > 1
-            and type(key[1]) is str
-            and key[1] in self.obj.index[self.obj.key_labels[1]].unique()
-        ):
+        """ Converts keys to loc slices """
+        if (type(key) is tuple and len(key) > 1
+            and len(self.obj.key_labels) > 1 and type(key[1]) is str
+            and key[1] in self.obj.index[self.obj.key_labels[1]].unique()):
             key = (key,)
         else:
             key = (key,) if type(key) is not tuple else key
@@ -129,50 +122,44 @@ class Location(_LocBase):
             if key_mask[i] == 0:
                 key_mask[i] = key[0]
                 key.pop(0)
-        key = key_mask
-        if type(key[0]) == pd.Series:
-            idx = key[0][key[0]].index
-        elif type(key[0]) == pd.DataFrame:
-            idx = (
-                self.obj.index.reset_index()
-                .set_index(self.obj.key_labels)
-                .loc[key[0].set_index(list(key[0].columns)).index]
-            )
+        return key_mask
+
+    def index_key(self, key):
+        if type(key) == pd.Series:
+            idx = np.where(key)[0]
+        elif type(key) == pd.DataFrame:
+            idx = (self.obj.index.reset_index().set_index(self.obj.key_labels)
+                       .loc[key.set_index(list(key.columns)).index]).values.flatten()
+        elif type(key) in [slice, list, tuple]:
+            idx = (self.obj.index.reset_index()
+                       .set_index(self.obj.key_labels).loc[key]).values.flatten()
         else:
-            idx = (
-                self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key[0]]
-            )
-        idx = idx.iloc[:, 0] if type(idx) is pd.DataFrame else idx
-        key[0] = _LocBase._contig_slice(idx.to_list())
-        default = slice(None, None, None)
-        norm = lambda k: type(k) is slice and (k.start == 0 or k == default)
+            idx = np.where(self.obj.kdims[:, 0]==key)[0]
+        return idx
 
-        def normalize(key, idx):
-            mapper = {1: "columns", 2: "origin", 3: "development"}
-            out = key[idx]
-            if not norm(key[idx]) and not isinstance(key, pd.Series):
-                s = pd.Series(getattr(self.obj, mapper[idx])).to_frame().reset_index()
-                out = s.set_index(mapper[idx]).loc[key[idx]].values.flatten()
-            return out
+    def other_key(self, key, idx):
+        if key == slice(None, None, None):
+            return key
+        s = getattr(self.obj, idx)
+        if type(key) in [slice, list]:
+            return pd.Series(range(len(s)), index=s).loc[key].values
+        if not hasattr(key, '__iter__') or type(key) is str:
+            return np.array([pd.Series(range(len(s)), index=s).loc[key]])
+        else:
+            raise AttributeError("Unable to slice.")
 
-        key = [key[0]] + [normalize(key, 1), normalize(key, 2), normalize(key, 3)]
-        return key
 
-        def normalize(key, idx):
-            mapper = {1: "columns", 2: "origin", 3: "development"}
-            out = key[idx]
-            if not norm(key[idx]) and not isinstance(key, pd.Series):
-                s = pd.Series(getattr(self.obj, mapper[idx])).to_frame().reset_index()
-                out = s.set_index(mapper[idx]).loc[key[idx]].values.flatten()
-            return out
-
-        key = [key[0]] + [normalize(key, 1), normalize(key, 2), normalize(key, 3)]
-        return key, filter_idx
+    def key_to_slice(self, key):
+        """ Converts keys to integer slices """
+        key = self.format_key(key)
+        out = [self.index_key(key[0]),
+                self.other_key(key[1], 'columns'),
+                self.other_key(key[2], 'origin'),
+                self.other_key(key[3], 'development')]
+        return out
 
     def __setitem__(self, key, values):
-        key = self.format_key(key)
-        super().__setitem__(key, values)
-
+        super().__setitem__(self.key_to_slice(key), values)
 
 class Ilocation(_LocBase):
     """ class to generate .iloc[] functionality """
@@ -246,22 +233,11 @@ class TriangleSlicer:
         obj = self.copy()
         obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
         key = key.reshape(self.shape[-2:], order="f")
-        nan_tri = np.ones(self.shape[-2:])
-        nan_tri = key * nan_tri
-        nan_tri[nan_tri == 0] = np.nan
-        o, d = nan_tri.shape
-        o_idx = np.arange(o)[(np.sum(np.isnan(nan_tri), 1) != d)]
-        d_idx = np.arange(d)[(np.sum(np.isnan(nan_tri), 0) != o)]
-        o_idx = _LocBase._contig_slice(o_idx)
-        d_idx = _LocBase._contig_slice(d_idx)
-        obj.odims = obj.odims[np.sum(np.isnan(nan_tri), 1) != d]
-        obj.ddims = obj.ddims[np.sum(np.isnan(nan_tri), 0) != o]
-        obj.values = obj.values * obj.get_array_module().array(nan_tri)
-        if type(o_idx) is slice or type(d_idx) is slice:
-            obj.values = obj.values[..., o_idx, d_idx]
-        else:
-            obj.values = obj.values[..., o_idx, :][..., d_idx]
-        return obj
+        obj.values = num_to_nan(obj.values * obj.get_array_module().array(key))
+        return _LocBase(obj).get_idx(
+            (slice(None), slice(None),
+             np.arange(obj.shape[2])[np.sum(~key, 1) != obj.shape[3]],
+             np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]]))
 
     def _slice(self, key, axis):
         """ private method for handling of origin/development slicing """
@@ -282,7 +258,7 @@ class TriangleSlicer:
 
 class At(Location):
     def _check_index(self, key):
-        idx = self.format_key(key)
+        idx = self.key_to_slice(key)
         for item in idx:
             if type(item) is slice:
                 if item.stop - item.start == 1:
@@ -306,7 +282,7 @@ class At(Location):
     def __setitem__(self, key, values):
         key = self._check_index(key)
         if self.obj.array_backend == 'sparse':
-            key = (key[0].start, key[1][0], key[2][0], key[3][0])
+            key = (key[0][0], key[1][0], key[2][0], key[3][0])
             self._sparse_setitem(key, values)
         else:
             if isinstance(values, TriangleSlicer):
@@ -315,6 +291,7 @@ class At(Location):
                 [slice(item, item + 1) if type(item) is int else item for item in key]
             )
             self.obj.values.__setitem__(self._normalize_index(key), values)
+
 
 class Iat(Ilocation):
     def _check_index(self, key):
@@ -325,7 +302,7 @@ class Iat(Ilocation):
         return idx
 
     def __getitem__(self, key):
-        return self.get_idx(self._check_index(key)).values[0,0,0,0]
+        return self.get_idx(self._check_index(key)).values[0, 0, 0, 0]
 
     def __setitem__(self, key, values):
         key = self._normalize_index(key)

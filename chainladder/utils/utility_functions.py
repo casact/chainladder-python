@@ -261,7 +261,7 @@ def concat(objs, axis, ignore_index=False, sort=False):
         return out
 
 
-def num_to_nan(arr):
+def num_to_value(arr, value):
     """ Function that turns all zeros to nan values in an array """
     backend = arr.__class__.__module__.split(".")[0]
     if backend == "sparse":
@@ -270,11 +270,17 @@ def num_to_nan(arr):
             arr.data = arr.data[arr.data != 0]
             arr = sp(coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape)
         else:
-            arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=sp.nan)
+            arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=value)
     else:
-        nan = np.nan if backend == "numpy" else cp.nan
-        arr[arr == 0] = nan
+        arr[arr == 0] = value
     return arr
+
+
+def num_to_nan(arr):
+    """ Function that turns all zeros to nan values in an array """
+    from chainladder import Triangle
+    xp = Triangle.get_array_module(None, arr=arr)
+    return num_to_value(arr, xp.nan)
 
 
 def minimum(x1, x2):
@@ -369,11 +375,11 @@ def model_diagnostics(model, name=None,  groupby=None):
             out['Month Incremental'] = obj.X_[col][val==obj.X_.valuation_date].sum('development')
         if obj.X_.development_grain in ['M', 'Q']:
             out['Quarter Incremental'] = (
-                obj.X_ - 
+                obj.X_ -
                 obj.X_[val<pd.Period(out.valuation_date, freq='Q').to_timestamp(how='s').strftime('%Y-%m')]
             ).sum('development')[col]
         out['Year Incremental'] = (
-            obj.X_ - 
+            obj.X_ -
             obj.X_[val<str(obj.X_.valuation_date.year)]
         ).sum('development')[col]
         out['IBNR'] = obj.ibnr_[col]

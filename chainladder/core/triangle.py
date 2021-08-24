@@ -10,7 +10,7 @@ from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
 from chainladder import AUTO_SPARSE, ULT_VAL
 try:
     import dask.bag as db
@@ -244,7 +244,7 @@ class Triangle(TriangleBase):
                 formats[self.development_grain]
             )
         elif self.is_pattern:
-            offset = {"Y": 12, "S": 6, "Q": 3, "M": 1}[self.development_grain]
+            offset = self._dstep()['M'][self.development_grain]
             if self.is_ultimate:
                 ddims[-1] = ddims[-2] + offset
             if self.is_cumulative:
@@ -322,25 +322,19 @@ class Triangle(TriangleBase):
             if not self.is_cumulative:
                 if self.is_pattern:
                     values = xp.nan_to_num(self.values[..., ::-1])
-                    if self.array_backend == 'sparse':
-                        values = xp.set_fill_value(values, 1.0)
-                    else:
-                        values[values == 0] = 1.0
+                    values = num_to_value(values, 1)
                     values = xp.cumprod(values, -1)[..., ::-1]
                     self.values = values * self.nan_triangle
-                    if self.array_backend == "sparse":
-                        values = xp.set_fill_value(values, np.nan)
-                        self.values = self.get_array_module()(self.values)
+                    values = num_to_value(values, self.get_array_module(values).nan)
                 else:
                     if self.array_backend not in ["sparse", "dask"]:
                         self.values = (
-                            num_to_nan(xp.cumsum(xp.nan_to_num(self.values), 3))
-                            * self.nan_triangle[None, None, ...]
-                        )
+                            xp.cumsum(xp.nan_to_num(self.values), 3)
+                            * self.nan_triangle[None, None, ...])
                     else:
                         values = xp.nan_to_num(self.values)
                         nan_triangle = xp.nan_to_num(self.nan_triangle)
-                        l1 = lambda i: values[..., 0 : (i + 1)]
+                        l1 = lambda i: values[..., 0 : i + 1]
                         l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
                         l3 = lambda i: l2(i).sum(3, keepdims=True)
                         if db:
@@ -349,7 +343,8 @@ class Triangle(TriangleBase):
                             out = bag.compute(scheduler='threads')
                         else:
                             out = [l3(i) for i in range(self.shape[-1])]
-                        self.values = num_to_nan(xp.concatenate(out, axis=3))
+                        self.values = xp.concatenate(out, axis=3)
+                    self.values = num_to_nan(self.values)
                 self.is_cumulative = True
             return self
         else:
@@ -374,16 +369,13 @@ class Triangle(TriangleBase):
                 if self.is_pattern:
                     xp = self.get_array_module()
                     self.values = xp.nan_to_num(self.values)
-                    if self.array_backend == 'sparse':
-                        self.values = xp.set_fill_value(self.values, 1.0)
-                    else:
-                        self.values[self.values == 0] = 1
+                    values = num_to_value(self.values, 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
                     self = concat((diff, self.iloc[..., -1],), axis=3)
                     self.values = self.values * self.nan_triangle
                 else:
                     diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
-                    self = concat((self.iloc[..., 0], diff,), axis=3,)
+                    self = concat((self.iloc[..., 0], diff), axis=3)
                 self.is_cumulative = False
             self.valuation_date = v
             return self
@@ -501,7 +493,7 @@ class Triangle(TriangleBase):
         else:
             origin_0 = pd.to_datetime(obj.odims[0])
         lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
-        scale = {"Y": 12, "S": 6, "Q": 3, "M": 1}[obj.development_grain]
+        scale = self._dstep()['M'][obj.development_grain]
         obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
         prune = obj[obj.origin == obj.origin.max()]
         if self.is_ultimate and self.shape[-1] > 1:
