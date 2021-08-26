@@ -9,6 +9,7 @@ raa = cl.load_sample("raa")
 tri_gt = copy.deepcopy(tri)
 qtr_gt = copy.deepcopy(qtr)
 raa_gt = copy.deepcopy(raa)
+prism = cl.load_sample("prism")
 # Test Triangle slicing
 def test_slice_by_boolean():
     assert tri == tri_gt
@@ -669,11 +670,11 @@ def test_groupby_axis1():
     assert np.all(
         clrd.to_frame().groupby("LOB").sum() == clrd.groupby("LOB").sum().to_frame()
     )
-    cl.load_sample("prism").sum().grain("OYDY")
+    prism.sum().grain("OYDY")
 
 
 def test_different_forms_of_grain():
-    t = cl.load_sample("prism").sum()["Paid"]
+    t = prism.sum()["Paid"]
     assert (
         abs(t.grain("OYDY") - t.incr_to_cum().grain("OYDY").cum_to_incr()).sum().sum()
         < 1e-4
@@ -811,7 +812,7 @@ def test_different_forms_of_grain():
 
 
 def test_partial_year():
-    before = cl.load_sample('prism')['Paid'].sum().incr_to_cum()
+    before = prism['Paid'].sum().incr_to_cum()
     before=before[before.valuation<='2017-08'].latest_diagonal
 
     after = cl.Triangle(
@@ -891,3 +892,9 @@ def test_virtual_column():
     prism['P'] = prism['Paid']
     prism['Paid'] = lambda x : x['P']
     assert prism['Paid'] == prism['P']
+
+def test_correct_valutaion():
+    new = cl.Triangle(
+        raa.iloc[..., :-3, :].latest_diagonal.to_frame(keepdims=True, implicit_axis=True),
+        origin='origin', development='valuation', columns='values')
+    assert new.valuation_date == raa.valuation_date

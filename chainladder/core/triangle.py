@@ -113,10 +113,11 @@ class Triangle(TriangleBase):
         index, columns, origin, development = self._input_validation(
             data, index, columns, origin, development)
         data, ult = self._split_ult(data, index, columns, origin, development)
-        origin_date = self._to_datetime(data, origin, format=origin_format)
+        origin_date = self._to_datetime(
+            data, origin, format=origin_format).rename('__origin__')
         self.origin_grain = self._get_grain(origin_date)
         development_date = self._set_development(
-            data, development or origin, development_format)
+            data, development, development_format, origin_date)
         self.development_grain = self._get_grain(development_date)
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
@@ -130,8 +131,7 @@ class Triangle(TriangleBase):
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
-        self.ddims, dev_idx = self._set_ddims(data_agg, date_axes, development)
-
+        self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
         # Set the Triangle values
         coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
         self.values = num_to_nan(
