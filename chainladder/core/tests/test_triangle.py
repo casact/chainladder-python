@@ -824,9 +824,11 @@ def test_partial_year():
 def test_at_iat():
     raa1 = cl.load_sample('raa')
     raa2 = cl.load_sample('raa')
+    raa1.at['Total','values', '1985', 120]
     raa1.at['Total','values', '1985', 120] = 5
     raa1.at['Total','values', '1985', 12] = 5
     raa2.iat[0, 0, 4, -1] = 5
+    raa2.iat[0, 0, 4, -1]
     raa2.iat[-1, -1, 4, 0] = 5
     assert raa1 == raa2
 
@@ -883,3 +885,9 @@ def test_create_full_triangle():
 
 def test_groupby_getitem():
     assert tri.groupby('LOB')['CumPaidLoss'].sum() == tri['CumPaidLoss'].groupby('LOB').sum()
+
+def test_virtual_column():
+    prism = cl.load_sample('prism')
+    prism['P'] = prism['Paid']
+    prism['Paid'] = lambda x : x['P']
+    assert prism['Paid'] == prism['P']

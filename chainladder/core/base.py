@@ -219,7 +219,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     @staticmethod
     def _get_grain(array):
-        return {1: "Y", 4: "Q"}.get(len(set(array.dt.month)), "M")
+        return {1: "Y", 2: "S", 4: "Q"}.get(len(set(array.dt.month)), "M")
 
     @staticmethod
     def _cartesian_product(*arrays):
@@ -257,11 +257,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             self.set_backend("numpy", inplace=True)
         return self
 
-    #def copy(self):
-    #    X = TriangleBase()
-    #    X.__dict__.update(vars(self))
-    #    X._set_slicers()
-    #    return X
 
     @property
     def valuation(self):
