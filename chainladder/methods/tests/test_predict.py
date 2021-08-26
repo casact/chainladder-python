@@ -56,3 +56,10 @@ def test_basic_transform():
     cl.TailCurve().fit_transform(tri)
     cl.BootstrapODPSample().fit_transform(tri)
     cl.IncrementalAdditive().fit_transform(tri, sample_weight=tri.latest_diagonal)
+
+def test_misaligned_index():
+    prism = cl.load_sample('prism')['Paid']
+    model = cl.Chainladder().fit(cl.Development(groupby=['Line', 'Type']).fit_transform(prism))
+    a = model.ultimate_.loc[prism.index.iloc[:10]].sum().sum()
+    b = model.predict(prism.iloc[:10]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
