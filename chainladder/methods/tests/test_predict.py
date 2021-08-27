@@ -63,3 +63,8 @@ def test_misaligned_index():
     a = model.ultimate_.loc[prism.index.iloc[:10]].sum().sum()
     b = model.predict(prism.iloc[:10]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
+    clrd = cl.load_sample('clrd')['CumPaidLoss']
+    model = cl.Chainladder().fit(cl.Development(groupby=['LOB']).fit_transform(clrd))
+    a = model.ultimate_.loc[clrd.index.iloc[:10]].sum().sum()
+    b = model.predict(clrd.iloc[:10]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5

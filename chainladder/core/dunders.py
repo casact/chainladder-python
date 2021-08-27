@@ -193,9 +193,11 @@ class TriangleDunders:
         if k in obj.groups.indices.keys():
             return obj.obj.iloc[obj.groups.indices[k]]
         else:
+            other = other.obj.iloc[other.groups.indices[k]]
             new_obj = obj.obj.iloc[:1] * 0
-            new_idx = other.obj.index.set_index(other.obj.key_labels).join(
-                new_obj.index.set_index(new_obj.key_labels)).reset_index()
+            labels = list(set(other.key_labels).intersection(set(new_obj.key_labels)))
+            new_idx = other.index.set_index(labels).join(
+                new_obj.index.set_index(labels)).reset_index()
             new_idx = new_idx[new_obj.key_labels].iloc[-1:]
             new_obj.kdims = new_idx.values
             new_obj.key_labels = list(new_idx.columns)
