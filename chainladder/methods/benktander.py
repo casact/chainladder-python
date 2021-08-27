@@ -120,8 +120,7 @@ class Benktander(MethodBase):
         ld = ultimate.latest_diagonal
         cdf = self._align_cdf(ultimate, expectation)
         if not cdf.index.equals(ld.index):
-            if len(ld.index) < len(cdf.index):
-                cdf = cdf.loc[ld.index]
+            cdf = self._filter_index(ld, cdf)
             if len(ld.index) >= len(cdf.index):
                 ld = ld.loc[cdf.index]
         if len(expectation) > 1 and not cdf.index.equals(expectation.index):
