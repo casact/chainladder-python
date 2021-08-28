@@ -40,8 +40,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         columns = str_to_list(columns)
         origin = str_to_list(origin)
         development = str_to_list(development)
-        if development and (data[development].values == data[development].values[0]).all():
-            development = None
         if "object" in data[columns].dtypes:
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
@@ -49,10 +47,16 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         return index, columns, origin, development
 
     @staticmethod
-    def _set_development(data, development, development_format):
+    def _set_development(data, development, development_format, origin_date):
         """ Initialize development and its grain """
-        development_date = TriangleBase._to_datetime(
-            data, development, period_end=True, format=development_format)
+        if development:
+            development_date = TriangleBase._to_datetime(
+                data, development, period_end=True, format=development_format)
+        else:
+            o_max = pd.Period(
+                origin_date.max(),
+                freq=TriangleBase._get_grain(origin_date)).to_timestamp(how='e')
+            development_date = pd.Series([o_max] * len(origin_date))
         development_date.name = "__development__"
         if pd.Series(development_date).dt.year.min() == \
            pd.Series(development_date).dt.year.max() == 1970:
@@ -107,19 +111,19 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         return odims, orig_idx
 
     @staticmethod
-    def _set_ddims(data_agg, date_axes, development):
-        dev_lag = TriangleBase._development_lag(
-            data_agg["__origin__"], data_agg["__development__"])
-        dev_lag_unique = np.sort(
-            TriangleBase._development_lag(
-                date_axes["__origin__"], date_axes["__development__"]
-            ).unique())
-        dev_idx = TriangleBase._set_index(dev_lag, dev_lag_unique)
-        if development:
-            ddims = dev_lag_unique
+    def _set_ddims(data_agg, date_axes):
+        if date_axes["__development__"].nunique() > 1:
+            dev_lag = TriangleBase._development_lag(
+                data_agg["__origin__"], data_agg["__development__"])
+            ddims = np.sort(
+                TriangleBase._development_lag(
+                    date_axes["__origin__"], date_axes["__development__"]
+                ).unique())
+            dev_idx = TriangleBase._set_index(dev_lag, ddims)
         else:
             ddims = pd.DatetimeIndex(
                 [data_agg['__development__'].max()], name='valuation')
+            dev_idx = np.zeros((len(data_agg), 1))
         return ddims, dev_idx
 
     @staticmethod

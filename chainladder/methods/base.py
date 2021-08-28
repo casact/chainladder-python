@@ -115,8 +115,19 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         if sample_weight:
             sample_weight = sample_weight.set_backend(obj.array_backend)
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
-        if len(obj.ultimate_) > len(obj):
-            obj.ultimate_ = obj.ultimate_.loc[obj.index]
+        obj.ultimate_ = self._filter_index(obj.ultimate_, obj)
+        return obj
+
+    def _filter_index(self, obj, other):
+        """ Triangle arithmetic on mis-matched indices will produce a 
+        union of indices.  Many of these are full of NaNs. THis will
+        filter obj to the index of other to eliminate the NaNs. """
+        if len(other) < len(obj):
+            common = list(set(obj.key_labels).intersection(
+                set(other.key_labels)))
+            common = obj.index.merge(other.index, how='left', on=common)
+            obj = obj.loc[~common.isna().any(axis=1)]
+            obj.index = common[~common.isna().any(axis=1)][other.key_labels]
         return obj
 
     def fit_predict(self, X, y=None, sample_weight=None):

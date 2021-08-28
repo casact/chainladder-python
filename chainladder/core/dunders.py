@@ -189,16 +189,19 @@ class TriangleDunders:
 
     @staticmethod
     def _slice_or_nan(obj, other, k):
+        """ Return a broadcastable slice or NaNs for missing slices """
         if k in obj.groups.indices.keys():
             return obj.obj.iloc[obj.groups.indices[k]]
         else:
-            if len(other.obj.key_labels) < len(obj.obj.key_labels):
-                raise ValueError("Unable to determine non-broadcasted key_labels in Triangle")
-            else:
-                new_obj = obj.obj.iloc[:1] * 0
-                new_obj.kdims = other.obj.iloc[other.groups.indices[k]].kdims
-                new_obj.key_labels = other.obj.key_labels
-                return new_obj
+            other = other.obj.iloc[other.groups.indices[k]]
+            new_obj = obj.obj.iloc[:1] * 0
+            labels = list(set(other.key_labels).intersection(set(new_obj.key_labels)))
+            new_idx = other.index.set_index(labels).join(
+                new_obj.index.set_index(labels)).reset_index()
+            new_idx = new_idx[new_obj.key_labels].iloc[-1:]
+            new_obj.kdims = new_idx.values
+            new_obj.key_labels = list(new_idx.columns)
+            return new_obj
 
     @staticmethod
     def _get_key_union(obj, other):
