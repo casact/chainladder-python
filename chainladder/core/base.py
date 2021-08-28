@@ -223,8 +223,6 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     @staticmethod
     def _get_grain(array):
-        if len(set(array)) == 1:
-            return "M"
         return {1: "Y", 2: "S", 4: "Q"}.get(len(set(array.dt.month)), "M")
 
     @staticmethod

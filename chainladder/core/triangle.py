@@ -118,7 +118,9 @@ class Triangle(TriangleBase):
         self.origin_grain = self._get_grain(origin_date)
         development_date = self._set_development(
             data, development, development_format, origin_date)
-        self.development_grain = self._get_grain(development_date)
+        self.development_grain = (
+            self._get_grain(development_date) if len(set(development_date)) != 1
+            else self.origin_grain)
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
         date_axes = self._get_date_axes(
