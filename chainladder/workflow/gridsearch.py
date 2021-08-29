@@ -4,8 +4,9 @@
 from sklearn.model_selection import ParameterGrid
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline as PipelineSL
+from sklearn.base import clone
 from chainladder.core.io import EstimatorIO
-import copy
+from joblib import Parallel, delayed
 import pandas as pd
 import json
 
@@ -41,6 +42,12 @@ class GridSearch(BaseEstimator):
         FitFailedWarning is raised. This parameter does not affect the refit
         step, which will always raise the error. Default is 'raise' but from
         version 0.22 it will change to np.nan.
+    n_jobs : int, default=None
+        The number of jobs to use for the computation. This will only provide
+        speedup for n_targets > 1 and sufficient large problems.
+        ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
+        ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
+        for more details.
 
     Attributes
     ----------
@@ -49,12 +56,14 @@ class GridSearch(BaseEstimator):
         score as the last column
     """
 
-    def __init__(self, estimator, param_grid, scoring, verbose=0, error_score="raise"):
+    def __init__(self, estimator, param_grid, scoring, verbose=0,
+                 error_score="raise", n_jobs=None):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
         self.verbose = verbose
         self.error_score = error_score
+        self.n_jobs = n_jobs
 
     def fit(self, X, y=None, **fit_params):
         """Fit the model with X.
@@ -77,15 +86,21 @@ class GridSearch(BaseEstimator):
         else:
             scoring = self.scoring
         grid = list(ParameterGrid(self.param_grid))
-        results_ = []
-        for num, item in enumerate(grid):
-            est = copy.deepcopy(self.estimator).set_params(**item)
+
+        def _fit_single_estimator(estimator, fit_params, X, y, scoring, item):
+            est = clone(estimator).set_params(**item)
             model = est.fit(X, y, **fit_params)
             for score in scoring.keys():
                 item[score] = scoring[score](model)
-            results_.append(item)
+            return item
+            
+        results_ = Parallel(n_jobs=self.n_jobs)(delayed(_fit_single_estimator)(
+            self.estimator, fit_params, X, y, scoring, item)
+            for item in grid)
         self.results_ = pd.DataFrame(results_)
         return self
+
+
 
 
 class Pipeline(PipelineSL, EstimatorIO):

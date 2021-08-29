@@ -102,7 +102,7 @@ class TriangleDisplay:
             rank_size = data.rank(axis=axis).max(axis=axis)
             gmap = (raw_rank-1).div(rank_size-1, axis=not axis)*(shape_size-1) + 1
             gmap = gmap.replace(np.nan, (shape_size+1)/2)
-            if float(pd.__version__[:3]) >= 1.3:
+            if pd.__version__ >= '1.3':
                 default_output = (
                     data.style.format(fmt_str).background_gradient(
                         cmap=cmap,
