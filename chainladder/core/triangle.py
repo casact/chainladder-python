@@ -299,6 +299,7 @@ class Triangle(TriangleBase):
                 obj = obj * w_ if obj.shape == w_.shape else obj
             obj.is_pattern = True
             obj.is_cumulative = False
+            obj.values = num_to_nan(obj.values)
             return obj
         else:
             return self
