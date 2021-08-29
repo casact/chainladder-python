@@ -17,13 +17,13 @@ def _get_full_expectation(cdf_, ultimate_):
 
 def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
     """ Private method that builds full triangle"""
-    from chainladder import ULT_VAL
+    from chainladder import options
     cdf = X.ldf_.copy()
     xp = cdf.get_array_module()
     cdf = cdf * (ultimate / ultimate)
     cdf = cdf[cdf.valuation<X.valuation_date] * 0 + 1 + cdf[cdf.valuation>=X.valuation_date]
     cdf.values = cdf.values.cumprod(3)
-    cdf.valuation_date = pd.to_datetime(ULT_VAL)
+    cdf.valuation_date = pd.to_datetime(options.ULT_VAL)
     cdf = (1 - 1 / cdf)
     cdf.ddims = cdf.ddims + {'Y': 12, 'Q': 3, 'M':1}[cdf.development_grain]
     cdf.ddims[-1] = 9999

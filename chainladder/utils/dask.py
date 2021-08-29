@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-from chainladder import ARRAY_BACKEND
+from chainladder import options
 
 try:
     import dask.array as dp
     dp.array([1])
     module = "dask"
 except:
-    if ARRAY_BACKEND == "dask":
+    if options.ARRAY_BACKEND == "dask":
         import warnings
 
         warnings.warn("Unable to load Dask.  Using numpy instead.")

@@ -118,7 +118,7 @@ class ClarkLDF(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder import ULT_VAL
+        from chainladder import options
 
         backend = X.array_backend
         if backend != "numpy":
@@ -205,7 +205,7 @@ class ClarkLDF(DevelopmentBase):
         obj.is_cumulative = False
         obj._set_slicers()
         self.ldf_ = obj
-        self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
+        self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         rows = X.index.set_index(X.key_labels).index
         self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
         self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)

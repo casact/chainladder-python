@@ -11,7 +11,7 @@ from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
-from chainladder import AUTO_SPARSE, ULT_VAL
+from chainladder import options
 try:
     import dask.bag as db
 except:
@@ -156,9 +156,8 @@ class Triangle(TriangleBase):
         # Deal with array backend
         self.array_backend = "sparse"
         if array_backend is None:
-            from chainladder import ARRAY_BACKEND
-            array_backend = ARRAY_BACKEND
-        if not AUTO_SPARSE or array_backend == "cupy":
+            array_backend = options.ARRAY_BACKEND
+        if not options.AUTO_SPARSE or array_backend == "cupy":
             self.set_backend(array_backend, inplace=True)
         else:
             self = self._auto_sparse()
@@ -176,7 +175,7 @@ class Triangle(TriangleBase):
             self.odims = obj.odims
             self.ddims = obj.ddims
             self.values = obj.values
-            self.valuation_date = pd.Timestamp(ULT_VAL)
+            self.valuation_date = pd.Timestamp(options.ULT_VAL)
 
     @staticmethod
     def _split_ult(data, index, columns, origin, development):
@@ -184,13 +183,13 @@ class Triangle(TriangleBase):
         ult = None
         if (development and len(development) == 1
             and data[development[0]].dtype == "<M8[ns]"):
-            u = data[data[development[0]] == ULT_VAL].copy()
+            u = data[data[development[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
                     u, origin=origin, development=development,
                     columns=columns, index=index)
-                ult.ddims = pd.DatetimeIndex([ULT_VAL])
-                data = data[data[development[0]] != ULT_VAL]
+                ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
+                data = data[data[development[0]] != options.ULT_VAL]
         return data, ult
 
     @property
@@ -282,7 +281,7 @@ class Triangle(TriangleBase):
 
     @property
     def is_ultimate(self):
-        return sum(self.valuation >= ULT_VAL[:4]) > 0
+        return sum(self.valuation >= options.ULT_VAL[:4]) > 0
 
     @property
     def latest_diagonal(self):
@@ -395,8 +394,6 @@ class Triangle(TriangleBase):
         }
 
     def _val_dev(self, sign, inplace=False):
-        from chainladder import AUTO_SPARSE
-
         backend = self.array_backend
         obj = self.set_backend("sparse")
         if not inplace:
@@ -416,7 +413,7 @@ class Triangle(TriangleBase):
                 min(obj.values.coords[-1].min(), min_slide))
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        if AUTO_SPARSE == False or backend == "cupy":
+        if options.AUTO_SPARSE == False or backend == "cupy":
             obj = obj.set_backend(backend)
         else:
             obj = obj._auto_sparse()

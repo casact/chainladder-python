@@ -41,12 +41,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
-        from chainladder import ULT_VAL
+        from chainladder import options
 
         xp = ultimate.get_array_module()
         if ultimate.array_backend != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
-        ultimate.ddims = pd.DatetimeIndex([ULT_VAL])
+        ultimate.ddims = pd.DatetimeIndex([options.ULT_VAL])
         ultimate.virtual_columns.columns = {}
         ultimate.is_cumulative = True
         ultimate._set_slicers()
@@ -119,7 +119,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return obj
 
     def _filter_index(self, obj, other):
-        """ Triangle arithmetic on mis-matched indices will produce a 
+        """ Triangle arithmetic on mis-matched indices will produce a
         union of indices.  Many of these are full of NaNs. THis will
         filter obj to the index of other to eliminate the NaNs. """
         if len(other) < len(obj):

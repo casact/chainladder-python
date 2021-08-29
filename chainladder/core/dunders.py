@@ -321,12 +321,12 @@ class TriangleDunders:
     def __eq__(self, other):
         if not isinstance(other, TriangleDunders):
             return False
-        from chainladder import ARRAY_PRIORITY
+        from chainladder import options
 
-        backend = ARRAY_PRIORITY[
+        backend = options.ARRAY_PRIORITY[
             min(
                 [
-                    ARRAY_PRIORITY.index(x)
+                    options.ARRAY_PRIORITY.index(x)
                     for x in [self.array_backend, other.array_backend]
                 ]
             )

@@ -80,7 +80,6 @@ class IncrementalAdditive(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder import ULT_VAL
         from chainladder.utils.utility_functions import num_to_nan
 
         if type(X.ddims) != np.ndarray:
