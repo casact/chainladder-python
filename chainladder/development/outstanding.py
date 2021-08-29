@@ -1,5 +1,5 @@
 from chainladder.development import Development, DevelopmentBase
-from chainladder import ULT_VAL
+from chainladder import options
 from chainladder.utils.utility_functions import concat
 
 import numpy as np
@@ -84,7 +84,7 @@ class CaseOutstanding(DevelopmentBase):
         original_val_date = case.valuation_date
 
         case_ldf_ = self.case_ldf_.copy()
-        case_ldf_.valuation_date = pd.Timestamp(ULT_VAL)
+        case_ldf_.valuation_date = pd.Timestamp(options.ULT_VAL)
         xp = case_ldf_.get_array_module()
         # Broadcast triangle shape
         case_ldf_ = case_ldf_ * case.latest_diagonal / case.latest_diagonal
@@ -115,7 +115,7 @@ class CaseOutstanding(DevelopmentBase):
         patterns = ((1-np.nan_to_num(X.nan_triangle[..., 1:]))*(self.paid_ldf_*ld).values)
         paid = (case.iloc[..., :-1]*patterns)
         paid.ddims = case.ddims[1:]
-        paid.valuation_date = pd.Timestamp(ULT_VAL)
+        paid.valuation_date = pd.Timestamp(options.ULT_VAL)
         #Create a full triangle of incurrds to support a multiplicative LDF
         paid = (paid_tri.cum_to_incr() + paid).incr_to_cum()
         inc = (case[case.valuation>X.valuation_date] +
@@ -128,7 +128,7 @@ class CaseOutstanding(DevelopmentBase):
         dev = concat((paid, inc), 1)[list(cols)]
         # Convert the paid/incurred to multiplicative LDF
         dev = (dev.iloc[..., -1]/dev).iloc[..., :-1]
-        dev.valuation_date = pd.Timestamp(ULT_VAL)
+        dev.valuation_date = pd.Timestamp(options.ULT_VAL)
         dev.ddims = X.link_ratio.ddims
         dev.is_pattern=True
         dev.is_cumulative=True

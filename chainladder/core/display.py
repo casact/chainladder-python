@@ -96,24 +96,34 @@ class TriangleDisplay:
             fmt_str = self._get_format_str(data)
 
             axis = self._get_axis(axis)
-            
+
             raw_rank = data.rank(axis=axis)
             shape_size = data.shape[axis]
             rank_size = data.rank(axis=axis).max(axis=axis)
             gmap = (raw_rank-1).div(rank_size-1, axis=not axis)*(shape_size-1) + 1
             gmap = gmap.replace(np.nan, (shape_size+1)/2)
-
-            default_output = (
-                data.style.format(fmt_str).background_gradient(
-                    cmap=cmap, 
-                    low=low, 
-                    high=high, 
-                    axis=None,
-                    subset=subset,
-                    gmap=gmap
+            if pd.__version__ >= '1.3':
+                default_output = (
+                    data.style.format(fmt_str).background_gradient(
+                        cmap=cmap,
+                        low=low,
+                        high=high,
+                        axis=None,
+                        subset=subset,
+                        gmap=gmap
+                    )
+                    .render()
                 )
-                .render()
-            )
+            else:
+                default_output = (
+                    data.style.format(fmt_str).background_gradient(
+                        cmap=cmap,
+                        low=low,
+                        high=high,
+                        axis=axis,
+                    )
+                    .render()
+                )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
             return HTML(output_xnan)
         elif HTML is None:

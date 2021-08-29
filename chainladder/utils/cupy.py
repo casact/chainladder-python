@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 
-from chainladder import ARRAY_BACKEND
+from chainladder import options
 from chainladder.utils.sparse import sp
 
 try:
@@ -12,7 +12,7 @@ try:
     cp.array([1])
     module = "cupy"
 except:
-    if ARRAY_BACKEND == "cupy":
+    if options.ARRAY_BACKEND == "cupy":
         import warnings
 
         warnings.warn("Unable to load CuPY.  Using numpy instead.")

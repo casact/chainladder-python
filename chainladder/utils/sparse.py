@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import sparse
-from chainladder import ARRAY_BACKEND
 from sparse import COO as sp
 from sparse import elemwise
 import pandas as pd

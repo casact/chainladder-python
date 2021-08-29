@@ -52,7 +52,7 @@ class DevelopmentConstant(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder import ULT_VAL
+        from chainladder import options
         if X.is_cumulative == False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
@@ -75,7 +75,7 @@ class DevelopmentConstant(DevelopmentBase):
         self.ldf_ = obj
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
-        self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
+        self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         return self
 
     def transform(self, X):

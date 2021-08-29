@@ -98,9 +98,9 @@ def read_json(json_str, array_backend=None):
     from chainladder.workflow import Pipeline
 
     if array_backend is None:
-        from chainladder import ARRAY_BACKEND
+        from chainladder import options
 
-        array_backend = ARRAY_BACKEND
+        array_backend = options.ARRAY_BACKEND
     json_dict = json.loads(json_str)
     if type(json_dict) is list:
         import chainladder as cl
@@ -188,8 +188,8 @@ def parallelogram_olf(
 
 
 def set_common_backend(objs):
-    from chainladder import ARRAY_PRIORITY as priority
-
+    from chainladder import options
+    priority = options.ARRAY_PRIORITY
     backend = priority[np.min([priority.index(i.array_backend) for i in objs])]
     return [i.set_backend(backend) for i in objs]
 

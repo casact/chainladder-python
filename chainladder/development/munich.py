@@ -73,7 +73,7 @@ class MunichAdjustment(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder import ULT_VAL
+        from chainladder import options
 
         if self.paid_to_incurred is None:
             raise ValueError("Must enter valid value for paid_to_incurred.")
@@ -111,7 +111,7 @@ class MunichAdjustment(DevelopmentBase):
             obj, self._get_mcl_cdf(obj, self.munich_full_triangle_)
         )
         self.ldf_.is_cumulative = False
-        self.ldf_.valuation_date = pd.to_datetime(ULT_VAL)
+        self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         self._map = {
             (list(X.columns).index(x)): (num % 2, num // 2)
             for num, x in enumerate(np.array(self.paid_to_incurred).flatten())

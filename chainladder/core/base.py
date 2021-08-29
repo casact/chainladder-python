@@ -14,7 +14,7 @@ from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
-from chainladder import AUTO_SPARSE, ULT_VAL
+from chainladder import options
 from chainladder.utils.utility_functions import num_to_nan, concat
 
 
@@ -248,9 +248,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     def _auto_sparse(self):
         """ Auto sparsifies at 30Mb or more and 20% density or less """
-        from chainladder import AUTO_SPARSE
-
-        if not AUTO_SPARSE:
+        if not options.AUTO_SPARSE:
             return self
         n = np.prod(list(self.shape) + [8 / 1e6])
         if (self.array_backend == "numpy" and n > 30
@@ -279,7 +277,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
         ).astype("datetime64[ns]") - np.timedelta64(1, "ns")
         if ddims[-1] == 9999:
-            ult = np.repeat(np.datetime64(ULT_VAL), val_array.shape[0])[:, None]
+            ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate((val_array, ult,), axis=1,)
         return pd.DatetimeIndex(val_array.reshape(1, -1, order="F")[0])
 
