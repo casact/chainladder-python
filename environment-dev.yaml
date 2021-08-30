@@ -11,13 +11,16 @@ dependencies:
   - pip
   - git
   - ipykernel
+  - jupyterlab
 
-  - pandas>=0.23
-  - scikit-learn>=0.23
-  - sparse>=0.9
+  - pandas
+  - scikit-learn
+  - sparse
   - dill
   - xlcompose
   - patsy
+  - openpyxl
+  - imageio
 
   # Docs
   - seaborn
