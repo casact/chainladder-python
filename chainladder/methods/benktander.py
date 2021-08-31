@@ -86,6 +86,7 @@ class Benktander(MethodBase):
         X_new = X.copy()
         xp = X_new.get_array_module()
         X_new.ldf_ = self.ldf_
+        X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         self.validate_weight(X, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(X_new.array_backend)
@@ -117,16 +118,8 @@ class Benktander(MethodBase):
             ultimate = X.sum('development').val_to_dev()
         else:
             ultimate = X.copy()
-        ld = ultimate.latest_diagonal
         cdf = self._align_cdf(ultimate, expectation)
-        if not cdf.index.equals(ld.index):
-            cdf = self._filter_index(ld, cdf)
-            if len(ld.index) >= len(cdf.index):
-                ld = ld.loc[cdf.index]
-        if len(expectation) > 1 and not cdf.index.equals(expectation.index):
-            expectation = expectation*(cdf/cdf).iloc[..., 0, 0]
-        if not cdf.index.equals(ultimate.index):
-            ultimate = ultimate.loc[cdf.index]
+        ld = ultimate.latest_diagonal
         backend = cdf.array_backend
         xp = cdf.get_array_module()
         cdf = (1 - 1 / num_to_nan(cdf.values))[None]

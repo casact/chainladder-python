@@ -90,9 +90,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         # origin <= development is required - truncate bad records if not true
         valid = data_agg["__origin__"] <= data_agg["__development__"]
         if sum(~valid) > 0:
-            warnings.warn(
-                "Observations with development before",
-                "origin start have been removed.")
+            warnings.warn("""
+                Observations with development before
+                origin start have been removed.""")
             valid = valid.compute() if hasattr(valid, 'compute') else valid
             data_agg = data_agg[valid]
         return data_agg

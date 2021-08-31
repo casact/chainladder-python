@@ -125,6 +125,8 @@ class Location(_LocBase):
         return key_mask
 
     def index_key(self, key):
+        if type(key) == pd.Series and len(key) != len(self.obj):
+                key = key.to_frame().T
         if type(key) == pd.Series:
             idx = np.where(key)[0]
         elif type(key) == pd.DataFrame:
@@ -138,6 +140,8 @@ class Location(_LocBase):
         return idx
 
     def other_key(self, key, idx):
+        if type(key) is np.ndarray:
+            return np.where(key)[0]
         if key == slice(None, None, None):
             return key
         s = getattr(self.obj, idx)

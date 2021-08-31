@@ -27,16 +27,19 @@ def test_slice_by_loc():
 def test_slice_origin():
     assert raa == raa_gt
     assert raa[raa.origin > "1985"].shape == (1, 1, 5, 10)
+    tri.loc[..., tri.origin<='1994', :]
 
 
 def test_slice_development():
     assert raa == raa_gt
     assert raa[raa.development < 72].shape == (1, 1, 10, 5)
+    tri.loc[..., 24:]
 
 
 def test_slice_by_loc_iloc():
     assert tri == tri_gt
     assert tri.groupby("LOB").sum().loc["comauto"].index.iloc[0, 0] == "comauto"
+    assert len(tri.loc[tri.index.iloc[150]]) == 1
 
 
 def test_repr():
@@ -898,3 +901,6 @@ def test_correct_valutaion():
         raa.iloc[..., :-3, :].latest_diagonal.to_frame(keepdims=True, implicit_axis=True),
         origin='origin', development='valuation', columns='values')
     assert new.valuation_date == raa.valuation_date
+
+
+    

@@ -12,16 +12,16 @@ class CapeCod(Benktander):
     Parameters
     ----------
     trend : float (default=0.0)
-        The cape cod trend assumption.  Any Trend transformer on X will override
-        this argument.
+        The cape cod trend assumption.  Any Trend transformer on X will
+        override this argument.
     decay : float (defaut=1.0)
         The cape cod decay assumption
     n_iters : int, optional (default=1)
         Number of iterations to use in the Benktander model.
     apriori_sigma : float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
-        bootstrap model, the model samples aprioris from a lognormal distribution
-        using this argument as a standard deviation.
+        bootstrap model, the model samples aprioris from a lognormal
+        distribution using this argument as a standard deviation.
     random_state : int, RandomState instance or None, optional (default=None)
         Seed for sampling from the apriori distribution.  This is ignored when
         using as a deterministic method.
@@ -30,9 +30,9 @@ class CapeCod(Benktander):
         If None, the random number generator is the RandomState instance used
         by np.random.
     groupby :
-        An option to group levels of the triangle index together for the purposes
-        of deriving the apriori measures.  If omitted, each level of the triangle
-        index will receive its own apriori computation.
+        An option to group levels of the triangle index together for the 
+        purposes of deriving the apriori measures.  If omitted, each level of 
+        the triangle index will receive its own apriori computation.
 
 
     Attributes
@@ -99,7 +99,6 @@ class CapeCod(Benktander):
         latest = X.latest_diagonal
         len_orig = sample_weight.shape[-2]
         reported_exposure = sample_weight / self._align_cdf(X.copy(), sample_weight)
-        reported_exposure = self._filter_index(reported_exposure, latest)
         reported_exposure = reported_exposure.set_backend(latest.array_backend)
         if self.groupby is not None:
             latest = latest.groupby(self.groupby).sum()
@@ -140,11 +139,15 @@ class CapeCod(Benktander):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
+        X_new = X.copy()
+        xp = X_new.get_array_module()
+        X_new.ldf_ = self.ldf_
+        X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         apriori_, detrended_apriori_ = self._get_capecod_aprioris(
-            X, sample_weight
+            X_new, sample_weight
         )
         expectation_ = detrended_apriori_ * sample_weight.values
-        X_new = super().predict(X,  expectation_)
+        X_new = super().predict(X_new,  expectation_)
         X_new.apriori_ = apriori_
         X_new.detrended_apriori_ = detrended_apriori_
         X_new.expectation_ = expectation_

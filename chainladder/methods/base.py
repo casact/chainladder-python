@@ -26,7 +26,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
     def _align_cdf(self, X, sample_weight=None):
         """ Vertically align CDF to origin period latest diagonal. """
         valuation = X.valuation_date
-        cdf = self.cdf_.iloc[..., : X.shape[-1]]
+        cdf = X.cdf_.iloc[..., : X.shape[-1]]
         a = X.iloc[0, 0] * 0
         a = a + a.nan_triangle
         if X.array_backend == "sparse":
@@ -111,25 +111,25 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             obj = obj.incr_to_cum()
         xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
+        obj, obj.ldf_ = self.intersection(obj, obj.ldf_)
         self.validate_weight(X, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(obj.array_backend)
         obj.ultimate_ = self._get_ultimate(obj, sample_weight)
-        obj.ultimate_ = self._filter_index(obj.ultimate_, obj)
         return obj
 
-    def _filter_index(self, obj, other):
-        """ Triangle arithmetic on mis-matched indices will produce a
-        union of indices.  Many of these are full of NaNs. THis will
-        filter obj to the index of other to eliminate the NaNs. """
-        if len(other) < len(obj):
-            common = list(set(obj.key_labels).intersection(
-                set(other.key_labels)))
-            common = obj.index.merge(other.index, how='left', on=common)
-            obj = obj.loc[~common.isna().any(axis=1)]
-            obj.index = common[~common.isna().any(axis=1)][other.key_labels]
-        return obj
-
+    def intersection(self, a, b):
+        """ Given two Triangles with mismatched indices, this method"""
+        intersection = list(set(a.key_labels).intersection(set(b.key_labels)))
+        a_idx = a.index[intersection]
+        b_idx = b.index[intersection]  
+        idx_intersection = list(
+            set(a_idx.set_index(intersection).index.intersection(
+                b_idx.set_index(intersection).index)))
+        b = b.iloc[b_idx[b_idx[intersection].isin(idx_intersection).iloc[:, 0]].index]
+        a = a.iloc[a_idx[a_idx[intersection].isin(idx_intersection).iloc[:, 0]].index]
+        return a, b
+        
     def fit_predict(self, X, y=None, sample_weight=None):
         self.fit(X, y, sample_weight)
         return self.predict(X, sample_weight)
@@ -152,5 +152,4 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             and sample_weight.shape[0] > 1
         ):
             warnings.warn(
-                "X and sample_weight are not aligned.  Broadcasting may occur.\n"
-            )
+                "X and sample_weight are not aligned. Broadcasting may occur.\n")

@@ -67,33 +67,47 @@ def test_misaligned_index():
 
 def test_misaligned_index2():
     clrd = cl.load_sample('clrd')['CumPaidLoss']
-    w = cl.load_sample('clrd')['EarnedPremDIR']
+    w = cl.load_sample('clrd')['EarnedPremDIR'].latest_diagonal
     bcl = cl.Chainladder().fit(cl.Development(groupby=['LOB']).fit_transform(clrd))
     bbk = cl.Benktander().fit(cl.Development(groupby=['LOB']).fit_transform(clrd), sample_weight=w)
     bcc = cl.CapeCod().fit(cl.Development(groupby=['LOB']).fit_transform(clrd), sample_weight=w)
 
-    a = bcl.ultimate_.loc[clrd.index.iloc[:10]].sum().sum()
+    a = bcl.ultimate_.iloc[:10].sum().sum()
     b = bcl.predict(clrd.iloc[:10]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
-    a = bbk.ultimate_.loc[clrd.index.iloc[:10]].sum().sum()
+    a = bbk.ultimate_.iloc[:10].sum().sum()
     b = bbk.predict(clrd.iloc[:10], sample_weight=w.iloc[:10]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
-    a = bcc.ultimate_.loc[clrd.index.iloc[:10]].sum().sum()
+    a = bcc.ultimate_.iloc[:10].sum().sum()
     b = bcc.predict(clrd.iloc[:10], sample_weight=w.iloc[:10]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
 
-    X = clrd.iloc[150:153]
-    sample_weight=w.iloc[150:153]
-    assert (bcl.predict(X).ultimate_.index == X.index).values.all()
-    assert (bbk.predict(X, sample_weight=sample_weight).ultimate_.index == X.index).values.all()
-    assert (bcc.predict(X, sample_weight=sample_weight).ultimate_.index == X.index).values.all()
-    X = clrd.iloc[150:152]
-    sample_weight=w.iloc[150:152]
-    assert (bcl.predict(X).ultimate_.index == X.index).values.all()
-    assert (bbk.predict(X, sample_weight=sample_weight).ultimate_.index == X.index).values.all()
-    assert (bcc.predict(X, sample_weight=sample_weight).ultimate_.index == X.index).values.all()
-    X = clrd.iloc[150]
-    sample_weight=w.iloc[150]
-    assert (bcl.predict(X).ultimate_.index == X.index).values.all()
-    assert (bbk.predict(X, sample_weight=sample_weight).ultimate_.index == X.index).values.all()
-    assert (bcc.predict(X, sample_weight=sample_weight).ultimate_.index == X.index).values.all()
+    a = bcl.ultimate_.iloc[150:153].sum().sum()
+    b = bcl.predict(clrd.iloc[150:153]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+    a = bbk.ultimate_.iloc[150:153].sum().sum()
+    b = bbk.predict(clrd.iloc[150:153], sample_weight=w.iloc[150:153]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+    a = bcc.ultimate_.iloc[150:153].sum().sum()
+    b = bcc.predict(clrd.iloc[150:153], sample_weight=w.iloc[150:153]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+
+    a = bcl.ultimate_.iloc[150:152].sum().sum()
+    b = bcl.predict(clrd.iloc[150:152]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+    a = bbk.ultimate_.iloc[150:152].sum().sum()
+    b = bbk.predict(clrd.iloc[150:152], sample_weight=w.iloc[150:152]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+    a = bcc.ultimate_.iloc[150:152].sum().sum()
+    b = bcc.predict(clrd.iloc[150:152], sample_weight=w.iloc[150:152]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+
+    a = bcl.ultimate_.iloc[150].sum().sum()
+    b = bcl.predict(clrd.iloc[150]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+    a = bbk.ultimate_.iloc[150].sum().sum()
+    b = bbk.predict(clrd.iloc[150], sample_weight=w.iloc[150]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
+    a = bcc.ultimate_.iloc[150].sum().sum()
+    b = bcc.predict(clrd.iloc[150], sample_weight=w.iloc[150]).ultimate_.sum().sum()
+    assert abs(a - b) < 1e-5
