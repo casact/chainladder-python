@@ -122,14 +122,16 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """ Given two Triangles with mismatched indices, this method"""
         intersection = list(set(a.key_labels).intersection(set(b.key_labels)))
         a_idx = a.index[intersection]
-        b_idx = b.index[intersection]  
+        b_idx = b.index[intersection]
         idx_intersection = list(
             set(a_idx.set_index(intersection).index.intersection(
                 b_idx.set_index(intersection).index)))
-        b = b.iloc[b_idx[b_idx[intersection].isin(idx_intersection).iloc[:, 0]].index]
-        a = a.iloc[a_idx[a_idx[intersection].isin(idx_intersection).iloc[:, 0]].index]
+        if (len(a) == 1 or len(b) == 1) and idx_intersection == []:
+            return a, b
+        b = b.iloc[b_idx[b_idx[intersection].set_index(intersection).index.isin(idx_intersection)].index]
+        a = a.iloc[a_idx[a_idx[intersection].set_index(intersection).index.isin(idx_intersection)].index]
         return a, b
-        
+
     def fit_predict(self, X, y=None, sample_weight=None):
         self.fit(X, y, sample_weight)
         return self.predict(X, sample_weight)
