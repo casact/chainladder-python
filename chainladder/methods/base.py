@@ -121,6 +121,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
     def intersection(self, a, b):
         """ Given two Triangles with mismatched indices, this method"""
         intersection = list(set(a.key_labels).intersection(set(b.key_labels)))
+        if intersection == []:
+            return a, b
         a_idx = a.index[intersection]
         b_idx = b.index[intersection]
         idx_intersection = list(

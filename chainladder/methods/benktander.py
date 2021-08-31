@@ -122,6 +122,10 @@ class Benktander(MethodBase):
         ld = ultimate.latest_diagonal
         backend = cdf.array_backend
         xp = cdf.get_array_module()
+        cdf = cdf.sort_index()
+        ld = ld.sort_index()
+        expectation = expectation.sort_index()
+        ultimate = ultimate.sort_index()
         cdf = (1 - 1 / num_to_nan(cdf.values))[None]
         exponents = xp.arange(self.n_iters + 1)
         exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))

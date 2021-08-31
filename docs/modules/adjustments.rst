@@ -185,7 +185,7 @@ the ``olf_`` property to your `Triangle`.
   >>> data = pd.DataFrame({
   ...     'Year': [2016, 2017, 2018, 2019, 2020],
   ...     'EarnedPremium': [10_000]*5})
-  >>> prem_tri = cl.Triangle(data, development='Year', columns='EarnedPremium')
+  >>> prem_tri = cl.Triangle(data, origin='Year', columns='EarnedPremium')
   >>> prem_tri = cl.ParallelogramOLF(rate_history, change_col='RateChange', date_col='EffDate').fit_transform(prem_tri)
   >>> prem_tri.olf_
             2020
