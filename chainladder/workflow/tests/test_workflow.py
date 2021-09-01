@@ -8,7 +8,6 @@ def test_grid():
     medmal_prem = (
         clrd.groupby("LOB").sum().loc["medmal"]["EarnedPremDIR"].latest_diagonal
     )
-    medmal_prem.rename("development", ["premium"])
 
     # Pipeline
     dev = cl.Development()
