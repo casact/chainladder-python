@@ -15,6 +15,7 @@ dependencies:
 
   - pandas
   - scikit-learn
+  - statsmodels
   - sparse
   - dill
   - xlcompose
