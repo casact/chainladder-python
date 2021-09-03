@@ -556,6 +556,18 @@ class Triangle(TriangleBase):
                  for k, v in indices.items()], axis=0).values
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = mn
+            if len(obj.ddims) > 1 and pd.Timestamp(obj.odims[0]).strftime(
+                "%Y%m"
+            ) != obj.valuation[0].strftime("%Y%m"):
+                addl_ts = (
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq="M")[:-1]
+                    .to_timestamp()
+                    .values
+                )
+                addl = obj.iloc[..., -len(addl_ts) :] * 0
+                addl.ddims = addl_ts
+                obj = concat((addl, obj), axis=-1)
+                obj.values = num_to_nan(obj.values)
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(len(obj.development) -

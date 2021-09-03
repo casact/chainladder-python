@@ -902,5 +902,9 @@ def test_correct_valutaion():
         origin='origin', development='valuation', columns='values')
     assert new.valuation_date == raa.valuation_date
 
+def test_assymetrric_origin_grain():
+    x = prism['Paid'].sum().iloc[..., 8:, :].incr_to_cum()
+    x = x[x.valuation<x.valuation_date]
+    assert x.grain('OYDM').development[0] == 1
 
     
