@@ -119,7 +119,7 @@ class Triangle(TriangleBase):
         development_date = self._set_development(
             data, development, development_format, origin_date)
         self.development_grain = (
-            self._get_grain(development_date) if len(set(development_date)) != 1
+            self._get_grain(development_date) if development_date.nunique() != 1
             else self.origin_grain)
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
@@ -129,7 +129,6 @@ class Triangle(TriangleBase):
         if not index:
             index = ["Total"]
             data_agg[index[0]] = "Total"
-
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
@@ -141,7 +140,6 @@ class Triangle(TriangleBase):
                has_duplicates=False, sorted=True,
                shape=(len(self.kdims), len(self.vdims),
                       len(self.odims), len(self.ddims))))
-
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date

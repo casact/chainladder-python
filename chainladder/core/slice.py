@@ -202,6 +202,12 @@ class TriangleSlicer:
         xp = self.get_array_module()
         if callable(value):
             self.virtual_columns[key] = value
+            if self.array_backend == "sparse":
+                if key not in self.vdims:
+                    k, v, o, d = self.values.shape
+                    self.values.shape = k, v + 1, o, d 
+                    self.vdims = np.append(self.vdims, key)
+                return 
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
         else:
             self.virtual_columns.pop(key)
