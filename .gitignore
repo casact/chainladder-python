@@ -116,9 +116,10 @@ settings.json
 # macOS related files
 *.DS_Store
 *Icon
-*r
+*.r
 
 # asv environments
 .asv
+docs\_static
 
 coverage_html_report
