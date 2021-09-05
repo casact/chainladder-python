@@ -15,4 +15,3 @@ dependencies:
   # testing
   - lxml
   - pytest
-  - pytest-xdist

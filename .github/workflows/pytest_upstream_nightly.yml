@@ -31,4 +31,4 @@ jobs:
           conda env create --file ./ci/environment-latest.yaml;
           conda activate cl_latest;
           python setup.py develop
-          pytest chainladder -m "no r" -n auto
+          pytest chainladder -m "no r"
