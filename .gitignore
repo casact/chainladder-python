@@ -120,6 +120,5 @@ settings.json
 
 # asv environments
 .asv
-docs\_static
 
 coverage_html_report
