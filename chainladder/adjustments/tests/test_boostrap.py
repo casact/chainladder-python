@@ -2,8 +2,8 @@ import chainladder as cl
 import numpy as np
 
 
-def test_bs_sample():
-    tri = cl.load_sample("raa")
+def test_bs_sample(raa):
+    tri = raa
     a = (
         cl.Development()
         .fit(cl.BootstrapODPSample(n_sims=40000).fit_transform(tri).mean())

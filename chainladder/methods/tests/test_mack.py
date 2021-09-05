@@ -1,15 +1,13 @@
 import numpy as np
 import pytest
 import chainladder as cl
-from rpy2.robjects.packages import importr
-from rpy2.robjects import r
 
-CL = importr("ChainLadder")
-
-
-@pytest.fixture
-def atol():
-    return 1e-5
+try:
+    from rpy2.robjects.packages import importr
+    from rpy2.robjects import r
+    CL = importr("ChainLadder")
+except:
+    pass
 
 
 def mack_r(data, alpha, est_sigma, tail):
@@ -64,7 +62,7 @@ def test_mack_to_triangle():
         .summary_
     )
 
-
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -77,7 +75,7 @@ def test_mack_full_std_err(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
-
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -90,7 +88,7 @@ def test_mack_process_risk(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
-
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -103,7 +101,7 @@ def test_mack_parameter_risk(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
-
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -116,7 +114,7 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])[None, ...]
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
-
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -129,7 +127,7 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])[None]
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
-
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -142,7 +140,7 @@ def test_mack_mack_std_err_(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
-
+@pytest.mark.r
 def test_mack_asymmetric():
     r("Paid <- matrix(NA, 45, 45)")
     r("Paid[seq(1,45,4),] <- qpaid")

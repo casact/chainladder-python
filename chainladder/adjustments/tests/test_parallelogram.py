@@ -2,7 +2,7 @@ import chainladder as cl
 import pandas as pd
 
 
-def test_parallelogram():
+def test_parallelogram(clrd):
     lob = ["wkcomp"] * 3 + ["comauto"] * 3 + ["wkcomp"] * 2
     values = [0.05, 0.02, -0.1, 0.05, 0.05, 0.05, 0.2, 1 / 1.1 - 1]
     date = [
@@ -21,7 +21,7 @@ def test_parallelogram():
         rate_history=rates, change_col="change", date_col="effdate"
     )
 
-    X = cl.load_sample("clrd")["EarnedPremNet"].latest_diagonal
+    X = clrd["EarnedPremNet"].latest_diagonal
     X = X[X["LOB"].isin(["wkcomp", "comauto"])]
     X = olf.fit_transform(X)
     assert X.get_array_module().all(

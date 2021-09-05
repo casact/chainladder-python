@@ -1,16 +1,13 @@
 import numpy as np
 import pytest
 import chainladder as cl
-from rpy2.robjects.packages import importr
-from rpy2.robjects import r
 
-CL = importr("ChainLadder")
-
-
-@pytest.fixture
-def atol():
-    return 1e-5
-
+try:
+    from rpy2.robjects.packages import importr
+    from rpy2.robjects import r
+    CL = importr("ChainLadder")
+except:
+    pass
 
 def dev_corr_r(data, ci):
     return r("out<-dfCorTest({},ci={})".format(data, ci))
@@ -20,6 +17,7 @@ def dev_corr_p(data, ci):
     return cl.load_sample(data).development_correlation(p_critical=ci)
 
 
+@pytest.mark.r
 def val_corr_r(data, ci):
     return r("out<-cyEffTest({},ci={})".format(data, ci))
 
@@ -32,6 +30,7 @@ data = ["RAA", "GenIns", "MW2014"]
 ci = [0.5, 0.75]
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("ci", ci)
 def test_dev_corr(data, ci, atol):
@@ -41,6 +40,7 @@ def test_dev_corr(data, ci, atol):
     assert np.allclose(r, p, atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("ci", ci)
 def test_dev_corr_var(data, ci, atol):
@@ -50,6 +50,7 @@ def test_dev_corr_var(data, ci, atol):
     assert np.allclose(r, p, atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("ci", ci)
 def test_dev_corr_range(data, ci, atol):
@@ -59,6 +60,7 @@ def test_dev_corr_range(data, ci, atol):
     assert np.allclose(r, p, atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("ci", ci)
 def test_val_corr_z(data, ci, atol):
@@ -68,6 +70,7 @@ def test_val_corr_z(data, ci, atol):
     assert np.allclose(r, p, atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("ci", ci)
 def test_val_corr_e(data, ci, atol):
@@ -77,6 +80,7 @@ def test_val_corr_e(data, ci, atol):
     assert np.allclose(r, p, atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("ci", ci)
 def test_val_corr_var(data, ci, atol):

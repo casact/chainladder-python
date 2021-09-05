@@ -19,8 +19,7 @@ def test_vertical_line():
     assert abs(olf.loc["2017"].iloc[0] - ((1 - 184 / 365) * 0.2 + 1)) < 0.00001
 
 
-def test_triangle_json_io():
-    clrd = cl.load_sample("clrd")
+def test_triangle_json_io(clrd):
     xp = clrd.get_array_module()
     clrd2 = cl.read_json(clrd.to_json())
     xp.testing.assert_array_equal(clrd.values, clrd2.values)
@@ -31,9 +30,9 @@ def test_triangle_json_io():
     assert np.all(clrd.valuation == clrd2.valuation)
 
 
-def test_json_for_val():
-    x = cl.load_sample("raa").dev_to_val().to_json()
-    assert cl.read_json(x) == cl.load_sample("raa").dev_to_val()
+def test_json_for_val(raa):
+    x = raa.dev_to_val().to_json()
+    assert cl.read_json(x) == raa.dev_to_val()
 
 
 def test_estimator_json_io():
@@ -53,11 +52,11 @@ def test_pipeline_json_io():
     }
 
 
-def test_json_subtri():
+def test_json_subtri(raa):
     a = cl.read_json(
-        cl.Chainladder().fit_predict(cl.load_sample("raa")).to_json()
+        cl.Chainladder().fit_predict(raa).to_json()
     ).full_triangle_
-    b = cl.Chainladder().fit_predict(cl.load_sample("raa")).full_triangle_
+    b = cl.Chainladder().fit_predict(raa).full_triangle_
     abs(a - b).max().max() < 1e-4
 
 
@@ -68,12 +67,12 @@ def test_json_df():
     assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum() < 1e-5
 
 
-def test_concat():
-    tri = cl.load_sample("clrd").groupby("LOB").sum()
+def test_concat(clrd):
+    tri = clrd.groupby("LOB").sum()
     assert (
         cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0)
         == tri.loc[["wkcomp", "comauto"]]
     )
 
-def test_model_diagnostics():
-    cl.model_diagnostics(cl.Chainladder().fit(cl.load_sample('quarterly')))
+def test_model_diagnostics(qtr):
+    cl.model_diagnostics(cl.Chainladder().fit(qtr))

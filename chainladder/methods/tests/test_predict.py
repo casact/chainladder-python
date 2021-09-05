@@ -23,9 +23,9 @@ def test_mack_predict():
     # mack.predict(raa)
 
 
-def test_bs_random_state_predict():
+def test_bs_random_state_predict(clrd):
     tri = (
-        cl.load_sample("clrd")
+        clrd
         .groupby("LOB")
         .sum()
         .loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]
@@ -46,27 +46,26 @@ def test_bs_random_state_predict():
     )
 
 
-def test_basic_transform():
-    tri = cl.load_sample("raa")
-    cl.Development().fit_transform(tri)
-    cl.ClarkLDF().fit_transform(tri)
-    cl.TailClark().fit_transform(tri)
-    cl.TailBondy().fit_transform(tri)
-    cl.TailConstant().fit_transform(tri)
-    cl.TailCurve().fit_transform(tri)
-    cl.BootstrapODPSample().fit_transform(tri)
-    cl.IncrementalAdditive().fit_transform(tri, sample_weight=tri.latest_diagonal)
+def test_basic_transform(raa):
+    cl.Development().fit_transform(raa)
+    cl.ClarkLDF().fit_transform(raa)
+    cl.TailClark().fit_transform(raa)
+    cl.TailBondy().fit_transform(raa)
+    cl.TailConstant().fit_transform(raa)
+    cl.TailCurve().fit_transform(raa)
+    cl.BootstrapODPSample().fit_transform(raa)
+    cl.IncrementalAdditive().fit_transform(raa, sample_weight=raa.latest_diagonal)
 
-def test_misaligned_index():
-    prism = cl.load_sample('prism')['Paid']
+def test_misaligned_index(prism):
+    prism = prism['Paid']
     model = cl.Chainladder().fit(cl.Development(groupby=['Line', 'Type']).fit_transform(prism))
     a = model.ultimate_.loc[prism.index.iloc[:10]].sum().sum()
     b = model.predict(prism.iloc[:10]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
-   
 
-def test_misaligned_index2():
-    clrd = cl.load_sample('clrd')['CumPaidLoss']
+
+def test_misaligned_index2(clrd):
+    clrd = clrd['CumPaidLoss']
     w = cl.load_sample('clrd')['EarnedPremDIR'].latest_diagonal
     bcl = cl.Chainladder().fit(cl.Development(groupby=['LOB']).fit_transform(clrd))
     bbk = cl.Benktander().fit(cl.Development(groupby=['LOB']).fit_transform(clrd), sample_weight=w)

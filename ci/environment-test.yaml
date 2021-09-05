@@ -23,6 +23,7 @@ dependencies:
   - lxml
   - pytest
   - pytest-cov
+  - pytest-xdist
   - pip
 
   # R ChainLadder unit testing

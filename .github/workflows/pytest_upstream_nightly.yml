@@ -31,5 +31,4 @@ jobs:
           conda env create --file ./ci/environment-latest.yaml;
           conda activate cl_latest;
           python setup.py develop
-          pytest chainladder/core/tests/test_triangle.py
-          pytest chainladder/workflow/tests/test_workflow.py
+          pytest chainladder -m "no r" -n auto

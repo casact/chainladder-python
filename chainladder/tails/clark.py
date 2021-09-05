@@ -141,7 +141,6 @@ class TailClark(TailBase):
         ]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
-        X_new._set_slicers()
         if hasattr(self, "elr_"):
             X_new.elr_ = self.elr_
         return X_new

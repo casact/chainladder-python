@@ -131,9 +131,8 @@ class Development(DevelopmentBase):
         exponent = xp.array([weight_dict.get(item, item) for item in self.average_])
         exponent = xp.nan_to_num(exponent[None, None, None] * (y * 0 + 1))
         link_ratio = y / x
-        self.w_ = xp.array(
-            self._assign_n_periods_weight(obj, n_periods_) *
-            self._drop_adjustment(obj, link_ratio))
+        self.w_ = (self._assign_n_periods_weight(obj, n_periods_) *
+                   self._drop_adjustment(obj, link_ratio))
         w = self.w_ / (x ** (exponent))
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
         if self.n_periods != 1:

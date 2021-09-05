@@ -657,6 +657,7 @@ class Triangle(TriangleBase):
         X = Triangle()
         X.__dict__.update(vars(self))
         X._set_slicers()
+        X.values = X.values.copy()
         return X
 
     def development_correlation(self, p_critical=0.5):

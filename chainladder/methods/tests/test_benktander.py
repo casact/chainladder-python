@@ -20,19 +20,15 @@ def test_benktander_to_chainladder(data, atol):
     assert xp.allclose(xp.nan_to_num(a.values), xp.nan_to_num(b.values), atol=atol)
 
 
-def test_bf_eq_cl_when_using_cl_apriori():
-    cl_ult = cl.Chainladder().fit(cl.load_sample("quarterly")).ultimate_
-    bf_ult = (
-        cl.BornhuetterFerguson()
-        .fit(cl.load_sample("quarterly"), sample_weight=cl_ult)
-        .ultimate_
-    )
+def test_bf_eq_cl_when_using_cl_apriori(qtr):
+    cl_ult = cl.Chainladder().fit(qtr).ultimate_
+    bf_ult = cl.BornhuetterFerguson().fit(qtr, sample_weight=cl_ult).ultimate_
     xp = cl_ult.get_array_module()
     assert xp.allclose(cl_ult.values, bf_ult.values, atol=1e-5)
 
 
-def test_different_backends():
-    clrd = cl.load_sample("clrd")[["CumPaidLoss", "EarnedPremDIR"]]
+def test_different_backends(clrd):
+    clrd = clrd[["CumPaidLoss", "EarnedPremDIR"]]
     clrd = clrd[clrd["LOB"] == "wkcomp"]
     model = cl.BornhuetterFerguson().fit(
         clrd["CumPaidLoss"].sum().set_backend("numpy"),
