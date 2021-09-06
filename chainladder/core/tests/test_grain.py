@@ -32,7 +32,7 @@ def test_grain_returns_valid_tri(qtr):
 def test_grain_increm_arg(qtr):
     clrd_i = qtr["incurred"].cum_to_incr()
     a = clrd_i.grain("OYDY").incr_to_cum()
-    assert a == qtr["incurred"].grain("OYDY")#.set_backend(a.array_backend)
+    assert a == qtr["incurred"].grain("OYDY")
 
 
 def test_commutative(qtr, atol):
@@ -54,7 +54,8 @@ def test_commutative(qtr, atol):
     assert abs(a - b).max().max().max() < atol
 
 
-@pytest.mark.parametrize('grain', ['OYDY', 'OYDQ', 'OYDM', 'OSDS', 'OSDQ', 'OSDM', 'OQDQ', 'OQDM'])#, 'OMDM'])
+@pytest.mark.parametrize('grain',
+    ['OYDY', 'OYDQ', 'OYDM', 'OSDS', 'OSDQ', 'OSDM', 'OQDQ', 'OQDM'])#, 'OMDM'])
 @pytest.mark.parametrize('alt', [0, 1, 2])
 @pytest.mark.parametrize('trailing', [False, True])
 def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):

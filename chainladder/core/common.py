@@ -53,7 +53,7 @@ class Common:
 
     @property
     def cdf_(self):
-        if not hasattr(self, "ldf_"):
+        if not self.has_ldf:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'cdf_'")
         return self.ldf_.incr_to_cum()

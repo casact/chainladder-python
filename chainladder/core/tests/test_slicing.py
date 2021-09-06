@@ -3,7 +3,6 @@ import numpy as np
 
 
 def test_slice_by_boolean(clrd):
-    assert clrd.array_backend == cl.options.get_option('ARRAY_BACKEND')
     assert (
         clrd[clrd["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
         == clrd.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"])
@@ -82,7 +81,7 @@ def test_loc_ellipsis(clrd):
     assert clrd.loc[..., "CumPaidLoss", :, :] == clrd.loc[:, "CumPaidLoss", :, :]
 
 
-def missing_first_lag(raa):
+def test_missing_first_lag(raa):
     x = raa.copy()
     x.values[:, :, :, 0] = 0
     x = x.sum(0)

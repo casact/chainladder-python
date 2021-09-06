@@ -21,7 +21,7 @@ def test_vertical_line():
 
 def test_triangle_json_io(clrd):
     xp = clrd.get_array_module()
-    clrd2 = cl.read_json(clrd.to_json())
+    clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
     xp.testing.assert_array_equal(clrd.values, clrd2.values)
     xp.testing.assert_array_equal(clrd.kdims, clrd2.kdims)
     xp.testing.assert_array_equal(clrd.vdims, clrd2.vdims)

@@ -4,6 +4,11 @@ import numpy as np
 import copy
 import pytest
 
+try:
+    from IPython.core.display import HTML
+except:
+    HTML = None
+
 
 def test_repr(raa):
     np.testing.assert_array_equal(
@@ -272,13 +277,6 @@ def test_init_vector(raa):
     assert a.valuation_date == b.valuation_date
 
 
-def missing_first_lag(raa):
-    x = raa.copy()
-    x.values[:, :, :, 0] = 0
-    x = x.sum(0)
-    x.link_ratio.shape == (1, 1, 9, 9)
-
-
 def test_index_broadcasting(clrd):
     assert ((clrd / clrd.sum()) - ((1 / clrd.sum()) * clrd)).sum().sum().sum() < 1e-4
 
@@ -369,3 +367,31 @@ def test_correct_valutaion(raa):
         raa.iloc[..., :-3, :].latest_diagonal.to_frame(keepdims=True, implicit_axis=True),
         origin='origin', development='valuation', columns='values')
     assert new.valuation_date == raa.valuation_date
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize(
+    'prop', ['cdf_', 'ibnr_', 'full_expectation_', 'full_triangle_'])
+def test_no_fitted(raa, prop):
+    getattr(raa, prop)
+
+def test_pipe(raa):
+    f = lambda x: x.loc[..., 48:]
+    assert raa.loc[..., 48:] == raa.pipe(f)
+
+def test_repr_html(raa, clrd):
+    assert type(raa._repr_html_()) == str
+    assert type(clrd._repr_html_()) == str
+
+
+@pytest.mark.xfail(HTML is None, reason="ipython needed for test")
+def test_heatmap(raa):
+    raa.link_ratio.heatmap()
+
+def test_sparse_column_assignment(prism):
+    t = prism.copy()
+    out = t['Paid']
+    t['Paid2'] = t['Paid']
+    t['Paid'] = lambda x: x['Paid2']
+    assert out == t['Paid']
+    assert t.shape == (34244, 5, 120, 120)

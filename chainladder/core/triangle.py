@@ -160,7 +160,6 @@ class Triangle(TriangleBase):
         else:
             self = self._auto_sparse()
         self._set_slicers()
-
         # Deal with special properties
         if self.is_pattern:
             obj = self.dropna()
