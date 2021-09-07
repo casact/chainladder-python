@@ -1,5 +1,6 @@
 import chainladder as cl
 import numpy as np
+import pytest
 
 
 def test_slice_by_boolean(clrd):
@@ -109,3 +110,26 @@ def test_at_iat(raa):
     raa2.iat[0, 0, 4, -1]
     raa2.iat[-1, -1, 4, 0] = 5
     assert raa1 == raa2
+
+
+@pytest.mark.xfail
+def test_sparse_at_iat(prism):
+    prism.iloc[0, 0, 0, 0] = 1.0
+
+
+def test_sparse_at_iat1(prism):
+    t = prism.copy()
+    t.iat[0, 0, 0, 0] = 5.0
+    t.at[12138, 'reportedCount', '2008-01', 1] = 0
+    assert t == prism
+
+
+def test_sparse_column_assignment(prism):
+    t = prism.copy()
+    out = t['Paid']
+    t['Paid2'] = t['Paid'] # New from physical
+    t['Paid2'] = lambda x: x['Paid'] # Existing from virtual
+    t['Paid'] = t['Paid2'] # Existing from physical
+    t['Paid3'] = lambda t: t['Paid'] # New from virtual
+    assert out == t['Paid']
+    assert t.shape == (34244, 6, 120, 120)

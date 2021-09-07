@@ -94,6 +94,10 @@ class _LocBase:
                 (self.obj.values.coords, np.array(key)[:, None]), 1)
             self.obj.values.data = np.concatenate(
                 (self.obj.values.data, np.array([values])), 0)
+            self.obj.values = self.obj.get_array_module()(
+                self.obj.values.coords, self.obj.values.data, prune=True,
+                has_duplicates=False, shape=self.obj.shape,
+                fill_value=self.obj.values.fill_value)
 
 
 class Location(_LocBase):
@@ -205,9 +209,9 @@ class TriangleSlicer:
             if self.array_backend == "sparse":
                 if key not in self.vdims:
                     k, v, o, d = self.values.shape
-                    self.values.shape = k, v + 1, o, d 
+                    self.values.shape = k, v + 1, o, d
                     self.vdims = np.append(self.vdims, key)
-                return 
+                return
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
         else:
             self.virtual_columns.pop(key)
@@ -293,6 +297,7 @@ class At(Location):
         key = self._check_index(key)
         if self.obj.array_backend == 'sparse':
             key = (key[0][0], key[1][0], key[2][0], key[3][0])
+            print(key)
             self._sparse_setitem(key, values)
         else:
             if isinstance(values, TriangleSlicer):

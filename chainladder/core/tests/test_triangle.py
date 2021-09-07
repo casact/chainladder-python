@@ -17,10 +17,6 @@ def test_repr(raa):
     )
 
 
-def test_arithmetic_union(raa):
-    assert raa.shape == (raa - raa[raa.valuation < "1987"]).shape
-
-
 def test_to_frame_unusual(clrd):
     a = clrd.groupby(["LOB"]).sum().latest_diagonal["CumPaidLoss"].to_frame()
     b = clrd.latest_diagonal["CumPaidLoss"].groupby(["LOB"]).sum().to_frame()
@@ -82,12 +78,6 @@ def test_assign_existing_col(qtr):
     assert out.shape == before
 
 
-def test_arithmetic_across_keys(qtr):
-    x = cl.load_sample("auto")
-    xp = x.get_array_module()
-    xp.testing.assert_array_equal((x.sum() - x.iloc[0]).values, x.iloc[1].values)
-
-
 def test_off_cycle_val_date(qtr):
     assert qtr.valuation_date.strftime("%Y-%m-%d") == "2006-03-31"
 
@@ -106,21 +96,6 @@ def test_value_order(clrd):
 def test_trend(raa, atol):
     assert (
         abs((raa.trend(0.05).trend((1 / 1.05) - 1) - raa).sum().sum()) < 1e-5)
-
-
-def test_arithmetic_1(raa):
-    x = raa
-    np.testing.assert_array_equal(-(((x / x) + 0) * x), -(+x))
-
-
-def test_arithmetic_2(raa):
-    x = raa
-    np.testing.assert_array_equal(1 - (x / x), 0 * x * 0)
-
-
-def test_rtruediv(raa):
-    xp = raa.get_array_module()
-    assert xp.nansum(abs(((1 / raa) * raa).values[0, 0] - raa.nan_triangle)) < 0.00001
 
 
 def test_shift(qtr):
@@ -253,18 +228,10 @@ def test_latest_diagonal_val_to_dev(raa):
     assert raa.latest_diagonal.val_to_dev() == raa[raa.valuation == raa.valuation_date]
 
 
-def test_vector_division(raa):
-    raa.latest_diagonal / raa
-
 
 def test_sumdiff_to_diffsum(clrd):
     out = clrd["CumPaidLoss"]
     assert out.cum_to_incr().incr_to_cum().sum() == out.sum()
-
-
-def test_multiindex_broadcast(clrd):
-    clrd = clrd["CumPaidLoss"]
-    clrd / clrd.groupby("LOB").sum()
 
 
 def test_init_vector(raa):
@@ -275,10 +242,6 @@ def test_init_vector(raa):
     b = cl.Triangle(b, origin="AccYear", columns="premium")
     assert np.all(a.valuation == b.valuation)
     assert a.valuation_date == b.valuation_date
-
-
-def test_index_broadcasting(clrd):
-    assert ((clrd / clrd.sum()) - ((1 / clrd.sum()) * clrd)).sum().sum().sum() < 1e-4
 
 
 def test_groupby_axis1(clrd, prism):
@@ -320,12 +283,6 @@ def test_partial_val_dev(raa):
     raa = raa.latest_diagonal
     raa.iloc[..., -3:, :] = np.nan
     raa.val_to_dev().iloc[0, 0, 0, -1] == raa.iloc[0, 0, 0, -1]
-
-
-def test_index_broadcasting2(clrd):
-    clrd = clrd['CumPaidLoss'].iloc[...,0,0]
-    clrd2 = clrd.groupby('LOB').sum().iloc[:-1]
-    clrd + clrd2
 
 
 def test_sort_axis(clrd):
@@ -388,10 +345,14 @@ def test_repr_html(raa, clrd):
 def test_heatmap(raa):
     raa.link_ratio.heatmap()
 
-def test_sparse_column_assignment(prism):
-    t = prism.copy()
-    out = t['Paid']
-    t['Paid2'] = t['Paid']
-    t['Paid'] = lambda x: x['Paid2']
-    assert out == t['Paid']
-    assert t.shape == (34244, 5, 120, 120)
+
+def test_agg_sparse():
+    a = cl.load_sample('raa')
+    b = cl.load_sample('raa').set_backend('sparse')
+    assert a.mean().mean() == b.mean().mean()
+
+def test_inplace(raa):
+    t = raa.copy()
+    t.dev_to_val(inplace=True)
+    t.val_to_dev(inplace=True)
+    t.grain('OYDY', inplace=True)

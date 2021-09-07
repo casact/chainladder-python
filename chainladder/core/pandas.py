@@ -289,6 +289,9 @@ class TrianglePandas:
     def sqrt(self):
         return self.get_array_module().sqrt(self)
 
+    def round(self, decimals=0, *args, **kwargs):
+        return round(self, decimals)
+
 
 def add_triangle_agg_func(cls, k, v):
     """ Aggregate Overrides in Triangle """
@@ -405,7 +408,7 @@ def set_method(cls, func, k):
 df_passthru = (
     ["to_clipboard", "to_csv", "to_excel", "to_json", "to_html",]
     + ["to_dict", "unstack", "pivot", "drop_duplicates", "describe", "melt",]
-    + ["pct_chg", "round",]
+    + ["pct_chg",]
 )
 for item in df_passthru:
     add_df_passthru(TrianglePandas, item)
