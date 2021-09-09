@@ -115,10 +115,9 @@ settings.json
 
 # macOS related files
 *.DS_Store
-*Icon
-*r
-Icon
-*Icon^M^M
+*Icon?
+*r?
+
 
 # asv environments
 .asv
