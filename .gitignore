@@ -117,6 +117,7 @@ settings.json
 *.DS_Store
 *Icon
 *r
+Icon
 
 # asv environments
 .asv
