@@ -32,6 +32,7 @@ dependencies:
   - lxml
   - pytest
   - pytest-cov
+  - pytest-xdist
   - black
   - rpy2
   - r-foreign

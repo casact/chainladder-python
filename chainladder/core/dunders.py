@@ -94,7 +94,11 @@ class TriangleDunders:
         ):
             # Make sure exact but unsorted index labels works
             x = x.sort_index()
-            y = y.loc[x.index]
+            try:
+                y = y.loc[x.index]
+            except:
+                x = x.groupby(list(common))
+                y = y.groupby(list(common))
         return x, y
 
     def _prep_columns(self, x, y):
@@ -297,7 +301,7 @@ class TriangleDunders:
     def __round__(self, other):
         obj = self.copy()
         xp = obj.get_array_module()
-        obj.values = xp.nan_to_num(obj.values).round(other)
+        obj.values = xp.round(obj.values, other)
         return obj
 
     def __truediv__(self, other):

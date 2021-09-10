@@ -119,7 +119,7 @@ class Triangle(TriangleBase):
         development_date = self._set_development(
             data, development, development_format, origin_date)
         self.development_grain = (
-            self._get_grain(development_date) if len(set(development_date)) != 1
+            self._get_grain(development_date) if development_date.nunique() != 1
             else self.origin_grain)
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
@@ -129,7 +129,6 @@ class Triangle(TriangleBase):
         if not index:
             index = ["Total"]
             data_agg[index[0]] = "Total"
-
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
@@ -141,7 +140,6 @@ class Triangle(TriangleBase):
                has_duplicates=False, sorted=True,
                shape=(len(self.kdims), len(self.vdims),
                       len(self.odims), len(self.ddims))))
-
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
@@ -162,7 +160,6 @@ class Triangle(TriangleBase):
         else:
             self = self._auto_sparse()
         self._set_slicers()
-
         # Deal with special properties
         if self.is_pattern:
             obj = self.dropna()
@@ -556,6 +553,18 @@ class Triangle(TriangleBase):
                  for k, v in indices.items()], axis=0).values
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = mn
+            if len(obj.ddims) > 1 and pd.Timestamp(obj.odims[0]).strftime(
+                "%Y%m"
+            ) != obj.valuation[0].strftime("%Y%m"):
+                addl_ts = (
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq="M")[:-1]
+                    .to_timestamp()
+                    .values
+                )
+                addl = obj.iloc[..., -len(addl_ts) :] * 0
+                addl.ddims = addl_ts
+                obj = concat((addl, obj), axis=-1)
+                obj.values = num_to_nan(obj.values)
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(len(obj.development) -
@@ -647,6 +656,7 @@ class Triangle(TriangleBase):
         X = Triangle()
         X.__dict__.update(vars(self))
         X._set_slicers()
+        X.values = X.values.copy()
         return X
 
     def development_correlation(self, p_critical=0.5):

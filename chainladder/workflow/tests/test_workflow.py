@@ -1,9 +1,8 @@
 import chainladder as cl
-import itertools
+import pytest
 
-def test_grid():
+def test_grid(clrd):
     # Load Data
-    clrd = cl.load_sample("clrd")
     medmal_paid = clrd.groupby("LOB").sum().loc["medmal"]["CumPaidLoss"]
     medmal_prem = (
         clrd.groupby("LOB").sum().loc["medmal"]["EarnedPremDIR"].latest_diagonal
@@ -34,26 +33,26 @@ def test_grid():
         .ibnr_.sum()
     )
 
-def test_pipeline():
-    tri = cl.load_sample('clrd').groupby('LOB').sum()[['CumPaidLoss', 'IncurLoss', 'EarnedPremDIR']]
-    tri['CaseIncurredLoss'] = tri['IncurLoss'] - tri['CumPaidLoss']
 
+@pytest.fixture
+def tri(clrd):
+    tri = clrd.groupby('LOB').sum()[['CumPaidLoss', 'IncurLoss', 'EarnedPremDIR']]
+    tri['CaseIncurredLoss'] = tri['IncurLoss'] - tri['CumPaidLoss']
+    return tri
+
+dev = [cl.Development, cl.ClarkLDF, cl.Trend, cl.IncrementalAdditive,
+       lambda : cl.MunichAdjustment(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss')),
+       lambda :cl.CaseOutstanding(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss'))]
+tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
+ibnr = [cl.Chainladder,  cl.BornhuetterFerguson,
+        lambda : cl.Benktander(n_iters=2), cl.CapeCod]
+
+@pytest.mark.parametrize('dev', dev)
+@pytest.mark.parametrize('tail', tail)
+@pytest.mark.parametrize('ibnr', ibnr)
+def test_pipeline(tri, dev, tail, ibnr):
     X = tri[['CumPaidLoss', 'CaseIncurredLoss']]
     sample_weight = tri['EarnedPremDIR'].latest_diagonal
-    X_gt = X.copy()
-    sample_weight_gt = sample_weight.copy()
-
-    dev = [cl.Development(), cl.ClarkLDF(), cl.Trend(), cl.IncrementalAdditive(),
-             cl.MunichAdjustment(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss')),
-             cl.CaseOutstanding(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss'))]
-    tail = [cl.TailCurve(), cl.TailConstant(), cl.TailBondy(), cl.TailClark()]
-    ibnr = [cl.Chainladder(),  cl.BornhuetterFerguson(), cl.Benktander(n_iters=2), cl.CapeCod()]
-
-    for model in list(itertools.product(dev, tail, ibnr)):
-        assert X == X_gt
-        assert sample_weight == sample_weight_gt
-        cl.Pipeline(
-            steps=[('dev', model[0]),
-                   ('tail', model[1]),
-                   ('ibnr', model[2])]
-        ).fit_predict(X, sample_weight=sample_weight).ibnr_.sum('origin').sum('columns').sum()
+    cl.Pipeline(
+        steps=[('dev', dev()), ('tail', tail()), ('ibnr', ibnr())]
+    ).fit_predict(X, sample_weight=sample_weight).ibnr_.sum('origin').sum('columns').sum()

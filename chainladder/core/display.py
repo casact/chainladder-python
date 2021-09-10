@@ -38,8 +38,6 @@ class TriangleDisplay:
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
-            if len(self.ddims) > 1 and type(self.ddims[0]) is int:
-                data.columns = [["Development Lag"] * len(self.ddims), self.ddims]
             default = data.to_html(
                 max_rows=pd.options.display.max_rows,
                 max_cols=pd.options.display.max_columns,
@@ -125,8 +123,9 @@ class TriangleDisplay:
                     .render()
                 )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
+        else:
+            raise ValueError("heatmap only works with single triangles")
+        if HTML:
             return HTML(output_xnan)
         elif HTML is None:
             raise ImportError("heatmap requires IPython")
-        else:
-            raise ValueError("heatmap only works with single triangles")

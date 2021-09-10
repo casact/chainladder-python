@@ -60,7 +60,8 @@ class TailBase(DevelopmentBase):
         X_new = X.copy()
         triangles = ["ldf_", "std_err_", "sigma_"]
         for item in triangles + ["tail_", "_ave_period", "average_"]:
-            setattr(X_new, item, getattr(self, item))
+            if hasattr(self, item):
+                setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
         return X_new
 

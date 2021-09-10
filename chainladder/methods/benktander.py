@@ -109,17 +109,17 @@ class Benktander(MethodBase):
         else:
             apriori = sample_weight * self.apriori
         apriori.columns = sample_weight.columns
-        return apriori
-
+        return apriori  
 
     def _get_ultimate(self, X, expectation):
         from chainladder.utils.utility_functions import num_to_nan
         if X.is_cumulative == False:
-            ultimate = X.sum('development').val_to_dev()
+            ld = X.sum('development')
+            ultimate = ld.val_to_dev()
         else:
+            ld = X.latest_diagonal
             ultimate = X.copy()
         cdf = self._align_cdf(ultimate, expectation)
-        ld = ultimate.latest_diagonal
         backend = cdf.array_backend
         xp = cdf.get_array_module()
         cdf = cdf.sort_index()
