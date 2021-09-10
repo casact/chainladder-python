@@ -208,22 +208,20 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 except:
                     pass
             target = target_field.map(arr)
-        freq = "M" if len(target.unique()) == 1 else TriangleBase._get_grain(target)
-        #if period_end and freq == 'Y':
-        #    freq = 'A-' + target.iloc[-1].strftime("%b").upper()
+        freq = "M" if target.nunique() == 1 else TriangleBase._get_grain(target)
         return target.dt.to_period(freq).dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
 
     @staticmethod
     def _development_lag(origin, development):
         """ For tabular format, this will convert the origin/development
             difference to a development lag """
-        year_diff = development.dt.year - origin.dt.year
-        month_diff = development.dt.month - origin.dt.month
-        return year_diff * 12 + month_diff + 1
-
+        return ((development - origin) / 
+                np.timedelta64(1, 'M')).round(0).astype(int)
+    
     @staticmethod
     def _get_grain(array):
-        return {1: "Y", 2: "S", 4: "Q"}.get(len(set(array.dt.month)), "M")
+        return {1: "Y", 2: "S", 4: "Q"}.get(
+            len(set(pd.Series(array.unique()).dt.month)), "M")
 
     @staticmethod
     def _cartesian_product(*arrays):

@@ -69,49 +69,60 @@ class BootstrapODPSample(DevelopmentBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        backend = X.array_backend
-        if backend == "sparse":
-            X = X.set_backend("numpy")
+        if X.shape[1] > 1:
+            from chainladder.utils.utility_functions import concat
+            out = [BootstrapODPSample(**self.get_params()).fit(X.iloc[:, i])
+                   for i in range(X.shape[1])]
+            xp = X.get_array_module(out[0].design_matrix_)
+            self.design_matrix_ = xp.concatenate([i.design_matrix_[None] for i in out], axis=0)
+            self.hat_ = xp.concatenate([i.hat_[None] for i in out], axis=0)
+            self.resampled_triangles_ = concat([i.resampled_triangles_ for i in out], axis=1)
+            self.scale_ = xp.array([i.scale_ for i in out])
+            self.w_ = out[0].w_
         else:
-            X = X.copy()
-        xp = X.get_array_module()
-        if X.shape[:2] != (1, 1):
-            raise ValueError("Only single index/column triangles are supported")
-        if type(X.ddims) != np.ndarray:
-            raise ValueError("Triangle must be expressed with development lags")
-        lag = {"M": 1, "Q": 3, "Y": 12}[X.development_grain]
-        obj = Development(
-            n_periods=self.n_periods,
-            drop=self.drop,
-            drop_high=self.drop_high,
-            drop_low=self.drop_low,
-            drop_valuation=self.drop_valuation,
-        ).fit_transform(X)
-        self.w_ = obj.w_
-        obj = Chainladder().fit(obj)
-        # Works for only a single triangle - can we generalize this
-        exp_incr_triangle = obj.full_expectation_.cum_to_incr().values[
-            0, 0, :, : X.shape[-1]
-        ]
-        exp_incr_triangle = xp.nan_to_num(exp_incr_triangle) * obj.X_.nan_triangle
-        self.design_matrix_ = self._get_design_matrix(X)
-        if self.hat_adj:
-            try:
-                self.hat_ = self._get_hat(X, exp_incr_triangle)
-            except:
-                warn("Could not compute hat matrix.  Setting hat_adj to False")
-                self.had_adj = False
+            backend = X.array_backend
+            if backend == "sparse":
+                X = X.set_backend("numpy")
+            else:
+                X = X.copy()
+            xp = X.get_array_module()
+            if len(X) != 1:
+                raise ValueError("Only single index triangles are supported")
+            if type(X.ddims) != np.ndarray:
+                raise ValueError("Triangle must be expressed with development lags")
+            lag = {"M": 1, "Q": 3, "Y": 12}[X.development_grain]
+            obj = Development(
+                n_periods=self.n_periods,
+                drop=self.drop,
+                drop_high=self.drop_high,
+                drop_low=self.drop_low,
+                drop_valuation=self.drop_valuation,
+            ).fit_transform(X)
+            self.w_ = obj.w_
+            obj = Chainladder().fit(obj)
+            # Works for only a single triangle - can we generalize this
+            exp_incr_triangle = obj.full_expectation_.cum_to_incr().values[
+                0, 0, :, : X.shape[-1]
+            ]
+            exp_incr_triangle = xp.nan_to_num(exp_incr_triangle) * obj.X_.nan_triangle
+            self.design_matrix_ = self._get_design_matrix(X)
+            if self.hat_adj:
+                try:
+                    self.hat_ = self._get_hat(X, exp_incr_triangle)
+                except:
+                    warn("Could not compute hat matrix.  Setting hat_adj to False")
+                    self.had_adj = False
+                    self.hat_ = None
+            else:
                 self.hat_ = None
-        else:
-            self.hat_ = None
-        self.resampled_triangles_, self.scale_ = self._get_simulation(
-            X, exp_incr_triangle
-        )
-        n_obs = xp.nansum(self.w_)
-        n_origin_params = X.shape[2]
-        n_dev_params = X.shape[3] - 1
-        deg_free = n_obs - n_origin_params - n_dev_params
-        deg_free_adj_fctr = xp.sqrt(n_obs / deg_free)
+            self.resampled_triangles_, self.scale_ = self._get_simulation(
+                X, exp_incr_triangle
+            )
+            n_obs = xp.nansum(self.w_)
+            n_origin_params = X.shape[2]
+            n_dev_params = X.shape[3] - 1
+            deg_free = n_obs - n_origin_params - n_dev_params
+            deg_free_adj_fctr = xp.sqrt(n_obs / deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):

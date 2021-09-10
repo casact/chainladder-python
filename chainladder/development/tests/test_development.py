@@ -1,16 +1,13 @@
 import numpy as np
 import pytest
 import chainladder as cl
-from rpy2.robjects.packages import importr
-from rpy2.robjects import r
 
-
-CL = importr("ChainLadder")
-
-
-@pytest.fixture
-def atol():
-    return 1e-5
+try:
+    from rpy2.robjects.packages import importr
+    from rpy2.robjects import r
+    CL = importr("ChainLadder")
+except:
+    pass
 
 
 def mack_r(data, alpha, est_sigma):
@@ -48,8 +45,7 @@ def test_full_slice2():
     )
 
 
-def test_drop1():
-    raa = cl.load_sample("raa")
+def test_drop1(raa):
     assert (
         cl.Development(drop=("1982", 12)).fit(raa).ldf_.values[0, 0, 0, 0]
         == cl.Development(drop_high=[True] + [False] * 8)
@@ -58,8 +54,7 @@ def test_drop1():
     )
 
 
-def test_drop2():
-    raa = cl.load_sample("raa")
+def test_drop2(raa):
     assert (
         cl.Development(drop_valuation="1981").fit(raa).ldf_.values[0, 0, 0, 0]
         == cl.Development(drop_low=[True] + [False] * 8)
@@ -83,6 +78,7 @@ def test_n_periods():
     )
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -93,6 +89,7 @@ def test_mack_ldf(data, averages, est_sigma, atol):
     assert xp.allclose(r, p.values[0, 0, :, :], atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -105,6 +102,7 @@ def test_mack_sigma(data, averages, est_sigma, atol):
     assert xp.allclose(r, p.values[0, 0, :, :], atol=atol)
 
 
+@pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
 @pytest.mark.parametrize("est_sigma", est_sigma)
@@ -115,9 +113,9 @@ def test_mack_std_err(data, averages, est_sigma, atol):
     assert xp.allclose(r, p.values[0, 0, :, :], atol=atol)
 
 
-def test_assymetric_development():
+def test_assymetric_development(atol):
     quarterly = cl.load_sample("quarterly")["paid"]
     xp = np if quarterly.array_backend == "sparse" else quarterly.get_array_module()
     dev = cl.Development(n_periods=1, average="simple").fit(quarterly)
     dev2 = cl.Development(n_periods=1, average="regression").fit(quarterly)
-    assert xp.allclose(dev.ldf_.values, dev2.ldf_.values, atol=1e-5)
+    assert xp.allclose(dev.ldf_.values, dev2.ldf_.values, atol=atol)

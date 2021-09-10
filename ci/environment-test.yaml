@@ -10,8 +10,8 @@ dependencies:
   - python
 
   # Downgrade numpy for rpy2 support
-  - numpy<=1.16.4
-  - pandas<=1.1.5
+  - numpy
+  - pandas
   - scikit-learn
   - sparse
   - dill
@@ -23,9 +23,9 @@ dependencies:
   - lxml
   - pytest
   - pytest-cov
+  - pip
 
   # R ChainLadder unit testing
-  - rpy2
   - tzlocal
   - libiconv
   - r-nloptr
@@ -57,3 +57,5 @@ dependencies:
   - r-tweedie
   - r-statmod
   - r-cplm
+  - pip:
+    - rpy2
