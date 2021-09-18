@@ -356,3 +356,12 @@ def test_inplace(raa):
     t.dev_to_val(inplace=True)
     t.val_to_dev(inplace=True)
     t.grain('OYDY', inplace=True)
+
+def test_malformed_init():
+    assert cl.Triangle(
+        data=pd.DataFrame({
+            'Accident Date': ['2020-07-23', '2019-07-23', '2018-07-23', '2016-07-23', '2020-08-23', '2019-09-23', '2018-10-23'],
+            'Valuation Date': ['2021-01-01', '2021-01-01', '2021-01-01', '2021-01-01', '2021-01-01', '2021-01-01', '2021-01-01'],
+            'Loss': [10000, 10000, 10000, 10000, 0, 0, 0]}),
+        origin='Accident Date', development='Valuation Date', columns='Loss'
+    ).origin_grain == 'M'

@@ -380,6 +380,7 @@ def add_groupby_agg_func(cls, k, v):
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0])
             obj.origin_grain = self.obj._get_grain(odims)
+            obj.origin_grain = 'S' if obj.origin_grain == '2Q' else obj.origin_grain
             obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:
