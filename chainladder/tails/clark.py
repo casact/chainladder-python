@@ -42,12 +42,17 @@ class TailClark(TailBase):
         The scale parameter of the model.
     norm_resid_ : Triangle
         The "Normalized" Residuals of the model according to Clark.
+    tail_duration : int 
+        The number of months beyond the latest available development age the
+        `ldf_` and `cdf_` vectors should extend.
     """
 
-    def __init__(self, growth="loglogistic", truncation_age=None, attachment_age=None):
+    def __init__(self, growth="loglogistic", truncation_age=None,
+                 attachment_age=None, tail_duration=12):
         self.growth = growth
         self.truncation_age = truncation_age
         self.attachment_age = attachment_age
+        self.tail_duration = tail_duration
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.

@@ -15,7 +15,8 @@ class TailBase(DevelopmentBase):
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
         xp = obj.ldf_.get_array_module()
-        self._ave_period = {"Y": (1, 12), "Q": (4, 3), "M": (12, 1)}[
+        m = int(self.tail_duration / 12)
+        self._ave_period = {"Y": (1 * m, 12), "Q": (4 * m, 3), "M": (12 * m, 1)}[
             obj.development_grain
         ]
         t_ddims = [
