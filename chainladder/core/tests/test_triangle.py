@@ -365,3 +365,13 @@ def test_malformed_init():
             'Loss': [10000, 10000, 10000, 10000, 0, 0, 0]}),
         origin='Accident Date', development='Valuation Date', columns='Loss'
     ).origin_grain == 'M'
+
+def test_sparse_reassignment_no_mutate(prism):
+    x = prism['Paid'].incr_to_cum()
+    x["Capped 100k Paid"] = cl.minimum(x["Paid"], 100000)
+    x["Excess 100k Paid"] = x["Paid"] - x["Capped 100k Paid"]
+    a = x["Excess 100k Paid"].sum().grain("OYDY")
+    x["Capped 100k Paid"] = cl.minimum(x["Paid"], 100000)
+    x["Excess 100k Paid"] = x["Paid"] - x["Capped 100k Paid"]
+    b = x["Excess 100k Paid"].sum().grain("OYDY")
+    assert a == b

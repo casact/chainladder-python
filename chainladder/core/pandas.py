@@ -179,6 +179,7 @@ class TrianglePandas:
         Triangle
 
         """
+        labels = [labels] if type(labels) is str else list(labels)
         if axis == 1:
             return self[[item for item in self.columns if item not in labels]]
         else:
