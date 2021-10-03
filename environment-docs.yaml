@@ -27,3 +27,4 @@ dependencies:
   - pip:
     - git+https://github.com/casact/chainladder-python/
     - sphinx_gallery
+    - jupyter-book

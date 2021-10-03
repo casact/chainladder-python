@@ -46,3 +46,4 @@ dependencies:
     - sphinx_gallery
     - asv
     - nb_black
+    - jupyter-book

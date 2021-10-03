@@ -232,7 +232,7 @@ version recognizes any ommissions you specify.
   >>> transformed_triangle.link_ratio.heatmap()
 
 
-.. figure:: ../_static/images/transformed_heatmap.PNG
+.. figure:: ../images/transformed_heatmap.PNG
    :align: center
    :scale: 40%
 
@@ -853,7 +853,7 @@ The `BarnettZehnwirth` estimator solves for development patterns using the
 Probabilistic Trend Family (PTF) regression framework.  Unlike the ELRF framework,
 which assumes no ``valuation`` covariate, the PTF framework allows for this.
 
-.. figure:: ../_static/images/prob_trend_family.PNG
+.. figure:: ../images/prob_trend_family.PNG
    :align: center
    :scale: 40%
 

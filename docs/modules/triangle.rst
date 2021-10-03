@@ -52,7 +52,7 @@ use ``index`` and ``columns`` in the same way you would for a pandas DataFrame.
 You can think of the 4D structure as a pandas DataFrame where each cell (row,
 column) is its own triangle.
 
-.. image:: ../_static/images/triangle_graphic.PNG
+.. image:: ../images/triangle_graphic.PNG
 
 Like pandas, you can access the ``values`` property of a triangle to get its numpy
 representation, however the Triangle class provides many helper methods to
@@ -68,7 +68,7 @@ data can come in a variety of forms those formats should be coerced to a pandas
 DataFrame before creating a triangle. The DataFrame also **must** be in tabular
 (long) format, not triangle (wide) format:
 
-.. image:: ../_static/images/triangle_bad_good.PNG
+.. image:: ../images/triangle_bad_good.PNG
 
 At a minimum, the DataFrame must also:
 
@@ -341,7 +341,7 @@ heatmap method requires IPython/Jupyter notebook to render.
 If executed in a notebook environment should produce:
 
 
-.. figure:: ../_static/images/heatmap.PNG
+.. figure:: ../images/heatmap.PNG
    :align: center
    :scale: 40%
 

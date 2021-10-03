@@ -1,0 +1,27 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: intro
+parts:
+  - caption: Getting Started
+    chapters:
+    - file: tutorials/index
+    - file: auto_examples/index
+  - caption: User Guide
+    chapters:
+    - file: modules/triangle
+    - file: modules/development
+    - file: modules/tails
+    - file: modules/methods
+    - file: modules/adjustments
+    - file: modules/workflow
+    - file: modules/utilities
+  - caption: Library Reference
+    chapters:
+    - file: library/install
+    - file: modules/api
+    - file: library/releases
+    - file: library/contributing
+    - file: library/roadmap
+    - file: library/glossary

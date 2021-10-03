@@ -162,7 +162,7 @@ The :class:`ParallelogramOLF` estimator is used to on-level a Triangle using
 the parallogram technique.  It requires a "rate history" and supports both
 vertical line estimates as well as the more common effective date estimates.
 
-.. image:: ../_static/images/onlevel.PNG
+.. image:: ../images/onlevel.PNG
 
 Rate History
 ---------------
