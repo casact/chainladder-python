@@ -1,3 +1,4 @@
+# jupyter-book config sphinx .
 author = ''
 bibtex_bibfiles = ['references.bib']
 comments_config = {'hypothesis': False, 'utterances': False}

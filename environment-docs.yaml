@@ -16,6 +16,7 @@ dependencies:
   - dill
   - xlcompose
   - patsy
+  - statsmodels
 
   # Docs
   - ipython
@@ -28,3 +29,4 @@ dependencies:
     - git+https://github.com/casact/chainladder-python/
     - sphinx_gallery
     - jupyter-book
+    - nb_black
