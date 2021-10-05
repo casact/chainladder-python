@@ -37,7 +37,7 @@ Tooling to generate loss development
 
 **Applications**: comprehensive library of development techniques
 
-**Algorithms**: [Development](development:development), [MunichAdjustment](modules/development/development), [ClarkLDF](development), …
+**Algorithms**: [Development](development:development), [MunichAdjustment](development:munichadjustment), [ClarkLDF](development:clarkldf), …
 ---
 :header: bg-jb-three
 
@@ -47,7 +47,7 @@ Extrapolate development patterns beyond the known data.
 
 **Applications**: Long-tailed lines of business
 
-**Algorithms**: TailCurve, TailConstant, TailBondy, …
+**Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), [TailBondy](tails:tailbondy), …
 
 :::
 
@@ -64,7 +64,7 @@ Generate IBNR estimates and associated statistics
 
 **Applications**: constructing reserve estimates
 
-**Algorithms**: Chainladder, BornhuetterFerguson, CapeCod, …
+**Algorithms**: [Chainladder](methods:chainladder), [BornhuetterFerguson](methods:bornhuetterferguson), [CapeCod](methods:capecod), …
 
 
 ---
@@ -76,7 +76,7 @@ Common actuarial data adjustments
 
 **Applications**: Simulation, trending, on-leveling
 
-**Classes**: BootstrapODPSample, BerquistSherman, Trend,…
+**Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [BerquistSherman](adjustments:berquistsherman), [Trend](adjustments:trend),…
 
 ---
 :header: bg-jb-three
@@ -88,5 +88,5 @@ Workflow tools for complex analyses
 
 **Application**: scenario testing, simulation, ensembling
 
-**Utilities**: Pipeline, VotingChainladder, …
+**Utilities**: [Pipeline](workflow:pipeline), [VotingChainladder](workflow:votingchainladder), …
 :::

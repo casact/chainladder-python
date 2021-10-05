@@ -13,10 +13,11 @@ from chainladder.core.common import Common
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def _set_fit_groups(self, X):
         """ Used for assigning group_index in fit """
+        backend = 'numpy' if X.array_backend in ['sparse', 'numpy'] else 'cupy'
         if self.groupby is None:
-            return X
+            return X.set_backend(backend)
         if callable(self.groupby) or type(self.groupby) in [list, str, pd.Series]:
-            return X.groupby(self.groupby).sum()
+            return X.groupby(self.groupby).sum().set_backend(backend)
         else:
             raise ValueError("Cannot determine groupings.")
 

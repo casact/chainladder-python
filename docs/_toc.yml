@@ -6,6 +6,7 @@ root: intro
 parts:
   - caption: Getting Started
     chapters:
+    - file: library/install
     - file: tutorials/index
     - file: auto_examples/index
   - caption: User Guide
@@ -19,7 +20,6 @@ parts:
     - file: modules/utilities
   - caption: Library Reference
     chapters:
-    - file: library/install
     - file: modules/api
     - file: library/releases
     - file: library/contributing
