@@ -36,7 +36,7 @@ class TailCurve(TailBase):
         threshold set to 1.00001 to avoid distortion caused by ldfs close to 1.
         Upper threshold can be used as an alternative to the fit_period start,
         to make the selection value based rather then period based.
-    tail_duration : int
+    projection_period : int
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
 
@@ -67,7 +67,7 @@ class TailCurve(TailBase):
         errors="ignore",
         attachment_age=None,
         reg_threshold=(1.00001,None),
-        tail_duration = 12
+        projection_period = 12
     ):
         self.curve = curve
         self.fit_period = fit_period
@@ -75,7 +75,7 @@ class TailCurve(TailBase):
         self.errors = errors
         self.attachment_age = attachment_age
         self.reg_threshold = reg_threshold
-        self.tail_duration = tail_duration
+        self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.

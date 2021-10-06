@@ -43,7 +43,7 @@ class TailBondy(TailBase):
     earliest_ldf_ : DataFrame
         Based on the ``earliest_age`` selection, this shows the seed ``ldf_`` used
         in fitting the Bondy exponent.
-    tail_duration : int
+    projection_period : int
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
 
@@ -53,10 +53,10 @@ class TailBondy(TailBase):
 
     """
 
-    def __init__(self, earliest_age=None, attachment_age=None, tail_duration=12):
+    def __init__(self, earliest_age=None, attachment_age=None, projection_period=12):
         self.earliest_age = earliest_age
         self.attachment_age = attachment_age
-        self.tail_duration = tail_duration
+        self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
