@@ -42,7 +42,7 @@ class TailClark(TailBase):
         The scale parameter of the model.
     norm_resid_ : Triangle
         The "Normalized" Residuals of the model according to Clark.
-    projection_period : int 
+    projection_period : int
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
     """
@@ -80,30 +80,20 @@ class TailClark(TailBase):
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
         age_offset = {"Y": 6.0, "Q": 1.5, "M": 0.5}[X.development_grain]
-        fitted = 1 / model.G_(
-            xp.array(
-                [
-                    self._ave_period[1] + X.ddims - age_offset
-                    for item in range(self._ave_period[0] + 2)
-                ]
-            )[0]
-        )
+        fitted = 1 / model.G_(self.ldf_.ddims - age_offset)
         fitted = xp.concatenate(
             (
-                fitted.values[..., :-1] / fitted.values[..., -1:],
+                fitted.values[..., :-1] / fitted.values[..., 1:],
                 fitted.values[..., -1:],
             ),
             -1,
         )
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
         attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
-        self.ldf_.values = xp.concatenate(
-            (
-                self.ldf_.values[..., : sum(X.ddims <= attachment_age)],
-                fitted[..., -sum(X.ddims >= attachment_age) :],
-            ),
-            axis=-1,
-        )
+        self.ldf_.values = xp.concatenate((
+            self.ldf_.values[..., : sum(self.ldf_.ddims < attachment_age)],
+            fitted[..., -sum(self.ldf_.ddims >= attachment_age) :],),
+            axis=-1,)
         self.omega_ = model.omega_
         self.theta_ = model.theta_
         self.G_ = model.G_
