@@ -215,13 +215,19 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
     def _development_lag(origin, development):
         """ For tabular format, this will convert the origin/development
             difference to a development lag """
-        return ((development - origin) / 
+        return ((development - origin) /
                 np.timedelta64(1, 'M')).round(0).astype(int)
-    
+
     @staticmethod
     def _get_grain(array):
-        return {1: "Y", 2: "S", 4: "Q"}.get(
-            len(set(pd.Series(array.unique()).dt.month)), "M")
+        u = pd.Series(array).dt.month.sort_values().diff().dropna().unique()
+        u = u[u>0]
+        if len(u) > 1:
+            return 'M'
+        elif len(u) == 0:
+            return 'Y'
+        else:
+            return {6: "2Q", 3: "Q"}.get(u[0], "M")
 
     @staticmethod
     def _cartesian_product(*arrays):

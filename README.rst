@@ -41,7 +41,7 @@ Available Estimators
 .. |Build Status| image:: https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
-   :target: http://chainladder-python.readthedocs.io/en/latest/?badge=latest
+   :target: http://chainladder-python.readthedocs.io/en/stable/?badge=latest
 
 .. |codecov io| image:: https://codecov.io/github/casact/chainladder-python/coverage.svg?branch=master
    :target: https://codecov.io/github/casact/chainladder-python?branch=master
@@ -71,32 +71,32 @@ Available Estimators
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
 
-.. _Development: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#basic-development
-.. _TailCurve: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#ldf-curve-fitting
-.. _Chainladder: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#basic-chainladder
-.. _BootstrapODPSample: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#bootstrap-sampling
-.. _DevelopmentConstant: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#external-patterns
-.. _TailConstant: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#external-data
-.. _MackChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#mack-chainladder
-.. _BerquistSherman: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#berquist-sherman
-.. _MunichAdjustment: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#munich-adjustment
-.. _TailBondy: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#the-bondy-tail
-.. _BornhuettterFerguson: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#bornhuetter-ferguson
-.. _Pipeline: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#pipeline
-.. _ClarkLDF: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#growth-curve-fitting
-.. _TailClark: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#growth-curve-extrapolation
-.. _Benktander: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#benktander
-.. _GridSearch: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#gridsearch
-.. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#incremental-additive
-.. _CapeCod: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#cape-cod
-.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#parallelogramolf
-.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#votingchainladder
-.. _Trend: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#trend
-.. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#caseoutstanding
-.. _TweedieGLM: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#tweedieglm
-.. _DevelopmentML: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#developmentml
-.. _BarnettZehnwirth: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#barnettzehnwirth
-.. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
+.. _Development: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#basic-development
+.. _TailCurve: https://chainladder-python.readthedocs.io/en/stable/modules/tails.html#ldf-curve-fitting
+.. _Chainladder: https://chainladder-python.readthedocs.io/en/stable/modules/methods.html#basic-chainladder
+.. _BootstrapODPSample: https://chainladder-python.readthedocs.io/en/stable/modules/workflow.html#bootstrap-sampling
+.. _DevelopmentConstant: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#external-patterns
+.. _TailConstant: https://chainladder-python.readthedocs.io/en/stable/modules/tails.html#external-data
+.. _MackChainladder: https://chainladder-python.readthedocs.io/en/stable/modules/methods.html#mack-chainladder
+.. _BerquistSherman: https://chainladder-python.readthedocs.io/en/stable/modules/workflow.html#berquist-sherman
+.. _MunichAdjustment: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#munich-adjustment
+.. _TailBondy: https://chainladder-python.readthedocs.io/en/stable/modules/tails.html#the-bondy-tail
+.. _BornhuettterFerguson: https://chainladder-python.readthedocs.io/en/stable/modules/methods.html#bornhuetter-ferguson
+.. _Pipeline: https://chainladder-python.readthedocs.io/en/stable/modules/workflow.html#pipeline
+.. _ClarkLDF: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#growth-curve-fitting
+.. _TailClark: https://chainladder-python.readthedocs.io/en/stable/modules/tails.html#growth-curve-extrapolation
+.. _Benktander: https://chainladder-python.readthedocs.io/en/stable/modules/methods.html#benktander
+.. _GridSearch: https://chainladder-python.readthedocs.io/en/stable/modules/workflow.html#gridsearch
+.. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#incremental-additive
+.. _CapeCod: https://chainladder-python.readthedocs.io/en/stable/modules/methods.html#cape-cod
+.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/stable/modules/adjustments.html#parallelogramolf
+.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/stable/modules/workflow.html#votingchainladder
+.. _Trend: https://chainladder-python.readthedocs.io/en/stable/modules/adjustments.html#trend
+.. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#caseoutstanding
+.. _TweedieGLM: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#tweedieglm
+.. _DevelopmentML: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#developmentml
+.. _BarnettZehnwirth: https://chainladder-python.readthedocs.io/en/stable/modules/development.html#barnettzehnwirth
+.. _Documentation: https://chainladder-python.readthedocs.io/en/stable/
 
 Getting Started Tutorials
 -------------------------
@@ -137,11 +137,11 @@ Want to contribute?
 Check out our `contributing guidelines`_.
 
 .. _here: https://github.com/casact/chainladder-python/tree/master/docs/tutorials
-.. _Working with Triangles: https://chainladder-python.readthedocs.io/en/latest/tutorials/triangle-tutorial.html
-.. _Selecting Development Patterns: https://chainladder-python.readthedocs.io/en/latest/tutorials/development-tutorial.html
-.. _Extending Development Patterns with Tails: https://chainladder-python.readthedocs.io/en/latest/tutorials/tail-tutorial.html
-.. _Applying Deterministic Methods: https://chainladder-python.readthedocs.io/en/latest/tutorials/deterministic-tutorial.html
-.. _Applying Stochastic Methods: https://chainladder-python.readthedocs.io/en/latest/tutorials/stochastic-tutorial.html
-.. _Large Datasets: https://chainladder-python.readthedocs.io/en/latest/tutorials/large-datasets.html
+.. _Working with Triangles: https://chainladder-python.readthedocs.io/en/stable/tutorials/triangle-tutorial.html
+.. _Selecting Development Patterns: https://chainladder-python.readthedocs.io/en/stable/tutorials/development-tutorial.html
+.. _Extending Development Patterns with Tails: https://chainladder-python.readthedocs.io/en/stable/tutorials/tail-tutorial.html
+.. _Applying Deterministic Methods: https://chainladder-python.readthedocs.io/en/stable/tutorials/deterministic-tutorial.html
+.. _Applying Stochastic Methods: https://chainladder-python.readthedocs.io/en/stable/tutorials/stochastic-tutorial.html
+.. _Large Datasets: https://chainladder-python.readthedocs.io/en/stable/tutorials/large-datasets.html
 .. _github discussions: https://github.com/casact/chainladder-python/discussions
-.. _contributing guidelines: https://chainladder-python.readthedocs.io/en/latest/contributing.html
+.. _contributing guidelines: https://chainladder-python.readthedocs.io/en/stable/contributing.html

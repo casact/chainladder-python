@@ -17,7 +17,7 @@ class TailBondy(TailBase):
     ----------
     earliest_age : int
         The earliest age from which the Bondy exponent is to be calculated.
-        Defaults to earliest available in the Triangle. Any available development
+        Defaults to latest age in the Triangle. Any available development
         age can be used.
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
@@ -40,9 +40,9 @@ class TailBondy(TailBase):
         sigma with tail factor applied.
     std_err_ : Triangle
         std_err with tail factor applied
-    earliest_ldf_ : DataFrame
-        Based on the ``earliest_age`` selection, this shows the seed ``ldf_`` used
-        in fitting the Bondy exponent.
+    projection_period : int
+        The number of months beyond the latest available development age the
+        `ldf_` and `cdf_` vectors should extend.
 
     See also
     --------
@@ -50,9 +50,10 @@ class TailBondy(TailBase):
 
     """
 
-    def __init__(self, earliest_age=None, attachment_age=None):
+    def __init__(self, earliest_age=None, attachment_age=None, projection_period=12):
         self.earliest_age = earliest_age
         self.attachment_age = attachment_age
+        self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -80,7 +81,7 @@ class TailBondy(TailBase):
         super().fit(X, y, sample_weight)
 
         if self.earliest_age is None:
-            earliest_age = X.ddims[0]
+            earliest_age = X.ddims[-2]
         else:
             earliest_age = X.ddims[
                 int(

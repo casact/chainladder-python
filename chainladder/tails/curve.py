@@ -15,10 +15,12 @@ class TailCurve(TailBase):
     ----------
     curve : str ('exponential', 'inverse_power')
         The type of curve extrapolation you'd like to use
-    fit_period : tuple (start, stop)
+    fit_period : tuple (start, stop) or list(bool)
         A tuple representing the range of ldfs to use in the curve fit.
         The use of ``None`` will use the edge of the triangle.  For example,
         (48, None) will use development factors for age 48 and beyond.
+        Alternatively, passing a list of booleans [True, False, ...] will
+        allow for excluding (False) any development patterns from fitting.
     extrap_periods : int
         Then number of development periods from attachment point to extrapolate
         the fit.
@@ -36,6 +38,10 @@ class TailCurve(TailBase):
         threshold set to 1.00001 to avoid distortion caused by ldfs close to 1.
         Upper threshold can be used as an alternative to the fit_period start,
         to make the selection value based rather then period based.
+    projection_period : int
+        The number of months beyond the latest available development age the
+        `ldf_` and `cdf_` vectors should extend.
+
 
     Attributes
     ----------
@@ -62,7 +68,8 @@ class TailCurve(TailBase):
         extrap_periods=100,
         errors="ignore",
         attachment_age=None,
-        reg_threshold=(1.00001,None)
+        reg_threshold=(1.00001,None),
+        projection_period = 12
     ):
         self.curve = curve
         self.fit_period = fit_period
@@ -70,6 +77,7 @@ class TailCurve(TailBase):
         self.errors = errors
         self.attachment_age = attachment_age
         self.reg_threshold = reg_threshold
+        self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -95,6 +103,8 @@ class TailCurve(TailBase):
                 "Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age)."
             )
             fit_period = self.fit_period
+        elif type(self.fit_period) is list:
+            fit_period = xp.array(self.fit_period)[None, None, None, :]
         else:
             grain = {"Y": 12, "Q": 3, "M": 1}[X.development_grain]
             start = (
@@ -112,20 +122,26 @@ class TailCurve(TailBase):
         xp = self.ldf_.get_array_module()
         _y = self.ldf_.values[..., : X.shape[-1] - 1].copy()
         _w = xp.zeros(_y.shape)
-        _w[..., fit_period] = 1.0
+        if type(fit_period) is slice:
+            _w[..., fit_period] = 1.0
+        else:
+            _w = (_w + 1) * fit_period
         if self.reg_threshold[0] is None:
-            warnings.warn("Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure" \
-                          "valid inputs for regression.")
+            warnings.warn(
+            "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure",
+            "valid inputs for regression.")
             lower_threshold = 1
         elif self.reg_threshold[0] < 1:
-            warnings.warn("Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure" \
-                          "valid inputs for regression.")
+            warnings.warn(
+            "Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure "
+            "valid inputs for regression.")
             lower_threshold = 1
         else:
             lower_threshold = self.reg_threshold[0]
         if self.reg_threshold[1] is not None:
             if self.reg_threshold[1] <= lower_threshold:
-                warnings.warn("Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'.")
+                warnings.warn(
+                "Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'.")
                 upper_threshold = None
             else:
                 upper_threshold = self.reg_threshold[1]
@@ -138,7 +154,7 @@ class TailCurve(TailBase):
             else:
                 _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
                 _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
-        elif self.errors == "raise" and xp.any(y < 1.0):
+        elif self.errors == "raise" and xp.any(_y < 1.0):
             raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
         _y = xp.log(_y - 1)
         n_obs = X.shape[-1] - 1

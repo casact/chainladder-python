@@ -81,32 +81,9 @@ def floor(x, *args, **kwargs):
     return x
 
 
-def minimum(x1, x2):
-    if type(x2) in [int, float]:
-        out = x1.copy()
-        out.data = np.minimum(x1.data, x2)
-        return out
-    elif np.all(x1.coords == x2.coords):
-        out = x1.copy()
-        out.data = np.minimum(x1.data, x2.data)
-        return out
-    if x1.shape != x2.shape:
-        raise ValueError("Shapes are not equal")
-    return (x1 < x2) * x1 + (x1 >= x2) * x2
 
-
-def maximum(x1, x2):
-    if np.all(x1.coords == x2.coords):
-        out = x1.copy()
-        out.data = np.maximum(x1.data, x2.data)
-        return out
-    if x1.shape != x2.shape:
-        raise ValueError("Shapes are not equal")
-    return (x1 < x2) * x2 + (x1 >= x2) * x1
-
-
-sp.minimum = minimum
-sp.maximum = maximum
+sp.minimum = np.minimum
+sp.maximum = np.maximum
 sp.floor = floor
 sp.where = where
 sp.arange = arange

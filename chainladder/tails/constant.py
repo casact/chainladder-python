@@ -20,6 +20,9 @@ class TailConstant(TailBase):
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
+    projection_period : int
+        The number of months beyond the latest available development age the
+        `ldf_` and `cdf_` vectors should extend.
 
     Attributes
     ----------
@@ -46,10 +49,11 @@ class TailConstant(TailBase):
 
     """
 
-    def __init__(self, tail=1.0, decay=0.5, attachment_age=None):
+    def __init__(self, tail=1.0, decay=0.5, attachment_age=None, projection_period=12):
         self.tail = tail
         self.decay = decay
         self.attachment_age = attachment_age
+        self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.

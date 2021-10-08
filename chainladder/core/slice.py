@@ -297,7 +297,6 @@ class At(Location):
         key = self._check_index(key)
         if self.obj.array_backend == 'sparse':
             key = (key[0][0], key[1][0], key[2][0], key[3][0])
-            print(key)
             self._sparse_setitem(key, values)
         else:
             if isinstance(values, TriangleSlicer):

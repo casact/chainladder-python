@@ -116,6 +116,7 @@ class Triangle(TriangleBase):
         origin_date = self._to_datetime(
             data, origin, format=origin_format).rename('__origin__')
         self.origin_grain = self._get_grain(origin_date)
+        self.origin_grain = 'S' if self.origin_grain == '2Q' else self.origin_grain
         development_date = self._set_development(
             data, development, development_format, origin_date)
         self.development_grain = (
