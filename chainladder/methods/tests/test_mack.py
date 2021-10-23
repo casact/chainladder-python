@@ -150,3 +150,10 @@ def test_mack_asymmetric():
     assert round(float(xp.array(out.rx("Mack.S.E")[0])[-1, -1]), 2) == round(
         float(cl.MackChainladder().fit(tri).summary_.to_frame().iloc[-1, -1]), 2
     )
+
+def test_mack_malformed():
+    a  = cl.load_sample('raa')
+    b = a.iloc[:, :, :-1]
+    x = cl.MackChainladder().fit(a) 
+    y = cl.MackChainladder().fit(b)
+    x.process_risk_.iloc[:,:,:-1] == y.process_risk_

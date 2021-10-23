@@ -132,6 +132,11 @@ class TriangleDunders:
         is_broadcastable = all(
             (m == n) or (m == 1) or (n == 1)
             for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1]))
+        if (len(obj.odims), len(obj.ddims)) == (len(other.odims), len(other.ddims)):
+            if np.all(obj.ddims != other.ddims) and len(obj.ddims) > 1:
+                is_broadcastable = False
+            if np.all(obj.odims != other.odims) and len(obj.odims) > 1:
+                is_broadcastable = False
         if len(other.odims) == 1 and len(obj.odims) > 1:
             other.odims = obj.odims
         elif len(obj.odims) == 1 and len(other.odims) > 1:
