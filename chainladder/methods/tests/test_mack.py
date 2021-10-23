@@ -156,4 +156,4 @@ def test_mack_malformed():
     b = a.iloc[:, :, :-1]
     x = cl.MackChainladder().fit(a) 
     y = cl.MackChainladder().fit(b)
-    x.process_risk_.iloc[:,:,:-1] == y.process_risk_
+    assert x.process_risk_.iloc[:,:,:-1] == y.process_risk_
