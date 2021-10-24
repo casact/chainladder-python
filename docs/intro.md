@@ -1,11 +1,8 @@
 # Welcome to Chainladder
 
-```{DANGER}
-These docs are under major development. If you want to visit our stable docs, please go [here](https://chainladder-python.readthedocs.io/en/stable/)
-```
 
-
-## Casualty Loss Reserving in Python
+Chainladder-python is a python library for casualty loss reserving. By loss
+reserving, we are refering to the work that would be conducted by an actuary. It is:
 
 * Simple and efficient tools for actuarial loss reserving
 * Designed with practical workflows in mind
