@@ -33,6 +33,7 @@ sphinx_gallery_conf = {'doc_module': 'chainladder', 'backreferences_dir': 'modul
 suppress_warnings = ['myst.domains']
 use_jupyterbook_latex = True
 use_multitoc_numbering = True
+autosummary_generate = True
 
 import chainladder as cl
 version = cl.__version__

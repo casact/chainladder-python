@@ -40,6 +40,7 @@ sphinx:
     - numpydoc
     - sphinx.ext.mathjax
   config:
+    autosummary_generate: True
     sphinx_gallery_conf:
         doc_module: chainladder
         backreferences_dir: modules/generated
