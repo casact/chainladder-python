@@ -1,13 +1,12 @@
 # Welcome to Chainladder
 
+`Chainladder-python` - A python library for casualty loss reserving.
 
-Chainladder-python is a python library for casualty loss reserving. By loss
-reserving, we are refering to the work that would be conducted by an actuary. It is:
+> * Simple and efficient tools for actuarial loss reserving
+> * Designed with practical workflows in mind
+> * Looks like Pandas and Scikit-Learn, the tools you love!
+> * Open source, commercially usable - MPL-2.0 license
 
-* Simple and efficient tools for actuarial loss reserving
-* Designed with practical workflows in mind
-* Looks like Pandas and Scikit-Learn, the tools you love!
-* Open source, commercially usable - MPL-2.0 license
 
 Here are a few links to help you get started.
 
@@ -17,73 +16,97 @@ Here are a few links to help you get started.
 ---
 :header: bg-jb-one
 
-**[Triangles](modules/triangle.rst)**
+**[Triangles](triangle)**
 ^^^
 Data object to manage and manipulate reserving data
 
 **Application**: Extend pandas syntax to manipulate reserving triangles
 
-**Classes**: **[Triangle](modules/triangle)**,...
+```{glue:} plot_triangle_from_pandas
+```
++++
+**Classes**: **[Triangle](triangle)**,...
 
 ---
 :header: bg-jb-two
 
-**[Development](modules/development.rst)**
+**[Development](development)**
 ^^^
-Tooling to generate loss development
+Tooling to generate loss development patterns
 
-**Applications**: comprehensive library of development techniques
+**Applications**: Comprehensive library for development
 
-**Algorithms**: [Development](development:development), [MunichAdjustment](development:munichadjustment), [ClarkLDF](development:clarkldf), …
+```{glue:} plot_clarkldf
+```
+
++++
+**Algorithms**: [Development](development:development), [ClarkLDF](development:clarkldf), …
 ---
 :header: bg-jb-three
 
-**[Tail Estimation](modules/tails.rst)**
+**[Tail Estimation](tails)**
 ^^^
 Extrapolate development patterns beyond the known data.
 
-**Applications**: Long-tailed lines of business
+**Applications**: Long-tailed lines of business use cases
 
-**Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), [TailBondy](tails:tailbondy), …
+```{glue:} plot_exponential_smoothing
+```
 
-:::
++++
+**Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), …
 
-
-:::{panels}
-:container: +full-width
-:column: col-lg-4 px-2 py-2
 ---
 :header: bg-jb-one
-**[IBNR Models](modules/methods.rst)**
+**[IBNR Models](methods)**
 ^^^
 
 Generate IBNR estimates and associated statistics
 
-**Applications**: constructing reserve estimates
 
-**Algorithms**: [Chainladder](methods:chainladder), [BornhuetterFerguson](methods:bornhuetterferguson), [CapeCod](methods:capecod), …
+**Applications**: Constructing reserve estimates
+
+```{glue:} plot_mack
+```
+
++++
+**Algorithms**: [Chainladder](methods:chainladder), [CapeCod](methods:capecod), …
 
 
 ---
 :header: bg-jb-two
 
-**[Adjustments](modules/adjustments.rst)**
+**[Adjustments](adjustments)**
 ^^^
 Common actuarial data adjustments
 
+
+
 **Applications**: Simulation, trending, on-leveling
 
-**Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [BerquistSherman](adjustments:berquistsherman), [Trend](adjustments:trend),…
+```{glue:} plot_stochastic_bornferg
+```
+
++++
+**Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [Trend](adjustments:trend), …
 
 ---
 :header: bg-jb-three
 
-**[Workflow](modules/workflow.rst)**
+**[Workflow](workflow)**
 ^^^
 
 Workflow tools for complex analyses
 
-**Application**: scenario testing, simulation, ensembling
+**Application**: Scenario testing, ensembling
 
+```{glue:} plot_voting_chainladder
+```
+
++++
 **Utilities**: [Pipeline](workflow:pipeline), [VotingChainladder](workflow:votingchainladder), …
 :::
+
+
+
+

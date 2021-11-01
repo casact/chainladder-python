@@ -14,7 +14,7 @@ with open("README.rst") as f:
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/casact/chainladder-python'
-version='0.8.9' # Put this in __init__.py
+version='0.8.10' # Put this in __init__.py
 
 data_path = ''
 setup(
@@ -28,8 +28,9 @@ setup(
     download_url='{}/archive/v{}.tar.gz'.format(url, version),
     license='MPL-2.0',
     include_package_data=True,
-    package_data={'data': [data_path + item
-                           for item in listdir('chainladder{}'.format(data_path))]},
+    package_data={
+        'data': [data_path + item
+                 for item in listdir('chainladder{}'.format(data_path))]},
     description=descr,
     long_description=long_desc,
     install_requires=dependencies,

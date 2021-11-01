@@ -24,7 +24,6 @@ dependencies:
   - imageio
 
   # Docs
-  - seaborn
   - nbsphinx
   - numpydoc
 
@@ -43,7 +42,6 @@ dependencies:
 
 
   - pip:
-    - sphinx_gallery
     - asv
     - nb_black
     - jupyter-book

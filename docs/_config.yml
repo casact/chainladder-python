@@ -33,16 +33,9 @@ html:
 
 sphinx:
   extra_extensions:
-    - sphinx_gallery.gen_gallery
-    - sphinx_gallery.load_style
     - sphinx.ext.autodoc
     - sphinx.ext.autosummary
     - numpydoc
     - sphinx.ext.mathjax
   config:
     autosummary_generate: True
-    sphinx_gallery_conf:
-        doc_module: chainladder
-        backreferences_dir: modules/generated
-        reference_url:
-          chainladder: NULL

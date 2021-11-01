@@ -8,16 +8,17 @@ parts:
     chapters:
     - file: library/install
     - file: tutorials/index
-    - file: auto_examples/index
+    - file: examples_toc
+    
   - caption: User Guide
     chapters:
-    - file: modules/triangle
-    - file: modules/development
-    - file: modules/tails
-    - file: modules/methods
-    - file: modules/adjustments
-    - file: modules/workflow
-    - file: modules/utilities
+    - file: triangle
+    - file: development
+    - file: tails
+    - file: methods
+    - file: adjustments
+    - file: workflow
+    - file: utilities
   - caption: Library Reference
     chapters:
     - file: modules/api
