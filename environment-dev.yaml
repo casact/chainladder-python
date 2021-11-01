@@ -22,6 +22,7 @@ dependencies:
   - patsy
   - openpyxl
   - imageio
+  - matplotlib
 
   # Docs
   - nbsphinx

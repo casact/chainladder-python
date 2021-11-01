@@ -17,6 +17,7 @@ dependencies:
   - xlcompose
   - patsy
   - statsmodels
+  - matplotlib
 
   # Docs
   - ipython
