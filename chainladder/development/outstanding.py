@@ -21,29 +21,29 @@ class CaseOutstanding(DevelopmentBase):
 
     Parameters
     ----------
-    paid_to_incurred : tuple or list of tuples
+    paid_to_incurred: tuple or list of tuples
         A tuple representing the paid and incurred ``columns`` of the triangles
         such as ``('paid', 'incurred')``
-    paid_n_periods : integer, optional (default=-1)
+    paid_n_periods: integer, optional (default=-1)
         number of origin periods to be used in the paid pattern averages. For
         all origin periods, set paid_n_periods=-1
-    case_n_periods : integer, optional (default=-1)
+    case_n_periods: integer, optional (default=-1)
         number of origin periods to be used in the case pattern averages. For
         all origin periods, set paid_n_periods=-1
 
     Attributes
     ----------
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated (multiplicative) loss development patterns.
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated (multiplicative) cumulative development patterns.
-    case_to_prior_case_ : Triangle
+    case_to_prior_case_: Triangle
         The case to prior case ratios used for fitting the estimator
-    case_ldf_ :
+    case_ldf_:
         The selected case to prior case ratios of the fitted estimator
-    paid_to_prior_case_ : Triangle
+    paid_to_prior_case_: Triangle
         The paid to prior case ratios used for fitting the estimator
-    paid_ldf_ :
+    paid_ldf_:
         The selected paid to prior case ratios of the fitted estimator
     """
     def __init__(self, paid_to_incurred=None, paid_n_periods=-1,

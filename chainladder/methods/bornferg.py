@@ -9,15 +9,15 @@ class BornhuetterFerguson(Benktander):
 
     Parameters
     ----------
-    apriori : float, optional (default=1.0)
+    apriori: float, optional (default=1.0)
         Multiplier for the sample_weight used in the Bornhuetter Ferguson
         method. If sample_weight is already an apriori measure of ultimate,
         then use 1.0
-    apriori_sigma : float, optional (default=0.0)
+    apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal distribution
         using this argument as a standard deviation.
-    random_state : int, RandomState instance or None, optional (default=None)
+    random_state: int, RandomState instance or None, optional (default=None)
         Seed for sampling from the apriori distribution.  This is ignored when
         using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
@@ -27,9 +27,9 @@ class BornhuetterFerguson(Benktander):
 
     Attributes
     ----------
-    ultimate_ : Triangle
+    ultimate_: Triangle
         The ultimate losses per the method
-    ibnr_ : Triangle
+    ibnr_: Triangle
         The IBNR per the method
     """
 

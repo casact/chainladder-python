@@ -16,18 +16,18 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
     Parameters
     ----------
 
-    trends : list-like
+    trends: list-like
         The list containing the annual trends expressed as a decimal. For example,
         5% decrease should be stated as -0.05
-    dates : list of date-likes
+    dates: list of date-likes
         A list-like of (start, end) dates to correspond to the `trend` list.
-    axis : str (options: [‘origin’, ‘valuation’])
+    axis: str (options: [‘origin’, ‘valuation’])
         The axis on which to apply the trend
 
     Attributes
     ----------
 
-    trend_ :
+    trend_:
         A triangle representation of the trend factors
 
     """
@@ -42,14 +42,14 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Data to which the model will be applied.
-        y : Ignored
-        sample_weight : Ignored
+        y: Ignored
+        sample_weight: Ignored
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         trends = self.trends if type(self.trends) is list else [self.trends]
@@ -72,12 +72,12 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+            X_new: New triangle with transformed attributes.
         """
         X_new = X.copy()
         triangles = ["trend_"]

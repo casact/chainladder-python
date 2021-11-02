@@ -15,29 +15,29 @@ class MackChainladder(Chainladder):
 
     Attributes
     ----------
-    X_
+    X_:
         returns **X**
-    ultimate_
+    ultimate_:
         The ultimate losses per the method
-    ibnr_
+    ibnr_:
         The IBNR per the method
-    full_expectation_
+    full_expectation_:
         The ultimates back-filled to each development period in **X** replacing
         the known data
-    full_triangle_
+    full_triangle_:
         The ultimates back-filled to each development period in **X** retaining
         the known data
-    summary_
+    summary_:
         summary of the model
-    full_std_err_
+    full_std_err_:
         The full standard error
-    total_process_risk_
+    total_process_risk_:
         The total process error
-    total_parameter_risk_
+    total_parameter_risk_:
         The total parameter error
-    mack_std_err_
+    mack_std_err_:
         The total prediction error by origin period
-    total_mack_std_err_
+    total_mack_std_err_:
         The total prediction error across all origin periods
     """
 
@@ -46,14 +46,14 @@ class MackChainladder(Chainladder):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Data to which the model will be applied.
-        y : Ignored
-        sample_weight : Ignored
+        y: Ignored
+        sample_weight: Ignored
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)

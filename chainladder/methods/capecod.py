@@ -11,25 +11,25 @@ class CapeCod(Benktander):
 
     Parameters
     ----------
-    trend : float (default=0.0)
+    trend: float (default=0.0)
         The cape cod trend assumption.  Any Trend transformer on X will
         override this argument.
-    decay : float (defaut=1.0)
+    decay: float (defaut=1.0)
         The cape cod decay assumption
-    n_iters : int, optional (default=1)
+    n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
-    apriori_sigma : float, optional (default=0.0)
+    apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal
         distribution using this argument as a standard deviation.
-    random_state : int, RandomState instance or None, optional (default=None)
+    random_state: int, RandomState instance or None, optional (default=None)
         Seed for sampling from the apriori distribution.  This is ignored when
         using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
         by np.random.
-    groupby :
+    groupby:
         An option to group levels of the triangle index together for the 
         purposes of deriving the apriori measures.  If omitted, each level of 
         the triangle index will receive its own apriori computation.
@@ -37,15 +37,15 @@ class CapeCod(Benktander):
 
     Attributes
     ----------
-    triangle :
+    triangle:
         returns **X**
-    ultimate_ :
+    ultimate_:
         The ultimate losses per the method
-    ibnr_ :
+    ibnr_:
         The IBNR per the method
-    apriori_ :
+    apriori_:
         The trended apriori vector developed by the Cape Cod Method
-    detrended_apriori_ :
+    detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
     """
 
@@ -63,15 +63,15 @@ class CapeCod(Benktander):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Loss data to which the model will be applied.
-        y : None
+        y: None
             Ignored
-        sample_weight : Triangle-like
+        sample_weight: Triangle-like
             The exposure to be used in the method.
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
 
@@ -127,9 +127,9 @@ class CapeCod(Benktander):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             Loss data to which the model will be applied.
-        sample_weight : Triangle
+        sample_weight: Triangle
             For exposure-based methods, the exposure to be used for predictions
 
         Returns

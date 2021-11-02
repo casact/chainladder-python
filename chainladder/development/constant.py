@@ -12,24 +12,24 @@ class DevelopmentConstant(DevelopmentBase):
 
     Parameters
     ----------
-    patterns : dict or callable
+    patterns: dict or callable
         A dictionary key:value representation of age(in months):value. If callable
         is supplied, callable must return a dict for each element of the callable axis
-    style : string, optional (default='ldf')
+    style: string, optional (default='ldf')
         Type of pattern given to the Estimator.  Options include 'cdf' or 'ldf'.
-    callable_axis : 0 or 1
+    callable_axis: 0 or 1
         If a callable is supplied, the axis (index or column) along which to apply
         the callable.  If patterns is not a callable, then this parameter is ignored.
-    groupby :
+    groupby:
         option to group levels of the triangle index together for the purposes
         estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
 
     Attributes
     ----------
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated loss development patterns
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated cumulative development patterns
     """
 

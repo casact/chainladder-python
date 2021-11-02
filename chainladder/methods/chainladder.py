@@ -14,16 +14,16 @@ class Chainladder(MethodBase):
 
     Attributes
     ----------
-    X_
+    X_:
         returns **X** used to fit the triangle
-    ultimate_
+    ultimate_:
         The ultimate losses per the method
-    ibnr_
+    ibnr_:
         The IBNR per the method
-    full_expectation_
+    full_expectation_:
         The ultimates back-filled to each development period in **X** replacing
         the known data
-    full_triangle_
+    full_triangle_:
         The ultimates back-filled to each development period in **X** retaining
         the known data
     """
@@ -33,14 +33,14 @@ class Chainladder(MethodBase):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Data to which the model will be applied.
-        y : Ignored
+        y: Ignored
         sample_weight : Ignored
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)

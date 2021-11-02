@@ -19,40 +19,33 @@ class ClarkLDF(DevelopmentBase):
 
     Parameters
     ----------
-    growth : {'loglogistic', 'weibull'}
+    growth: {'loglogistic', 'weibull'}
         The growth function to be used in curve fitting development patterns.
         Options are 'loglogistic' and 'weibull'
-    groupby :
+    groupby:
         An option to group levels of the triangle index together for the purposes
         of estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
 
-
     Attributes
     ----------
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated loss development patterns.
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated cumulative development patterns.
-    incremental_fits_ : Triangle
+    incremental_fits_: Triangle
         The fitted incrementals of the model.
-    theta_ : DataFrame
+    theta_: DataFrame
         Estimates of the theta parameter of the growth curve.
-    omega_ : DataFrame
+    omega_: DataFrame
         Estimates of the omega parameter of the growth curve.
-    elr_ : DataFrame
+    elr_: DataFrame
         The Expected Loss Ratio parameter. This only exists when a ``sample_weight``
         is provided to the Estimator.
-    scale_ : DataFrame
+    scale_: DataFrame
         The scale parameter of the model.
-    norm_resid_ : Triangle
+    norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
-
-    Todos
-    -----
-    1. Add stochastic functionality
-    3. Allow for dropping elements from the fit
-
 
     """
 

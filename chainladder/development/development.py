@@ -12,23 +12,23 @@ class Development(DevelopmentBase):
 
     Parameters
     ----------
-    n_periods : integer, optional (default=-1)
+    n_periods: integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    average : string or float, optional (default='volume')
+    average: string or float, optional (default='volume')
         type of averaging to use for ldf average calculation.  Options include
         'volume', 'simple', and 'regression'. If numeric values are supplied,
         then (2-average) in the style of Zehnwirth & Barnett is used
         for the exponent of the regression weights.
-    sigma_interpolation : string optional (default='log-linear')
+    sigma_interpolation: string optional (default='log-linear')
         Options include 'log-linear' and 'mack'
-    drop : tuple or list of tuples
+    drop: tuple or list of tuples
         Drops specific origin/development combination(s)
-    drop_high : bool or list of bool (default=None)
+    drop_high: bool or list of bool (default=None)
         Drops highest link ratio(s) from LDF calculation
-    drop_low : bool or list of bool (default=None)
+    drop_low: bool or list of bool (default=None)
         Drops lowest link ratio(s) from LDF calculation
-    drop_valuation : str or list of str (default=None)
+    drop_valuation: str or list of str (default=None)
         Drops specific valuation periods. str must be date convertible.
     fillna: float, (default=None)
         Used to fill in zero or nan values of an triangle with some non-zero
@@ -36,7 +36,7 @@ class Development(DevelopmentBase):
         excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
         averaging in a deterministic method, this may be reasonable.  For all other
         averages and stochastic methods, this assumption should be avoided.
-    groupby :
+    groupby:
         An option to group levels of the triangle index together for the purposes
         of estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
@@ -44,17 +44,17 @@ class Development(DevelopmentBase):
 
     Attributes
     ----------
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated loss development patterns
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated cumulative development patterns
-    sigma_ : Triangle
+    sigma_: Triangle
         Sigma of the ldf regression
-    std_err_ : Triangle
+    std_err_: Triangle
         Std_err of the ldf regression
-    weight_ : pandas.DataFrame
+    weight_: pandas.DataFrame
         The weight used in the ldf regression
-    std_residuals_ : Triangle
+    std_residuals_: Triangle
         A Triangle representing the weighted standardized residuals of the
         estimator as described in Barnett and Zehnwirth.
 

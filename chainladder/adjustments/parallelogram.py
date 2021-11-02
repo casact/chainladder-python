@@ -14,14 +14,14 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     Parameters
     ----------
 
-    rate_history : pd.DataFrame
+    rate_history: pd.DataFrame
         A DataFrame with
-    change_col : str
+    change_col: str
         The column containing the rate changes expressed as a decimal. For example,
         5% decrease should be stated as -0.05
-    date_col : str
+    date_col: str
         A list-like set of effective dates corresponding to each of the changes
-    vertical_line :
+    vertical_line:
         Rates are typically stated on an effective date basis and premiums on
         and earned basis.  By default, this argument is False and produces
         parallelogram OLFs. If True, Parallelograms become squares.  This is
@@ -31,7 +31,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     Attributes
     ----------
 
-    olf_ :
+    olf_:
         A triangle representation of the on-level factors
     """
 
@@ -48,14 +48,14 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Data to which the model will be applied.
-        y : Ignored
-        sample_weight : Ignored
+        y: Ignored
+        sample_weight: Ignored
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         from chainladder.utils.utility_functions import parallelogram_olf, concat
@@ -110,12 +110,12 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+            X_new: New triangle with transformed attributes.
         """
         X_new = X.copy()
         triangles = ["olf_"]

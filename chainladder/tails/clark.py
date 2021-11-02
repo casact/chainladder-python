@@ -12,39 +12,39 @@ class TailClark(TailBase):
 
     Parameters
     ----------
-    growth : {'loglogistic', 'weibull'}
+    growth: {'loglogistic', 'weibull'}
         The growth function to be used in curve fitting development patterns.
         Options are 'loglogistic' and 'weibull'
-    truncation_age : int
+    truncation_age: int
         The age at which you wish to stop extrapolating development
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
-
+    projection_period: int
+        The number of months beyond the latest available development age the
+        `ldf_` and `cdf_` vectors should extend.
 
     Attributes
     ----------
-    ldf_ :
+    ldf_:
         ldf with tail applied.
-    cdf_ :
+    cdf_:
         cdf with tail applied.
-    tail_ : DataFrame
+    tail_: DataFrame
         Point estimate of tail at latest maturity available in the Triangle.
-    theta_ : DataFrame
+    theta_: DataFrame
         Estimates of the theta parameter of the growth curve.
-    omega_ : DataFrame
+    omega_: DataFrame
         Estimates of the omega parameter of the growth curve.
-    elr_ : DataFrame
+    elr_: DataFrame
         The Expected Loss Ratio parameter. This only exists when a ``sample_weight``
         is provided to the Estimator.
-    scale_ : DataFrame
+    scale_: DataFrame
         The scale parameter of the model.
-    norm_resid_ : Triangle
+    norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
-    projection_period : int
-        The number of months beyond the latest available development age the
-        `ldf_` and `cdf_` vectors should extend.
+
     """
 
     def __init__(self, growth="loglogistic", truncation_age=None,
@@ -59,15 +59,15 @@ class TailClark(TailBase):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Set of LDFs to which the tail will be applied.
-        y : Ignored
+        y: Ignored
         sample_weight : Triangle-like
             Exposure vector used to invoke the Cape Cod method.
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         backend = X.array_backend
@@ -115,12 +115,12 @@ class TailClark(TailBase):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             Triangle must contain the ``ldf_`` development attribute.
 
         Returns
         -------
-        X_new : Triangle
+        X_new: Triangle
             New Triangle with tail factor applied to its development
             attributes.
         """

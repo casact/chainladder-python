@@ -12,38 +12,38 @@ class IncrementalAdditive(DevelopmentBase):
 
     Parameters
     ----------
-    trend : float (default=0.0)
+    trend: float (default=0.0)
         A multiplicative trend amount used to trend each incremental development
         period the valuation_date of the Triangle.
-    future_trend : float (default=None)
+    future_trend: float (default=None)
         The trend to apply to the incremental development periods in the lower
         half of the completed Triangle. If None, then will be set to the value of
         the trend parameter.
-    n_periods : integer, optional (default=-1)
+    n_periods: integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
     average: str optional (default='volume')
         type of averaging to use for ldf average calculation.  Options include
         'volume' and 'simple'.
-    drop : tuple or list of tuples
+    drop: tuple or list of tuples
         Drops specific origin/development combination(s)
-    drop_high : bool or list of bool (default=None)
+    drop_high: bool or list of bool (default=None)
         Drops highest link ratio(s) from LDF calculation
-    drop_low : bool or list of bool (default=None)
+    drop_low: bool or list of bool (default=None)
         Drops lowest link ratio(s) from LDF calculation
-    drop_valuation : str or list of str (default=None)
+    drop_valuation: str or list of str (default=None)
         Drops specific valuation periods. str must be date convertible.
 
     Attributes
     ----------
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated loss development patterns
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated cumulative development patterns
-    zeta : Triangle
+    zeta_: Triangle
         The fitted incrementals as a percent of exposure trended to the valuation
         date of the Triangle.
-    incremental_ : Triangle
+    incremental_: Triangle
         A triangle of full incremental values.
 
 

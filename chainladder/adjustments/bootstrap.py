@@ -17,24 +17,24 @@ class BootstrapODPSample(DevelopmentBase):
 
     Parameters
     ----------
-    n_sims : int (default=1000)
+    n_sims: int (default=1000)
         Number of simulations to generate
-    n_periods : integer, optional (default=-1)
+    n_periods: integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    hat_adj : bool (default=False)
+    hat_adj: bool (default=False)
         Adjust standardized Pearson residuals with the hat matrix adjustment
         factor.  If false, Degree of Freedom adjustment is used.
-    drop : tuple or list of tuples
+    drop: tuple or list of tuples
         Drops specific origin/development combination(s) from residual sample
-    drop_high : bool or list of bool (default=None)
+    drop_high: bool or list of bool (default=None)
         Drops highest link ratio(s) from residual sample
-    drop_low : bool or list of bool (default=None)
+    drop_low: bool or list of bool (default=None)
         Drops lowest link ratio(s) from residual sample
-    drop_valuation : str or list of str (default=None)
+    drop_valuation: str or list of str (default=None)
         Drops specific valuation periods from residual sample. str must be date
         convertible.
-    random_state : int, RandomState instance or None, optional (default=None)
+    random_state: int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
@@ -42,9 +42,9 @@ class BootstrapODPSample(DevelopmentBase):
 
     Attributes
     ----------
-    resampled_triangles_ : Triangle
+    resampled_triangles_: Triangle
         A set of triangles represented by each simulation
-    scale_ :
+    scale_:
         The scale parameter to be used in generating process risk
     """
 
@@ -239,12 +239,12 @@ class BootstrapODPSample(DevelopmentBase):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+            X_new: New triangle with transformed attributes.
         """
         X_new = X.copy()
         X_new = self.resampled_triangles_

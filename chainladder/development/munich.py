@@ -15,36 +15,36 @@ class MunichAdjustment(DevelopmentBase):
 
     Parameters
     ----------
-    paid_to_incurred : tuple or list of tuples
+    paid_to_incurred: tuple or list of tuples
         A tuple representing the paid and incurred ``columns`` of the triangles
         such as ``('paid', 'incurred')``
-    fillna : boolean
+    fillna: boolean
         The MunichAdjustment will fail when P/I or I/P ratios cannot be calculated.
         Setting fillna to True will fill the triangle with expected amounts using
         the simple chainladder.
 
     Attributes
     ----------
-    basic_cdf_ : Triangle
+    basic_cdf_: Triangle
         The univariate cumulative development patterns
-    basic_sigma_ : Triangle
+    basic_sigma_: Triangle
         Sigma of the univariate ldf regression
-    resids_ : Triangle
+    resids_: Triangle
         Residuals of the univariate ldf regression
-    q_ : Triangle
+    q_: Triangle
         chainladder age-to-age factors of the paid/incurred triangle and its
         inverse.  For paid measures it is (P/I) and for incurred measures it is
         (I/P).
-    q_resids_ : Triangle
+    q_resids_: Triangle
         Residuals of q regression.
-    rho_ : Triangle
+    rho_: Triangle
         Estimated conditional deviation around ``q_``
-    lambda_ : Series or DataFrame
+    lambda_: Series or DataFrame
         Dependency coefficient between univariate chainladder link ratios and
         ``q_resids_``
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated bivariate loss development patterns
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated bivariate cumulative development patterns
 
     """

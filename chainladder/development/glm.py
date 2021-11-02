@@ -22,15 +22,15 @@ class TweedieGLM(DevelopmentBase):
 
     Parameters
     -----------
-    design_matrix : formula-like
+    design_matrix: formula-like
         A patsy formula describing the independent variables, X of the GLM
-    response :  str
+    response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
-    weight : str
+    weight: str
         Column name of any weight to use in the GLM. If none specified, then an
         unweighted regression will be performed.
-    power : float, default=0
+    power: float, default=0
             The power determines the underlying target distribution according
             to the following table:
             +-------+------------------------+
@@ -47,33 +47,33 @@ class TweedieGLM(DevelopmentBase):
             | 3     | Inverse Gaussian       |
             +-------+------------------------+
             For ``0 < power < 1``, no distribution exists.
-    alpha : float, default=1
+    alpha: float, default=1
         Constant that multiplies the penalty term and thus determines the
         regularization strength. ``alpha = 0`` is equivalent to unpenalized
         GLMs. In this case, the design matrix `X` must have full column rank
         (no collinearities).
-    link : {'auto', 'identity', 'log'}, default='auto'
+    link: {'auto', 'identity', 'log'}, default='auto'
         The link function of the GLM, i.e. mapping from linear predictor
         `X @ coeff + intercept` to prediction `y_pred`. Option 'auto' sets
         the link depending on the chosen family as follows:
         - 'identity' for Normal distribution
         - 'log' for Poisson,  Gamma and Inverse Gaussian distributions
-    max_iter : int, default=100
+    max_iter: int, default=100
         The maximal number of iterations for the solver.
-    tol : float, default=1e-4
+    tol: float, default=1e-4
         Stopping criterion. For the lbfgs solver,
         the iteration will stop when ``max{|g_j|, j = 1, ..., d} <= tol``
         where ``g_j`` is the j-th component of the gradient (derivative) of
         the objective function.
-    warm_start : bool, default=False
+    warm_start: bool, default=False
         If set to ``True``, reuse the solution of the previous call to ``fit``
         as initialization for ``coef_`` and ``intercept_`` .
-    verbose : int, default=0
+    verbose: int, default=0
         For the lbfgs solver set verbose to any positive number for verbosity.
 
     Attributes
     -----------
-    model_ : sklearn.Pipeline
+    model_: sklearn.Pipeline
         A scikit-learn Pipeline of the GLM
     """
 

@@ -9,17 +9,17 @@ class Benktander(MethodBase):
 
     Parameters
     ----------
-    apriori : float, optional (default=1.0)
+    apriori: float, optional (default=1.0)
         Multiplier for the sample_weight used in the Benktander method
         method. If sample_weight is already an apriori measure of ultimate,
         then use 1.0
-    n_iters : int, optional (default=1)
+    n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
-    apriori_sigma : float, optional (default=0.0)
+    apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal distribution
         using this argument as a standard deviation.
-    random_state : int, RandomState instance or None, optional (default=None)
+    random_state: int, RandomState instance or None, optional (default=None)
         Seed for sampling from the apriori distribution.  This is ignored when
         using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
@@ -29,9 +29,9 @@ class Benktander(MethodBase):
 
     Attributes
     ----------
-    ultimate_ : Triangle
+    ultimate_: Triangle
         The ultimate losses per the method
-    ibnr_ : Triangle
+    ibnr_: Triangle
         The IBNR per the method
     """
 
@@ -46,16 +46,16 @@ class Benktander(MethodBase):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             Loss data to which the model will be applied.
-        y : None
+        y: None
             Ignored
-        sample_weight : Triangle
+        sample_weight: Triangle
             Required exposure to be used in the calculation.
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         if sample_weight is None:
@@ -71,9 +71,9 @@ class Benktander(MethodBase):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             Loss data to which the model will be applied.
-        sample_weight : Triangle
+        sample_weight: Triangle
             Required exposure to be used in the calculation.
 
         Returns

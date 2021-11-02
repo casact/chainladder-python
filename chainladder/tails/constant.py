@@ -10,9 +10,9 @@ class TailConstant(TailBase):
 
     Parameters
     ----------
-    tail : float
+    tail: float
         The constant to apply to all LDFs within a triangle object.
-    decay : float (default=0.50)
+    decay: float (default=0.50)
         An exponential decay constant that allows for decay over future
         development periods.  A decay rate of 0.5 sets the development portion
         of each successive LDF to 50% of the previous LDF.
@@ -20,21 +20,21 @@ class TailConstant(TailBase):
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
         when being used in conjunction with the MackChainladder method.
-    projection_period : int
+    projection_period: int
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
 
     Attributes
     ----------
-    ldf_ :
+    ldf_:
         ldf with tail applied.
-    cdf_ :
+    cdf_:
         cdf with tail applied.
-    tail_ : DataFrame
+    tail_: DataFrame
         Point estimate of tail at latest maturity available in the Triangle.
-    sigma_ :
+    sigma_:
         sigma with tail factor applied.
-    std_err_ :
+    std_err_:
         std_err with tail factor applied
 
     Notes

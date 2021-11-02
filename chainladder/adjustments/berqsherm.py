@@ -17,30 +17,30 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
 
     Parameters
     ----------
-    paid_amount : str
+    paid_amount: str
         The triangle column associated with paid amounts
-    incurred_amount : str
+    incurred_amount: str
         The triangle column associated with incurred amounts
-    reported_count : str
+    reported_count: str
         The triangle column associated with reported claim count
-    closed_count : str
+    closed_count: str
         The triangle column associated with closed claim counts
-    trend : float (default=0.0)
+    trend: float (default=0.0)
         Trend rate underlying average open case reserves.
-    reported_count_estimator : Estimator
+    reported_count_estimator: Estimator
         An IBNR estimator for reported_count used to calculate closed_count
         disposal rates.  Estimator can be a Pipeline.  If None selected then
         basic Chainladder model is used.
 
     Attributes
     ----------
-    adjusted_triangle_ : Triangle
+    adjusted_triangle_: Triangle
         A set of triangles represented by each simulation
-    disposal_rate_ : Triangle
+    disposal_rate_: Triangle
         The disposal rates of closed claims based on the reported_count_estimator
-    a_ : Triangle
+    a_: Triangle
         Two-period Exponential intercept parameters
-    b_ : Triangle
+    b_: Triangle
         Two-period Exponential slope parameters
     """
 
@@ -188,12 +188,12 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X : Triangle
+        X: Triangle
             The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+            X_new: New triangle with transformed attributes.
         """
         X_new = copy.deepcopy(X)
         X_new[self.paid_amount] = self.adjusted_triangle_[self.paid_amount]

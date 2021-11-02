@@ -15,7 +15,7 @@ class TailBondy(TailBase):
 
     Parameters
     ----------
-    earliest_age : int
+    earliest_age: int
         The earliest age from which the Bondy exponent is to be calculated.
         Defaults to latest age in the Triangle. Any available development
         age can be used.
@@ -26,21 +26,21 @@ class TailBondy(TailBase):
 
     Attributes
     ----------
-    ldf_ : Triangle
+    ldf_: Triangle
         ldf with tail applied.
-    cdf_ : Triangle
+    cdf_: Triangle
         cdf with tail applied.
-    tail_ : DataFrame
+    tail_: DataFrame
         Point estimate of tail at latest maturity available in the Triangle.
-    b_ : DataFrame
+    b_: DataFrame
         The Bondy exponent
-    earliest_ldf_ : DataFrame
+    earliest_ldf_: DataFrame
         The LDF associated with the ``earliest_age`` pick.
-    sigma_ : Triangle
+    sigma_: Triangle
         sigma with tail factor applied.
-    std_err_ : Triangle
+    std_err_: Triangle
         std_err with tail factor applied
-    projection_period : int
+    projection_period: int
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
 

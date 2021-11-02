@@ -23,30 +23,30 @@ class DevelopmentML(DevelopmentBase):
 
     Parameters
     ----------
-    estimator_ml : skearn Estimator
+    estimator_ml: skearn Estimator
         Any sklearn compatible regression estimator, including Pipelines and
-    y_ml : list or str or sklearn_transformer
+    y_ml: list or str or sklearn_transformer
         The response column(s) for the machine learning algorithm. It must be
         present within the Triangle.
-    autoregressive : tuple, (autoregressive_col_name, lag, source_col_name)
+    autoregressive: tuple, (autoregressive_col_name, lag, source_col_name)
         The subset of response column(s) to use as lagged features for the
         Time Series aspects of the model. Predictions from one development period
         get used as featues in the next development period. Lags should be negative
         integers.
-    fit_incrementals :
+    fit_incrementals:
         Whether the response variable should be converted to an incremental basis
         for fitting.
 
-
     Attributes
     ----------
-    estimator_ml : Estimator
+    estimator_ml: Estimator
         An sklearn-style estimator to predict development patterns
-    ldf_ : Triangle
+    ldf_: Triangle
         The estimated loss development patterns.
-    cdf_ : Triangle
+    cdf_: Triangle
         The estimated cumulative development patterns.
     """
+
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
                  weight_ml=None, fit_incrementals=True):
         self.estimator_ml=estimator_ml

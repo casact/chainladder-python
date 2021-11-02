@@ -18,9 +18,9 @@ class BarnettZehnwirth(TweedieGLM):
 
     Parameters
     -----------
-    formula : formula-like
+    formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
-    response :  str
+    response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
 

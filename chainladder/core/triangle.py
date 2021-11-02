@@ -24,33 +24,33 @@ class Triangle(TriangleBase):
 
     Parameters
     ----------
-    data : DataFrame
+    data: DataFrame
         A single dataframe that contains columns represeting all other
         arguments to the Triangle constructor
-    origin : str or list
+    origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
-    development : str or list
+    development: str or list
         A representation of the development/valuation periods of the triangle
         that will map to the Development dimension
-    columns : str or list
+    columns: str or list
         A representation of the numeric data of the triangle that will map to
         the columns dimension.  If None, then a single 'Total' key will be
         generated.
-    index : str or list or None
+    index: str or list or None
         A representation of the index of the triangle that will map to the
         index dimension.  If None, then a single 'Total' key will be generated.
-    origin_format : optional str
+    origin_format: optional str
         A string representation of the date format of the origin arg. If
         omitted then date format will be inferred by pandas.
-    development_format : optional str
+    development_format: optional str
         A string representation of the date format of the development arg. If
         omitted then date format will be inferred by pandas.
-    cumulative : bool
+    cumulative: bool
         Whether the triangle is cumulative or incremental.  This attribute is
         required to use the ``grain`` and ``dev_to_val`` methods and will be
         automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
-    trailing : bool
+    trailing: bool
         When partial origin periods are present, setting trailing to True will
         ensure the most recent origin period is a full period and the oldest
         origin is partial. If full origin periods are present in the data, then
@@ -58,35 +58,35 @@ class Triangle(TriangleBase):
 
     Attributes
     ----------
-    index : Series
+    index: Series
         Represents all available levels of the index dimension.
-    columns : Series
+    columns: Series
         Represents all available levels of the value dimension.
-    origin : DatetimeIndex
+    origin: DatetimeIndex
         Represents all available levels of the origin dimension.
-    development : Series
+    development: Series
         Represents all available levels of the development dimension.
-    key_labels : list
+    key_labels: list
         Represents the ``index`` axis labels
-    virtual_columns : Series
+    virtual_columns: Series
         Represents the subset of columns of the triangle that are virtual.
-    valuation : DatetimeIndex
+    valuation: DatetimeIndex
         Represents all valuation dates of each cell in the Triangle.
-    origin_grain : str
-        The grain of the origin vector ('Y', 'Q', 'M')
-    development_grain : str
-        The grain of the development vector ('Y', 'Q', 'M')
-    shape : tuple
+    origin_grain: str
+        The grain of the origin vector ('Y', 'S', 'Q', 'M')
+    development_grain: str
+        The grain of the development vector ('Y', 'S', 'Q', 'M')
+    shape: tuple
         The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
     link_ratio, age_to_age
         Displays age-to-age ratios for the triangle.
     valuation_date : date
         The latest valuation date of the data
-    loc : Triangle
+    loc: Triangle
         pandas-style ``loc`` accessor
-    iloc : Triangle
+    iloc: Triangle
         pandas-style ``iloc`` accessor
-    latest_diagonal : Triangle
+    latest_diagonal: Triangle
         The latest diagonal of the triangle
     is_cumulative: bool
         Whether the triangle is cumulative or not
@@ -97,9 +97,9 @@ class Triangle(TriangleBase):
     is_val_tri:
         Whether the triangle development period is expressed as valuation
         periods.
-    values : array
+    values: array
         4D numpy array underlying the Triangle instance
-    T : Triangle
+    T: Triangle
         Transpose index and columns of object.  Only available when Triangle is
         convertible to DataFrame.
     """

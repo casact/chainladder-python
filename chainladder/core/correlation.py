@@ -24,14 +24,14 @@ class DevelopmentCorrelation:
 
     Attributes
     ----------
-    t_critical : DataFrame
+    t_critical: DataFrame
         Boolean value for whether correlation is too high based on ``p_critical``
         confidence level.
-    t_expectation : DataFrame
+    t_expectation: DataFrame
         Values representing the Spearman rank correlation
-    t_variance : float
+    t_variance: float
         Variance measure of Spearman rank correlation
-    range : tuple
+    range: tuple
         Range within which ``t_expectation`` must fall for independence assumption
         to be significant.
     """

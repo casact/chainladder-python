@@ -23,26 +23,26 @@ class GridSearch(BaseEstimator):
 
     Parameters
     ----------
-    estimator : estimator object.
+    estimator: estimator object.
         This is assumed to implement the chainladder estimator interface.
-    param_grid : dict or list of dictionaries
+    param_grid: dict or list of dictionaries
         Dictionary with parameters names (string) as keys and lists of
         parameter settings to try as values, or a list of such
         dictionaries, in which case the grids spanned by each dictionary
         in the list are explored. This enables searching over any sequence
         of parameter settings.
-    scoring : callable or dict of callable(s)
+    scoring: callable or dict of callable(s)
         Should be of the form {'name': callable}.  The callable(s) should
         return a single value.
-    verbose : integer
+    verbose: integer
         Controls the verbosity: the higher, the more messages.
-    error_score : 'raise' or numeric
+    error_score: 'raise' or numeric
         Value to assign to the score if an error occurs in estimator fitting.
         If set to 'raise', the error is raised. If a numeric value is given,
         FitFailedWarning is raised. This parameter does not affect the refit
         step, which will always raise the error. Default is 'raise' but from
         version 0.22 it will change to np.nan.
-    n_jobs : int, default=None
+    n_jobs: int, default=None
         The number of jobs to use for the computation. This will only provide
         speedup for n_targets > 1 and sufficient large problems.
         ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
@@ -51,7 +51,7 @@ class GridSearch(BaseEstimator):
 
     Attributes
     ----------
-    results_ : DataFrame
+    results_: DataFrame
         A DataFrame with each param_grid key as a column and the ``scoring``
         score as the last column
     """
@@ -70,15 +70,15 @@ class GridSearch(BaseEstimator):
 
         Parameters
         ----------
-        X : Triangle-like
+        X: Triangle-like
             Set of LDFs to which the tail will be applied.
-        y : Ignored
-        fit_params : (optional) dict of string -> object
+        y: Ignored
+        fit_params: (optional) dict of string -> object
             Parameters passed to the ``fit`` method of the estimator
 
         Returns
         -------
-        self : object
+        self: object
             Returns the instance itself.
         """
         if type(self.scoring) is not dict:
@@ -122,11 +122,11 @@ class Pipeline(PipelineSL, EstimatorIO):
 
     Parameters
     ----------
-    steps : list
+    steps: list
         List of (name, transform) tuples (implementing fit/transform) that are
         chained, in the order in which they are chained, with the last object
         an estimator.
-    memory : None, str or object with the joblib.Memory interface, optional
+    memory: None, str or object with the joblib.Memory interface, optional
         Used to cache the fitted transformers of the pipeline. By default,
         no caching is performed. If a string is given, it is the path to
         the caching directory. Enabling caching triggers a clone of
@@ -137,7 +137,7 @@ class Pipeline(PipelineSL, EstimatorIO):
         transformers is advantageous when fitting is time consuming.
     Attributes
     ----------
-    named_steps : bunch object, a dictionary with attribute access
+    named_steps: bunch object, a dictionary with attribute access
         Read-only attribute to access any step parameter by user given name.
         Keys are step names and values are steps parameters."""
 

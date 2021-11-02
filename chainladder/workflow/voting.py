@@ -157,13 +157,12 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
 
     Parameters
     ----------
-    estimators : list of (str, estimator) tuples
+    estimators: list of (str, estimator) tuples
         Invoking the ``fit`` method on the ``VotingChainladder`` will fit clones
         of those original estimators that will be stored in the class attribute
         ``self.estimators_``. An estimator can be set to ``'drop'`` using
         ``set_params``.
-
-    weights : array callable or dict, default=None
+    weights: array callable or dict, default=None
         ``array``: Numpy array of shape (index, columns, origin, n_estimators). Minimum
         shape required is (origin, n_estimators). Lower dimensional weight arrays
         will have missing dimensions repeated to match the shape of the triangle.
@@ -172,29 +171,25 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         origin periods will be given ``default_weighting``.
         ``callable``: A callable that returns weighting tuples.
         ``None`` uses ``default_weighting``.
-
-    default_weighting : tuple of shape (n_estimators, ), default=None
+    default_weighting: tuple of shape (n_estimators, ), default=None
         Default weighting to use where a weight was not provided or if ``weights`` is None.
         ``None`` uses a typle of all ones which is equivalent to averaging the predictions
         of the estimators.
-
-    n_jobs : int, default=None
+    n_jobs: int, default=None
         The number of jobs to run in parallel for ``fit``.
         ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
         ``-1`` means using all processors.
         for more details.
-
-    verbose : bool, default=False
+    verbose: bool, default=False
         If True, the time elapsed while fitting will be printed as it
         is completed.
 
     Attributes
     ----------
-    estimators_ : list of chainladder estimators
+    estimators_: list of chainladder estimators
         The collection of fitted sub-estimators as defined in ``estimators``
         that are not 'drop'.
-
-    named_estimators_ : Bunch
+    named_estimators_: Bunch
         Attribute to access any fitted sub-estimators by name.
 
     Examples

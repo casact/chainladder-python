@@ -159,8 +159,6 @@ def parallelogram_olf(
     values, date, start_date=None, end_date=None, grain="M", vertical_line=False
 ):
     """ Parallelogram approach to on-leveling.
-
-    Ar
     """
     date = pd.to_datetime(date)
     if not start_date:
@@ -199,12 +197,12 @@ def concat(objs, axis, ignore_index=False, sort=False):
 
     Parameters
     ----------
-    objs : list or tuple
+    objs: list or tuple
         A list or tuple of Triangle objects to concat. All non-concat axes must
         be identical and all elements of the concat axes must be unique.
-    axis : string or int
+    axis: string or int
         The axis to concatenate along.
-    ignore_index : bool, default False
+    ignore_index: bool, default False
         If True, do not use the index values along the concatenation axis. The
         resulting axis will be labeled 0, …, n - 1. This is useful if you are
         concatenating objects where the concatenation axis does not have
@@ -300,12 +298,12 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     Parameters
     -----------
 
-    formula : str
+    formula: str
         A string representation of the regression model X features.
 
     Attributes
     ------------
-    design_info_ :
+    design_info_:
         The patsy instructions for generating the design_matrix, X.
 
     """
@@ -333,12 +331,12 @@ def model_diagnostics(model, name=None,  groupby=None):
 
     Parameters
     ----------
-    model :
+    model:
         A chainladder IBNR estimator or Pipeline
-    name :
+    name:
         An alias to give the model. This will be added to the index of the return
         triangle.
-    groupby :
+    groupby:
         The index level at which the model should be summarized
 
     Returns
