@@ -71,31 +71,31 @@ Available Estimators
 +------------------------------+------------------+-------------------------+-----------------------+-----------------------+
 
 
-.. _Development: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#development
-.. _TailCurve: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#tailcurve
-.. _Chainladder: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#chainladder
-.. _BootstrapODPSample: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#bootstrapodpsample
-.. _DevelopmentConstant: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#developmentconstant
-.. _TailConstant: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#tailconstant
-.. _MackChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#mackchainladder
-.. _BerquistSherman: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#berquistsherman
-.. _MunichAdjustment: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#munichadjustment
-.. _TailBondy: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#tailbondy
-.. _BornhuettterFerguson: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#bornhuetterferguson
-.. _Pipeline: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#pipeline
-.. _ClarkLDF: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#clarkldf
-.. _TailClark: https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#tailclark
-.. _Benktander: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#benktander
-.. _GridSearch: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#gridsearch
-.. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#incrementaladditive
-.. _CapeCod: https://chainladder-python.readthedocs.io/en/latest/modules/methods.html#capecod
-.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#parallelogramolf
-.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/modules/workflow.html#votingchainladder
-.. _Trend: https://chainladder-python.readthedocs.io/en/latest/modules/adjustments.html#trend
-.. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#caseoutstanding
-.. _TweedieGLM: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#tweedieglm
-.. _DevelopmentML: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#developmentml
-.. _BarnettZehnwirth: https://chainladder-python.readthedocs.io/en/latest/modules/development.html#barnettzehnwirth
+.. _Development: https://chainladder-python.readthedocs.io/en/latest/development.html#development
+.. _TailCurve: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailcurve
+.. _Chainladder: https://chainladder-python.readthedocs.io/en/latest/methods.html#chainladder
+.. _BootstrapODPSample: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#bootstrapodpsample
+.. _DevelopmentConstant: https://chainladder-python.readthedocs.io/en/latest/development.html#developmentconstant
+.. _TailConstant: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailconstant
+.. _MackChainladder: https://chainladder-python.readthedocs.io/en/latest/methods.html#mackchainladder
+.. _BerquistSherman: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#berquistsherman
+.. _MunichAdjustment: https://chainladder-python.readthedocs.io/en/latest/development.html#munichadjustment
+.. _TailBondy: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailbondy
+.. _BornhuettterFerguson: https://chainladder-python.readthedocs.io/en/latest/methods.html#bornhuetterferguson
+.. _Pipeline: https://chainladder-python.readthedocs.io/en/latest/workflow.html#pipeline
+.. _ClarkLDF: https://chainladder-python.readthedocs.io/en/latest/development.html#clarkldf
+.. _TailClark: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailclark
+.. _Benktander: https://chainladder-python.readthedocs.io/en/latest/methods.html#benktander
+.. _GridSearch: https://chainladder-python.readthedocs.io/en/latest/workflow.html#gridsearch
+.. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/latest/development.html#incrementaladditive
+.. _CapeCod: https://chainladder-python.readthedocs.io/en/latest/methods.html#capecod
+.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#parallelogramolf
+.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/workflow.html#votingchainladder
+.. _Trend: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#trend
+.. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/development.html#caseoutstanding
+.. _TweedieGLM: https://chainladder-python.readthedocs.io/en/latest/development.html#tweedieglm
+.. _DevelopmentML: https://chainladder-python.readthedocs.io/en/latest/development.html#developmentml
+.. _BarnettZehnwirth: https://chainladder-python.readthedocs.io/en/latest/development.html#barnettzehnwirth
 .. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
 
 Getting Started Tutorials
