@@ -348,6 +348,7 @@ class MunichAdjustment(DevelopmentBase):
         obj.values = ldf_tri
         obj.ddims = X.link_ratio.ddims
         obj.is_pattern = True
+        obj.is_cumulative = False
         obj._set_slicers
         return obj
 
