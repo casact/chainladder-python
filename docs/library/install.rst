@@ -4,35 +4,67 @@
 Installing chainladder
 =======================
 
-Basic Installation
-============================
+General Installation
+======================
 
-There are different ways to install chainladder,  The easiest way is with ``pip``.
+``chainladder-python`` is available through ``pip`` and ``conda``.
 
-    ``pip install chainladder``
 
-Alternatively, if you have git and want to play with unreleased features, you can
-install from git.
+.. tabbed:: pip
 
-  ``pip install git+https://github.com/casact/chainladder-python/``
+    |PyPI version|
 
-Finally, ``chainladder`` is also hosted as a conda package in the conda-forge channel.
+    Installing `chainladder` from the `Pipi` channel can be achieved by using ``pip``:
+    
+    ```
+    pip install chainladder
+    ```
 
-  ``conda install -c conda-forge chainladder``
+    Alternatively, if you have git and want to play with unreleased features, you can
+    install directly from [Github](https://github.com/casact/chainladder-python/):
 
-Keeping Packages Updated
-============================
+    ```
+    pip install git+https://github.com/casact/chainladder-python/
+    ```
 
-If you want to use ``pip``, the code is a bit messy, as there isn't a built-in flag yet.
 
-  ``pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U``
+.. tabbed:: conda
 
-Alternatively, you can use conda.
+    |Conda Version| |Conda Downloads|
 
-  ``conda update --all``
+    Installing `chainladder` from the `conda-forge` channel can be achieved by adding `conda-forge` to 
+    your channels with:
+
+    ```
+    conda config --add channels conda-forge
+    conda config --set channel_priority strict
+    ```
+
+    Once the `conda-forge` channel has been enabled, `chainladder` can be installed with:
+
+    ```
+    conda install chainladder
+    ```
+
+    It is possible to list all of the versions of `chainladder` available on your platform with:
+
+    ```
+    conda search chainladder --channel conda-forge
+    ```
+
 
 Developer Installation
 ============================
 
 If you're interested in contributing, please refer to :ref:`Contributing <contributing>`
 for information on the developer environment.
+
+
+.. |Conda Downloads| image:: https://img.shields.io/conda/dn/conda-forge/chainladder.svg
+   :target: https://anaconda.org/conda-forge/chainladder
+
+.. |PyPI version| image:: https://badge.fury.io/py/chainladder.svg
+   :target: https://badge.fury.io/py/chainladder
+
+.. |Conda Version| image:: https://img.shields.io/conda/vn/conda-forge/chainladder.svg
+   :target: https://anaconda.org/conda-forge/chainladder

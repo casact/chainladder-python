@@ -14,7 +14,6 @@ dependencies:
   - scikit-learn
   - sparse
   - dill
-  - xlcompose
   - patsy
   - statsmodels
   - matplotlib

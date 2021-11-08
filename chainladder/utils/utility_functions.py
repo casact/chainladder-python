@@ -11,7 +11,6 @@ import dill
 import json
 import os
 import copy
-from sklearn.utils import deprecated
 from patsy import dmatrix
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -82,10 +81,6 @@ def load_sample(key, *args, **kwargs):
         **kwargs
     )
 
-
-@deprecated("Use load_sample instead.")
-def load_dataset(key, *args, **kwargs):
-    return load_sample(key, *args, **kwargs)
 
 
 def read_pickle(path):
