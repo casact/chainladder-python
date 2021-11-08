@@ -4,21 +4,6 @@
 from chainladder.utils.weighted_regression import (
     WeightedRegression,
 )  # noqa (API import)
-from xlcompose import (
-    DataFrame,
-    Series,
-    Row,
-    Column,
-    Tabs,
-    CSpacer,
-    RSpacer,
-    Title,
-    Image,
-    VSpacer,
-    HSpacer,
-    Sheet,
-    load_yaml,
-)
 
 from chainladder.utils.utility_functions import (  # noqa (API import)
     parallelogram_olf,
