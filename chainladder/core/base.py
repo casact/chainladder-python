@@ -243,7 +243,11 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
             if kind == 'origin':
                 end = (dates.min() - pd.DateOffset(days=1)).strftime('%b').upper()
             else:
-                end = dates.max().strftime('%b').upper()
+                # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
+                if dates.dt.strftime('%m%d').isin(['0101', '0401', '0701', '1001']).any():
+                    end = (dates.min() - pd.DateOffset(days=1, years=-1)).strftime('%b').upper()
+                else:
+                    end = dates.max().strftime('%b').upper()
             grain = grain + '-' + end
         return grain
 
