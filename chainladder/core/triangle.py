@@ -107,25 +107,33 @@ class Triangle(TriangleBase):
     def __init__(self, data=None, origin=None, development=None, columns=None,
                  index=None, origin_format=None, development_format=None,
                  cumulative=None, array_backend=None, pattern=False,
-                 trailing=False, *args, **kwargs):
+                 trailing=True, *args, **kwargs):
         if data is None:
             return
         index, columns, origin, development = self._input_validation(
             data, index, columns, origin, development)
+        # Handle any ultimate vectors in triangles separately
         data, ult = self._split_ult(data, index, columns, origin, development)
+        # Conform origins and developments to datetimes and determine lowest grains
         origin_date = self._to_datetime(
             data, origin, format=origin_format).rename('__origin__')
-        self.origin_grain = self._get_grain(origin_date)
-        self.origin_grain = 'S' if self.origin_grain == '2Q' else self.origin_grain
+        self.origin_grain = self._get_grain(origin_date, trailing=trailing)
         development_date = self._set_development(
             data, development, development_format, origin_date)
-        self.development_grain = (
-            self._get_grain(development_date) if development_date.nunique() != 1
-            else self.origin_grain)
+        if development_date.nunique() != 1:
+            self.development_grain = self._get_grain(development_date, trailing=True, kind='development') 
+        else:
+            self.development_grain = self.origin_grain
+        origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(how='s')
+        development_date = development_date.dt.to_period(self.development_grain).dt.to_timestamp(how='e')
+
+        # Aggregate dates to the origin/development grains
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
+        # Fill in missing periods with zeros
         date_axes = self._get_date_axes(
-            data_agg["__origin__"], data_agg["__development__"])
+            data_agg["__origin__"], data_agg["__development__"], 
+            self.origin_grain, self.development_grain)
         # Deal with labels
         if not index:
             index = ["Total"]
@@ -149,9 +157,18 @@ class Triangle(TriangleBase):
         self.is_cumulative = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern = pattern
-        self.origin_close = 'DEC'
-        if self.origin_grain != 'M' and trailing:
-            self.origin_close = pd.to_datetime(self.odims[-1]).strftime('%b').upper()
+        split = self.origin_grain.split('-')
+        self.origin_grain = {'A':'Y', '2Q':'S'}.get(split[0], split[0])
+        if len(split) == 1:
+            self.origin_close = 'DEC'
+        else:
+            self.origin_close = split[1]
+        split = self.development_grain.split('-')
+        self.development_grain = {'A':'Y', '2Q':'S'}.get(split[0], split[0])
+        grain_sort = ['Y','S', 'Q', 'M']
+        self.development_grain = grain_sort[
+            max(grain_sort.index(self.origin_grain), 
+            grain_sort.index(self.development_grain))]
         # Deal with array backend
         self.array_backend = "sparse"
         if array_backend is None:
@@ -540,8 +557,6 @@ class Triangle(TriangleBase):
             raise ValueError("Origin grain must be coarser than development grain")
         if self.is_full and not self.is_ultimate and not self.is_val_tri:
             warnings.warn('Triangle includes extraneous development lags')
-        else:
-            d_limit = None
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
             freq = {"Y": "A", "S": "2Q"}.get(ograin_new, ograin_new)

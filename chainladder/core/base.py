@@ -147,16 +147,16 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 "{} elements".format(len(y)),
             )
 
-    def _get_date_axes(self, origin_date, development_date):
+    def _get_date_axes(self, origin_date, development_date, origin_grain, development_grain):
         """ Function to find any missing origin dates or development dates that
             would otherwise mess up the origin/development dimensions.
         """
         o = pd.period_range(
             start=origin_date.min(), end=origin_date.max(),
-            freq=self._get_grain(origin_date)).to_timestamp(how='s')
+            freq=origin_grain).to_timestamp(how='s')
         d = pd.period_range(
             start=development_date.min(), end=development_date.max(),
-            freq=self._get_grain(development_date)).to_timestamp(how='e')
+            freq=development_grain).to_timestamp(how='e')
         c = pd.DataFrame(TriangleBase._cartesian_product(o, d),
                          columns=['__origin__', '__development__'])
         return c[c['__development__']>c['__origin__']]
@@ -208,8 +208,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 except:
                     pass
             target = target_field.map(arr)
-        freq = "M" if target.nunique() == 1 else TriangleBase._get_grain(target)
-        return target.dt.to_period(freq).dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
+        return target
 
     @staticmethod
     def _development_lag(origin, development):
@@ -219,15 +218,34 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
                 np.timedelta64(1, 'M')).round(0).astype(int)
 
     @staticmethod
-    def _get_grain(array):
-        u = pd.Series(array).dt.month.sort_values().diff().dropna().unique()
-        u = u[u>0]
-        if len(u) > 1:
-            return 'M'
-        elif len(u) == 0:
-            return 'Y'
+    def _get_grain(dates, trailing=False, kind='origin'):
+        """ Determines Grain of origin 
+        
+        Parameters:
+        
+        dates: pd.Series[datetime64[ns]]
+            A Datetime Series
+        trailing:
+            Set to False if you want to treat December as period end. Set
+            to True if you want it inferred from the data.
+        """
+        months = dates.dt.month.unique()
+        diffs = np.diff(np.sort(months))
+        if len(months) == 1:
+            grain = 'A'
+        elif np.all(diffs == 6):
+            grain = '2Q'
+        elif np.all(diffs == 3):
+            grain = 'Q'
         else:
-            return {6: "2Q", 3: "Q"}.get(u[0], "M")
+            grain = 'M'
+        if trailing and grain != 'M':
+            if kind == 'origin':
+                end = (dates.min() - pd.DateOffset(days=1)).strftime('%b').upper()
+            else:
+                end = dates.max().strftime('%b').upper()
+            grain = grain + '-' + end
+        return grain
 
     @staticmethod
     def _cartesian_product(*arrays):

@@ -375,3 +375,24 @@ def test_sparse_reassignment_no_mutate(prism):
     x["Excess 100k Paid"] = x["Paid"] - x["Capped 100k Paid"]
     b = x["Excess 100k Paid"].sum().grain("OYDY")
     assert a == b
+
+
+def test_trailing_origin():
+    raa = cl.load_sample('raa').dev_to_val().to_frame(keepdims=True).reset_index()
+    #adjust valuations to mid-year
+    raa['valuation'] = raa['valuation'] - pd.DateOffset(months=6)
+    tri = cl.Triangle(raa, origin='origin', development='valuation', columns='values', cumulative=True)
+    assert tri.development.to_list() == [6, 18, 30, 42, 54, 66, 78, 90, 102, 114]
+    assert tri.origin_close == 'DEC'
+    raa['origin2'] = raa['origin'] - pd.DateOffset(months=6)
+    tri = cl.Triangle(raa, origin='origin2', development='valuation', columns='values', cumulative=True)
+    assert tri.development.to_list() == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+    assert tri.origin_close == 'JUN'
+
+def test_trailing_valuation():
+    data = cl.load_sample('raa').dev_to_val().to_frame(keepdims=True)
+    data.valuation = (data.valuation.dt.year+1)*100+3
+    tri = cl.Triangle(data, origin='origin', development='valuation', columns='values')
+    assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
+    tri2 = cl.Triangle(data, origin='origin', development='valuation', columns='values', trailing=True)
+    assert tri == tri2

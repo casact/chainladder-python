@@ -22,6 +22,7 @@ dependencies:
   - openpyxl
   - imageio
   - matplotlib
+  - dask
 
   # Docs
   - nbsphinx
