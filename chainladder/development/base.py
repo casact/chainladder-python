@@ -79,7 +79,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation(X)
             
-        # print("FINAL WEIGHT:\n", weight)
+        print("FINAL WEIGHT:\n", weight)
         return weight
 
     def _drop_n(self, kind, num, X, link_ratio):
@@ -109,20 +109,15 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         print("drop_n_index", drop_n_array)
     
         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
-        # link_ratio_ranks = np.round(link_ratio[0][0],4).argsort(axis=0)
-        print("link_ratio_ranks:")
         print(link_ratio_ranks)
         
+        weights=link_ratio[0][0].T
+
         for index in range(len(drop_n_array)-1):
-            print(link_ratio_ranks.T[index], "drop_n_array_len:", drop_n_array_len,"index", index, "drop_n_array[index]", drop_n_array[index], "limit:",drop_n_array_len - index - drop_n_array[index] )
-            print(link_ratio_ranks.T[index] < drop_n_array_len - index - drop_n_array[index]-1)
-            
-        # print(np.transpose(link_ratio[0][0]))
-        # print("break")
-        # print(np.transpose(link_ratio[0][0]).argsort())
-        # print("_drop_n final weight")
-        # print(~np.isnan(link_ratio))
-        return ~np.isnan(link_ratio)
+            max_rank = drop_n_array_len - index - drop_n_array[index]-1
+            weights[index] = link_ratio_ranks.T[index] < max_rank
+        
+        return weights.T
     
     def _drop_hilo(self, kind, X, link_ratio):
         print("in drop hilo")
