@@ -70,16 +70,62 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         if self.drop_high == self.drop_low == self.drop == self.drop_valuation is None:
             return weight
         if self.drop_high is not None:
-            weight = weight * self._drop_hilo("high", X, link_ratio)
+            # weight = weight * self._drop_hilo("high", X, link_ratio)
+            weight = weight * self._drop_n("high", self.drop_high, X, link_ratio)
         if self.drop_low is not None:
             weight = weight * self._drop_hilo("low", X, link_ratio)
         if self.drop is not None:
             weight = weight * self._drop(X)
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation(X)
+            
+        # print("FINAL WEIGHT:\n", weight)
         return weight
 
+    def _drop_n(self, kind, num, X, link_ratio):
+        drop_n_array_len = len(link_ratio[0][0])
+        drop_n_array = np.array(drop_n_array_len*[0])
+        
+        # only a single parameter is provided
+        if isinstance(num, int):
+            drop_n_array = np.array(drop_n_array_len*[num])
+        elif isinstance(num, bool):
+            drop_n_array = np.array(drop_n_array_len*int(num))
+            
+        # an array of parameters is provided
+        else:
+            for index in range(len(num)):
+                drop_n_array[index] = int(num[index])
+        
+        # convert boolean to ints (1s)
+        for index in range(len(drop_n_array)):
+            if isinstance(drop_n_array[index], bool):
+                print("converting bool to int:", int(drop_n_array[index] == True))
+                drop_n_array[index] = int(drop_n_array[index] == True)
+            else :
+                drop_n_array[index] = drop_n_array[index]
+            
+        # drop_n_index = num
+        print("drop_n_index", drop_n_array)
+    
+        link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
+        # link_ratio_ranks = np.round(link_ratio[0][0],4).argsort(axis=0)
+        print("link_ratio_ranks:")
+        print(link_ratio_ranks)
+        
+        for index in range(len(drop_n_array)-1):
+            print(link_ratio_ranks.T[index], "drop_n_array_len:", drop_n_array_len,"index", index, "drop_n_array[index]", drop_n_array[index], "limit:",drop_n_array_len - index - drop_n_array[index] )
+            print(link_ratio_ranks.T[index] < drop_n_array_len - index - drop_n_array[index]-1)
+            
+        # print(np.transpose(link_ratio[0][0]))
+        # print("break")
+        # print(np.transpose(link_ratio[0][0]).argsort())
+        # print("_drop_n final weight")
+        # print(~np.isnan(link_ratio))
+        return ~np.isnan(link_ratio)
+    
     def _drop_hilo(self, kind, X, link_ratio):
+        print("in drop hilo")
         xp = X.get_array_module()
         link_ratio[link_ratio == 0] = xp.nan
         # small perturbation to have only one max/min per development age
