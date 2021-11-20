@@ -82,8 +82,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         print("FINAL WEIGHT:\n", weight)
         return weight
 
-    def _drop_n(self, kind, num, X, link_ratio):
-        drop_n_array_len = len(link_ratio[0][0])
+    def _drop_n(self, kind, num, X, link_ratio, preserve = 1):
+        drop_n_array_len = len(link_ratio[0][0]) #link_ratio[0,0]
         drop_n_array = np.array(drop_n_array_len*[0])
         
         # only a single parameter is provided
@@ -112,12 +112,23 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         print(link_ratio_ranks)
         
         weights=link_ratio[0][0].T
-
-        for index in range(len(drop_n_array)-1):
-            max_rank = drop_n_array_len - index - drop_n_array[index]-1
-            weights[index] = link_ratio_ranks.T[index] < max_rank
+        warning_flag = False
         
-        return weights.T
+        # checking to see if the ranks are in range
+        for index in range(len(drop_n_array)-1):
+            max_rank = drop_n_array_len - index - drop_n_array[index]
+            # weights[index] = link_ratio_ranks.T[index] < max_rank
+            if max_rank > preserve:
+                weights[index] = link_ratio_ranks.T[index] < max_rank - 1
+            else:
+                weights[index] = 1
+                warning_flag = True
+        
+        if warning_flag:
+            warnings.warn(
+                "Exclusion is ignored for some age-to-age factor when the selected exclusion result in the number of remaining factors being less than the minimum age-to-age data required (default preserve = 1).")
+            
+        return weights.T[None, None] #weights.T[None, None]
     
     def _drop_hilo(self, kind, X, link_ratio):
         print("in drop hilo")
