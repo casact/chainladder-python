@@ -68,6 +68,7 @@ class Development(DevelopmentBase):
         drop=None,
         drop_high=None,
         drop_low=None,
+        preserve=1,
         drop_valuation=None,
         fillna=None,
         groupby=None
@@ -77,6 +78,7 @@ class Development(DevelopmentBase):
         self.sigma_interpolation = sigma_interpolation
         self.drop_high = drop_high
         self.drop_low = drop_low
+        self.preserve = preserve
         self.drop_valuation = drop_valuation
         self.drop = drop
         self.fillna = fillna
