@@ -124,9 +124,12 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # checking to see if the ranks are in range
         for index in range(len(drop_high_array)-1):
             max_rank = link_ratios_len - index - drop_high_array[index]
+            min_rank = drop_low_array[index]
+            print("max_rank", max_rank, "min_rank", min_rank)
+            
             # weights[index] = link_ratio_ranks.T[index] < max_rank
-            if max_rank > preserve:
-                weights[index] = link_ratio_ranks.T[index] < max_rank - 1
+            if (max_rank > preserve) & (min_rank < preserve):
+                weights[index] = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
             else:
                 weights[index] = 1
                 warning_flag = True
