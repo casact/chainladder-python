@@ -71,8 +71,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             return weight
         if (self.drop_high is not None) | (self.drop_low is not None):
             weight = weight * self._drop_n(self.drop_high, self.drop_low, X, link_ratio, self.preserve)
-        if self.drop_low is not None:
-            weight = weight * self._drop_hilo("low", X, link_ratio)
+        # if self.drop_low is not None:
+        #     weight = weight * self._drop_hilo("low", X, link_ratio)
         if self.drop is not None:
             weight = weight * self._drop(X)
         if self.drop_valuation is not None:
@@ -81,36 +81,40 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         print("FINAL WEIGHT:\n", weight)
         return weight
 
-    def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve = 1):
+    def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
         link_ratios_len = len(link_ratio[0,0])
         
-        drop_high_array = np.array(link_ratios_len*[0])
-        drop_low_array = np.array(link_ratios_len*[0])
-        
-        if self.drop_high is not None:
-            # only a single parameter is provided
-            if isinstance(drop_high, int):
-                drop_high_array = np.array(link_ratios_len*[drop_high])
-            elif isinstance(drop_high, bool):
-                drop_high_array = np.array(link_ratios_len*int(drop_high))
-
-            # an array of parameters is provided
+        def drop_array_helper(drop_type):
+            drop_type_array = np.array(link_ratios_len*[0])
+            
+            if drop_type is None:
+                return np.array(link_ratios_len*[0])
             else:
-                for index in range(len(drop_high)):
-                    drop_high_array[index] = int(drop_high[index])
+                # only a single parameter is provided
+                if isinstance(drop_type, int):
+                    drop_type_array = np.array(link_ratios_len*[drop_type])
+                elif isinstance(drop_type, bool):
+                    drop_type_array = np.array(link_ratios_len*int(drop_type))
 
-            # convert boolean to ints (1s)
-            for index in range(len(drop_high_array)):
-                if isinstance(drop_high_array[index], bool):
-                    print("converting bool to int:", int(drop_high_array[index] == True))
-                    drop_high_array[index] = int(drop_high_array[index] == True)
-                else :
-                    drop_high_array[index] = drop_high_array[index]
+                # an array of parameters is provided
+                else:
+                    for index in range(len(drop_type)):
+                        drop_type_array[index] = int(drop_type[index])
 
-            print("drop_high_array", drop_high_array)
-        
-        
-    
+                # convert boolean to ints (1s)
+                for index in range(len(drop_type_array)):
+                    if isinstance(drop_type_array[index], bool):
+                        drop_type_array[index] = int(drop_type_array[index] == True)
+                    else :
+                        drop_type_array[index] = drop_type_array[index]
+
+                return drop_type_array
+                
+        drop_high_array = drop_array_helper(drop_high)
+        drop_low_array = drop_array_helper(drop_low)
+        print("drop_high_array", drop_high_array)
+        print("drop_low_array", drop_low_array)
+            
         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
         print(link_ratio_ranks)
         
