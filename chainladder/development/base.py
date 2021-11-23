@@ -71,8 +71,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             return weight
         if (self.drop_high is not None) | (self.drop_low is not None):
             weight = weight * self._drop_n(self.drop_high, self.drop_low, X, link_ratio, self.preserve)
-        # if self.drop_low is not None:
-        #     weight = weight * self._drop_hilo("low", X, link_ratio)
         if self.drop is not None:
             weight = weight * self._drop(X)
         if self.drop_valuation is not None:
@@ -135,33 +133,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         return weights.T[None, None]
     
-    def _drop_hilo(self, kind, X, link_ratio):
-        print("in drop hilo")
-        xp = X.get_array_module()
-        link_ratio[link_ratio == 0] = xp.nan
-        # small perturbation to have only one max/min per development age
-        link_ratio = link_ratio + xp.random.rand(*list(link_ratio.shape)) / 1e8
-        lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
-        if kind == "high":
-            vals = xp.nanmax(link_ratio, -2, keepdims=True)
-            drop_hilo = self.drop_high
-        else:
-            vals = xp.nanmin(link_ratio, -2, keepdims=True)
-            drop_hilo = self.drop_low
-        hilo = 1 * (vals != link_ratio)
-        if type(drop_hilo) is bool:
-            drop_hilo = [drop_hilo] * (len(X.development) - 1)
-        for num in range((len(X.development) - 1)):
-            if not drop_hilo[num]:
-                hilo[..., num] = hilo[..., num] * 0 + 1
-            else:
-                if lr_valid_count[num] < 3:
-                    hilo[..., num] = hilo[..., num] * 0 + 1
-                    warnings.warn(
-                        "drop_high and drop_low cannot be computed when less than three LDFs are present, exclusions are ignored."
-                    )
-        return hilo
-
     def _drop_valuation(self, X):
         xp = X.get_array_module()
         if type(self.drop_valuation) is not list:
