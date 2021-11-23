@@ -119,14 +119,13 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         for index in range(len(drop_high_array)-1):
             max_rank = link_ratios_len - index - drop_high_array[index]
             min_rank = drop_low_array[index]
-            print("max_rank",max_rank,"min_rank",min_rank)
             
             index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
-            print("index_array_weights",index_array_weights)
+
             if sum(index_array_weights) > preserve - 1:
                 weights[index] = index_array_weights
+                
             else:
-                print("warning at index", index)
                 warning_flag = True
         
         if warning_flag:
