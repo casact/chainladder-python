@@ -126,11 +126,13 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
             if sum(index_array_weights) > preserve - 1:
                 weights[index] = index_array_weights
+            else:
+                warning_flag = True
         
         if warning_flag:
-            warnings.warn(
-                "Exclusion is ignored for some age-to-age factor when the selected exclusion result in the number of remaining factors being less than the minimum age-to-age data required (default preserve = 1).")
-            
+            warning = "Some exclusions have been ignored. At least " + str(preserve) + " (use preserve = ...) link ratio(s) is required for development estimation."
+            warnings.warn(warning)
+
         return weights.T[None, None]
     
     def _drop_hilo(self, kind, X, link_ratio):
