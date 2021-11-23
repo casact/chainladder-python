@@ -78,7 +78,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation(X)
             
-        print("FINAL WEIGHT:\n", weight)
         return weight
 
     def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
@@ -112,27 +111,21 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 
         drop_high_array = drop_array_helper(drop_high)
         drop_low_array = drop_array_helper(drop_low)
-        print("drop_high_array", drop_high_array)
-        print("drop_low_array", drop_low_array)
             
         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
-        print(link_ratio_ranks)
         
-        weights=link_ratio[0][0].T
+        weights = ~np.isnan(link_ratio[0][0].T)
         warning_flag = False
         
         # checking to see if the ranks are in range
         for index in range(len(drop_high_array)-1):
             max_rank = link_ratios_len - index - drop_high_array[index]
             min_rank = drop_low_array[index]
-            print("max_rank", max_rank, "min_rank", min_rank)
-            
-            # weights[index] = link_ratio_ranks.T[index] < max_rank
-            if (max_rank > preserve) & (min_rank < preserve):
-                weights[index] = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
-            else:
-                weights[index] = 1
-                warning_flag = True
+
+            index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
+
+            if sum(index_array_weights) > preserve - 1:
+                weights[index] = index_array_weights
         
         if warning_flag:
             warnings.warn(
