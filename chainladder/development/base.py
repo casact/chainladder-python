@@ -69,42 +69,74 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         weight = X.nan_triangle[:, :-1]
         if self.drop_high == self.drop_low == self.drop == self.drop_valuation is None:
             return weight
-        if self.drop_high is not None:
-            weight = weight * self._drop_hilo("high", X, link_ratio)
-        if self.drop_low is not None:
-            weight = weight * self._drop_hilo("low", X, link_ratio)
+        if (self.drop_high is not None) | (self.drop_low is not None):
+            weight = weight * self._drop_n(self.drop_high, self.drop_low, X, link_ratio, self.preserve)
         if self.drop is not None:
             weight = weight * self._drop(X)
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation(X)
+            
         return weight
 
-    def _drop_hilo(self, kind, X, link_ratio):
-        xp = X.get_array_module()
-        link_ratio[link_ratio == 0] = xp.nan
-        # small perturbation to have only one max/min per development age
-        link_ratio = link_ratio + xp.random.rand(*list(link_ratio.shape)) / 1e8
-        lr_valid_count = xp.sum(~xp.isnan(link_ratio)[0, 0], axis=0)
-        if kind == "high":
-            vals = xp.nanmax(link_ratio, -2, keepdims=True)
-            drop_hilo = self.drop_high
-        else:
-            vals = xp.nanmin(link_ratio, -2, keepdims=True)
-            drop_hilo = self.drop_low
-        hilo = 1 * (vals != link_ratio)
-        if type(drop_hilo) is bool:
-            drop_hilo = [drop_hilo] * (len(X.development) - 1)
-        for num in range((len(X.development) - 1)):
-            if not drop_hilo[num]:
-                hilo[..., num] = hilo[..., num] * 0 + 1
+    def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
+        link_ratios_len = len(link_ratio[0,0])
+        
+        def drop_array_helper(drop_type):
+            drop_type_array = np.array(link_ratios_len*[0])
+            
+            if drop_type is None:
+                return np.array(link_ratios_len*[0])
             else:
-                if lr_valid_count[num] < 3:
-                    hilo[..., num] = hilo[..., num] * 0 + 1
-                    warnings.warn(
-                        "drop_high and drop_low cannot be computed when less than three LDFs are present, exclusions are ignored."
-                    )
-        return hilo
+                # only a single parameter is provided
+                if isinstance(drop_type, int):
+                    drop_type_array = np.array(link_ratios_len*[drop_type])
+                elif isinstance(drop_type, bool):
+                    drop_type_array = np.array(link_ratios_len*int(drop_type))
 
+                # an array of parameters is provided
+                else:
+                    for index in range(len(drop_type)):
+                        drop_type_array[index] = int(drop_type[index])
+
+                # convert boolean to ints (1s)
+                for index in range(len(drop_type_array)):
+                    if isinstance(drop_type_array[index], bool):
+                        drop_type_array[index] = int(drop_type_array[index] == True)
+                    else :
+                        drop_type_array[index] = drop_type_array[index]
+
+                return drop_type_array
+                
+        drop_high_array = drop_array_helper(drop_high)
+        drop_low_array = drop_array_helper(drop_low)
+            
+        link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
+        
+        weights = ~np.isnan(link_ratio[0][0].T)
+        warning_flag = False
+        
+        # checking to see if the ranks are in range
+        for index in range(len(drop_high_array)-1):
+            max_rank = link_ratios_len - index - drop_high_array[index]
+            min_rank = drop_low_array[index]
+            
+            index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
+
+            if sum(index_array_weights) > preserve - 1:
+                weights[index] = index_array_weights
+                
+            else:
+                warning_flag = True
+        
+        if warning_flag:
+            if preserve == 1:
+                warning = "Some exclusions have been ignored. At least " + str(preserve) + " (use preserve = ...)" + " link ratio(s) is required for development estimation."
+            else:
+                warning = "Some exclusions have been ignored. At least " + str(preserve) + " link ratio(s) is required for development estimation."
+            warnings.warn(warning)
+
+        return weights.T[None, None]
+    
     def _drop_valuation(self, X):
         xp = X.get_array_module()
         if type(self.drop_valuation) is not list:
