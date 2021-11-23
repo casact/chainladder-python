@@ -24,10 +24,12 @@ class Development(DevelopmentBase):
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
         Drops specific origin/development combination(s)
-    drop_high: bool or list of bool (default=None)
+    drop_high: bool or int, or list of bools or ints (default=None)
         Drops highest link ratio(s) from LDF calculation
-    drop_low: bool or list of bool (default=None)
+    drop_low: bool or int, or list of bools or ints (default=None)
         Drops lowest link ratio(s) from LDF calculation
+    preserve: int (default = 1)
+        The minimum number of link ratio(s) required for LDF calculation
     drop_valuation: str or list of str (default=None)
         Drops specific valuation periods. str must be date convertible.
     fillna: float, (default=None)
