@@ -56,7 +56,7 @@ def test_index_broadcasting3(clrd):
     assert len(c) - len(a) == 2
 
 
-def test_index_broadcasting3(clrd):
+def test_index_broadcasting4(clrd):
     """ b should broadcast to a if b only has one index element """
     a = clrd['CumPaidLoss']
     b = clrd['CumPaidLoss'].groupby('LOB').sum().iloc[0]

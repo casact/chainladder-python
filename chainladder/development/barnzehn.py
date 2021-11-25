@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import numpy as np
+import pandas as pd
+from chainladder import options
 from chainladder.development.learning import DevelopmentML
 from chainladder.development.glm import TweedieGLM
 from sklearn.linear_model import LinearRegression
@@ -49,3 +51,27 @@ class BarnettZehnwirth(TweedieGLM):
         self.model_.triangle_ml_ = self.model_.triangle_ml_.exp()
         self.model_.triangle_ml_.is_cumulative = False
         return self
+
+    def transform(self, X):
+        """ If X and self are of different shapes, align self to X, else
+        return self.
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X_new : New triangle with transformed attributes.
+        """
+        X_new = X.copy()
+        X_ml = self.model_._prep_X_ml(X.cum_to_incr().log())
+        y_ml = self.model_.estimator_ml.predict(X_ml)
+        triangle_ml = self.model_._get_triangle_ml(X_ml, y_ml)
+        backend = "cupy" if X.array_backend == "cupy" else "numpy"
+        triangle_ml.is_cumulative = False
+        X_new.ldf_ = triangle_ml.exp().incr_to_cum().link_ratio.set_backend(backend)
+        X_new.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
+        X_new._set_slicers()
+        return X_new

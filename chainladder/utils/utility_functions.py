@@ -5,17 +5,15 @@ import pandas as pd
 import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
-from scipy.sparse import coo_matrix
-import joblib
 import dill
 import json
 import os
 import copy
 from patsy import dmatrix
 from sklearn.base import BaseEstimator, TransformerMixin
+from typing import Iterable, Union
 
-
-def load_sample(key, *args, **kwargs):
+def load_sample(key : str, *args, **kwargs):
     """ Function to load datasets included in the chainladder package.
 
         Parameters
@@ -187,7 +185,11 @@ def set_common_backend(objs):
     return [i.set_backend(backend) for i in objs]
 
 
-def concat(objs, axis, ignore_index=False, sort=False):
+def concat(
+    objs : Iterable, 
+    axis : Union[int, str], 
+    ignore_index: bool = False, 
+    sort: bool = False):
     """ Concatenate Triangle objects along a particular axis.
 
     Parameters
@@ -208,6 +210,10 @@ def concat(objs, axis, ignore_index=False, sort=False):
     -------
     Updated triangle
     """
+    if type(objs) not in (list, tuple):
+        raise TypeError("objects to be concatenated must be in a list or tuple")
+    if len(objs) == 0:
+        raise ValueError("objs must contain at least one element")
     xp = objs[0].get_array_module()
     axis = objs[0]._get_axis(axis)
 
