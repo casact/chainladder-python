@@ -126,7 +126,7 @@ class Triangle(TriangleBase):
             self.development_grain = self.origin_grain
         origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(how='s')
         development_date = development_date.dt.to_period(self.development_grain).dt.to_timestamp(how='e')
-
+        
         # Aggregate dates to the origin/development grains
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
@@ -154,6 +154,10 @@ class Triangle(TriangleBase):
         val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
         self.key_labels = index
         self.valuation_date = val_date
+        if cumulative is None:
+            warnings.warn("""
+            The cumulative property of your triangle is not set. This may result in 
+            undesirable behavior. In a future release this will result in an error.""")
         self.is_cumulative = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern = pattern
