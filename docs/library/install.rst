@@ -12,7 +12,7 @@ General Installation
 
 .. tabbed:: pip
 
-    |PyPI version|
+    |PyPI version| |Pypi Downloads|
 
     Installing `chainladder` from the `Pipi` channel can be achieved by using ``pip``:
     
@@ -21,7 +21,7 @@ General Installation
     ```
 
     Alternatively, if you have git and want to play with unreleased features, you can
-    install directly from [Github](https://github.com/casact/chainladder-python/):
+    install directly from `Github`_:
 
     ```
     pip install git+https://github.com/casact/chainladder-python/
@@ -68,3 +68,8 @@ for information on the developer environment.
 
 .. |Conda Version| image:: https://img.shields.io/conda/vn/conda-forge/chainladder.svg
    :target: https://anaconda.org/conda-forge/chainladder
+
+.. |Pypi Downloads| image:: https://pepy.tech/badge/chainladder
+   :target: https://pepy.tech/project/chainladder
+
+.. _Github: https://github.com/casact/chainladder-python/

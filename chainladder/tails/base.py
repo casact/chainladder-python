@@ -122,7 +122,10 @@ class TailBase(DevelopmentBase):
             y = num_to_nan(y)
             reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y), None)
             std_err_ = xp.exp(time_pd * reg.slope_ + reg.intercept_)
-
+            if self.tail_.values.flatten().sum() / xp.prod(self.tail_.shape) == 1.0: 
+                # If no tail, assume no variation
+                sigma_ = sigma_ * 0
+                std_err_ = std_err_* 0
             self.sigma_.values = xp.concatenate(
                 (self.sigma_.values[..., :-1], sigma_[..., -1:]), axis=-1
             )
