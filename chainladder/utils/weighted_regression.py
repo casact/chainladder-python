@@ -78,10 +78,8 @@ class WeightedRegression(BaseEstimator):
         mse_denom = xp.nansum((y * 0 + 1) * (w != 0), axis) - 1
         mse_denom = num_to_nan(mse_denom)
         mse = wss_residual / mse_denom
-        std_err = xp.sqrt(num_to_nan(mse) / d)
+        std_err = xp.sqrt(mse / d)
         std_err = std_err[..., None]
-        if xp != sp:
-            std_err[std_err == 0] = xp.nan
         coef = coef[..., None]
         sigma = xp.sqrt(mse)[..., None]
         self.slope_ = coef
@@ -109,7 +107,8 @@ class WeightedRegression(BaseEstimator):
         from chainladder.utils.utility_functions import num_to_nan
 
         xp = self.xp
-        ly = xp.log(num_to_nan(y))
+        ly = y.copy()
+        ly = xp.log(xp.where(ly==0, 1e-320, ly))
         w = xp.nan_to_num(ly * 0 + 1)
         reg = WeightedRegression(self.axis, False, xp=xp).fit(None, ly, w)
         slope, intercept = reg.slope_, reg.intercept_
@@ -125,7 +124,9 @@ class WeightedRegression(BaseEstimator):
         from chainladder.utils.utility_functions import num_to_nan
 
         xp = self.xp
-        w = xp.nan_to_num(y * 0 + 1)
+        ly = y.copy()
+        ly = xp.where(ly == 0, 1e-320, ly)
+        w = xp.nan_to_num(ly * 0 + 1)
         slicer_n, slicer_d, slicer_a = (
             ([slice(None)] * 4),
             ([slice(None)] * 4),
@@ -144,13 +145,13 @@ class WeightedRegression(BaseEstimator):
         fill_ = xp.sqrt(
             abs(
                 xp.minimum(
-                    (y[slicer_n] ** 4 / y[slicer_d] ** 2),
-                    xp.minimum(y[slicer_d] ** 2, y[slicer_n] ** 2),
+                    (ly[slicer_n] ** 4 / ly[slicer_d] ** 2),
+                    xp.minimum(ly[slicer_d] ** 2, ly[slicer_n] ** 2),
                 )
             )
         )
         fill_ = xp.concatenate((w[slicer_a], xp.nan_to_num(fill_)), axis=self.axis) * (
             1 - w
         )
-        out = xp.nan_to_num(y) + fill_
+        out = xp.nan_to_num(ly) + fill_
         return num_to_nan(out)

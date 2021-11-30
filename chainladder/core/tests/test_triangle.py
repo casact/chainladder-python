@@ -273,10 +273,11 @@ def test_array_protocol(raa, clrd):
     assert np.concatenate((clrd.iloc[:200], clrd.iloc[200:]),0) == cl.concat((clrd.iloc[:200], clrd.iloc[200:]),0)
 
 
-def test_dask_backend(raa):
-    raa1 = cl.Chainladder().fit(raa.set_backend('dask')).ultimate_
-    raa2 = cl.Chainladder().fit(raa).ultimate_
-    assert (raa1 == raa2).compute()
+#def test_dask_backend(raa):
+#     """ Dask backend not fully implemented """
+#    raa1 = cl.Chainladder().fit(raa.set_backend('dask')).ultimate_
+#    raa2 = cl.Chainladder().fit(raa).ultimate_
+#    assert (raa1 == raa2).compute()
 
 
 def test_partial_val_dev(raa):
