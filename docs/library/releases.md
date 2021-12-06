@@ -1,6 +1,21 @@
 # Releases
 ## Version 0.8
 
+### Version 0.8.10
+Release Date: Dec 4, 2021
+
+### Enhancements
+* [\#225](https://github.com/casact/chainladder-python/issues/225) - Added support for mid-year triangles
+* Remove `xlcompose` as a dependency
+* [\#233](https://github.com/casact/chainladder-python/issues/233) and [\#219](https://github.com/casact/chainladder-python/issues/219) - Added more explicit warning when `is_cumulative` property of triangle is not set.
+* [\#192](https://github.com/casact/chainladder-python/issues/192) Expanded `drop_high` and `drop_low` functionality to include integers and variable length lists. PR courtesy of @kennethshsu.
+
+### Bug fixes
+* [\#234](https://github.com/casact/chainladder-python/issues/234) Coerce `MackChainladder` to zero variance when `inbr_` and `cdf_` are 0.
+* Fix bug in `BarnettZehnwirth.transform` that was previously not applying the log-transform correctly
+
+
+
 ### Version 0.8.9
 Release Date: Oct 24, 2021
 
