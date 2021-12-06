@@ -26,3 +26,4 @@ parts:
     - file: library/contributing
     - file: library/roadmap
     - file: library/glossary
+    - file: References
