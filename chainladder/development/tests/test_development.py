@@ -77,6 +77,20 @@ def test_n_periods():
         == xp.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0])
     )
 
+def test_drophighlow():
+    raa = cl.load_sample("raa")
+    
+    lhs = np.round(cl.Development(drop_high=0).fit(raa).cdf_.values,4).flatten()
+    rhs = np.array([8.9202, 2.974, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
+    assert (np.all(lhs == rhs))
+    
+    lhs = np.round(cl.Development(drop_high=[True, False, True, False]).fit(raa).cdf_.values,4).flatten()
+    rhs = np.array([8.0595, 2.8613, 1.7624, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
+    assert (np.all(lhs == rhs))
+
+    lhs = np.round(cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2).fit(raa).cdf_.values,4).flatten()
+    rhs = np.array([5.7403, 2.2941, 1.5617, 1.3924, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092,])
+    assert (np.all(lhs == rhs))
 
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
