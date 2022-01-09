@@ -32,6 +32,10 @@ class Development(DevelopmentBase):
         The minimum number of link ratio(s) required for LDF calculation
     drop_valuation: str or list of str (default=None)
         Drops specific valuation periods. str must be date convertible.
+    min_ldf: int or list of ints (default=None)
+        Drops all link ratio(s) below assigned parameter from the LDF calculation
+    max_ldf: int or list of ints (default=None)
+        Drops all link ratio(s) above assigned parameter from the LDF calculation
     fillna: float, (default=None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
@@ -72,6 +76,8 @@ class Development(DevelopmentBase):
         drop_low=None,
         preserve=1,
         drop_valuation=None,
+        min_ldf=None,
+        max_ldf=None,
         fillna=None,
         groupby=None
     ):
@@ -82,6 +88,8 @@ class Development(DevelopmentBase):
         self.drop_low = drop_low
         self.preserve = preserve
         self.drop_valuation = drop_valuation
+        self.min_ldf = min_ldf
+        self.max_ldf = max_ldf
         self.drop = drop
         self.fillna = fillna
         self.groupby = groupby
