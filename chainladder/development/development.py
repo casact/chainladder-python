@@ -12,31 +12,31 @@ class Development(DevelopmentBase):
 
     Parameters
     ----------
-    n_periods: integer, optional (default=-1)
+    n_periods: integer, optional (default = -1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
-    average: string or float, optional (default='volume')
+    average: string or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.  Options include
         'volume', 'simple', and 'regression'. If numeric values are supplied,
         then (2-average) in the style of Zehnwirth & Barnett is used
         for the exponent of the regression weights.
-    sigma_interpolation: string optional (default='log-linear')
+    sigma_interpolation: string optional (default = 'log-linear')
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
         Drops specific origin/development combination(s)
-    drop_high: bool or int, or list of bools or ints (default=None)
+    drop_high: bool or int, or list of bools or ints (default = None)
         Drops highest link ratio(s) from LDF calculation
-    drop_low: bool or int, or list of bools or ints (default=None)
+    drop_low: bool or int, or list of bools or ints (default = None)
         Drops lowest link ratio(s) from LDF calculation
     preserve: int (default = 1)
         The minimum number of link ratio(s) required for LDF calculation
-    drop_valuation: str or list of str (default=None)
+    drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
-    drop_below: float or list of floats (default=None)
+    drop_below: float or list of floats (default = 0.00)
         Drops all link ratio(s) below the given parameter from the LDF calculation
-    drop_above: float or list of floats (default=None)
+    drop_above: float or list of floats (default = numpy.inf)
         Drops all link ratio(s) above the given parameter from the LDF calculation
-    fillna: float, (default=None)
+    fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
         excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
