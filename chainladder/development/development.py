@@ -76,8 +76,8 @@ class Development(DevelopmentBase):
         drop_low=None,
         preserve=1,
         drop_valuation=None,
-        min_ldf=None,
-        max_ldf=None,
+        drop_above=np.inf,
+        drop_below=0.00,
         fillna=None,
         groupby=None
     ):
@@ -88,8 +88,8 @@ class Development(DevelopmentBase):
         self.drop_low = drop_low
         self.preserve = preserve
         self.drop_valuation = drop_valuation
-        self.min_ldf = min_ldf
-        self.max_ldf = max_ldf
+        self.drop_above = drop_above
+        self.drop_below = drop_below
         self.drop = drop
         self.fillna = fillna
         self.groupby = groupby
