@@ -78,35 +78,35 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             
         return weight
 
-    def drop_array_helper(drop_type):
-        drop_type_array = np.array(link_ratios_len*[0])
-
-        if drop_type is None:
-            return np.array(link_ratios_len*[0])
-        else:
-            # only a single parameter is provided
-            if isinstance(drop_type, int):
-                drop_type_array = np.array(link_ratios_len*[drop_type])
-            elif isinstance(drop_type, bool):
-                drop_type_array = np.array(link_ratios_len*int(drop_type))
-
-            # an array of parameters is provided
-            else:
-                for index in range(len(drop_type)):
-                    drop_type_array[index] = int(drop_type[index])
-
-            # convert boolean to ints (1s)
-            for index in range(len(drop_type_array)):
-                if isinstance(drop_type_array[index], bool):
-                    drop_type_array[index] = int(drop_type_array[index] == True)
-                else :
-                    drop_type_array[index] = drop_type_array[index]
-
-            return drop_type_array
-            
     def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
         link_ratios_len = len(link_ratio[0,0])
         
+        def drop_array_helper(drop_type):
+            drop_type_array = np.array(link_ratios_len*[0])
+            
+            if drop_type is None:
+                return np.array(link_ratios_len*[0])
+            else:
+                # only a single parameter is provided
+                if isinstance(drop_type, int):
+                    drop_type_array = np.array(link_ratios_len*[drop_type])
+                elif isinstance(drop_type, bool):
+                    drop_type_array = np.array(link_ratios_len*int(drop_type))
+
+                # an array of parameters is provided
+                else:
+                    for index in range(len(drop_type)):
+                        drop_type_array[index] = int(drop_type[index])
+
+                # convert boolean to ints (1s)
+                for index in range(len(drop_type_array)):
+                    if isinstance(drop_type_array[index], bool):
+                        drop_type_array[index] = int(drop_type_array[index] == True)
+                    else :
+                        drop_type_array[index] = drop_type_array[index]
+
+                return drop_type_array
+                
         drop_high_array = drop_array_helper(drop_high)
         drop_low_array = drop_array_helper(drop_low)
             
