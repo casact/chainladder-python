@@ -165,27 +165,27 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             return drop_type_array
                 
         drop_above_array = drop_array_helper(drop_above)
-        print("drop_above_array",drop_above_array)
+        print("drop_above_array", drop_above_array)
         drop_below_array = drop_array_helper(drop_below)
-        print("drop_below_array",drop_below_array)     
+        print("drop_below_array", drop_below_array)     
         
 #         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
         
         weights = ~np.isnan(link_ratio[0][0].T)
-#         warning_flag = False
+        warning_flag = False
         
-#         # checking to see if the ranks are in range
-#         for index in range(len(drop_high_array)-1):
-#             max_rank = link_ratios_len - index - drop_high_array[index]
-#             min_rank = drop_low_array[index]
+        # checking to see if the ranks are in range
+        for index in range(len(drop_above_array)-1):
+            max_ldf = drop_above_array[index]
+            min_ldf = drop_below_array[index]
             
-#             index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
+            index_array_weights = (link_ratio[0][0].T[index] <= max_ldf) & (link_ratio[0][0].T[index] >= min_ldf)
 
-#             if sum(index_array_weights) > preserve - 1:
-#                 weights[index] = index_array_weights
+            if sum(index_array_weights) > preserve - 1:
+                weights[index] = index_array_weights
                 
-#             else:
-#                 warning_flag = True
+            else:
+                warning_flag = True
         
 #         if warning_flag:
 #             if preserve == 1:
