@@ -75,7 +75,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             weight = weight * self._drop_n(self.drop_high, self.drop_low, X, link_ratio, self.preserve)
 
         if (self.drop_above != np.inf) | (self.drop_below != 0.00):
-            print("drop_above drop_below called")
             weight = weight * self._drop_x(self.drop_above, self.drop_below, X, link_ratio, self.preserve)
             
         if self.drop is not None:
@@ -165,11 +164,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             return drop_type_array
                 
         drop_above_array = drop_array_helper(drop_above)
-        print("drop_above_array", drop_above_array)
-        drop_below_array = drop_array_helper(drop_below)
-        print("drop_below_array", drop_below_array)     
-        
-#         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
+        drop_below_array = drop_array_helper(drop_below)  
         
         weights = ~np.isnan(link_ratio[0][0].T)
         warning_flag = False
@@ -187,12 +182,12 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             else:
                 warning_flag = True
         
-#         if warning_flag:
-#             if preserve == 1:
-#                 warning = "Some exclusions have been ignored. At least " + str(preserve) + " (use preserve = ...)" + " link ratio(s) is required for development estimation."
-#             else:
-#                 warning = "Some exclusions have been ignored. At least " + str(preserve) + " link ratio(s) is required for development estimation."
-#             warnings.warn(warning)
+        if warning_flag:
+            if preserve == 1:
+                warning = "Some exclusions have been ignored. At least " + str(preserve) + " (use preserve = ...)" + " link ratio(s) is required for development estimation."
+            else:
+                warning = "Some exclusions have been ignored. At least " + str(preserve) + " link ratio(s) is required for development estimation."
+            warnings.warn(warning)
 
         return weights.T[None, None]
     
