@@ -70,101 +70,16 @@ Once you have the package installed, we recommend that you follow the starter tu
 
 
 
+Documentation and Discussions
+-----------------------------
 
-
-Estimators
---------------------
-
-chainladder has an ever growing list of estimators that work seamlessly together, here are some examples:
-
-Loss Development:
-
-* `Development`_
-* `DevelopmentConstant`_
-* `MunichAdjustment`_
-* `ClarkLDF`_
-* `IncrementalAdditive`_
-* `CaseOutstanding`_
-* `TweedieGLM`_
-* `DevelopmentML`_
-* `BarnettZehnwirth`_
-
-Tail Factors:
-
-* `TailCurve`_
-* `TailConstant`_
-* `TailBondy`_
-* `TailClark`_
-
-Adjustments:
-
-* `BootstrapODPSample`_
-* `BerquistSherman`_
-* `ParallelogramOLF`_
-* `Trend`_
-
-IBNR Models:
-
-* `Chainladder`_
-* `MackChainladder`_
-* `BornhuettterFerguson`_
-* `Benktander`_
-* `CapeCod`_
-
-Workflow:
-
-* `VotingChainladder`_
-* `Pipeline`_
-* `GridSearch`_
-
-
-.. _Development: https://chainladder-python.readthedocs.io/en/latest/development.html#development
-.. _TailCurve: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailcurve
-.. _Chainladder: https://chainladder-python.readthedocs.io/en/latest/methods.html#chainladder
-.. _BootstrapODPSample: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#bootstrapodpsample
-.. _DevelopmentConstant: https://chainladder-python.readthedocs.io/en/latest/development.html#developmentconstant
-.. _TailConstant: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailconstant
-.. _MackChainladder: https://chainladder-python.readthedocs.io/en/latest/methods.html#mackchainladder
-.. _BerquistSherman: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#berquistsherman
-.. _MunichAdjustment: https://chainladder-python.readthedocs.io/en/latest/development.html#munichadjustment
-.. _TailBondy: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailbondy
-.. _BornhuettterFerguson: https://chainladder-python.readthedocs.io/en/latest/methods.html#bornhuetterferguson
-.. _Pipeline: https://chainladder-python.readthedocs.io/en/latest/workflow.html#pipeline
-.. _ClarkLDF: https://chainladder-python.readthedocs.io/en/latest/development.html#clarkldf
-.. _TailClark: https://chainladder-python.readthedocs.io/en/latest/tails.html#tailclark
-.. _Benktander: https://chainladder-python.readthedocs.io/en/latest/methods.html#benktander
-.. _GridSearch: https://chainladder-python.readthedocs.io/en/latest/workflow.html#gridsearch
-.. _IncrementalAdditive: https://chainladder-python.readthedocs.io/en/latest/development.html#incrementaladditive
-.. _CapeCod: https://chainladder-python.readthedocs.io/en/latest/methods.html#capecod
-.. _ParallelogramOLF: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#parallelogramolf
-.. _VotingChainladder: https://chainladder-python.readthedocs.io/en/latest/workflow.html#votingchainladder
-.. _Trend: https://chainladder-python.readthedocs.io/en/latest/adjustments.html#trend
-.. _CaseOutstanding: https://chainladder-python.readthedocs.io/en/latest/development.html#caseoutstanding
-.. _TweedieGLM: https://chainladder-python.readthedocs.io/en/latest/development.html#tweedieglm
-.. _DevelopmentML: https://chainladder-python.readthedocs.io/en/latest/development.html#developmentml
-.. _BarnettZehnwirth: https://chainladder-python.readthedocs.io/en/latest/development.html#barnettzehnwirth
-
-
-
-
-
-Documentation
--------------
-
-Please visit the `Documentation`_ page for examples, how-tos, and source
+Please visit the `documentation`_ page for examples, how-tos, and source
 code documentation.
 
-.. _Documentation: https://chainladder-python.readthedocs.io/en/latest/
+Do you have a question, a new idea, or a feature request? Join the `discussions`_ on GitHub.  Your question is more likely to get answered here than on Stack Overflow. We are always happy to answer any usage questions or hear ideas on how to make ``chainladder`` better.
 
-
-
-
-Discussion Board
---------------------
-
-Do you have a question, a new idea, or a feature request? Join the discussions on `GitHub`_.  Your question is more likely to get answered here than on Stack Overflow. We are always happy to answer any usage questions or hear ideas on how to make ``chainladder`` better.
-
-.. _GitHub: https://github.com/casact/chainladder-python/discussions
+.. _documentation: https://chainladder-python.readthedocs.io/en/latest/
+.. _discussions: https://github.com/casact/chainladder-python/discussions
 
 
 
@@ -176,3 +91,10 @@ Check out our `contributing guidelines`_.
 
 
 .. _contributing guidelines: https://chainladder-python.readthedocs.io/en/latest/library/contributing.html
+
+
+Licenses
+-------------------
+This package is released under `Mozilla Public License 2.0`_.
+
+.. _Mozilla Public License 2.0: https://github.com/casact/chainladder-python/blob/master/LICENSE
