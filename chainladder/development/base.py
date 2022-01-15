@@ -149,11 +149,13 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def _drop_x(self, drop_above, drop_below, X, link_ratio, preserve):
         link_ratios_len = len(link_ratio[0,0])
         
-        def drop_array_helper(drop_type):
-            drop_type_array = np.array(link_ratios_len*[0.0])
+        def drop_array_helper(drop_type, default_value):
+            drop_type_array = np.array(link_ratios_len*[default_value])
             
             # only a single parameter is provided
-            if isinstance(drop_type, float):
+            if isinstance(drop_type, int):
+                drop_type_array = np.array(link_ratios_len*[float(drop_type)])
+            elif isinstance(drop_type, float):
                 drop_type_array = np.array(link_ratios_len*[drop_type])
 
             # an array of parameters is provided
@@ -163,8 +165,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
             return drop_type_array
                 
-        drop_above_array = drop_array_helper(drop_above)
-        drop_below_array = drop_array_helper(drop_below)  
+        drop_above_array = drop_array_helper(drop_above, np.inf)
+        drop_below_array = drop_array_helper(drop_below, 0.0)
         
         weights = ~np.isnan(link_ratio[0][0].T)
         warning_flag = False
@@ -175,7 +177,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             min_ldf = drop_below_array[index]
             
             index_array_weights = (link_ratio[0][0].T[index] <= max_ldf) & (link_ratio[0][0].T[index] >= min_ldf)
-
+            
             if sum(index_array_weights) > preserve - 1:
                 weights[index] = index_array_weights
                 
