@@ -44,15 +44,15 @@ There are two ways to install the chainladder package, using `pip` or `conda`:
 
 1) Using `pip`:
 
-`pip install chainladder`
+``pip install chainladder``
 
 2) Using `conda`:
 
-`conda install -c conda-forge chainladder`
+``conda install -c conda-forge chainladder``
 
 If you would like to try pre-release features, install the package directly from GitHub.
 
-`pip install git+https://github.com/casact/chainladder-python/`
+``pip install git+https://github.com/casact/chainladder-python/``
 
 
 
