@@ -397,3 +397,12 @@ def test_trailing_valuation():
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(data, origin='origin', development='valuation', columns='values', trailing=True)
     assert tri == tri2
+
+
+def test_edgecase_236():
+    assert cl.Triangle(
+        pd.DataFrame({'origin':[201906, 201907], 'development':[201911, 201911], 'amount':[1, 0]}),
+        origin='origin',
+        development='development',
+        columns=['amount'],
+        cumulative=True).val_to_dev().iloc[..., 0, -1].sum() == 1
