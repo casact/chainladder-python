@@ -123,7 +123,7 @@ def read_json(json_str, array_backend=None):
             index=index,
             columns=columns,
             pattern=json.loads(j["metadata"])["is_pattern"],
-            cumulative=json.loads(j["metadata"])["is_cumulative"],
+            cumulative=False,
         )
         if json.loads(j["metadata"])["is_val_tri"]:
             tri = tri.dev_to_val()
