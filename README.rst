@@ -60,7 +60,7 @@ If you would like to try pre-release features, install the package directly from
 Getting Started
 -------------------------
 
-The package comes pre-load with sample insurance datasets that are publicly available. We have also drafted tutorials that use the chainladder package on these datasets to demonstrate some of the commonly used functionalities that the package offers.
+The package comes pre-loaded with sample insurance datasets that are publicly available. We have also drafted tutorials that use the chainladder package on these datasets to demonstrate some of the commonly used functionalities that the package offers.
 
 Once you have the package installed, we recommend that you follow the starter tutorial and work alongside with the pre-loaded datasets.
 
