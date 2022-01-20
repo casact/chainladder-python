@@ -420,7 +420,10 @@ class Triangle(TriangleBase):
         scale = self._dstep()[obj.development_grain][obj.origin_grain]
         offset = np.arange(obj.shape[-2]) * scale
         min_slide = -offset.max()
-        offset = offset[obj.values.coords[-2]] * sign
+        if (obj.values.coords[-2] == np.arange(1)).all():
+            # Unique edge case #239
+            offset = offset[-1:] * sign
+        offset = offset[obj.values.coords[-2]] * sign # [0]
         obj.values.coords[-1] = obj.values.coords[-1] + offset
         ddims = obj.valuation[obj.valuation <= obj.valuation_date]
         ddims = len(ddims.drop_duplicates())
