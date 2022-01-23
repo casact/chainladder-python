@@ -3,12 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+from sklearn.utils import deprecated
+
 from chainladder.utils.utility_functions import num_to_nan
 try:
     import dask.bag as db
 except:
     db = None
 
+    
 class TriangleGroupBy:
     def __init__(self, obj, by, axis=0, **kwargs):
         self.obj = obj.copy()
@@ -27,9 +30,8 @@ class TriangleGroupBy:
         return TriangleGroupBy(obj=self.obj.__getitem__(key), by=self.by,
                                axis=self.axis, groups=self.groups)
 
-
-
 class TrianglePandas:
+    @deprecated("In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting.")
     def to_frame(self, origin_as_datetime=False, keepdims=False, implicit_axis=False,
                  *args, **kwargs):
         """ Converts a triangle to a pandas.DataFrame.
@@ -50,6 +52,7 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
+        
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if keepdims:
             is_val_tri = self.is_val_tri
