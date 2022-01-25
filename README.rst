@@ -64,7 +64,7 @@ The package comes pre-loaded with sample insurance datasets that are publicly av
 
 Once you have the package installed, we recommend that you follow the starter tutorial and work alongside with the pre-loaded datasets.
 
-Note that a lot of the examples shown might not be applicable in a real world scenario, and is only meant to demonstrate some of the functionalities included in the package. The user should always follow any applicable laws, the Code of Professional Conduct, applicable Actuarial Standards of Practice, and exercise their best actuarial judgement.
+Note that a lot of the examples shown might not be applicable in a real world scenario, and is only meant to demonstrate some of the functionalities included in the package. The user should always follow all applicable laws, the Code of Professional Conduct, applicable Actuarial Standards of Practice, and exercise their best actuarial judgement.
 
 `Starter Tutorial`_
 
