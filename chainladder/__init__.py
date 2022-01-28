@@ -25,12 +25,11 @@ class Options:
 
 options = Options()
 
-@deprecated("Use chainladder.options.set_option('ARRAY_BACKEND', value) instead.")
+@deprecated("In an upcoming version of the package, this function will be deprecated. Use `chainladder.options.set_option('ARRAY_BACKEND', value)` to avoid breakage.")
 def array_backend(array_backend="numpy"):
     options.set_option('ARRAY_BACKEND', array_backend)
 
-
-@deprecated("Use chainladder.options.set_option('AUTO_SPARSE', value) instead.")
+@deprecated("In an upcoming version of the package, this function will be deprecated. Use `chainladder.options.set_option('AUTO_SPARSE', value)` to avoid breakage.")
 def auto_sparse(auto_sparse=True):
     options.set_option('AUTO_SPARSE', auto_sparse)
 
