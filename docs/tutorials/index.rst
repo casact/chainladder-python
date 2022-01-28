@@ -18,4 +18,4 @@ These tutorials serve as more comprehensive examples of how to use chainladder.
    tail-tutorial 
    deterministic-tutorial
    stochastic-tutorial
-   large-datasets
+   data-tutorial
