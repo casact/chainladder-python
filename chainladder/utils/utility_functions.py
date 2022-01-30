@@ -227,10 +227,11 @@ def concat(
         for obj in objs:
             for col in all_columns:
                 if col not in obj.columns:
+                    obj = copy.deepcopy(obj)
                     obj[col] = xp.nan
     objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
-    for k, v in mapper.items():
+    for k in mapper.keys():
         if k != axis and k !=1:  # All non-concat axes must be identical
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
             assert np.all(a == a[0])

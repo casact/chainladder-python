@@ -1,6 +1,7 @@
 import chainladder as cl
 from chainladder.utils.cupy import cp
 import numpy as np
+import copy
 
 
 def test_non_vertical_line():
@@ -76,3 +77,11 @@ def test_concat(clrd):
 
 def test_model_diagnostics(qtr):
     cl.model_diagnostics(cl.Chainladder().fit(qtr))
+
+def test_concat_immutability(raa):
+    u = cl.Chainladder().fit(raa).ultimate_
+    u.columns = [0]
+    l = raa.latest_diagonal
+    u_new = copy.deepcopy(u)
+    cl.concat((l, u), axis=3)
+    assert u == u_new
