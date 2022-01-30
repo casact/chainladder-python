@@ -168,10 +168,12 @@ class Triangle(TriangleBase):
             grain_sort.index(self.development_grain))]
         # Coerce malformed triangles to something more predictible
         check_origin = pd.period_range(
-            start=self.origin.min(), 
+            start=self.odims.min(), 
             end=self.valuation_date, 
             freq=self.origin_grain).to_timestamp().values
-        if len(check_origin) != self.odims and pd.to_datetime(options.ULT_VAL) != self.valuation_date:
+        if (len(check_origin) != self.odims and 
+            pd.to_datetime(options.ULT_VAL) != self.valuation_date and
+            not self.is_pattern):
             self.odims = check_origin
 
         # Set the Triangle values
