@@ -126,7 +126,6 @@ class Triangle(TriangleBase):
             self.development_grain = self.origin_grain
         origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(how='s')
         development_date = development_date.dt.to_period(self.development_grain).dt.to_timestamp(how='e')
-        
         # Aggregate dates to the origin/development grains
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns)
@@ -142,13 +141,7 @@ class Triangle(TriangleBase):
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
-        # Set the Triangle values
-        coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
-        self.values = num_to_nan(
-            sp(coords, amts, prune=True,
-               has_duplicates=False, sorted=True,
-               shape=(len(self.kdims), len(self.vdims),
-                      len(self.odims), len(self.ddims))))
+
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
@@ -173,6 +166,23 @@ class Triangle(TriangleBase):
         self.development_grain = grain_sort[
             max(grain_sort.index(self.origin_grain), 
             grain_sort.index(self.development_grain))]
+        # Coerce malformed triangles to something more predictible
+        check_origin = pd.period_range(
+            start=self.odims.min(), 
+            end=self.valuation_date, 
+            freq=self.origin_grain).to_timestamp().values
+        if (len(check_origin) != self.odims and 
+            pd.to_datetime(options.ULT_VAL) != self.valuation_date and
+            not self.is_pattern):
+            self.odims = check_origin
+
+        # Set the Triangle values
+        coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
+        self.values = num_to_nan(
+            sp(coords, amts, prune=True,
+               has_duplicates=False, sorted=True,
+               shape=(len(self.kdims), len(self.vdims),
+                      len(self.odims), len(self.ddims))))
         # Deal with array backend
         self.array_backend = "sparse"
         if array_backend is None:

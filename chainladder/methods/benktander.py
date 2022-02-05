@@ -119,7 +119,7 @@ class Benktander(MethodBase):
         else:
             ld = X.latest_diagonal
             ultimate = X.copy()
-        cdf = self._align_cdf(ultimate, expectation)
+        cdf = self._align_cdf(ultimate.val_to_dev(), expectation)
         backend = cdf.array_backend
         xp = cdf.get_array_module()
         cdf = cdf.sort_index()
