@@ -4,12 +4,12 @@
 format: jb-book
 root: intro
 parts:
-  - caption: Getting Started
+  - caption: START HERE
     chapters:
     - file: library/install
     - file: tutorials/index
     - file: examples_toc
-    
+
   - caption: User Guide
     chapters:
     - file: triangle
