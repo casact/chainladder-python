@@ -213,6 +213,8 @@ def concat(
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
+    if type(objs) is tuple:
+        objs = list(objs)
     if len(objs) == 0:
         raise ValueError("objs must contain at least one element")
     xp = objs[0].get_array_module()
@@ -224,11 +226,12 @@ def concat(
             for col in obj.columns:
                 if col not in all_columns:
                     all_columns.append(col)
-        for obj in objs:
+        for num, obj in enumerate(objs):
             for col in all_columns:
                 if col not in obj.columns:
                     obj = copy.deepcopy(obj)
                     obj[col] = xp.nan
+                    objs[num] = obj
     objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
