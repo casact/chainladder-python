@@ -122,7 +122,7 @@ class Triangle(TriangleBase):
         development_date = self._set_development(
             data, development, development_format, origin_date)
         self.development_grain = self._get_grain(
-            development_date, trailing=True, kind='development') 
+            development_date, trailing=trailing, kind='development') 
         origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(how='s')
         development_date = development_date.dt.to_period(self.development_grain).dt.to_timestamp(how='e')
         # Aggregate dates to the origin/development grains

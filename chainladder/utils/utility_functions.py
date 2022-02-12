@@ -133,6 +133,8 @@ def read_json(json_str, array_backend=None):
         if "sub_tris" in json_dict.keys():
             for k, v in json_dict["sub_tris"].items():
                 setattr(tri, k, read_json(v, array_backend))
+                setattr(getattr(tri, k), 'origin_grain', tri.origin_grain)
+                setattr(getattr(tri, k), 'development_grain', tri.development_grain)
         if "dfs" in json_dict.keys():
             for k, v in json_dict["dfs"].items():
                 df = pd.read_json(v)
