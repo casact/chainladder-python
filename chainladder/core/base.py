@@ -219,7 +219,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     @staticmethod
     def _get_grain(dates, trailing=False, kind='origin'):
-        """ Determines Grain of origin 
+        """ Determines Grain of origin or valuation vector
         
         Parameters:
         

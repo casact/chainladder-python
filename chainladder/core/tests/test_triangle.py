@@ -410,3 +410,18 @@ def test_edgecase_236():
 
 def test_to_frame_on_zero(clrd):
     assert len((clrd*0).latest_diagonal.to_frame()) == 0
+
+def test_valuation_vector():    
+    df = pd.DataFrame(
+        {'Accident Date': [201508, 201608, 201708],
+        'Valuation Date': [202111, 202111, 202111],
+        'Loss': [110, 594, 696]})
+
+    tri = cl.Triangle(
+        df,
+        origin='Accident Date', 
+        development='Valuation Date', 
+        columns='Loss', 
+        cumulative=True, trailing=True)
+
+    assert int(tri.valuation_date.strftime('%Y%m')) == 202111
