@@ -81,10 +81,11 @@ class Benktander(MethodBase):
         X_new: Triangle
             Loss data with Benktander ultimate applied
         """
+        if sum(X.ddims > self.ldf_.ddims.max()) > 0:
+            raise ValueError("X has ages that exceed those available in model")
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
-        xp = X_new.get_array_module()
         X_new.ldf_ = self.ldf_
         X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         self.validate_weight(X, sample_weight)

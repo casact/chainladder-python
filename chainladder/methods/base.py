@@ -106,6 +106,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new: Triangle
 
         """
+        if sum(X.ddims > self.ldf_.ddims.max()) > 0:
+            raise ValueError("X has ages that exceed those available in model.")
         obj = X.val_to_dev()
         if X.is_cumulative is not None:
             obj = obj.incr_to_cum()

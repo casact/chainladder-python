@@ -137,6 +137,8 @@ class CapeCod(Benktander):
         X_new: Triangle
             Loss data with CapeCod ultimate applied
         """
+        if sum(X.ddims > self.ldf_.ddims.max()) > 0:
+            raise ValueError("X has ages that exceed those available in model")
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
