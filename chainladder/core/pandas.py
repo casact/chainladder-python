@@ -70,7 +70,6 @@ class TrianglePandas:
             out.columns = ["origin", "development"] + list(
                 out.columns.get_level_values(1)[2:]
             )
-
             valuation = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
                 index=obj.odims, columns=obj.ddims
@@ -80,8 +79,11 @@ class TrianglePandas:
             val_dict = dict(zip(list(zip(
                 valuation['origin'], valuation['development'])),
                 valuation['valuation']))
-            out['valuation'] = out.apply(
-                lambda x: val_dict[(x['origin'], x['development'])], axis=1)
+            if len(out) > 0:
+                out['valuation'] = out.apply(
+                    lambda x: val_dict[(x['origin'], x['development'])], axis=1)
+            else:
+                out['valuation'] = self.valuation_date
             col_order = list(self.columns)
             if implicit_axis:
                 col_order = ['origin', 'development', 'valuation'] + col_order

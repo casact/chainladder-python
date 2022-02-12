@@ -406,3 +406,7 @@ def test_edgecase_236():
         development='development',
         columns=['amount'],
         cumulative=True).val_to_dev().iloc[..., 0, -1].sum() == 1
+
+
+def test_to_frame_on_zero(clrd):
+    assert len((clrd*0).latest_diagonal.to_frame()) == 0
