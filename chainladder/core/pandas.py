@@ -70,6 +70,7 @@ class TrianglePandas:
             out.columns = ["origin", "development"] + list(
                 out.columns.get_level_values(1)[2:]
             )
+
             valuation = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
                 index=obj.odims, columns=obj.ddims
@@ -79,11 +80,8 @@ class TrianglePandas:
             val_dict = dict(zip(list(zip(
                 valuation['origin'], valuation['development'])),
                 valuation['valuation']))
-            if len(out) > 0:
-                out['valuation'] = out.apply(
-                    lambda x: val_dict[(x['origin'], x['development'])], axis=1)
-            else:
-                out['valuation'] = self.valuation_date
+            out['valuation'] = out.apply(
+                lambda x: val_dict[(x['origin'], x['development'])], axis=1)
             col_order = list(self.columns)
             if implicit_axis:
                 col_order = ['origin', 'development', 'valuation'] + col_order
@@ -161,6 +159,23 @@ class TrianglePandas:
             ]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
+        return obj
+    
+    def fillna(self, value=None, axis=None, inplace=False, triangle=True):
+        """  SAMPLE DOCSTRING
+        """     
+        print("in fillna()")
+        
+        obj = self.copy() if inplace is False else self
+        
+        values_by_origin = value
+        
+        for i in np.arange(len(values_by_origin)):
+            fill_max_size = obj.shape[3] - i if triangle else obj.shape[3]
+            obj.iloc[:,:,i,:fill_max_size] = values_by_origin[i]
+            
+        # print(obj)
+        print("returning")
         return obj
 
     def drop(self, labels=None, axis=1):
@@ -267,7 +282,7 @@ class TrianglePandas:
         -------
         Triangle as new datatype
         """
-        obj = self.copy() if inplace is True else self
+        obj = self.copy() if inplace is False else self
         obj.values = obj.values.astype(dtype)
         return obj
 
