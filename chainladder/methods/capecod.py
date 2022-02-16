@@ -90,10 +90,6 @@ class CapeCod(Benktander):
     def _get_capecod_aprioris(self, X, sample_weight):
         """ Private method to establish CapeCod Apriori """
 
-        if self.groupby is not None:
-            groupby = self.groupby
-        else:
-            groupby = X.key_labels
         if X.is_cumulative == False:
             X = X.sum('development').val_to_dev()
         latest = X.latest_diagonal
@@ -140,7 +136,6 @@ class CapeCod(Benktander):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
-        xp = X_new.get_array_module()
         X_new.ldf_ = self.ldf_
         X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         apriori_, detrended_apriori_ = self._get_capecod_aprioris(

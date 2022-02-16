@@ -107,9 +107,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         obj = X.val_to_dev()
+        if sum(obj.ddims > self.ldf_.ddims.max()) > 0:
+            raise ValueError("X has ages that exceed those available in model.")
         if X.is_cumulative is not None:
             obj = obj.incr_to_cum()
-        xp = obj.get_array_module()
         obj.ldf_ = self.ldf_
         obj, obj.ldf_ = self.intersection(obj, obj.ldf_)
         self.validate_weight(X, sample_weight)

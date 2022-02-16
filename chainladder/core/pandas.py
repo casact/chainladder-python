@@ -160,6 +160,23 @@ class TrianglePandas:
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
+    
+    def fillna(self, value=None, axis=None, inplace=False, triangle=True):
+        """  SAMPLE DOCSTRING
+        """     
+        print("in fillna()")
+        
+        obj = self.copy() if inplace is False else self
+        
+        values_by_origin = value
+        
+        for i in np.arange(len(values_by_origin)):
+            fill_max_size = obj.shape[3] - i if triangle else obj.shape[3]
+            obj.iloc[:,:,i,:fill_max_size] = values_by_origin[i]
+            
+        # print(obj)
+        print("returning")
+        return obj
 
     def drop(self, labels=None, axis=1):
         """ Drop specified labels from rows or columns.
@@ -265,7 +282,7 @@ class TrianglePandas:
         -------
         Triangle as new datatype
         """
-        obj = self.copy() if inplace is True else self
+        obj = self.copy() if inplace is False else self
         obj.values = obj.values.astype(dtype)
         return obj
 

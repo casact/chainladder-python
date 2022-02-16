@@ -80,8 +80,8 @@ def test_model_diagnostics(qtr):
 
 def test_concat_immutability(raa):
     u = cl.Chainladder().fit(raa).ultimate_
-    u.columns = [0]
     l = raa.latest_diagonal
+    u.columns = l.columns
     u_new = copy.deepcopy(u)
     cl.concat((l, u), axis=3)
     assert u == u_new

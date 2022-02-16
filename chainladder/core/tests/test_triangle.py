@@ -406,3 +406,38 @@ def test_edgecase_236():
         development='development',
         columns=['amount'],
         cumulative=True).val_to_dev().iloc[..., 0, -1].sum() == 1
+
+
+def test_to_frame_on_zero(clrd):
+    assert len((clrd*0).latest_diagonal.to_frame()) == 0
+
+def test_valuation_vector():    
+    df = pd.DataFrame(
+        {'Accident Date': [201508, 201608, 201708],
+        'Valuation Date': [202111, 202111, 202111],
+        'Loss': [110, 594, 696]})
+
+    tri = cl.Triangle(
+        df,
+        origin='Accident Date', 
+        development='Valuation Date', 
+        columns='Loss', 
+        cumulative=True, trailing=True)
+
+    assert int(tri.valuation_date.strftime('%Y%m')) == 202111
+
+def test_single_entry():
+    #triangle with one entry
+    data = pd.DataFrame({'origin':2014, 'valuation_date':'01.01.2017', 'amount':100}, index=[1])
+    cl_tri = cl.Triangle(data, origin='origin',development='valuation_date',columns='amount', cumulative=True)
+
+    #create a development constant                    
+    dev_periods = cl_tri.val_to_dev().development.to_list()
+    kwargs = {'patterns': {k: 1.5 for k in dev_periods}, 'style': 'ldf_'}
+    cl_dev_constant = cl.DevelopmentConstant(**kwargs)
+
+    #fit - this now works
+    cl_dev_constant_fit = cl_dev_constant.fit(cl_tri.val_to_dev())
+
+    # aim
+    cl.Chainladder().fit(cl_dev_constant_fit.transform(cl_tri)).ultimate_

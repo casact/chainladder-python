@@ -219,7 +219,7 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
 
     @staticmethod
     def _get_grain(dates, trailing=False, kind='origin'):
-        """ Determines Grain of origin 
+        """ Determines Grain of origin or valuation vector
         
         Parameters:
         
@@ -231,7 +231,9 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         """
         months = dates.dt.month.unique()
         diffs = np.diff(np.sort(months))
-        if len(months) == 1:
+        if len(dates.unique()) == 1:
+            grain = 'M'
+        elif len(months) == 1:
             grain = 'A'
         elif np.all(diffs == 6):
             grain = '2Q'
