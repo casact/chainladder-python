@@ -56,3 +56,14 @@ for information on the developer environment.
    :target: https://pepy.tech/project/chainladder
 
 .. _Github: https://github.com/casact/chainladder-python/
+
+Keeping Packages Updated
+============================
+
+If you want to use ``pip``, the code is a bit messy, as there isn't a built-in flag yet.
+
+  ``pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U``
+
+Alternatively, you can use conda.
+
+  ``conda update --all``
