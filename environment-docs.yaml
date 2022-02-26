@@ -13,6 +13,7 @@ dependencies:
   - pandas
   - scikit-learn
   - sparse
+  - numba
   - dill
   - patsy
   - statsmodels
