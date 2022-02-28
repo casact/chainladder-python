@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+import warnings
 from sklearn.utils import deprecated
 
 from chainladder.utils.utility_functions import num_to_nan
@@ -31,11 +32,9 @@ class TriangleGroupBy:
                                axis=self.axis, groups=self.groups)
 
 class TrianglePandas:
-    @deprecated("In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting.")
-    def to_frame(self, origin_as_datetime=False, keepdims=False, implicit_axis=False,
-                 *args, **kwargs):
+    def to_frame(self, origin_as_datetime=None, keepdims=False,
+                 implicit_axis=False, *args, **kwargs):
         """ Converts a triangle to a pandas.DataFrame.
-
         Parameters
         ----------
         origin_as_datetime : bool
@@ -52,6 +51,11 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
+        if origin_as_datetime == None:
+            # this will be set to True as the default in an upcoming version of the package
+            warning = "In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting."
+            warnings.warn(warning)
+            origin_as_datetime = False
 
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if keepdims:
