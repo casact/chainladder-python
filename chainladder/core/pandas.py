@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
+import warnings
 from sklearn.utils import deprecated
 
 from chainladder.utils.utility_functions import num_to_nan
@@ -31,11 +32,9 @@ class TriangleGroupBy:
                                axis=self.axis, groups=self.groups)
 
 class TrianglePandas:
-    @deprecated("In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting.")
-    def to_frame(self, origin_as_datetime=False, keepdims=False, implicit_axis=False,
-                 *args, **kwargs):
+    def to_frame(self, origin_as_datetime=None, keepdims=False,
+                 implicit_axis=False, *args, **kwargs):
         """ Converts a triangle to a pandas.DataFrame.
-
         Parameters
         ----------
         origin_as_datetime : bool
@@ -52,6 +51,11 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
+        if origin_as_datetime == None:
+            # this will be set to True as the default in an upcoming version of the package
+            warning = "In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting."
+            warnings.warn(warning)
+            origin_as_datetime = False
 
         axes = [num for num, item in enumerate(self.shape) if item > 1]
         if keepdims:
@@ -164,45 +168,27 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self, value=None, axis=3, inplace=False, triangle=True):
+    def fillna(self, value=None, inplace=False):
         """  Fill nan with 'value' by axis.
         Parameters
         -----------
         value: single value or array-like values, default = None
             Value(s) to fill across the axis.
 
-        axis: {3 or ‘origin’, 4 or ‘development’}, default = 3
-            Whether to fill the value(s) along rows (3 or ‘origin’)
-            or columns (4 or ‘development’).
-
         inplace: boolean, default = False
             Whether to modify the triangle object directly (True), or
             return a new modified triangle (False).
-
-        triangle: boolean, default = True
-            Whether to preserve the filled object as a triangle (True),
-            or to square the triangle with the value(s) (False).
 
         Returns
         -------
         Triangle
         """
-        obj = self.copy() if inplace is False else self
-        if isinstance(value, list):
-            # it's a list, do nothing
-            values_by_origin = value
-        else:
-            # it's a single value
-            values_by_origin = obj.shape[3] * [value]
+        obj = self if inplace else self.copy()
 
-        for i in np.arange(len(values_by_origin)):
-            fill_max_size = obj.shape[3] - i if triangle else obj.shape[3]
-
-            if (axis == 3) | (axis == 'origin'):
-                obj.iloc[:,:,i,:fill_max_size] = values_by_origin[i]
-
-            elif (axis == 4) | (axis == 'development'):
-                obj.iloc[:,:,:fill_max_size,i] = values_by_origin[i]
+        frame = (obj + value*0)
+        xp = obj.get_array_module()
+        fill = (xp.nan_to_num(frame.values)==0)*(obj*0 + value)
+        obj = frame + fill
 
         return obj
 
