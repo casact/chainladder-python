@@ -17,6 +17,7 @@ dependencies:
   - scikit-learn
   - statsmodels
   - sparse
+  - numba
   - dill
   - patsy
   - openpyxl
