@@ -168,45 +168,27 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self, value=None, axis=3, inplace=False, triangle=True):
+    def fillna(self, value=None, inplace=False):
         """  Fill nan with 'value' by axis.
         Parameters
         -----------
         value: single value or array-like values, default = None
             Value(s) to fill across the axis.
 
-        axis: {3 or ‘origin’, 4 or ‘development’}, default = 3
-            Whether to fill the value(s) along rows (3 or ‘origin’)
-            or columns (4 or ‘development’).
-
         inplace: boolean, default = False
             Whether to modify the triangle object directly (True), or
             return a new modified triangle (False).
-
-        triangle: boolean, default = True
-            Whether to preserve the filled object as a triangle (True),
-            or to square the triangle with the value(s) (False).
 
         Returns
         -------
         Triangle
         """
-        obj = self.copy() if inplace is False else self
-        if isinstance(value, list):
-            # it's a list, do nothing
-            values_by_origin = value
-        else:
-            # it's a single value
-            values_by_origin = obj.shape[3] * [value]
+        obj = self if inplace else self.copy()
 
-        for i in np.arange(len(values_by_origin)):
-            fill_max_size = obj.shape[3] - i if triangle else obj.shape[3]
-
-            if (axis == 3) | (axis == 'origin'):
-                obj.iloc[:,:,i,:fill_max_size] = values_by_origin[i]
-
-            elif (axis == 4) | (axis == 'development'):
-                obj.iloc[:,:,:fill_max_size,i] = values_by_origin[i]
+        frame = (obj + value*0)
+        xp = obj.get_array_module()
+        fill = (xp.nan_to_num(frame.values)==0)*(obj*0 + value)
+        obj = frame + fill
 
         return obj
 
