@@ -62,7 +62,10 @@ class TriangleDisplay:
 
     def _repr_format(self, origin_as_datetime=False):
         out = self.compute().set_backend("numpy").values[0, 0]
-        origin = self.origin.copy()
+        if origin_as_datetime:
+            origin = self.origin.copy().to_timestamp()
+        else:
+            origin = self.origin.copy()
         origin.name = None
         development = self.development.copy()
         development.name = None
