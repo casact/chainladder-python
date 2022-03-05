@@ -58,6 +58,7 @@ class TrianglePandas:
             origin_as_datetime = False
 
         axes = [num for num, item in enumerate(self.shape) if item > 1]
+
         if keepdims:
             is_val_tri = self.is_val_tri
             obj = self.val_to_dev().set_backend("sparse")
@@ -102,31 +103,40 @@ class TrianglePandas:
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
                 out.loc[out[col] == 0, col] = np.nan
+
             return out[col_order]
-        if self.shape[:2] == (1, 1):
-            return self._repr_format(origin_as_datetime)
-        elif len(axes) in [1, 2]:
-            tri = np.squeeze(self.set_backend("numpy").values)
-            axes_lookup = {
-                0: self.kdims,
-                1: self.vdims,
-                2: self.origin,
-                3: self.development,
-            }
-            if axes[0] == 0:
-                idx = self.index.set_index(self.key_labels).index
-            else:
-                idx = axes_lookup[axes[0]]
-            if len(axes) == 2:
-                return pd.DataFrame(
-                    tri, index=idx, columns=axes_lookup[axes[1]]
-                ).fillna(0)
-            if len(axes) == 1:
-                return pd.Series(tri, index=idx).fillna(0)
+
+        # keepdims = False
         else:
-            return self.to_frame(
-                origin_as_datetime=origin_as_datetime, keepdims=True,
-                implicit_axis=implicit_axis)
+            if self.shape[:2] == (1, 1):
+                return self._repr_format(origin_as_datetime)
+
+            elif len(axes) in [1, 2]:
+                tri = np.squeeze(self.set_backend("numpy").values)
+                axes_lookup = {
+                    0: self.kdims,
+                    1: self.vdims,
+                    2: self.origin,
+                    3: self.development,
+                }
+
+                if axes[0] == 0:
+                    idx = self.index.set_index(self.key_labels).index
+                else:
+                    idx = axes_lookup[axes[0]]
+
+                if len(axes) == 1:
+                    return pd.Series(tri, index=idx).fillna(0)
+
+                elif len(axes) == 2:
+                    return pd.DataFrame(
+                        tri, index=idx, columns=axes_lookup[axes[1]]
+                    ).fillna(0)
+
+            else:
+                return self.to_frame(
+                    origin_as_datetime=origin_as_datetime, keepdims=True,
+                    implicit_axis=implicit_axis)
 
     def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """

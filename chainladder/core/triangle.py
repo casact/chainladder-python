@@ -12,6 +12,7 @@ from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
 from chainladder import options
+
 try:
     import dask.bag as db
 except:
@@ -104,34 +105,59 @@ class Triangle(TriangleBase):
         convertible to DataFrame.
     """
 
-    def __init__(self, data=None, origin=None, development=None, columns=None,
-                 index=None, origin_format=None, development_format=None,
-                 cumulative=None, array_backend=None, pattern=False,
-                 trailing=True, *args, **kwargs):
+    def __init__(
+        self,
+        data=None,
+        origin=None,
+        development=None,
+        columns=None,
+        index=None,
+        origin_format=None,
+        development_format=None,
+        cumulative=None,
+        array_backend=None,
+        pattern=False,
+        trailing=True,
+        *args,
+        **kwargs
+    ):
         if data is None:
             return
         index, columns, origin, development = self._input_validation(
-            data, index, columns, origin, development)
+            data, index, columns, origin, development
+        )
         # Handle any ultimate vectors in triangles separately
         data, ult = self._split_ult(data, index, columns, origin, development)
         # Conform origins and developments to datetimes and determine lowest grains
-        origin_date = self._to_datetime(
-            data, origin, format=origin_format).rename('__origin__')
+        origin_date = self._to_datetime(data, origin, format=origin_format).rename(
+            "__origin__"
+        )
         self.origin_grain = self._get_grain(
-            origin_date, trailing=trailing, kind='origin')
+            origin_date, trailing=trailing, kind="origin"
+        )
         development_date = self._set_development(
-            data, development, development_format, origin_date)
+            data, development, development_format, origin_date
+        )
         self.development_grain = self._get_grain(
-            development_date, trailing=trailing, kind='development') 
-        origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(how='s')
-        development_date = development_date.dt.to_period(self.development_grain).dt.to_timestamp(how='e')
+            development_date, trailing=trailing, kind="development"
+        )
+        origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(
+            how="s"
+        )
+        development_date = development_date.dt.to_period(
+            self.development_grain
+        ).dt.to_timestamp(how="e")
         # Aggregate dates to the origin/development grains
         data_agg = self._aggregate_data(
-            data, origin_date, development_date, index, columns)
+            data, origin_date, development_date, index, columns
+        )
         # Fill in missing periods with zeros
         date_axes = self._get_date_axes(
-            data_agg["__origin__"], data_agg["__development__"], 
-            self.origin_grain, self.development_grain)
+            data_agg["__origin__"],
+            data_agg["__development__"],
+            self.origin_grain,
+            self.development_grain,
+        )
         # Deal with labels
         if not index:
             index = ["Total"]
@@ -143,45 +169,65 @@ class Triangle(TriangleBase):
 
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
-        val_date = val_date.compute() if hasattr(val_date, 'compute') else val_date
+        val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
         self.key_labels = index
         self.valuation_date = val_date
         if cumulative is None:
-            warnings.warn("""
-            The cumulative property of your triangle is not set. This may result in 
-            undesirable behavior. In a future release this will result in an error.""")
+            warnings.warn(
+                """
+            The cumulative property of your triangle is not set. This may result in
+            undesirable behavior. In a future release this will result in an error."""
+            )
         self.is_cumulative = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern = pattern
-        split = self.origin_grain.split('-')
-        self.origin_grain = {'A':'Y', '2Q':'S'}.get(split[0], split[0])
+        split = self.origin_grain.split("-")
+        self.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
         if len(split) == 1:
-            self.origin_close = 'DEC'
+            self.origin_close = "DEC"
         else:
             self.origin_close = split[1]
-        split = self.development_grain.split('-')
-        self.development_grain = {'A':'Y', '2Q':'S'}.get(split[0], split[0])
-        grain_sort = ['Y','S', 'Q', 'M']
+        split = self.development_grain.split("-")
+        self.development_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        grain_sort = ["Y", "S", "Q", "M"]
         self.development_grain = grain_sort[
-            max(grain_sort.index(self.origin_grain), 
-            grain_sort.index(self.development_grain))]
+            max(
+                grain_sort.index(self.origin_grain),
+                grain_sort.index(self.development_grain),
+            )
+        ]
         # Coerce malformed triangles to something more predictible
-        check_origin = pd.period_range(
-            start=self.odims.min(), 
-            end=self.valuation_date, 
-            freq=self.origin_grain).to_timestamp().values
-        if (len(check_origin) != self.odims and 
-            pd.to_datetime(options.ULT_VAL) != self.valuation_date and
-            not self.is_pattern):
+        check_origin = (
+            pd.period_range(
+                start=self.odims.min(), end=self.valuation_date, freq=self.origin_grain
+            )
+            .to_timestamp()
+            .values
+        )
+        if (
+            len(check_origin) != self.odims
+            and pd.to_datetime(options.ULT_VAL) != self.valuation_date
+            and not self.is_pattern
+        ):
             self.odims = check_origin
 
         # Set the Triangle values
         coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
         self.values = num_to_nan(
-            sp(coords, amts, prune=True,
-               has_duplicates=False, sorted=True,
-               shape=(len(self.kdims), len(self.vdims),
-                      len(self.odims), len(self.ddims))))
+            sp(
+                coords,
+                amts,
+                prune=True,
+                has_duplicates=False,
+                sorted=True,
+                shape=(
+                    len(self.kdims),
+                    len(self.vdims),
+                    len(self.odims),
+                    len(self.ddims),
+                ),
+            )
+        )
         # Deal with array backend
         self.array_backend = "sparse"
         if array_backend is None:
@@ -198,7 +244,7 @@ class Triangle(TriangleBase):
             self.ddims = obj.ddims
             self.values = obj.values
         if ult:
-            obj = concat((self.dev_to_val().iloc[..., :len(ult.odims), :], ult), -1)
+            obj = concat((self.dev_to_val().iloc[..., : len(ult.odims), :], ult), -1)
             obj = obj.val_to_dev()
             self.odims = obj.odims
             self.ddims = obj.ddims
@@ -209,13 +255,20 @@ class Triangle(TriangleBase):
     def _split_ult(data, index, columns, origin, development):
         """ Deal with triangles with ultimate values """
         ult = None
-        if (development and len(development) == 1
-            and data[development[0]].dtype == "<M8[ns]"):
+        if (
+            development
+            and len(development) == 1
+            and data[development[0]].dtype == "<M8[ns]"
+        ):
             u = data[data[development[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
-                    u, origin=origin, development=development,
-                    columns=columns, index=index)
+                    u,
+                    origin=origin,
+                    development=development,
+                    columns=columns,
+                    index=index,
+                )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[development[0]] != options.ULT_VAL]
         return data, ult
@@ -251,16 +304,17 @@ class Triangle(TriangleBase):
         if self.is_pattern and len(self.odims) == 1:
             return pd.Series(["(All)"])
         else:
-            freq = {"Y": "A", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
-            freq = freq if freq == 'M' else freq + '-' + self.origin_close
-            return (pd.DatetimeIndex(self.odims, name="origin")
-                      .to_period(freq=freq))
+            freq = {"Y": "A", "S": "2Q", "H": "2Q"}.get(
+                self.origin_grain, self.origin_grain
+            )
+            freq = freq if freq == "M" else freq + "-" + self.origin_close
+            return pd.DatetimeIndex(self.odims, name="origin").to_period(freq=freq)
 
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
         freq = {"Y": "A", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
-        freq = freq if freq == 'M' else freq + '-' + self.origin_close
+        freq = freq if freq == "M" else freq + "-" + self.origin_close
         value = pd.PeriodIndex(list(value), freq=freq)
         self.odims = value.to_timestamp().values
 
@@ -273,7 +327,7 @@ class Triangle(TriangleBase):
                 formats[self.development_grain]
             )
         elif self.is_pattern:
-            offset = self._dstep()['M'][self.development_grain]
+            offset = self._dstep()["M"][self.development_grain]
             if self.is_ultimate:
                 ddims[-1] = ddims[-2] + offset
             if self.is_cumulative:
@@ -313,7 +367,7 @@ class Triangle(TriangleBase):
 
     @property
     def latest_diagonal(self):
-        return self[self.valuation==self.valuation_date].sum('development')
+        return self[self.valuation == self.valuation_date].sum("development")
 
     @property
     def link_ratio(self):
@@ -360,7 +414,8 @@ class Triangle(TriangleBase):
                     if self.array_backend not in ["sparse", "dask"]:
                         self.values = (
                             xp.cumsum(xp.nan_to_num(self.values), 3)
-                            * self.nan_triangle[None, None, ...])
+                            * self.nan_triangle[None, None, ...]
+                        )
                     else:
                         values = xp.nan_to_num(self.values)
                         nan_triangle = xp.nan_to_num(self.nan_triangle)
@@ -370,7 +425,7 @@ class Triangle(TriangleBase):
                         if db:
                             bag = db.from_sequence(range(self.shape[-1]))
                             bag = bag.map(l3)
-                            out = bag.compute(scheduler='threads')
+                            out = bag.compute(scheduler="threads")
                         else:
                             out = [l3(i) for i in range(self.shape[-1])]
                         self.values = xp.concatenate(out, axis=3)
@@ -432,16 +487,16 @@ class Triangle(TriangleBase):
         if (obj.values.coords[-2] == np.arange(1)).all():
             # Unique edge case #239
             offset = offset[-1:] * sign
-        offset = offset[obj.values.coords[-2]] * sign # [0]
+        offset = offset[obj.values.coords[-2]] * sign  # [0]
         obj.values.coords[-1] = obj.values.coords[-1] + offset
         ddims = obj.valuation[obj.valuation <= obj.valuation_date]
         ddims = len(ddims.drop_duplicates())
         if ddims == 1 and sign == -1:
             ddims = len(obj.odims)
         if obj.values.density > 0 and obj.values.coords[-1].min() < 0:
-            obj.values.coords[-1] = (
-                obj.values.coords[-1] -
-                min(obj.values.coords[-1].min(), min_slide))
+            obj.values.coords[-1] = obj.values.coords[-1] - min(
+                obj.values.coords[-1].min(), min_slide
+            )
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if options.AUTO_SPARSE == False or backend == "cupy":
@@ -524,7 +579,7 @@ class Triangle(TriangleBase):
         else:
             origin_0 = pd.to_datetime(obj.odims[0])
         lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
-        scale = self._dstep()['M'][obj.development_grain]
+        scale = self._dstep()["M"][obj.development_grain]
         obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
         prune = obj[obj.origin == obj.origin.max()]
         if self.is_ultimate and self.shape[-1] > 1:
@@ -555,8 +610,13 @@ class Triangle(TriangleBase):
         """
         ograin_old, ograin_new = self.origin_grain, grain[1:2]
         dgrain_old, dgrain_new = self.development_grain, grain[-1]
-        valid = {"Y": ["Y"], "Q": ["Q", "S", "Y"], "M": ["Y", "S", "Q", "M"],
-                 "S": ["S", "Y"]}
+        ograin_new = "S" if ograin_new == "H" else ograin_new
+        valid = {
+            "Y": ["Y"],
+            "Q": ["Q", "S", "Y"],
+            "M": ["Y", "S", "Q", "M"],
+            "S": ["S", "Y"],
+        }
         if ograin_new not in valid.get(ograin_old, []) or dgrain_new not in valid.get(
             dgrain_old, []
         ):
@@ -572,17 +632,19 @@ class Triangle(TriangleBase):
         if valid["M"].index(ograin_new) > valid["M"].index(dgrain_new):
             raise ValueError("Origin grain must be coarser than development grain")
         if self.is_full and not self.is_ultimate and not self.is_val_tri:
-            warnings.warn('Triangle includes extraneous development lags')
+            warnings.warn("Triangle includes extraneous development lags")
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
             freq = {"Y": "A", "S": "2Q"}.get(ograin_new, ograin_new)
             mn = self.origin[-1].strftime("%b").upper() if trailing else "DEC"
-            indices = pd.Series(
-                range(len(self.origin)), index=self.origin).resample(
-                    '-'.join([freq, mn])).indices
-            groups = pd.concat([
-                pd.Series([k]*len(v), index=v)
-                 for k, v in indices.items()], axis=0).values
+            indices = (
+                pd.Series(range(len(self.origin)), index=self.origin)
+                .resample("-".join([freq, mn]))
+                .indices
+            )
+            groups = pd.concat(
+                [pd.Series([k] * len(v), index=v) for k, v in indices.items()], axis=0
+            ).values
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = mn
             if len(obj.ddims) > 1 and pd.Timestamp(obj.odims[0]).strftime(
@@ -599,8 +661,9 @@ class Triangle(TriangleBase):
                 obj.values = num_to_nan(obj.values)
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
-            d = np.sort(len(obj.development) -
-                        np.arange(0, len(obj.development), step) - 1)
+            d = np.sort(
+                len(obj.development) - np.arange(0, len(obj.development), step) - 1
+            )
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
@@ -660,28 +723,37 @@ class Triangle(TriangleBase):
         end = pd.to_datetime(end) if type(end) is str else end
         end = self.origin[0].to_timestamp() if end is None else end
         if axis in ["origin", 2, -2]:
-            vector = pd.DatetimeIndex(np.tile(
-                self.origin.to_timestamp(how='e').values,
-                self.shape[-1]).flatten())
+            vector = pd.DatetimeIndex(
+                np.tile(
+                    self.origin.to_timestamp(how="e").values, self.shape[-1]
+                ).flatten()
+            )
         else:
             vector = self.valuation
         lower, upper = (end, start) if end > start else (start, end)
-        vector = pd.DatetimeIndex(np.maximum(
-            np.minimum(np.datetime64(lower), vector.values), np.datetime64(upper)))
-        vector = ((
-                start.year - vector.year)*12+(start.month-vector.month)
-               ).values.reshape(self.shape[-2:], order="f")
+        vector = pd.DatetimeIndex(
+            np.maximum(
+                np.minimum(np.datetime64(lower), vector.values), np.datetime64(upper)
+            )
+        )
+        vector = (
+            (start.year - vector.year) * 12 + (start.month - vector.month)
+        ).values.reshape(self.shape[-2:], order="f")
         if self.is_ultimate and ultimate_lag is not None and vector.shape[-1] > 1:
             vector[:, -1] = vector[:, -2] + ultimate_lag
-        trend = xp.array((1 + trend) **(vector/12))[None, None, ...] * self.nan_triangle
+        trend = (
+            xp.array((1 + trend) ** (vector / 12))[None, None, ...] * self.nan_triangle
+        )
         obj = self.copy()
         obj.values = obj.values * trend
         return obj
 
     def broadcast_axis(self, axis, value):
-        warnings.warn("""
+        warnings.warn(
+            """
             Broadcast axis is deprecated in favor of broadcasting
-            using Triangle arithmetic.""")
+            using Triangle arithmetic."""
+        )
         return self
 
     def copy(self):
@@ -753,33 +825,49 @@ class Triangle(TriangleBase):
         """
         axis = self._get_axis(axis)
         if axis < 2:
-           raise AttributeError("Lagging only supported for origin and development axes")
+            raise AttributeError(
+                "Lagging only supported for origin and development axes"
+            )
         if periods == 0:
-           return self
+            return self
         if periods > 0:
-           if axis == 3:
-               out = concat((
-                   self.iloc[..., 1:].rename('development', self.development[:-1]),
-                   (self.iloc[..., -1:]*0)), axis=axis)
-           else:
-                out = concat((
-                   self.iloc[..., 1:, :].rename('origin', self.origin[:-1]),
-                   (self.iloc[..., -1:, :]*0)), axis=axis)
+            if axis == 3:
+                out = concat(
+                    (
+                        self.iloc[..., 1:].rename("development", self.development[:-1]),
+                        (self.iloc[..., -1:] * 0),
+                    ),
+                    axis=axis,
+                )
+            else:
+                out = concat(
+                    (
+                        self.iloc[..., 1:, :].rename("origin", self.origin[:-1]),
+                        (self.iloc[..., -1:, :] * 0),
+                    ),
+                    axis=axis,
+                )
         else:
-           if axis == 3:
-               out = concat((
-                   (self.iloc[..., :1]*0),
-                   self.iloc[..., :-1].rename('development', self.development[1:]),
-                   ), axis=axis)
-           else:
-                out = concat((
-                   (self.iloc[..., :1, :]*0),
-                   self.iloc[..., :-1, :].rename('origin', self.origin[1:]),
-                   ), axis=axis)
+            if axis == 3:
+                out = concat(
+                    (
+                        (self.iloc[..., :1] * 0),
+                        self.iloc[..., :-1].rename("development", self.development[1:]),
+                    ),
+                    axis=axis,
+                )
+            else:
+                out = concat(
+                    (
+                        (self.iloc[..., :1, :] * 0),
+                        self.iloc[..., :-1, :].rename("origin", self.origin[1:]),
+                    ),
+                    axis=axis,
+                )
         if abs(periods) == 1:
             return out
         else:
-            return out.shift(periods-1 if periods > 0 else periods + 1, axis)
+            return out.shift(periods - 1 if periods > 0 else periods + 1, axis)
 
     def sort_axis(self, axis):
         """ Method to sort a Triangle along a given axis
