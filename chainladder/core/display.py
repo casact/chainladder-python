@@ -38,11 +38,15 @@ class TriangleDisplay:
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
-            default = data.to_html(
-                max_rows=pd.options.display.max_rows,
-                max_cols=pd.options.display.max_columns,
-                float_format=fmt_str.format,
-            ).replace("nan", "").replace("NaN", "")
+            default = (
+                data.to_html(
+                    max_rows=pd.options.display.max_rows,
+                    max_cols=pd.options.display.max_columns,
+                    float_format=fmt_str.format,
+                )
+                .replace("nan", "")
+                .replace("NaN", "")
+            )
             return default
         else:
             return self._summary_frame().to_html(
@@ -67,6 +71,17 @@ class TriangleDisplay:
         else:
             origin = self.origin.copy()
         origin.name = None
+
+        if self.origin_grain == "S":
+            origin_formatted = [""] * len(origin)
+            for origin_index in range(len(origin)):
+                origin_formatted[origin_index] = (
+                    origin.astype("str")[origin_index]
+                    .replace("Q1", "H1")
+                    .replace("Q3", "H2")
+                )
+            origin = origin_formatted
+
         development = self.development.copy()
         development.name = None
         return pd.DataFrame(out, index=origin, columns=development)
@@ -101,28 +116,27 @@ class TriangleDisplay:
             raw_rank = data.rank(axis=axis)
             shape_size = data.shape[axis]
             rank_size = data.rank(axis=axis).max(axis=axis)
-            gmap = (raw_rank-1).div(rank_size-1, axis=not axis)*(shape_size-1) + 1
-            gmap = gmap.replace(np.nan, (shape_size+1)/2)
-            if pd.__version__ >= '1.3':
+            gmap = (raw_rank - 1).div(rank_size - 1, axis=not axis) * (
+                shape_size - 1
+            ) + 1
+            gmap = gmap.replace(np.nan, (shape_size + 1) / 2)
+            if pd.__version__ >= "1.3":
                 default_output = (
-                    data.style.format(fmt_str).background_gradient(
+                    data.style.format(fmt_str)
+                    .background_gradient(
                         cmap=cmap,
                         low=low,
                         high=high,
                         axis=None,
                         subset=subset,
-                        gmap=gmap
+                        gmap=gmap,
                     )
                     .render()
                 )
             else:
                 default_output = (
-                    data.style.format(fmt_str).background_gradient(
-                        cmap=cmap,
-                        low=low,
-                        high=high,
-                        axis=axis,
-                    )
+                    data.style.format(fmt_str)
+                    .background_gradient(cmap=cmap, low=low, high=high, axis=axis,)
                     .render()
                 )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
