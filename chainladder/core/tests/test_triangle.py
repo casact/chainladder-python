@@ -441,3 +441,8 @@ def test_single_entry():
 
     # aim
     cl.Chainladder().fit(cl_dev_constant_fit.transform(cl_tri)).ultimate_
+
+def test_origin_as_datetime_arg(clrd):
+    from pandas.api.types import is_datetime64_any_dtype
+    assert is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=True)['origin'])
+    assert not is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=False)['origin'])
