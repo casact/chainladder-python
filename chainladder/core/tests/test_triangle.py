@@ -379,7 +379,7 @@ def test_sparse_reassignment_no_mutate(prism):
 
 
 def test_trailing_origin():
-    raa = cl.load_sample('raa').dev_to_val().to_frame(keepdims=True).reset_index()
+    raa = cl.load_sample('raa').dev_to_val().to_frame(keepdims=True, origin_as_datetime=True).reset_index()
     #adjust valuations to mid-year
     raa['valuation'] = raa['valuation'] - pd.DateOffset(months=6)
     tri = cl.Triangle(raa, origin='origin', development='valuation', columns='values', cumulative=True)
