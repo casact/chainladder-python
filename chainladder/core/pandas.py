@@ -197,14 +197,17 @@ class TrianglePandas:
         -------
         Triangle
         """
-        obj = self if inplace else self.copy()
+        if inplace:
+            frame = (self + value*0)
+            xp = self.get_array_module()
+            fill = (xp.nan_to_num(frame.values)==0)*(self*0 + value)
+            self.values = (frame + fill).values
+            return self
+        else:
+            new_obj = self.copy()
+            return new_obj.fillna(value=value, inplace=True)
 
-        frame = (obj + value*0)
-        xp = obj.get_array_module()
-        fill = (xp.nan_to_num(frame.values)==0)*(obj*0 + value)
-        obj = frame + fill
-
-        return obj
+ 
 
     def drop(self, labels=None, axis=1):
         """ Drop specified labels from rows or columns.
