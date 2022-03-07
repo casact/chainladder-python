@@ -1,6 +1,24 @@
 # Releases
 ## Version 0.8
 
+### Version 0.8.11 
+Release Date: Mar 7, 2022
+
+### Bug Fixes:
+* [\#254](https://github.com/casact/chainladder-python/issues/254) Fixed an undesired mutation when using cl.concat
+* [\#257](https://github.com/casact/chainladder-python/issues/257) to_frame bug fix on empty triangles
+* [\#248](https://github.com/casact/chainladder-python/issues/248) to_frame bug and deprecation notice in origin_as_datetime argument.
+* [\#250](https://github.com/casact/chainladder-python/issues/250) Bug fix in triangle initialization
+* [\#258](https://github.com/casact/chainladder-python/issues/258) Addressed silent error when predicting on a Triangle that is larger than the underlying model.
+* [\#261](https://github.com/casact/chainladder-python/issues/261) Addressed a pandas>1.4.0 bug
+
+### Enhancements
+Introduced ExpectedLoss method
+* [\#242](https://github.com/casact/chainladder-python/issues/242) Added threshold based dropping of link ratios to Development estimator
+* [\#158](https://github.com/casact/chainladder-python/issues/158) Triangles can now be instantiated with only one data point.
+* [\#250](https://github.com/casact/chainladder-python/issues/250) python 3.10 support
+* [\#260](https://github.com/casact/chainladder-python/issues/260) fillna method added to Triangle class that supports filling with constants or other Triangles.
+
 ### Version 0.8.10
 Release Date: Dec 4, 2021
 
