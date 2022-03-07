@@ -13,13 +13,13 @@ except:
 def test_repr(raa):
     np.testing.assert_array_equal(
         pd.read_html(raa._repr_html_())[0].set_index("Unnamed: 0").values,
-        raa.to_frame().values,
+        raa.to_frame(origin_as_datetime=False).values,
     )
 
 
 def test_to_frame_unusual(clrd):
-    a = clrd.groupby(["LOB"]).sum().latest_diagonal["CumPaidLoss"].to_frame()
-    b = clrd.latest_diagonal["CumPaidLoss"].groupby(["LOB"]).sum().to_frame()
+    a = clrd.groupby(["LOB"]).sum().latest_diagonal["CumPaidLoss"].to_frame(origin_as_datetime=False)
+    b = clrd.latest_diagonal["CumPaidLoss"].groupby(["LOB"]).sum().to_frame(origin_as_datetime=False)
     assert (a == b).all().all()
 
 
@@ -112,7 +112,7 @@ def test_quantile_vs_median(clrd):
 
 
 def test_base_minimum_exposure_triangle(raa):
-    d = (raa.latest_diagonal * 0 + 50000).to_frame().reset_index()
+    d = (raa.latest_diagonal * 0 + 50000).to_frame(origin_as_datetime=False).reset_index()
     d["index"] = d["index"].astype(str)
     cl.Triangle(d, origin="index", columns=d.columns[-1])
 
@@ -190,7 +190,7 @@ def test_dropna(clrd):
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
-    x = x["paid"].to_frame().T.unstack().reset_index()
+    x = x["paid"].to_frame(origin_as_datetime=False).T.unstack().reset_index()
     x.columns = ["LOB", "origin", "paid"]
     x.origin = x.origin.astype(str)
     y = cl.Triangle(x, origin="origin", index="LOB", columns="paid")
@@ -215,13 +215,13 @@ def test_jagged_2_add(raa):
 
 def test_df_period_input(raa):
     d = raa.latest_diagonal
-    df = d.to_frame().reset_index()
+    df = d.to_frame(origin_as_datetime=False).reset_index()
     assert cl.Triangle(df, origin="index", columns=df.columns[-1]) == d
 
 
 def test_trend_on_vector(raa):
     d = raa.latest_diagonal
-    assert d.trend(0.05, axis=2).to_frame().astype(int).iloc[0, 0] == 29217
+    assert d.trend(0.05, axis=2).to_frame(origin_as_datetime=False).astype(int).iloc[0, 0] == 29217
 
 
 def test_latest_diagonal_val_to_dev(raa):
@@ -248,11 +248,12 @@ def test_groupby_axis1(clrd, prism):
     clrd = clrd.sum("origin").sum("development")
     groups = [i.find("Loss") >= 0 for i in clrd.columns]
     assert np.all(
-        clrd.to_frame().groupby(groups, axis=1).sum()
-        == clrd.groupby(groups, axis=1).sum().to_frame()
+        clrd.to_frame(origin_as_datetime=False).groupby(groups, axis=1).sum()
+        == clrd.groupby(groups, axis=1).sum().to_frame(origin_as_datetime=False)
     )
     assert np.all(
-        clrd.to_frame().groupby("LOB").sum() == clrd.groupby("LOB").sum().to_frame()
+        clrd.to_frame(origin_as_datetime=False).groupby("LOB").sum() == 
+        clrd.groupby("LOB").sum().to_frame(origin_as_datetime=False)
     )
     prism.sum().grain("OYDY")
 
@@ -262,7 +263,7 @@ def test_partial_year(prism):
     before=before[before.valuation<='2017-08'].latest_diagonal
 
     after = cl.Triangle(
-        before.to_frame(keepdims=True).reset_index(),
+        before.to_frame(keepdims=True, origin_as_datetime=True).reset_index(),
         origin='origin', development='valuation', columns='Paid', index=before.key_labels)
 
     assert after.valuation_date == before.valuation_date
@@ -294,7 +295,7 @@ def test_shift(raa):
     assert (
         raa.iloc[..., 1:-1, 1:-1] -
         raa.shift(-1, axis=2).shift(-1, axis=3).shift(2, axis=2).shift(2, axis=3).dropna().values
-    ).to_frame().fillna(0).sum().sum() == 0
+    ).to_frame(origin_as_datetime=False).fillna(0).sum().sum() == 0
 
 
 def test_array_protocol2(raa):
@@ -305,7 +306,7 @@ def test_array_protocol2(raa):
 def test_create_full_triangle(raa):
     a = cl.Chainladder().fit(raa).full_triangle_
     b = cl.Triangle(
-        a.to_frame(keepdims=True, implicit_axis=True),
+        a.to_frame(keepdims=True, implicit_axis=True, origin_as_datetime=True),
         origin='origin', development='valuation', columns='values')
     assert a == b
 
@@ -322,7 +323,7 @@ def test_virtual_column(prism):
 
 def test_correct_valutaion(raa):
     new = cl.Triangle(
-        raa.iloc[..., :-3, :].latest_diagonal.to_frame(keepdims=True, implicit_axis=True),
+        raa.iloc[..., :-3, :].latest_diagonal.to_frame(keepdims=True, implicit_axis=True, origin_as_datetime=True),
         origin='origin', development='valuation', columns='values')
     assert new.valuation_date == raa.valuation_date
 
@@ -391,7 +392,7 @@ def test_trailing_origin():
     assert tri.origin_close == 'JUN'
 
 def test_trailing_valuation():
-    data = cl.load_sample('raa').dev_to_val().to_frame(keepdims=True)
+    data = cl.load_sample('raa').dev_to_val().to_frame(keepdims=True, origin_as_datetime=True)
     data.valuation = (data.valuation.dt.year+1)*100+3
     tri = cl.Triangle(data, origin='origin', development='valuation', columns='values')
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
@@ -409,7 +410,7 @@ def test_edgecase_236():
 
 
 def test_to_frame_on_zero(clrd):
-    assert len((clrd*0).latest_diagonal.to_frame()) == 0
+    assert len((clrd*0).latest_diagonal.to_frame(origin_as_datetime=False)) == 0
 
 def test_valuation_vector():    
     df = pd.DataFrame(

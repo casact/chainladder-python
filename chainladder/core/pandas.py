@@ -144,11 +144,11 @@ class TrianglePandas:
 
     def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
-        return self.to_frame().plot(*args, **kwargs)
+        return self.to_frame(origin_as_datetime=False).plot(*args, **kwargs)
 
     def hvplot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
-        df = self.to_frame()
+        df = self.to_frame(origin_as_datetime=True)
         if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
@@ -238,7 +238,7 @@ class TrianglePandas:
 
     @property
     def T(self):
-        return self.to_frame().T
+        return self.to_frame(origin_as_datetime=False).T
 
     def groupby(self, by, axis=0, *args, **kwargs):
         """ Group Triangle by index values.  If the triangle is convertable to a

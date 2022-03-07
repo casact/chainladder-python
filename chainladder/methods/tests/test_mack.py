@@ -148,7 +148,7 @@ def test_mack_asymmetric():
     tri = cl.load_sample("quarterly")["paid"]
     xp = tri.get_array_module()
     assert round(float(xp.array(out.rx("Mack.S.E")[0])[-1, -1]), 2) == round(
-        float(cl.MackChainladder().fit(tri).summary_.to_frame().iloc[-1, -1]), 2
+        float(cl.MackChainladder().fit(tri).summary_.to_frame(origin_as_datetime=False).iloc[-1, -1]), 2
     )
 
 def test_mack_malformed():
