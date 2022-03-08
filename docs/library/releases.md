@@ -1,8 +1,8 @@
 # Releases
 ## Version 0.8
 
-### Version 0.8.11 
-Release Date: Mar 7, 2022
+### Version 0.8.12 
+Release Date: Mar 8, 2022
 
 ### Bug Fixes:
 * [\#254](https://github.com/casact/chainladder-python/issues/254) Fixed an undesired mutation when using cl.concat
