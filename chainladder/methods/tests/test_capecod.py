@@ -17,7 +17,7 @@ def test_groupby(clrd):
     clrd = clrd[clrd['LOB']=='comauto']
     # But only the top 10 get their own CapeCod aprioris. Smaller companies get grouped together
     top_10 = clrd['EarnedPremDIR'].groupby('GRNAME').sum().latest_diagonal
-    top_10 = top_10.loc[..., '1997', :].to_frame().nlargest(10)
+    top_10 = top_10.loc[..., '1997', :].to_frame(origin_as_datetime=True).nlargest(10)
     cc_groupby = clrd.index['GRNAME'].map(lambda x: x if x in top_10.index else 'Remainder')
     idx = clrd.index
     idx['Top 10'] = cc_groupby

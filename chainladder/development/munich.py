@@ -369,7 +369,7 @@ class MunichAdjustment(DevelopmentBase):
         obj.odims = obj.odims[0:1]
         obj.ddims = obj.ddims[0:1]
         obj.values = self._reshape("lambda_coef_")
-        return obj.to_frame()
+        return obj.to_frame(origin_as_datetime=False)
 
     @property
     def basic_cdf_(self):

@@ -136,9 +136,12 @@ class DevelopmentML(DevelopmentBase):
             for i in self.autoregressive:
                 lag = X[i[2]].shift(i[1])
                 X_[i[0]] = lag[lag.valuation<=X.valuation_date]
-        df_base = X.incr_to_cum().to_frame(keepdims=True, implicit_axis=True).reset_index().iloc[:, :-1]
-        df = df_base.merge(
-            X.cum_to_incr().to_frame(keepdims=True, implicit_axis=True).reset_index(), how='left',
+        df_base = X.incr_to_cum().to_frame(
+            keepdims=True, implicit_axis=True, origin_as_datetime=True
+            ).reset_index().iloc[:, :-1]
+        df = df_base.merge(X.cum_to_incr().to_frame(
+                keepdims=True, implicit_axis=True, origin_as_datetime=True
+            ).reset_index(), how='left',
             on=list(df_base.columns)).fillna(0)
         df['origin'] = df['origin'].map(self.origin_encoder_)
         df['valuation'] = df['valuation'].map(self.valuation_encoder_)

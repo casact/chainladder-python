@@ -14,7 +14,7 @@ with open("README.rst") as f:
 descr = "Chainladder Package - P&C Loss Reserving package "
 name = 'chainladder'
 url = 'https://github.com/casact/chainladder-python'
-version='0.8.11' # Put this in __init__.py
+version='0.8.12' # Put this in __init__.py
 
 data_path = ''
 setup(

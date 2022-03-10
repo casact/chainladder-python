@@ -65,7 +65,10 @@ class TrianglePandas:
             out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
             out["columns"] = obj.columns[obj.values.coords[1]]
             missing_cols = list(set(self.columns) - set(out['columns']))
-            out["origin"] = obj.odims[obj.values.coords[2]]
+            if origin_as_datetime:
+                out["origin"] = obj.odims[obj.values.coords[2]]
+            else:
+                out["origin"] = obj.origin[obj.values.coords[2]]
             out["development"] = obj.ddims[obj.values.coords[3]]
             out["values"] = obj.values.data
             out = pd.pivot_table(
@@ -78,7 +81,8 @@ class TrianglePandas:
 
             valuation = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
-                index=obj.odims, columns=obj.ddims
+                index=obj.odims if origin_as_datetime else obj.origin, 
+                columns=obj.ddims
             ).unstack().rename('valuation').reset_index().rename(
                 columns={'level_0': 'development', 'level_1': 'origin'})
 
@@ -140,11 +144,11 @@ class TrianglePandas:
 
     def plot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
-        return self.to_frame().plot(*args, **kwargs)
+        return self.to_frame(origin_as_datetime=False).plot(*args, **kwargs)
 
     def hvplot(self, *args, **kwargs):
         """ Passthrough of pandas functionality """
-        df = self.to_frame()
+        df = self.to_frame(origin_as_datetime=True)
         if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
@@ -193,14 +197,17 @@ class TrianglePandas:
         -------
         Triangle
         """
-        obj = self if inplace else self.copy()
+        if inplace:
+            frame = (self + value*0)
+            xp = self.get_array_module()
+            fill = (xp.nan_to_num(frame.values)==0)*(self*0 + value)
+            self.values = (frame + fill).values
+            return self
+        else:
+            new_obj = self.copy()
+            return new_obj.fillna(value=value, inplace=True)
 
-        frame = (obj + value*0)
-        xp = obj.get_array_module()
-        fill = (xp.nan_to_num(frame.values)==0)*(obj*0 + value)
-        obj = frame + fill
-
-        return obj
+ 
 
     def drop(self, labels=None, axis=1):
         """ Drop specified labels from rows or columns.
@@ -231,7 +238,7 @@ class TrianglePandas:
 
     @property
     def T(self):
-        return self.to_frame().T
+        return self.to_frame(origin_as_datetime=False).T
 
     def groupby(self, by, axis=0, *args, **kwargs):
         """ Group Triangle by index values.  If the triangle is convertable to a
