@@ -6,39 +6,15 @@ import pandas as pd
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from chainladder.utils.dask import dp
+from chainladder.utils.utility_functions import concat
+from chainladder import options
 
 
 def _get_full_expectation(cdf_, ultimate_):
     """ Private method that builds full expectation"""
-    from chainladder.utils.utility_functions import concat
     full = ultimate_ / cdf_
-    return concat((full, ultimate_.copy().rename('development', [9999])), axis=3)
 
-
-def _get_full_triangle(X, ultimate, expectation=None, n_iters=None):
-    """ Private method that builds full triangle"""
-    from chainladder import options
-    cdf = X.ldf_.copy()
-    xp = cdf.get_array_module()
-    cdf = cdf * (ultimate / ultimate)
-    cdf = cdf[cdf.valuation<X.valuation_date] * 0 + 1 + cdf[cdf.valuation>=X.valuation_date]
-    cdf.values = cdf.values.cumprod(3)
-    cdf.valuation_date = pd.to_datetime(options.ULT_VAL)
-    cdf = (1 - 1 / cdf)
-    cdf.ddims = cdf.ddims + {'Y': 12, 'Q': 3, 'M':1}[cdf.development_grain]
-    cdf.ddims[-1] = 9999
-    ld = X.latest_diagonal
-    if n_iters is not None:
-        cdf_ = X.cdf_
-        cdf_.ddims = cdf.ddims
-        a = (X.latest_diagonal * 0 + expectation) / cdf_ * X.ldf_.values
-        complement = xp.nansum(cdf.values[None] ** xp.arange(n_iters)[:, None, None, None, None], 0)
-        new_run_off = ((a * (cdf ** n_iters)) + (ld * complement))
-    else:
-        complement = (1 / (1 - cdf))
-        new_run_off = (ld * complement)
-    new_run_off = new_run_off[new_run_off.valuation>X.valuation_date]
-    return new_run_off + X
+    return concat((full, ultimate_.copy().rename("development", [9999])), axis=3)
 
 
 class Common:
@@ -70,10 +46,12 @@ class Common:
     @property
     def full_expectation_(self):
         if not hasattr(self, "ultimate_"):
-            x = self.__class__.__name__
             raise AttributeError(
-                "'" + x + "' object has no attribute 'full_expectation_'"
+                "'"
+                + self.__class__.__name__
+                + "' object has no attribute 'full_expectation_'"
             )
+
         return _get_full_expectation(self.cdf_, self.ultimate_)
 
     @property
@@ -82,17 +60,15 @@ class Common:
             raise AttributeError(
                 "'"
                 + self.__class__.__name__
-                + "'"
-                + " object has no attribute 'full_triangle_'"
+                + "' object has no attribute 'full_triangle_'"
             )
-        if hasattr(self, "X_"):
-            X = self.X_
-        else:
-            X = self
-        if hasattr(self, 'n_iters'):
-            return _get_full_triangle(X, self.ultimate_, self.expectation_, self.n_iters)
-        else:
-            return _get_full_triangle(X, self.ultimate_)
+
+        full_expectation = _get_full_expectation(self.cdf_, self.ultimate_)
+        frame = self.X_ + full_expectation * 0
+        xp = self.X_.get_array_module()
+        fill = (xp.nan_to_num(frame.values) == 0) * (self.X_ * 0 + full_expectation)
+
+        return self.X_ + fill
 
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
@@ -122,7 +98,7 @@ class Common:
         if inplace:
             # Coming from dask - compute and then recall this method
             # going to dask  -
-            if old_backend == 'dask' and backend != 'dask':
+            if old_backend == "dask" and backend != "dask":
                 self = self.compute()
                 old_backend = self.array_backend
             if backend in ["numpy", "sparse", "cupy", "dask"]:
@@ -144,7 +120,7 @@ class Common:
                         "numpy": lambda x: dp.from_array(x, **kwargs),
                         "cupy": lambda x: dp.from_array(x, **kwargs),
                         "sparse": lambda x: dp.from_array(x, **kwargs),
-                    }
+                    },
                 }
                 if hasattr(self, "values"):
                     self.values = lookup[backend].get(old_backend, lambda x: x)(

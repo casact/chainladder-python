@@ -13,7 +13,8 @@ from patsy import dmatrix
 from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union
 
-def load_sample(key : str, *args, **kwargs):
+
+def load_sample(key: str, *args, **kwargs):
     """ Function to load datasets included in the chainladder package.
 
         Parameters
@@ -68,6 +69,7 @@ def load_sample(key : str, *args, **kwargs):
         development = "PaymentDate"
         cumulative = False
     df = pd.read_csv(os.path.join(path, "data", key.lower() + ".csv"))
+
     return Triangle(
         df,
         origin=origin,
@@ -78,7 +80,6 @@ def load_sample(key : str, *args, **kwargs):
         *args,
         **kwargs
     )
-
 
 
 def read_pickle(path):
@@ -111,8 +112,7 @@ def read_json(json_str, array_backend=None):
         j = json.loads(json_str)
         y = pd.read_json(j["data"], orient="split", date_unit="ns")
         y["origin"] = pd.to_datetime(y["origin"])
-        y.columns= [
-            c if c != 'valuation' else 'development' for c in y.columns]
+        y.columns = [c if c != "valuation" else "development" for c in y.columns]
         y["development"] = pd.to_datetime(y["development"])
         index = list(y.columns[: list(y.columns).index("origin")])
         columns = list(y.columns[list(y.columns).index("development") + 1 :])
@@ -133,8 +133,8 @@ def read_json(json_str, array_backend=None):
         if "sub_tris" in json_dict.keys():
             for k, v in json_dict["sub_tris"].items():
                 setattr(tri, k, read_json(v, array_backend))
-                setattr(getattr(tri, k), 'origin_grain', tri.origin_grain)
-                setattr(getattr(tri, k), 'development_grain', tri.development_grain)
+                setattr(getattr(tri, k), "origin_grain", tri.origin_grain)
+                setattr(getattr(tri, k), "development_grain", tri.development_grain)
         if "dfs" in json_dict.keys():
             for k, v in json_dict["dfs"].items():
                 df = pd.read_json(v)
@@ -183,16 +183,18 @@ def parallelogram_olf(
 
 def set_common_backend(objs):
     from chainladder import options
+
     priority = options.ARRAY_PRIORITY
     backend = priority[np.min([priority.index(i.array_backend) for i in objs])]
     return [i.set_backend(backend) for i in objs]
 
 
 def concat(
-    objs : Iterable, 
-    axis : Union[int, str], 
-    ignore_index: bool = False, 
-    sort: bool = False):
+    objs: Iterable,
+    axis: Union[int, str],
+    ignore_index: bool = False,
+    sort: bool = False,
+):
     """ Concatenate Triangle objects along a particular axis.
 
     Parameters
@@ -237,7 +239,7 @@ def concat(
     objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
-        if k != axis and k !=1:  # All non-concat axes must be identical
+        if k != axis and k != 1:  # All non-concat axes must be identical
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
             assert np.all(a == a[0])
         else:  # All elements of concat axis must be unique
@@ -274,7 +276,9 @@ def num_to_value(arr, value):
         if arr.fill_value == 0 or sp.isnan(arr.fill_value):
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
-            arr = sp(coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape)
+            arr = sp(
+                coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape
+            )
         else:
             arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=value)
     else:
@@ -285,6 +289,7 @@ def num_to_value(arr, value):
 def num_to_nan(arr):
     """ Function that turns all zeros to nan values in an array """
     from chainladder import Triangle
+
     xp = Triangle.get_array_module(None, arr=arr)
     return num_to_value(arr, xp.nan)
 
@@ -295,6 +300,7 @@ def minimum(x1, x2):
 
 def maximum(x1, x2):
     return x1.maximum(x2)
+
 
 class PatsyFormula(BaseEstimator, TransformerMixin):
     """ A sklearn-style Transformer for patsy formulas.
@@ -315,11 +321,13 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         The patsy instructions for generating the design_matrix, X.
 
     """
+
     def __init__(self, formula=None):
         self.formula = formula
 
     def _check_X(self, X):
         from chainladder.core import Triangle
+
         if isinstance(X, Triangle):
             raise AttributeError("X must be a pandas dataframe, not a Triangle")
 
@@ -333,7 +341,7 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         return dmatrix(self.design_info_, X)
 
 
-def model_diagnostics(model, name=None,  groupby=None):
+def model_diagnostics(model, name=None, groupby=None):
     """ A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
@@ -360,40 +368,50 @@ def model_diagnostics(model, name=None,  groupby=None):
     if groupby is not None:
         obj.X_ = obj.X_.groupby(groupby).sum().cum_to_incr()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
-        if hasattr(obj, 'expectation_'):
+        if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
     else:
         obj.X_ = obj.X_.incr_to_cum()
     val = obj.X_.valuation
-    latest = obj.X_.sum('development')
+    latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
-    run_off = run_off[run_off.development>str(obj.X_.valuation_date)]
-    run_off = run_off.iloc[..., :{'M': 12, 'Q': 4, 'Y': 1}[obj.X_.development_grain]]
+    run_off = run_off[run_off.development > str(obj.X_.valuation_date)]
+    run_off = run_off.iloc[..., : {"M": 12, "Q": 4, "Y": 1}[obj.X_.development_grain]]
 
     triangles = []
     for col in obj.ultimate_.columns:
         idx = latest.index
-        idx['Measure'] = col
-        idx['Model'] = obj.__class__.__name__ if name is None else name
+        idx["Measure"] = col
+        idx["Model"] = obj.__class__.__name__ if name is None else name
         idx = idx[list(idx.columns[-2:]) + list(idx.columns[:-2])]
-        out = latest[col].rename('columns', ['Latest'])
-        if obj.X_.development_grain in ['M']:
-            out['Month Incremental'] = obj.X_[col][val==obj.X_.valuation_date].sum('development')
-        if obj.X_.development_grain in ['M', 'Q']:
-            out['Quarter Incremental'] = (
-                obj.X_ -
-                obj.X_[val<pd.Period(out.valuation_date, freq='Q').to_timestamp(how='s').strftime('%Y-%m')]
-            ).sum('development')[col]
-        out['Year Incremental'] = (
-            obj.X_ -
-            obj.X_[val<str(obj.X_.valuation_date.year)]
-        ).sum('development')[col]
-        out['IBNR'] = obj.ibnr_[col]
-        out['Ultimate'] = obj.ultimate_[col]
+        out = latest[col].rename("columns", ["Latest"])
+        if obj.X_.development_grain in ["M"]:
+            out["Month Incremental"] = obj.X_[col][val == obj.X_.valuation_date].sum(
+                "development"
+            )
+        if obj.X_.development_grain in ["M", "Q"]:
+            out["Quarter Incremental"] = (
+                obj.X_
+                - obj.X_[
+                    val
+                    < pd.Period(out.valuation_date, freq="Q")
+                    .to_timestamp(how="s")
+                    .strftime("%Y-%m")
+                ]
+            ).sum("development")[col]
+        out["Year Incremental"] = (
+            obj.X_ - obj.X_[val < str(obj.X_.valuation_date.year)]
+        ).sum("development")[col]
+        out["IBNR"] = obj.ibnr_[col]
+        out["Ultimate"] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
-            out['Run Off ' + str(i+1)] = run_off[col].iloc[..., i]
-        if hasattr(obj, 'expectation_'):
-            out['Apriori'] = obj.expectation_ if obj.expectation_.shape[1] == 1 else obj.expectation_[col]
+            out["Run Off " + str(i + 1)] = run_off[col].iloc[..., i]
+        if hasattr(obj, "expectation_"):
+            out["Apriori"] = (
+                obj.expectation_
+                if obj.expectation_.shape[1] == 1
+                else obj.expectation_[col]
+            )
         out.index = idx
         triangles.append(out)
-    return concat(triangles,0)
+    return concat(triangles, 0)
