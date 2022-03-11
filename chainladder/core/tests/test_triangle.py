@@ -447,3 +447,7 @@ def test_origin_as_datetime_arg(clrd):
     from pandas.api.types import is_datetime64_any_dtype
     assert is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=True)['origin'])
     assert not is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=False)['origin'])
+
+def test_halfyear_grain():
+    data=pd.DataFrame({'AccMo':[201409, 201503, 201603], 'ValMo':[202203]*3, 'value':[100]*3})
+    assert cl.Triangle(data=data, origin='AccMo', development='ValMo', columns='value').shape == (1,1,16,1)
