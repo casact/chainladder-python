@@ -10,11 +10,19 @@ from chainladder.utils.utility_functions import concat
 from chainladder import options
 
 
-def _get_full_expectation(cdf_, ultimate_):
+def _get_full_expectation(cdf_, ultimate_, is_cumulative):
     """ Private method that builds full expectation"""
     full = ultimate_ / cdf_
 
-    return concat((full, ultimate_.copy().rename("development", [9999])), axis=3)
+    if is_cumulative:
+        return concat((full, ultimate_.copy().rename("development", [9999])), axis=3)
+
+    else:
+        tail_ = full.iloc[:, :, :, -1] - ultimate_
+
+        return concat(
+            (full.cum_to_incr(), tail_.copy().rename("development", [9999])), axis=3
+        )
 
 
 class Common:
@@ -52,7 +60,7 @@ class Common:
                 + "' object has no attribute 'full_expectation_'"
             )
 
-        return _get_full_expectation(self.cdf_, self.ultimate_)
+        return _get_full_expectation(self.cdf_, self.ultimate_, self.X_.is_cumulative)
 
     @property
     def full_triangle_(self):
@@ -63,7 +71,9 @@ class Common:
                 + "' object has no attribute 'full_triangle_'"
             )
 
-        full_expectation = _get_full_expectation(self.cdf_, self.ultimate_)
+        full_expectation = _get_full_expectation(
+            self.cdf_, self.ultimate_, self.X_.is_cumulative
+        )
         frame = self.X_ + full_expectation * 0
         xp = self.X_.get_array_module()
         fill = (xp.nan_to_num(frame.values) == 0) * (self.X_ * 0 + full_expectation)
