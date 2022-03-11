@@ -625,3 +625,12 @@ def test_full_triangle_and_full_expectation(raa):
     assert (bf_fit_cum.full_triangle_ - raa_cum) - (
         bf_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < 0.00001
+
+
+def test_halfyear_grain():
+    data = pd.DataFrame(
+        {"AccMo": [201409, 201503, 201603], "ValMo": [202203] * 3, "value": [100] * 3}
+    )
+    assert cl.Triangle(
+        data=data, origin="AccMo", development="ValMo", columns="value"
+    ).shape == (1, 1, 16, 1)
