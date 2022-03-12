@@ -63,7 +63,8 @@ class Common:
         if not hasattr(self, "ultimate_"):
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'ibnr_'")
-        ibnr = self.ultimate_ - self.latest_diagonal
+        ld = self.latest_diagonal if self.is_cumulative else self.sum(axis=3)
+        ibnr = self.ultimate_ - ld
         ibnr.vdims = self.ultimate_.vdims
         return ibnr
 

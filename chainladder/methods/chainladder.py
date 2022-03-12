@@ -50,7 +50,6 @@ class Chainladder(MethodBase):
 
     def _get_ultimate(self, X, sample_weight=None):
         """ Private method that uses CDFs to obtain an ultimate vector """
-        xp = X.get_array_module()
         if X.is_cumulative == False:
             ld = X.sum('development')
             ultimate = ld.val_to_dev()
