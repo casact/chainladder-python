@@ -144,6 +144,7 @@ class Triangle(TriangleBase):
         origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(
             how="s"
         )
+
         development_date = development_date.dt.to_period(
             self.development_grain
         ).dt.to_timestamp(how="e")
@@ -151,6 +152,7 @@ class Triangle(TriangleBase):
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns
         )
+
         # Fill in missing periods with zeros
         date_axes = self._get_date_axes(
             data_agg["__origin__"],
@@ -161,12 +163,11 @@ class Triangle(TriangleBase):
         # Deal with labels
         if not index:
             index = ["Total"]
-            data_agg[index[0]] = "Total"
+            data_agg[index[0]] = "Total"    
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
-
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
@@ -199,7 +200,8 @@ class Triangle(TriangleBase):
         # Coerce malformed triangles to something more predictible
         check_origin = (
             pd.period_range(
-                start=self.odims.min(), end=self.valuation_date, freq=self.origin_grain
+                start=self.odims.min(), end=self.valuation_date, 
+                freq=self.origin_grain.replace('S', '2Q')
             )
             .to_timestamp()
             .values

@@ -572,6 +572,7 @@ def test_single_entry():
 
 def test_origin_as_datetime_arg(clrd):
     from pandas.api.types import is_datetime64_any_dtype
+<<<<<<< HEAD
 
     assert is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=True)["origin"])
     assert not is_datetime64_any_dtype(
@@ -625,3 +626,11 @@ def test_full_triangle_and_full_expectation(raa):
     assert (bf_fit_cum.full_triangle_ - raa_cum) - (
         bf_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < 0.00001
+=======
+    assert is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=True)['origin'])
+    assert not is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=False)['origin'])
+
+def test_halfyear_grain():
+    data=pd.DataFrame({'AccMo':[201409, 201503, 201603], 'ValMo':[202203]*3, 'value':[100]*3})
+    assert cl.Triangle(data=data, origin='AccMo', development='ValMo', columns='value').shape == (1,1,16,1)
+>>>>>>> 77700f8fb512a85046a4069c9d65ecd4f09b9fcd

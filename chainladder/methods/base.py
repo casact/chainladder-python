@@ -106,19 +106,16 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new: Triangle
 
         """
-        obj = X.val_to_dev()
-        if sum(obj.ddims > self.ldf_.ddims.max()) > 0:
+        if sum(X.ddims > self.ldf_.ddims.max()) > 0:
             raise ValueError("X has ages that exceed those available in model.")
-        if X.is_cumulative is not None:
-            obj = obj.incr_to_cum()
-        obj.ldf_ = self.ldf_
-        obj, obj.ldf_ = self.intersection(obj, obj.ldf_)
-        self.validate_weight(X, sample_weight)
+        X_new = X.val_to_dev() + (self.X_.val_to_dev().iloc[0,0].sum(2) * 0)
+        self.validate_weight(X_new, sample_weight)
         if sample_weight:
-            sample_weight = sample_weight.set_backend(obj.array_backend)
-        obj.ultimate_ = self._get_ultimate(obj, sample_weight)
-        return obj
-
+            sample_weight = sample_weight.set_backend(X_new.array_backend)
+        X_new.ldf_ = self.ldf_
+        X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
+        return X_new
+        
     def intersection(self, a, b):
         """ Given two Triangles with mismatched indices, this method"""
         intersection = list(set(a.key_labels).intersection(set(b.key_labels)))

@@ -110,3 +110,18 @@ def test_misaligned_index2(clrd):
     a = bcc.ultimate_.iloc[150].sum().sum()
     b = bcc.predict(clrd.iloc[150], sample_weight=w.iloc[150]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
+
+def align_cdfs():
+    ld = cl.load_sample('raa').latest_diagonal*0+40000
+    model = cl.BornhuetterFerguson().fit(cl.load_sample('raa'), sample_weight=ld)
+    a = model.ultimate_.iloc[..., :4, :] 
+    b = model.predict(
+        cl.load_sample('raa').dev_to_val().iloc[..., :4, -1].val_to_dev(),
+        sample_weight=ld.iloc[..., :4, :]).ultimate_
+    assert a == b
+    model = cl.Chainladder().fit(cl.load_sample('raa'), sample_weight=ld)
+    a = model.ultimate_.iloc[..., :4, :] 
+    b = model.predict(
+        cl.load_sample('raa').dev_to_val().iloc[..., :4, -1].val_to_dev(),
+        sample_weight=ld.iloc[..., :4, :]).ultimate_
+    assert a == b

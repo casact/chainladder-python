@@ -48,9 +48,27 @@ class Chainladder(MethodBase):
         self.process_variance_ = self._include_process_variance()
         return self
 
+    def predict(self, X, sample_weight=None):
+        """Predicts the Benktander ultimate on a new triangle **X**
+
+        Parameters
+        ----------
+        X: Triangle
+            Loss data to which the model will be applied.
+        sample_weight: Triangle
+            Required exposure to be used in the calculation.
+
+        Returns
+        -------
+        X_new: Triangle
+            Loss data with Benktander ultimate applied
+        """
+        X_new = super().predict(X, sample_weight)
+        X_new.ultimate_ = self._get_ultimate(X_new, sample_weight)
+        return X_new
+
     def _get_ultimate(self, X, sample_weight=None):
         """ Private method that uses CDFs to obtain an ultimate vector """
-        xp = X.get_array_module()
         if X.is_cumulative == False:
             ld = X.sum('development')
             ultimate = ld.val_to_dev()
