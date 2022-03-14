@@ -10,7 +10,7 @@ from chainladder.utils.utility_functions import concat
 from chainladder import options
 
 
-def _get_full_expectation(cdf_, ultimate_, is_cumulative):
+def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
     """ Private method that builds full expectation"""
     full = ultimate_ / cdf_
 
@@ -23,6 +23,51 @@ def _get_full_expectation(cdf_, ultimate_, is_cumulative):
         return concat(
             (full.cum_to_incr(), tail_.copy().rename("development", [9999])), axis=3
         )
+
+
+def _get_full_triangle(X, ultimate, expectation=None, n_iters=None, is_cumulative=True):
+    """ Private method that builds full triangle"""
+    # Getting the LDFs and expand for all origins
+    cdf = X.ldf_.copy() * (ultimate / ultimate)
+
+    # Setting LDFs for all of the known diagonals as 1
+    cdf = (
+        cdf[cdf.valuation < X.valuation_date] * 0
+        + 1
+        + cdf[cdf.valuation >= X.valuation_date]
+    )
+
+    cdf.valuation_date = pd.to_datetime(options.ULT_VAL)
+    cdf.values = 1 - 1 / cdf.values.cumprod(axis=3)
+
+    # Shifting the CDFs by development age, and renaming the last column as 9999
+    cdf.ddims = cdf.ddims + {"Y": 12, "Q": 3, "M": 1}[cdf.development_grain]
+    cdf.ddims[-1] = 9999
+
+    ld = X.incr_to_cum().latest_diagonal
+
+    if n_iters is None:
+        complement = 1 / (1 - cdf)
+        cum_run_off = ld * complement
+
+    else:
+        cdf_ = X.cdf_
+
+        cdf_.ddims = cdf.ddims
+        a = (X.latest_diagonal * 0 + expectation) / cdf_ * X.ldf_.values
+        complement = xp.nansum(
+            cdf.values[None] ** xp.arange(n_iters)[:, None, None, None, None], 0
+        )
+        cum_run_off = (a * (cdf ** n_iters)) + (ld * complement)
+
+    cum_run_off = cum_run_off[cum_run_off.valuation > X.valuation_date]
+    cum_run_off.is_cumulative = True
+
+    if is_cumulative:
+        return cum_run_off + X
+
+    else:
+        return (X.incr_to_cum() + cum_run_off).cum_to_incr()
 
 
 class Common:
@@ -47,7 +92,11 @@ class Common:
         if not hasattr(self, "ultimate_"):
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'ibnr_'")
-        ibnr = self.ultimate_ - self.latest_diagonal
+        if hasattr(self, "X_"):
+            ld = self.latest_diagonal
+        else:
+            ld = self.latest_diagonal if self.is_cumulative else self.sum(axis=3)
+        ibnr = self.ultimate_ - ld
         ibnr.vdims = self.ultimate_.vdims
         return ibnr
 
@@ -71,14 +120,26 @@ class Common:
                 + "' object has no attribute 'full_triangle_'"
             )
 
-        full_expectation = _get_full_expectation(
-            self.cdf_, self.ultimate_, self.X_.is_cumulative
-        )
-        frame = self.X_ + full_expectation * 0
-        xp = self.X_.get_array_module()
-        fill = (xp.nan_to_num(frame.values) == 0) * (self.X_ * 0 + full_expectation)
+        if hasattr(self, "X_"):
+            X = self.X_
+        else:
+            X = self
 
-        return self.X_ + fill
+        if hasattr(self, "n_iters"):
+            return _get_full_triangle(
+                X, self.ultimate_, self.expectation_, self.n_iters, X.is_cumulative
+            )
+        else:
+            return _get_full_triangle(X, self.ultimate_, None, None, X.is_cumulative)
+
+        # full_expectation = _get_full_expectation(
+        #     self.cdf_, self.ultimate_, self.X_.is_cumulative
+        # )
+        # frame = self.X_ + full_expectation * 0
+        # xp = self.X_.get_array_module()
+        # fill = (xp.nan_to_num(frame.values) == 0) * (self.X_ * 0 + full_expectation)
+        #
+        # return self.X_ + fill
 
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
