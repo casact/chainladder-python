@@ -28,43 +28,48 @@ def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
 def _get_full_triangle(X, ultimate, expectation=None, n_iters=None, is_cumulative=True):
     """ Private method that builds full triangle"""
     # Getting the LDFs and expand for all origins
-    cdf = X.ldf_.copy() * (ultimate / ultimate)
+    emergence = X.ldf_.copy() * (ultimate / ultimate)
 
     # Setting LDFs for all of the known diagonals as 1
-    cdf = (
-        cdf[cdf.valuation < X.valuation_date] * 0
+    emergence = (
+        emergence[emergence.valuation < X.valuation_date] * 0
         + 1
-        + cdf[cdf.valuation >= X.valuation_date]
+        + emergence[emergence.valuation >= X.valuation_date]
     )
 
-    cdf.valuation_date = pd.to_datetime(options.ULT_VAL)
-    cdf.values = 1 - 1 / cdf.values.cumprod(axis=3)
+    emergence.valuation_date = pd.to_datetime(options.ULT_VAL)
+    emergence.values = 1 - 1 / emergence.values.cumprod(axis=3)
 
     # Shifting the CDFs by development age, and renaming the last column as 9999
-    cdf.ddims = cdf.ddims + {"Y": 12, "Q": 3, "M": 1}[cdf.development_grain]
-    cdf.ddims[-1] = 9999
+    emergence.ddims = emergence.ddims + \
+        {"Y": 12, "Q": 3, "M": 1}[emergence.development_grain]
+    emergence.ddims[-1] = 9999
 
     ld = X.incr_to_cum().latest_diagonal
 
     if n_iters is None:
-        complement = 1 / (1 - cdf)
+        complement = 1 / (1 - emergence)
         cum_run_off = ld * complement
 
     else:
         cdf_ = X.cdf_
+        cdf_.ddims = emergence.ddims
 
-        cdf_.ddims = cdf.ddims
         a = (X.latest_diagonal * 0 + expectation) / cdf_ * X.ldf_.values
+
+        xp = emergence.get_array_module()
         complement = xp.nansum(
-            cdf.values[None] ** xp.arange(n_iters)[:, None, None, None, None], 0
+            emergence.values[None] ** xp.arange(n_iters)[:,
+                                                         None, None, None, None], 0
         )
-        cum_run_off = (a * (cdf ** n_iters)) + (ld * complement)
+
+        cum_run_off = (a * (emergence ** n_iters)) + (ld * complement)
 
     cum_run_off = cum_run_off[cum_run_off.valuation > X.valuation_date]
     cum_run_off.is_cumulative = True
 
     if is_cumulative:
-        return cum_run_off + X
+        return X + cum_run_off
 
     else:
         return (X.incr_to_cum() + cum_run_off).cum_to_incr()
@@ -95,7 +100,8 @@ class Common:
         if hasattr(self, "X_"):
             ld = self.latest_diagonal
         else:
-            ld = self.latest_diagonal if self.is_cumulative else self.sum(axis=3)
+            ld = self.latest_diagonal if self.is_cumulative else self.sum(
+                axis=3)
         ibnr = self.ultimate_ - ld
         ibnr.vdims = self.ultimate_.vdims
         return ibnr
