@@ -671,3 +671,21 @@ def test_halfyear_grain():
     assert cl.Triangle(
         data=data, origin="AccMo", development="ValMo", columns="value"
     ).shape == (1, 1, 16, 1)
+
+
+def test_predict(raa):
+    raa_cum = raa
+    assert cl.Chainladder().fit(raa_cum).X_.is_cumulative == True
+    assert cl.BornhuetterFerguson().fit(raa_cum, sample_weight=raa_cum.latest_diagonal *
+                                        0 + 40000).X_.is_cumulative == True
+    assert cl.Chainladder().fit_predict(raa_cum).is_cumulative == True
+    assert cl.BornhuetterFerguson().fit_predict(
+        raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000).is_cumulative == True
+
+    raa_incr = raa.cum_to_incr()
+    assert cl.Chainladder().fit(raa_incr).X_.is_cumulative == False
+    assert cl.BornhuetterFerguson().fit(raa_incr, sample_weight=raa_incr.latest_diagonal *
+                                        0 + 40000).X_.is_cumulative == False
+    assert cl.Chainladder().fit_predict(raa_incr).is_cumulative == False
+    assert cl.BornhuetterFerguson().fit_predict(
+        raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000).is_cumulative == False
