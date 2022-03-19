@@ -131,7 +131,7 @@ class TriangleDisplay:
                         subset=subset,
                         gmap=gmap,
                     )
-                    .render()
+                    .to_html()
                 )
             else:
                 default_output = (
