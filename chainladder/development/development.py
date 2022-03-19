@@ -122,7 +122,9 @@ class Development(DevelopmentBase):
 
         # Validate inputs
         if X.is_cumulative is None:
-            warnings.warn("The is_cumulative property of your triangle is not set. This may result in undesirable behavior.")
+            warnings.warn(
+                "The is_cumulative property of your triangle is not set. This may result in undesirable behavior."
+            )
         if X.is_cumulative == False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:

@@ -24,6 +24,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pip
+  - ipython
 
   # R ChainLadder unit testing
   - tzlocal

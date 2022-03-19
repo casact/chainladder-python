@@ -32,10 +32,6 @@ class TailConstant(TailBase):
         cdf with tail applied.
     tail_: DataFrame
         Point estimate of tail at latest maturity available in the Triangle.
-    sigma_:
-        sigma with tail factor applied.
-    std_err_:
-        std_err with tail factor applied
 
     Notes
     -----

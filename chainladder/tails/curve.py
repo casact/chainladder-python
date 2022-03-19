@@ -55,10 +55,6 @@ class TailCurve(TailBase):
         Slope parameter of the curve fit.
     intercept : DataFrame
         Intercept parameter of the curve fit.
-    sigma_ : Triangle
-        sigma with tail factor applied.
-    std_err_ : Triangle
-        std_err with tail factor applied
     """
 
     def __init__(

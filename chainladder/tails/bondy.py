@@ -36,10 +36,6 @@ class TailBondy(TailBase):
         The Bondy exponent
     earliest_ldf_: DataFrame
         The LDF associated with the ``earliest_age`` pick.
-    sigma_: Triangle
-        sigma with tail factor applied.
-    std_err_: Triangle
-        std_err with tail factor applied
     projection_period: int
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
