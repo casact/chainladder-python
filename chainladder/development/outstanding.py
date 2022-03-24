@@ -75,6 +75,7 @@ class CaseOutstanding(DevelopmentBase):
         """
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
         self.X_ = X.copy()
+
         self.paid_w_ = (
             Development(n_periods=self.paid_n_periods).fit(self.X_.sum(0).sum(1)).w_
         )
@@ -82,22 +83,30 @@ class CaseOutstanding(DevelopmentBase):
             Development(n_periods=self.case_n_periods).fit(self.X_.sum(0).sum(1)).w_
         )
 
-        print("=== self.case_to_prior_case_.mean(2) ===")
-        print(self.case_to_prior_case_)
+        ldf_shape = (1, 1, 1, self.case_to_prior_case_.shape[3])
 
-        case_tri = X[self.paid_to_incurred[1]] - X[self.paid_to_incurred[0]]
-        temp = Development(n_periods=self.paid_n_periods, average="simple").fit(
-            case_tri
-        )
+        new_case_ldf_ = (
+            self.case_to_prior_case_.to_frame(origin_as_datetime=True)
+            .replace(0, np.NaN)
+            .mean()
+            .values
+        ).reshape(ldf_shape)
 
-        print("=== temp ===")
-        print(temp.ldf_)
+        new_paid_ldf_ = (
+            self.paid_to_prior_case_.to_frame(origin_as_datetime=True)
+            .replace(0, np.NaN)
+            .mean()
+            .values
+        ).reshape(ldf_shape)
 
-        self.case_ldf_ = self.case_to_prior_case_.mean(2)
-        self.paid_ldf_ = self.paid_to_prior_case_.mean(2)
-        print("=== self.case_ldf_ ===")
-        print(self.case_ldf_)
+        self.case_ldf_ = self.case_to_prior_case_.mean(2)  # this has the wrong value
+        self.case_ldf_.values = new_case_ldf_
+
+        self.paid_ldf_ = self.paid_to_prior_case_.mean(2)  # this has the wrong value
+        self.paid_ldf_.values = new_paid_ldf_
+
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
+
         return self
 
     def _set_ldf(self, X):
@@ -178,6 +187,7 @@ class CaseOutstanding(DevelopmentBase):
         if self.groupby is not None:
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
+
         out = (
             (incurred_tri - paid_tri).iloc[..., 1:]
             * self.case_w_
@@ -185,6 +195,7 @@ class CaseOutstanding(DevelopmentBase):
         )
         out.is_pattern = True
         out.is_cumulative = False
+
         return out
 
     @property
