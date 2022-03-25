@@ -4,6 +4,7 @@
 from chainladder.development import Development, DevelopmentBase
 from chainladder import options
 from chainladder.utils.utility_functions import concat
+from chainladder.utils.utility_functions import num_to_nan
 
 import numpy as np
 import pandas as pd
@@ -83,27 +84,17 @@ class CaseOutstanding(DevelopmentBase):
             Development(n_periods=self.case_n_periods).fit(self.X_.sum(0).sum(1)).w_
         )
 
-        ldf_shape = (1, 1, 1, self.case_to_prior_case_.shape[3])
-
-        new_case_ldf_ = (
-            self.case_to_prior_case_.to_frame(origin_as_datetime=True)
-            .replace(0, np.NaN)
-            .mean()
-            .values
-        ).reshape(ldf_shape)
-
-        new_paid_ldf_ = (
-            self.paid_to_prior_case_.to_frame(origin_as_datetime=True)
-            .replace(0, np.NaN)
-            .mean()
-            .values
-        ).reshape(ldf_shape)
+        case_to_prior_case_naned = self.case_to_prior_case_
+        case_to_prior_case_naned.values = num_to_nan(self.case_to_prior_case_.values)
 
         self.case_ldf_ = self.case_to_prior_case_.mean(2)  # this has the wrong value
-        self.case_ldf_.values = new_case_ldf_
+        self.case_ldf_.values = case_to_prior_case_naned.mean(axis=2).values
+
+        paid_to_prior_case_naned = self.paid_to_prior_case_
+        paid_to_prior_case_naned.values = num_to_nan(self.paid_to_prior_case_.values)
 
         self.paid_ldf_ = self.paid_to_prior_case_.mean(2)  # this has the wrong value
-        self.paid_ldf_.values = new_paid_ldf_
+        self.paid_ldf_.values = paid_to_prior_case_naned.mean(axis=2).values
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -121,8 +112,8 @@ class CaseOutstanding(DevelopmentBase):
         case_ldf_.valuation_date = pd.Timestamp(options.ULT_VAL)
         xp = case_ldf_.get_array_module()
         # Broadcast triangle shape
-        case_ldf_ = case_ldf_ * case.latest_diagonal / case.latest_diagonal
-        case_ldf_.odims = case.odims
+        case_ldf_ = case_ldf_ * case_tri.latest_diagonal / case_tri.latest_diagonal
+        case_ldf_.odims = case_tri.odims
         case_ldf_.is_pattern = False
         case_ldf_.values = xp.concatenate(
             (xp.ones(list(case_ldf_.shape[:-1]) + [1]), case_ldf_.values), axis=-1
