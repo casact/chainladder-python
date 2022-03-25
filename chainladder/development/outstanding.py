@@ -4,6 +4,7 @@
 from chainladder.development import Development, DevelopmentBase
 from chainladder import options
 from chainladder.utils.utility_functions import concat
+from chainladder.utils.utility_functions import num_to_nan
 
 import numpy as np
 import pandas as pd
@@ -83,49 +84,42 @@ class CaseOutstanding(DevelopmentBase):
             Development(n_periods=self.case_n_periods).fit(self.X_.sum(0).sum(1)).w_
         )
 
-        ldf_shape = (1, 1, 1, self.case_to_prior_case_.shape[3])
-
-        new_case_ldf_ = (
-            self.case_to_prior_case_.to_frame(origin_as_datetime=True)
-            .replace(0, np.NaN)
-            .mean()
-            .values
-        ).reshape(ldf_shape)
-
-        new_paid_ldf_ = (
-            self.paid_to_prior_case_.to_frame(origin_as_datetime=True)
-            .replace(0, np.NaN)
-            .mean()
-            .values
-        ).reshape(ldf_shape)
+        case_to_prior_case_naned = self.case_to_prior_case_
+        case_to_prior_case_naned.values = num_to_nan(self.case_to_prior_case_.values)
 
         self.case_ldf_ = self.case_to_prior_case_.mean(2)  # this has the wrong value
-        self.case_ldf_.values = new_case_ldf_
+        self.case_ldf_.values = case_to_prior_case_naned.mean(axis=2).values
+
+        paid_to_prior_case_naned = self.paid_to_prior_case_
+        paid_to_prior_case_naned.values = num_to_nan(self.paid_to_prior_case_.values)
 
         self.paid_ldf_ = self.paid_to_prior_case_.mean(2)  # this has the wrong value
-        self.paid_ldf_.values = new_paid_ldf_
+        self.paid_ldf_.values = paid_to_prior_case_naned.mean(axis=2).values
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
         return self
 
     def _set_ldf(self, X):
+        print("=== in _set_ldf ===")
         paid_tri = X[self.paid_to_incurred[0]]
         incurred_tri = X[self.paid_to_incurred[1]]
-        case = incurred_tri - paid_tri
-        original_val_date = case.valuation_date
+        case_tri = incurred_tri - paid_tri
+
+        original_val_date = case_tri.valuation_date
+
         case_ldf_ = self.case_ldf_.copy()
         case_ldf_.valuation_date = pd.Timestamp(options.ULT_VAL)
         xp = case_ldf_.get_array_module()
         # Broadcast triangle shape
-        case_ldf_ = case_ldf_ * case.latest_diagonal / case.latest_diagonal
-        case_ldf_.odims = case.odims
+        case_ldf_ = case_ldf_ * case_tri.latest_diagonal / case_tri.latest_diagonal
+        case_ldf_.odims = case_tri.odims
         case_ldf_.is_pattern = False
         case_ldf_.values = xp.concatenate(
             (xp.ones(list(case_ldf_.shape[:-1]) + [1]), case_ldf_.values), axis=-1
         )
 
-        case_ldf_.ddims = case.ddims
+        case_ldf_.ddims = case_tri.ddims
         case_ldf_.valuation_date = case_ldf_.valuation.max()
         case_ldf_ = case_ldf_.dev_to_val().set_backend(self.case_ldf_.array_backend)
 
@@ -140,25 +134,29 @@ class CaseOutstanding(DevelopmentBase):
         backward = xp.cumprod(backward[..., ::-1], -1)[..., ::-1][..., 1:]
         nans = case_ldf_ / case_ldf_
         case_ldf_.values = xp.concatenate(
-            (backward, (case.latest_diagonal * 0 + 1).values, forward), -1
+            (backward, (case_tri.latest_diagonal * 0 + 1).values, forward), -1
         )
-        case = (
-            (case_ldf_ * nans.values * case.latest_diagonal.values)
+        case_tri = (
+            (case_ldf_ * nans.values * case_tri.latest_diagonal.values)
             .val_to_dev()
-            .iloc[..., : len(case.ddims)]
+            .iloc[..., : len(case_tri.ddims)]
         )
-        ld = case[case.valuation == X.valuation_date].sum("development").sum("origin")
+        ld = (
+            case_tri[case_tri.valuation == X.valuation_date]
+            .sum("development")
+            .sum("origin")
+        )
         ld = ld / ld
         patterns = (1 - np.nan_to_num(X.nan_triangle[..., 1:])) * (
             self.paid_ldf_ * ld
         ).values
-        paid = case.iloc[..., :-1] * patterns
-        paid.ddims = case.ddims[1:]
+        paid = case_tri.iloc[..., :-1] * patterns
+        paid.ddims = case_tri.ddims[1:]
         paid.valuation_date = pd.Timestamp(options.ULT_VAL)
         # Create a full triangle of incurrds to support a multiplicative LDF
         paid = (paid_tri.cum_to_incr() + paid).incr_to_cum()
         inc = (
-            case[case.valuation > X.valuation_date]
+            case_tri[case_tri.valuation > X.valuation_date]
             + paid[paid.valuation > X.valuation_date]
             + incurred_tri
         )
@@ -168,6 +166,7 @@ class CaseOutstanding(DevelopmentBase):
         cols = X.columns[
             X.columns.isin([self.paid_to_incurred[0], self.paid_to_incurred[1]])
         ]
+
         dev = concat((paid, inc), 1)[list(cols)]
         # Convert the paid/incurred to multiplicative LDF
         dev = (dev.iloc[..., -1] / dev).iloc[..., :-1]
@@ -175,8 +174,12 @@ class CaseOutstanding(DevelopmentBase):
         dev.ddims = X.link_ratio.ddims
         dev.is_pattern = True
         dev.is_cumulative = True
-        self.case = case
+
+        self.case = case_tri
         self.paid = paid
+        print("=== self.case ===\n", self.case)
+        print("=== self.paid ===\n", self.paid)
+        print("=== set LDF return ===\n", dev.cum_to_incr())
         return dev.cum_to_incr()
 
     @property
