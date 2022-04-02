@@ -5,13 +5,7 @@ import pandas as pd
 import numpy as np
 import warnings
 from sklearn.utils import deprecated
-
 from chainladder.utils.utility_functions import num_to_nan
-
-try:
-    import dask.bag as db
-except:
-    db = None
 
 
 class TriangleGroupBy:
@@ -64,10 +58,22 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
-        if origin_as_datetime == None:
-            # this will be set to True as the default in an upcoming version of the package
-            warning = "In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting."
+
+        if origin_as_datetime == None:  # origin_as_datetime not specified
+
+            warning = "In an upcoming version of the package, `origin_as_datetime` " + \
+                "will be defaulted to `True` in to_frame(...), use " + \
+                "`origin_as_datetime=False` to preserve current setting."
             warnings.warn(warning)
+
+            # this will be set to True as the default in an upcoming version of the package
+            origin_as_datetime = False
+
+        elif not isinstance(self.origin, pd.PeriodIndex) and origin_as_datetime:
+            warning = "Unable to convert origin as datetime, " + \
+                "the origin_as_datetime = True parameter is ignored."
+            warnings.warn(warning)
+
             origin_as_datetime = False
 
         axes = [num for num, item in enumerate(self.shape) if item > 1]
@@ -129,13 +135,13 @@ class TrianglePandas:
             for col in set(missing_cols).intersection(
                 self.virtual_columns.columns.keys()
             ):
-                out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+                out[col] = out.fillna(0).apply(
+                    self.virtual_columns.columns[col], 1)
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
 
-        # keepdims = False
-        else:
+        else:  # keepdims = False
             if self.shape[:2] == (1, 1):
                 return self._repr_format(origin_as_datetime)
 
@@ -199,10 +205,12 @@ class TrianglePandas:
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
         if obj.shape[-1] != 1:
-            ddim = list((xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
+            ddim = list(
+                (xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
             ddim = obj.development[pd.Series(ddim).astype(bool)]
             obj = self[
-                (self.development >= ddim.min()) & (self.development <= ddim.max())
+                (self.development >= ddim.min()) & (
+                    self.development <= ddim.max())
             ]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
@@ -431,7 +439,8 @@ def add_groupby_agg_func(cls, k, v):
         else:
             values = [
                 getattr(
-                    obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
+                    obj.iloc.__getitem__(
+                        tuple([slice(None)] * self.axis + [i])), v
                 )(self.axis, auto_sparse=False, keepdims=True)
                 for i in self.groups.indices.values()
             ]
