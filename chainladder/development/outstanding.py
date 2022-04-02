@@ -101,7 +101,7 @@ class CaseOutstanding(DevelopmentBase):
         return self
 
     def _set_ldf(self, X):
-        # print("=== in _set_ldf ===")
+        print("=== in _set_ldf ===")
         paid_tri = X[self.paid_to_incurred[0]]
         incurred_tri = X[self.paid_to_incurred[1]]
         case_tri = incurred_tri - paid_tri
@@ -177,9 +177,9 @@ class CaseOutstanding(DevelopmentBase):
 
         self.case = case_tri
         self.paid = paid
-        # print("=== self.case ===\n", self.case)
-        # print("=== self.paid ===\n", self.paid)
-        # print("=== set LDF return ===\n", dev.cum_to_incr())
+        print("=== self.case ===\n", self.case)
+        print("=== self.paid ===\n", self.paid)
+        print("=== set LDF return ===\n", dev.cum_to_incr())
         return dev.cum_to_incr()
 
     @property

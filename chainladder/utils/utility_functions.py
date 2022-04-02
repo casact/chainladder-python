@@ -15,16 +15,16 @@ from typing import Iterable, Union
 
 
 def load_sample(key: str, *args, **kwargs):
-    """Function to load datasets included in the chainladder package.
+    """ Function to load datasets included in the chainladder package.
 
-    Parameters
-    ----------
-    key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
+        Parameters
+        ----------
+        key: str
+            The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
 
-    Returns
-    --------
-        pandas.DataFrame of the loaded dataset.
+        Returns
+        --------
+            pandas.DataFrame of the loaded dataset.
 
     """
     from chainladder import Triangle
@@ -154,7 +154,8 @@ def read_json(json_str, array_backend=None):
 def parallelogram_olf(
     values, date, start_date=None, end_date=None, grain="M", vertical_line=False
 ):
-    """Parallelogram approach to on-leveling."""
+    """ Parallelogram approach to on-leveling.
+    """
     date = pd.to_datetime(date)
     if not start_date:
         start_date = "{}-01-01".format(date.min().year)
@@ -194,7 +195,7 @@ def concat(
     ignore_index: bool = False,
     sort: bool = False,
 ):
-    """Concatenate Triangle objects along a particular axis.
+    """ Concatenate Triangle objects along a particular axis.
 
     Parameters
     ----------
@@ -269,7 +270,7 @@ def concat(
 
 
 def num_to_value(arr, value):
-    """Function that turns all zeros to nan values in an array"""
+    """ Function that turns all zeros to nan values in an array """
     backend = arr.__class__.__module__.split(".")[0]
     if backend == "sparse":
         if arr.fill_value == 0 or sp.isnan(arr.fill_value):
@@ -286,7 +287,7 @@ def num_to_value(arr, value):
 
 
 def num_to_nan(arr):
-    """Function that turns all zeros to nan values in an array"""
+    """ Function that turns all zeros to nan values in an array """
     from chainladder import Triangle
 
     xp = Triangle.get_array_module(None, arr=arr)
@@ -302,7 +303,7 @@ def maximum(x1, x2):
 
 
 class PatsyFormula(BaseEstimator, TransformerMixin):
-    """A sklearn-style Transformer for patsy formulas.
+    """ A sklearn-style Transformer for patsy formulas.
 
     PatsyFormula allows for R-style formula preprocessing of the ``design_matrix``
     of a machine learning algorithm. It's particularly useful with the `DevelopmentML`
@@ -341,7 +342,7 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
 
 def model_diagnostics(model, name=None, groupby=None):
-    """A helper function that summarizes various vectors of an
+    """ A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
     Parameters
@@ -388,11 +389,8 @@ def model_diagnostics(model, name=None, groupby=None):
             out["Month Incremental"] = obj.X_[col][val == obj.X_.valuation_date].sum(
                 "development"
             )
-        if (
-            obj.X_.development_grain in ["M", "Q"]
-            and pd.Period(out.valuation_date, freq="Q").to_timestamp(how="s")
-            > val.min()
-        ):
+        if (obj.X_.development_grain in ["M", "Q"] and 
+            pd.Period(out.valuation_date, freq="Q").to_timestamp(how="s") > val.min()):
             out["Quarter Incremental"] = (
                 obj.X_
                 - obj.X_[
@@ -403,8 +401,8 @@ def model_diagnostics(model, name=None, groupby=None):
                 ]
             ).sum("development")[col]
         else:
-            out["Quarter Incremental"] = 0
-        if pd.Period(out.valuation_date, freq="Y").to_timestamp(how="s") > val.min():
+            out["Quarter Incremental"]  = 0
+        if (pd.Period(out.valuation_date, freq="Y").to_timestamp(how="s") > val.min()):
             out["Year Incremental"] = (
                 obj.X_ - obj.X_[val < str(obj.X_.valuation_date.year)]
             ).sum("development")[col]
