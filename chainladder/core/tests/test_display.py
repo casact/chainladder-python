@@ -15,6 +15,6 @@ def test_to_frame(raa):
         cl.Chainladder().fit(raa).ultimate_.to_frame()
         cl.Chainladder().fit(raa).ultimate_.to_frame(origin_as_datetime=False)
         cl.Chainladder().fit(raa).ultimate_.to_frame(origin_as_datetime=True)
-        True == False
+
     except:
         assert False
