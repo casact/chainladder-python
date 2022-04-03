@@ -7,6 +7,11 @@ import warnings
 from sklearn.utils import deprecated
 from chainladder.utils.utility_functions import num_to_nan
 
+try:
+    import dask.bag as db
+except:
+    db = None
+
 
 class TriangleGroupBy:
     def __init__(self, obj, by, axis=0, **kwargs):
@@ -60,7 +65,6 @@ class TrianglePandas:
         """
 
         if origin_as_datetime == None:  # origin_as_datetime not specified
-
             warning = "In an upcoming version of the package, `origin_as_datetime` " + \
                 "will be defaulted to `True` in to_frame(...), use " + \
                 "`origin_as_datetime=False` to preserve current setting."
