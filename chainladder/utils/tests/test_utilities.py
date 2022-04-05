@@ -58,7 +58,7 @@ def test_json_subtri(raa):
         cl.Chainladder().fit_predict(raa).to_json()
     ).full_triangle_
     b = cl.Chainladder().fit_predict(raa).full_triangle_
-    abs(a - b).max().max() < 1e-4
+    assert abs(a - b).max().max() < 1e-4
 
 
 def test_json_df():

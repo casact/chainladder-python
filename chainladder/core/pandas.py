@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import warnings
 from sklearn.utils import deprecated
-
 from chainladder.utils.utility_functions import num_to_nan
+
 try:
     import dask.bag as db
 except:
@@ -18,8 +18,8 @@ class TriangleGroupBy:
         self.obj = obj.copy()
         self.axis = self.obj._get_axis(axis)
         self.by = by
-        if kwargs.get('groups', None):
-            self.groups = kwargs.get('groups', None)
+        if kwargs.get("groups", None):
+            self.groups = kwargs.get("groups", None)
         elif self.axis == 0:
             self.groups = obj.index.groupby(by)
         elif axis == 1:
@@ -28,18 +28,30 @@ class TriangleGroupBy:
             self.groups = pd.DataFrame(by).groupby(by)
 
     def __getitem__(self, key):
-        return TriangleGroupBy(obj=self.obj.__getitem__(key), by=self.by,
-                               axis=self.axis, groups=self.groups)
+        return TriangleGroupBy(
+            obj=self.obj.__getitem__(key),
+            by=self.by,
+            axis=self.axis,
+            groups=self.groups,
+        )
+
 
 class TrianglePandas:
-    def to_frame(self, origin_as_datetime=None, keepdims=False,
-                 implicit_axis=False, *args, **kwargs):
-        """ Converts a triangle to a pandas.DataFrame.
+    def to_frame(
+        self,
+        origin_as_datetime=None,
+        keepdims=False,
+        implicit_axis=False,
+        *args,
+        **kwargs
+    ):
+        """Converts a triangle to a pandas.DataFrame.
         Parameters
         ----------
         origin_as_datetime : bool
             Whether the origin vector should be converted from PeriodIndex
-            into a datetime dtype. Default is False.
+            into a datetime dtype. Default is False, but will be changed to
+            True in an upcoming version.
         keepdims : bool
             If True, the triangle will be converted to a DataFrame with all
             dimensions intact.  The argument will force a consistent DataFrame
@@ -51,10 +63,21 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
-        if origin_as_datetime == None:
-            # this will be set to True as the default in an upcoming version of the package
-            warning = "In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting."
+
+        if origin_as_datetime == None:  # origin_as_datetime not specified
+            warning = "In an upcoming version of the package, `origin_as_datetime` " + \
+                "will be defaulted to `True` in to_frame(...), use " + \
+                "`origin_as_datetime=False` to preserve current setting."
             warnings.warn(warning)
+
+            # this will be set to True as the default in an upcoming version of the package
+            origin_as_datetime = False
+
+        elif not isinstance(self.origin, pd.PeriodIndex) and origin_as_datetime:
+            warning = "Unable to convert origin as datetime, " + \
+                "the origin_as_datetime = True parameter is ignored."
+            warnings.warn(warning)
+
             origin_as_datetime = False
 
         axes = [num for num, item in enumerate(self.shape) if item > 1]
@@ -64,7 +87,7 @@ class TrianglePandas:
             obj = self.val_to_dev().set_backend("sparse")
             out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
             out["columns"] = obj.columns[obj.values.coords[1]]
-            missing_cols = list(set(self.columns) - set(out['columns']))
+            missing_cols = list(set(self.columns) - set(out["columns"]))
             if origin_as_datetime:
                 out["origin"] = obj.odims[obj.values.coords[2]]
             else:
@@ -79,39 +102,50 @@ class TrianglePandas:
                 out.columns.get_level_values(1)[2:]
             )
 
-            valuation = pd.DataFrame(
-                obj.valuation.values.reshape(obj.shape[-2:], order='F'),
-                index=obj.odims if origin_as_datetime else obj.origin, 
-                columns=obj.ddims
-            ).unstack().rename('valuation').reset_index().rename(
-                columns={'level_0': 'development', 'level_1': 'origin'})
+            valuation = (
+                pd.DataFrame(
+                    obj.valuation.values.reshape(obj.shape[-2:], order="F"),
+                    index=obj.odims if origin_as_datetime else obj.origin,
+                    columns=obj.ddims,
+                )
+                .unstack()
+                .rename("valuation")
+                .reset_index()
+                .rename(columns={"level_0": "development", "level_1": "origin"})
+            )
 
-            val_dict = dict(zip(list(zip(
-                valuation['origin'], valuation['development'])),
-                valuation['valuation']))
+            val_dict = dict(
+                zip(
+                    list(zip(valuation["origin"], valuation["development"])),
+                    valuation["valuation"],
+                )
+            )
             if len(out) > 0:
-                out['valuation'] = out.apply(
-                    lambda x: val_dict[(x['origin'], x['development'])], axis=1)
+                out["valuation"] = out.apply(
+                    lambda x: val_dict[(x["origin"], x["development"])], axis=1
+                )
             else:
-                out['valuation'] = self.valuation_date
+                out["valuation"] = self.valuation_date
             col_order = list(self.columns)
             if implicit_axis:
-                col_order = ['origin', 'development', 'valuation'] + col_order
+                col_order = ["origin", "development", "valuation"] + col_order
             else:
                 if is_val_tri:
-                    col_order = ['origin', 'valuation'] + col_order
+                    col_order = ["origin", "valuation"] + col_order
                 else:
-                    col_order = ['origin', 'development'] + col_order
+                    col_order = ["origin", "development"] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col] = np.nan
-            for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
-                out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+            for col in set(missing_cols).intersection(
+                self.virtual_columns.columns.keys()
+            ):
+                out[col] = out.fillna(0).apply(
+                    self.virtual_columns.columns[col], 1)
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
 
-        # keepdims = False
-        else:
+        else:  # keepdims = False
             if self.shape[:2] == (1, 1):
                 return self._repr_format(origin_as_datetime)
 
@@ -139,15 +173,17 @@ class TrianglePandas:
 
             else:
                 return self.to_frame(
-                    origin_as_datetime=origin_as_datetime, keepdims=True,
-                    implicit_axis=implicit_axis)
+                    origin_as_datetime=origin_as_datetime,
+                    keepdims=True,
+                    implicit_axis=implicit_axis,
+                )
 
     def plot(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
+        """Passthrough of pandas functionality"""
         return self.to_frame(origin_as_datetime=False).plot(*args, **kwargs)
 
     def hvplot(self, *args, **kwargs):
-        """ Passthrough of pandas functionality """
+        """Passthrough of pandas functionality"""
         df = self.to_frame(origin_as_datetime=True)
         if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
@@ -162,7 +198,7 @@ class TrianglePandas:
         return ax.get(axis, 0)
 
     def dropna(self):
-        """  Method that removes orgin/development vectors from edge of a
+        """Method that removes orgin/development vectors from edge of a
         triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
@@ -173,17 +209,19 @@ class TrianglePandas:
         min_odim = obj.origin[odim.index(1)]
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
         if obj.shape[-1] != 1:
-            ddim = list((xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
+            ddim = list(
+                (xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
             ddim = obj.development[pd.Series(ddim).astype(bool)]
             obj = self[
-                (self.development >= ddim.min()) & (self.development <= ddim.max())
+                (self.development >= ddim.min()) & (
+                    self.development <= ddim.max())
             ]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
     def fillna(self, value=None, inplace=False):
-        """  Fill nan with 'value' by axis.
+        """Fill nan with 'value' by axis.
         Parameters
         -----------
         value: single value or array-like values, default = None
@@ -198,19 +236,17 @@ class TrianglePandas:
         Triangle
         """
         if inplace:
-            frame = (self + value*0)
+            frame = self + value * 0
             xp = self.get_array_module()
-            fill = (xp.nan_to_num(frame.values)==0)*(self*0 + value)
+            fill = (xp.nan_to_num(frame.values) == 0) * (self * 0 + value)
             self.values = (frame + fill).values
             return self
         else:
             new_obj = self.copy()
             return new_obj.fillna(value=value, inplace=True)
 
- 
-
     def drop(self, labels=None, axis=1):
-        """ Drop specified labels from rows or columns.
+        """Drop specified labels from rows or columns.
 
         Remove rows or columns by specifying label names and corresponding axis,
         or by specifying directly index or column names.
@@ -241,7 +277,7 @@ class TrianglePandas:
         return self.to_frame(origin_as_datetime=False).T
 
     def groupby(self, by, axis=0, *args, **kwargs):
-        """ Group Triangle by index values.  If the triangle is convertable to a
+        """Group Triangle by index values.  If the triangle is convertable to a
         DataFrame, then it defaults to pandas groupby functionality.
 
         Parameters
@@ -256,7 +292,7 @@ class TrianglePandas:
         return TriangleGroupBy(self, by, axis)
 
     def append(self, other):
-        """ Append rows of other to the end of caller, returning a new object.
+        """Append rows of other to the end of caller, returning a new object.
 
         Parameters
         ----------
@@ -272,7 +308,7 @@ class TrianglePandas:
         return concat((self, other), 0)
 
     def rename(self, axis, value):
-        """ Alter axes labels.
+        """Alter axes labels.
 
         Parameters
         ----------
@@ -300,7 +336,7 @@ class TrianglePandas:
         return self
 
     def astype(self, dtype, inplace=True):
-        """ Copy of the array, cast to a specified type.
+        """Copy of the array, cast to a specified type.
 
         Parameters
         ----------
@@ -346,7 +382,7 @@ class TrianglePandas:
 
 
 def add_triangle_agg_func(cls, k, v):
-    """ Aggregate Overrides in Triangle """
+    """Aggregate Overrides in Triangle"""
 
     def agg_func(self, axis=None, *args, **kwargs):
         keepdims = kwargs.get("keepdims", None)
@@ -386,7 +422,7 @@ def add_triangle_agg_func(cls, k, v):
 
 
 def add_groupby_agg_func(cls, k, v):
-    """ Aggregate Overrides in GroupBy """
+    """Aggregate Overrides in GroupBy"""
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
@@ -394,19 +430,22 @@ def add_groupby_agg_func(cls, k, v):
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
-        if db and obj.array_backend == 'sparse':
+        if db and obj.array_backend == "sparse":
+
             def aggregate(i, obj, axis, v):
                 return getattr(
                     obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v
                 )(axis, auto_sparse=False, keepdims=True)
+
             bag = db.from_sequence(self.groups.indices.values())
             bag = bag.map(aggregate, obj, self.axis, v)
-            values = bag.compute(scheduler='threads')
+            values = bag.compute(scheduler="threads")
         else:
             values = [
-                getattr(obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v)(
-                    self.axis, auto_sparse=False, keepdims=True
-                )
+                getattr(
+                    obj.iloc.__getitem__(
+                        tuple([slice(None)] * self.axis + [i])), v
+                )(self.axis, auto_sparse=False, keepdims=True)
                 for i in self.groups.indices.values()
             ]
         obj = concat(values, axis=self.axis, ignore_index=True)
@@ -430,10 +469,11 @@ def add_groupby_agg_func(cls, k, v):
             obj.vdims = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
         if self.axis == 2:
             odims = self.obj._to_datetime(
-                pd.Series(self.groups.indices.keys()).to_frame(), [0])
+                pd.Series(self.groups.indices.keys()).to_frame(), [0]
+            )
             obj.origin_grain = self.obj._get_grain(odims)
-            split = obj.origin_grain.split('-')
-            obj.origin_grain = {'A': 'Y', '2Q': 'S'}.get(split[0], split[0])
+            split = obj.origin_grain.split("-")
+            obj.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
             obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:
@@ -444,7 +484,7 @@ def add_groupby_agg_func(cls, k, v):
 
 
 def add_df_passthru(cls, k):
-    """Pass Through of pandas functionality """
+    """Pass Through of pandas functionality"""
 
     def df_passthru(self, *args, **kwargs):
         return getattr(pd.DataFrame, k)(self.to_frame(), *args, **kwargs)
@@ -453,16 +493,31 @@ def add_df_passthru(cls, k):
 
 
 def set_method(cls, func, k):
-    """ Assigns methods to a class """
+    """Assigns methods to a class"""
     func.__doc__ = "Refer to pandas for ``{}`` functionality.".format(k)
     func.__name__ = k
     setattr(cls, func.__name__, func)
 
 
 df_passthru = (
-    ["to_clipboard", "to_csv", "to_excel", "to_json", "to_html",]
-    + ["to_dict", "unstack", "pivot", "drop_duplicates", "describe", "melt",]
-    + ["pct_chg",]
+    [
+        "to_clipboard",
+        "to_csv",
+        "to_excel",
+        "to_json",
+        "to_html",
+    ]
+    + [
+        "to_dict",
+        "unstack",
+        "pivot",
+        "drop_duplicates",
+        "describe",
+        "melt",
+    ]
+    + [
+        "pct_chg",
+    ]
 )
 for item in df_passthru:
     add_df_passthru(TrianglePandas, item)
