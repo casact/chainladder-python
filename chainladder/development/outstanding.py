@@ -106,15 +106,23 @@ class CaseOutstanding(DevelopmentBase):
         incurred_tri = X[self.paid_to_incurred[1]]
         case_tri = incurred_tri - paid_tri
 
-        original_val_date = case_tri.valuation_date
 
         case_ldf_ = self.case_ldf_.copy()
+        # print("=== case_ldf_\n,", case_ldf_)
         case_ldf_.valuation_date = pd.Timestamp(options.ULT_VAL)
-        xp = case_ldf_.get_array_module()
+
         # Broadcast triangle shape
         case_ldf_ = case_ldf_ * case_tri.latest_diagonal / case_tri.latest_diagonal
-        case_ldf_.odims = case_tri.odims
+        print("=== broadcasted case_ldf_\n", case_ldf_)
+
+        # print("=== case_ldf_.odims\n", case_ldf_.odims)
+        # print("=== case_tri.odims\n", case_tri.odims)
+        # print("== equal?", case_ldf_.odims == case_tri.odims)
+        case_ldf_.odims = case_tri.odims # what does this do?
         case_ldf_.is_pattern = False
+
+        xp = case_ldf_.get_array_module()
+        # Inserting 1.000 as the first age-to-age factor
         case_ldf_.values = xp.concatenate(
             (xp.ones(list(case_ldf_.shape[:-1]) + [1]), case_ldf_.values), axis=-1
         )
@@ -124,6 +132,7 @@ class CaseOutstanding(DevelopmentBase):
         case_ldf_ = case_ldf_.dev_to_val().set_backend(self.case_ldf_.array_backend)
 
         # Will this work for sparse?
+        original_val_date = case_tri.valuation_date
         forward = case_ldf_[case_ldf_.valuation > original_val_date].values
         forward[xp.isnan(forward)] = 1.0
         forward = xp.cumprod(forward, -1)
@@ -177,9 +186,9 @@ class CaseOutstanding(DevelopmentBase):
 
         self.case = case_tri
         self.paid = paid
-        print("=== self.case ===\n", self.case)
-        print("=== self.paid ===\n", self.paid)
-        print("=== set LDF return ===\n", dev.cum_to_incr())
+        # print("=== self.case ===\n", self.case)
+        # print("=== self.paid ===\n", self.paid)
+        # print("=== set LDF return ===\n", dev.cum_to_incr())
         return dev.cum_to_incr()
 
     @property
