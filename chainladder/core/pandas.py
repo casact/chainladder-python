@@ -37,21 +37,14 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
-    def to_frame(
-        self,
-        origin_as_datetime=None,
-        keepdims=False,
-        implicit_axis=False,
-        *args,
-        **kwargs
-    ):
-        """Converts a triangle to a pandas.DataFrame.
+    def to_frame(self, origin_as_datetime=None, keepdims=False,
+                 implicit_axis=False, *args, **kwargs):
+        """ Converts a triangle to a pandas.DataFrame.
         Parameters
         ----------
         origin_as_datetime : bool
             Whether the origin vector should be converted from PeriodIndex
-            into a datetime dtype. Default is False, but will be changed to
-            True in an upcoming version.
+            into a datetime dtype. Default is False.
         keepdims : bool
             If True, the triangle will be converted to a DataFrame with all
             dimensions intact.  The argument will force a consistent DataFrame
@@ -63,21 +56,10 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
-
-        if origin_as_datetime == None:  # origin_as_datetime not specified
-            warning = "In an upcoming version of the package, `origin_as_datetime` " + \
-                "will be defaulted to `True` in to_frame(...), use " + \
-                "`origin_as_datetime=False` to preserve current setting."
-            warnings.warn(warning)
-
+        if origin_as_datetime == None:
             # this will be set to True as the default in an upcoming version of the package
-            origin_as_datetime = False
-
-        elif not isinstance(self.origin, pd.PeriodIndex) and origin_as_datetime:
-            warning = "Unable to convert origin as datetime, " + \
-                "the origin_as_datetime = True parameter is ignored."
+            warning = "In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting."
             warnings.warn(warning)
-
             origin_as_datetime = False
 
         axes = [num for num, item in enumerate(self.shape) if item > 1]
@@ -87,7 +69,7 @@ class TrianglePandas:
             obj = self.val_to_dev().set_backend("sparse")
             out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
             out["columns"] = obj.columns[obj.values.coords[1]]
-            missing_cols = list(set(self.columns) - set(out["columns"]))
+            missing_cols = list(set(self.columns) - set(out['columns']))
             if origin_as_datetime:
                 out["origin"] = obj.odims[obj.values.coords[2]]
             else:
@@ -102,50 +84,39 @@ class TrianglePandas:
                 out.columns.get_level_values(1)[2:]
             )
 
-            valuation = (
-                pd.DataFrame(
-                    obj.valuation.values.reshape(obj.shape[-2:], order="F"),
-                    index=obj.odims if origin_as_datetime else obj.origin,
-                    columns=obj.ddims,
-                )
-                .unstack()
-                .rename("valuation")
-                .reset_index()
-                .rename(columns={"level_0": "development", "level_1": "origin"})
-            )
+            valuation = pd.DataFrame(
+                obj.valuation.values.reshape(obj.shape[-2:], order='F'),
+                index=obj.odims if origin_as_datetime else obj.origin, 
+                columns=obj.ddims
+            ).unstack().rename('valuation').reset_index().rename(
+                columns={'level_0': 'development', 'level_1': 'origin'})
 
-            val_dict = dict(
-                zip(
-                    list(zip(valuation["origin"], valuation["development"])),
-                    valuation["valuation"],
-                )
-            )
+            val_dict = dict(zip(list(zip(
+                valuation['origin'], valuation['development'])),
+                valuation['valuation']))
             if len(out) > 0:
-                out["valuation"] = out.apply(
-                    lambda x: val_dict[(x["origin"], x["development"])], axis=1
-                )
+                out['valuation'] = out.apply(
+                    lambda x: val_dict[(x['origin'], x['development'])], axis=1)
             else:
-                out["valuation"] = self.valuation_date
+                out['valuation'] = self.valuation_date
             col_order = list(self.columns)
             if implicit_axis:
-                col_order = ["origin", "development", "valuation"] + col_order
+                col_order = ['origin', 'development', 'valuation'] + col_order
             else:
                 if is_val_tri:
-                    col_order = ["origin", "valuation"] + col_order
+                    col_order = ['origin', 'valuation'] + col_order
                 else:
-                    col_order = ["origin", "development"] + col_order
+                    col_order = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col] = np.nan
-            for col in set(missing_cols).intersection(
-                self.virtual_columns.columns.keys()
-            ):
-                out[col] = out.fillna(0).apply(
-                    self.virtual_columns.columns[col], 1)
+            for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
+                out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
 
-        else:  # keepdims = False
+        # keepdims = False
+        else:
             if self.shape[:2] == (1, 1):
                 return self._repr_format(origin_as_datetime)
 
@@ -173,10 +144,8 @@ class TrianglePandas:
 
             else:
                 return self.to_frame(
-                    origin_as_datetime=origin_as_datetime,
-                    keepdims=True,
-                    implicit_axis=implicit_axis,
-                )
+                    origin_as_datetime=origin_as_datetime, keepdims=True,
+                    implicit_axis=implicit_axis)
 
     def plot(self, *args, **kwargs):
         """Passthrough of pandas functionality"""
