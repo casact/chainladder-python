@@ -24,18 +24,18 @@ class Development(DevelopmentBase):
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
         Drops specific origin/development combination(s)
-    drop_high: bool or int, or list of bools or ints (default = None)
-        Drops highest link ratio(s) from LDF calculation
-    drop_low: bool or int, or list of bools or ints (default = None)
-        Drops lowest link ratio(s) from LDF calculation
+    drop_high: bool or int, or list of bools, or list of ints (default = None)
+        Drops highest (by rank) link ratio(s) from LDF calculation
+    drop_low: bool or int, or list of bools, or list of ints (default = None)
+        Drops lowest (by rank) link ratio(s) from LDF calculation
+    drop_above: float or list of floats (default = numpy.inf)
+        Drops all link ratio(s) above the given parameter from the LDF calculation
+    drop_below: float or list of floats (default = 0.00)
+        Drops all link ratio(s) below the given parameter from the LDF calculation
     preserve: int (default = 1)
         The minimum number of link ratio(s) required for LDF calculation
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
-    drop_below: float or list of floats (default = 0.00)
-        Drops all link ratio(s) below the given parameter from the LDF calculation
-    drop_above: float or list of floats (default = numpy.inf)
-        Drops all link ratio(s) above the given parameter from the LDF calculation
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
