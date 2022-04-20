@@ -27,8 +27,10 @@ class Development(DevelopmentBase):
         Drops specific origin/development combination(s)
     drop_high: bool or int, or list of bools, or list of ints (default = None)
         Drops highest (by rank) link ratio(s) from LDF calculation
+        Note that drop_high is performed after consideration of n_periods (if used)
     drop_low: bool or int, or list of bools, or list of ints (default = None)
         Drops lowest (by rank) link ratio(s) from LDF calculation
+        Note that drop_low is performed after consideration of n_periods (if used)
     drop_above: float or list of floats (default = numpy.inf)
         Drops all link ratio(s) above the given parameter from the LDF calculation
     drop_below: float or list of floats (default = 0.00)
