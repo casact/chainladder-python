@@ -12,8 +12,8 @@ from chainladder.core.common import Common
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def _set_fit_groups(self, X):
-        """ Used for assigning group_index in fit """
-        backend = 'numpy' if X.array_backend in ['sparse', 'numpy'] else 'cupy'
+        """Used for assigning group_index in fit"""
+        backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
         if self.groupby is None:
             return X.set_backend(backend)
         if callable(self.groupby) or type(self.groupby) in [list, str, pd.Series]:
@@ -22,7 +22,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             raise ValueError("Cannot determine groupings.")
 
     def _set_transform_groups(self, X):
-        """ Used for assigning group_index in transform """
+        """Used for assigning group_index in transform"""
         if self.groupby is None:
             return X.index
         else:
@@ -37,7 +37,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         )
 
     def _assign_n_periods_weight(self, X, n_periods):
-        """ Used to apply the n_periods weight """
+        """Used to apply the n_periods weight"""
 
         def _assign_n_periods_weight_int(X, n_periods):
             xp = X.get_array_module()
@@ -57,49 +57,81 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 return xp.nan_to_num((w / w).values) * X.nan_triangle
 
         xp = X.get_array_module()
+        print("n_periods", n_periods)
         dict_map = {
             item: _assign_n_periods_weight_int(X, item) for item in set(n_periods)
         }
+
         conc = [
             dict_map[item][..., num : num + 1] for num, item in enumerate(n_periods)
         ]
         return xp.concatenate(tuple(conc), -1)
 
     def _drop_adjustment(self, X, link_ratio):
+        print("=== in _drop_adjustment ===")
         weight = X.nan_triangle[:, :-1]
-        
-        if self.drop_high == self.drop_low == self.drop == self.drop_valuation is None and self.drop_above == np.inf and self.drop_below == 0.00:
-            return weight
-        
-        if (self.drop_high is not None) | (self.drop_low is not None):
-            weight = weight * self._drop_n(self.drop_high, self.drop_low, X, link_ratio, self.preserve)
 
-        if (self.drop_above != np.inf) | (self.drop_below != 0.00):
-            weight = weight * self._drop_x(self.drop_above, self.drop_below, X, link_ratio, self.preserve)
-            
+        # if self.drop_high == self.drop_low == self.drop == self.drop_valuation is None and self.drop_above == np.inf and self.drop_below == 0.00:
+        #     return weight
+        # print("=== weight\n", weight)
+
         if self.drop is not None:
             weight = weight * self._drop(X)
-            
+
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation(X)
-            
+
+        print("=== before weight\n", weight)
+
+        if (self.drop_high is not None) | (self.drop_low is not None):
+            print("=== link_ratio\n", link_ratio)
+            n_periods_ = self._validate_axis_assumption(
+                self.n_periods, X.development[:-1]
+            )
+            w_ = self._assign_n_periods_weight(X, n_periods_)
+            w_ = w_.astype("float")
+            print("=== w_\n", w_)
+            w_[w_ == 0] = np.nan
+            print("=== w_nan\n", w_)
+            link_ratio_w_ = link_ratio * w_
+            print("=== link_ratio_w_\n", np.round(link_ratio_w_, 4))
+
+            weight = weight * self._drop_n(
+                self.drop_high, self.drop_low, X, link_ratio_w_, self.preserve
+            )
+            print(
+                "final weight:\n",
+                self._drop_n(
+                    self.drop_high, self.drop_low, X, link_ratio_w_, self.preserve
+                )
+                * self._assign_n_periods_weight(X, n_periods_),
+            )
+
+        print("=== weight drop_high drop_low \n", weight)
+
+        if (self.drop_above != np.inf) | (self.drop_below != 0.00):
+            weight = weight * self._drop_x(
+                self.drop_above, self.drop_below, X, link_ratio, self.preserve
+            )
+        print("=== weight drop_above drop_below\n", weight)
+
         return weight
 
     # for drop_high and drop_low
     def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
-        link_ratios_len = len(link_ratio[0,0])
-        
+        link_ratios_len = len(link_ratio[0, 0])
+
         def drop_array_helper(drop_type):
-            drop_type_array = np.array(link_ratios_len*[0])
-            
+            drop_type_array = np.array(link_ratios_len * [0])
+
             if drop_type is None:
-                return np.array(link_ratios_len*[0])
+                return np.array(link_ratios_len * [0])
             else:
                 # only a single parameter is provided
                 if isinstance(drop_type, int):
-                    drop_type_array = np.array(link_ratios_len*[drop_type])
+                    drop_type_array = np.array(link_ratios_len * [drop_type])
                 elif isinstance(drop_type, bool):
-                    drop_type_array = np.array(link_ratios_len*int(drop_type))
+                    drop_type_array = np.array(link_ratios_len * int(drop_type))
 
                 # an array of parameters is provided
                 else:
@@ -110,53 +142,64 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 for index in range(len(drop_type_array)):
                     if isinstance(drop_type_array[index], bool):
                         drop_type_array[index] = int(drop_type_array[index] == True)
-                    else :
+                    else:
                         drop_type_array[index] = drop_type_array[index]
 
                 return drop_type_array
-                
+
         drop_high_array = drop_array_helper(drop_high)
         drop_low_array = drop_array_helper(drop_low)
-            
+
         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
-        
+
         weights = ~np.isnan(link_ratio[0][0].T)
         warning_flag = False
-        
+
         # checking to see if the ranks are in range
-        for index in range(len(drop_high_array)-1):
+        for index in range(len(drop_high_array) - 1):
             max_rank = link_ratios_len - index - drop_high_array[index]
             min_rank = drop_low_array[index]
-            
-            index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (link_ratio_ranks.T[index] >= min_rank)
+
+            index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (
+                link_ratio_ranks.T[index] >= min_rank
+            )
 
             if sum(index_array_weights) > preserve - 1:
                 weights[index] = index_array_weights
-                
+
             else:
                 warning_flag = True
-        
+
         if warning_flag:
             if preserve == 1:
-                warning = "Some exclusions have been ignored. At least " + str(preserve) + " (use preserve = ...)" + " link ratio(s) is required for development estimation."
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(preserve)
+                    + " (use preserve = ...)"
+                    + " link ratio(s) is required for development estimation."
+                )
             else:
-                warning = "Some exclusions have been ignored. At least " + str(preserve) + " link ratio(s) is required for development estimation."
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(preserve)
+                    + " link ratio(s) is required for development estimation."
+                )
             warnings.warn(warning)
 
         return weights.T[None, None]
-    
+
     # for drop_above and drop_below
     def _drop_x(self, drop_above, drop_below, X, link_ratio, preserve):
-        link_ratios_len = len(link_ratio[0,0])
-        
+        link_ratios_len = len(link_ratio[0, 0])
+
         def drop_array_helper(drop_type, default_value):
-            drop_type_array = np.array(link_ratios_len*[default_value])
-            
+            drop_type_array = np.array(link_ratios_len * [default_value])
+
             # only a single parameter is provided
             if isinstance(drop_type, int):
-                drop_type_array = np.array(link_ratios_len*[float(drop_type)])
+                drop_type_array = np.array(link_ratios_len * [float(drop_type)])
             elif isinstance(drop_type, float):
-                drop_type_array = np.array(link_ratios_len*[drop_type])
+                drop_type_array = np.array(link_ratios_len * [drop_type])
 
             # an array of parameters is provided
             else:
@@ -164,35 +207,46 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                     drop_type_array[index] = float(drop_type[index])
 
             return drop_type_array
-                
+
         drop_above_array = drop_array_helper(drop_above, np.inf)
         drop_below_array = drop_array_helper(drop_below, 0.0)
-        
+
         weights = ~np.isnan(link_ratio[0][0].T)
         warning_flag = False
-        
+
         # checking to see if the ranks are in range
-        for index in range(len(drop_above_array)-1):
+        for index in range(len(drop_above_array) - 1):
             max_ldf = drop_above_array[index]
             min_ldf = drop_below_array[index]
-            
-            index_array_weights = (link_ratio[0][0].T[index] <= max_ldf) & (link_ratio[0][0].T[index] >= min_ldf)
-            
+
+            index_array_weights = (link_ratio[0][0].T[index] <= max_ldf) & (
+                link_ratio[0][0].T[index] >= min_ldf
+            )
+
             if sum(index_array_weights) > preserve - 1:
                 weights[index] = index_array_weights
-                
+
             else:
                 warning_flag = True
-        
+
         if warning_flag:
             if preserve == 1:
-                warning = "Some exclusions have been ignored. At least " + str(preserve) + " (use preserve = ...)" + " link ratio(s) is required for development estimation."
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(preserve)
+                    + " (use preserve = ...)"
+                    + " link ratio(s) is required for development estimation."
+                )
             else:
-                warning = "Some exclusions have been ignored. At least " + str(preserve) + " link ratio(s) is required for development estimation."
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(preserve)
+                    + " link ratio(s) is required for development estimation."
+                )
             warnings.warn(warning)
 
         return weights.T[None, None]
-    
+
     def _drop_valuation(self, X):
         xp = X.get_array_module()
         if type(self.drop_valuation) is not list:
