@@ -25,11 +25,15 @@ class Development(DevelopmentBase):
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
         Drops specific origin/development combination(s)
-    drop_high: bool or int, or list of bools, or list of ints (default = None)
+    drop_high: bool, int, list of bools, or list of ints (default = None)
         Drops highest (by rank) link ratio(s) from LDF calculation
+        If a boolean variable is passed, drop_high is set to 1, dropping only the
+        highest value
         Note that drop_high is performed after consideration of n_periods (if used)
-    drop_low: bool or int, or list of bools, or list of ints (default = None)
+    drop_low: bool, int, list of bools, or list of ints (default = None)
         Drops lowest (by rank) link ratio(s) from LDF calculation
+        If a boolean variable is passed, drop_low is set to 1, dropping only the
+        lowest value
         Note that drop_low is performed after consideration of n_periods (if used)
     drop_above: float or list of floats (default = numpy.inf)
         Drops all link ratio(s) above the given parameter from the LDF calculation
