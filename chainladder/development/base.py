@@ -57,7 +57,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 return xp.nan_to_num((w / w).values) * X.nan_triangle
 
         xp = X.get_array_module()
-        print("n_periods", n_periods)
+
         dict_map = {
             item: _assign_n_periods_weight_int(X, item) for item in set(n_periods)
         }
@@ -81,26 +81,25 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation(X)
 
-        print("=== before weight\n", weight)
+        # print("=== before weight\n", weight)
 
         if (self.drop_high is not None) | (self.drop_low is not None):
-            print("=== link_ratio\n", link_ratio)
+            # print("=== link_ratio\n", link_ratio)
             n_periods_ = self._validate_axis_assumption(
                 self.n_periods, X.development[:-1]
             )
             w_ = self._assign_n_periods_weight(X, n_periods_)
             w_ = w_.astype("float")
-            print("=== w_\n", w_)
+            # print("=== w_\n", w_)
             w_[w_ == 0] = np.nan
-            print("=== w_nan\n", w_)
+            # print("=== w_nan\n", w_)
             link_ratio_w_ = link_ratio * w_
-            print("=== link_ratio_w_\n", np.round(link_ratio_w_, 4))
 
             weight = weight * self._drop_n(
                 self.drop_high,
                 self.drop_low,
                 X,
-                link_ratio_w_ * self._assign_n_periods_weight(X, n_periods_),
+                link_ratio_w_,
                 self.preserve,
             )
             # print(
@@ -111,13 +110,13 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             #     * self._assign_n_periods_weight(X, n_periods_),
             # )
 
-        print("=== weight drop_high drop_low \n", weight)
+        # print("=== weight drop_high drop_low \n", weight)
 
         if (self.drop_above != np.inf) | (self.drop_below != 0.00):
             weight = weight * self._drop_x(
                 self.drop_above, self.drop_below, X, link_ratio, self.preserve
             )
-        print("=== weight drop_above drop_below\n", weight)
+        # print("=== weight drop_above drop_below\n", weight)
 
         return weight
 
@@ -154,7 +153,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         drop_high_array = drop_array_helper(drop_high)
         drop_low_array = drop_array_helper(drop_low)
 
-        print("=== ranking\n", link_ratio[0][0])
+        print("=== ranking link_ratios\n", link_ratio[0][0])
         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
         print("=== link_ratio_ranks\n", link_ratio_ranks)
 
@@ -163,11 +162,19 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         # checking to see if the ranks are in range
         for index in range(len(drop_high_array) - 1):
-            max_rank = link_ratios_len - index - drop_high_array[index]
+            if self.n_periods == -1:
+                period_guard = link_ratios_len
+            else:
+                period_guard = self.n_periods + 1
+
+            max_rank = (
+                min(link_ratios_len - index, period_guard) - drop_high_array[index]
+            )
             min_rank = drop_low_array[index]
+            print("index:", index, "max_rank:", max_rank, "min_rank:", min_rank)
 
             index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (
-                link_ratio_ranks.T[index] >= min_rank
+                link_ratio_ranks.T[index] > min_rank - 1
             )
 
             if sum(index_array_weights) > preserve - 1:
