@@ -15,7 +15,7 @@ class Development(DevelopmentBase):
     ----------
     n_periods: integer, optional (default = -1)
         number of origin periods to be used in the ldf average calculation. For
-        all origin periods, set n_periods=-1
+        all origin periods, set n_periods = -1
     average: string or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.  Options include
         'volume', 'simple', and 'regression'. If numeric values are supplied,
