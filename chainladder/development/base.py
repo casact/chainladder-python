@@ -97,15 +97,19 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             print("=== link_ratio_w_\n", np.round(link_ratio_w_, 4))
 
             weight = weight * self._drop_n(
-                self.drop_high, self.drop_low, X, link_ratio_w_, self.preserve
+                self.drop_high,
+                self.drop_low,
+                X,
+                link_ratio_w_ * self._assign_n_periods_weight(X, n_periods_),
+                self.preserve,
             )
-            print(
-                "final weight:\n",
-                self._drop_n(
-                    self.drop_high, self.drop_low, X, link_ratio_w_, self.preserve
-                )
-                * self._assign_n_periods_weight(X, n_periods_),
-            )
+            # print(
+            #     "final weight:\n",
+            #     self._drop_n(
+            #         self.drop_high, self.drop_low, X, link_ratio_w_, self.preserve
+            #     )
+            #     * self._assign_n_periods_weight(X, n_periods_),
+            # )
 
         print("=== weight drop_high drop_low \n", weight)
 
@@ -150,7 +154,9 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         drop_high_array = drop_array_helper(drop_high)
         drop_low_array = drop_array_helper(drop_low)
 
+        print("=== ranking\n", link_ratio[0][0])
         link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
+        print("=== link_ratio_ranks\n", link_ratio_ranks)
 
         weights = ~np.isnan(link_ratio[0][0].T)
         warning_flag = False
