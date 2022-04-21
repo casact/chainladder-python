@@ -5,6 +5,7 @@ import chainladder as cl
 try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
+
     CL = importr("ChainLadder")
 except:
     pass
@@ -77,45 +78,122 @@ def test_n_periods():
         == xp.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0])
     )
 
+
 def test_drophighlow():
     raa = cl.load_sample("raa")
-    
-    lhs = np.round(cl.Development(drop_high=0).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([8.9202, 2.974, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
-    
-    lhs = np.round(cl.Development(drop_high=[True, False, True, False]).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([8.0595, 2.8613, 1.7624, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
 
-    lhs = np.round(cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([5.7403, 2.2941, 1.5617, 1.3924, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092,])
-    assert (np.all(lhs == rhs))
-    
+    lhs = np.round(cl.Development(drop_high=0).fit(raa).cdf_.values, 4).flatten()
+    rhs = np.array(
+        [8.9202, 2.974, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_high=[True, False, True, False]).fit(raa).cdf_.values, 4
+    ).flatten()
+    rhs = np.array(
+        [8.0595, 2.8613, 1.7624, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2)
+        .fit(raa)
+        .cdf_.values,
+        4,
+    ).flatten()
+    rhs = np.array(
+        [
+            5.7403,
+            2.2941,
+            1.5617,
+            1.3924,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(cl.Development(drop_high=1).fit(raa).cdf_.values, 4).flatten()
+    rhs = np.array(
+        [7.2190, 2.5629, 1.6592, 1.3570, 1.1734, 1.0669, 1.0419, 1.0121, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_high=1, drop_low=1).fit(raa).cdf_.values, 4
+    ).flatten()
+    rhs = np.array(
+        [9.0982, 2.8731, 1.8320, 1.4713, 1.2522, 1.0963, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_high=[2, 1, 1], drop_low=1).fit(raa).cdf_.values, 4
+    ).flatten()
+    rhs = np.array(
+        [8.4905, 3.0589, 1.9504, 1.5664, 1.3142, 1.1403, 1.0822, 1.0426, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_high=1, drop_low=1, n_periods=5).fit(raa).cdf_.values, 4
+    ).flatten()
+    rhs = np.array(
+        [16.3338, 3.2092, 1.8124, 1.4793, 1.2522, 1.0963, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+
 def test_dropabovebelow():
     raa = cl.load_sample("raa")
-    
-    lhs = np.round(cl.Development(drop_above=40.0).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([8.3771, 2.9740, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
-    
-    lhs = np.round(cl.Development(drop_above=1.2).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([7.6859, 2.5625, 1.5784, 1.4072, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
 
-    lhs = np.round(cl.Development(drop_above=1.2, drop_below=1.05).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([8.4983, 2.8334, 1.7452, 1.5560, 1.3602, 1.1802, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
+    lhs = np.round(cl.Development(drop_above=40.0).fit(raa).cdf_.values, 4).flatten()
+    rhs = np.array(
+        [8.3771, 2.9740, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
 
-    lhs = np.round(cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7]).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([8.3771, 2.9740, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
+    lhs = np.round(cl.Development(drop_above=1.2).fit(raa).cdf_.values, 4).flatten()
+    rhs = np.array(
+        [7.6859, 2.5625, 1.5784, 1.4072, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
 
-    lhs = np.round(cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2]).fit(raa).cdf_.values,4).flatten()
-    rhs = np.array([8.9773, 3.1871, 1.9631, 1.5447, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092])
-    assert (np.all(lhs == rhs))
-    
-    
+    lhs = np.round(
+        cl.Development(drop_above=1.2, drop_below=1.05).fit(raa).cdf_.values, 4
+    ).flatten()
+    rhs = np.array(
+        [8.4983, 2.8334, 1.7452, 1.5560, 1.3602, 1.1802, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
+        .fit(raa)
+        .cdf_.values,
+        4,
+    ).flatten()
+    rhs = np.array(
+        [8.3771, 2.9740, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
+        .fit(raa)
+        .cdf_.values,
+        4,
+    ).flatten()
+    rhs = np.array(
+        [8.9773, 3.1871, 1.9631, 1.5447, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
+    )
+    assert np.all(lhs == rhs)
+
+
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
