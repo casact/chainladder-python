@@ -20,6 +20,10 @@ class CaseOutstanding(MethodBase):
 
     Attributes
     ----------
+    ldf_: Triangle
+        The estimated loss development patterns
+    cdf_: Triangle
+        The estimated cumulative development patterns
     ultimate_: Triangle
         The ultimate losses per the method
     ibnr_: Triangle
@@ -28,34 +32,36 @@ class CaseOutstanding(MethodBase):
 
     def __init__(self, paid_pattern=None, reported_pattern=None):
         print("in CaseOutstanding init")
-        self.paid_pattern = None
-        self.reported_pattern = None
+        self.paid_pattern = paid_pattern
+        print(self.paid_pattern)
+        self.reported_pattern = reported_pattern
+        print(self.reported_pattern)
+        # case_pattern = 1 + (self.reported_pattern - 1) * self.paid_pattern / (
+        #     self.paid_pattern - self.reported_pattern
+        # )
 
-    #
-    # def fit(self, X, y=None, sample_weight=None):
-    #     """Applies the Benktander technique to triangle **X**
-    #
-    #     Parameters
-    #     ----------
-    #     X: Triangle
-    #         Loss data to which the model will be applied.
-    #     y: None
-    #         Ignored
-    #     sample_weight: Triangle
-    #         Required exposure to be used in the calculation.
-    #
-    #     Returns
-    #     -------
-    #     self: object
-    #         Returns the instance itself.
-    #     """
-    #     if sample_weight is None:
-    #         raise ValueError("sample_weight is required.")
-    #     super().fit(X, y, sample_weight)
-    #     self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
-    #     self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
-    #     self.process_variance_ = self._include_process_variance()
-    #     return self
+    def fit(self, X, y=None, sample_weight=None):
+        """Applies the Benktander technique to triangle **X**
+
+        Parameters
+        ----------
+        X: Triangle
+            Loss data to which the model will be applied.
+        y: None
+            Ignored
+
+        Returns
+        -------
+        self: object
+            Returns the instance itself.
+        """
+
+        super().fit(X, y, sample_weight)
+        self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
+        self.process_variance_ = self._include_process_variance()
+        return self
+
     #
     # def predict(self, X, sample_weight=None):
     #     """Predicts the Benktander ultimate on a new triangle **X**
