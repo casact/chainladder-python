@@ -186,9 +186,9 @@ class CaseOutstanding(DevelopmentBase):
 
         self.case = case_tri
         self.paid = paid
-        # print("=== self.case ===\n", self.case)
-        # print("=== self.paid ===\n", self.paid)
-        # print("=== set LDF return ===\n", dev.cum_to_incr())
+        print("=== self.case ===\n", self.case)
+        print("=== self.paid ===\n", self.paid)
+        print("=== set LDF return ===\n", dev.cum_to_incr())
         return dev.cum_to_incr()
 
     @property

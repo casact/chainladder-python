@@ -67,7 +67,7 @@ class TriangleDisplay:
     def _repr_format(self, origin_as_datetime=False):
         out = self.compute().set_backend("numpy").values[0, 0]
         if origin_as_datetime:
-            origin = self.origin.copy().to_timestamp()
+            origin = pd.to_datetime(self.origin.copy(), errors='ignore')
         else:
             origin = self.origin.copy()
         origin.name = None
