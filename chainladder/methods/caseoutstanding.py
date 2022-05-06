@@ -31,7 +31,7 @@ class CaseOutstanding(MethodBase):
     """
 
     def __init__(self, paid_pattern=None, reported_pattern=None):
-        print("in CaseOutstanding init")
+        print("=== in CaseOutstanding init ===")
         self.paid_pattern = paid_pattern
         print(self.paid_pattern)
         self.reported_pattern = reported_pattern
@@ -55,11 +55,12 @@ class CaseOutstanding(MethodBase):
         self: object
             Returns the instance itself.
         """
-
-        super().fit(X, y, sample_weight)
-        self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
-        self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
-        self.process_variance_ = self._include_process_variance()
+        print("=== in fit ===")
+        print(self.paid_pattern.patterns)
+        # super().fit(X, y, sample_weight)
+        # self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
+        # self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)
+        # self.process_variance_ = self._include_process_variance()
         return self
 
     #
