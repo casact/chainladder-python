@@ -4,6 +4,7 @@
 from chainladder.methods import MethodBase
 from chainladder.development import DevelopmentConstant
 import numpy as np
+import pandas as pd
 
 
 class CaseOutstanding(MethodBase):
@@ -33,9 +34,7 @@ class CaseOutstanding(MethodBase):
     def __init__(self, paid_pattern=None, reported_pattern=None):
         print("=== in CaseOutstanding init ===")
         self.paid_pattern = paid_pattern
-        print(self.paid_pattern)
         self.reported_pattern = reported_pattern
-        print(self.reported_pattern)
         # case_pattern = 1 + (self.reported_pattern - 1) * self.paid_pattern / (
         #     self.paid_pattern - self.reported_pattern
         # )
@@ -55,8 +54,36 @@ class CaseOutstanding(MethodBase):
         self: object
             Returns the instance itself.
         """
+
         print("=== in fit ===")
-        print(self.paid_pattern.patterns)
+
+        patterns_pd = pd.concat(
+            [
+                pd.DataFrame.from_dict(
+                    self.paid_pattern.patterns, orient="index", columns=["paid"]
+                ),
+                pd.DataFrame.from_dict(
+                    self.reported_pattern.patterns, orient="index", columns=["reported"]
+                ),
+            ],
+            axis=1,
+        )
+        # if the patterns are LDF, convert them to CDF
+        if self.paid_pattern.style == "ldf":
+            patterns_pd["paid"] = patterns_pd["paid"].iloc[::-1].cumprod().iloc[::-1]
+
+        if self.reported_pattern.style == "ldf":
+            patterns_pd["reported"] = (
+                patterns_pd["reported"].iloc[::-1].cumprod().iloc[::-1]
+            )
+
+        # patterns_pd =
+        # patterns_pd["case"] =
+        print("patterns_pd:\n", patterns_pd)
+        # self.ldf_ = self.paid_pattern  # put in the 3rd pattern
+        # self.ldf_.is_pattern = True
+        # self.ldf_.is_cumulative = False
+
         # super().fit(X, y, sample_weight)
         # self.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         # self.ultimate_ = self._get_ultimate(self.X_, self.expectation_)

@@ -6,7 +6,7 @@ import pandas as pd
 
 
 class DevelopmentConstant(DevelopmentBase):
-    """ A Estimator that allows for including of external patterns into a
+    """A Estimator that allows for including of external patterns into a
         Development style model. When this estimator is fit against a triangle,
         only the grain of the existing triangle is retained.
 
@@ -53,17 +53,20 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import options
+
         if X.is_cumulative == False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
         xp = obj.get_array_module()
-        obj = obj.iloc[..., :1, :-1]*0+1
+        obj = obj.iloc[..., :1, :-1] * 0 + 1
         if callable(self.patterns):
             ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
             ldf = (
                 pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                  .fillna(1)[obj.ddims].values)
+                .fillna(1)[obj.ddims]
+                .values
+            )
             ldf = xp.array(ldf[:, None, None, :])
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
@@ -72,6 +75,8 @@ class DevelopmentConstant(DevelopmentBase):
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
         obj = obj * ldf
         obj._set_slicers()
+        print("=== in DevelopmentConstant ===")
+        print("obj:\n", obj)
         self.ldf_ = obj
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
@@ -79,7 +84,7 @@ class DevelopmentConstant(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
