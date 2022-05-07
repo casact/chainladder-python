@@ -77,8 +77,10 @@ class CaseOutstanding(MethodBase):
                 patterns_pd["reported"].iloc[::-1].cumprod().iloc[::-1]
             )
 
-        # patterns_pd =
-        # patterns_pd["case"] =
+        patterns_pd["case"] = 1 + (
+            (patterns_pd["reported"] - 1) * patterns_pd["paid"]
+        ) / (patterns_pd["paid"] - patterns_pd["reported"])
+
         print("patterns_pd:\n", patterns_pd)
         # self.ldf_ = self.paid_pattern  # put in the 3rd pattern
         # self.ldf_.is_pattern = True
