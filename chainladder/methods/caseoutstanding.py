@@ -1,13 +1,16 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-from chainladder.methods import MethodBase
+# from chainladder.methods import MethodBase
+from chainladder.development.base import DevelopmentBase
 from chainladder.development import DevelopmentConstant
+from chainladder.methods.chainladder import Chainladder
+
 import numpy as np
 import pandas as pd
 
 
-class CaseOutstanding(MethodBase):
+class CaseOutstanding(DevelopmentBase):
     """The CaseOutstanding IBNR model
 
     Parameters
@@ -32,14 +35,10 @@ class CaseOutstanding(MethodBase):
     """
 
     def __init__(self, paid_pattern=None, reported_pattern=None):
-        print("=== in CaseOutstanding init ===")
         self.paid_pattern = paid_pattern
         self.reported_pattern = reported_pattern
-        # case_pattern = 1 + (self.reported_pattern - 1) * self.paid_pattern / (
-        #     self.paid_pattern - self.reported_pattern
-        # )
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None):
         """Applies the Benktander technique to triangle **X**
 
         Parameters
@@ -80,9 +79,22 @@ class CaseOutstanding(MethodBase):
         patterns_pd["case"] = 1 + (
             (patterns_pd["reported"] - 1) * patterns_pd["paid"]
         ) / (patterns_pd["paid"] - patterns_pd["reported"])
-
+        # print("Paid Pattern:", self.paid_pattern.patterns)
+        # print("Case Pattern", patterns_pd["case"].to_dict())
         print("patterns_pd:\n", patterns_pd)
-        # self.ldf_ = self.paid_pattern  # put in the 3rd pattern
+
+        print("X\n", X)
+        Modified_X = DevelopmentConstant(
+            patterns=patterns_pd["case"].to_dict(), style="cdf"
+        ).fit_transform(X)
+        print("Modified_X\n", Modified_X)
+        print("Modified_X.ldf_\n", Modified_X.ldf_)
+        print("Modified_X.cdf_\n", Modified_X.cdf_)
+        model = Chainladder().fit(Modified_X)
+        print("model.ultimate_\n", model.ultimate_)
+
+        # cl.DevelopmentConstant(pattern = )
+        # self.ldf_ = self.paid_pattern # put in the 3rd pattern
         # self.ldf_.is_pattern = True
         # self.ldf_.is_cumulative = False
 

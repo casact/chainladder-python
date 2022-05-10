@@ -73,10 +73,11 @@ class DevelopmentConstant(DevelopmentBase):
             ldf = ldf[None, None, None, :]
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
+        # print("ldf:\n", ldf)
         obj = obj * ldf
         obj._set_slicers()
-        print("=== in DevelopmentConstant ===")
-        print("obj:\n", obj)
+        # print("=== in DevelopmentConstant ===")
+        # print("obj:\n", obj)
         self.ldf_ = obj
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
