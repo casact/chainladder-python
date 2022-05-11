@@ -4,6 +4,7 @@
 # from chainladder.methods import MethodBase
 from chainladder.development.base import DevelopmentBase
 from chainladder.development import DevelopmentConstant
+from chainladder.tails import TailConstant
 from chainladder.methods.chainladder import Chainladder
 
 import numpy as np
@@ -81,12 +82,17 @@ class CaseOutstanding(DevelopmentBase):
         ) / (patterns_pd["paid"] - patterns_pd["reported"])
         # print("Paid Pattern:", self.paid_pattern.patterns)
         # print("Case Pattern", patterns_pd["case"].to_dict())
+
+        case_tail_factor = patterns_pd["case"].iloc[-1]
+        patterns_pd["case"] = patterns_pd["case"] / case_tail_factor
+        print("case_tail_factor", case_tail_factor)
         print("patterns_pd:\n", patterns_pd)
 
-        print("X\n", X)
-        Modified_X = DevelopmentConstant(
-            patterns=patterns_pd["case"].to_dict(), style="cdf"
-        ).fit_transform(X)
+        Modified_X = TailConstant(tail=case_tail_factor).fit_transform(
+            DevelopmentConstant(
+                patterns=patterns_pd["case"].to_dict(), style="cdf"
+            ).fit_transform(X)
+        )
         print("Modified_X\n", Modified_X)
         print("Modified_X.ldf_\n", Modified_X.ldf_)
         print("Modified_X.cdf_\n", Modified_X.cdf_)
