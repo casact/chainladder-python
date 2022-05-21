@@ -52,6 +52,8 @@ class TriangleBase(TriangleIO, TriangleDisplay, TriangleSlicer,
         if development:
             development_date = TriangleBase._to_datetime(
                 data, development, period_end=True, format=development_format)
+            if np.all(development_date.dt.strftime('%m-%d') == '01-01'):
+                development_date = pd.Series(pd.PeriodIndex(development_date, freq='A').to_timestamp(how='e'))
         else:
             o_max = pd.Period(
                 origin_date.max(),
