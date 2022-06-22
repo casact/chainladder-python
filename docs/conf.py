@@ -33,6 +33,7 @@ suppress_warnings = ['myst.domains']
 use_jupyterbook_latex = True
 use_multitoc_numbering = True
 autosummary_generate = True
+nbsphinx_kernel_name = 'cl_docs'
 
 import chainladder as cl
 version = cl.__version__
