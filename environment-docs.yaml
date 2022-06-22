@@ -30,3 +30,4 @@ dependencies:
     - jupyter-book
     - nb_black
     - myst-nb
+    - sphinx-panels
