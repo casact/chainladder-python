@@ -1,6 +1,21 @@
 # Releases
 ## Version 0.8
 
+### Version 0.8.13 
+Release Date: Jun 27, 2022
+
+### Bug Fixes:
+* [\#270](https://github.com/casact/chainladder-python/issues/270) Fixed an issue affecting triangle instantiation
+* [\#251](https://github.com/casact/chainladder-python/issues/251) Fixed a bug in `predict` method that failed to honor development ages appropriatly
+* [\#274](https://github.com/casact/chainladder-python/issues/274) Addressed a pandas deprecation notice in the `heatmap` method.
+* [\#258](https://github.com/casact/chainladder-python/issues/258) Addressed silent error when predicting on a Triangle that is larger than the underlying model.
+* [\#288](https://github.com/casact/chainladder-python/issues/288) Addressed Bug in `to_frame` method
+* [\#283](https://github.com/casact/chainladder-python/issues/283) Addressed Bug in the calculation of LDFs in `CaseOutstanding`
+
+### Enhancements
+* [\#293](https://github.com/casact/chainladder-python/issues/293) Expanded functionality `drop_high` and `drop_low` arguments of `Development` estimator.
+* [\#298, #299, #304, #305, #308](https://github.com/casact/chainladder-python/issues/298) Documentation clean-up.
+
 ### Version 0.8.12 
 Release Date: Mar 8, 2022
 
