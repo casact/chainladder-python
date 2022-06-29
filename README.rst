@@ -34,7 +34,7 @@ This package is written in Python, if you are looking for a similar package writ
 .. _pandas: https://pandas.pydata.org/
 
 .. _scikit-learn: https://scikit-learn.org/stable/
-.. _chainladder: https://github.com/mages/ChainLadder#chainladder
+.. _chainladder: https://github.com/mages/ChainLadder
 
 
 
