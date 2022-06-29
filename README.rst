@@ -29,9 +29,12 @@ construction. An actuary that is already familiar with these tools will be able 
 
 Chainladder is built by a group of volunteers, and we need YOUR help!
 
+This package is written in Python, if you are looking for a similar package written in R, please visit `chainladder`_.
+
 .. _pandas: https://pandas.pydata.org/
 
 .. _scikit-learn: https://scikit-learn.org/stable/
+.. _chainladder: https://github.com/mages/ChainLadder#chainladder
 
 
 
