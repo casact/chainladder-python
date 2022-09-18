@@ -4,16 +4,11 @@ name: cl_test
 channels:
   - defaults
   - conda-forge
-  - r
 
 dependencies:
-  - python
-
-  # Downgrade numpy for rpy2 support
-  - numpy
-  - pandas
-  - scikit-learn
-  - sparse
+  - pandas>=0.23
+  - scikit-learn>=0.23
+  - sparse>=0.9
   - numba
   - dill
   - patsy
@@ -23,6 +18,5 @@ dependencies:
   - lxml
   - pytest
   - pytest-cov
-  - pip
   - ipython
 

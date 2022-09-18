@@ -19,7 +19,7 @@ class BarnettZehnwirth(TweedieGLM):
     .. versionadded:: 0.8.2
 
     Parameters
-    -----------
+    ----------
     formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
     response:  str
