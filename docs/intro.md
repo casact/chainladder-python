@@ -1,4 +1,4 @@
-# Welcome to Chainladder
+# WELCOME
 
 `Chainladder-python` - Property and Casualty Loss Reserving in Python
 
