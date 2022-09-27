@@ -3,9 +3,11 @@
 
 format: jb-book
 root: intro
+
 parts:
   - caption: START HERE
     chapters:
+    - file: tutorials/demo_lite
     - file: library/install
     - file: tutorials/index
     - file: examples_toc
@@ -19,6 +21,7 @@ parts:
     - file: adjustments
     - file: workflow
     - file: utilities
+
   - caption: Library Reference
     chapters:
     - file: modules/api
