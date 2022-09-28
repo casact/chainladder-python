@@ -10,12 +10,11 @@ Chainladder is built by a group of volunteers, and we need YOUR help!
 
 Here are a few links to help you get started.
 
-:::{panels}
-:container: +full-width
-:column: col-lg-4 px-2 py-2
----
-:header: bg-jb-one
+::::{grid}
+:gutter: 3
 
+:::{grid-item-card} 
+:columns: 6
 **[Triangles](triangle)**
 ^^^
 Data object to manage and manipulate reserving data
@@ -26,9 +25,10 @@ Data object to manage and manipulate reserving data
 ```
 +++
 **Classes**: **[Triangle](triangle)**,...
+:::
 
----
-:header: bg-jb-two
+:::{grid-item-card} 
+:columns: 6
 
 **[Development](development)**
 ^^^
@@ -41,8 +41,10 @@ Tooling to generate loss development patterns
 
 +++
 **Algorithms**: [Development](development:development), [ClarkLDF](development:clarkldf), …
----
-:header: bg-jb-three
+:::
+
+:::{grid-item-card}
+:columns: 6
 
 **[Tail Estimation](tails)**
 ^^^
@@ -55,9 +57,11 @@ Extrapolate development patterns beyond the known data.
 
 +++
 **Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), …
+:::
 
----
-:header: bg-jb-one
+:::{grid-item-card}
+:columns: 6
+
 **[IBNR Models](methods)**
 ^^^
 
@@ -71,10 +75,10 @@ Generate IBNR estimates and associated statistics
 
 +++
 **Algorithms**: [Chainladder](methods:chainladder), [CapeCod](methods:capecod), …
+:::
 
-
----
-:header: bg-jb-two
+:::{grid-item-card}
+:columns: 6
 
 **[Adjustments](adjustments)**
 ^^^
@@ -89,9 +93,10 @@ Common actuarial data adjustments
 
 +++
 **Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [Trend](adjustments:trend), …
+:::
 
----
-:header: bg-jb-three
+:::{grid-item-card}
+:columns: 6
 
 **[Workflow](workflow)**
 ^^^
@@ -106,3 +111,6 @@ Workflow tools for complex analyses
 +++
 **Utilities**: [Pipeline](workflow:pipeline), [VotingChainladder](workflow:votingchainladder), …
 :::
+
+::::
+
