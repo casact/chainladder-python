@@ -34,8 +34,8 @@ Release Date: Mar 8, 2022
 - [\#261](https://github.com/casact/chainladder-python/issues/261) Addressed a pandas>1.4.0 bug
 
 **Enhancements**
-Introduced ExpectedLoss method
 
+- Introduced ExpectedLoss method
 - [\#242](https://github.com/casact/chainladder-python/issues/242) Added threshold based dropping of link ratios to Development estimator
 - [\#158](https://github.com/casact/chainladder-python/issues/158) Triangles can now be instantiated with only one data point.
 - [\#250](https://github.com/casact/chainladder-python/issues/250) python 3.10 support
