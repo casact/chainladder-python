@@ -2,27 +2,35 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: intro
+root: intro.md
 
 parts:
   - caption: START HERE
     chapters:
-    - file: tutorials/demo_lite
-    - file: library/install
-    - file: tutorials/index
-    - file: examples_toc
+    - file: tutorials/demo_lite.ipynb
+    - file: library/install.rst
+    - file: tutorials/tutorials_intro.rst
+      sections:
+      - file: tutorials/triangle-tutorial.ipynb
+      - file: tutorials/development-tutorial.ipynb
+      - file: tutorials/tail-tutorial.ipynb
+      - file: tutorials/deterministic-tutorial.ipynb
+      - file: tutorials/stochastic-tutorial.ipynb
+      - file: tutorials/data-tutorial.ipynb
+    - file: examples_toc.md
+
 
   - caption: User Guide
     chapters:
-    - file: triangle
-    - file: development
-    - file: tails
-    - file: methods
-    - file: adjustments
-    - file: workflow
-    - file: utilities
+    - file: guides/triangle.ipynb
+    - file: guides/development.ipynb
+    - file: guides/tails.ipynb
+    - file: guides/methods.ipynb
+    - file: guides/adjustments.ipynb
+    - file: guides/workflow.ipynb
+    - file: guides/utilities.ipynb
 
-  - caption: Library Reference
+  - caption: References
     chapters:
     - file: modules/api
     - file: library/releases
