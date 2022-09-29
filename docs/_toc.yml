@@ -17,7 +17,7 @@ parts:
       - file: tutorials/deterministic-tutorial.ipynb
       - file: tutorials/stochastic-tutorial.ipynb
       - file: tutorials/data-tutorial.ipynb
-    - file: examples_toc.md
+    # - file: examples_toc.md
 
 
   - caption: User Guide
@@ -29,12 +29,16 @@ parts:
     - file: guides/adjustments.ipynb
     - file: guides/workflow.ipynb
     - file: guides/utilities.ipynb
+    - file: examples_toc.md
+  # - caption: Gallery Library
+  #   chapters:
+
 
   - caption: References
     chapters:
-    - file: modules/api
-    - file: library/releases
-    - file: library/contributing
-    - file: library/roadmap
-    - file: library/glossary
-    - file: References
+    - file: modules/api.rst
+    - file: library/releases.rst
+    - file: library/contributing.rst
+    - file: library/roadmap.rst
+    - file: library/glossary.rst
+    - file: library/references.rst
