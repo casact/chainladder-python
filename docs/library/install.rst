@@ -9,32 +9,30 @@ General Installation
 
 There are two ways to install the chainladder package, using `pip` or `conda`:
 
-.. tabbed:: pip
+````{tab-set}
+```{tab-item} pip
 
-    |PyPI version| |Pypi Downloads|
+|PyPI version| |Pypi Downloads|
 
-    Installing `chainladder` using `pip`:
+Installing `chainladder` using `pip`:
 
-    ``
-    pip install chainladder
-    ``
+`pip install chainladder`
 
-    Alternatively, if you have git and want to enjoy unreleased features, you can
-    install directly from `Github`_:
+Alternatively, if you have git and want to enjoy unreleased features, you can
+install directly from `Github`_:
 
-    ``
-    pip install git+https://github.com/casact/chainladder-python/
-    ``
+`pip install git+https://github.com/casact/chainladder-python/`
+```
 
-.. tabbed:: conda
+```{tab-item} conda
 
-    |Conda Version| |Conda Downloads|
+|Conda Version| |Conda Downloads|
 
-    Installing `chainladder` using `conda`:
+Installing `chainladder` using `conda`:
 
-    ```
-    conda install -c conda-forge chainladder
-    ```
+`conda install -c conda-forge chainladder`
+```
+````
 
 Developer Installation
 ============================
