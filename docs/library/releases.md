@@ -1,4 +1,4 @@
-# Releases
+# Releases & Changelog
 
 ## Version 0.8
 
