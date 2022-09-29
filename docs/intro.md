@@ -6,8 +6,6 @@ Welcome! The `chainladder-python` package was built to be able to handle all of 
 
 This package strives to be minimalistic in needing its own API. The syntax mimics popular packages such as [pandas](https://pandas.pydata.org/) for data manipulation and [scikit-learn](https://scikit-learn.org/) for model construction. An actuary that is already familiar with these tools will be able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
 
-`chainladder-python` is built by a group of volunteers, and we need YOUR help!
-
 Don't know where to start? Head over to the `START HERE` section to explore what's next.
 
 <!-- :::{panels}
