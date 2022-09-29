@@ -45,9 +45,9 @@ Example Gallery
 
 ```
 
-Welcome to the `chainladder` gallery. These notebooks syntesize many of the concepts learned in the [User Guide].
+You'll find a collection of gallery examples here. These notebooks syntesize many of the concepts learned in the tutorials or the user guide.
 
-Each of these notebooks has a corresponding badge that indicates its the level of difficulty.
+Each of these notebooks has a corresponding badge that indicates its the level of difficulty. However, they are not ordered in any way.
 
 * {badge}`easy,badge-success` examples cover the basics of the library.
 * {badge}`medium,badge-warning` examples cover the more advanced features of the library.

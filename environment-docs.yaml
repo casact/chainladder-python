@@ -31,3 +31,4 @@ dependencies:
     - nb_black
     - myst-nb
     - sphinx-panels
+    - sphinx-togglebutton
