@@ -7,7 +7,7 @@ root: intro.md
 parts:
   - caption: START HERE
     chapters:
-    - file: tutorials/demo_lite.ipynb
+    - file: tutorials/demo_exercises.ipynb
     - file: library/install.rst
     - file: tutorials/tutorials_intro.rst
       sections:
@@ -29,10 +29,10 @@ parts:
     - file: guides/adjustments.ipynb
     - file: guides/workflow.ipynb
     - file: guides/utilities.ipynb
-    - file: examples_toc.md
-  # - caption: Gallery Library
-  #   chapters:
 
+  - caption: Gallery Library
+    chapters:
+    - file: examples_toc.md
 
   - caption: References
     chapters:
