@@ -17,28 +17,28 @@ parts:
       - file: tutorials/deterministic-tutorial.ipynb
       - file: tutorials/stochastic-tutorial.ipynb
       - file: tutorials/data-tutorial.ipynb
-    # - file: examples_toc.md
-
-
-  - caption: User Guide
-    chapters:
-    - file: guides/triangle.ipynb
-    - file: guides/development.ipynb
-    - file: guides/tails.ipynb
-    - file: guides/methods.ipynb
-    - file: guides/adjustments.ipynb
-    - file: guides/workflow.ipynb
-    - file: guides/utilities.ipynb
-
-  - caption: Gallery Library
-    chapters:
-    - file: examples_toc.md
 
   - caption: References
     chapters:
+    - file: guides/guides_intro.rst
+      sections:
+      - file: guides/triangle.ipynb
+      - file: guides/development.ipynb
+      - file: guides/tails.ipynb
+      - file: guides/methods.ipynb
+      - file: guides/adjustments.ipynb
+      - file: guides/workflow.ipynb
+      - file: guides/utilities.ipynb
     - file: modules/api.rst
+    - file: gallery/examples_toc.md
+    # Sample data set
+    - file: library/glossary.rst
+
+  - caption: About
+    chapters:
+    # Source code
+    # Questions and Issues
     - file: library/releases.rst
     - file: library/contributing.rst
     - file: library/roadmap.rst
-    - file: library/glossary.rst
-    - file: library/references.rst
+    - file: library/references.md
