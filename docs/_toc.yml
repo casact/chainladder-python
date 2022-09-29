@@ -33,6 +33,7 @@ parts:
     - file: gallery/examples_toc.md
     # Sample data set
     - file: library/glossary.rst
+    - file: library/references.md
 
   - caption: About
     chapters:
@@ -41,4 +42,3 @@ parts:
     - file: library/releases.rst
     - file: library/contributing.rst
     - file: library/roadmap.rst
-    - file: library/references.md
