@@ -2,7 +2,7 @@
 # Learn more at https://jupyterbook.org/customize/config.html
 
 title: Chainladder - Python
-author: John Bogaardt, et. al.
+author: John Bogaardt, Kenneth Hsu, et. al.
 logo: images/logo.png
 
 # Force re-execution of notebooks on each build.

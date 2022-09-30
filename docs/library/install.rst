@@ -69,6 +69,6 @@ Depends on how you first install the package, to update the package through `pip
 
 .. tabbed:: conda
 
-  ``conda`` is simple:
+  Using ``conda`` is simple:
 
   ``conda update --all``

@@ -37,8 +37,8 @@ parts:
 
   - caption: About
     chapters:
-    # Source code
-    # Questions and Issues
+    - file: library/source_code.md
+    - file: library/questions_issues.md
     - file: library/releases.rst
     - file: library/contributing.rst
     - file: library/roadmap.rst
