@@ -4,6 +4,33 @@ Welcome! The `chainladder-python` package was built to be able to handle all of 
 
 This package strives to be minimalistic in needing its own API. The syntax mimics popular packages such as [pandas](https://pandas.pydata.org/) for data manipulation and [scikit-learn](https://scikit-learn.org/) for model construction. An actuary that is already familiar with these tools will be able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
 
-Chainladder is built by a group of volunteers, and we need YOUR help! If you see an error on this site, please click on the Github Icon at the top, and submit a ticket so we make the necessary correction.
+Want to see examples of what you can do with the package? At the bottom of this page, you will find selected examples of what we have built using `chainladder-python`, for more examples, visit the Example Gallery page.
 
-Don't know where to start? Head over to the START HERE section to explore what's next.
+This package is built by a group of volunteers, and we need YOUR help! If you see an error on this site, please click on the Github Icon at the top, and submit a ticket so we make the necessary correction.
+
+Don't know where to start? Head over to the START HERE section to explore what's next. In fact, you can try out the package without having to install anything.
+
+
+::::{grid}
+:gutter: 2
+
+:::{grid-item-card}
+:columns: 4
+**[Actual Vs Expected](gallery/plot_ave_analysis)**
+```{glue:} plot_ave_analysis
+```
+:::
+
+:::{grid-item-card}
+:columns: 4
+**[IBNR Runoff](gallery/plot_ibnr_runoff)**
+```{glue:} plot_ibnr_runoff
+```
+:::
+
+:::{grid-item-card}
+:columns: 4
+**[MackChainladder](gallery/plot_mack)**
+```{glue:} plot_mack
+```
+:::

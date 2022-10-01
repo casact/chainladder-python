@@ -3,4 +3,4 @@
 Starter Tutorials
 =======================
 
-These tutorials serve as more comprehensive examples of how to use chainladder.
+These tutorials serve as the basic onboarding docs on how to use chainladder.
