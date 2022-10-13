@@ -36,15 +36,27 @@ class DevelopmentCorrelation:
         to be significant.
     """
 
-    def __init__(self, triangle, p_critical=0.5):
+    def __init__(
+            self,
+            triangle,
+            p_critical: float = 0.5
+    ):
         self.p_critical = p_critical
+
+        # Check that critical value is a probability
+        validate_critical(p_critical=p_critical)
+
         if triangle.array_backend != "numpy":
             triangle = triangle.set_backend("numpy")
         xp = triangle.get_array_module()
 
         m1 = triangle.link_ratio
+
+        # Rank link ratios by development period, assigning a score of 1 for the lowest
         m1_val = xp.apply_along_axis(rankdata, 2, m1.values) * (m1.values * 0 + 1)
         m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
+
+        # Remove the last element from each column, and then rank again
         m2.values = xp.apply_along_axis(rankdata, 2, m2.values) * (m2.values * 0 + 1)
         m1 = m2.copy()
         m1.values = m1_val[..., : m2.shape[2], 1:]
@@ -107,17 +119,42 @@ class ValuationCorrelation:
         The variance value of Z.
     """
 
-    def __init__(self, triangle, p_critical=0.1, total=True):
-        def pZlower(z, n, p=0.5):
+    def __init__(
+            self,
+            triangle,
+            p_critical: float = 0.1,
+            total: bool = True
+    ):
+
+        def pZlower(
+            z: int,
+            n: int,
+            p: float = 0.5
+        ):
             return min(1, 2 * binom.cdf(z, n, p))
 
         self.p_critical = p_critical
+
+        # Check that critical value is a probability
+        validate_critical(p_critical=p_critical)
+
         self.total = total
         triangle = triangle.set_backend("numpy")
         xp = triangle.get_array_module()
         lr = triangle.link_ratio
-        m1 = xp.apply_along_axis(rankdata, 2, lr.values) * (lr.values * 0 + 1)
-        med = xp.nanmedian(m1, axis=2, keepdims=True)
+
+        # Rank link ratios for each column
+        m1 = xp.apply_along_axis(
+            func1d=rankdata,
+            axis=2,
+            arr=lr.values) * (lr.values * 0 + 1)
+
+        med = xp.nanmedian(
+            a=m1,
+            axis=2,
+            keepdims=True
+        )
+
         m1large = (xp.nan_to_num(m1) > med) + (lr.values * 0)
         m1small = (xp.nan_to_num(m1) < med) + (lr.values * 0)
         m2large = triangle.link_ratio
@@ -145,6 +182,8 @@ class ValuationCorrelation:
             z_idx, n_idx = z.astype(int), n.astype(int)
             self.probs = T[z_idx, n_idx]
             z_critical = triangle[triangle.valuation > triangle.valuation.min()]
+            # z_critical = z_critical[z_critical.development > z_critical.development.min()].dev_to_val().sum(
+            #     "origin") * 0
             z_critical = z_critical.dev_to_val().dropna().sum("origin") * 0
             z_critical.values = np.array(self.probs) < p_critical
             z_critical.odims = triangle.odims[0:1]
@@ -176,3 +215,21 @@ class ValuationCorrelation:
             self.z_variance = pd.DataFrame(
                 VarZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx
             )
+
+
+def validate_critical(
+        p_critical: float
+) -> None:
+    """
+    Checks whether value passed to the p_critical parameter in ValuationCorrelation or DevelopmentCorrelation
+    classes is a percentage, that is, between 0 and 1.
+
+    Parameters
+    ----------
+    p_critical: float
+        Critical value used to test null hypothesis in Mack correlation tests.
+    """
+    if 0 <= p_critical <= 1:
+        pass
+    else:
+        raise ValueError('p_critical must be between 0 and 1.')
