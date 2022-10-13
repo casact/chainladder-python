@@ -29,5 +29,4 @@ dependencies:
     - git+https://github.com/casact/chainladder-python/
     - jupyter-book
     - nb_black
-    - myst-nb
-    - sphinx-panels
+    - sphinx-togglebutton

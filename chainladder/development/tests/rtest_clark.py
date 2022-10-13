@@ -1,3 +1,8 @@
+### Building out a dev environment with a working copy
+### of R ChainLadder is difficult.  These tests are 
+### Currently inactive, but available should the compatibility
+### of the installs improve at a later date.
+
 import numpy as np
 import chainladder as cl
 import pytest

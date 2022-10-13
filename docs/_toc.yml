@@ -2,28 +2,43 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: intro
+root: intro.md
+
 parts:
   - caption: START HERE
     chapters:
-    - file: library/install
-    - file: tutorials/index
-    - file: examples_toc
+    - file: tutorials/demo_exercises.ipynb
+    - file: library/install.rst
+    - file: tutorials/tutorials_intro.rst
+      sections:
+      - file: tutorials/triangle-tutorial.ipynb
+      - file: tutorials/development-tutorial.ipynb
+      - file: tutorials/tail-tutorial.ipynb
+      - file: tutorials/deterministic-tutorial.ipynb
+      - file: tutorials/stochastic-tutorial.ipynb
+      - file: tutorials/data-tutorial.ipynb
 
-  - caption: User Guide
+  - caption: References
     chapters:
-    - file: triangle
-    - file: development
-    - file: tails
-    - file: methods
-    - file: adjustments
-    - file: workflow
-    - file: utilities
-  - caption: Library Reference
+    - file: guides/guides_intro.rst
+      sections:
+      - file: guides/triangle.ipynb
+      - file: guides/development.ipynb
+      - file: guides/tails.ipynb
+      - file: guides/methods.ipynb
+      - file: guides/adjustments.ipynb
+      - file: guides/workflow.ipynb
+      - file: guides/utilities.ipynb
+    - file: modules/api.rst
+    - file: gallery/examples_toc.md
+    - file: library/sample_data.md
+    - file: library/glossary.rst
+    - file: library/references.md
+
+  - caption: About
     chapters:
-    - file: modules/api
-    - file: library/releases
-    - file: library/contributing
-    - file: library/roadmap
-    - file: library/glossary
-    - file: References
+    - file: library/source_code.md
+    - file: library/questions_issues.md
+    - file: library/releases.rst
+    - file: library/contributing.rst
+    - file: library/roadmap.rst

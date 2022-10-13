@@ -1,7 +1,7 @@
 .. _api_ref:
 
 =============
-API Reference
+API Documentation
 =============
 
 This is the class and function reference of chainladder. Please refer to
