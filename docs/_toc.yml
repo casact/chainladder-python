@@ -8,7 +8,7 @@ parts:
   - caption: START HERE
     chapters:
     - file: tutorials/demo_exercises.ipynb
-    - file: library/install.rst
+    - file: library/install.md
     - file: tutorials/tutorials_intro.rst
       sections:
       - file: tutorials/triangle-tutorial.ipynb
@@ -20,17 +20,17 @@ parts:
 
   - caption: References
     chapters:
-    - file: guides/guides_intro.rst
+    - file: guides_intro.md
       sections:
-      - file: guides/triangle.ipynb
-      - file: guides/development.ipynb
-      - file: guides/tails.ipynb
-      - file: guides/methods.ipynb
-      - file: guides/adjustments.ipynb
-      - file: guides/workflow.ipynb
-      - file: guides/utilities.ipynb
+      - file: triangle.ipynb
+      - file: development.ipynb
+      - file: tails.ipynb
+      - file: methods.ipynb
+      - file: adjustments.ipynb
+      - file: workflow.ipynb
+      - file: utilities.ipynb
     - file: modules/api.rst
-    - file: gallery/examples_toc.md
+    - file: examples_toc.md
     - file: library/sample_data.md
     - file: library/glossary.rst
     - file: library/references.md
@@ -40,5 +40,5 @@ parts:
     - file: library/source_code.md
     - file: library/questions_issues.md
     - file: library/releases.rst
-    - file: library/contributing.rst
+    - file: library/contributing.md
     - file: library/roadmap.rst

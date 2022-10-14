@@ -1,17 +1,17 @@
+# User Guide
 
-=======================
-User Guide
-=======================
 
 Here are a few links to help you get started.
 
-::::{grid}
+`````{grid}
 :gutter: 3
 
-:::{grid-item-card}
+````{grid-item-card}
 :columns: 6
+
 **[Triangles](triangle)**
 ^^^
+
 Data object to manage and manipulate reserving data
 
 **Application**: Extend pandas syntax to manipulate reserving triangles
@@ -19,10 +19,10 @@ Data object to manage and manipulate reserving data
 ```{glue:} plot_triangle_from_pandas
 ```
 +++
-**Classes**: **[Triangle](triangle)**,...
-:::
+**Classes**: **[Triangle](triangle)**, ...
+````
 
-:::{grid-item-card}
+````{grid-item-card}
 :columns: 6
 
 **[Development](development)**
@@ -33,12 +33,13 @@ Tooling to generate loss development patterns
 
 ```{glue:} plot_clarkldf
 ```
-
 +++
-**Algorithms**: [Development](development:development), [ClarkLDF](development:clarkldf), …
-:::
 
-:::{grid-item-card}
+**Algorithms**: [Development](development:development), [ClarkLDF](development:clarkldf), …
+
+````
+
+````{grid-item-card}
 :columns: 6
 
 **[Tail Estimation](tails)**
@@ -52,9 +53,9 @@ Extrapolate development patterns beyond the known data.
 
 +++
 **Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), …
-:::
+````
 
-:::{grid-item-card}
+````{grid-item-card}
 :columns: 6
 
 **[IBNR Models](methods)**
@@ -70,9 +71,9 @@ Generate IBNR estimates and associated statistics
 
 +++
 **Algorithms**: [Chainladder](methods:chainladder), [CapeCod](methods:capecod), …
-:::
+````
 
-:::{grid-item-card}
+````{grid-item-card}
 :columns: 6
 
 **[Adjustments](adjustments)**
@@ -88,9 +89,9 @@ Common actuarial data adjustments
 
 +++
 **Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [Trend](adjustments:trend), …
-:::
+````
 
-:::{grid-item-card}
+````{grid-item-card}
 :columns: 6
 
 **[Workflow](workflow)**
@@ -105,6 +106,6 @@ Workflow tools for complex analyses
 
 +++
 **Utilities**: [Pipeline](workflow:pipeline), [VotingChainladder](workflow:votingchainladder), …
-:::
+````
 
-::::
+`````

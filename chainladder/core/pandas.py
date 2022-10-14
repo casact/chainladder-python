@@ -192,7 +192,7 @@ class TrianglePandas:
     def fillna(self, value=None, inplace=False):
         """Fill nan with 'value' by axis.
         Parameters
-        -----------
+        ----------
         value: single value or array-like values, default = None
             Value(s) to fill across the axis.
 

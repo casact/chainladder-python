@@ -23,7 +23,7 @@ def load_sample(key: str, *args, **kwargs):
             The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
 
         Returns
-        --------
+        -------
             pandas.DataFrame of the loaded dataset.
 
     """
@@ -310,13 +310,13 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     and `TweedieGLM` estimators.
 
     Parameters
-    -----------
+    ----------
 
     formula: str
         A string representation of the regression model X features.
 
     Attributes
-    ------------
+    ----------
     design_info_:
         The patsy instructions for generating the design_matrix, X.
 
