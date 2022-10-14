@@ -8,7 +8,7 @@ execution_allow_errors = False
 execution_excludepatterns = []
 execution_in_temp = False
 execution_timeout = 30
-extensions = ['sphinx_togglebutton', 'sphinx_copybutton', 'myst_nb', 'jupyter_book', 'sphinx_thebe', 'sphinx_comments', 'sphinx_external_toc', 'sphinx.ext.intersphinx', 'sphinx_panels', 'sphinx_book_theme', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'numpydoc', 'sphinx.ext.mathjax', 'sphinxcontrib.bibtex', 'sphinx_jupyterbook_latex']
+extensions = ['sphinx_design', 'sphinx_togglebutton', 'sphinx_copybutton', 'myst_nb', 'jupyter_book', 'sphinx_thebe', 'sphinx_comments', 'sphinx_external_toc', 'sphinx.ext.intersphinx', 'sphinx_book_theme', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'numpydoc', 'sphinx.ext.mathjax', 'sphinxcontrib.bibtex', 'sphinx_jupyterbook_latex', 'sphinx_copybutton']
 external_toc_exclude_missing = False
 external_toc_path = '_toc.yml'
 html_add_permalinks = '¶'
@@ -34,6 +34,7 @@ use_jupyterbook_latex = True
 use_multitoc_numbering = True
 autosummary_generate = True
 nbsphinx_kernel_name = 'cl_docs'
+
 
 import chainladder as cl
 version = cl.__version__

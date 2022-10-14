@@ -1,49 +1,29 @@
 # The basic requirements for developing chainladder
+
 name: cl_dev
 
 channels:
   - defaults
   - conda-forge
-  - r
-
+  
 dependencies:
   - python
   - pip
   - git
+  - ipython
   - ipykernel
-  - jupyterlab
 
   - pandas
   - scikit-learn
-  - statsmodels
   - sparse
   - numba
   - dill
   - patsy
-  - openpyxl
-  - imageio
   - matplotlib
-  - dask
-
-  # Docs
-  - nbsphinx
-  - numpydoc
 
   # testing
   - lxml
   - pytest
   - pytest-cov
   - pytest-xdist
-  - black
-  - rpy2
-  - r-foreign
-  - r-ggplot2
-  - r-car
-  - r-actuar
-  - r-sandwich
-
-
-  - pip:
-    - asv
-    - nb_black
-    - jupyter-book
+  - jinja2

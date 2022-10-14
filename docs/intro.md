@@ -1,108 +1,36 @@
-# Welcome to Chainladder
+# WELCOME!
 
-`Chainladder-python` - Property and Casualty Loss Reserving in Python
+Welcome! The `chainladder-python` package was built to be able to handle all of your actuarial needs in python. It consists of popular actuarial tools, such as **triangle data manipulation**, **link ratios calculation**, and **IBNR estimates** using both deterministic and stochastic models. We build this package so you no longer have to rely on outdated softwares and tools when performing actuarial pricing or reserving indications.
 
-Welcome! The chainladder package was built to be able to handle all of your actuarial needs in python. It consists of popular actuarial tools, such as triangle data manipulation, link ratios calculation, and IBNR estimates with both deterministic and stochastic models. We build this package so you no longer have to rely on outdated softwares and tools when performing actuarial pricing or reserving indications.
+This package strives to be minimalistic in needing its own API. The syntax mimics popular packages such as [pandas](https://pandas.pydata.org/) for data manipulation and [scikit-learn](https://scikit-learn.org/) for model construction. An actuary that is already familiar with these tools will be able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
 
-This package strives to be minimalistic in needing its own API. The syntax mimics popular packages pandas for data manipulation and scikit-learn for model construction. An actuary that is already familiar with these tools will be able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
+Want to see examples of what you can do with the package? At the bottom of this page, you will find selected examples of what we have built using `chainladder-python`, for more examples, visit the Example Gallery page.
 
-Chainladder is built by a group of volunteers, and we need YOUR help!
+This package is built by a group of volunteers, and we need YOUR help! If you see an error on this site, please click on the Github Icon at the top, and submit a ticket so we make the necessary correction.
 
-Here are a few links to help you get started.
+Don't know where to start? Head over to the START HERE section to explore what's next. In fact, you can try out the package without having to install anything.
 
-:::{panels}
-:container: +full-width
-:column: col-lg-4 px-2 py-2
----
-:header: bg-jb-one
 
-**[Triangles](triangle)**
-^^^
-Data object to manage and manipulate reserving data
+::::{grid}
+:gutter: 2
 
-**Application**: Extend pandas syntax to manipulate reserving triangles
-
-```{glue:} plot_triangle_from_pandas
+:::{grid-item-card}
+:columns: 4
+**[Actual Vs Expected](gallery/plot_ave_analysis)**
+```{glue:} plot_ave_analysis
 ```
-+++
-**Classes**: **[Triangle](triangle)**,...
+:::
 
----
-:header: bg-jb-two
-
-**[Development](development)**
-^^^
-Tooling to generate loss development patterns
-
-**Applications**: Comprehensive library for development
-
-```{glue:} plot_clarkldf
+:::{grid-item-card}
+:columns: 4
+**[IBNR Runoff](gallery/plot_ibnr_runoff)**
+```{glue:} plot_ibnr_runoff
 ```
+:::
 
-+++
-**Algorithms**: [Development](development:development), [ClarkLDF](development:clarkldf), …
----
-:header: bg-jb-three
-
-**[Tail Estimation](tails)**
-^^^
-Extrapolate development patterns beyond the known data.
-
-**Applications**: Long-tailed lines of business use cases
-
-```{glue:} plot_exponential_smoothing
-```
-
-+++
-**Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), …
-
----
-:header: bg-jb-one
-**[IBNR Models](methods)**
-^^^
-
-Generate IBNR estimates and associated statistics
-
-
-**Applications**: Constructing reserve estimates
-
+:::{grid-item-card}
+:columns: 4
+**[MackChainladder](gallery/plot_mack)**
 ```{glue:} plot_mack
 ```
-
-+++
-**Algorithms**: [Chainladder](methods:chainladder), [CapeCod](methods:capecod), …
-
-
----
-:header: bg-jb-two
-
-**[Adjustments](adjustments)**
-^^^
-Common actuarial data adjustments
-
-
-
-**Applications**: Simulation, trending, on-leveling
-
-```{glue:} plot_stochastic_bornferg
-```
-
-+++
-**Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [Trend](adjustments:trend), …
-
----
-:header: bg-jb-three
-
-**[Workflow](workflow)**
-^^^
-
-Workflow tools for complex analyses
-
-**Application**: Scenario testing, ensembling
-
-```{glue:} plot_voting_chainladder
-```
-
-+++
-**Utilities**: [Pipeline](workflow:pipeline), [VotingChainladder](workflow:votingchainladder), …
 :::

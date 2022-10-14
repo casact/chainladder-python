@@ -29,7 +29,6 @@ jobs:
           conda env create --file ./ci/environment-test.yaml;
           conda activate cl_test;
           python setup.py develop
-          R -e "install.packages('ChainLadder', repo='http://cran.rstudio.com')";
           pytest --cov=chainladder --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

@@ -21,7 +21,7 @@ class TweedieGLM(DevelopmentBase):
     .. versionadded:: 0.8.1
 
     Parameters
-    -----------
+    ----------
     design_matrix: formula-like
         A patsy formula describing the independent variables, X of the GLM
     response:  str
@@ -72,7 +72,7 @@ class TweedieGLM(DevelopmentBase):
         For the lbfgs solver set verbose to any positive number for verbosity.
 
     Attributes
-    -----------
+    ----------
     model_: sklearn.Pipeline
         A scikit-learn Pipeline of the GLM
     """
