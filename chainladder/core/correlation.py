@@ -1,10 +1,23 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-from scipy.stats import binom, norm, rankdata
-from scipy.special import comb
-import pandas as pd
+from __future__ import annotations
+
 import numpy as np
+import pandas as pd
+
+from scipy.special import comb
+
+from scipy.stats import (
+    binom,
+    norm,
+    rankdata
+)
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core.triangle import Triangle
 
 
 class DevelopmentCorrelation:
@@ -18,9 +31,12 @@ class DevelopmentCorrelation:
     triangle: Triangle
         Triangle on which to estimate correlation between subsequent development
         factors.
-    p_critical: float (default=0.10)
+    p_critical: float (default=0.5)
         Value between 0 and 1 representing the confidence level for the test. A
-        value of 0.1 implies 90% confidence.
+        value of 0.5 implies a 50% confidence. The default value is based on the example
+        provided in the Mack 97 paper, the selection of which is justified on the basis of the
+        test being only an approximate measure of correlations and the desire to detect
+        correlations already in a substantial part of the triangle.
 
     Attributes
     ----------
@@ -31,7 +47,7 @@ class DevelopmentCorrelation:
         Values representing the Spearman rank correlation
     t_variance: float
         Variance measure of Spearman rank correlation
-    range: tuple
+    confidence_interval: tuple
         Range within which ``t_expectation`` must fall for independence assumption
         to be significant.
     """
@@ -53,37 +69,100 @@ class DevelopmentCorrelation:
         m1 = triangle.link_ratio
 
         # Rank link ratios by development period, assigning a score of 1 for the lowest
-        m1_val = xp.apply_along_axis(rankdata, 2, m1.values) * (m1.values * 0 + 1)
-        m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
+        m1_val = xp.apply_along_axis(
+            func1d=rankdata,
+            axis=2,
+            arr=m1.values
+        ) * (m1.values * 0 + 1)
 
         # Remove the last element from each column, and then rank again
-        m2.values = xp.apply_along_axis(rankdata, 2, m2.values) * (m2.values * 0 + 1)
+        m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
+        m2.values = xp.apply_along_axis(
+            func1d=rankdata,
+            axis=2,
+            arr=m2.values
+        ) * (m2.values * 0 + 1)
+
         m1 = m2.copy()
+
+        # remove the first column from m1 since it is not used in the comparison to m2
         m1.values = m1_val[..., : m2.shape[2], 1:]
+
+        # Apply Spearman Rank Correlation formula
+        # numerator is the one in formula G4 of the Mack 97 paper
         numerator = ((m1 - m2) ** 2).sum("origin")
+
+        # remove last column because it was not part of the comparison with m2
         numerator.values = numerator.values[..., :-1]
         numerator.ddims = numerator.ddims[:-1]
-        I = triangle.shape[3]
+
+        # I is the number of development periods in the triangle
+        I = len(triangle.development)
+
+        # k values are the column indexes for which we are calculating T_k
         k = xp.array(range(2, 2 + numerator.shape[3]))
+
+        # denominator is the one in formula G4 of the Mack 97 paper
         denominator = ((I - k) ** 3 - I + k)[None, None, None]
+
+        # complete formula G4, results in array of each T_k value
         self.t = 1 - 6 * xp.nan_to_num(numerator.values) / denominator
+
+        # per Mack, weight is one less than the number of pairs for each T_k
         weight = (I - k - 1)[None, None, None]
+
+        # Calculate big T, the weighted average of the T_k values
         t_expectation = (
             xp.sum(xp.nan_to_num(weight * self.t), axis=3) / xp.sum(weight, axis=3)
         )[..., None]
+
         idx = triangle.index.set_index(triangle.key_labels).index
+
+        # variance is result of formula G6
         self.t_variance = 2 / ((I - 2) * (I - 3))
-        self.t = pd.DataFrame(self.t[..., 0, 0], columns=triangle.vdims, index=idx)
-        self.t_expectation = pd.DataFrame(
-            t_expectation[..., 0, 0], columns=triangle.vdims, index=idx
+
+        # array of t values
+        self.t = pd.DataFrame(
+            self.t[0, 0, ...],
+            columns=k,
+            index=["T_k"]
         )
-        self.range = (
+
+        # array of weights
+        self.weights = pd.DataFrame(
+            weight[0, 0, ...],
+            columns=k,
+            index=["I-k-1"]
+        )
+
+        # final big T
+        self.t_expectation = pd.DataFrame(
+            t_expectation[..., 0, 0],
+            columns=triangle.vdims,
+            index=idx
+        )
+
+        # table of Spearman's rank coefficients Tk, can be used to verify consistency with paper
+        self.corr = pd.concat([
+            self.t,
+            self.weights
+        ])
+
+        self.corr.columns.names = ['k']
+
+        # construct confidence interval based on selection of p_critical
+        self.confidence_interval = (
             norm.ppf(0.5 - (1 - p_critical) / 2) * xp.sqrt(self.t_variance),
             norm.ppf(0.5 + (1 - p_critical) / 2) * xp.sqrt(self.t_variance),
         )
-        self.t_critical = (self.t_expectation < self.range[0]) | (
-            self.t_expectation > self.range[1]
+
+        # if T lies outside this range, we reject the null hypothesis
+        self.t_critical = (self.t_expectation < self.confidence_interval[0]) | (
+            self.t_expectation > self.confidence_interval[1]
         )
+
+        # hypothesis test result, False means fail to reject the null hypothesis
+        self.reject = self.t_critical.values[0][0]
 
 
 class ValuationCorrelation:
@@ -121,7 +200,7 @@ class ValuationCorrelation:
 
     def __init__(
             self,
-            triangle,
+            triangle: Triangle,
             p_critical: float = 0.1,
             total: bool = True
     ):
@@ -130,7 +209,7 @@ class ValuationCorrelation:
             z: int,
             n: int,
             p: float = 0.5
-        ):
+        ) -> float:
             return min(1, 2 * binom.cdf(z, n, p))
 
         self.p_critical = p_critical
