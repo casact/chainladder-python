@@ -148,11 +148,11 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 period_guard = self.n_periods + 1
 
             max_rank = (
-                min(link_ratios_len - index, period_guard) - drop_high_array[index]
+                (~np.isnan(link_ratio[0][0].T[index])).sum() - drop_high_array[index]
             )
             min_rank = drop_low_array[index]
 
-            index_array_weights = (link_ratio_ranks.T[index] < max_rank - 1) & (
+            index_array_weights = (link_ratio_ranks.T[index] < max_rank) & (
                 link_ratio_ranks.T[index] > min_rank - 1
             )
 
