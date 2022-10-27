@@ -37,66 +37,14 @@ This package is written in Python, if you are looking for a similar package writ
 .. _chainladder: https://github.com/mages/ChainLadder
 
 
-
-
-
-Installation
+Dedicated Documentatino Site
 ------------
 
-There are two ways to install the chainladder package, using `pip` or `conda`:
+We have a dedicated documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change logs, and more.
 
-1) Using `pip`:
+Visit `Read the Docs`_.
 
-``pip install chainladder``
-
-2) Using `conda`:
-
-``conda install -c conda-forge chainladder``
-
-If you would like to try pre-release features, install the package directly from GitHub.
-
-``pip install git+https://github.com/casact/chainladder-python/``
-
-
-
-
-Getting Started
--------------------------
-
-The package comes pre-loaded with sample insurance datasets that are publicly available. We have also drafted tutorials that use the chainladder package on these datasets to demonstrate some of the commonly used functionalities that the package offers.
-
-Once you have the package installed, we recommend that you follow the starter tutorial and work alongside with the pre-loaded datasets.
-
-Note that a lot of the examples shown might not be applicable in a real world scenario, and is only meant to demonstrate some of the functionalities included in the package. The user should always follow all applicable laws, the Code of Professional Conduct, applicable Actuarial Standards of Practice, and exercise their best actuarial judgement.
-
-`Starter Tutorial`_
-
-.. _Starter Tutorial: https://chainladder-python.readthedocs.io/en/latest/tutorials/triangle-tutorial.html
-
-
-
-Documentation and Discussions
------------------------------
-
-Please visit the `documentation`_ page for examples, how-tos, and source
-code documentation.
-
-Do you have a question, a new idea, or a feature request? Join the `discussions`_ on GitHub.  Your question is more likely to get answered here than on Stack Overflow. We are always happy to answer any usage questions or hear ideas on how to make ``chainladder`` better.
-
-.. _documentation: https://chainladder-python.readthedocs.io/en/latest/
-.. _discussions: https://github.com/casact/chainladder-python/discussions
-
-
-
-Want to Contribute?
--------------------
-We welcome volunteers for all aspects of the project. Whether you are new to actuarial reserving, new to python, or both; feedback, questions, suggestions and, of course, contributions are all welcomed. We can all learn from each other, together.
-
-Check out our `contributing guidelines`_.
-
-
-.. _contributing guidelines: https://chainladder-python.readthedocs.io/en/latest/library/contributing.html
-
+.. Read the Docs: https://chainladder-python.readthedocs.io/
 
 Licenses
 -------------------
