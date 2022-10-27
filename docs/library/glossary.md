@@ -7,27 +7,27 @@ conventions applied in `chanladder` and its API.
 
 ::: glossary
 backend
-The storage of the numerical representation of a
-[Triangle]{.title-ref}. It can be 'numpy' for a dense CPU bound
-representation, 'sparse' for a sparse matrix CPU bound representation,
-or 'cupy' for a dense GPU bound representation.
+  The storage of the numerical representation of a
+  [Triangle]{.title-ref}. It can be 'numpy' for a dense CPU bound
+  representation, 'sparse' for a sparse matrix CPU bound representation,
+  or 'cupy' for a dense GPU bound representation.
 
 estimator
-Any scikit-learn style class that can be `fit` to [Triangle]{.title-ref}
-data
+  Any scikit-learn style class that can be `fit` to [Triangle]{.title-ref}
+  data
 
 hyperparameter
-An initial parameter of an estimator that can be set
-before the estimator is fit.
+  An initial parameter of an estimator that can be set
+  before the estimator is fit.
 
 predictor
-An estimator that has the
-`predict` method. All IBNR estimators of `chainladder` are predictors
+  An estimator that has the
+  `predict` method. All IBNR estimators of `chainladder` are predictors
 
 transformer
-An estimator that has the `transform` method. The transform
-method returns instances of a Triangle. All estimators
-other than IBNR estimators are transformers.
+  An estimator that has the `transform` method. The transform
+  method returns instances of a Triangle. All estimators
+  other than IBNR estimators are transformers.
 
 :::
 
