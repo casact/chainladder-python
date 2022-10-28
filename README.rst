@@ -37,14 +37,14 @@ This package is written in Python, if you are looking for a similar package writ
 .. _chainladder: https://github.com/mages/ChainLadder
 
 
-Dedicated Documentatino Site
+Dedicated Documentation Site
 ------------
 
-We have a dedicated documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change logs, and more.
+We have a dedicated documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change log history, and more.
 
-Visit `Read the Docs`_.
+Visit `Chainladder-Python on Read the Docs`_.
 
-.. Read the Docs: https://chainladder-python.readthedocs.io/
+.. _Chainladder-Python on Read the Docs: https://chainladder-python.readthedocs.io/
 
 Licenses
 -------------------
