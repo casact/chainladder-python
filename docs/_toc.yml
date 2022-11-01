@@ -12,7 +12,7 @@ parts:
 
   - caption: Start Here
     chapters:
-    - file: tutorials/demo_exercises.ipynb
+    - file: tutorials/demo.ipynb
     - file: library/install.md
     - file: tutorials/tutorials_intro.md
       sections:
