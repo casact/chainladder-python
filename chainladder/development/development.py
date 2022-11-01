@@ -209,7 +209,7 @@ class Development(DevelopmentBase):
         """
         X_new = X.copy()
         X_new.group_index = self._set_transform_groups(X_new)
-        triangles = ["std_err_", "ldf_", "sigma_"]
+        triangles = ["std_err_", "ldf_", "sigma_","std_residuals_"]
         for item in triangles + ["average_", "w_", "sigma_interpolation"]:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
