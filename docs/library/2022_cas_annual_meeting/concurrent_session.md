@@ -6,8 +6,8 @@ Below, you can find the materials referenced in the Concurrent Session.
 
 - [Presentation Deck](https://docs.google.com/presentation/d/13JtlCODvNjAF62SQyF_TLnvGk8FuBOOn4L3LeDqxjbQ/edit#slide=id.g14a01cc18bb_0_0)
 - Live Demo Workbook
-  - Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/blob/master/docs/tutorials/demo_exercises_blank.ipynb) (faster, Google Account required)
-  - Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master?urlpath=tree/docs/tutorials/demo_exercises_blank.ipynb) (slower, no sign up required)
+  - Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/blob/master/docs/tutorials/demo-blank.ipynb) (faster, Google Account required)
+  - Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master?urlpath=tree/docs/tutorials/demo-blank.ipynb) (slower, no sign up required)
 
 Other Resources:
 - [Chainladder-Python's GitHub](https://github.com/casact/chainladder-python/)
