@@ -5,11 +5,12 @@ format: jb-book
 root: intro.md
 
 parts:
-  # - caption: 2022 CAS Annual Meeting
-  #     chapters:
-  #       - file: Concurrent Session
-  #       - file: Round Table
-  - caption: START HERE
+  - caption: 2022 CAS Annual Meeting
+      chapters:
+        - file: library/concurrent_session.md
+        - file: library/roundtable_session.md
+
+  - caption: Start Here
     chapters:
     - file: tutorials/demo_exercises.ipynb
     - file: library/install.md
