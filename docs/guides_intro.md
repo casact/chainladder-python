@@ -1,7 +1,6 @@
 # User Guide
 
-
-Here are a few links to help you get started.
+Here are a few examples that we have came up with, hopefully the code is simple enough so you can fit your own needs.
 
 `````{grid}
 :gutter: 3
