@@ -42,8 +42,9 @@ parts:
 
   - caption: About
     chapters:
+    - file: library/usage.md
     - file: library/source_code.md
-    - file: library/questions_issues.md
     - file: library/releases.md
+    - file: library/questions_issues.md
     - file: library/contributing.md
     - file: library/roadmap.md
