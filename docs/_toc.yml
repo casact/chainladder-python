@@ -7,8 +7,8 @@ root: intro.md
 parts:
   - caption: 2022 CAS Annual Meeting
     chapters:
-    - file: library/concurrent_session.md
-    - file: library/roundtable_session.md
+      - file: library/2022_cas_annual_meeting/concurrent_session.md
+      - file: library/2022_cas_annual_meeting/roundtable_session.md
 
   - caption: Start Here
     chapters:
