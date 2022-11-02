@@ -16,21 +16,21 @@ Don't know where to start? Head over to the START HERE section to explore what's
 
 :::{grid-item-card}
 :columns: 4
-**[Actual Vs Expected](gallery/plot_ave_analysis)**
+**[Actual Vs Expected](plot_ave_analysis)**
 ```{glue:} plot_ave_analysis
 ```
 :::
 
 :::{grid-item-card}
 :columns: 4
-**[IBNR Runoff](gallery/plot_ibnr_runoff)**
+**[IBNR Runoff](plot_ibnr_runoff)**
 ```{glue:} plot_ibnr_runoff
 ```
 :::
 
 :::{grid-item-card}
 :columns: 4
-**[MackChainladder](gallery/plot_mack)**
+**[MackChainladder](plot_mack)**
 ```{glue:} plot_mack
 ```
 :::
