@@ -2,7 +2,9 @@
 
 Below is the list of all datasets that come included with the `chainladder` package, and their basic attributes.
 
-You can load any dataset with `cl.load_sample(...)` such as `cl.load_sample("abc")`. * Denotes datasets that are more interesting and possess unique characteristics.
+You can load any dataset with `cl.load_sample(...)` such as `cl.load_sample("abc")`.
+
+* Denotes datasets that are more interesting and possess unique characteristics.
 
 
 | Dataset Name | Indexes                                                  | Columns                                                                             | Origin Grain       | Development Grain  |
