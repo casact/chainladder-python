@@ -19,7 +19,7 @@ ALLSPHINXOPTS   = -T -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS)\
 
 .PHONY: help clean html dirhtml pickle json latex latexpdf changes linkcheck doctest optipng
 
-all: html-noplot
+all: html
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
