@@ -4,8 +4,9 @@
 from chainladder.methods import MethodBase
 import numpy as np
 
+
 class Benktander(MethodBase):
-    """ The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
+    """The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
 
     Parameters
     ----------
@@ -89,7 +90,7 @@ class Benktander(MethodBase):
         return X_new
 
     def _get_benktander_aprioris(self, X, sample_weight):
-        """ Private method to establish Benktander Apriori """
+        """Private method to establish Benktander Apriori"""
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)
@@ -101,12 +102,13 @@ class Benktander(MethodBase):
         else:
             apriori = sample_weight * self.apriori
         apriori.columns = sample_weight.columns
-        return apriori  
+        return apriori
 
     def _get_ultimate(self, X, expectation):
         from chainladder.utils.utility_functions import num_to_nan
+
         if X.is_cumulative == False:
-            ld = X.sum('development')
+            ld = X.sum("development")
             ultimate = ld.val_to_dev()
         else:
             ld = X.latest_diagonal
@@ -127,5 +129,5 @@ class Benktander(MethodBase):
         b = cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(backend).values)
         ultimate.values = num_to_nan(a + b)
         ultimate.array_backend = backend
-        ultimate.ddims = self.cdf_.ddims[:ultimate.shape[-1]]
+        ultimate.ddims = self.cdf_.ddims[: ultimate.shape[-1]]
         return self._set_ult_attr(ultimate)
