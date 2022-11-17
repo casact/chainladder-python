@@ -176,7 +176,9 @@ class CapeCod(Benktander):
                         trend_array[index] = 1.000
                     else:
                         trend_array[index] = trended_diag[index] / original_diag[index]
-                trend_array = np.reshape(trend_array, (1, 1, X.values.shape[2], 1))
+                trend_array = np.reshape(
+                    trend_array, (X.shape[0], X.shape[1], X.values.shape[2], 1)
+                )
 
         else:
             if hasattr(X, "trend_"):
