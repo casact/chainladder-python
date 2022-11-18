@@ -137,9 +137,6 @@ class Triangle(TriangleBase):
         self.origin_grain = self._get_grain(
             origin_date, trailing=trailing, kind="origin"
         )
-        print("origin_date\n", origin_date)
-        print("trailing\n", trailing)
-        print("self.origin_grain\n", self.origin_grain)
 
         development_date = self._set_development(
             data, development, development_format, origin_date
@@ -169,7 +166,6 @@ class Triangle(TriangleBase):
             self.origin_grain,
             self.development_grain,
         )
-        print("=== date_axes\n", date_axes)
 
         # Deal with labels
         if not index:
@@ -215,8 +211,8 @@ class Triangle(TriangleBase):
                 grain_sort.index(self.development_grain),
             )
         ]
+
         # Coerce malformed triangles to something more predictible
-        print("origin_freq\n", self.origin_grain)
         check_origin = (
             pd.period_range(
                 start=self.odims.min(),
@@ -226,6 +222,7 @@ class Triangle(TriangleBase):
             .to_timestamp()
             .values
         )
+
         if (
             len(check_origin) != self.odims
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date

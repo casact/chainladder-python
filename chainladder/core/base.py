@@ -138,17 +138,15 @@ class TriangleBase(
                     date_axes["__origin__"], date_axes["__development__"]
                 ).unique()
             )
-            # print("ddims recalc\n", ddims)
-            # ddims = dev_lag.unique()
-            # print("dev_lag\n", dev_lag)
-            # print("ddims\n", ddims)
+
             dev_idx = TriangleBase._set_index(dev_lag, ddims)
+
         else:
             ddims = pd.DatetimeIndex(
                 [data_agg["__development__"].max()], name="valuation"
             )
             dev_idx = np.zeros((len(data_agg), 1))
-        # print("dev_idx\n", dev_idx)
+
         return ddims, dev_idx
 
     @staticmethod
@@ -186,11 +184,7 @@ class TriangleBase(
         o = pd.period_range(
             start=origin_date.min(), end=origin_date.max(), freq=origin_grain
         ).to_timestamp(how="s")
-        print("orgin axis\n", o)
 
-        # print("== IN _get_date_axes")
-        # print("development_date\n", development_date)
-        # print("development_grain\n", development_grain)
         d = pd.period_range(
             start=development_date.min(),
             end=development_date.max(),
@@ -199,12 +193,10 @@ class TriangleBase(
 
         # If the development is semi-annual, we need to adjust further because of "2Q-DEC"
         if development_grain == "2Q-DEC":
-            # print("semi annual detected")
             from pandas.tseries.offsets import DateOffset
 
             d = d + DateOffset(months=-3)
 
-        # print("development axis\n", d)
         c = pd.DataFrame(
             TriangleBase._cartesian_product(o, d),
             columns=["__origin__", "__development__"],
