@@ -5,7 +5,7 @@ import copy
 
 
 def test_non_vertical_line():
-    true_olf = (1 - 0.5 * (184 / 365) ** 2) * 0.2
+    true_olf = (1 - 0.5 * (184 / 365.25) ** 2) * 0.2
     olf_low = (
         cl.parallelogram_olf([0.20], ["7/1/2017"], grain="Y").loc["2017"].iloc[0] - 1
     )
@@ -54,9 +54,7 @@ def test_pipeline_json_io():
 
 
 def test_json_subtri(raa):
-    a = cl.read_json(
-        cl.Chainladder().fit_predict(raa).to_json()
-    ).full_triangle_
+    a = cl.read_json(cl.Chainladder().fit_predict(raa).to_json()).full_triangle_
     b = cl.Chainladder().fit_predict(raa).full_triangle_
     assert abs(a - b).max().max() < 1e-4
 
@@ -75,8 +73,10 @@ def test_concat(clrd):
         == tri.loc[["wkcomp", "comauto"]]
     )
 
+
 def test_model_diagnostics(qtr):
     cl.model_diagnostics(cl.Chainladder().fit(qtr))
+
 
 def test_concat_immutability(raa):
     u = cl.Chainladder().fit(raa).ultimate_
