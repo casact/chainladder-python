@@ -163,7 +163,7 @@ class Triangle(TriangleBase):
         # Deal with labels
         if not index:
             index = ["Total"]
-            data_agg[index[0]] = "Total"    
+            data_agg[index[0]] = "Total"
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
@@ -200,8 +200,9 @@ class Triangle(TriangleBase):
         # Coerce malformed triangles to something more predictible
         check_origin = (
             pd.period_range(
-                start=self.odims.min(), end=self.valuation_date, 
-                freq=self.origin_grain.replace('S', '2Q')
+                start=self.odims.min(),
+                end=self.valuation_date,
+                freq=self.origin_grain.replace("S", "2Q"),
             )
             .to_timestamp()
             .values
@@ -215,6 +216,7 @@ class Triangle(TriangleBase):
 
         # Set the Triangle values
         coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
+        print("coords\n", coords)
         self.values = num_to_nan(
             sp(
                 coords,
@@ -255,7 +257,7 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(data, index, columns, origin, development):
-        """ Deal with triangles with ultimate values """
+        """Deal with triangles with ultimate values"""
         ult = None
         if (
             development
@@ -347,7 +349,7 @@ class Triangle(TriangleBase):
         self.ddims = np.array([value] if type(value) is str else value)
 
     def set_index(self, value, inplace=False):
-        """ Sets the index of the Triangle """
+        """Sets the index of the Triangle"""
         if inplace:
             self.index = value
             return self
@@ -458,7 +460,13 @@ class Triangle(TriangleBase):
                     self.values = xp.nan_to_num(self.values)
                     values = num_to_value(self.values, 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
-                    self = concat((diff, self.iloc[..., -1],), axis=3)
+                    self = concat(
+                        (
+                            diff,
+                            self.iloc[..., -1],
+                        ),
+                        axis=3,
+                    )
                     self.values = self.values * self.nan_triangle
                 else:
                     diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
@@ -508,7 +516,7 @@ class Triangle(TriangleBase):
         return obj
 
     def dev_to_val(self, inplace=False):
-        """ Converts triangle from a development lag triangle to a valuation
+        """Converts triangle from a development lag triangle to a valuation
         triangle.
 
         Parameters
@@ -551,7 +559,7 @@ class Triangle(TriangleBase):
         return obj
 
     def val_to_dev(self, inplace=False):
-        """ Converts triangle from a valuation triangle to a development lag
+        """Converts triangle from a valuation triangle to a development lag
         triangle.
 
         Parameters
@@ -689,7 +697,7 @@ class Triangle(TriangleBase):
         ultimate_lag=None,
         **kwargs
     ):
-        """  Allows for the trending of a Triangle object along either a valuation
+        """Allows for the trending of a Triangle object along either a valuation
         or origin axis.  This method trends using days and assumes a years is
         365.25 days long.
 
@@ -807,7 +815,7 @@ class Triangle(TriangleBase):
         return ValuationCorrelation(self, p_critical, total)
 
     def shift(self, periods=-1, axis=3):
-        """ Shift elements along an axis by desired number of periods.
+        """Shift elements along an axis by desired number of periods.
 
         Data that falls beyond the existing shape of the Triangle is eliminated
         and new cells default to zero.
@@ -872,7 +880,7 @@ class Triangle(TriangleBase):
             return out.shift(periods - 1 if periods > 0 else periods + 1, axis)
 
     def sort_axis(self, axis):
-        """ Method to sort a Triangle along a given axis
+        """Method to sort a Triangle along a given axis
 
         Parameters
         ----------
