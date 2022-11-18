@@ -123,9 +123,11 @@ class Triangle(TriangleBase):
     ):
         if data is None:
             return
+
         index, columns, origin, development = self._input_validation(
             data, index, columns, origin, development
         )
+
         # Handle any ultimate vectors in triangles separately
         data, ult = self._split_ult(data, index, columns, origin, development)
         # Conform origins and developments to datetimes and determine lowest grains
@@ -138,28 +140,37 @@ class Triangle(TriangleBase):
         development_date = self._set_development(
             data, development, development_format, origin_date
         )
+        print("development_date raw\n", development_date)
+
         self.development_grain = self._get_grain(
             development_date, trailing=trailing, kind="development"
         )
+
         origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(
             how="s"
         )
-
+        # UNCOMMENT?
         development_date = development_date.dt.to_period(
             self.development_grain
         ).dt.to_timestamp(how="e")
+
+        print("development_date processed\n", development_date)
+
         # Aggregate dates to the origin/development grains
         data_agg = self._aggregate_data(
             data, origin_date, development_date, index, columns
         )
 
         # Fill in missing periods with zeros
+        print("data_agg\n", data_agg)
         date_axes = self._get_date_axes(
             data_agg["__origin__"],
             data_agg["__development__"],
+            # self._set_development(data, development, development_format, origin_date),
             self.origin_grain,
             self.development_grain,
         )
+        print("=== date_axes\n", date_axes)
         # Deal with labels
         if not index:
             index = ["Total"]
@@ -216,7 +227,7 @@ class Triangle(TriangleBase):
 
         # Set the Triangle values
         coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
-        print("coords\n", coords)
+
         self.values = num_to_nan(
             sp(
                 coords,

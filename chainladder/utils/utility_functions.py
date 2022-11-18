@@ -275,7 +275,6 @@ def num_to_value(arr, value):
         if arr.fill_value == 0 or sp.isnan(arr.fill_value):
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
-            print("arr.coords\n", arr.coords)
 
             arr = sp(
                 coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape
@@ -292,8 +291,7 @@ def num_to_nan(arr):
     from chainladder import Triangle
 
     xp = Triangle.get_array_module(None, arr=arr)
-    print("xp:\n", xp)
-    print("num_to_value(arr, xp.nan)\n", num_to_value(arr, xp.nan))
+
     return num_to_value(arr, xp.nan)
 
 
