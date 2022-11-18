@@ -196,18 +196,20 @@ class TriangleBase(
             end=development_date.max(),
             freq=development_grain,
         ).to_timestamp(how="e")
+
         # If the development is semi-annual, we need to adjust further because of "2Q-DEC"
         if development_grain == "2Q-DEC":
-            print("semi annual detected")
+            # print("semi annual detected")
             from pandas.tseries.offsets import DateOffset
 
             d = d + DateOffset(months=-3)
 
-        print("development axis\n", d)
+        # print("development axis\n", d)
         c = pd.DataFrame(
             TriangleBase._cartesian_product(o, d),
             columns=["__origin__", "__development__"],
         )
+
         return c[c["__development__"] > c["__origin__"]]
 
     @property
@@ -279,7 +281,7 @@ class TriangleBase(
         months = dates.dt.month.unique()
         diffs = np.diff(np.sort(months))
         if len(dates.unique()) == 1:
-            grain = "M"
+            grain = "A"
         elif len(months) == 1:
             grain = "A"
         elif np.all(diffs == 6):

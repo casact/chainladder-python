@@ -137,10 +137,13 @@ class Triangle(TriangleBase):
         self.origin_grain = self._get_grain(
             origin_date, trailing=trailing, kind="origin"
         )
+        print("origin_date\n", origin_date)
+        print("trailing\n", trailing)
+        print("self.origin_grain\n", self.origin_grain)
+
         development_date = self._set_development(
             data, development, development_format, origin_date
         )
-        print("development_date raw\n", development_date)
 
         self.development_grain = self._get_grain(
             development_date, trailing=trailing, kind="development"
@@ -149,12 +152,10 @@ class Triangle(TriangleBase):
         origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(
             how="s"
         )
-        # UNCOMMENT?
+
         development_date = development_date.dt.to_period(
             self.development_grain
         ).dt.to_timestamp(how="e")
-
-        print("development_date processed\n", development_date)
 
         # Aggregate dates to the origin/development grains
         data_agg = self._aggregate_data(
@@ -162,43 +163,49 @@ class Triangle(TriangleBase):
         )
 
         # Fill in missing periods with zeros
-        print("data_agg\n", data_agg)
         date_axes = self._get_date_axes(
             data_agg["__origin__"],
             data_agg["__development__"],
-            # self._set_development(data, development, development_format, origin_date),
             self.origin_grain,
             self.development_grain,
         )
         print("=== date_axes\n", date_axes)
+
         # Deal with labels
         if not index:
             index = ["Total"]
             data_agg[index[0]] = "Total"
+
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
+
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
         self.key_labels = index
         self.valuation_date = val_date
+
         if cumulative is None:
             warnings.warn(
                 """
             The cumulative property of your triangle is not set. This may result in
             undesirable behavior. In a future release this will result in an error."""
             )
+
         self.is_cumulative = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern = pattern
+
         split = self.origin_grain.split("-")
         self.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+
         if len(split) == 1:
             self.origin_close = "DEC"
         else:
             self.origin_close = split[1]
+
         split = self.development_grain.split("-")
         self.development_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
         grain_sort = ["Y", "S", "Q", "M"]
@@ -209,6 +216,7 @@ class Triangle(TriangleBase):
             )
         ]
         # Coerce malformed triangles to something more predictible
+        print("origin_freq\n", self.origin_grain)
         check_origin = (
             pd.period_range(
                 start=self.odims.min(),
