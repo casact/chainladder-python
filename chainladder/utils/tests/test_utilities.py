@@ -5,7 +5,7 @@ import copy
 
 
 def test_non_vertical_line():
-    true_olf = (1 - 0.5 * (184 / 365.25) ** 2) * 0.2
+    true_olf = (1 - 0.5 * ((31 + 31 + 30 + 31 + 30 + 31) / 365.25) ** 2) * 0.2
     olf_low = (
         cl.parallelogram_olf([0.20], ["7/1/2017"], grain="Y").loc["2017"].iloc[0] - 1
     )
