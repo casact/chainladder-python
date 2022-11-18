@@ -729,3 +729,30 @@ def test_halfyear_development():
         )
         == cl.Triangle
     )
+
+    data = [
+        ["2010-01-01", "2011-06-30", "premium", 100.0],
+        ["2010-01-01", "2011-12-31", "incurred", 100.0],
+        ["2010-01-01", "2012-06-30", "premium", 200.0],
+        ["2010-01-01", "2012-12-31", "incurred", 100.0],
+        ["2010-01-01", "2013-12-31", "incurred", 200.0],
+        ["2011-01-01", "2011-06-30", "premium", 100.0],
+        ["2011-01-01", "2012-06-30", "premium", 200.0],
+        ["2011-01-01", "2012-12-31", "incurred", 100.0],
+        ["2011-01-01", "2013-12-31", "incurred", 200.0],
+        ["2012-01-01", "2012-06-30", "premium", 200.0],
+        ["2012-01-01", "2013-12-31", "incurred", 200.0],
+    ]
+
+    assert (
+        type(
+            cl.Triangle(
+                data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
+                index="idx",
+                columns="value",
+                origin="origin",
+                development="val_date",
+                cumulative=True,
+            )
+        )
+    ) == cl.Triangle
