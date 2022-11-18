@@ -1,8 +1,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-from chainladder.methods import Benktander
 import warnings
+import numpy as np
+
+from chainladder.methods import Benktander
 
 
 class CapeCod(Benktander):
@@ -29,8 +31,8 @@ class CapeCod(Benktander):
         If None, the random number generator is the RandomState instance used
         by np.random.
     groupby:
-        An option to group levels of the triangle index together for the 
-        purposes of deriving the apriori measures.  If omitted, each level of 
+        An option to group levels of the triangle index together for the
+        purposes of deriving the apriori measures.  If omitted, each level of
         the triangle index will receive its own apriori computation.
 
 
@@ -48,8 +50,15 @@ class CapeCod(Benktander):
         The detrended apriori vector developed by the Cape Cod Method
     """
 
-    def __init__(self, trend=0, decay=1, n_iters=1, apriori_sigma=0.0,
-                 random_state=None, groupby=None):
+    def __init__(
+        self,
+        trend=0,
+        decay=1,
+        n_iters=1,
+        apriori_sigma=0.0,
+        random_state=None,
+        groupby=None,
+    ):
         self.trend = trend
         self.decay = decay
         self.n_iters = n_iters
@@ -78,19 +87,18 @@ class CapeCod(Benktander):
             raise ValueError("sample_weight is required.")
         self.apriori = 1.0
         self.X_ = self.validate_X(X)
-        self.validate_weight(X, sample_weight)
         sample_weight = sample_weight.set_backend(self.X_.array_backend)
-        self.apriori_, self.detrended_apriori_ = \
-            self._get_capecod_aprioris(self.X_, sample_weight)
-        self.expectation_ =  sample_weight * self.detrended_apriori_
+        self.apriori_, self.detrended_apriori_ = self._get_capecod_aprioris(
+            self.X_, sample_weight
+        )
+        self.expectation_ = sample_weight * self.detrended_apriori_
         super().fit(X, y, self.expectation_)
         return self
 
     def _get_capecod_aprioris(self, X, sample_weight):
-        """ Private method to establish CapeCod Apriori """
-
+        """Private method to establish CapeCod Apriori"""
         if X.is_cumulative == False:
-            X = X.sum('development').val_to_dev()
+            X = X.sum("development").val_to_dev()
         latest = X.latest_diagonal
         len_orig = sample_weight.shape[-2]
         reported_exposure = sample_weight / self._align_cdf(X.copy(), sample_weight)
@@ -106,16 +114,17 @@ class CapeCod(Benktander):
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
         weighted_exposure = xp.swapaxes(reported_exposure.values, -1, -2) * decay_matrix
-        trended_ultimate = ((latest.values * trend_array * X_olf_array) /
-                            (reported_exposure.values * sw_olf_array))
+        trended_ultimate = (latest.values * trend_array * X_olf_array) / (
+            reported_exposure.values * sw_olf_array
+        )
         trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
-        apriori = (xp.nansum(weighted_exposure * trended_ultimate, -1) /
-                   xp.nansum(weighted_exposure, -1))
+        apriori = xp.nansum(weighted_exposure * trended_ultimate, -1) / xp.nansum(
+            weighted_exposure, -1
+        )
         apriori_ = reported_exposure.copy()
         apriori_.values = apriori[..., None]
         detrended_apriori_ = apriori_ / trend_array / X_olf_array * sw_olf_array
         return self._set_ult_attr(apriori_), self._set_ult_attr(detrended_apriori_)
-
 
     def predict(self, X, sample_weight=None):
         """Predicts the CapeCod ultimate on a new triangle **X**
@@ -137,11 +146,9 @@ class CapeCod(Benktander):
         X_new = X.copy()
         X_new.ldf_ = self.ldf_
         X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
-        apriori_, detrended_apriori_ = self._get_capecod_aprioris(
-            X_new, sample_weight
-        )
+        apriori_, detrended_apriori_ = self._get_capecod_aprioris(X_new, sample_weight)
         expectation_ = detrended_apriori_ * sample_weight.values
-        X_new = super().predict(X_new,  expectation_)
+        X_new = super().predict(X_new, expectation_)
         X_new.apriori_ = apriori_
         X_new.detrended_apriori_ = detrended_apriori_
         X_new.expectation_ = expectation_
@@ -155,18 +162,38 @@ class CapeCod(Benktander):
                         "CapeCod Trend assumption is ignored when X has a trend_ property."
                     )
                 trend_array = X.trend_.latest_diagonal.values
+
             else:
-                trend_array = (X.trend(self.trend) / X).latest_diagonal.values
+                trended_diag = X.trend(self.trend).latest_diagonal.values.ravel()
+                original_diag = X.latest_diagonal.values.ravel()
+
+                ## Init the trends as 1.000
+                trend_array = [1.000] * len(trended_diag)
+
+                for index in range(X.values.shape[2]):
+                    # In case of 0/0
+                    if np.isnan(trended_diag[index]) and np.isnan(original_diag[index]):
+                        trend_array[index] = 1.000
+                    else:
+                        trend_array[index] = trended_diag[index] / original_diag[index]
+                trend_array = np.reshape(
+                    trend_array, (X.shape[0], X.shape[1], X.values.shape[2], 1)
+                )
+
         else:
             if hasattr(X, "trend_"):
                 if self.trend != 0:
                     warnings.warn(
                         "CapeCod Trend assumption is ignored when X has a trend_ property."
                     )
-                trend_array = X.trend_.groupby(self.groupby).latest_diagonal.sum().values
+                trend_array = (
+                    X.trend_.groupby(self.groupby).latest_diagonal.sum().values
+                )
             else:
-                trend_array = (X.groupby(self.groupby).sum().trend(self.trend) /
-                               X.groupby(self.groupby).sum()).latest_diagonal.values
+                trend_array = (
+                    X.groupby(self.groupby).sum().trend(self.trend)
+                    / X.groupby(self.groupby).sum()
+                ).latest_diagonal.values
         return trend_array
 
     def _onlevel(self, X):
