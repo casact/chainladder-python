@@ -104,7 +104,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     # for drop_high and drop_low
     def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
-        link_ratios_len = len(link_ratio[0, 0])
+        #this is safe because each triangle by index and column has 
+        link_ratios_len = link_ratio.shape[3]
 
         def drop_array_helper(drop_type):
             drop_type_array = np.array(link_ratios_len * [0])
@@ -132,36 +133,46 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
                 return drop_type_array
 
+        #setting up 3-D arrays for drop parameters
+        drop_high_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
         drop_high_array = drop_array_helper(drop_high)
+        drop_low_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
         drop_low_array = drop_array_helper(drop_low)
+        n_period_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
+        n_period_array = drop_array_helper(self.n_periods)
+        preserve_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
+        preserve_array = drop_array_helper(preserve)
+        
+        #operationalizing the -1 option for n_period
+        n_period_array = np.where(n_period_array == -1, link_ratios_len, n_period_array)
+        
+        #ranking factors by itself and volume
+        link_ratio_ranks = np.lexsort((X.values[...,:-1],link_ratio),axis = 2).argsort(axis=2)
 
-        link_ratio_ranks = link_ratio[0][0].argsort(axis=0).argsort(axis=0)
+        #setting up default return
+        weights = ~np.isnan(link_ratio.transpose((0,1,3,2)))
 
-        weights = ~np.isnan(link_ratio[0][0].T)
-        warning_flag = False
+        #counting valid factors
+        ldf_count = weights.sum(axis=3)
+        
+        #applying n_period
+        ldf_count_n_period = np.where(ldf_count > n_period_array, n_period_array, ldf_count)
+        
+        #applying drop_high and drop_low
+        max_rank_unpreserve = ldf_count_n_period - drop_high_array
+        min_rank_unpreserve = drop_low_array
 
-        # checking to see if the ranks are in range
-        for index in range(len(drop_high_array) - 1):
-            if self.n_periods == -1:
-                period_guard = link_ratios_len
-            else:
-                period_guard = self.n_periods + 1
+        #applying preserve
+        warning_flag = np.any(max_rank_unpreserve - min_rank_unpreserve < preserve)
+        max_rank = np.where(max_rank_unpreserve - min_rank_unpreserve < preserve, ldf_count_n_period, max_rank_unpreserve)
+        min_rank = np.where(max_rank_unpreserve - min_rank_unpreserve < preserve, 0, min_rank_unpreserve)
+            
+        index_array_weights = (link_ratio_ranks.transpose((0,1,3,2)) < max_rank.reshape(max_rank.shape[0],max_rank.shape[1],max_rank.shape[2],1)) & (
+            link_ratio_ranks.transpose((0,1,3,2)) > min_rank.reshape(min_rank.shape[0],min_rank.shape[1],min_rank.shape[2],1) - 1
+        )
 
-            max_rank = (
-                (~np.isnan(link_ratio[0][0].T[index])).sum() - drop_high_array[index]
-            )
-            min_rank = drop_low_array[index]
-
-            index_array_weights = (link_ratio_ranks.T[index] < max_rank) & (
-                link_ratio_ranks.T[index] > min_rank - 1
-            )
-
-            if sum(index_array_weights) > preserve - 1:
-                weights[index] = index_array_weights
-
-            else:
-                warning_flag = True
-
+        weights = index_array_weights
+        
         if warning_flag:
             if preserve == 1:
                 warning = (
@@ -178,7 +189,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 )
             warnings.warn(warning)
 
-        return weights.T[None, None]
+        return weights.transpose((0,1,3,2))
 
     # for drop_above and drop_below
     def _drop_x(self, drop_above, drop_below, X, link_ratio, preserve):

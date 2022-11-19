@@ -31,3 +31,9 @@ def test_groupby(clrd):
     xp = a.get_array_module()
     b = b.set_backend(a.array_backend)
     xp.allclose(xp.nan_to_num(a.values), xp.nan_to_num(b.values), atol=1e-5)
+
+
+def test_capecod_zero_tri(raa):
+    premium = raa.latest_diagonal * 0 + 50000
+    raa.loc[:,:,'1987',48] = 0
+    assert cl.CapeCod().fit(raa, sample_weight=premium).ultimate_.loc[:,:,'1987'].sum() > 0
