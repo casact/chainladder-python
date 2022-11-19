@@ -52,7 +52,8 @@ class TriangleDunders:
         x, y = set_common_backend([x, y])
         if (
             x.origin_grain != y.origin_grain
-            or x.development_grain != y.development_grain
+            or (x.development_grain != y.development_grain and 
+                min(x.shape[-1], y.shape[-1]) > 1)
         ):
             raise ValueError(
                 "Triangle arithmetic requires both triangles to be the same grain."
