@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import copy
 import pytest
+import io
 
 try:
     from IPython.core.display import HTML
@@ -35,8 +36,7 @@ def test_to_frame_unusual(clrd):
 
 def test_link_ratio(raa, atol):
     assert (
-        raa.link_ratio * raa.iloc[:, :, :-1, :-
-                                  1].values - raa.values[:, :, :-1, 1:]
+        raa.link_ratio * raa.iloc[:, :, :-1, :-1].values - raa.values[:, :, :-1, 1:]
     ).sum().sum() < atol
 
 
@@ -67,15 +67,13 @@ def test_multilevel_index_groupby_sum2(clrd):
 
 def test_boolean_groupby_eq_groupby_loc(clrd):
     assert (
-        clrd[clrd["LOB"] == "ppauto"].sum() == clrd.groupby(
-            "LOB").sum().loc["ppauto"]
+        clrd[clrd["LOB"] == "ppauto"].sum() == clrd.groupby("LOB").sum().loc["ppauto"]
     )
 
 
 def test_latest_diagonal_two_routes(clrd):
     assert (
-        clrd.latest_diagonal.sum()["BulkLoss"] == clrd.sum(
-        ).latest_diagonal["BulkLoss"]
+        clrd.latest_diagonal.sum()["BulkLoss"] == clrd.sum().latest_diagonal["BulkLoss"]
     )
 
 
@@ -121,15 +119,13 @@ def test_trend(raa, atol):
 def test_shift(qtr):
     x = qtr.iloc[0, 0]
     xp = x.get_array_module()
-    xp.testing.assert_array_equal(
-        x[x.valuation <= x.valuation_date].values, x.values)
+    xp.testing.assert_array_equal(x[x.valuation <= x.valuation_date].values, x.values)
 
 
 def test_quantile_vs_median(clrd):
     xp = clrd.get_array_module()
     xp.testing.assert_array_equal(
-        clrd.quantile(q=0.5)["CumPaidLoss"].values, clrd.median()[
-            "CumPaidLoss"].values
+        clrd.quantile(q=0.5)["CumPaidLoss"].values, clrd.median()["CumPaidLoss"].values
     )
 
 
@@ -248,15 +244,13 @@ def test_df_period_input(raa):
 def test_trend_on_vector(raa):
     d = raa.latest_diagonal
     assert (
-        d.trend(0.05, axis=2).to_frame(
-            origin_as_datetime=False).astype(int).iloc[0, 0]
+        d.trend(0.05, axis=2).to_frame(origin_as_datetime=False).astype(int).iloc[0, 0]
         == 29217
     )
 
 
 def test_latest_diagonal_val_to_dev(raa):
-    assert raa.latest_diagonal.val_to_dev(
-    ) == raa[raa.valuation == raa.valuation_date]
+    assert raa.latest_diagonal.val_to_dev() == raa[raa.valuation == raa.valuation_date]
 
 
 def test_sumdiff_to_diffsum(clrd):
@@ -267,8 +261,7 @@ def test_sumdiff_to_diffsum(clrd):
 def test_init_vector(raa):
     a = raa.latest_diagonal
     b = pd.DataFrame(
-        {"AccYear": [item for item in range(1981, 1991)], "premium": [
-            3000000] * 10}
+        {"AccYear": [item for item in range(1981, 1991)], "premium": [3000000] * 10}
     )
     b = cl.Triangle(b, origin="AccYear", columns="premium")
     assert np.all(a.valuation == b.valuation)
@@ -393,7 +386,9 @@ def test_no_fitted(raa, prop):
 
 
 def test_pipe(raa):
-    def f(x): return x.loc[..., 48:]
+    def f(x):
+        return x.loc[..., 48:]
+
     assert raa.loc[..., 48:] == raa.pipe(f)
 
 
@@ -477,8 +472,7 @@ def test_trailing_origin():
     tri = cl.Triangle(
         raa, origin="origin", development="valuation", columns="values", cumulative=True
     )
-    assert tri.development.to_list() == [
-        6, 18, 30, 42, 54, 66, 78, 90, 102, 114]
+    assert tri.development.to_list() == [6, 18, 30, 42, 54, 66, 78, 90, 102, 114]
     assert tri.origin_close == "DEC"
     raa["origin2"] = raa["origin"] - pd.DateOffset(months=6)
     tri = cl.Triangle(
@@ -488,8 +482,7 @@ def test_trailing_origin():
         columns="values",
         cumulative=True,
     )
-    assert tri.development.to_list() == [
-        12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+    assert tri.development.to_list() == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
     assert tri.origin_close == "JUN"
 
 
@@ -500,10 +493,8 @@ def test_trailing_valuation():
         .to_frame(keepdims=True, origin_as_datetime=True)
     )
     data.valuation = (data.valuation.dt.year + 1) * 100 + 3
-    tri = cl.Triangle(data, origin="origin",
-                      development="valuation", columns="values")
-    assert tri.development.to_list() == [
-        3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
+    tri = cl.Triangle(data, origin="origin", development="valuation", columns="values")
+    assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(
         data, origin="origin", development="valuation", columns="values", trailing=True
     )
@@ -585,8 +576,7 @@ def test_single_entry():
 def test_origin_as_datetime_arg(clrd):
     from pandas.api.types import is_datetime64_any_dtype
 
-    assert is_datetime64_any_dtype(
-        clrd.to_frame(origin_as_datetime=True)["origin"])
+    assert is_datetime64_any_dtype(clrd.to_frame(origin_as_datetime=True)["origin"])
     assert not is_datetime64_any_dtype(
         clrd.to_frame(origin_as_datetime=False)["origin"]
     )
@@ -611,10 +601,12 @@ def test_full_triangle_and_full_expectation(raa):
     assert cl_fit_incr.ultimate_ == cl_fit_cum.ultimate_
 
     assert (
-        cl_fit_cum.full_expectation_ - cl_fit_incr.full_expectation_.incr_to_cum() < 0.00001
+        cl_fit_cum.full_expectation_ - cl_fit_incr.full_expectation_.incr_to_cum()
+        < 0.00001
     )
-    assert cl_fit_cum.full_triangle_ - \
-        cl_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+    assert (
+        cl_fit_cum.full_triangle_ - cl_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+    )
     assert (cl_fit_cum.full_triangle_ - raa_cum) - (
         cl_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < 0.00001
@@ -633,10 +625,12 @@ def test_full_triangle_and_full_expectation(raa):
     assert bf_fit_incr.ultimate_ == bf_fit_cum.ultimate_
 
     assert (
-        bf_fit_cum.full_expectation_ - bf_fit_incr.full_expectation_.incr_to_cum() < 0.00001
+        bf_fit_cum.full_expectation_ - bf_fit_incr.full_expectation_.incr_to_cum()
+        < 0.00001
     )
-    assert bf_fit_cum.full_triangle_ - \
-        bf_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+    assert (
+        bf_fit_cum.full_triangle_ - bf_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+    )
     assert (bf_fit_cum.full_triangle_ - raa_cum) - (
         bf_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < 0.00001
@@ -654,10 +648,12 @@ def test_full_triangle_and_full_expectation(raa):
     )
 
     assert (
-        bk_fit_cum.full_expectation_ - bk_fit_incr.full_expectation_.incr_to_cum() < 0.00001
+        bk_fit_cum.full_expectation_ - bk_fit_incr.full_expectation_.incr_to_cum()
+        < 0.00001
     )
-    assert bk_fit_cum.full_triangle_ - \
-        bk_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+    assert (
+        bk_fit_cum.full_triangle_ - bk_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+    )
     assert (bk_fit_cum.full_triangle_ - raa_cum) - (
         bk_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < 0.00001
@@ -665,8 +661,7 @@ def test_full_triangle_and_full_expectation(raa):
 
 def test_halfyear_grain():
     data = pd.DataFrame(
-        {"AccMo": [201409, 201503, 201603], "ValMo": [
-            202203] * 3, "value": [100] * 3}
+        {"AccMo": [201409, 201503, 201603], "ValMo": [202203] * 3, "value": [100] * 3}
     )
     assert cl.Triangle(
         data=data, origin="AccMo", development="ValMo", columns="value"
@@ -676,16 +671,89 @@ def test_halfyear_grain():
 def test_predict(raa):
     raa_cum = raa
     assert cl.Chainladder().fit(raa_cum).X_.is_cumulative == True
-    assert cl.BornhuetterFerguson().fit(raa_cum, sample_weight=raa_cum.latest_diagonal *
-                                        0 + 40000).X_.is_cumulative == True
+    assert (
+        cl.BornhuetterFerguson()
+        .fit(raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000)
+        .X_.is_cumulative
+        == True
+    )
     assert cl.Chainladder().fit_predict(raa_cum).is_cumulative == True
-    assert cl.BornhuetterFerguson().fit_predict(
-        raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000).is_cumulative == True
+    assert (
+        cl.BornhuetterFerguson()
+        .fit_predict(raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000)
+        .is_cumulative
+        == True
+    )
 
     raa_incr = raa.cum_to_incr()
     assert cl.Chainladder().fit(raa_incr).X_.is_cumulative == False
-    assert cl.BornhuetterFerguson().fit(raa_incr, sample_weight=raa_incr.latest_diagonal *
-                                        0 + 40000).X_.is_cumulative == False
+    assert (
+        cl.BornhuetterFerguson()
+        .fit(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
+        .X_.is_cumulative
+        == False
+    )
     assert cl.Chainladder().fit_predict(raa_incr).is_cumulative == False
-    assert cl.BornhuetterFerguson().fit_predict(
-        raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000).is_cumulative == False
+    assert (
+        cl.BornhuetterFerguson()
+        .fit_predict(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
+        .is_cumulative
+        == False
+    )
+
+
+def test_halfyear_development():
+    df_sub = pd.read_csv(
+        io.StringIO(
+            """
+        2011-01-01, 2011-01-01, 179.74
+        2011-01-01, 2011-07-01, 664.94
+        2011-01-01, 2012-01-01, 7471.75
+        2011-01-01, 2012-07-01, 820.99
+        2011-01-01, 2013-01-01, 908.77
+        """
+        ),
+        names=["origin", "development", "paid"],
+        parse_dates=["origin", "development"],
+    )
+    assert (
+        type(
+            cl.Triangle(
+                data=df_sub,
+                origin="origin",
+                origin_format="%Y-%m-%d",
+                development="development",
+                development_format="%Y-%m-%d",
+                columns="paid",
+                cumulative=True,
+            )
+        )
+        == cl.Triangle
+    )
+
+    data = [
+        ["2010-01-01", "2011-06-30", "premium", 100.0],
+        ["2010-01-01", "2011-12-31", "incurred", 100.0],
+        ["2010-01-01", "2012-06-30", "premium", 200.0],
+        ["2010-01-01", "2012-12-31", "incurred", 100.0],
+        ["2010-01-01", "2013-12-31", "incurred", 200.0],
+        ["2011-01-01", "2011-06-30", "premium", 100.0],
+        ["2011-01-01", "2012-06-30", "premium", 200.0],
+        ["2011-01-01", "2012-12-31", "incurred", 100.0],
+        ["2011-01-01", "2013-12-31", "incurred", 200.0],
+        ["2012-01-01", "2012-06-30", "premium", 200.0],
+        ["2012-01-01", "2013-12-31", "incurred", 200.0],
+    ]
+
+    assert (
+        type(
+            cl.Triangle(
+                data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
+                index="idx",
+                columns="value",
+                origin="origin",
+                development="val_date",
+                cumulative=True,
+            )
+        )
+    ) == cl.Triangle
