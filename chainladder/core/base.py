@@ -286,6 +286,7 @@ class TriangleBase(
             if kind == "origin":
                 end = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
                 end = 'DEC' if end in ['MAR', 'JUN', 'SEP', 'DEC'] and grain == 'Q' else end
+                end = 'DEC' if end in ['JUN', 'DEC'] and grain == '2Q' else end
             else:
                 # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
                 if (
