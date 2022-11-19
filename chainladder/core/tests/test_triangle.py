@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import copy
 import pytest
+import io
 
 try:
     from IPython.core.display import HTML
