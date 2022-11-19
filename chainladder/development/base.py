@@ -133,15 +133,15 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
                 return drop_type_array
 
-        #setting up 3-D arrays for drop parameters
+        #explicitly setting up 3D arrays for drop parameters to avoid broadcasting bugs
         drop_high_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
-        drop_high_array = drop_array_helper(drop_high)
+        drop_high_array[:,:,:] = drop_array_helper(drop_high)
         drop_low_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
-        drop_low_array = drop_array_helper(drop_low)
+        drop_low_array[:,:,:] = drop_array_helper(drop_low)
         n_period_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
-        n_period_array = drop_array_helper(self.n_periods)
+        n_period_array[:,:,:] = drop_array_helper(self.n_periods)
         preserve_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
-        preserve_array = drop_array_helper(preserve)
+        preserve_array[:,:,:] = drop_array_helper(preserve)        
         
         #operationalizing the -1 option for n_period
         n_period_array = np.where(n_period_array == -1, link_ratios_len, n_period_array)
@@ -193,7 +193,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     # for drop_above and drop_below
     def _drop_x(self, drop_above, drop_below, X, link_ratio, preserve):
-        link_ratios_len = len(link_ratio[0, 0])
+        #this is safe because each triangle by index and column has 
+        link_ratios_len = link_ratio.shape[3]
 
         def drop_array_helper(drop_type, default_value):
             drop_type_array = np.array(link_ratios_len * [default_value])
@@ -211,26 +212,31 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
             return drop_type_array
 
-        drop_above_array = drop_array_helper(drop_above, np.inf)
-        drop_below_array = drop_array_helper(drop_below, 0.0)
+        #explicitly setting up 3D arrays for drop parameters to avoid broadcasting bugs
+        drop_above_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
+        drop_above_array[:,:,:] = drop_array_helper(drop_above, np.inf)
+        drop_below_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
+        drop_below_array[:,:,:] = drop_array_helper(drop_below, 0.0)
+        preserve_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
+        preserve_array[:,:,:] = drop_array_helper(preserve, preserve)        
 
-        weights = ~np.isnan(link_ratio[0][0].T)
-        warning_flag = False
+        #transposing
+        link_ratio_T = link_ratio.transpose((0,1,3,2))
+        
+        #setting up default return
+        weights = ~np.isnan(link_ratio_T)
+        
+        #dropping
+        index_array_weights = (link_ratio_T < drop_above_array[...,None]) & (
+            link_ratio_T > drop_below_array[...,None]
+        )
 
-        # checking to see if the ranks are in range
-        for index in range(len(drop_above_array) - 1):
-            max_ldf = drop_above_array[index]
-            min_ldf = drop_below_array[index]
-
-            index_array_weights = (link_ratio[0][0].T[index] <= max_ldf) & (
-                link_ratio[0][0].T[index] >= min_ldf
-            )
-
-            if sum(index_array_weights) > preserve - 1:
-                weights[index] = index_array_weights
-
-            else:
-                warning_flag = True
+        #counting remaining factors
+        ldf_count = index_array_weights.sum(axis=3)
+        
+        #applying preserve
+        warning_flag = np.any(ldf_count < preserve_array)
+        weights = np.where(ldf_count[...,None] < preserve_array[...,None], weights, index_array_weights)
 
         if warning_flag:
             if preserve == 1:
@@ -248,7 +254,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 )
             warnings.warn(warning)
 
-        return weights.T[None, None]
+        return weights.transpose((0,1,3,2))
 
     def _drop_valuation(self, X):
         xp = X.get_array_module()
