@@ -172,3 +172,12 @@ def test_assymetric_development(atol):
     dev = cl.Development(n_periods=1, average="simple").fit(quarterly)
     dev2 = cl.Development(n_periods=1, average="regression").fit(quarterly)
     assert xp.allclose(dev.ldf_.values, dev2.ldf_.values, atol=atol)
+
+def test_hilo_multiple_indices(clrd):
+    tri = clrd.groupby('LOB')['CumPaidLoss'].sum()
+    assert (
+        cl.Development(n_periods=5).fit(tri).ldf_.loc['wkcomp'] == 
+        cl.Development(n_periods=5).fit(tri.loc['wkcomp']).ldf_)
+    assert (
+        cl.Development(drop_low=2).fit(tri).ldf_.loc['wkcomp'] == 
+        cl.Development(drop_low=2).fit(tri.loc['wkcomp']).ldf_)
