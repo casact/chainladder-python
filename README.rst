@@ -11,7 +11,7 @@
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
    :target: http://chainladder-python.readthedocs.io/en/latest/?badge=latest
 
-.. |codecov io| image:: https://codecov.io/github/casact/chainladder-python/coverage.svg?branch=latest
+.. |codecov io| image:: https://codecov.io/gh/casact/chainladder-python/branch/master/graphs/badge.svg
    :target: https://codecov.io/github/casact/chainladder-python?branch=latest
 
 chainladder (python)
