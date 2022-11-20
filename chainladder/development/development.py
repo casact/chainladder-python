@@ -156,7 +156,6 @@ class Development(DevelopmentBase):
         n_periods_ = self._validate_axis_assumption(
             self.n_periods, obj.development[:-1]
         )
-
         weight_dict = {"regression": 0, "volume": 1, "simple": 2}
         x, y = tri_array[..., :-1], tri_array[..., 1:]
         exponent = xp.array([weight_dict.get(item, item) for item in self.average_])
@@ -186,11 +185,9 @@ class Development(DevelopmentBase):
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
-
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_ ** 2).values)
-        resid = resid / std
+        resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date]
         return self
 
