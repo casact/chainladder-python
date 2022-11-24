@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development import Development, DevelopmentBase
+from chainladder.utils.utility_functions import num_to_value, num_to_nan
 import numpy as np
 import pandas as pd
 import warnings
@@ -40,9 +41,22 @@ class IncrementalAdditive(DevelopmentBase):
         The estimated loss development patterns
     cdf_: Triangle
         The estimated cumulative development patterns
+    tri_zeta: Triangle
+        The raw incrementals as a percent of exposure trended to the valuation
+        date of the Triangle.
+    fit_zeta: Triangle
+        The raw incrementals as a percent of exposure trended to the valuation
+        date of the Triangle. Only those used in the fitting.
     zeta_: Triangle
         The fitted incrementals as a percent of exposure trended to the valuation
         date of the Triangle.
+    cum_zeta_: Triangle
+        The fitted cumulative percent of exposure trended to the valuation date of 
+        the Triangle
+    w_: Triangle
+        The weight used in the zeta fitting
+    sample_weight: Triangle
+        The exposure used to obtain incremental %
     incremental_: Triangle
         A triangle of full incremental values.
 
@@ -60,7 +74,6 @@ class IncrementalAdditive(DevelopmentBase):
         self.drop_low = drop_low
         self.drop_valuation = drop_valuation
         self.drop = drop
-
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -80,8 +93,6 @@ class IncrementalAdditive(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder.utils.utility_functions import num_to_nan
-
         if type(X.ddims) != np.ndarray:
             raise ValueError("Triangle must be expressed with development lags")
         if X.array_backend == "sparse":
@@ -116,8 +127,17 @@ class IncrementalAdditive(DevelopmentBase):
         if self.average == "volume":
             y_ = xp.nansum(w_ * x.values * sample_weight.values, axis=-2)
             y_ = y_ / xp.nansum(w_ * sample_weight.values, axis=-2)
-        self.zeta_ = X.iloc[..., -1:, :]
+        self.tri_zeta = x.copy()
+        self.sample_weight = sample_weight
+        self.w_ = w_.copy()
+        self.fit_zeta_ = self.tri_zeta * self.w_
+        self.zeta_ = x.iloc[..., -1:, :]
         self.zeta_.values = y_[:, :, None, :]
+        #following https://github.com/casact/chainladder-python/blob/4766369bdd3d987619d63e4e425d3d4e480004ec/chainladder/core/triangle.py#L428
+        self.cum_zeta_ = self.zeta_.copy()
+        values = xp.nan_to_num(self.zeta_.values[...,::-1])
+        values = num_to_value(values, 0)
+        self.cum_zeta_.values = xp.cumsum(values,-1)[...,::-1] * self.zeta_.nan_triangle
         y_ = xp.repeat(y_[..., None, :], len(x.odims), -2)
         obj = x.copy()
         keeps = (
@@ -158,6 +178,6 @@ class IncrementalAdditive(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        for item in ["ldf_"]:
+        for item in ["ldf_", "w_", "zeta_", "cum_zeta_", "incremental_", "tri_zeta", "fit_zeta_", "sample_weight"]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
