@@ -10,14 +10,14 @@ dependencies:
   - pip
   - git
 
-  - pandas==1.4.4
-  - scikit-learn==1.1.3
-  - sparse==0.13.0
-  - numba==0.55.1
+  - pandas
+  - scikit-learn
+  - sparse
+  - numba
   - dill
   - patsy
   - statsmodels
-  - matplotlib==3.5.3
+  - matplotlib
 
   # Docs
   - ipython
