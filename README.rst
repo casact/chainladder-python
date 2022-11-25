@@ -9,7 +9,7 @@
 .. |Build Status| image:: https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
-   :target: http://chainladder-python.readthedocs.io/en/latest/?badge=latest
+   :target: https://chainladder-python.readthedocs.io/en/latest/?badge=latest
 
 .. |codecov io| image:: https://codecov.io/gh/casact/chainladder-python/branch/master/graphs/badge.svg
    :target: https://codecov.io/github/casact/chainladder-python?branch=latest
@@ -32,13 +32,12 @@ Chainladder is built by a group of volunteers, and we need YOUR help!
 This package is written in Python, if you are looking for a similar package written in R, please visit `chainladder`_.
 
 .. _pandas: https://pandas.pydata.org/
-
 .. _scikit-learn: https://scikit-learn.org/stable/
 .. _chainladder: https://github.com/mages/ChainLadder
 
 
 Dedicated Documentation Site
-------------
+----------------------------
 
 We have a dedicated documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change log history, and more.
 
