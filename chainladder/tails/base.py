@@ -16,7 +16,7 @@ class TailBase(DevelopmentBase):
             obj = Development().fit_transform(obj)
         xp = obj.ldf_.get_array_module()
         m = int(self.projection_period / 12)
-        self._ave_period = {"Y": (1 * m, 12), "Q": (4 * m, 3), "M": (12 * m, 1)}[
+        self._ave_period = {"Y": (1 * m, 12), "Q": (4 * m, 3), "M": (12 * m, 1), "S": (2 * m, 6)}[
             obj.development_grain
         ]
         t_ddims = [
