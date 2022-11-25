@@ -37,7 +37,7 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
-    def to_frame(self, origin_as_datetime=None, keepdims=False,
+    def to_frame(self, origin_as_datetime=True, keepdims=False,
                  implicit_axis=False, *args, **kwargs):
         """ Converts a triangle to a pandas.DataFrame.
         Parameters
@@ -56,12 +56,6 @@ class TrianglePandas:
         -------
             pandas.DataFrame representation of the Triangle.
         """
-        if origin_as_datetime == None:
-            # this will be set to True as the default in an upcoming version of the package
-            warning = "In an upcoming version of the package, `origin_as_datetime` will be defaulted to `True` in to_frame(...), use `origin_as_datetime=False` to preserve current setting."
-            warnings.warn(warning)
-            origin_as_datetime = False
-
         axes = [num for num, item in enumerate(self.shape) if item > 1]
 
         if keepdims:
