@@ -4,10 +4,10 @@ sphinx:
   configuration: docs/conf.py
 
 build:
-  image: latest
   os: "ubuntu-20.04"
   tools:
     python: "mambaforge-4.10"
+
 
 conda:
   environment: environment-docs.yaml
