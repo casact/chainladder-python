@@ -6,6 +6,7 @@ import pandas as pd
 import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils import WeightedRegression
+from chainladder.utils.utility_functions import num_to_nan
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
 
@@ -286,3 +287,219 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
                 np.where(X.development == item[1])[0][0],
             ] = 0
         return arr[:, :-1]
+
+    def _param_array_helper(self,size, param, default_value):
+        # setting default
+        param_array = np.array(size * [default_value])
+        # only a single parameter is provided
+        if isinstance(param, list):
+            param_array[range(len(param))] = np.array(param).astype(type(default_value))
+        # an array of parameters is provided
+        else:
+            param_array[:] = np.array([param]).astype(type(default_value))
+        return param_array
+
+    def _set_weight_func(self,factor,secondary_rank=None):
+        w = (~np.isnan(factor.values)).astype(float)
+        w = w * self._assign_n_periods_weight_func(factor)
+        if self.drop is not None:
+            w = w * self._drop_func(factor)
+        
+        if self.drop_valuation is not None:
+            w = w * self._drop_valuation_func(factor)
+
+        if (self.drop_above != np.inf) | (self.drop_below != 0.0):
+            w = w * self._drop_x_func(factor)
+            
+        if (self.drop_high is not None) | (self.drop_low is not None):
+            w = w * self._drop_n_func(factor * num_to_nan(w),secondary_rank)
+        return num_to_nan(w)
+                
+    def _assign_n_periods_weight_func(self,factor):
+        """Used to apply the n_periods weight"""
+        #getting dimensions of factor for various manipulation
+        factor_len = factor.shape[3]
+        #putting n_periods into array
+        n_periods_array = self._param_array_helper(factor_len,self.n_periods,-1)
+
+        def _assign_n_periods_weight_int(X, n_periods):
+            xp = X.get_array_module()
+            val_offset = {
+                "Y": {"Y": 1},
+                "Q": {"Y": 4, "Q": 1},
+                "M": {"Y": 12, "Q": 3, "M": 1},
+            }
+            if n_periods < 1 or n_periods >= X.shape[-2]:
+                return X.values * 0 + 1
+            else:
+                val_date_min = X.valuation[X.valuation <= X.valuation_date]
+                val_date_min = val_date_min.drop_duplicates().sort_values()
+                z = -n_periods * val_offset[X.development_grain][X.origin_grain]
+                val_date_min = val_date_min[z]
+                w = X[X.valuation >= val_date_min]
+                return xp.nan_to_num((w / w).values) * X.nan_triangle
+
+        xp = factor.get_array_module()
+
+        dict_map = {
+            item: _assign_n_periods_weight_int(factor, item) for item in set(n_periods_array)
+        }
+        conc = [
+            dict_map[item][..., num : num + 1] for num, item in enumerate(n_periods_array)
+        ]
+        return xp.concatenate(tuple(conc), -1)    
+    
+    def _drop_func(self,factor):
+        #get the appropriate backend for nan_triangle and nan_to_num
+        xp = factor.get_array_module()
+        #turn single drop_valuation parameter to list if necessary
+        drop_list = self.drop if isinstance(self.drop,list) else [self.drop]
+        #get an starting array of weights
+        arr = factor.nan_triangle.copy()
+        #accommodate ldf triangle as factor, where the dimensions are '12-24'
+        dev_list = factor.development.str.split("-",expand=True)[0] if factor.development.dtype == object else factor.development.astype("string")
+        #create ndarray of drop_list for further operation in numpy
+        drop_np = np.asarray(drop_list)
+        #find indices of drop_np
+        origin_ind = np.where(np.array([factor.origin.astype("string")]) == drop_np[:,[0]])[1]
+        dev_ind = np.where(np.array([dev_list]) == drop_np[:,[1]])[1]
+        #set weight of dropped factors to 0
+        arr[(origin_ind,dev_ind)] = 0
+        return xp.nan_to_num(arr)[None,None]
+    
+    def _drop_valuation_func(self,factor):
+        #get the appropriate backend for nan_to_num
+        xp = factor.get_array_module()
+        #turn single drop_valuation parameter to list if necessary
+        if isinstance(self.drop_valuation,list):
+            drop_valuation_list = self.drop_valuation
+        else:
+            drop_valuation_list = [self.drop_valuation]
+        #turn drop_valuation to same valuation freq as factor
+        v = pd.PeriodIndex(drop_valuation_list, freq=factor.development_grain).to_timestamp(how="e")
+        #warn that some drop_valuation are outside of factor
+        if np.any(~v.isin(factor.valuation)):
+            warnings.warn("Some valuations could not be dropped.")
+        #return triangle of 0/1 where dropped factors have 0
+        b = xp.nan_to_num(factor.iloc[0,0][~factor.valuation.isin(v)].values * 0 + 1)
+        #check to make sure some factors are still left
+        if b.sum() == 0:
+            raise Exception("The entire triangle has been dropped via drop_valuation.")
+        return b
+    
+    def _drop_x_func(self,factor):
+        #getting dimensions of factor for various manipulation
+        factor_val = factor.values.copy()
+        factor_len = factor_val.shape[3]
+        indices = factor_val.shape[0]
+        columns = factor_val.shape[1]
+
+        #explicitly setting up 3D arrays for drop parameters to avoid broadcasting bugs
+        drop_above_array = np.zeros((indices,columns,factor_len))
+        drop_above_array[:,:,:] = self._param_array_helper(factor_len,self.drop_above, np.inf)[None,None]
+        drop_below_array = np.zeros((indices,columns,factor_len))
+        drop_below_array[:,:,:] = self._param_array_helper(factor_len,self.drop_below, 0.0)[None,None]
+        preserve_array = np.zeros((indices,columns,factor_len))
+        preserve_array[:,:,:] = self._param_array_helper(factor_len,self.preserve,self.preserve)[None,None]
+        #transposing so columns of factors (same dev age) are in the last index.
+        #not sure if this is really necessary. will leave for a better dev to find out
+        factor_val_T = factor_val.transpose((0,1,3,2))
+
+        #setting up starting array of weights
+        w = ~np.isnan(factor_val_T)
+
+        #dropping
+        index_array_weights = (factor_val_T < drop_above_array[...,None]) & (
+            factor_val_T > drop_below_array[...,None]
+        )
+
+        #counting remaining factors
+        ldf_count = index_array_weights.sum(axis=3)
+
+        #applying preserve
+        warning_flag = np.any(ldf_count < preserve_array)
+        w = np.where(ldf_count[...,None] < preserve_array[...,None], w, index_array_weights)
+
+        if warning_flag:
+            if self.preserve == 1:
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(self.preserve)
+                    + " (use preserve = ...)"
+                    + " link ratio(s) is required for development estimation."
+                )
+            else:
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(self.preserve)
+                    + " link ratio(s) is required for development estimation."
+                )
+            warnings.warn(warning)
+
+        return w.transpose((0,1,3,2)).astype(float)
+    
+    # for drop_high and drop_low
+    def _drop_n_func(self,factor,secondary_rank=None):
+        #getting dimensions of factor for various manipulation
+        factor_val = factor.values.copy()
+        #secondary rank is the optional triangle that breaks ties in factor
+        #the original use case is for dropping the link ratio of 1 with the lowest loss value
+        #(pass in a reverse rank of loss to drop link of ratio of 1 with the highest loss value)
+        #leaving to user to ensure that secondary rank is the same dimensions as factor
+        #also leaving to user to pick whether to trim head or tail
+        if secondary_rank is None:
+            sec_rank_val = factor_val.copy()
+        else:
+            sec_rank_val = secondary_rank.values.copy()
+        factor_len = factor_val.shape[3]
+        indices = factor_val.shape[0]
+        columns = factor_val.shape[1]
+
+        #explicitly setting up 3D arrays for drop parameters to avoid broadcasting bugs
+        drop_high_array = np.zeros((indices,columns,factor_len))
+        drop_high_array[:,:,:] = self._param_array_helper(factor_len,self.drop_high,0)[None,None]
+        drop_low_array = np.zeros((indices,columns,factor_len))
+        drop_low_array[:,:,:] = self._param_array_helper(factor_len,self.drop_low,0)[None,None]
+        preserve_array = np.zeros((indices,columns,factor_len))
+        preserve_array[:,:,:] = self._param_array_helper(factor_len,self.preserve,self.preserve)[None,None]
+
+        #ranking factors by itself and secondary rank
+        factor_ranks = np.lexsort((sec_rank_val,factor_val),axis = 2).argsort(axis=2)
+
+        #setting up starting weights
+        w = ~np.isnan(factor_val.transpose((0,1,3,2)))
+
+        #counting valid factors
+        ldf_count = w.sum(axis=3)
+
+        #getting max index after drop high
+        max_rank_unpreserve = ldf_count - drop_high_array
+
+        #applying preserve
+        preserve_trigger = (max_rank_unpreserve - drop_low_array) < preserve_array
+        warning_flag = np.any(preserve_trigger)
+        max_rank = np.where(preserve_trigger, ldf_count, max_rank_unpreserve)
+        min_rank = np.where(preserve_trigger, 0, drop_low_array)
+
+        #dropping
+        index_array_weights = (factor_ranks.transpose((0,1,3,2)) < max_rank[...,None]) & (
+            factor_ranks.transpose((0,1,3,2)) > min_rank[...,None] - 1
+        )
+
+        if warning_flag:
+            if self.preserve == 1:
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(self.preserve)
+                    + " (use preserve = ...)"
+                    + " link ratio(s) is required for development estimation."
+                )
+            else:
+                warning = (
+                    "Some exclusions have been ignored. At least "
+                    + str(self.preserve)
+                    + " link ratio(s) is required for development estimation."
+                )
+            warnings.warn(warning)
+
+        return index_array_weights.transpose((0,1,3,2)).astype(float)
