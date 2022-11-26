@@ -20,6 +20,7 @@ dependencies:
   - dill
   - patsy
   - matplotlib
+  - statsmodels
 
   # testing
   - lxml

@@ -16,3 +16,4 @@ dependencies:
   - lxml
   - pytest
   - ipython
+  - statsmodels
