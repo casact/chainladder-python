@@ -396,7 +396,7 @@ class Triangle(TriangleBase):
             if not obj.is_full:
                 obj = obj[obj.valuation < obj.valuation_date]
             if hasattr(obj, "w_"):
-                w_ = obj.w_[..., 0:1, : len(obj.odims), :]
+                w_ = obj.w_[..., : len(obj.odims), :]
                 obj = obj * w_ if obj.shape == w_.shape else obj
             obj.is_pattern = True
             obj.is_cumulative = False
