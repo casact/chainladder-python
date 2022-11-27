@@ -130,7 +130,7 @@ class Development(DevelopmentBase):
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
-        w = self.w_ / (x ** (exponent))
+        w = num_to_nan(self.w_ / (x ** (exponent)))
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)

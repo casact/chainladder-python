@@ -225,3 +225,9 @@ def compare_new_drop(dev,tri):
             True
         )
     )
+
+def test_4d_drop(clrd):
+    clrd = clrd.groupby("LOB").sum()[["CumPaidLoss","IncurLoss"]]
+    assert (
+        cl.Development(n_periods = 4).fit_transform(clrd.iloc[0,0]).link_ratio == 
+        cl.Development(n_periods = 4).fit_transform(clrd).link_ratio.iloc[0,0])
