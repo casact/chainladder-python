@@ -224,7 +224,7 @@ class Triangle(TriangleBase):
         )
 
         if (
-            len(check_origin) != self.odims
+            len(check_origin) != len(self.odims)
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date
             and not self.is_pattern
         ):

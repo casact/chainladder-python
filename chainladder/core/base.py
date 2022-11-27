@@ -428,6 +428,16 @@ class TriangleBase(
                 obj.array_backend = "numpy"
             return obj
         return self
+    
+    def _get_axis_value(self, axis):
+        axis = self._get_axis(axis)
+        return {
+            0: self.index, 
+            1: self.columns,
+            2: self.origin, 
+            3: self.development
+        }[axis]
+        
 
 
 def is_chainladder(estimator):

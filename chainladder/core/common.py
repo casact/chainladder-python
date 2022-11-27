@@ -5,8 +5,10 @@ import pandas as pd
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from chainladder.utils.dask import dp
+import numpy as np
 from chainladder.utils.utility_functions import concat
 from chainladder import options
+
 
 
 def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
@@ -182,3 +184,18 @@ class Common:
         else:
             obj = self.copy()
             return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)
+    
+    def _validate_assumption(self, triangle, value, axis):
+        if type(value) in (int, float, str):
+            arr = np.repeat(value, triangle.shape[axis])
+        if type(value) in (list, tuple, set, np.array):
+            arr = np.array(value)
+        if type(value) is dict:
+            arr = np.array([value[a] for a in triangle._get_axis_value(axis)])
+        if callable(value):
+            arr = np.array([value(a) for a in triangle._get_axis_value(axis)])
+        if axis == 3:
+            arr = arr[None, None, None]
+        if axis == 2:
+            arr = arr[None, None, :, None]
+        return arr

@@ -43,12 +43,6 @@ class Development(DevelopmentBase):
         The minimum number of link ratio(s) required for LDF calculation
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
-    fillna: float, (default = None)
-        Used to fill in zero or nan values of an triangle with some non-zero
-        amount.  When an link-ratio has zero as its denominator, it is automatically
-        excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
-        averaging in a deterministic method, this may be reasonable.  For all other
-        averages and stochastic methods, this assumption should be avoided.
     groupby:
         An option to group levels of the triangle index together for the purposes
         of estimating patterns.  If omitted, each level of the triangle
@@ -65,8 +59,6 @@ class Development(DevelopmentBase):
         Sigma of the ldf regression
     std_err_: Triangle
         Std_err of the ldf regression
-    weight_: pandas.DataFrame
-        The weight used in the ldf regression
     std_residuals_: Triangle
         A Triangle representing the weighted standardized residuals of the
         estimator as described in Barnett and Zehnwirth.
@@ -101,13 +93,6 @@ class Development(DevelopmentBase):
         self.fillna = fillna
         self.groupby = groupby
 
-    def _validate_axis_assumption(self, parameter, axis):
-        if callable(parameter):
-            return axis.map(parameter).to_list()
-        if type(parameter) in [int, str, float]:
-            return [parameter] * len(axis)
-        return parameter
-
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
 
@@ -127,39 +112,19 @@ class Development(DevelopmentBase):
         """
         from chainladder.utils.utility_functions import num_to_nan
 
-        # Validate inputs
-        if X.is_cumulative is None:
-            warnings.warn(
-                "The is_cumulative property of your triangle is not set. This may result in undesirable behavior."
-            )
-        if X.is_cumulative == False:
-            obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
-        else:
-            obj = self._set_fit_groups(X).val_to_dev().copy()
-
+        # Triangle must be cumulative and in "development" mode
+        obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp = obj.get_array_module()
-
-        # Make sure it is a dev tri
-        if type(obj.ddims) != np.ndarray:
-            raise ValueError("Triangle must be expressed with development lags")
-
-        # validate hyperparameters
-        if self.fillna:
-            tri_array = num_to_nan((obj + self.fillna).values)
-        else:
-            tri_array = num_to_nan(obj.values.copy())
-
-        self.average_ = np.array(
-            self._validate_axis_assumption(self.average, obj.development[:-1])
-        )
-
-        n_periods_ = self._validate_axis_assumption(
-            self.n_periods, obj.development[:-1]
-        )
-        weight_dict = {"regression": 0, "volume": 1, "simple": 2}
+        tri_array = num_to_nan(obj.values.copy())
+        average_ = self._validate_assumption(X, self.average, axis=3)[... , :X.shape[3]-1]
+        self.average_ = average_.flatten()
+        n_periods_ = self._validate_assumption(X, self.n_periods, axis=3)[... , :X.shape[3]-1]
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        exponent = xp.array([weight_dict.get(item, item) for item in self.average_])
-        exponent = xp.nan_to_num(exponent[None, None, None] * (y * 0 + 1))
+        exponent = xp.array(
+            [{"regression": 0, "volume": 1, "simple": 2}[x] 
+             for x in average_[0, 0, 0]]
+        )
+        exponent = xp.nan_to_num(exponent * (y * 0 + 1))
         link_ratio = y / x
 
         self.w_ = self._assign_n_periods_weight(
@@ -211,14 +176,6 @@ class Development(DevelopmentBase):
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
         return X_new
-
-    @property
-    def weight_(self):
-        return pd.DataFrame(
-            self.w_[0, 0],
-            index=self.ldf_.origin,
-            columns=list(self.ldf_.development.values[:, 0]),
-        )
 
     def _param_property(self, X, params, idx):
         from chainladder import options

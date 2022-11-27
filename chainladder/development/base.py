@@ -60,11 +60,11 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         xp = X.get_array_module()
 
         dict_map = {
-            item: _assign_n_periods_weight_int(X, item) for item in set(n_periods)
+            item: _assign_n_periods_weight_int(X, item) for item in set(n_periods.flatten())
         }
 
         conc = [
-            dict_map[item][..., num : num + 1] for num, item in enumerate(n_periods)
+            dict_map[item][..., num : num + 1] for num, item in enumerate(n_periods.flatten())
         ]
         return xp.concatenate(tuple(conc), -1)
 
@@ -78,9 +78,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             weight = weight * self._drop_valuation(X)
 
         if (self.drop_high is not None) | (self.drop_low is not None):
-            n_periods_ = self._validate_axis_assumption(
-                self.n_periods, X.development[:-1]
-            )
+            n_periods_ = self._validate_assumption(
+                X, self.n_periods, axis=3)[0, 0, 0, :-1]
 
             w_ = self._assign_n_periods_weight(X, n_periods_)
             w_ = w_.astype("float")

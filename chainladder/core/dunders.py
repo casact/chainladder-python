@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import warnings
 from chainladder.utils.utility_functions import num_to_nan, concat
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
