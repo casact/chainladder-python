@@ -181,3 +181,47 @@ def test_hilo_multiple_indices(clrd):
     assert (
         cl.Development(drop_low=2).fit(tri).ldf_.loc['wkcomp'] == 
         cl.Development(drop_low=2).fit(tri.loc['wkcomp']).ldf_)
+
+def test_new_drop_1():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #n_periods
+    return compare_new_drop(cl.Development(n_periods = 4).fit(clrd),clrd)
+
+def test_new_drop_2():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #single drop and drop_valuation
+    return compare_new_drop(cl.Development(drop = ("1992",12),drop_valuation = 1993).fit(clrd),clrd)
+
+def test_new_drop_3():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #multiple drop and drop_valuation
+    return compare_new_drop(cl.Development(drop = [("1992",12),("1996",24)],drop_valuation = [1993,1995]).fit(clrd),clrd)
+
+def test_new_drop_4():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #drop_hi/low without preserve
+    return compare_new_drop(cl.Development(drop_high = 1, drop_low = 1).fit(clrd),clrd)
+
+def test_new_drop_5():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #drop_hi/low without preserve
+    return compare_new_drop(cl.Development(drop_high = 1, drop_low = 1,preserve = 3).fit(clrd),clrd) & \
+
+def test_new_drop_6():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #drop_above/below without preserve
+    return compare_new_drop(cl.Development(drop_above = 1.01,drop_below = 0.95).fit(clrd),clrd) & \
+
+def test_new_drop_7():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #drop_above/below with preserve
+    return compare_new_drop(cl.Development(drop_above = 1.01,drop_below = 0.95,preserve=3).fit(clrd),clrd)
+    
+def compare_new_drop(dev,tri):
+    assert (
+        np.array_equal(
+            dev._set_weight_func(tri.age_to_age, tri.age_to_age), 
+            dev.transform(tri).age_to_age.values*0+1,
+            True
+        )
+    )
