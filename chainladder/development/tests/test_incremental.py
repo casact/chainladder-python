@@ -21,3 +21,16 @@ def test_schmidt():
         ]
     )
     assert xp.allclose(answer, check, atol=1e-5)
+
+def test_IBNR_methods():
+    tri = cl.load_sample("ia_sample")
+    incr_est = cl.IncrementalAdditive().fit(tri['loss'], sample_weight=tri['exposure'].latest_diagonal)
+    incr_trans = incr_est.transform(tri['loss'])
+    incr_tri = incr_est.incremental_.incr_to_cum()
+    incr_ult = incr_tri[incr_tri.development == incr_tri.development.max()]
+    cl_est = cl.Chainladder().fit(incr_trans)
+    bf_est = cl.BornhuetterFerguson(apriori=1).fit(incr_trans, sample_weight=incr_ult)
+    incr_result = np.round(incr_est.incremental_.values,5)
+    cl_result = np.round(cl_est.full_triangle_.cum_to_incr().values[...,:-2],5)
+    bf_result = np.round(bf_est.full_triangle_.cum_to_incr().values[...,:-2],5)
+    assert np.all(incr_result == cl_result) & np.all(incr_result == bf_result)
