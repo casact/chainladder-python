@@ -207,6 +207,15 @@ def test_new_drop_5(clrd):
     #drop_hi/low without preserve
     return compare_new_drop(cl.Development(drop_high = 1, drop_low = 1,preserve = 3).fit(clrd),clrd) 
 
+def test_new_drop_5a(clrd):
+    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    #drop_hi/low without preserve
+    assert np.array_equal(
+        cl.Development(drop_high = 1, drop_low = 1,preserve = 3)._set_weight_func(clrd.age_to_age, clrd.age_to_age).values,
+        cl.Development(drop_high = True, drop_low = [True, True, True, True, True, True, True, True, True] ,preserve = 3)._set_weight_func(clrd.age_to_age).values,
+        True
+    )
+
 def test_new_drop_6(clrd):
     clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
     #drop_above/below without preserve
@@ -220,7 +229,7 @@ def test_new_drop_7(clrd):
 def compare_new_drop(dev,tri):
     assert (
         np.array_equal(
-            dev._set_weight_func(tri.age_to_age, tri.age_to_age), 
+            dev._set_weight_func(tri.age_to_age, tri.age_to_age).values, 
             dev.transform(tri).age_to_age.values*0+1,
             True
         )
