@@ -32,6 +32,12 @@ class IncrementalAdditive(DevelopmentBase):
         Drops highest link ratio(s) from LDF calculation
     drop_low: bool or list of bool (default=None)
         Drops lowest link ratio(s) from LDF calculation
+    drop_above: float or list of floats (default = numpy.inf)
+        Drops all link ratio(s) above the given parameter from incremental factor calculation
+    drop_below: float or list of floats (default = numpy.NINF)
+        Drops all link ratio(s) below the given parameter from incremental factor calculation
+    preserve: int (default = 1)
+        The minimum number of incremental factor(s) required for incremental factor calculation
     drop_valuation: str or list of str (default=None)
         Drops specific valuation periods. str must be date convertible.
 
@@ -65,14 +71,17 @@ class IncrementalAdditive(DevelopmentBase):
 
     def __init__(
         self, trend=0.0, n_periods=-1, average="volume", future_trend=0,
-        drop=None, drop_high=None, drop_low=None, drop_valuation=None):
+        drop=None, drop_high=None, drop_low=None, drop_above=np.inf, drop_below=np.NINF, drop_valuation=None, preserve = 1):
         self.trend = trend
         self.n_periods = n_periods
         self.average = average
         self.future_trend = future_trend
         self.drop_high = drop_high
         self.drop_low = drop_low
+        self.drop_above = drop_above
+        self.drop_below = drop_below
         self.drop_valuation = drop_valuation
+        self.preserve = preserve
         self.drop = drop
 
     def fit(self, X, y=None, sample_weight=None):
@@ -115,21 +124,18 @@ class IncrementalAdditive(DevelopmentBase):
         else:
             x = obj.trend(self.trend, axis='valuation')
 
-        w_ = Development(
-            n_periods=self.n_periods - 1, drop=self.drop,
-            drop_high=self.drop_high, drop_low=self.drop_low,
-            drop_valuation=self.drop_valuation).fit(x).w_
-        # This will miss drops on the latest diagonal
-        w_ = num_to_nan(w_)
-        w_ = xp.concatenate((w_, (w_[..., -1:] * x.nan_triangle)[..., -1:]), axis=-1)
+        if hasattr(X, "w_"):
+            self.w_tri_ = self._set_weight_func(x * X.w_,X.cum_to_incr())
+        else:
+            self.w_tri_ = self._set_weight_func(x,X.cum_to_incr())
+        self.w_ = self.w_tri_.values
         if self.average == "simple":
-            y_ = xp.nanmean(w_ * x.values, axis=-2)
+            y_ = xp.nanmean(self.w_ * x.values, axis=-2)
         if self.average == "volume":
-            y_ = xp.nansum(w_ * x.values * sample_weight.values, axis=-2)
-            y_ = y_ / xp.nansum(w_ * sample_weight.values, axis=-2)
+            y_ = xp.nansum(self.w_ * x.values * sample_weight.values, axis=-2)
+            y_ = y_ / xp.nansum(self.w_ * sample_weight.values, axis=-2)
         self.tri_zeta = x.copy()
         self.sample_weight = sample_weight
-        self.w_ = w_.copy()
         self.fit_zeta_ = self.tri_zeta * self.w_
         self.zeta_ = x.iloc[..., -1:, :]
         self.zeta_.values = y_[:, :, None, :]
