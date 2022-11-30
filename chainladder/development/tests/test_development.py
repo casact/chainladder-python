@@ -241,7 +241,7 @@ def test_4d_drop(clrd):
         cl.Development(n_periods = 4).fit_transform(clrd.iloc[0,0]).link_ratio == 
         cl.Development(n_periods = 4).fit_transform(clrd).link_ratio.iloc[0,0])
 
-def test_pipeline(clrd)
+def test_pipeline(clrd):
     clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
     dev1 = cl.Development(
         n_periods = 7,
