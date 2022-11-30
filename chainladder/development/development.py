@@ -127,6 +127,10 @@ class Development(DevelopmentBase):
         exponent = xp.nan_to_num(exponent * (y * 0 + 1))
         link_ratio = y / x
 
+        if hasattr(X, "w_v2_"):
+            self.w_v2_ = self._set_weight_func(obj.age_to_age * X.w_v2_,obj.iloc[...,:-1,:-1])
+        else:
+            self.w_v2_ = self._set_weight_func(obj.age_to_age,obj.iloc[...,:-1,:-1])
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
@@ -171,8 +175,8 @@ class Development(DevelopmentBase):
         """
         X_new = X.copy()
         X_new.group_index = self._set_transform_groups(X_new)
-        triangles = ["std_err_", "ldf_", "sigma_","std_residuals_"]
-        for item in triangles + ["average_", "w_", "sigma_interpolation"]:
+        triangles = ["std_err_", "ldf_", "sigma_","std_residuals_","average_", "w_", "sigma_interpolation","w_v2_"]
+        for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
         return X_new
