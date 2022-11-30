@@ -225,7 +225,7 @@ def test_new_drop_7(clrd):
     clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
     #drop_above/below with preserve
     return compare_new_drop(cl.Development(drop_above = 1.01,drop_below = 0.95,preserve=3).fit(clrd),clrd)
-    
+
 def compare_new_drop(dev,tri):
     assert (
         np.array_equal(
@@ -240,3 +240,24 @@ def test_4d_drop(clrd):
     assert (
         cl.Development(n_periods = 4).fit_transform(clrd.iloc[0,0]).link_ratio == 
         cl.Development(n_periods = 4).fit_transform(clrd).link_ratio.iloc[0,0])
+
+def test_pipeline(clrd):
+    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    dev1 = cl.Development(
+        n_periods = 7,
+        drop_valuation = 1995,
+        drop = ("1992",12),
+        drop_above = 1.05,
+        drop_below = .95,
+        drop_high = 1,
+        drop_low = 1
+    ).fit(clrd)
+    pipe = cl.Pipeline(steps=[
+        ('n_periods', cl.Development(n_periods = 7)),
+        ('drop_valuation', cl.Development(drop_valuation = 1995)),
+        ('drop', cl.Development(drop = ("1992",12))),
+        ('drop_abovebelow', cl.Development(drop_above = 1.05, drop_below = .95)),
+        ('drop_hilo', cl.Development(drop_high = 1, drop_low = 1))]
+    )
+    dev2 = pipe.fit(X=clrd)
+    assert np.array_equal(dev1.w_v2_.values,dev2.named_steps.drop_hilo.w_v2_.values,True)

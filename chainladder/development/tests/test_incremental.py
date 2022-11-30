@@ -34,3 +34,26 @@ def test_IBNR_methods():
     cl_result = np.round(cl_est.full_triangle_.cum_to_incr().values[...,:-2],5)
     bf_result = np.round(bf_est.full_triangle_.cum_to_incr().values[...,:-2],5)
     assert np.all(incr_result == cl_result) & np.all(incr_result == bf_result)
+
+def test_pipeline():
+    clrd = cl.load_sample("clrd").groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    dev = cl.Development().fit_transform(clrd)
+    ult = cl.Chainladder().fit(clrd)
+    dev1 = cl.IncrementalAdditive(
+        n_periods = 7,
+        drop_valuation = 1995,
+        drop = ("1992",12),
+        drop_above = 1.05,
+        drop_below = -1,
+        drop_high = 1,
+        drop_low = 1
+    ).fit(clrd,sample_weight = ult.ultimate_ * 3)
+    pipe = cl.Pipeline(steps=[
+        ('n_periods', cl.IncrementalAdditive(n_periods = 7)),
+        ('drop_valuation', cl.IncrementalAdditive(drop_valuation = 1995)),
+        ('drop', cl.IncrementalAdditive(drop = ("1992",12))),
+        ('drop_abovebelow', cl.IncrementalAdditive(drop_above = 1.05, drop_below = .95)),
+        ('drop_hilo', cl.IncrementalAdditive(drop_high = 1, drop_low = 1))]
+    )
+    dev2 = pipe.fit(X=clrd,sample_weight=ult.ultimate_ * 3)
+    assert np.array_equal(dev1.zeta_.values,dev2.named_steps.drop_hilo.zeta_.values,True)
