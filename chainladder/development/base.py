@@ -289,14 +289,18 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _param_array_helper(self,size, param, default_value):
         # setting default
-        param_array = np.array(size * [default_value])
+        param_array = pd.Series(size * [default_value]).astype('object')
         # only a single parameter is provided
         if isinstance(param, list):
-            param_array[range(len(param))] = np.array(param).astype(type(default_value))
+            param_array[range(len(param))] = np.array(param)
+            param_array.loc[param_array.isna()] = default_value
+            param_array = param_array.astype(type(default_value))
         # an array of parameters is provided
         else:
-            param_array[:] = np.array([param]).astype(type(default_value))
-        return param_array
+            param_array.loc[:] = param
+            param_array.loc[param_array.isna()] = default_value
+            param_array = param_array.astype(type(default_value))
+        return param_array.to_numpy()
 
     def _set_weight_func(self,factor,secondary_rank=None):
         w = (~np.isnan(factor.values)).astype(float)
