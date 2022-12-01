@@ -165,7 +165,7 @@ class TriangleBase(
         amts = np.concatenate(
             [data_agg[col].fillna(0).values for col in data_agg[columns]]
         )
-        return coords.T, amts
+        return coords.T.astype("int32"), amts
 
     def _len_check(self, x, y):
         if len(x) != len(y):
