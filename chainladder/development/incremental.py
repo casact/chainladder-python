@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development import Development, DevelopmentBase
 from chainladder.utils.utility_functions import num_to_value, num_to_nan
+from chainladder.utils import WeightedRegression
 import numpy as np
 import pandas as pd
 import warnings
@@ -24,8 +25,8 @@ class IncrementalAdditive(DevelopmentBase):
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
     average: str optional (default='volume')
-        type of averaging to use for ldf average calculation.  Options include
-        'volume' and 'simple'.
+        type of averaging to use for average incremental factor calculation.  Options include
+        'regression', 'volume' and 'simple'.
     drop: tuple or list of tuples
         Drops specific origin/development combination(s)
     drop_high: bool or list of bool (default=None)
@@ -59,10 +60,12 @@ class IncrementalAdditive(DevelopmentBase):
     cum_zeta_: Triangle
         The fitted cumulative percent of exposure trended to the valuation date of 
         the Triangle
-    w_: Triangle
+    w_: ndarray
         The weight used in the zeta fitting
+    w_tri_: Triangle
+        Triangle of w_
     sample_weight: Triangle
-        The exposure used to obtain incremental %
+        The exposure used to obtain incremental factor
     incremental_: Triangle
         A triangle of full incremental values.
 
@@ -83,6 +86,7 @@ class IncrementalAdditive(DevelopmentBase):
         self.drop_valuation = drop_valuation
         self.preserve = preserve
         self.drop = drop
+        self.is_additive = True
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -113,27 +117,25 @@ class IncrementalAdditive(DevelopmentBase):
         else:
             sample_weight = sample_weight.copy()
         xp = X.get_array_module()
+        self.xp = xp
         sample_weight.is_cumulative = False
-        obj = X.cum_to_incr() / sample_weight.values
+        X_incr = X.cum_to_incr()
         if hasattr(X, "trend_"):
             if self.trend != 0:
                 warnings.warn(
                     "IncrementalAdditive Trend assumption is ignored when X has a trend_ property."
                 )
-            x = obj * obj.trend_.values
+            X_trended = X_incr * X_incr.trend_.values
         else:
-            x = obj.trend(self.trend, axis='valuation')
-
+            X_trended = X_incr.trend(self.trend, axis='valuation')
+        x = X_trended / sample_weight.values
         if hasattr(X, "w_"):
             self.w_tri_ = self._set_weight_func(x * X.w_,X.cum_to_incr())
         else:
             self.w_tri_ = self._set_weight_func(x,X.cum_to_incr())
         self.w_ = self.w_tri_.values
-        if self.average == "simple":
-            y_ = xp.nanmean(self.w_ * x.values, axis=-2)
-        if self.average == "volume":
-            y_ = xp.nansum(self.w_ * x.values * sample_weight.values, axis=-2)
-            y_ = y_ / xp.nansum(self.w_ * sample_weight.values, axis=-2)
+        super().fit(sample_weight.values,X_trended.values,self.w_)
+        y_ = self.params_.slope_[...,0]
         self.tri_zeta = x.copy()
         self.sample_weight = sample_weight
         self.fit_zeta_ = self.tri_zeta * self.w_

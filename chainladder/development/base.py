@@ -12,6 +12,19 @@ from chainladder.core.common import Common
 
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
+    
+    def fit(self,X,y=None,sample_weight=None):
+        average_ = self._validate_assumption(y, self.average, axis=3)
+        self.average_ = average_.flatten()    
+        exponent = self.xp.array(
+            [{"regression": 0, "volume": 1, "simple": 2}[x] 
+             for x in average_[0, 0, 0]]
+        )        
+        exponent = self.xp.nan_to_num(exponent * (y * 0 + 1))
+        w = num_to_nan(sample_weight / (X ** (exponent)))
+        self.params_ = WeightedRegression(axis=2, thru_orig=True, xp=self.xp).fit(X, y, w)
+        return self
+        
     def _set_fit_groups(self, X):
         """Used for assigning group_index in fit"""
         backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
