@@ -117,6 +117,7 @@ class IncrementalAdditive(DevelopmentBase):
         else:
             sample_weight = sample_weight.copy()
         xp = X.get_array_module()
+        self.xp = xp
         sample_weight.is_cumulative = False
         X_incr = X.cum_to_incr()
         if hasattr(X, "trend_"):
@@ -133,15 +134,8 @@ class IncrementalAdditive(DevelopmentBase):
         else:
             self.w_tri_ = self._set_weight_func(x,X.cum_to_incr())
         self.w_ = self.w_tri_.values
-        average_ = self._validate_assumption(X, self.average, axis=3)[... , :X.shape[3]]
-        exponent = xp.array(
-            [{"regression": 0, "volume": 1, "simple": 2}[x] 
-             for x in average_[0, 0, 0]]
-        )
-        exponent = xp.nan_to_num(exponent * (x.values * 0 + 1))
-        w = num_to_nan(self.w_ / (sample_weight.values ** (exponent)))
-        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(sample_weight.values, X_trended.values, w)
-        y_ = params.slope_[...,0]
+        super().fit(sample_weight.values,X_trended.values,self.w_)
+        y_ = self.params_.slope_[...,0]
         self.tri_zeta = x.copy()
         self.sample_weight = sample_weight
         self.fit_zeta_ = self.tri_zeta * self.w_
