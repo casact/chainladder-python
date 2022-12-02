@@ -9,7 +9,7 @@ import pandas as pd
 import warnings
 
 
-class IncrementalAdditiveNew(DevelopmentBase):
+class IncrementalAdditive(DevelopmentBase):
     """ The Incremental Additive Method.
 
     Parameters
