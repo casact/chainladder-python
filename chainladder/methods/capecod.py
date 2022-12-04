@@ -106,7 +106,7 @@ class CapeCod(Benktander):
         if self.groupby is not None:
             latest = latest.groupby(self.groupby).sum()
             reported_exposure = reported_exposure.groupby(self.groupby).sum()
-        trend_array = self._trend(X)
+        trend_array = self._trend(X.iloc[0] * 0 + 1)
         X_olf_array = self._onlevel(X)
         sw_olf_array = self._onlevel(sample_weight)
         xp = reported_exposure.get_array_module()
@@ -144,14 +144,18 @@ class CapeCod(Benktander):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
-        X_new.ldf_ = self.ldf_
-        X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
-        apriori_, detrended_apriori_ = self._get_capecod_aprioris(X_new, sample_weight)
-        expectation_ = detrended_apriori_ * sample_weight.values
-        X_new = super().predict(X_new, expectation_)
+        _, X_new.ldf_ = self.intersection(X_new, self.ldf_)
+        # If model was fit at a higher grain, then need to aggregate predicted aprioris too
+        if len(set(sample_weight.key_labels) - set(self.apriori_.key_labels)) > 1:
+            apriori_, detrended_apriori_ = self._get_capecod_aprioris(
+                X_new.groupby(self.apriori_.key_labels).sum(), 
+                sample_weight.groupby(self.apriori_.key_labels).sum())
+        else:
+            apriori_, detrended_apriori_ = self._get_capecod_aprioris(X_new, sample_weight)
+        X_new.expectation_ = sample_weight * detrended_apriori_
+        X_new = super().predict(X_new, X_new.expectation_)
         X_new.apriori_ = apriori_
         X_new.detrended_apriori_ = detrended_apriori_
-        X_new.expectation_ = expectation_
         return X_new
 
     def _trend(self, X):
@@ -164,21 +168,7 @@ class CapeCod(Benktander):
                 trend_array = X.trend_.latest_diagonal.values
 
             else:
-                trended_diag = X.trend(self.trend).latest_diagonal.values.ravel()
-                original_diag = X.latest_diagonal.values.ravel()
-
-                ## Init the trends as 1.000
-                trend_array = [1.000] * len(trended_diag)
-
-                for index in range(X.values.shape[2]):
-                    # In case of 0/0
-                    if np.isnan(trended_diag[index]) and np.isnan(original_diag[index]):
-                        trend_array[index] = 1.000
-                    else:
-                        trend_array[index] = trended_diag[index] / original_diag[index]
-                trend_array = np.reshape(
-                    trend_array, (X.shape[0], X.shape[1], X.values.shape[2], 1)
-                )
+                trend_array = (X.trend(self.trend) / X).latest_diagonal.values
 
         else:
             if hasattr(X, "trend_"):
