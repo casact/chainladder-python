@@ -147,14 +147,6 @@ class IncrementalAdditive(DevelopmentBase):
         self.sample_weight = sample_weight
         self.fit_zeta_ = self.tri_zeta * self.w_
         self.zeta_ = self._param_property(x,self.params_.slope_[...,0][..., None, :])
-
-        #to migrate under cum_zeta_ property under common, so cum_zeta_ can be correct after tail
-        #following https://github.com/casact/chainladder-python/blob/4766369bdd3d987619d63e4e425d3d4e480004ec/chainladder/core/triangle.py#L428
-        self.cum_zeta_ = self.zeta_.copy()
-        values = xp.nan_to_num(self.zeta_.values[...,::-1])
-        values = num_to_value(values, 0)
-        self.cum_zeta_.values = xp.cumsum(values,-1)[...,::-1] * self.zeta_.nan_triangle
-
         
         #to consolidate under full_triangle_
         y_ = xp.repeat(self.zeta_.values, len(x.odims), -2)
@@ -198,7 +190,7 @@ class IncrementalAdditive(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        for item in ["ldf_", "w_", "zeta_", "cum_zeta_", "incremental_", "tri_zeta", "fit_zeta_", "sample_weight"]:
+        for item in ["ldf_", "w_", "zeta_", "incremental_", "tri_zeta", "fit_zeta_", "sample_weight"]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
 

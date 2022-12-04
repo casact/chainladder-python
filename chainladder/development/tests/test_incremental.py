@@ -6,10 +6,12 @@ def test_schmidt():
     tri = cl.load_sample("ia_sample")
     xp = np if tri.array_backend == "sparse" else tri.get_array_module()
     ia = cl.IncrementalAdditive()
-    answer = ia.fit_transform(
+    ia_transform = ia.fit_transform(
         tri.iloc[0, 0], sample_weight=tri.iloc[0, 1].latest_diagonal
     )
-    answer = ia.incremental_.incr_to_cum().values[0, 0, :, -1]
+    answer = ia_transform.incremental_.incr_to_cum().values[0, 0, :, -1]
+    answer_zeta = ia_transform.zeta_.values[0,0,0,:]
+    answer_cum_zeta = ia_transform.cum_zeta_.values[0,0,0,:]
     check = xp.array(
         [
             3483.0,
@@ -20,7 +22,27 @@ def test_schmidt():
             7152.82539296,
         ]
     )
-    assert xp.allclose(answer, check, atol=1e-5)
+    check_zeta = xp.array(
+        [
+            0.24321225,
+            0.22196026,
+            0.15397836,
+            0.14185271,
+            0.09067327,
+            0.03677019
+        ]
+    )
+    check_cum_zeta = xp.array(
+        [
+            0.88844704,
+            0.64523479,
+            0.42327453,
+            0.26929617,
+            0.12744346,
+            0.03677019
+        ]
+    )
+    assert xp.allclose(answer, check, atol=1e-5) & xp.allclose(answer_zeta, check_zeta, atol=1e-8) & xp.allclose(answer_cum_zeta, check_cum_zeta, atol=1e-8)
 
 def test_IBNR_methods():
     tri = cl.load_sample("ia_sample")
