@@ -6,7 +6,7 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from chainladder.utils.dask import dp
 import numpy as np
-from chainladder.utils.utility_functions import concat, num_to_value
+from chainladder.utils.utility_functions import concat
 from chainladder import options
 
 
@@ -87,14 +87,7 @@ class Common:
         if not self.has_zeta:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'cum_zeta_'")
-        #following https://github.com/casact/chainladder-python/blob/4766369bdd3d987619d63e4e425d3d4e480004ec/chainladder/core/triangle.py#L428
-        cz = self.zeta_.copy()
-        xp = cz.get_array_module()
-        values = xp.nan_to_num(self.zeta_.values[...,::-1])
-        values = num_to_value(values, 0)
-        cz.values = xp.cumsum(values,-1)[...,::-1] * self.zeta_.nan_triangle
-        cz.is_cumulative = True
-        return cz
+        return self.zeta_.incr_to_cum()
     
     @property
     def ibnr_(self):
