@@ -57,7 +57,7 @@ def test_capecod_predict1(prism):
             cc_pipe.named_steps.model.ultimate_.sum()).sum() < 1e-6
             
 
-def test_capecod_predict2():
+def test_capecod_predict2(prism):
     """ github issue #400 
     Test whether predictions between groupby with estimator and
     groupby outside estimator match
