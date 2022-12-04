@@ -106,8 +106,10 @@ class IncrementalAdditive(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
+        #check dev lag
         if type(X.ddims) != np.ndarray:
             raise ValueError("Triangle must be expressed with development lags")
+        #convert to numpy
         if X.array_backend == "sparse":
             X = X.set_backend("numpy")
         else:
@@ -116,9 +118,12 @@ class IncrementalAdditive(DevelopmentBase):
             sample_weight = sample_weight.set_backend("numpy")
         else:
             sample_weight = sample_weight.copy()
+        #get backend
         xp = X.get_array_module()
         self.xp = xp
+        #short cut to use sample_weight as is
         sample_weight.is_cumulative = False
+        #get incremental factor
         X_incr = X.cum_to_incr()
         if hasattr(X, "trend_"):
             if self.trend != 0:
@@ -129,24 +134,30 @@ class IncrementalAdditive(DevelopmentBase):
         else:
             X_trended = X_incr.trend(self.trend, axis='valuation')
         x = X_trended / sample_weight.values
+        #assign weights according to n_periods and drops
         if hasattr(X, "w_"):
-            self.w_tri_ = self._set_weight_func(x * X.w_,X.cum_to_incr())
+            self.w_tri_ = self._set_weight_func(x * X.w_,X_trended)
         else:
-            self.w_tri_ = self._set_weight_func(x,X.cum_to_incr())
+            self.w_tri_ = self._set_weight_func(x,X_trended)
         self.w_ = self.w_tri_.values
+        #calculate factors
         super().fit(sample_weight.values,X_trended.values,self.w_)
-        y_ = self.params_.slope_[...,0]
+        #keep attributes
         self.tri_zeta = x.copy()
         self.sample_weight = sample_weight
         self.fit_zeta_ = self.tri_zeta * self.w_
-        self.zeta_ = x.iloc[..., -1:, :]
-        self.zeta_.values = y_[:, :, None, :]
+        self.zeta_ = self._param_property(x,self.params_.slope_[...,0][..., None, :])
+
+        #to migrate under cum_zeta_ property under common, so cum_zeta_ can be correct after tail
         #following https://github.com/casact/chainladder-python/blob/4766369bdd3d987619d63e4e425d3d4e480004ec/chainladder/core/triangle.py#L428
         self.cum_zeta_ = self.zeta_.copy()
         values = xp.nan_to_num(self.zeta_.values[...,::-1])
         values = num_to_value(values, 0)
         self.cum_zeta_.values = xp.cumsum(values,-1)[...,::-1] * self.zeta_.nan_triangle
-        y_ = xp.repeat(y_[..., None, :], len(x.odims), -2)
+
+        
+        #to consolidate under full_triangle_
+        y_ = xp.repeat(self.zeta_.values, len(x.odims), -2)
         obj = x.copy()
         keeps = (
             1
@@ -160,7 +171,6 @@ class IncrementalAdditive(DevelopmentBase):
         obj.values = obj.values * (1 - xp.nan_to_num(x.nan_triangle)) + xp.nan_to_num(
             (X.cum_to_incr().values / sample_weight.values)
         )
-
         obj.values[obj.values == 0] = xp.nan
         obj._set_slicers()
         obj.valuation_date = obj.valuation.max()
@@ -169,6 +179,8 @@ class IncrementalAdditive(DevelopmentBase):
         self.incremental_ = self.incremental_.trend(
             1/(1+future_trend)-1, axis='valuation', start=X.valuation_date,
             end=self.incremental_.valuation_date)
+        
+        #to migrate under _zeta_to_ldf method under common, so ldf_ can be correct after tail
         self.ldf_ = obj.incr_to_cum().link_ratio
         return self
 
@@ -189,3 +201,17 @@ class IncrementalAdditive(DevelopmentBase):
         for item in ["ldf_", "w_", "zeta_", "cum_zeta_", "incremental_", "tri_zeta", "fit_zeta_", "sample_weight"]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
+
+    def _param_property(self, factor, params):
+        from chainladder import options
+        
+        obj = factor[factor.origin == factor.origin.min()]
+        xp = factor.get_array_module()
+        obj.values = params
+        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
+        obj.is_pattern = True
+        obj.is_additive = True
+        obj.is_cumulative = False
+        obj.virtual_columns.columns = {}
+        obj._set_slicers()
+        return obj
