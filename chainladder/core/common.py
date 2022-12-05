@@ -69,12 +69,26 @@ class Common:
             return False
 
     @property
+    def has_zeta(self):
+        if hasattr(self, "zeta_"):
+            return True
+        else:
+            return False        
+        
+    @property
     def cdf_(self):
         if not self.has_ldf:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'cdf_'")
         return self.ldf_.incr_to_cum()
 
+    @property
+    def cum_zeta_(self):
+        if not self.has_zeta:
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'cum_zeta_'")
+        return self.zeta_.incr_to_cum()
+    
     @property
     def ibnr_(self):
         if not hasattr(self, "ultimate_"):
