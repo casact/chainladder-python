@@ -90,7 +90,6 @@ class BootstrapODPSample(DevelopmentBase):
                 raise ValueError("Only single index triangles are supported")
             if type(X.ddims) != np.ndarray:
                 raise ValueError("Triangle must be expressed with development lags")
-            lag = {"M": 1, "Q": 3, "Y": 12}[X.development_grain]
             obj = Development(
                 n_periods=self.n_periods,
                 drop=self.drop,

@@ -12,19 +12,19 @@ from chainladder.core.common import Common
 
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
-    
+
     def fit(self,X,y=None,sample_weight=None):
         average_ = self._validate_assumption(y, self.average, axis=3)
-        self.average_ = average_.flatten()    
+        self.average_ = average_.flatten()
         exponent = self.xp.array(
-            [{"regression": 0, "volume": 1, "simple": 2}[x] 
+            [{"regression": 0, "volume": 1, "simple": 2}[x]
              for x in average_[0, 0, 0]]
-        )        
+        )
         exponent = self.xp.nan_to_num(exponent * (y * 0 + 1))
         w = num_to_nan(sample_weight / (X ** (exponent)))
         self.params_ = WeightedRegression(axis=2, thru_orig=True, xp=self.xp).fit(X, y, w)
         return self
-        
+
     def _set_fit_groups(self, X):
         """Used for assigning group_index in fit"""
         backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
@@ -57,8 +57,9 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             xp = X.get_array_module()
             val_offset = {
                 "Y": {"Y": 1},
-                "Q": {"Y": 4, "Q": 1},
-                "M": {"Y": 12, "Q": 3, "M": 1},
+                "S": {"Y": 2, "S": 1},
+                "Q": {"Y": 4, "S": 2, "Q": 1},
+                "M": {"Y": 12, "S": 6, "Q": 3, "M": 1},
             }
             if n_periods < 1 or n_periods >= X.shape[-2] - 1:
                 return X.values * 0 + 1
@@ -117,7 +118,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     # for drop_high and drop_low
     def _drop_n(self, drop_high, drop_low, X, link_ratio, preserve):
-        #this is safe because each triangle by index and column has 
+        #this is safe because each triangle by index and column has
         link_ratios_len = link_ratio.shape[3]
 
         def drop_array_helper(drop_type):
@@ -154,11 +155,11 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         n_period_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
         n_period_array[:,:,:] = drop_array_helper(self.n_periods)
         preserve_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
-        preserve_array[:,:,:] = drop_array_helper(preserve)        
-        
+        preserve_array[:,:,:] = drop_array_helper(preserve)
+
         #operationalizing the -1 option for n_period
         n_period_array = np.where(n_period_array == -1, link_ratios_len, n_period_array)
-        
+
         #ranking factors by itself and volume
         link_ratio_ranks = np.lexsort((X.values[...,:-1],link_ratio),axis = 2).argsort(axis=2)
 
@@ -167,10 +168,10 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         #counting valid factors
         ldf_count = weights.sum(axis=3)
-        
+
         #applying n_period
         ldf_count_n_period = np.where(ldf_count > n_period_array, n_period_array, ldf_count)
-        
+
         #applying drop_high and drop_low
         max_rank_unpreserve = ldf_count_n_period - drop_high_array
         min_rank_unpreserve = drop_low_array
@@ -179,13 +180,13 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         warning_flag = np.any(max_rank_unpreserve - min_rank_unpreserve < preserve)
         max_rank = np.where(max_rank_unpreserve - min_rank_unpreserve < preserve, ldf_count_n_period, max_rank_unpreserve)
         min_rank = np.where(max_rank_unpreserve - min_rank_unpreserve < preserve, 0, min_rank_unpreserve)
-            
+
         index_array_weights = (link_ratio_ranks.transpose((0,1,3,2)) < max_rank.reshape(max_rank.shape[0],max_rank.shape[1],max_rank.shape[2],1)) & (
             link_ratio_ranks.transpose((0,1,3,2)) > min_rank.reshape(min_rank.shape[0],min_rank.shape[1],min_rank.shape[2],1) - 1
         )
 
         weights = index_array_weights
-        
+
         if warning_flag:
             if preserve == 1:
                 warning = (
@@ -206,7 +207,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     # for drop_above and drop_below
     def _drop_x(self, drop_above, drop_below, X, link_ratio, preserve):
-        #this is safe because each triangle by index and column has 
+        #this is safe because each triangle by index and column has
         link_ratios_len = link_ratio.shape[3]
 
         def drop_array_helper(drop_type, default_value):
@@ -231,14 +232,14 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         drop_below_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
         drop_below_array[:,:,:] = drop_array_helper(drop_below, 0.0)
         preserve_array = np.zeros((link_ratio.shape[0],link_ratio.shape[1],link_ratios_len))
-        preserve_array[:,:,:] = drop_array_helper(preserve, preserve)        
+        preserve_array[:,:,:] = drop_array_helper(preserve, preserve)
 
         #transposing
         link_ratio_T = link_ratio.transpose((0,1,3,2))
-        
+
         #setting up default return
         weights = ~np.isnan(link_ratio_T)
-        
+
         #dropping
         index_array_weights = (link_ratio_T < drop_above_array[...,None]) & (
             link_ratio_T > drop_below_array[...,None]
@@ -246,7 +247,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         #counting remaining factors
         ldf_count = index_array_weights.sum(axis=3)
-        
+
         #applying preserve
         warning_flag = np.any(ldf_count < preserve_array)
         weights = np.where(ldf_count[...,None] < preserve_array[...,None], weights, index_array_weights)
@@ -320,19 +321,19 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         w = w * self._assign_n_periods_weight_func(factor)
         if self.drop is not None:
             w = w * self._drop_func(factor)
-        
+
         if self.drop_valuation is not None:
             w = w * self._drop_valuation_func(factor)
 
         if (self.drop_above != np.inf) | (self.drop_below != 0.0):
             w = w * self._drop_x_func(factor)
-            
+
         if (self.drop_high is not None) | (self.drop_low is not None):
             w = w * self._drop_n_func(factor * num_to_nan(w),secondary_rank)
         w_tri = factor.copy()
         w_tri.values = num_to_nan(w)
         return w_tri
-    
+
     def _assign_n_periods_weight_func(self,factor):
         """Used to apply the n_periods weight"""
         #getting dimensions of factor for various manipulation
@@ -344,6 +345,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             xp = X.get_array_module()
             val_offset = {
                 "Y": {"Y": 1},
+                "S": {"Y": 2, "S": 1},
                 "Q": {"Y": 4, "Q": 1},
                 "M": {"Y": 12, "Q": 3, "M": 1},
             }
@@ -365,8 +367,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         conc = [
             dict_map[item][..., num : num + 1] for num, item in enumerate(n_periods_array)
         ]
-        return xp.concatenate(tuple(conc), -1)    
-    
+        return xp.concatenate(tuple(conc), -1)
+
     def _drop_func(self,factor):
         #get the appropriate backend for nan_triangle and nan_to_num
         xp = factor.get_array_module()
@@ -384,7 +386,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         #set weight of dropped factors to 0
         arr[(origin_ind,dev_ind)] = 0
         return xp.nan_to_num(arr)[None,None]
-    
+
     def _drop_valuation_func(self,factor):
         #get the appropriate backend for nan_to_num
         xp = factor.get_array_module()
@@ -404,7 +406,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         if b.sum() == 0:
             raise Exception("The entire triangle has been dropped via drop_valuation.")
         return b
-    
+
     def _drop_x_func(self,factor):
         #getting dimensions of factor for various manipulation
         factor_val = factor.values.copy()
@@ -455,7 +457,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             warnings.warn(warning)
 
         return w.transpose((0,1,3,2)).astype(float)
-    
+
     # for drop_high and drop_low
     def _drop_n_func(self,factor,secondary_rank=None):
         #getting dimensions of factor for various manipulation

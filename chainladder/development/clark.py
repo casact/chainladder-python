@@ -129,8 +129,8 @@ class ClarkLDF(DevelopmentBase):
             sample_weight = self._set_fit_groups(sample_weight)
         else:
             self.method_ = "ldf"
-        age_offset = {"Y": 6.0, "Q": 1.5, "M": 0.5}[X.development_grain]
-        age_interval = {"Y": 12.0, "Q": 3.0, "M": 1.0}[X.development_grain]
+        age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
+        age_interval = {"Y": 12.0, "S": 6.0, "Q": 3.0, "M": 1.0}[X.development_grain]
         nans = nan_triangle.reshape(1, -1)[0]
         age = xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)].astype("float64")
         age_end = age - age_offset
