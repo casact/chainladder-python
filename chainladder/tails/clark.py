@@ -79,7 +79,7 @@ class TailClark(TailBase):
         super().fit(X, y, sample_weight)
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
-        age_offset = {"Y": 6.0, "Q": 1.5, "M": 0.5}[X.development_grain]
+        age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
         fitted = 1 / model.G_(self.ldf_.ddims - age_offset)
         fitted = xp.concatenate(
             (
