@@ -102,7 +102,7 @@ class TailCurve(TailBase):
         elif type(self.fit_period) is list:
             fit_period = xp.array(self.fit_period)[None, None, None, :]
         else:
-            grain = {"Y": 12, "Q": 3, "M": 1}[X.development_grain]
+            grain = {"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain]
             start = (
                 None
                 if self.fit_period[0] is None

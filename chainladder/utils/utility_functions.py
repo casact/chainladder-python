@@ -377,7 +377,7 @@ def model_diagnostics(model, name=None, groupby=None):
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
     run_off = run_off[run_off.development > str(obj.X_.valuation_date)]
-    run_off = run_off.iloc[..., : {"M": 12, "Q": 4, "Y": 1}[obj.X_.development_grain]]
+    run_off = run_off.iloc[..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]]
 
     triangles = []
     for col in obj.ultimate_.columns:
