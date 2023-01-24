@@ -58,15 +58,29 @@ class TailCurve(TailBase):
     """
 
     def __init__(
-        self,
-        curve="exponential",
-        fit_period=(None, None),
-        extrap_periods=100,
-        errors="ignore",
-        attachment_age=None,
-        reg_threshold=(1.00001,None),
-        projection_period = 12
+            self,
+            curve="exponential",
+            fit_period=(None, None),
+            extrap_periods=100,
+            errors="ignore",
+            attachment_age=None,
+            reg_threshold=(1.00001, None),
+            projection_period=12
     ):
+        # validate arguments
+
+        if curve not in [
+            'exponential',
+            'inverse_power'
+        ]:
+            raise ValueError("Invalid curve type specified. Accepted values are 'exponential' and 'inverse_power'.")
+
+        if errors not in [
+            'ignore',
+            'raise'
+        ]:
+            raise ValueError("Invalid value argument supplied to the errors parameter. Accepted values are 'raise' "
+                             "and 'ignore'.")
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
@@ -124,20 +138,20 @@ class TailCurve(TailBase):
             _w = (_w + 1) * fit_period
         if self.reg_threshold[0] is None:
             warnings.warn(
-            "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure",
-            "valid inputs for regression.")
+                "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure"
+                "valid inputs for regression.")
             lower_threshold = 1
         elif self.reg_threshold[0] < 1:
             warnings.warn(
-            "Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure "
-            "valid inputs for regression.")
+                "Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure "
+                "valid inputs for regression.")
             lower_threshold = 1
         else:
             lower_threshold = self.reg_threshold[0]
         if self.reg_threshold[1] is not None:
             if self.reg_threshold[1] <= lower_threshold:
                 warnings.warn(
-                "Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'.")
+                    "Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'.")
                 upper_threshold = None
             else:
                 upper_threshold = self.reg_threshold[1]
