@@ -1,6 +1,6 @@
 pandas>=0.23
 scikit-learn>=0.23
-numba
+numba>0.54
 sparse>=0.9
 matplotlib
 dill
