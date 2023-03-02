@@ -26,9 +26,10 @@ class TriangleDisplay:
                 "O" + self.origin_grain + "D" + self.development_grain,
                 self.shape,
                 self.key_labels,
+                self.olab,
                 list(self.vdims),
             ],
-            index=["Valuation:", "Grain:", "Shape:", "Index:", "Columns:"],
+            index=["Valuation:", "Grain:", "Shape:", "Index:", "Origin: ", "Columns:"],
             name="Triangle Summary",
         ).to_frame()
 
