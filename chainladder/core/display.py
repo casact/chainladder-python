@@ -29,7 +29,7 @@ class TriangleDisplay:
                 self.olab,
                 list(self.vdims),
             ],
-            index=["Valuation:", "Grain:", "Shape:", "Index:", "Origin: ", "Columns:"],
+            index=["Valuation:", "Grain:", "Shape:", "Index:", "Origin:", "Columns:"],
             name="Triangle Summary",
         ).to_frame()
 
