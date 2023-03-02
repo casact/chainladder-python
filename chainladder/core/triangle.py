@@ -176,6 +176,7 @@ class Triangle(TriangleBase):
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
+        self.olab = origin
 
         # Set remaining triangle properties
         val_date = data_agg["__development__"].max()
