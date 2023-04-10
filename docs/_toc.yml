@@ -5,10 +5,11 @@ format: jb-book
 root: intro.md
 
 parts:
-  - caption: 2022 CAS Annual Meeting
+  - caption: 4/13/2023 CAS Webinar Series
     chapters:
-      - file: library/2022_cas_annual_meeting/concurrent_session.md
-      - file: library/2022_cas_annual_meeting/roundtable_session.md
+      - file: library/presentation_assets/webinar_demo.md
+      # - file: library/2022_cas_annual_meeting/concurrent_session.md
+      # - file: library/2022_cas_annual_meeting/roundtable_session.md
 
   - caption: Start Here
     chapters:
