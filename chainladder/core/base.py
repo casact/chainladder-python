@@ -165,7 +165,7 @@ class TriangleBase(
         amts = np.concatenate(
             [data_agg[col].fillna(0).values for col in data_agg[columns]]
         ).astype("float64")
-        return coords.T.astype("int64"), amts
+        return coords.T.astype("int32"), amts
 
     def _len_check(self, x, y):
         if len(x) != len(y):
@@ -285,6 +285,8 @@ class TriangleBase(
         if trailing and grain != "M":
             if kind == "origin":
                 end = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
+                end = 'DEC' if end in ['MAR', 'JUN', 'SEP', 'DEC'] and grain == 'Q' else end
+                end = 'DEC' if end in ['JUN', 'DEC'] and grain == '2Q' else end
             else:
                 # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
                 if (
@@ -426,6 +428,16 @@ class TriangleBase(
                 obj.array_backend = "numpy"
             return obj
         return self
+    
+    def _get_axis_value(self, axis):
+        axis = self._get_axis(axis)
+        return {
+            0: self.index, 
+            1: self.columns,
+            2: self.origin, 
+            3: self.development
+        }[axis]
+        
 
 
 def is_chainladder(estimator):

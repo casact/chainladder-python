@@ -14,7 +14,8 @@ class _LocBase:
 
     def get_idx(self, idx):
         """ Returns a slice of the original Triangle """
-        obj = self.obj.copy()
+        from chainladder.core.triangle import Triangle
+        obj = Triangle()
         i_idx = _LocBase._contig_slice(idx[0])
         c_idx = _LocBase._contig_slice(idx[1])
         o_idx = _LocBase._contig_slice(idx[2])
@@ -22,14 +23,27 @@ class _LocBase:
         if type(o_idx) != slice or type(d_idx) != slice:
             raise ValueError("Fancy indexing on origin/development is not supported.")
         if type(i_idx) is slice or type(c_idx) is slice:
-            obj.values = obj.values[i_idx, c_idx, o_idx, d_idx]
+            obj.values = self.obj.values[i_idx, c_idx, o_idx, d_idx]
         else:
-            obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
-        obj.kdims = obj.kdims[i_idx]
-        obj.vdims = obj.vdims[c_idx]
-        obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
-        obj.iloc, obj.loc = Ilocation(obj), Location(obj)
-        obj.valuation_date = np.minimum(obj.valuation.max(), obj.valuation_date)
+            obj.values = self.obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
+        obj.kdims = self.obj.kdims[i_idx]
+        obj.vdims = self.obj.vdims[c_idx]
+        obj.odims = self.obj.odims[o_idx]
+        obj.ddims = self.obj.ddims[d_idx]
+        obj.iloc = Ilocation(obj) 
+        obj.loc = Location(obj)
+        obj.origin_grain = self.obj.origin_grain
+        obj.development_grain = self.obj.development_grain
+        obj.key_labels = self.obj.key_labels
+        obj.origin_close = self.obj.origin_close
+        obj.is_pattern = self.obj.is_pattern
+        obj.is_cumulative = self.obj.is_cumulative
+        obj.virtual_columns = self.obj.virtual_columns
+        obj.array_backend = self.obj.array_backend
+        obj.valuation_date = self.obj.valuation_date
+        obj.valuation_date = np.minimum(obj.valuation.max(), self.obj.valuation_date)
+        for t in self.obj.subtriangles + ['w_'] if hasattr(self.obj, 'w_') else []:
+            setattr(obj, t, getattr(self.obj, t))
         return obj
 
     @staticmethod

@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import warnings
 import re
 
 try:
@@ -66,13 +65,13 @@ class TriangleDisplay:
 
     def _repr_format(self, origin_as_datetime=False):
         out = self.compute().set_backend("numpy").values[0, 0]
-        if origin_as_datetime:
-            origin = pd.to_datetime(self.origin.copy(), errors='ignore')
+        if origin_as_datetime and not self.is_pattern:
+            origin = self.origin.to_timestamp(how='s')
         else:
             origin = self.origin.copy()
         origin.name = None
 
-        if self.origin_grain == "S":
+        if self.origin_grain == "S" and not origin_as_datetime:
             origin_formatted = [""] * len(origin)
             for origin_index in range(len(origin)):
                 origin_formatted[origin_index] = (
@@ -81,7 +80,6 @@ class TriangleDisplay:
                     .replace("Q3", "H2")
                 )
             origin = origin_formatted
-
         development = self.development.copy()
         development.name = None
         return pd.DataFrame(out, index=origin, columns=development)

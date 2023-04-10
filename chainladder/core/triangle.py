@@ -224,7 +224,7 @@ class Triangle(TriangleBase):
         )
 
         if (
-            len(check_origin) != self.odims
+            len(check_origin) != len(self.odims)
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date
             and not self.is_pattern
         ):
@@ -396,7 +396,7 @@ class Triangle(TriangleBase):
             if not obj.is_full:
                 obj = obj[obj.valuation < obj.valuation_date]
             if hasattr(obj, "w_"):
-                w_ = obj.w_[..., 0:1, : len(obj.odims), :]
+                w_ = obj.w_[..., : len(obj.odims), :]
                 obj = obj * w_ if obj.shape == w_.shape else obj
             obj.is_pattern = True
             obj.is_cumulative = False
@@ -425,11 +425,17 @@ class Triangle(TriangleBase):
             xp = self.get_array_module()
             if not self.is_cumulative:
                 if self.is_pattern:
-                    values = xp.nan_to_num(self.values[..., ::-1])
-                    values = num_to_value(values, 1)
-                    values = xp.cumprod(values, -1)[..., ::-1]
-                    self.values = values * self.nan_triangle
-                    values = num_to_value(values, self.get_array_module(values).nan)
+                    if hasattr(self,"is_additive"):
+                        if self.is_additive:
+                            values = xp.nan_to_num(self.values[...,::-1])
+                            values = num_to_value(values, 0)
+                            self.values = xp.cumsum(values,-1)[...,::-1] * self.nan_triangle
+                    else:
+                        values = xp.nan_to_num(self.values[..., ::-1])
+                        values = num_to_value(values, 1)
+                        values = xp.cumprod(values, -1)[..., ::-1]
+                        self.values = values * self.nan_triangle
+                        values = num_to_value(values, self.get_array_module(values).nan)
                 else:
                     if self.array_backend not in ["sparse", "dask"]:
                         self.values = (

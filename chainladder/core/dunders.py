@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import warnings
 from chainladder.utils.utility_functions import num_to_nan, concat
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
@@ -52,7 +51,8 @@ class TriangleDunders:
         x, y = set_common_backend([x, y])
         if (
             x.origin_grain != y.origin_grain
-            or x.development_grain != y.development_grain
+            or (x.development_grain != y.development_grain and 
+                min(x.shape[-1], y.shape[-1]) > 1)
         ):
             raise ValueError(
                 "Triangle arithmetic requires both triangles to be the same grain."
@@ -139,12 +139,16 @@ class TriangleDunders:
                 is_broadcastable = False
         if len(other.odims) == 1 and len(obj.odims) > 1:
             other.odims = obj.odims
+            other.origin_grain = obj.origin_grain
         elif len(obj.odims) == 1 and len(other.odims) > 1:
             obj.odims = other.odims
+            obj.origin_grain = other.origin_grain
         if len(other.ddims) == 1 and len(obj.ddims) > 1:
             other.ddims = obj.ddims
+            other.development_grain = obj.development_grain
         elif len(obj.ddims) == 1 and len(other.ddims) > 1:
             obj.ddims = other.ddims
+            obj.development_grain = other.development_grain
         if not is_broadcastable:
             # If broadcasting doesn't work, union axes similar to pandas
             ddims = pd.concat(

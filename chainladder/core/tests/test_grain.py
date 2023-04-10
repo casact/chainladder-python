@@ -55,7 +55,7 @@ def test_commutative(qtr, atol):
 
 
 @pytest.mark.parametrize('grain',
-    ['OYDY', 'OYDQ', 'OYDM', 'OSDS', 'OSDQ', 'OSDM', 'OQDQ', 'OQDM'])#, 'OMDM'])
+    ['OYDY', 'OYDQ', 'OYDM', 'OSDS', 'OSDQ', 'OSDM', 'OQDQ', 'OQDM'])
 @pytest.mark.parametrize('alt', [0, 1, 2])
 @pytest.mark.parametrize('trailing', [False, True])
 def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
@@ -77,3 +77,10 @@ def test_assymetrric_origin_grain(prism_dense):
     x = prism_dense.iloc[..., 8:, :].incr_to_cum()
     x = x[x.valuation<x.valuation_date]
     assert x.grain('OYDM').development[0] == 1
+
+
+def test_vector_triangle_grain_mismatch(prism):
+    tri = prism['Paid'].sum().incr_to_cum().grain('OQDM')
+    exposure = tri.latest_diagonal
+    tri = tri.grain('OQDQ')
+    assert (tri / exposure).development_grain == 'Q'

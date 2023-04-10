@@ -21,7 +21,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             obj = Development().fit_transform(obj)
         if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
             obj = TailConstant().fit_transform(obj)
-        return obj
+        return obj.val_to_dev()
 
     def _align_cdf(self, X, sample_weight=None):
         """ Vertically align CDF to origin period latest diagonal. """
@@ -106,9 +106,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new: Triangle
 
         """
-        if sum(X.ddims > self.ldf_.ddims.max()) > 0:
+        X_new = X.val_to_dev()
+        if sum(X_new.ddims > self.ldf_.ddims.max()) > 0:
             raise ValueError("X has ages that exceed those available in model.")
-        X_new = X.val_to_dev() + (self.X_.val_to_dev().iloc[0,0].sum(2) * 0)
+        X_new = X_new + (self.X_.val_to_dev().iloc[0,0].sum(2) * 0)
         self.validate_weight(X_new, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(X_new.array_backend)

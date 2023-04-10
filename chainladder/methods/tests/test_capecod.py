@@ -1,5 +1,5 @@
 import chainladder as cl
-
+import numpy as np
 
 def test_struhuss():
     X = cl.load_sample("cc_sample")["loss"]
@@ -37,3 +37,50 @@ def test_capecod_zero_tri(raa):
     premium = raa.latest_diagonal * 0 + 50000
     raa.loc[:,:,'1987',48] = 0
     assert cl.CapeCod().fit(raa, sample_weight=premium).ultimate_.loc[:,:,'1987'].sum() > 0
+
+
+def test_capecod_predict1(prism):
+    """ github issue #400 
+    Test whether we can make predictions at a more granular level than is fitted
+    """
+    prism = prism[['reportedCount', 'Paid']]
+
+    cc_pipe = cl.Pipeline(
+        [('dev', cl.Development()),
+        ('model', cl.CapeCod())]
+    )
+    cc_pipe.fit(
+        X=prism.groupby('Line')['Paid'].sum(), 
+        sample_weight=prism.groupby('Line')['reportedCount'].sum().sum('development'))
+
+    assert abs(cc_pipe.predict(prism['Paid'], sample_weight=prism['reportedCount'].sum('development')).ultimate_.sum() - 
+            cc_pipe.named_steps.model.ultimate_.sum()).sum() < 1e-6
+            
+
+def test_capecod_predict2(prism):
+    """ github issue #400 
+    Test whether predictions between groupby with estimator and
+    groupby outside estimator match
+    """
+    prism = prism[['reportedCount', 'Paid']]
+
+    pipe1 = cl.Pipeline(
+        [('dev', cl.Development(groupby='Line')),
+        ('model', cl.CapeCod(groupby='Line'))]
+    )
+    pipe1.fit(
+        X=prism['Paid'], 
+        sample_weight=prism['reportedCount'].sum('development'))
+
+    pipe2 = cl.Pipeline(
+        [('dev', cl.Development()),
+        ('model', cl.CapeCod())]
+    )
+    pipe2.fit(
+        X=prism.groupby('Line')['Paid'].sum(), 
+        sample_weight=prism.groupby('Line')['reportedCount'].sum().sum('development'))
+
+    pred1 = pipe1.named_steps.model.ultimate_.sum()
+    pred2 = pipe2.predict(prism['Paid'], sample_weight=prism['reportedCount'].sum('development')).ultimate_.sum()
+
+    assert np.nan_to_num(abs(pred1 - pred2).values).sum() <= 1e-6

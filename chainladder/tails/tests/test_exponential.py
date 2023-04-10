@@ -1,4 +1,5 @@
 import chainladder as cl
+import pytest
 
 
 def test_fit_period():
@@ -15,3 +16,26 @@ def test_fit_period():
         )
         == 1.044
     )
+
+
+def test_curve_validation():
+    """
+    Test validation of the curve parameter. Should raise a value error if an incorrect argument is supplied.
+    """
+
+    with pytest.raises(ValueError):
+        tri = cl.load_sample('tail_sample')
+        cl.TailCurve(
+            curve='Exponential'
+        ).fit_transform(tri)
+
+
+def test_errors_validation():
+    """
+    Test validation of the errors parameter. Should raise a value error if an incorrect argument is supplied.
+    """
+    with pytest.raises(ValueError):
+        tri = cl.load_sample('tail_sample')
+        cl.TailCurve(
+            errors='Ignore'
+        ).fit_transform(tri)

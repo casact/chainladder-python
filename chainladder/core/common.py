@@ -1,13 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import numpy as np
 import pandas as pd
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from chainladder.utils.dask import dp
+import numpy as np
 from chainladder.utils.utility_functions import concat
 from chainladder import options
+
 
 
 def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
@@ -25,9 +26,10 @@ def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
         )
 
 
-def _get_full_triangle(X, ultimate, expectation=None, n_iters=None, is_cumulative=True):
+def _get_full_triangle(X, ultimate, is_cumulative=True):
     """ Private method that builds full triangle"""
     # Getting the LDFs and expand for all origins
+    from chainladder.utils.utility_functions import num_to_nan
     emergence = X.ldf_.copy() * (ultimate / ultimate)
 
     # Setting LDFs for all of the known diagonals as 1
@@ -36,41 +38,22 @@ def _get_full_triangle(X, ultimate, expectation=None, n_iters=None, is_cumulativ
         + 1
         + emergence[emergence.valuation >= X.valuation_date]
     )
-
+    
     emergence.valuation_date = pd.to_datetime(options.ULT_VAL)
-    emergence.values = 1 - 1 / emergence.values.cumprod(axis=3)
-
+    emergence.values = emergence.values.cumprod(axis=3) - 1 
+    
     # Shifting the CDFs by development age, and renaming the last column as 9999
     emergence.ddims = emergence.ddims + \
-        {"Y": 12, "Q": 3, "M": 1}[emergence.development_grain]
+        {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
     emergence.ddims[-1] = 9999
-
+    emergence.values = emergence.values / num_to_nan(emergence.values[..., -1:])
     ld = X.incr_to_cum().latest_diagonal
-
-    if n_iters is None:
-        complement = 1 / (1 - emergence)
-        cum_run_off = ld * complement
-
-    else:
-        cdf_ = X.cdf_
-        cdf_.ddims = emergence.ddims
-
-        a = (X.latest_diagonal * 0 + expectation) / cdf_ * X.ldf_.values
-
-        xp = emergence.get_array_module()
-        complement = xp.nansum(
-            emergence.values[None] ** xp.arange(n_iters)[:,
-                                                         None, None, None, None], 0
-        )
-
-        cum_run_off = (a * (emergence ** n_iters)) + (ld * complement)
-
+    cum_run_off = ld + emergence * (ultimate - ld)
     cum_run_off = cum_run_off[cum_run_off.valuation > X.valuation_date]
     cum_run_off.is_cumulative = True
 
     if is_cumulative:
         return X + cum_run_off
-
     else:
         return (X.incr_to_cum() + cum_run_off).cum_to_incr()
 
@@ -86,12 +69,26 @@ class Common:
             return False
 
     @property
+    def has_zeta(self):
+        if hasattr(self, "zeta_"):
+            return True
+        else:
+            return False        
+        
+    @property
     def cdf_(self):
         if not self.has_ldf:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'cdf_'")
         return self.ldf_.incr_to_cum()
 
+    @property
+    def cum_zeta_(self):
+        if not self.has_zeta:
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'cum_zeta_'")
+        return self.zeta_.incr_to_cum()
+    
     @property
     def ibnr_(self):
         if not hasattr(self, "ultimate_"):
@@ -130,22 +127,8 @@ class Common:
             X = self.X_
         else:
             X = self
-
-        if hasattr(self, "n_iters"):
-            return _get_full_triangle(
-                X, self.ultimate_, self.expectation_, self.n_iters, X.is_cumulative
-            )
-        else:
-            return _get_full_triangle(X, self.ultimate_, None, None, X.is_cumulative)
-
-        # full_expectation = _get_full_expectation(
-        #     self.cdf_, self.ultimate_, self.X_.is_cumulative
-        # )
-        # frame = self.X_ + full_expectation * 0
-        # xp = self.X_.get_array_module()
-        # fill = (xp.nan_to_num(frame.values) == 0) * (self.X_ * 0 + full_expectation)
-        #
-        # return self.X_ + fill
+        return _get_full_triangle(X, self.ultimate_,  X.is_cumulative)
+        
 
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
@@ -215,3 +198,18 @@ class Common:
         else:
             obj = self.copy()
             return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)
+    
+    def _validate_assumption(self, triangle, value, axis):
+        if type(value) in (int, float, str):
+            arr = np.repeat(value, triangle.shape[axis])
+        if type(value) in (list, tuple, set, np.array):
+            arr = np.array(value)
+        if type(value) is dict:
+            arr = np.array([value[a] for a in triangle._get_axis_value(axis)])
+        if callable(value):
+            arr = np.array([value(a) for a in triangle._get_axis_value(axis)])
+        if axis == 3:
+            arr = arr[None, None, None]
+        if axis == 2:
+            arr = arr[None, None, :, None]
+        return arr

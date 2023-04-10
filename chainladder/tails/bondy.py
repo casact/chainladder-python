@@ -81,7 +81,7 @@ class TailBondy(TailBase):
         else:
             earliest_age = X.ddims[
                 int(
-                    self.earliest_age / ({"Y": 12, "Q": 3, "M": 1}[X.development_grain])
+                    self.earliest_age / ({"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain])
                 )
                 - 1
             ]

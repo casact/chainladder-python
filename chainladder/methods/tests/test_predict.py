@@ -125,3 +125,8 @@ def align_cdfs():
         cl.load_sample('raa').dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :]).ultimate_
     assert a == b
+
+
+def check_val_tri_cl(raa):
+    model = cl.Chainladder().fit(raa.dev_to_val())
+    assert model.predict(raa.latest_diagonal).ultimate_ == model.ultimate_
