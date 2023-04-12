@@ -1,13 +1,13 @@
-# Concurrent Session
+# Presentation & Demo
 
-Are you at the CAS Annual Meeting in Minneapolis? So are we!
+Are you for the CAS Webinar series? So are we!
 
-Below, you can find the materials referenced in the Concurrent Session.
+Below, you can find the materials referenced in the presentation.
 
-- [Presentation Deck](https://docs.google.com/presentation/d/13JtlCODvNjAF62SQyF_TLnvGk8FuBOOn4L3LeDqxjbQ/edit#slide=id.g14a01cc18bb_0_0)
-- [Lite Demo Workbook](https://github.com/casact/chainladder-python/blob/master/docs/library/2022_cas_annual_meeting/demo-blank-concurrent.ipynb)
-  - Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/blob/master/docs/library/2022_cas_annual_meeting/demo-blank-concurrent.ipynb) (faster, Google Account required)
-  - Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master?urlpath=treedocs/library/2022_cas_annual_meeting/demo-blank-concurrent.ipynb) (slower, no sign up required)
+- [Presentation Deck](https://docs.google.com/presentation/d/1aEX7Df616hXxqa3s_mD5gzIg5X4rYnS_yc8wl1IaGaE/edit#slide=id.g14a01cc18bb_0_0)
+- [Demo Workbook](https://github.com/casact/chainladder-python/blob/master/docs/tutorials/demo-blank.ipynb)
+  - Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/blob/master/docs/tutorials/demo-blank.ipynb) (faster, Google Account required)
+  - Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master?urlpath=treedocs/docs/tutorials/demo-blank.ipynb) (slower, no sign up required)
 
 Other Resources:
 - [Chainladder-Python's GitHub](https://github.com/casact/chainladder-python/)
