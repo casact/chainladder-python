@@ -668,22 +668,27 @@ class Triangle(TriangleBase):
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
             freq = {"Y": "A", "S": "2Q"}.get(ograin_new, ograin_new)
-            mn = self.origin[-1].strftime("%b").upper() if trailing else "DEC"
+            if trailing or obj.origin.freqstr[-3:] != "DEC":
+                origin_period_end = self.origin[-1].strftime("%b").upper()  
+            else:
+                origin_period_end = "DEC"
             indices = (
                 pd.Series(range(len(self.origin)), index=self.origin)
-                .resample("-".join([freq, mn]))
+                .resample("-".join([freq, origin_period_end]))
                 .indices
             )
             groups = pd.concat(
                 [pd.Series([k] * len(v), index=v) for k, v in indices.items()], axis=0
             ).values
             obj = obj.groupby(groups, axis=2).sum()
-            obj.origin_close = mn
-            if len(obj.ddims) > 1 and pd.Timestamp(obj.odims[0]).strftime(
-                "%Y%m"
-            ) != obj.valuation[0].strftime("%Y%m"):
+            obj.origin_close = origin_period_end
+            d_start = pd.Period(
+                obj.valuation[0], 
+                freq=dgrain_old if dgrain_old == 'M' else dgrain_old + obj.origin.freqstr[-4:]
+            ).to_timestamp(how='s')
+            if (len(obj.ddims) > 1 and obj.origin.to_timestamp(how='s')[0] != d_start):
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq="M")[:-1]
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[:-1]
                     .to_timestamp()
                     .values
                 )
