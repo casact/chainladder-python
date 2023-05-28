@@ -118,7 +118,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return X_new
         
     def intersection(self, a, b):
-        """ Given two Triangles with mismatched indices, this method"""
+        """ Given two Triangles with mismatched indices, this method aligns
+            their indices """
+        if len(a) == 1 and len(b) == 1:
+            return a, b
         intersection = list(set(a.key_labels).intersection(set(b.key_labels)))
         if intersection == []:
             return a, b
