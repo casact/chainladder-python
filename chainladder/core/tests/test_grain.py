@@ -73,7 +73,7 @@ def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
     assert abs(a-b).sum().sum() < atol
 
 
-def test_assymetrric_origin_grain(prism_dense):
+def test_asymmetric_origin_grain(prism_dense):
     x = prism_dense.iloc[..., 8:, :].incr_to_cum()
     x = x[x.valuation<x.valuation_date]
     assert x.grain('OYDM').development[0] == 1
@@ -84,3 +84,11 @@ def test_vector_triangle_grain_mismatch(prism):
     exposure = tri.latest_diagonal
     tri = tri.grain('OQDQ')
     assert (tri / exposure).development_grain == 'Q'
+
+
+def test_annual_trailing(prism):
+    tri = prism['Paid'].sum().incr_to_cum()
+    # (limit data to November)
+    tri = tri[tri.valuation<tri.valuation_date].incr_to_cum() 
+    tri = tri.grain('OQDQ', trailing=True).grain('OYDY')
+    assert np.all(tri.ddims[:4] == np.array([3, 6, 9, 12]))
