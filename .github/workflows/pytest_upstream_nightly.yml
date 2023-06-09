@@ -28,7 +28,8 @@ jobs:
       - name: Install repo and dependencies
         shell: bash -l {0}
         run: |
-          conda env create --file ./ci/environment-latest.yaml;
+          conda install mamba -y -c conda-forge
+          mamba env create --file ./ci/environment-latest.yaml;
           conda activate cl_latest;
           python setup.py develop
           pytest chainladder -m "not r"
