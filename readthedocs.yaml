@@ -7,6 +7,10 @@ build:
   os: "ubuntu-20.04"
   tools:
     python: "mambaforge-4.10"
+  jobs:
+    pre_build:
+      # Generate on-the-fly Sphinx configuration from Jupyter Book's _config.yml
+      - "jupyter-book config sphinx docs/"
 
 
 conda:
