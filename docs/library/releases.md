@@ -1,6 +1,41 @@
-# Releases & Changelog
+# {octicon}`megaphone` Releases & Changelog
 
 ## Version 0.8
+
+### Version 0.8.15
+
+Release Date: Apr 11, 2023
+
+**What's Changed**
+- revamping drop functions by @henrydingliu in [\#385](https://github.com/casact/chainladder-python/issues/385)
+- Fixing link_ratio by @henrydingliu in [\#387](https://github.com/casact/chainladder-python/issues/387)
+- adding some tests for the revamped drop function by @henrydingliu in [\#388](https://github.com/casact/chainladder-python/issues/388)
+- Adding test wth CL and BF by @henrydingliu in [\#391](https://github.com/casact/chainladder-python/issues/391)
+- Henrydingliu enhancement 1 2022 11 29 by @henrydingliu in [\#392](https://github.com/casact/chainladder-python/issues/392)
+- w_v2_ and pipeline in Development by @henrydingliu in [\#394](https://github.com/casact/chainladder-python/issues/394)
+- next step for #376 by @henrydingliu in [\#397](https://github.com/casact/chainladder-python/issues/397)
+- consolidating weighted regression factor fit by @henrydingliu in [\#398](https://github.com/casact/chainladder-python/issues/398)
+- cum_zeta_ by @henrydingliu in [\#401](https://github.com/casact/chainladder-python/issues/401)
+- Expanded mappings to include semester sampling by @A108669 in [\#403](https://github.com/casact/chainladder-python/issues/403)
+- fix one more ref to semiannual by @wleescor in [\#410](https://github.com/casact/chainladder-python/issues/410)
+- TailCurve argument validation by @genedan in [\#414](https://github.com/casact/chainladder-python/issues/414)
+- chore(version): specify version of numba by @pafechet in [\#418](https://github.com/casact/chainladder-python/issues/418)
+- Add Friedland Sample - Auto BI Insurer (Expected Loss Method) by @genedan in [\#419](https://github.com/casact/chainladder-python/issues/419)
+- Cas webinar by @kennethshsu in [\#424](https://github.com/casact/chainladder-python/issues/424)
+- [BUG] Argument validation needed for TailCurve [\#413](https://github.com/casact/chainladder-python/issues/413)
+- [BUG] origin_as_datetime does nothing [\#407](https://github.com/casact/chainladder-python/issues/407)
+- [BUG] CapeCod predict at different index grain [\#400](https://github.com/casact/chainladder-python/issues/400)
+- [BUG] Chainladder doesn't coerce valuation triangle correctly [\#399](https://github.com/casact/chainladder-python/issues/399)
+
+**New Contributors**
+[@A108669](https://github.com/A108669) made their first contribution in [\#403](https://github.com/casact/chainladder-python/issues/403)
+[@pafechet](https://github.com/pafechet) made their first contribution in [\#418](https://github.com/casact/chainladder-python/issues/418)
+
+### Version 0.8.14
+
+Release Date: Nov 25, 2022
+
+
 
 ### Version 0.8.13
 

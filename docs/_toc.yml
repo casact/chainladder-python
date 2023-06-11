@@ -2,50 +2,44 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: intro.md
+root: index.md
 
 parts:
-  - caption: 4/13/2023 CAS Webinar Series
-    chapters:
-    - file: library/presentation_assets/webinar_demo.md
-    # - file: library/2022_cas_annual_meeting/concurrent_session.md
-    # - file: library/2022_cas_annual_meeting/roundtable_session.md
-
-  - caption: Start Here
-    chapters:
-    - file: tutorials/demo.ipynb
-    - file: library/install.md
-    - file: tutorials/tutorials_intro.md
+  - chapters:
+    - file: getting_started/index.md
       sections:
-      - file: tutorials/triangle-tutorial.ipynb
-      - file: tutorials/development-tutorial.ipynb
-      - file: tutorials/tail-tutorial.ipynb
-      - file: tutorials/deterministic-tutorial.ipynb
-      - file: tutorials/stochastic-tutorial.ipynb
-      - file: tutorials/data-tutorial.ipynb
-
-  - caption: References
-    chapters:
-    - file: guides_intro.md
+      - file: getting_started/install.md
+      - file: getting_started/tutorials/index.md
+        sections:
+        - file: getting_started/tutorials/triangle-tutorial.ipynb
+        - file: getting_started/tutorials/development-tutorial.ipynb
+        - file: getting_started/tutorials/tail-tutorial.ipynb
+        - file: getting_started/tutorials/deterministic-tutorial.ipynb
+        - file: getting_started/tutorials/stochastic-tutorial.ipynb
+        - file: getting_started/tutorials/data-tutorial.ipynb
+  - chapters:
+    - file: user_guide/index.md
       sections:
-      - file: triangle.ipynb
-      - file: development.ipynb
-      - file: tails.ipynb
-      - file: methods.ipynb
-      - file: adjustments.ipynb
-      - file: workflow.ipynb
-      - file: utilities.ipynb
-    - file: modules/api.rst
-    - file: examples_toc.md
-    - file: library/sample_data.md
-    - file: library/glossary.md
-    - file: library/references.md
-
-  - caption: About
-    chapters:
-    - file: library/usage.md
-    - file: library/source_code.md
+      - file: user_guide/triangle.ipynb
+      - file: user_guide/development.ipynb
+      - file: user_guide/tails.ipynb
+      - file: user_guide/methods.ipynb
+      - file: user_guide/adjustments.ipynb
+      - file: user_guide/workflow.ipynb
+      - file: user_guide/utilities.ipynb
+  - chapters:
+    - file: gallery/index.md
+  - chapters:
+    - file: library/api.rst    
+  - chapters:
+    - file: library/about.md
+      sections:
+      - file: library/usage.md
+      - file: library/references.md
+      - file: library/sample_data.md
+      - file: library/glossary.md
+      - file: library/questions_issues.md
+      - file: library/contributing.md
+      - file: library/roadmap.md
+  - chapters:
     - file: library/releases.md
-    - file: library/questions_issues.md
-    - file: library/contributing.md
-    - file: library/roadmap.md
