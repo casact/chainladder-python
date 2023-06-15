@@ -128,9 +128,6 @@ class TriangleBase(
 
     @staticmethod
     def _set_ddims(data_agg, date_axes):
-        # print("date origin", date_axes["__origin__"])
-        # print("date development", date_axes["__development__"])
-
         if date_axes["__development__"].nunique() > 1:
             dev_lag = TriangleBase._development_lag(
                 data_agg["__origin__"], data_agg["__development__"]
@@ -149,8 +146,6 @@ class TriangleBase(
                 [data_agg["__development__"].max()], name="valuation"
             )
             dev_idx = np.zeros((len(data_agg), 1))
-
-        print("ddims", ddims)
 
         return ddims, dev_idx
 
