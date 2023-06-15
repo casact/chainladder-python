@@ -72,10 +72,9 @@ def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
     a = t.grain(grain, trailing=trailing)
     b = t.incr_to_cum().grain(grain, trailing=trailing).cum_to_incr()
     assert abs(a - b).sum().sum() < atol
-    assert abs(a - b).sum().sum() < atol
+
     a = t.incr_to_cum().grain(grain, trailing=trailing)
     b = t.grain(grain, trailing=trailing).incr_to_cum()
-    assert abs(a - b).sum().sum() < atol
     assert abs(a - b).sum().sum() < atol
 
 
@@ -84,6 +83,7 @@ def test_asymmetric_origin_grain(prism_dense):
     x = prism_dense.iloc[..., 8:, :].incr_to_cum()
     x = x[x.valuation < x.valuation_date]
     assert x.grain("OYDM").development[0] == 1
+    
     x = x[x.valuation < x.valuation_date]
     assert x.grain("OYDM").development[0] == 1
 
