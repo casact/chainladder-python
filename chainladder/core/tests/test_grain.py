@@ -80,6 +80,7 @@ def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
 
 
 def test_asymmetric_origin_grain(prism_dense):
+def test_asymmetric_origin_grain(prism_dense):
     x = prism_dense.iloc[..., 8:, :].incr_to_cum()
     x = x[x.valuation < x.valuation_date]
     assert x.grain("OYDM").development[0] == 1
