@@ -95,11 +95,6 @@ def test_vector_triangle_grain_mismatch(prism):
     assert (tri / exposure).development_grain == "Q"
 
 
-def test_development_age():
-    raa_tri = cl.load_sample("raa")
-    assert (raa_tri.ddims == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]).all()
-
-
 def test_annual_trailing(prism):
     tri = prism["Paid"].sum().incr_to_cum()
     tri = prism["Paid"].sum().incr_to_cum()
@@ -109,3 +104,8 @@ def test_annual_trailing(prism):
     tri = tri[tri.valuation < tri.valuation_date].incr_to_cum()
     tri = tri.grain("OQDQ", trailing=True).grain("OYDY")
     assert np.all(tri.ddims[:4] == np.array([12, 24, 36, 48]))
+
+
+def test_development_age():
+    raa_tri = cl.load_sample("raa")
+    assert (raa_tri.ddims == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]).all()
