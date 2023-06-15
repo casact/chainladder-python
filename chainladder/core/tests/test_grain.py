@@ -9,19 +9,22 @@ def test_grain(qtr):
     actual = qtr.iloc[0, 0].grain("OYDY")
     xp = actual.get_array_module()
     nan = xp.nan
-    expected = xp.array([
-        [44, 621, 950, 1020, 1070, 1069, 1089, 1094, 1097, 1099, 1100, 1100],
-        [42, 541, 1052, 1169, 1238, 1249, 1266, 1269, 1296, 1300, 1300, nan],
-        [17, 530, 966, 1064, 1100, 1128, 1155, 1196, 1201, 1200, nan, nan],
-        [10, 393, 935, 1062, 1126, 1209, 1243, 1286, 1298, nan, nan, nan],
-        [13, 481, 1021, 1267, 1400, 1476, 1550, 1583, nan, nan, nan, nan],
-        [2, 380, 788, 953, 1001, 1030, 1066, nan, nan, nan, nan, nan],
-        [4, 777, 1063, 1307, 1362, 1411, nan, nan, nan, nan, nan, nan],
-        [2, 472, 1617, 1818, 1820, nan, nan, nan, nan, nan, nan, nan],
-        [3, 597, 1092, 1221, nan, nan, nan, nan, nan, nan, nan, nan],
-        [4, 583, 1212, nan, nan, nan, nan, nan, nan, nan, nan, nan],
-        [21, 422, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
-        [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]])
+    expected = xp.array(
+        [
+            [44, 621, 950, 1020, 1070, 1069, 1089, 1094, 1097, 1099, 1100, 1100],
+            [42, 541, 1052, 1169, 1238, 1249, 1266, 1269, 1296, 1300, 1300, nan],
+            [17, 530, 966, 1064, 1100, 1128, 1155, 1196, 1201, 1200, nan, nan],
+            [10, 393, 935, 1062, 1126, 1209, 1243, 1286, 1298, nan, nan, nan],
+            [13, 481, 1021, 1267, 1400, 1476, 1550, 1583, nan, nan, nan, nan],
+            [2, 380, 788, 953, 1001, 1030, 1066, nan, nan, nan, nan, nan],
+            [4, 777, 1063, 1307, 1362, 1411, nan, nan, nan, nan, nan, nan],
+            [2, 472, 1617, 1818, 1820, nan, nan, nan, nan, nan, nan, nan],
+            [3, 597, 1092, 1221, nan, nan, nan, nan, nan, nan, nan, nan],
+            [4, 583, 1212, nan, nan, nan, nan, nan, nan, nan, nan, nan],
+            [21, 422, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
+            [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
+        ]
+    )
     xp.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
 
 
@@ -54,10 +57,11 @@ def test_commutative(qtr, atol):
     assert abs(a - b).max().max().max() < atol
 
 
-@pytest.mark.parametrize('grain',
-    ['OYDY', 'OYDQ', 'OYDM', 'OSDS', 'OSDQ', 'OSDM', 'OQDQ', 'OQDM'])
-@pytest.mark.parametrize('alt', [0, 1, 2])
-@pytest.mark.parametrize('trailing', [False, True])
+@pytest.mark.parametrize(
+    "grain", ["OYDY", "OYDQ", "OYDM", "OSDS", "OSDQ", "OSDM", "OQDQ", "OQDM"]
+)
+@pytest.mark.parametrize("alt", [0, 1, 2])
+@pytest.mark.parametrize("trailing", [False, True])
 def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
     t = prism_dense["Paid"]
     if alt == 1:
@@ -67,20 +71,25 @@ def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
         t = t[t.valuation < "2017-09"]
     a = t.grain(grain, trailing=trailing)
     b = t.incr_to_cum().grain(grain, trailing=trailing).cum_to_incr()
-    assert abs(a-b).sum().sum() < atol
+    assert abs(a - b).sum().sum() < atol
     a = t.incr_to_cum().grain(grain, trailing=trailing)
     b = t.grain(grain, trailing=trailing).incr_to_cum()
-    assert abs(a-b).sum().sum() < atol
+    assert abs(a - b).sum().sum() < atol
 
 
 def test_assymetrric_origin_grain(prism_dense):
     x = prism_dense.iloc[..., 8:, :].incr_to_cum()
-    x = x[x.valuation<x.valuation_date]
-    assert x.grain('OYDM').development[0] == 1
+    x = x[x.valuation < x.valuation_date]
+    assert x.grain("OYDM").development[0] == 1
 
 
 def test_vector_triangle_grain_mismatch(prism):
-    tri = prism['Paid'].sum().incr_to_cum().grain('OQDM')
+    tri = prism["Paid"].sum().incr_to_cum().grain("OQDM")
     exposure = tri.latest_diagonal
-    tri = tri.grain('OQDQ')
-    assert (tri / exposure).development_grain == 'Q'
+    tri = tri.grain("OQDQ")
+    assert (tri / exposure).development_grain == "Q"
+
+
+def test_development_age():
+    raa_tri = cl.load_sample("raa")
+    assert (raa_tri.ddims == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]).all()
