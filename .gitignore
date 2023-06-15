@@ -122,3 +122,6 @@ settings.json
 .asv
 
 coverage_html_report
+
+# Random python test workbooks
+Untitled.ipynb
