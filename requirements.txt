@@ -1,4 +1,4 @@
-pandas>=0.23
+pandas>=0.23,<2.0.0
 scikit-learn>=0.23
 numba>0.54
 sparse>=0.9
