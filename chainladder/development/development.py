@@ -43,6 +43,12 @@ class Development(DevelopmentBase):
         The minimum number of link ratio(s) required for LDF calculation
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
+    fillna: float, (default = None)
+        Used to fill in zero or nan values of an triangle with some non-zero
+        amount.  When an link-ratio has zero as its denominator, it is automatically
+        excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
+        averaging in a deterministic method, this may be reasonable.  For all other
+        averages and stochastic methods, this assumption should be avoided.
     groupby:
         An option to group levels of the triangle index together for the purposes
         of estimating patterns.  If omitted, each level of the triangle
@@ -115,7 +121,10 @@ class Development(DevelopmentBase):
         # Triangle must be cumulative and in "development" mode
         obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp = obj.get_array_module()
-        tri_array = num_to_nan(obj.values.copy())
+        if self.fillna:
+            tri_array = num_to_nan((obj + self.fillna).values)
+        else:
+            tri_array = num_to_nan(obj.values.copy())
         average_ = self._validate_assumption(X, self.average, axis=3)[... , :X.shape[3]-1]
         self.average_ = average_.flatten()
         n_periods_ = self._validate_assumption(X, self.n_periods, axis=3)[... , :X.shape[3]-1]

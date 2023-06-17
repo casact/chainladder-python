@@ -389,7 +389,6 @@ def add_groupby_agg_func(cls, k, v):
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
-
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)

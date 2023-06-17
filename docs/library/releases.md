@@ -1,6 +1,22 @@
 # {octicon}`megaphone` Releases & Changelog
 
 ## Version 0.8
+### Version 0.8.16
+
+Release Date: Jun 17, 2023
+
+**What's Changed**
+* fix for [\#409](https://github.com/casact/chainladder-python/issues/409)  
+* fix for [\#411](https://github.com/casact/chainladder-python/issues/411) 
+* fix for [\#438](https://github.com/casact/chainladder-python/issues/438) 
+
+## New Contributors
+* [@MatthewCaseres](https://github.com/MatthewCaseres) made their first contribution.
+* [@andrejakobsen](https://github.com/andrejakobsen) made their first contribution.
+
+
+
+
 
 ### Version 0.8.15
 
