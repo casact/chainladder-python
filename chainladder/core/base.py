@@ -253,10 +253,32 @@ class TriangleBase(
         return target
 
     @staticmethod
-    def _development_lag(origin, development):
+    def _development_lag(origin, valuation):
         """For tabular format, this will convert the origin/development
         difference to a development lag"""
-        return ((development - origin) / np.timedelta64(1, "M")).round(0).astype(int)
+
+        temp = pd.DataFrame()
+        temp["valuation"] = (valuation + pd.DateOffset(1)).dt.strftime("%m/%d/%Y")
+        temp["origin"] = origin.dt.strftime("%m/%d/%Y")
+
+        temp["age_old"] = (
+            ((valuation - origin) / np.timedelta64(1, "M")).round(0).astype(int)
+        )
+
+        temp["age_temp_div"] = (
+            (valuation.dt.year * 12 + valuation.dt.month)
+            - (origin.dt.year * 12 + origin.dt.month)
+            + 1
+        )
+
+        # print(temp.tail(10))
+
+        # return ((valuation - origin) / np.timedelta64(1, "Y")).round(0).astype(int) * 12
+        return (
+            (valuation.dt.year * 12 + valuation.dt.month)
+            - (origin.dt.year * 12 + origin.dt.month)
+            + 1
+        )
 
     @staticmethod
     def _get_grain(dates, trailing=False, kind="origin"):
@@ -285,8 +307,12 @@ class TriangleBase(
         if trailing and grain != "M":
             if kind == "origin":
                 end = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
-                end = 'DEC' if end in ['MAR', 'JUN', 'SEP', 'DEC'] and grain == 'Q' else end
-                end = 'DEC' if end in ['JUN', 'DEC'] and grain == '2Q' else end
+                end = (
+                    "DEC"
+                    if end in ["MAR", "JUN", "SEP", "DEC"] and grain == "Q"
+                    else end
+                )
+                end = "DEC" if end in ["JUN", "DEC"] and grain == "2Q" else end
             else:
                 # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
                 if (
@@ -428,16 +454,12 @@ class TriangleBase(
                 obj.array_backend = "numpy"
             return obj
         return self
-    
+
     def _get_axis_value(self, axis):
         axis = self._get_axis(axis)
-        return {
-            0: self.index, 
-            1: self.columns,
-            2: self.origin, 
-            3: self.development
-        }[axis]
-        
+        return {0: self.index, 1: self.columns, 2: self.origin, 3: self.development}[
+            axis
+        ]
 
 
 def is_chainladder(estimator):

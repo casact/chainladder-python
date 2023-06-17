@@ -425,11 +425,13 @@ class Triangle(TriangleBase):
             xp = self.get_array_module()
             if not self.is_cumulative:
                 if self.is_pattern:
-                    if hasattr(self,"is_additive"):
+                    if hasattr(self, "is_additive"):
                         if self.is_additive:
-                            values = xp.nan_to_num(self.values[...,::-1])
+                            values = xp.nan_to_num(self.values[..., ::-1])
                             values = num_to_value(values, 0)
-                            self.values = xp.cumsum(values,-1)[...,::-1] * self.nan_triangle
+                            self.values = (
+                                xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
+                            )
                     else:
                         values = xp.nan_to_num(self.values[..., ::-1])
                         values = num_to_value(values, 1)
