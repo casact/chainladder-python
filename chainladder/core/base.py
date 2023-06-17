@@ -254,31 +254,10 @@ class TriangleBase(
 
     @staticmethod
     def _development_lag(origin, valuation):
-        """For tabular format, this will convert the origin/development
+        """For tabular format, this will convert the origin/valuation
         difference to a development lag"""
+        return ((valuation - origin) / (365/12)).round('1d').dt.days
 
-        temp = pd.DataFrame()
-        temp["valuation"] = (valuation + pd.DateOffset(1)).dt.strftime("%m/%d/%Y")
-        temp["origin"] = origin.dt.strftime("%m/%d/%Y")
-
-        temp["age_old"] = (
-            ((valuation - origin) / np.timedelta64(1, "M")).round(0).astype(int)
-        )
-
-        temp["age_temp_div"] = (
-            (valuation.dt.year * 12 + valuation.dt.month)
-            - (origin.dt.year * 12 + origin.dt.month)
-            + 1
-        )
-
-        # print(temp.tail(10))
-
-        # return ((valuation - origin) / np.timedelta64(1, "Y")).round(0).astype(int) * 12
-        return (
-            (valuation.dt.year * 12 + valuation.dt.month)
-            - (origin.dt.year * 12 + origin.dt.month)
-            + 1
-        )
 
     @staticmethod
     def _get_grain(dates, trailing=False, kind="origin"):
