@@ -1,4 +1,4 @@
-# {octicon}`grabber` Example Gallery
+# {octicon}`mdi:graph-bar` Example Gallery
 
 ```{eval-rst}
 :parenttoc: True
