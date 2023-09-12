@@ -1,4 +1,4 @@
-# octicon:home-fill-24 Welcome
+# {octicon}`home` Welcome
 
 Hello and welcome!
 

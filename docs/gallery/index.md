@@ -1,4 +1,4 @@
-# {octicon}`mdi:graph-bar` Example Gallery
+# {octicon}`graph` Example Gallery
 
 ```{eval-rst}
 :parenttoc: True
