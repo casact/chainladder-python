@@ -2,7 +2,7 @@
 author = ""
 bibtex_bibfiles = ["./library/references.bib"]
 comments_config = {"hypothesis": False, "utterances": False}
-copyright = "2022"
+copyright = "2023"
 exclude_patterns = [
     "**.ipynb_checkpoints",
     ".DS_Store",

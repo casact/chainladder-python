@@ -8,6 +8,7 @@ parts:
   - chapters:
     - file: getting_started/index.md
       sections:
+      - file: getting_started/online_sandbox/sandbox_intro.md
       - file: getting_started/install.md
       - file: getting_started/tutorials/index.md
         sections:

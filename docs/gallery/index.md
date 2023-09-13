@@ -1,4 +1,4 @@
-# {octicon}`grabber` Example Gallery
+# {octicon}`graph` Example Gallery
 
 ```{eval-rst}
 :parenttoc: True

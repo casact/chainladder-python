@@ -1,6 +1,6 @@
-# CHAINLADDER-PYTHON
+# {octicon}`home` Welcome
 
-Welcome!
+Hello and welcome!
 
 The `chainladder-python` package was built to be able to handle all of your actuarial reserving needs in python. It consists of popular actuarial tools, such as **triangle data manipulation**, **link ratios calculation**, and **IBNR estimates** using both deterministic and stochastic models. We build this package so you no longer have to rely on outdated softwares and tools when performing actuarial pricing or reserving indications.
 
