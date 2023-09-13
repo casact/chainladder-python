@@ -2,7 +2,7 @@
 
 Before you go through the trouble of installing the package on your machine, why not  give it a try online first? There's no reason to spend the time with getting your enviroment set up. Now you can explore what `chainladder-python` can do without any installation hassle. Give it a shot now and see for yourself!
 
-If you are already familiar with a programming language, you should be able to get thorugh this sandbox tutorial in *about an hour*. While knowing python is not really required for this sandbox tutorial, you'll want to brush up your basic python skills before working on the Onboarding Tutorials.
+If you are already familiar with a programming language, you should be able to get thorugh this sandbox tutorial in **about an hour**. While knowing python is not really required for this sandbox tutorial, you'll want to brush up your basic python skills before working on the Onboarding Tutorials.
 
 This sandbox tutorial is set up for you to "fill in the blank". Basically, most of the code is already completed, except for a small piece of code in each line for you to fill in. 
 
