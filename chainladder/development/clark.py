@@ -184,7 +184,7 @@ class ClarkLDF(DevelopmentBase):
                     x0 = xp.array([[[[1.0, age_interval]]]])
                     bounds = ((1e-6, None), (1e-6, None))
                 idx_params.append(
-                    minimize(fun=solver, x0=x0, bounds=bounds).x.reshape(1, 1, 1, -1)
+                    minimize(fun=solver, x0=x0.flatten(), bounds=bounds).x.reshape(1, 1, 1, -1)
                 )
             params.append(xp.concatenate(idx_params, axis=1))
         params = xp.concatenate(params, axis=0)
