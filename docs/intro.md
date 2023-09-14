@@ -23,7 +23,7 @@ Install chainladder and try the beginner tutorials.
 A more comprehensive guide on the capabilities of chainladder.
 :::
 
-:::{grid-item-card} {octicon}`grabber;2.5em;sd-mr-1` Galllery
+:::{grid-item-card} {octicon}`graph;2.5em;sd-mr-1` Galllery
 :link: gallery/index
 :link-type: doc
 
