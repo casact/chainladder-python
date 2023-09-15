@@ -13,8 +13,5 @@ You can open the sandbox tutorial in one of two ways. You may be forced to use o
 - Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb) (faster, but a free Google Account is required)
 - Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb) (slower, no sign up required)
 
-<!-- # old stuff -->
-<!-- - Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/blob/master/docs/library/2022_cas_annual_meeting/demo-blank-concurrent.ipynb) (faster, but a free Google Account is required)
-- Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master?urlpath=treedocs/library/2022_cas_annual_meeting/demo-blank-concurrent.ipynb) (slower, no sign up required) -->
 
 Just in case you want a copy of the sandbox tutorial notebook, you can download it [here](https://github.com/casact/chainladder-python/blob/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb).
