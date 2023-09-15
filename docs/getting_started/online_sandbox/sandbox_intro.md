@@ -10,7 +10,8 @@ Time recommended: **1 hour**
 
 You can open the sandbox tutorial in one of two ways. You may be forced to use one or another, especially if you are a company network with strict network firewall rules.
 
-- Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb) (faster, but a free Google Account is required)
-- Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb) (slower, no sign up required)
+- Open in [Google Colab](https://githubtocolab.com/casact/chainladder-python/blob/master/docs/getting_started/online_sandbox/sandbox_workbook_blank.ipynb) (faster, but a free Google Account is required)
+
+- Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/blob/master/docs/getting_started/online_sandbox/sandbox_workbook_blank.ipynb) (slower, no sign up required)
 
 Just in case you want a copy of the sandbox tutorial notebook, you can download it [here](https://github.com/casact/chainladder-python/blob/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb).
