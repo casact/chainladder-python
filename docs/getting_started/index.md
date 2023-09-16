@@ -26,4 +26,11 @@ How to install chainladder.
 Our beginner tutorials.
 :::
 
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
+:link: user_guide/index
+:link-type: doc
+
+A more comprehensive guide on the capabilities of chainladder.
+:::
+
 ::::
