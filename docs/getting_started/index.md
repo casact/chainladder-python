@@ -1,10 +1,10 @@
 ## {octicon}`rocket` Getting Started
-
-::::{grid} 
+ 
+::::{grid} 1 2 3 4
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`chevron-right;2.5em;sd-mr-1` Try Online
-:link: getting_started/sandbox_intro.md
+:link: online_sandbox/sandbox_intro.md
 :link-type: doc
 
 Try chainladder online.
