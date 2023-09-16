@@ -15,4 +15,3 @@ You can open the sandbox tutorial in one of two ways. You may be forced to use o
 - Open in [Binder](https://mybinder.org/v2/gh/casact/chainladder-python/blob/master/docs/getting_started/online_sandbox/sandbox_workbook_blank.ipynb) (slower, no sign up required)
 
 Just in case you want a copy of the sandbox tutorial notebook, you can download it [here](https://github.com/casact/chainladder-python/blob/master/docs/getting_started/online_sandbox/demo-blank-concurrent.ipynb).
-
