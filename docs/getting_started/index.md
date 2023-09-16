@@ -6,7 +6,7 @@ We recommend that you try the sandbox tutorial before installing the package on 
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`chevron-right;2.5em;sd-mr-1` Try Online
-:link: online_sandbox/sandbox_intro
+:link: getting_started/sandbox_intro.md
 :link-type: doc
 
 Try chainladder online.
