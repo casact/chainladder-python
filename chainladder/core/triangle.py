@@ -673,7 +673,6 @@ class Triangle(TriangleBase):
             print(trailing, obj.origin.freqstr[-3:])
             if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != 'M'):
                 origin_period_end = self.origin[-1].strftime("%b").upper()  
-                print(origin_period_end)
             else:
                 origin_period_end = "DEC"
             indices = (
