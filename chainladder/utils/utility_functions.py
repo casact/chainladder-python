@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
+import polars as pl
 import numpy as np
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 import dill
 import json
@@ -33,10 +33,14 @@ def load_sample(key: str, *args, **kwargs):
     origin = "origin"
     development = "development"
     columns = ["values"]
+    origin_format = '%Y'
+    valuation_format = '%Y'
     index = None
     cumulative = True
     if key.lower() in ["mcl", "usaa", "quarterly", "auto", "usauto", "tail_sample"]:
         columns = ["incurred", "paid"]
+    if key.lower() == 'quarterly':
+        valuation_format = '%Y%m'
     if key.lower() == "clrd":
         origin = "AccidentYear"
         development = "DevelopmentYear"
@@ -67,16 +71,20 @@ def load_sample(key: str, *args, **kwargs):
         index = ["ClaimNo", "Line", "Type", "ClaimLiability", "Limit", "Deductible"]
         origin = "AccidentDate"
         development = "PaymentDate"
+        origin_format = '%Y-%m-%d'
+        valuation_format = '%Y-%m-%d'
         cumulative = False
-    df = pd.read_csv(os.path.join(path, "data", key.lower() + ".csv"))
+    df = pl.read_csv(os.path.join(path, "data", key.lower() + ".csv"))
 
     return Triangle(
         df,
         origin=origin,
-        development=development,
+        valuation=development,
         index=index,
         columns=columns,
         cumulative=cumulative,
+        origin_format=origin_format,
+        valuation_format=valuation_format,
         *args,
         **kwargs
     )
@@ -188,7 +196,7 @@ def set_common_backend(objs):
     return [i.set_backend(backend) for i in objs]
 
 
-def concat(
+def legacy_concat(
     objs: Iterable,
     axis: Union[int, str],
     ignore_index: bool = False,
@@ -267,6 +275,53 @@ def concat(
     else:
         return out
 
+def concat(objs, axis, ignore_index: bool = False, sort: bool = False):
+    """Concatenate Triangle objects along a particular axis.
+
+    Parameters
+    ----------
+    objs: list or tuple
+        A list or tuple of Triangle objects to concat. All non-concat axes must
+        be identical and all elements of the concat axes must be unique.
+    axis: string or int
+        The axis to concatenate along.
+    ignore_index: bool, default False
+        If True, do not use the index values along the concatenation axis. The
+        resulting axis will be labeled 0, …, n - 1. This is useful if you are
+        concatenating objects where the concatenation axis does not have
+        meaningful indexing information. Note the index values on the other
+        axes are still respected in the join.
+
+    Returns
+    -------
+    Updated triangle
+    """
+    if type(objs) not in (list, tuple):
+        raise TypeError("objects to be concatenated must be in a list or tuple")
+    if type(objs) is tuple:
+        objs = list(objs)
+    if len(objs) == 0:
+        raise ValueError("objs must contain at least one element")
+    if len(set([i.is_val_tri for i in objs])) > 1:
+        raise ValueError("All objs must be on the same valuation basis.")
+    if min([(obj.key_labels==objs[0].key_labels) for obj in objs]) < 1:
+        raise ValueError("All objs must have the same key_labels.")
+    axis = objs[0]._get_axis(axis)
+    triangle = TriangleBase.from_triangle(objs[0])
+    if axis != 1:
+        if min([(obj.columns==objs[0].columns) for obj in objs]) < 1:
+            raise ValueError("All objs must have the same columns.")
+        triangle.data = (
+            pl.concat([obj.data for obj in objs])
+              .group_by(objs[0].key_labels + ['__origin__', '__development__'])
+              .agg(pl.col(objs[0].columns).sum()))
+    else:
+        l0 = objs[0].data.lazy()
+        for lf in [obj.data.lazy() for obj in objs[1:]]:
+            l0 = l0.join(lf, how='outer', on=objs[0].key_labels + ['__origin__', '__development__'])
+        triangle.data = l0.collect()
+        triangle.columns=[col for obj in objs for col in obj.columns]
+    return triangle
 
 def num_to_value(arr, value):
     """Function that turns all zeros to nan values in an array"""
