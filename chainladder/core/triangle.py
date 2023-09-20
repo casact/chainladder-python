@@ -670,7 +670,7 @@ class Triangle(TriangleBase):
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
             freq = {"Y": "A", "S": "2Q"}.get(ograin_new, ograin_new)
-            if trailing or obj.origin.freqstr[-3:] != "DEC":
+            if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != 'M'):
                 origin_period_end = self.origin[-1].strftime("%b").upper()  
             else:
                 origin_period_end = "DEC"
