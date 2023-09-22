@@ -6,10 +6,10 @@ import pandas as pd
 import numpy as np
 import copy
 import warnings
-from chainladder.core.base import TriangleBase
+from chainladder.legacy.base import TriangleBase
 from chainladder.utils.sparse import sp
-from chainladder.core.slice import VirtualColumns
-from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
+from chainladder.legacy.slice import VirtualColumns
+from chainladder.legacy.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
 from chainladder import options
 

@@ -56,6 +56,10 @@ class Triangle:
     def is_val_tri(self):
         return self.triangle.is_val_tri
     
+    @property 
+    def origin_close(self):
+        return self.triangle.origin_close
+    
     def collect(self):
         self.triangle.data = self.triangle.data.collect()
         return self
@@ -126,25 +130,16 @@ class Triangle:
     def iloc(self):
         return Ilocation(self)
     
+    @property  
+    def loc(self):
+        return Location(self)
+    
     def __repr__(self):
         if self.shape[:2] == (1, 1):
             data = self._repr_format()
             return data.to_string()
         else:
-            return self._summary_frame().__repr__()
-
-    def _summary_frame(self):
-        return pd.Series(
-            [
-                self.valuation_date.strftime("%Y-%m"),
-                "O" + self.origin_grain + "D" + self.development_grain,
-                self.shape,
-                self.key_labels,
-                self.columns.tolist(),
-            ],
-            index=["Valuation:", "Grain:", "Shape:", "Index:", "Columns:"],
-            name="Triangle Summary",
-        ).to_frame()
+            return self.triangle._summary_frame().to_pandas().set_index('').__repr__()
 
     def _repr_html_(self):
         """ Jupyter/Ipython HTML representation """
@@ -163,7 +158,7 @@ class Triangle:
             )
             return default
         else:
-            return self._summary_frame().to_html(
+            return self.triangle._summary_frame().to_pandas().set_index('').to_html(
                 max_rows=pd.options.display.max_rows,
                 max_cols=pd.options.display.max_columns,
             )
@@ -265,12 +260,15 @@ class Triangle:
         obj = self.copy()
         if type(key) is str:
             key = [key]
+        index = type(key) is list and len(set(self.key_labels).intersection(set(key))) == len(key)
         columns = type(key) is list and len(set(self.columns).intersection(set(key))) == len(key)
         development = type(key) is pd.Series
         origin = type(key) is np.ndarray and len(key) == len(self.origin)
         valuation = type(key) is np.ndarray and len(key) != len(self.origin)
+        if type(key) is pl.Expr:
+            obj.triangle = self.triangle.filter(key)
         if columns:
-            obj.triangle = self.triangle.select(key)
+            obj.triangle = self.triangle.select(pl.col(key))
         elif development:
             if self.is_val_tri:
                 formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
@@ -300,8 +298,8 @@ class Triangle:
                 ))
                 .select(self.key_labels + ['__origin__', '__development__'] + s1))
             obj.triangle.columns = s1
-        else:
-            raise NotImplementedError()
+        elif index:
+            return pl.col(key[0] if len(key) == 1 else key)
         return obj
     
     def __setitem__(self, key, value):
@@ -311,8 +309,8 @@ class Triangle:
         
     
     def to_sparse(self):
-        from chainladder.core.slice import VirtualColumns
-        from chainladder.core.triangle import Triangle
+        from chainladder.legacy.slice import VirtualColumns
+        from chainladder.legacy.triangle import Triangle
         import pandas as pd
         import sparse
         import polars as pl
@@ -343,41 +341,62 @@ class Triangle:
     
     @property
     def values(self):
-        return self.triangle.data.select(self.columns)
+        return self.triangle.values
     
     def __eq__(self, other):
         return self.triangle == other.triangle
-    
-    def __eq__(self, other):
-        return (
-            self.triangle.data.sort(
-                pl.col(self.key_labels + ['__origin__', '__development__'])
-                ).select(self.triangle.columns).lazy().collect() == 
-            other.triangle.data.sort(
-                pl.col(other.key_labels + ['__origin__', '__development__'])
-                ).select(other.columns).lazy().collect()
-         ).min(axis=0).min(axis=1)[0]
-    
+
     def __len__(self):
         return len(self)
-
     
-    def to_frame(self, *args, **kwargs):
-        df = self.triangle.to_frame(*args, **kwargs).lazy().collect().to_pandas()
+    def to_frame(self, origin_as_datetime=True, keepdims=False,
+                 implicit_axis=False, *args, **kwargs):
+        """ Converts a triangle to a pandas.DataFrame.
+        Parameters
+        ----------
+        origin_as_datetime : bool
+            Whether the origin vector should be converted from PeriodIndex
+            into a datetime dtype. Default is False.
+        keepdims : bool
+            If True, the triangle will be converted to a DataFrame with all
+            dimensions intact.  The argument will force a consistent DataFrame
+            format regardless of whether any dimensions are of length 1.
+        implicit_axis : bool
+            When keepdims is True, this denotes whether to include the implicit
+            valuation axis in addition to the origin and development.
+        Returns
+        -------
+            pandas.DataFrame representation of the Triangle.
+        """
+        df = self.triangle.to_frame(keepdims=keepdims, implicit_axis=implicit_axis).lazy().collect().to_pandas()
+        if not origin_as_datetime:
+            df['origin'] = df['origin'].map(dict(zip(self.triangle.origin, self.origin)))
         shape = tuple([num for num, i in enumerate(self.shape) if i > 1])
-        if shape == (0, 1):
-            df = df.set_index(self.key_labels)[self.columns]
-        if shape == (0, 2):
-            df = df.pivot(index=self.key_labels, columns='origin', values=self.columns)
-        if shape == (0, 3):
-            df = df.pivot(index=self.key_labels, columns='development', values=self.columns)
-        if shape == (1, 2):
-            df = df.set_index('origin')[self.columns].T
-        if shape == (1, 3):
-            df = df.set_index('development')[self.columns].T
-        if shape == (2, 3):
-            df = df.set_index('origin')
+        if len(shape) == 2 and not keepdims:
+            if shape == (0, 1):
+                df = df.set_index(self.key_labels)[self.columns]
+            if shape == (0, 2):
+                df = df.pivot(index=self.key_labels, columns='origin', values=self.columns[0])
+            if shape == (0, 3):
+                df = df.pivot(index=self.key_labels, columns='development', values=self.columns[0])
+            if shape == (1, 2):
+                df = df.set_index('origin')[self.columns].T
+            if shape == (1, 3):
+                df = df.set_index('development')[self.columns].T
+            if shape == (2, 3):
+                df = df.set_index('origin')
+            df.index.name = None
+            df.columns.name = None
+            if df.columns[0] == 'origin':
+                df = df.set_index('origin')
+                df.index.name = None
+        else:
+            df = df.set_index(self.key_labels)
         return df
+    
+    @property
+    def T(self):
+        return self.to_frame(origin_as_datetime=False).T
     
     def groupby(self, by, axis=0, *args, **kwargs):
         return TriangleGroupBy(self.triangle, by, axis)
@@ -412,24 +431,107 @@ class Triangle:
     def exp(self):
         return np.exp(self)
     
+    def val_to_dev(self, *args, **kwargs):
+        obj = self.copy()
+        obj.triangle = self.triangle.to_development(*args, **kwargs)
+        return obj
+
+    def dev_to_val(self, *args, **kwargs):
+        obj = self.copy()
+        obj.triangle = self.triangle.to_valuation(*args, **kwargs)
+        return obj
+
+    def cum_to_incr(self, *args, **kwargs):
+        obj = self.copy()
+        obj.triangle = self.triangle.to_incremental(*args, **kwargs)
+        return obj
+
+    def incr_to_cum(self, *args, **kwargs):
+        obj = self.copy()
+        obj.triangle = self.triangle.to_cumulative(*args, **kwargs)
+        return obj
+
+    def grain(self, *args, **kwargs):
+        obj = self.copy()
+        obj.triangle = self.triangle.to_grain(*args, **kwargs)
+        return obj
+    
+    def pipe(self, func, *args, **kwargs):
+        return func(self, *args, **kwargs)
+    
+    def append(self, other):
+        from chainladder.utils.utility_functions import concat
+        obj = self.copy()
+        obj.triangle = concat((self.triangle, other.triangle), axis=0)
+        return obj
+
+
+
+class Location:
+    """ Base class for pandas style loc/iloc indexing """
+    def __init__(self, obj):
+        self.obj = obj
+        
+    def _contig_slice(self, arr):
+        """ Try to make a contiguous slicer from an array of indices """
+        if type(arr) is slice:
+            return arr
+        if type(arr) in [int, np.int64, np.int32]:
+            arr = [arr]
+        if len(arr) == 1:
+            return slice(arr[0], arr[0] + 1)
+        diff = np.diff(arr)
+        if len(diff) == 0:
+            raise ValueError("Slice returns empty Triangle")
+        if max(diff) == min(diff):
+            step = max(diff)
+        else:
+            return arr
+        step = None if step == 1 else step
+        min_arr = None if min(arr) == 0 else min(arr)
+        max_arr = max(arr) + 1
+        if step and step < 0:
+            min_arr, max_arr = max_arr - 1, min_arr - 1 if min_arr else min_arr
+        return slice(min_arr, max_arr, step)
+    
+    def __getitem__(self, key):
+        key = self.obj.triangle._normalize_slice(key)
+        obj = self.obj.copy()
+        idx_slice = obj.index.reset_index().set_index(obj.key_labels).loc[key[0]]
+
+        key = (
+            self._contig_slice(idx_slice.values.flatten().tolist()),
+            self._contig_slice(
+                pd.Series(obj.columns).reset_index().set_index('columns')
+                .loc[key[1]].values.flatten().tolist()),
+            self._contig_slice(
+                pd.Series(obj.origin).reset_index().set_index('origin')
+                .loc[key[2]].values.flatten().tolist()),
+            self._contig_slice(
+                obj.development.reset_index().set_index('development')
+                .loc[key[3]].values.flatten().tolist()))
+        obj.triangle = obj.triangle[key]
+        if len(obj.key_labels) > 1:
+            obj.triangle.data = obj.triangle.data.drop(set(obj.key_labels)-set(idx_slice.index.names))
+            obj.triangle._properties.pop('index', None)
+        return obj
+
+
 class Ilocation:
     def __init__(self, obj):
         self.obj = obj
     
     def __getitem__(self, key):
-        return self.obj.__getitem__(key)
+        key = self.obj.triangle._normalize_slice(key)
+        obj = self.obj.copy()
+        obj.triangle = obj.triangle.__getitem__(key)
+        return obj
     
-class TriangleGroupBy(PlTriangleGroupBy):            
-    def _agg(self, agg, axis=1, *args, **kwargs):
-        axis = self.obj._get_axis(axis)
-        if axis == 0:
-            self.obj.data = self.groups.agg(
-                getattr(pl.col(self.columns), agg)(*args, **kwargs))
-        else:
-            raise ValueError(f'axis {axis} is not supported')
-        self.obj.columns = self.columns
+    
+class TriangleGroupBy(PlTriangleGroupBy):
+    def _agg(self, agg, *args, **kwargs):
         obj = Triangle()
-        obj.triangle = self.obj
+        obj.triangle = super()._agg(agg, *args, **kwargs)
         return obj
     
 def add_tri_passthru(cls, k):
@@ -454,9 +556,10 @@ def add_tri_passthru(cls, k):
 
 passthru = [
     '__abs__', '__neg__', '__pos__',  '__pow__', '__round__', 
-    'collect', 'lazy', 'head',
+    'collect', 'lazy', 'head', '_get_axis',
     'max', 'mean', 'median', 'min', 'product', 'quantile', 'std', 
-    'sum', 'tail', 'val_to_dev', 'var', 'val_to_dev', 'dev_to_val', 'cum_to_incr', 'incr_to_cum', 'grain']
+    'sum', 'tail', 'var']
+
 for item in passthru:
     add_tri_passthru(Triangle, item)
 

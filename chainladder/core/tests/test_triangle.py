@@ -217,6 +217,7 @@ def test_jagged_2_add(raa):
 def test_df_period_input(raa):
     d = raa.latest_diagonal
     df = d.to_frame(origin_as_datetime=False).reset_index()
+    df = df.rename(columns={'1990-12': 'values'})
     assert cl.Triangle(df, origin="index", columns=df.columns[-1]) == d
 
 

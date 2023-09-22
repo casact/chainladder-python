@@ -296,6 +296,7 @@ def concat(objs, axis, ignore_index: bool = False, sort: bool = False):
     -------
     Updated triangle
     """
+    from chainladder.core.core import TriangleBase
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
     if type(objs) is tuple:
@@ -321,6 +322,7 @@ def concat(objs, axis, ignore_index: bool = False, sort: bool = False):
             l0 = l0.join(lf, how='outer', on=objs[0].key_labels + ['__origin__', '__development__'])
         triangle.data = l0.collect()
         triangle.columns=[col for obj in objs for col in obj.columns]
+    triangle._properties = {}
     return triangle
 
 def num_to_value(arr, value):
