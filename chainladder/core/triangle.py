@@ -33,10 +33,6 @@ class Triangle:
         return obj
     
     @property
-    def key_labels(self):
-        return self.triangle.key_labels
-    
-    @property
     def index(self):
         return self.triangle.index.lazy().collect().to_pandas()
     
@@ -50,15 +46,9 @@ class Triangle:
     
     @property
     def origin(self):
-        return pd.PeriodIndex(self.triangle.origin.to_pandas(), freq=f'{self.triangle.origin_grain}')
-    
-    @property
-    def is_val_tri(self):
-        return self.triangle.is_val_tri
-    
-    @property 
-    def origin_close(self):
-        return self.triangle.origin_close
+        return pd.PeriodIndex(
+            self.triangle.origin.to_pandas(), 
+            freq=f'{self.triangle.origin_grain}')
     
     def collect(self):
         self.triangle.data = self.triangle.data.collect()
@@ -102,30 +92,6 @@ class Triangle:
                 .select(vcol.alias('valuation')).to_pandas().iloc[:, 0]
                 ) + pd.DateOffset(days=1) + pd.DateOffset(nanoseconds=-1)
     
-    @property
-    def shape(self):
-        return self.triangle.shape
-    
-    @property
-    def latest_diagonal(self):
-        obj = self.copy()
-        obj.triangle = self.triangle.latest_diagonal
-        return obj
-
-    @property
-    def link_ratio(self):
-        obj = self.copy()
-        obj.triangle = self.triangle.link_ratio
-        return obj
-    
-    @property
-    def origin_grain(self):
-        return self.triangle.origin_grain
-    
-    @property
-    def development_grain(self):
-        return self.triangle.development_grain
-    
     @property  
     def iloc(self):
         return Ilocation(self)
@@ -151,17 +117,14 @@ class Triangle:
                 data.to_html(
                     max_rows=pd.options.display.max_rows,
                     max_cols=pd.options.display.max_columns,
-                    float_format=fmt_str.format,
-                )
+                    float_format=fmt_str.format,)
                 .replace("nan", "")
-                .replace("NaN", "")
-            )
+                .replace("NaN", ""))
             return default
         else:
             return self.triangle._summary_frame().to_pandas().set_index('').to_html(
                 max_rows=pd.options.display.max_rows,
-                max_cols=pd.options.display.max_columns,
-            )
+                max_cols=pd.options.display.max_columns)
 
     def _get_format_str(self, data):
         if np.all(np.isnan(data)):
@@ -172,7 +135,6 @@ class Triangle:
             return "{0:,.2f}"
         else:
             return "{:,.0f}"
-
 
     def _repr_format(self, origin_as_datetime=False):
         out = self.triangle.wide()[:, 1:].to_numpy()
@@ -255,93 +217,11 @@ class Triangle:
             return HTML(output_xnan)
         elif HTML is None:
             raise ImportError("heatmap requires IPython")
-            
-    def __getitem__(self, key):
-        obj = self.copy()
-        if type(key) is str:
-            key = [key]
-        index = type(key) is list and len(set(self.key_labels).intersection(set(key))) == len(key)
-        columns = type(key) is list and len(set(self.columns).intersection(set(key))) == len(key)
-        development = type(key) is pd.Series
-        origin = type(key) is np.ndarray and len(key) == len(self.origin)
-        valuation = type(key) is np.ndarray and len(key) != len(self.origin)
-        if type(key) is pl.Expr:
-            obj.triangle = self.triangle.filter(key)
-        if columns:
-            obj.triangle = self.triangle.select(pl.col(key))
-        elif development:
-            if self.is_val_tri:
-                formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-                ddims = pd.to_datetime(
-                    self.development, 
-                    format=formats[self.development_grain]
-                ).dt.to_period(self.development_grain).dt.to_timestamp(how='e')
-                key = self.triangle.valuation.is_in(ddims[key].dt.date)
-                obj.triangle = obj.triangle[key]
-            else:
-                key = self.triangle.development.is_in(self.development[key])
-                obj.triangle = obj.triangle[key]
-        elif origin:
-            key = self.triangle.origin.is_in(self.origin[key].to_timestamp(how='s'))
-            obj.triangle = obj.triangle[key]
-        elif valuation:
-            key = self.triangle.valuation.is_in(self.valuation[key].unique().date.tolist())
-            obj.triangle = obj.triangle[key]
-        elif type(key) is tuple or type(key) is slice or type(key) is int:
-            s0, s1, s2, s3 = self.triangle[key]
-            obj.triangle.data = (
-                obj.triangle.data
-                .filter(pl.fold(
-                    acc=pl.lit(True),
-                    function=lambda acc, x: acc & x,
-                    exprs=s0 + s2 + s3
-                ))
-                .select(self.key_labels + ['__origin__', '__development__'] + s1))
-            obj.triangle.columns = s1
-        elif index:
-            return pl.col(key[0] if len(key) == 1 else key)
-        return obj
     
     def __setitem__(self, key, value):
         if type(value) == type(self):
             value = value.triangle
         self.triangle.__setitem__(key, value)
-        
-    
-    def to_sparse(self):
-        from chainladder.legacy.slice import VirtualColumns
-        from chainladder.legacy.triangle import Triangle
-        import pandas as pd
-        import sparse
-        import polars as pl
-        df = (
-            self.triangle.data.lazy().collect()
-             .join(self.triangle.development.to_frame().select(pl.int_range(0, self.shape[3]).alias('d_idx'), pl.col('development').alias('__development__')), how='left', on='__development__')
-             .join(self.triangle.origin.to_frame().select(pl.int_range(0, self.shape[2]).alias('o_idx'), pl.col('origin').alias('__origin__')), how='left', on='__origin__')
-             .join(self.triangle.index.lazy().collect().select(pl.int_range(0, self.shape[0]).alias('i_idx'), pl.col(self.triangle.key_labels)), how='left', on=self.triangle.key_labels)
-             .select(['i_idx', 'o_idx', 'd_idx'] + self.triangle.columns))
-        df = pl.concat([df.select(['i_idx', pl.lit(num).alias('c_idx'), 'o_idx','d_idx', pl.col(col).alias('value').cast(pl.Float64)]) for num, col in enumerate(self.triangle.columns)])
-        sm = sparse.COO(coords=df.select(pl.all().exclude('value')).to_numpy().T, data=df['value'].to_numpy(), shape=self.triangle.shape)
-        triangle = Triangle()
-        triangle.values=sm
-        triangle.key_labels = self.triangle.key_labels
-        triangle.kdims=self.triangle.index.lazy().collect().to_numpy()
-        triangle.vdims=self.triangle.columns
-        triangle.odims = self.triangle.origin.cast(pl.Datetime).to_numpy()
-        triangle.ddims = self.triangle.development.to_numpy()
-        triangle.origin_grain = self.triangle.origin_grain
-        triangle.development_grain = self.triangle.development_grain
-        triangle.valuation_date = pd.PeriodIndex([self.triangle.valuation_date], freq='M').to_timestamp(how='e')[0]
-        triangle.is_cumulative = self.triangle.is_cumulative
-        triangle.is_pattern = self.triangle.is_pattern
-        triangle.origin_close = self.triangle.origin_close
-        triangle.array_backend = "sparse"
-        triangle.virtual_columns = VirtualColumns(triangle)
-        return triangle
-    
-    @property
-    def values(self):
-        return self.triangle.values
     
     def __eq__(self, other):
         return self.triangle == other.triangle
@@ -387,10 +267,15 @@ class Triangle:
                 df = df.set_index('origin')
             df.index.name = None
             df.columns.name = None
-            if df.columns[0] == 'origin':
-                df = df.set_index('origin')
-                df.index.name = None
-        else:
+        if len(shape) == 1 and not keepdims:
+            df = df.set_index(
+                {0: self.key_labels,
+                 1: self.columns,
+                 2: 'origin',
+                 3: 'development'}[shape[0]])
+            df.index.name = None
+            df.columns.name = None
+        if self.triangle.shape[0] > 1 or len(shape) > 2 or keepdims:
             df = df.set_index(self.key_labels)
         return df
     
@@ -431,6 +316,39 @@ class Triangle:
     def exp(self):
         return np.exp(self)
     
+    def __getitem__(self, key):
+        obj = self.copy()
+        development = type(key) is pd.Series
+        origin = type(key) is np.ndarray and len(key) == len(self.origin)
+        valuation = type(key) is np.ndarray and len(key) != len(self.origin)
+        if not (origin or development or valuation):
+            out = self.triangle[key]
+            if type(out) is TriangleBase:
+                obj.triangle = out
+                return obj
+            else:
+                return out
+        elif development:
+            if self.is_val_tri:
+                formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
+                ddims = pd.to_datetime(
+                    self.development, 
+                    format=formats[self.development_grain]
+                ).dt.to_period(self.development_grain).dt.to_timestamp(how='e')
+                key = self.triangle.valuation.is_in(ddims[key].dt.date)
+                obj.triangle = obj.triangle[key]
+            else:
+                key = self.triangle.development.is_in(self.development[key])
+                obj.triangle = obj.triangle[key]
+        elif origin:
+            key = self.triangle.origin.is_in(self.origin[key].to_timestamp(how='s'))
+            obj.triangle = obj.triangle[key]
+        elif valuation:
+            key = self.triangle.valuation.is_in(self.valuation[key].unique().date.tolist())
+            obj.triangle = obj.triangle[key]
+        return obj
+    
+    
     def val_to_dev(self, *args, **kwargs):
         obj = self.copy()
         obj.triangle = self.triangle.to_development(*args, **kwargs)
@@ -465,13 +383,17 @@ class Triangle:
         obj.triangle = concat((self.triangle, other.triangle), axis=0)
         return obj
 
-
-
-class Location:
-    """ Base class for pandas style loc/iloc indexing """
+class Ilocation:
     def __init__(self, obj):
         self.obj = obj
-        
+    
+    def __getitem__(self, key):
+        obj = self.obj.copy()
+        obj.triangle = obj.triangle[key]
+        return obj
+
+
+class Location(Ilocation):        
     def _contig_slice(self, arr):
         """ Try to make a contiguous slicer from an array of indices """
         if type(arr) is slice:
@@ -497,34 +419,27 @@ class Location:
     def __getitem__(self, key):
         key = self.obj.triangle._normalize_slice(key)
         obj = self.obj.copy()
-        idx_slice = obj.index.reset_index().set_index(obj.key_labels).loc[key[0]]
-
+        full_slice = lambda x: x == slice(None, None, None) or x == slice(None, None, -1)
+        if not full_slice(key[0]):
+            idx_slice = obj.index.reset_index().set_index(obj.key_labels).loc[key[0]]
+        else:
+            idx_slice = key[0]
         key = (
-            self._contig_slice(idx_slice.values.flatten().tolist()),
-            self._contig_slice(
+            key[0] if full_slice(key[0]) else self._contig_slice(
+                idx_slice.values.flatten().tolist()),
+            key[1] if full_slice(key[1]) else self._contig_slice(
                 pd.Series(obj.columns).reset_index().set_index('columns')
                 .loc[key[1]].values.flatten().tolist()),
-            self._contig_slice(
+            key[2] if full_slice(key[2]) else self._contig_slice(
                 pd.Series(obj.origin).reset_index().set_index('origin')
                 .loc[key[2]].values.flatten().tolist()),
-            self._contig_slice(
+            key[3] if full_slice(key[3]) else self._contig_slice(
                 obj.development.reset_index().set_index('development')
                 .loc[key[3]].values.flatten().tolist()))
         obj.triangle = obj.triangle[key]
-        if len(obj.key_labels) > 1:
+        if len(obj.key_labels) > 1 and not full_slice(key[0]):
             obj.triangle.data = obj.triangle.data.drop(set(obj.key_labels)-set(idx_slice.index.names))
             obj.triangle._properties.pop('index', None)
-        return obj
-
-
-class Ilocation:
-    def __init__(self, obj):
-        self.obj = obj
-    
-    def __getitem__(self, key):
-        key = self.obj.triangle._normalize_slice(key)
-        obj = self.obj.copy()
-        obj.triangle = obj.triangle.__getitem__(key)
         return obj
     
     
@@ -533,7 +448,8 @@ class TriangleGroupBy(PlTriangleGroupBy):
         obj = Triangle()
         obj.triangle = super()._agg(agg, *args, **kwargs)
         return obj
-    
+
+
 def add_tri_passthru(cls, k):
     """Pass Through of TriangleBase functionality"""
 
@@ -553,15 +469,15 @@ def add_tri_passthru(cls, k):
 
     set_method(cls, tri_passthru, k)
 
-
 passthru = [
     '__abs__', '__neg__', '__pos__',  '__pow__', '__round__', 
-    'collect', 'lazy', 'head', '_get_axis',
+    'collect', 'lazy', 'head', '_get_axis', 'filter', 'select',
     'max', 'mean', 'median', 'min', 'product', 'quantile', 'std', 
     'sum', 'tail', 'var']
 
 for item in passthru:
     add_tri_passthru(Triangle, item)
+
 
 def add_arithmetic_passthru(cls, k):
     """Pass Through of TriangleBase functionality"""
@@ -588,3 +504,30 @@ passthru = [
     '__rtruediv__', '__sub__', '__truediv__'] 
 for item in passthru:
     add_arithmetic_passthru(Triangle, item)
+
+
+def add_property_passthru(cls, k):
+    """Pass Through of TriangleBase functionality"""
+
+    def tri_passthru(self):
+        prop = getattr(self.triangle, k)
+        if type(prop) is TriangleBase:
+            obj = self.copy()
+            obj.triangle = prop
+            return obj 
+        else:
+            return prop
+
+    def set_method(cls, func, k):
+        """Assigns methods to a class"""
+        func.__name__ = k
+        setattr(cls, func.__name__, property(func))
+
+    set_method(cls, tri_passthru, k)
+
+property_passthru = [
+    'key_labels', 'is_val_tri', 'origin_close', 'shape', 
+    'latest_diagonal', 'link_ratio', 'origin_grain', 
+    'development_grain', 'values']
+for item in property_passthru:
+    add_property_passthru(Triangle, item)

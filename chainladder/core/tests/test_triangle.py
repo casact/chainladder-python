@@ -36,7 +36,7 @@ def test_to_frame_unusual(clrd):
 
 def test_link_ratio(raa, atol):
     assert (
-        raa.link_ratio * raa.iloc[:, :, :-1, :-1].values - raa.values[:, :, :-1, 1:]
+        raa.link_ratio * raa.iloc[:, :, :-1, :-1].values - raa.iloc[:, :, :-1, 1:].values
     ).sum().sum() < atol
 
 

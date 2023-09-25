@@ -52,7 +52,7 @@ class TriangleBase:
         ).dt.truncate("1mo").alias('__origin__')
 
         data = data.with_columns(__origin__, __development__)
-        if data.select('__development__').lazy().collect().n_unique() > 1:
+        if data.select('__development__').lazy().collect(streaming=True).n_unique() > 1:
             # Coerce to development triangle
             data = data.select(pl.all().exclude('__development__'), dcol)  
         self.data = (
@@ -64,7 +64,7 @@ class TriangleBase:
                 pl.col(['__origin__', '__development__'] + self.columns))
             .sort((index or ['Total']) + ['__origin__', '__development__']))
         if not lazy:
-            self.data = self.data.lazy().collect()
+            self.data = self.data.lazy().collect(streaming=True)
         if not trailing:
             self.origin_close = 'DEC'
         else:
@@ -144,14 +144,14 @@ class TriangleBase:
                         pl.col('__origin__'),
                         pl.col('__development__').alias('__valuation__'),
                         dcol
-                    )).lazy().collect()
+                    )).lazy().collect(streaming=True)
             else:
                 self._properties['date_matrix'] = (
                     self.data
                     .group_by('__origin__')
                     .agg(pl.col('__development__').unique())
                     .explode('__development__')
-                    .with_columns(vcol.alias('__valuation__'))).lazy().collect()
+                    .with_columns(vcol.alias('__valuation__'))).lazy().collect(streaming=True)
         return self._properties['date_matrix']
 
         
@@ -165,18 +165,6 @@ class TriangleBase:
                         'Q': '3mo', '2Q': '6mo'}[self.origin_grain], 
                 eager=True).alias('origin')
         return self._properties['origin']
-    
-    @origin.setter
-    def origin(self, value):
-        if type(value) is not pl.Series:
-            raise TypeError('The origin attribute must be of type pl.Series.')
-        if value.name != 'origin':
-            raise ValueError('The origin attribute must be a series with the name "origin".')
-        if value.dtype != pl.Date:
-            raise TypeError('The origin Series must be of dtype pl.Date.')
-        if len(set(value.unique())) != len(set(self.date_matrix['__origin__'].unique())):
-            raise ValueError('Duplicates values found in origin')
-        self._properties['origin'] = value
 
     
     @property
@@ -189,18 +177,6 @@ class TriangleBase:
                         self.date_matrix['__development__'].max() + interval, 
                         interval)).cast(pl.UInt16)
         return self._properties['development']
-
-    @development.setter
-    def development(self, value : pl.Series):
-        if type(value) is not pl.Series:
-            raise TypeError('The development attribute must be of type pl.Series.')
-        if value.name != 'development':
-            raise ValueError('The development attribute must be a series with the name "development".')
-        if value.dtype != pl.UInt16:
-            raise TypeError('The development Series must be of dtype pl.Uint16.')
-        if len(set(value.unique())) != len(set(self.date_matrix['__development__'].unique())):
-            raise ValueError('Duplicates values found in development')
-        self._properties['development'] = value
 
     @property
     def valuation(self):
@@ -216,18 +192,6 @@ class TriangleBase:
                 interval=interval, 
                 eager=True).dt.month_end().alias('valuation')
         return self._properties['valuation']
-    
-    @valuation.setter
-    def valuation(self, value):
-        if type(value) is not pl.Series:
-            raise TypeError('The valuation attribute must be of type pl.Series.')
-        if value.name != 'valuation':
-            raise ValueError('The valuation attribute must be a series with the name "valuation".')
-        if value.dtype != pl.Date:
-            raise TypeError('The valuation Series must be of dtype pl.Date.')
-        if len(set(value.unique())) != len(set(self.date_matrix['__valuation__'].unique())):
-            raise ValueError('Duplicates values found in valuation')
-        self._properties['valuation'] = value
 
 
     @property
@@ -237,11 +201,10 @@ class TriangleBase:
     
     @property
     def is_val_tri(self):
-        if 'is_val_tri' not in self._properties.keys(): 
-            self._properties['is_val_tri'] = dict(
+        return dict(
                 zip(self.data.columns, self.data.dtypes)
             )['__development__'] != pl.UInt16
-        return self._properties['is_val_tri'] 
+
         
     @property
     def development_grain(self):
@@ -251,7 +214,7 @@ class TriangleBase:
             months = self.data.select(
                 self.date_matrix['__valuation__']
                     .dt.month().unique().sort().alias('__development__')
-            ).lazy().collect()['__development__']
+            ).lazy().collect(streaming=True)['__development__']
             diffs = months.diff()[1:]
             if len(months) == 1:
                 grain = "Y"
@@ -268,24 +231,18 @@ class TriangleBase:
         return self[self.valuation==self.valuation_date].to_valuation()
     
     def _get_value_idx(self):
-        index = pl.concat(
-            (self.index, 
-            pl.Series(range(len(self.index))).alias('index').cast(pl.UInt64).to_frame()), 
-            how='horizontal')
-        origin = pl.concat(
-            (self.origin.alias('__origin__').to_frame(), 
-            pl.Series(range(len(self.origin))).alias('origin').cast(pl.UInt64).to_frame()), 
-            how='horizontal')
-        development = pl.concat(
-            ((self.valuation if self.is_val_tri else self.development).alias('__development__').to_frame() , 
-            pl.Series(
-                range(len(self.valuation if self.is_val_tri else self.development))
-                ).alias('development').cast(pl.UInt64).to_frame()), 
-            how='horizontal')
+        index = self.index.with_row_count('index')
+        origin = self.origin.alias('__origin__').to_frame().with_row_count('origin')
+        development = (
+            self.valuation 
+            if self.is_val_tri else 
+            self.development
+            ).alias('__development__').to_frame().with_row_count('development')
         return index, origin, development
 
     @property
     def values(self) -> pl.DataFrame:
+        """ Removes labels and replaces with index values """
         index, origin, development = self._get_value_idx()
         return (
             self.data
@@ -296,6 +253,7 @@ class TriangleBase:
             .rename({i: str(num) for num, i in enumerate(self.columns)}))
     
     def apply_labels_to_values(self, other: pl.DataFrame):
+        """ Removes index values and replaces with labels """
         index, origin, development = self._get_value_idx()
         triangle = TriangleBase.from_triangle(self)
         triangle.data = (
@@ -313,7 +271,6 @@ class TriangleBase:
             obj.data = obj.data.select(
                 pl.col(self.key_labels + ['__origin__']), 
                 dcol, pl.col(self.columns))
-            obj._properties['is_val_tri'] = False
             return obj
         else:
             return self
@@ -324,7 +281,7 @@ class TriangleBase:
             obj.data = obj.data.select(
                 pl.col(self.key_labels + ['__origin__']), 
                 vcol, pl.col(self.columns))
-            obj._properties['is_val_tri'] = True
+            #obj._properties.pop('valuation', None)
             return obj
         else:
             return self
@@ -417,7 +374,6 @@ class TriangleBase:
                 .group_by(self.key_labels + ['__origin__'])
                 .agg(getattr(pl.col(self.columns).fill_null(0), agg)(*args, **kwargs))
                 .with_columns(pl.lit(self.valuation_date).alias('__development__')))
-            obj._properties['is_val_tri'] = True
             obj._properties.pop('date_matrix', None)
             obj._properties.pop('development', None)
             obj._properties.pop('valuation', None)
@@ -497,23 +453,21 @@ class TriangleBase:
             .join(self.valuation.to_frame().lazy(), how='cross')
             .filter(pl.col('__development__')<=pl.col('valuation'))
             .drop('__development__').rename({'valuation':'__development__'}))
+        on=self.key_labels + ['__origin__', '__development__']
         triangle.data = (
             self.data.lazy()
             .select(pl.all().exclude('__development__'), col)
-            .join(expanded, how='outer', 
-                  left_on=self.key_labels + ['__origin__', '__development__'], 
-                  right_on=self.key_labels + ['__origin__', '__development__'])
-            .sort(by=self.key_labels + ['__origin__', '__development__'])
+            .join(expanded, how='outer', on=on)
+            .sort(by=on)
             .group_by(self.key_labels + ['__origin__'])
             .agg(
                 pl.col('__development__'),
                 pl.col(self.columns).fill_null(pl.lit(0)).cumsum())
             .explode(["__development__"] + self.columns)
-            .select(self.key_labels + ['__origin__', '__development__'] + self.columns))
+            .select(on + self.columns))
         if not self.is_lazy:
-            triangle.data = triangle.data.collect()
+            triangle.data = triangle.data.collect(streaming=True)
         triangle.is_cumulative = True
-        triangle._properties['is_val_tri'] = True
         triangle._properties.pop('date_matrix', None)
         if self.is_val_tri:
             triangle._properties.pop('valuation', None)
@@ -549,10 +503,8 @@ class TriangleBase:
                 )
             triangle.is_cumulative = False
             triangle._properties.pop('date_matrix', None)
-            if self.is_val_tri:
-                triangle._properties.pop('valuation', None)
-            else:
-                triangle._properties.pop('development', None)
+            triangle._properties.pop('valuation', None)
+            triangle._properties.pop('development', None)
             if not self.is_lazy:
                 triangle.data = triangle.data.collect()
             return triangle
@@ -647,7 +599,7 @@ class TriangleBase:
             .group_by(self.key_labels + ['__origin__', '__development__']).sum())
         triangle.data = data
         if not self.is_lazy:
-            triangle.data = triangle.data.collect()
+            triangle.data = triangle.data.collect(streaming=True)
         triangle._properties.pop('date_matrix', None)
         if self.origin_grain != ograin_new:
             triangle._properties.pop('origin', None)
@@ -700,33 +652,58 @@ class TriangleBase:
         if len(ellipsis_index) == 0 and len(key) < 4:
             key = key + [slice(None, None, None)]*(4 - len(key))
         return key if type(key) is tuple else tuple(key)
-
-    def __getitem__(self, key):
-        """ Eager materialization. Use select, with_columns and filter for optimized performance """
+    
+    def _slice(self, key):
         triangle = TriangleBase.from_triangle(self)
-        if type(key) is str:
-            return self.select(key)
-        if type(key) in [tuple, slice, int] or (type(key) is list and type(key[0]) is int):
-            s0, s1, s2, s3 = self._normalize_slice(key)
-            s0 = self.index[s0] if s0 != slice(None, None, None) else s0
-            s1 = pl.col(self.columns[s1])
-            s2 = self.origin[s2]
-            s3 = self.valuation[s3] if self.is_val_tri else self.development[s3]
+        s0, s1, s2, s3 = self._normalize_slice(key)
+        if s2 != slice(None, None, None):
+            s2_val = self.origin[s2]
+            s2_expr = [pl.col('__origin__').is_in(s2_val)]
+        else:
+            s2_val = self.origin
+            s2_expr = []
+        if s3 != slice(None, None, None):
+            s3_val = self.valuation[s3] if self.is_val_tri else self.development[s3]
+            s3_expr = [pl.col('__development__').is_in(s3_val)]
+        else:
+            s3_val = self.valuation if self.is_val_tri else self.development
+            s3_expr = []
+        if len(s2_expr + s3_expr) > 0:
             triangle = triangle.filter(
                 pl.fold(
                     acc=pl.lit(True),
                     function=lambda acc, x: acc & x,
-                    exprs=([pl.col('__origin__').is_in(s2)] + 
-                        [pl.col('__development__').is_in(s3)])))
-            if type(s0) is not slice:
-                triangle = triangle.filter_by_df(s0)
-                triangle._properties['index'] = s0
-            triangle._properties['origin'] = s2
-            if self.is_val_tri:
-                triangle._properties['valuation'] = s3
-            else:
-                triangle._properties['development'] = s3
-            return triangle.select(s1)
+                    exprs=(s2_expr + s3_expr)))
+        if s0 != slice(None, None, None):
+            s0_val = self.index[s0]
+            triangle = triangle.filter_by_df(s0_val)
+        triangle._properties['index'] = s0_val.join(
+            triangle.index, how='semi', on=self.key_labels)
+        triangle._properties['origin'] = s2_val.to_frame().join(
+            triangle.origin.to_frame(), how='semi', on=['origin']).to_series()
+        if self.is_val_tri:
+            triangle._properties['valuation'] = s3_val.to_frame().join(
+                triangle.valuation.to_frame(), how='semi', on=['valuation']).to_series()
+        else:
+            triangle._properties['development'] = s3_val.to_frame().join(
+                triangle.development.to_frame(), how='semi', on=['development']).to_series()
+        return triangle.select(pl.col(self.columns[s1]))
+
+    def __getitem__(self, key):
+        """ Eager materialization. Use select, with_columns and filter for optimized performance """
+        triangle = TriangleBase.from_triangle(self)
+        if type(key) is str and key in self.columns:
+            return self.select(key)
+        if type(key) is str and key in self.key_labels:
+            return pl.col(key)
+        if type(key) is str and key == 'origin':
+            return pl.col('__origin__')
+        if type(key) is str and key == 'development':
+            return dcol if self.is_val_tri else pl.col('__development__')
+        if type(key) is str and key == 'valuation':
+            return pl.col('__development__') if self.is_val_tri else vcol
+        if type(key) in [tuple, slice, int] or (type(key) is list and type(key[0]) is int):
+            return self._slice(key)
         elif type(key) is list:
             triangle = triangle.select(pl.col(key))
             return triangle
@@ -744,7 +721,9 @@ class TriangleBase:
             elif key.name == 'origin':
                 key = self.origin.filter(key)
                 return triangle.filter(pl.col('__origin__').is_in(key))
-        else:   
+        elif type(key) == pl.Expr:
+            return triangle.filter(key)
+        else: 
             raise NotImplementedError()
         
     def __setitem__(self, key, value):
@@ -772,8 +751,8 @@ class TriangleBase:
             if self._is_aligned(value):
                 self.data = (
                 pl.concat(
-                    (self.data.lazy().collect(), 
-                     value.data.select(pl.col(value.columns[0]).alias(key)).lazy().collect())
+                    (self.data.lazy().collect(streaming=True), 
+                     value.data.select(pl.col(value.columns[0]).alias(key)).lazy().collect(streaming=True))
                     , how='horizontal')
                 .lazy())
             else:
@@ -792,139 +771,99 @@ class TriangleBase:
                 )
         self.columns = self.columns + [key]
         if not self.is_lazy:
-            self.data = self.data.lazy().collect()
+            self.data = self.data.lazy().collect(streaming=True)
     
     @staticmethod
     def _broadcast_axes(a, b):
-        def broadcast_index(a, b):
-            a = TriangleBase.from_triangle(a)
-            a.data = (b.index.lazy().join(
-                a.data.lazy().select(
-                    pl.col(['__origin__', '__development__'] + a.columns)), 
-                how='cross'))
-            a._properties.pop('index', None)
-            return a, b
-
         def broadcast_columns(a, b):
             a = TriangleBase.from_triangle(a)
             a.data = (a.data.select(
                 pl.col(a.key_labels + ['__origin__', '__development__']),
                 *[pl.col(a.columns[0]).alias(col) for col in b.columns]))
             a.columns = b.columns
-            return a, b
-
-        def broadcast_origin(a, b):
-            a = TriangleBase.from_triangle(a)
-            a.data = a.data.drop('__origin__').join(
-                b.origin.alias('__origin__').to_frame().lazy(), 
-                how='cross')
-            a._properties.pop('date_matrix', None)
-            a._properties.pop('origin', None)
-            a._properties.pop('development', None)
-            a._properties.pop('valuation', None)
-            return a, b
-
-        def broadcast_development(a, b):
-            a = TriangleBase.from_triangle(a)
-            a.data = a.data.drop('__development__').join(
-                (b.valuation if b.is_val_tri else b.development
-                ).alias('__development__').to_frame().lazy(), 
-                how='cross')
-            a._properties.pop('date_matrix', None)
-            a._properties.pop('origin', None)
-            a._properties.pop('development', None)
-            a._properties.pop('valuation', None)
-            a._properties.pop('is_val_tri', None)
-            return a, b
-        a.data = a.data.lazy()
-        b.data = b.data.lazy()
+            return a
         if a.shape[0] == 1 and b.shape[0] > 1:
-            a, b = broadcast_index(a, b)
+            a.data = a.data.drop(a.key_labels)
         if a.shape[0] > 1 and b.shape[0] == 1:
-            b, a = broadcast_index(b, a)
+            b.data = b.data.drop(b.key_labels)
         if a.shape[1] == 1 and b.shape[1] > 1:
-            a, b = broadcast_columns(a, b)    
+            a = broadcast_columns(a, b)    
         if a.shape[1] > 1 and b.shape[1] == 1:
-            b, a = broadcast_columns(b, a)
+            b = broadcast_columns(b, a)
         if a.shape[2] == 1 and b.shape[2] > 1:
-            a, b = broadcast_origin(a, b)    
+            a.data = a.data.drop('__origin__')
         if a.shape[2] > 1 and b.shape[2] == 1:
-            b, a = broadcast_origin(b, a)
+            b.data = b.data.drop('__origin__')
         if a.shape[3] == 1 and b.shape[3] > 1:
-            a, b = broadcast_development(a, b)    
+            a.data = a.data.drop('__development__')
         if a.shape[3] > 1 and b.shape[3] == 1:
-            b, a = broadcast_development(b, a)
-        if not a.is_lazy:
-            a.data = a.data.lazy().collect()
-        if not b.is_lazy:
-            b.data = b.data.lazy().collect()
+            b.data = b.data.drop('__development__')
         return a, b
 
     def head(self, n: 'int' = 5):
-        triangle = TriangleBase.from_triangle(self)
-        triangle.data = triangle.data.join(
-            self.index.head(n), 
-            how='semi', 
-            on=self.key_labels)
-        triangle._properties.pop('index', None)
-        return triangle
+        return self[:n]
     
     def tail(self, n: 'int' = 5):
-        triangle = TriangleBase.from_triangle(self)
-        triangle.data = triangle.data.join(
-            self.index.tail(n), 
-            how='semi', 
-            on=self.key_labels)
-        triangle._properties.pop('index', None)
-        return triangle
+        return self[-n:]
     
     def filter(self, *exprs):
         """ Function to apply polars filtering and re-trigger
         affected properties """
         triangle = TriangleBase.from_triangle(self)
         triangle.data = triangle.data.filter(*exprs)
-        triangle._properties.pop('date_matrix', None)
-        triangle._properties['origin'] = triangle.origin.filter(
-            triangle.origin.is_in(
-                triangle.date_matrix['__origin__'].unique()))
-        triangle._properties['development'] = triangle.development.filter(
-            triangle.development.is_in(
-                triangle.date_matrix['__development__'].unique()))
-        triangle._properties['valuation'] = triangle.valuation.filter(
-            triangle.valuation.is_in(
-                triangle.date_matrix['__valuation__'].unique()))
-        triangle._properties.pop('index', None)
-        triangle._properties['index'] = self.filter_index(triangle.index)
+        triangle = self._filter_axes(triangle)
         return triangle
     
-    def filter_index(self, df):
-        return (
-            self.index
-            .with_columns(
-                pl.Series('__row__', range(len(self.index))))
-            .join(df, how='inner', on=df.columns)
-            .sort('__row__')
-            .drop('__row__'))
+    def _filter_axes(self, triangle):
+        """ Filters axes, but preserves axis order """
+        triangle._properties = {}
+        shapes = list(zip(self.shape, triangle.shape))
+        if shapes[0][0] == shapes[0][1]:
+            triangle._properties['index'] = self.index
+        else:
+            triangle._properties['index'] = (
+                self.index.lazy()
+                .with_row_count('__row__')
+                .join(triangle.index.lazy(), how='inner', on=triangle.key_labels)
+                .sort('__row__')
+                .drop('__row__'))
+        if shapes[2][0] == shapes[2][1]:
+            triangle._properties['origin'] = self.origin
+        else:
+            triangle._properties['origin'] = self.origin.filter(
+                self.origin.is_in(triangle.origin))
+        if shapes[3][0] == shapes[3][1]:
+            triangle._properties['development'] = self.development
+            triangle._properties['valuation'] = self.valuation
+        else:
+            if self.is_val_tri:
+                triangle._properties['valuation'] = self.valuation.filter(
+                    self.valuation.is_in(triangle.valuation))
+            else:
+                triangle._properties['development'] = self.development.filter(
+                    self.development.is_in(triangle.development))
+        return triangle
 
 
     def filter_by_df(self, df):
         triangle = TriangleBase.from_triangle(self)
-        triangle.data = triangle.data.join(
-            df, how='inner', on=df.columns)
-        triangle._properties.pop('date_matrix', None)
-        triangle._properties['origin'] = triangle.origin.filter(
-            triangle.origin.is_in(
-                triangle.date_matrix['__origin__'].unique()))
-        triangle._properties['development'] = triangle.development.filter(
-            triangle.development.is_in(
-                triangle.date_matrix['__development__'].unique()))
-        triangle._properties['valuation'] = triangle.valuation.filter(
-            triangle.valuation.is_in(
-                triangle.date_matrix['__valuation__'].unique()))
-        triangle._properties.pop('index', None)
-        triangle._properties['index'] = self.filter_index(triangle.index)
+        triangle.data = (
+            triangle.data
+            .lazy()
+            .join(df.lazy(), how='inner', on=df.columns))
+        triangle = self._filter_axes(triangle)
+        if not self.is_lazy:
+            triangle.data = triangle.data.collect(streaming=True)
         return triangle
         
+
+    def select_index(self, *exprs):
+        """ Function to apply polars selection and re-trigger
+        affected properties. Does not support pl.all """
+        triangle = TriangleBase.from_triangle(self)
+        dims = self.key_labels + ['__origin__', '__development__']
+        triangle.data = triangle.data.select(pl.col(dims), *exprs)
+        return triangle
 
     def select(self, *exprs):
         """ Function to apply polars selection and re-trigger
@@ -945,7 +884,7 @@ class TriangleBase:
         return triangle
     
     def join(self, other):
-        """ Method to union two triangles together """
+        """ Method to horizonatl join two triangles together """
         shared_cols = set(self.columns).intersection(set(other.columns))
         if len(shared_cols) > 0:
             raise ValueError(
@@ -957,6 +896,13 @@ class TriangleBase:
         triangle.data = self.data.join(other.data, on=on, how='inner')
         triangle.columns = self.columns + other.columns
         triangle._properties = {}
+        return triangle
+    
+    def join_index(self, other : pl.DataFrame, *args, **kwargs):
+        """ Method to join the index to another df """
+        triangle = TriangleBase.from_triangle(self)
+        triangle.data = self.data.join(other, how='left', *args, **kwargs)
+        triangle._properties.pop('index', None)
         return triangle
     
 
@@ -983,7 +929,7 @@ class TriangleBase:
             )
         if (self.origin_grain != other.origin_grain
             or (self.development_grain != other.development_grain 
-                and min(self.shape[-1], y.shape[-1]) > 1)):
+                and min(self.shape[-1], other.shape[-1]) > 1)):
             raise ValueError(
                 "Triangle arithmetic requires both triangles to be the same grain."
             )
@@ -996,7 +942,7 @@ class TriangleBase:
     def _is_aligned(self, other):
         """ Helper to determine whether horizontal concat is feasible """
         return (
-            not (self.is_lazy and other.is_lazy) and # must be eager
+            not (self.is_lazy or other.is_lazy) and # must be eager
             len(self.data) == len(other.data) and # must have same underlying rows
             # must have all non-measure columns be equal
             (self.data.select(self.key_labels + ['__origin__', '__development__']) == 
@@ -1015,16 +961,19 @@ class TriangleBase:
             other = self.apply_labels_to_values(other)
         if type(other) != type(self):
             other = self._triangle_literal(other)
-        valuation = max(self.valuation_date, other.valuation_date)
-        a, b = TriangleBase._broadcast_axes(self, other)
+            valuation = self.valuation_date
+            a, b = self, other
+        else:
+            valuation = max(self.valuation_date, other.valuation_date)
+            a, b = TriangleBase._broadcast_axes(self, other)
         join_index, union_index, source_columns, destination_columns = \
             a._compatibility_check(b)
         a = TriangleBase.from_triangle(a)
         if a._is_aligned(b):
             a.data = (
                 pl.concat(
-                    (a.data.lazy().collect(), 
-                     b.data.lazy().collect()
+                    (a.data.lazy().collect(streaming=True), 
+                     b.data.lazy().collect(streaming=True)
                       .rename({k: source_columns[num][1] for num, k in enumerate(b.columns)})
                       .drop(b.key_labels + ['__origin__', '__development__'])), how='horizontal')
                 .lazy()
@@ -1041,10 +990,9 @@ class TriangleBase:
                     .rename({k: source_columns[num][1] for num, k in enumerate(b.columns)}), 
                     how='outer',
                     on=join_index + ['__origin__', '__development__'])
-                .with_columns(
+                .filter((
                     pl.col('__development__').alias('__valuation__') 
-                    if a.is_val_tri else vcol.alias('__valuation__'))
-                .filter(pl.col('__valuation__') <= valuation)
+                    if a.is_val_tri else vcol.alias('__valuation__')) <= valuation)
                 .select(
                     pl.col(union_index + ['__origin__', '__development__']),
                     *[(getattr(pl.col(source_columns[num][0]).fill_null(0), operation)(
@@ -1052,7 +1000,7 @@ class TriangleBase:
                     for num, col in enumerate(destination_columns)])
             )
         if not self.is_lazy:
-            a.data = a.data.collect()
+            a.data = a.data.collect(streaming=True)
         a._properties = {}
         return a
     
@@ -1068,11 +1016,9 @@ class TriangleBase:
                 how='cross')
             .filter((pl.col('__development__') if self.is_val_tri 
                      else vcol) <= self.valuation_date)
-        ).with_columns(pl.lit("Total").alias('Total'), 
-                       pl.lit(value).alias('__value__'))
+        ).with_columns(pl.lit(value).alias('__value__'))
         other.columns = ['__value__']
-        if not self.is_lazy:
-            other.data = other.data.collect()
+        other.is_lazy = True
         return other
     
     def _triangle_unary(self, unary, *args):
@@ -1144,8 +1090,8 @@ class TriangleBase:
             or len(self.data) != len(other.data)):
             return False
         return (
-            self.sort_data().data.select(self.columns).lazy().collect() == 
-            other.sort_data().data.select(other.columns).lazy().collect()
+            self.sort_data().data.select(self.columns).lazy().collect(streaming=True) == 
+            other.sort_data().data.select(other.columns).lazy().collect(streaming=True)
         ).min().min(axis=1)[0]
         
 
@@ -1165,18 +1111,14 @@ class TriangleBase:
             pandas.DataFrame representation of the Triangle.
         """
         if self.shape[:2] == (1, 1) and not keepdims:
-            index = pl.concat((
-                pl.Series(range(len(self.origin))).alias('index').to_frame(), 
-                self.origin.to_frame()), how='horizontal')
+            index = self.origin.to_frame().with_row_count('index')
             columns = (self.valuation
-                       if self.is_val_tri else 
-                       self.development.cast(pl.Utf8))
+                        if self.is_val_tri else 
+                        self.development).cast(pl.Utf8)
             return (
                 self.data
                 .with_columns(
-                    (pl.col('__development__')
-                    if self.is_val_tri else
-                    pl.col('__development__')).alias('development'),
+                    pl.col('__development__').alias('development'),
                     pl.col('__origin__').alias('origin'),
                     pl.col(self.columns))
                 .lazy().collect(streaming=True)
@@ -1252,11 +1194,11 @@ class PlTriangleGroupBy:
         axis = self.obj._get_axis(self.axis)
         if axis == 0:
             self.obj.data = self.groups.agg(
-                getattr(pl.col(self.obj.columns), agg)())
+                getattr(pl.col(self.columns), agg)())
             self.obj._properties.pop('index', None)
         elif axis == 1:
             maps = pl.DataFrame(
-                {'by': self.by, 'columns': list(self.obj.columns)}
+                {'by': self.by, 'columns': list(self.columns)}
                 ).group_by('by').agg(pl.col('columns'))
             maps = dict(
                 zip(maps['by'].cast(pl.Utf8).to_list(), 
@@ -1266,9 +1208,10 @@ class PlTriangleGroupBy:
                 *[getattr(pl, agg + '_horizontal')(pl.col(v)).alias(str(k)) 
                   for k, v in maps.items()])
             self.obj.columns = [
-                c for c in self.obj.data.columns 
+                c for c in self.self.columns 
                 if c not in self.obj.key_labels + ['__origin__', '__development__']]
             raise ValueError(f'axis {axis} is not supported')
+        self.obj.columns = self.columns
         return self.obj
 
     def sum(self):
