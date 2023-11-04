@@ -411,12 +411,13 @@ def add_groupby_agg_func(cls, k, v):
                 for i in self.groups.indices.values()
             ]
         obj = concat(values, axis=self.axis, ignore_index=True)
+        group_index = pd.Index(self.groups.keys())
         if self.axis == 0:
-            if isinstance(self.groups.dtypes.index, pd.MultiIndex):
+            if isinstance(group_index, pd.MultiIndex):
                 index = (
                     pd.DataFrame(
-                        np.zeros(len(self.groups.dtypes.index)),
-                        index=self.groups.dtypes.index,
+                        np.zeros(len(group_index)),
+                        index=group_index,
                         columns=["_"],
                     )
                     .reset_index()
@@ -424,11 +425,11 @@ def add_groupby_agg_func(cls, k, v):
                 )
                 obj.index = index
             else:
-                index = pd.DataFrame(self.groups.dtypes.index)
+                index = pd.DataFrame(group_index)
                 obj.key_labels = index.columns.tolist()
                 obj.kdims = index.values
         if self.axis == 1:
-            obj.vdims = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
+            obj.vdims = pd.DataFrame(group_index).values[:, 0]
         if self.axis == 2:
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]
