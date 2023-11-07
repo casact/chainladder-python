@@ -2,9 +2,6 @@
 
 We recommend that you try the sandbox tutorial before installing the package on your machine. There's also the more in-depth onboarding tutorial to give you a slightly more comprehensive view of what the package can do.
 
-
-We recommend that you try the sandbox tutorial before installing the package on your machine. There's also the more in-depth onboarding tutorial to give you a slightly more comprehensive view of what the package can do.
-
 ::::{grid} 1 2 3 4
 :gutter: 1 1 1 2
 
