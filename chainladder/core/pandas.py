@@ -411,7 +411,7 @@ def add_groupby_agg_func(cls, k, v):
                 for i in self.groups.indices.values()
             ]
         obj = concat(values, axis=self.axis, ignore_index=True)
-        group_index = pd.Index(self.groups.keys())
+        group_index = self.groups.first().index
         if self.axis == 0:
             if isinstance(group_index, pd.MultiIndex):
                 index = (
