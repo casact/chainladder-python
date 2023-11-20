@@ -10,7 +10,7 @@ from chainladder.legacy.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.legacy.slice import VirtualColumns
 from chainladder.legacy.correlation import DevelopmentCorrelation, ValuationCorrelation
-from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
+from chainladder.legacy.utility_functions import concat, num_to_nan, num_to_value
 from chainladder import options
 
 try:

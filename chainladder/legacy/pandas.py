@@ -3,9 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-import warnings
-from sklearn.utils import deprecated
-from chainladder.utils.utility_functions import num_to_nan
+from chainladder.legacy.utility_functions import num_to_nan
 
 try:
     import dask.bag as db
@@ -266,7 +264,7 @@ class TrianglePandas:
         -------
             New Triangle with appended data.
         """
-        from chainladder.utils.utility_functions import concat
+        from chainladder.legacy.utility_functions import concat
 
         return concat((self, other), 0)
 
@@ -388,7 +386,7 @@ def add_groupby_agg_func(cls, k, v):
     """Aggregate Overrides in GroupBy"""
 
     def agg_func(self, *args, **kwargs):
-        from chainladder.utils import concat
+        from chainladder.legacy.utility_functions import concat
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
@@ -411,12 +409,13 @@ def add_groupby_agg_func(cls, k, v):
                 for i in self.groups.indices.values()
             ]
         obj = concat(values, axis=self.axis, ignore_index=True)
+        group_index = self.groups.first().index
         if self.axis == 0:
-            if isinstance(self.groups.dtypes.index, pd.MultiIndex):
+            if isinstance(group_index, pd.MultiIndex):
                 index = (
                     pd.DataFrame(
-                        np.zeros(len(self.groups.dtypes.index)),
-                        index=self.groups.dtypes.index,
+                        np.zeros(len(group_index)),
+                        index=group_index,
                         columns=["_"],
                     )
                     .reset_index()
@@ -424,11 +423,11 @@ def add_groupby_agg_func(cls, k, v):
                 )
                 obj.index = index
             else:
-                index = pd.DataFrame(self.groups.dtypes.index)
+                index = pd.DataFrame(group_index)
                 obj.key_labels = index.columns.tolist()
                 obj.kdims = index.values
         if self.axis == 1:
-            obj.vdims = pd.DataFrame(self.groups.dtypes.index).values[:, 0]
+            obj.vdims = pd.DataFrame(group_index).values[:, 0]
         if self.axis == 2:
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]

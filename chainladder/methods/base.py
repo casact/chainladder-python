@@ -7,8 +7,8 @@ import warnings
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
-from chainladder.core.io import EstimatorIO
-from chainladder.core.common import Common
+from chainladder.legacy.io import EstimatorIO
+from chainladder.legacy.common import Common
 
 
 class MethodBase(BaseEstimator, EstimatorIO, Common):

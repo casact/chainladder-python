@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import polars as pl
 import re
-from .core import TriangleBase, PlTriangleGroupBy, vcol
+from .base import TriangleBase, PlTriangleGroupBy, vcol
 import warnings
 try:
     from IPython.core.display import HTML
@@ -531,3 +531,39 @@ property_passthru = [
     'development_grain', 'values']
 for item in property_passthru:
     add_property_passthru(Triangle, item)
+
+def to_legacy(self):
+    from chainladder.legacy.slice import VirtualColumns
+    from chainladder.legacy import LegacyTriangle
+    import sparse
+    arr = (
+        self.values
+        .to_pandas()
+        .set_index(['index', 'origin', 'development'])
+        .stack().reset_index()
+        .rename(columns={'level_3': 'columns', 0: 'data'}))
+    arr['columns'] = arr['columns'].astype('int64')
+    arr = arr[['index', 'columns', 'origin', 'development', 'data']]
+    legacy = LegacyTriangle()
+    legacy.array_backend = "sparse"
+    legacy.kdims = legacy.vdims = legacy.odims =[]
+    
+    legacy.values = sparse.COO(
+        coords=arr.iloc[:, :4].values.T,
+        data=arr['data'].values,
+        shape=self.shape,
+        prune=True,
+        has_duplicates=False,
+        sorted=True,)
+    legacy.is_pattern = False
+    legacy.origin_close = self.origin_close
+    legacy.origin_grain = self.origin_grain
+    legacy.key_labels = self.key_labels
+    legacy.development_grain = self.development_grain
+    legacy.valuation_date = self.valuation_date
+    legacy.vdims = self.columns.to_numpy()
+    legacy.ddims = self.development.to_numpy()
+    legacy.odims = self.triangle.origin.to_numpy()
+    legacy.kdims = self.index.to_numpy()
+    legacy.virtual_columns = VirtualColumns(legacy)
+    return legacy

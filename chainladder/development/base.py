@@ -7,8 +7,8 @@ import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.utils import WeightedRegression
 from chainladder.utils.utility_functions import num_to_nan
-from chainladder.core.io import EstimatorIO
-from chainladder.core.common import Common
+from chainladder.legacy.io import EstimatorIO
+from chainladder.legacy.common import Common
 
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):

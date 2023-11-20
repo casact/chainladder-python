@@ -3,8 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from chainladder.utils.utility_functions import num_to_nan, concat
-from chainladder.core.pandas import TriangleGroupBy
+from chainladder.legacy.utility_functions import num_to_nan, concat
+from chainladder.legacy.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
 
 try:
@@ -46,7 +46,7 @@ class TriangleDunders:
         return obj
 
     def _compatibility_check(self, x, y):
-        from chainladder.utils.utility_functions import set_common_backend
+        from chainladder.legacy.utility_functions import set_common_backend
 
         x, y = set_common_backend([x, y])
         if (

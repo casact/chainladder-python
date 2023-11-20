@@ -5,7 +5,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline as PipelineSL
 from sklearn.base import clone
-from chainladder.core.io import EstimatorIO
+from chainladder.legacy.io import EstimatorIO
 from joblib import Parallel, delayed
 import pandas as pd
 import json

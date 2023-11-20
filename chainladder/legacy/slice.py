@@ -4,7 +4,7 @@
 import pandas as pd
 import numpy as np
 from sparse._slicing import normalize_index
-from chainladder.utils.utility_functions import num_to_nan
+from chainladder.legacy.utility_functions import num_to_nan
 
 class _LocBase:
     """ Base class for pandas style loc/iloc indexing """

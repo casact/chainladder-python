@@ -6,7 +6,7 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
 from chainladder.utils.dask import dp
 import numpy as np
-from chainladder.utils.utility_functions import concat
+from chainladder.legacy.utility_functions import concat
 from chainladder import options
 
 
@@ -29,7 +29,7 @@ def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
 def _get_full_triangle(X, ultimate, is_cumulative=True):
     """ Private method that builds full triangle"""
     # Getting the LDFs and expand for all origins
-    from chainladder.utils.utility_functions import num_to_nan
+    from chainladder.legacy.utility_functions import num_to_nan
     emergence = X.ldf_.copy() * (ultimate / ultimate)
 
     # Setting LDFs for all of the known diagonals as 1

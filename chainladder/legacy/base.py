@@ -15,7 +15,7 @@ from chainladder.legacy.slice import TriangleSlicer
 from chainladder.legacy.io import TriangleIO
 from chainladder.legacy.common import Common
 from chainladder import options
-from chainladder.utils.utility_functions import num_to_nan, concat
+from chainladder.legacy.utility_functions import num_to_nan, concat
 
 
 class TriangleBase(
@@ -404,7 +404,7 @@ class TriangleBase(
             raise NotImplementedError()
 
     def __array_function__(self, func, types, args, kwargs):
-        from chainladder.utils.utility_functions import concat
+        from chainladder.legacy.utility_functions import concat
 
         methods_as_funcs = list(
             set(dir(np)).intersection(set(dir(self))) - {"__dir__", "__doc__"}

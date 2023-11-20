@@ -7,7 +7,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 import copy
 import warnings
-from chainladder.core.io import EstimatorIO
+from chainladder.legacy.io import EstimatorIO
 
 
 class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
