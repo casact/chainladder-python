@@ -757,3 +757,9 @@ def test_halfyear_development():
             )
         )
     ) == cl.Triangle
+
+def test_olab(raa):
+    """
+    The string passed to the origin argument should be assigned to the .olab (origin label) attribute.
+    """
+    assert raa.olab == ['origin']
