@@ -128,6 +128,9 @@ class Triangle(TriangleBase):
             data, index, columns, origin, development
         )
 
+        self.columns_label = columns
+        self.origin_label = origin
+
         # Handle any ultimate vectors in triangles separately
         data, ult = self._split_ult(data, index, columns, origin, development)
         # Conform origins and developments to datetimes and determine lowest grains
@@ -170,6 +173,7 @@ class Triangle(TriangleBase):
         # Deal with labels
         if not index:
             index = ["Total"]
+            self.index_label = index
             data_agg[index[0]] = "Total"
 
         self.kdims, key_idx = self._set_kdims(data_agg, index)
@@ -670,8 +674,8 @@ class Triangle(TriangleBase):
         obj = self.dev_to_val()
         if ograin_new != ograin_old:
             freq = {"Y": "A", "S": "2Q"}.get(ograin_new, ograin_new)
-            if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != 'M'):
-                origin_period_end = self.origin[-1].strftime("%b").upper()  
+            if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != "M"):
+                origin_period_end = self.origin[-1].strftime("%b").upper()
             else:
                 origin_period_end = "DEC"
             indices = (
@@ -685,12 +689,16 @@ class Triangle(TriangleBase):
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = origin_period_end
             d_start = pd.Period(
-                obj.valuation[0], 
-                freq=dgrain_old if dgrain_old == 'M' else dgrain_old + obj.origin.freqstr[-4:]
-            ).to_timestamp(how='s')
-            if (len(obj.ddims) > 1 and obj.origin.to_timestamp(how='s')[0] != d_start):
+                obj.valuation[0],
+                freq=dgrain_old
+                if dgrain_old == "M"
+                else dgrain_old + obj.origin.freqstr[-4:],
+            ).to_timestamp(how="s")
+            if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[:-1]
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[
+                        :-1
+                    ]
                     .to_timestamp()
                     .values
                 )
