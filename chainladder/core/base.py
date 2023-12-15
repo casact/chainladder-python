@@ -410,11 +410,14 @@ class TriangleBase(
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
         Requires pandas version > 1.5.2.
 
-        Parameters:
-        data: Dataframe object supporting the __dataframe__ protocol.
-
-        Returns:
-        pd.DataFrame: A pandas DataFrame.
+        Parameters
+        ----------
+        data :
+            Dataframe object supporting the __dataframe__ protocol.
+        Returns
+        -------
+        out: pd.DataFrame
+            A pandas DataFrame.
         """
         # Check if pandas version is greater than 1.5.2
         if version.parse(pd.__version__) >= version.parse("1.5.2"):
