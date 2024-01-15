@@ -111,7 +111,7 @@ def test_misaligned_index2(clrd):
     b = bcc.predict(clrd.iloc[150], sample_weight=w.iloc[150]).ultimate_.sum().sum()
     assert abs(a - b) < 1e-5
 
-def align_cdfs():
+def test_align_cdfs():
     ld = cl.load_sample('raa').latest_diagonal*0+40000
     model = cl.BornhuetterFerguson().fit(cl.load_sample('raa'), sample_weight=ld)
     a = model.ultimate_.iloc[..., :4, :] 
@@ -127,6 +127,6 @@ def align_cdfs():
     assert a == b
 
 
-def check_val_tri_cl(raa):
+def test_check_val_tri_cl(raa):
     model = cl.Chainladder().fit(raa.dev_to_val())
     assert model.predict(raa.latest_diagonal).ultimate_ == model.ultimate_
