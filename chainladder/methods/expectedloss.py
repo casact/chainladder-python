@@ -39,7 +39,7 @@ class ExpectedLoss(Benktander):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        """Applies the Bornhuetter-Ferguson technique to triangle **X**
+        """Applies the Benktander technique to triangle **X**
 
         Parameters
         ----------
@@ -60,7 +60,7 @@ class ExpectedLoss(Benktander):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the Bornhuetter-Ferguson ultimate on a new triangle **X**
+        """Predicts the Benktander ultimate on a new triangle **X**
 
         Parameters
         ----------
