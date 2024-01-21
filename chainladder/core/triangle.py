@@ -798,7 +798,7 @@ class Triangle(TriangleBase):
         return self
 
     def copy(self):
-        X = Triangle()
+        X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))
         X._set_slicers()
         X.values = X.values.copy()
