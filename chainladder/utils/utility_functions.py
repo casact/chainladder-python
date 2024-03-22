@@ -161,22 +161,36 @@ def parallelogram_olf(
     if not end_date:
         end_date = "{}-12-31".format(date.max().year)
     start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+    print("start_date:", start_date)
+    print("end_date", end_date)
     date_idx = pd.date_range(
-        start_date - pd.tseries.offsets.DateOffset(years=1), end_date
+        start_date - pd.tseries.offsets.DateOffset(years=1),
+        end_date,
+        freq="MS",  ## TO DO, remove FREQ
     )
-    y = pd.Series(np.array(values), np.array(date))
-    y = y.reindex(date_idx, fill_value=0)
-    idx = np.cumprod(y.values + 1)
-    idx = idx[-1] / idx
-    y = pd.Series(idx, y.index)
-    y = y[~((y.index.day == 29) & (y.index.month == 2))]
+    rate_changes = pd.Series(np.array(values), np.array(date))
+    # print("rate_changes:\n", rate_changes)
+    # y = rate_changes
+    rate_changes = rate_changes.reindex(date_idx, fill_value=0)
+    # print("y changes:\n", y)
+    cum_rate_changes = np.cumprod(1 + rate_changes.values)
+    crl = cum_rate_changes[-1]
+    print("crl", crl)
+    cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
+    y = cum_rate_changes
+    # y = y[~((y.index.day == 29) & (y.index.month == 2))]
     if not vertical_line:
-        y = y.rolling(365).mean()
+        y = y.rolling(12).mean()
         y = (y + y.shift(1).values) / 2
-    y = y.iloc[366:]
+    print("first y\n", y)
+    y = y.iloc[12:]
+    print("y 2:\n", y)
+    print("y groupby:\n", y.groupby(y.index.to_period(grain)).mean().reset_index())
     y = y.groupby(y.index.to_period(grain)).mean().reset_index()
     y.columns = ["Origin", "OLF"]
     y["Origin"] = y["Origin"].astype(str)
+    y["OLF"] = crl / y["OLF"]
+    print("y final:\n", y)
     return y.set_index("Origin")
 
 
@@ -377,7 +391,9 @@ def model_diagnostics(model, name=None, groupby=None):
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
     run_off = run_off[run_off.development > str(obj.X_.valuation_date)]
-    run_off = run_off.iloc[..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]]
+    run_off = run_off.iloc[
+        ..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]
+    ]
 
     triangles = []
     for col in obj.ultimate_.columns:
