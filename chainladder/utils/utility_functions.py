@@ -152,7 +152,13 @@ def read_json(json_str, array_backend=None):
 
 
 def parallelogram_olf(
-    values, date, start_date=None, end_date=None, grain="M", vertical_line=False
+    values,
+    date,
+    start_date=None,
+    end_date=None,
+    grain="Y",
+    approximation_grain="M",
+    vertical_line=False,
 ):
     """Parallelogram approach to on-leveling."""
     date = pd.to_datetime(date)
@@ -162,36 +168,87 @@ def parallelogram_olf(
         end_date = "{}-12-31".format(date.max().year)
     start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
     print("start_date:", start_date)
-    print("end_date", end_date)
+    print("end_date:", end_date)
+    print("approximation_grain:", approximation_grain)
+
+    date_freq = {
+        "M": "MS",
+        "D": "D",
+    }
+    try:
+        date_freq[approximation_grain]
+    except:
+        print("grain must be " "M" " or " "D" "")
+
     date_idx = pd.date_range(
         start_date - pd.tseries.offsets.DateOffset(years=1),
         end_date,
-        freq="MS",  ## TO DO, remove FREQ
+        freq=date_freq[approximation_grain],
     )
+
     rate_changes = pd.Series(np.array(values), np.array(date))
-    # print("rate_changes:\n", rate_changes)
-    # y = rate_changes
     rate_changes = rate_changes.reindex(date_idx, fill_value=0)
-    # print("y changes:\n", y)
+
     cum_rate_changes = np.cumprod(1 + rate_changes.values)
-    crl = cum_rate_changes[-1]
-    print("crl", crl)
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
-    y = cum_rate_changes
-    # y = y[~((y.index.day == 29) & (y.index.month == 2))]
+
+    crl = cum_rate_changes[-1]
+
     if not vertical_line:
-        y = y.rolling(12).mean()
-        y = (y + y.shift(1).values) / 2
-    print("first y\n", y)
-    y = y.iloc[12:]
-    print("y 2:\n", y)
-    print("y groupby:\n", y.groupby(y.index.to_period(grain)).mean().reset_index())
-    y = y.groupby(y.index.to_period(grain)).mean().reset_index()
-    y.columns = ["Origin", "OLF"]
-    y["Origin"] = y["Origin"].astype(str)
-    y["OLF"] = crl / y["OLF"]
-    print("y final:\n", y)
-    return y.set_index("Origin")
+        rolling_num = {
+            "M": 12,
+            "D": 365,
+        }
+
+        cum_avg_rate_non_leaps = cum_rate_changes.rolling(
+            rolling_num[approximation_grain]
+        ).mean()
+        cum_avg_rate_non_leaps = (
+            cum_avg_rate_non_leaps + cum_avg_rate_non_leaps.shift(1).values
+        ) / 2
+
+        cum_avg_rate_leaps = cum_rate_changes.rolling(
+            rolling_num[approximation_grain] + 1
+        ).mean()
+        cum_avg_rate_leaps = (
+            cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
+        ) / 2
+
+    dropdates_num = {
+        "M": 12,
+        "D": 366,
+    }
+    cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
+        dropdates_num[approximation_grain] :
+    ]
+    cum_avg_rate_leaps = cum_avg_rate_leaps.iloc[
+        dropdates_num[approximation_grain] + 1 :
+    ]
+
+    fcrl_non_leaps = (
+        cum_avg_rate_non_leaps.groupby(cum_avg_rate_non_leaps.index.to_period(grain))
+        .mean()
+        .reset_index()
+    )
+    fcrl_non_leaps.columns = ["Origin", "OLF"]
+    fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
+    fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
+    print("fcrl_non_leaps final:\n", fcrl_non_leaps)
+
+    fcrl_leaps = (
+        cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
+        .mean()
+        .reset_index()
+    )
+    fcrl_leaps.columns = ["Origin", "OLF"]
+    fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
+    fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
+    print("fcrl_leaps final:\n", fcrl_leaps)
+
+    master = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
+    print("msater", master)
+
+    return fcrl_non_leaps.set_index("Origin")
 
 
 def set_common_backend(objs):
