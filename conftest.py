@@ -66,7 +66,7 @@ def prism(request):
 @pytest.fixture
 def prism_dense(request):
     if request.param == "sparse_only_run":
-        cl.options.set_option('ARRAY_BACKEND', 'numpy')
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
     else:
         cl.options.set_option('ARRAY_BACKEND', 'numpy')
     return cl.load_sample('prism').sum()

@@ -123,7 +123,9 @@ class Triangle(TriangleBase):
     ):
         if data is None:
             return
-
+        elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
+            data = self._interchange_dataframe(data)
+        
         index, columns, origin, development = self._input_validation(
             data, index, columns, origin, development
         )
@@ -274,7 +276,7 @@ class Triangle(TriangleBase):
             self.ddims = obj.ddims
             self.values = obj.values
             self.valuation_date = pd.Timestamp(options.ULT_VAL)
-
+    
     @staticmethod
     def _split_ult(data, index, columns, origin, development):
         """Deal with triangles with ultimate values"""
@@ -804,7 +806,7 @@ class Triangle(TriangleBase):
         return self
 
     def copy(self):
-        X = Triangle()
+        X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))
         X._set_slicers()
         X.values = X.values.copy()

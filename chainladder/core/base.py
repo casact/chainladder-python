@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
+from packaging import version
+
 import numpy as np
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
@@ -402,7 +404,30 @@ class TriangleBase(
             return obj
         else:
             raise NotImplementedError()
+        
+    def _interchange_dataframe(self, data):
+        """
+        Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
+        Requires pandas version > 1.5.2.
 
+        Parameters
+        ----------
+        data :
+            Dataframe object supporting the __dataframe__ protocol.
+        Returns
+        -------
+        out: pd.DataFrame
+            A pandas DataFrame.
+        """
+        # Check if pandas version is greater than 1.5.2
+        if version.parse(pd.__version__) >= version.parse("1.5.2"):
+            return pd.api.interchange.from_dataframe(data)
+        
+        else:
+            # Raise an error prompting the user to upgrade pandas
+            raise NotImplementedError("Your version of pandas does not support the DataFrame interchange API. "
+                                    "Please upgrade pandas to a version greater than 1.5.2 to use this feature.")
+            
     def __array_function__(self, func, types, args, kwargs):
         from chainladder.utils.utility_functions import concat
 
