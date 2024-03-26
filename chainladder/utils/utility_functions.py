@@ -167,14 +167,12 @@ def parallelogram_olf(
     if not end_date:
         end_date = "{}-12-31".format(date.max().year)
     start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
-    print("start_date:", start_date)
-    print("end_date:", end_date)
-    print("approximation_grain:", approximation_grain)
 
     date_freq = {
         "M": "MS",
         "D": "D",
     }
+
     try:
         date_freq[approximation_grain]
     except:
@@ -188,10 +186,8 @@ def parallelogram_olf(
 
     rate_changes = pd.Series(np.array(values), np.array(date))
     rate_changes = rate_changes.reindex(date_idx, fill_value=0)
-
     cum_rate_changes = np.cumprod(1 + rate_changes.values)
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
-
     crl = cum_rate_changes[-1]
 
     if not vertical_line:
@@ -233,7 +229,6 @@ def parallelogram_olf(
     fcrl_non_leaps.columns = ["Origin", "OLF"]
     fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
     fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
-    print("fcrl_non_leaps final:\n", fcrl_non_leaps)
 
     fcrl_leaps = (
         cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
@@ -243,12 +238,27 @@ def parallelogram_olf(
     fcrl_leaps.columns = ["Origin", "OLF"]
     fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
     fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
-    print("fcrl_leaps final:\n", fcrl_leaps)
 
-    master = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
-    print("msater", master)
+    combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
+    combined["is_leap"] = pd.to_datetime(
+        combined["Origin_non_leaps"], format="%Y"
+    ).dt.is_leap_year
 
-    return fcrl_non_leaps.set_index("Origin")
+    if approximation_grain == "M":
+        combined["final_OLF"] = combined["OLF_non_leaps"]
+    else:
+        combined["final_OLF"] = np.where(
+            combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+        )
+
+    combined.drop(
+        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"],
+        axis=1,
+        inplace=True,
+    )
+    combined.columns = ["Origin", "OLF"]
+
+    return combined.set_index("Origin")
 
 
 def set_common_backend(objs):
