@@ -15,15 +15,15 @@ class TriangleDisplay:
     def __repr__(self):
         try:
             self.values
-
-            if (self.values.shape[0], self.values.shape[1]) == (1, 1):
-                data = self._repr_format()
-                return data.to_string()
-            else:
-                return self._summary_frame().__repr__()
-
         except:
             print("Triangle is empty")
+            return
+
+        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
+            data = self._repr_format()
+            return data.to_string()
+        else:
+            return self._summary_frame().__repr__()
 
     def _summary_frame(self):
         return pd.Series(
