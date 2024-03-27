@@ -258,7 +258,7 @@ class TriangleBase(
     def _development_lag(origin, valuation):
         """For tabular format, this will convert the origin/valuation
         difference to a development lag"""
-        return ((valuation - origin) / (365.25/12)).round('1d').dt.days
+        return ((valuation - origin) / (365.25/12)).dt.round('1d').dt.days
 
 
     @staticmethod

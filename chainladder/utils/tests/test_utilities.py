@@ -2,6 +2,7 @@ import chainladder as cl
 from chainladder.utils.cupy import cp
 import numpy as np
 import copy
+import pandas as pd
 
 
 def test_non_vertical_line():
@@ -13,6 +14,81 @@ def test_non_vertical_line():
         cl.parallelogram_olf([0.20], ["7/2/2017"], grain="Y").loc["2017"].iloc[0] - 1
     )
     assert olf_low < true_olf < olf_high
+    # Monthly approximation
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"],
+            "RateChange": [0.035, 0.05, 0.10, -0.01],
+        }
+    )
+
+    data = pd.DataFrame(
+        {"Year": list(range(2006, 2016)), "EarnedPremium": [10_000] * 10}
+    )
+
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
+    prem_tri = cl.ParallelogramOLF(
+        rate_history,
+        change_col="RateChange",
+        date_col="EffDate",
+        approximation_grain="M",
+        vertical_line=False,
+    ).fit_transform(prem_tri)
+    assert (
+        np.round(prem_tri.olf_.to_frame().values, 6).flatten()
+        == [
+            1.183471,
+            1.183471,
+            1.183471,
+            1.183471,
+            1.178316,
+            1.120181,
+            1.075556,
+            1.004236,
+            0.999684,
+            1.000000,
+        ]
+    ).all()
+
+    # Daily approximation
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"],
+            "RateChange": [0.035, 0.05, 0.10, -0.01],
+        }
+    )
+
+    data = pd.DataFrame(
+        {"Year": list(range(2006, 2016)), "EarnedPremium": [10_000] * 10}
+    )
+
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
+    prem_tri = cl.ParallelogramOLF(
+        rate_history,
+        change_col="RateChange",
+        date_col="EffDate",
+        approximation_grain="D",
+        vertical_line=False,
+    ).fit_transform(prem_tri)
+    assert (
+        np.round(prem_tri.olf_.to_frame().values, 6).flatten()
+        == [
+            1.183471,
+            1.183471,
+            1.183471,
+            1.183471,
+            1.178231,
+            1.120105,
+            1.075410,
+            1.004073,
+            0.999693,
+            1.000000,
+        ]
+    ).all()
 
 
 def test_vertical_line():
