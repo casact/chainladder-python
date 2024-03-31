@@ -6,14 +6,24 @@ import pandas as pd
 
 
 def test_non_vertical_line():
-    true_olf = (1 - 0.5 * ((31 + 31 + 30 + 31 + 30 + 31) / 365.25) ** 2) * 0.2
-    olf_low = (
-        cl.parallelogram_olf([0.20], ["7/1/2017"], grain="Y").loc["2017"].iloc[0] - 1
+    true_olf = (
+        1.20
+        / (
+            (1 - 0.5 * ((31 + 31 + 30 + 31 + 30 + 31) / 365) ** 2) * 1.0
+            + (0.5 * ((31 + 31 + 30 + 31 + 30 + 31) / 365) ** 2) * 1.2
+        )
+        - 1
     )
-    olf_high = (
-        cl.parallelogram_olf([0.20], ["7/2/2017"], grain="Y").loc["2017"].iloc[0] - 1
+
+    result = (
+        cl.parallelogram_olf([0.20], ["7/1/2017"], approximation_grain="D")
+        .loc["2017"]
+        .iloc[0]
+        - 1
     )
-    assert olf_low < true_olf < olf_high
+
+    assert true_olf == result
+
     # Monthly approximation
     rate_history = pd.DataFrame(
         {
