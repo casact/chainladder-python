@@ -185,9 +185,9 @@ def parallelogram_olf(
     )
 
     rate_changes = pd.Series(np.array(values), np.array(date))
-    print("rate_changes:\n", rate_changes)
+    # print("rate_changes:\n", rate_changes)
     rate_changes = rate_changes.reindex(date_idx, fill_value=0)
-    print("rate_changes:\n", rate_changes)
+    # print("rate_changes:\n", rate_changes)
     cum_rate_changes = np.cumprod(1 + rate_changes.values)
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
     # print("cum_rate_changes:\n", cum_rate_changes)
