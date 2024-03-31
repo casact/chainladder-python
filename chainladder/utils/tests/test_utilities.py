@@ -102,8 +102,11 @@ def test_non_vertical_line():
 
 
 def test_vertical_line():
-    olf = cl.parallelogram_olf([0.20], ["7/1/2017"], grain="Y", vertical_line=True)
-    assert abs(olf.loc["2017"].iloc[0] - ((1 - 184 / 365) * 0.2 + 1)) < 0.00001
+    olf = cl.parallelogram_olf(
+        [0.20], ["7/1/2017"], approximation_grain="D", vertical_line=True
+    )
+    true_olf = 1.2 / ((1 - 184 / 365) * 1.0 + (184 / 365) * 1.2)
+    assert abs(olf.loc["2017"].iloc[0] - true_olf) < 0.00001
 
 
 def test_triangle_json_io(clrd):

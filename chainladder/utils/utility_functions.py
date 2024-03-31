@@ -194,6 +194,9 @@ def parallelogram_olf(
     crl = cum_rate_changes[-1]
     # print("crl:", crl)
 
+    cum_avg_rate_non_leaps = cum_rate_changes
+    cum_avg_rate_leaps = cum_rate_changes
+
     if not vertical_line:
         rolling_num = {
             "M": 12,
