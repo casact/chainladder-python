@@ -13,6 +13,12 @@ except:
 
 class TriangleDisplay:
     def __repr__(self):
+        try:
+            self.values
+        except:
+            print("Triangle is empty")
+            return
+
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             return data.to_string()
@@ -33,7 +39,7 @@ class TriangleDisplay:
         ).to_frame()
 
     def _repr_html_(self):
-        """ Jupyter/Ipython HTML representation """
+        """Jupyter/Ipython HTML representation"""
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
@@ -66,7 +72,7 @@ class TriangleDisplay:
     def _repr_format(self, origin_as_datetime=False):
         out = self.compute().set_backend("numpy").values[0, 0]
         if origin_as_datetime and not self.is_pattern:
-            origin = self.origin.to_timestamp(how='s')
+            origin = self.origin.to_timestamp(how="s")
         else:
             origin = self.origin.copy()
         origin.name = None
@@ -85,7 +91,7 @@ class TriangleDisplay:
         return pd.DataFrame(out, index=origin, columns=development)
 
     def heatmap(self, cmap="coolwarm", low=0, high=0, axis=0, subset=None):
-        """ Color the background in a gradient according to the data in each
+        """Color the background in a gradient according to the data in each
         column (optionally row). Requires matplotlib
 
         Parameters
@@ -134,7 +140,12 @@ class TriangleDisplay:
             else:
                 default_output = (
                     data.style.format(fmt_str)
-                    .background_gradient(cmap=cmap, low=low, high=high, axis=axis,)
+                    .background_gradient(
+                        cmap=cmap,
+                        low=low,
+                        high=high,
+                        axis=axis,
+                    )
                     .render()
                 )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
