@@ -3,8 +3,16 @@ import chainladder as cl
 
 
 def test_heatmap_render(raa):
-    """ The heatmap method should render correctly given the sample."""
-    return raa.heatmap()
+    """The heatmap method should render correctly given the sample."""
+    try:
+        raa.heatmap()
+
+    except:
+        assert False
+
+
+# def test_empty_triangle():
+#     assert cl.Triangle()
 
 
 def test_to_frame(raa):

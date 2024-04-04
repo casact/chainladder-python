@@ -202,7 +202,7 @@ class Common:
     def _validate_assumption(self, triangle, value, axis):
         if type(value) in (int, float, str):
             arr = np.repeat(value, triangle.shape[axis])
-        if type(value) in (list, tuple, set, np.array):
+        if type(value) in (list, tuple, set, np.ndarray):
             arr = np.array(value)
         if type(value) is dict:
             arr = np.array([value[a] for a in triangle._get_axis_value(axis)])

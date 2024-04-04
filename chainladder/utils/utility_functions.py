@@ -152,7 +152,13 @@ def read_json(json_str, array_backend=None):
 
 
 def parallelogram_olf(
-    values, date, start_date=None, end_date=None, grain="M", vertical_line=False
+    values,
+    date,
+    start_date=None,
+    end_date=None,
+    grain="Y",
+    approximation_grain="M",
+    vertical_line=False,
 ):
     """Parallelogram approach to on-leveling."""
     date = pd.to_datetime(date)
@@ -161,23 +167,107 @@ def parallelogram_olf(
     if not end_date:
         end_date = "{}-12-31".format(date.max().year)
     start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+
+    date_freq = {
+        "M": "MS",
+        "D": "D",
+    }
+
+    try:
+        date_freq[approximation_grain]
+    except:
+        print("grain must be " "M" " or " "D" "")
+
     date_idx = pd.date_range(
-        start_date - pd.tseries.offsets.DateOffset(years=1), end_date
+        start_date - pd.tseries.offsets.DateOffset(years=1),
+        end_date,
+        freq=date_freq[approximation_grain],
     )
-    y = pd.Series(np.array(values), np.array(date))
-    y = y.reindex(date_idx, fill_value=0)
-    idx = np.cumprod(y.values + 1)
-    idx = idx[-1] / idx
-    y = pd.Series(idx, y.index)
-    y = y[~((y.index.day == 29) & (y.index.month == 2))]
+
+    rate_changes = pd.Series(np.array(values), np.array(date))
+    # print("rate_changes:\n", rate_changes)
+    rate_changes = rate_changes.reindex(date_idx, fill_value=0)
+    # print("rate_changes:\n", rate_changes)
+    cum_rate_changes = np.cumprod(1 + rate_changes.values)
+    cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
+    # print("cum_rate_changes:\n", cum_rate_changes)
+    crl = cum_rate_changes[-1]
+    # print("crl:", crl)
+
+    cum_avg_rate_non_leaps = cum_rate_changes
+    cum_avg_rate_leaps = cum_rate_changes
+
     if not vertical_line:
-        y = y.rolling(365).mean()
-        y = (y + y.shift(1).values) / 2
-    y = y.iloc[366:]
-    y = y.groupby(y.index.to_period(grain)).mean().reset_index()
-    y.columns = ["Origin", "OLF"]
-    y["Origin"] = y["Origin"].astype(str)
-    return y.set_index("Origin")
+        rolling_num = {
+            "M": 12,
+            "D": 365,
+        }
+
+        cum_avg_rate_non_leaps = cum_rate_changes.rolling(
+            rolling_num[approximation_grain]
+        ).mean()
+        cum_avg_rate_non_leaps = (
+            cum_avg_rate_non_leaps + cum_avg_rate_non_leaps.shift(1).values
+        ) / 2
+
+        cum_avg_rate_leaps = cum_rate_changes.rolling(
+            rolling_num[approximation_grain] + 1
+        ).mean()
+        cum_avg_rate_leaps = (
+            cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
+        ) / 2
+    # print("cum_avg_rate_non_leaps\n", cum_avg_rate_non_leaps)
+    # print("cum_avg_rate_leaps\n", cum_avg_rate_leaps)
+
+    dropdates_num = {
+        "M": 12,
+        "D": 366,
+    }
+    cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
+        dropdates_num[approximation_grain] :
+    ]
+    cum_avg_rate_leaps = cum_avg_rate_leaps.iloc[
+        dropdates_num[approximation_grain] + 1 :
+    ]
+
+    fcrl_non_leaps = (
+        cum_avg_rate_non_leaps.groupby(cum_avg_rate_non_leaps.index.to_period(grain))
+        .mean()
+        .reset_index()
+    )
+    fcrl_non_leaps.columns = ["Origin", "OLF"]
+    fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
+    fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
+
+    fcrl_leaps = (
+        cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
+        .mean()
+        .reset_index()
+    )
+    fcrl_leaps.columns = ["Origin", "OLF"]
+    fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
+    fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
+
+    combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
+    combined["is_leap"] = pd.to_datetime(
+        combined["Origin_non_leaps"], format="%Y"
+    ).dt.is_leap_year
+
+    if approximation_grain == "M":
+        combined["final_OLF"] = combined["OLF_non_leaps"]
+    else:
+        combined["final_OLF"] = np.where(
+            combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+        )
+
+    combined.drop(
+        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"],
+        axis=1,
+        inplace=True,
+    )
+    combined.columns = ["Origin", "OLF"]
+
+    return combined.set_index("Origin")
 
 
 def set_common_backend(objs):
@@ -377,7 +467,9 @@ def model_diagnostics(model, name=None, groupby=None):
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
     run_off = run_off[run_off.development > str(obj.X_.valuation_date)]
-    run_off = run_off.iloc[..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]]
+    run_off = run_off.iloc[
+        ..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]
+    ]
 
     triangles = []
     for col in obj.ultimate_.columns:
