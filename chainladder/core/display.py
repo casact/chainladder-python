@@ -13,11 +13,11 @@ except:
 
 class TriangleDisplay:
     def __repr__(self):
-        try:
-            self.values
-        except:
-            print("Triangle is empty")
-            return
+        # try:
+        #     self.values
+        # except:
+        #     print("Triangle is empty")
+        #     return
 
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
