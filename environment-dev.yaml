@@ -15,6 +15,7 @@ dependencies:
 
   - pandas
   - polars
+  - polars-lts-cpu
   - scikit-learn
   - sparse
   - numba

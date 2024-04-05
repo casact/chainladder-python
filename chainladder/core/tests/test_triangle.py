@@ -665,7 +665,7 @@ def test_halfyear_grain():
         {"AccMo": [201409, 201503, 201603], "ValMo": [202203] * 3, "value": [100] * 3}
     )
     assert cl.Triangle(
-        data=data, origin="AccMo", development="ValMo", columns="value"
+        data=data, origin="AccMo", development="ValMo", columns="value", cumulative=True
     ).shape == (1, 1, 16, 1)
 
 
@@ -775,21 +775,18 @@ def test_halfyear_development():
         )
     ) == cl.Triangle
 
-    assert (
-            cl.Triangle(
-                data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
-                index="idx",
-                columns="value",
-                origin="origin",
-                development="val_date",
-                cumulative=True,
-            ) ==
-            cl.Triangle(
-                data=df_polars,
-                index="idx",
-                columns="value",
-                origin="origin",
-                development="val_date",
-                cumulative=True,
-            )
+    assert cl.Triangle(
+        data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
+        index="idx",
+        columns="value",
+        origin="origin",
+        development="val_date",
+        cumulative=True,
+    ) == cl.Triangle(
+        data=df_polars,
+        index="idx",
+        columns="value",
+        origin="origin",
+        development="val_date",
+        cumulative=True,
     )

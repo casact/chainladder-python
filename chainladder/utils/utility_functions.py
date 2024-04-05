@@ -185,14 +185,11 @@ def parallelogram_olf(
     )
 
     rate_changes = pd.Series(np.array(values), np.array(date))
-    # print("rate_changes:\n", rate_changes)
     rate_changes = rate_changes.reindex(date_idx, fill_value=0)
-    # print("rate_changes:\n", rate_changes)
+
     cum_rate_changes = np.cumprod(1 + rate_changes.values)
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
-    # print("cum_rate_changes:\n", cum_rate_changes)
     crl = cum_rate_changes[-1]
-    # print("crl:", crl)
 
     cum_avg_rate_non_leaps = cum_rate_changes
     cum_avg_rate_leaps = cum_rate_changes
@@ -216,8 +213,6 @@ def parallelogram_olf(
         cum_avg_rate_leaps = (
             cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
         ) / 2
-    # print("cum_avg_rate_non_leaps\n", cum_avg_rate_non_leaps)
-    # print("cum_avg_rate_leaps\n", cum_avg_rate_leaps)
 
     dropdates_num = {
         "M": 12,

@@ -13,15 +13,15 @@ except:
 
 class TriangleDisplay:
     def __repr__(self):
-        # try:
-        #     self.values
-        # except:
-        #     print("Triangle is empty")
-        #     return
+        try:
+            self.values
+        except:
+            return "Empty Triangle."
 
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             return data.to_string()
+
         else:
             return self._summary_frame().__repr__()
 
@@ -40,6 +40,11 @@ class TriangleDisplay:
 
     def _repr_html_(self):
         """Jupyter/Ipython HTML representation"""
+        try:
+            self.values
+        except:
+            return "Triangle is empty."
+
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
@@ -150,7 +155,7 @@ class TriangleDisplay:
                 )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
         else:
-            raise ValueError("heatmap only works with single triangles")
+            raise ValueError("heatmap() only works with a single triangle")
         if HTML:
             return HTML(output_xnan)
         elif HTML is None:
