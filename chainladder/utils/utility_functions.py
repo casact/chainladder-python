@@ -172,11 +172,8 @@ def parallelogram_olf(
         "M": "MS",
         "D": "D",
     }
-
-    try:
-        date_freq[approximation_grain]
-    except:
-        print("grain must be " "M" " or " "D" "")
+    if approximation_grain not in ['M', 'D']:
+        raise ValueError("approximation_grain must be " "M" " or " "D" "")
 
     date_idx = pd.date_range(
         start_date - pd.tseries.offsets.DateOffset(years=1),

@@ -59,7 +59,7 @@ class TriangleBase(
                 data, development, period_end=True, format=development_format
             )
             # if np.all(development_date.dt.strftime('%m-%d') == '01-01'):
-            #    development_date = pd.Series(pd.PeriodIndex(development_date, freq='A').to_timestamp(how='e'))
+            #    development_date = pd.Series(pd.PeriodIndex(development_date, freq="Y").to_timestamp(how='e'))
         else:
             o_max = pd.Period(
                 origin_date.max(), freq=TriangleBase._get_grain(origin_date)
@@ -276,9 +276,9 @@ class TriangleBase(
         months = dates.dt.month.unique()
         diffs = np.diff(np.sort(months))
         if len(dates.unique()) == 1:
-            grain = "A"
+            grain = "Y"
         elif len(months) == 1:
-            grain = "A"
+            grain = "Y"
         elif np.all(diffs == 6):
             grain = "2Q"
         elif np.all(diffs == 3):

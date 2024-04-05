@@ -311,7 +311,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         return weights.transpose((0, 1, 3, 2))
 
     def _drop_valuation(self, X):
-        print("=== in _drop_valuation ===")
         xp = X.get_array_module()
         if type(self.drop_valuation) is not list:
             drop_valuation = [self.drop_valuation]
