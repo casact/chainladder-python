@@ -26,3 +26,16 @@ def test_to_frame(raa):
 
     except:
         assert False
+
+
+def test_labels(xyz):
+    assert (
+        xyz.valuation_date.strftime("%Y-%m-%d %H:%M:%S.%f")
+        == "2008-12-31 23:59:59.999999"
+    )
+    assert xyz.origin_grain == "Y"
+    assert xyz.development_grain == "Y"
+    assert xyz.shape == (1, 5, 11, 11)
+    assert xyz.index_label == ["Total"]
+    assert xyz.columns_label == ["Incurred", "Paid", "Reported", "Closed", "Premium"]
+    assert xyz.origin_label == ["AccidentYear"]
