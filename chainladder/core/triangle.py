@@ -330,7 +330,8 @@ class Triangle(TriangleBase):
         if self.is_pattern and len(self.odims) == 1:
             return pd.Series(["(All)"])
         else:
-            freq = {"Y": "Y", "S": "2Q", "H": "2Q"}.get(
+            freq = {"Y": "Y" if float('.'.join(pd.__version__.split('.')[:-1])) < 2.2 else "A", 
+                    "S": "2Q", "H": "2Q"}.get(
                 self.origin_grain, self.origin_grain
             )
             freq = freq if freq == "M" else freq + "-" + self.origin_close
@@ -339,7 +340,7 @@ class Triangle(TriangleBase):
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
-        freq = {"Y": "Y", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
+        freq = {"Y": "Y" if float('.'.join(pd.__version__.split('.')[:-1])) < 2.2 else "A", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
         freq = freq if freq == "M" else freq + "-" + self.origin_close
         value = pd.PeriodIndex(list(value), freq=freq)
         self.odims = value.to_timestamp().values
