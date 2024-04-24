@@ -8,11 +8,7 @@ import pandas as pd
 
 from scipy.special import comb
 
-from scipy.stats import (
-    binom,
-    norm,
-    rankdata
-)
+from scipy.stats import binom, norm, rankdata
 
 from typing import TYPE_CHECKING
 
@@ -52,11 +48,7 @@ class DevelopmentCorrelation:
         to be significant.
     """
 
-    def __init__(
-            self,
-            triangle,
-            p_critical: float = 0.5
-    ):
+    def __init__(self, triangle, p_critical: float = 0.5):
         self.p_critical = p_critical
 
         # Check that critical value is a probability
@@ -69,19 +61,15 @@ class DevelopmentCorrelation:
         m1 = triangle.link_ratio
 
         # Rank link ratios by development period, assigning a score of 1 for the lowest
-        m1_val = xp.apply_along_axis(
-            func1d=rankdata,
-            axis=2,
-            arr=m1.values
-        ) * (m1.values * 0 + 1)
+        m1_val = xp.apply_along_axis(func1d=rankdata, axis=2, arr=m1.values) * (
+            m1.values * 0 + 1
+        )
 
         # Remove the last element from each column, and then rank again
         m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
-        m2.values = xp.apply_along_axis(
-            func1d=rankdata,
-            axis=2,
-            arr=m2.values
-        ) * (m2.values * 0 + 1)
+        m2.values = xp.apply_along_axis(func1d=rankdata, axis=2, arr=m2.values) * (
+            m2.values * 0 + 1
+        )
 
         m1 = m2.copy()
 
@@ -122,33 +110,20 @@ class DevelopmentCorrelation:
         self.t_variance = 2 / ((I - 2) * (I - 3))
 
         # array of t values
-        self.t = pd.DataFrame(
-            self.t[0, 0, ...],
-            columns=k,
-            index=["T_k"]
-        )
+        self.t = pd.DataFrame(self.t[0, 0, ...], columns=k, index=["T_k"])
 
         # array of weights
-        self.weights = pd.DataFrame(
-            weight[0, 0, ...],
-            columns=k,
-            index=["I-k-1"]
-        )
+        self.weights = pd.DataFrame(weight[0, 0, ...], columns=k, index=["I-k-1"])
 
         # final big T
         self.t_expectation = pd.DataFrame(
-            t_expectation[..., 0, 0],
-            columns=triangle.vdims,
-            index=idx
+            t_expectation[..., 0, 0], columns=triangle.vdims, index=idx
         )
 
         # table of Spearman's rank coefficients Tk, can be used to verify consistency with paper
-        self.corr = pd.concat([
-            self.t,
-            self.weights
-        ])
+        self.corr = pd.concat([self.t, self.weights])
 
-        self.corr.columns.names = ['k']
+        self.corr.columns.names = ["k"]
 
         # construct confidence interval based on selection of p_critical
         self.confidence_interval = (
@@ -198,18 +173,9 @@ class ValuationCorrelation:
         The variance value of Z.
     """
 
-    def __init__(
-            self,
-            triangle: Triangle,
-            p_critical: float = 0.1,
-            total: bool = True
-    ):
+    def __init__(self, triangle: Triangle, p_critical: float = 0.1, total: bool = True):
 
-        def pZlower(
-            z: int,
-            n: int,
-            p: float = 0.5
-        ) -> float:
+        def pZlower(z: int, n: int, p: float = 0.5) -> float:
             return min(1, 2 * binom.cdf(z, n, p))
 
         self.p_critical = p_critical
@@ -223,16 +189,12 @@ class ValuationCorrelation:
         lr = triangle.link_ratio
 
         # Rank link ratios for each column
-        m1 = xp.apply_along_axis(
-            func1d=rankdata,
-            axis=2,
-            arr=lr.values) * (lr.values * 0 + 1)
-
-        med = xp.nanmedian(
-            a=m1,
-            axis=2,
-            keepdims=True
+        m1 = xp.apply_along_axis(func1d=rankdata, axis=2, arr=lr.values) * (
+            lr.values * 0 + 1
         )
+
+        med = xp.nanmedian(a=m1, axis=2, keepdims=True, nan_policy="omit")
+        print("med:\n", med)
 
         m1large = (xp.nan_to_num(m1) > med) + (lr.values * 0)
         m1small = (xp.nan_to_num(m1) < med) + (lr.values * 0)
@@ -240,14 +202,14 @@ class ValuationCorrelation:
         m2large.values = m1large
         m2small = triangle.link_ratio
         m2small.values = m1small
-        S = xp.nan_to_num(m2small.dev_to_val().sum(axis=2).set_backend('numpy').values)
-        L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).set_backend('numpy').values)
+        S = xp.nan_to_num(m2small.dev_to_val().sum(axis=2).set_backend("numpy").values)
+        L = xp.nan_to_num(m2large.dev_to_val().sum(axis=2).set_backend("numpy").values)
         z = xp.minimum(L, S)
         n = L + S
         m = xp.floor((n - 1) / 2)
         c = comb(n - 1, m)
-        EZ = (n / 2) - c * n / (2 ** n)
-        VarZ = n * (n - 1) / 4 - c * n * (n - 1) / (2 ** n) + EZ - EZ ** 2
+        EZ = (n / 2) - c * n / (2**n)
+        VarZ = n * (n - 1) / 4 - c * n * (n - 1) / (2**n) + EZ - EZ**2
         if not self.total:
             T = []
             for i in range(0, xp.max(m1large.shape[2:]) + 1):
@@ -296,9 +258,7 @@ class ValuationCorrelation:
             )
 
 
-def validate_critical(
-        p_critical: float
-) -> None:
+def validate_critical(p_critical: float) -> None:
     """
     Checks whether value passed to the p_critical parameter in ValuationCorrelation or DevelopmentCorrelation
     classes is a percentage, that is, between 0 and 1.
@@ -311,4 +271,4 @@ def validate_critical(
     if 0 <= p_critical <= 1:
         pass
     else:
-        raise ValueError('p_critical must be between 0 and 1.')
+        raise ValueError("p_critical must be between 0 and 1.")
