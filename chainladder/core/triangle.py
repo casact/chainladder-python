@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import copy
 import warnings
+from packaging import version
 from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
@@ -125,7 +126,7 @@ class Triangle(TriangleBase):
             return
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
-        
+
         index, columns, origin, development = self._input_validation(
             data, index, columns, origin, development
         )
@@ -276,7 +277,7 @@ class Triangle(TriangleBase):
             self.ddims = obj.ddims
             self.values = obj.values
             self.valuation_date = pd.Timestamp(options.ULT_VAL)
-    
+
     @staticmethod
     def _split_ult(data, index, columns, origin, development):
         """Deal with triangles with ultimate values"""
@@ -330,17 +331,21 @@ class Triangle(TriangleBase):
         if self.is_pattern and len(self.odims) == 1:
             return pd.Series(["(All)"])
         else:
-            freq = {"Y": "Y" if float('.'.join(pd.__version__.split('.')[:-1])) < 2.2 else "A", 
-                    "S": "2Q", "H": "2Q"}.get(
-                self.origin_grain, self.origin_grain
-            )
+            freq = {
+                "Y": "Y" if version.Version(pd.__version__) else "A",
+                "S": "2Q",
+                "H": "2Q",
+            }.get(self.origin_grain, self.origin_grain)
             freq = freq if freq == "M" else freq + "-" + self.origin_close
             return pd.DatetimeIndex(self.odims, name="origin").to_period(freq=freq)
 
     @origin.setter
     def origin(self, value):
         self._len_check(self.origin, value)
-        freq = {"Y": "Y" if float('.'.join(pd.__version__.split('.')[:-1])) < 2.2 else "A", "S": "2Q"}.get(self.origin_grain, self.origin_grain)
+        freq = {
+            "Y": "Y" if float(".".join(pd.__version__.split(".")[:-1])) < 2.2 else "A",
+            "S": "2Q",
+        }.get(self.origin_grain, self.origin_grain)
         freq = freq if freq == "M" else freq + "-" + self.origin_close
         value = pd.PeriodIndex(list(value), freq=freq)
         self.odims = value.to_timestamp().values
@@ -693,9 +698,11 @@ class Triangle(TriangleBase):
             obj.origin_close = origin_period_end
             d_start = pd.Period(
                 obj.valuation[0],
-                freq=dgrain_old
-                if dgrain_old == "M"
-                else dgrain_old + obj.origin.freqstr[-4:],
+                freq=(
+                    dgrain_old
+                    if dgrain_old == "M"
+                    else dgrain_old + obj.origin.freqstr[-4:]
+                ),
             ).to_timestamp(how="s")
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
