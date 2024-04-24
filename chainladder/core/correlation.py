@@ -193,8 +193,8 @@ class ValuationCorrelation:
             lr.values * 0 + 1
         )
 
-        med = xp.nanmedian(a=m1, axis=2, keepdims=True, nan_policy="omit")
-        print("med:\n", med)
+        med = xp.nanmedian(a=m1, axis=2, keepdims=True)
+        # print("med:\n", med)
 
         m1large = (xp.nan_to_num(m1) > med) + (lr.values * 0)
         m1small = (xp.nan_to_num(m1) < med) + (lr.values * 0)
