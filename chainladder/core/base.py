@@ -278,16 +278,14 @@ class TriangleBase(
                 if version.Version(pd.__version__) >= version.Version("2.2.0")
                 else "A"
             )
-            print(float(".".join(pd.__version__.split(".")[:-1])))
-            print("grain:", grain)
+
         elif len(months) == 1:
             grain = (
                 "Y"
                 if version.Version(pd.__version__) >= version.Version("2.2.0")
                 else "A"
             )
-            print(float(".".join(pd.__version__.split(".")[:-1])))
-            print("grain:", grain)
+
         elif np.all(diffs == 6):
             grain = "2Q"
         elif np.all(diffs == 3):
