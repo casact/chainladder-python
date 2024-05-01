@@ -332,7 +332,11 @@ class Triangle(TriangleBase):
             return pd.Series(["(All)"])
         else:
             freq = {
-                "Y": "Y" if version.Version(pd.__version__) else "A",
+                "Y": (
+                    "A"
+                    if version.Version(pd.__version__) >= version.Version("2.2.0")
+                    else "Y"
+                ),
                 "S": "2Q",
                 "H": "2Q",
             }.get(self.origin_grain, self.origin_grain)
