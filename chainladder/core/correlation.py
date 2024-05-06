@@ -189,17 +189,12 @@ class ValuationCorrelation:
         lr = triangle.link_ratio
 
         # Rank link ratios for each column
-        m1 = xp.apply_along_axis(
-            func1d=rankdata,
-            axis=2,
-            arr=lr.values,
-        ) * (lr.values * 0 + 1)
-
-        med = xp.nanmedian(
-            a=m1,
-            axis=2,
-            keepdims=True,
+        m1 = xp.apply_along_axis(func1d=rankdata, axis=2, arr=lr.values) * (
+            lr.values * 0 + 1
         )
+        # print("med:\n", med)
+
+        med = xp.nanmedian(a=m1, axis=2, keepdims=True)
         # print("med:\n", med)
 
         m1large = (xp.nan_to_num(m1) > med) + (lr.values * 0)

@@ -274,12 +274,18 @@ class TriangleBase(
         diffs = np.diff(np.sort(months))
         if len(dates.unique()) == 1:
             grain = (
-                "Y" if float(".".join(pd.__version__.split(".")[:-1])) >= 2.2 else "A"
+                "A"
+                if version.Version(pd.__version__) >= version.Version("2.2.0")
+                else "Y"
             )
+
         elif len(months) == 1:
             grain = (
-                "Y" if float(".".join(pd.__version__.split(".")[:-1])) >= 2.2 else "A"
+                "A"
+                if version.Version(pd.__version__) >= version.Version("2.2.0")
+                else "Y"
             )
+
         elif np.all(diffs == 6):
             grain = "2Q"
         elif np.all(diffs == 3):

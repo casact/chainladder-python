@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import copy
 import warnings
+from packaging import version
 from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
@@ -331,9 +332,9 @@ class Triangle(TriangleBase):
         else:
             freq = {
                 "Y": (
-                    "Y"
-                    if float(".".join(pd.__version__.split(".")[:-1])) >= 2.2
-                    else "A"
+                    "A"
+                    if version.Version(pd.__version__) >= version.Version("2.2.0")
+                    else "Y"
                 ),
                 "S": "2Q",
                 "H": "2Q",
@@ -345,7 +346,7 @@ class Triangle(TriangleBase):
     def origin(self, value):
         self._len_check(self.origin, value)
         freq = {
-            "Y": "Y" if float(".".join(pd.__version__.split(".")[:-1])) >= 2.2 else "A",
+            "Y": "Y" if float(".".join(pd.__version__.split(".")[:-1])) < 2.2 else "A",
             "S": "2Q",
         }.get(self.origin_grain, self.origin_grain)
         freq = freq if freq == "M" else freq + "-" + self.origin_close
