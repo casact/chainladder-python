@@ -61,15 +61,15 @@ class DevelopmentCorrelation:
         m1 = triangle.link_ratio
 
         # Rank link ratios by development period, assigning a score of 1 for the lowest
-        m1_val = xp.apply_along_axis(func1d=rankdata, axis=2, arr=m1.values) * (
-            m1.values * 0 + 1
-        )
+        m1_val = xp.apply_along_axis(
+            func1d=rankdata, axis=2, arr=m1.values, nan_policy="omit"
+        ) * (m1.values * 0 + 1)
 
         # Remove the last element from each column, and then rank again
         m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
-        m2.values = xp.apply_along_axis(func1d=rankdata, axis=2, arr=m2.values) * (
-            m2.values * 0 + 1
-        )
+        m2.values = xp.apply_along_axis(
+            func1d=rankdata, axis=2, arr=m2.values, nan_policy="omit"
+        ) * (m2.values * 0 + 1)
 
         m1 = m2.copy()
 
@@ -189,9 +189,9 @@ class ValuationCorrelation:
         lr = triangle.link_ratio
 
         # Rank link ratios for each column
-        m1 = xp.apply_along_axis(func1d=rankdata, axis=2, arr=lr.values) * (
-            lr.values * 0 + 1
-        )
+        m1 = xp.apply_along_axis(
+            func1d=rankdata, axis=2, arr=lr.values, nan_policy="omit"
+        ) * (lr.values * 0 + 1)
         # print("med:\n", med)
 
         med = xp.nanmedian(a=m1, axis=2, keepdims=True)
