@@ -256,8 +256,7 @@ class TriangleBase(
     def _development_lag(origin, valuation):
         """For tabular format, this will convert the origin/valuation
         difference to a development lag"""
-        return ((valuation - origin) / (365.25/12)).dt.round('1d').dt.days
-
+        return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
 
     @staticmethod
     def _get_grain(dates, trailing=False, kind="origin"):
@@ -274,9 +273,13 @@ class TriangleBase(
         months = dates.dt.month.unique()
         diffs = np.diff(np.sort(months))
         if len(dates.unique()) == 1:
-            grain = "Y" if float('.'.join(pd.__version__.split('.')[:-1])) < 2.2 else "A"
+            grain = (
+                "Y" if float(".".join(pd.__version__.split(".")[:-1])) >= 2.2 else "A"
+            )
         elif len(months) == 1:
-            grain = "Y" if float('.'.join(pd.__version__.split('.')[:-1])) < 2.2 else "A"
+            grain = (
+                "Y" if float(".".join(pd.__version__.split(".")[:-1])) >= 2.2 else "A"
+            )
         elif np.all(diffs == 6):
             grain = "2Q"
         elif np.all(diffs == 3):
@@ -402,7 +405,7 @@ class TriangleBase(
             return obj
         else:
             raise NotImplementedError()
-        
+
     def _interchange_dataframe(self, data):
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
@@ -420,12 +423,14 @@ class TriangleBase(
         # Check if pandas version is greater than 1.5.2
         if version.parse(pd.__version__) >= version.parse("1.5.2"):
             return pd.api.interchange.from_dataframe(data)
-        
+
         else:
             # Raise an error prompting the user to upgrade pandas
-            raise NotImplementedError("Your version of pandas does not support the DataFrame interchange API. "
-                                    "Please upgrade pandas to a version greater than 1.5.2 to use this feature.")
-            
+            raise NotImplementedError(
+                "Your version of pandas does not support the DataFrame interchange API. "
+                "Please upgrade pandas to a version greater than 1.5.2 to use this feature."
+            )
+
     def __array_function__(self, func, types, args, kwargs):
         from chainladder.utils.utility_functions import concat
 
