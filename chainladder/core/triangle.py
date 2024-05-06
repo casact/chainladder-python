@@ -332,9 +332,9 @@ class Triangle(TriangleBase):
         else:
             freq = {
                 "Y": (
-                    "A"
+                    "Y"
                     if version.Version(pd.__version__) >= version.Version("2.2.0")
-                    else "Y"
+                    else "A"
                 ),
                 "S": "2Q",
                 "H": "2Q",
