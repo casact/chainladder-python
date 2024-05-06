@@ -126,7 +126,6 @@ class Triangle(TriangleBase):
             return
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
-
         index, columns, origin, development = self._input_validation(
             data, index, columns, origin, development
         )
@@ -333,9 +332,9 @@ class Triangle(TriangleBase):
         else:
             freq = {
                 "Y": (
-                    "A"
+                    "Y"
                     if version.Version(pd.__version__) >= version.Version("2.2.0")
-                    else "Y"
+                    else "A"
                 ),
                 "S": "2Q",
                 "H": "2Q",
