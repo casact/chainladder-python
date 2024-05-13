@@ -231,23 +231,22 @@ class TriangleBase(
             target_field = data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
         else:
             target_field = data[fields].iloc[:, 0]
+
         if hasattr(target_field, "dt"):
             target = target_field
             if type(target.iloc[0]) == pd.Period:
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
             datetime_arg = target_field.unique()
-            # print("datetime_arg", datetime_arg)
             format = [{"arg": datetime_arg, "format": format}] if format else []
+
             date_inference_list = format + [
                 {"arg": datetime_arg, "format": "%Y%m"},
                 {"arg": datetime_arg, "format": "%Y"},
                 {"arg": datetime_arg, "format": "%Y-%m-%d"},
-                # {"arg": datetime_arg, "infer_datetime_format": True},
+                {"arg": datetime_arg},
             ]
-            print("date_inference_list", date_inference_list)
             for item in date_inference_list:
-                print("trying:", item)
                 try:
                     arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
                     break
@@ -255,7 +254,7 @@ class TriangleBase(
                     pass
 
             target = target_field.map(arr)
-            # print("target", target)
+
         return target
 
     @staticmethod
