@@ -754,15 +754,15 @@ class Triangle(TriangleBase):
         Parameters
         ----------
         trend : float
-            The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
+            The annual amount of the trend. Use 1/(1+trend)-1 to de-trend.
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
         start: date
             The start date from which trend should be calculated. If none is
-            provided then the latest date of the triangle is used.
+            provided, then the earliest date of the triangle is used.
         end: date
             The end date to which the trend should be calculated. If none is
-            provided then the earliest period of the triangle is used.
+            provided, then the valuation date of the triangle is used.
         ultimate_lag : int
             If ultimate valuations are in the triangle, optionally set the overall
             age (in months) of the ultimate to be some lag from the latest non-Ultimate
@@ -778,16 +778,16 @@ class Triangle(TriangleBase):
                 "Only origin and valuation axes are supported for trending"
             )
 
-        # print("====== BEGIN ======")
+        print("====== BEGIN ======")
         xp = self.get_array_module()
 
         start = pd.to_datetime(start) if type(start) is str else start
         start = self.origin[0].to_timestamp() if start is None else start
-        # print("start", start)
+        print("start", start)
 
         end = pd.to_datetime(end) if type(end) is str else end
         end = self.valuation_date if end is None else end
-        # print("end", end)
+        print("end", end)
 
         if axis in ["origin", 2, -2]:
             vector = pd.DatetimeIndex(
@@ -798,26 +798,30 @@ class Triangle(TriangleBase):
         else:
             vector = self.valuation
 
-        lower, upper = (end, start) if end > start else (start, end)
+        upper, lower = (end, start) if end > start else (start, end)
         # print("lower", lower)
         # print("upper", upper)
 
         vector = pd.DatetimeIndex(
             np.maximum(
-                np.minimum(np.datetime64(lower), vector.values), np.datetime64(upper)
+                np.minimum(np.datetime64(upper), vector.values), np.datetime64(lower)
             )
         )
         # print("vector\n", vector)
-        vector = (
-            (end.year - vector.year) * 12 + (end.month - vector.month)
-        ).values.reshape(self.shape[-2:], order="f")
         # print("vector\n", vector)
+        # vector = (
+        #     (end.year - vector.year) * 12 + (end.month - vector.month)
+        # ).values.reshape(self.shape[-2:], order="f")
+        # print("vector\n", vector)
+
+        vector = ((end - vector).days).values.reshape(self.shape[-2:], order="f")
+        print("end\n", vector)
 
         if self.is_ultimate and ultimate_lag is not None and vector.shape[-1] > 1:
             vector[:, -1] = vector[:, -2] + ultimate_lag
 
         trend = (
-            xp.array((1 + trend) ** (vector / 12))[None, None, ...] * self.nan_triangle
+            xp.array((1 + trend) ** (vector / 365))[None, None, ...] * self.nan_triangle
         )
         # print("trend\n", trend)
 
