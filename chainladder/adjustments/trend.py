@@ -142,12 +142,24 @@ class TrendConstant(BaseEstimator, TransformerMixin, EstimatorIO):
         #     Returns the instance itself.
         # """
         print("IN TrendConstant FIT")
-        self.trend_ = X.copy()
-        for i, trend in enumerate(trends):
-            self.trend_ = self.trend_.trend(
-                trend, self.axis, start=dates[i][0], end=dates[i][1]
-            )
-        self.trend_ = self.trend_ / X
+        print("base_trend", self.base_trend)
+
+        self.trendedvalues_ = X.copy().trend(
+            self.base_trend, self.axis  # , start=dates[i][0], end=dates[i][1]
+        )
+        print("self.trendedvalues_\n", self.trendedvalues_)
+
+        # if type(dates[0]) is not tuple:
+        #     raise AttributeError(
+        #         "Dates must be specified as a tuple of start and end dates"
+        #     )
+        # self.trend_ = X.copy()
+        # for i, trend in enumerate(trends):
+        #     self.trend_ = self.trend_.trend(
+        #         trend, self.axis, start=dates[i][0], end=dates[i][1]
+        #     )
+        self.trendfactor_ = self.trendedvalues_ / X
+        print("self.trendfactor_\n", self.trendfactor_)
         return self
 
     def transform(self, X, y=None, sample_weight=None):
