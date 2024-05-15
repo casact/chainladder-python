@@ -792,11 +792,12 @@ class Triangle(TriangleBase):
         if axis in ["origin", 2, -2]:
             vector = pd.DatetimeIndex(
                 np.tile(
-                    self.origin.to_timestamp(how="e").values, self.shape[-1]
+                    self.origin.to_timestamp(how="e").date, self.shape[-1]
                 ).flatten()
             )
         else:
             vector = self.valuation
+        print("vector\n", vector)
 
         upper, lower = (end, start) if end > start else (start, end)
         # print("lower", lower)
@@ -807,7 +808,7 @@ class Triangle(TriangleBase):
                 np.minimum(np.datetime64(upper), vector.values), np.datetime64(lower)
             )
         )
-        # print("vector\n", vector)
+        print("vector\n", vector)
         # print("vector\n", vector)
         # vector = (
         #     (end.year - vector.year) * 12 + (end.month - vector.month)
@@ -815,7 +816,7 @@ class Triangle(TriangleBase):
         # print("vector\n", vector)
 
         vector = ((end - vector).days).values.reshape(self.shape[-2:], order="f")
-        print("end\n", vector)
+        print("days to trend\n", vector)
 
         if self.is_ultimate and ultimate_lag is not None and vector.shape[-1] > 1:
             vector[:, -1] = vector[:, -2] + ultimate_lag
