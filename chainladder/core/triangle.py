@@ -822,7 +822,8 @@ class Triangle(TriangleBase):
             vector[:, -1] = vector[:, -2] + ultimate_lag
 
         trend = (
-            xp.array((1 + trend) ** (vector / 365))[None, None, ...] * self.nan_triangle
+            xp.array((1 + trend) ** (vector / 365.25))[None, None, ...]
+            * self.nan_triangle
         )
         # print("trend\n", trend)
 
