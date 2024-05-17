@@ -690,7 +690,7 @@ class Triangle(TriangleBase):
         obj = self.dev_to_val()
 
         if ograin_new != ograin_old:
-            freq = {"Y": "YE", "S": "2Q"}.get(ograin_new, ograin_new)
+            freq = {"Y": "Y", "S": "2Q"}.get(ograin_new, ograin_new)
 
             if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != "M"):
                 origin_period_end = self.origin[-1].strftime("%b").upper()
@@ -698,7 +698,7 @@ class Triangle(TriangleBase):
                 origin_period_end = "DEC"
 
             indices = (
-                pd.Series(range(len(self.origin)), index=self.origin.to_timestamp())
+                pd.Series(range(len(self.origin)), index=self.origin)
                 .resample("-".join([freq, origin_period_end]))
                 .indices
             )
@@ -708,6 +708,7 @@ class Triangle(TriangleBase):
             ).values
 
             obj = obj.groupby(groups, axis=2).sum()
+
             obj.origin_close = origin_period_end
             d_start = pd.Period(
                 obj.valuation[0],
