@@ -666,10 +666,12 @@ class Triangle(TriangleBase):
             "M": ["Y", "S", "Q", "M"],
             "S": ["S", "Y"],
         }
+
         if ograin_new not in valid.get(ograin_old, []) or dgrain_new not in valid.get(
             dgrain_old, []
         ):
             raise ValueError("New grain not compatible with existing grain")
+
         if (
             self.is_cumulative is None
             and dgrain_old != dgrain_new
@@ -678,25 +680,33 @@ class Triangle(TriangleBase):
             raise AttributeError(
                 "The is_cumulative attribute must be set before using grain method."
             )
+
         if valid["M"].index(ograin_new) > valid["M"].index(dgrain_new):
             raise ValueError("Origin grain must be coarser than development grain")
+
         if self.is_full and not self.is_ultimate and not self.is_val_tri:
             warnings.warn("Triangle includes extraneous development lags")
+
         obj = self.dev_to_val()
+
         if ograin_new != ograin_old:
             freq = {"Y": "Y", "S": "2Q"}.get(ograin_new, ograin_new)
+
             if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != "M"):
                 origin_period_end = self.origin[-1].strftime("%b").upper()
             else:
                 origin_period_end = "DEC"
+
             indices = (
-                pd.Series(range(len(self.origin)), index=self.origin)
+                pd.Series(range(len(self.origin)), index=self.origin.to_timestamp())
                 .resample("-".join([freq, origin_period_end]))
                 .indices
             )
+
             groups = pd.concat(
                 [pd.Series([k] * len(v), index=v) for k, v in indices.items()], axis=0
             ).values
+
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = origin_period_end
             d_start = pd.Period(
@@ -707,6 +717,7 @@ class Triangle(TriangleBase):
                     else dgrain_old + obj.origin.freqstr[-4:]
                 ),
             ).to_timestamp(how="s")
+
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
                     pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[
@@ -719,11 +730,13 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
+
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
                 len(obj.development) - np.arange(0, len(obj.development), step) - 1
             )
+
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
@@ -731,11 +744,15 @@ class Triangle(TriangleBase):
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
                 obj = obj.groupby(d2, axis=3).sum()
                 obj.ddims = ddims
+
             obj.development_grain = dgrain_new
+
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
+
         if inplace:
             self = obj
             return self
+
         return obj
 
     def trend(
