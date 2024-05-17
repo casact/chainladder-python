@@ -356,7 +356,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             param_array = param_array.astype(type(default_value))
         return param_array.to_numpy()
 
-    def _set_weight_func(self, factor):
+    def _set_weight_func(self, factor, secondary_rank=None):
         w = (~np.isnan(factor.values)).astype(float)
         w = w * self._assign_n_periods_weight_func(factor)
 
