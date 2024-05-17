@@ -5,6 +5,7 @@ import numpy as np
 import copy
 import pytest
 import io
+from datetime import datetime
 
 try:
     from IPython.core.display import HTML
@@ -244,10 +245,16 @@ def test_df_period_input(raa):
 
 def test_trend_on_vector(raa):
     d = raa.latest_diagonal
-    assert (
-        d.trend(0.05, axis=2).to_frame(origin_as_datetime=False).astype(int).iloc[0, 0]
-        == 29217
+
+    trend_from = datetime.strptime("12-31-1981", "%m-%d-%Y")
+    trend_to = datetime.strptime("12-31-1990", "%m-%d-%Y")
+    days_to_trend = (trend_to - trend_from).days
+    expected_value = np.round(
+        raa.latest_diagonal.to_frame().iloc[0, 0] * (1.05) ** (days_to_trend / 365.25),
+        0,
     )
+
+    assert np.round(d.trend(0.05, axis=2).to_frame().iloc[0, 0], 0) == expected_value
 
 
 def test_latest_diagonal_val_to_dev(raa):
