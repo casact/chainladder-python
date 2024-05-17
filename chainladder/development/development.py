@@ -119,27 +119,36 @@ class Development(DevelopmentBase):
         from chainladder.utils.utility_functions import num_to_nan
 
         # Triangle must be cumulative and in "development" mode
+
         obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp = obj.get_array_module()
         if self.fillna:
             tri_array = num_to_nan((obj + self.fillna).values)
         else:
             tri_array = num_to_nan(obj.values.copy())
-        average_ = self._validate_assumption(X, self.average, axis=3)[... , :X.shape[3]-1]
+        average_ = self._validate_assumption(X, self.average, axis=3)[
+            ..., : X.shape[3] - 1
+        ]
         self.average_ = average_.flatten()
-        n_periods_ = self._validate_assumption(X, self.n_periods, axis=3)[... , :X.shape[3]-1]
+        n_periods_ = self._validate_assumption(X, self.n_periods, axis=3)[
+            ..., : X.shape[3] - 1
+        ]
         x, y = tri_array[..., :-1], tri_array[..., 1:]
         exponent = xp.array(
-            [{"regression": 0, "volume": 1, "simple": 2}[x] 
-             for x in average_[0, 0, 0]]
+            [{"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]]
         )
         exponent = xp.nan_to_num(exponent * (y * 0 + 1))
         link_ratio = y / x
 
         if hasattr(X, "w_v2_"):
-            self.w_v2_ = self._set_weight_func(obj.age_to_age * X.w_v2_,obj.iloc[...,:-1,:-1])
+            self.w_v2_ = self._set_weight_func(
+                factor=obj.age_to_age * X.w_v2_,
+            )
         else:
-            self.w_v2_ = self._set_weight_func(obj.age_to_age,obj.iloc[...,:-1,:-1])
+            self.w_v2_ = self._set_weight_func(
+                factor=obj.age_to_age,
+            )
+
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
@@ -164,7 +173,7 @@ class Development(DevelopmentBase):
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-        std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_ ** 2).values)
+        std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date]
         return self
@@ -184,7 +193,16 @@ class Development(DevelopmentBase):
         """
         X_new = X.copy()
         X_new.group_index = self._set_transform_groups(X_new)
-        triangles = ["std_err_", "ldf_", "sigma_","std_residuals_","average_", "w_", "sigma_interpolation","w_v2_"]
+        triangles = [
+            "std_err_",
+            "ldf_",
+            "sigma_",
+            "std_residuals_",
+            "average_",
+            "w_",
+            "sigma_interpolation",
+            "w_v2_",
+        ]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
         X_new._set_slicers()
