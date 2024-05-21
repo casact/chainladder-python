@@ -119,13 +119,14 @@ class Development(DevelopmentBase):
         from chainladder.utils.utility_functions import num_to_nan
 
         # Triangle must be cumulative and in "development" mode
-
         obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         xp = obj.get_array_module()
+
         if self.fillna:
             tri_array = num_to_nan((obj + self.fillna).values)
         else:
             tri_array = num_to_nan(obj.values.copy())
+
         average_ = self._validate_assumption(X, self.average, axis=3)[
             ..., : X.shape[3] - 1
         ]
@@ -143,10 +144,12 @@ class Development(DevelopmentBase):
         if hasattr(X, "w_v2_"):
             self.w_v2_ = self._set_weight_func(
                 factor=obj.age_to_age * X.w_v2_,
+                # secondary_rank=obj.iloc[..., :-1, :-1]
             )
         else:
             self.w_v2_ = self._set_weight_func(
                 factor=obj.age_to_age,
+                # secondary_rank=obj.iloc[..., :-1, :-1]
             )
 
         self.w_ = self._assign_n_periods_weight(
@@ -154,6 +157,7 @@ class Development(DevelopmentBase):
         ) * self._drop_adjustment(obj, link_ratio)
         w = num_to_nan(self.w_ / (x ** (exponent)))
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
+
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
         else:
@@ -162,11 +166,13 @@ class Development(DevelopmentBase):
                 "of freedom to support calculation of all regression"
                 " statistics.  Only LDFs have been calculated."
             )
+
         params.std_err_ = xp.nan_to_num(params.std_err_) + xp.nan_to_num(
             (1 - xp.nan_to_num(params.std_err_ * 0 + 1))
             * params.sigma_
             / xp.swapaxes(xp.sqrt(x ** (2 - exponent))[..., 0:1, :], -1, -2)
         )
+
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
         self.ldf_ = self._param_property(obj, params, 0)
@@ -176,6 +182,7 @@ class Development(DevelopmentBase):
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date]
+
         return self
 
     def transform(self, X):
@@ -205,7 +212,9 @@ class Development(DevelopmentBase):
         ]
         for item in triangles:
             setattr(X_new, item, getattr(self, item))
+
         X_new._set_slicers()
+
         return X_new
 
     def _param_property(self, X, params, idx):
@@ -220,4 +229,5 @@ class Development(DevelopmentBase):
         obj.is_cumulative = False
         obj.virtual_columns.columns = {}
         obj._set_slicers()
+
         return obj

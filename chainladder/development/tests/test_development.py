@@ -266,6 +266,24 @@ def test_new_drop_7(clrd):
     )
 
 
+def test_new_drop_8():
+    tri = cl.load_sample("prism")["Paid"].sum().grain("OYDQ")
+
+    try:
+        cl.Development(drop_high=False).fit_transform(tri)
+    except:
+        assert False
+
+    assert (
+        cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
+        == cl.Development(drop_high=1).fit(tri).cdf_.to_frame().fillna(0).values
+    ).all()
+    assert (
+        cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
+        >= cl.Development(drop_high=2).fit(tri).cdf_.to_frame().fillna(0).values
+    ).all()
+
+
 def compare_new_drop(dev, tri):
     assert np.array_equal(
         dev._set_weight_func(tri.age_to_age, tri.age_to_age).values,
