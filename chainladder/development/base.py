@@ -359,7 +359,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def _set_weight_func(self, factor, secondary_rank=None):
         w = (~np.isnan(factor.values)).astype(float)
         w = w * self._assign_n_periods_weight_func(factor)
-
         if self.drop is not None:
             w = w * self._drop_func(factor)
 
@@ -370,11 +369,9 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             w = w * self._drop_x_func(factor)
 
         if (self.drop_high is not None) | (self.drop_low is not None):
-            w = w * self._drop_n_func(factor * num_to_nan(w))
-
+            w = w * self._drop_n_func(factor * num_to_nan(w), secondary_rank)
         w_tri = factor.copy()
         w_tri.values = num_to_nan(w)
-
         return w_tri
 
     def _assign_n_periods_weight_func(self, factor):
@@ -520,11 +517,18 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         return w.transpose((0, 1, 3, 2)).astype(float)
 
     # for drop_high and drop_low
-    def _drop_n_func(self, factor):
+    def _drop_n_func(self, factor, secondary_rank=None):
         # getting dimensions of factor for various manipulation
         factor_val = factor.values.copy()
-        sec_rank_val = factor_val.copy()
-
+        # secondary rank is the optional triangle that breaks ties in factor
+        # the original use case is for dropping the link ratio of 1 with the lowest loss value
+        # (pass in a reverse rank of loss to drop link of ratio of 1 with the highest loss value)
+        # leaving to user to ensure that secondary rank is the same dimensions as factor
+        # also leaving to user to pick whether to trim head or tail
+        if secondary_rank is None:
+            sec_rank_val = factor_val.copy()
+        else:
+            sec_rank_val = secondary_rank.values.copy()
         factor_len = factor_val.shape[3]
         indices = factor_val.shape[0]
         columns = factor_val.shape[1]
@@ -534,17 +538,16 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         drop_high_array[:, :, :] = self._param_array_helper(
             factor_len, self.drop_high, 0
         )[None, None]
-
         drop_low_array = np.zeros((indices, columns, factor_len))
         drop_low_array[:, :, :] = self._param_array_helper(
             factor_len, self.drop_low, 0
         )[None, None]
-
         preserve_array = np.zeros((indices, columns, factor_len))
         preserve_array[:, :, :] = self._param_array_helper(
             factor_len, self.preserve, self.preserve
         )[None, None]
 
+        # ranking factors by itself and secondary rank
         factor_ranks = np.lexsort((sec_rank_val, factor_val), axis=2).argsort(axis=2)
 
         # setting up starting weights
