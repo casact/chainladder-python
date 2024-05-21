@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 
 import pandas as pd
 import numpy as np
@@ -17,6 +18,10 @@ try:
     import dask.bag as db
 except ImportError:
     db = None
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
 class Triangle(TriangleBase):
@@ -107,17 +112,17 @@ class Triangle(TriangleBase):
 
     def __init__(
         self,
-        data=None,
-        origin=None,
-        development=None,
-        columns=None,
-        index=None,
-        origin_format=None,
-        development_format=None,
-        cumulative=None,
+        data: DataFrame = None,
+        origin: str | list = None,
+        development: str | list = None,
+        columns: str | list = None,
+        index: str | list | None = None,
+        origin_format: str = None,
+        development_format: str = None,
+        cumulative: bool = None,
         array_backend=None,
         pattern=False,
-        trailing=True,
+        trailing: bool = True,
         *args,
         **kwargs
     ):
