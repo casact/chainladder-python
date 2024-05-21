@@ -15,7 +15,7 @@ from chainladder import options
 
 try:
     import dask.bag as db
-except:
+except ImportError:
     db = None
 
 
