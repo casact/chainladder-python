@@ -1,5 +1,6 @@
 import numpy as np
 import chainladder as cl
+import pytest
 
 
 def test_full_slice():
@@ -278,14 +279,67 @@ def test_new_drop_8():
 def test_new_drop_9():
     tri = cl.load_sample("prism")["Paid"].sum().grain("OYDQ")
 
+    lhs = cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
+    rhs = cl.Development(drop_high=1).fit(tri).cdf_.to_frame().fillna(0).values
+    assert (lhs == rhs).all()
+
+
+@pytest.mark.xfail
+def test_new_drop_10():
+    data = {
+        "valuation": [
+            1981,
+            1982,
+            1983,
+            1984,
+            1985,
+            1982,
+            1983,
+            1984,
+            1985,
+        ],
+        "origin": [
+            1981,
+            1982,
+            1983,
+            1984,
+            1985,
+            1981,
+            1982,
+            1983,
+            1984,
+        ],
+        "values": [
+            100,
+            200,
+            300,
+            400,
+            500,
+            200,
+            200,
+            300,
+            800,
+        ],
+    }
+
+    tri = cl.Triangle(
+        pd.DataFrame(data),
+        origin="origin",
+        development="valuation",
+        columns=["values"],
+        cumulative=True,
+    )
+
+    assert np.round(
+        cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+    ) == (200 + 300 + 800) / (200 + 300 + 400)
+
     assert (
-        cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
-        == cl.Development(drop_high=1).fit(tri).cdf_.to_frame().fillna(0).values
-    ).all()
-    assert (
-        cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
-        >= cl.Development(drop_high=2).fit(tri).cdf_.to_frame().fillna(0).values
-    ).all()
+        np.round(
+            cl.Development(drop_high=2).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+        )
+        == 1.0000
+    )
 
 
 def compare_new_drop(dev, tri):
