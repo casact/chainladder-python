@@ -274,6 +274,10 @@ def test_new_drop_8():
     except:
         assert False
 
+
+def test_new_drop_9():
+    tri = cl.load_sample("prism")["Paid"].sum().grain("OYDQ")
+
     assert (
         cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
         == cl.Development(drop_high=1).fit(tri).cdf_.to_frame().fillna(0).values
