@@ -19,7 +19,11 @@ try:
 except ImportError:
     db = None
 
-from typing import TYPE_CHECKING
+from typing import (
+    Optional,
+    TYPE_CHECKING
+)
+
 if TYPE_CHECKING:
     from pandas import DataFrame
 
@@ -31,7 +35,7 @@ class Triangle(TriangleBase):
     Parameters
     ----------
     data: DataFrame
-        A single dataframe that contains columns represeting all other
+        A single dataframe that contains columns representing all other
         arguments to the Triangle constructor
     origin: str or list
          A representation of the accident, reporting or more generally the
@@ -115,7 +119,7 @@ class Triangle(TriangleBase):
         data: DataFrame = None,
         origin: str | list = None,
         development: str | list = None,
-        columns: str | list = None,
+        columns: Optional[str | list] = None,
         index: str | list | None = None,
         origin_format: str = None,
         development_format: str = None,
@@ -196,8 +200,9 @@ class Triangle(TriangleBase):
         if cumulative is None:
             warnings.warn(
                 """
-            The cumulative property of your triangle is not set. This may result in
-            undesirable behavior. In a future release this will result in an error."""
+                The cumulative property of your triangle is not set. This may result in
+                undesirable behavior. In a future release this will result in an error.
+                """
             )
 
         self.is_cumulative = cumulative
