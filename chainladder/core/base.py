@@ -19,7 +19,6 @@ from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 from chainladder import options
-from chainladder.utils.utility_functions import num_to_nan, concat
 
 from typing import TYPE_CHECKING
 
