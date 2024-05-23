@@ -130,12 +130,18 @@ class Triangle(TriangleBase):
         *args,
         **kwargs
     ):
+
+        # If data are present, validate the dimensions.
         if data is None:
             return
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
         index, columns, origin, development = self._input_validation(
-            data, index, columns, origin, development
+            data=data,
+            index=index,
+            columns=columns,
+            origin=origin,
+            development=development
         )
 
         self.columns_label = columns
@@ -143,7 +149,7 @@ class Triangle(TriangleBase):
 
         # Handle any ultimate vectors in triangles separately
         data, ult = self._split_ult(data, index, columns, origin, development)
-        # Conform origins and developments to datetimes and determine lowest grains
+        # Conform origins and developments to datetimes and determine the lowest grains
         origin_date = self._to_datetime(data, origin, format=origin_format).rename(
             "__origin__"
         )
