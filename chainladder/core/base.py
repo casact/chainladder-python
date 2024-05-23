@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import pandas as pd
 from packaging import version
 
@@ -19,6 +21,11 @@ from chainladder.core.common import Common
 from chainladder import options
 from chainladder.utils.utility_functions import num_to_nan, concat
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
 
 class TriangleBase(
     TriangleIO, TriangleDisplay, TriangleSlicer, TriangleDunders, TrianglePandas, Common
@@ -30,10 +37,22 @@ class TriangleBase(
         return self.values.shape
 
     @staticmethod
-    def _input_validation(data, index, columns, origin, development):
+    def _input_validation(
+            data: DataFrame,
+            index: str | list,
+            columns: str | list,
+            origin: str | list,
+            development: str | list
+    ) -> tuple[
+        None | list,
+        None | list,
+        None | list,
+        None | list
+    ]:
+
         """Validate/sanitize inputs"""
 
-        def str_to_list(arg):
+        def str_to_list(arg: str | list) -> None | list:
             if arg is None:
                 return
             if type(arg) in [str, pd.Period]:
@@ -417,7 +436,7 @@ class TriangleBase(
         else:
             raise NotImplementedError()
 
-    def _interchange_dataframe(self, data):
+    def _interchange_dataframe(self, data) -> DataFrame:
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
         Requires pandas version > 1.5.2.
