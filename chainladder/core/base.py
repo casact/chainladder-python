@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 class TriangleBase(
     TriangleIO, TriangleDisplay, TriangleSlicer, TriangleDunders, TrianglePandas, Common
@@ -436,7 +436,7 @@ class TriangleBase(
         else:
             raise NotImplementedError()
 
-    def _interchange_dataframe(self, data) -> DataFrame:
+    def _interchange_dataframe(self, data: DataFrameXchg) -> DataFrame:
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
         Requires pandas version > 1.5.2.

@@ -26,6 +26,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from pandas import DataFrame
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 
 class Triangle(TriangleBase):
@@ -34,9 +35,12 @@ class Triangle(TriangleBase):
 
     Parameters
     ----------
-    data: DataFrame
+    data: DataFrame or DataFrameXchg
         A single dataframe that contains columns representing all other
-        arguments to the Triangle constructor
+        arguments to the Triangle constructor. If using pandas version > 1.5.2,
+        one may supply a DataFrame-like object (referred to as DataFrameXchg)
+        supporting the __dataframe__ protocol, which will then be converted to
+        a pandas DataFrame.
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
@@ -116,7 +120,7 @@ class Triangle(TriangleBase):
 
     def __init__(
         self,
-        data: Optional[DataFrame] = None,
+        data: Optional[DataFrame | DataFrameXchg] = None,
         origin: Optional[str | list] = None,
         development: Optional[str | list] = None,
         columns: Optional[str | list] = None,
@@ -144,11 +148,18 @@ class Triangle(TriangleBase):
             development=development
         )
 
-        self.columns_label = columns
-        self.origin_label = origin
+        # Store dimension metadata.
+        self.columns_label: list = columns
+        self.origin_label: list = origin
 
-        # Handle any ultimate vectors in triangles separately
-        data, ult = self._split_ult(data, index, columns, origin, development)
+        # Handle any ultimate vectors in triangles separately.
+        data, ult = self._split_ult(
+            data=data,
+            index=index,
+            columns=columns,
+            origin=origin,
+            development=development
+        )
         # Conform origins and developments to datetimes and determine the lowest grains
         origin_date = self._to_datetime(data, origin, format=origin_format).rename(
             "__origin__"
@@ -293,7 +304,13 @@ class Triangle(TriangleBase):
             self.valuation_date = pd.Timestamp(options.ULT_VAL)
 
     @staticmethod
-    def _split_ult(data, index, columns, origin, development):
+    def _split_ult(
+            data: DataFrame,
+            index: list,
+            columns: list,
+            origin: list,
+            development: list
+    ):
         """Deal with triangles with ultimate values"""
         ult = None
         if (
