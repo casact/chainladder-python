@@ -211,7 +211,7 @@ class Development(DevelopmentBase):
             "w_v2_",
         ]
         for item in triangles:
-            setattr(X_new, item, getattr(self, item))
+            setattr(X_new, item, getattr(self, item), None)
 
         X_new._set_slicers()
 
