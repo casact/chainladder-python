@@ -161,7 +161,11 @@ class Triangle(TriangleBase):
             development=development
         )
         # Conform origins and developments to datetimes and determine the lowest grains
-        origin_date = self._to_datetime(data, origin, format=origin_format).rename(
+        origin_date = self._to_datetime(
+            data=data,
+            fields=origin,
+            format=origin_format
+        ).rename(
             "__origin__"
         )
         self.origin_grain = self._get_grain(
@@ -310,7 +314,7 @@ class Triangle(TriangleBase):
             columns: list,
             origin: list,
             development: list
-    ):
+    ) -> tuple[DataFrame, Triangle]:
         """Deal with triangles with ultimate values"""
         ult = None
         if (
