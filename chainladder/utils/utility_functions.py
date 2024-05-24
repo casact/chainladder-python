@@ -174,7 +174,6 @@ def parallelogram_olf(
     }
     if approximation_grain not in ['M', 'D']:
         raise ValueError("approximation_grain must be " "M" " or " "D" "")
-
     date_idx = pd.date_range(
         start_date - pd.tseries.offsets.DateOffset(years=1),
         end_date,
@@ -242,8 +241,9 @@ def parallelogram_olf(
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
     combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y"
+        combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
     ).dt.is_leap_year
+    
 
     if approximation_grain == "M":
         combined["final_OLF"] = combined["OLF_non_leaps"]
