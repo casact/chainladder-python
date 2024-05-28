@@ -75,6 +75,8 @@ class TriangleDunders:
             # Broadcast to the triangle with a larger multi-index
             kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
             y.kdims = x.kdims = kdims
+            key_labels = x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
+            y.key_labels = x.key_labels = key_labels
             return x, y
         a, b = set(x.key_labels), set(y.key_labels)
         common = a.intersection(b)
