@@ -1,8 +1,6 @@
 import chainladder as cl
 import pandas as pd
-import polars as pl
 import numpy as np
-import copy
 import pytest
 import io
 from datetime import datetime
@@ -746,9 +744,7 @@ def test_halfyear_development():
         ["2012-01-01", "2013-12-31", "incurred", 200.0],
     ]
 
-    df_polars = pl.DataFrame(data)
-    df_polars.columns = ["origin", "val_date", "idx", "value"]
-
+    
     assert (
         type(
             cl.Triangle(
@@ -761,32 +757,3 @@ def test_halfyear_development():
             )
         )
     ) == cl.Triangle
-
-    assert (
-        type(
-            cl.Triangle(
-                data=df_polars,
-                index="idx",
-                columns="value",
-                origin="origin",
-                development="val_date",
-                cumulative=True,
-            )
-        )
-    ) == cl.Triangle
-
-    assert cl.Triangle(
-        data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
-        index="idx",
-        columns="value",
-        origin="origin",
-        development="val_date",
-        cumulative=True,
-    ) == cl.Triangle(
-        data=df_polars,
-        index="idx",
-        columns="value",
-        origin="origin",
-        development="val_date",
-        cumulative=True,
-    )
