@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import pandas as pd
 from packaging import version
 
@@ -17,8 +19,15 @@ from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 from chainladder import options
-from chainladder.utils.utility_functions import num_to_nan, concat
 
+from typing import (
+    Optional,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 class TriangleBase(
     TriangleIO, TriangleDisplay, TriangleSlicer, TriangleDunders, TrianglePandas, Common
@@ -30,10 +39,22 @@ class TriangleBase(
         return self.values.shape
 
     @staticmethod
-    def _input_validation(data, index, columns, origin, development):
+    def _input_validation(
+            data: DataFrame,
+            index: str | list,
+            columns: str | list,
+            origin: str | list,
+            development: str | list
+    ) -> tuple[
+        None | list,
+        None | list,
+        None | list,
+        None | list
+    ]:
+
         """Validate/sanitize inputs"""
 
-        def str_to_list(arg):
+        def str_to_list(arg: str | list) -> None | list:
             if arg is None:
                 return
             if type(arg) in [str, pd.Period]:
@@ -219,7 +240,12 @@ class TriangleBase(
         return nan_triangle
 
     @staticmethod
-    def _to_datetime(data, fields, period_end=False, format=None):
+    def _to_datetime(
+            data: DataFrame,
+            fields: list,
+            period_end: bool = False,
+            format: Optional[str] = None
+    ):
         """For tabular form, this will take a set of data
         column(s) and return a single date array.  This function heavily
         relies on pandas, but does two additional things:
@@ -417,7 +443,7 @@ class TriangleBase(
         else:
             raise NotImplementedError()
 
-    def _interchange_dataframe(self, data):
+    def _interchange_dataframe(self, data: DataFrameXchg) -> DataFrame:
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
         Requires pandas version > 1.5.2.
