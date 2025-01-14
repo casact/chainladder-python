@@ -140,6 +140,12 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
                 )
                 - 1
             )
+
+        # Don't allow lookup values beyond the final value.
+        n = min(lookup.shape[-1], lookup.shape[-2])
+        for j in range(n - 1):
+            lookup[:, :, j, :] = np.clip(lookup[:, :, j, :], 0,  n - j - 2)
+
         a = (
             xp.concatenate(
                 [
