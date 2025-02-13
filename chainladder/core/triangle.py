@@ -981,3 +981,10 @@ class Triangle(TriangleBase):
                 obj.values = obj.values[..., list(sort)]
                 obj.ddims = obj.ddims[list(sort)]
         return obj
+
+    def reindex(self, columns=None, fill_value=np.nan):
+        obj = self.copy()
+        for column in columns:
+            if column not in obj.columns:
+                obj[column] = fill_value
+        return obj

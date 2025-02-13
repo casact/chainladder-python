@@ -109,14 +109,10 @@ class TriangleDunders:
             y.vdims = x.vdims
         elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
             return x, y
-        else:
-            # Use sets for faster operations
-            x_cols = set(x.columns)
-            y_cols = set(y.columns)
-            
+        else:            
             # Find columns to add to each triangle
-            cols_to_add_to_x = y_cols - x_cols
-            cols_to_add_to_y = x_cols - y_cols
+            cols_to_add_to_x = [col for col in y.columns if col not in x.columns] 
+            cols_to_add_to_y = [col for col in x.columns if col not in y.columns] 
             
             # Create new columns only if necessary
             if cols_to_add_to_x:
@@ -128,9 +124,8 @@ class TriangleDunders:
                 y = y.reindex(columns=new_y_cols, fill_value=0)
             
             # Ensure both triangles have the same column order
-            final_cols = list(x_cols | y_cols)
-            x = x[final_cols]
-            y = y[final_cols]
+            x = x[new_x_cols]
+            y = y[new_x_cols]
         
         # Reset backends only if they've changed
         if x.array_backend != x_backend:
