@@ -147,24 +147,24 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
             lookup[:, :, j, :] = np.clip(lookup[:, :, j, :], 0,  n - j - 2)
 
         a = (
-            xp.concatenate(
-                [
-                    a[..., i, lookup[0, 0, i : i + 1, :]]
-                    for i in range(lookup.shape[-2])
-                ],
-                -2,
-            )
-            * adj_closed_clm.nan_triangle[None, None, ...]
+            xp.concatenate([
+                xp.concatenate(
+                    [a[j:j+1, ..., i, lookup[j, 0, i:i+1, :]] for i in range(lookup.shape[-2])],
+                    axis=-2
+                )
+                for j in range(a.shape[0]) # Process each batch independently
+            ], axis=0)
+        * adj_closed_clm.nan_triangle[None, None, ...]
         )
         b = (
-            xp.concatenate(
-                [
-                    b[..., i, lookup[0, 0, i : i + 1, :]]
-                    for i in range(lookup.shape[-2])
-                ],
-                -2,
-            )
-            * adj_closed_clm.nan_triangle[None, None, ...]
+            xp.concatenate([
+                xp.concatenate(
+                    [b[j:j+1, ..., i, lookup[j, 0, i:i+1, :]] for i in range(lookup.shape[-2])],
+                    axis=-2
+                )
+                for j in range(b.shape[0]) # Process each batch independently
+            ], axis=0)
+        * adj_closed_clm.nan_triangle[None, None, ...]
         )
         # Adjust paids
         adj_paid_claims = adj_closed_clm * 0 + xp.exp(adj_closed_clm.values * b) * a
