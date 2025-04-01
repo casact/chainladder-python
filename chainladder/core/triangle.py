@@ -382,7 +382,7 @@ class Triangle(TriangleBase):
     def origin(self, value):
         self._len_check(self.origin, value)
         freq = {
-            "Y": "Y" if float(".".join(pd.__version__.split(".")[:-1])) < 2.2 else "A",
+            "Y": "A" if float(".".join(pd.__version__.split(".")[:-1])) < 2.2 else "Y",
             "S": "2Q",
         }.get(self.origin_grain, self.origin_grain)
         freq = freq if freq == "M" else freq + "-" + self.origin_close
@@ -702,10 +702,12 @@ class Triangle(TriangleBase):
             "M": ["Y", "S", "Q", "M"],
             "S": ["S", "Y"],
         }
+
         if ograin_new not in valid.get(ograin_old, []) or dgrain_new not in valid.get(
             dgrain_old, []
         ):
             raise ValueError("New grain not compatible with existing grain")
+
         if (
             self.is_cumulative is None
             and dgrain_old != dgrain_new
@@ -714,26 +716,35 @@ class Triangle(TriangleBase):
             raise AttributeError(
                 "The is_cumulative attribute must be set before using grain method."
             )
+
         if valid["M"].index(ograin_new) > valid["M"].index(dgrain_new):
             raise ValueError("Origin grain must be coarser than development grain")
+
         if self.is_full and not self.is_ultimate and not self.is_val_tri:
             warnings.warn("Triangle includes extraneous development lags")
+
         obj = self.dev_to_val()
+
         if ograin_new != ograin_old:
             freq = {"Y": "Y", "S": "2Q"}.get(ograin_new, ograin_new)
+
             if trailing or (obj.origin.freqstr[-3:] != "DEC" and ograin_old != "M"):
                 origin_period_end = self.origin[-1].strftime("%b").upper()
             else:
                 origin_period_end = "DEC"
+
             indices = (
                 pd.Series(range(len(self.origin)), index=self.origin)
                 .resample("-".join([freq, origin_period_end]))
                 .indices
             )
+
             groups = pd.concat(
                 [pd.Series([k] * len(v), index=v) for k, v in indices.items()], axis=0
             ).values
+
             obj = obj.groupby(groups, axis=2).sum()
+
             obj.origin_close = origin_period_end
             d_start = pd.Period(
                 obj.valuation[0],
@@ -743,6 +754,7 @@ class Triangle(TriangleBase):
                     else dgrain_old + obj.origin.freqstr[-4:]
                 ),
             ).to_timestamp(how="s")
+
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
                     pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[
@@ -755,11 +767,13 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
+
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
                 len(obj.development) - np.arange(0, len(obj.development), step) - 1
             )
+
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
@@ -767,11 +781,15 @@ class Triangle(TriangleBase):
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
                 obj = obj.groupby(d2, axis=3).sum()
                 obj.ddims = ddims
+
             obj.development_grain = dgrain_new
+
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
+
         if inplace:
             self = obj
             return self
+
         return obj
 
     def trend(
@@ -790,15 +808,15 @@ class Triangle(TriangleBase):
         Parameters
         ----------
         trend : float
-            The annual amount of the trend. Use 1/(1+trend)-1 to de-trend.
+            The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
         axis : str (options: ['origin', 'valuation'])
             The axis on which to apply the trend
         start: date
             The start date from which trend should be calculated. If none is
-            provided, then the earliest date of the triangle is used.
+            provided then the latest date of the triangle is used.
         end: date
             The end date to which the trend should be calculated. If none is
-            provided, then the valuation date of the triangle is used.
+            provided then the earliest period of the triangle is used.
         ultimate_lag : int
             If ultimate valuations are in the triangle, optionally set the overall
             age (in months) of the ultimate to be some lag from the latest non-Ultimate
@@ -813,59 +831,35 @@ class Triangle(TriangleBase):
             raise ValueError(
                 "Only origin and valuation axes are supported for trending"
             )
-
-        # print("====== BEGIN ======")
         xp = self.get_array_module()
-
         start = pd.to_datetime(start) if type(start) is str else start
-        start = self.origin[0].to_timestamp() if start is None else start
-        # print("start", start)
-
+        start = self.valuation_date if start is None else start
         end = pd.to_datetime(end) if type(end) is str else end
-        end = self.valuation_date if end is None else end
-        # print("end", end)
-
+        end = self.origin[0].to_timestamp() if end is None else end
         if axis in ["origin", 2, -2]:
             vector = pd.DatetimeIndex(
                 np.tile(
-                    self.origin.to_timestamp(how="e").date, self.shape[-1]
+                    self.origin.to_timestamp(how="e").values, self.shape[-1]
                 ).flatten()
             )
         else:
             vector = self.valuation
-        # print("vector\n", vector)
-
-        upper, lower = (end, start) if end > start else (start, end)
-        # print("lower", lower)
-        # print("upper", upper)
-
+        lower, upper = (end, start) if end > start else (start, end)
         vector = pd.DatetimeIndex(
             np.maximum(
-                np.minimum(np.datetime64(upper), vector.values), np.datetime64(lower)
+                np.minimum(np.datetime64(lower), vector.values), np.datetime64(upper)
             )
         )
-        # print("vector\n", vector)
-        # print("vector\n", vector)
-        # vector = (
-        #     (end.year - vector.year) * 12 + (end.month - vector.month)
-        # ).values.reshape(self.shape[-2:], order="f")
-        # print("vector\n", vector)
-
-        vector = ((end - vector).days).values.reshape(self.shape[-2:], order="f")
-        # print("days to trend\n", vector)
-
+        vector = (
+            (start.year - vector.year) * 12 + (start.month - vector.month)
+        ).values.reshape(self.shape[-2:], order="f")
         if self.is_ultimate and ultimate_lag is not None and vector.shape[-1] > 1:
             vector[:, -1] = vector[:, -2] + ultimate_lag
-
         trend = (
-            xp.array((1 + trend) ** (vector / 365.25))[None, None, ...]
-            * self.nan_triangle
+            xp.array((1 + trend) ** (vector / 12))[None, None, ...] * self.nan_triangle
         )
-        # print("trend\n", trend)
-
         obj = self.copy()
         obj.values = obj.values * trend
-
         return obj
 
     def broadcast_axis(self, axis, value):
@@ -1022,4 +1016,11 @@ class Triangle(TriangleBase):
             if np.any(sort != self.development.index):
                 obj.values = obj.values[..., list(sort)]
                 obj.ddims = obj.ddims[list(sort)]
+        return obj
+
+    def reindex(self, columns=None, fill_value=np.nan):
+        obj = self.copy()
+        for column in columns:
+            if column not in obj.columns:
+                obj[column] = fill_value
         return obj

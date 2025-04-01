@@ -14,13 +14,11 @@ dependencies:
   - ipykernel
 
   - pandas
-  - polars
   - scikit-learn
   - sparse
-  - numba
   - dill
   - patsy
-  - matplotlib
+  - matplotlib-base
 
   # testing
   - lxml

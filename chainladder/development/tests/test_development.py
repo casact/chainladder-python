@@ -1,5 +1,6 @@
 import numpy as np
 import chainladder as cl
+import pytest
 
 
 def test_full_slice():
@@ -119,6 +120,13 @@ def test_drophighlow():
     )
     assert np.all(lhs == rhs)
 
+    tri = cl.load_sample("prism")["Paid"].sum().grain("OYDQ")
+    no_drop = cl.Development().fit_transform(tri).cdf_.to_frame().values
+    drop_high = cl.Development(drop_high=True).fit_transform(tri).cdf_.to_frame().values
+    drop_low = cl.Development(drop_low=True).fit_transform(tri).cdf_.to_frame().values
+    assert (drop_low >= no_drop).all()
+    assert (no_drop >= drop_high).all()
+
 
 def test_dropabovebelow():
     raa = cl.load_sample("raa")
@@ -173,91 +181,204 @@ def test_assymetric_development(atol):
     dev2 = cl.Development(n_periods=1, average="regression").fit(quarterly)
     assert xp.allclose(dev.ldf_.values, dev2.ldf_.values, atol=atol)
 
+
 def test_hilo_multiple_indices(clrd):
-    tri = clrd.groupby('LOB')['CumPaidLoss'].sum()
+    tri = clrd.groupby("LOB")["CumPaidLoss"].sum()
     assert (
-        cl.Development(n_periods=5).fit(tri).ldf_.loc['wkcomp'] == 
-        cl.Development(n_periods=5).fit(tri.loc['wkcomp']).ldf_)
+        cl.Development(n_periods=5).fit(tri).ldf_.loc["wkcomp"]
+        == cl.Development(n_periods=5).fit(tri.loc["wkcomp"]).ldf_
+    )
     assert (
-        cl.Development(drop_low=2).fit(tri).ldf_.loc['wkcomp'] == 
-        cl.Development(drop_low=2).fit(tri.loc['wkcomp']).ldf_)
+        cl.Development(drop_low=2).fit(tri).ldf_.loc["wkcomp"]
+        == cl.Development(drop_low=2).fit(tri.loc["wkcomp"]).ldf_
+    )
+
 
 def test_new_drop_1(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #n_periods
-    return compare_new_drop(cl.Development(n_periods = 4).fit(clrd),clrd)
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # n_periods
+    compare_new_drop(cl.Development(n_periods=4).fit(clrd), clrd)
+
 
 def test_new_drop_2(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #single drop and drop_valuation
-    return compare_new_drop(cl.Development(drop = ("1992",12),drop_valuation = 1993).fit(clrd),clrd)
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # single drop and drop_valuation
+    compare_new_drop(
+        cl.Development(drop=("1992", 12), drop_valuation=1993).fit(clrd), clrd
+    )
+
 
 def test_new_drop_3(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #multiple drop and drop_valuation
-    return compare_new_drop(cl.Development(drop = [("1992",12),("1996",24)],drop_valuation = [1993,1995]).fit(clrd),clrd)
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # multiple drop and drop_valuation
+    compare_new_drop(
+        cl.Development(
+            drop=[("1992", 12), ("1996", 24)], drop_valuation=[1993, 1995]
+        ).fit(clrd),
+        clrd,
+    )
+
 
 def test_new_drop_4(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #drop_hi/low without preserve
-    return compare_new_drop(cl.Development(drop_high = 1, drop_low = 1).fit(clrd),clrd)
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # drop_hi/low without preserve
+    compare_new_drop(cl.Development(drop_high=1, drop_low=1).fit(clrd), clrd)
+
 
 def test_new_drop_5(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #drop_hi/low without preserve
-    return compare_new_drop(cl.Development(drop_high = 1, drop_low = 1,preserve = 3).fit(clrd),clrd) 
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # drop_hi/low without preserve
+    compare_new_drop(
+        cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd), clrd
+    )
+
 
 def test_new_drop_5a(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #drop_hi/low without preserve
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # drop_hi/low without preserve
     assert np.array_equal(
-        cl.Development(drop_high = 1, drop_low = 1,preserve = 3)._set_weight_func(clrd.age_to_age, clrd.age_to_age).values,
-        cl.Development(drop_high = True, drop_low = [True, True, True, True, True, True, True, True, True] ,preserve = 3)._set_weight_func(clrd.age_to_age).values,
-        True
+        cl.Development(drop_high=1, drop_low=1, preserve=3)
+        ._set_weight_func(clrd.age_to_age, clrd.age_to_age)
+        .values,
+        cl.Development(
+            drop_high=True,
+            drop_low=[True, True, True, True, True, True, True, True, True],
+            preserve=3,
+        )
+        ._set_weight_func(clrd.age_to_age)
+        .values,
+        True,
     )
+
 
 def test_new_drop_6(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #drop_above/below without preserve
-    return compare_new_drop(cl.Development(drop_above = 1.01,drop_below = 0.95).fit(clrd),clrd) 
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # drop_above/below without preserve
+    compare_new_drop(
+        cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd
+    )
+
 
 def test_new_drop_7(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
-    #drop_above/below with preserve
-    return compare_new_drop(cl.Development(drop_above = 1.01,drop_below = 0.95,preserve=3).fit(clrd),clrd)
-
-def compare_new_drop(dev,tri):
-    assert (
-        np.array_equal(
-            dev._set_weight_func(tri.age_to_age, tri.age_to_age).values, 
-            dev.transform(tri).age_to_age.values*0+1,
-            True
-        )
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # drop_above/below with preserve
+    compare_new_drop(
+        cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd), clrd
     )
+
+
+def test_new_drop_8():
+    tri = cl.load_sample("prism")["Paid"].sum().grain("OYDQ")
+
+    try:
+        cl.Development(drop_high=False).fit_transform(tri)
+    except:
+        assert False
+
+
+def test_new_drop_9():
+    tri = cl.load_sample("prism")["Paid"].sum().grain("OYDQ")
+
+    lhs = cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
+    rhs = cl.Development(drop_high=1).fit(tri).cdf_.to_frame().fillna(0).values
+    assert (lhs == rhs).all()
+
+
+@pytest.mark.xfail
+def test_new_drop_10():
+    data = {
+        "valuation": [
+            1981,
+            1982,
+            1983,
+            1984,
+            1985,
+            1982,
+            1983,
+            1984,
+            1985,
+        ],
+        "origin": [
+            1981,
+            1982,
+            1983,
+            1984,
+            1985,
+            1981,
+            1982,
+            1983,
+            1984,
+        ],
+        "values": [
+            100,
+            200,
+            300,
+            400,
+            500,
+            200,
+            200,
+            300,
+            800,
+        ],
+    }
+
+    tri = cl.Triangle(
+        pd.DataFrame(data),
+        origin="origin",
+        development="valuation",
+        columns=["values"],
+        cumulative=True,
+    )
+
+    assert np.round(
+        cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+    ) == (200 + 300 + 800) / (200 + 300 + 400)
+
+    assert (
+        np.round(
+            cl.Development(drop_high=2).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+        )
+        == 1.0000
+    )
+
+
+def compare_new_drop(dev, tri):
+    assert np.array_equal(
+        dev._set_weight_func(tri.age_to_age, tri.age_to_age).values,
+        dev.transform(tri).age_to_age.values * 0 + 1,
+        True,
+    )
+
 
 def test_4d_drop(clrd):
-    clrd = clrd.groupby("LOB").sum()[["CumPaidLoss","IncurLoss"]]
+    clrd = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
     assert (
-        cl.Development(n_periods = 4).fit_transform(clrd.iloc[0,0]).link_ratio == 
-        cl.Development(n_periods = 4).fit_transform(clrd).link_ratio.iloc[0,0])
+        cl.Development(n_periods=4).fit_transform(clrd.iloc[0, 0]).link_ratio
+        == cl.Development(n_periods=4).fit_transform(clrd).link_ratio.iloc[0, 0]
+    )
+
 
 def test_pipeline(clrd):
-    clrd = clrd.groupby('LOB')[["IncurLoss","CumPaidLoss"]].sum()
+    clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     dev1 = cl.Development(
-        n_periods = 7,
-        drop_valuation = 1995,
-        drop = ("1992",12),
-        drop_above = 1.05,
-        drop_below = .95,
-        drop_high = 1,
-        drop_low = 1
+        n_periods=7,
+        drop_valuation=1995,
+        drop=("1992", 12),
+        drop_above=1.05,
+        drop_below=0.95,
+        drop_high=1,
+        drop_low=1,
     ).fit(clrd)
-    pipe = cl.Pipeline(steps=[
-        ('n_periods', cl.Development(n_periods = 7)),
-        ('drop_valuation', cl.Development(drop_valuation = 1995)),
-        ('drop', cl.Development(drop = ("1992",12))),
-        ('drop_abovebelow', cl.Development(drop_above = 1.05, drop_below = .95)),
-        ('drop_hilo', cl.Development(drop_high = 1, drop_low = 1))]
+    pipe = cl.Pipeline(
+        steps=[
+            ("n_periods", cl.Development(n_periods=7)),
+            ("drop_valuation", cl.Development(drop_valuation=1995)),
+            ("drop", cl.Development(drop=("1992", 12))),
+            ("drop_abovebelow", cl.Development(drop_above=1.05, drop_below=0.95)),
+            ("drop_hilo", cl.Development(drop_high=1, drop_low=1)),
+        ]
     )
     dev2 = pipe.fit(X=clrd)
-    assert np.array_equal(dev1.w_v2_.values,dev2.named_steps.drop_hilo.w_v2_.values,True)
+    assert np.array_equal(
+        dev1.w_v2_.values, dev2.named_steps.drop_hilo.w_v2_.values, True
+    )

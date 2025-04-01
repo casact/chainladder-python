@@ -60,71 +60,79 @@ class TriangleDunders:
         return x, y
 
     def _prep_index(self, x, y):
-        """ Preps index and column axes for arithmetic """
         if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
-            # Broadcast x to y
             x.kdims = y.kdims
             x.key_labels = y.key_labels
             return x, y
         if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
-            # Broadcast y to x
             y.kdims = x.kdims
             y.key_labels = x.key_labels
             return x, y
         if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
-            # Broadcast to the triangle with a larger multi-index
             kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
-            y.kdims = x.kdims = kdims
+            key_labels = x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
+            x.kdims = y.kdims = kdims
+            x.key_labels = y.key_labels = key_labels
             return x, y
-        a, b = set(x.key_labels), set(y.key_labels)
-        common = a.intersection(b)
-        if common in [a, b] and (a != b or (a == b and x.kdims.shape[0] != y.kdims.shape[0])):
-            # If index labels are subset of other triangle index labels
-            x = x.groupby(list(common))
-            y = y.groupby(list(common))
-            return x, y
-        if common not in [a, b]:
-            raise ValueError('Index broadcasting is ambiguous between', str(a), 'and', str(b))
-        if (
-            x.key_labels == y.key_labels
-            and x.kdims.shape[0] == y.kdims.shape[0]
-            and y.kdims.shape[0] > 1
-            and not x.kdims is y.kdims
-            and not x.index.equals(y.index)
-        ):
-            # Make sure exact but unsorted index labels works
-            x = x.sort_index()
-            try:
-                y = y.loc[x.index]
-            except:
+
+        # Use sets for faster operations
+        x_labels = set(x.key_labels)
+        y_labels = set(y.key_labels)
+        common = x_labels.intersection(y_labels)
+
+        if common == x_labels or common == y_labels:
+            if x_labels != y_labels or x.kdims.shape[0] != y.kdims.shape[0]:
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
+            elif x.kdims.shape[0] > 1 and not np.array_equal(x.kdims, y.kdims) and not x.index.equals(y.index):
+                x = x.sort_index()
+                try:
+                    y = y.loc[x.index]
+                except:
+                    x = x.groupby(list(common))
+                    y = y.groupby(list(common))
+            return x, y
+
+        if common != x_labels and common != y_labels:
+            raise ValueError('Index broadcasting is ambiguous between ' + str(x_labels) + ' and ' + str(y_labels))
+
         return x, y
 
     def _prep_columns(self, x, y):
         x_backend, y_backend = x.array_backend, y.array_backend
+        
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.vdims = y.vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
             y.vdims = x.vdims
-        elif len(y.columns) == 1 and len(x.columns) == 1 and x.columns != y.columns:
+        elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
             y.vdims = x.vdims
-        elif x.shape[1] == y.shape[1] and np.all(x.columns == y.columns):
-            pass
-        else:
-            col_union = list(x.columns) + [
-                item for item in y.columns if item not in x.columns
-            ]
-            for item in [item for item in col_union if item not in x.columns]:
-                x[item] = 0
-            x = x[col_union]
-            for item in [item for item in col_union if item not in y.columns]:
-                y[item] = 0
-            y = y[col_union]
-        x, y = (
-            x.set_backend(x_backend, inplace=True),
-            y.set_backend(y_backend, inplace=True),
-        )
+        elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
+            return x, y
+        else:            
+            # Find columns to add to each triangle
+            cols_to_add_to_x = [col for col in y.columns if col not in x.columns] 
+            cols_to_add_to_y = [col for col in x.columns if col not in y.columns] 
+            
+            # Create new columns only if necessary
+            if cols_to_add_to_x:
+                new_x_cols = list(x.columns) + list(cols_to_add_to_x)
+                x = x.reindex(columns=new_x_cols, fill_value=0)
+            
+            if cols_to_add_to_y:
+                new_y_cols = list(y.columns) + list(cols_to_add_to_y)
+                y = y.reindex(columns=new_y_cols, fill_value=0)
+            
+            # Ensure both triangles have the same column order
+            x = x[new_x_cols]
+            y = y[new_x_cols]
+        
+        # Reset backends only if they've changed
+        if x.array_backend != x_backend:
+            x = x.set_backend(x_backend, inplace=True)
+        if y.array_backend != y_backend:
+            y = y.set_backend(y_backend, inplace=True)
+        
         return x, y
 
     def _prep_origin_development(self, obj, other):

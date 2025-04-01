@@ -111,14 +111,14 @@ class TriangleBase(
             key_gr = ["__origin__", "__development__"] + [
                 data[item] for item in ([] if not index else index)
             ]
-            data_agg = data.groupby(key_gr)[columns].sum().reset_index().fillna(0)
+            data_agg = data.groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
             data = data.drop(["__origin__", "__development__"], axis=1)
         else:
             # Summarize dataframe to the level specified in axes
             key_gr = [origin_date, development_date] + [
                 data[item] for item in ([] if not index else index)
             ]
-            data_agg = data[columns].groupby(key_gr).sum().reset_index().fillna(0)
+            data_agg = data[columns].groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
             data_agg["__origin__"] = data_agg[origin_date.name]
             data_agg["__development__"] = data_agg[development_date.name]
         # origin <= development is required - truncate bad records if not true

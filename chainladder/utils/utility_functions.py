@@ -12,6 +12,7 @@ import copy
 from patsy import dmatrix
 from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union
+from io import StringIO
 
 
 def load_sample(key: str, *args, **kwargs):
@@ -110,7 +111,7 @@ def read_json(json_str, array_backend=None):
         )
     elif "metadata" in json_dict.keys():
         j = json.loads(json_str)
-        y = pd.read_json(j["data"], orient="split", date_unit="ns")
+        y = pd.read_json(StringIO(j["data"]), orient="split", date_unit="ns")
         y["origin"] = pd.to_datetime(y["origin"])
         y.columns = [c if c != "valuation" else "development" for c in y.columns]
         y["development"] = pd.to_datetime(y["development"])
@@ -174,7 +175,6 @@ def parallelogram_olf(
     }
     if approximation_grain not in ['M', 'D']:
         raise ValueError("approximation_grain must be " "M" " or " "D" "")
-
     date_idx = pd.date_range(
         start_date - pd.tseries.offsets.DateOffset(years=1),
         end_date,
@@ -186,7 +186,7 @@ def parallelogram_olf(
 
     cum_rate_changes = np.cumprod(1 + rate_changes.values)
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
-    crl = cum_rate_changes[-1]
+    crl = cum_rate_changes.iloc[-1]
 
     cum_avg_rate_non_leaps = cum_rate_changes
     cum_avg_rate_leaps = cum_rate_changes
@@ -242,8 +242,9 @@ def parallelogram_olf(
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
     combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y"
+        combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
     ).dt.is_leap_year
+    
 
     if approximation_grain == "M":
         combined["final_OLF"] = combined["OLF_non_leaps"]
