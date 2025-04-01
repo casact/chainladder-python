@@ -26,7 +26,10 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from pandas import DataFrame
+    from pandas import (
+        DataFrame,
+        Series
+    )
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 class TriangleBase(
@@ -77,7 +80,7 @@ class TriangleBase(
         """Initialize development and its grain"""
         if development:
             development_date = TriangleBase._to_datetime(
-                data, development, period_end=True, format=development_format
+                data, development, period_end=True, date_format=development_format
             )
         else:
             o_max = pd.Period(
@@ -244,9 +247,10 @@ class TriangleBase(
             data: DataFrame,
             fields: list,
             period_end: bool = False,
-            format: Optional[str] = None
-    ):
-        """For tabular form, this will take a set of data
+            date_format: Optional[str] = None
+    ) -> Series:
+        """
+        For tabular form, this will take a set of data
         column(s) and return a single date array.  This function heavily
         relies on pandas, but does two additional things:
         1. It extends the automatic inference using date_inference_list
@@ -254,32 +258,42 @@ class TriangleBase(
         """
         # Concat everything into one field
         if len(fields) > 1:
-            target_field = data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
+            target_field: Series = data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
         else:
-            target_field = data[fields].iloc[:, 0]
+            target_field: Series = data[fields].iloc[:, 0]
 
         if hasattr(target_field, "dt"):
-            target = target_field
+            # If the target field is already a non-period datetime, no conversion is needed.
+            target: Series = target_field
+            # If the target field is a period, convert to timestamp. period_end is a boolean that if true,
+            # means that the timestamp should be the end of the period.
             if type(target.iloc[0]) == pd.Period:
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
-            datetime_arg = target_field.unique()
-            format = [{"arg": datetime_arg, "format": format}] if format else []
+            datetime_arg: np.ndarray = target_field.unique()
+            date_format = [{"arg": datetime_arg, "format": date_format}] if date_format else []
 
-            date_inference_list = format + [
+            date_inference_list = date_format + [
                 {"arg": datetime_arg, "format": "%Y%m"},
                 {"arg": datetime_arg, "format": "%Y"},
                 {"arg": datetime_arg, "format": "%Y-%m-%d"},
                 {"arg": datetime_arg},
             ]
-            for item in date_inference_list:
+
+            datetime_mapping: None | dict = None
+            for date_inference in date_inference_list:
                 try:
-                    arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
+                    datetime_mapping = dict(zip(datetime_arg, pd.to_datetime(**date_inference)))
                     break
-                except:
+                except ValueError:
                     pass
 
-            target = target_field.map(arr)
+            if datetime_mapping is None:
+                raise ValueError(
+                    "Unable to infer datetime for field(s): " + str(fields) +
+                    ". Please check the underlying data or any supplied format arguments."
+                    )
+            target: Series = target_field.map(arg=datetime_mapping)
 
         return target
 

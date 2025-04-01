@@ -25,7 +25,10 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from pandas import DataFrame
+    from pandas import (
+        DataFrame,
+        Series
+    )
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 
@@ -160,11 +163,11 @@ class Triangle(TriangleBase):
             origin=origin,
             development=development
         )
-        # Conform origins and developments to datetimes and determine the lowest grains
-        origin_date = self._to_datetime(
+        # Conform origins and developments to datetimes and determine the lowest grains.
+        origin_date: Series = self._to_datetime(
             data=data,
             fields=origin,
-            format=origin_format
+            date_format=origin_format
         ).rename(
             "__origin__"
         )
