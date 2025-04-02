@@ -171,8 +171,11 @@ class Triangle(TriangleBase):
         ).rename(
             "__origin__"
         )
-        self.origin_grain = self._get_grain(
-            origin_date, trailing=trailing, kind="origin"
+
+        self.origin_grain: str = self._get_grain(
+            dates=origin_date,
+            trailing=trailing,
+            kind="origin"
         )
 
         development_date = self._set_development(

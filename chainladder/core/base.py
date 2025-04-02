@@ -304,8 +304,13 @@ class TriangleBase(
         return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
 
     @staticmethod
-    def _get_grain(dates, trailing=False, kind="origin"):
-        """Determines Grain of origin or valuation vector
+    def _get_grain(
+            dates: Series,
+            trailing: bool = False,
+            kind: str = "origin"
+    ) -> str:
+        """
+        Determines Grain of origin or valuation vector.
 
         Parameters:
 
@@ -315,8 +320,8 @@ class TriangleBase(
             Set to False if you want to treat December as period end. Set
             to True if you want it inferred from the data.
         """
-        months = dates.dt.month.unique()
-        diffs = np.diff(np.sort(months))
+        months: np.ndarray = dates.dt.month.unique()
+        diffs: np.ndarray = np.diff(np.sort(months))
         if len(dates.unique()) == 1:
             grain = (
                 "Y"
@@ -339,13 +344,13 @@ class TriangleBase(
             grain = "M"
         if trailing and grain != "M":
             if kind == "origin":
-                end = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
-                end = (
+                end: str = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
+                end: str = (
                     "DEC"
                     if end in ["MAR", "JUN", "SEP", "DEC"] and grain == "Q"
                     else end
                 )
-                end = "DEC" if end in ["JUN", "DEC"] and grain == "2Q" else end
+                end: str = "DEC" if end in ["JUN", "DEC"] and grain == "2Q" else end
             else:
                 # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
                 if (
@@ -353,14 +358,14 @@ class TriangleBase(
                     .isin(["0101", "0401", "0701", "1001"])
                     .any()
                 ):
-                    end = (
+                    end: str = (
                         (dates.min() - pd.DateOffset(days=1, years=-1))
                         .strftime("%b")
                         .upper()
                     )
                 else:
-                    end = dates.max().strftime("%b").upper()
-            grain = grain + "-" + end
+                    end: str = dates.max().strftime("%b").upper()
+            grain: str = grain + "-" + end
         return grain
 
     @staticmethod
