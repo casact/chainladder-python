@@ -179,38 +179,53 @@ class Triangle(TriangleBase):
         )
 
         development_date = self._set_development(
-            data, development, development_format, origin_date
+            data=data,
+            development=development,
+            development_format=development_format,
+            origin_date=origin_date
         )
 
         self.development_grain = self._get_grain(
-            development_date, trailing=trailing, kind="development"
+            dates=development_date,
+            trailing=trailing,
+            kind="development"
         )
 
-        origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(
+        # Ensure that origin_date values represent the beginning of the period.
+        # i.e., 1990 means the start of 1990.
+        origin_date: Series = origin_date.dt.to_period(
+            self.origin_grain
+        ).dt.to_timestamp(
             how="s"
         )
 
-        development_date = development_date.dt.to_period(
+        # Ensure that development_date values represent the end of the period.
+        # i.e., 1990 means the end of 1990 assuming annual development periods.
+        development_date: Series = development_date.dt.to_period(
             self.development_grain
         ).dt.to_timestamp(how="e")
 
-        # Aggregate dates to the origin/development grains
-        data_agg = self._aggregate_data(
-            data, origin_date, development_date, index, columns
+        # Aggregate dates to the origin/development grains.
+        data_agg: DataFrame = self._aggregate_data(
+            data=data,
+            origin_date=origin_date,
+            development_date=development_date,
+            index=index,
+            columns=columns
         )
 
-        # Fill in missing periods with zeros
-        date_axes = self._get_date_axes(
+        # Fill in missing periods with zeros.
+        date_axes: DataFrame = self._get_date_axes(
             data_agg["__origin__"],
             data_agg["__development__"],
             self.origin_grain,
             self.development_grain,
         )
 
-        # Deal with labels
+        # Deal with labels.
         if not index:
-            index = ["Total"]
-            self.index_label = index
+            index: list = ["Total"]
+            self.index_label: list = index
             data_agg[index[0]] = "Total"
 
         self.kdims, key_idx = self._set_kdims(data_agg, index)
