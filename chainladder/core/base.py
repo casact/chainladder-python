@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import pandas as pd
 from packaging import version
 
@@ -17,8 +19,18 @@ from chainladder.core.slice import TriangleSlicer
 from chainladder.core.io import TriangleIO
 from chainladder.core.common import Common
 from chainladder import options
-from chainladder.utils.utility_functions import num_to_nan, concat
 
+from typing import (
+    Optional,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from pandas import (
+        DataFrame,
+        Series
+    )
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 class TriangleBase(
     TriangleIO, TriangleDisplay, TriangleSlicer, TriangleDunders, TrianglePandas, Common
@@ -30,10 +42,22 @@ class TriangleBase(
         return self.values.shape
 
     @staticmethod
-    def _input_validation(data, index, columns, origin, development):
+    def _input_validation(
+            data: DataFrame,
+            index: str | list,
+            columns: str | list,
+            origin: str | list,
+            development: str | list
+    ) -> tuple[
+        None | list,
+        None | list,
+        None | list,
+        None | list
+    ]:
+
         """Validate/sanitize inputs"""
 
-        def str_to_list(arg):
+        def str_to_list(arg: str | list) -> None | list:
             if arg is None:
                 return
             if type(arg) in [str, pd.Period]:
@@ -56,7 +80,7 @@ class TriangleBase(
         """Initialize development and its grain"""
         if development:
             development_date = TriangleBase._to_datetime(
-                data, development, period_end=True, format=development_format
+                data, development, period_end=True, date_format=development_format
             )
         else:
             o_max = pd.Period(
@@ -219,8 +243,14 @@ class TriangleBase(
         return nan_triangle
 
     @staticmethod
-    def _to_datetime(data, fields, period_end=False, format=None):
-        """For tabular form, this will take a set of data
+    def _to_datetime(
+            data: DataFrame,
+            fields: list,
+            period_end: bool = False,
+            date_format: Optional[str] = None
+    ) -> Series:
+        """
+        For tabular form, this will take a set of data
         column(s) and return a single date array.  This function heavily
         relies on pandas, but does two additional things:
         1. It extends the automatic inference using date_inference_list
@@ -228,32 +258,42 @@ class TriangleBase(
         """
         # Concat everything into one field
         if len(fields) > 1:
-            target_field = data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
+            target_field: Series = data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
         else:
-            target_field = data[fields].iloc[:, 0]
+            target_field: Series = data[fields].iloc[:, 0]
 
         if hasattr(target_field, "dt"):
-            target = target_field
+            # If the target field is already a non-period datetime, no conversion is needed.
+            target: Series = target_field
+            # If the target field is a period, convert to timestamp. period_end is a boolean that if true,
+            # means that the timestamp should be the end of the period.
             if type(target.iloc[0]) == pd.Period:
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
-            datetime_arg = target_field.unique()
-            format = [{"arg": datetime_arg, "format": format}] if format else []
+            datetime_arg: np.ndarray = target_field.unique()
+            date_format = [{"arg": datetime_arg, "format": date_format}] if date_format else []
 
-            date_inference_list = format + [
+            date_inference_list = date_format + [
                 {"arg": datetime_arg, "format": "%Y%m"},
                 {"arg": datetime_arg, "format": "%Y"},
                 {"arg": datetime_arg, "format": "%Y-%m-%d"},
                 {"arg": datetime_arg},
             ]
-            for item in date_inference_list:
+
+            datetime_mapping: None | dict = None
+            for date_inference in date_inference_list:
                 try:
-                    arr = dict(zip(datetime_arg, pd.to_datetime(**item)))
+                    datetime_mapping = dict(zip(datetime_arg, pd.to_datetime(**date_inference)))
                     break
-                except:
+                except ValueError:
                     pass
 
-            target = target_field.map(arr)
+            if datetime_mapping is None:
+                raise ValueError(
+                    "Unable to infer datetime for field(s): " + str(fields) +
+                    ". Please check the underlying data or any supplied format arguments."
+                    )
+            target: Series = target_field.map(arg=datetime_mapping)
 
         return target
 
@@ -264,8 +304,13 @@ class TriangleBase(
         return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
 
     @staticmethod
-    def _get_grain(dates, trailing=False, kind="origin"):
-        """Determines Grain of origin or valuation vector
+    def _get_grain(
+            dates: Series,
+            trailing: bool = False,
+            kind: str = "origin"
+    ) -> str:
+        """
+        Determines Grain of origin or valuation vector.
 
         Parameters:
 
@@ -275,8 +320,8 @@ class TriangleBase(
             Set to False if you want to treat December as period end. Set
             to True if you want it inferred from the data.
         """
-        months = dates.dt.month.unique()
-        diffs = np.diff(np.sort(months))
+        months: np.ndarray = dates.dt.month.unique()
+        diffs: np.ndarray = np.diff(np.sort(months))
         if len(dates.unique()) == 1:
             grain = (
                 "Y"
@@ -299,13 +344,13 @@ class TriangleBase(
             grain = "M"
         if trailing and grain != "M":
             if kind == "origin":
-                end = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
-                end = (
+                end: str = (dates.min() - pd.DateOffset(days=1)).strftime("%b").upper()
+                end: str = (
                     "DEC"
                     if end in ["MAR", "JUN", "SEP", "DEC"] and grain == "Q"
                     else end
                 )
-                end = "DEC" if end in ["JUN", "DEC"] and grain == "2Q" else end
+                end: str = "DEC" if end in ["JUN", "DEC"] and grain == "2Q" else end
             else:
                 # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
                 if (
@@ -313,14 +358,14 @@ class TriangleBase(
                     .isin(["0101", "0401", "0701", "1001"])
                     .any()
                 ):
-                    end = (
+                    end: str = (
                         (dates.min() - pd.DateOffset(days=1, years=-1))
                         .strftime("%b")
                         .upper()
                     )
                 else:
-                    end = dates.max().strftime("%b").upper()
-            grain = grain + "-" + end
+                    end: str = dates.max().strftime("%b").upper()
+            grain: str = grain + "-" + end
         return grain
 
     @staticmethod
@@ -417,7 +462,7 @@ class TriangleBase(
         else:
             raise NotImplementedError()
 
-    def _interchange_dataframe(self, data):
+    def _interchange_dataframe(self, data: DataFrameXchg) -> DataFrame:
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
         Requires pandas version > 1.5.2.

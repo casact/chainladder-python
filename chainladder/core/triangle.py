@@ -1,10 +1,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-import copy
 import warnings
 from packaging import version
 from chainladder.core.base import TriangleBase
@@ -16,8 +16,20 @@ from chainladder import options
 
 try:
     import dask.bag as db
-except:
+except ImportError:
     db = None
+
+from typing import (
+    Optional,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from pandas import (
+        DataFrame,
+        Series
+    )
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 
 class Triangle(TriangleBase):
@@ -26,9 +38,12 @@ class Triangle(TriangleBase):
 
     Parameters
     ----------
-    data: DataFrame
-        A single dataframe that contains columns represeting all other
-        arguments to the Triangle constructor
+    data: DataFrame or DataFrameXchg
+        A single dataframe that contains columns representing all other
+        arguments to the Triangle constructor. If using pandas version > 1.5.2,
+        one may supply a DataFrame-like object (referred to as DataFrameXchg)
+        supporting the __dataframe__ protocol, which will then be converted to
+        a pandas DataFrame.
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
@@ -108,39 +123,59 @@ class Triangle(TriangleBase):
 
     def __init__(
         self,
-        data=None,
-        origin=None,
-        development=None,
-        columns=None,
-        index=None,
-        origin_format=None,
-        development_format=None,
-        cumulative=None,
+        data: Optional[DataFrame | DataFrameXchg] = None,
+        origin: Optional[str | list] = None,
+        development: Optional[str | list] = None,
+        columns: Optional[str | list] = None,
+        index: Optional[str | list] = None,
+        origin_format: Optional[str] = None,
+        development_format: Optional[str] = None,
+        cumulative: Optional[bool] = None,
         array_backend=None,
         pattern=False,
-        trailing=True,
+        trailing: bool = True,
         *args,
         **kwargs
     ):
+
+        # If data are present, validate the dimensions.
         if data is None:
             return
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
         index, columns, origin, development = self._input_validation(
-            data, index, columns, origin, development
+            data=data,
+            index=index,
+            columns=columns,
+            origin=origin,
+            development=development
         )
 
-        self.columns_label = columns
-        self.origin_label = origin
+        # Store dimension metadata.
+        self.columns_label: list = columns
+        self.origin_label: list = origin
 
-        # Handle any ultimate vectors in triangles separately
-        data, ult = self._split_ult(data, index, columns, origin, development)
-        # Conform origins and developments to datetimes and determine lowest grains
-        origin_date = self._to_datetime(data, origin, format=origin_format).rename(
+        # Handle any ultimate vectors in triangles separately.
+        data, ult = self._split_ult(
+            data=data,
+            index=index,
+            columns=columns,
+            origin=origin,
+            development=development
+        )
+        # Conform origins and developments to datetimes and determine the lowest grains.
+        origin_date: Series = self._to_datetime(
+            data=data,
+            fields=origin,
+            date_format=origin_format
+        ).rename(
             "__origin__"
         )
-        self.origin_grain = self._get_grain(
-            origin_date, trailing=trailing, kind="origin"
+
+        self.origin_grain: str = self._get_grain(
+            dates=origin_date,
+            trailing=trailing,
+            kind="origin"
         )
 
         development_date = self._set_development(
@@ -192,8 +227,9 @@ class Triangle(TriangleBase):
         if cumulative is None:
             warnings.warn(
                 """
-            The cumulative property of your triangle is not set. This may result in
-            undesirable behavior. In a future release this will result in an error."""
+                The cumulative property of your triangle is not set. This may result in
+                undesirable behavior. In a future release this will result in an error.
+                """
             )
 
         self.is_cumulative = cumulative
@@ -278,7 +314,13 @@ class Triangle(TriangleBase):
             self.valuation_date = pd.Timestamp(options.ULT_VAL)
 
     @staticmethod
-    def _split_ult(data, index, columns, origin, development):
+    def _split_ult(
+            data: DataFrame,
+            index: list,
+            columns: list,
+            origin: list,
+            development: list
+    ) -> tuple[DataFrame, Triangle]:
         """Deal with triangles with ultimate values"""
         ult = None
         if (
