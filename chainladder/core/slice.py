@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
 import numpy as np
-from sparse._slicing import normalize_index
+from sparse import _slicing
 from chainladder.utils.utility_functions import num_to_nan
 
 class _LocBase:
@@ -66,7 +66,7 @@ class _LocBase:
         self.obj.values.__setitem__(self._normalize_index(key), values)
 
     def _normalize_index(self, key):
-        key = normalize_index(key, self.obj.shape)
+        key = _slicing.normalize_index(key, self.obj.shape)
         l = []
         for n, i in enumerate(key):
             if type(i) is slice:
