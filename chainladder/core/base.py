@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         DataFrame,
         Series
     )
+    from numpy.typing import ArrayLike
     from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from pandas._libs.tslibs.timestamps import Timestamp
@@ -185,30 +186,33 @@ class TriangleBase(
             data_agg: DataFrame,
             date_axes: DataFrame
     ) -> tuple[np.ndarray, np.ndarray]:
+
         odims: np.ndarray = np.sort(date_axes["__origin__"].unique())
         orig_idx: np.ndarray = TriangleBase._set_index(col=data_agg["__origin__"], unique=odims)
+
         return odims, orig_idx
 
     @staticmethod
     def _set_ddims(
             data_agg: DataFrame,
             date_axes: DataFrame
-    ):
+    ) -> tuple[ArrayLike, np.ndarray]:
+
         if date_axes["__development__"].nunique() > 1:
-            dev_lag = TriangleBase._development_lag(
+            dev_lag: Series = TriangleBase._development_lag(
                 data_agg["__origin__"], data_agg["__development__"]
             )
 
-            ddims = np.sort(
+            ddims: ArrayLike = np.sort(
                 TriangleBase._development_lag(
                     date_axes["__origin__"], date_axes["__development__"]
                 ).unique()
             )
 
-            dev_idx = TriangleBase._set_index(dev_lag, ddims)
+            dev_idx: np.ndarray = TriangleBase._set_index(dev_lag, ddims)
 
         else:
-            ddims = pd.DatetimeIndex(
+            ddims: ArrayLike = pd.DatetimeIndex(
                 [data_agg["__development__"].max()], name="valuation"
             )
             dev_idx = np.zeros((len(data_agg), 1))
@@ -218,7 +222,7 @@ class TriangleBase(
     @staticmethod
     def _set_values(data_agg, key_idx, columns, orig_idx, dev_idx):
         val_idx = (
-            ((np.ones(len(data_agg))[None].T) * range(len(columns)))
+            (np.ones(len(data_agg))[None].T * range(len(columns)))
             .reshape((1, -1), order="F")
             .T
         )
@@ -347,9 +351,14 @@ class TriangleBase(
         return target
 
     @staticmethod
-    def _development_lag(origin, valuation):
-        """For tabular format, this will convert the origin/valuation
-        difference to a development lag"""
+    def _development_lag(
+            origin: Series,
+            valuation: Series
+    ) -> Series:
+        """
+        For tabular format, this will convert the origin/valuation
+        difference to a development lag.
+        """
         return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
 
     @staticmethod

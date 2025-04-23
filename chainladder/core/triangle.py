@@ -29,6 +29,8 @@ if TYPE_CHECKING:
         DataFrame,
         Series
     )
+    from numpy.typing import ArrayLike
+    from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 
@@ -228,16 +230,23 @@ class Triangle(TriangleBase):
             self.index_label: list = index
             data_agg[index[0]] = "Total"
 
+        self.kdims: np.ndarray
+        key_idx: np.ndarray
+        self.vdims: np.ndarray
+        self.odims: np.ndarray
+        orig_idx: np.ndarray
+        self.ddims: ArrayLike
+
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
 
-        # Set remaining triangle properties
-        val_date = data_agg["__development__"].max()
+        # Set remaining triangle properties.
+        val_date: Timestamp = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
-        self.key_labels = index
-        self.valuation_date = val_date
+        self.key_labels: list = index
+        self.valuation_date: Timestamp = val_date
 
         if cumulative is None:
             warnings.warn(
@@ -247,11 +256,11 @@ class Triangle(TriangleBase):
                 """
             )
 
-        self.is_cumulative = cumulative
+        self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
-        self.is_pattern = pattern
+        self.is_pattern: bool = pattern
 
-        split = self.origin_grain.split("-")
+        split: list[str] = self.origin_grain.split("-")
         self.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
 
         if len(split) == 1:
