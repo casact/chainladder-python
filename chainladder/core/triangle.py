@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+    from sparse import COO
 
 
 class Triangle(TriangleBase):
@@ -236,6 +237,7 @@ class Triangle(TriangleBase):
         self.odims: np.ndarray
         orig_idx: np.ndarray
         self.ddims: ArrayLike
+        dev_idx: np.ndarray
 
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
@@ -261,25 +263,25 @@ class Triangle(TriangleBase):
         self.is_pattern: bool = pattern
 
         split: list[str] = self.origin_grain.split("-")
-        self.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
 
         if len(split) == 1:
-            self.origin_close = "DEC"
+            self.origin_close: str = "DEC"
         else:
-            self.origin_close = split[1]
+            self.origin_close: str = split[1]
 
-        split = self.development_grain.split("-")
-        self.development_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
-        grain_sort = ["Y", "S", "Q", "M"]
-        self.development_grain = grain_sort[
+        split: list[str] = self.development_grain.split("-")
+        self.development_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        grain_sort: list = ["Y", "S", "Q", "M"]
+        self.development_grain: str = grain_sort[
             max(
                 grain_sort.index(self.origin_grain),
                 grain_sort.index(self.development_grain),
             )
         ]
 
-        # Coerce malformed triangles to something more predictible
-        check_origin = (
+        # Coerce malformed triangles to something more predictable.
+        check_origin: np.ndarray = (
             pd.period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
@@ -294,12 +296,22 @@ class Triangle(TriangleBase):
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date
             and not self.is_pattern
         ):
-            self.odims = check_origin
+            self.odims: np.ndarray = check_origin
 
-        # Set the Triangle values
-        coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
+        # Set the Triangle values.
+        coords: np.ndarray
+        amts: np.ndarray
 
-        self.values = num_to_nan(
+        coords, amts = self._set_values(
+            data_agg=data_agg,
+            key_idx=key_idx,
+            columns=columns,
+            orig_idx=orig_idx,
+            dev_idx=dev_idx
+        )
+
+        # Construct Sparse multidimensional array.
+        self.values: COO = num_to_nan(
             sp(
                 coords,
                 amts,
