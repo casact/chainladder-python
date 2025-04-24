@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from pandas._libs.tslibs.timestamps import Timestamp
+    from types import ModuleType
 
 class TriangleBase(
     TriangleIO,
@@ -220,21 +221,29 @@ class TriangleBase(
         return ddims, dev_idx
 
     @staticmethod
-    def _set_values(data_agg, key_idx, columns, orig_idx, dev_idx):
-        val_idx = (
+    def _set_values(
+            data_agg: DataFrame,
+            key_idx: np.ndarray,
+            columns: list,
+            orig_idx: np.ndarray,
+            dev_idx: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+        val_idx: np.ndarray = (
             (np.ones(len(data_agg))[None].T * range(len(columns)))
             .reshape((1, -1), order="F")
             .T
         )
-        coords = np.concatenate(
+        coords: np.ndarray = np.concatenate(
             tuple([np.concatenate((orig_idx, dev_idx), 1)] * len(columns)), 0
         )
-        coords = np.concatenate(
+        coords: np.ndarray = np.concatenate(
             (np.concatenate(tuple([key_idx] * len(columns)), 0), val_idx, coords), 1
         )
-        amts = np.concatenate(
+        amts: np.ndarray = np.concatenate(
             [data_agg[col].fillna(0).values for col in data_agg[columns]]
         ).astype("float64")
+
         return coords.T.astype("int32"), amts
 
     def _len_check(self, x, y):
@@ -440,17 +449,24 @@ class TriangleBase(
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def get_array_module(self, arr=None):
-        backend = (
+    def get_array_module(self, arr: ArrayLike = None) -> ModuleType:
+        backend: str = (
             self.array_backend
             if arr is None
             else arr.__class__.__module__.split(".")[0]
         )
-        modules = {"cupy": cp, "sparse": sp, "numpy": np, "dask": dp}
-        if modules.get(backend, None):
-            return modules.get(backend, None)
-        else:
-            raise ValueError("Array backend is invalid or not properly set.")
+        modules: dict = {
+            "cupy": cp,
+            "sparse": sp,
+            "numpy": np,
+            "dask": dp
+        }
+        try:
+            return modules[backend]
+        except KeyError as e:
+            raise Exception(
+                "Array backend is invalid or not properly set. Supported backends are: " + ', '.join([*modules])
+            ) from e
 
     def _auto_sparse(self):
         """Auto sparsifies at 30Mb or more and 20% density or less"""
