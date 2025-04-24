@@ -1,18 +1,32 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import pandas as pd
-import numpy as np
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
+from __future__ import annotations
+
+import copy
 import dill
 import json
 import os
-import copy
-from patsy import dmatrix
-from sklearn.base import BaseEstimator, TransformerMixin
-from typing import Iterable, Union
+import numpy as np
+import pandas as pd
+
+from chainladder.utils.sparse import sp
 from io import StringIO
+from patsy import dmatrix # noqa
+from sklearn.base import (
+    BaseEstimator,
+    TransformerMixin
+)
+
+from typing import (
+    Iterable,
+    Union,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike
+    from types import ModuleType
 
 
 def load_sample(key: str, *args, **kwargs):
@@ -351,8 +365,10 @@ def concat(
         return out
 
 
-def num_to_value(arr, value):
-    """Function that turns all zeros to nan values in an array"""
+def num_to_value(arr: ArrayLike, value):
+    """
+    Function that turns all zeros to nan values in an array.
+    """
     backend = arr.__class__.__module__.split(".")[0]
     if backend == "sparse":
         if arr.fill_value == 0 or sp.isnan(arr.fill_value):
@@ -369,11 +385,28 @@ def num_to_value(arr, value):
     return arr
 
 
-def num_to_nan(arr):
-    """Function that turns all zeros to nan values in an array"""
+def num_to_nan(arr: ArrayLike) -> ArrayLike:
+    """
+    Function that turns all zeros to nan values in an array.
+
+    Parameters
+    ----------
+    arr: ArrayLike
+        An array-like object. For example, the values used in a Triangle.
+
+    Returns
+    -------
+        The supplied array with all zeros converted to nan values. These nans
+        are specific to the Triangle backend used.
+    """
+
     from chainladder import Triangle
 
-    xp = Triangle.get_array_module(None, arr=arr)
+    # Take the nan specific to the module of the backend used. e.g., numpy, cupy, sparse, etc.
+    xp: ModuleType = Triangle.get_array_module(
+        None,
+        arr=arr
+    )
 
     return num_to_value(arr, xp.nan)
 
