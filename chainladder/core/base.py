@@ -449,7 +449,26 @@ class TriangleBase(
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def get_array_module(self, arr: ArrayLike = None) -> ModuleType:
+    def get_array_module(
+            self: TriangleBase | None,
+            arr: ArrayLike = None
+    ) -> ModuleType:
+
+        """
+        Returns the module pertaining to the backend underlying the supplied array.
+        If no array is supplied, this method will return the array_backend of the TriangleBase.
+
+        Parameters
+        ----------
+        arr: ArrayLike
+            An array-like object. For example, the values used in a Triangle.
+
+        Returns
+        -------
+            The backend module. For example, if the backend is numpy, it will return the "np" that you
+            would get if you ran the statement, "import numpy as np".
+        """
+
         backend: str = (
             self.array_backend
             if arr is None
