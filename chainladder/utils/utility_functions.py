@@ -26,6 +26,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike
+    from sparse import COO
     from types import ModuleType
 
 
@@ -365,7 +366,10 @@ def concat(
         return out
 
 
-def num_to_value(arr: ArrayLike, value):
+def num_to_value(
+        arr: ArrayLike,
+        value
+) -> ArrayLike:
     """
     Function that turns all zeros to nan values in an array.
     """
@@ -375,11 +379,17 @@ def num_to_value(arr: ArrayLike, value):
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
 
-            arr = sp(
-                coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape
+            arr: COO = sp(
+                coords=arr.coords,
+                data=arr.data,
+                fill_value=sp.nan, # noqa
+                shape=arr.shape
             )
         else:
-            arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=value)
+            arr: COO = sp(
+                num_to_nan(np.nan_to_num(arr.todense())),
+                fill_value=value
+            )
     else:
         arr[arr == 0] = value
     return arr
