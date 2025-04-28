@@ -1,10 +1,17 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import pandas as pd
 import numpy as np
 from sparse import _slicing
 from chainladder.utils.utility_functions import num_to_nan
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 class _LocBase:
     """ Base class for pandas style loc/iloc indexing """
@@ -327,7 +334,7 @@ class Iat(Ilocation):
 
 
 class VirtualColumns:
-    def __init__(self, triangle, columns=None):
+    def __init__(self, triangle: Triangle, columns=None):
         self.triangle = triangle
         self.columns = {} if not columns else columns
 

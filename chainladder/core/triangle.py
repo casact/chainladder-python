@@ -29,7 +29,10 @@ if TYPE_CHECKING:
         DataFrame,
         Series
     )
+    from numpy.typing import ArrayLike
+    from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+    from sparse import COO
 
 
 class Triangle(TriangleBase):
@@ -179,50 +182,73 @@ class Triangle(TriangleBase):
         )
 
         development_date = self._set_development(
-            data, development, development_format, origin_date
+            data=data,
+            development=development,
+            development_format=development_format,
+            origin_date=origin_date
         )
 
         self.development_grain = self._get_grain(
-            development_date, trailing=trailing, kind="development"
+            dates=development_date,
+            trailing=trailing,
+            kind="development"
         )
 
-        origin_date = origin_date.dt.to_period(self.origin_grain).dt.to_timestamp(
+        # Ensure that origin_date values represent the beginning of the period.
+        # i.e., 1990 means the start of 1990.
+        origin_date: Series = origin_date.dt.to_period(
+            self.origin_grain
+        ).dt.to_timestamp(
             how="s"
         )
 
-        development_date = development_date.dt.to_period(
+        # Ensure that development_date values represent the end of the period.
+        # i.e., 1990 means the end of 1990 assuming annual development periods.
+        development_date: Series = development_date.dt.to_period(
             self.development_grain
         ).dt.to_timestamp(how="e")
 
-        # Aggregate dates to the origin/development grains
-        data_agg = self._aggregate_data(
-            data, origin_date, development_date, index, columns
+        # Aggregate dates to the origin/development grains.
+        data_agg: DataFrame = self._aggregate_data(
+            data=data,
+            origin_date=origin_date,
+            development_date=development_date,
+            index=index,
+            columns=columns
         )
 
-        # Fill in missing periods with zeros
-        date_axes = self._get_date_axes(
+        # Fill in missing periods with zeros.
+        date_axes: DataFrame = self._get_date_axes(
             data_agg["__origin__"],
             data_agg["__development__"],
             self.origin_grain,
             self.development_grain,
         )
 
-        # Deal with labels
+        # Deal with labels.
         if not index:
-            index = ["Total"]
-            self.index_label = index
+            index: list = ["Total"]
+            self.index_label: list = index
             data_agg[index[0]] = "Total"
+
+        self.kdims: np.ndarray
+        key_idx: np.ndarray
+        self.vdims: np.ndarray
+        self.odims: np.ndarray
+        orig_idx: np.ndarray
+        self.ddims: ArrayLike
+        dev_idx: np.ndarray
 
         self.kdims, key_idx = self._set_kdims(data_agg, index)
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
 
-        # Set remaining triangle properties
-        val_date = data_agg["__development__"].max()
+        # Set remaining triangle properties.
+        val_date: Timestamp = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
-        self.key_labels = index
-        self.valuation_date = val_date
+        self.key_labels: list = index
+        self.valuation_date: Timestamp = val_date
 
         if cumulative is None:
             warnings.warn(
@@ -232,30 +258,30 @@ class Triangle(TriangleBase):
                 """
             )
 
-        self.is_cumulative = cumulative
+        self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
-        self.is_pattern = pattern
+        self.is_pattern: bool = pattern
 
-        split = self.origin_grain.split("-")
-        self.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        split: list[str] = self.origin_grain.split("-")
+        self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
 
         if len(split) == 1:
-            self.origin_close = "DEC"
+            self.origin_close: str = "DEC"
         else:
-            self.origin_close = split[1]
+            self.origin_close: str = split[1]
 
-        split = self.development_grain.split("-")
-        self.development_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
-        grain_sort = ["Y", "S", "Q", "M"]
-        self.development_grain = grain_sort[
+        split: list[str] = self.development_grain.split("-")
+        self.development_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        grain_sort: list = ["Y", "S", "Q", "M"]
+        self.development_grain: str = grain_sort[
             max(
                 grain_sort.index(self.origin_grain),
                 grain_sort.index(self.development_grain),
             )
         ]
 
-        # Coerce malformed triangles to something more predictible
-        check_origin = (
+        # Coerce malformed triangles to something more predictable.
+        check_origin: np.ndarray = (
             pd.period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
@@ -270,12 +296,22 @@ class Triangle(TriangleBase):
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date
             and not self.is_pattern
         ):
-            self.odims = check_origin
+            self.odims: np.ndarray = check_origin
 
-        # Set the Triangle values
-        coords, amts = self._set_values(data_agg, key_idx, columns, orig_idx, dev_idx)
+        # Set the Triangle values.
+        coords: np.ndarray
+        amts: np.ndarray
 
-        self.values = num_to_nan(
+        coords, amts = self._set_values(
+            data_agg=data_agg,
+            key_idx=key_idx,
+            columns=columns,
+            orig_idx=orig_idx,
+            dev_idx=dev_idx
+        )
+
+        # Construct Sparse multidimensional array.
+        self.values: COO = num_to_nan(
             sp(
                 coords,
                 amts,
