@@ -397,8 +397,11 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         if (self.drop_high is not None) | (self.drop_low is not None):
             w = w * self._drop_n_func(factor * num_to_nan(w), secondary_rank)
+
         w_tri = factor.copy()
         w_tri.values = num_to_nan(w)
+
+        print("w_tri:\n", w_tri)
         return w_tri
 
     def _assign_n_periods_weight_func(self, factor):
