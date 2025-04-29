@@ -7,18 +7,20 @@ import pandas as pd
 from packaging import version
 
 import numpy as np
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
-from chainladder.utils.dask import dp
 import warnings
 
+from chainladder import options
+
+from chainladder.core.common import Common
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
+from chainladder.core.io import TriangleIO
 from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
-from chainladder.core.io import TriangleIO
-from chainladder.core.common import Common
-from chainladder import options
+
+from chainladder.utils.cupy import cp
+from chainladder.utils.dask import dp
+from chainladder.utils.sparse import sp
 
 from typing import (
     Optional,
@@ -30,10 +32,19 @@ if TYPE_CHECKING:
         DataFrame,
         Series
     )
+    from numpy.typing import ArrayLike
+    from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+    from pandas._libs.tslibs.timestamps import Timestamp
+    from types import ModuleType
 
 class TriangleBase(
-    TriangleIO, TriangleDisplay, TriangleSlicer, TriangleDunders, TrianglePandas, Common
+    TriangleIO,
+    TriangleDisplay,
+    TriangleSlicer,
+    TriangleDunders,
+    TrianglePandas,
+    Common
 ):
     """This class handles the initialization of a triangle"""
 
@@ -44,7 +55,7 @@ class TriangleBase(
     @staticmethod
     def _input_validation(
             data: DataFrame,
-            index: str | list,
+            index: str | list | None,
             columns: str | list,
             origin: str | list,
             development: str | list
@@ -76,17 +87,26 @@ class TriangleBase(
         return index, columns, origin, development
 
     @staticmethod
-    def _set_development(data, development, development_format, origin_date):
+    def _set_development(
+            data: DataFrame,
+            development: list,
+            development_format: None | str,
+            origin_date: Series
+    ) -> Series:
         """Initialize development and its grain"""
         if development:
-            development_date = TriangleBase._to_datetime(
-                data, development, period_end=True, date_format=development_format
+            development_date: Series = TriangleBase._to_datetime(
+                data=data,
+                fields=development,
+                period_end=True,
+                date_format=development_format
             )
         else:
-            o_max = pd.Period(
-                origin_date.max(), freq=TriangleBase._get_grain(origin_date)
+            o_max: Timestamp  = pd.Period(
+                value=origin_date.max(),
+                freq=TriangleBase._get_grain(origin_date)
             ).to_timestamp(how="e")
-            development_date = pd.Series([o_max] * len(origin_date))
+            development_date: Series = pd.Series([o_max] * len(origin_date))
 
         development_date.name = "__development__"
         if (
@@ -101,14 +121,23 @@ class TriangleBase(
         return development_date
 
     @staticmethod
-    def _set_index(col, unique):
+    def _set_index(
+            col: Series,
+            unique: np.ndarray
+    ) -> np.ndarray:
         return col.map(dict(zip(unique, range(len(unique))))).values[None].T
 
     @staticmethod
-    def _aggregate_data(data, origin_date, development_date, index, columns):
+    def _aggregate_data(
+            data,
+            origin_date: Series,
+            development_date: Series,
+            index: list | None,
+            columns: list
+    ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:
-            # Dask dataframes are mutated
+            # Dask dataframes are mutated.
             data["__origin__"] = origin_date
             data["__development__"] = development_date
             key_gr = ["__origin__", "__development__"] + [
@@ -117,11 +146,11 @@ class TriangleBase(
             data_agg = data.groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
             data = data.drop(["__origin__", "__development__"], axis=1)
         else:
-            # Summarize dataframe to the level specified in axes
-            key_gr = [origin_date, development_date] + [
+            # Summarize dataframe to the level specified in axes.
+            key_gr: list = [origin_date, development_date] + [
                 data[item] for item in ([] if not index else index)
             ]
-            data_agg = data[columns].groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
+            data_agg: DataFrame = data[columns].groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
             data_agg["__origin__"] = data_agg[origin_date.name]
             data_agg["__development__"] = data_agg[development_date.name]
         # origin <= development is required - truncate bad records if not true
@@ -130,43 +159,61 @@ class TriangleBase(
             warnings.warn(
                 """
                 Observations with development before
-                origin start have been removed."""
+                origin start have been removed.
+                """
             )
             valid = valid.compute() if hasattr(valid, "compute") else valid
             data_agg = data_agg[valid]
         return data_agg
 
     @staticmethod
-    def _set_kdims(data_agg, index):
-        kdims = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
-        key_idx = (
-            data_agg[index].merge(kdims, how="left", on=index)["index"].values[None].T
+    def _set_kdims(
+            data_agg: DataFrame,
+            index: list
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+        kdims: DataFrame = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
+        key_idx: np.ndarray = (
+            data_agg[index].merge(
+                kdims,
+                how="left",
+                on=index
+            )["index"].values[None].T
         )
-        return kdims.drop("index", axis=1).values, key_idx
+        return kdims.drop(labels="index", axis=1).values, key_idx
 
     @staticmethod
-    def _set_odims(data_agg, date_axes):
-        odims = np.sort(date_axes["__origin__"].unique())
-        orig_idx = TriangleBase._set_index(data_agg["__origin__"], odims)
+    def _set_odims(
+            data_agg: DataFrame,
+            date_axes: DataFrame
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+        odims: np.ndarray = np.sort(date_axes["__origin__"].unique())
+        orig_idx: np.ndarray = TriangleBase._set_index(col=data_agg["__origin__"], unique=odims)
+
         return odims, orig_idx
 
     @staticmethod
-    def _set_ddims(data_agg, date_axes):
+    def _set_ddims(
+            data_agg: DataFrame,
+            date_axes: DataFrame
+    ) -> tuple[ArrayLike, np.ndarray]:
+
         if date_axes["__development__"].nunique() > 1:
-            dev_lag = TriangleBase._development_lag(
+            dev_lag: Series = TriangleBase._development_lag(
                 data_agg["__origin__"], data_agg["__development__"]
             )
 
-            ddims = np.sort(
+            ddims: ArrayLike = np.sort(
                 TriangleBase._development_lag(
                     date_axes["__origin__"], date_axes["__development__"]
                 ).unique()
             )
 
-            dev_idx = TriangleBase._set_index(dev_lag, ddims)
+            dev_idx: np.ndarray = TriangleBase._set_index(dev_lag, ddims)
 
         else:
-            ddims = pd.DatetimeIndex(
+            ddims: ArrayLike = pd.DatetimeIndex(
                 [data_agg["__development__"].max()], name="valuation"
             )
             dev_idx = np.zeros((len(data_agg), 1))
@@ -174,21 +221,29 @@ class TriangleBase(
         return ddims, dev_idx
 
     @staticmethod
-    def _set_values(data_agg, key_idx, columns, orig_idx, dev_idx):
-        val_idx = (
-            ((np.ones(len(data_agg))[None].T) * range(len(columns)))
+    def _set_values(
+            data_agg: DataFrame,
+            key_idx: np.ndarray,
+            columns: list,
+            orig_idx: np.ndarray,
+            dev_idx: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+        val_idx: np.ndarray = (
+            (np.ones(len(data_agg))[None].T * range(len(columns)))
             .reshape((1, -1), order="F")
             .T
         )
-        coords = np.concatenate(
+        coords: np.ndarray = np.concatenate(
             tuple([np.concatenate((orig_idx, dev_idx), 1)] * len(columns)), 0
         )
-        coords = np.concatenate(
+        coords: np.ndarray = np.concatenate(
             (np.concatenate(tuple([key_idx] * len(columns)), 0), val_idx, coords), 1
         )
-        amts = np.concatenate(
+        amts: np.ndarray = np.concatenate(
             [data_agg[col].fillna(0).values for col in data_agg[columns]]
         ).astype("float64")
+
         return coords.T.astype("int32"), amts
 
     def _len_check(self, x, y):
@@ -199,30 +254,37 @@ class TriangleBase(
                 "{} elements".format(len(y)),
             )
 
+    @staticmethod
     def _get_date_axes(
-        self, origin_date, development_date, origin_grain, development_grain
-    ):
-        """Function to find any missing origin dates or development dates that
+        origin_date: Series,
+        development_date: Series,
+        origin_grain: str,
+        development_grain: str
+    ) -> DataFrame:
+        """
+        Function to find any missing origin dates or development dates that
         would otherwise mess up the origin/development dimensions.
         """
-        o = pd.period_range(
-            start=origin_date.min(), end=origin_date.max(), freq=origin_grain
+        origin_range: DatetimeIndex = pd.period_range(
+            start=origin_date.min(),
+            end=origin_date.max(),
+            freq=origin_grain
         ).to_timestamp(how="s")
 
-        d = pd.period_range(
+        development_range: DatetimeIndex = pd.period_range(
             start=development_date.min(),
             end=development_date.max(),
             freq=development_grain,
         ).to_timestamp(how="e")
 
-        # If the development is semi-annual, we need to adjust further because of "2Q-DEC"
+        # If the development is semi-annual, we need to adjust further because of "2Q-DEC".
         if development_grain == "2Q-DEC":
             from pandas.tseries.offsets import DateOffset
 
-            d = d + DateOffset(months=-3)
+            development_range += DateOffset(months=-3)
 
         c = pd.DataFrame(
-            TriangleBase._cartesian_product(o, d),
+            TriangleBase._cartesian_product(origin_range, development_range),
             columns=["__origin__", "__development__"],
         )
 
@@ -298,9 +360,14 @@ class TriangleBase(
         return target
 
     @staticmethod
-    def _development_lag(origin, valuation):
-        """For tabular format, this will convert the origin/valuation
-        difference to a development lag"""
+    def _development_lag(
+            origin: Series,
+            valuation: Series
+    ) -> Series:
+        """
+        For tabular format, this will convert the origin/valuation
+        difference to a development lag.
+        """
         return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
 
     @staticmethod
@@ -370,8 +437,10 @@ class TriangleBase(
 
     @staticmethod
     def _cartesian_product(*arrays):
-        """A fast implementation of cartesian product, used for filling in gaps
-        in triangles (if any)"""
+        """
+        A fast implementation of cartesian product, used for filling in gaps
+        in triangles (if any)
+        """
         arr = np.empty(
             [len(a) for a in arrays] + [len(arrays)], dtype=np.result_type(*arrays)
         )
@@ -380,17 +449,43 @@ class TriangleBase(
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def get_array_module(self, arr=None):
-        backend = (
+    def get_array_module(
+            self: TriangleBase | None,
+            arr: ArrayLike = None
+    ) -> ModuleType:
+
+        """
+        Returns the module pertaining to the backend underlying the supplied array.
+        If no array is supplied, this method will return the array_backend of the TriangleBase.
+
+        Parameters
+        ----------
+        arr: ArrayLike
+            An array-like object. For example, the values used in a Triangle.
+
+        Returns
+        -------
+            The backend module. For example, if the backend is numpy, it will return the "np" that you
+            would get if you ran the statement, "import numpy as np".
+        """
+
+        backend: str = (
             self.array_backend
             if arr is None
             else arr.__class__.__module__.split(".")[0]
         )
-        modules = {"cupy": cp, "sparse": sp, "numpy": np, "dask": dp}
-        if modules.get(backend, None):
-            return modules.get(backend, None)
-        else:
-            raise ValueError("Array backend is invalid or not properly set.")
+        modules: dict = {
+            "cupy": cp,
+            "sparse": sp,
+            "numpy": np,
+            "dask": dp
+        }
+        try:
+            return modules[backend]
+        except KeyError as e:
+            raise Exception(
+                "Array backend is invalid or not properly set. Supported backends are: " + ', '.join([*modules])
+            ) from e
 
     def _auto_sparse(self):
         """Auto sparsifies at 30Mb or more and 20% density or less"""
