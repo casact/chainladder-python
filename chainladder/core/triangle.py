@@ -19,16 +19,10 @@ try:
 except ImportError:
     db = None
 
-from typing import (
-    Optional,
-    TYPE_CHECKING
-)
+from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pandas import (
-        DataFrame,
-        Series
-    )
+    from pandas import DataFrame, Series
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
 
 
@@ -135,7 +129,7 @@ class Triangle(TriangleBase):
         pattern=False,
         trailing: bool = True,
         *args,
-        **kwargs
+        **kwargs,
     ):
 
         # If data are present, validate the dimensions.
@@ -148,7 +142,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
             origin=origin,
-            development=development
+            development=development,
         )
 
         # Store dimension metadata.
@@ -161,21 +155,15 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
             origin=origin,
-            development=development
+            development=development,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
         origin_date: Series = self._to_datetime(
-            data=data,
-            fields=origin,
-            date_format=origin_format
-        ).rename(
-            "__origin__"
-        )
+            data=data, fields=origin, date_format=origin_format
+        ).rename("__origin__")
 
         self.origin_grain: str = self._get_grain(
-            dates=origin_date,
-            trailing=trailing,
-            kind="origin"
+            dates=origin_date, trailing=trailing, kind="origin"
         )
 
         development_date = self._set_development(
@@ -315,11 +303,7 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(
-            data: DataFrame,
-            index: list,
-            columns: list,
-            origin: list,
-            development: list
+        data: DataFrame, index: list, columns: list, origin: list, development: list
     ) -> tuple[DataFrame, Triangle]:
         """Deal with triangles with ultimate values"""
         ult = None
@@ -329,6 +313,7 @@ class Triangle(TriangleBase):
             and data[development[0]].dtype == "<M8[ns]"
         ):
             u = data[data[development[0]] == options.ULT_VAL].copy()
+            print("332")
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
                     u,
@@ -339,6 +324,7 @@ class Triangle(TriangleBase):
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[development[0]] != options.ULT_VAL]
+            print("343")
         return data, ult
 
     @property
@@ -805,7 +791,7 @@ class Triangle(TriangleBase):
         start=None,
         end=None,
         ultimate_lag=None,
-        **kwargs
+        **kwargs,
     ):
         """Allows for the trending of a Triangle object along either a valuation
         or origin axis.  This method trends using days and assumes a years is
