@@ -313,49 +313,20 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def _drop_valuation(self, X):
         xp = X.get_array_module()
 
-        # print("=== X ===\n", X)
         if type(self.drop_valuation) is not list:
             drop_valuation = [self.drop_valuation]
         else:
             drop_valuation = self.drop_valuation
 
-        # print("drop_valuation", drop_valuation)
         drop_valuation_vector = pd.PeriodIndex(
             drop_valuation, freq=X.development_grain
         ).to_timestamp(how="e")
 
-        # print("drop_valuation_vector", drop_valuation_vector)
+        tri_w = X * 0 + 1
+        tri_w = tri_w[~tri_w.valuation.isin(drop_valuation_vector)]
+        tri_w = xp.nan_to_num(tri_w.values[0, 0])
 
-        arr = 1 - xp.nan_to_num(
-            X[X.valuation.isin(drop_valuation_vector)].values[0, 0] * 0 + 1
-        )
-
-        # print("arr\n", arr)
-        # print("X\n", X)
-        new_arr = X * 0 + 1
-        new_arr = new_arr[~new_arr.valuation.isin(drop_valuation_vector)]
-
-        # print("new_arr\n", new_arr)
-        new_arr = xp.nan_to_num(new_arr.values[0, 0])
-        print("new_arr\n", new_arr)
-
-        ofill = X.shape[-2] - arr.shape[-2]
-        dfill = X.shape[-1] - arr.shape[-1]
-
-        if ofill > 0:
-            arr = xp.concatenate(
-                (arr, xp.repeat(xp.ones(arr.shape[-1])[None], ofill, 0)), 0
-            )
-        if dfill > 0:
-            arr = xp.concatenate(
-                (arr, xp.repeat(xp.ones(arr.shape[-2])[..., None], dfill, -1)), -1
-            )
-
-        # print("arr after fill\n", arr)
-
-        # print("result\n", arr[:, :-1])
-        # return arr[:, :-1]
-        return new_arr[:, :-1]
+        return tri_w[:, :-1]
 
     def _drop(self, X):
         xp = X.get_array_module()
@@ -401,7 +372,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         w_tri = factor.copy()
         w_tri.values = num_to_nan(w)
 
-        print("w_tri:\n", w_tri)
         return w_tri
 
     def _assign_n_periods_weight_func(self, factor):

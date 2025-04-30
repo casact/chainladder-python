@@ -156,6 +156,7 @@ class Development(DevelopmentBase):
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
         w = num_to_nan(self.w_ / (x ** (exponent)))
+
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
 
         if self.n_periods != 1:
@@ -175,9 +176,11 @@ class Development(DevelopmentBase):
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
+
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
+
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
