@@ -174,6 +174,42 @@ def test_dropabovebelow():
     assert np.all(lhs == rhs)
 
 
+def test_drop_valuation():
+    raa = cl.load_sample("raa")
+    assert (
+        cl.Development(drop_valuation="1981-12-31").fit_transform(raa).cdf_
+        != cl.Development(drop_valuation="1982-12-31").fit_transform(raa).cdf_
+    )
+    assert (
+        cl.Development(drop_valuation="1982-12-31").fit_transform(raa).cdf_
+        != cl.Development(drop_valuation="1983-12-31").fit_transform(raa).cdf_
+    )
+    assert (
+        cl.Development(drop_valuation="1981-12-31").fit_transform(raa).cdf_
+        != cl.Development(drop_valuation="1983-12-31").fit_transform(raa).cdf_
+    )
+
+    triangle = cl.load_sample("quarterly")
+    incurred = triangle["incurred"]
+    incurred[incurred.valuation < "2006-1-1"]
+    assert (
+        cl.Development().fit_transform(incurred).cdf_
+        != cl.Development(drop_valuation="1995-03-31").fit_transform(incurred).cdf_
+    )
+    assert (
+        cl.Development().fit_transform(incurred).cdf_
+        != cl.Development(drop_valuation="1995-06-30").fit_transform(incurred).cdf_
+    )
+    assert (
+        cl.Development(drop_valuation="1995-03-31").fit_transform(incurred).cdf_
+        != cl.Development(drop_valuation="1995-06-30").fit_transform(incurred).cdf_
+    )
+    assert (
+        cl.Development(drop_valuation="1995-06-30").fit_transform(incurred).cdf_
+        != cl.Development(drop_valuation="1995-09-30").fit_transform(incurred).cdf_
+    )
+
+
 def test_assymetric_development(atol):
     quarterly = cl.load_sample("quarterly")["paid"]
     xp = np if quarterly.array_backend == "sparse" else quarterly.get_array_module()
@@ -254,9 +290,7 @@ def test_new_drop_5a(clrd):
 def test_new_drop_6(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below without preserve
-    compare_new_drop(
-        cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd
-    )
+    compare_new_drop(cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd)
 
 
 def test_new_drop_7(clrd):
