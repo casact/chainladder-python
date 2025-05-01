@@ -189,24 +189,34 @@ def test_drop_valuation():
         != cl.Development(drop_valuation="1983-12-31").fit_transform(raa).cdf_
     )
 
-    triangle = cl.load_sample("quarterly")
-    incurred = triangle["incurred"]
-    incurred[incurred.valuation < "2006-1-1"]
+    quarterly = cl.load_sample("quarterly")
     assert (
-        cl.Development().fit_transform(incurred).cdf_
-        != cl.Development(drop_valuation="1995-03-31").fit_transform(incurred).cdf_
+        cl.Development().fit_transform(quarterly["incurred"]).cdf_
+        != cl.Development(drop_valuation="1995-03-31")
+        .fit_transform(quarterly["incurred"])
+        .cdf_
     )
     assert (
-        cl.Development().fit_transform(incurred).cdf_
-        != cl.Development(drop_valuation="1995-06-30").fit_transform(incurred).cdf_
+        cl.Development().fit_transform(quarterly["incurred"]).cdf_
+        != cl.Development(drop_valuation="1995-06-30")
+        .fit_transform(quarterly["incurred"])
+        .cdf_
     )
     assert (
-        cl.Development(drop_valuation="1995-03-31").fit_transform(incurred).cdf_
-        != cl.Development(drop_valuation="1995-06-30").fit_transform(incurred).cdf_
+        cl.Development(drop_valuation="1995-03-31")
+        .fit_transform(quarterly["incurred"])
+        .cdf_
+        != cl.Development(drop_valuation="1995-06-30")
+        .fit_transform(quarterly["incurred"])
+        .cdf_
     )
     assert (
-        cl.Development(drop_valuation="1995-06-30").fit_transform(incurred).cdf_
-        != cl.Development(drop_valuation="1995-09-30").fit_transform(incurred).cdf_
+        cl.Development(drop_valuation="1995-06-30")
+        .fit_transform(quarterly["incurred"])
+        .cdf_
+        != cl.Development(drop_valuation="1995-09-30")
+        .fit_transform(quarterly["incurred"])
+        .cdf_
     )
 
 
