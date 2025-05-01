@@ -17,3 +17,4 @@ dependencies:
   - pytest
   - ipython
   - jinja2
+  - setuptools
