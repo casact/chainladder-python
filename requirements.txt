@@ -5,4 +5,3 @@ sparse>=0.9
 matplotlib
 dill
 patsy
-setuptools
