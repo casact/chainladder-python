@@ -86,7 +86,6 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _drop_adjustment(self, X, link_ratio):
         weight = X.nan_triangle[:, :-1]
-
         if self.drop is not None:
             weight = weight * self._drop(X)
 
@@ -237,6 +236,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     # for drop_above and drop_below
     def _drop_x(self, drop_above, drop_below, X, link_ratio, preserve):
+
         # this is safe because each triangle by index and column has
         link_ratios_len = link_ratio.shape[3]
 
@@ -312,23 +312,21 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
     def _drop_valuation(self, X):
         xp = X.get_array_module()
+
         if type(self.drop_valuation) is not list:
             drop_valuation = [self.drop_valuation]
         else:
             drop_valuation = self.drop_valuation
-        v = pd.PeriodIndex(drop_valuation, freq=X.origin_grain).to_timestamp(how="e")
-        arr = 1 - xp.nan_to_num(X[X.valuation.isin(v)].values[0, 0] * 0 + 1)
-        ofill = X.shape[-2] - arr.shape[-2]
-        dfill = X.shape[-1] - arr.shape[-1]
-        if ofill > 0:
-            arr = xp.concatenate(
-                (arr, xp.repeat(xp.ones(arr.shape[-1])[None], ofill, 0)), 0
-            )
-        if dfill > 0:
-            arr = xp.concatenate(
-                (arr, xp.repeat(xp.ones(arr.shape[-2])[..., None], dfill, -1)), -1
-            )
-        return arr[:, :-1]
+
+        drop_valuation_vector = pd.PeriodIndex(
+            drop_valuation, freq=X.development_grain
+        ).to_timestamp(how="e")
+
+        tri_w = X * 0 + 1
+        tri_w = tri_w[~tri_w.valuation.isin(drop_valuation_vector)]
+        tri_w = xp.nan_to_num(tri_w.values[0, 0])
+
+        return tri_w[:, :-1]
 
     def _drop(self, X):
         xp = X.get_array_module()
@@ -370,8 +368,10 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         if (self.drop_high is not None) | (self.drop_low is not None):
             w = w * self._drop_n_func(factor * num_to_nan(w), secondary_rank)
+
         w_tri = factor.copy()
         w_tri.values = num_to_nan(w)
+
         return w_tri
 
     def _assign_n_periods_weight_func(self, factor):
@@ -436,6 +436,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         return xp.nan_to_num(arr)[None, None]
 
     def _drop_valuation_func(self, factor):
+
         # get the appropriate backend for nan_to_num
         xp = factor.get_array_module()
         # turn single drop_valuation parameter to list if necessary
