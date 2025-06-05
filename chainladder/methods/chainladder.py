@@ -6,7 +6,7 @@ from chainladder.methods import MethodBase
 
 class Chainladder(MethodBase):
     """
-    The basic determinsitic chainladder method.
+    The basic deterministic chainladder method.
 
     Parameters
     ----------
