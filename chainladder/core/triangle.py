@@ -128,7 +128,7 @@ class Triangle(TriangleBase):
         origin_format: Optional[str] = None,
         development_format: Optional[str] = None,
         cumulative: Optional[bool] = None,
-        array_backend=None,
+        array_backend: str = None,
         pattern=False,
         trailing: bool = True,
         *args,
@@ -310,12 +310,15 @@ class Triangle(TriangleBase):
                 ),
             )
         )
-        # Deal with array backend
+        # Deal with array backend.
         self.array_backend = "sparse"
         if array_backend is None:
-            array_backend = options.ARRAY_BACKEND
+            array_backend: str = options.ARRAY_BACKEND
         if not options.AUTO_SPARSE or array_backend == "cupy":
-            self.set_backend(array_backend, inplace=True)
+            self.set_backend(
+                backend=array_backend,
+                inplace=True
+            )
         else:
             self = self._auto_sparse()
         self._set_slicers()
@@ -337,7 +340,7 @@ class Triangle(TriangleBase):
     def _split_ult(
         data: DataFrame, index: list, columns: list, origin: list, development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Deal with triangles with ultimate values"""
+        """Deal with triangles with ultimate values."""
         ult = None
         if (
             development
@@ -360,11 +363,11 @@ class Triangle(TriangleBase):
         return data, ult
 
     @property
-    def index(self):
+    def index(self) -> DataFrame:
         return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
     @index.setter
-    def index(self, value):
+    def index(self, value) -> None:
         self._len_check(self.index, value)
         if type(value) is pd.DataFrame:
             self.kdims = value.values
