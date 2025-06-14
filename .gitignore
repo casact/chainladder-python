@@ -125,3 +125,6 @@ coverage_html_report
 
 # Random python test workbooks
 Untitled.ipynb
+
+# IntelliJ .idea folder
+.idea

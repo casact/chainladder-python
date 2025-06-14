@@ -487,8 +487,10 @@ class TriangleBase(
                 "Array backend is invalid or not properly set. Supported backends are: " + ', '.join([*modules])
             ) from e
 
-    def _auto_sparse(self):
-        """Auto sparsifies at 30Mb or more and 20% density or less"""
+    def _auto_sparse(self) -> None:
+        """
+        Auto sparsifies at 30Mb or more and 20% density or less.
+        """
         if not options.AUTO_SPARSE:
             return self
         n = np.prod(list(self.shape) + [8 / 1e6])

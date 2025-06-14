@@ -25,39 +25,78 @@ from typing import (
 )
 
 if TYPE_CHECKING:
+    from chainladder import Triangle
     from numpy.typing import ArrayLike
     from sparse import COO
     from types import ModuleType
+    from typing import AnyStr
 
 
-def load_sample(key: str, *args, **kwargs):
-    """Function to load datasets included in the chainladder package.
+def load_sample(
+        key: str,
+        *args,
+        **kwargs
+) -> Triangle:
+    """Function to load datasets included in the chainladder package. These consist of CSV
+    files located in the repository directory chainladder/utils/data.
 
     Parameters
     ----------
     key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
+        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc. The name should match the
+        file name, without extension, of one of the files in the sample data folder.
 
     Returns
     -------
-        pandas.DataFrame of the loaded dataset.
+        chainladder.Triangle of the loaded dataset.
 
     """
     from chainladder import Triangle
 
-    path = os.path.dirname(os.path.abspath(__file__))
-    origin = "origin"
-    development = "development"
-    columns = ["values"]
-    index = None
-    cumulative = True
-    if key.lower() in ["mcl", "usaa", "quarterly", "auto", "usauto", "tail_sample"]:
-        columns = ["incurred", "paid"]
+
+    # Set base path to be the parent directory of this file, e.g., the utils folder.
+    utils_path: AnyStr = os.path.dirname(os.path.abspath(__file__))
+
+    # Validate that the file indicated by the key argument exists.
+    dataset_path: str = os.path.join(utils_path, "data", key.lower() + ".csv")
+
+    if not os.path.exists(dataset_path):
+        raise ValueError(
+            """
+            Invalid key supplied. The key should match the name, without extension, of one of the file names
+            in the sample data set folder. Please refer to the documentation page on sample data sets to see 
+            what data are available.
+            """
+         )
+
+    # Set initial values for arguments to Triangle __init__. These may be overridden by
+    # values specific to the data set.
+    origin: str = "origin"
+    development: str = "development"
+    columns: list = ["values"]
+    index: list | None = None
+    cumulative: bool = True
+
+    if key.lower() in [
+        "mcl",
+        "usaa",
+        "quarterly",
+        "auto",
+        "usauto",
+        "tail_sample"
+    ]:
+        columns: list = [
+            "incurred",
+            "paid"
+        ]
     if key.lower() == "clrd":
-        origin = "AccidentYear"
-        development = "DevelopmentYear"
-        index = ["GRNAME", "LOB"]
-        columns = [
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        index: list = [
+            "GRNAME",
+            "LOB"
+        ]
+        columns: list = [
             "IncurLoss",
             "CumPaidLoss",
             "BulkLoss",
@@ -66,28 +105,61 @@ def load_sample(key: str, *args, **kwargs):
             "EarnedPremNet",
         ]
     if key.lower() == "berqsherm":
-        origin = "AccidentYear"
-        development = "DevelopmentYear"
-        index = ["LOB"]
-        columns = ["Incurred", "Paid", "Reported", "Closed"]
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        index: list = ["LOB"]
+        columns: list = [
+            "Incurred",
+            "Paid",
+            "Reported",
+            "Closed"
+        ]
     if key.lower() == "xyz":
-        origin = "AccidentYear"
-        development = "DevelopmentYear"
-        columns = ["Incurred", "Paid", "Reported", "Closed", "Premium"]
-    if key.lower() in ["liab", "auto"]:
-        index = ["lob"]
-    if key.lower() in ["cc_sample", "ia_sample"]:
-        columns = ["loss", "exposure"]
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        columns: list = [
+            "Incurred",
+            "Paid",
+            "Reported",
+            "Closed",
+            "Premium"
+        ]
+    if key.lower() in [
+        "liab",
+        "auto"
+    ]:
+        index: list = ["lob"]
+    if key.lower() in [
+        "cc_sample",
+        "ia_sample"
+    ]:
+        columns: list = [
+            "loss",
+            "exposure"
+        ]
     if key.lower() in ["prism"]:
-        columns = ["reportedCount", "closedPaidCount", "Paid", "Incurred"]
-        index = ["ClaimNo", "Line", "Type", "ClaimLiability", "Limit", "Deductible"]
-        origin = "AccidentDate"
-        development = "PaymentDate"
-        cumulative = False
-    df = pd.read_csv(os.path.join(path, "data", key.lower() + ".csv"))
+        columns: list = [
+            "reportedCount",
+            "closedPaidCount",
+            "Paid",
+            "Incurred"
+        ]
+        index: list = [
+            "ClaimNo",
+            "Line",
+            "Type",
+            "ClaimLiability",
+            "Limit",
+            "Deductible"
+        ]
+        origin: str = "AccidentDate"
+        development: str = "PaymentDate"
+        cumulative: bool = False
+
+    df = pd.read_csv(filepath_or_buffer=dataset_path)
 
     return Triangle(
-        df,
+        data=df,
         origin=origin,
         development=development,
         index=index,
