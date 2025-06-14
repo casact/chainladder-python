@@ -1,16 +1,23 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import pandas as pd
+from __future__ import annotations
+
 import numpy as np
-import warnings
-from sklearn.utils import deprecated
+import pandas as pd
+
 from chainladder.utils.utility_functions import num_to_nan
+from typing import TYPE_CHECKING
+
 
 try:
     import dask.bag as db
-except:
+except ImportError:
     db = None
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Type
 
 
 class TriangleGroupBy:
@@ -344,8 +351,14 @@ class TrianglePandas:
         return round(self, decimals)
 
 
-def add_triangle_agg_func(cls, k, v):
-    """Aggregate Overrides in Triangle"""
+def add_triangle_agg_func(
+        cls: Type[TrianglePandas],
+        k: str,
+        v: str
+):
+    """
+    Aggregate Overrides in Triangle
+    """
 
     def agg_func(self, axis=None, *args, **kwargs):
         keepdims = kwargs.get("keepdims", None)
@@ -384,7 +397,7 @@ def add_triangle_agg_func(cls, k, v):
     set_method(cls, agg_func, k)
 
 
-def add_groupby_agg_func(cls, k, v):
+def add_groupby_agg_func(cls, k: str, v: str):
     """Aggregate Overrides in GroupBy"""
 
     def agg_func(self, *args, **kwargs):
@@ -443,7 +456,11 @@ def add_groupby_agg_func(cls, k, v):
             obj = obj._auto_sparse()
         return obj
 
-    set_method(cls, agg_func, k)
+    set_method(
+        cls=cls,
+        func=agg_func,
+        k=k
+    )
 
 
 def add_df_passthru(cls, k):
@@ -455,8 +472,31 @@ def add_df_passthru(cls, k):
     set_method(cls, df_passthru, k)
 
 
-def set_method(cls, func, k):
-    """Assigns methods to a class"""
+def set_method(
+        cls: Type[TrianglePandas | TriangleGroupBy],
+        func: Callable,
+        k: str
+) -> None:
+    """
+    Assigns methods to a class.
+
+    Parameters
+    ----------
+
+    cls: Type[TrianglePandas | TriangleGroupBy]
+        Class to be modified.
+
+    func: Callable
+        Method to be added to the class supplied to parameter cls.
+
+    k: str
+        Name of the method to be added to the class supplied to parameter cls.
+
+    Returns
+    -------
+
+    None
+    """
     func.__doc__ = "Refer to pandas for ``{}`` functionality.".format(k)
     func.__name__ = k
     setattr(cls, func.__name__, func)
