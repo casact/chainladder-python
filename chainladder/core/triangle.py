@@ -456,7 +456,16 @@ class Triangle(TriangleBase):
         return type(self.ddims) == pd.DatetimeIndex
 
     @property
-    def is_full(self):
+    def is_full(self) -> bool:
+        """
+        Property that in indicates whether lower half of Triangle has been filled in.
+
+        Returns
+        -------
+
+        bool
+        """
+
         return self.nan_triangle.sum().sum() == np.prod(self.shape[-2:])
 
     @property
@@ -464,13 +473,36 @@ class Triangle(TriangleBase):
         return sum(self.valuation >= options.ULT_VAL[:4]) > 0
 
     @property
-    def latest_diagonal(self):
-        return self[self.valuation == self.valuation_date].sum("development")
+    def latest_diagonal(self) -> Triangle:
+        """
+        The latest diagonal of the triangle.
+
+        Returns
+        -------
+
+        Triangle
+        """
+        test = self[self.valuation == self.valuation_date]
+        test2 = test.sum("development")
+        return test2
+        # return self[self.valuation == self.valuation_date].sum("development")
 
     @property
-    def link_ratio(self):
+    def link_ratio(self) -> Triangle:
+        """
+        Displays age-to-age ratios for the triangle. If the calling Triangle object already has the
+        self.is_pattern set to true (i.e., it is already a set of link ratios or development patterns),
+        this property simply returns itself.
+
+        Returns
+        -------
+
+        Triangle object in link ratio form.
+        """
+
+        # Case where triangle is not a set of link ratios or development patterns.
         if not self.is_pattern:
-            obj = (1 / self.iloc[..., :-1]) * self.iloc[..., 1:].values
+            obj: Triangle = (1 / self.iloc[..., :-1]) * self.iloc[..., 1:].values
             if not obj.is_full:
                 obj = obj[obj.valuation < obj.valuation_date]
             if hasattr(obj, "w_"):
@@ -480,6 +512,7 @@ class Triangle(TriangleBase):
             obj.is_cumulative = False
             obj.values = num_to_nan(obj.values)
             return obj
+        # Case where triangle already is a set of link ratios or development patterns.
         else:
             return self
 
