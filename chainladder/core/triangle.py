@@ -476,16 +476,8 @@ class Triangle(TriangleBase):
     def latest_diagonal(self) -> Triangle:
         """
         The latest diagonal of the triangle.
-
-        Returns
-        -------
-
-        Triangle
         """
-        test = self[self.valuation == self.valuation_date]
-        test2 = test.sum("development")
-        return test2
-        # return self[self.valuation == self.valuation_date].sum("development")
+        return self[self.valuation == self.valuation_date].sum(axis="development")
 
     @property
     def link_ratio(self) -> Triangle:
