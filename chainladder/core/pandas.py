@@ -187,12 +187,12 @@ class TrianglePandas:
             **{"index": 0, "columns": 1, "origin": 2, "development": 3},
         }
 
-        if axis is None:
-            return 0
-        else:
-            try:
-                return ax[axis]
-            except KeyError:
+        try:
+            return ax[axis]
+        except KeyError:
+            if axis is None:
+                return 0
+            else:
                 raise ValueError(
                     "Invalid axis specified. Please specify the correct string or "
                     "integer representation of the desired axis."
