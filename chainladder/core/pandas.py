@@ -164,13 +164,13 @@ class TrianglePandas:
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(axis: str | int) -> int:
+    def _get_axis(axis: str | int| None) -> int:
         """
         Returns the integer representation of the requested axis.
 
         Parameters
         ----------
-        axis: str | int
+        axis: str | int | None
             String or integer representation of the requested axis. If
             supplied as a string, returns the integer representation. If
             supplied as an integer, returns the same integer.
@@ -180,15 +180,26 @@ class TrianglePandas:
         The integer representation of the requested axis
 
         """
+
         ax = {
             **{0: 0, 1: 1, 2: 2, 3: 3},
             **{-1: 3, -2: 2, -3: 1, -4: 0},
             **{"index": 0, "columns": 1, "origin": 2, "development": 3},
         }
-        return ax.get(axis, 0)
+
+        if axis is None:
+            return 0
+        else:
+            try:
+                return ax[axis]
+            except KeyError:
+                raise ValueError(
+                    "Invalid axis specified. Please specify the correct string or "
+                    "integer representation of the desired axis."
+                )
 
     def dropna(self):
-        """Method that removes orgin/development vectors from edge of a
+        """Method that removes origin/development vectors from edge of a
         triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
