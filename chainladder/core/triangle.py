@@ -128,7 +128,7 @@ class Triangle(TriangleBase):
         origin_format: Optional[str] = None,
         development_format: Optional[str] = None,
         cumulative: Optional[bool] = None,
-        array_backend=None,
+        array_backend: str = None,
         pattern=False,
         trailing: bool = True,
         *args,
@@ -310,12 +310,15 @@ class Triangle(TriangleBase):
                 ),
             )
         )
-        # Deal with array backend
+        # Deal with array backend.
         self.array_backend = "sparse"
         if array_backend is None:
-            array_backend = options.ARRAY_BACKEND
+            array_backend: str = options.ARRAY_BACKEND
         if not options.AUTO_SPARSE or array_backend == "cupy":
-            self.set_backend(array_backend, inplace=True)
+            self.set_backend(
+                backend=array_backend,
+                inplace=True
+            )
         else:
             self = self._auto_sparse()
         self._set_slicers()
@@ -337,7 +340,7 @@ class Triangle(TriangleBase):
     def _split_ult(
         data: DataFrame, index: list, columns: list, origin: list, development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Deal with triangles with ultimate values"""
+        """Deal with triangles with ultimate values."""
         ult = None
         if (
             development
@@ -360,11 +363,11 @@ class Triangle(TriangleBase):
         return data, ult
 
     @property
-    def index(self):
+    def index(self) -> DataFrame:
         return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
     @index.setter
-    def index(self, value):
+    def index(self, value) -> None:
         self._len_check(self.index, value)
         if type(value) is pd.DataFrame:
             self.kdims = value.values
@@ -453,7 +456,16 @@ class Triangle(TriangleBase):
         return type(self.ddims) == pd.DatetimeIndex
 
     @property
-    def is_full(self):
+    def is_full(self) -> bool:
+        """
+        Property that in indicates whether lower half of Triangle has been filled in.
+
+        Returns
+        -------
+
+        bool
+        """
+
         return self.nan_triangle.sum().sum() == np.prod(self.shape[-2:])
 
     @property
@@ -461,13 +473,28 @@ class Triangle(TriangleBase):
         return sum(self.valuation >= options.ULT_VAL[:4]) > 0
 
     @property
-    def latest_diagonal(self):
-        return self[self.valuation == self.valuation_date].sum("development")
+    def latest_diagonal(self) -> Triangle:
+        """
+        The latest diagonal of the triangle.
+        """
+        return self[self.valuation == self.valuation_date].sum(axis="development")
 
     @property
-    def link_ratio(self):
+    def link_ratio(self) -> Triangle:
+        """
+        Displays age-to-age ratios for the triangle. If the calling Triangle object already has the
+        self.is_pattern set to true (i.e., it is already a set of link ratios or development patterns),
+        this property simply returns itself.
+
+        Returns
+        -------
+
+        Triangle object in link ratio form.
+        """
+
+        # Case where triangle is not a set of link ratios or development patterns.
         if not self.is_pattern:
-            obj = (1 / self.iloc[..., :-1]) * self.iloc[..., 1:].values
+            obj: Triangle = (1 / self.iloc[..., :-1]) * self.iloc[..., 1:].values
             if not obj.is_full:
                 obj = obj[obj.valuation < obj.valuation_date]
             if hasattr(obj, "w_"):
@@ -477,6 +504,7 @@ class Triangle(TriangleBase):
             obj.is_cumulative = False
             obj.values = num_to_nan(obj.values)
             return obj
+        # Case where triangle already is a set of link ratios or development patterns.
         else:
             return self
 

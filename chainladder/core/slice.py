@@ -14,7 +14,9 @@ if TYPE_CHECKING:
     from chainladder import Triangle
 
 class _LocBase:
-    """ Base class for pandas style loc/iloc indexing """
+    """
+    Base class for pandas style loc/iloc indexing.
+    """
 
     def __init__(self, obj):
         self.obj = obj
@@ -177,7 +179,9 @@ class Location(_LocBase):
         super().__setitem__(self.key_to_slice(key), values)
 
 class Ilocation(_LocBase):
-    """ class to generate .iloc[] functionality """
+    """
+    Class to generate .iloc[] functionality.
+    """
 
     def __getitem__(self, key):
         return self.get_idx(self._normalize_index(key))
@@ -270,7 +274,7 @@ class TriangleSlicer:
         obj.values = obj.values[slicer]
         return obj
 
-    def _set_slicers(self):
+    def _set_slicers(self) -> None:
         """ Call any time the shape of index or column changes """
         self.iloc, self.loc = Ilocation(self), Location(self)
         self.iat, self.at = Iat(self), At(self)
@@ -334,7 +338,7 @@ class Iat(Ilocation):
 
 
 class VirtualColumns:
-    def __init__(self, triangle: Triangle, columns=None):
+    def __init__(self, triangle: TriangleSlicer, columns=None):
         self.triangle = triangle
         self.columns = {} if not columns else columns
 
