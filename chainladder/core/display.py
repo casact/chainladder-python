@@ -1,33 +1,57 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import pandas as pd
+from __future__ import annotations
+
 import numpy as np
+import pandas as pd
 import re
+
+from typing import TYPE_CHECKING
 
 try:
     from IPython.core.display import HTML
-except:
+except ImportError:
     HTML = None
 
+if TYPE_CHECKING:
+    from chainladder import Triangle
+    from pandas import (
+        DataFrame,
+        Series
+    )
 
 class TriangleDisplay:
-    def __repr__(self):
+
+    def __repr__(self) -> str | DataFrame:
+
+        # If values hasn't been defined yet, return an empty triangle.
         try:
             self.values
-        except:
+        except AttributeError:
             return "Empty Triangle."
 
+        # For triangles with a single segment, containing a single triangle, return the
+        # DataFrame of the values.
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
-            data = self._repr_format()
+            data: DataFrame = self._repr_format()
             return data.to_string()
 
+        # For multidimensional triangles, return a summary.
         else:
             return self._summary_frame().__repr__()
 
-    def _summary_frame(self):
+    def _summary_frame(self) -> DataFrame:
+        """
+        Returns summary information about the triangle. Used in the case of multidimensional triangles.
+
+        Returns
+        -------
+
+        DataFrame
+        """
         return pd.Series(
-            [
+            data=[
                 self.valuation_date.strftime("%Y-%m"),
                 "O" + self.origin_grain + "D" + self.development_grain,
                 self.shape,
@@ -38,13 +62,16 @@ class TriangleDisplay:
             name="Triangle Summary",
         ).to_frame()
 
-    def _repr_html_(self):
-        """Jupyter/Ipython HTML representation"""
+    def _repr_html_(self) -> str:
+        """Jupyter/Ipython HTML representation."""
+
+        # Case empty triangle.
         try:
             self.values
-        except:
+        except AttributeError:
             return "Triangle is empty."
 
+        # Case single-dimensional triangle.
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
@@ -58,13 +85,15 @@ class TriangleDisplay:
                 .replace("NaN", "")
             )
             return default
+        # Case multidimensional triangle.
         else:
             return self._summary_frame().to_html(
                 max_rows=pd.options.display.max_rows,
                 max_cols=pd.options.display.max_columns,
             )
 
-    def _get_format_str(self, data):
+    @staticmethod
+    def _get_format_str(data):
         if np.all(np.isnan(data)):
             return ""
         elif np.nanmean(abs(data)) < 10:
@@ -74,10 +103,10 @@ class TriangleDisplay:
         else:
             return "{:,.0f}"
 
-    def _repr_format(self, origin_as_datetime=False):
-        out = self.compute().set_backend("numpy").values[0, 0]
+    def _repr_format(self: Triangle, origin_as_datetime: bool = False) -> DataFrame:
+        out: np.ndarray = self.compute().set_backend("numpy").values[0, 0]
         if origin_as_datetime and not self.is_pattern:
-            origin = self.origin.to_timestamp(how="s")
+            origin: Series = self.origin.to_timestamp(how="s")
         else:
             origin = self.origin.copy()
         origin.name = None
