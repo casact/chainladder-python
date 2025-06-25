@@ -338,7 +338,11 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(
-        data: DataFrame, index: list, columns: list, origin: list, development: list
+        data: DataFrame,
+        index: list,
+        columns: list,
+        origin: list,
+        development: list
     ) -> tuple[DataFrame, Triangle]:
         """Deal with triangles with ultimate values."""
         ult = None
@@ -364,6 +368,9 @@ class Triangle(TriangleBase):
 
     @property
     def index(self) -> DataFrame:
+        """
+        Returns a DataFrame of the unique values of the index.
+        """
         return pd.DataFrame(list(self.kdims), columns=self.key_labels)
 
     @index.setter
