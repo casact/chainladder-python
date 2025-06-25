@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import IPython.display
 import numpy as np
 import pandas as pd
 import re
@@ -15,9 +16,9 @@ except ImportError:
     HTML = None
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
     from pandas import (
         DataFrame,
+        IndexSlice,
         Series
     )
 
@@ -26,14 +27,12 @@ class TriangleDisplay:
     def __repr__(self) -> str | DataFrame:
 
         # If values hasn't been defined yet, return an empty triangle.
-        try:
-            self.values
-        except AttributeError:
+        if self._dimensionality == 'empty':
             return "Empty Triangle."
 
         # For triangles with a single segment, containing a single triangle, return the
         # DataFrame of the values.
-        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
+        elif self._dimensionality == 'single':
             data: DataFrame = self._repr_format()
             return data.to_string()
 
@@ -63,18 +62,22 @@ class TriangleDisplay:
         ).to_frame()
 
     def _repr_html_(self) -> str:
-        """Jupyter/Ipython HTML representation."""
+        """
+        Jupyter/Ipython HTML representation.
+
+        Returns
+        -------
+        str
+        """
 
         # Case empty triangle.
-        try:
-            self.values
-        except AttributeError:
-            return "Triangle is empty."
+        if self._dimensionality == 'empty':
+            return "Empty Triangle."
 
         # Case single-dimensional triangle.
-        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
+        elif self._dimensionality == 'single':
             data = self._repr_format()
-            fmt_str = self._get_format_str(data)
+            fmt_str = self._get_format_str(data=data)
             default = (
                 data.to_html(
                     max_rows=pd.options.display.max_rows,
@@ -93,7 +96,15 @@ class TriangleDisplay:
             )
 
     @staticmethod
-    def _get_format_str(data):
+    def _get_format_str(data: DataFrame) -> str:
+        """
+        Returns a numerical format string based on the magnitude of the mean absolute value of the values in the
+        supplied DataFrame.
+
+        Returns
+        -------
+        str
+        """
         if np.all(np.isnan(data)):
             return ""
         elif np.nanmean(abs(data)) < 10:
@@ -103,7 +114,17 @@ class TriangleDisplay:
         else:
             return "{:,.0f}"
 
-    def _repr_format(self: Triangle, origin_as_datetime: bool = False) -> DataFrame:
+    def _repr_format(
+            self,
+            origin_as_datetime: bool = False
+    ) -> DataFrame:
+        """
+        Prepare triangle values for printing as a DataFrame. Mainly used with single-dimensional triangles.
+
+        Returns
+        -------
+        DataFrame
+        """
         out: np.ndarray = self.compute().set_backend("numpy").values[0, 0]
         if origin_as_datetime and not self.is_pattern:
             origin: Series = self.origin.to_timestamp(how="s")
@@ -124,9 +145,17 @@ class TriangleDisplay:
         development.name = None
         return pd.DataFrame(out, index=origin, columns=development)
 
-    def heatmap(self, cmap="coolwarm", low=0, high=0, axis=0, subset=None):
-        """Color the background in a gradient according to the data in each
-        column (optionally row). Requires matplotlib
+    def heatmap(
+            self,
+            cmap: str = "coolwarm",
+            low: float = 0,
+            high: float = 0,
+            axis: int | str = 0,
+            subset: IndexSlice=None
+    ) -> IPython.display.HTML:
+        """
+        Color the background in a gradient according to the data in each
+        column (optionally row). Requires matplotlib.
 
         Parameters
         ----------
@@ -145,7 +174,7 @@ class TriangleDisplay:
             Ipython.display.HTML
 
         """
-        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
+        if self._dimensionality == 'single':
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
 
@@ -184,8 +213,29 @@ class TriangleDisplay:
                 )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
         else:
-            raise ValueError("heatmap() only works with a single triangle")
+            raise ValueError("heatmap() only works with a single triangle.")
         if HTML:
             return HTML(output_xnan)
         elif HTML is None:
-            raise ImportError("heatmap requires IPython")
+            raise ImportError("heatmap requires IPython.")
+
+    @property
+    def _dimensionality(self) -> str:
+        """
+        Determine whether the triangle is empty, single-dimensional, or multidimensional. Used for conditional
+        branching in displaying the triangle.
+
+        Returns
+        -------
+        str
+        """
+        try:
+             self.values
+        except AttributeError:
+            return 'empty'
+
+        if (self.values.shape[0], self.values.shape[1]) == (1, 1):
+            return 'single'
+
+        else :
+            return 'multi'
