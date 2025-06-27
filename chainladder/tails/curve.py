@@ -71,9 +71,10 @@ class TailCurve(TailBase):
 
         if curve not in [
             'exponential',
-            'inverse_power'
+            'inverse_power',
+            'weibull'
         ]:
-            raise ValueError("Invalid curve type specified. Accepted values are 'exponential' and 'inverse_power'.")
+            raise ValueError("Invalid curve type specified. Accepted values are 'exponential', 'inverse_power' and 'weibull'.")
 
         if errors not in [
             'ignore',
@@ -166,7 +167,10 @@ class TailCurve(TailBase):
                 _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
         elif self.errors == "raise" and xp.any(_y < 1.0):
             raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
-        _y = xp.log(_y - 1)
+        if self.curve == "weibull":
+            _y = xp.log(xp.log(_y / (_y - 1)))
+        else:
+            _y = xp.log(_y - 1)
         n_obs = X.shape[-1] - 1
         k, v = X.shape[:2]
         _x = self._get_x(_w, _y)
@@ -192,7 +196,7 @@ class TailCurve(TailBase):
         # For Exponential decay, no transformation on x is needed
         if self.curve == "exponential":
             return None
-        if self.curve == "inverse_power":
+        if self.curve in ("inverse_power", "weibull"):
             xp = self.ldf_.get_array_module()
             reg = WeightedRegression(3, False, xp=xp).fit(None, y, w).infer_x_w()
             return xp.log(reg.x)
@@ -203,6 +207,9 @@ class TailCurve(TailBase):
             tail_ldf = xp.exp(self._slope_ * extrapolate + self._intercept_)
         if self.curve == "inverse_power":
             tail_ldf = xp.exp(self._intercept_) * (extrapolate ** self._slope_)
+        if self.curve == "weibull":
+            tail_ldf = 1/(1-xp.exp(-xp.exp(self._intercept_)
+                          * extrapolate**self._slope_))-1
         return self._get_tail_prediction(tail_ldf)
 
     @property
