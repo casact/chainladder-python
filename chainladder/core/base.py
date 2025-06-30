@@ -171,8 +171,28 @@ class TriangleBase(
             data_agg: DataFrame,
             index: list
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Sets the key dimension of the triangle.
 
+        Parameters
+        ----------
+        data_agg: DataFrame
+            A DataFrame consisting of the triangle input data aggregated to the grain specified in the
+            Triangle constructor.
+        index: list
+            The list of columns of the input data supplied to the index argument of the Triangle constructor.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            A tuple consisting of a ndarray of the unique levels of the index, and another ndarray consisting of their
+            positions within the supplied data_agg.
+        """
+
+        # Get unique values of index and assign an integer value to each one.
         kdims: DataFrame = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
+
+        # Map these integers back to the agg data to generate a key index.
         key_idx: np.ndarray = (
             data_agg[index].merge(
                 kdims,

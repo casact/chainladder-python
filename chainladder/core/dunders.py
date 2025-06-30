@@ -1,23 +1,35 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import pandas as pd
+from __future__ import annotations
+
 import numpy as np
-from chainladder.utils.utility_functions import num_to_nan, concat
+import pandas as pd
+
+from chainladder.utils.utility_functions import (
+    num_to_nan,
+    concat
+)
+
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
 
 try:
     import dask.bag as db
-except:
+except ImportError:
     db = None
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any
 
 class TriangleDunders:
     """ Class that implements the dunder (double underscore) methods for the
         Triangle class
     """
 
-    def _validate_arithmetic(self, other):
+    def _validate_arithmetic(self, other: Any) -> tuple:
         """ Common functionality BEFORE arithmetic operations """
         if isinstance(other, TriangleDunders):
             obj, other = self._compatibility_check(self, other)
@@ -321,7 +333,16 @@ class TriangleDunders:
         obj.values = xp.round(obj.values, other)
         return obj
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Any):
+        """
+        Implements the true division operator, /, on the triangle.
+
+        Parameters
+        ----------
+
+        other: Any
+        The thing that divides the triangle.
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -329,7 +350,6 @@ class TriangleDunders:
                         self._slice_or_nan(other, obj, k))
             obj = self._arithmetic_mapper(obj, other, f)
         else:
-            xp = obj.get_array_module()
             obj.values = obj.values / other
         return obj
 
