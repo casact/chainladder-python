@@ -45,6 +45,13 @@ Visit `Chainladder-Python on Read the Docs`_.
 
 .. _Chainladder-Python on Read the Docs: https://chainladder-python.readthedocs.io/
 
+Repo Status
+----------------------------
+
+Total Outstanding Issues: .. image:: https://img.shields.io/github/issues-search?query=is%3Aissue%20state%3Aopen&label=Open%20Issues
+   :alt: GitHub issue custom search
+
+
 Licenses
 -------------------
 This package is released under `Mozilla Public License 2.0`_.
