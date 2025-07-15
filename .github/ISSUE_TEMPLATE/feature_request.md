@@ -1,9 +1,9 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-title: "[ENH] Description"
-labels: Enhancement
-assignees: jbogaardt
+title: ""
+labels: "Triage Pending ⚠️"
+assignees: 
 
 ---
 
