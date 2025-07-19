@@ -174,6 +174,10 @@ def read_pickle(path):
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
+def read_csv(*args, **kwargs):
+    #Chainladder implementation of: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+    local_dataframe = pd.read_csv(*args, **kwargs)
+    return local_dataframe
 
 def read_json(json_str, array_backend=None):
     from chainladder import Triangle
