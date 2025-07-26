@@ -21,15 +21,22 @@ from sklearn.base import (
 from typing import (
     Iterable,
     Union,
+    Optional,
     TYPE_CHECKING
 )
 
 if TYPE_CHECKING:
     from chainladder import Triangle
     from numpy.typing import ArrayLike
+    from pandas import DataFrame
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from sparse import COO
     from types import ModuleType
     from typing import AnyStr
+    from pandas._typing import (
+        FilePath,
+        ReadCsvBuffer
+    )
 
 
 def load_sample(
@@ -174,10 +181,45 @@ def read_pickle(path):
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
-def read_csv(*args, **kwargs):
+def read_csv(
+        filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
+        origin: Optional[str | list] = None,
+        development: Optional[str | list] = None,
+        columns: Optional[str | list] = None,
+        index: Optional[str | list] = None,
+        origin_format: Optional[str] = None,
+        development_format: Optional[str] = None,
+        cumulative: Optional[bool] = None,
+        array_backend: str = None,
+        pattern=False,
+        trailing: bool = True,
+        *args, 
+        **kwargs
+        ) -> Triangle:
+    from chainladder import Triangle
+
     #Chainladder implementation of: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
-    local_dataframe = pd.read_csv(*args, **kwargs)
-    return local_dataframe
+    #This will allow the user to create a trignel directly from csv instead in csv -> dataframe -> triangle
+
+    #create a data frame using the *args and **kwargs that the user specified
+    local_dataframe = pd.read_csv(filepath_or_buffer,*args, **kwargs)
+
+    #pass the created local_dataframe in the Triangle constructor 
+    local_triangle = Triangle(
+        data = local_dataframe, 
+        origin=origin,
+        development=development,
+        columns=columns,
+        index=index,
+        origin_format=origin_format,
+        development_format=development_format,
+        cumulative=cumulative,
+        array_backend=array_backend,
+        pattern=pattern,
+        trailing = trailing
+    )
+
+    return local_triangle
 
 def read_json(json_str, array_backend=None):
     from chainladder import Triangle
