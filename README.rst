@@ -45,6 +45,11 @@ Visit `Chainladder-Python on Read the Docs`_.
 
 .. _Chainladder-Python on Read the Docs: https://chainladder-python.readthedocs.io/
 
+Contributors Working Group
+----------------------------
+
+We also have a Contributors Working Group that meets approximately every two weeks for one hour. The current meeting time is Fridays from 9:00–10:00 AM PT (12:00–1:00 PM ET). We discuss milestones, outstanding issues, and package design philosophies. If you're interested in joining, please contact one of the core developers.
+
 Licenses
 -------------------
 This package is released under `Mozilla Public License 2.0`_.
