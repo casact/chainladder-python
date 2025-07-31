@@ -9,24 +9,29 @@ body:
       description: A clear and concise description of the problem or missing capability
     validations:
       required: true
-  - type: textarea
+  - type: checkboxes
     attributes:
       label: Is your feature request at odds with the scope of the package?
       description: |
         The ethos governing `chainladder-python` is that it: 
-        1. Is an engine for triangle manipulation and reserves setting. It is not a reserving system, but can be a major component in a reserving system. 
-        2. Conforms to `pandas` and `sklearn` API in a strict sense. Deviations from these APIs is strongly discouraged. 
+        1. Is an engine for triangle manipulation and reserves study. It is not a reserving system, but can be a major component in a reserving system. 
+        2. Conforms to `pandas` and `sklearn` API styling in a strict sense. Deviations from these APIs is strongly discouraged. 
+      options:
+        - label: Yes, absolutely!
+          required: false
+        - label: No, but it's still worth discussing.
+          required: false
+        - label: N/A (this request is not a codebase enhancement).
+          required: false
   - type: textarea
     attributes:
-      label: Describe the solution you'd like.
+      label: Describe the solution you'd like, or your current workaround.
       description: >-
         If you have a solution in mind, please describe it clearly and
         concisely.
   - type: textarea
     attributes:
-      label: Describe alternatives you've considered.
-      description: What do you currently do to get around this limitation?
-  - type: textarea
-    attributes:
-      label: Do you have any additional comments?
-      description: Such as papers, screenshots, or datasets that may help with this ticket.
+      label: Do you have any additional supporting notes?
+      description: >-
+        Such as papers, spreadsheet workbooks, screenshots, or datasets that may
+        help with this ticket.
