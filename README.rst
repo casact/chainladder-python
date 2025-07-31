@@ -49,6 +49,7 @@ Contributors Working Group
 ----------------------------
 
 We also have a Contributors Working Group that meets approximately every two weeks for one hour. The current meeting time is Fridays from 9:00–10:00 AM PT / 12:00–1:00 PM ET. During these meetings, we discuss milestones, package design philosophies, outstanding issues, and other behind-the-scenes topics related to our work on GitHub. If you're interested in joining, please contact one of the core developers.
+
 Licenses
 -------------------
 This package is released under `Mozilla Public License 2.0`_.
