@@ -48,7 +48,7 @@ Visit `Chainladder-Python on Read the Docs`_.
 Contributors Working Group
 ----------------------------
 
-We also have a Contributors Working Group that meets approximately every two weeks for one hour. The current meeting time is Fridays from 9:00–10:00 AM PT / 12:00–1:00 PM ET. During these meetings, we discuss milestones, package design philosophies, outstanding issues, and other behind-the-scenes topics related to our work on GitHub. If you're interested in joining, please contact one of the core developers.
+We also have a Contributors Working Group that meets approximately every two weeks for one hour. The current meeting time is Fridays from 9:00–10:00 AM PT / 12:00–1:00 PM ET. During these meetings, we discuss milestones, package design philosophies, outstanding issues, and other behind-the-scenes topics related to our work on GitHub. If you're interested in joining, please contact one of the core developers. We welcome contributors of all skill levels and encourage your involvement.
 
 Licenses
 -------------------
