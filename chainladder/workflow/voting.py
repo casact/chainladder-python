@@ -134,8 +134,8 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
                 clone(clf),
                 X,
                 y,
-                # fit_params=dict(sample_weight=sample_weight),
-                sample_weight=sample_weight,
+                fit_params=dict(sample_weight=sample_weight),
+                # sample_weight=sample_weight,
                 message_clsname="VotingChainladder",
                 message=self._log_message(names[idx], idx + 1, len(clfs)),
             )
