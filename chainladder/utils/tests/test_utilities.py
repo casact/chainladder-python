@@ -177,9 +177,37 @@ def test_concat_immutability(raa):
     cl.concat((l, u), axis=3)
     assert u == u_new
 
+
 def test_invalid_sample() -> None:
     """
     Test that an invalid sample name provided to cl.load_sample() raises an error.
     """
     with pytest.raises(ValueError):
-        cl.load_sample(key='not_a_real_sample_38473743')
+        cl.load_sample(key="not_a_real_sample_38473743")
+
+
+def test_voting(raa):
+    cl_ult = cl.Chainladder().fit(raa).ultimate_
+    apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)
+    bcl = cl.Chainladder()
+    bf = cl.BornhuetterFerguson()
+    cc = cl.CapeCod()
+    estimators = [("bcl", bcl), ("bf", bf), ("cc", cc)]
+    weights = np.array([[0.6, 0.2, 0.2]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
+    vot = cl.VotingChainladder(estimators=estimators, weights=weights)
+    vot.fit(raa, sample_weight=apriori)
+    assert (
+        vot.ultimate_.to_frame().round(2).values.flatten()
+        == [
+            18834.00,
+            16875.50,
+            24058.53,
+            28542.58,
+            28236.84,
+            19905.32,
+            18947.25,
+            23106.94,
+            20004.50,
+            21605.83,
+        ]
+    ).all()
