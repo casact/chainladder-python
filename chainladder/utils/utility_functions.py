@@ -196,6 +196,97 @@ def read_csv(
         *args, 
         **kwargs
         ) -> Triangle:
+    """
+    Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
+    https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+
+    Parameters
+    ----------
+    filepath_or_buffer: str, path object or file-like object
+        Any valid string path is acceptable. The string could be a URL. Valid URL schemes 
+        include http, ftp, s3, gs, and file. For file URLs, a host is expected. A local 
+        file could be: file://localhost/path/to/table.csv.
+        If you want to pass in a path object, pandas accepts any os.PathLike.
+        By file-like object, we refer to objects with a read() method, such as a 
+        file handle (e.g. via builtin open function) or StringIO.
+    origin: str or list
+         A representation of the accident, reporting or more generally the
+         origin period of the triangle that will map to the Origin dimension
+    development: str or list
+        A representation of the development/valuation periods of the triangle
+        that will map to the Development dimension
+    columns: str or list
+        A representation of the numeric data of the triangle that will map to
+        the columns dimension.  If None, then a single 'Total' key will be
+        generated.
+    index: str or list or None
+        A representation of the index of the triangle that will map to the
+        index dimension.  If None, then a single 'Total' key will be generated.
+    origin_format: optional str
+        A string representation of the date format of the origin arg. If
+        omitted then date format will be inferred by pandas.
+    development_format: optional str
+        A string representation of the date format of the development arg. If
+        omitted then date format will be inferred by pandas.
+    cumulative: bool
+        Whether the triangle is cumulative or incremental.  This attribute is
+        required to use the ``grain`` and ``dev_to_val`` methods and will be
+        automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
+    trailing: bool
+        When partial origin periods are present, setting trailing to True will
+        ensure the most recent origin period is a full period and the oldest
+        origin is partial. If full origin periods are present in the data, then
+        trailing has no effect.
+
+    Attributes
+    ----------
+    index: Series
+        Represents all available levels of the index dimension.
+    columns: Series
+        Represents all available levels of the value dimension.
+    origin: DatetimeIndex
+        Represents all available levels of the origin dimension.
+    development: Series
+        Represents all available levels of the development dimension.
+    key_labels: list
+        Represents the ``index`` axis labels
+    virtual_columns: Series
+        Represents the subset of columns of the triangle that are virtual.
+    valuation: DatetimeIndex
+        Represents all valuation dates of each cell in the Triangle.
+    origin_grain: str
+        The grain of the origin vector ('Y', 'S', 'Q', 'M')
+    development_grain: str
+        The grain of the development vector ('Y', 'S', 'Q', 'M')
+    shape: tuple
+        The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
+    link_ratio, age_to_age
+        Displays age-to-age ratios for the triangle.
+    valuation_date : date
+        The latest valuation date of the data
+    loc: Triangle
+        pandas-style ``loc`` accessor
+    iloc: Triangle
+        pandas-style ``iloc`` accessor
+    latest_diagonal: Triangle
+        The latest diagonal of the triangle
+    is_cumulative: bool
+        Whether the triangle is cumulative or not
+    is_ultimate: bool
+        Whether the triangle has an ultimate valuation
+    is_full: bool
+        Whether lower half of Triangle has been filled in
+    is_val_tri:
+        Whether the triangle development period is expressed as valuation
+        periods.
+    values: array
+        4D numpy array underlying the Triangle instance
+    T: Triangle
+        Transpose index and columns of object.  Only available when Triangle is
+        convertible to DataFrame.
+    """
+
+
     from chainladder import Triangle
 
     #Chainladder implementation of: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
