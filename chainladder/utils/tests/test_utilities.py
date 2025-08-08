@@ -157,9 +157,9 @@ def test_json_df():
     assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum() < 1e-5
 
 def test_read_csv_single(raa):
-    #test the read_csv funtion for a single dimensional input 
+    # Test the read_csv function for a single dimensional input.
     
-    #read in the csv file 
+    # Read in the csv file.
     from pathlib import Path
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
@@ -172,9 +172,9 @@ def test_read_csv_single(raa):
         cumulative = True)
 
 def test_read_csv_multi(clrd):
-    #test the read_csv funtion for multi dimensional input 
+    # Test the read_csv function for multidimensional input.
 
-    #read in the csv file 
+    # Read in the csv file.
     from pathlib import Path
     clrd_csv_path = Path(__file__).parent.parent / "data" / "clrd.csv"
 
