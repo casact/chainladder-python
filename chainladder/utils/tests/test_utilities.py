@@ -156,6 +156,43 @@ def test_json_df():
     )
     assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum() < 1e-5
 
+def test_read_csv_single(raa):
+    # Test the read_csv function for a single dimensional input.
+    
+    # Read in the csv file.
+    from pathlib import Path
+    raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
+
+    assert raa == cl.read_csv(
+        filepath_or_buffer=raa_csv_path,
+        origin = "origin",
+        development = "development",
+        columns = ["values"],
+        index = None,
+        cumulative = True)
+
+def test_read_csv_multi(clrd):
+    # Test the read_csv function for multidimensional input.
+
+    # Read in the csv file.
+    from pathlib import Path
+    clrd_csv_path = Path(__file__).parent.parent / "data" / "clrd.csv"
+
+    assert clrd == cl.read_csv(
+        filepath_or_buffer=clrd_csv_path,
+        origin = "AccidentYear",
+        development = "DevelopmentYear",
+        columns = [
+            "IncurLoss",
+            "CumPaidLoss",
+            "BulkLoss",
+            "EarnedPremDIR",
+            "EarnedPremCeded",
+            "EarnedPremNet",
+        ],
+        index = ["GRNAME","LOB"],
+        cumulative = True
+    ) 
 
 def test_concat(clrd):
     tri = clrd.groupby("LOB").sum()
