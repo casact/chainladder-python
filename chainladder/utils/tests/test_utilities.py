@@ -214,9 +214,10 @@ def test_concat_immutability(raa):
     cl.concat((l, u), axis=3)
     assert u == u_new
 
+
 def test_invalid_sample() -> None:
     """
     Test that an invalid sample name provided to cl.load_sample() raises an error.
     """
     with pytest.raises(ValueError):
-        cl.load_sample(key='not_a_real_sample_38473743')
+        cl.load_sample(key="not_a_real_sample_38473743")
