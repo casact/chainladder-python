@@ -31,5 +31,4 @@ jobs:
           conda install mamba -y -c conda-forge -n base
           mamba env create --file ./ci/environment-latest.yaml;
           conda activate cl_latest;
-          python setup.py develop
           pytest chainladder -m "not r"
