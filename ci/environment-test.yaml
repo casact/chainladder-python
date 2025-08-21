@@ -1,7 +1,7 @@
 name: cl_test
 
 channels:
-  - defaults
+  - anaconda
   - conda-forge
 
 dependencies:

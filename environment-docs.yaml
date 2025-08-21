@@ -1,7 +1,7 @@
 name: cl_docs
 
 channels:
-  - defaults
+  - anaconda
   - conda-forge
 
 dependencies:
@@ -9,6 +9,6 @@ dependencies:
   - pip
   - git
   - numba>0.54  # Better conda integration for compiled packages
-
+  - nb_black
   - pip:
     - -e .[docs]

@@ -1,7 +1,7 @@
 name: cl_dev
 
 channels:
-  - defaults
+  - anaconda
   - conda-forge
   
 dependencies:

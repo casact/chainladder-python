@@ -1,7 +1,7 @@
 name: cl_latest
 
 channels:
-  - defaults
+  - anaconda
   - conda-forge
 
 dependencies:
