@@ -14,7 +14,7 @@ maintainers = [
 description = "Chainladder Package - P&C Loss Reserving package"
 readme = "README.rst"
 license = {text = "MPL-2.0"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -22,13 +22,10 @@ classifiers = [
     "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering",
-    "Topic :: Office/Business :: Financial",
 ]
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
@@ -46,7 +43,7 @@ Homepage = "https://github.com/casact/chainladder-python"
 Documentation = "https://chainladder-python.readthedocs.io/"
 Repository = "https://github.com/casact/chainladder-python"
 "Bug Tracker" = "https://github.com/casact/chainladder-python/issues"
-Download = "https://github.com/casact/chainladder-python/archive/v0.8.24.tar.gz"
+
 
 [project.optional-dependencies]
 dev = [
@@ -83,7 +80,7 @@ performance = [
     "cupy",  # For GPU acceleration (if available)
 ]
 all = [
-    "chainladder[dev,docs,test,performance]",
+    "chainladder[dev,docs,test]",
 ]
 
 [tool.setuptools]
