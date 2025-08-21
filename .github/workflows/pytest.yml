@@ -29,7 +29,6 @@ jobs:
           conda install mamba -y -c conda-forge -n base
           mamba env create --file ./ci/environment-test.yaml;
           conda activate cl_test;
-          python setup.py develop
           pytest --cov=chainladder --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
