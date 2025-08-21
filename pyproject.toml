@@ -65,7 +65,6 @@ docs = [
     "numpydoc",
     "jupyter-book",
     "sphinx-togglebutton",
-    "nb_black",
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples

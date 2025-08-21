@@ -11,4 +11,4 @@ dependencies:
   - numba>0.54  # Better conda integration for compiled packages
 
   - pip:
-    - -e .[test]
+    - -e ../.[test]

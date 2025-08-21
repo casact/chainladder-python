@@ -9,8 +9,8 @@ dependencies:
   - pip
   - git
   - numba>0.54  # Better conda integration for compiled packages
-  - dask  # Keep in conda for better performance
+  - dask
 
   - pip:
-    - -e .[test]
+    - -e ../.[test]
 

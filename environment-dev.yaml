@@ -1,8 +1,4 @@
 name: cl_dev
-
-channels:
-  - anaconda
-  - conda-forge
   
 dependencies:
   - python>=3.8
