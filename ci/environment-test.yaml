@@ -1,4 +1,3 @@
-# The basic requirements for CI testing of chainladder
 name: cl_test
 
 channels:
@@ -6,19 +5,12 @@ channels:
   - conda-forge
 
 dependencies:
-  - pandas>=0.23
-  - polars>=0.16.2
-  - scikit-learn>=0.23
-  - sparse>=0.9
-  - numba
-  - dill
-  - patsy
-  - dask
+  - python>=3.8
+  - pip
+  - git
+  - numba>0.54  # Better conda integration for compiled packages
+  - dask  # Keep in conda for better performance
 
-  # testing
-  - lxml
-  - pytest
-  - pytest-cov
-  - ipython
-  - jinja2
+  - pip:
+    - -e .[test]
 

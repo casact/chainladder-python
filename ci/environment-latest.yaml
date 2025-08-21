@@ -5,15 +5,10 @@ channels:
   - conda-forge
 
 dependencies:
-  - conda-forge::pandas>=2.0
-  - polars
-  - scikit-learn>=0.23
-  - sparse>=0.9
-  - numba
-  - dill
-  - patsy
-  # testing
-  - lxml
-  - pytest
-  - ipython
-  - jinja2
+  - python>=3.8
+  - pip
+  - git
+  - numba>0.54  # Better conda integration for compiled packages
+
+  - pip:
+    - -e .[test]

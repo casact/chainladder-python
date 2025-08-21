@@ -1,4 +1,3 @@
-# The basic requirements for building the hosted docs
 name: cl_docs
 
 channels:
@@ -6,28 +5,10 @@ channels:
   - conda-forge
 
 dependencies:
-  - python
+  - python>=3.8
   - pip
   - git
-
-  - pandas
-  - polars
-  - scikit-learn
-  - sparse
-  - numba
-  - dill
-  - patsy
-  - statsmodels
-  - matplotlib
-
-  # Docs
-  - ipython
-  - parso>=0.8
-  - nbsphinx
-  - numpydoc
-  - nb_black
+  - numba>0.54  # Better conda integration for compiled packages
 
   - pip:
-    - git+https://github.com/casact/chainladder-python/
-    - jupyter-book
-    - sphinx-togglebutton
+    - -e .[docs]
