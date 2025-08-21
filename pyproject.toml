@@ -76,6 +76,7 @@ test = [
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
+    "dask",  
 ]
 performance = [
     "dask",  # For distributed computing

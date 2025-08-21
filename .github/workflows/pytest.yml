@@ -15,23 +15,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest'] #, 'macos-latest', 'windows-latest']
-        python-version: ['3.9']
+        os: ['ubuntu-latest']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
     steps:
-      - uses: actions/checkout@v1
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
-      - name: Install repo and dependencies
-        shell: bash -l {0}
+          version: "latest"
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+      - name: Install dependencies and run tests
         run: |
-          conda install mamba -y -c conda-forge -n base
-          mamba env create --file ./ci/environment-test.yaml;
-          conda activate cl_test;
-          pytest --cov=chainladder --cov-report=xml
+          uv sync --extra test
+          uv run pytest --cov=chainladder --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
