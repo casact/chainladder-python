@@ -8,23 +8,55 @@ from chainladder.utils.sparse import sp
 import dill
 import json
 import os
-import copy
-from patsy import dmatrix
-from sklearn.base import BaseEstimator, TransformerMixin
-from typing import Iterable, Union
+import numpy as np
+import pandas as pd
+
+from chainladder.utils.sparse import sp
+from io import StringIO
+from patsy import dmatrix # noqa
+from sklearn.base import (
+    BaseEstimator,
+    TransformerMixin
+)
+
+from typing import (
+    Iterable,
+    Union,
+    Optional,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+    from numpy.typing import ArrayLike
+    from pandas import DataFrame
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+    from sparse import COO
+    from types import ModuleType
+    from typing import AnyStr
+    from pandas._typing import (
+        FilePath,
+        ReadCsvBuffer
+    )
 
 
-def load_sample(key: str, *args, **kwargs):
-    """Function to load datasets included in the chainladder package.
+def load_sample(
+        key: str,
+        *args,
+        **kwargs
+) -> Triangle:
+    """Function to load datasets included in the chainladder package. These consist of CSV
+    files located in the repository directory chainladder/utils/data.
 
     Parameters
     ----------
     key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc.
+        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc. The name should match the
+        file name, without extension, of one of the files in the sample data folder.
 
     Returns
     -------
-        pandas.DataFrame of the loaded dataset.
+        chainladder.Triangle of the loaded dataset.
 
     """
     from chainladder import Triangle
@@ -42,10 +74,13 @@ def load_sample(key: str, *args, **kwargs):
     if key.lower() == 'quarterly':
         valuation_format = '%Y%m'
     if key.lower() == "clrd":
-        origin = "AccidentYear"
-        development = "DevelopmentYear"
-        index = ["GRNAME", "LOB"]
-        columns = [
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        index: list = [
+            "GRNAME",
+            "LOB"
+        ]
+        columns: list = [
             "IncurLoss",
             "CumPaidLoss",
             "BulkLoss",
@@ -54,18 +89,38 @@ def load_sample(key: str, *args, **kwargs):
             "EarnedPremNet",
         ]
     if key.lower() == "berqsherm":
-        origin = "AccidentYear"
-        development = "DevelopmentYear"
-        index = ["LOB"]
-        columns = ["Incurred", "Paid", "Reported", "Closed"]
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        index: list = ["LOB"]
+        columns: list = [
+            "Incurred",
+            "Paid",
+            "Reported",
+            "Closed"
+        ]
     if key.lower() == "xyz":
-        origin = "AccidentYear"
-        development = "DevelopmentYear"
-        columns = ["Incurred", "Paid", "Reported", "Closed", "Premium"]
-    if key.lower() in ["liab", "auto"]:
-        index = ["lob"]
-    if key.lower() in ["cc_sample", "ia_sample"]:
-        columns = ["loss", "exposure"]
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        columns: list = [
+            "Incurred",
+            "Paid",
+            "Reported",
+            "Closed",
+            "Premium"
+        ]
+    if key.lower() in [
+        "liab",
+        "auto"
+    ]:
+        index: list = ["lob"]
+    if key.lower() in [
+        "cc_sample",
+        "ia_sample"
+    ]:
+        columns: list = [
+            "loss",
+            "exposure"
+        ]
     if key.lower() in ["prism"]:
         columns = ["reportedCount", "closedPaidCount", "Paid", "Incurred"]
         index = ["ClaimNo", "Line", "Type", "ClaimLiability", "Limit", "Deductible"]
@@ -77,7 +132,7 @@ def load_sample(key: str, *args, **kwargs):
     df = pl.read_csv(os.path.join(path, "data", key.lower() + ".csv"))
 
     return Triangle(
-        df,
+        data=df,
         origin=origin,
         valuation=development,
         index=index,
@@ -94,6 +149,136 @@ def read_pickle(path):
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
+def read_csv(
+        filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
+        origin: Optional[str | list] = None,
+        development: Optional[str | list] = None,
+        columns: Optional[str | list] = None,
+        index: Optional[str | list] = None,
+        origin_format: Optional[str] = None,
+        development_format: Optional[str] = None,
+        cumulative: Optional[bool] = None,
+        array_backend: str = None,
+        pattern=False,
+        trailing: bool = True,
+        *args, 
+        **kwargs
+        ) -> Triangle:
+    """
+    Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
+    https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+
+    Parameters
+    ----------
+    filepath_or_buffer: str, path object or file-like object
+        Any valid string path is acceptable. The string could be a URL. Valid URL schemes 
+        include http, ftp, s3, gs, and file. For file URLs, a host is expected. A local 
+        file could be: file://localhost/path/to/table.csv.
+        If you want to pass in a path object, pandas accepts any os.PathLike.
+        By file-like object, we refer to objects with a read() method, such as a 
+        file handle (e.g. via builtin open function) or StringIO.
+    origin: str or list
+         A representation of the accident, reporting or more generally the
+         origin period of the triangle that will map to the Origin dimension
+    development: str or list
+        A representation of the development/valuation periods of the triangle
+        that will map to the Development dimension
+    columns: str or list
+        A representation of the numeric data of the triangle that will map to
+        the columns dimension.  If None, then a single 'Total' key will be
+        generated.
+    index: str or list or None
+        A representation of the index of the triangle that will map to the
+        index dimension.  If None, then a single 'Total' key will be generated.
+    origin_format: optional str
+        A string representation of the date format of the origin arg. If
+        omitted then date format will be inferred by pandas.
+    development_format: optional str
+        A string representation of the date format of the development arg. If
+        omitted then date format will be inferred by pandas.
+    cumulative: bool
+        Whether the triangle is cumulative or incremental.  This attribute is
+        required to use the ``grain`` and ``dev_to_val`` methods and will be
+        automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
+    trailing: bool
+        When partial origin periods are present, setting trailing to True will
+        ensure the most recent origin period is a full period and the oldest
+        origin is partial. If full origin periods are present in the data, then
+        trailing has no effect.
+
+    Attributes
+    ----------
+    index: Series
+        Represents all available levels of the index dimension.
+    columns: Series
+        Represents all available levels of the value dimension.
+    origin: DatetimeIndex
+        Represents all available levels of the origin dimension.
+    development: Series
+        Represents all available levels of the development dimension.
+    key_labels: list
+        Represents the ``index`` axis labels
+    virtual_columns: Series
+        Represents the subset of columns of the triangle that are virtual.
+    valuation: DatetimeIndex
+        Represents all valuation dates of each cell in the Triangle.
+    origin_grain: str
+        The grain of the origin vector ('Y', 'S', 'Q', 'M')
+    development_grain: str
+        The grain of the development vector ('Y', 'S', 'Q', 'M')
+    shape: tuple
+        The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
+    link_ratio, age_to_age
+        Displays age-to-age ratios for the triangle.
+    valuation_date : date
+        The latest valuation date of the data
+    loc: Triangle
+        pandas-style ``loc`` accessor
+    iloc: Triangle
+        pandas-style ``iloc`` accessor
+    latest_diagonal: Triangle
+        The latest diagonal of the triangle
+    is_cumulative: bool
+        Whether the triangle is cumulative or not
+    is_ultimate: bool
+        Whether the triangle has an ultimate valuation
+    is_full: bool
+        Whether lower half of Triangle has been filled in
+    is_val_tri:
+        Whether the triangle development period is expressed as valuation
+        periods.
+    values: array
+        4D numpy array underlying the Triangle instance
+    T: Triangle
+        Transpose index and columns of object.  Only available when Triangle is
+        convertible to DataFrame.
+    """
+
+
+    from chainladder import Triangle
+
+    #Chainladder implementation of: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+    #This will allow the user to create a trignel directly from csv instead in csv -> dataframe -> triangle
+
+    #create a data frame using the *args and **kwargs that the user specified
+    local_dataframe = pd.read_csv(filepath_or_buffer,*args, **kwargs)
+
+    #pass the created local_dataframe in the Triangle constructor 
+    local_triangle = Triangle(
+        data = local_dataframe, 
+        origin=origin,
+        development=development,
+        columns=columns,
+        index=index,
+        origin_format=origin_format,
+        development_format=development_format,
+        cumulative=cumulative,
+        array_backend=array_backend,
+        pattern=pattern,
+        trailing = trailing
+    )
+
+    return local_triangle
 
 def read_json(json_str, array_backend=None):
     from chainladder import Triangle
@@ -118,7 +303,7 @@ def read_json(json_str, array_backend=None):
         )
     elif "metadata" in json_dict.keys():
         j = json.loads(json_str)
-        y = pd.read_json(j["data"], orient="split", date_unit="ns")
+        y = pd.read_json(StringIO(j["data"]), orient="split", date_unit="ns")
         y["origin"] = pd.to_datetime(y["origin"])
         y.columns = [c if c != "valuation" else "development" for c in y.columns]
         y["development"] = pd.to_datetime(y["development"])
@@ -160,7 +345,13 @@ def read_json(json_str, array_backend=None):
 
 
 def parallelogram_olf(
-    values, date, start_date=None, end_date=None, grain="M", vertical_line=False
+    values,
+    date,
+    start_date=None,
+    end_date=None,
+    grain="Y",
+    approximation_grain="M",
+    vertical_line=False,
 ):
     """Parallelogram approach to on-leveling."""
     date = pd.to_datetime(date)
@@ -169,23 +360,99 @@ def parallelogram_olf(
     if not end_date:
         end_date = "{}-12-31".format(date.max().year)
     start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+
+    date_freq = {
+        "M": "MS",
+        "D": "D",
+    }
+    if approximation_grain not in ['M', 'D']:
+        raise ValueError("approximation_grain must be " "M" " or " "D" "")
     date_idx = pd.date_range(
-        start_date - pd.tseries.offsets.DateOffset(years=1), end_date
+        start_date - pd.tseries.offsets.DateOffset(years=1),
+        end_date,
+        freq=date_freq[approximation_grain],
     )
-    y = pd.Series(np.array(values), np.array(date))
-    y = y.reindex(date_idx, fill_value=0)
-    idx = np.cumprod(y.values + 1)
-    idx = idx[-1] / idx
-    y = pd.Series(idx, y.index)
-    y = y[~((y.index.day == 29) & (y.index.month == 2))]
+
+    rate_changes = pd.Series(np.array(values), np.array(date))
+    rate_changes = rate_changes.reindex(date_idx, fill_value=0)
+
+    cum_rate_changes = np.cumprod(1 + rate_changes.values)
+    cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
+    crl = cum_rate_changes.iloc[-1]
+
+    cum_avg_rate_non_leaps = cum_rate_changes
+    cum_avg_rate_leaps = cum_rate_changes
+
     if not vertical_line:
-        y = y.rolling(365).mean()
-        y = (y + y.shift(1).values) / 2
-    y = y.iloc[366:]
-    y = y.groupby(y.index.to_period(grain)).mean().reset_index()
-    y.columns = ["Origin", "OLF"]
-    y["Origin"] = y["Origin"].astype(str)
-    return y.set_index("Origin")
+        rolling_num = {
+            "M": 12,
+            "D": 365,
+        }
+
+        cum_avg_rate_non_leaps = cum_rate_changes.rolling(
+            rolling_num[approximation_grain]
+        ).mean()
+        cum_avg_rate_non_leaps = (
+            cum_avg_rate_non_leaps + cum_avg_rate_non_leaps.shift(1).values
+        ) / 2
+
+        cum_avg_rate_leaps = cum_rate_changes.rolling(
+            rolling_num[approximation_grain] + 1
+        ).mean()
+        cum_avg_rate_leaps = (
+            cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
+        ) / 2
+
+    dropdates_num = {
+        "M": 12,
+        "D": 366,
+    }
+    cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
+        dropdates_num[approximation_grain] :
+    ]
+    cum_avg_rate_leaps = cum_avg_rate_leaps.iloc[
+        dropdates_num[approximation_grain] + 1 :
+    ]
+
+    fcrl_non_leaps = (
+        cum_avg_rate_non_leaps.groupby(cum_avg_rate_non_leaps.index.to_period(grain))
+        .mean()
+        .reset_index()
+    )
+    fcrl_non_leaps.columns = ["Origin", "OLF"]
+    fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
+    fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
+
+    fcrl_leaps = (
+        cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
+        .mean()
+        .reset_index()
+    )
+    fcrl_leaps.columns = ["Origin", "OLF"]
+    fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
+    fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
+
+    combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
+    combined["is_leap"] = pd.to_datetime(
+        combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
+    ).dt.is_leap_year
+    
+
+    if approximation_grain == "M":
+        combined["final_OLF"] = combined["OLF_non_leaps"]
+    else:
+        combined["final_OLF"] = np.where(
+            combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+        )
+
+    combined.drop(
+        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"],
+        axis=1,
+        inplace=True,
+    )
+    combined.columns = ["Origin", "OLF"]
+
+    return combined.set_index("Origin")
 
 
 def set_common_backend(objs):
@@ -334,11 +601,17 @@ def num_to_value(arr, value):
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
 
-            arr = sp(
-                coords=arr.coords, data=arr.data, fill_value=sp.nan, shape=arr.shape
+            arr: COO = sp(
+                coords=arr.coords,
+                data=arr.data,
+                fill_value=sp.nan, # noqa
+                shape=arr.shape
             )
         else:
-            arr = sp(num_to_nan(np.nan_to_num(arr.todense())), fill_value=value)
+            arr: COO = sp(
+                num_to_nan(np.nan_to_num(arr.todense())),
+                fill_value=value
+            )
     else:
         arr[arr == 0] = value
     return arr
@@ -435,7 +708,9 @@ def model_diagnostics(model, name=None, groupby=None):
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
     run_off = run_off[run_off.development > str(obj.X_.valuation_date)]
-    run_off = run_off.iloc[..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]]
+    run_off = run_off.iloc[
+        ..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]
+    ]
 
     triangles = []
     for col in obj.ultimate_.columns:

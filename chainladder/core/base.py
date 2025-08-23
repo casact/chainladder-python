@@ -6,6 +6,25 @@ import polars as pl
 from datetime import date
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+from chainladder.utils.cupy import cp
+from chainladder.utils.dask import dp
+from chainladder.utils.sparse import sp
+
+from typing import (
+    Optional,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from pandas import (
+        DataFrame,
+        Series
+    )
+    from numpy.typing import ArrayLike
+    from pandas.core.indexes.datetimes import DatetimeIndex
+    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+    from pandas._libs.tslibs.timestamps import Timestamp
+    from types import ModuleType
 
 def cached_property(func):
     def wrapper(self):

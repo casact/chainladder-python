@@ -2,7 +2,7 @@
 author = ""
 bibtex_bibfiles = ["./library/references.bib"]
 comments_config = {"hypothesis": False, "utterances": False}
-copyright = "2022"
+copyright = "2023"
 exclude_patterns = [
     "**.ipynb_checkpoints",
     ".DS_Store",
@@ -66,7 +66,7 @@ html_theme_options = {
 html_title = "Reserving in Python"
 jupyter_cache = ""
 jupyter_execute_notebooks = "force"
-language = None
+language = "en"
 latex_engine = "pdflatex"
 myst_enable_extensions = ["colon_fence", "dollarmath", "linkify", "substitution"]
 myst_url_schemes = ["mailto", "http", "https"]

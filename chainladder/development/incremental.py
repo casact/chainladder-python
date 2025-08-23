@@ -34,7 +34,7 @@ class IncrementalAdditive(DevelopmentBase):
         Drops lowest link ratio(s) from LDF calculation
     drop_above: float or list of floats (default = numpy.inf)
         Drops all link ratio(s) above the given parameter from incremental factor calculation
-    drop_below: float or list of floats (default = numpy.NINF)
+    drop_below: float or list of floats (default = -numpy.inf)
         Drops all link ratio(s) below the given parameter from incremental factor calculation
     preserve: int (default = 1)
         The minimum number of incremental factor(s) required for incremental factor calculation
@@ -73,7 +73,7 @@ class IncrementalAdditive(DevelopmentBase):
 
     def __init__(
         self, trend=0.0, n_periods=-1, average="volume", future_trend=0,
-        drop=None, drop_high=None, drop_low=None, drop_above=np.inf, drop_below=np.NINF, drop_valuation=None, preserve = 1):
+        drop=None, drop_high=None, drop_low=None, drop_above=np.inf, drop_below=-np.inf, drop_valuation=None, preserve = 1):
         self.trend = trend
         self.n_periods = n_periods
         self.average = average

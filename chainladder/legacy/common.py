@@ -133,8 +133,15 @@ class Common:
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
 
-    def set_backend(self, backend, inplace=False, deep=False, **kwargs):
-        """ Converts triangle array_backend.
+    def set_backend(
+            self,
+            backend: str,
+            inplace: bool = False,
+            deep: bool = False,
+            **kwargs
+    ):
+        """
+        Converts triangle array_backend.
 
         Parameters
         ----------
@@ -149,10 +156,10 @@ class Common:
             Triangle with updated array_backend
         """
         if hasattr(self, "array_backend"):
-            old_backend = self.array_backend
+            old_backend: str = self.array_backend
         else:
             if hasattr(self, "ldf_"):
-                old_backend = self.ldf_.array_backend
+                old_backend: str = self.ldf_.array_backend
             else:
                 raise ValueError("Unable to determine array backend.")
         if inplace:
@@ -160,9 +167,9 @@ class Common:
             # going to dask  -
             if old_backend == "dask" and backend != "dask":
                 self = self.compute()
-                old_backend = self.array_backend
+                old_backend: str = self.array_backend
             if backend in ["numpy", "sparse", "cupy", "dask"]:
-                lookup = {
+                lookup: dict = {
                     "numpy": {
                         "sparse": lambda x: x.todense(),
                         "cupy": lambda x: cp.asnumpy(x),
@@ -202,7 +209,7 @@ class Common:
     def _validate_assumption(self, triangle, value, axis):
         if type(value) in (int, float, str):
             arr = np.repeat(value, triangle.shape[axis])
-        if type(value) in (list, tuple, set, np.array):
+        if type(value) in (list, tuple, set, np.ndarray):
             arr = np.array(value)
         if type(value) is dict:
             arr = np.array([value[a] for a in triangle._get_axis_value(axis)])

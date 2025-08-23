@@ -6,7 +6,7 @@ from chainladder.methods import MethodBase
 
 class Chainladder(MethodBase):
     """
-    The basic determinsitic chainladder method.
+    The basic deterministic chainladder method.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ class Chainladder(MethodBase):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the Benktander ultimate on a new triangle **X**
+        """Predicts the chainladder ultimate on a new triangle **X**
 
         Parameters
         ----------
@@ -61,7 +61,7 @@ class Chainladder(MethodBase):
         Returns
         -------
         X_new: Triangle
-            Loss data with Benktander ultimate applied
+            Loss data with chainladder ultimate applied
         """
         X_new = super().predict(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, sample_weight)

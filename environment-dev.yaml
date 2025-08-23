@@ -16,10 +16,9 @@ dependencies:
   - pandas
   - scikit-learn
   - sparse
-  - numba
   - dill
   - patsy
-  - matplotlib
+  - matplotlib-base
 
   # testing
   - lxml

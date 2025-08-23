@@ -53,7 +53,7 @@ class DevelopmentML(DevelopmentBase):
         self.y_ml=y_ml
         self.weight_ml = weight_ml
         self.autoregressive=autoregressive
-        self.fit_incrementals=fit_incrementals
+        self.fit_incrementals = fit_incrementals
 
     def _get_y_names(self):
         """ private function to get the response column name"""
@@ -153,7 +153,7 @@ class DevelopmentML(DevelopmentBase):
         Parameters
         ----------
         X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
+            Set of LDFs to which the estimator will be applied.
         y : None
             Ignored, use y_ml to set a reponse variable for the ML algorithm
         sample_weight : None
@@ -180,7 +180,7 @@ class DevelopmentML(DevelopmentBase):
         self.df_ = df
         # Fit model
         self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze())
-        #return self
+        #return selffit_incrementals 
         self.triangle_ml_ = self._get_triangle_ml(df)
         return self
 

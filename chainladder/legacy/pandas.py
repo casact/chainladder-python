@@ -1,14 +1,23 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import pandas as pd
+from __future__ import annotations
+
 import numpy as np
 from chainladder.legacy.utility_functions import num_to_nan
 
 try:
     import dask.bag as db
-except:
+except ImportError:
     db = None
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+    from collections.abc import Callable
+    from numpy.typing import ArrayLike
+    from types import ModuleType
+    from typing import Type
+
 
 
 class TriangleGroupBy:
@@ -150,16 +159,43 @@ class TrianglePandas:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
 
-    def _get_axis(self, axis):
+    @staticmethod
+    def _get_axis(axis: str | int| None) -> int:
+        """
+        Returns the integer representation of the requested axis.
+
+        Parameters
+        ----------
+        axis: str | int | None
+            String or integer representation of the requested axis. If
+            supplied as a string, returns the integer representation. If
+            supplied as an integer, returns the same integer.
+
+        Returns`
+        -------
+        The integer representation of the requested axis
+
+        """
+
         ax = {
             **{0: 0, 1: 1, 2: 2, 3: 3},
             **{-1: 3, -2: 2, -3: 1, -4: 0},
             **{"index": 0, "columns": 1, "origin": 2, "development": 3},
         }
-        return ax.get(axis, 0)
+
+        try:
+            return ax[axis]
+        except KeyError:
+            if axis is None:
+                return 0
+            else:
+                raise ValueError(
+                    "Invalid axis specified. Please specify the correct string or "
+                    "integer representation of the desired axis."
+                )
 
     def dropna(self):
-        """Method that removes orgin/development vectors from edge of a
+        """Method that removes origin/development vectors from edge of a
         triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
@@ -342,30 +378,63 @@ class TrianglePandas:
         return round(self, decimals)
 
 
-def add_triangle_agg_func(cls, k, v):
-    """Aggregate Overrides in Triangle"""
+def add_triangle_agg_func(
+        cls: Type[TrianglePandas],
+        k: str,
+        v: str
+):
+    """
+    Aggregate Overrides in Triangle
+    """
 
-    def agg_func(self, axis=None, *args, **kwargs):
+    def agg_func(
+            self: Triangle,
+            axis: str | int | None = None,
+            *args,
+            **kwargs
+    ) -> Triangle | np.ndarray:
+        """
+        Applies the aggregation function specified by k from the outer function.
+
+        Parameters
+        ----------
+
+        self: Triangle
+            The triangle to which the aggregation function will be applied.
+
+        axis: str | int | None
+            The axis of the triangle to which the aggregation function will be applied.
+
+        Returns
+        -------
+
+        An aggregated Triangle or ndarray.
+        """
         keepdims = kwargs.get("keepdims", None)
         obj = self.copy()
-        auto_sparse = kwargs.pop("auto_sparse", True)
+        auto_sparse: bool = kwargs.pop("auto_sparse", True)
         if axis is None:
             if max(obj.shape) == 1:
-                axis = 0
+                axis: int = 0
             else:
-                axis = min([num for num, _ in enumerate(obj.shape) if _ != 1])
+                axis: int = min([num for num, _ in enumerate(obj.shape) if _ != 1])
         else:
             axis = self._get_axis(axis)
-        xp = obj.get_array_module()
-        func = getattr(xp, v)
+        xp: ModuleType = obj.get_array_module()
+        func: Callable = getattr(xp, v)
         kwargs.update({"keepdims": True})
+        # Apply the function on the requested axis.
         obj.values = func(obj.values, axis=axis, *args, **kwargs)
+
+        # Aggregation function will collapse a dimension, so
+        # adjust the dimensions of the original object to match that of the aggregation.
         if axis == 0 and obj.values.shape[axis] == 1 and len(obj.kdims) > 1:
             obj.kdims = np.array([["(All)"] * len(obj.key_labels)])
         if axis == 1 and obj.values.shape[axis] == 1 and len(obj.vdims) > 1:
             obj.vdims = np.array([0])
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
+        # If axis is development, set the ddims to be the valuation date.
         if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
             obj.ddims = pd.DatetimeIndex(
                 [self.valuation_date], dtype="datetime64[ns]", freq=None
@@ -373,7 +442,7 @@ def add_triangle_agg_func(cls, k, v):
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()
-        obj.values = num_to_nan(obj.values)
+        obj.values: ArrayLike = num_to_nan(obj.values)
         if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
         else:
@@ -382,7 +451,7 @@ def add_triangle_agg_func(cls, k, v):
     set_method(cls, agg_func, k)
 
 
-def add_groupby_agg_func(cls, k, v):
+def add_groupby_agg_func(cls, k: str, v: str):
     """Aggregate Overrides in GroupBy"""
 
     def agg_func(self, *args, **kwargs):
@@ -441,7 +510,11 @@ def add_groupby_agg_func(cls, k, v):
             obj = obj._auto_sparse()
         return obj
 
-    set_method(cls, agg_func, k)
+    set_method(
+        cls=cls,
+        func=agg_func,
+        k=k
+    )
 
 
 def add_df_passthru(cls, k):
@@ -453,8 +526,31 @@ def add_df_passthru(cls, k):
     set_method(cls, df_passthru, k)
 
 
-def set_method(cls, func, k):
-    """Assigns methods to a class"""
+def set_method(
+        cls: Type[TrianglePandas | TriangleGroupBy],
+        func: Callable,
+        k: str
+) -> None:
+    """
+    Assigns methods to a class.
+
+    Parameters
+    ----------
+
+    cls: Type[TrianglePandas | TriangleGroupBy]
+        Class to be modified.
+
+    func: Callable
+        Method to be added to the class supplied to parameter cls.
+
+    k: str
+        Name of the method to be added to the class supplied to parameter cls.
+
+    Returns
+    -------
+
+    None
+    """
     func.__doc__ = "Refer to pandas for ``{}`` functionality.".format(k)
     func.__name__ = k
     setattr(cls, func.__name__, func)

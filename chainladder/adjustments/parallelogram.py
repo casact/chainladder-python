@@ -36,11 +36,17 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     """
 
     def __init__(
-        self, rate_history=None, change_col="", date_col="", vertical_line=False
+        self,
+        rate_history=None,
+        change_col="",
+        date_col="",
+        approximation_grain="M",
+        vertical_line=False,
     ):
         self.rate_history = rate_history
         self.change_col = change_col
         self.date_col = date_col
+        self.approximation_grain = approximation_grain
         self.vertical_line = vertical_line
 
     def fit(self, X, y=None, sample_weight=None):
@@ -77,6 +83,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             end_date=X.origin[-1].to_timestamp(how="e"),
             grain=X.origin_grain,
             vertical_line=self.vertical_line,
+            approximation_grain=self.approximation_grain,
         )
 
         if len(groups) > 0:
@@ -105,7 +112,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         return self
 
     def transform(self, X, y=None, sample_weight=None):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

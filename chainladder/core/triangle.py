@@ -298,6 +298,7 @@ class Triangle:
                 ufunc(*inputs, **kwargs))
             obj.triangle.data.select(pl.all().exclude(self.columns), )
             return obj
+        # Case where triangle already is a set of link ratios or development patterns.
         else:
             raise NotImplementedError()
         

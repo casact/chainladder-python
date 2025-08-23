@@ -32,4 +32,14 @@ def prism_dense(request):
 
 
 @pytest.fixture
-def atol(): return 1e-4
+def xyz(request):
+    if request.param == "sparse_only_run":
+        cl.options.set_option("ARRAY_BACKEND", "sparse")
+    else:
+        cl.options.set_option("ARRAY_BACKEND", "numpy")
+    return cl.load_sample("xyz")
+
+
+@pytest.fixture
+def atol():
+    return 1e-4
