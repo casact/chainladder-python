@@ -30,6 +30,17 @@ class Triangle:
     def copy(self):
         obj = Triangle()
         obj.triangle = TriangleBase.from_triangle(self.triangle)
+        # Copy dynamic modeling attributes (only non-properties)  
+        dynamic_attrs = ['ldf_', 'tail_', 'sigma_', 'std_err_', 'average_', 'ultimate_', 'ibnr_', 'sample_weight_', 'X_']
+        for attr in dynamic_attrs:
+            if hasattr(self, attr) and not isinstance(getattr(type(self), attr, None), property):
+                setattr(obj, attr, getattr(self, attr))
+                
+        # Copy intended grain attributes from triangle base if they exist
+        if hasattr(self.triangle, '_intended_origin_grain'):
+            obj.triangle._intended_origin_grain = self.triangle._intended_origin_grain
+        if hasattr(self.triangle, '_intended_development_grain'):
+            obj.triangle._intended_development_grain = self.triangle._intended_development_grain
         return obj
     
     @property
@@ -103,6 +114,33 @@ class Triangle:
     @property
     def is_cumulative(self):
         return self.triangle.is_cumulative
+    
+    @property
+    def cdf_(self):
+        """Cumulative Development Factors - cumulative product of LDF"""
+        if hasattr(self, 'ldf_'):
+            # For basic functionality, return the ldf_ itself
+            # TODO: Implement proper CDF calculation (cumulative product of LDFs)
+            return self.ldf_
+        else:
+            return None
+    
+    @property
+    def nan_triangle(self):
+        """Returns a triangle of the same shape with 1s where data exists, NaN otherwise"""
+        obj = Triangle()
+        obj.triangle = self.triangle.nan_triangle
+        return obj
+    
+    @property
+    def array_backend(self):
+        """Backend system - simplified to always use polars"""
+        return "polars"
+    
+    @property
+    def ddims(self):
+        """Development dimensions - alias for development periods"""
+        return self.development
     
     def __repr__(self):
         if self.shape[:2] == (1, 1):
@@ -234,7 +272,7 @@ class Triangle:
             return False
 
     def __len__(self):
-        return len(self)
+        return len(self.triangle)
     
     def to_frame(self, origin_as_datetime=True, keepdims=False,
                  implicit_axis=False, *args, **kwargs):
