@@ -44,7 +44,7 @@ def load_sample(
         key: str,
         *args,
         **kwargs
-) -> Triangle:
+) -> "Triangle":
     """Function to load datasets included in the chainladder package. These consist of CSV
     files located in the repository directory chainladder/utils/data.
 
@@ -163,7 +163,7 @@ def read_csv(
         trailing: bool = True,
         *args, 
         **kwargs
-        ) -> Triangle:
+        ) -> "Triangle":
     """
     Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
     https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
