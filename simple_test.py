@@ -77,12 +77,17 @@ try:
         
         # Convert to core triangle
         df = raa.to_frame(keepdims=True, origin_as_datetime=True).reset_index()
+        print(f"RAA DataFrame columns: {df.columns.tolist()}")
+        print(f"RAA DataFrame shape: {df.shape}")
+        print(f"RAA DataFrame head:\n{df.head()}")
+        
+        # Use the actual column names from RAA
         core_raa = CoreTriangle(
             df,
             origin='origin',
-            valuation='valuation',
-            columns='values',
-            cumulative=raa.is_cumulative
+            development='development', 
+            columns=['values'],
+            cumulative=True  # RAA is typically cumulative
         )
         print(f"✓ RAA converted to core triangle. Shape: {core_raa.shape}")
         

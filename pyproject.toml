@@ -36,6 +36,8 @@ dependencies = [
     "matplotlib",
     "dill",
     "patsy",
+    "polars>=1.32.3",
+    "pyarrow>=21.0.0",
 ]
 
 [project.urls]

@@ -22,7 +22,7 @@ class Triangle:
             kwargs['valuation_format'] = kwargs['development_format']
         if data is None:
             self.triangle = None
-        if type(data) == pd.DataFrame:
+        elif type(data) == pd.DataFrame:
             self.triangle = TriangleBase(pl.DataFrame(data), *args, **kwargs)
         else:
             self.triangle = TriangleBase(data, *args, **kwargs)
@@ -99,6 +99,10 @@ class Triangle:
     @property  
     def loc(self):
         return Location(self)
+    
+    @property
+    def is_cumulative(self):
+        return self.triangle.is_cumulative
     
     def __repr__(self):
         if self.shape[:2] == (1, 1):
@@ -224,7 +228,10 @@ class Triangle:
         self.triangle.__setitem__(key, value)
     
     def __eq__(self, other):
-        return self.triangle == other.triangle
+        if hasattr(other, 'triangle'):
+            return self.triangle == other.triangle
+        else:
+            return False
 
     def __len__(self):
         return len(self)
@@ -342,8 +349,11 @@ class Triangle:
                 key = self.triangle.development.is_in(self.development[key])
                 obj.triangle = obj.triangle[key]
         elif origin:
-            key = self.triangle.origin.is_in(self.origin[key].to_timestamp(how='s'))
-            obj.triangle = obj.triangle[key]
+            # Use proper origin filtering that maintains triangle dimensions
+            origin_vals = self.origin[key].to_timestamp(how='s').date.tolist()
+            # Create a polars Series with proper name for origin_filter detection
+            origin_series = pl.Series("origin", [val in origin_vals for val in self.triangle.origin.dt.date()])
+            obj.triangle = obj.triangle[origin_series]
         elif valuation:
             key = self.triangle.valuation.is_in(self.valuation[key].unique().date.tolist())
             obj.triangle = obj.triangle[key]
@@ -474,7 +484,7 @@ passthru = [
     '__abs__', '__neg__', '__pos__',  '__pow__', '__round__', 
     'collect', 'lazy', 'head', '_get_axis', 'filter', 'select',
     'max', 'mean', 'median', 'min', 'product', 'quantile', 'std', 
-    'sum', 'tail', 'var']
+    'sum', 'tail', 'var', 'replace_non_finite', 'with_values', 'sort_index']
 
 for item in passthru:
     add_tri_passthru(Triangle, item)

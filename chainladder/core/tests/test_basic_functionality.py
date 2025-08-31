@@ -338,3 +338,62 @@ class TestTriangleEdgeCases:
         
         # Should aggregate duplicates or handle appropriately
         assert tri.triangle.shape[2:] == (1, 1)  # Should resolve to single cell
+
+
+class TestPolarsMethods:
+    """Test new polars-native methods"""
+    
+    def test_replace_non_finite_method(self):
+        """Test replace_non_finite method"""
+        data = pd.DataFrame({
+            'origin': [datetime(2020, 1, 1), datetime(2020, 1, 1), datetime(2021, 1, 1)],
+            'valuation': [datetime(2020, 1, 1), datetime(2021, 1, 1), datetime(2021, 1, 1)],
+            'values': [1000.0, float('inf'), -float('inf')]  # Include infinite values
+        })
+        
+        tri = CoreTriangle(
+            data,
+            origin='origin',
+            valuation='valuation',
+            columns='values',
+            cumulative=True
+        )
+        
+        # Test replace_non_finite method
+        clean_tri = tri.replace_non_finite()
+        assert clean_tri.shape == tri.shape
+        
+        # Verify method returns new triangle instance
+        assert clean_tri is not tri
+        assert clean_tri.triangle is not tri.triangle
+        
+    def test_with_values_mathematical_operations(self):
+        """Test with_values method for mathematical operations"""
+        data = pd.DataFrame({
+            'origin': [datetime(2020, 1, 1), datetime(2020, 1, 1)],
+            'valuation': [datetime(2020, 1, 1), datetime(2021, 1, 1)],
+            'values': [1000.0, 1500.0]
+        })
+        
+        tri = CoreTriangle(
+            data,
+            origin='origin', 
+            valuation='valuation',
+            columns='values',
+            cumulative=True
+        )
+        
+        # Test mathematical operations
+        doubled_tri = tri.with_values(values=pl.col('values') * 2)
+        assert doubled_tri.shape == tri.shape
+        
+        # Verify the operation worked
+        orig_sum = tri.values.select('0').sum().item()
+        doubled_sum = doubled_tri.values.select('0').sum().item()
+        assert abs(doubled_sum - 2 * orig_sum) < 0.01
+        
+        # Test method chaining
+        complex_tri = (tri
+                      .with_values(values=pl.col('values') * 2)
+                      .replace_non_finite())
+        assert complex_tri.shape == tri.shape

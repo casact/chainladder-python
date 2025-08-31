@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import numpy as np
 from chainladder.legacy.utility_functions import num_to_nan
+from typing import TYPE_CHECKING
 
 try:
     import dask.bag as db

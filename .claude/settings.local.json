@@ -2,9 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(uv run python -m pytest:*)",
-      "Bash(uv run pytest:*)", 
+      "Bash(uv run pytest:*)",
       "Bash(uv run python:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv add:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

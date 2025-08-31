@@ -13,7 +13,7 @@ Chainladder is a Python package for Property and Casualty insurance loss reservi
 
 The package is organized into several key modules:
 
-- `chainladder/core/` - Core triangle data structures and base classes
+- `chainladder/core/` - Core triangle data structures and base classes. base.py is stricly a polars only implementation while triangle.py is a pandas-style API wrapper.
 - `chainladder/development/` - Development pattern estimation methods (e.g., chain-ladder, Clark, Munich)
 - `chainladder/methods/` - Loss reserving methods (e.g., Mack, Benktander, CapeCod)
 - `chainladder/tails/` - Tail factor estimation methods
@@ -46,9 +46,8 @@ A very good look into the public API can be obtained from our docs in `chainladd
 - Tests are organized in `tests/` subdirectories within each module
 - Global test fixtures defined in `conftest.py` (sample datasets: raa, qtr, clrd, genins, prism, xyz)
 
-### Windows Environment Notes
+### Environment Notes
 - This project uses `uv` for dependency management
-- On Windows cmd.exe, use: `cmd /c "uv run python script.py"` instead of `cmd /c "python script.py"`
 - All Python commands should be prefixed with `uv run` to use the virtual environment
 
 ### Building
@@ -57,12 +56,6 @@ A very good look into the public API can be obtained from our docs in `chainladd
 
 ## Key Patterns
 
-### Array Backend Flexibility
-The package supports multiple array backends. Code should be written to work with the active backend:
-```python
-import chainladder as cl
-cl.options.set_option('ARRAY_BACKEND', 'sparse')  # or 'numpy', 'dask', 'cupy'
-```
 
 ### Scikit-learn API Compatibility  
 All estimators follow scikit-learn patterns:
@@ -94,3 +87,95 @@ The Triangle class mimics pandas DataFrame behavior for ease of use.
     3. Tests must touch a variety of datasets and edge cases (raa - a simply 2d triangle, qtr - a quarterly triangle, clrd - a 4d triangle with many index and column values,  prism - a large triangle with monthly data that can stress-test performance)
 
 Refactor should initially not modify anything outside of the /core path. However, we can leverage /legacy for parity checks and /docs for better context.
+
+## Polars-First Refactor Learnings
+
+### Core Triangle Architecture
+The triangle refactor involves two key components:
+- **TriangleBase** (`chainladder/core/base.py`): Pure polars implementation with arrow-compatible internals
+- **Triangle** (`chainladder/core/triangle.py`): Pandas-style API wrapper that provides legacy compatibility
+
+### Critical Slicing Behavior
+Actuarial triangle slicing has specific dimensional requirements that differ from standard DataFrame slicing:
+
+#### Origin Filtering: `raa[raa.origin > "1985"]`
+- **Expected**: `(1, 1, 5, 10)` - 5 filtered origins, 10 full developments
+- **Behavior**: Remove origin rows from data, but preserve full development range
+- **Implementation**: Filter data by origins AND override `_properties['origin']` with filtered origins
+
+#### Development Filtering: `raa[raa.development < 72]` 
+- **Expected**: `(1, 1, 10, 5)` - 10 full origins, 5 filtered developments  
+- **Behavior**: Remove development columns from data, but preserve full origin range
+- **Implementation**: Filter data by developments AND override `_properties['development']` with filtered developments
+
+### Key Polars API Compatibility Issues Fixed
+
+1. **Boolean Indexing**: `clrd[clrd["LOB"] == "ppauto"]`
+   - Required implementing proper Series name detection (`origin_filter`, `development_filter`)
+   - Condition ordering matters: specific filters before generic `boolean_mask_filter`
+
+2. **Polars API Deprecations**:
+   - `cumsum()` → `cum_sum()`
+   - `streaming=True` → removed parameter
+   - `how='outer'` → `how='full'`  
+   - `with_row_count()` → `with_row_index()`
+   - `columns` → `on` in pivot operations
+
+3. **DataFrame vs LazyFrame Consistency**:
+   - Mixed lazy/eager operations cause join failures
+   - Use consistent `.lazy().collect()` patterns
+
+4. **Triangle Comparisons**:
+   - `min(axis=1)` → `fold(lambda acc, x: acc & x).all()`
+
+### Property Override System
+For slicing operations that need to maintain specific dimensions:
+
+```python
+triangle._properties = triangle._properties.copy() if hasattr(triangle, '_properties') else {}
+triangle._properties['origin'] = filtered_origin_series  
+triangle._properties['development'] = preserved_full_development_series
+# Clear cached properties to force use of overrides
+if hasattr(triangle, '__dict__'):
+    triangle.__dict__.pop('origin', None)
+    triangle.__dict__.pop('development', None)
+```
+
+### Test Cleanup Patterns
+Incompatible test patterns to eliminate in polars-first refactor:
+
+- **Array Access**: `.values[0, 0, :, :]` 
+- **Backend System**: `.set_backend("sparse")`
+- **Array Module**: `get_array_module()`, `xp.testing.assert_array_equal()`
+- **Direct numpy operations**: Direct array manipulation
+
+### Critical Condition Ordering in __getitem__
+The filtering logic must check specific conditions before generic ones:
+
+```python
+# CORRECT ORDER:
+if column_filter: ...
+if index_column_filter: ...
+if valuation_filter: ...
+if development_filter: ...  # SPECIFIC - must come before boolean_mask_filter
+if origin_filter: ...       # SPECIFIC - must come before boolean_mask_filter  
+if boolean_mask_filter: ... # GENERIC - catches remaining boolean series
+if generic_slicer: ...
+```
+
+### Performance Warnings
+Common polars performance warnings to address:
+- LazyFrame schema resolution: Use `collect_schema().names()` instead of `.columns`
+- LazyFrame dtype resolution: Use `collect_schema().dtypes()` instead of `.dtypes`
+
+### Debugging Triangle Wrapper vs Base
+Remember the wrapper pattern:
+- `raa` is a `Triangle` wrapper
+- `raa.triangle` is the underlying `TriangleBase` 
+- Slicing operations may go through Triangle wrapper first, then to TriangleBase
+- Properties like `_properties` exist on TriangleBase, not Triangle wrapper
+
+### Test Results Progress Tracking
+- **Initial**: 171 failed, 34 passed (83.7% failure rate)
+- **After core fixes**: 146 failed, 57 passed (71.9% failure rate)  
+- **Key improvement**: +23 passing tests, -11.8 percentage point failure rate reduction

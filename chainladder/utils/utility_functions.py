@@ -18,6 +18,11 @@ from sklearn.base import (
     BaseEstimator,
     TransformerMixin
 )
+# Use generic typing for now - polars types may not be available in all versions
+from typing import Union
+from io import StringIO, BytesIO
+FilePath = Union[str, bytes, "os.PathLike[str]", "os.PathLike[bytes]"]
+ReadCsvBuffer = Union[StringIO, BytesIO]
 
 from typing import (
     Iterable,
@@ -150,7 +155,7 @@ def read_pickle(path):
         return dill.load(pkl)
 
 def read_csv(
-        filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
+        filepath_or_buffer: FilePath | ReadCsvBuffer,
         origin: Optional[str | list] = None,
         development: Optional[str | list] = None,
         columns: Optional[str | list] = None,
