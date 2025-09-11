@@ -386,8 +386,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             val_offset = {
                 "Y": {"Y": 1},
                 "S": {"Y": 2, "S": 1},
-                "Q": {"Y": 4, "Q": 1},
-                "M": {"Y": 12, "Q": 3, "M": 1},
+                "Q": {"Y": 4, "S": 2, "Q": 1},
+                "M": {"Y": 12, "S": 6, "Q": 3, "M": 1},
             }
             if n_periods < 1 or n_periods >= X.shape[-2]:
                 return X.values * 0 + 1
