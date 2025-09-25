@@ -650,6 +650,126 @@ class TriangleBase(
             axis
         ]
 
+    def collapse_to_summary(self, values, collapse_origin=True, collapse_development=False):
+        """Create new Triangle collapsed to single origin and/or development period.
+
+        This is the most common dimension manipulation pattern in estimators,
+        replacing the brittle manual approach of:
+            obj.odims = obj.odims[0:1]  # fragile
+            obj._set_slicers()          # easy to forget
+
+        Parameters
+        ----------
+        values : array-like
+            New values for the collapsed triangle
+        collapse_origin : bool, default True
+            Whether to collapse to first origin period only
+        collapse_development : bool, default False
+            Whether to collapse to first development period only
+
+        Returns
+        -------
+        Triangle
+            New Triangle with collapsed dimensions and updated values
+
+        Examples
+        --------
+        >>> # Replace manual dimension manipulation
+        >>> obj = source.copy()
+        >>> obj.odims = obj.odims[0:1]
+        >>> obj.values = calculated_values
+        >>> obj._set_slicers()
+        >>>
+        >>> # With semantic factory method
+        >>> obj = source.collapse_to_summary(calculated_values)
+        """
+        # Create copy to avoid mutating original
+        result = self.copy()
+
+        # Update values first
+        result.values = values
+
+        # Collapse dimensions as requested
+        if collapse_origin:
+            result.odims = result.odims[0:1]
+        if collapse_development:
+            result.ddims = result.ddims[0:1]
+
+        # Ensure internal consistency
+        result._set_slicers()
+
+        return result
+
+    def create_result_triangle(self, values, development_dims=None, origin_dims=None,
+                              index_dims=None, column_dims=None):
+        """Create new Triangle with calculated values and optional dimension changes.
+
+        This replaces the most common brittle pattern found throughout the codebase:
+            obj = source.copy()
+            obj.values = calculated_values
+            obj.ddims = new_dims           # sometimes
+            obj._set_slicers()             # often forgotten - BUG SOURCE!
+
+        With a safe, validated approach:
+            obj = source.create_result_triangle(calculated_values,
+                                               development_dims=new_dims)
+
+        Parameters
+        ----------
+        values : array-like
+            New values for the result triangle
+        development_dims : array-like, optional
+            New development dimension labels (replaces ddims assignment)
+        origin_dims : array-like, optional
+            New origin dimension values (replaces odims assignment)
+        index_dims : array-like, optional
+            New index dimension values (replaces kdims assignment)
+        column_dims : array-like, optional
+            New column dimension values (replaces vdims assignment)
+
+        Returns
+        -------
+        Triangle
+            New Triangle with updated values and dimensions, properly synchronized
+
+        Examples
+        --------
+        >>> # Replace brittle manual approach
+        >>> obj = self.ultimate_.copy()
+        >>> obj.values = concatenated_values
+        >>> obj.ddims = ["Latest", "IBNR", "Ultimate", "Std Err"]
+        >>> obj._set_slicers()  # Easy to forget!
+        >>>
+        >>> # With safe factory method
+        >>> obj = self.ultimate_.create_result_triangle(
+        ...     concatenated_values,
+        ...     development_dims=["Latest", "IBNR", "Ultimate", "Std Err"]
+        ... )
+        """
+        # Create copy to avoid mutating original
+        result = self.copy()
+
+        # Update values first
+        result.values = values
+
+        # Apply dimension changes if specified
+        if development_dims is not None:
+            result.ddims = development_dims
+
+        if origin_dims is not None:
+            result.odims = origin_dims
+
+        if index_dims is not None:
+            result.kdims = index_dims
+
+        if column_dims is not None:
+            result.vdims = column_dims
+
+        # Ensure internal consistency - this is the key bug prevention!
+        result._set_slicers()
+
+        return result
+
     @contextmanager
     def temporary_cache(self, **kwargs):
         """Context manager for temporary attribute assignment.

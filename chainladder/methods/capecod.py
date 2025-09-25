@@ -121,8 +121,7 @@ class CapeCod(Benktander):
         apriori = xp.nansum(weighted_exposure * trended_ultimate, -1) / xp.nansum(
             weighted_exposure, -1
         )
-        apriori_ = reported_exposure.copy()
-        apriori_.values = apriori[..., None]
+        apriori_ = reported_exposure.create_result_triangle(apriori[..., None])
         detrended_apriori_ = apriori_ / trend_array / X_olf_array * sw_olf_array
         return self._set_ult_attr(apriori_), self._set_ult_attr(detrended_apriori_)
 

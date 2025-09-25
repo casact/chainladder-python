@@ -365,22 +365,21 @@ class MunichAdjustment(DevelopmentBase):
 
     @property
     def lambda_(self):
-        obj = self.ldf_.copy()
-        obj.odims = obj.odims[0:1]
-        obj.ddims = obj.ddims[0:1]
-        obj.values = self._reshape("lambda_coef_")
+        obj = self.ldf_.collapse_to_summary(
+            self._reshape("lambda_coef_"),
+            collapse_origin=True,
+            collapse_development=True
+        )
         return obj.to_frame(origin_as_datetime=False)
 
     @property
     def basic_cdf_(self):
-        obj = self.ldf_.copy()
-        obj.values = self._reshape("p_to_i_ldf_")
+        obj = self.ldf_.create_result_triangle(self._reshape("p_to_i_ldf_"))
         return obj
 
     @property
     def basic_sigma_(self):
-        obj = self.ldf_.copy()
-        obj.values = self._reshape("p_to_i_sigma_")
+        obj = self.ldf_.create_result_triangle(self._reshape("p_to_i_sigma_"))
         return obj
 
     @property
@@ -392,9 +391,10 @@ class MunichAdjustment(DevelopmentBase):
 
     @property
     def q_(self):
-        obj = self.rho_.copy()
-        obj.odims = self.cdf_.odims
-        obj.values = self._reshape("q_f_")
+        obj = self.rho_.create_result_triangle(
+            self._reshape("q_f_"),
+            origin_dims=self.cdf_.odims
+        )
         return obj
 
     @property

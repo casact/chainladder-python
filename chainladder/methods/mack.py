@@ -173,14 +173,14 @@ class MackChainladder(Chainladder):
     @property
     def summary_(self):
         # This might be better as a dataframe
-        obj = self.ultimate_.copy()
         cols = (
             self.X_.latest_diagonal.values,
             self.ibnr_.values,
             self.ultimate_.values,
             self.mack_std_err_.values[..., -1:],
         )
-        obj.values = obj.get_array_module().concatenate(cols, 3)
-        obj.ddims = ["Latest", "IBNR", "Ultimate", "Mack Std Err"]
-        obj._set_slicers()
+        obj = self.ultimate_.create_result_triangle(
+            self.ultimate_.get_array_module().concatenate(cols, 3),
+            development_dims=["Latest", "IBNR", "Ultimate", "Mack Std Err"]
+        )
         return obj
