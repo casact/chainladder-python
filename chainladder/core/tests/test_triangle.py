@@ -85,7 +85,7 @@ def test_sum_of_diff_eq_diff_of_sum(clrd):
 
 def test_append(raa):
     raa2 = raa.copy()
-    raa2.kdims = np.array([["P2"]])
+    raa2.index = pd.DataFrame([["P2"]], columns=raa2.key_labels)
     raa.append(raa2).sum() == raa * 2
     assert raa.append(raa2).sum() == 2 * raa
 
@@ -147,8 +147,8 @@ def test_origin_and_value_setters(raa):
         (
             np.all(raa2.origin == raa.origin),
             np.all(raa2.development == raa.development),
-            np.all(raa2.odims == raa.odims),
-            np.all(raa2.vdims == raa.vdims),
+            raa2.origin.equals(raa.origin),
+            raa2.columns.equals(raa.columns),
         )
     )
 

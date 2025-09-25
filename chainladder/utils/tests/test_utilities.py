@@ -114,10 +114,10 @@ def test_triangle_json_io(clrd):
     xp = clrd.get_array_module()
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.get_backend())
     xp.testing.assert_array_equal(clrd.values, clrd2.values)
-    xp.testing.assert_array_equal(clrd.kdims, clrd2.kdims)
-    xp.testing.assert_array_equal(clrd.vdims, clrd2.vdims)
-    xp.testing.assert_array_equal(clrd.odims, clrd2.odims)
-    xp.testing.assert_array_equal(clrd.ddims, clrd2.ddims)
+    assert clrd.index.equals(clrd2.index)
+    assert clrd.columns.equals(clrd2.columns)
+    assert clrd.origin.equals(clrd2.origin)
+    assert clrd.development.equals(clrd2.development)
     assert np.all(clrd.valuation == clrd2.valuation)
 
 

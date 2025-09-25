@@ -101,7 +101,7 @@ def test_tail_doesnt_mutate_ldf_(data, averages, est_sigma):
     xp = p.get_array_module()
     p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).ldf_.values
     xp.testing.assert_array_equal(
-        p_no_tail, p.values[..., : len(cl.load_sample(data).ddims) - 1]
+        p_no_tail, p.values[..., : len(cl.load_sample(data).development) - 1]
     )
 
 

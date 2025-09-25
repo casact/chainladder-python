@@ -74,8 +74,6 @@ test = [
     "ipython",
     "pytest-cov",  # For coverage testing
 ]
-performance = [
-]
 all = [
     "chainladder[dev,docs,test]",
 ]
