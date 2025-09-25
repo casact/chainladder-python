@@ -229,7 +229,7 @@ Release Date: Oct 24, 2021
 **Bug Fixes**
 
 - [\#210](https://github.com/casact/chainladder-python/issues/210) Fixed regression in triangle instantiation where `grain=='S'` is being interpreted as seconds and not semesters.
-- [\#213](https://github.com/casact/chainladder-python/issues/213) Fixed an unintended Triangle mutation when reassigning columns on a sparse backend.
+- [\#213](https://github.com/casact/chainladder-python/issues/213) Fixed an unintended Triangle mutation when reassigning columns.
 - [\#221](https://github.com/casact/chainladder-python/issues/221) Fixed `origin`/`development` broadcasting issue that was causing silent bugs in calculations on malformed triangles.
 
 ### Version 0.8.8
@@ -298,7 +298,7 @@ Release Date: Jul 11, 2021
   the widely used Development estimator. This allows fitting
   development patterns at a higher grain than the Triangle all within
   the estiamtor or Pipeline.
-- Improved index broadcasting for sparse arrays. Prior to 0.8.5, this
+- Improved index broadcasting. Prior to 0.8.5, this
   code would inappropriately consume too much memory. For example:
 
 > \>\>\> prism = cl.load_sample('prism') \>\>\> prism /
@@ -308,9 +308,6 @@ Release Date: Jul 11, 2021
   pandas
 - Added `model_diagnostics` utility function to be used on fitted
   estimators.
-- Initial support for `dask` arrays. Current support is basic, but
-  will eventually allow for distributed computations on massive
-  triangles.
 - added numpy array protocol support to the Triangle class. Now numpy
   functions can be called on Triangles. For example:
 
@@ -362,7 +359,7 @@ Release Date: Apr 25, 2021
 
 - [\#144](https://github.com/casact/chainladder-python/issues/144) -
   Eliminated error when trying to assign a column from a different
-  array backend.
+  source.
 - [\#134](https://github.com/casact/chainladder-python/issues/134) -
   Clearer error handling when attempting to instantiate a triangle
   with ages instead of date-likes
@@ -591,7 +588,7 @@ Release Date: Aug 26, 2020
 - Patches to the interaction between `sparse` and `numpy` arrays to
   accomodate more scenarios.
 - Patches to multi-index broadcasting
-- Improved performance of `latest_diagonal` for sparse backends
+- Improved performance of `latest_diagonal`
 - [\#91](https://github.com/casact/chainladder-python/issues/91) Bug
   fix to `MackChainladder` which errored on asymmetric triangles
   (Thank you [johalnes](https://github.com/johalnes) for reporting)
@@ -615,7 +612,6 @@ Release Date: Aug 15, 2020
 
 **Bug Fixes**
 
-- Fixed cupy backend which had previously been neglected
 - Fixed xlcompose issue where Period fails when included as column
   header
 
@@ -632,7 +628,7 @@ Release Date: Jul 26, 2020
 **Enhancements**
 
 - Added `head` and `tail` methods to Triangle
-- Prepped Triangle class to support sparse backend
+- Prepped Triangle class to support enhanced data structures
 - Added prism sample dataset for sparse demonstrations and unit tests
 
 ### Version 0.7.3

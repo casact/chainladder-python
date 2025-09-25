@@ -2,9 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
-from chainladder.utils.dask import dp
 import numpy as np
 from chainladder.utils.utility_functions import concat
 from chainladder import options
@@ -146,7 +144,7 @@ class Common:
         Parameters
         ----------
         backend : str
-            Currently supported options are 'numpy', 'sparse', and 'cupy'
+            Currently supported options are 'numpy', 'sparse'
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
@@ -163,30 +161,13 @@ class Common:
             else:
                 raise ValueError("Unable to determine array backend.")
         if inplace:
-            # Coming from dask - compute and then recall this method
-            # going to dask  -
-            if old_backend == "dask" and backend != "dask":
-                self = self.compute()
-                old_backend: str = self.array_backend
-            if backend in ["numpy", "sparse", "cupy", "dask"]:
+            if backend in ["numpy", "sparse"]:
                 lookup: dict = {
                     "numpy": {
                         "sparse": lambda x: x.todense(),
-                        "cupy": lambda x: cp.asnumpy(x),
-                    },
-                    "cupy": {
-                        "numpy": lambda x: cp.array(x),
-                        "sparse": lambda x: cp.array(x.todense()),
                     },
                     "sparse": {
                         "numpy": lambda x: sp.array(x),
-                        "cupy": lambda x: sp.array(cp.asnumpy(x)),
-                    },
-                    "dask": {
-                        # should this be chunked?
-                        "numpy": lambda x: dp.from_array(x, **kwargs),
-                        "cupy": lambda x: dp.from_array(x, **kwargs),
-                        "sparse": lambda x: dp.from_array(x, **kwargs),
                     },
                 }
                 if hasattr(self, "values"):

@@ -73,11 +73,8 @@ test = [
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
-    "dask",  
 ]
 performance = [
-    "dask",  # For distributed computing
-    "cupy",  # For GPU acceleration (if available)
 ]
 all = [
     "chainladder[dev,docs,test]",

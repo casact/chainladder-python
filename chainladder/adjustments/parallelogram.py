@@ -97,8 +97,6 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
                 olf = parallelogram_olf(values=values, date=date, **kw).values[
                     None, None
                 ]
-                if X.array_backend == "cupy":
-                    olf = X.get_array_module().array(olf)
                 tris.append((idx.loc[item[0]] * 0 + 1) * olf)
             self.olf_ = concat(tris, 0).latest_diagonal
         else:

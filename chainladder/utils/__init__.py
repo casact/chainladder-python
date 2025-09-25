@@ -17,6 +17,4 @@ from chainladder.utils.utility_functions import (  # noqa (API import)
     PatsyFormula,
     model_diagnostics
 )
-from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp
-from chainladder.utils.dask import dp

@@ -219,8 +219,6 @@ class ClarkLDF(DevelopmentBase):
             * nan_triangle
         )
         self.incremental_fits_.is_cumulative = False
-        if backend == "cupy":
-            self.set_backend("cupy", inplace=True)
         return self
 
     def transform(self, X):

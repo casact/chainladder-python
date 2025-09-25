@@ -74,7 +74,7 @@ class CaseOutstanding(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        backend = "cupy" if X.array_backend == "cupy" else "numpy"
+        backend = "numpy"
         self.X_ = X.copy()
 
         self.paid_w_ = (

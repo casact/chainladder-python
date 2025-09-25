@@ -14,10 +14,6 @@ from chainladder.utils.utility_functions import (
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
 
-try:
-    import dask.bag as db
-except ImportError:
-    db = None
 
 from typing import TYPE_CHECKING
 
@@ -242,13 +238,8 @@ class TriangleDunders:
                    list(other.groups.indices.keys()))
 
     def _arithmetic_mapper(self, obj, other, f):
-        """ Use Dask if available, otherwise basic list comprehension """
-        if db and obj.obj.array_backend == 'sparse':
-            bag = db.from_sequence(self._get_key_union(obj, other))
-            bag = bag.map(f, self, obj, other)
-            c = bag.compute(scheduler='threads')
-        else:
-            c = [f(k, self, obj, other) for k in self._get_key_union(obj, other)]
+        """ Basic list comprehension for arithmetic operations """
+        c = [f(k, self, obj, other) for k in self._get_key_union(obj, other)]
         return concat(c, 0).sort_index()
 
     def __add__(self, other):

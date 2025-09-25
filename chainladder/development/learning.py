@@ -207,7 +207,7 @@ class DevelopmentML(DevelopmentBase):
         X_ml = self._prep_X_ml(X)
         y_ml=self.estimator_ml.predict(X_ml)
         triangle_ml = self._get_triangle_ml(X_ml, y_ml)
-        backend = "cupy" if X.array_backend == "cupy" else "numpy"
+        backend = "numpy"
         X_new.ldf_ = triangle_ml.incr_to_cum().link_ratio.set_backend(backend)
         X_new.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         X_new._set_slicers()

@@ -69,7 +69,7 @@ class BarnettZehnwirth(TweedieGLM):
         X_ml = self.model_._prep_X_ml(X.cum_to_incr().log())
         y_ml = self.model_.estimator_ml.predict(X_ml)
         triangle_ml = self.model_._get_triangle_ml(X_ml, y_ml)
-        backend = "cupy" if X.array_backend == "cupy" else "numpy"
+        backend = "numpy"
         triangle_ml.is_cumulative = False
         X_new.ldf_ = triangle_ml.exp().incr_to_cum().link_ratio.set_backend(backend)
         X_new.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)

@@ -18,8 +18,6 @@ from chainladder.core.io import TriangleIO
 from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
 
-from chainladder.utils.cupy import cp
-from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
 from typing import (
@@ -495,10 +493,8 @@ class TriangleBase(
             else arr.__class__.__module__.split(".")[0]
         )
         modules: dict = {
-            "cupy": cp,
             "sparse": sp,
             "numpy": np,
-            "dask": dp
         }
         try:
             return modules[backend]
@@ -628,8 +624,6 @@ class TriangleBase(
             m = obj.get_array_module(obj.values)
             if m == sp:
                 obj.array_backend = "sparse"
-            if m == cp:
-                obj.array_backend = "cupy"
             if m == np:
                 obj.array_backend = "numpy"
             return obj

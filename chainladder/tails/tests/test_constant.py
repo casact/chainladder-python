@@ -1,6 +1,5 @@
 import chainladder as cl
 import numpy as np
-from chainladder.utils.cupy import cp
 
 
 def test_constant_balances(qtr):

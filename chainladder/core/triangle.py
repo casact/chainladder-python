@@ -14,10 +14,6 @@ from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrel
 from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
 from chainladder import options
 
-try:
-    import dask.bag as db
-except ImportError:
-    db = None
 
 from typing import Optional, TYPE_CHECKING
 
@@ -314,7 +310,7 @@ class Triangle(TriangleBase):
         self.array_backend = "sparse"
         if array_backend is None:
             array_backend: str = options.ARRAY_BACKEND
-        if not options.AUTO_SPARSE or array_backend == "cupy":
+        if not options.AUTO_SPARSE:
             self.set_backend(
                 backend=array_backend,
                 inplace=True
@@ -549,7 +545,7 @@ class Triangle(TriangleBase):
                         self.values = values * self.nan_triangle
                         values = num_to_value(values, self.get_array_module(values).nan)
                 else:
-                    if self.array_backend not in ["sparse", "dask"]:
+                    if self.array_backend not in ["sparse"]:
                         self.values = (
                             xp.cumsum(xp.nan_to_num(self.values), 3)
                             * self.nan_triangle[None, None, ...]
@@ -560,12 +556,7 @@ class Triangle(TriangleBase):
                         l1 = lambda i: values[..., 0 : i + 1]
                         l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
                         l3 = lambda i: l2(i).sum(3, keepdims=True)
-                        if db:
-                            bag = db.from_sequence(range(self.shape[-1]))
-                            bag = bag.map(l3)
-                            out = bag.compute(scheduler="threads")
-                        else:
-                            out = [l3(i) for i in range(self.shape[-1])]
+                        out = [l3(i) for i in range(self.shape[-1])]
                         self.values = xp.concatenate(out, axis=3)
                     self.values = num_to_nan(self.values)
                 self.is_cumulative = True
@@ -643,7 +634,7 @@ class Triangle(TriangleBase):
             )
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        if options.AUTO_SPARSE == False or backend == "cupy":
+        if options.AUTO_SPARSE == False:
             obj = obj.set_backend(backend)
         else:
             obj = obj._auto_sparse()

@@ -70,8 +70,7 @@ class TailClark(TailBase):
         self: object
             Returns the instance itself.
         """
-        backend = X.array_backend
-        if backend != "numpy":
+        if X.array_backend != "numpy":
             X = X.set_backend("numpy")
         else:
             X = X.copy()
@@ -106,8 +105,6 @@ class TailClark(TailBase):
         if self.truncation_age:
             self.ldf_.values[..., -1:] = self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
         # self._get_tail_stats(self)
-        if backend == "cupy":
-            self = self.set_backend("cupy", inplace=True)
         return self
 
     def transform(self, X):

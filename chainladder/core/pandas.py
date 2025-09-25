@@ -10,10 +10,6 @@ from chainladder.utils.utility_functions import num_to_nan
 from typing import TYPE_CHECKING
 
 
-try:
-    import dask.bag as db
-except ImportError:
-    db = None
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -463,18 +459,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
         xp = self.obj.get_array_module()
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
-        if db and obj.array_backend == "sparse":
-
-            def aggregate(i, obj, axis, v):
-                return getattr(
-                    obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v
-                )(axis, auto_sparse=False, keepdims=True)
-
-            bag = db.from_sequence(self.groups.indices.values())
-            bag = bag.map(aggregate, obj, self.axis, v)
-            values = bag.compute(scheduler="threads")
-        else:
-            values = [
+        values = [
                 getattr(
                     obj.iloc.__getitem__(
                         tuple([slice(None)] * self.axis + [i])), v

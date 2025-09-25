@@ -3,7 +3,7 @@ from sklearn.utils import deprecated
 class Options:
     ARRAY_BACKEND = "numpy"
     AUTO_SPARSE = True
-    ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
+    ARRAY_PRIORITY = ["sparse", "numpy"]
     ULT_VAL = "2261-12-31 23:59:59.999999999"
 
     @classmethod
@@ -17,7 +17,7 @@ class Options:
     def reset_option(self):
         self.set_option('ARRAY_BACKEND', "numpy")
         self.set_option('AUTO_SPARSE', True)
-        self.set_option('ARRAY_PRIORITY', ["dask", "sparse", "cupy", "numpy"])
+        self.set_option('ARRAY_PRIORITY', ["sparse", "numpy"])
         self.set_option('ULT_VAL', "2261-12-31 23:59:59.999999999")
 
     def describe_option(self):

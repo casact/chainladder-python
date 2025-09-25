@@ -621,7 +621,7 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
     from chainladder import Triangle
 
-    # Take the nan specific to the module of the backend used. e.g., numpy, cupy, sparse, etc.
+    # Take the nan specific to the module of the backend used. e.g., numpy or sparse.
     xp: ModuleType = Triangle.get_array_module(
         None,
         arr=arr

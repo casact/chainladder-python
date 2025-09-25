@@ -5,12 +5,6 @@ conventions applied in `chanladder` and its API.
 
 ## General Terms
 
-backend
-  -   The storage of the numerical representation of a
-      [Triangle]{.title-ref}. It can be 'numpy' for a dense CPU bound
-      representation, 'sparse' for a sparse matrix CPU bound representation,
-      or 'cupy' for a dense GPU bound representation.
-
 estimator
   -   Any scikit-learn style class that can be `fit` to Triangle data.
 
