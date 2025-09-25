@@ -80,7 +80,7 @@ class BootstrapODPSample(DevelopmentBase):
             self.scale_ = xp.array([i.scale_ for i in out])
             self.w_ = out[0].w_
         else:
-            backend = X.array_backend
+            backend = X.get_backend()
             if backend == "sparse":
                 X = X.set_backend("numpy")
             else:

@@ -4,7 +4,7 @@ import numpy as np
 
 def test_schmidt():
     tri = cl.load_sample("ia_sample")
-    xp = np if tri.array_backend == "sparse" else tri.get_array_module()
+    xp = np if tri.get_backend() == "sparse" else tri.get_array_module()
     ia = cl.IncrementalAdditive()
     ia_transform = ia.fit_transform(
         tri.iloc[0, 0], sample_weight=tri.iloc[0, 1].latest_diagonal

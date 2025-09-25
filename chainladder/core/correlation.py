@@ -54,7 +54,7 @@ class DevelopmentCorrelation:
         # Check that critical value is a probability
         validate_critical(p_critical=p_critical)
 
-        if triangle.array_backend != "numpy":
+        if triangle.get_backend() != "numpy":
             triangle = triangle.set_backend("numpy")
         xp = triangle.get_array_module()
 

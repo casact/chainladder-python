@@ -113,7 +113,7 @@ class ClarkLDF(DevelopmentBase):
         """
         from chainladder import options
 
-        backend = X.array_backend
+        backend = X.get_backend()
         if backend != "numpy":
             obj = X.set_backend("numpy", deep=True)
         else:

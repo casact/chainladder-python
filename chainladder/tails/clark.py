@@ -70,7 +70,7 @@ class TailClark(TailBase):
         self: object
             Returns the instance itself.
         """
-        if X.array_backend != "numpy":
+        if X.get_backend() != "numpy":
             X = X.set_backend("numpy")
         else:
             X = X.copy()

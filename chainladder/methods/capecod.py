@@ -87,7 +87,7 @@ class CapeCod(Benktander):
             raise ValueError("sample_weight is required.")
         self.apriori = 1.0
         self.X_ = self.validate_X(X)
-        sample_weight = sample_weight.set_backend(self.X_.array_backend)
+        sample_weight = sample_weight.set_backend(self.X_.get_backend())
         self.apriori_, self.detrended_apriori_ = self._get_capecod_aprioris(
             self.X_, sample_weight
         )
@@ -102,7 +102,7 @@ class CapeCod(Benktander):
         latest = X.latest_diagonal
         len_orig = sample_weight.shape[-2]
         reported_exposure = sample_weight / self._align_cdf(X.copy(), sample_weight)
-        reported_exposure = reported_exposure.set_backend(latest.array_backend)
+        reported_exposure = reported_exposure.set_backend(latest.get_backend())
         if self.groupby is not None:
             latest = latest.groupby(self.groupby).sum()
             reported_exposure = reported_exposure.groupby(self.groupby).sum()

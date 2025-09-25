@@ -296,7 +296,7 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         # obj.ldf_ = self.ldf_
         self.validate_weight(X, sample_weight)
         if sample_weight:
-            sample_weight = sample_weight.set_backend(obj.array_backend)
+            sample_weight = sample_weight.set_backend(obj.get_backend())
         obj.ultimate_ = self._get_ultimate(obj, sample_weight=sample_weight)
         return obj
 

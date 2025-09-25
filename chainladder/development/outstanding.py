@@ -120,7 +120,7 @@ class CaseOutstanding(DevelopmentBase):
 
         case_ldf_.ddims = case_tri.ddims
         case_ldf_.valuation_date = case_ldf_.valuation.max()
-        case_ldf_ = case_ldf_.dev_to_val().set_backend(self.case_ldf_.array_backend)
+        case_ldf_ = case_ldf_.dev_to_val().set_backend(self.case_ldf_.get_backend())
 
         # Will this work for sparse?
         forward = case_ldf_[case_ldf_.valuation > original_val_date].values
@@ -229,7 +229,7 @@ class CaseOutstanding(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        X_new.ldf_ = self._set_ldf(X_new).set_backend(self.ldf_.array_backend)
+        X_new.ldf_ = self._set_ldf(X_new).set_backend(self.ldf_.get_backend())
         X_new._set_slicers()
         X_new.paid_ldf_ = self.paid_ldf_
         X_new.case_ldf_ = self.case_ldf_

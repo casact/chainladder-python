@@ -61,7 +61,7 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         self.reported_count_estimator = reported_count_estimator
 
     def fit(self, X, y=None, sample_weight=None):
-        backend = X.array_backend
+        backend = X.get_backend()
         if backend == "sparse":
             obj = X.set_backend("numpy")
         else:

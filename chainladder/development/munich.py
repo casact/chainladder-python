@@ -77,7 +77,7 @@ class MunichAdjustment(DevelopmentBase):
 
         if self.paid_to_incurred is None:
             raise ValueError("Must enter valid value for paid_to_incurred.")
-        if X.array_backend == "sparse":
+        if X.get_backend() == "sparse":
             obj = X.set_backend("numpy")
         else:
             obj = X.copy()
@@ -132,7 +132,7 @@ class MunichAdjustment(DevelopmentBase):
         -------
             X_new : New triangle with transformed attributes.
         """
-        backend = X.array_backend
+        backend = X.get_backend()
         if backend == "sparse":
             X_new = X.set_backend("numpy")
         else:

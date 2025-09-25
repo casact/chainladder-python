@@ -66,7 +66,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         from chainladder.utils.utility_functions import parallelogram_olf, concat
 
-        if X.array_backend == "sparse":
+        if X.get_backend() == "sparse":
             obj = X.set_backend("numpy")
         else:
             obj = X.copy()

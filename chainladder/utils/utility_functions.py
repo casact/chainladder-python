@@ -491,7 +491,7 @@ def set_common_backend(objs):
     from chainladder import options
 
     priority = options.ARRAY_PRIORITY
-    backend = priority[np.min([priority.index(i.array_backend) for i in objs])]
+    backend = priority[np.min([priority.index(i.get_backend()) for i in objs])]
     return [i.set_backend(backend) for i in objs]
 
 

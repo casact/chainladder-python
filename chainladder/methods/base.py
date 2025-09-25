@@ -29,7 +29,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         cdf = X.cdf_.iloc[..., : X.shape[-1]]
         a = X.iloc[0, 0] * 0
         a = a + a.nan_triangle
-        if X.array_backend == "sparse":
+        if X.get_backend() == "sparse":
             a = a - a[a.valuation < a.valuation_date]
         if sample_weight:
             X = X * a + sample_weight * a
@@ -44,7 +44,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         from chainladder import options
 
         xp = ultimate.get_array_module()
-        if ultimate.array_backend != "sparse":
+        if ultimate.get_backend() != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
         ultimate.ddims = pd.DatetimeIndex([options.ULT_VAL])
         ultimate.virtual_columns.columns = {}
@@ -85,7 +85,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         self.X_ = self.validate_X(X)
         self.validate_weight(X, sample_weight)
         if sample_weight:
-            self.sample_weight_ = sample_weight.set_backend(self.X_.array_backend)
+            self.sample_weight_ = sample_weight.set_backend(self.X_.get_backend())
         else:
             self.sample_weight_ = sample_weight
         return self
@@ -112,7 +112,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new = X_new + (self.X_.val_to_dev().iloc[0,0].sum(2) * 0)
         self.validate_weight(X_new, sample_weight)
         if sample_weight:
-            sample_weight = sample_weight.set_backend(X_new.array_backend)
+            sample_weight = sample_weight.set_backend(X_new.get_backend())
         X_new.ldf_ = self.ldf_
         X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         return X_new

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pandas as pd
 from packaging import version
+from contextlib import contextmanager
 
 import numpy as np
 import warnings
@@ -467,6 +468,20 @@ class TriangleBase(
         arr = arr.reshape(-1, len(arrays))
         return arr
 
+    def get_backend(self) -> str:
+        """
+        Returns the current array backend being used by this Triangle.
+
+        This is the preferred way to access the array backend instead of
+        accessing the .array_backend attribute directly.
+
+        Returns
+        -------
+        str
+            The name of the current array backend (e.g., 'numpy', 'sparse')
+        """
+        return self.array_backend
+
     def get_array_module(
             self: TriangleBase | None,
             arr: ArrayLike = None
@@ -488,7 +503,7 @@ class TriangleBase(
         """
 
         backend: str = (
-            self.array_backend
+            self.get_backend()
             if arr is None
             else arr.__class__.__module__.split(".")[0]
         )
@@ -511,12 +526,12 @@ class TriangleBase(
             return self
         n = np.prod(list(self.shape) + [8 / 1e6])
         if (
-            self.array_backend == "numpy"
+            self.get_backend() == "numpy"
             and n > 30
             and 1 - np.isnan(self.values).sum() / n * (8 / 1e6) < 0.2
         ):
             self.set_backend("sparse", inplace=True)
-        if self.array_backend == "sparse" and not (
+        if self.get_backend() == "sparse" and not (
             self.values.density < 0.2 and n > 30
         ):
             self.set_backend("numpy", inplace=True)
@@ -634,6 +649,48 @@ class TriangleBase(
         return {0: self.index, 1: self.columns, 2: self.origin, 3: self.development}[
             axis
         ]
+
+    @contextmanager
+    def temporary_cache(self, **kwargs):
+        """Context manager for temporary attribute assignment.
+
+        This allows temporary assignment of attributes that are automatically
+        cleaned up when the context exits, preventing accidental pollution
+        of Triangle objects with temporary state.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Attributes to temporarily assign to the Triangle object
+
+        Examples
+        --------
+        >>> with triangle.temporary_cache(_full_triangle_=some_value):
+        ...     # Use triangle with temporary attribute
+        ...     result = some_calculation(triangle)
+        """
+        # Store original values for any attributes that already exist
+        original_values = {}
+        for attr_name in kwargs:
+            if hasattr(self, attr_name):
+                original_values[attr_name] = getattr(self, attr_name)
+
+        # Set temporary attributes
+        for attr_name, attr_value in kwargs.items():
+            setattr(self, attr_name, attr_value)
+
+        try:
+            yield self
+        finally:
+            # Clean up: remove new attributes and restore original values
+            for attr_name in kwargs:
+                if attr_name in original_values:
+                    # Restore original value
+                    setattr(self, attr_name, original_values[attr_name])
+                else:
+                    # Remove temporary attribute
+                    if hasattr(self, attr_name):
+                        delattr(self, attr_name)
 
 
 def is_chainladder(estimator):

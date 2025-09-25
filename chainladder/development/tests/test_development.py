@@ -39,7 +39,7 @@ def test_drop2(raa):
 
 def test_n_periods():
     d = cl.load_sample("usauto")["incurred"]
-    xp = np if d.array_backend == "sparse" else d.get_array_module()
+    xp = np if d.get_backend() == "sparse" else d.get_array_module()
     return xp.all(
         xp.around(
             xp.unique(
@@ -222,7 +222,7 @@ def test_drop_valuation():
 
 def test_assymetric_development(atol):
     quarterly = cl.load_sample("quarterly")["paid"]
-    xp = np if quarterly.array_backend == "sparse" else quarterly.get_array_module()
+    xp = np if quarterly.get_backend() == "sparse" else quarterly.get_array_module()
     dev = cl.Development(n_periods=1, average="simple").fit(quarterly)
     dev2 = cl.Development(n_periods=1, average="regression").fit(quarterly)
     assert xp.allclose(dev.ldf_.values, dev2.ldf_.values, atol=atol)
@@ -282,17 +282,15 @@ def test_new_drop_5(clrd):
 def test_new_drop_5a(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
+    dev1 = cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd)
+    dev2 = cl.Development(
+        drop_high=True,
+        drop_low=[True, True, True, True, True, True, True, True, True],
+        preserve=3,
+    ).fit(clrd)
     assert np.array_equal(
-        cl.Development(drop_high=1, drop_low=1, preserve=3)
-        ._set_weight_func(clrd.age_to_age, clrd.age_to_age)
-        .values,
-        cl.Development(
-            drop_high=True,
-            drop_low=[True, True, True, True, True, True, True, True, True],
-            preserve=3,
-        )
-        ._set_weight_func(clrd.age_to_age)
-        .values,
+        dev1.w_v2_.values,
+        dev2.w_v2_.values,
         True,
     )
 
@@ -388,7 +386,7 @@ def test_new_drop_10():
 
 def compare_new_drop(dev, tri):
     assert np.array_equal(
-        dev._set_weight_func(tri.age_to_age, tri.age_to_age).values,
+        dev.w_v2_.values,
         dev.transform(tri).age_to_age.values * 0 + 1,
         True,
     )

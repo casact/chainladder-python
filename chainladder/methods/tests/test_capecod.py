@@ -29,7 +29,7 @@ def test_groupby(clrd):
     a = cl.CapeCod(groupby='Top 10', decay=0.98, trend=0.02).fit(X, sample_weight=sample_weight).ibnr_.groupby('Top 10').sum().sort_index()
     b = cl.CapeCod(decay=0.98, trend=0.02).fit(X.groupby('Top 10').sum(), sample_weight=sample_weight.groupby('Top 10').sum()).ibnr_.sort_index()
     xp = a.get_array_module()
-    b = b.set_backend(a.array_backend)
+    b = b.set_backend(a.get_backend())
     xp.allclose(xp.nan_to_num(a.values), xp.nan_to_num(b.values), atol=1e-5)
 
 

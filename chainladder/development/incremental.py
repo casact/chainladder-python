@@ -109,11 +109,11 @@ class IncrementalAdditive(DevelopmentBase):
         if type(X.ddims) != np.ndarray:
             raise ValueError("Triangle must be expressed with development lags")
         #convert to numpy
-        if X.array_backend == "sparse":
+        if X.get_backend() == "sparse":
             X = X.set_backend("numpy")
         else:
             X = X.copy()
-        if sample_weight.array_backend == "sparse":
+        if sample_weight.get_backend() == "sparse":
             sample_weight = sample_weight.set_backend("numpy")
         else:
             sample_weight = sample_weight.copy()
