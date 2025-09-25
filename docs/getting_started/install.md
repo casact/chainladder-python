@@ -1,9 +1,9 @@
 (installation-instructions)=
 # {octicon}`desktop-download` Installation
-We strongly encourage users to install chainladder in a dedicated environment, like a conda environment.
+We strongly encourage users to install chainladder in a dedicated virtual environment.
 
 ## General Installation
-There are two ways to install the chainladder package, using `pip` or `conda`:
+Install the chainladder package using `pip`:
 
 
 [![](https://pepy.tech/badge/chainladder)](https://pepy.tech/project/chainladder)
