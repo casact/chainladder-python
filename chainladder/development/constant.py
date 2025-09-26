@@ -66,6 +66,8 @@ class DevelopmentConstant(DevelopmentBase):
                   .fillna(1)[obj.ddims].values)
             ldf = xp.array(ldf[:, None, None, :])
         else:
+            if self.patterns is None:
+                raise ValueError("patterns parameter cannot be None. Please provide a dictionary of age:value patterns.")
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
         if self.style == "cdf":

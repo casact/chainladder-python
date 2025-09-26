@@ -770,6 +770,146 @@ class TriangleBase(
 
         return result
 
+    def copy_structure_from(self, values, source_triangle, dimensions=['development']):
+        """Create new Triangle copying dimensional structure from another Triangle.
+
+        This replaces common structure copying patterns found throughout the codebase:
+            obj.ddims = X.link_ratio.ddims     # Copy development structure
+            obj.odims = X.odims                # Copy origin structure
+            obj._set_slicers()                 # often forgotten - BUG SOURCE!
+
+        With a clear, validated approach:
+            obj = self.copy_structure_from(values, X.link_ratio, ['development'])
+
+        Parameters
+        ----------
+        values : array-like
+            New values for the result triangle
+        source_triangle : Triangle
+            Triangle to copy dimensional structure from
+        dimensions : list of str, default ['development']
+            Which dimensions to copy from source. Options:
+            - 'development' : Copy development dimension (ddims)
+            - 'origin' : Copy origin dimension (odims)
+            - 'index' : Copy index dimension (kdims)
+            - 'columns' : Copy column dimension (vdims)
+
+        Returns
+        -------
+        Triangle
+            New Triangle with updated values and copied dimensions, properly synchronized
+
+        Examples
+        --------
+        >>> # Replace brittle manual approach
+        >>> obj = cdf.copy()
+        >>> obj.values = ldf_tri
+        >>> obj.ddims = X.link_ratio.ddims
+        >>> obj._set_slicers()  # Easy to forget!
+        >>>
+        >>> # With safe factory method
+        >>> obj = cdf.copy_structure_from(ldf_tri, X.link_ratio, ['development'])
+        """
+        # Create copy to avoid mutating original
+        result = self.copy()
+
+        # Update values first
+        if values is not None:
+            result.values = values
+
+        # Copy dimensions from source triangle as specified
+        for dim in dimensions:
+            if dim == 'development':
+                result.ddims = source_triangle.ddims
+            elif dim == 'origin':
+                result.odims = source_triangle.odims
+            elif dim == 'index':
+                result.kdims = source_triangle.kdims
+            elif dim == 'columns':
+                result.vdims = source_triangle.vdims
+            else:
+                raise ValueError(f"Unknown dimension: {dim}. Valid options: "
+                               "'development', 'origin', 'index', 'columns'")
+
+        # Ensure internal consistency - this is the key bug prevention!
+        result._set_slicers()
+
+        return result
+
+    def create_ldf_triangle(self, values, source_triangle, collapse_origin=True):
+        """Create Link Development Factor triangle with proper attributes.
+
+        This replaces the complex LDF creation pattern found in multiple estimators:
+            obj.values = calculated_ldf_values
+            obj.ddims = X.link_ratio.ddims      # Copy development structure
+            obj.odims = obj.odims[0:1]          # Usually collapse origin
+            obj.is_pattern = True               # Set LDF flags
+            obj.is_cumulative = False
+            obj.valuation_date = ULT_VAL        # Set valuation
+            obj._set_slicers()                  # Easy to forget!
+
+        With a semantic, validated approach:
+            obj = self.create_ldf_triangle(calculated_ldf_values, X.link_ratio)
+
+        Parameters
+        ----------
+        values : array-like
+            Calculated LDF values for the result triangle
+        source_triangle : Triangle
+            Triangle to copy development structure from (typically X.link_ratio)
+        collapse_origin : bool, default True
+            Whether to collapse to single origin period (most LDF patterns do this)
+
+        Returns
+        -------
+        Triangle
+            New Triangle configured as LDF pattern with proper attributes
+
+        Examples
+        --------
+        >>> # Replace complex multi-step LDF creation
+        >>> obj.values = cdf[..., :-1] / cdf[..., 1:]
+        >>> obj.ddims = X.link_ratio.ddims
+        >>> obj.odims = obj.odims[0:1]
+        >>> obj.is_pattern = True
+        >>> obj.is_cumulative = False
+        >>> obj._set_slicers()
+        >>>
+        >>> # With semantic LDF factory
+        >>> obj = self.create_ldf_triangle(
+        ...     cdf[..., :-1] / cdf[..., 1:],
+        ...     X.link_ratio
+        ... )
+        """
+        from chainladder import options
+        import pandas as pd
+
+        # Create copy to avoid mutating original
+        result = self.copy()
+
+        # Set calculated LDF values
+        result.values = values
+
+        # Copy development structure from source (usually X.link_ratio)
+        result.ddims = source_triangle.ddims
+
+        # Collapse origin if requested (most common case for LDFs)
+        if collapse_origin:
+            result.odims = result.odims[0:1]
+
+        # Set standard LDF triangle attributes
+        result.is_pattern = True
+        result.is_cumulative = False
+        result.valuation_date = pd.to_datetime(options.ULT_VAL)
+
+        # Clear virtual columns for pattern triangles
+        result.virtual_columns.columns = {}
+
+        # Ensure internal consistency - critical for LDF triangles!
+        result._set_slicers()
+
+        return result
+
     @contextmanager
     def temporary_cache(self, **kwargs):
         """Context manager for temporary attribute assignment.

@@ -344,12 +344,9 @@ class MunichAdjustment(DevelopmentBase):
         xp = X.get_array_module()
         ldf_tri = xp.concatenate((ldf_tri, xp.ones(ldf_tri.shape)[..., -1:]), -1)
         ldf_tri = ldf_tri[..., :-1] / ldf_tri[..., 1:]
-        obj = cdf.copy()
-        obj.values = ldf_tri
-        obj.ddims = X.link_ratio.ddims
+        obj = cdf.copy_structure_from(ldf_tri, X.link_ratio, ['development'])
         obj.is_pattern = True
         obj.is_cumulative = False
-        obj._set_slicers
         return obj
 
     def _reshape(self, measure):

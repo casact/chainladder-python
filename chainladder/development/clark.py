@@ -191,12 +191,11 @@ class ClarkLDF(DevelopmentBase):
         cdf = self._G(
             latest_age - age_offset, theta=params[..., 1:2], omega=params[..., 0:1]
         )
-        obj.values = cdf[..., :-1] / cdf[..., 1:]
-        obj.ddims = X.link_ratio.ddims
-        obj.odims = obj.odims[0:1]
-        obj.is_pattern = True
-        obj.is_cumulative = False
-        obj._set_slicers()
+        obj = obj.create_ldf_triangle(
+            cdf[..., :-1] / cdf[..., 1:],
+            X.link_ratio,
+            collapse_origin=True
+        )
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         rows = X.index.set_index(X.key_labels).index

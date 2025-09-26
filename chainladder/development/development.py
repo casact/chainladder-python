@@ -225,12 +225,10 @@ class Development(DevelopmentBase):
 
         obj = X[X.origin == X.origin.min()]
         xp = X.get_array_module()
-        obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
-        obj.ddims = X.link_ratio.ddims
-        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
-        obj.is_pattern = True
-        obj.is_cumulative = False
-        obj.virtual_columns.columns = {}
-        obj._set_slicers()
+        obj = obj.create_ldf_triangle(
+            xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :],
+            X.link_ratio,
+            collapse_origin=False  # This case doesn't collapse origin
+        )
 
         return obj
