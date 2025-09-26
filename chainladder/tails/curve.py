@@ -182,9 +182,9 @@ class TailCurve(TailBase):
         )
         tail = self._predict_tail(extrapolate)
         if self.attachment_age:
-            attach_idx = xp.min(xp.where(X.ddims >= self.attachment_age))
+            attach_idx = xp.min(xp.where(X.development.values >= self.attachment_age))
         else:
-            attach_idx = len(X.ddims) - 1
+            attach_idx = len(X.development) - 1
         self.ldf_.values = xp.concatenate(
             (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1
         )
@@ -217,7 +217,7 @@ class TailCurve(TailBase):
         """ Does not work with munich """
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.vdims
+            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.columns
         )
 
     @property
@@ -225,5 +225,5 @@ class TailCurve(TailBase):
         """ Does not work with munich """
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.vdims
+            self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.columns
         )

@@ -88,7 +88,7 @@ class TailClark(TailBase):
             -1,
         )
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
-        attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
+        attachment_age = self.attachment_age if self.attachment_age else X.development.values[-2]
         self.ldf_.values = xp.concatenate((
             self.ldf_.values[..., : sum(self.ldf_.ddims < attachment_age)],
             fitted[..., -sum(self.ldf_.ddims >= attachment_age) :],),

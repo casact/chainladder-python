@@ -70,9 +70,9 @@ class TailConstant(TailBase):
         xp = self.ldf_.get_array_module()
         tail = self.tail
         if self.attachment_age:
-            attach_idx = xp.min(xp.where(X.ddims >= self.attachment_age))
+            attach_idx = xp.min(xp.where(X.development.values >= self.attachment_age))
         else:
-            attach_idx = len(X.ddims) - 1
+            attach_idx = len(X.development) - 1
         self = self._apply_decay(X, tail, attach_idx)
         obj = Development().fit_transform(X) if "ldf_" not in X else X
         self._get_tail_stats(obj)

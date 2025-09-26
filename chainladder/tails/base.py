@@ -19,8 +19,9 @@ class TailBase(DevelopmentBase):
         self._ave_period = {"Y": (1 * m, 12), "Q": (4 * m, 3), "M": (12 * m, 1), "S": (2 * m, 6)}[
             obj.development_grain
         ]
+        max_dev_age = obj.ldf_.ddims[-1]
         t_ddims = [
-            (item + 1) * self._ave_period[1] + obj.ldf_.ddims[-1]
+            (item + 1) * self._ave_period[1] + max_dev_age
             for item in range(self._ave_period[0]+1)
         ]
         ddims = np.concatenate((obj.ldf_.ddims, t_ddims), 0,)
@@ -35,7 +36,7 @@ class TailBase(DevelopmentBase):
             self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()
             self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-            self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims[:obj.shape[2]]
+            self.sigma_.ddims = self.std_err_.ddims = ddims[:obj.shape[2]]
             self.sigma_._set_slicers()
             self.std_err_._set_slicers()
         if hasattr(obj, "average_"):
