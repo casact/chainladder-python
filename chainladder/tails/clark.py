@@ -79,7 +79,21 @@ class TailClark(TailBase):
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
         age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
-        fitted = 1 / model.G_(self.ldf_.ddims - age_offset)
+        # Recreate the extended development ages using the same logic as TailBase
+        # Get the LDF development structure before tail extension
+        obj = X.copy()
+        if "ldf_" not in obj:
+            from chainladder.development import Development
+            obj = Development().fit_transform(obj)
+        max_dev_age = int(str(obj.ldf_.development.values[-1]).split('-')[0])
+        tail_ages = [
+            (item + 1) * self._ave_period[1] + max_dev_age
+            for item in range(self._ave_period[0] + 1)
+        ]
+        # Convert LDF development values to numeric (extract start ages from ranges like '12-24' -> 12)
+        ldf_ages = [int(str(age).split('-')[0]) for age in obj.ldf_.development.values]
+        extended_dev_ages = xp.concatenate([ldf_ages, tail_ages])
+        fitted = 1 / model.G_(extended_dev_ages - age_offset)
         fitted = xp.concatenate(
             (
                 fitted.values[..., :-1] / fitted.values[..., 1:],
@@ -90,8 +104,8 @@ class TailClark(TailBase):
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
         attachment_age = self.attachment_age if self.attachment_age else X.development.values[-2]
         self.ldf_.values = xp.concatenate((
-            self.ldf_.values[..., : sum(self.ldf_.ddims < attachment_age)],
-            fitted[..., -sum(self.ldf_.ddims >= attachment_age) :],),
+            self.ldf_.values[..., : sum(extended_dev_ages < attachment_age)],
+            fitted[..., -sum(extended_dev_ages >= attachment_age) :],),
             axis=-1,)
         self.omega_ = model.omega_
         self.theta_ = model.theta_

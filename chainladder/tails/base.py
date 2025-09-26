@@ -19,26 +19,29 @@ class TailBase(DevelopmentBase):
         self._ave_period = {"Y": (1 * m, 12), "Q": (4 * m, 3), "M": (12 * m, 1), "S": (2 * m, 6)}[
             obj.development_grain
         ]
-        max_dev_age = obj.ldf_.ddims[-1]
+        # Get max development age using public API (use START ages from LDF periods)
+        max_dev_age = int(str(obj.ldf_.development.values[-1]).split('-')[0])
         t_ddims = [
             (item + 1) * self._ave_period[1] + max_dev_age
             for item in range(self._ave_period[0]+1)
         ]
-        ddims = np.concatenate((obj.ldf_.ddims, t_ddims), 0,)
-        self.ldf_ = obj.ldf_.copy()
-        tail = xp.ones(self.ldf_.shape)[..., -1:]
+        # Get existing LDF development ages using public API (use START ages)
+        ldf_ages = [int(str(age).split('-')[0]) for age in obj.ldf_.development.values]
+        ddims = np.concatenate((ldf_ages, t_ddims), 0,)
+        # Create extended LDF values
+        tail = xp.ones(obj.ldf_.shape)[..., -1:]
         tail = xp.repeat(tail, self._ave_period[0] + 1, -1)
-        self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
-        self.ldf_.ddims = ddims
+        extended_values = xp.concatenate((obj.ldf_.values, tail), -1)
+        # Use factory method to create result triangle with extended dimensions
+        self.ldf_ = obj.ldf_.create_result_triangle(extended_values, development_dims=ddims)
         if hasattr(obj, "sigma_"):
             zeros = (obj.sigma_.iloc[..., -1:] * 0).values
-            self.sigma_ = getattr(obj, "sigma_").copy()
-            self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
-            self.std_err_ = getattr(obj, "std_err_").copy()
-            self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-            self.sigma_.ddims = self.std_err_.ddims = ddims[:obj.shape[2]]
-            self.sigma_._set_slicers()
-            self.std_err_._set_slicers()
+            sigma_values = xp.concatenate((obj.sigma_.values, zeros), -1)
+            std_err_values = xp.concatenate((obj.std_err_.values, zeros), -1)
+            # Use factory method to create result triangles with extended dimensions
+            sigma_dims = ddims[:obj.shape[2]]
+            self.sigma_ = obj.sigma_.create_result_triangle(sigma_values, development_dims=sigma_dims)
+            self.std_err_ = obj.std_err_.create_result_triangle(std_err_values, development_dims=sigma_dims)
         if hasattr(obj, "average_"):
             self.average_ = obj.average_
         else:
