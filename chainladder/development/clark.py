@@ -90,7 +90,7 @@ class ClarkLDF(DevelopmentBase):
         if type(age) == list:
             age = xp.array([age]).astype("float64")
         obj = self.incremental_act_.copy()
-        obj.odims = obj.odims[0:1]
+        obj = obj.trim_to_shape(origin_size=1)
         obj.values = 1 / self._G(age)
         obj.ddims = age
         return obj

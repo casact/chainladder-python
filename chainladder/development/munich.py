@@ -383,7 +383,7 @@ class MunichAdjustment(DevelopmentBase):
     def resids_(self):
         obj = self.ldf_.copy()
         obj.values = self._reshape("residual_")
-        obj.odims = self.cdf_.odims[: obj.values.shape[2]]
+        obj = obj.trim_to_shape(origin_size=obj.values.shape[2])
         return obj
 
     @property
@@ -400,6 +400,5 @@ class MunichAdjustment(DevelopmentBase):
         obj.values = self._reshape("q_resid_")[
             ..., : self.residual_.shape[-2], : self.residual_.shape[-1]
         ]
-        obj.odims = obj.odims[: obj.values.shape[2]]
-        obj.ddims = obj.ddims[: obj.values.shape[3]]
+        obj = obj.trim_to_shape()
         return obj

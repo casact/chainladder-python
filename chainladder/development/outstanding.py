@@ -112,13 +112,11 @@ class CaseOutstanding(DevelopmentBase):
         xp = case_ldf_.get_array_module()
         # Broadcast triangle shape
         case_ldf_ = case_ldf_ * case_tri.latest_diagonal / case_tri.latest_diagonal
-        case_ldf_.odims = case_tri.odims
+        case_ldf_ = case_ldf_.sync_dimensions(case_tri, ['origin', 'development'])
         case_ldf_.is_pattern = False
         case_ldf_.values = xp.concatenate(
             (xp.ones(list(case_ldf_.shape[:-1]) + [1]), case_ldf_.values), axis=-1
         )
-
-        case_ldf_.ddims = case_tri.ddims
         case_ldf_.valuation_date = case_ldf_.valuation.max()
         case_ldf_ = case_ldf_.dev_to_val().set_backend(self.case_ldf_.get_backend())
 
@@ -150,7 +148,9 @@ class CaseOutstanding(DevelopmentBase):
             self.paid_ldf_ * ld
         ).values
         paid = case_tri.iloc[..., :-1] * patterns
-        paid.ddims = case_tri.ddims[1:]
+        paid = paid.sync_dimensions(
+            case_tri.iloc[..., 1:], ['development']
+        )
         paid.valuation_date = pd.Timestamp(options.ULT_VAL)
         # Create a full triangle of incurrds to support a multiplicative LDF
         paid = (paid_tri.cum_to_incr() + paid).incr_to_cum()
@@ -170,7 +170,7 @@ class CaseOutstanding(DevelopmentBase):
         # Convert the paid/incurred to multiplicative LDF
         dev = (dev.iloc[..., -1] / dev).iloc[..., :-1]
         dev.valuation_date = pd.Timestamp(options.ULT_VAL)
-        dev.ddims = X.link_ratio.ddims
+        dev = dev.sync_dimensions(X.link_ratio, ['development'])
         dev.is_pattern = True
         dev.is_cumulative = True
 

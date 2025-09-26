@@ -910,6 +910,150 @@ class TriangleBase(
 
         return result
 
+    def sync_dimensions(self, source_triangle, dimensions=['development', 'origin']):
+        """Factory method to synchronize dimensions from another triangle.
+
+        This method copies the specified dimensions from a source triangle to this
+        triangle and ensures internal consistency. It's designed to replace common
+        patterns of manual dimension assignment followed by _set_slicers() calls.
+
+        Parameters
+        ----------
+        source_triangle : Triangle
+            The triangle from which to copy dimensions
+        dimensions : list of str, default ['development', 'origin']
+            Which dimensions to synchronize. Options include:
+            - 'development': Copy ddims (development dimensions)
+            - 'origin': Copy odims (origin dimensions)
+            - 'index': Copy index dimensions
+            - 'columns': Copy column dimensions
+
+        Returns
+        -------
+        Triangle
+            A new triangle with synchronized dimensions
+
+        Examples
+        --------
+        >>> # Instead of manual dimension assignment:
+        >>> obj.ddims = source.ddims
+        >>> obj.odims = source.odims
+        >>> obj._set_slicers()
+        >>>
+        >>> # Use the factory method:
+        >>> obj = obj.sync_dimensions(source, ['development', 'origin'])
+        """
+        result = self.copy()
+
+        for dim in dimensions:
+            if dim == 'development':
+                if not hasattr(source_triangle, 'ddims'):
+                    raise ValueError(f"Source triangle does not have development dimensions (ddims)")
+                result.ddims = source_triangle.ddims
+            elif dim == 'origin':
+                if not hasattr(source_triangle, 'odims'):
+                    raise ValueError(f"Source triangle does not have origin dimensions (odims)")
+                result.odims = source_triangle.odims
+            elif dim == 'index':
+                if not hasattr(source_triangle, 'index'):
+                    raise ValueError(f"Source triangle does not have index dimensions")
+                result.index = source_triangle.index
+            elif dim == 'columns':
+                if not hasattr(source_triangle, 'columns'):
+                    raise ValueError(f"Source triangle does not have column dimensions")
+                result.columns = source_triangle.columns
+            else:
+                raise ValueError(f"Invalid dimension '{dim}'. Valid options are: "
+                               "'development', 'origin', 'index', 'columns'")
+
+        # Ensure internal consistency - this is the key benefit of the factory method
+        result._set_slicers()
+
+        return result
+
+    def trim_to_shape(self, target_shape=None, **kwargs):
+        """Factory method to trim dimensions to match a target shape.
+
+        This method trims the dimensions of the triangle to match the specified
+        target shape or the current values shape. It's designed to replace common
+        patterns of manual dimension trimming based on array shapes.
+
+        Parameters
+        ----------
+        target_shape : tuple, optional
+            The target shape to trim dimensions to. If None, uses self.values.shape
+        **kwargs : dict
+            Specific dimension trimming options:
+            - origin_size : int, trim odims to this size
+            - development_size : int, trim ddims to this size
+            - index_size : int, trim kdims to this size
+            - column_size : int, trim vdims to this size
+
+        Returns
+        -------
+        Triangle
+            A new triangle with trimmed dimensions
+
+        Examples
+        --------
+        >>> # Instead of manual dimension trimming:
+        >>> obj.odims = obj.odims[:obj.values.shape[2]]
+        >>> obj.ddims = obj.ddims[:obj.values.shape[3]]
+        >>> obj._set_slicers()
+        >>>
+        >>> # Use the factory method:
+        >>> obj = obj.trim_to_shape()
+        >>>
+        >>> # Or with specific sizes:
+        >>> obj = obj.trim_to_shape(origin_size=5, development_size=10)
+        """
+        result = self.copy()
+
+        # Determine target shape
+        if target_shape is None:
+            target_shape = result.values.shape
+
+        # Apply specific dimension trims from kwargs first
+        if 'index_size' in kwargs and hasattr(result, 'kdims'):
+            size = kwargs['index_size']
+            if size < len(result.kdims):
+                result.kdims = result.kdims[:size]
+
+        if 'column_size' in kwargs and hasattr(result, 'vdims'):
+            size = kwargs['column_size']
+            if size < len(result.vdims):
+                result.vdims = result.vdims[:size]
+
+        if 'origin_size' in kwargs and hasattr(result, 'odims'):
+            size = kwargs['origin_size']
+            if size < len(result.odims):
+                result.odims = result.odims[:size]
+
+        if 'development_size' in kwargs and hasattr(result, 'ddims'):
+            size = kwargs['development_size']
+            if size < len(result.ddims):
+                result.ddims = result.ddims[:size]
+
+        # Apply shape-based trimming if no specific sizes given
+        elif len(target_shape) >= 4:
+            # Trim dimensions to match values shape
+            if hasattr(result, 'kdims') and len(result.kdims) > target_shape[0]:
+                result.kdims = result.kdims[:target_shape[0]]
+
+            if hasattr(result, 'vdims') and len(result.vdims) > target_shape[1]:
+                result.vdims = result.vdims[:target_shape[1]]
+
+            if hasattr(result, 'odims') and len(result.odims) > target_shape[2]:
+                result.odims = result.odims[:target_shape[2]]
+
+            if hasattr(result, 'ddims') and len(result.ddims) > target_shape[3]:
+                result.ddims = result.ddims[:target_shape[3]]
+
+        # Ensure internal consistency - this is the key benefit of the factory method
+        result._set_slicers()
+
+        return result
+
     @contextmanager
     def temporary_cache(self, **kwargs):
         """Context manager for temporary attribute assignment.
