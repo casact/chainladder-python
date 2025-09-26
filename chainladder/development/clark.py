@@ -92,7 +92,7 @@ class ClarkLDF(DevelopmentBase):
         obj = self.incremental_act_.copy()
         obj = obj.trim_to_shape(origin_size=1)
         obj.values = 1 / self._G(age)
-        obj.ddims = age
+        obj = obj.create_result_triangle(obj.values, development_dims=age)
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
@@ -132,13 +132,13 @@ class ClarkLDF(DevelopmentBase):
         age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
         age_interval = {"Y": 12.0, "S": 6.0, "Q": 3.0, "M": 1.0}[X.development_grain]
         nans = nan_triangle.reshape(1, -1)[0]
-        age = xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)].astype("float64")
+        age = xp.tile(X.development.values, len(X.origin))[~xp.isnan(nans)].astype("float64")
         age_end = age - age_offset
         age_start = xp.maximum(age_end - age_interval, 0).astype("float64")
-        origin = np.repeat(X.odims, len(X.ddims))[~xp.isnan(nans)]
+        origin = np.repeat(X.origin.values, len(X.development))[~xp.isnan(nans)]
         latest_diagonal = obj[X.valuation == X.valuation_date].sum("origin")
-        latest_age = latest_diagonal.ddims.astype("float64")
-        latest_origin = X.odims
+        latest_age = latest_diagonal.development.values.astype("float64")
+        latest_origin = X.origin.values
         latest_diagonal = latest_diagonal.values[..., 0, :]
 
         index = xp.argsort(latest_origin)
@@ -199,10 +199,10 @@ class ClarkLDF(DevelopmentBase):
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         rows = X.index.set_index(X.key_labels).index
-        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
-        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)
+        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.columns)
+        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.columns)
         if sample_weight:
-            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
+            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.columns)
         ultimate_ = (
             xp.swapaxes(self._G(age=(latest_age - age_offset)[::-1]), -1, -2)
             * ld.values
@@ -211,8 +211,8 @@ class ClarkLDF(DevelopmentBase):
         self.incremental_fits_.array_backend = "numpy"
         self.incremental_fits_.values = (
             (
-                1 / self._G(X.ddims - age_offset)
-                - 1 / self._G(xp.maximum(X.ddims - age_offset - age_interval, 0))
+                1 / self._G(X.development.values - age_offset)
+                - 1 / self._G(xp.maximum(X.development.values - age_offset - age_interval, 0))
             )
             * ultimate_[..., ::-1]
             * nan_triangle
@@ -265,7 +265,7 @@ class ClarkLDF(DevelopmentBase):
         )
         df = xp.nansum(self.incremental_fits_.nan_triangle) - 2
         if self.method_ == "ldf":
-            df = df - len(self.incremental_fits_.odims)
+            df = df - len(self.incremental_fits_.origin)
         else:
             df = df - 1
         if scale.shape != ():

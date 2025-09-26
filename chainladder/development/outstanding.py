@@ -136,7 +136,7 @@ class CaseOutstanding(DevelopmentBase):
         case_tri = (
             (case_ldf_ * nans.values * case_tri.latest_diagonal.values)
             .val_to_dev()
-            .iloc[..., : len(case_tri.ddims)]
+            .iloc[..., : len(case_tri.development)]
         )
         ld = (
             case_tri[case_tri.valuation == X.valuation_date]

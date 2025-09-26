@@ -63,12 +63,12 @@ class DevelopmentConstant(DevelopmentBase):
             ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
             ldf = (
                 pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                  .fillna(1)[obj.ddims].values)
+                  .fillna(1)[obj.development.values].values)
             ldf = xp.array(ldf[:, None, None, :])
         else:
             if self.patterns is None:
                 raise ValueError("patterns parameter cannot be None. Please provide a dictionary of age:value patterns.")
-            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
+            ldf = xp.array([float(self.patterns[item]) for item in obj.development.values])
             ldf = ldf[None, None, None, :]
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)

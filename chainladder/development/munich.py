@@ -320,8 +320,8 @@ class MunichAdjustment(DevelopmentBase):
         """
         xp = X.get_array_module()
         obj = X.cdf_.copy()
-        obj.values = xp.repeat(obj.values, len(X.odims), 2)
-        obj.odims = X.odims
+        obj.values = xp.repeat(obj.values, len(X.origin), 2)
+        obj = obj.sync_dimensions(X)
         if type(self.paid_to_incurred) is tuple:
             p_to_i = [self.paid_to_incurred]
         else:
@@ -330,11 +330,11 @@ class MunichAdjustment(DevelopmentBase):
         cdf_triangle = cdf_triangle[..., -1:] / cdf_triangle[..., :-1]
         paid = [item[0] for item in p_to_i]
         for n, item in enumerate(paid):
-            idx = np.where(X.cdf_.vdims == item)[0][0]
+            idx = np.where(X.cdf_.columns == item)[0][0]
             obj.values[:, idx : idx + 1, ...] = cdf_triangle[0, :, n : n + 1, ...]
         incurred = [item[1] for item in p_to_i]
         for n, item in enumerate(incurred):
-            idx = np.where(X.cdf_.vdims == item)[0][0]
+            idx = np.where(X.cdf_.columns == item)[0][0]
             obj.values[:, idx : idx + 1, ...] = cdf_triangle[1, :, n : n + 1, ...]
         obj._set_slicers()
         return obj
@@ -390,7 +390,7 @@ class MunichAdjustment(DevelopmentBase):
     def q_(self):
         obj = self.rho_.create_result_triangle(
             self._reshape("q_f_"),
-            origin_dims=self.cdf_.odims
+            origin_dims=self.cdf_.origin.values
         )
         return obj
 

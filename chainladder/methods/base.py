@@ -19,7 +19,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
-        if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
+        if len(obj.development) - len(obj.ldf_.development) == 1:
             obj = TailConstant().fit_transform(obj)
         return obj.val_to_dev()
 
@@ -107,7 +107,9 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         X_new = X.val_to_dev()
-        if sum(X_new.ddims > self.ldf_.ddims.max()) > 0:
+        last_ldf_period = str(self.ldf_.development.iloc[-1])
+        max_projectable_age = int(last_ldf_period.split('-')[1])
+        if sum(X_new.development.values > max_projectable_age) > 0:
             raise ValueError("X has ages that exceed those available in model.")
         X_new = X_new + (self.X_.val_to_dev().iloc[0,0].sum(2) * 0)
         self.validate_weight(X_new, sample_weight)

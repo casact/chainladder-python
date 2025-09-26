@@ -103,7 +103,7 @@ class MackChainladder(Chainladder):
         avg = {"regression": 0, "volume": 1, "simple": 2}
         avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
-        weight = xp.sqrt(full.values[..., : len(X.ddims)] ** (2 - val))
+        weight = xp.sqrt(full.values[..., : len(X.development)] ** (2 - val))
         obj.values = X.sigma_.values / num_to_nan(weight)
         w = lxp.concatenate((X.w_, lxp.ones((1, 1, val.shape[2], 1))), 3)
         w[xp.isnan(w)] = 1
@@ -131,13 +131,13 @@ class MackChainladder(Chainladder):
         else:
             nans = xp.nan_to_num(X.nan_triangle[None, None])
             nans = 1 - xp.concatenate((nans, xp.zeros((1, 1, X.shape[2], 1))), 3)
-            full_tri = X._full_triangle_.values[..., : len(X.ddims)]
+            full_tri = X._full_triangle_.values[..., : len(X.development)]
             if est == "parameter_risk_":
                 t1_t = xp.nan_to_num(full_tri) * obj.std_err_.values
             else:
                 t1_t = xp.nan_to_num(full_tri) * self._get_full_std_err_(X).values
         extend = X.ldf_.shape[-1] - X.shape[-1] + 1
-        ldf = X.ldf_.values[..., : len(X.ddims) - 1]
+        ldf = X.ldf_.values[..., : len(X.development) - 1]
         tail = X.cdf_.values[..., -extend : -extend + 1]
         ldf = xp.array(X.ldf_.get_array_module().concatenate((ldf, tail), -1))
         # Recursive Mack Formula
@@ -149,7 +149,8 @@ class MackChainladder(Chainladder):
                 t_tot = t_tot * nans[..., i + 1 : i + 2]
             risk_arr = xp.concatenate((risk_arr, xp.nan_to_num(t_tot)), 3)
         obj.values = risk_arr
-        obj.ddims = X._full_triangle_.ddims[list(range(X.shape[-1])) + [-1]]
+        extended_dev_dims = X._full_triangle_.development.values[list(range(X.shape[-1])) + [-1]]
+        obj.ddims = extended_dev_dims
         obj._set_slicers()
         obj.valuation_date = X._full_triangle_.valuation_date
         return obj
