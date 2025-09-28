@@ -522,4 +522,18 @@ alt: VotingChainladder Basics
 {bdg-warning}`medium`
 
 :::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_loss_development
+:link-type: doc
+**Loss Development Patterns**
+```{image} ../images/plot_loss_development.png
+---
+alt: Loss Development Patterns
+---
+```
++++
+{bdg-success}`easy`
+:::
 ::::
