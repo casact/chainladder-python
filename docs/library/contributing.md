@@ -4,6 +4,15 @@
 
 ---
 
+## Why Contribute
+
+- Gain practical experience with Python, software development, and actuarial methods.  
+- Meet like-minded actuaries that prefer open-source software.
+- Help advance open-source actuarial research and reproducible methodologies.  
+- Contributing is rewarding and fun!  
+
+---
+
 ## How to Contribute
 
 You can help improve and shape the project in many ways:  
@@ -12,7 +21,7 @@ You can help improve and shape the project in many ways:
 2. Volunteer to implement code changes for existing issues.  
 3. Ask questions or discuss ideas on the [discussion forum](https://github.com/casact/chainladder-python/discussions).  
 4. Improve documentation where it is unclear.  
-5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/en/latest/auto_examples/index.html).  
+5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/en/latest/gallery/index.html).  
 
 ---
 
@@ -23,14 +32,6 @@ We also have a **Contributors Working Group** that meets approximately every two
 During these meetings, we discuss milestones, package design philosophies, outstanding issues, and other behind-the-scenes topics related to our work on GitHub.  
 
 If you're interested in joining, please contact one of the core developers. We welcome contributors of all skill levels and encourage your involvement.
-
----
-
-## Why Contribute
-
-- Gain practical experience with Python, software development, and actuarial methods.  
-- Help advance open-source actuarial research and reproducible methodologies.  
-- Contributing is rewarding—and fun!  
 
 ---
 
@@ -48,21 +49,24 @@ For domain-specific exceptions, discuss on the [issue tracker](https://github.co
 
 ## Development Environment
 
-After forking the repository, set up a development environment using `uv`:
+After forking the repository, you can set up a development environment using `uv`:
 
 ```bash
 # Install uv if you haven't already
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/chainladder-python.git
+# Add uv to your PATH
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Navigate to your working directory
 cd chainladder-python
 
 # Create virtual environment and install all dependencies
 uv sync --extra all
 
 # Activate the environment
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv run python
 ```
 
 This will install the package in editable mode with all development dependencies. After finishing work, deactivate:
