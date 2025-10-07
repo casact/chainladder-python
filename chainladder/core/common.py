@@ -10,9 +10,8 @@ from chainladder.utils.utility_functions import concat
 from chainladder import options
 
 
-
 def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
-    """ Private method that builds full expectation"""
+    """Private method that builds full expectation"""
     full = ultimate_ / cdf_
 
     if is_cumulative:
@@ -27,10 +26,15 @@ def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
 
 
 def _get_full_triangle(X, ultimate, is_cumulative=True):
-    """ Private method that builds full triangle"""
+    """Private method that builds full triangle"""
     # Getting the LDFs and expand for all origins
     from chainladder.utils.utility_functions import num_to_nan
-    emergence = X.ldf_.copy() * (ultimate / ultimate)
+
+    print("==== BREAK ====")
+    emergence = X.cdf_.cum_to_incr().copy() * (ultimate / ultimate)
+    print("ldf_:\n", X.ldf_)
+    print("cdf_:\n", X.cdf_)
+    print("emergence:\n", emergence)
 
     # Setting LDFs for all of the known diagonals as 1
     emergence = (
@@ -38,13 +42,14 @@ def _get_full_triangle(X, ultimate, is_cumulative=True):
         + 1
         + emergence[emergence.valuation >= X.valuation_date]
     )
-    
+
     emergence.valuation_date = pd.to_datetime(options.ULT_VAL)
-    emergence.values = emergence.values.cumprod(axis=3) - 1 
-    
+    emergence.values = emergence.values.cumprod(axis=3) - 1
+
     # Shifting the CDFs by development age, and renaming the last column as 9999
-    emergence.ddims = emergence.ddims + \
-        {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
+    emergence.ddims = (
+        emergence.ddims + {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
+    )
     emergence.ddims[-1] = 9999
     emergence.values = emergence.values / num_to_nan(emergence.values[..., -1:])
     ld = X.incr_to_cum().latest_diagonal
@@ -59,7 +64,7 @@ def _get_full_triangle(X, ultimate, is_cumulative=True):
 
 
 class Common:
-    """ Class that contains common properties of a "fitted" Triangle. """
+    """Class that contains common properties of a "fitted" Triangle."""
 
     @property
     def has_ldf(self):
@@ -73,8 +78,8 @@ class Common:
         if hasattr(self, "zeta_"):
             return True
         else:
-            return False        
-        
+            return False
+
     @property
     def cdf_(self):
         if not self.has_ldf:
@@ -88,7 +93,7 @@ class Common:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'cum_zeta_'")
         return self.zeta_.incr_to_cum()
-    
+
     @property
     def ibnr_(self):
         if not hasattr(self, "ultimate_"):
@@ -97,8 +102,7 @@ class Common:
         if hasattr(self, "X_"):
             ld = self.latest_diagonal
         else:
-            ld = self.latest_diagonal if self.is_cumulative else self.sum(
-                axis=3)
+            ld = self.latest_diagonal if self.is_cumulative else self.sum(axis=3)
         ibnr = self.ultimate_ - ld
         ibnr.vdims = self.ultimate_.vdims
         return ibnr
@@ -127,18 +131,13 @@ class Common:
             X = self.X_
         else:
             X = self
-        return _get_full_triangle(X, self.ultimate_,  X.is_cumulative)
-        
+        return _get_full_triangle(X, self.ultimate_, X.is_cumulative)
 
     def pipe(self, func, *args, **kwargs):
         return func(self, *args, **kwargs)
 
     def set_backend(
-            self,
-            backend: str,
-            inplace: bool = False,
-            deep: bool = False,
-            **kwargs
+        self, backend: str, inplace: bool = False, deep: bool = False, **kwargs
     ):
         """
         Converts triangle array_backend.
@@ -205,7 +204,7 @@ class Common:
         else:
             obj = self.copy()
             return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)
-    
+
     def _validate_assumption(self, triangle, value, axis):
         if type(value) in (int, float, str):
             arr = np.repeat(value, triangle.shape[axis])
