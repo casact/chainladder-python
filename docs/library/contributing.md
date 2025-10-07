@@ -48,26 +48,34 @@ For domain-specific exceptions, discuss on the [issue tracker](https://github.co
 
 ## Development Environment
 
-After forking the repository, set up a development environment:  
+After forking the repository, set up a development environment using `uv`:
 
 ```bash
-conda config --set channel_priority strict
-conda env create --file environment-dev.yaml
-conda config --set channel_priority false
-conda activate cl_dev
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/chainladder-python.git
+cd chainladder-python
+
+# Create virtual environment and install all dependencies
+uv sync --extra all
+
+# Activate the environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
-After finishing, deactivate:  
+This will install the package in editable mode with all development dependencies. After finishing work, deactivate:
 
 ```bash
-conda deactivate
+deactivate
 ```
 
 ---
 
 ## Documentation
 
-Documentation is built with **Jupyter Book**. From the `cl_dev` or `cl_docs` environment:  
+Documentation is built with **Jupyter Book**. From your development environment:  
 
 ```bash
 cd docs
