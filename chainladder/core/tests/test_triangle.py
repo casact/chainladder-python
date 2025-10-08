@@ -759,7 +759,12 @@ def test_halfyear_development():
     ) == cl.Triangle
 
 
-def test_latest_diagonal_vs_full_tri(clrd):
+def test_latest_diagonal_vs_full_tri_raa(raa):
+    model = cl.Chainladder().fit(raa)
+    assert model.ultimate_.latest_diagonal == model.full_triangle_.latest_diagonal
+
+
+def test_latest_diagonal_vs_full_tri_clrd(clrd):
     model = cl.Chainladder().fit(clrd)
     ult = model.ultimate_
     full_tri = model.full_triangle_
