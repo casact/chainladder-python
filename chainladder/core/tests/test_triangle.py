@@ -769,8 +769,4 @@ def test_latest_diagonal_vs_full_tri_clrd(clrd):
     ult = model.ultimate_
     full_tri = model.full_triangle_
 
-    for i in range(1, clrd.shape[0]):
-        for j in range(0, clrd.shape[1]):
-            assert np.round(full_tri.latest_diagonal.iloc[i, j, :, :], 2) == np.round(
-                ult.latest_diagonal.iloc[i, j, :, :], 2
-            )
+    assert np.round(full_tri.latest_diagonal, 2) == np.round(ult.latest_diagonal, 2)
