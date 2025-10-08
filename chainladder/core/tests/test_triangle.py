@@ -245,7 +245,8 @@ def test_trend_on_vector(raa):
     d = raa.latest_diagonal
     assert (
         d.trend(0.05, axis=2).to_frame(origin_as_datetime=False).astype(int).iloc[0, 0]
-        == 29217)
+        == 29217
+    )
 
 
 def test_latest_diagonal_val_to_dev(raa):
@@ -744,7 +745,6 @@ def test_halfyear_development():
         ["2012-01-01", "2013-12-31", "incurred", 200.0],
     ]
 
-    
     assert (
         type(
             cl.Triangle(
@@ -757,3 +757,15 @@ def test_halfyear_development():
             )
         )
     ) == cl.Triangle
+
+
+def test_latest_diagonal_vs_full_tri(clrd):
+    model = cl.Chainladder().fit(clrd)
+    ult = model.ultimate_
+    full_tri = model.full_triangle_
+
+    for i in range(1, clrd.shape[0]):
+        for j in range(0, clrd.shape[1]):
+            assert np.round(full_tri.latest_diagonal.iloc[i, j, :, :], 2) == np.round(
+                ult.latest_diagonal.iloc[i, j, :, :], 2
+            )
