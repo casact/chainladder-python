@@ -30,21 +30,7 @@ def _get_full_triangle(X, ultimate, is_cumulative=True):
     # Getting the LDFs and expand for all origins
     from chainladder.utils.utility_functions import num_to_nan
 
-    # print("==== BREAK ====")
-    # emergence = X.ldf_.copy() * (ultimate / ultimate)
     emergence = (X.ldf_.copy() * (ultimate / ultimate)).fillna(1)
-    # print("X:\n", X)
-    # print(
-    #     "X.ldf_.copy() * (ultimate / ultimate):\n",
-    #     X.ldf_.copy() * (ultimate / ultimate),
-    # )
-    # print("ldf_:\n", X.ldf_)
-    # print("cdf_:\n", X.cdf_)
-
-    # print("emergence:\n", emergence)
-    # print("new_emergence:\n", new_emergence)
-
-    # emergence = new_emergence
 
     # Setting LDFs for all of the known diagonals as 1
     emergence = (
