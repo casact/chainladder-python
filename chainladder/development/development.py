@@ -14,8 +14,12 @@ class Development(DevelopmentBase):
     Parameters
     ----------
     n_periods: integer, optional (default = -1)
-        number of origin periods to be used in the ldf average calculation. For
-        all origin periods, set n_periods = -1
+        number of origin periods to be used in the ldf average calculation. When
+        used in combination with drop parameters (drop, drop_valuation), n_periods
+        counts only valid (non-dropped) periods. For example, if n_periods=3 and
+        one period is dropped, the calculation will use the 3 most recent valid
+        periods, excluding the dropped period. For all origin periods, set 
+        n_periods = -1.
     average: string or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.  Options include
         'volume', 'simple', and 'regression'. If numeric values are supplied,
@@ -29,12 +33,14 @@ class Development(DevelopmentBase):
         Drops highest (by rank) link ratio(s) from LDF calculation
         If a boolean variable is passed, drop_high is set to 1, dropping only the
         highest value
-        Note that drop_high is performed after consideration of n_periods (if used)
+        Note that drop_high is applied independently from explicit drops
+        (drop, drop_valuation) when determining n_periods selection.
     drop_low: bool, int, list of bools, or list of ints (default = None)
         Drops lowest (by rank) link ratio(s) from LDF calculation
         If a boolean variable is passed, drop_low is set to 1, dropping only the
         lowest value
-        Note that drop_low is performed after consideration of n_periods (if used)
+        Note that drop_low is applied independently from explicit drops
+        (drop, drop_valuation) when determining n_periods selection.
     drop_above: float or list of floats (default = numpy.inf)
         Drops all link ratio(s) above the given parameter from the LDF calculation
     drop_below: float or list of floats (default = 0.00)
@@ -152,9 +158,11 @@ class Development(DevelopmentBase):
                 # secondary_rank=obj.iloc[..., :-1, :-1]
             )
 
-        self.w_ = self._assign_n_periods_weight(
-            obj, n_periods_
-        ) * self._drop_adjustment(obj, link_ratio)
+        drop_mask = self._drop_adjustment(obj, link_ratio)
+
+        self.w_ = self._apply_n_periods_with_drops(
+            n_periods_, drop_mask, link_ratio, xp
+        )
         w = num_to_nan(self.w_ / (x ** (exponent)))
 
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
@@ -187,6 +195,60 @@ class Development(DevelopmentBase):
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date]
 
         return self
+    
+    def _apply_n_periods_with_drops(self, n_periods, drop_mask, link_ratio, xp):
+        """
+        Apply n_periods selection while respecting dropped link ratios.
+        
+        This method ensures that when n_periods is specified along with explicit
+        drops (via drop or drop_valuation parameters), the n_periods count only
+        includes valid (non-dropped) periods. The selection ranks valid periods
+        from most recent to oldest and selects the top n_periods.
+        
+        Parameters
+        ----------
+        n_periods : array
+            Number of periods to include for each development age. 
+        drop_mask : array
+            Binary mask indicating which origin-development combinations are valid
+            (1) vs dropped (0). 
+        link_ratio : array
+            Array of link ratios used to identify which periods have valid data
+        xp : module
+            Array module (numpy or cupy) for array operations
+            
+        Returns
+        -------
+        final_mask : array
+            Binary weight mask with 1 for selected periods, 0 for excluded periods.
+            
+        """
+        #  A link ratio is "valid" if it exists (is not NaN) AND has not been excluded by the user's drop rules.
+        available_mask = ~xp.isnan(link_ratio)
+        valid_mask = available_mask & drop_mask.astype(bool)
+
+        # Handle n_periods=-1, replace -1 with a number larger than the maximum number of origin periods to effectively select all.
+        n_periods_mod = n_periods.copy()
+        max_origins = link_ratio.shape[2]  # Get max # of origins
+        n_periods_mod[n_periods_mod == -1] = max_origins
+
+        # Calculate the "reverse rank" of each valid period. For each development column, 
+        # rank the valid data points from most recent (rank 1) to oldest.
+        
+        # Total number of valid points in each development column.
+        total_valid_per_col = xp.sum(valid_mask, axis=2, keepdims=True)
+        
+        # Cumulative sum of valid points from oldest to newest.
+        cum_valid_from_oldest = xp.cumsum(valid_mask, axis=2)
+        
+        # The rank from the end is: Total - CumSum_from_start + 1 (for the current item)
+        rev_rank = total_valid_per_col - cum_valid_from_oldest + valid_mask.astype(int)
+
+        # The final weight mask includes a point if it is valid AND its
+        # reverse rank is less than or equal to the desired n_periods.
+        final_mask = (rev_rank <= n_periods_mod) & valid_mask
+
+        return final_mask.astype(float)
 
     def transform(self, X):
         """If X and self are of different shapes, align self to X, else

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import chainladder as cl
 import pytest
 
@@ -426,3 +427,126 @@ def test_pipeline(clrd):
     assert np.array_equal(
         dev1.w_v2_.values, dev2.named_steps.drop_hilo.w_v2_.values, True
     )
+
+def test_n_periods_with_drop():
+    """Test that n_periods counts only valid (non-dropped) periods"""
+    # Create a triangle
+    data = {
+        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", 
+                   "2008-01-01", "2008-01-01", 
+                   "2009-01-01"],
+        'development': ["2007-01-01", "2008-01-01", "2009-01-01", 
+                        "2008-01-01", "2009-01-01", 
+                        "2009-01-01"],
+        'loss': [100, 200, 300, 150, 250, 350]
+    }
+    tri = cl.Triangle(
+        pd.DataFrame(data),
+        origin='origin',
+        development='development',
+        columns='loss',
+        cumulative=True
+    )
+
+    # Without drop: n_periods=1 should use 2008 (most recent)
+    dev_no_drop = cl.Development(n_periods=1, average='volume')
+    dev_no_drop.fit(tri)
+    ldf_no_drop = dev_no_drop.ldf_.values[0, 0, 0, 0]
+
+    # With drop: n_periods=1 should skip 2008 and use 2007
+    dev_with_drop = cl.Development(n_periods=1, drop=[("2008", 12)], average='volume')
+    dev_with_drop.fit(tri)
+    ldf_with_drop = dev_with_drop.ldf_.values[0, 0, 0, 0]
+
+    # These should be different
+    assert ldf_no_drop != ldf_with_drop
+    # With drop should use 2007's ratio (200 / 100 = 2)
+    assert np.round(ldf_with_drop, 2) == 2.00
+    # Without drop should use 2008's ratio (250/150 = 1.67)
+    assert np.round(ldf_no_drop, 2) == 1.67
+
+
+def test_n_periods_with_drop_valuation():
+    """Test that n_periods correctly skips a dropped valuation period."""
+    raa = cl.load_sample("raa")
+    
+    
+    # Dropping valuation '1989' with n_periods 2 should result in using 1987 and 1988 in the first column
+    dev_with_drop = cl.Development(n_periods=2, drop_valuation="1989", average='volume')
+    dev_with_drop.fit(raa)
+
+    weights = dev_with_drop.w_[0, 0, :, 0]
+    
+    origin_years_with_weights = raa.origin.year[weights > 0]
+    
+    assert set(origin_years_with_weights) == {1988, 1987}
+
+
+def test_insufficient_periods_after_drop():
+    """Test behavior when n_periods exceeds available valid periods after drops."""
+    raa = cl.load_sample("raa")
+    
+   # Request n_periods=3 but drop 2 periods so only 7 available
+    dev = cl.Development(
+        n_periods=8, 
+        drop=[("1989", 12), ("1988", 12)], 
+        average='volume'
+    )
+    dev.fit(raa)
+
+    weights = dev.w_[0, 0, :, 0]
+    origin_years_with_weights = raa.origin.year[weights > 0]
+    
+    # Only one of the three most recent periods is left (1988).
+    # The estimator should use it without error.
+    assert set(origin_years_with_weights) == {1981, 1982, 1983, 1984, 1985, 1986, 1987}
+
+def test_n_periods_all_works_with_drops():
+    """Test that n_periods=-1 (all periods) still correctly applies drops."""
+    raa = cl.load_sample("raa")
+    
+    dev_all = cl.Development(n_periods=-1, average='volume')
+    dev_all.fit(raa)
+    num_periods_all = np.sum(dev_all.w_[0, 0, :, 0])
+
+    dev_dropped = cl.Development(n_periods=-1, drop=[("1982", 12)], average='volume')
+    dev_dropped.fit(raa)
+    num_periods_dropped = np.sum(dev_dropped.w_[0, 0, :, 0])
+    
+    # The number of periods used should be exactly one less after the drop
+    assert num_periods_dropped == num_periods_all - 1
+
+def test_drop_in_one_column_preserves_other_columns():
+    """Test that drops in one development period do not affect others."""
+    raa = cl.load_sample("raa")
+    
+    # Drop only affects '12-24', should not affect '24-36'
+    dev = cl.Development(n_periods=2, drop=[("1989", 12)], average='volume')
+    dev.fit(raa)
+    
+    dev_no_drop = cl.Development(n_periods=2, average='volume')
+    dev_no_drop.fit(raa)
+    
+    # LDF for '24-36' should be identical in both estimators
+    ldf_24_36 = dev.ldf_.values[0, 0, 0, 1]
+    ldf_24_36_no_drop = dev_no_drop.ldf_.values[0, 0, 0, 1]
+    
+    assert ldf_24_36 == ldf_24_36_no_drop
+
+# --- Multi-Index Test ---
+
+def test_n_periods_with_drop_multiindex_triangle(clrd):
+    """Test n_periods with drop on a multi-index (grouped) triangle."""
+    clrd_grouped = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    
+    # Apply n_periods with a drop on the multi-index triangle
+    dev = cl.Development(n_periods=3, drop=[("1992", 12)], average='volume')
+    dev.fit(clrd_grouped)
+    
+    # Check that the calculation was successful for all LOBs and all measures
+    assert not np.any(np.isnan(dev.ldf_.values))
+    
+    # Check shape to ensure it ran on all grouped triangles
+    # 6 LOBs, 2 measures (IncurLoss, CumPaidLoss)
+    assert dev.ldf_.shape[0] == 6
+    assert dev.ldf_.shape[1] == 2
