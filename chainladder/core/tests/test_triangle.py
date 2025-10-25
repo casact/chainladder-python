@@ -771,7 +771,7 @@ def test_latest_diagonal_vs_full_tri_clrd(clrd):
 
     assert np.round(full_tri.latest_diagonal, 0) == np.round(ult.latest_diagonal, 0)
 
-def test_semi_annual_grain()
+def test_semi_annual_grain():
     Sdata = {
         'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
                 "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01",
