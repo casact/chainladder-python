@@ -831,7 +831,7 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
-        print(obj.values)
+        
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
@@ -847,7 +847,7 @@ class Triangle(TriangleBase):
                 obj.ddims = ddims
 
             obj.development_grain = dgrain_new
-        print(obj.values)
+        
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
 
         if inplace:
