@@ -428,7 +428,7 @@ class Triangle(TriangleBase):
         ddims = self.ddims.copy()
         if self.is_val_tri:
             formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(freq=self.development_grain).strftime(
+            ddims = ddims.to_period(freq=(self.development_grain if self.development_grain != "S" else "2Q")).strftime(
                 formats[self.development_grain]
             )
         elif self.is_pattern:
@@ -803,20 +803,25 @@ class Triangle(TriangleBase):
             ).values
 
             obj = obj.groupby(groups, axis=2).sum()
-
             obj.origin_close = origin_period_end
+
+            dstart_freq = dgrain_old + obj.origin.freqstr[-4:]
+            if dgrain_old == "M":
+                dstart_freq = dgrain_old
+            elif dgrain_old == "S":
+                dstart_freq = "Q"
+
             d_start = pd.Period(
                 obj.valuation[0],
-                freq=(
-                    dgrain_old
-                    if dgrain_old == "M"
-                    else dgrain_old + obj.origin.freqstr[-4:]
-                ),
+                freq=dstart_freq,
             ).to_timestamp(how="s")
+
+            if dgrain_old == "S":
+                d_start = d_start +  pd.DateOffset(months=-3)
 
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=('2Q' if dgrain_old == 'S' else dgrain_old))[
                         :-1
                     ]
                     .to_timestamp()
@@ -826,7 +831,7 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
-
+        print(obj.values)
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
@@ -842,7 +847,7 @@ class Triangle(TriangleBase):
                 obj.ddims = ddims
 
             obj.development_grain = dgrain_new
-
+        print(obj.values)
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
 
         if inplace:
