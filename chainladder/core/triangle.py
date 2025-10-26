@@ -263,13 +263,13 @@ class Triangle(TriangleBase):
                 grain_sort.index(self.development_grain),
             )
         ]
-        
+
         # Coerce malformed triangles to something more predictable.
         check_origin: np.ndarray = (
             pd.period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
-                freq=self.origin.freqstr.replace("S", "2Q"),
+                freq=self.origin_grain.replace("S", "2Q") + '-' + self.origin_close,
             )
             .to_timestamp()
             .values
