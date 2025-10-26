@@ -827,3 +827,17 @@ def test_semi_annual_grain():
         cumulative=True
     )
     assert Atri == Stri.grain('OYDY')
+
+def test_odd_quarter_end():
+    data= pd.DataFrame([
+        ["5/1/2023", 12, '4/30/2024', 100],
+        ["8/1/2023", 9, "4/30/2024", 130],
+        ["11/1/2023", 6, "4/30/2024", 160],
+        ["2/1/2024", 3, "4/30/2024", 140]], 
+        columns = ['origin', 'development', 'valuation', 'EarnedPremium'])
+    triangle = cl.Triangle(
+        data, origin='origin', origin_format='%Y-%m-%d', development='valuation', columns='EarnedPremium', trailing=True, cumulative=True
+    )
+    data_from_tri = triangle.to_frame(origin_as_datetime=True)
+    assert np.all(data_from_tri['2024Q2'].values == [100.,130.,160.,140.])
+    assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023","8/1/2023","11/1/2023","2/1/2024"],freq = 'QS-NOV'))
