@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import chainladder as cl
-
+import pandas as pd
 
 @pytest.fixture
 def atol():
@@ -48,3 +48,23 @@ def test_different_backends(clrd):
         )
         < 1
     )
+
+def test_odd_shaped_triangle():
+    df = pd.DataFrame({
+        "claim_year": 2000 + pd.Series([0] * 8 + [1] * 4),
+        "claim_month": [1, 4, 7, 10] * 3,
+        "dev_year": 2000 + pd.Series([0] * 4 + [1] * 8),
+        "dev_month": [1, 4, 7, 10] * 3,
+        "payment": [1] * 12,
+    })
+    tr = cl.Triangle(
+        df,
+        origin=["claim_year", "claim_month"],
+        development=["dev_year", "dev_month"],
+        columns="payment",
+        cumulative=False,
+    )
+    atr = tr.grain("OYDQ")
+    ult1 = cl.Benktander(apriori = 1,n_iters=10000).fit(cl.Development(average="volume").fit_transform(atr),sample_weight = atr.latest_diagonal).ultimate_.sum()
+    ult2 = cl.Benktander(apriori = 1,n_iters=10000).fit(cl.Development(average="volume").fit_transform(tr),sample_weight = tr.latest_diagonal).ultimate_.grain("OYDQ").sum()
+    assert abs(ult1 - ult2) < 1e-5
