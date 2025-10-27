@@ -97,9 +97,7 @@ class CapeCod(Benktander):
 
     def _get_capecod_aprioris(self, X, sample_weight):
         """Private method to establish CapeCod Apriori"""
-        if X.is_cumulative == False:
-            X = X.sum("development").val_to_dev()
-        latest = X.latest_diagonal
+        latest = X.incr_to_cum().latest_diagonal
         len_orig = sample_weight.shape[-2]
         reported_exposure = sample_weight / self._align_cdf(X.copy(), sample_weight)
         reported_exposure = reported_exposure.set_backend(latest.array_backend)
