@@ -1,4 +1,5 @@
 import chainladder as cl
+import pandas as pd
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]
@@ -150,3 +151,22 @@ def test_align_cdfs():
 def test_check_val_tri_cl(raa):
     model = cl.Chainladder().fit(raa.dev_to_val())
     assert model.predict(raa.latest_diagonal).ultimate_ == model.ultimate_
+
+def test_odd_shaped_triangle():
+    df = pd.DataFrame({
+        "claim_year": 2000 + pd.Series([0] * 8 + [1] * 4),
+        "claim_month": [1, 4, 7, 10] * 3,
+        "dev_year": 2000 + pd.Series([0] * 4 + [1] * 8),
+        "dev_month": [1, 4, 7, 10] * 3,
+        "payment": [1] * 12,
+    })
+    tr = cl.Triangle(
+        df,
+        origin=["claim_year", "claim_month"],
+        development=["dev_year", "dev_month"],
+        columns="payment",
+        cumulative=False,
+    )
+    ult1 = cl.Chainladder().fit(cl.Development(average="volume").fit_transform(tr.grain("OYDQ"))).ultimate_.sum()
+    ult2 = cl.Chainladder().fit(cl.Development(average="volume").fit_transform(tr)).ultimate_.grain("OYDQ").sum()
+    assert abs(ult1 - ult2) < 1e-5

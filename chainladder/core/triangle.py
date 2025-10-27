@@ -151,7 +151,7 @@ class Triangle(TriangleBase):
         # Store dimension metadata.
         self.columns_label: list = columns
         self.origin_label: list = origin
-
+        
         # Handle any ultimate vectors in triangles separately.
         data, ult = self._split_ult(
             data=data,
@@ -200,7 +200,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
         )
-
+        
         # Fill in missing periods with zeros.
         date_axes: DataFrame = self._get_date_axes(
             data_agg["__origin__"],
@@ -227,7 +227,7 @@ class Triangle(TriangleBase):
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
-
+        
         # Set remaining triangle properties.
         val_date: Timestamp = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
@@ -245,7 +245,7 @@ class Triangle(TriangleBase):
         self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern: bool = pattern
-
+        
         split: list[str] = self.origin_grain.split("-")
         self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
 
@@ -269,7 +269,7 @@ class Triangle(TriangleBase):
             pd.period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
-                freq=self.origin_grain.replace("S", "2Q"),
+                freq=self.origin_grain.replace("S", "2Q") + ('' if self.origin_grain == "M" else '-' + self.origin_close),
             )
             .to_timestamp()
             .values
@@ -428,7 +428,7 @@ class Triangle(TriangleBase):
         ddims = self.ddims.copy()
         if self.is_val_tri:
             formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(freq=(self.development_grain if self.development_grain != "S" else "2Q")).strftime(
+            ddims = ddims.to_period(freq=self.development_grain.replace("S", "2Q")).strftime(
                 formats[self.development_grain]
             )
         elif self.is_pattern:
@@ -805,15 +805,9 @@ class Triangle(TriangleBase):
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = origin_period_end
 
-            dstart_freq = dgrain_old + obj.origin.freqstr[-4:]
-            if dgrain_old == "M":
-                dstart_freq = dgrain_old
-            elif dgrain_old == "S":
-                dstart_freq = "Q"
-
             d_start = pd.Period(
                 obj.valuation[0],
-                freq=dstart_freq,
+                freq=dgrain_old.replace("S", "2Q") + ('' if dgrain_old == "M" else obj.origin.freqstr[-4:]),
             ).to_timestamp(how="s")
 
             if dgrain_old == "S":
@@ -821,7 +815,7 @@ class Triangle(TriangleBase):
 
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=('2Q' if dgrain_old == 'S' else dgrain_old))[
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S","2Q"))[
                         :-1
                     ]
                     .to_timestamp()
