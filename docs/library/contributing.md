@@ -66,7 +66,7 @@ cd chainladder-python
 uv sync --extra all
 
 # Activate the environment
-uv run python
+uv run python # or uv run jupyter-lab
 ```
 
 This will install the package in editable mode with all development dependencies. After finishing work, deactivate:
