@@ -269,7 +269,7 @@ class Triangle(TriangleBase):
             pd.period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
-                freq=self.origin_grain.replace("S", "2Q") + '-' + self.origin_close,
+                freq=self.origin_grain.replace("S", "2Q") + ('' if self.origin_grain == "M" else '-' + self.origin_close),
             )
             .to_timestamp()
             .values
@@ -805,15 +805,9 @@ class Triangle(TriangleBase):
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = origin_period_end
 
-            dstart_freq = dgrain_old + obj.origin.freqstr[-4:]
-            if dgrain_old == "M":
-                dstart_freq = dgrain_old
-            elif dgrain_old == "S":
-                dstart_freq = "Q"
-
             d_start = pd.Period(
                 obj.valuation[0],
-                freq=dstart_freq,
+                freq=dgrain_old.replace("S", "2Q") + ('' if dgrain_old == "M" else obj.origin.freqstr[-4:]),
             ).to_timestamp(how="s")
 
             if dgrain_old == "S":
