@@ -11,6 +11,14 @@ def atol():
 data = ["RAA", "ABC", "GenIns", "MW2008", "MW2014"]
 
 
+def test_bk_fit_weight():
+    """
+    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    """
+    raa = cl.load_sample("RAA")
+    with pytest.raises(ValueError):
+        cl.Benktander().fit(raa)
+
 @pytest.mark.parametrize("data", data)
 def test_benktander_to_chainladder(data, atol):
     tri = cl.load_sample(data)

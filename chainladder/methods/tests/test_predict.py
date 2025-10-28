@@ -1,5 +1,6 @@
 import chainladder as cl
 import pandas as pd
+import pytest 
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]
@@ -12,16 +13,32 @@ def test_cc_predict():
     cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
     assert cc.predict(raa, sample_weight=apriori)
 
-
 def test_bf_predict():
     bf = cl.BornhuetterFerguson().fit(raa_1989, sample_weight=apriori_1989)
     assert bf.predict(raa, sample_weight=apriori)
 
+def test_el_predict():
+    bf = cl.ExpectedLoss().fit(raa_1989, sample_weight=apriori_1989)
+    assert bf.predict(raa, sample_weight=apriori)
 
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
     assert mack.predict(raa_1989)
 
+def test_capecod_fit_weight():
+    """
+    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    """
+    with pytest.raises(ValueError):
+        cl.CapeCod().fit(raa_1989)
+
+def test_capecod_predict_weight():
+    """
+    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    """
+    with pytest.raises(ValueError):
+        cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
+        cc.predict(raa)
 
 def test_bs_random_state_predict(clrd):
     tri = clrd.groupby("LOB").sum().loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]
