@@ -1,5 +1,9 @@
 import chainladder as cl
 
+raa = cl.load_sample("RAA")
 
-def val_corr_p(data, ci):
-    return cl.load_sample(data).valuation_correlation(p_critical=ci, total=True)
+def test_val_corr():
+    assert raa.valuation_correlation(p_critical=0.5, total=True)
+
+def test_dev_corr():
+    assert raa.development_correlation(p_critical=0.5)
