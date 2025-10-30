@@ -124,7 +124,7 @@ settings.json
 coverage_html_report
 
 # Random python test workbooks
-Untitled.ipynb
+**/Untitled*.ipynb
 
 # IntelliJ .idea folder
 .idea

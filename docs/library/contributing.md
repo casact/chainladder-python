@@ -1,125 +1,121 @@
-(contributing)=
-## Contributing
+# Contributing
 
+**`chainladder-python`** welcomes volunteers at all levels, whether you are new to actuarial reserving, Python, or both. Feedback, questions, suggestions, and contributions are all highly encouraged.
 
-``chainladder-python`` welcomes volunteers for all aspects of the
-project. Whether you’re new to actuarial reserving, new to python, or
-both, feedback, questions, suggestions and, of course, contributions are
-all welcomed.
+---
 
-### How Do I Contribute?
+## Why Contribute
 
+- Gain practical experience with Python, software development, and actuarial methods.  
+- Meet like-minded actuaries that prefer open-source software.
+- Help advance open-source actuarial research and reproducible methodologies.  
+- Contributing is rewarding and fun!  
 
-There are tons of ways to improve and shape the direction of this
-project.
+---
 
-1. Submitting bugs or enhancements to the [issue
-   tracker](https://github.com/casact/chainladder-python/issues).
-2. Volunteer to draft code changes for existing
-   [issues](https://github.com/casact/chainladder-python/issues).
-3. Ask questions through the [discussion forum](https://github.com/casact/chainladder-python/discussions).
-4. Improve the [documents](https://chainladder-python.readthedocs.io/en/latest/) where they are unclear.
-5. Make new [examples](https://chainladder-python.readthedocs.io/en/latest/auto_examples/index.html).
+## How to Contribute
 
-### Why Contribute?
+You can help improve and shape the project in many ways:  
 
+1. Submit bugs or enhancement requests via the [issue tracker](https://github.com/casact/chainladder-python/issues).  
+2. Volunteer to implement code changes for existing issues.  
+3. Ask questions or discuss ideas on the [discussion forum](https://github.com/casact/chainladder-python/discussions).  
+4. Improve documentation where it is unclear.  
+5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/en/latest/gallery/index.html).  
 
-1. Contributing to an open-source project is an incredibly rewarding
-   learning experience. Whether your interests are in learning python,
-   implementing functionality you need, software development, or gaining
-   a deeper appreciation for how actuarial methods work, you will learn
-   a ton.
-2. Actuarial literature has a history of being free and open source, but
-   we’re barely scratching the surface on reproducible research or a
-   similar level of freedom with regard to tools.
-3. It’s fun.
+---
 
-If you are interested in contributing. Here are a few helpful hints to
-make the journey enjoyable.
+## Contributors Working Group
 
-### API Guidelines
+We also have a **Contributors Working Group** that meets approximately every two weeks for one hour. The current meeting time is **Fridays from 9:00–10:00 AM PT / 12:00–1:00 PM ET**.  
 
+During these meetings, we discuss milestones, package design philosophies, outstanding issues, and other behind-the-scenes topics related to our work on GitHub.  
 
-``chainladder-python`` by design is intended to mimic the API styles of
-``pandas`` and ``scikit-learn``. This benefits the on-going development
-of the package as API design is not up for debate which should eliminate
-many inquiries on how to write new functionality. In general,
+If you're interested in joining, please contact one of the core developers. We welcome contributors of all skill levels and encourage your involvement.
 
-1. the API for any estimator/transformer must strive to follow the
-   [scikit-learn estimator API](https://scikit-learn.org/stable/developers/develop.html).
-2. Methods for the ``Triangle`` classes should generally follow the same
-   name and signature as ``pandas`` if it exists, followed by ``numpy``.
-   Methods that are truly domain specific with no equivalency in
-   ``pandas`` or ``numpy`` should follow
-   [PEP8](https://www.python.org/dev/peps/pep-0008/#method-names-and-instance-variables)
-   naming convention.
-3. ``Triangle`` methods should never be self-mutating by default.
-   Mutation is allowable with an ``inplace`` argument similar to pandas.
+---
 
-Occasionally, there will be cases where domain-specific functionality
-does not fit neatly into the existing API and these should be discussed
-in [issue](https://github.com/casact/chainladder-python/issues).
+## API Guidelines
 
-### Setting Up Development Environment
+`chainladder-python` is designed to follow the style of **pandas** and **scikit-learn**. This ensures a consistent API and simplifies new development:  
 
-Once you’ve forked the repository, you’ll need a development
-environment. A conda development environment ``chainladder`` including
-all testing and documentation dependencies can be set up as follows:
+1. Estimators and transformers should follow the [scikit-learn estimator API](https://scikit-learn.org/stable/developers/develop.html).  
+2. `Triangle` methods should align with **pandas** (then **NumPy**) naming and signature conventions. Domain-specific methods with no equivalent should follow [PEP8](https://www.python.org/dev/peps/pep-0008/#method-names-and-instance-variables).  
+3. `Triangle` methods are non-mutating by default. Mutation is allowed only via an `inplace` argument.  
+
+For domain-specific exceptions, discuss on the [issue tracker](https://github.com/casact/chainladder-python/issues).
+
+---
+
+## Development Environment
+
+After forking the repository, you can set up a development environment using `uv`:
 
 ```bash
-conda config --set channel_priority strict
-conda env create --file environment-dev.yaml
-conda config --set channel_priority false
-conda activate cl_dev
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Add uv to your PATH
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Navigate to your working directory
+cd chainladder-python
+
+# Create virtual environment and install all dependencies
+uv sync --extra all
+
+# Activate the environment
+uv run python # or uv run jupyter-lab
 ```
 
-When you are done with development, you should exit ``cl_dev``.
+This will install the package in editable mode with all development dependencies. After finishing work, deactivate:
 
 ```bash
-conda deactivate
+deactivate
 ```
-   
 
-### Updating the Documentation
+---
 
+## Documentation
 
-The documentation is build using ``jupyter-book``.  
-From your ``cl_dev`` or ``cl_docs`` conda environment, docs can be generated by navigating
-to the ‘/docs’ folder and running ``jb build .`` at the command line. The
-built site will be available in your ``_build\html`` folder.
+Documentation is built with **Jupyter Book**. From your development environment:  
 
-Editing of the documentation happens in one of four places:
+```bash
+cd docs
+jb build .
+```
 
-1. First, the docstrings of the actual library live with the code and
-   get hosted as part of the API reference
+The generated site is in `_build/html`. Documentation is maintained in:  
 
-2. The User Guide is written in jupyter notebooks in the ‘/docs/modules’
-   folder.
+1. Docstrings within the code (hosted in API reference).  
+2. User Guide notebooks (`/docs/modules`).  
+3. Tutorial notebooks (`/docs/tutorials`).  
 
-3. The tutorials are jupyter notebooks stored at ‘docs/tutorials’.
+Contributions to documentation are especially helpful for new users.
 
-Docs are a great way for newer users to get involved. New user help is
-especially helpful in clarifying the docs as they are the primary user
-of the docs.
+---
 
-### Pull Requests
+## Pull Requests (PRs)
 
+**Guidelines for PRs:**  
 
-Pull requests (PR) should be tied to an
-[issue](https://github.com/casact/chainladder-python/issues>). It’s
-generally a good idea to keep issues and pull requests small. Like all
-projects, the larger the PR, the less likely it will be merged.
+**PRs must:**  
+- Pass all existing unit tests  
+- Undergo independent peer review  
 
-All pull requests must pass existing unit tests. On occasion, existing
-unit tests can be in violation of the API guidelines. These unit tests
-should be refined to accommodate the API ethos set forth above. It is a
-good practice to run tests ahead of pushing changes to Github. That
-said, these unit tests will be run by Github.
+**PRs are encouraged to:**  
+- Be small, focused, and modular  
+- Link to relevant Issue ticket(s)  
+- Include docstring updates for any code changes  
+- Update the documentation site for corresponding changes  
+- Follow established naming conventions  
+- Include new unit tests with reasonable coverage  
 
+All PRs should be run locally before submission:  
 
-```bash 
+```bash
 pytest chainladder
 ```
 
-New functionality should include new unit tests with a reasonable level
-of code coverage.
+Large or unfocused PRs may delay merging. Each PR should address a single issue or feature to maintain clarity and quality.

@@ -1,4 +1,6 @@
 import chainladder as cl
+import pandas as pd
+import pytest 
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]
@@ -11,16 +13,32 @@ def test_cc_predict():
     cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
     assert cc.predict(raa, sample_weight=apriori)
 
-
 def test_bf_predict():
     bf = cl.BornhuetterFerguson().fit(raa_1989, sample_weight=apriori_1989)
     assert bf.predict(raa, sample_weight=apriori)
 
+def test_el_predict():
+    bf = cl.ExpectedLoss().fit(raa_1989, sample_weight=apriori_1989)
+    assert bf.predict(raa, sample_weight=apriori)
 
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
     assert mack.predict(raa_1989)
 
+def test_capecod_fit_weight():
+    """
+    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    """
+    with pytest.raises(ValueError):
+        cl.CapeCod().fit(raa_1989)
+
+def test_capecod_predict_weight():
+    """
+    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    """
+    with pytest.raises(ValueError):
+        cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
+        cc.predict(raa)
 
 def test_bs_random_state_predict(clrd):
     tri = clrd.groupby("LOB").sum().loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]
@@ -150,3 +168,22 @@ def test_align_cdfs():
 def test_check_val_tri_cl(raa):
     model = cl.Chainladder().fit(raa.dev_to_val())
     assert model.predict(raa.latest_diagonal).ultimate_ == model.ultimate_
+
+def test_odd_shaped_triangle():
+    df = pd.DataFrame({
+        "claim_year": 2000 + pd.Series([0] * 8 + [1] * 4),
+        "claim_month": [1, 4, 7, 10] * 3,
+        "dev_year": 2000 + pd.Series([0] * 4 + [1] * 8),
+        "dev_month": [1, 4, 7, 10] * 3,
+        "payment": [1] * 12,
+    })
+    tr = cl.Triangle(
+        df,
+        origin=["claim_year", "claim_month"],
+        development=["dev_year", "dev_month"],
+        columns="payment",
+        cumulative=False,
+    )
+    ult1 = cl.Chainladder().fit(cl.Development(average="volume").fit_transform(tr.grain("OYDQ"))).ultimate_.sum()
+    ult2 = cl.Chainladder().fit(cl.Development(average="volume").fit_transform(tr)).ultimate_.grain("OYDQ").sum()
+    assert abs(ult1 - ult2) < 1e-5

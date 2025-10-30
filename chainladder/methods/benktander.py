@@ -107,12 +107,8 @@ class Benktander(MethodBase):
     def _get_ultimate(self, X, expectation):
         from chainladder.utils.utility_functions import num_to_nan
 
-        if X.is_cumulative == False:
-            ld = X.sum("development")
-            ultimate = ld.val_to_dev()
-        else:
-            ld = X.latest_diagonal
-            ultimate = X.copy()
+        ld = X.incr_to_cum().latest_diagonal
+        ultimate = X.incr_to_cum().copy()
         cdf = self._align_cdf(ultimate.val_to_dev(), expectation)
         backend = cdf.array_backend
         xp = cdf.get_array_module()

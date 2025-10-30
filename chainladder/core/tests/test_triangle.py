@@ -245,7 +245,8 @@ def test_trend_on_vector(raa):
     d = raa.latest_diagonal
     assert (
         d.trend(0.05, axis=2).to_frame(origin_as_datetime=False).astype(int).iloc[0, 0]
-        == 29217)
+        == 29217
+    )
 
 
 def test_latest_diagonal_val_to_dev(raa):
@@ -744,7 +745,6 @@ def test_halfyear_development():
         ["2012-01-01", "2013-12-31", "incurred", 200.0],
     ]
 
-    
     assert (
         type(
             cl.Triangle(
@@ -757,3 +757,87 @@ def test_halfyear_development():
             )
         )
     ) == cl.Triangle
+
+
+def test_latest_diagonal_vs_full_tri_raa(raa):
+    model = cl.Chainladder().fit(raa)
+    assert model.ultimate_.latest_diagonal == model.full_triangle_.latest_diagonal
+
+
+def test_latest_diagonal_vs_full_tri_clrd(clrd):
+    model = cl.Chainladder().fit(clrd)
+    ult = model.ultimate_
+    full_tri = model.full_triangle_
+
+    assert np.round(full_tri.latest_diagonal, 0) == np.round(ult.latest_diagonal, 0)
+
+def test_semi_annual_grain():
+    Sdata = {
+        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
+                "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01",
+                "2008-01-01", "2008-01-01", "2008-01-01", "2008-01-01", "2008-01-01",
+                "2008-07-01", "2008-07-01", "2008-07-01", "2008-07-01",
+                "2009-01-01", "2009-01-01", "2009-01-01",
+                "2009-07-01", "2009-07-01",
+                "2010-01-01"],
+        'development': ["2007-01-01", "2007-07-01", "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2007-07-01", "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2009-07-01", "2010-01-01",
+                        "2010-01-01"],
+        'loss': [100, 200, 300, 400, 500, 600, 700, 
+                150, 300, 450, 500, 550, 600, 
+                200, 250, 350, 400, 450, 
+                50, 100, 150, 200,
+                100, 200, 300,
+                50, 150, 
+                100]
+    }
+
+    Stri = cl.Triangle(
+        pd.DataFrame(Sdata), 
+        origin='origin',
+        development='development',
+        columns='loss',
+        cumulative=True
+    )
+
+    Adata = {
+        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
+                "2008-01-01", "2008-01-01", "2008-01-01",
+                "2009-01-01", "2009-01-01",
+                "2010-01-01"],
+        'development': ["2007-01-01", "2008-01-01", "2009-01-01", "2010-01-01",
+                        "2008-01-01", "2009-01-01", "2010-01-01",
+                        "2009-01-01", "2010-01-01",
+                        "2010-01-01"],
+        'loss': [100, 600, 1000, 1300, 
+                200, 450, 650, 
+                100, 450,
+                100]
+    }
+
+    Atri = cl.Triangle(
+        pd.DataFrame(Adata), 
+        origin='origin',
+        development='development',
+        columns='loss',
+        cumulative=True
+    )
+    assert Atri == Stri.grain('OYDY')
+
+def test_odd_quarter_end():
+    data= pd.DataFrame([
+        ["5/1/2023", 12, '4/30/2024', 100],
+        ["8/1/2023", 9, "4/30/2024", 130],
+        ["11/1/2023", 6, "4/30/2024", 160],
+        ["2/1/2024", 3, "4/30/2024", 140]], 
+        columns = ['origin', 'development', 'valuation', 'EarnedPremium'])
+    triangle = cl.Triangle(
+        data, origin='origin', origin_format='%Y-%m-%d', development='valuation', columns='EarnedPremium', trailing=True, cumulative=True
+    )
+    data_from_tri = triangle.to_frame(origin_as_datetime=True)
+    assert np.all(data_from_tri['2024Q2'].values == [100.,130.,160.,140.])
+    assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023","8/1/2023","11/1/2023","2/1/2024"],freq = 'QS-NOV'))

@@ -4,14 +4,17 @@ sphinx:
   configuration: docs/conf.py
 
 build:
-  os: "ubuntu-20.04"
+  os: "ubuntu-22.04"
   tools:
-    python: "mambaforge-4.10"
+    python: "3.11"
   jobs:
     pre_build:
       # Generate on-the-fly Sphinx configuration from Jupyter Book's _config.yml
       - "jupyter-book config sphinx docs/"
 
-
-conda:
-  environment: environment-docs.yaml
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs

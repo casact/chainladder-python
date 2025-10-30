@@ -3,9 +3,6 @@
 .. |PyPI version| image:: https://badge.fury.io/py/chainladder.svg
    :target: https://badge.fury.io/py/chainladder
 
-.. |Conda Version| image:: https://img.shields.io/conda/vn/conda-forge/chainladder.svg
-   :target: https://anaconda.org/conda-forge/chainladder
-
 .. |Build Status| image:: https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
@@ -17,7 +14,7 @@
 chainladder (python)
 ====================
 
-|PyPI version| |Conda Version| |Build Status| |codecov io| |Documentation Status|
+|PyPI version| |Build Status| |codecov io| |Documentation Status|
 
 chainladder: Property and Casualty Loss Reserving in Python
 ------------------------------------------------------------
