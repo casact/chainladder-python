@@ -352,7 +352,6 @@ class Triangle(TriangleBase):
             and data[development[0]].dtype == "<M8[ns]"
         ):
             u = data[data[development[0]] == options.ULT_VAL].copy()
-            print("332")
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
                     u,
@@ -363,7 +362,6 @@ class Triangle(TriangleBase):
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[development[0]] != options.ULT_VAL]
-            print("343")
         return data, ult
 
     @property
