@@ -11,7 +11,7 @@ from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
+from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value, to_period
 from chainladder import options
 
 try:
@@ -182,16 +182,12 @@ class Triangle(TriangleBase):
 
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
-        origin_date: Series = origin_date.dt.to_period(
-            self.origin_grain
-        ).dt.to_timestamp(how="s")
-
+        origin_date: Series = to_period(origin_date,self.origin_grain).dt.to_timestamp(how="s")
+        
         # Ensure that development_date values represent the end of the period.
         # i.e., 1990 means the end of 1990 assuming annual development periods.
-        development_date: Series = development_date.dt.to_period(
-            self.development_grain
-        ).dt.to_timestamp(how="e")
-
+        development_date: Series = to_period(development_date,self.development_grain).dt.to_timestamp(how="e")
+        
         # Aggregate dates to the origin/development grains.
         data_agg: DataFrame = self._aggregate_data(
             data=data,
@@ -227,7 +223,7 @@ class Triangle(TriangleBase):
         self.vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
-        
+
         # Set remaining triangle properties.
         val_date: Timestamp = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date

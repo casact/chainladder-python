@@ -637,6 +637,11 @@ def minimum(x1, x2):
 def maximum(x1, x2):
     return x1.maximum(x2)
 
+def to_period(dateseries: pd.Series, freq:str):
+    if freq[:2] != '2Q':
+        return dateseries.dt.to_period(freq)
+    else:
+        return dateseries.where(dateseries.dt.to_period(freq).dt.strftime('%q').isin(['1','3']),dateseries.dt.date + pd.DateOffset(months=-3)).dt.to_period(freq)
 
 class PatsyFormula(BaseEstimator, TransformerMixin):
     """A sklearn-style Transformer for patsy formulas.
