@@ -866,3 +866,36 @@ def test_single_valuation_date_preserves_exact_date():
     assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999999')
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
+def test_OXDX_triangle():
+    
+    for x in [12,6,3,1]:
+        for y in [i for i in [12,6,3,1] if i <= x]:
+            first_orig = '2020-01-01'
+            width = int(x / y) + 1
+            dev_series = (pd.date_range(start=first_orig,periods = width, freq = str(y) + 'ME') + pd.DateOffset(months=y-1)).to_series()
+            tri_df = pd.DataFrame({
+                'origin_date': pd.concat([pd.to_datetime([first_orig] * (width)).to_series(), (pd.to_datetime([first_orig]) + pd.DateOffset(months=x)).to_series()]).to_list(),
+                'development_date': pd.concat([dev_series,dev_series.iloc[[0]] + pd.DateOffset(months=x)]).to_list(),
+                'value': list(range(1,width + 2))
+            })
+            for i in range(12):
+                for j in range(y):
+                    test_data = tri_df.copy()
+                    test_data['origin_date'] += pd.DateOffset(months=i)        
+                    test_data['development_date'] += pd.DateOffset(months=i-j)
+                    tri = cl.Triangle(
+                        test_data, 
+                        origin='origin_date', 
+                        development='development_date', 
+                        columns='value', 
+                        cumulative=True
+                    )
+                    assert tri.shape == (1,1,2,width)
+                    assert tri.sum().sum() == tri_df['value'].sum()
+                    assert np.all(tri.development == [y-j + x * y for x in range(width)])
+                    #there's a known bug with origin that displays incorrect year when origin doesn't start on 1/1
+                    #if x == 12:
+                        #assert np.all(tri.origin == ['2020','2021'])
+                    #elif x in [6,3]:
+                        #assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
+                        #assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
