@@ -841,3 +841,28 @@ def test_odd_quarter_end():
     data_from_tri = triangle.to_frame(origin_as_datetime=True)
     assert np.all(data_from_tri['2024Q2'].values == [100.,130.,160.,140.])
     assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023","8/1/2023","11/1/2023","2/1/2024"],freq = 'QS-NOV'))
+
+
+def test_single_valuation_date_preserves_exact_date():
+    # Test that a single development date is preserved exactly and not converted to fiscal year
+    # Regression test for issue where 202510 was incorrectly converted to 2026-09 instead of 2025-10
+    data = pd.DataFrame({
+        'Accident Year Month': [202002, 202003, 202105, 202201, 202301, 202401, 202501],
+        'Calendar Year Month': [202510] * 7,  # Single valuation date
+        'Loss': [100, 200, 150, 300, 250, 400, 350]
+    })
+
+    triangle = cl.Triangle(
+        data=data,
+        origin='Accident Year Month',
+        development='Calendar Year Month',
+        columns='Loss',
+        cumulative=True,
+        development_format='%Y%m',
+        origin_format='%Y%m'
+    )
+
+    # Valuation date should be end of October 2025, not converted to a fiscal year
+    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999999')
+    assert triangle.development_grain == 'M'
+    assert int(triangle.valuation_date.strftime('%Y%m')) == 202510

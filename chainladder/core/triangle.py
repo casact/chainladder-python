@@ -176,9 +176,21 @@ class Triangle(TriangleBase):
             origin_date=origin_date,
         )
 
-        self.development_grain = self._get_grain(
-            dates=development_date, trailing=trailing, kind="development"
-        )
+        if len(development_date.unique()) == 1:
+            if len(data) == 1 and self.origin_grain.split("-")[0] in ["Y", "A"]:
+                self.development_grain = self.origin_grain
+            else:
+                dev_date = pd.to_datetime(development_date.iloc[0])
+                dev_date_monthly_end = dev_date.to_period("M").to_timestamp(how="e")
+                period_converted = dev_date_monthly_end.to_period(self.origin_grain).to_timestamp(how="e")
+                if abs((period_converted - dev_date_monthly_end).total_seconds()) < 1e-6:
+                    self.development_grain = self.origin_grain
+                else:
+                    self.development_grain = "M"
+        else:
+            self.development_grain = self._get_grain(
+                dates=development_date, trailing=trailing, kind="development"
+            )
 
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
