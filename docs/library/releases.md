@@ -2,6 +2,26 @@
 
 ## Version 0.8
 
+### Version 0.8.26
+
+Release Date: Nov 5, 2025
+
+**What's Changed**
+* Add loss development patterns gallery example by @Hendrik240298 in [#602](https://github.com/casact/chainladder-python/pull/602)
+* #532 by @kennethshsu in [#606](https://github.com/casact/chainladder-python/pull/606)
+* Replaced deprecated lab_black with jupyter_black from issue #608 by @SRwcf in [#610](https://github.com/casact/chainladder-python/pull/610)
+* fix for #609 by @henrydingliu in [#611](https://github.com/casact/chainladder-python/pull/611)
+* Some words in the contribution guide by @kennethshsu in [#603](https://github.com/casact/chainladder-python/pull/603)
+* Misc Clean Up by @henrydingliu in [#612](https://github.com/casact/chainladder-python/pull/612)
+* adding a few tests by @henrydingliu in [#613](https://github.com/casact/chainladder-python/pull/613)
+* Fix for #614 by @henrydingliu in [#616](https://github.com/casact/chainladder-python/pull/616)
+* Addresses #617 by @jbogaardt in [#618](https://github.com/casact/chainladder-python/pull/618)
+
+**New Contributors**
+* [@Hendrik240298](https://github.com/Hendrik240298) made their first contribution in [#602](https://github.com/casact/chainladder-python/pull/602)
+
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.8.25...v0.8.26
+
 ### Version 0.8.25
 
 Release Date: Sep 25, 2025

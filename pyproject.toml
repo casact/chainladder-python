@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chainladder"
-version = "0.8.25"
+version = "0.8.26"
 authors = [
     {name = "John Bogaardt", email = "jbogaardt@gmail.com"},
 ]
@@ -60,7 +60,7 @@ docs = [
     "sphinx-rtd-theme",
     "nbsphinx",
     "numpydoc",
-    "jupyter-book",
+    "jupyter-book<2.0",  # Pin to v1.x - v2 doesn't support autodoc/autosummary yet
     "sphinx-togglebutton",
     "ipython",
     "parso>=0.8",
