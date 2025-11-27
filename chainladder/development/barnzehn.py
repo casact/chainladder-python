@@ -9,7 +9,9 @@ from chainladder.development.learning import DevelopmentML
 from chainladder.development.glm import TweedieGLM
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
+import warnings
 from chainladder.utils.utility_functions import PatsyFormula
+from patsy import ModelDesc
 
 
 class BarnettZehnwirth(TweedieGLM):
@@ -29,7 +31,7 @@ class BarnettZehnwirth(TweedieGLM):
 
     """
 
-    def __init__(self, formula='origin + development + valuation', response=None):
+    def __init__(self, formula='C(origin) + development', response=None):
         self.formula = formula
         self.response = response
 
@@ -38,6 +40,13 @@ class BarnettZehnwirth(TweedieGLM):
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr().log()
         response = X.columns[0] if not self.response else self.response
+        # Check for more than one linear predictor 
+        linearpredictors = 0
+        for term in ModelDesc.from_formula(self.formula).rhs_termlist[1:]:
+            if 'C(' not in term.factors[0].code:
+                linearpredictors += 1
+        if linearpredictors > 1:
+            warnings.warn("Using more than one linear predictor with BarnettZehnwirth may lead to issues with multicollinearity.")
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
