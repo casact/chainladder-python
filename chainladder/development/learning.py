@@ -33,6 +33,8 @@ class DevelopmentML(DevelopmentBase):
         Time Series aspects of the model. Predictions from one development period
         get used as featues in the next development period. Lags should be negative
         integers.
+    feat_eng: dict
+        A dictionary of features as keys and functions (applied to a Dataframe with origin, development, and valuation)
     fit_incrementals:
         Whether the response variable should be converted to an incremental basis
         for fitting.
@@ -48,12 +50,13 @@ class DevelopmentML(DevelopmentBase):
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
-                 weight_ml=None, fit_incrementals=True):
+                 weight_ml=None, fit_incrementals=True, feat_eng=None):
         self.estimator_ml=estimator_ml
         self.y_ml=y_ml
         self.weight_ml = weight_ml
         self.autoregressive=autoregressive
         self.fit_incrementals = fit_incrementals
+        self.feat_eng = feat_eng
 
     def _get_y_names(self):
         """ private function to get the response column name"""
@@ -112,6 +115,9 @@ class DevelopmentML(DevelopmentBase):
             if len(out) == 0:
                 continue
             X_r.append(out.copy())
+            if self.feat_eng is not None:            
+                for key, item in self.feat_eng.items():
+                    out[key] = item(out)
             preds = self.estimator_ml.predict(out)
             y_r.append(preds.copy())
         X_r = pd.concat(X_r, axis=0).reset_index(drop=True)
@@ -177,6 +183,9 @@ class DevelopmentML(DevelopmentBase):
             val,
             (pd.Series(val).rank()-1)/{'Y':1, 'Q':4, 'M': 12, 'S': 6}[X.development_grain]))
         df = self._prep_X_ml(X)
+        if self.feat_eng is not None:            
+            for key, item in self.feat_eng.items():
+                df[key] = item(df)
         self.df_ = df
         # Fit model
         self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze())

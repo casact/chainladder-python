@@ -13,3 +13,15 @@ def test_multiple_triangle_exception():
     d = cl.load_sample("usauto")
     with pytest.raises(ValueError):
         cl.BarnettZehnwirth(formula='C(origin)+C(development)').fit(d)
+
+def test_feat_eng():
+    def test_func(X):
+        return X["development"]
+
+    abc = cl.load_sample('abc')
+    test_dict = {'testfeat':test_func}
+
+    assert np.all(
+        np.around(cl.BarnettZehnwirth(formula='C(origin)+C(development)').fit(abc).coef_.T.values,3).flatten()
+        == np.around(cl.BarnettZehnwirth(formula='C(origin)+C(testfeat)',feat_eng = test_dict).fit(abc).coef_.T.values,3).flatten()
+    )

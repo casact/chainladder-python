@@ -24,6 +24,8 @@ class BarnettZehnwirth(TweedieGLM):
     ----------
     formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
+    feat_eng: dict
+        A dictionary of features as keys and functions (applied to a Dataframe with origin, development, and valuation)
     response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
@@ -31,9 +33,10 @@ class BarnettZehnwirth(TweedieGLM):
 
     """
 
-    def __init__(self, formula='C(origin) + development', response=None):
+    def __init__(self, formula='C(origin) + development', feat_eng=None, response=None):
         self.formula = formula
         self.response = response
+        self.feat_eng = feat_eng
 
     def fit(self, X, y=None, sample_weight=None):
         if max(X.shape[:2]) > 1:
@@ -50,7 +53,7 @@ class BarnettZehnwirth(TweedieGLM):
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
-                    y_ml=response, fit_incrementals=False).fit(tri)
+                    y_ml=response, fit_incrementals=False, feat_eng = self.feat_eng).fit(tri)
         resid = tri - self.model_.triangle_ml_[
             self.model_.triangle_ml_.valuation <= tri.valuation_date]
         self.mse_resid_ = (resid**2).sum(0).sum(1).sum(2).sum() / (
