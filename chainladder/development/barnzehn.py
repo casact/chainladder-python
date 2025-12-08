@@ -24,6 +24,24 @@ class BarnettZehnwirth(TweedieGLM):
     ----------
     formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
+    feat_eng: dict
+        A dictionary with feature names as keys and a dictionary of function (with a key of 'func') and keyword arguments (with a key of 'kwargs') 
+        (e.g. {
+            'feature_1':{
+                'func': function_name for feature 1,
+                'kwargs': keyword arguments for the function
+                },
+            'feature_2':{
+                'func': function_name for feature 2,
+                'kwargs': keyword arguments for the function
+                }
+            }
+        );  
+        functions should be written with a input Dataframe named df; this is the DataFrame containing origin, development, and valuation that will passed into the function at run time
+        (e.g. this function adds 1 to every origin 
+        def test_func(df)
+            return df['origin'] + 1
+        )
     response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
@@ -31,9 +49,10 @@ class BarnettZehnwirth(TweedieGLM):
 
     """
 
-    def __init__(self, formula='C(origin) + development', response=None):
+    def __init__(self, formula='C(origin) + development', feat_eng=None, response=None):
         self.formula = formula
         self.response = response
+        self.feat_eng = feat_eng
 
     def fit(self, X, y=None, sample_weight=None):
         if max(X.shape[:2]) > 1:
@@ -50,7 +69,7 @@ class BarnettZehnwirth(TweedieGLM):
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
-                    y_ml=response, fit_incrementals=False).fit(tri)
+                    y_ml=response, fit_incrementals=False, feat_eng = self.feat_eng).fit(tri)
         resid = tri - self.model_.triangle_ml_[
             self.model_.triangle_ml_.valuation <= tri.valuation_date]
         self.mse_resid_ = (resid**2).sum(0).sum(1).sum(2).sum() / (
