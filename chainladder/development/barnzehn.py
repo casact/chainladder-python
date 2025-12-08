@@ -25,7 +25,22 @@ class BarnettZehnwirth(TweedieGLM):
     formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
     feat_eng: dict
-        A dictionary of features as keys and functions (applied to a Dataframe with origin, development, and valuation)
+        A dictionary with feature names as keys and a dictionary of function (with a key of 'func') and keyword arguments (with a key of 'kwargs') 
+        (e.g. {
+            'feature_1':{
+                'func': function_name for feature 1,
+                'kwargs': keyword arguments for the function
+                },
+            'feature_2':{
+                'func': function_name for feature 2,
+                'kwargs': keyword arguments for the function
+                }
+        );  
+        functions should be written with a input Dataframe named df; this is the DataFrame containing origin, development, and valuation that will passed into the function at run time
+        (e.g. this function adds 1 to every origin 
+        def test_func(df)
+            return df['origin'] + 1
+        )
     response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
