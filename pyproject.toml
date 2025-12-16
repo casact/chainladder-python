@@ -66,6 +66,7 @@ docs = [
     "parso>=0.8",
     "polars",  # For docs examples
     "statsmodels",  # For docs examples
+    "jupyter_black",
 ]
 test = [
     "lxml",
