@@ -93,8 +93,8 @@ class DevelopmentML(DevelopmentBase):
             preds = self.estimator_ml.predict(df)
         X_r = [df]
         y_r = [preds]
-        dgrain = {'Y':12, 'Q':3, 'M': 1, 'S': 6}[self.development_grain_]
-        ograin = {'Y':1, 'Q':4, 'M': 12, 'S': 6}[self.origin_grain_]
+        dgrain = {'Y':12, 'S': 6, 'Q':3, 'M': 1}[self.development_grain_]
+        ograin = {'Y':1, 'S': 2, 'Q':4, 'M': 12}[self.origin_grain_]
         latest_filter = (df['origin']+1)*ograin+(df['development']-dgrain)/dgrain
         latest_filter = latest_filter == latest_filter.max()
         preds=pd.DataFrame(preds.copy())[latest_filter].values
@@ -171,11 +171,11 @@ class DevelopmentML(DevelopmentBase):
         self.development_grain_ = X.development_grain
         self.origin_encoder_ = dict(zip(
             X.origin.to_timestamp(how='s'),
-            (pd.Series(X.origin).rank()-1)/{'Y':1, 'Q':4, 'M': 12, 'S': 6}[X.origin_grain]))
+            (pd.Series(X.origin).rank()-1)/{'Y':1, 'S': 2, 'Q':4, 'M': 12}[X.origin_grain]))
         val = X.valuation.sort_values().unique()
         self.valuation_encoder_ = dict(zip(
             val,
-            (pd.Series(val).rank()-1)/{'Y':1, 'Q':4, 'M': 12, 'S': 6}[X.development_grain]))
+            (pd.Series(val).rank()-1)/{'Y':1, 'S': 2, 'Q':4, 'M': 12}[X.development_grain]))
         df = self._prep_X_ml(X)
         self.df_ = df
         # Fit model
