@@ -39,7 +39,7 @@ class BarnettZehnwirth(TweedieGLM):
         if max(X.shape[:2]) > 1:
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr()
-        if(len(sample_weight)):
+        if(sample_weight is not None):
             tri = tri/sample_weight
         tri = tri.log()
         response = X.columns[0] if not self.response else self.response
