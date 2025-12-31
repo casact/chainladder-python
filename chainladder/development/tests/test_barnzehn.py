@@ -19,6 +19,10 @@ def test_drops():
     this function tests the passing in a basic drop_valuation
     '''
     assert np.all(
+        np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit_transform(abc).ldf_.values,3)
+        == np.around(cl.BarnettZehnwirth(formula='C(development)',drop = [('1977',36),('1978',24),('1979',12)]).fit_transform(abc).ldf_.values,3)
+    )
+    assert np.all(
         np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit(abc).triangle_ml_.values,3)
         == np.around(cl.BarnettZehnwirth(formula='C(development)',drop = [('1977',36),('1978',24),('1979',12)]).fit(abc).triangle_ml_.values,3)
     )
