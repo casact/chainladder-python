@@ -39,24 +39,6 @@ class DevelopmentML(DevelopmentBase):
         Drops specific origin/development combination(s)
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
-    feat_eng: dict
-        A dictionary with feature names as keys and a dictionary of function (with a key of 'func') and keyword arguments (with a key of 'kwargs') 
-        (e.g. {
-            'feature_1':{
-                'func': function_name for feature 1,
-                'kwargs': keyword arguments for the function
-                },
-            'feature_2':{
-                'func': function_name for feature 2,
-                'kwargs': keyword arguments for the function
-                }
-            }
-        );  
-        functions should be written with a input Dataframe named df; this is the DataFrame containing origin, development, and valuation that will passed into the function at run time
-        (e.g. this function adds 1 to every origin 
-        def test_func(df)
-            return df['origin'] + 1
-        )
     fit_incrementals:
         Whether the response variable should be converted to an incremental basis for fitting.
 
@@ -71,7 +53,7 @@ class DevelopmentML(DevelopmentBase):
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
-                 weighted_step=None,drop=None,drop_valuation=None,fit_incrementals=True, feat_eng=None):
+                 weighted_step=None,drop=None,drop_valuation=None,fit_incrementals=True):
         self.estimator_ml=estimator_ml
         self.y_ml=y_ml
         self.weighted_step = weighted_step
@@ -79,7 +61,6 @@ class DevelopmentML(DevelopmentBase):
         self.drop = drop
         self.drop_valuation = drop_valuation
         self.fit_incrementals = fit_incrementals
-        self.feat_eng = feat_eng
 
     def _get_y_names(self):
         """ private function to get the response column name"""
@@ -138,9 +119,6 @@ class DevelopmentML(DevelopmentBase):
             if len(out) == 0:
                 continue
             X_r.append(out.copy())
-            if self.feat_eng is not None:            
-                for key, item in self.feat_eng.items():
-                    out[key] = item['func'](df=out,**item['kwargs'])
             preds = self.estimator_ml.predict(out)
             y_r.append(preds.copy())
         X_r = pd.concat(X_r, axis=0).reset_index(drop=True)
@@ -174,9 +152,6 @@ class DevelopmentML(DevelopmentBase):
             on=list(df_base.columns)).fillna(0)
         df['origin'] = df['origin'].map(self.origin_encoder_)
         df['valuation'] = df['valuation'].map(self.valuation_encoder_)
-        if self.feat_eng is not None:            
-            for key, item in self.feat_eng.items():
-                df[key] = item['func'](df=df,**item['kwargs'])
         return df
 
     def _prep_w_ml(self,X,sample_weight=None):
