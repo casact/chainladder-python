@@ -22,6 +22,10 @@ class BarnettZehnwirth(TweedieGLM):
 
     Parameters
     ----------
+    drop: tuple or list of tuples
+        Drops specific origin/development combination(s)
+    drop_valuation: str or list of str (default = None)
+        Drops specific valuation periods. str must be date convertible.
     formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
     feat_eng: dict
@@ -49,7 +53,9 @@ class BarnettZehnwirth(TweedieGLM):
 
     """
 
-    def __init__(self, formula='C(origin) + development', feat_eng=None, response=None):
+    def __init__(self, drop=None,drop_valuation=None,formula='C(origin) + development', feat_eng=None, response=None):
+        self.drop = drop
+        self.drop_valuation = drop_valuation
         self.formula = formula
         self.response = response
         self.feat_eng = feat_eng
@@ -69,7 +75,7 @@ class BarnettZehnwirth(TweedieGLM):
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
-                    y_ml=response, fit_incrementals=False, feat_eng = self.feat_eng).fit(tri)
+                    y_ml=response, fit_incrementals=False, feat_eng = self.feat_eng, drop=self.drop, drop_valuation = self.drop_valuation, weighted_step = 'model').fit(tri)
         resid = tri - self.model_.triangle_ml_[
             self.model_.triangle_ml_.valuation <= tri.valuation_date]
         self.mse_resid_ = (resid**2).sum(0).sum(1).sum(2).sum() / (
@@ -94,12 +100,13 @@ class BarnettZehnwirth(TweedieGLM):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        X_ml = self.model_._prep_X_ml(X.cum_to_incr().log())
+        X_ml, weight_ml = self.model_._prep_X_ml(X.cum_to_incr().log())
         y_ml = self.model_.estimator_ml.predict(X_ml)
-        triangle_ml = self.model_._get_triangle_ml(X_ml, y_ml)
+        triangle_ml, predicted_data = self.model_._get_triangle_ml(X_ml, y_ml)
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
         triangle_ml.is_cumulative = False
         X_new.ldf_ = triangle_ml.exp().incr_to_cum().link_ratio.set_backend(backend)
         X_new.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         X_new._set_slicers()
+        X_new.predicted_data_ = predicted_data
         return X_new

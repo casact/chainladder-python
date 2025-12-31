@@ -44,7 +44,33 @@ def test_feat_eng_2():
         np.around(cl.BarnettZehnwirth(formula='+'.join([f'C({x})' for x in feat_dict.keys()]),feat_eng = feat_dict).fit(abc).ldf_.values,3)
         == np.around(cl.BarnettZehnwirth(formula='C(origin)').fit_transform(abc).ldf_.values,3)
     )
+
+def test_bz_2008():
+    '''
+    this function tests the drop parameter by recreating the example in the 2008 BZ paper, section 4.1
+    '''
+    abc = cl.load_sample('abc')
+    exposure=np.array([[2.2], [2.4], [2.2], [2.0], [1.9], [1.6], [1.6], [1.8], [2.2], [2.5], [2.6]])
+    abc_adj = abc/exposure
+
+    def predictor_bins(df,pbin,axis):
+        return [int(x >= min(pbin)) for x in df[axis]]
+        
+    origin_groups = {f'origin_{ori}'.replace('[','').replace(']','').replace(', ',''):{'func':predictor_bins,'kwargs':{'pbin':ori,'axis':'origin'}} for ori in [[2],[3,4],[5,6,7,8,9,10]]}
+
+    def trend_piece(df,piece,axis):
+        pmax = float(max(piece))
+        increment=min(df[axis][df[axis]>0])
+        pfirst = piece[0]-increment
+        return [(x-pfirst)/increment if x in piece else (0 if x<pmax else (pmax-pfirst)/increment) for x in df[axis]]
+        
+    development_groups = {f'development_{dev}'.replace('[','').replace(']','').replace(', ',''):{'func':trend_piece,'kwargs':{'piece':dev,'axis':'development'}} for dev in [[24],[36],[48,60,72],[84,96],[108,120,132]]}
+
+    valuation_groups = {f'valuation_{val}'.replace('[','').replace(']','').replace(', ',''):{'func':trend_piece,'kwargs':{'piece':val,'axis':'valuation'}} for val in [[1,2,3,4,5,6,7],[8],[9,10]]}
+
+    abc_dict = {**origin_groups,**development_groups,**valuation_groups}
+    model=cl.BarnettZehnwirth(formula='+'.join([z for z in abc_dict.keys()]),feat_eng=abc_dict, drop=('1982',72)).fit(abc_adj)
     assert np.all(
-        np.around(cl.BarnettZehnwirth(formula='+'.join([f'C({x})' for x in feat_dict.keys()]),feat_eng = feat_dict).fit(abc).ldf_.values,3)
-        == np.around(cl.BarnettZehnwirth(formula='C(origin)').fit_transform(abc).ldf_.values,3)
+        np.around(model.coef_.values,4).flatten()
+        == np.array([11.1579,0.1989,0.0703,0.0919,0.1871,-0.3771,-0.4465,-0.3727,-0.3154,0.0432,0.0858,0.1464])
     )
