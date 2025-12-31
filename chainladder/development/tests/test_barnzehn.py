@@ -45,6 +45,21 @@ def test_feat_eng_2():
         == np.around(cl.BarnettZehnwirth(formula='C(origin)').fit_transform(abc).ldf_.values,3)
     )
 
+def test_drops():
+    '''
+    this function tests the passing in a basic drop_valuation
+    '''
+    def test_func(df):
+        return df["development"]
+
+    abc = cl.load_sample('abc')
+    test_dict = {'testfeat':{'func':test_func,'kwargs':{}}}
+
+    assert np.all(
+        np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit(abc).coef_.T.values,3)
+        == np.around(cl.BarnettZehnwirth(formula='C(testfeat)',drop = [('1977',36),('1978',24),('1979',12)],feat_eng = test_dict).fit(abc).coef_.T.values,3)
+    )
+
 def test_bz_2008():
     '''
     this function tests the drop parameter by recreating the example in the 2008 BZ paper, section 4.1
