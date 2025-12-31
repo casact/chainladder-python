@@ -75,7 +75,7 @@ class BarnettZehnwirth(TweedieGLM):
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
-                    y_ml=response, fit_incrementals=False, feat_eng = self.feat_eng, drop=self.drop, drop_valuation = self.drop_valuation, weighted_step = 'model').fit(tri)
+                    y_ml=response, fit_incrementals=True, feat_eng = self.feat_eng, drop=self.drop, drop_valuation = self.drop_valuation, weighted_step = 'model').fit(X = tri, sample_weight = sample_weight)
         resid = tri - self.model_.triangle_ml_[
             self.model_.triangle_ml_.valuation <= tri.valuation_date]
         self.mse_resid_ = (resid**2).sum(0).sum(1).sum(2).sum() / (
@@ -100,7 +100,7 @@ class BarnettZehnwirth(TweedieGLM):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        X_ml, weight_ml = self.model_._prep_X_ml(X.cum_to_incr().log())
+        X_ml = self.model_._prep_X_ml(X.cum_to_incr().log())
         y_ml = self.model_.estimator_ml.predict(X_ml)
         triangle_ml, predicted_data = self.model_._get_triangle_ml(X_ml, y_ml)
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
