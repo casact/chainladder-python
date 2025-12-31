@@ -1,9 +1,9 @@
 import numpy as np
 import chainladder as cl
 import pytest
+abc = cl.load_sample('abc')
 
 def test_basic_bz():
-    abc = cl.load_sample('abc')
     assert np.all(
         np.around(cl.BarnettZehnwirth(formula='C(origin)+C(development)').fit(abc).coef_.T.values,3).flatten()
         == np.array([11.837,0.179,0.345,0.378,0.405,0.427,0.431,0.66,0.963,1.157,1.278,0.251,-0.056,-0.449,-0.829,-1.169,-1.508,-1.798,-2.023,-2.238,-2.428])
@@ -21,7 +21,6 @@ def test_feat_eng_1():
     def test_func(df):
         return df["development"]
 
-    abc = cl.load_sample('abc')
     test_dict = {'testfeat':{'func':test_func,'kwargs':{}}}
 
     assert np.all(
@@ -38,7 +37,6 @@ def test_feat_eng_2():
     def origin_onehot(df,ori):
         return [1 if x == ori else 0 for x in df["origin"]]
 
-    abc = cl.load_sample('abc')
     feat_dict = {f'origin_{x}':{'func':origin_onehot,'kwargs':{'ori':float(x+1)}} for x in range(10)}
     assert np.all(
         np.around(cl.BarnettZehnwirth(formula='+'.join([f'C({x})' for x in feat_dict.keys()]),feat_eng = feat_dict).fit(abc).ldf_.values,3)
@@ -52,19 +50,17 @@ def test_drops():
     def test_func(df):
         return df["development"]
 
-    abc = cl.load_sample('abc')
     test_dict = {'testfeat':{'func':test_func,'kwargs':{}}}
 
     assert np.all(
-        np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit(abc).coef_.T.values,3)
-        == np.around(cl.BarnettZehnwirth(formula='C(testfeat)',drop = [('1977',36),('1978',24),('1979',12)],feat_eng = test_dict).fit(abc).coef_.T.values,3)
+        np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit(abc).triangle_ml_.values,3)
+        == np.around(cl.BarnettZehnwirth(formula='C(testfeat)',drop = [('1977',36),('1978',24),('1979',12)],feat_eng = test_dict).fit(abc).triangle_ml_.values,3)
     )
 
 def test_bz_2008():
     '''
     this function tests the drop parameter by recreating the example in the 2008 BZ paper, section 4.1
     '''
-    abc = cl.load_sample('abc')
     exposure=np.array([[2.2], [2.4], [2.2], [2.0], [1.9], [1.6], [1.6], [1.8], [2.2], [2.5], [2.6]])
     abc_adj = abc/exposure
 
