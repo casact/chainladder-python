@@ -35,7 +35,7 @@ class BarnettZehnwirth(TweedieGLM):
         self.formula = formula
         self.response = response
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, sample_weight=None):
         if max(X.shape[:2]) > 1:
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr().log()
