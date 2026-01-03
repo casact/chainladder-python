@@ -35,13 +35,10 @@ class BarnettZehnwirth(TweedieGLM):
         self.formula = formula
         self.response = response
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None):
         if max(X.shape[:2]) > 1:
             raise ValueError("Only single index/column triangles are supported")
-        tri = X.cum_to_incr()
-        if(sample_weight is not None):
-            tri = tri/sample_weight
-        tri = tri.log()
+        tri = X.cum_to_incr().log()
         response = X.columns[0] if not self.response else self.response
         # Check for more than one linear predictor 
         linearpredictors = 0
