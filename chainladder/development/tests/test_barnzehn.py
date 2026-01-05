@@ -26,6 +26,11 @@ def test_drops():
         np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit(abc).triangle_ml_.values,3)
         == np.around(cl.BarnettZehnwirth(formula='C(development)',drop = [('1977',36),('1978',24),('1979',12)]).fit(abc).triangle_ml_.values,3)
     )
+    assert np.all(
+        np.around(cl.BarnettZehnwirth(formula='C(development)',drop_valuation='1979').fit(abc).ldf_.values,3)
+        == np.around(cl.BarnettZehnwirth(formula='C(development)',drop = [('1977',36),('1978',24),('1979',12)]).fit(abc).ldf_.values,3)
+    )
+
 
 def test_bz_2008():
     '''
