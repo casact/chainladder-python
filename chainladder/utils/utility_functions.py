@@ -774,12 +774,17 @@ def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None,
     estimator.  Each axis's parameters can be grouped together. Groups of origin 
     parameters (alpha) are set equal, and are specified by a set of cutoff points. 
     Groups of development (gamma) and valuation (iota) parameters are fit to 
-    separate linear trends, specified as tuples denoting ranges. A triangle must be 
-    supplied to provide development grain information.
+    separate linear trends, specified as tuples denoting ranges with shared endpoints.
+    In other words, development and valuation trends are fit to a piecewise linear model.
+    A triangle must be supplied to provide some critical information.
     """
     formula_parts=[]
     if(alpha):
-        formula_parts += ['+'.join([f'I(origin >= {x})' for x in alpha])]
+        # The intercept term takes the place of the first alpha
+        for ind,a in enumerate(alpha):
+            if(a[0]==0):
+                alpha=alpha[:ind]+alpha[(ind+1):]
+        formula_parts += ['+'.join([f'I(np.multiply(({x[0]} <= origin), (origin <= {x[1]})))' for x in alpha])]
     if(gamma):
         dgrain = min(tri.development)
         formula_parts += ['+'.join([f'I((np.minimum({x[1]-dgrain},development) - np.minimum({x[0]-dgrain},development))/{dgrain})' for x in gamma])]
