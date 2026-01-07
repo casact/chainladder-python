@@ -772,7 +772,7 @@ def model_diagnostics(model, name=None, groupby=None):
 def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None, iota: ArrayLike = None):
     """ Helper formula that builds a patsy formula string for the BarnettZehnwirth 
     estimator.  Each axis's parameters can be grouped together. Groups of origin 
-    parameters (alpha) are set equal, and are specified by a set of cutoff points. 
+    parameters (alpha) are set equal, and are specified by a ranges (inclusive). 
     Groups of development (gamma) and valuation (iota) parameters are fit to 
     separate linear trends, specified as tuples denoting ranges with shared endpoints.
     In other words, development and valuation trends are fit to a piecewise linear model.
@@ -784,7 +784,7 @@ def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None,
         for ind,a in enumerate(alpha):
             if(a[0]==0):
                 alpha=alpha[:ind]+alpha[(ind+1):]
-        formula_parts += ['+'.join([f'I(np.multiply(({x[0]} <= origin), (origin <= {x[1]})))' for x in alpha])]
+        formula_parts += ['+'.join([f'I({x[0]} <= origin)' for x in alpha])]
     if(gamma):
         dgrain = min(tri.development)
         formula_parts += ['+'.join([f'I((np.minimum({x[1]-dgrain},development) - np.minimum({x[0]-dgrain},development))/{dgrain})' for x in gamma])]
