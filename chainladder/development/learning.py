@@ -33,9 +33,14 @@ class DevelopmentML(DevelopmentBase):
         Time Series aspects of the model. Predictions from one development period
         get used as featues in the next development period. Lags should be negative
         integers.
+    weight_step: str
+        Step name within estimator_ml that is weighted
+    drop: tuple or list of tuples
+        Drops specific origin/development combination(s)
+    drop_valuation: str or list of str (default = None)
+        Drops specific valuation periods. str must be date convertible.
     fit_incrementals:
-        Whether the response variable should be converted to an incremental basis
-        for fitting.
+        Whether the response variable should be converted to an incremental basis for fitting.
 
     Attributes
     ----------
@@ -48,11 +53,13 @@ class DevelopmentML(DevelopmentBase):
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
-                 weight_ml=None, fit_incrementals=True):
+                 weighted_step=None,drop=None,drop_valuation=None,fit_incrementals=True):
         self.estimator_ml=estimator_ml
         self.y_ml=y_ml
-        self.weight_ml = weight_ml
-        self.autoregressive=autoregressive
+        self.weighted_step = weighted_step
+        self.autoregressive = autoregressive
+        self.drop = drop
+        self.drop_valuation = drop_valuation
         self.fit_incrementals = fit_incrementals
 
     def _get_y_names(self):
@@ -124,7 +131,7 @@ class DevelopmentML(DevelopmentBase):
         return Triangle(
             out, origin='origin', development='valuation',
             index=self._key_labels, columns=self._get_y_names(),
-            cumulative=not self.fit_incrementals).dropna()
+            cumulative=not self.fit_incrementals).dropna(), out
 
     def _prep_X_ml(self, X):
         """ Preps Triangle data ahead of the pipeline """
@@ -139,13 +146,24 @@ class DevelopmentML(DevelopmentBase):
         df_base = X.incr_to_cum().to_frame(
             keepdims=True, implicit_axis=True, origin_as_datetime=True
             ).reset_index().iloc[:, :-1]
-        df = df_base.merge(X.cum_to_incr().to_frame(
+        df = df_base.merge(X_.to_frame(
                 keepdims=True, implicit_axis=True, origin_as_datetime=True
             ).reset_index(), how='left',
             on=list(df_base.columns)).fillna(0)
         df['origin'] = df['origin'].map(self.origin_encoder_)
         df['valuation'] = df['valuation'].map(self.valuation_encoder_)
         return df
+
+    def _prep_w_ml(self,X,sample_weight=None):
+        weight_base = (~np.isnan(X.values)).astype(float)
+        weight = weight_base.copy()               
+        if self.drop is not None:
+            weight = weight * self._drop_func(X)
+        if self.drop_valuation is not None:
+            weight = weight * self._drop_valuation_func(X)
+        if sample_weight is not None:
+            weight = weight * sample_weight.values 
+        return weight.flatten()[weight_base.flatten()>0]
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -156,8 +174,8 @@ class DevelopmentML(DevelopmentBase):
             Set of LDFs to which the estimator will be applied.
         y : None
             Ignored, use y_ml to set a reponse variable for the ML algorithm
-        sample_weight : None
-            Ignored
+        sample_weight : Triangle-like
+            Weights to use in the regression
 
         Returns
         -------
@@ -178,10 +196,18 @@ class DevelopmentML(DevelopmentBase):
             (pd.Series(val).rank()-1)/{'Y':1, 'S': 2, 'Q':4, 'M': 12}[X.development_grain]))
         df = self._prep_X_ml(X)
         self.df_ = df
+        weight = self._prep_w_ml(X,sample_weight)
+        self.weight_ = weight
+        if self.weighted_step == None:
+            sample_weights = {}
+        elif isinstance(self.weighted_step, list):
+            sample_weights = {x + '__sample_weight':weight for x in self.weighted_step}
+        else:
+            sample_weights = {self.weighted_step + '__sample_weight':weight}
         # Fit model
-        self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze())
+        self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze(),**sample_weights)
         #return selffit_incrementals 
-        self.triangle_ml_ = self._get_triangle_ml(df)
+        self.triangle_ml_, self.predicted_data_ = self._get_triangle_ml(df)
         return self
 
     @property
@@ -206,9 +232,10 @@ class DevelopmentML(DevelopmentBase):
         X_new = X.copy()
         X_ml = self._prep_X_ml(X)
         y_ml=self.estimator_ml.predict(X_ml)
-        triangle_ml = self._get_triangle_ml(X_ml, y_ml)
+        triangle_ml, predicted_data = self._get_triangle_ml(X_ml, y_ml)
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
         X_new.ldf_ = triangle_ml.incr_to_cum().link_ratio.set_backend(backend)
         X_new.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         X_new._set_slicers()
+        X_new.predicted_data_ = predicted_data
         return X_new
