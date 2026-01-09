@@ -22,15 +22,16 @@ class TweedieGLM(DevelopmentBase):
 
     Parameters
     ----------
+    drop: tuple or list of tuples
+        Drops specific origin/development combination(s)
+    drop_valuation: str or list of str (default = None)
+        Drops specific valuation periods. str must be date convertible.
     design_matrix: formula-like
         A patsy formula describing the independent variables, X of the GLM
     response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
-    weight: str
-        Column name of any weight to use in the GLM. If none specified, then an
-        unweighted regression will be performed.
-    power: float, default=0
+    power: float, default=1
             The power determines the underlying target distribution according
             to the following table:
             +-------+------------------------+
@@ -52,7 +53,7 @@ class TweedieGLM(DevelopmentBase):
         regularization strength. ``alpha = 0`` is equivalent to unpenalized
         GLMs. In this case, the design matrix `X` must have full column rank
         (no collinearities).
-    link: {'auto', 'identity', 'log'}, default='auto'
+    link: {'auto', 'identity', 'log'}, default='log'
         The link function of the GLM, i.e. mapping from linear predictor
         `X @ coeff + intercept` to prediction `y_pred`. Option 'auto' sets
         the link depending on the chosen family as follows:
@@ -78,10 +79,11 @@ class TweedieGLM(DevelopmentBase):
     """
 
     def __init__(self, design_matrix='C(development) + C(origin)',
-                 response=None, weight=None, power=1.0, alpha=1.0, link='log',
-                 max_iter=100, tol=0.0001, warm_start=False, verbose=0):
+                 response=None, power=1.0, alpha=1.0, link='log',
+                 max_iter=100, tol=0.0001, warm_start=False, verbose=0, drop=None,drop_valuation=None):
+        self.drop = drop
+        self.drop_valuation = drop_valuation
         self.response=response
-        self.weight=weight
         self.design_matrix = design_matrix
         self.power=power
         self.alpha=alpha
@@ -93,13 +95,18 @@ class TweedieGLM(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         response = X.columns[0] if not self.response else self.response
+        if sample_weight is None:
+            weight = None
+        else:
+            weight = 'model'
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.design_matrix)),
             ('model', TweedieRegressor(
                     link=self.link, power=self.power, max_iter=self.max_iter,
                     tol=self.tol, warm_start=self.warm_start,
                     verbose=self.verbose, fit_intercept=False))]),
-                    y_ml=response, weight_ml=self.weight).fit(X)
+                    y_ml=response, weighted_step = weight,
+                    drop=self.drop, drop_valuation=self.drop_valuation).fit(X = X, sample_weight = sample_weight)
         return self
 
     @property
