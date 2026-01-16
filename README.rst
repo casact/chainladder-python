@@ -3,9 +3,6 @@
 .. |PyPI version| image:: https://badge.fury.io/py/chainladder.svg
    :target: https://badge.fury.io/py/chainladder
 
-.. |Conda Version| image:: https://img.shields.io/conda/vn/conda-forge/chainladder.svg
-   :target: https://anaconda.org/conda-forge/chainladder
-
 .. |Build Status| image:: https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
@@ -17,7 +14,7 @@
 chainladder (python)
 ====================
 
-|PyPI version| |Conda Version| |Build Status| |codecov io| |Documentation Status|
+|PyPI version| |Build Status| |codecov io| |Documentation Status|
 
 chainladder: Property and Casualty Loss Reserving in Python
 ------------------------------------------------------------
@@ -48,7 +45,11 @@ Visit `Chainladder-Python on Read the Docs`_.
 Contributors Working Group
 ----------------------------
 
-We also have a Contributors Working Group that meets approximately every two weeks for one hour. The current meeting time is **Fridays from 9:00–10:00 AM PT / 12:00–1:00 PM ET**. During these meetings, we discuss milestones, package design philosophies, outstanding issues, and other behind-the-scenes topics related to our work on GitHub. If you're interested in joining, please contact one of the core developers. We welcome contributors of all skill levels and encourage your involvement.
+We also have a Contributors Working Group that meets for one hour approximately every two weeks. We are part of the CAS volunteer groups and are supported by the CAS. If you are interested, you are welcome to join us through the Open-Source Projects Working Group.
+
+We currently meet on Fridays 11:00am - Noon ET, but we periodically adjust meeting times to accommodate contributors across time zones around the globe. Our meetings are relaxed and collaborative, with discussions around milestones, package design ideas, open issues, and other behind-the-scenes work on GitHub.
+
+We welcome contributors of all skill levels, including CAS members, its affiliate members, industry researchers, educators, students, and CAS candidates. To join us, you may respond to the CAS annual Volunteer Interest and Participation (VIP) Survey, reach out to a CAS staff persons (Heather Davis <hdavis@casact.org>, Elizabeth Smith <esmith@casact.org>), or the working group chair (Kenneth Hsu <kennethshsu@gmail.com>), and we will be happy to welcome you into the group.
 
 Licenses
 -------------------

@@ -11,7 +11,7 @@ from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value
+from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value, to_period
 from chainladder import options
 
 try:
@@ -151,7 +151,7 @@ class Triangle(TriangleBase):
         # Store dimension metadata.
         self.columns_label: list = columns
         self.origin_label: list = origin
-
+        
         # Handle any ultimate vectors in triangles separately.
         data, ult = self._split_ult(
             data=data,
@@ -176,22 +176,30 @@ class Triangle(TriangleBase):
             origin_date=origin_date,
         )
 
-        self.development_grain = self._get_grain(
-            dates=development_date, trailing=trailing, kind="development"
-        )
+        if len(development_date.unique()) == 1:
+            if len(data) == 1 and self.origin_grain.split("-")[0] in ["Y", "A"]:
+                self.development_grain = self.origin_grain
+            else:
+                dev_date = pd.to_datetime(development_date.iloc[0])
+                dev_date_monthly_end = dev_date.to_period("M").to_timestamp(how="e")
+                period_converted = dev_date_monthly_end.to_period(self.origin_grain).to_timestamp(how="e")
+                if abs((period_converted - dev_date_monthly_end).total_seconds()) < 1e-6:
+                    self.development_grain = self.origin_grain
+                else:
+                    self.development_grain = "M"
+        else:
+            self.development_grain = self._get_grain(
+                dates=development_date, trailing=trailing, kind="development"
+            )
 
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
-        origin_date: Series = origin_date.dt.to_period(
-            self.origin_grain
-        ).dt.to_timestamp(how="s")
-
+        origin_date: Series = to_period(origin_date,self.origin_grain).dt.to_timestamp(how="s")
+        
         # Ensure that development_date values represent the end of the period.
         # i.e., 1990 means the end of 1990 assuming annual development periods.
-        development_date: Series = development_date.dt.to_period(
-            self.development_grain
-        ).dt.to_timestamp(how="e")
-
+        development_date: Series = to_period(development_date,self.development_grain).dt.to_timestamp(how="e")
+        
         # Aggregate dates to the origin/development grains.
         data_agg: DataFrame = self._aggregate_data(
             data=data,
@@ -200,7 +208,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
         )
-
+        
         # Fill in missing periods with zeros.
         date_axes: DataFrame = self._get_date_axes(
             data_agg["__origin__"],
@@ -245,7 +253,7 @@ class Triangle(TriangleBase):
         self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern: bool = pattern
-
+        
         split: list[str] = self.origin_grain.split("-")
         self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
 
@@ -269,7 +277,7 @@ class Triangle(TriangleBase):
             pd.period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
-                freq=self.origin_grain.replace("S", "2Q"),
+                freq=self.origin_grain.replace("S", "2Q") + ('' if self.origin_grain == "M" else '-' + self.origin_close),
             )
             .to_timestamp()
             .values
@@ -352,7 +360,6 @@ class Triangle(TriangleBase):
             and data[development[0]].dtype == "<M8[ns]"
         ):
             u = data[data[development[0]] == options.ULT_VAL].copy()
-            print("332")
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
                     u,
@@ -363,7 +370,6 @@ class Triangle(TriangleBase):
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[development[0]] != options.ULT_VAL]
-            print("343")
         return data, ult
 
     @property
@@ -428,7 +434,7 @@ class Triangle(TriangleBase):
         ddims = self.ddims.copy()
         if self.is_val_tri:
             formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(freq=self.development_grain).strftime(
+            ddims = ddims.to_period(freq=self.development_grain.replace("S", "2Q")).strftime(
                 formats[self.development_grain]
             )
         elif self.is_pattern:
@@ -803,20 +809,19 @@ class Triangle(TriangleBase):
             ).values
 
             obj = obj.groupby(groups, axis=2).sum()
-
             obj.origin_close = origin_period_end
+
             d_start = pd.Period(
                 obj.valuation[0],
-                freq=(
-                    dgrain_old
-                    if dgrain_old == "M"
-                    else dgrain_old + obj.origin.freqstr[-4:]
-                ),
+                freq=dgrain_old.replace("S", "2Q") + ('' if dgrain_old == "M" else obj.origin.freqstr[-4:]),
             ).to_timestamp(how="s")
+
+            if dgrain_old == "S":
+                d_start = d_start +  pd.DateOffset(months=-3)
 
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old)[
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S","2Q"))[
                         :-1
                     ]
                     .to_timestamp()
@@ -826,7 +831,7 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
-
+        
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
@@ -842,7 +847,7 @@ class Triangle(TriangleBase):
                 obj.ddims = ddims
 
             obj.development_grain = dgrain_new
-
+        
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
 
         if inplace:

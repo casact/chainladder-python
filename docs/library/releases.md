@@ -1,6 +1,133 @@
 # {octicon}`megaphone` Releases & Changelog
 
 ## Version 0.8
+
+### Version 0.8.26
+
+Release Date: Nov 5, 2025
+
+**What's Changed**
+* Add loss development patterns gallery example by @Hendrik240298 in [#602](https://github.com/casact/chainladder-python/pull/602)
+* #532 by @kennethshsu in [#606](https://github.com/casact/chainladder-python/pull/606)
+* Replaced deprecated lab_black with jupyter_black from issue #608 by @SRwcf in [#610](https://github.com/casact/chainladder-python/pull/610)
+* fix for #609 by @henrydingliu in [#611](https://github.com/casact/chainladder-python/pull/611)
+* Some words in the contribution guide by @kennethshsu in [#603](https://github.com/casact/chainladder-python/pull/603)
+* Misc Clean Up by @henrydingliu in [#612](https://github.com/casact/chainladder-python/pull/612)
+* adding a few tests by @henrydingliu in [#613](https://github.com/casact/chainladder-python/pull/613)
+* Fix for #614 by @henrydingliu in [#616](https://github.com/casact/chainladder-python/pull/616)
+* Addresses #617 by @jbogaardt in [#618](https://github.com/casact/chainladder-python/pull/618)
+
+**New Contributors**
+* [@Hendrik240298](https://github.com/Hendrik240298) made their first contribution in [#602](https://github.com/casact/chainladder-python/pull/602)
+
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.8.25...v0.8.26
+
+### Version 0.8.25
+
+Release Date: Sep 25, 2025
+
+**What's Changed**
+* Update pythonpublish.yml by @jbogaardt in [#550](https://github.com/casact/chainladder-python/pull/550)
+* 553 by @cdietrich215 in [#555](https://github.com/casact/chainladder-python/pull/555)
+* Adding annotations - triangle.py by @genedan in [#522](https://github.com/casact/chainladder-python/pull/522)
+* Update pytest_upstream_nightly.yml by @jbogaardt in [#557](https://github.com/casact/chainladder-python/pull/557)
+* Add annotations to triangle.py by @genedan in [#558](https://github.com/casact/chainladder-python/pull/558)
+* #457 v2 by @kennethshsu in [#563](https://github.com/casact/chainladder-python/pull/563)
+* Dangling commits? by @genedan in [#564](https://github.com/casact/chainladder-python/pull/564)
+* fix-typo-in-notebooks by @EKtheSage in [#568](https://github.com/casact/chainladder-python/pull/568)
+* Add annotations, minor validation. by @genedan in [#572](https://github.com/casact/chainladder-python/pull/572)
+* Add support for Weibull curve in tail fitting methods by @andrewwilson201 in [#577](https://github.com/casact/chainladder-python/pull/577)
+* Annotate TriangleDisplay.py by @genedan in [#576](https://github.com/casact/chainladder-python/pull/576)
+* Sandbox tutorial by @kennethshsu in [#581](https://github.com/casact/chainladder-python/pull/581)
+* Issues template by @kennethshsu in [#586](https://github.com/casact/chainladder-python/pull/586)
+* Readme update by @kennethshsu in [#589](https://github.com/casact/chainladder-python/pull/589)
+* Resolved merge conflict by @kennethshsu in [#590](https://github.com/casact/chainladder-python/pull/590)
+* Adding a native read_csv function to Chainladder-python by @JoJo10Smith in [#587](https://github.com/casact/chainladder-python/pull/587)
+* Fix package publishing warnings by @genedan in [#592](https://github.com/casact/chainladder-python/pull/592)
+* 583 by @kennethshsu in [#593](https://github.com/casact/chainladder-python/pull/593)
+* setup refactor by @jbogaardt in [#595](https://github.com/casact/chainladder-python/pull/595)
+* Fix KeyError for semi-annual origins by @andrewwilson201 in [#597](https://github.com/casact/chainladder-python/pull/597)
+* New contribution guideline by @kennethshsu in [#600](https://github.com/casact/chainladder-python/pull/600)
+* FIX: Fix errors in friedland_uspp_auto_increasing_claim.csv. by @genedan in [#594](https://github.com/casact/chainladder-python/pull/594)
+
+**New Contributors**
+* @EKtheSage made their first contribution in [#568](https://github.com/casact/chainladder-python/pull/568)
+* @andrewwilson201 made their first contribution in [#577](https://github.com/casact/chainladder-python/pull/577)
+* @JoJo10Smith made their first contribution in [#587](https://github.com/casact/chainladder-python/pull/587)
+
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.8.24...v0.8.25
+
+### Version 0.8.24
+
+Release Date: Feb 13, 2025
+
+**What's Changed**
+* Compatibility fixes for numpy>2.0 and pandas>2.0. Pandas>=2.0 is a strict requirement.
+* Fix for [#537](https://github.com/casact/chainladder-python/issues/537) by @cdietrich215 in [#546](https://github.com/casact/chainladder-python/issues/546)
+
+**New Contributors**
+* [@cdietrich215](https://github.com/cdietrich215) made their first contribution in [#546](https://github.com/casact/chainladder-python/issues/546)
+
+### Version 0.8.23
+
+Release Date: May 24, 2024
+
+**Bug Fixes**
+* [#524](https://github.com/casact/chainladder-python/issues/524) ParallelogramOlf fix
+* [#525](https://github.com/casact/chainladder-python/issues/525) Unplanned Trend deprecations
+
+### Version 0.8.22
+
+Release Date: May 24, 2024
+
+**What's Changed**
+* Bump release number
+
+### Version 0.8.21
+
+Release Date: May 24, 2024
+
+**What's Changed**
+* Fix for compatibility between chainladder==0.8.20 and pandas<2.2.0
+
+### Version 0.8.20
+
+Release Date: Apr 10, 2024
+
+**What's Changed**
+* Various bug fixes and improvements
+
+### Version 0.8.19
+
+Release Date: Apr 8, 2024
+
+**What's Changed**
+* Documentation improvements by @kennethshsu in [#464](https://github.com/casact/chainladder-python/issues/464), [#466](https://github.com/casact/chainladder-python/issues/466), [#469](https://github.com/casact/chainladder-python/issues/469), [#470](https://github.com/casact/chainladder-python/issues/470), [#472](https://github.com/casact/chainladder-python/issues/472)
+* Support for Polars and other dataframes by @johalnes in [#482](https://github.com/casact/chainladder-python/issues/482)
+* Various documentation and test fixes by @MatthewCaseres in [#484](https://github.com/casact/chainladder-python/issues/484), [#485](https://github.com/casact/chainladder-python/issues/485), [#488](https://github.com/casact/chainladder-python/issues/488), [#492](https://github.com/casact/chainladder-python/issues/492), [#489](https://github.com/casact/chainladder-python/issues/489), [#493](https://github.com/casact/chainladder-python/issues/493)
+* Addressed [#420](https://github.com/casact/chainladder-python/issues/420) and [#491](https://github.com/casact/chainladder-python/issues/491) by @kennethshsu in [#507](https://github.com/casact/chainladder-python/issues/507)
+
+**Contributors**
+* [@kennethshsu](https://github.com/kennethshsu)
+* [@johalnes](https://github.com/johalnes)
+* [@MatthewCaseres](https://github.com/MatthewCaseres)
+
+### Version 0.8.18
+
+Release Date: Sep 18, 2023
+
+**Bug Fixes**
+* [#456](https://github.com/casact/chainladder-python/issues/456) Fix trailing argument in grain method
+* [#463](https://github.com/casact/chainladder-python/issues/463) Fix bug in sigma_ weight of Development estimator. Previous algorithm did not honor link ratio exclusions.
+* [#446](https://github.com/casact/chainladder-python/issues/446) Addressed scipy solver changes
+
+### Version 0.8.17
+
+Release Date: Jun 17, 2023
+
+**What's Changed**
+* Bump of 0.8.16
+
 ### Version 0.8.16
 
 Release Date: Jun 17, 2023

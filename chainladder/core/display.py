@@ -3,17 +3,18 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import IPython.display
 import numpy as np
 import pandas as pd
 import re
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 try:
     from IPython.core.display import HTML
+    import IPython.display
 except ImportError:
     HTML = None
+    IPython = None
 
 if TYPE_CHECKING:
     from pandas import (
@@ -152,7 +153,7 @@ class TriangleDisplay:
             high: float = 0,
             axis: int | str = 0,
             subset: IndexSlice=None
-    ) -> IPython.display.HTML:
+    ) -> Any:
         """
         Color the background in a gradient according to the data in each
         column (optionally row). Requires matplotlib.

@@ -10,14 +10,14 @@ from sklearn.base import clone
 from sklearn.ensemble._base import _fit_single_estimator, _BaseHeterogeneousEnsemble
 from sklearn.ensemble._voting import _BaseVoting
 from sklearn.utils import Bunch
-from sklearn.utils.validation import (_deprecate_positional_args,
-                                      check_is_fitted)
+from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from ..core.base import is_chainladder
 
 
 class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
     """Base class for ensemble of triangle methods."""
+
     def __init__(self, estimators):
         super().__init__(estimators)
 
@@ -32,7 +32,7 @@ class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
         self._validate_names(names)
 
         for est in estimators:
-            if est != 'drop' and not is_chainladder(est):
+            if est != "drop" and not is_chainladder(est):
                 raise ValueError(
                     f"The estimator {est.__class__.__name__}"
                     f" should be a chainladder method."
@@ -47,13 +47,12 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
     Warning: This class should not be used directly. Use derived classes
     instead.
     """
+
     def _assum_vector_is_none(self, X, assum_vector):
         # return np.ones(X.shape[:3] + (len(self.estimators), ))
         return np.repeat(
-            np.array(self.default_weighting)[np.newaxis, :],
-            repeats=X.shape[-1],
-            axis=0
-            )
+            np.array(self.default_weighting)[np.newaxis, :], repeats=X.shape[-1], axis=0
+        )
 
     def _assum_vector_is_array(self, X, assum_vector):
         assum_vector_ = assum_vector
@@ -69,7 +68,10 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
 
     def _assum_vector_is_dict(self, X, assum_vector):
         mapping_dict = {X.origin[X.origin == k][0]: v for k, v in assum_vector.items()}
-        missing = {k: self.default_weighting for k in X.origin[~X.origin.isin(mapping_dict.keys())]}
+        missing = {
+            k: self.default_weighting
+            for k in X.origin[~X.origin.isin(mapping_dict.keys())]
+        }
         assum_vector_ = np.array([*self.X_.origin.map({**mapping_dict, **missing})])
         return assum_vector_
 
@@ -85,9 +87,11 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
         elif isinstance(assum_vector, dict):
             assum_vector_ = self._assum_vector_is_dict(X, assum_vector)
         else:
-            raise ValueError("The vector assumption provided must be a "
-                             "numpy array, list, dict or callable. Got a "
-                             f"{type(assum_vector)} instead.")
+            raise ValueError(
+                "The vector assumption provided must be a "
+                "numpy array, list, dict or callable. Got a "
+                f"{type(assum_vector)} instead."
+            )
         return assum_vector_
 
     def _broadcast_weights(self, X):
@@ -106,38 +110,45 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
         """Get common fit operations."""
         names, clfs = self._validate_estimators()
         if self.default_weighting is None:
-            self.default_weighting = (1, ) * len(self.estimators)
+            self.default_weighting = (1,) * len(self.estimators)
         self.weights_ = self._coerce_assum_vector_to_array(X, self.weights)
         self.weights_ = self.weights_[..., np.newaxis]
         if self.weights_.shape[-3] != X.shape[2]:
-            raise ValueError('Length of weight arrays do not equal'
-                             f' number of accident periods; found'
-                             f' {self.weights_.shape[-3]} weights'
-                             f' and {X.shape[2]} accident periods.')
+            raise ValueError(
+                "Length of weight arrays do not equal"
+                f" number of accident periods; found"
+                f" {self.weights_.shape[-3]} weights"
+                f" and {X.shape[2]} accident periods."
+            )
         if self.weights_.shape[-2] != len(self.estimators):
-            raise ValueError('Number of weight arrays does not equal'
-                             f' number of estimators array; '
-                             f' found {self.weights_.shape[-2]} weights'
-                             f' arrays and {len(self.estimators)}'
-                             ' estimators.')
+            raise ValueError(
+                "Number of weight arrays does not equal"
+                f" number of estimators array; "
+                f" found {self.weights_.shape[-2]} weights"
+                f" arrays and {len(self.estimators)}"
+                " estimators."
+            )
 
         self.estimators_ = Parallel(n_jobs=self.n_jobs)(
-                delayed(_fit_single_estimator)(
-                        clone(clf), X, y,
-                        fit_params=dict(sample_weight=sample_weight),
-                        message_clsname='VotingChainladder',
-                        message=self._log_message(names[idx],
-                                                  idx + 1, len(clfs))
-                )
-                for idx, clf in enumerate(clfs) if clf != 'drop'
+            delayed(_fit_single_estimator)(
+                clone(clf),
+                X,
+                y,
+                fit_params=dict(sample_weight=sample_weight),
+                # sample_weight=sample_weight,
+                message_clsname="VotingChainladder",
+                message=self._log_message(names[idx], idx + 1, len(clfs)),
             )
+            for idx, clf in enumerate(clfs)
+            if clf != "drop"
+        )
 
         self.named_estimators_ = Bunch()
 
         # Uses 'drop' as placeholder for dropped estimators
         est_iter = iter(self.estimators_)
         for name, est in self.estimators:
-            current_est = est if est == 'drop' else next(est_iter)
+            current_est = est if est == "drop" else next(est_iter)
             self.named_estimators_[name] = current_est
 
         return self
@@ -219,9 +230,17 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         1989  20004.502125
         1990  21605.832631
     """
+
     @_deprecate_positional_args
-    def __init__(self, estimators, *, weights=None, default_weighting=None,
-                 n_jobs=None, verbose=False):
+    def __init__(
+        self,
+        estimators,
+        *,
+        weights=None,
+        default_weighting=None,
+        n_jobs=None,
+        verbose=False,
+    ):
         super().__init__(estimators=estimators)
         self.weights = weights
         self.default_weighting = default_weighting
@@ -327,19 +346,25 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
             weights = self._broadcast_weights(X)
         elif self.weights_.ndim == 5:
             if self.weights_.shape[0] != X.shape[0]:
-                raise ValueError('Index length (axis 0) of weights does'
-                                 ' not equal index length of X; found'
-                                 f' {self.weights_.shape[0]} for weights'
-                                 f' and {X.shape[0]} for X.')
+                raise ValueError(
+                    "Index length (axis 0) of weights does"
+                    " not equal index length of X; found"
+                    f" {self.weights_.shape[0]} for weights"
+                    f" and {X.shape[0]} for X."
+                )
             if self.weights_.shape[1] != X.shape[1]:
-                raise ValueError('Column length (axis 1) of weights does'
-                                 f' not equal column length of X; found'
-                                 f' {self.weights_.shape[1]} for weights'
-                                 f' and {X.shape[1]} for X.')
+                raise ValueError(
+                    "Column length (axis 1) of weights does"
+                    f" not equal column length of X; found"
+                    f" {self.weights_.shape[1]} for weights"
+                    f" and {X.shape[1]} for X."
+                )
             weights = self.weights_
 
-        ultimate = sum([
+        ultimate = sum(
+            [
                 est.predict(X, sample_weight).ultimate_ * weights[..., i, :]
                 for i, est in enumerate(self.estimators_)
-            ]) / weights.sum(axis=-2)
+            ]
+        ) / weights.sum(axis=-2)
         return ultimate

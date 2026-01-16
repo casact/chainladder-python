@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chainladder"
+version = "0.8.26"
+authors = [
+    {name = "John Bogaardt", email = "jbogaardt@gmail.com"},
+]
+maintainers = [
+    {name = "John Bogaardt", email = "jbogaardt@gmail.com"},
+]
+description = "Chainladder Package - P&C Loss Reserving package"
+readme = "README.rst"
+license = {text = "MPL-2.0"}
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
+dependencies = [
+    "pandas>=2.0",
+    "scikit-learn>1.4.2",
+    "numba>0.54",
+    "sparse>=0.9",
+    "matplotlib",
+    "dill",
+    "patsy",
+]
+
+[project.urls]
+Homepage = "https://github.com/casact/chainladder-python"
+Documentation = "https://chainladder-python.readthedocs.io/"
+Repository = "https://github.com/casact/chainladder-python"
+"Bug Tracker" = "https://github.com/casact/chainladder-python/issues"
+
+
+[project.optional-dependencies]
+dev = [
+    "lxml",
+    "pytest",
+    "pytest-cov", 
+    "pytest-xdist",
+    "jinja2",
+    "ipython",
+    "ipykernel",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "nbsphinx",
+    "numpydoc",
+    "jupyter-book<2.0",  # Pin to v1.x - v2 doesn't support autodoc/autosummary yet
+    "sphinx-togglebutton",
+    "ipython",
+    "parso>=0.8",
+    "polars",  # For docs examples
+    "statsmodels",  # For docs examples
+]
+test = [
+    "lxml",
+    "pytest",
+    "jinja2",
+    "ipython",
+    "pytest-cov",  # For coverage testing
+    "dask",  
+]
+performance = [
+    "dask",  # For distributed computing
+    "cupy",  # For GPU acceleration (if available)
+]
+all = [
+    "chainladder[dev,docs,test]",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["chainladder", "chainladder.*"]
+
+[tool.setuptools.package-data]
+chainladder = ["utils/data/*"]

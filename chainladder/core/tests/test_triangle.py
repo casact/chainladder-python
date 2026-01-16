@@ -245,7 +245,8 @@ def test_trend_on_vector(raa):
     d = raa.latest_diagonal
     assert (
         d.trend(0.05, axis=2).to_frame(origin_as_datetime=False).astype(int).iloc[0, 0]
-        == 29217)
+        == 29217
+    )
 
 
 def test_latest_diagonal_val_to_dev(raa):
@@ -744,7 +745,6 @@ def test_halfyear_development():
         ["2012-01-01", "2013-12-31", "incurred", 200.0],
     ]
 
-    
     assert (
         type(
             cl.Triangle(
@@ -757,3 +757,145 @@ def test_halfyear_development():
             )
         )
     ) == cl.Triangle
+
+
+def test_latest_diagonal_vs_full_tri_raa(raa):
+    model = cl.Chainladder().fit(raa)
+    assert model.ultimate_.latest_diagonal == model.full_triangle_.latest_diagonal
+
+
+def test_latest_diagonal_vs_full_tri_clrd(clrd):
+    model = cl.Chainladder().fit(clrd)
+    ult = model.ultimate_
+    full_tri = model.full_triangle_
+
+    assert np.round(full_tri.latest_diagonal, 0) == np.round(ult.latest_diagonal, 0)
+
+def test_semi_annual_grain():
+    Sdata = {
+        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
+                "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01",
+                "2008-01-01", "2008-01-01", "2008-01-01", "2008-01-01", "2008-01-01",
+                "2008-07-01", "2008-07-01", "2008-07-01", "2008-07-01",
+                "2009-01-01", "2009-01-01", "2009-01-01",
+                "2009-07-01", "2009-07-01",
+                "2010-01-01"],
+        'development': ["2007-01-01", "2007-07-01", "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2007-07-01", "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2009-01-01", "2009-07-01", "2010-01-01",
+                        "2009-07-01", "2010-01-01",
+                        "2010-01-01"],
+        'loss': [100, 200, 300, 400, 500, 600, 700, 
+                150, 300, 450, 500, 550, 600, 
+                200, 250, 350, 400, 450, 
+                50, 100, 150, 200,
+                100, 200, 300,
+                50, 150, 
+                100]
+    }
+
+    Stri = cl.Triangle(
+        pd.DataFrame(Sdata), 
+        origin='origin',
+        development='development',
+        columns='loss',
+        cumulative=True
+    )
+
+    Adata = {
+        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
+                "2008-01-01", "2008-01-01", "2008-01-01",
+                "2009-01-01", "2009-01-01",
+                "2010-01-01"],
+        'development': ["2007-01-01", "2008-01-01", "2009-01-01", "2010-01-01",
+                        "2008-01-01", "2009-01-01", "2010-01-01",
+                        "2009-01-01", "2010-01-01",
+                        "2010-01-01"],
+        'loss': [100, 600, 1000, 1300, 
+                200, 450, 650, 
+                100, 450,
+                100]
+    }
+
+    Atri = cl.Triangle(
+        pd.DataFrame(Adata), 
+        origin='origin',
+        development='development',
+        columns='loss',
+        cumulative=True
+    )
+    assert Atri == Stri.grain('OYDY')
+
+def test_odd_quarter_end():
+    data= pd.DataFrame([
+        ["5/1/2023", 12, '4/30/2024', 100],
+        ["8/1/2023", 9, "4/30/2024", 130],
+        ["11/1/2023", 6, "4/30/2024", 160],
+        ["2/1/2024", 3, "4/30/2024", 140]], 
+        columns = ['origin', 'development', 'valuation', 'EarnedPremium'])
+    triangle = cl.Triangle(
+        data, origin='origin', origin_format='%Y-%m-%d', development='valuation', columns='EarnedPremium', trailing=True, cumulative=True
+    )
+    data_from_tri = triangle.to_frame(origin_as_datetime=True)
+    assert np.all(data_from_tri['2024Q2'].values == [100.,130.,160.,140.])
+    assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023","8/1/2023","11/1/2023","2/1/2024"],freq = 'QS-NOV'))
+
+
+def test_single_valuation_date_preserves_exact_date():
+    # Test that a single development date is preserved exactly and not converted to fiscal year
+    # Regression test for issue where 202510 was incorrectly converted to 2026-09 instead of 2025-10
+    data = pd.DataFrame({
+        'Accident Year Month': [202002, 202003, 202105, 202201, 202301, 202401, 202501],
+        'Calendar Year Month': [202510] * 7,  # Single valuation date
+        'Loss': [100, 200, 150, 300, 250, 400, 350]
+    })
+
+    triangle = cl.Triangle(
+        data=data,
+        origin='Accident Year Month',
+        development='Calendar Year Month',
+        columns='Loss',
+        cumulative=True,
+        development_format='%Y%m',
+        origin_format='%Y%m'
+    )
+
+    # Valuation date should be end of October 2025, not converted to a fiscal year
+    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999999')
+    assert triangle.development_grain == 'M'
+    assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
+def test_OXDX_triangle():
+    
+    for x in [12,6,3,1]:
+        for y in [i for i in [12,6,3,1] if i <= x]:
+            first_orig = '2020-01-01'
+            width = int(x / y) + 1
+            dev_series = (pd.date_range(start=first_orig,periods = width, freq = str(y) + 'ME') + pd.DateOffset(months=y-1)).to_series()
+            tri_df = pd.DataFrame({
+                'origin_date': pd.concat([pd.to_datetime([first_orig] * (width)).to_series(), (pd.to_datetime([first_orig]) + pd.DateOffset(months=x)).to_series()]).to_list(),
+                'development_date': pd.concat([dev_series,dev_series.iloc[[0]] + pd.DateOffset(months=x)]).to_list(),
+                'value': list(range(1,width + 2))
+            })
+            for i in range(12):
+                for j in range(y):
+                    test_data = tri_df.copy()
+                    test_data['origin_date'] += pd.DateOffset(months=i)        
+                    test_data['development_date'] += pd.DateOffset(months=i-j)
+                    tri = cl.Triangle(
+                        test_data, 
+                        origin='origin_date', 
+                        development='development_date', 
+                        columns='value', 
+                        cumulative=True
+                    )
+                    assert tri.shape == (1,1,2,width)
+                    assert tri.sum().sum() == tri_df['value'].sum()
+                    assert np.all(tri.development == [y-j + x * y for x in range(width)])
+                    #there's a known bug with origin that displays incorrect year when origin doesn't start on 1/1
+                    #if x == 12:
+                        #assert np.all(tri.origin == ['2020','2021'])
+                    #elif x in [6,3]:
+                        #assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
+                        #assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))

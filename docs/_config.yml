@@ -45,3 +45,6 @@ parse:
   myst_enable_extensions:
     - html_admonition
     - colon_fence
+    - dollarmath
+    - linkify
+    - substitution

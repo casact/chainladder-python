@@ -42,4 +42,10 @@ from chainladder.tails import *  # noqa (API Import)
 from chainladder.methods import *  # noqa (API Import)
 from chainladder.workflow import *  # noqa (API Import)
 
-__version__ = "0.8.24"
+try:
+    from importlib.metadata import version
+    __version__ = version("chainladder")
+except ImportError:
+    # Fallback for Python < 3.8
+    from importlib_metadata import version
+    __version__ = version("chainladder")

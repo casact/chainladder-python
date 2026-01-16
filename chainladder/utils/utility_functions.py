@@ -637,6 +637,11 @@ def minimum(x1, x2):
 def maximum(x1, x2):
     return x1.maximum(x2)
 
+def to_period(dateseries: pd.Series, freq:str):
+    if freq[:2] != '2Q':
+        return dateseries.dt.to_period(freq)
+    else:
+        return dateseries.where(dateseries.dt.to_period(freq).dt.strftime('%q').isin(['1','3']),dateseries.dt.date + pd.DateOffset(months=-3)).dt.to_period(freq)
 
 class PatsyFormula(BaseEstimator, TransformerMixin):
     """A sklearn-style Transformer for patsy formulas.
@@ -762,3 +767,29 @@ def model_diagnostics(model, name=None, groupby=None):
         out.index = idx
         triangles.append(out)
     return concat(triangles, 0)
+
+
+def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None, iota: ArrayLike = None):
+    """ Helper formula that builds a patsy formula string for the BarnettZehnwirth 
+    estimator.  Each axis's parameters can be grouped together. Groups of origin 
+    parameters (alpha) are set equal, and are specified by a ranges (inclusive). 
+    Groups of development (gamma) and valuation (iota) parameters are fit to 
+    separate linear trends, specified as tuples denoting ranges with shared endpoints.
+    In other words, development and valuation trends are fit to a piecewise linear model.
+    A triangle must be supplied to provide some critical information.
+    """
+    formula_parts=[]
+    if(alpha):
+        # The intercept term takes the place of the first alpha
+        for ind,a in enumerate(alpha):
+            if(a[0]==0):
+                alpha=alpha[:ind]+alpha[(ind+1):]
+        formula_parts += ['+'.join([f'I({x[0]} <= origin)' for x in alpha])]
+    if(gamma):
+        dgrain = min(tri.development)
+        formula_parts += ['+'.join([f'I((np.minimum({x[1]-dgrain},development) - np.minimum({x[0]-dgrain},development))/{dgrain})' for x in gamma])]
+    if(iota):
+        formula_parts += ['+'.join([f'I(np.minimum({x[1]-1},valuation) - np.minimum({x[0]-1},valuation))' for x in iota])]
+    if(formula_parts):
+        return '+'.join(formula_parts)
+    return ''
