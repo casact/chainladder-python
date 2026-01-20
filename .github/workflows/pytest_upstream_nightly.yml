@@ -1,11 +1,5 @@
 name: CI Upstream
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
   schedule:
     - cron: "0 0 * * *" # Daily “At 00:00” UTC
   workflow_dispatch: # allows you to trigger the workflow run manually
@@ -20,14 +14,13 @@ jobs:
         os: ['ubuntu-latest']
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
-      - name: Install dependencies and run tests
-        run: |
-          uv sync --extra test
-          uv run pytest chainladder -m "not r"
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --extra test
+      - name: Run tests
+        run: uv run pytest chainladder -m "not r"
