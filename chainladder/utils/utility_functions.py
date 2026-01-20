@@ -787,9 +787,9 @@ def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None,
         formula_parts += ['+'.join([f'I({x[0]} <= origin)' for x in alpha])]
     if(gamma):
         dgrain = min(tri.development)
-        formula_parts += ['+'.join([f'I((np.minimum({x[1]-dgrain},development) - np.minimum({x[0]-dgrain},development))/{dgrain})' for x in gamma])]
+        formula_parts += ['+'.join([f'I((np.minimum({x[1]},development) - np.minimum({x[0]},development))/{dgrain})' for x in gamma])]
     if(iota):
-        formula_parts += ['+'.join([f'I(np.minimum({x[1]-1},valuation) - np.minimum({x[0]-1},valuation))' for x in iota])]
+        formula_parts += ['+'.join([f'I(np.minimum({x[1]},valuation) - np.minimum({x[0]},valuation))' for x in iota])]
     if(formula_parts):
         return '+'.join(formula_parts)
     return ''
