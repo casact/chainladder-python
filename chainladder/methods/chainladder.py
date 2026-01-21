@@ -71,6 +71,6 @@ class Chainladder(MethodBase):
         """ Private method that uses CDFs to obtain an ultimate vector """
         ld = X.incr_to_cum().latest_diagonal
         ultimate = X.incr_to_cum().copy()
-        cdf = self._align_cdf(ultimate, sample_weight) 
-        ultimate = ld * cdf 
+        cdf = self._align_cdf(ultimate, sample_weight)
+        ultimate = ld * cdf
         return self._set_ult_attr(ultimate)

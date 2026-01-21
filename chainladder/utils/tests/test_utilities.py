@@ -158,7 +158,7 @@ def test_json_df():
 
 def test_read_csv_single(raa):
     # Test the read_csv function for a single dimensional input.
-    
+
     # Read in the csv file.
     from pathlib import Path
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
@@ -192,7 +192,7 @@ def test_read_csv_multi(clrd):
         ],
         index = ["GRNAME","LOB"],
         cumulative = True
-    ) 
+    )
 
 def test_concat(clrd):
     tri = clrd.groupby("LOB").sum()

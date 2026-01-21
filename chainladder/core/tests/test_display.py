@@ -7,7 +7,7 @@ def test_heatmap_render(raa):
     try:
         raa.heatmap()
 
-    except:
+    except Exception:
         assert False
 
 
@@ -24,7 +24,7 @@ def test_to_frame(raa):
         cl.Chainladder().fit(raa).ultimate_.to_frame(origin_as_datetime=False)
         cl.Chainladder().fit(raa).ultimate_.to_frame(origin_as_datetime=True)
 
-    except:
+    except Exception:
         assert False
 
 

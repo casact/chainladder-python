@@ -248,7 +248,7 @@ class TriangleSlicer:
             self.vdims = self.vdims if key in self.vdims else np.append(self.vdims, key)
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
-            except:
+            except Exception:
                 # For misaligned triangle support
                 conc = (self.values, (self.iloc[:, 0] * 0 + value).values)
                 self.values = xp.concatenate(conc, axis=1)

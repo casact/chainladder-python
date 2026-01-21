@@ -63,7 +63,7 @@ class TriangleDunders:
         x, y = set_common_backend([x, y])
         if (
             x.origin_grain != y.origin_grain
-            or (x.development_grain != y.development_grain and 
+            or (x.development_grain != y.development_grain and
                 min(x.shape[-1], y.shape[-1]) > 1)
         ):
             raise ValueError(
@@ -100,7 +100,7 @@ class TriangleDunders:
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
-                except:
+                except Exception:
                     x = x.groupby(list(common))
                     y = y.groupby(list(common))
             return x, y
@@ -112,7 +112,7 @@ class TriangleDunders:
 
     def _prep_columns(self, x, y):
         x_backend, y_backend = x.array_backend, y.array_backend
-        
+
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.vdims = y.vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
@@ -121,30 +121,30 @@ class TriangleDunders:
             y.vdims = x.vdims
         elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
             return x, y
-        else:            
+        else:
             # Find columns to add to each triangle
-            cols_to_add_to_x = [col for col in y.columns if col not in x.columns] 
-            cols_to_add_to_y = [col for col in x.columns if col not in y.columns] 
-            
+            cols_to_add_to_x = [col for col in y.columns if col not in x.columns]
+            cols_to_add_to_y = [col for col in x.columns if col not in y.columns]
+
             # Create new columns only if necessary
             if cols_to_add_to_x:
                 new_x_cols = list(x.columns) + list(cols_to_add_to_x)
                 x = x.reindex(columns=new_x_cols, fill_value=0)
-            
+
             if cols_to_add_to_y:
                 new_y_cols = list(y.columns) + list(cols_to_add_to_y)
                 y = y.reindex(columns=new_y_cols, fill_value=0)
-            
+
             # Ensure both triangles have the same column order
             x = x[new_x_cols]
             y = y[new_x_cols]
-        
+
         # Reset backends only if they've changed
         if x.array_backend != x_backend:
             x = x.set_backend(x_backend, inplace=True)
         if y.array_backend != y_backend:
             y = y.set_backend(y_backend, inplace=True)
-        
+
         return x, y
 
     def _prep_origin_development(self, obj, other):

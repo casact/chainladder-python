@@ -108,7 +108,7 @@ class BootstrapODPSample(DevelopmentBase):
             if self.hat_adj:
                 try:
                     self.hat_ = self._get_hat(X, exp_incr_triangle)
-                except:
+                except Exception:
                     warn("Could not compute hat matrix.  Setting hat_adj to False")
                     self.had_adj = False
                     self.hat_ = None

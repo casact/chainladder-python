@@ -43,9 +43,9 @@ def test_bz_2008():
     origin_buckets = [(0,1),(2,2),(3,4),(5,10)]
     dev_buckets = [(24,36),(36,48),(48,84),(84,108),(108,144)]
     val_buckets = [(1,8),(8,9),(9,12)]
-    
+
     abc_formula = PTF_formula(abc_adj,alpha=origin_buckets,gamma=dev_buckets,iota=val_buckets)
-    
+
     model=cl.BarnettZehnwirth(formula=abc_formula, drop=('1982',72)).fit(abc_adj)
     assert np.all(
         np.around(model.coef_.values,4).flatten()

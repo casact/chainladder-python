@@ -290,24 +290,24 @@ class TriangleBase(
             end=origin_date.max(),
             freq=origin_grain
         ).to_timestamp(how="s")
-        
+
         development_range: DatetimeIndex = pd.period_range(
             start=development_date.min(),
             end=development_date.max(),
             freq=development_grain,
         ).to_timestamp(how="e")
-        
+
         # If the development is semi-annual, we need to adjust further because of "2Q-DEC".
         if development_grain[:2] == "2Q":
             from pandas.tseries.offsets import DateOffset
 
             development_range += DateOffset(months=-3)
-        
+
         c = pd.DataFrame(
             TriangleBase._cartesian_product(origin_range, development_range),
             columns=["__origin__", "__development__"],
         )
-        
+
         return c[c["__development__"] > c["__origin__"]]
 
     @property

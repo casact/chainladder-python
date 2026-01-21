@@ -151,7 +151,7 @@ class Triangle(TriangleBase):
         # Store dimension metadata.
         self.columns_label: list = columns
         self.origin_label: list = origin
-        
+
         # Handle any ultimate vectors in triangles separately.
         data, ult = self._split_ult(
             data=data,
@@ -195,11 +195,11 @@ class Triangle(TriangleBase):
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
         origin_date: Series = to_period(origin_date,self.origin_grain).dt.to_timestamp(how="s")
-        
+
         # Ensure that development_date values represent the end of the period.
         # i.e., 1990 means the end of 1990 assuming annual development periods.
         development_date: Series = to_period(development_date,self.development_grain).dt.to_timestamp(how="e")
-        
+
         # Aggregate dates to the origin/development grains.
         data_agg: DataFrame = self._aggregate_data(
             data=data,
@@ -208,7 +208,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
         )
-        
+
         # Fill in missing periods with zeros.
         date_axes: DataFrame = self._get_date_axes(
             data_agg["__origin__"],
@@ -253,7 +253,7 @@ class Triangle(TriangleBase):
         self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
         self.is_pattern: bool = pattern
-        
+
         split: list[str] = self.origin_grain.split("-")
         self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
 
@@ -831,7 +831,7 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
-        
+
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
@@ -847,7 +847,7 @@ class Triangle(TriangleBase):
                 obj.ddims = ddims
 
             obj.development_grain = dgrain_new
-        
+
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
 
         if inplace:

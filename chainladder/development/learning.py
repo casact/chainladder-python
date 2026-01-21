@@ -156,13 +156,13 @@ class DevelopmentML(DevelopmentBase):
 
     def _prep_w_ml(self,X,sample_weight=None):
         weight_base = (~np.isnan(X.values)).astype(float)
-        weight = weight_base.copy()               
+        weight = weight_base.copy()
         if self.drop is not None:
             weight = weight * self._drop_func(X)
         if self.drop_valuation is not None:
             weight = weight * self._drop_valuation_func(X)
         if sample_weight is not None:
-            weight = weight * sample_weight.values 
+            weight = weight * sample_weight.values
         return weight.flatten()[weight_base.flatten()>0]
 
     def fit(self, X, y=None, sample_weight=None):
@@ -206,7 +206,7 @@ class DevelopmentML(DevelopmentBase):
             sample_weights = {self.weighted_step + '__sample_weight':weight}
         # Fit model
         self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze(),**sample_weights)
-        #return selffit_incrementals 
+        #return selffit_incrementals
         self.triangle_ml_, self.predicted_data_ = self._get_triangle_ml(df)
         return self
 

@@ -193,7 +193,7 @@ def read_csv(
         array_backend: str = None,
         pattern=False,
         trailing: bool = True,
-        *args, 
+        *args,
         **kwargs
         ) -> Triangle:
     """
@@ -295,9 +295,9 @@ def read_csv(
     #create a data frame using the *args and **kwargs that the user specified
     local_dataframe = pd.read_csv(filepath_or_buffer,*args, **kwargs)
 
-    #pass the created local_dataframe in the Triangle constructor 
+    #pass the created local_dataframe in the Triangle constructor
     local_triangle = Triangle(
-        data = local_dataframe, 
+        data = local_dataframe,
         origin=origin,
         development=development,
         columns=columns,
@@ -468,7 +468,7 @@ def parallelogram_olf(
     combined["is_leap"] = pd.to_datetime(
         combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
     ).dt.is_leap_year
-    
+
 
     if approximation_grain == "M":
         combined["final_OLF"] = combined["OLF_non_leaps"]

@@ -1,5 +1,5 @@
 ### Building out a dev environment with a working copy
-### of R ChainLadder is difficult.  These tests are 
+### of R ChainLadder is difficult.  These tests are
 ### Currently inactive, but available should the compatibility
 ### of the installs improve at a later date.
 
@@ -11,7 +11,7 @@ try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
     CL = importr("ChainLadder")
-except:
+except Exception:
     pass
 
 

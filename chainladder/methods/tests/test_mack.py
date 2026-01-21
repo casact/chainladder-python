@@ -18,6 +18,6 @@ def test_mack_to_triangle():
 def test_mack_malformed():
     a  = cl.load_sample('raa')
     b = a.iloc[:, :, :-1]
-    x = cl.MackChainladder().fit(a) 
+    x = cl.MackChainladder().fit(a)
     y = cl.MackChainladder().fit(b)
     assert x.process_risk_.iloc[:,:,:-1] == y.process_risk_
