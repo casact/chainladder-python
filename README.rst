@@ -1,9 +1,19 @@
 .. -*- mode: rst -*-
 
-.. |PyPI version| image:: https://badge.fury.io/py/chainladder.svg
-   :target: https://badge.fury.io/py/chainladder
+.. |PyPI version| image:: https://badgen.net/pypi/v/chainladder
+   :target: https://pypi.python.org/pypi/chainladder
 
-.. |Build Status| image:: https://github.com/casact/chainladder-python/workflows/Unit%20Tests/badge.svg
+.. |Python versions| image:: https://badgen.net/pypi/python/chainladder
+   :target: https://pypi.python.org/pypi/chainladder
+
+.. |License| image:: https://badgen.net/pypi/license/chainladder
+   :target: https://pypi.python.org/pypi/chainladder
+
+.. |Downloads| image:: https://badgen.net/pypi/dm/chainladder
+   :target: https://pypi.python.org/pypi/chainladder
+
+.. |Build Status| image:: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml/badge.svg
+   :target: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
    :target: https://chainladder-python.readthedocs.io/en/latest/?badge=latest
@@ -14,7 +24,7 @@
 chainladder (python)
 ====================
 
-|PyPI version| |Build Status| |codecov io| |Documentation Status|
+|PyPI version| |Python versions| |License| |Downloads| |Build Status| |codecov io| |Documentation Status|
 
 chainladder: Property and Casualty Loss Reserving in Python
 ------------------------------------------------------------
