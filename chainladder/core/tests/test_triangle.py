@@ -89,6 +89,18 @@ def test_append(raa):
     raa.append(raa2).sum() == raa * 2
     assert raa.append(raa2).sum() == 2 * raa
 
+def test_rename_columns(genins, clrd) -> None:
+    """
+    Test the renaming of triangle columns.
+    """
+    # Scalar case - single column triangle.
+    genins.rename('columns', 'foo')
+
+    assert genins.columns.to_list() == ['foo']
+
+    # Test the cascading of rename to triangle.columns_label.
+    assert genins.columns_label == ['foo']
+
 
 def test_assign_existing_col(qtr):
     out = qtr.copy()
