@@ -40,7 +40,7 @@ def test_drop2(raa):
 def test_n_periods():
     d = cl.load_sample("usauto")["incurred"]
     xp = np if d.array_backend == "sparse" else d.get_array_module()
-    return xp.all(
+    assert xp.all(
         xp.around(
             xp.unique(
                 cl.Development(n_periods=3, average="volume").fit(d).ldf_.values,
@@ -316,7 +316,7 @@ def test_new_drop_8():
 
     try:
         cl.Development(drop_high=False).fit_transform(tri)
-    except:
+    except Exception:
         assert False
 
 

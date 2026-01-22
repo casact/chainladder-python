@@ -6,7 +6,7 @@ try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
     CL = importr("ChainLadder")
-except:
+except Exception:
     pass
 
 

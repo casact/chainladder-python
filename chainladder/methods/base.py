@@ -116,7 +116,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new.ldf_ = self.ldf_
         X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         return X_new
-        
+
     def intersection(self, a, b):
         """ Given two Triangles with mismatched indices, this method aligns
             their indices """

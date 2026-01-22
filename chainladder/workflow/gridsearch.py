@@ -93,7 +93,7 @@ class GridSearch(BaseEstimator):
             for score in scoring.keys():
                 item[score] = scoring[score](model)
             return item
-            
+
         results_ = Parallel(n_jobs=self.n_jobs)(delayed(_fit_single_estimator)(
             self.estimator, fit_params, X, y, scoring, item)
             for item in grid)

@@ -7,7 +7,7 @@ from datetime import datetime
 
 try:
     from IPython.core.display import HTML
-except:
+except Exception:
     HTML = None
 
 
@@ -787,17 +787,17 @@ def test_semi_annual_grain():
                         "2009-01-01", "2009-07-01", "2010-01-01",
                         "2009-07-01", "2010-01-01",
                         "2010-01-01"],
-        'loss': [100, 200, 300, 400, 500, 600, 700, 
-                150, 300, 450, 500, 550, 600, 
-                200, 250, 350, 400, 450, 
+        'loss': [100, 200, 300, 400, 500, 600, 700,
+                150, 300, 450, 500, 550, 600,
+                200, 250, 350, 400, 450,
                 50, 100, 150, 200,
                 100, 200, 300,
-                50, 150, 
+                50, 150,
                 100]
     }
 
     Stri = cl.Triangle(
-        pd.DataFrame(Sdata), 
+        pd.DataFrame(Sdata),
         origin='origin',
         development='development',
         columns='loss',
@@ -813,14 +813,14 @@ def test_semi_annual_grain():
                         "2008-01-01", "2009-01-01", "2010-01-01",
                         "2009-01-01", "2010-01-01",
                         "2010-01-01"],
-        'loss': [100, 600, 1000, 1300, 
-                200, 450, 650, 
+        'loss': [100, 600, 1000, 1300,
+                200, 450, 650,
                 100, 450,
                 100]
     }
 
     Atri = cl.Triangle(
-        pd.DataFrame(Adata), 
+        pd.DataFrame(Adata),
         origin='origin',
         development='development',
         columns='loss',
@@ -833,7 +833,7 @@ def test_odd_quarter_end():
         ["5/1/2023", 12, '4/30/2024', 100],
         ["8/1/2023", 9, "4/30/2024", 130],
         ["11/1/2023", 6, "4/30/2024", 160],
-        ["2/1/2024", 3, "4/30/2024", 140]], 
+        ["2/1/2024", 3, "4/30/2024", 140]],
         columns = ['origin', 'development', 'valuation', 'EarnedPremium'])
     triangle = cl.Triangle(
         data, origin='origin', origin_format='%Y-%m-%d', development='valuation', columns='EarnedPremium', trailing=True, cumulative=True
@@ -867,7 +867,7 @@ def test_single_valuation_date_preserves_exact_date():
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
 def test_OXDX_triangle():
-    
+
     for x in [12,6,3,1]:
         for y in [i for i in [12,6,3,1] if i <= x]:
             first_orig = '2020-01-01'
@@ -881,13 +881,13 @@ def test_OXDX_triangle():
             for i in range(12):
                 for j in range(y):
                     test_data = tri_df.copy()
-                    test_data['origin_date'] += pd.DateOffset(months=i)        
+                    test_data['origin_date'] += pd.DateOffset(months=i)
                     test_data['development_date'] += pd.DateOffset(months=i-j)
                     tri = cl.Triangle(
-                        test_data, 
-                        origin='origin_date', 
-                        development='development_date', 
-                        columns='value', 
+                        test_data,
+                        origin='origin_date',
+                        development='development_date',
+                        columns='value',
                         cumulative=True
                     )
                     assert tri.shape == (1,1,2,width)

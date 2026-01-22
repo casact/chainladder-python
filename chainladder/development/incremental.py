@@ -146,7 +146,7 @@ class IncrementalAdditive(DevelopmentBase):
         self.sample_weight = sample_weight
         self.fit_zeta_ = self.tri_zeta * self.w_
         self.zeta_ = self._param_property(x,self.params_.slope_[...,0][..., None, :])
-        
+
         #to consolidate under full_triangle_
         y_ = xp.repeat(self.zeta_.values, len(x.odims), -2)
         obj = x.copy()
@@ -170,7 +170,7 @@ class IncrementalAdditive(DevelopmentBase):
         self.incremental_ = self.incremental_.trend(
             1/(1+future_trend)-1, axis='valuation', start=X.valuation_date,
             end=self.incremental_.valuation_date)
-        
+
         #to migrate under _zeta_to_ldf method under common, so ldf_ can be correct after tail
         self.ldf_ = obj.incr_to_cum().link_ratio
         return self
@@ -195,7 +195,7 @@ class IncrementalAdditive(DevelopmentBase):
 
     def _param_property(self, factor, params):
         from chainladder import options
-        
+
         obj = factor[factor.origin == factor.origin.min()]
         xp = factor.get_array_module()
         obj.values = params

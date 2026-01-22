@@ -91,7 +91,7 @@ class TrianglePandas:
 
             valuation = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
-                index=obj.odims if origin_as_datetime else obj.origin, 
+                index=obj.odims if origin_as_datetime else obj.origin,
                 columns=obj.ddims
             ).unstack().rename('valuation').reset_index().rename(
                 columns={'level_0': 'development', 'level_1': 'origin'})

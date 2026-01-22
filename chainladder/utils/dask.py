@@ -8,7 +8,7 @@ try:
     import dask.array as dp
     dp.array([1])
     module = "dask"
-except:
+except Exception:
     if options.ARRAY_BACKEND == "dask":
         import warnings
 
