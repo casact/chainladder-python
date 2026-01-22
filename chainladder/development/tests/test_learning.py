@@ -19,7 +19,7 @@ def test_misc(genins):
                 weighted_step = ['model'], fit_incrementals=False).fit(genins, sample_weight=genins/genins)
     assert abs(model.triangle_ml_.loc[:,:,'2010',:] - genins.mean()).max() < 1e2
     
-def test_grain():
+def test_grain():   
     grains={'Y':2,'2Q':4,'Q':8,'M':24}
     for period in grains.keys():
         tframe = pd.DataFrame()
@@ -33,4 +33,5 @@ def test_grain():
         ('design_matrix', PatsyFormula('C(development)')),
         ('model', LinearRegression(fit_intercept=False))]),
                 weighted_step = ['model'], fit_incrementals=False).fit(tri)
-        assert grains[period] == len(model.triangle_ml_.development) == len(model.triangle_ml_.origin)
+        assert grains[period] == len(model.triangle_ml_.development) 
+        assert grains[period] == len(model.triangle_ml_.origin)
