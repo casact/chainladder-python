@@ -769,7 +769,7 @@ def model_diagnostics(model, name=None, groupby=None):
     return concat(triangles, 0)
 
 
-def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None, iota: ArrayLike = None):
+def PTF_formula(alpha: list = None, gamma: list = None, iota: list = None,dgrain: int = 12):
     """ Helper formula that builds a patsy formula string for the BarnettZehnwirth 
     estimator.  Each axis's parameters can be grouped together. Groups of origin 
     parameters (alpha) are set equal, and are specified by the first period in each bin. 
@@ -786,9 +786,10 @@ def PTF_formula(tri: Triangle, alpha: ArrayLike = None, gamma: ArrayLike = None,
                 alpha=alpha[:ind]+alpha[(ind+1):]
         formula_parts += ['+'.join([f'I({x} <= origin)' for x in alpha])]
     if(gamma): 
-        dgrain = min(tri.development)
-        for ind in range(1,len(gamma)):
-            formula_parts += ['+'.join([f'I((np.minimum({gamma[ind]},development) - np.minimum({gamma[ind-1]},development))/{dgrain})'])]
+        # preprocess gamma to align with grain
+        graingamma = [(i+1)*dgrain for i in gamma]
+        for ind in range(1,len(graingamma)):
+            formula_parts += ['+'.join([f'I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development))/{dgrain})'])]
     if(iota):
         for ind in range(1,len(iota)):
             formula_parts += ['+'.join([f'I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind-1]},valuation))'])]
