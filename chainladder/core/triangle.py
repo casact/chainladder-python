@@ -149,7 +149,6 @@ class Triangle(TriangleBase):
         )
 
         # Store dimension metadata.
-        self.columns_label: list = columns
         self.origin_label: list = origin
         
         # Handle any ultimate vectors in triangles separately.
@@ -400,6 +399,10 @@ class Triangle(TriangleBase):
         if type(self.vdims) is list:
             self.vdims = np.array(self.vdims)
         self._set_slicers()
+
+    @property
+    def columns_label(self) -> list:
+        return self.columns.to_list()
 
     @property
     def origin(self):

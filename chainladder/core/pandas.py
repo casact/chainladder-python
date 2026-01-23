@@ -20,7 +20,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from numpy.typing import ArrayLike
     from types import ModuleType
-    from typing import Type
+    from typing import (
+        Literal,
+        Self,
+        Type
+    )
 
 
 
@@ -308,7 +312,11 @@ class TrianglePandas:
 
         return concat((self, other), 0)
 
-    def rename(self, axis, value):
+    def rename(
+            self,
+            axis: Literal['index', 'columns', 'origin', 'development'] | int,
+            value: list | str
+    ) -> Self:
         """Alter axes labels.
 
         Parameters
@@ -328,12 +336,18 @@ class TrianglePandas:
         value = [value] if type(value) is str else value
         if axis == "index" or axis == 0:
             self.index = value
-        if axis == "columns" or axis == 1:
+        elif axis == "columns" or axis == 1:
             self.columns = value
-        if axis == "origin" or axis == 2:
+        elif axis == "origin" or axis == 2:
             self.origin = value
-        if axis == "development" or axis == 3:
+        elif axis == "development" or axis == 3:
             self.development = value
+        else:
+            raise ValueError(
+                "Invalid value provided to the 'axis' parameter. Accepted values are a string of 'index', "
+                 "'columns', 'origin', or 'development', or an integer in the interval [0, 4] specifying the"
+                 " axis to be modified."
+            )
         return self
 
     def astype(self, dtype, inplace=True):
