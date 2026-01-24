@@ -663,11 +663,8 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, formula=None, alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12):
-        if(formula):
-            self.formula = formula
-        else:
-            self.formula = PTF_formula(alpha,gamma,iota,dgrain)
+    def __init__(self, formula=None):
+        self.formula = formula
 
     def _check_X(self, X):
         from chainladder.core import Triangle
@@ -772,7 +769,7 @@ def model_diagnostics(model, name=None, groupby=None):
     return concat(triangles, 0)
 
 
-def PTF_formula(alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12):
+def PTF_formula(alpha: list = None, gamma: list = None, iota: list = None,dgrain: int = 12):
     """ Helper formula that builds a patsy formula string for the BarnettZehnwirth 
     estimator.  Each axis's parameters can be grouped together. Groups of origin 
     parameters (alpha) are set equal, and are specified by the first period in each bin. 

@@ -58,8 +58,10 @@ class BarnettZehnwirth(TweedieGLM):
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr().log()
         response = X.columns[0] if not self.response else self.response
+        if(not self.formula):
+            self.formula = PTF_formula(self.alpha,self.gamma,self.iota,dgrain=min(tri.development))
         self.model_ = DevelopmentML(Pipeline(steps=[
-            ('design_matrix', PatsyFormula(self.formula,self.alpha,self.gamma,self.iota,dgrain=min(tri.development))),
+            ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
                     y_ml=response, fit_incrementals=True, drop=self.drop, drop_valuation = self.drop_valuation, weighted_step = 'model').fit(X = tri, sample_weight = sample_weight)
         resid = tri - self.model_.triangle_ml_[
