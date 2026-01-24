@@ -11,7 +11,7 @@ body:
       required: true
   - type: checkboxes
     attributes:
-      label: Is your feature request at odds with the scope of the package?
+      label: Is your feature request aligned with the scope of the package?
       description: |
         The ethos governing `chainladder-python` is that it: 
         1. Is an engine for triangle manipulation and reserves study. It is not a reserving system, but can be a major component in a reserving system. 

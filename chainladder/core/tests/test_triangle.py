@@ -89,6 +89,30 @@ def test_append(raa):
     raa.append(raa2).sum() == raa * 2
     assert raa.append(raa2).sum() == 2 * raa
 
+def test_rename_columns(genins, clrd) -> None:
+    """
+    Test the renaming of triangle columns.
+    """
+    # Scalar case - single column triangle.
+    genins.rename('columns', 'foo')
+
+    assert genins.columns.to_list() == ['foo']
+
+    # Test the cascading of rename to triangle.columns_label.
+    assert genins.columns_label == ['foo']
+
+def test_rename_exception(genins, clrd) -> None:
+    # Test incorrect axis argument - misspelling of string.
+    with pytest.raises(ValueError):
+        genins.rename('colunms', 'foo')
+
+    # Test incorrect axis integer.
+    with pytest.raises(ValueError):
+        genins.rename(4, 'foo')
+
+    # Test incorrect number of columns.
+    with pytest.raises(ValueError):
+        clrd.rename('columns', ['foo'])
 
 def test_assign_existing_col(qtr):
     out = qtr.copy()
