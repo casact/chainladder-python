@@ -71,6 +71,7 @@ docs = [
 ]
 test = [
     "lxml",
+    "nbmake",
     "pytest",
     "jinja2",
     "ipython",
