@@ -56,7 +56,6 @@ dev = [
     "jinja2",
     "ipython",
     "ipykernel",
-    'jupyter-black',
 ]
 docs = [
     "sphinx",
@@ -77,7 +76,8 @@ test = [
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
-    "dask",  
+    "dask",
+    'jupyter-black',
 ]
 performance = [
     "dask",  # For distributed computing
