@@ -56,6 +56,7 @@ dev = [
     "jinja2",
     "ipython",
     "ipykernel",
+    'jupyter-black',
 ]
 docs = [
     "sphinx",
@@ -67,8 +68,7 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels",  # For docs examples
-    'jupyter-black',
+    "statsmodels",  # For docs example
 ]
 test = [
     "lxml",
