@@ -1,7 +1,6 @@
 import numpy as np
 import chainladder as cl
 import pytest
-from chainladder.utils.utility_functions import PTF_formula
 abc = cl.load_sample('abc')
 
 def test_basic_bz():
@@ -40,13 +39,11 @@ def test_bz_2008():
     exposure=np.array([[2.2], [2.4], [2.2], [2.0], [1.9], [1.6], [1.6], [1.8], [2.2], [2.5], [2.6]])
     abc_adj = abc/exposure
 
-    origin_buckets = [(0,1),(2,2),(3,4),(5,10)]
-    dev_buckets = [(24,36),(36,48),(48,84),(84,108),(108,144)]
-    val_buckets = [(1,8),(8,9),(9,12)]
-    
-    abc_formula = PTF_formula(abc_adj,alpha=origin_buckets,gamma=dev_buckets,iota=val_buckets)
-    
-    model=cl.BarnettZehnwirth(formula=abc_formula, drop=('1982',72)).fit(abc_adj)
+    origin_buckets = [0,2,3,5]
+    dev_buckets = [0,1,2,5,7,10]
+    val_buckets = [0,7,8,11]
+
+    model=cl.BarnettZehnwirth(drop=('1982',72),alpha=origin_buckets,gamma=dev_buckets,iota=val_buckets).fit(abc_adj)
     assert np.all(
         np.around(model.coef_.values,4).flatten()
         == np.array([11.1579,0.1989,0.0703,0.0919,0.1871,-0.3771,-0.4465,-0.3727,-0.3154,0.0432,0.0858,0.1464])
