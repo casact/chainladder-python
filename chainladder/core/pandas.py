@@ -133,7 +133,7 @@ class TrianglePandas:
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col]: Series = np.nan
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
-                out[col]: Series = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+                out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
