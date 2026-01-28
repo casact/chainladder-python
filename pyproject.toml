@@ -67,15 +67,17 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels",  # For docs examples
+    "statsmodels",  # For docs example
 ]
 test = [
     "lxml",
+    "nbmake",
     "pytest",
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
-    "dask",  
+    "dask",
+    'statsmodels'
 ]
 performance = [
     "dask",  # For distributed computing

@@ -124,17 +124,20 @@ class TriangleDunders:
         else:            
             # Find columns to add to each triangle
             cols_to_add_to_x = [col for col in y.columns if col not in x.columns] 
-            cols_to_add_to_y = [col for col in x.columns if col not in y.columns] 
-            
-            # Create new columns only if necessary
+            cols_to_add_to_y = [col for col in x.columns if col not in y.columns]
+
+            # Start with case with no new columns, y simply has a different order
+            new_x_cols = list(x.columns)
+
+            # Then, if there are new columns, add them.
             if cols_to_add_to_x:
                 new_x_cols = list(x.columns) + list(cols_to_add_to_x)
                 x = x.reindex(columns=new_x_cols, fill_value=0)
-            
+
             if cols_to_add_to_y:
                 new_y_cols = list(y.columns) + list(cols_to_add_to_y)
                 y = y.reindex(columns=new_y_cols, fill_value=0)
-            
+
             # Ensure both triangles have the same column order
             x = x[new_x_cols]
             y = y[new_x_cols]
