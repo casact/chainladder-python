@@ -9,10 +9,7 @@ from chainladder.development.learning import DevelopmentML
 from chainladder.development.glm import TweedieGLM
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
-import warnings
-from chainladder.utils.utility_functions import PatsyFormula
-from patsy import ModelDesc
-
+from chainladder.utils.utility_functions import PatsyFormula, PTF_formula
 
 class BarnettZehnwirth(TweedieGLM):
     """ This estimator enables modeling from the Probabilistic Trend Family as
@@ -31,21 +28,38 @@ class BarnettZehnwirth(TweedieGLM):
     response:  str
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
-
+    alpha: list of int
+        List of origin periods denoting the first indices of each group 
+    gamma: list of int
+    iota: list of int
 
     """
 
-    def __init__(self, drop=None,drop_valuation=None,formula='C(origin) + development', response=None):
+    def __init__(self, drop=None,drop_valuation=None,formula=None, response=None, alpha=None, gamma=None, iota=None):
         self.drop = drop
         self.drop_valuation = drop_valuation
-        self.formula = formula
-        self.response = response
 
+        self.response = response
+        if formula and (alpha or gamma or iota):
+            raise ValueError("Model can only be specified by either a formula or some combination of alpha, gamma and iota.")
+        if not (formula or alpha or gamma or iota):
+            raise ValueError("Model must be specified, either a formula or some combination of alpha, gamma and iota.")
+        for Greek in [alpha,gamma,iota]:
+            if Greek:
+                if not ( (type(Greek) is list) and all(type(bound) is int for bound in Greek) ):
+                    raise ValueError("Alpha, gamma and iota must be given as lists of integers, specifying periods.")
+        self.formula = formula
+        self.alpha = alpha
+        self.gamma = gamma
+        self.iota = iota
+        
     def fit(self, X, y=None, sample_weight=None):
         if max(X.shape[:2]) > 1:
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr().log()
         response = X.columns[0] if not self.response else self.response
+        if(not self.formula):
+            self.formula = PTF_formula(self.alpha,self.gamma,self.iota,dgrain=min(tri.development))
         self.model_ = DevelopmentML(Pipeline(steps=[
             ('design_matrix', PatsyFormula(self.formula)),
             ('model', LinearRegression(fit_intercept=False))]),
