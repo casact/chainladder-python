@@ -269,6 +269,26 @@ class TrianglePandas:
             new_obj = self.copy()
             return new_obj.fillna(value=value, inplace=True)
 
+    def fillzero(self, inplace=False):
+        """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
+        Parameters
+        ----------
+        inplace: boolean, default = False
+            Whether to modify the triangle object directly (True), or
+            return a new modified triangle (False).
+
+        Returns
+        -------
+        Triangle
+        """
+        if inplace:
+            xp = self.get_array_module()
+            self.values = np.where((xp.nan_to_num(self.values) == 0) * (self.nan_triangle == 1), self.nan_triangle * 0, self.values)
+            return self
+        else:
+            new_obj = self.copy()
+            return new_obj.fillzero(inplace=True)
+
     def drop(self, labels=None, axis=1):
         """Drop specified labels from rows or columns.
 

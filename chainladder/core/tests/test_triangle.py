@@ -923,3 +923,9 @@ def test_OXDX_triangle():
                     #elif x in [6,3]:
                         #assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
                         #assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
+
+def test_fillzero():
+    raa = cl.load_sample('raa')
+    zero = raa - raa[raa.origin=='1982']
+    filled = zero.fillzero()
+    assert (filled[filled.origin == '1982'][filled.development == 24].values.flatten()[0]) == 0
