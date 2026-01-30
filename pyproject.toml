@@ -31,7 +31,7 @@ classifiers = [
 ]
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
-    "pandas>=2.0, <=2.3",
+    "pandas >=2.0, <3.0",
     "scikit-learn>1.4.2",
     "numba>0.54",
     "sparse>=0.9",
@@ -67,15 +67,17 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels",  # For docs examples
+    "statsmodels",  # For docs example
 ]
 test = [
     "lxml",
+    "nbmake",
     "pytest",
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
-    "dask",  
+    "dask",
+    'statsmodels'
 ]
 performance = [
     "dask",  # For distributed computing

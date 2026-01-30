@@ -18,7 +18,12 @@ except ImportError:
 if TYPE_CHECKING:
     from chainladder import Triangle
     from collections.abc import Callable
+    from numpy import ndarray
     from numpy.typing import ArrayLike
+    from pandas import (
+        DataFrame,
+        Series
+    )
     from types import ModuleType
     from typing import (
         Literal,
@@ -52,8 +57,14 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
-    def to_frame(self, origin_as_datetime=True, keepdims=False,
-                 implicit_axis=False, *args, **kwargs):
+    def to_frame(
+            self,
+            origin_as_datetime: bool = True,
+            keepdims: bool = False,
+            implicit_axis: bool = False,
+            *args,
+            **kwargs
+    ) -> DataFrame | Series:
         """ Converts a triangle to a pandas.DataFrame.
         Parameters
         ----------
@@ -69,55 +80,58 @@ class TrianglePandas:
             valuation axis in addition to the origin and development.
         Returns
         -------
-            pandas.DataFrame representation of the Triangle.
+            DataFrame or Series representation of the Triangle.
         """
-        axes = [num for num, item in enumerate(self.shape) if item > 1]
 
+        # Identify the axes that increase the dimensionality of the triangle, i.e., those whose length is > 1.
+        axes: list[int] = [num for num, item in enumerate(self.shape) if item > 1]
+
+        # Long format.
         if keepdims:
-            is_val_tri = self.is_val_tri
-            obj = self.val_to_dev().set_backend("sparse")
-            out = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
-            out["columns"] = obj.columns[obj.values.coords[1]]
-            missing_cols = list(set(self.columns) - set(out['columns']))
+            is_val_tri: bool = self.is_val_tri
+            obj: Triangle = self.val_to_dev().set_backend("sparse")
+            out: DataFrame = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
+            out["columns"]: Series = obj.columns[obj.values.coords[1]]
+            missing_cols: list = list(set(self.columns) - set(out['columns']))
             if origin_as_datetime:
-                out["origin"] = obj.odims[obj.values.coords[2]]
+                out["origin"]: Series = obj.odims[obj.values.coords[2]]
             else:
-                out["origin"] = obj.origin[obj.values.coords[2]]
-            out["development"] = obj.ddims[obj.values.coords[3]]
-            out["values"] = obj.values.data
-            out = pd.pivot_table(
+                out["origin"]: Series = obj.origin[obj.values.coords[2]]
+            out["development"]: Series = obj.ddims[obj.values.coords[3]]
+            out["values"]: Series = obj.values.data
+            out: DataFrame = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
             )
-            out = out.reset_index().set_index(obj.key_labels)
+            out: DataFrame = out.reset_index().set_index(obj.key_labels)
             out.columns = ["origin", "development"] + list(
                 out.columns.get_level_values(1)[2:]
             )
 
-            valuation = pd.DataFrame(
+            valuation: DataFrame = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
                 index=obj.odims if origin_as_datetime else obj.origin, 
                 columns=obj.ddims
             ).unstack().rename('valuation').reset_index().rename(
                 columns={'level_0': 'development', 'level_1': 'origin'})
 
-            val_dict = dict(zip(list(zip(
+            val_dict: dict = dict(zip(list(zip(
                 valuation['origin'], valuation['development'])),
                 valuation['valuation']))
             if len(out) > 0:
-                out['valuation'] = out.apply(
+                out['valuation']: Series = out.apply(
                     lambda x: val_dict[(x['origin'], x['development'])], axis=1)
             else:
-                out['valuation'] = self.valuation_date
-            col_order = list(self.columns)
+                out['valuation']: Series = self.valuation_date
+            col_order: list = list(self.columns)
             if implicit_axis:
-                col_order = ['origin', 'development', 'valuation'] + col_order
+                col_order: list = ['origin', 'development', 'valuation'] + col_order
             else:
                 if is_val_tri:
-                    col_order = ['origin', 'valuation'] + col_order
+                    col_order: list = ['origin', 'valuation'] + col_order
                 else:
-                    col_order = ['origin', 'development'] + col_order
+                    col_order: list = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
-                out[col] = np.nan
+                out[col]: Series = np.nan
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
                 out.loc[out[col] == 0, col] = np.nan
@@ -126,35 +140,40 @@ class TrianglePandas:
 
         # keepdims = False
         else:
+            # Case when there is a single triangle, for a single segment.
             if self.shape[:2] == (1, 1):
                 return self._repr_format(origin_as_datetime)
-
+            # Case when triangle is multidimensional but is of unusual shape, such as a collection of latest diagonals.
             elif len(axes) in [1, 2]:
-                tri = np.squeeze(self.set_backend("numpy").values)
-                axes_lookup = {
+                tri: ndarray = np.squeeze(self.set_backend("numpy").values)
+                axes_lookup: dict = {
                     0: self.kdims,
                     1: self.vdims,
                     2: self.origin,
                     3: self.development,
                 }
 
+                # Set the index to be key dimension if the key dimension is greater than length 1.
                 if axes[0] == 0:
                     idx = self.index.set_index(self.key_labels).index
+                # Otherwise, find the axis that is greater than length 0 and set that to be the index.
                 else:
                     idx = axes_lookup[axes[0]]
 
                 if len(axes) == 1:
                     return pd.Series(tri, index=idx).fillna(0)
-
-                elif len(axes) == 2:
+                # Case len(axes) == 2.
+                else:
                     return pd.DataFrame(
                         tri, index=idx, columns=axes_lookup[axes[1]]
                     ).fillna(0)
-
+            # Multidimensional triangles, return DataFrame in long form.
             else:
                 return self.to_frame(
-                    origin_as_datetime=origin_as_datetime, keepdims=True,
-                    implicit_axis=implicit_axis)
+                    origin_as_datetime=origin_as_datetime,
+                    keepdims=True,
+                    implicit_axis=implicit_axis
+                )
 
     def plot(self, *args, **kwargs):
         """Passthrough of pandas functionality"""
@@ -410,7 +429,7 @@ def add_triangle_agg_func(
             axis: str | int | None = None,
             *args,
             **kwargs
-    ) -> Triangle | np.ndarray:
+    ) -> Triangle | ndarray:
         """
         Applies the aggregation function specified by k from the outer function.
 
