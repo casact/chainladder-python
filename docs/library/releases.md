@@ -1,5 +1,53 @@
 # {octicon}`megaphone` Releases & Changelog
 
+## Version 0.9
+
+### Version 0.9.1
+
+Release Date: Jan 30, 2026
+
+**What's Changed**
+* Release number fix and bump
+
+### Version 0.9.0
+
+Release Date: Jan 30, 2026
+
+**What's Changed**
+* Fix Issue 619 undelcared IPython dependency by @bayesflows in [#620](https://github.com/casact/chainladder-python/pull/620)
+* Addresses #579 by @danielfong-act in [#624](https://github.com/casact/chainladder-python/pull/624)
+* Adding BZ tests by @henrydingliu in [#625](https://github.com/casact/chainladder-python/pull/625)
+* Update tails.ipynb by @henrydingliu in [#629](https://github.com/casact/chainladder-python/pull/629)
+* Actually fixing #437 by @henrydingliu in [#631](https://github.com/casact/chainladder-python/pull/631)
+* fixes grain error in learning.py by @danielfong-act in [#633](https://github.com/casact/chainladder-python/pull/633)
+* removing feat_eng from developmentML by @henrydingliu in [#637](https://github.com/casact/chainladder-python/pull/637)
+* Fix for #634 by @danielfong-act in [#638](https://github.com/casact/chainladder-python/pull/638)
+* updating branch and adding another test by @henrydingliu in [#640](https://github.com/casact/chainladder-python/pull/640)
+* Added the new WG info by @kennethshsu in [#641](https://github.com/casact/chainladder-python/pull/641)
+* [Work in progress] BarnettZehnwirth formula helper (with some refactor) by @danielfong-act in [#642](https://github.com/casact/chainladder-python/pull/642)
+* Enhancing BZ method to recreate BZ08 by @henrydingliu in [#643](https://github.com/casact/chainladder-python/pull/643)
+* bump actions, simplify uv python setup by @hutch3232 in [#645](https://github.com/casact/chainladder-python/pull/645)
+* Update CI Upstream workflow to remove branch triggers by @hutch3232 in [#646](https://github.com/casact/chainladder-python/pull/646)
+* document 3.14 support, add to test matrix by @hutch3232 in [#649](https://github.com/casact/chainladder-python/pull/649)
+* Update feature request template label for clarity by @hutch3232 in [#653](https://github.com/casact/chainladder-python/pull/653)
+* Bump urllib3 from 2.5.0 to 2.6.3 by @dependabot[bot] in [#647](https://github.com/casact/chainladder-python/pull/647)
+* Bump fonttools from 4.60.1 to 4.60.2 by @dependabot[bot] in [#648](https://github.com/casact/chainladder-python/pull/648)
+* Grain test for learning.py by @danielfong-act in [#661](https://github.com/casact/chainladder-python/pull/661)
+* FEAT: Add validation to TrianglePandas.rename. Also add tests to ensure cascading of rename to triangle.columns_label. by @genedan in [#659](https://github.com/casact/chainladder-python/pull/659)
+* Update pyproject.toml by @henrydingliu in [#663](https://github.com/casact/chainladder-python/pull/663)
+* Barnett Zehnwirth documentation and formulation rework by @danielfong-act in [#657](https://github.com/casact/chainladder-python/pull/657)
+* Add nbmake to dependencies and update GitHub action to test notebooks. by @genedan in [#666](https://github.com/casact/chainladder-python/pull/666)
+* Commit reconciliation request by @genedan in [#668](https://github.com/casact/chainladder-python/pull/668)
+* Adding Fillzero by @henrydingliu in [#670](https://github.com/casact/chainladder-python/pull/670)
+
+**New Contributors**
+* @bayesflows made their first contribution in [#620](https://github.com/casact/chainladder-python/pull/620)
+* @danielfong-act made their first contribution in [#624](https://github.com/casact/chainladder-python/pull/624)
+* @hutch3232 made their first contribution in [#645](https://github.com/casact/chainladder-python/pull/645)
+* @dependabot[bot] made their first contribution in [#647](https://github.com/casact/chainladder-python/pull/647)
+
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.8.26...v0.9.0
+
 ## Version 0.8
 
 ### Version 0.8.26
