@@ -101,7 +101,20 @@ def test_rename_columns(genins, clrd) -> None:
     # Test the cascading of rename to triangle.columns_label.
     assert genins.columns_label == ['foo']
 
+    genins.rename('columns',{'foo':'newfoo'})
+
+    assert genins.columns.to_list() == ['newfoo']
+
+    genins.rename('columns',{'foo':'newnewfoo'})
+
+    assert genins.columns.to_list() == ['newfoo']
+
+
 def test_rename_exception(genins, clrd) -> None:
+    # Test incorrect value argument - misspelling of string.
+    with pytest.raises(ValueError):
+        genins.rename('origin', {'oldfoo':'foo'})
+
     # Test incorrect axis argument - misspelling of string.
     with pytest.raises(ValueError):
         genins.rename('colunms', 'foo')

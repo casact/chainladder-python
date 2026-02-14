@@ -354,7 +354,7 @@ class TrianglePandas:
     def rename(
             self,
             axis: Literal['index', 'columns', 'origin', 'development'] | int,
-            value: list | str
+            value: list | str | dict
     ) -> Self:
         """Alter axes labels.
 
@@ -364,29 +364,40 @@ class TrianglePandas:
             A value of 0 <= axis <= 4 corresponding to axes 'index',
             'columns', 'origin', 'development' respectively.  Both the
             int and str representation can be used.
-        value: list or str
+        value: list or str or dict
             List of new labels to be assigned to the axis. List must be of
-            same length of the specified axis.
+            same length of the specified axis. Can also be a dictionary for renaming columns
 
         Returns
         -------
             Triangle with relabeled axis.
         """
-        value = [value] if type(value) is str else value
-        if axis == "index" or axis == 0:
-            self.index = value
-        elif axis == "columns" or axis == 1:
-            self.columns = value
-        elif axis == "origin" or axis == 2:
-            self.origin = value
-        elif axis == "development" or axis == 3:
-            self.development = value
+        
+        if type(value) is dict:
+            if axis == "columns" or axis == 1:
+                full_dict = dict(zip(self.columns.values,self.columns.values))
+                full_dict.update(value)
+                self.columns = self.columns.map(full_dict)
+            else:
+                raise ValueError(
+                    "Invalid value provided to the 'value' parameter. Accepted values for index, origin, and development axes are a str or a list"    
+                )
         else:
-            raise ValueError(
-                "Invalid value provided to the 'axis' parameter. Accepted values are a string of 'index', "
-                 "'columns', 'origin', or 'development', or an integer in the interval [0, 4] specifying the"
-                 " axis to be modified."
-            )
+            value = [value] if type(value) is str else value
+            if axis == "index" or axis == 0:
+                self.index = value
+            elif axis == "columns" or axis == 1:
+                self.columns = value
+            elif axis == "origin" or axis == 2:
+                self.origin = value
+            elif axis == "development" or axis == 3:
+                self.development = value
+            else:
+                raise ValueError(
+                    "Invalid value provided to the 'axis' parameter. Accepted values are a string of 'index', "
+                    "'columns', 'origin', or 'development', or an integer in the interval [0, 4] specifying the"
+                    " axis to be modified."
+                )
         return self
 
     def astype(self, dtype, inplace=True):
