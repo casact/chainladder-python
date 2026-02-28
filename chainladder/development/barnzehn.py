@@ -69,7 +69,7 @@ class BarnettZehnwirth(TweedieGLM):
         self.mse_resid_ = (resid**2).sum(0).sum(1).sum(2).sum() / (
             np.nansum(tri.nan_triangle) -
             len(self.model_.estimator_ml.named_steps.model.coef_))
-        self.std_residuals_ = (resid / np.sqrt(self.mse_resid_))
+        self.std_residuals_ = (resid / np.sqrt(self.mse_resid_)).fillzero()
         self.model_.triangle_ml_ = self.model_.triangle_ml_.exp()
         self.model_.triangle_ml_.is_cumulative = False
         return self

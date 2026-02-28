@@ -109,7 +109,15 @@ def test_rename_columns(genins, clrd) -> None:
 
     assert genins.columns.to_list() == ['newfoo']
 
-
+def test_rename_index() -> None:
+    """
+    Test the renaming of triangle columns.
+    """
+    auto = cl.load_sample('auto')
+    new_index = ['CommAuto','PersAuto']
+    auto.rename('index',new_index)
+    assert np.all(auto.index.values.flatten() == new_index)
+    
 def test_rename_exception(genins, clrd) -> None:
     # Test incorrect value argument - misspelling of string.
     with pytest.raises(ValueError):

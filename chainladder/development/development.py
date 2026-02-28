@@ -184,7 +184,7 @@ class Development(DevelopmentBase):
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
-        self.std_residuals_ = resid[resid.valuation < obj.valuation_date]
+        self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         return self
 

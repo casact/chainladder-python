@@ -385,7 +385,7 @@ class TrianglePandas:
         else:
             value = [value] if type(value) is str else value
             if axis == "index" or axis == 0:
-                self.index = value
+                self.index = pd.DataFrame(value,columns = self.index.columns)
             elif axis == "columns" or axis == 1:
                 self.columns = value
             elif axis == "origin" or axis == 2:
