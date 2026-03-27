@@ -21,6 +21,10 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         5% decrease should be stated as -0.05
     date_col: str
         A list-like set of effective dates corresponding to each of the changes
+    approximation_grain: str
+        The resolution of the internal calendar used for calculating the on-level factors: 
+        monthly ('M') or daily ('D'). Daily is finer and adjusts for leap years when assigning
+        factors to origin periods.
     vertical_line:
         Rates are typically stated on an effective date basis and premiums on
         and earned basis.  By default, this argument is False and produces
