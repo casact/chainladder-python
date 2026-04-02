@@ -92,6 +92,8 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+.ipynb_checkpoints
+.virtual_documents
 
 # Spyder project settings
 .spyderproject
