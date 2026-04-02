@@ -65,8 +65,12 @@ cd chainladder-python
 # Create virtual environment and install all dependencies
 uv sync --extra all
 
+```
+
+Once the environment is set up, we may go into development mode with `uv`:
+```bash
 # Activate the environment
-uv run python # or uv run jupyter-lab
+uv run jupyter-lab # or uv run python
 ```
 
 This will install the package in editable mode with all development dependencies. After finishing work, deactivate:
