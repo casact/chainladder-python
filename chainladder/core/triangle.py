@@ -144,6 +144,33 @@ class Triangle(TriangleBase):
         1982   106.0  4285.0   5396.0      NaN
         1983  3410.0  8992.0      NaN      NaN
         1984  5655.0     NaN      NaN      NaN
+
+    When another dimension is added, such an additional column, the Triangle becomes multidimensional. In this case,
+    printing displays the Triangle's metadata, rather than its contents.
+
+    >>> df = pd.DataFrame(
+            data={
+                'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
+                'paid': [2506, 4135, 5454, 5903, 53, 2143, 2698, 1705, 4496, 2828]
+            }
+        )
+
+    >>> tr = cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns=['reported', 'paid'],
+            cumulative=True
+        )
+    >>> tr
+                    Triangle Summary
+        Valuation:           1984-12
+        Grain:                  OYDY
+        Shape:          (1, 2, 4, 4)
+        Index:               [Total]
+        Columns:    [reported, paid]
     """
 
     def __init__(
