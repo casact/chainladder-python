@@ -116,6 +116,34 @@ class Triangle(TriangleBase):
     T: Triangle
         Transpose index and columns of object.  Only available when Triangle is
         convertible to DataFrame.
+
+    Examples
+    --------
+
+    Constructing a Triangle from a Pandas DataFrame.
+
+    >>> import chainladder as cl
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(
+            data={
+                'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655]
+            }
+        )
+    >>> tr = cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns=['reported'],
+            cumulative=True
+        )
+    >>> tr
+                  12      24       36       48
+        1981  5012.0  8269.0  10907.0  11805.0
+        1982   106.0  4285.0   5396.0      NaN
+        1983  3410.0  8992.0      NaN      NaN
+        1984  5655.0     NaN      NaN      NaN
     """
 
     def __init__(
