@@ -9,6 +9,8 @@ from packaging import version
 import numpy as np
 import warnings
 
+from abc import ABC, abstractmethod
+
 from chainladder import options
 
 from chainladder.core.common import Common
@@ -44,7 +46,8 @@ class TriangleBase(
     TriangleSlicer,
     TriangleDunders,
     TrianglePandas,
-    Common
+    Common,
+    ABC
 ):
     """This class handles the initialization of a triangle"""
 
@@ -309,6 +312,16 @@ class TriangleBase(
         )
         
         return c[c["__development__"] > c["__origin__"]]
+    
+    @property
+    @abstractmethod
+    def is_pattern(self):
+        raise NotImplementedError
+        
+    @property
+    @abstractmethod
+    def is_ultimate(self):
+        raise NotImplementedError
 
     @property
     def nan_triangle(self):
@@ -317,7 +330,8 @@ class TriangleBase(
         This becomes useful when managing array arithmetic.
         """
         xp = self.get_array_module()
-        if min(self.values.shape[2:]) == 1:
+#        if min(self.values.shape[2:]) == 1:
+        if self.is_pattern or self.is_ultimate:
             return xp.ones(self.values.shape[2:], dtype="float16")
         val_array = np.array(self.valuation).reshape(self.shape[-2:], order="f")
         nan_triangle = np.array(pd.DataFrame(val_array) > self.valuation_date)
