@@ -330,7 +330,6 @@ class TriangleBase(
         This becomes useful when managing array arithmetic.
         """
         xp = self.get_array_module()
-#        if min(self.values.shape[2:]) == 1:
         if self.is_pattern or self.is_ultimate:
             return xp.ones(self.values.shape[2:], dtype="float16")
         val_array = np.array(self.valuation).reshape(self.shape[-2:], order="f")
