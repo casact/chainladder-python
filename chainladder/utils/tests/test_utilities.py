@@ -125,7 +125,6 @@ def test_policy_length():
     prem_tri = cl.ParallelogramOLF(
     rate_history, change_col="RateChange", date_col="EffDate", policy_length = 12
     ).fit_transform(prem_tri)
-
     assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.136348, 1.043056, 0.992792, 0.999684, 1]).all()
 
     prem_tri = cl.ParallelogramOLF(
