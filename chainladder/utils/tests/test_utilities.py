@@ -110,6 +110,19 @@ def test_vertical_line():
     true_olf = 1.2 / ((1 - 184 / 365) * 1.0 + (184 / 365) * 1.2)
     assert abs(olf.loc["2017"].iloc[0] - true_olf) < 0.00001
 
+def test_policy_length():
+    prem_tri = cl.ParallelogramOLF(
+    rate_history, change_col="RateChange", date_col="EffDate", policy_length = 12
+    ).fit_transform(prem_tri)
+
+    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.136348, 1.043056, 0.992792, 0.999684, 1]).all()
+
+    prem_tri = cl.ParallelogramOLF(
+        rate_history, change_col="RateChange", date_col="EffDate", policy_length = 6
+    ).fit_transform(prem_tri)
+    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.129333, 1.013023, 0.994975, 1, 1]).all()
+
+
 
 def test_triangle_json_io(clrd):
     xp = clrd.get_array_module()
