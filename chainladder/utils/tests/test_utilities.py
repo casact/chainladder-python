@@ -111,6 +111,17 @@ def test_vertical_line():
     assert abs(olf.loc["2017"].iloc[0] - true_olf) < 0.00001
 
 def test_policy_length():
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-07-01", "2011-01-01", "2012-04-01"],
+            "RateChange": [0.05, 0.1, -0.01],
+        }
+    )
+    data = pd.DataFrame(
+        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
+    )
+    prem_tri = cl.Triangle(data, origin="Year", columns="EarnedPremium", cumulative = True)
+    
     prem_tri = cl.ParallelogramOLF(
     rate_history, change_col="RateChange", date_col="EffDate", policy_length = 12
     ).fit_transform(prem_tri)
