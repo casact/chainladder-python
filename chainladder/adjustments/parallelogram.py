@@ -25,6 +25,8 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         The resolution of the internal calendar used for calculating the on-level factors: 
         monthly ('M') or daily ('D'). Daily is finer and adjusts for leap years when assigning
         factors to origin periods.
+    policy_length: int (default=12)
+        The length of the policy in months.
     vertical_line:
         Rates are typically stated on an effective date basis and premiums on
         and earned basis.  By default, this argument is False and produces
@@ -45,12 +47,14 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         change_col="",
         date_col="",
         approximation_grain="M",
+        policy_length=12,
         vertical_line=False,
     ):
         self.rate_history = rate_history
         self.change_col = change_col
         self.date_col = date_col
         self.approximation_grain = approximation_grain
+        self.policy_length = policy_length
         self.vertical_line = vertical_line
 
     def fit(self, X, y=None, sample_weight=None):
@@ -86,6 +90,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             start_date=X.origin[0].to_timestamp(how="s"),
             end_date=X.origin[-1].to_timestamp(how="e"),
             grain=X.origin_grain,
+            policy_length=self.policy_length,
             vertical_line=self.vertical_line,
             approximation_grain=self.approximation_grain,
         )

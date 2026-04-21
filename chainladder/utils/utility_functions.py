@@ -376,12 +376,27 @@ def read_json(json_str, array_backend=None):
         return cl.__dict__[json_dict["__class__"]]().set_params(**json_dict["params"])
 
 
+def _parallelogram_midpoint_average(cum_rate_changes: pd.Series, window: int) -> pd.Series:
+    """Rolling mean of cumulative rate level, averaged with a one-step shift (parallelogram)."""
+    avg = cum_rate_changes.rolling(window).mean()
+    return (avg + avg.shift(1).values) / 2
+
+
+def _parallelogram_olf_by_origin(series: pd.Series, grain: str, crl: float) -> pd.DataFrame:
+    tbl = series.groupby(series.index.to_period(grain)).mean().reset_index()
+    tbl.columns = ["Origin", "OLF"]
+    tbl["Origin"] = tbl["Origin"].astype(str)
+    tbl["OLF"] = crl / tbl["OLF"]
+    return tbl
+
+
 def parallelogram_olf(
     values,
     date,
     start_date=None,
     end_date=None,
     grain="Y",
+    policy_length=12,
     approximation_grain="M",
     vertical_line=False,
 ):
@@ -412,71 +427,37 @@ def parallelogram_olf(
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
     crl = cum_rate_changes.iloc[-1]
 
-    cum_avg_rate_non_leaps = cum_rate_changes
-    cum_avg_rate_leaps = cum_rate_changes
+    win_m = int(policy_length)
+    win_d = int(round(365 * policy_length / 12))
+    win_d_leap = win_d + 1
 
+    # Monthly calendar: leap vs non-leap is not used (same as legacy second branch discarded).
+    if approximation_grain == "M":
+        if vertical_line:
+            trimmed = cum_rate_changes.iloc[win_m:]
+        else:
+            trimmed = _parallelogram_midpoint_average(cum_rate_changes, win_m).iloc[win_m:]
+        out = _parallelogram_olf_by_origin(trimmed, grain, crl)
+        return out.set_index("Origin")
+
+    # Daily calendar: 365- vs 366-day policy windows; pick by origin calendar year (leap or not).
     if not vertical_line:
-        rolling_num = {
-            "M": 12,
-            "D": 365,
-        }
+        s_nonleap = _parallelogram_midpoint_average(cum_rate_changes, win_d).iloc[win_d + 1 :]
+        s_leap = _parallelogram_midpoint_average(cum_rate_changes, win_d_leap).iloc[win_d_leap + 1 :]
+    else:
+        s_nonleap = cum_rate_changes.iloc[win_d + 1 :]
+        s_leap = cum_rate_changes.iloc[win_d_leap + 1 :]
 
-        cum_avg_rate_non_leaps = cum_rate_changes.rolling(
-            rolling_num[approximation_grain]
-        ).mean()
-        cum_avg_rate_non_leaps = (
-            cum_avg_rate_non_leaps + cum_avg_rate_non_leaps.shift(1).values
-        ) / 2
-
-        cum_avg_rate_leaps = cum_rate_changes.rolling(
-            rolling_num[approximation_grain] + 1
-        ).mean()
-        cum_avg_rate_leaps = (
-            cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
-        ) / 2
-
-    dropdates_num = {
-        "M": 12,
-        "D": 366,
-    }
-    cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
-        dropdates_num[approximation_grain] :
-    ]
-    cum_avg_rate_leaps = cum_avg_rate_leaps.iloc[
-        dropdates_num[approximation_grain] + 1 :
-    ]
-
-    fcrl_non_leaps = (
-        cum_avg_rate_non_leaps.groupby(cum_avg_rate_non_leaps.index.to_period(grain))
-        .mean()
-        .reset_index()
-    )
-    fcrl_non_leaps.columns = ["Origin", "OLF"]
-    fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
-    fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
-
-    fcrl_leaps = (
-        cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
-        .mean()
-        .reset_index()
-    )
-    fcrl_leaps.columns = ["Origin", "OLF"]
-    fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
-    fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
+    fcrl_non_leaps = _parallelogram_olf_by_origin(s_nonleap, grain, crl)
+    fcrl_leaps = _parallelogram_olf_by_origin(s_leap, grain, crl)
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
     combined["is_leap"] = pd.to_datetime(
         combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
     ).dt.is_leap_year
-    
-
-    if approximation_grain == "M":
-        combined["final_OLF"] = combined["OLF_non_leaps"]
-    else:
-        combined["final_OLF"] = np.where(
-            combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
-        )
-
+    combined["OLF"] = np.where(
+        combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+    )
     combined.drop(
         ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"],
         axis=1,
