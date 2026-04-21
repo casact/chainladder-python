@@ -110,6 +110,7 @@ def test_vertical_line():
     true_olf = 1.2 / ((1 - 184 / 365) * 1.0 + (184 / 365) * 1.2)
     assert abs(olf.loc["2017"].iloc[0] - true_olf) < 0.00001
 
+
 def test_policy_length():
     rate_history = pd.DataFrame(
         {
@@ -120,18 +121,25 @@ def test_policy_length():
     data = pd.DataFrame(
         {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
     )
-    prem_tri = cl.Triangle(data, origin="Year", columns="EarnedPremium", cumulative = True)
-    
-    prem_tri = cl.ParallelogramOLF(
-    rate_history, change_col="RateChange", date_col="EffDate", policy_length = 12
-    ).fit_transform(prem_tri)
-    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.136348, 1.043056, 0.992792, 0.999684, 1]).all()
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
 
     prem_tri = cl.ParallelogramOLF(
-        rate_history, change_col="RateChange", date_col="EffDate", policy_length = 6
+        rate_history, change_col="RateChange", date_col="EffDate", policy_length=12
     ).fit_transform(prem_tri)
-    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.129333, 1.013023, 0.994975, 1, 1]).all()
+    assert (
+        np.round(prem_tri.olf_.values.flatten(), 6)
+        == [1.136348, 1.043056, 0.992792, 0.999684, 1]
+    ).all()
 
+    prem_tri = cl.ParallelogramOLF(
+        rate_history, change_col="RateChange", date_col="EffDate", policy_length=6
+    ).fit_transform(prem_tri)
+    assert (
+        np.round(prem_tri.olf_.values.flatten(), 6)
+        == [1.129333, 1.013023, 0.994975, 1, 1]
+    ).all()
 
 
 def test_triangle_json_io(clrd):
@@ -179,33 +187,38 @@ def test_json_df():
     )
     assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum() < 1e-5
 
+
 def test_read_csv_single(raa):
     # Test the read_csv function for a single dimensional input.
-    
+
     # Read in the csv file.
     from pathlib import Path
+
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
     assert raa == cl.read_csv(
         filepath_or_buffer=raa_csv_path,
-        origin = "origin",
-        development = "development",
-        columns = ["values"],
-        index = None,
-        cumulative = True)
+        origin="origin",
+        development="development",
+        columns=["values"],
+        index=None,
+        cumulative=True,
+    )
+
 
 def test_read_csv_multi(clrd):
     # Test the read_csv function for multidimensional input.
 
     # Read in the csv file.
     from pathlib import Path
+
     clrd_csv_path = Path(__file__).parent.parent / "data" / "clrd.csv"
 
     assert clrd == cl.read_csv(
         filepath_or_buffer=clrd_csv_path,
-        origin = "AccidentYear",
-        development = "DevelopmentYear",
-        columns = [
+        origin="AccidentYear",
+        development="DevelopmentYear",
+        columns=[
             "IncurLoss",
             "CumPaidLoss",
             "BulkLoss",
@@ -213,9 +226,10 @@ def test_read_csv_multi(clrd):
             "EarnedPremCeded",
             "EarnedPremNet",
         ],
-        index = ["GRNAME","LOB"],
-        cumulative = True
-    ) 
+        index=["GRNAME", "LOB"],
+        cumulative=True,
+    )
+
 
 def test_concat(clrd):
     tri = clrd.groupby("LOB").sum()
