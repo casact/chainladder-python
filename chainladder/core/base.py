@@ -315,12 +315,12 @@ class TriangleBase(
     
     @property
     @abstractmethod
-    def is_pattern(self):
+    def is_pattern(self) -> bool:
         raise NotImplementedError
         
     @property
     @abstractmethod
-    def is_ultimate(self):
+    def is_ultimate(self) -> bool:
         raise NotImplementedError
 
     @property

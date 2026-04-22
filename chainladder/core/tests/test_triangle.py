@@ -950,3 +950,21 @@ def test_fillzero():
     zero = raa - raa[raa.origin=='1982']
     filled = zero.fillzero()
     assert (filled[filled.origin == '1982'][filled.development == 24].values.flatten()[0]) == 0
+    
+def test_2x2_triangle():
+        
+    df = pd.DataFrame(data={
+        'origin': [2022, 2022, 2023],
+        'development': [2022, 2023, 2023],
+        'reported': [78000, 222000, 78000]}
+    )
+    tri_from_df = cl.Triangle(
+        data=df,
+        origin='origin',
+        development='development',
+        columns=['reported'],
+        cumulative=True
+    )
+    tri_from_df
+    assert np.array_equal(tri_from_df.cum_to_incr().values,np.array([[[[ 78000., 144000.],
+    [ 78000., np.float64(np.nan)]]]]), equal_nan=True)
