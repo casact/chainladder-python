@@ -23,6 +23,7 @@ extensions = [
     "sphinx_thebe",
     "sphinx_comments",
     "sphinx_external_toc",
+    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx_book_theme",
     "sphinx.ext.autodoc",
