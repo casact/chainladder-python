@@ -486,14 +486,15 @@ class Triangle(TriangleBase):
 
         
     @property
-    def is_pattern(self):
+    def is_pattern(self) -> bool:
         return self._pattern
+        
     @is_pattern.setter
-    def is_pattern(self,pattern):
+    def is_pattern(self, pattern: bool):
         self._pattern = pattern
 
     @property
-    def is_ultimate(self):
+    def is_ultimate(self) ->  np.bool:
         return sum(self.valuation >= options.ULT_VAL[:4]) > 0
 
     @property
