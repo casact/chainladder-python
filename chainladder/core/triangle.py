@@ -306,7 +306,7 @@ class Triangle(TriangleBase):
 
         self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
-        self.is_pattern: bool = pattern
+        self._pattern: bool = pattern
         
         split: list[str] = self.origin_grain.split("-")
         self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
@@ -539,8 +539,17 @@ class Triangle(TriangleBase):
 
         return self.nan_triangle.sum().sum() == np.prod(self.shape[-2:])
 
+        
     @property
-    def is_ultimate(self):
+    def is_pattern(self) -> bool:
+        return self._pattern
+        
+    @is_pattern.setter
+    def is_pattern(self, pattern: bool):
+        self._pattern = pattern
+
+    @property
+    def is_ultimate(self) ->  np.bool:
         return sum(self.valuation >= options.ULT_VAL[:4]) > 0
 
     @property
