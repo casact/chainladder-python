@@ -14,23 +14,22 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     Parameters
     ----------
 
-    rate_history: pd.DataFrame
-        A DataFrame with
-    change_col: str
-        The column containing the rate changes expressed as a decimal. For example,
-        5% decrease should be stated as -0.05
-    date_col: str
-        A list-like set of effective dates corresponding to each of the changes
-    approximation_grain: str
-        The resolution of the internal calendar used for calculating the on-level factors: 
-        monthly ('M') or daily ('D'). Daily is finer and adjusts for leap years when assigning
-        factors to origin periods.
-    vertical_line:
-        Rates are typically stated on an effective date basis and premiums on
-        and earned basis.  By default, this argument is False and produces
-        parallelogram OLFs. If True, Parallelograms become squares.  This is
-        commonly seen in Workers Compensation with benefit on-leveling or if
-        the premium origin is also stated on an effective date basis.
+    rate_history : pd.DataFrame
+        A rate history in DataFrame, including the the date of the rate change, and the rate change itself.
+    change_col : str
+        In reference of `rate_history`. The column containing the rate changes expressed as a decimal. For
+        example, an 8% increase should be stated as 0.08, and a 5% decrease should be stated as -0.05.
+    date_col : str
+        In reference of `rate_history`.The column of effective dates corresponding to each change.
+    approximation_grain : str
+        Resolution of the internal calendar for on-level factors: monthly
+        (``"M"``) or daily (``"D"``). Daily is finer and accounts for leap years
+        when assigning factors to origin periods.
+    vertical_line : bool, default=False
+        Rates are typically effective-dated and premiums are earned. When
+        ``False`` (default), this yields parallelogram OLFs. When ``True``,
+        parallelogram shapes become square (e.g. Workers' Compensation
+        benefit on-leveling, or premium on an effective origin basis).
 
     Attributes
     ----------

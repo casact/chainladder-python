@@ -382,6 +382,7 @@ def parallelogram_olf(
     start_date=None,
     end_date=None,
     grain="Y",
+    policy_length=12,
     approximation_grain="M",
     vertical_line=False,
 ):
@@ -417,8 +418,8 @@ def parallelogram_olf(
 
     if not vertical_line:
         rolling_num = {
-            "M": 12,
-            "D": 365,
+            "M": policy_length,
+            "D": 365*policy_length/12,
         }
 
         cum_avg_rate_non_leaps = cum_rate_changes.rolling(
