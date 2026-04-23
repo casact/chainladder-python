@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import chainladder as cl
 import inspect
 import importlib
 import os
@@ -47,9 +48,9 @@ def linkcode_resolve(
         return None
 
     # Extract the module.
-    cl: ModuleType = importlib.import_module(info['module'])
+    mod: ModuleType = importlib.import_module(info['module'])
 
-    obj: ModuleType = cl
+    obj: ModuleType = mod
     # Extract the part.
     for part in info['fullname'].split('.'):
         obj: type = getattr(obj, part)
