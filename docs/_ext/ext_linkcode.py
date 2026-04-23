@@ -47,8 +47,9 @@ def linkcode_resolve(
         return None
 
     # Extract the module.
-    obj: ModuleType = importlib.import_module(info['module'])
+    cl: ModuleType = importlib.import_module(info['module'])
 
+    obj: ModuleType = cl
     # Extract the part.
     for part in info['fullname'].split('.'):
         obj: type = getattr(obj, part)
@@ -68,12 +69,12 @@ def linkcode_resolve(
     source_lines, start_line = inspect.getsourcelines(obj)
 
     # Get the root path.
-    repo_root: str = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..')
+    root_path: str = os.path.abspath(
+        os.path.join(cl.__file__, '..', '..')
     )
 
     # Construct a relative path using the source file path, enforce forward slash in case running on Windows.
-    rel_path: str = os.path.relpath(source_file, repo_root).replace(os.sep, '/')
+    rel_path: str = os.path.relpath(source_file, root_path).replace(os.sep, '/')
 
     # Extract the ending line.
     end_line: int = start_line + len(source_lines) - 1
