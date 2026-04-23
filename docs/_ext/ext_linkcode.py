@@ -72,8 +72,8 @@ def linkcode_resolve(
         os.path.join(os.path.dirname(__file__), '..', '..')
     )
 
-    # Construct a relative path using the source file path.
-    rel_path: str = os.path.relpath(source_file, repo_root)
+    # Construct a relative path using the source file path, enforce forward slash in case running on Windows.
+    rel_path: str = os.path.relpath(source_file, repo_root).replace(os.sep, '/')
 
     # Extract the ending line.
     end_line: int = start_line + len(source_lines) - 1
