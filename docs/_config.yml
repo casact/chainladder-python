@@ -35,8 +35,11 @@ sphinx:
   extra_extensions:
     - sphinx.ext.autodoc
     - sphinx.ext.autosummary
+    - sphinx.ext.linkcode
     - numpydoc
     - sphinx.ext.mathjax
+  local_extensions:
+    ext_linkcode: _ext
   config:
     autosummary_generate: True
     bibtex_reference_style: author_year
