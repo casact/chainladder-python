@@ -437,8 +437,8 @@ def parallelogram_olf(
         ) / 2
 
     dropdates_num = {
-        "M": 12,
-        "D": 366,
+        "M": policy_length,
+        "D": int(366*policy_length/12),
     }
     cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
         dropdates_num[approximation_grain] :
