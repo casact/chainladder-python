@@ -59,13 +59,13 @@ def linkcode_resolve(
     # Get the path of the source file.
     source_file: str = inspect.getsourcefile(obj)
 
-    # Extract the lines and locate the starting line position.
-    source_lines, start_line = inspect.getsourcelines(obj)
-
     # If the source file cannot be found, return the URL pointing to a .py file named after the module.
     if source_file is None:
         filename: str = info['module'].replace('.', '/')
         return url_base + "%s.py" % filename
+
+    # Extract the lines and locate the starting line position.
+    source_lines, start_line = inspect.getsourcelines(obj)
 
     # Get the root path.
     repo_root: str = os.path.abspath(
