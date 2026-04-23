@@ -1,5 +1,10 @@
+import pathlib
 import pytest
+import sys
 import chainladder as cl
+
+# Add path to documentation helper functions.
+sys.path.insert(0, str(pathlib.Path(__file__).parent / 'docs' / '_ext'))
 
 
 def pytest_generate_tests(metafunc):
