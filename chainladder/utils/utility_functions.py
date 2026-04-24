@@ -61,16 +61,29 @@ def load_sample(
     -------
         chainladder.Triangle of the loaded dataset.
 
+
     Examples
     --------
-    >>> import chainladder as cl
-    >>> tr = cl.load_sample("raa")
-    >>> tr
-    <chainladder.Triangle>
-    Origin: 1981-01-01 to 1991-01-01
-    Development: 1981-01-01 to 1991-01-01
-    Shape: (10, 10, 10, 10)
-    Index: [Total]
+    
+    Loading "raa" as an example.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+        tr = cl.load_sample("raa")
+        tr
+
+        .. testoutput::
+
+        <chainladder.Triangle>
+        Origin: 1981-01-01 to 1991-01-01
+        Development: 1981-01-01 to 1991-01-01
+        Shape: (10, 10, 10, 10)
+        Index: [Total]
+
 
     """
     from chainladder import Triangle
