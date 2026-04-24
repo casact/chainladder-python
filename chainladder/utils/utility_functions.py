@@ -44,18 +44,33 @@ def load_sample(
         *args,
         **kwargs
 ) -> Triangle:
-    """Function to load datasets included in the chainladder package. These consist of CSV
+    """Function to load a dataset already included in the chainladder package. These consist of CSV
     files located in the repository directory chainladder/utils/data.
 
     Parameters
     ----------
-    key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc. The name should match the
-        file name, without extension, of one of the files in the sample data folder.
+    key: str (not case sensitive)
+        The name of the dataset. The name should match the file name, without extension, of one of 
+        the files in the sample data folder.
+
+        Datasets that are commonly used in examples are: raa, clrd, and prism. 
+        
+        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
 
     Returns
     -------
         chainladder.Triangle of the loaded dataset.
+
+    Examples
+    --------
+    >>> import chainladder as cl
+    >>> tr = cl.load_sample("raa")
+    >>> tr
+    <chainladder.Triangle>
+    Origin: 1981-01-01 to 1991-01-01
+    Development: 1981-01-01 to 1991-01-01
+    Shape: (10, 10, 10, 10)
+    Index: [Total]
 
     """
     from chainladder import Triangle
