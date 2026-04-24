@@ -65,10 +65,11 @@ class Triangle(TriangleBase):
         required to use the ``grain`` and ``dev_to_val`` methods and will be
         automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
     trailing: bool
-        When partial origin periods are present, setting trailing to True will
-        ensure the most recent origin period is a full period and the oldest
-        origin is partial. If full origin periods are present in the data, then
-        trailing has no effect.
+        Controls how the period-end month is inferred from origin and
+        development dates. When False, December is treated as the period end
+        (i.e., calendar fiscal periods). When True, the period end is inferred
+        from the data itself. This is useful when origin dates do not align
+        with calendar period boundaries.
 
     Attributes
     ----------
@@ -122,55 +123,177 @@ class Triangle(TriangleBase):
 
     Constructing a Triangle from a Pandas DataFrame.
 
-    >>> import chainladder as cl
-    >>> import pandas as pd
     >>> df = pd.DataFrame(
-            data={
-                'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
-                'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655]
-            }
-        )
+    ...     data={
+    ...         'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+    ...         'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+    ...         'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
+    ...     }
+    ... )
     >>> tr = cl.Triangle(
-            data=df,
-            origin='origin',
-            development='development',
-            columns=['reported'],
-            cumulative=True
-        )
+    ...     data=df,
+    ...     origin='origin',
+    ...     development='development',
+    ...     columns=['reported'],
+    ...     cumulative=True,
+    ... )
     >>> tr
-                  12      24       36       48
-        1981  5012.0  8269.0  10907.0  11805.0
-        1982   106.0  4285.0   5396.0      NaN
-        1983  3410.0  8992.0      NaN      NaN
-        1984  5655.0     NaN      NaN      NaN
+              12      24       36       48
+    1981  5012.0  8269.0  10907.0  11805.0
+    1982   106.0  4285.0   5396.0      NaN
+    1983  3410.0  8992.0      NaN      NaN
+    1984  5655.0     NaN      NaN      NaN
 
-    When another dimension is added, such an additional column, the Triangle becomes multidimensional. In this case,
-    printing displays the Triangle's metadata, rather than its contents.
+    When another dimension is added, such as an additional column, the Triangle
+    becomes multidimensional. In this case, printing displays the Triangle's
+    metadata rather than its contents.
 
     >>> df = pd.DataFrame(
-            data={
-                'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
-                'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
-                'paid': [2506, 4135, 5454, 5903, 53, 2143, 2698, 1705, 4496, 2828]
-            }
-        )
+    ...     data={
+    ...         'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+    ...         'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+    ...         'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
+    ...         'paid': [2506, 4135, 5454, 5903, 53, 2143, 2698, 1705, 4496, 2828],
+    ...     }
+    ... )
+    >>> tr = cl.Triangle(
+    ...     data=df,
+    ...     origin='origin',
+    ...     development='development',
+    ...     columns=['reported', 'paid'],
+    ...     cumulative=True,
+    ... )
+    >>> tr
+                Triangle Summary
+    Valuation:           1984-12
+    Grain:                  OYDY
+    Shape:          (1, 2, 4, 4)
+    Index:               [Total]
+    Columns:    [reported, paid]
+
+    Using the ``index`` parameter creates a multi-dimensional Triangle split by a
+    categorical grouping, for example Line of Business.
+
+    >>> df = pd.DataFrame(
+    ...     data={
+    ...         'lob': ['auto', 'auto', 'auto', 'home', 'home', 'home'],
+    ...         'origin': [2020, 2020, 2021, 2020, 2020, 2021],
+    ...         'development': [2020, 2021, 2021, 2020, 2021, 2021],
+    ...         'reported': [100, 150, 80, 200, 280, 160],
+    ...     }
+    ... )
+    >>> tr = cl.Triangle(
+    ...     data=df,
+    ...     origin='origin',
+    ...     development='development',
+    ...     columns=['reported'],
+    ...     index=['lob'],
+    ...     cumulative=True,
+    ... )
+    >>> tr
+               Triangle Summary
+    Valuation:          2021-12
+    Grain:                 OYDY
+    Shape:         (2, 1, 2, 2)
+    Index:                [lob]
+    Columns:         [reported]
+
+    Non-standard date strings can be parsed by specifying ``origin_format`` and
+    ``development_format`` using Python ``strftime`` codes.
+
+    >>> df = pd.DataFrame(
+    ...     data={
+    ...         'origin': ['2020-01', '2020-01', '2020-02', '2020-02'],
+    ...         'development': ['2020-01', '2020-02', '2020-02', '2020-03'],
+    ...         'reported': [100, 150, 200, 280],
+    ...     }
+    ... )
+    >>> tr = cl.Triangle(
+    ...     data=df,
+    ...     origin='origin',
+    ...     origin_format='%Y-%m',
+    ...     development='development',
+    ...     development_format='%Y-%m',
+    ...     columns=['reported'],
+    ...     cumulative=True,
+    ... )
+    >>> tr
+                 1      2   3
+    2020-01  100.0  150.0 NaN
+    2020-02  200.0  280.0 NaN
+    2020-03    NaN    NaN NaN
+
+    Setting ``cumulative=False`` builds an incremental Triangle, where each cell
+    is the amount accrued within that development period rather than the
+    cumulative total to date.
+
+    >>> df = pd.DataFrame(
+    ...     data={
+    ...         'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+    ...         'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+    ...         'reported': [5012, 3257, 2638, 898, 106, 4179, 1111, 3410, 5582, 5655],
+    ...     }
+    ... )
+    >>> tr = cl.Triangle(
+    ...     data=df,
+    ...     origin='origin',
+    ...     development='development',
+    ...     columns=['reported'],
+    ...     cumulative=False,
+    ... )
+    >>> tr
+              12      24      36     48
+    1981  5012.0  3257.0  2638.0  898.0
+    1982   106.0  4179.0  1111.0    NaN
+    1983  3410.0  5582.0     NaN    NaN
+    1984  5655.0     NaN     NaN    NaN
+
+    By default (``trailing=False``), chainladder uses December as the fiscal
+    period end, so origin dates are assigned to calendar quarters. Setting
+    ``trailing=True`` instead infers the period end from the data itself,
+    producing quarters aligned to the origin dates.
+
+    >>> df = pd.DataFrame(
+    ...     data={
+    ...         'origin': ['2023-05', '2023-08', '2023-11', '2024-02'],
+    ...         'development': ['2024-04', '2024-04', '2024-04', '2024-04'],
+    ...         'premium': [100, 130, 160, 140],
+    ...     }
+    ... )
+    >>> tr = cl.Triangle(
+    ...     data=df,
+    ...     origin='origin',
+    ...     origin_format='%Y-%m',
+    ...     development='development',
+    ...     development_format='%Y-%m',
+    ...     columns=['premium'],
+    ...     cumulative=True,
+    ...     trailing=False,
+    ... )
+    >>> tr
+            2024-04
+    2023Q2    100.0
+    2023Q3    130.0
+    2023Q4    160.0
+    2024Q1    140.0
+    2024Q2      NaN
 
     >>> tr = cl.Triangle(
-            data=df,
-            origin='origin',
-            development='development',
-            columns=['reported', 'paid'],
-            cumulative=True
-        )
+    ...     data=df,
+    ...     origin='origin',
+    ...     origin_format='%Y-%m',
+    ...     development='development',
+    ...     development_format='%Y-%m',
+    ...     columns=['premium'],
+    ...     cumulative=True,
+    ...     trailing=True,
+    ... )
     >>> tr
-                    Triangle Summary
-        Valuation:           1984-12
-        Grain:                  OYDY
-        Shape:          (1, 2, 4, 4)
-        Index:               [Total]
-        Columns:    [reported, paid]
+            2024Q2
+    2024Q1   100.0
+    2024Q2   130.0
+    2024Q3   160.0
+    2024Q4   140.0
     """
 
     def __init__(
