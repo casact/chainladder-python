@@ -67,22 +67,22 @@ def load_sample(
     
     Loading "raa" as an example.
 
-        .. testsetup::
+    .. testsetup::
 
-            import chainladder as cl
+        import chainladder as cl
 
-        .. testcode::
+    .. testcode::
 
-        tr = cl.load_sample("raa")
-        tr
+    tr = cl.load_sample("raa")
+    tr
 
-        .. testoutput::
+    .. testoutput::
 
-        <chainladder.Triangle>
-        Origin: 1981-01-01 to 1991-01-01
-        Development: 1981-01-01 to 1991-01-01
-        Shape: (10, 10, 10, 10)
-        Index: [Total]
+    <chainladder.Triangle>
+    Origin: 1981-01-01 to 1991-01-01
+    Development: 1981-01-01 to 1991-01-01
+    Shape: (10, 10, 10, 10)
+    Index: [Total]
 
 
     """
