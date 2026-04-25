@@ -205,44 +205,40 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
 
     Examples
     --------
-    >>> import numpy as np
-    >>> import chainladder as cl
-    >>> raa = cl.load_sample('RAA')
-    >>> cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
-    >>> apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)  # Mean Chainladder Ultimate
-    >>> bcl = cl.Chainladder()
-    >>> bf = cl.BornhuetterFerguson()
-    >>> cc = cl.CapeCod()
-    >>> estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
-    >>> weights = np.array([[0.6, 0.2, 0.2]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
-    >>> vot = cl.VotingChainladder(estimators=estimators, weights=weights)
-    >>> vot.fit(raa, sample_weight=apriori)
-    VotingChainladder(default_weighting=(1, 1, 1),
-                      estimators=[('bcl', Chainladder()),
-                                  ('bf', BornhuetterFerguson()),
-                                  ('cc', CapeCod())],
-                      weights=array([[0.6, 0.2, 0.2],
-           [0.6, 0.2, 0.2],
-           [0.6, 0.2, 0.2],
-           [0.6, 0.2, 0.2],
-           [0. , 0.5, 0.5],
-           [0. , 0.5, 0.5],
-           [0. , 0.5, 0.5],
-           [0. , 0. , 1. ],
-           [0. , 0. , 1. ],
-           [0. , 0. , 1. ]]))
-    >>> print(vot.ultimate_)
-                  2261
-    1981  18834.000000
-    1982  16875.500226
-    1983  24058.534810
-    1984  28542.580970
-    1985  28236.843134
-    1986  19905.317262
-    1987  18947.245455
-    1988  23106.943030
-    1989  20004.502125
-    1990  21605.832631
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+
+        raa = cl.load_sample('RAA')
+        cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
+        apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)  # Mean Chainladder Ultimate
+        bcl = cl.Chainladder()
+        bf = cl.BornhuetterFerguson()
+        cc = cl.CapeCod()
+        estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
+        weights = np.array([[0.6, 0.2, 0.2]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
+        vot = cl.VotingChainladder(estimators=estimators, weights=weights)
+        vot.fit(raa, sample_weight=apriori)
+        print(vot.ultimate_)
+
+    .. testoutput::
+
+                      2261
+        1981  18834.000000
+        1982  16875.500226
+        1983  24058.534810
+        1984  28542.580970
+        1985  28236.843134
+        1986  19905.317262
+        1987  18947.245455
+        1988  23106.943030
+        1989  20004.502125
+        1990  21605.832631
     """
 
     @_deprecate_positional_args
