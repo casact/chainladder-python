@@ -122,23 +122,31 @@ class Triangle(TriangleBase):
 
     Constructing a Triangle from a Pandas DataFrame.
 
-    >>> import chainladder as cl
-    >>> import pandas as pd
-    >>> df = pd.DataFrame(
+    .. testsetup::
+
+        import chainladder as cl
+        import pandas as pd
+
+    .. testcode::
+
+        df = pd.DataFrame(
             data={
                 'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
                 'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
                 'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655]
             }
         )
-    >>> tr = cl.Triangle(
+        tr = cl.Triangle(
             data=df,
             origin='origin',
             development='development',
             columns=['reported'],
             cumulative=True
         )
-    >>> tr
+        print(tr)
+
+    .. testoutput::
+
                   12      24       36       48
         1981  5012.0  8269.0  10907.0  11805.0
         1982   106.0  4285.0   5396.0      NaN
@@ -148,7 +156,9 @@ class Triangle(TriangleBase):
     When another dimension is added, such an additional column, the Triangle becomes multidimensional. In this case,
     printing displays the Triangle's metadata, rather than its contents.
 
-    >>> df = pd.DataFrame(
+    .. testcode::
+
+        df = pd.DataFrame(
             data={
                 'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
                 'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
@@ -157,14 +167,17 @@ class Triangle(TriangleBase):
             }
         )
 
-    >>> tr = cl.Triangle(
+        tr = cl.Triangle(
             data=df,
             origin='origin',
             development='development',
             columns=['reported', 'paid'],
             cumulative=True
         )
-    >>> tr
+        print(tr)
+
+    .. testoutput::
+
                     Triangle Summary
         Valuation:           1984-12
         Grain:                  OYDY
