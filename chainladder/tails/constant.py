@@ -43,6 +43,41 @@ class TailConstant(TailBase):
     --------
     TailCurve
 
+    Examples
+    --------
+
+    Applying a 5% tail factor to the RAA sample triangle. The ``tail_``
+    attribute returns the point estimate of the tail at the latest maturity,
+    while ``ldf_`` and ``cdf_`` are extended to include the tail.
+
+    >>> raa = cl.load_sample('raa')
+    >>> dev = cl.Development().fit_transform(raa)
+    >>> tail = cl.TailConstant(tail=1.05).fit(dev)
+    >>> tail.tail_
+           120-Ult
+    (All)     1.05
+    >>> tail.cdf_
+             12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult   84-Ult    96-Ult   108-Ult  120-Ult  132-Ult
+    (All)  9.366246  3.122749  1.923441  1.513462  1.291708  1.160163  1.11347  1.077625  1.059677     1.05  1.02538
+
+    Using ``decay`` to control how the tail factor is distributed across
+    future development periods. A higher ``decay`` rate concentrates more of
+    the tail factor into earlier projection periods.
+
+    >>> tail = cl.TailConstant(tail=1.10, decay=0.75).fit(dev)
+    >>> tail.tail_
+           120-Ult
+    (All)      1.1
+
+    Using ``projection_period`` to extend the ``ldf_`` and ``cdf_`` vectors
+    further beyond the latest available development age. Below, the projection
+    is extended by 36 months instead of the default 12, adding two extra
+    development columns to ``cdf_``.
+
+    >>> tail = cl.TailConstant(tail=1.05, projection_period=36).fit(dev)
+    >>> tail.cdf_
+             12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult   84-Ult    96-Ult   108-Ult  120-Ult  132-Ult   144-Ult  156-Ult
+    (All)  9.366246  3.122749  1.923441  1.513462  1.291708  1.160163  1.11347  1.077625  1.059677     1.05  1.02538  1.013216  1.00717
     """
 
     def __init__(self, tail=1.0, decay=0.5, attachment_age=None, projection_period=12):
