@@ -48,6 +48,57 @@ class CapeCod(Benktander):
         The trended apriori vector developed by the Cape Cod Method
     detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
+
+    Examples
+    --------
+    Unlike Bornhuetter-Ferguson and Benktander, CapeCod derives the apriori
+    loss ratio from the data itself. ``sample_weight`` represents exposure
+    (e.g. earned premium) rather than an apriori expected ultimate.
+
+    >>> tr = cl.load_sample('ukmotor')
+    >>> exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+
+    With default ``decay=1`` and ``trend=0``, every origin receives the same
+    apriori loss ratio: the exposure-weighted mean loss ratio across all
+    origins.
+
+    >>> model = cl.CapeCod().fit(tr, sample_weight=exposure)
+    >>> model.apriori_
+              2261
+    2007  0.706225
+    2008  0.706225
+    2009  0.706225
+    2010  0.706225
+    2011  0.706225
+    2012  0.706225
+    2013  0.706225
+
+    Setting ``decay`` below 1 down-weights distant origins when computing
+    each origin's apriori, so each origin receives its own loss-ratio
+    estimate that drifts toward more recent experience.
+
+    >>> cl.CapeCod(decay=0.5).fit(tr, sample_weight=exposure).apriori_
+              2261
+    2007  0.653584
+    2008  0.666113
+    2009  0.683132
+    2010  0.689123
+    2011  0.717497
+    2012  0.776364
+    2013  0.836006
+
+    Setting ``trend`` projects the loss ratio forward over the experience
+    period. With ``decay=1``, all origins share the trended apriori.
+
+    >>> cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure).apriori_
+              2261
+    2007  0.836096
+    2008  0.836096
+    2009  0.836096
+    2010  0.836096
+    2011  0.836096
+    2012  0.836096
+    2013  0.836096
     """
 
     def __init__(
@@ -81,6 +132,16 @@ class CapeCod(Benktander):
         -------
         self: object
             Returns the instance itself.
+
+        Examples
+        --------
+        Fit returns the estimator itself, with ``ultimate_`` and
+        ``apriori_`` populated. The repr shows non-default parameters.
+
+        >>> tr = cl.load_sample('ukmotor')
+        >>> exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+        >>> cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure)
+        CapeCod(trend=0.05)
         """
 
         if sample_weight is None:
@@ -138,6 +199,28 @@ class CapeCod(Benktander):
         -------
         X_new: Triangle
             Loss data with CapeCod ultimate applied
+
+        Examples
+        --------
+        Fit on a prior-period view of the data, then apply the model to the
+        current Triangle and a refreshed exposure.
+
+        >>> tr = cl.load_sample('ukmotor')
+        >>> tr_prior = tr[tr.valuation < tr.valuation_date]
+        >>> exposure_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 20000
+        >>> exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+        >>> model = cl.CapeCod(trend=0.05).fit(
+        ...     tr_prior, sample_weight=exposure_prior
+        ... )
+        >>> model.predict(tr, sample_weight=exposure).ultimate_
+                      2261
+        2007  12690.000000
+        2008  12746.000000
+        2009  13631.353487
+        2010  12896.639975
+        2011  13806.211939
+        2012  15991.144199
+        2013  17489.630279
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
