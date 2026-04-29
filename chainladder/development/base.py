@@ -9,6 +9,7 @@ from chainladder.utils import WeightedRegression
 from chainladder.utils.utility_functions import num_to_nan
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
+from pandas.api.types import is_string_dtype
 
 
 class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
@@ -421,7 +422,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # accommodate ldf triangle as factor, where the dimensions are '12-24'
         dev_list = (
             factor.development.str.split("-", expand=True)[0]
-            if factor.development.dtype == object
+            if is_string_dtype(factor.development)
             else factor.development.astype("string")
         )
         # create ndarray of drop_list for further operation in numpy
