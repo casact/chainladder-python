@@ -35,12 +35,13 @@ class Triangle(TriangleBase):
 
     Parameters
     ----------
-    data: DataFrame or DataFrameXchg
+    data: DataFrame or DataFrameXchg, or dict
         A single dataframe that contains columns representing all other
         arguments to the Triangle constructor. If using pandas version > 1.5.2,
         one may supply a DataFrame-like object (referred to as DataFrameXchg)
         supporting the __dataframe__ protocol, which will then be converted to
-        a pandas DataFrame.
+        a pandas DataFrame. If supplying a dict, it must be structured such that
+        a pandas DataFrame created from it will be accepted by the constructor.
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
@@ -298,7 +299,7 @@ class Triangle(TriangleBase):
 
     def __init__(
         self,
-        data: Optional[DataFrame | DataFrameXchg] = None,
+        data: Optional[DataFrame | DataFrameXchg | dict] = None,
         origin: Optional[str | list] = None,
         development: Optional[str | list] = None,
         columns: Optional[str | list] = None,
@@ -316,6 +317,8 @@ class Triangle(TriangleBase):
         # If data are present, validate the dimensions.
         if data is None:
             return
+        elif type(data) == dict:
+            data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
         index, columns, origin, development = self._input_validation(
