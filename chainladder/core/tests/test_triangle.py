@@ -318,7 +318,7 @@ def test_groupby_axis1(clrd, prism):
     clrd = clrd.sum("origin").sum("development")
     groups = [i.find("Loss") >= 0 for i in clrd.columns]
     assert np.all(
-        clrd.to_frame(origin_as_datetime=False).groupby(groups, axis=1).sum()
+        clrd.to_frame(origin_as_datetime=False).T.groupby(groups).sum().T
         == clrd.groupby(groups, axis=1).sum().to_frame(origin_as_datetime=False)
     )
     assert np.all(
