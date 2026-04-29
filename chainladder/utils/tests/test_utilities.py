@@ -1,11 +1,9 @@
 import pytest
 
 import chainladder as cl
-from chainladder.utils.cupy import cp
 import numpy as np
 import copy
 import pandas as pd
-
 
 def test_non_vertical_line():
     true_olf = (

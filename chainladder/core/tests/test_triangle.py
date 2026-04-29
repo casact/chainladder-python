@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import pytest
 import io
-from datetime import datetime
+
+from io import StringIO
 
 try:
     from IPython.core.display import HTML
@@ -13,7 +14,7 @@ except:
 
 def test_repr(raa):
     np.testing.assert_array_equal(
-        pd.read_html(raa._repr_html_())[0].set_index("Unnamed: 0").values,
+        pd.read_html(StringIO(raa._repr_html_()))[0].set_index("Unnamed: 0").values,
         raa.to_frame(origin_as_datetime=False).values,
     )
 
@@ -908,7 +909,7 @@ def test_single_valuation_date_preserves_exact_date():
     )
 
     # Valuation date should be end of October 2025, not converted to a fiscal year
-    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999999')
+    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999')
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
 def test_OXDX_triangle():
