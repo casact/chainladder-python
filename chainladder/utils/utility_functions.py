@@ -73,7 +73,9 @@ def load_sample(
             Invalid key supplied. The key should match the name, without extension, of one of the file names
             in the sample data set folder. Please refer to the documentation page on sample data sets to see 
             what data are available.
-            """
+            
+            You supplied: {}
+            """.format(key)
          )
 
     # Set initial values for arguments to Triangle __init__. These may be overridden by
@@ -162,6 +164,11 @@ def load_sample(
         origin: str = "AccidentDate"
         development: str = "PaymentDate"
         cumulative: bool = False
+    if 'mack_1997' in key.lower():
+        columns = ['Case Incurred']
+        origin = 'Accident Year'
+        development = 'Calendar Year'
+        cumulative: bool = True
     # Friedland datasets
     if 'friedland' in key.lower():
         columns: list = [
