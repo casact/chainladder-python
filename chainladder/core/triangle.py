@@ -190,7 +190,7 @@ class Triangle(TriangleBase):
     Using the ``index`` parameter creates a multi-dimensional Triangle split by a
     categorical grouping, for example Line of Business.
 
-.. testcode::
+    .. testcode::
 
         df = pd.DataFrame(
             data={
