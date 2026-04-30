@@ -130,7 +130,11 @@ class Chainladder(MethodBase):
 
             tr = cl.load_sample('ukmotor')
             cl.Chainladder().fit(tr)
+
+        .. testoutput::
+
             Chainladder()
+            
         """
         super().fit(X, y, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_)
