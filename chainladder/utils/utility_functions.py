@@ -223,7 +223,7 @@ def load_sample(
         if 'auto_case' in key.lower():
             columns: list = [
                 'Case Outstanding',
-                'Incremental Paid Claims'
+                'Paid Claims'
             ]
         if 'wc_self_insurer' in key.lower():
             columns: list = [
@@ -243,9 +243,7 @@ def load_sample(
         if 'xyz_case' in key.lower():
             columns: list = [
                 'Case Outstanding',
-                'Incremental Paid Claims',
-                'Incremental Paid to Previous Case',
-                'Case to Previous Case'
+                'Paid Claims'
             ]
         if 'xyz_disp' in key.lower():
             columns: list = [
