@@ -270,6 +270,9 @@ class Triangle(TriangleBase):
             cumulative=False,
         )
         print(tr)
+
+    .. testoutput::
+    
                   12      24      36     48
         1981  5012.0  3257.0  2638.0  898.0
         1982   106.0  4179.0  1111.0    NaN

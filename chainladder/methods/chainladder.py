@@ -60,6 +60,8 @@ class Chainladder(MethodBase):
 
         print(model.ibnr_)
 
+    .. testoutput::
+
                       2261
         2007           NaN
         2008    350.902024
@@ -92,6 +94,8 @@ class Chainladder(MethodBase):
     .. testcode::
 
         print(model.full_expectation_.iloc[..., -3:, :5])
+
+    .. testoutput::
 
                        12            24            36            48            60
         2011  4217.162588   7967.208127  10217.000000  11719.970266  12853.969769
