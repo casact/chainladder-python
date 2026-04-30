@@ -55,50 +55,71 @@ class CapeCod(Benktander):
     loss ratio from the data itself. ``sample_weight`` represents exposure
     (e.g. earned premium) rather than an apriori expected ultimate.
 
-    >>> tr = cl.load_sample('ukmotor')
-    >>> exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+    .. testsetup:
+
+        import chainladder as cl
+
+    .. testcode:
+
+        tr = cl.load_sample('ukmotor')
+        exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
 
     With default ``decay=1`` and ``trend=0``, every origin receives the same
     apriori loss ratio: the exposure-weighted mean loss ratio across all
     origins.
 
-    >>> model = cl.CapeCod().fit(tr, sample_weight=exposure)
-    >>> model.apriori_
-              2261
-    2007  0.706225
-    2008  0.706225
-    2009  0.706225
-    2010  0.706225
-    2011  0.706225
-    2012  0.706225
-    2013  0.706225
+    .. testcode:
+
+        model = cl.CapeCod().fit(tr, sample_weight=exposure)
+        print(model.apriori_)
+
+    .. testoutput:
+
+                  2261
+        2007  0.706225
+        2008  0.706225
+        2009  0.706225
+        2010  0.706225
+        2011  0.706225
+        2012  0.706225
+        2013  0.706225
 
     Setting ``decay`` below 1 down-weights distant origins when computing
     each origin's apriori, so each origin receives its own loss-ratio
     estimate that drifts toward more recent experience.
 
-    >>> cl.CapeCod(decay=0.5).fit(tr, sample_weight=exposure).apriori_
-              2261
-    2007  0.653584
-    2008  0.666113
-    2009  0.683132
-    2010  0.689123
-    2011  0.717497
-    2012  0.776364
-    2013  0.836006
+    .. testcode:
+
+        print(cl.CapeCod(decay=0.5).fit(tr, sample_weight=exposure).apriori_)
+
+    .. testoutput:
+
+                  2261
+        2007  0.653584
+        2008  0.666113
+        2009  0.683132
+        2010  0.689123
+        2011  0.717497
+        2012  0.776364
+        2013  0.836006
 
     Setting ``trend`` projects the loss ratio forward over the experience
     period. With ``decay=1``, all origins share the trended apriori.
 
-    >>> cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure).apriori_
-              2261
-    2007  0.836096
-    2008  0.836096
-    2009  0.836096
-    2010  0.836096
-    2011  0.836096
-    2012  0.836096
-    2013  0.836096
+    .. testcode:
+
+        print(cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure).apriori_)
+
+    .. testoutput:
+
+                  2261
+        2007  0.836096
+        2008  0.836096
+        2009  0.836096
+        2010  0.836096
+        2011  0.836096
+        2012  0.836096
+        2013  0.836096
     """
 
     def __init__(

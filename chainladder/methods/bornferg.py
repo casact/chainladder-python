@@ -44,32 +44,46 @@ class BornhuetterFerguson(Benktander):
     same-shape Triangle, zero it out, and add the desired value. Below uses
     the chainladder ultimate as the shape donor.
 
-    >>> tr = cl.load_sample('ukmotor')
-    >>> cl_ult = cl.Chainladder().fit(tr).ultimate_
-    >>> apriori = cl_ult * 0 + float(cl_ult.sum()) / 7
-    >>> apriori
-                  2261
-    2007  14903.967562
-    2008  14903.967562
-    2009  14903.967562
-    2010  14903.967562
-    2011  14903.967562
-    2012  14903.967562
-    2013  14903.967562
+    .. testsetup:
+
+        import chainladder as cl
+
+    .. testcode:
+
+        tr = cl.load_sample('ukmotor')
+        cl_ult = cl.Chainladder().fit(tr).ultimate_
+        apriori = cl_ult * 0 + float(cl_ult.sum()) / 7
+        print(apriori)
+
+    .. testoutput:
+
+                      2261
+        2007  14903.967562
+        2008  14903.967562
+        2009  14903.967562
+        2010  14903.967562
+        2011  14903.967562
+        2012  14903.967562
+        2013  14903.967562
 
     Fit with that apriori. The BF ultimates pull the immature origins toward
     the apriori while leaving mature origins close to chainladder.
 
-    >>> model = cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
-    >>> model.ultimate_
-                  2261
-    2007  12690.000000
-    2008  13145.318280
-    2009  14095.125641
-    2010  13412.748068
-    2011  14150.549749
-    2012  15999.244850
-    2013  16658.824705
+    .. testcode:
+
+        model = cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
+        print(model.ultimate_)
+
+    .. testoutput:
+
+                      2261
+        2007  12690.000000
+        2008  13145.318280
+        2009  14095.125641
+        2010  13412.748068
+        2011  14150.549749
+        2012  15999.244850
+        2013  16658.824705
     """
 
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):
