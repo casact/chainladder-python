@@ -73,7 +73,9 @@ def load_sample(
             Invalid key supplied. The key should match the name, without extension, of one of the file names
             in the sample data set folder. Please refer to the documentation page on sample data sets to see 
             what data are available.
-            """
+            
+            You supplied: {}
+            """.format(key)
          )
 
     # Set initial values for arguments to Triangle __init__. These may be overridden by
@@ -162,6 +164,111 @@ def load_sample(
         origin: str = "AccidentDate"
         development: str = "PaymentDate"
         cumulative: bool = False
+    if 'mack_1997' in key.lower():
+        columns = ['Case Incurred']
+        origin = 'Accident Year'
+        development = 'Calendar Year'
+        cumulative: bool = True
+    # Friedland datasets
+    if 'friedland' in key.lower():
+        columns: list = [
+            'Paid Claims',
+            'Reported Claims'
+        ]
+        origin: str = "Accident Year"
+        development: str = 'Calendar Year'
+        cumulative: bool = True
+        index: None = None
+        if 'autoprop' in key.lower():
+            columns: list = [
+                'Reported ALAE',
+                'Paid ALAE',
+                'Reported Claims',
+                'Paid Claims'
+            ]
+        if 'auto_salsub' in key.lower():
+            columns: list = [
+                'Reported Salvage and Subrogation',
+                'Received Salvage and Subrogation',
+                'Reported Claims',
+                'Paid Claims'
+            ]
+        if 'berq_sher_auto' in key.lower():
+            columns: list = [
+                'Paid Claims',
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Disposal Rate'
+            ]
+        if 'gl_insurer' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Disposal Rate',
+                'Paid Claims'
+            ]
+        if 'med_mal' in key.lower():
+            columns: list = [
+                'Reported Claims',
+                'Paid Claims',
+                'Case Outstanding',
+                'Open Claim Counts'
+            ]
+        if 'qs' in key.lower():
+            columns: list = [
+                'Gross Reported Claims',
+                'Net Reported Claims',
+                'Net to Gross'
+            ]
+        if 'auto_case' in key.lower():
+            columns: list = [
+                'Case Outstanding',
+                'Paid Claims'
+            ]
+        if 'wc_self_insurer' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Paid Claims',
+                'Paid Severities',
+                'Reported Claims',
+                'Reported Severities'
+            ]
+        if 'xol' in key.lower():
+            columns: list = [
+                'Gross Reported Claims',
+                'Net Reported Claims',
+                'Ceded Reported Claims'
+            ]
+        if 'xyz_case' in key.lower():
+            columns: list = [
+                'Case Outstanding',
+                'Paid Claims'
+            ]
+        if 'xyz_disp' in key.lower():
+            columns: list = [
+                'Disposal Rate',
+                'Closed Claim Counts',
+                'Paid Claims'
+            ]
+        if 'xyz_freq_sev' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Reported Claims',
+                'Reported Severities'
+            ]
+        if 'auto_freq_sev' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Reported Claims',
+                'Reported Severity'
+            ]
+            origin: str = "Accident Half-Year"
+            development: str = "Calendar Half-Year"
+
+
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
