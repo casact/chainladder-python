@@ -80,7 +80,7 @@ class Chainladder(MethodBase):
 
         print(model.full_triangle_.iloc[..., -3:, :5])
 
-    .. testoutput:
+    .. testoutput::
 
                   12            24            36            48            60
         2011  4150.0   7897.000000  10217.000000  11719.970266  12853.969769
@@ -123,9 +123,14 @@ class Chainladder(MethodBase):
         Fitting returns the estimator itself, so it can be chained with
         attribute access.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> cl.Chainladder().fit(tr)
-        Chainladder()
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            cl.Chainladder().fit(tr)
+            Chainladder()
         """
         super().fit(X, y, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_)
@@ -155,18 +160,27 @@ class Chainladder(MethodBase):
         Triangle. The ultimates differ from a freshly-fit model because the
         patterns reflect the older view.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> tr_prior = tr[tr.valuation < tr.valuation_date]
-        >>> model = cl.Chainladder().fit(tr_prior)
-        >>> model.predict(tr).ultimate_
-                      2261
-        2007  12690.000000
-        2008  12746.000000
-        2009  13641.379750
-        2010  12719.871218
-        2011  13485.986574
-        2012  16296.783586
-        2013  20040.175415
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            model = cl.Chainladder().fit(tr_prior)
+            print(model.predict(tr).ultimate_)
+
+        .. testoutput::
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13641.379750
+            2010  12719.871218
+            2011  13485.986574
+            2012  16296.783586
+            2013  20040.175415
         """
         X_new = super().predict(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, sample_weight)

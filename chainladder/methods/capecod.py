@@ -159,10 +159,19 @@ class CapeCod(Benktander):
         Fit returns the estimator itself, with ``ultimate_`` and
         ``apriori_`` populated. The repr shows non-default parameters.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
-        >>> cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure)
-        CapeCod(trend=0.05)
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+            print(cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure))
+
+        .. testoutput:
+
+            CapeCod(trend=0.05)
         """
 
         if sample_weight is None:
@@ -226,22 +235,31 @@ class CapeCod(Benktander):
         Fit on a prior-period view of the data, then apply the model to the
         current Triangle and a refreshed exposure.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> tr_prior = tr[tr.valuation < tr.valuation_date]
-        >>> exposure_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 20000
-        >>> exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
-        >>> model = cl.CapeCod(trend=0.05).fit(
-        ...     tr_prior, sample_weight=exposure_prior
-        ... )
-        >>> model.predict(tr, sample_weight=exposure).ultimate_
-                      2261
-        2007  12690.000000
-        2008  12746.000000
-        2009  13631.353487
-        2010  12896.639975
-        2011  13806.211939
-        2012  15991.144199
-        2013  17489.630279
+        .. testsetup:
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            exposure_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 20000
+            exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+            model = cl.CapeCod(trend=0.05).fit(
+                tr_prior, sample_weight=exposure_prior
+            )
+            print(model.predict(tr, sample_weight=exposure).ultimate_)
+
+        .. testoutput::
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13631.353487
+            2010  12896.639975
+            2011  13806.211939
+            2012  15991.144199
+            2013  17489.630279
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")

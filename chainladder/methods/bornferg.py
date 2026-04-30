@@ -112,10 +112,18 @@ class BornhuetterFerguson(Benktander):
         --------
         Fit returns the estimator itself, with ``ultimate_`` populated.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
-        >>> cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
-        BornhuetterFerguson()
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            print(cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori))
+
+        .. testoutput::
+
+            BornhuetterFerguson()
         """
         self.n_iters = 1
         super().fit(X, y, sample_weight)
@@ -141,21 +149,30 @@ class BornhuetterFerguson(Benktander):
         Fit on a prior-period view of the data, then apply the model to the
         current Triangle and a refreshed apriori.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> tr_prior = tr[tr.valuation < tr.valuation_date]
-        >>> apriori_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 14000
-        >>> apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
-        >>> model = cl.BornhuetterFerguson(apriori=1.0).fit(
-        ...     tr_prior, sample_weight=apriori_prior
-        ... )
-        >>> model.predict(tr, sample_weight=apriori).ultimate_
-                      2261
-        2007  12690.000000
-        2008  12746.000000
-        2009  13658.425101
-        2010  12883.599658
-        2011  13610.582796
-        2012  15360.020613
-        2013  15893.717063
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            apriori_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 14000
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            model = cl.BornhuetterFerguson(apriori=1.0).fit(
+                tr_prior, sample_weight=apriori_prior
+            )
+
+            print(model.predict(tr, sample_weight=apriori).ultimate_)
+
+        .. testoutput
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13658.425101
+            2010  12883.599658
+            2011  13610.582796
+            2012  15360.020613
+            2013  15893.717063
         """
         return super().predict(X, sample_weight)

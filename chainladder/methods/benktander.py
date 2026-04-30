@@ -126,10 +126,19 @@ class Benktander(MethodBase):
         Fit returns the estimator itself, with ``ultimate_`` populated. The
         repr shows non-default parameters.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
-        >>> cl.Benktander(apriori=1.0, n_iters=2).fit(tr, sample_weight=apriori)
-        Benktander(n_iters=2)
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            print(cl.Benktander(apriori=1.0, n_iters=2).fit(tr, sample_weight=apriori))
+
+        .. testoutput::
+
+            Benktander(n_iters=2)
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
@@ -159,22 +168,31 @@ class Benktander(MethodBase):
         Fit on a prior-period view of the data, then apply the model to the
         current Triangle and a refreshed apriori.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> tr_prior = tr[tr.valuation < tr.valuation_date]
-        >>> apriori_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 14000
-        >>> apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
-        >>> model = cl.Benktander(apriori=1.0, n_iters=2).fit(
-        ...     tr_prior, sample_weight=apriori_prior
-        ... )
-        >>> model.predict(tr, sample_weight=apriori).ultimate_
-                      2261
-        2007  12690.000000
-        2008  12746.000000
-        2009  13642.189922
-        2010  12740.812082
-        2011  13516.188545
-        2012  15914.716737
-        2013  17193.715555
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            apriori_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 14000
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            model = cl.Benktander(apriori=1.0, n_iters=2).fit(
+                tr_prior, sample_weight=apriori_prior
+            )
+
+            print(model.predict(tr, sample_weight=apriori).ultimate_)
+
+        .. testoutput::
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13642.189922
+            2010  12740.812082
+            2011  13516.188545
+            2012  15914.716737
+            2013  17193.715555
         """
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
