@@ -46,25 +46,38 @@ class MackChainladder(Chainladder):
     which combines the deterministic chainladder estimate with Mack's
     stochastic standard error.
 
-    >>> tr = cl.load_sample('ukmotor')
-    >>> model = cl.MackChainladder().fit(tr)
-    >>> model.summary_
-           Latest          IBNR      Ultimate  Mack Std Err
-    2007  12690.0           NaN  12690.000000           NaN
-    2008  12746.0    350.902024  13096.902024     27.246756
-    2009  12993.0   1037.536767  14030.536767     36.524408
-    2010  11093.0   2044.859861  13137.859861    144.534287
-    2011  10217.0   3663.404483  13880.404483    427.634355
-    2012   9650.0   7162.150646  16812.150646    693.166178
-    2013   6283.0  14396.919151  20679.919151    901.408385
+    .. testsetup:
+
+        import chainladder as cl
+
+    .. testcode:
+
+        tr = cl.load_sample('ukmotor')
+        model = cl.MackChainladder().fit(tr)
+        print(model.summary_)
+
+    .. testoutput:
+
+               Latest          IBNR      Ultimate  Mack Std Err
+        2007  12690.0           NaN  12690.000000           NaN
+        2008  12746.0    350.902024  13096.902024     27.246756
+        2009  12993.0   1037.536767  14030.536767     36.524408
+        2010  11093.0   2044.859861  13137.859861    144.534287
+        2011  10217.0   3663.404483  13880.404483    427.634355
+        2012   9650.0   7162.150646  16812.150646    693.166178
+        2013   6283.0  14396.919151  20679.919151    901.408385
 
     The deterministic chainladder ultimates match those of
     :class:`Chainladder`. Mack's contribution is the stochastic standard error
     in the rightmost column, which can be aggregated across origins.
 
-    >>> model.total_mack_std_err_
-    columns        values
-    (Total,)  1424.531543
+    .. testcode:
+        print(model.total_mack_std_err_)
+
+    .. testoutput:
+
+        columns        values
+        (Total,)  1424.531543
     """
 
     def fit(self, X, y=None, sample_weight=None):
