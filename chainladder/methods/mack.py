@@ -72,6 +72,7 @@ class MackChainladder(Chainladder):
     in the rightmost column, which can be aggregated across origins.
 
     .. testcode:
+
         print(model.total_mack_std_err_)
 
     .. testoutput:
