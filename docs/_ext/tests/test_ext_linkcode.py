@@ -1,4 +1,4 @@
-from docs._ext.ext_linkcode import linkcode_resolve # noqa
+from linkcode import linkcode_resolve
 
 def test_linkcode_resolve_url_lines() -> None:
     """
