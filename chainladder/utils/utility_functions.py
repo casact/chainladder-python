@@ -44,18 +44,53 @@ def load_sample(
         *args,
         **kwargs
 ) -> Triangle:
-    """Function to load datasets included in the chainladder package. These consist of CSV
+    """Function to load a dataset already included in the chainladder package. These consist of CSV
     files located in the repository directory chainladder/utils/data.
 
     Parameters
     ----------
-    key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc. The name should match the
-        file name, without extension, of one of the files in the sample data folder.
+    key: str (not case sensitive)
+        The name of the dataset. The name should match the file name, without extension, of one of 
+        the files in the sample data folder.
+
+        Datasets that are commonly used in examples are: raa, clrd, and prism. 
+        
+        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
 
     Returns
     -------
         chainladder.Triangle of the loaded dataset.
+
+
+    Examples
+    --------
+    
+    Loading "raa" as an example.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+    tr = cl.load_sample("raa")
+    tr
+
+    .. testoutput::
+
+        12	24	36	48	60	72	84	96	108	120
+    1981	5,012	8,269	10,907	11,805	13,539	16,181	18,009	18,608	18,662	18,834
+    1982	106	4,285	5,396	10,666	13,782	15,599	15,496	16,169	16,704	
+    1983	3,410	8,992	13,873	16,141	18,735	22,214	22,863	23,466		
+    1984	5,655	11,555	15,766	21,266	23,425	26,083	27,067			
+    1985	1,092	9,565	15,836	22,169	25,955	26,180				
+    1986	1,513	6,445	11,702	12,935	15,852					
+    1987	557	4,020	10,946	12,314						
+    1988	1,351	6,947	13,112							
+    1989	3,133	5,395								
+    1990	2,063									
+
+
 
     """
     from chainladder import Triangle
