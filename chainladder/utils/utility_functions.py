@@ -74,7 +74,7 @@ def load_sample(
     .. testcode::
 
         tr = cl.load_sample("raa")
-        tr
+        print(tr)
 
     .. testoutput::
 
