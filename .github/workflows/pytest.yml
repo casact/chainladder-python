@@ -1,12 +1,12 @@
 name: Unit Tests
 
+
 on:
-  push:
-    branches:
-    - '*'
+  # push:
+  #   branches:
+  #   - '*'
+
   pull_request:
-    branches:
-    - '*'
 
 jobs:
   linux:
@@ -49,4 +49,5 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra docs
       - name: Run doctests
-        run: cd docs && uv run jb build . --builder=custom --custom-builder=doctest
+        run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest
+        
