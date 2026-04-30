@@ -46,25 +46,39 @@ class MackChainladder(Chainladder):
     which combines the deterministic chainladder estimate with Mack's
     stochastic standard error.
 
-    >>> tr = cl.load_sample('ukmotor')
-    >>> model = cl.MackChainladder().fit(tr)
-    >>> model.summary_
-           Latest          IBNR      Ultimate  Mack Std Err
-    2007  12690.0           NaN  12690.000000           NaN
-    2008  12746.0    350.902024  13096.902024     27.246756
-    2009  12993.0   1037.536767  14030.536767     36.524408
-    2010  11093.0   2044.859861  13137.859861    144.534287
-    2011  10217.0   3663.404483  13880.404483    427.634355
-    2012   9650.0   7162.150646  16812.150646    693.166178
-    2013   6283.0  14396.919151  20679.919151    901.408385
+    .. testsetup:
+
+        import chainladder as cl
+
+    .. testcode:
+
+        tr = cl.load_sample('ukmotor')
+        model = cl.MackChainladder().fit(tr)
+        print(model.summary_)
+
+    .. testoutput:
+
+               Latest          IBNR      Ultimate  Mack Std Err
+        2007  12690.0           NaN  12690.000000           NaN
+        2008  12746.0    350.902024  13096.902024     27.246756
+        2009  12993.0   1037.536767  14030.536767     36.524408
+        2010  11093.0   2044.859861  13137.859861    144.534287
+        2011  10217.0   3663.404483  13880.404483    427.634355
+        2012   9650.0   7162.150646  16812.150646    693.166178
+        2013   6283.0  14396.919151  20679.919151    901.408385
 
     The deterministic chainladder ultimates match those of
     :class:`Chainladder`. Mack's contribution is the stochastic standard error
     in the rightmost column, which can be aggregated across origins.
 
-    >>> model.total_mack_std_err_
-    columns        values
-    (Total,)  1424.531543
+    .. testcode:
+
+        print(model.total_mack_std_err_)
+
+    .. testoutput:
+
+        columns        values
+        (Total,)  1424.531543
     """
 
     def fit(self, X, y=None, sample_weight=None):
@@ -87,9 +101,18 @@ class MackChainladder(Chainladder):
         Fitting attaches the ``ultimate_`` and Mack std error attributes to
         the estimator and returns the estimator itself.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> cl.MackChainladder().fit(tr)
-        MackChainladder()
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            cl.MackChainladder().fit(tr)
+
+        .. testoutput::
+
+            MackChainladder()
         """
         super().fit(X, y, sample_weight)
         if "sigma_" not in self.X_:
@@ -132,12 +155,21 @@ class MackChainladder(Chainladder):
         Fit the model and apply it to a Triangle with the same shape, then
         read the Mack standard error off the resulting Triangle.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> model = cl.MackChainladder().fit(tr)
-        >>> predicted = model.predict(tr)
-        >>> predicted.total_mack_std_err_
-        columns        values
-        (Total,)  1424.531543
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            predicted = model.predict(tr)
+            print(predicted.total_mack_std_err_)
+
+        .. testoutput::
+
+            columns        values
+            (Total,)  1424.531543
         """
         X_new = super().predict(X, sample_weight)
         X_new.sigma_ = getattr(X_new, "sigma_", self.X_.sigma_)
@@ -174,17 +206,27 @@ class MackChainladder(Chainladder):
 
         Examples
         --------
-        >>> tr = cl.load_sample('ukmotor')
-        >>> model = cl.MackChainladder().fit(tr)
-        >>> model.full_std_err_
-                    12        24        36        48        60        72   84
-        2007  0.047826  0.040745  0.031412  0.010337  0.001431  0.001523  0.0
-        2008  0.044802  0.038074  0.029815  0.010123  0.001410  0.001500  0.0
-        2009  0.042943  0.036708  0.029445  0.009864  0.001361  0.001449  0.0
-        2010  0.043241  0.037958  0.030130  0.010154  0.001407  0.001497  0.0
-        2011  0.043990  0.037603  0.029468  0.009879  0.001369  0.001457  0.0
-        2012  0.039675  0.034017  0.026776  0.008976  0.001243  0.001324  0.0
-        2013  0.035752  0.030671  0.024143  0.008094  0.001121  0.001193  0.0
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.full_std_err_)
+
+        .. testoutput
+
+                        12        24        36        48        60        72   84
+            2007  0.047826  0.040745  0.031412  0.010337  0.001431  0.001523  0.0
+            2008  0.044802  0.038074  0.029815  0.010123  0.001410  0.001500  0.0
+            2009  0.042943  0.036708  0.029445  0.009864  0.001361  0.001449  0.0
+            2010  0.043241  0.037958  0.030130  0.010154  0.001407  0.001497  0.0
+            2011  0.043990  0.037603  0.029468  0.009879  0.001369  0.001457  0.0
+            2012  0.039675  0.034017  0.026776  0.008976  0.001243  0.001324  0.0
+            2013  0.035752  0.030671  0.024143  0.008094  0.001121  0.001193  0.0
         """
         return self._get_full_std_err_(self.X_)
 
@@ -224,11 +266,20 @@ class MackChainladder(Chainladder):
 
         Examples
         --------
-        >>> tr = cl.load_sample('ukmotor')
-        >>> model = cl.MackChainladder().fit(tr)
-        >>> model.total_process_risk_.iloc[..., -3:]
-                     72           84           9999
-        2007  1039.901929  1069.726277  1069.726277
+
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.total_process_risk_.iloc[..., -3:])
+
+        .. testoutput::
+
+                         72           84           9999
+            2007  1039.901929  1069.726277  1069.726277
         """
         return (self.process_risk_ ** 2).sum(axis="origin").sqrt()
 
@@ -288,13 +339,20 @@ class MackChainladder(Chainladder):
         keep the slice readable. The final column is the ultimate prediction
         error per origin.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> model = cl.MackChainladder().fit(tr)
-        >>> model.mack_std_err_.iloc[..., -3:, -3:]
-                    72          84          9999
-        2011  415.253333  427.634355  427.634355
-        2012  673.828536  693.166178  693.166178
-        2013  876.437914  901.408385  901.408385
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.mack_std_err_.iloc[..., -3:, -3:])
+
+        .. testoutput::
+
+                        72          84          9999
+            2011  415.253333  427.634355  427.634355
+            2012  673.828536  693.166178  693.166178
+            2013  876.437914  901.408385  901.408385
         """
         return (self.parameter_risk_ ** 2 + self.process_risk_ ** 2).sqrt()
 
@@ -316,11 +374,21 @@ class MackChainladder(Chainladder):
 
         Examples
         --------
-        >>> tr = cl.load_sample('ukmotor')
-        >>> model = cl.MackChainladder().fit(tr)
-        >>> model.total_mack_std_err_
-        columns        values
-        (Total,)  1424.531543
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.total_mack_std_err_)
+
+        .. testoutput::
+
+            columns        values
+            (Total,)  1424.531543
         """
         return self._get_total_mack_std_err_(self)
 
@@ -346,17 +414,27 @@ class MackChainladder(Chainladder):
 
         Examples
         --------
-        >>> tr = cl.load_sample('ukmotor')
-        >>> model = cl.MackChainladder().fit(tr)
-        >>> model.summary_
-               Latest          IBNR      Ultimate  Mack Std Err
-        2007  12690.0           NaN  12690.000000           NaN
-        2008  12746.0    350.902024  13096.902024     27.246756
-        2009  12993.0   1037.536767  14030.536767     36.524408
-        2010  11093.0   2044.859861  13137.859861    144.534287
-        2011  10217.0   3663.404483  13880.404483    427.634355
-        2012   9650.0   7162.150646  16812.150646    693.166178
-        2013   6283.0  14396.919151  20679.919151    901.408385
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.summary_)
+
+        .. testoutput::
+
+                   Latest          IBNR      Ultimate  Mack Std Err
+            2007  12690.0           NaN  12690.000000           NaN
+            2008  12746.0    350.902024  13096.902024     27.246756
+            2009  12993.0   1037.536767  14030.536767     36.524408
+            2010  11093.0   2044.859861  13137.859861    144.534287
+            2011  10217.0   3663.404483  13880.404483    427.634355
+            2012   9650.0   7162.150646  16812.150646    693.166178
+            2013   6283.0  14396.919151  20679.919151    901.408385
         """
         # This might be better as a dataframe
         obj = self.ultimate_.copy()
