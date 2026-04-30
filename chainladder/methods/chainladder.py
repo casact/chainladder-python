@@ -32,17 +32,17 @@ class Chainladder(MethodBase):
     Fit the chainladder method to a loss triangle and inspect the projected
     ultimates.
 
-    .. testsetup:
+    .. testsetup::
 
         import chainladder as cl
 
-    .. testcode:
+    .. testcode::
 
         tr = cl.load_sample('ukmotor')
         model = cl.Chainladder().fit(tr)
         print(model.ultimate_)
 
-    .. testoutput:
+    .. testoutput::
 
                       2261
         2007  12690.000000
@@ -56,7 +56,7 @@ class Chainladder(MethodBase):
     The ``ibnr_`` attribute is ``ultimate_ - latest_diagonal``. The 2007 origin
     is fully developed in the data, so its IBNR is ``NaN``.
 
-    .. testcode:
+    .. testcode::
 
         print(model.ibnr_)
 
@@ -74,7 +74,7 @@ class Chainladder(MethodBase):
     periods makes the data-to-projection boundary visible: whole-number cells
     are observed, decimal cells are projected.
 
-    .. testcode:
+    .. testcode::
 
         print(model.full_triangle_.iloc[..., -3:, :5])
 
@@ -89,7 +89,7 @@ class Chainladder(MethodBase):
     known ones, with the model's expectation. Compare the ``12`` column above
     against the same slice below: the observed values have been overwritten.
 
-    .. testcode:
+    .. testcode::
 
         print(model.full_expectation_.iloc[..., -3:, :5])
 

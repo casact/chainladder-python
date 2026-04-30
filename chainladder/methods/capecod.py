@@ -55,11 +55,11 @@ class CapeCod(Benktander):
     loss ratio from the data itself. ``sample_weight`` represents exposure
     (e.g. earned premium) rather than an apriori expected ultimate.
 
-    .. testsetup:
+    .. testsetup::
 
         import chainladder as cl
 
-    .. testcode:
+    .. testcode::
 
         tr = cl.load_sample('ukmotor')
         exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
@@ -68,12 +68,12 @@ class CapeCod(Benktander):
     apriori loss ratio: the exposure-weighted mean loss ratio across all
     origins.
 
-    .. testcode:
+    .. testcode::
 
         model = cl.CapeCod().fit(tr, sample_weight=exposure)
         print(model.apriori_)
 
-    .. testoutput:
+    .. testoutput::
 
                   2261
         2007  0.706225
@@ -88,11 +88,11 @@ class CapeCod(Benktander):
     each origin's apriori, so each origin receives its own loss-ratio
     estimate that drifts toward more recent experience.
 
-    .. testcode:
+    .. testcode::
 
         print(cl.CapeCod(decay=0.5).fit(tr, sample_weight=exposure).apriori_)
 
-    .. testoutput:
+    .. testoutput::
 
                   2261
         2007  0.653584
@@ -106,11 +106,11 @@ class CapeCod(Benktander):
     Setting ``trend`` projects the loss ratio forward over the experience
     period. With ``decay=1``, all origins share the trended apriori.
 
-    .. testcode:
+    .. testcode::
 
         print(cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure).apriori_)
 
-    .. testoutput:
+    .. testoutput::
 
                   2261
         2007  0.836096

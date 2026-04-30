@@ -44,18 +44,18 @@ class BornhuetterFerguson(Benktander):
     same-shape Triangle, zero it out, and add the desired value. Below uses
     the chainladder ultimate as the shape donor.
 
-    .. testsetup:
+    .. testsetup::
 
         import chainladder as cl
 
-    .. testcode:
+    .. testcode::
 
         tr = cl.load_sample('ukmotor')
         cl_ult = cl.Chainladder().fit(tr).ultimate_
         apriori = cl_ult * 0 + float(cl_ult.sum()) / 7
         print(apriori)
 
-    .. testoutput:
+    .. testoutput::
 
                       2261
         2007  14903.967562
@@ -69,12 +69,12 @@ class BornhuetterFerguson(Benktander):
     Fit with that apriori. The BF ultimates pull the immature origins toward
     the apriori while leaving mature origins close to chainladder.
 
-    .. testcode:
+    .. testcode::
 
         model = cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
         print(model.ultimate_)
 
-    .. testoutput:
+    .. testoutput::
 
                       2261
         2007  12690.000000

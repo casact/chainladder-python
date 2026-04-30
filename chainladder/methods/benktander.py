@@ -43,17 +43,18 @@ class Benktander(MethodBase):
     (``n_iters=1``) and chainladder (``n_iters`` large): each additional
     iteration shifts the ultimate further toward the chainladder estimate.
 
-    .. testsetup:
+    .. testsetup::
+
         import chainladder as cl
 
-    .. testcode:
+    .. testcode::
 
         tr = cl.load_sample('ukmotor')
         apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
 
     With ``n_iters=1`` Benktander reproduces Bornhuetter-Ferguson exactly.
 
-    .. testcode:
+    .. testcode::
 
         print(
             cl.Benktander(apriori=1.0, n_iters=1).fit(
@@ -61,7 +62,7 @@ class Benktander(MethodBase):
             ).ultimate_
         )
 
-    .. testoutput:
+    .. testoutput::
 
                       2261
         2007  12690.000000
@@ -77,7 +78,7 @@ class Benktander(MethodBase):
     rising to ``19110`` at ``n_iters=4`` and approaching the chainladder
     ultimate of ``20680``.
 
-    .. testcode:
+    .. testcode::
 
         print(
             cl.Benktander(apriori=1.0, n_iters=4).fit(
@@ -85,7 +86,7 @@ class Benktander(MethodBase):
             ).ultimate_
         )
 
-    .. testoutput:
+    .. testoutput::
 
                       2261
         2007  12690.000000

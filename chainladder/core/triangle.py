@@ -124,10 +124,12 @@ class Triangle(TriangleBase):
 
     Constructing a Triangle from a Pandas DataFrame.
 
-    .. testsetup:
+    .. testsetup::
+
         import chainladder as cl
 
-    .. testcode:
+    .. testcode::
+
         import pandas as pd
         df = pd.DataFrame(
             data={
@@ -145,7 +147,8 @@ class Triangle(TriangleBase):
         )
         print(tr)
 
-    .. testoutput:
+    .. testoutput::
+
                   12      24       36       48
         1981  5012.0  8269.0  10907.0  11805.0
         1982   106.0  4285.0   5396.0      NaN
@@ -156,7 +159,7 @@ class Triangle(TriangleBase):
     becomes multidimensional. In this case, printing displays the Triangle's
     metadata rather than its contents.
 
-    .. testcode:
+    .. testcode::
 
         df = pd.DataFrame(
             data={
@@ -175,7 +178,7 @@ class Triangle(TriangleBase):
         )
         print(tr)
 
-    .. testoutput:
+    .. testoutput::
 
                     Triangle Summary
         Valuation:           1984-12
@@ -187,7 +190,7 @@ class Triangle(TriangleBase):
     Using the ``index`` parameter creates a multi-dimensional Triangle split by a
     categorical grouping, for example Line of Business.
 
-.. testcode:
+.. testcode::
 
         df = pd.DataFrame(
             data={
@@ -207,7 +210,7 @@ class Triangle(TriangleBase):
         )
         print(tr)
 
-    .. testoutput:
+    .. testoutput::
 
                    Triangle Summary
         Valuation:          2021-12
@@ -219,7 +222,7 @@ class Triangle(TriangleBase):
     Non-standard date strings can be parsed by specifying ``origin_format`` and
     ``development_format`` using Python ``strftime`` codes.
 
-    .. testcode:
+    .. testcode::
 
         df = pd.DataFrame(
             data={
@@ -239,7 +242,7 @@ class Triangle(TriangleBase):
         )
         print(tr)
 
-    .. testoutput:
+    .. testoutput::
 
                      1      2   3
         2020-01  100.0  150.0 NaN
@@ -250,7 +253,7 @@ class Triangle(TriangleBase):
     is the amount accrued within that development period rather than the
     cumulative total to date.
 
-    .. testcode:
+    .. testcode::
 
         df = pd.DataFrame(
             data={
@@ -278,7 +281,7 @@ class Triangle(TriangleBase):
     ``trailing=True`` instead infers the period end from the data itself,
     producing quarters aligned to the origin dates.
 
-    .. testcode:
+    .. testcode::
 
         df = pd.DataFrame(
             data={
@@ -299,7 +302,7 @@ class Triangle(TriangleBase):
         )
         print(tr)
 
-    .. testoutput:
+    .. testoutput::
 
                 2024-04
         2023Q2    100.0
@@ -308,7 +311,7 @@ class Triangle(TriangleBase):
         2024Q1    140.0
         2024Q2      NaN
 
-    .. testcode:
+    .. testcode::
 
         tr = cl.Triangle(
             data=df,
@@ -322,7 +325,7 @@ class Triangle(TriangleBase):
         )
         print(tr)
 
-    .. testouput:
+    .. testouput::
 
                 2024Q2
         2024Q1   100.0
