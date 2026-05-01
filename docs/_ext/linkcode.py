@@ -10,10 +10,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from types import ModuleType
 
-def linkcode_resolve(
-        domain: str,
-        info: dict
-) -> str | None:
+
+def linkcode_resolve(domain: str, info: dict) -> str | None:
     """
     Implementation of linkcode_resolve from the Sphinx extension sphinx.ext.linkcode. For more information, see:
 
@@ -39,20 +37,20 @@ def linkcode_resolve(
     """
 
     # Base path pointing to GitHub source code.
-    url_base: str = 'https://github.com/casact/chainladder-python/blob/master/'
+    url_base: str = "https://github.com/casact/chainladder-python/blob/master/"
 
     # Get the language information.
-    if domain != 'py':
+    if domain != "py":
         return None
-    if not info['module']:
+    if not info["module"]:
         return None
 
     # Extract the module.
-    mod: ModuleType = importlib.import_module(info['module'])
+    mod: ModuleType = importlib.import_module(info["module"])
 
     obj: ModuleType = mod
     # Extract the part.
-    for part in info['fullname'].split('.'):
+    for part in info["fullname"].split("."):
         obj: type = getattr(obj, part)
 
     # Unwrap any decorators.
@@ -63,27 +61,24 @@ def linkcode_resolve(
 
     # If the source file cannot be found, return the URL pointing to a .py file named after the module.
     if source_file is None:
-        filename: str = info['module'].replace('.', '/')
+        filename: str = info["module"].replace(".", "/")
         return url_base + "%s.py" % filename
 
     # Extract the lines and locate the starting line position.
     source_lines, start_line = inspect.getsourcelines(obj)
 
     # Get the root path.
-    root_path: str = os.path.abspath(
-        os.path.join(cl.__file__, '..', '..')
-    )
+    root_path: str = os.path.abspath(os.path.join(cl.__file__, "..", ".."))
 
     # Construct a relative path using the source file path, enforce forward slash in case running on Windows.
-    rel_path: str = os.path.relpath(source_file, root_path).replace(os.sep, '/')
+    rel_path: str = os.path.relpath(source_file, root_path).replace(os.sep, "/")
 
     # Extract the ending line.
     end_line: int = start_line + len(source_lines) - 1
 
     # Construct the URL by appending the relative path, starting, and ending lines to the base URL.
-    return url_base + '%s#L%d-L%d' % (
-        rel_path, start_line, end_line
-    )
+    return url_base + "%s#L%d-L%d" % (rel_path, start_line, end_line)
+
 
 def setup(app) -> None:
     """
