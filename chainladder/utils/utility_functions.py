@@ -504,7 +504,7 @@ def read_json(json_str, array_backend=None):
                 setattr(getattr(tri, k), "development_grain", tri.development_grain)
         if "dfs" in json_dict.keys():
             for k, v in json_dict["dfs"].items():
-                df = pd.read_json(v)
+                df = pd.read_json(StringIO(v))
                 if len(df.columns) == 1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
@@ -708,7 +708,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == "datetime64[ns]" and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == "datetime64[us]" and type(out.ddims) == np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:

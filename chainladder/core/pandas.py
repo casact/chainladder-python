@@ -505,7 +505,7 @@ def add_triangle_agg_func(
         # If axis is development, set the ddims to be the valuation date.
         if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
             obj.ddims = pd.DatetimeIndex(
-                [self.valuation_date], dtype="datetime64[ns]", freq=None
+                [self.valuation_date], dtype="datetime64[us]", freq=None
             )
         obj._set_slicers()
         if auto_sparse:

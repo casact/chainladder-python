@@ -4,7 +4,7 @@ class Options:
     ARRAY_BACKEND = "numpy"
     AUTO_SPARSE = True
     ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
-    ULT_VAL = "2261-12-31 23:59:59.999999999"
+    ULT_VAL = "2261-12-31 23:59:59.999999"
 
     @classmethod
     def get_option(cls, option=None):
@@ -18,7 +18,7 @@ class Options:
         self.set_option('ARRAY_BACKEND', "numpy")
         self.set_option('AUTO_SPARSE', True)
         self.set_option('ARRAY_PRIORITY', ["dask", "sparse", "cupy", "numpy"])
-        self.set_option('ULT_VAL', "2261-12-31 23:59:59.999999999")
+        self.set_option('ULT_VAL', "2261-12-31 23:59:59.999999")
 
     def describe_option(self):
         pass

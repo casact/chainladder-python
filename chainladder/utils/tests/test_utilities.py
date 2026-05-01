@@ -7,7 +7,6 @@ import pandas as pd
 
 from pathlib import Path
 
-
 def test_non_vertical_line():
     true_olf = (
         1.20
@@ -161,7 +160,6 @@ def test_read_csv_single(raa):
     # Test the read_csv function for a single dimensional input.
     
     # Read in the csv file.
-    from pathlib import Path
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
     assert raa == cl.read_csv(
