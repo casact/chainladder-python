@@ -14,7 +14,7 @@ maintainers = [
 description = "Chainladder Package - P&C Loss Reserving package"
 readme = "README.rst"
 license = {text = "MPL-2.0"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -22,7 +22,6 @@ classifiers = [
     "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -30,7 +29,7 @@ classifiers = [
 ]
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
-    "pandas >=2.3.3",
+    "pandas >=3",
     "scikit-learn>1.4.2",
     "numba>0.54",
     "sparse>=0.9",
