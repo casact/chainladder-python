@@ -969,3 +969,40 @@ def test_2x2_triangle():
     tri_from_df
     assert np.array_equal(tri_from_df.cum_to_incr().values,np.array([[[[ 78000., 144000.],
     [ 78000., np.float64(np.nan)]]]]), equal_nan=True)
+
+
+def test_triangle_init_from_dict() -> None:
+    """
+    Tests the initialization of a triangle by supplying a dict to the data parameter. The triangle
+    created should be equal to that of one created with a pandas DataFrame containing the same data.
+    """
+
+    # Common data.
+    data_dict = {
+            'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+            'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+            'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655]
+    }
+
+    # Initialze via DataFrame.
+    df = pd.DataFrame(
+        data=data_dict
+    )
+    tri_from_df = cl.Triangle(
+        data=df,
+        origin='origin',
+        development='development',
+        columns=['reported'],
+        cumulative=True
+    )
+
+    # Initialize via dict.
+    tri_from_dict = cl.Triangle(
+        data=data_dict,
+        origin='origin',
+        development='development',
+        columns=['reported'],
+        cumulative=True
+    )
+
+    assert tri_from_df == tri_from_dict

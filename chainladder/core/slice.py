@@ -21,7 +21,7 @@ class _LocBase:
     def __init__(self, obj):
         self.obj = obj
 
-    def get_idx(self, idx):
+    def get_idx(self, idx: tuple):
         """ Returns a slice of the original Triangle """
         obj = self.obj.copy()
         i_idx = _LocBase._contig_slice(idx[0])
@@ -74,8 +74,8 @@ class _LocBase:
         )
         self.obj.values.__setitem__(self._normalize_index(key), values)
 
-    def _normalize_index(self, key):
-        key = _slicing.normalize_index(key, self.obj.shape)
+    def _normalize_index(self, key: tuple) -> tuple:
+        key: tuple = _slicing.normalize_index(key, self.obj.shape)
         l = []
         for n, i in enumerate(key):
             if type(i) is slice:
@@ -183,7 +183,7 @@ class Ilocation(_LocBase):
     Class to generate .iloc[] functionality.
     """
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: tuple):
         return self.get_idx(self._normalize_index(key))
 
     def __setitem__(self, key, values):
@@ -208,7 +208,8 @@ class TriangleSlicer:
                 out = self.virtual_columns[key].copy()
                 out.virtual_columns.columns = {}
                 return out
-            key = [key] if not hasattr(key, '__iter__') or type(key) is str else key
+            key: list = [key] if not hasattr(key, '__iter__') or type(key) is str else key
+            # Identify the position of each requested element within the valuation dimension.
             idx = [list(self.vdims).index(item) for item in key]
             return self.iloc[:, idx]
 

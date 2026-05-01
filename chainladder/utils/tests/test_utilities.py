@@ -1,8 +1,8 @@
 import pytest
 
 import chainladder as cl
-import numpy as np
 import copy
+import numpy as np
 import pandas as pd
 
 def test_non_vertical_line():
@@ -158,7 +158,7 @@ def test_read_csv_single(raa):
     # Test the read_csv function for a single dimensional input.
     
     # Read in the csv file.
-    from pathlib import Path
+    from pathlib import `
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
     assert raa == cl.read_csv(
@@ -219,3 +219,23 @@ def test_invalid_sample() -> None:
     """
     with pytest.raises(ValueError):
         cl.load_sample(key="not_a_real_sample_38473743")
+
+def test_load_sample() -> None:
+    """
+    Tests whether the supported sample data sets load.
+    """
+
+    # Get the folder containing the datasets.
+    data_dir: Path = Path(__file__).parent.parent / 'data'
+
+    # Files to exclude from cl.load_sample().
+    files_to_excl: list = [
+        '__init__'
+    ]
+
+    # Gather list of files to test.
+    datasets = [f.stem for f in data_dir.iterdir() if f.is_file() and f.stem not in files_to_excl]
+
+    # Load each file.
+    for dataset in datasets:
+        cl.load_sample(dataset)

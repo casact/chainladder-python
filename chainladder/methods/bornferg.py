@@ -31,6 +31,59 @@ class BornhuetterFerguson(Benktander):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
+
+    Examples
+    --------
+    Bornhuetter-Ferguson requires an apriori expected ultimate per origin,
+    supplied through ``sample_weight``. ``sample_weight`` must be a
+    chainladder Triangle aligned with ``X``, not a scalar; passing
+    ``sample_weight=14000`` would raise ``AttributeError`` because the model
+    accesses ``.shape``.
+
+    A common idiom for building a flat per-origin apriori is to take any
+    same-shape Triangle, zero it out, and add the desired value. Below uses
+    the chainladder ultimate as the shape donor.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tr = cl.load_sample('ukmotor')
+        cl_ult = cl.Chainladder().fit(tr).ultimate_
+        apriori = cl_ult * 0 + float(cl_ult.sum()) / 7
+        print(apriori)
+
+    .. testoutput::
+
+                      2261
+        2007  14903.967562
+        2008  14903.967562
+        2009  14903.967562
+        2010  14903.967562
+        2011  14903.967562
+        2012  14903.967562
+        2013  14903.967562
+
+    Fit with that apriori. The BF ultimates pull the immature origins toward
+    the apriori while leaving mature origins close to chainladder.
+
+    .. testcode::
+
+        model = cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
+        print(model.ultimate_)
+
+    .. testoutput::
+
+                      2261
+        2007  12690.000000
+        2008  13145.318280
+        2009  14095.125641
+        2010  13412.748068
+        2011  14150.549749
+        2012  15999.244850
+        2013  16658.824705
     """
 
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):
@@ -54,6 +107,23 @@ class BornhuetterFerguson(Benktander):
         -------
         self : object
             Returns the instance itself.
+
+        Examples
+        --------
+        Fit returns the estimator itself, with ``ultimate_`` populated.
+
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            print(cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori))
+
+        .. testoutput::
+
+            BornhuetterFerguson()
         """
         self.n_iters = 1
         super().fit(X, y, sample_weight)
@@ -73,5 +143,36 @@ class BornhuetterFerguson(Benktander):
         -------
         X_new: Triangle
             Loss data with Bornhuetter-Ferguson ultimate applied
+
+        Examples
+        --------
+        Fit on a prior-period view of the data, then apply the model to the
+        current Triangle and a refreshed apriori.
+
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            apriori_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 14000
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            model = cl.BornhuetterFerguson(apriori=1.0).fit(
+                tr_prior, sample_weight=apriori_prior
+            )
+
+            print(model.predict(tr, sample_weight=apriori).ultimate_)
+
+        .. testoutput
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13658.425101
+            2010  12883.599658
+            2011  13610.582796
+            2012  15360.020613
+            2013  15893.717063
         """
         return super().predict(X, sample_weight)

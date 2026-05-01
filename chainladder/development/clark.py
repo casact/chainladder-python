@@ -1,20 +1,27 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 from chainladder.development.base import DevelopmentBase
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    from numpy import ndarray
+    from types import ModuleType
+
 
 class ClarkLDF(DevelopmentBase):
-    """ A Estimator that allows for curve fitting development pattterns according
+    """An Estimator that allows for curve fitting development patterns according
     to Clark 2003.
 
     The method fits incremental triangle amounts to one of
-    ``loglogistic`` or ``weibull`` growth curves.  Both Clarks methods, LDF and Cape
+    "loglogistic" or "weibull" growth curves.  Both of Clark's methods, LDF and Cape
     Cod, can be estimated.  To invoke the Cape Cod method, include
-    ``sample_weight`` in when fitting the estimator.
+    "sample_weight" in when fitting the estimator.
 
 
     Parameters
@@ -49,13 +56,32 @@ class ClarkLDF(DevelopmentBase):
 
     """
 
-    def __init__(self, growth="loglogistic", groupby=None):
-        self.growth = growth
+    def __init__(
+            self,
+            growth: str = "loglogistic",
+            groupby=None
+    ):
+        self.growth: str = growth
         self.groupby = groupby
 
-    def _G(self, age, theta=None, omega=None):
-        """ Growth function """
-        xp = self.incremental_act_.get_array_module()
+    def _G(
+            self,
+            age,
+            theta: float = None,
+            omega: float = None
+    ):
+        """Growth function.
+
+        Parameters
+        ----------
+
+        theta: float
+            The scale parameter of the growth function.
+        omega: float
+            The shape, or "warp" parameter of the growth function.
+
+        """
+        xp: ModuleType = self.incremental_act_.get_array_module()
         if theta is None:
             theta = self.theta_.values[..., None, None]
         if omega is None:
@@ -67,7 +93,7 @@ class ClarkLDF(DevelopmentBase):
             out = 1 / (1 - xp.exp(-((age / theta) ** omega)))
         else:
             ValueError(str(self.growth) + "is an invalid growth curve.")
-        out[xp.isnan(out)] = xp.inf
+        out[xp.isnan(out)] = xp.inf # noqa
         return out
 
     def G_(self, age):
@@ -155,7 +181,7 @@ class ClarkLDF(DevelopmentBase):
             idx_params = []
             for col in range(len(X.columns)):
 
-                def solver(x):
+                def solver(x: ndarray):
                     """ Solve Loglogistic MLE"""
                     ldf = lambda age: self._G(age, theta=x[..., 1], omega=x[..., 0])
                     if sample_weight:

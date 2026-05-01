@@ -39,6 +39,46 @@ class MackChainladder(Chainladder):
         The total prediction error by origin period
     total_mack_std_err_:
         The total prediction error across all origin periods
+
+    Examples
+    --------
+    Fit the Mack chainladder method and inspect the headline summary table,
+    which combines the deterministic chainladder estimate with Mack's
+    stochastic standard error.
+
+    .. testsetup:
+
+        import chainladder as cl
+
+    .. testcode:
+
+        tr = cl.load_sample('ukmotor')
+        model = cl.MackChainladder().fit(tr)
+        print(model.summary_)
+
+    .. testoutput:
+
+               Latest          IBNR      Ultimate  Mack Std Err
+        2007  12690.0           NaN  12690.000000           NaN
+        2008  12746.0    350.902024  13096.902024     27.246756
+        2009  12993.0   1037.536767  14030.536767     36.524408
+        2010  11093.0   2044.859861  13137.859861    144.534287
+        2011  10217.0   3663.404483  13880.404483    427.634355
+        2012   9650.0   7162.150646  16812.150646    693.166178
+        2013   6283.0  14396.919151  20679.919151    901.408385
+
+    The deterministic chainladder ultimates match those of
+    :class:`Chainladder`. Mack's contribution is the stochastic standard error
+    in the rightmost column, which can be aggregated across origins.
+
+    .. testcode:
+
+        print(model.total_mack_std_err_)
+
+    .. testoutput:
+
+        columns        values
+        (Total,)  1424.531543
     """
 
     def fit(self, X, y=None, sample_weight=None):
@@ -55,6 +95,24 @@ class MackChainladder(Chainladder):
         -------
         self: object
             Returns the instance itself.
+
+        Examples
+        --------
+        Fitting attaches the ``ultimate_`` and Mack std error attributes to
+        the estimator and returns the estimator itself.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            cl.MackChainladder().fit(tr)
+
+        .. testoutput::
+
+            MackChainladder()
         """
         super().fit(X, y, sample_weight)
         if "sigma_" not in self.X_:
@@ -71,6 +129,48 @@ class MackChainladder(Chainladder):
         return self
 
     def predict(self, X, sample_weight=None):
+        """Predicts the Mack chainladder ultimate on a new triangle **X**.
+
+        The fitted age-to-age factors and sigma estimates from ``self.X_`` are
+        applied to ``X`` to compute ``ultimate_`` and the Mack standard errors
+        (parameter risk, process risk, ``mack_std_err_``,
+        ``total_mack_std_err_``) on the predicted Triangle.
+
+        Parameters
+        ----------
+        X: Triangle
+            Loss data to which the fitted model will be applied. Must share
+            the same shape as the Triangle used in :meth:`fit`.
+        sample_weight: Triangle
+            Optional exposure used in CDF alignment.
+
+        Returns
+        -------
+        X_new: Triangle
+            Triangle with ``ultimate_`` and Mack std error attributes
+            attached.
+
+        Examples
+        --------
+        Fit the model and apply it to a Triangle with the same shape, then
+        read the Mack standard error off the resulting Triangle.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            predicted = model.predict(tr)
+            print(predicted.total_mack_std_err_)
+
+        .. testoutput::
+
+            columns        values
+            (Total,)  1424.531543
+        """
         X_new = super().predict(X, sample_weight)
         X_new.sigma_ = getattr(X_new, "sigma_", self.X_.sigma_)
         X_new.std_err_ = getattr(X_new, "std_err_", self.X_.std_err_)
@@ -93,6 +193,41 @@ class MackChainladder(Chainladder):
 
     @property
     def full_std_err_(self):
+        """
+        Per-cell standard error of the form ``sigma_ / sqrt(c**(2-alpha))``,
+        where ``alpha`` reflects the development averaging method
+        (regression, volume, simple). This is the building block Mack's
+        recursion uses to propagate parameter and process risk forward.
+
+        Returns
+        -------
+        Triangle
+            Per-cell standardized error scale.
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.full_std_err_)
+
+        .. testoutput
+
+                        12        24        36        48        60        72   84
+            2007  0.047826  0.040745  0.031412  0.010337  0.001431  0.001523  0.0
+            2008  0.044802  0.038074  0.029815  0.010123  0.001410  0.001500  0.0
+            2009  0.042943  0.036708  0.029445  0.009864  0.001361  0.001449  0.0
+            2010  0.043241  0.037958  0.030130  0.010154  0.001407  0.001497  0.0
+            2011  0.043990  0.037603  0.029468  0.009879  0.001369  0.001457  0.0
+            2012  0.039675  0.034017  0.026776  0.008976  0.001243  0.001324  0.0
+            2013  0.035752  0.030671  0.024143  0.008094  0.001121  0.001193  0.0
+        """
         return self._get_full_std_err_(self.X_)
 
     def _get_full_std_err_(self, X=None):
@@ -116,6 +251,36 @@ class MackChainladder(Chainladder):
 
     @property
     def total_process_risk_(self):
+        """
+        Across-origin process risk by development period.
+
+        Process risk is independent across origins, so the across-origin
+        total is the quadrature sum: ``sqrt(sum_i process_risk_i**2)``.
+        Reported as a 1-row Triangle (the "(Total)" origin).
+
+        Returns
+        -------
+        Triangle
+            Single-origin Triangle of total process risk by development
+            period.
+
+        Examples
+        --------
+
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.total_process_risk_.iloc[..., -3:])
+
+        .. testoutput::
+
+                         72           84           9999
+            2007  1039.901929  1069.726277  1069.726277
+        """
         return (self.process_risk_ ** 2).sum(axis="origin").sqrt()
 
     def _mack_recursion(self, est, X=None):
@@ -158,10 +323,73 @@ class MackChainladder(Chainladder):
 
     @property
     def mack_std_err_(self):
+        """
+        Per-(origin, development) Mack prediction error,
+        ``sqrt(parameter_risk**2 + process_risk**2)`` (Mack 1993 eq 7).
+
+        Returns
+        -------
+        Triangle
+            Per-cell Mack standard error. The last development column is the
+            ultimate-period prediction error per origin.
+
+        Examples
+        --------
+        Showing the last three origins and last three development periods to
+        keep the slice readable. The final column is the ultimate prediction
+        error per origin.
+
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.mack_std_err_.iloc[..., -3:, -3:])
+
+        .. testoutput::
+
+                        72          84          9999
+            2011  415.253333  427.634355  427.634355
+            2012  673.828536  693.166178  693.166178
+            2013  876.437914  901.408385  901.408385
+        """
         return (self.parameter_risk_ ** 2 + self.process_risk_ ** 2).sqrt()
 
     @property
     def total_mack_std_err_(self):
+        """
+        Total Mack prediction error aggregated across all origin periods,
+        ``sqrt(total_process_risk**2 + total_parameter_risk**2)``.
+
+        Note that this total exceeds the quadrature sum of per-origin
+        ``mack_std_err_`` values because parameter risk is correlated across
+        origins (each origin's projection uses the same estimated age-to-age
+        factors), introducing positive cross-origin covariances.
+
+        Returns
+        -------
+        DataFrame
+            One value per (index, column) combination of the fitted Triangle.
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.total_mack_std_err_)
+
+        .. testoutput::
+
+            columns        values
+            (Total,)  1424.531543
+        """
         return self._get_total_mack_std_err_(self)
 
     def _get_total_mack_std_err_(self, obj):
@@ -174,6 +402,40 @@ class MackChainladder(Chainladder):
 
     @property
     def summary_(self):
+        """
+        Headline Mack summary table by origin: latest diagonal, IBNR,
+        ultimate, and Mack standard error.
+
+        Returns
+        -------
+        Triangle
+            Triangle whose four development columns are ``Latest``, ``IBNR``,
+            ``Ultimate``, and ``Mack Std Err``.
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            model = cl.MackChainladder().fit(tr)
+            print(model.summary_)
+
+        .. testoutput::
+
+                   Latest          IBNR      Ultimate  Mack Std Err
+            2007  12690.0           NaN  12690.000000           NaN
+            2008  12746.0    350.902024  13096.902024     27.246756
+            2009  12993.0   1037.536767  14030.536767     36.524408
+            2010  11093.0   2044.859861  13137.859861    144.534287
+            2011  10217.0   3663.404483  13880.404483    427.634355
+            2012   9650.0   7162.150646  16812.150646    693.166178
+            2013   6283.0  14396.919151  20679.919151    901.408385
+        """
         # This might be better as a dataframe
         obj = self.ultimate_.copy()
         cols = (

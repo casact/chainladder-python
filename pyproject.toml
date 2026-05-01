@@ -87,6 +87,7 @@ all = [
 
 [tool.pytest.ini_options]
 testpaths = ["chainladder/*", "docs/_ext"]
+pythonpath = ["docs/_ext"]
 
 [tool.setuptools]
 include-package-data = true

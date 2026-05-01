@@ -44,18 +44,53 @@ def load_sample(
         *args,
         **kwargs
 ) -> Triangle:
-    """Function to load datasets included in the chainladder package. These consist of CSV
+    """Function to load a dataset already included in the chainladder package. These consist of CSV
     files located in the repository directory chainladder/utils/data.
 
     Parameters
     ----------
-    key: str
-        The name of the dataset, e.g. RAA, ABC, UKMotor, GenIns, etc. The name should match the
-        file name, without extension, of one of the files in the sample data folder.
+    key: str (not case sensitive)
+        The name of the dataset. The name should match the file name, without extension, of one of 
+        the files in the sample data folder.
+
+        Datasets that are commonly used in examples are: raa, clrd, and prism. 
+        
+        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
 
     Returns
     -------
         chainladder.Triangle of the loaded dataset.
+
+
+    Examples
+    --------
+    
+    Loading "raa" as an example.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tr = cl.load_sample("raa")
+        print(tr)
+
+    .. testoutput::
+
+                 12       24       36       48       60       72       84       96       108      120
+        1981  5012.0   8269.0  10907.0  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
+        1982   106.0   4285.0   5396.0  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0      NaN
+        1983  3410.0   8992.0  13873.0  16141.0  18735.0  22214.0  22863.0  23466.0      NaN      NaN
+        1984  5655.0  11555.0  15766.0  21266.0  23425.0  26083.0  27067.0      NaN      NaN      NaN
+        1985  1092.0   9565.0  15836.0  22169.0  25955.0  26180.0      NaN      NaN      NaN      NaN
+        1986  1513.0   6445.0  11702.0  12935.0  15852.0      NaN      NaN      NaN      NaN      NaN
+        1987   557.0   4020.0  10946.0  12314.0      NaN      NaN      NaN      NaN      NaN      NaN
+        1988  1351.0   6947.0  13112.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        1989  3133.0   5395.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        1990  2063.0      NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+
+
 
     """
     from chainladder import Triangle
@@ -73,7 +108,9 @@ def load_sample(
             Invalid key supplied. The key should match the name, without extension, of one of the file names
             in the sample data set folder. Please refer to the documentation page on sample data sets to see 
             what data are available.
-            """
+            
+            You supplied: {}
+            """.format(key)
          )
 
     # Set initial values for arguments to Triangle __init__. These may be overridden by
@@ -162,6 +199,111 @@ def load_sample(
         origin: str = "AccidentDate"
         development: str = "PaymentDate"
         cumulative: bool = False
+    if 'mack_1997' in key.lower():
+        columns = ['Case Incurred']
+        origin = 'Accident Year'
+        development = 'Calendar Year'
+        cumulative: bool = True
+    # Friedland datasets
+    if 'friedland' in key.lower():
+        columns: list = [
+            'Paid Claims',
+            'Reported Claims'
+        ]
+        origin: str = "Accident Year"
+        development: str = 'Calendar Year'
+        cumulative: bool = True
+        index: None = None
+        if 'autoprop' in key.lower():
+            columns: list = [
+                'Reported ALAE',
+                'Paid ALAE',
+                'Reported Claims',
+                'Paid Claims'
+            ]
+        if 'auto_salsub' in key.lower():
+            columns: list = [
+                'Reported Salvage and Subrogation',
+                'Received Salvage and Subrogation',
+                'Reported Claims',
+                'Paid Claims'
+            ]
+        if 'berq_sher_auto' in key.lower():
+            columns: list = [
+                'Paid Claims',
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Disposal Rate'
+            ]
+        if 'gl_insurer' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Disposal Rate',
+                'Paid Claims'
+            ]
+        if 'med_mal' in key.lower():
+            columns: list = [
+                'Reported Claims',
+                'Paid Claims',
+                'Case Outstanding',
+                'Open Claim Counts'
+            ]
+        if 'qs' in key.lower():
+            columns: list = [
+                'Gross Reported Claims',
+                'Net Reported Claims',
+                'Net to Gross'
+            ]
+        if 'auto_case' in key.lower():
+            columns: list = [
+                'Case Outstanding',
+                'Paid Claims'
+            ]
+        if 'wc_self_insurer' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Paid Claims',
+                'Paid Severities',
+                'Reported Claims',
+                'Reported Severities'
+            ]
+        if 'xol' in key.lower():
+            columns: list = [
+                'Gross Reported Claims',
+                'Net Reported Claims',
+                'Ceded Reported Claims'
+            ]
+        if 'xyz_case' in key.lower():
+            columns: list = [
+                'Case Outstanding',
+                'Paid Claims'
+            ]
+        if 'xyz_disp' in key.lower():
+            columns: list = [
+                'Disposal Rate',
+                'Closed Claim Counts',
+                'Paid Claims'
+            ]
+        if 'xyz_freq_sev' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Reported Claims',
+                'Reported Severities'
+            ]
+        if 'auto_freq_sev' in key.lower():
+            columns: list = [
+                'Closed Claim Counts',
+                'Reported Claim Counts',
+                'Reported Claims',
+                'Reported Severity'
+            ]
+            origin: str = "Accident Half-Year"
+            development: str = "Calendar Half-Year"
+
+
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
