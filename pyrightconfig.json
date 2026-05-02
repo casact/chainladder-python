@@ -1,0 +1,9 @@
+{
+    "include": ["chainladder"],
+    "exclude": [".venv"],
+    "venvPath": ".",
+    "extraPaths": ["."],
+    "venv": ".venv",
+    "pythonVersion": "3.14",
+    "typeCheckingMode": "basic"
+}

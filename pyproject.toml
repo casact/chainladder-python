@@ -55,6 +55,7 @@ dev = [
     "jinja2",
     "ipython",
     "ipykernel",
+    "pyright",
 ]
 docs = [
     "sphinx",
@@ -86,6 +87,12 @@ all = [
     "chainladder[dev,docs,test]",
 ]
 
+# Exclude if TYPE_CHECKING block at the beginning of modules.
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:"
+]
+
 [tool.pytest.ini_options]
 testpaths = ["chainladder/*", "docs/_ext"]
 pythonpath = ["docs/_ext"]
@@ -97,4 +104,7 @@ include-package-data = true
 include = ["chainladder", "chainladder.*"]
 
 [tool.setuptools.package-data]
-chainladder = ["utils/data/*"]
+chainladder = ["utils/data/*", "py.typed"]
+
+[tool.uv]
+config-settings = {editable_mode="compat"}

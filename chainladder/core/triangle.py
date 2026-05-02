@@ -919,8 +919,18 @@ class Triangle(TriangleBase):
 
         Examples
         --------
-        >>> tr = cl.load_sample('ukmotor')
-        >>> tr.link_ratio
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            print(tr.link_ratio)
+
+        .. testoutput::
+
                  12-24     24-36     36-48     48-60     60-72    72-84
         2007  1.915694  1.336902  1.190391  1.098935  1.049902  1.02753
         2008  1.925269  1.295729  1.118225  1.085655  1.051911      NaN
@@ -1254,16 +1264,25 @@ class Triangle(TriangleBase):
         development triangle through valuation form and back returns the
         original layout.
 
-        >>> tr = cl.load_sample('ukmotor')
-        >>> tr.dev_to_val().val_to_dev()
-                  12      24       36       48       60       72       84
-        2007  3511.0  6726.0   8992.0  10704.0  11763.0  12350.0  12690.0
-        2008  4001.0  7703.0   9981.0  11161.0  12117.0  12746.0      NaN
-        2009  4355.0  8287.0  10233.0  11755.0  12993.0      NaN      NaN
-        2010  4295.0  7750.0   9773.0  11093.0      NaN      NaN      NaN
-        2011  4150.0  7897.0  10217.0      NaN      NaN      NaN      NaN
-        2012  5102.0  9650.0      NaN      NaN      NaN      NaN      NaN
-        2013  6283.0     NaN      NaN      NaN      NaN      NaN      NaN
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr.dev_to_val().val_to_dev()
+
+        .. testoutput::
+
+                      12      24       36       48       60       72       84
+            2007  3511.0  6726.0   8992.0  10704.0  11763.0  12350.0  12690.0
+            2008  4001.0  7703.0   9981.0  11161.0  12117.0  12746.0      NaN
+            2009  4355.0  8287.0  10233.0  11755.0  12993.0      NaN      NaN
+            2010  4295.0  7750.0   9773.0  11093.0      NaN      NaN      NaN
+            2011  4150.0  7897.0  10217.0      NaN      NaN      NaN      NaN
+            2012  5102.0  9650.0      NaN      NaN      NaN      NaN      NaN
+            2013  6283.0     NaN      NaN      NaN      NaN      NaN      NaN
         """
         if not self.is_val_tri:
             if inplace:

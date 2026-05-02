@@ -1,13 +1,27 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import pandas as pd
-from chainladder.utils.cupy import cp
-from chainladder.utils.sparse import sp
-from chainladder.utils.dask import dp
+from __future__ import annotations
+
 import numpy as np
-from chainladder.utils.utility_functions import concat
+import pandas as pd
+
 from chainladder import options
+from chainladder.utils.cupy import cp
+from chainladder.utils.dask import dp
+from chainladder.utils.sparse import sp
+from chainladder.utils.utility_functions import concat
+
+from typing import (
+    Callable,
+    Literal,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike
+    from chainladder.core.typing import TriangleLike
+
 
 
 def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
@@ -201,15 +215,33 @@ class Common:
             obj = self.copy()
             return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)
 
-    def _validate_assumption(self, triangle, value, axis):
+    @staticmethod
+    def _validate_assumption(
+            triangle: TriangleLike,
+            value: str | int | float | list | tuple | set | np.ndarray | dict | Callable,
+            axis: Literal[1, 2, 3, 4]
+    ) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+
+        """
         if type(value) in (int, float, str):
             arr = np.repeat(value, triangle.shape[axis])
-        if type(value) in (list, tuple, set, np.ndarray):
+        elif type(value) in (list, tuple, set, np.ndarray):
             arr = np.array(value)
-        if type(value) is dict:
+        elif type(value) is dict:
             arr = np.array([value[a] for a in triangle._get_axis_value(axis)])
-        if callable(value):
+        elif callable(value):
             arr = np.array([value(a) for a in triangle._get_axis_value(axis)])
+        else:
+            raise TypeError(
+                """
+                Invalid type provided to value parameter. 
+                Accepted types are str, int, float, list, tuple, set, ndarray, dict, or Callable.
+                """
+            )
         if axis == 3:
             arr = arr[None, None, None]
         if axis == 2:
