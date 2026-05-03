@@ -1271,7 +1271,7 @@ class Triangle(TriangleBase):
         .. testcode::
 
             tr = cl.load_sample('ukmotor')
-            tr.dev_to_val().val_to_dev()
+            print(tr.dev_to_val().val_to_dev())
 
         .. testoutput::
 
