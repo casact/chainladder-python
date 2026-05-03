@@ -219,7 +219,7 @@ class Common:
     def _validate_assumption(
             triangle: TriangleLike,
             value: str | int | float | list | tuple | set | np.ndarray | dict | Callable,
-            axis: Literal[1, 2, 3, 4]
+            axis: Literal[0, 1, 2, 3]
     ) -> np.ndarray:
         """
 
