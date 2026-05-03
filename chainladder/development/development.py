@@ -14,8 +14,7 @@ from chainladder.utils.utility_functions import num_to_nan
 from typing import (
     Callable,
     Literal,
-    Optional,
-    Self,
+    # Self,  # Make use of this once Python 3.10 is deprecated.
     TYPE_CHECKING
 )
 
@@ -125,7 +124,7 @@ class Development(DevelopmentBase):
             self, X: TriangleLike,
             y: None = None,
             sample_weight: None = None
-    ) -> Self:
+    ):
         """Fit the model with X.
 
         Parameters

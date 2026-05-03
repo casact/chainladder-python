@@ -94,7 +94,7 @@ exclude_also = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["chainladder/*", "docs/_ext"]
+testpaths = ["chainladder", "docs/_ext"]
 pythonpath = ["docs/_ext"]
 
 [tool.setuptools]
