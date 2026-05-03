@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import chainladder as cl
-import pandas as pd
-import numpy as np
-import pytest
 import io
-from datetime import datetime
+import numpy as np
+import pandas as pd
+import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 try:
     from IPython.core.display import HTML
-except:
+except ImportError:
     HTML = None
 
 
@@ -1005,3 +1011,16 @@ def test_triangle_init_from_dict() -> None:
     )
 
     assert tri_from_df == tri_from_dict
+
+
+def test_validate_assumption(raa: Triangle) -> None:
+    """
+    Tests Common._validate_assumption.
+    """
+
+    # Check incorrect type provided to value argument.
+    with pytest.raises(TypeError):
+        raa._validate_assumption(
+            triangle=raa,
+            value=raa, axis=3  # noqa - incorrect type provided on purpose.
+        )
