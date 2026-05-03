@@ -1,15 +1,33 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import warnings
-from chainladder.utils import WeightedRegression
+
 from chainladder.development.base import DevelopmentBase
+from chainladder.utils import WeightedRegression
+from chainladder.utils.utility_functions import num_to_nan
+
+from typing import (
+    Callable,
+    Literal,
+    # Self,  # Make use of this once Python 3.10 is deprecated.
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from chainladder.core.typing import TriangleLike
+    from numpy.typing import ArrayLike
+    from pandas import Series
+    from types import ModuleType
 
 
 class Development(DevelopmentBase):
-    """A Transformer that allows for basic loss development pattern selection.
+    """
+    A Transformer that allows for basic loss development pattern selection.
 
     Parameters
     ----------
@@ -49,7 +67,7 @@ class Development(DevelopmentBase):
         excluded from the ``ldf_`` calculation.  For the specific case of 'volume'
         averaging in a deterministic method, this may be reasonable.  For all other
         averages and stochastic methods, this assumption should be avoided.
-    groupby:
+    groupby: Callable, list, str, Series (default = None)
         An option to group levels of the triangle index together for the purposes
         of estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
@@ -73,18 +91,18 @@ class Development(DevelopmentBase):
 
     def __init__(
         self,
-        n_periods=-1,
-        average="volume",
-        sigma_interpolation="log-linear",
-        drop=None,
-        drop_high=None,
-        drop_low=None,
-        preserve=1,
-        drop_valuation=None,
-        drop_above=np.inf,
-        drop_below=0.00,
-        fillna=None,
-        groupby=None,
+        n_periods: int = -1,
+        average: str = "volume",
+        sigma_interpolation: Literal['log-linear', 'mack'] = "log-linear",
+        drop: tuple | list[tuple] | None = None,
+        drop_high: bool | int | list[bool] | list[int] | None = None,
+        drop_low: bool | int | list[bool] | list[int] | None = None,
+        preserve: int = 1,
+        drop_valuation: str | list[str] = None,
+        drop_above: float = np.inf,
+        drop_below: float = 0.00,
+        fillna: float | None = None,
+        groupby: Callable | list | str | Series = None,
     ):
         self.n_periods = n_periods
         self.average = average
@@ -99,12 +117,19 @@ class Development(DevelopmentBase):
         self.fillna = fillna
         self.groupby = groupby
 
-    def fit(self, X, y=None, sample_weight=None):
+        # Undeclared until fitted attributes - scikit-learn convention.
+        self.average_: np.ndarray
+
+    def fit(
+            self, X: TriangleLike,
+            y: None = None,
+            sample_weight: None = None
+    ):
         """Fit the model with X.
 
         Parameters
         ----------
-        X : Triangle-like
+        X : TriangleLike
             Set of LDFs to which the munich adjustment will be applied.
         y : None
             Ignored
@@ -116,30 +141,34 @@ class Development(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder.utils.utility_functions import num_to_nan
 
-        # Triangle must be cumulative and in "development" mode
-        obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
-        xp = obj.get_array_module()
+        # Triangle must be cumulative and in "development" mode.
+        obj: TriangleLike = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
+        xp: ModuleType = obj.get_array_module()
 
         if self.fillna:
-            tri_array = num_to_nan((obj + self.fillna).values)
+            tri_array: ArrayLike = num_to_nan((obj + self.fillna).values)
         else:
-            tri_array = num_to_nan(obj.values.copy())
+            tri_array: ArrayLike = num_to_nan(obj.values.copy())
 
-        average_ = self._validate_assumption(X, self.average, axis=3)[
+        average_: np.ndarray = self._validate_assumption(X, self.average, axis=3)[
             ..., : X.shape[3] - 1
         ]
-        self.average_ = average_.flatten()
-        n_periods_ = self._validate_assumption(X, self.n_periods, axis=3)[
+
+        # noinspection PyAttributeOutsideInit
+        self.average_: np.ndarray = average_.flatten()
+        n_periods_: np.ndarray = self._validate_assumption(X, self.n_periods, axis=3)[
             ..., : X.shape[3] - 1
         ]
+
+        x: ArrayLike
+        y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        exponent = xp.array(
+        exponent: ArrayLike = xp.array(
             [{"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]]
         )
         exponent = xp.nan_to_num(exponent * (y * 0 + 1))
-        link_ratio = y / x
+        link_ratio: ArrayLike = y / x
 
         if hasattr(X, "w_v2_"):
             self.w_v2_ = self._set_weight_func(
@@ -187,6 +216,8 @@ class Development(DevelopmentBase):
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         return self
+
+
 
     def transform(self, X):
         """If X and self are of different shapes, align self to X, else

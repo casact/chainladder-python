@@ -1,17 +1,34 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import warnings
-from sklearn.base import BaseEstimator, TransformerMixin
+
+from sklearn.base import (
+    BaseEstimator,
+    TransformerMixin
+)
+
 from chainladder.utils import WeightedRegression
 from chainladder.utils.utility_functions import num_to_nan
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
 
+from typing import TYPE_CHECKING
 
-class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
+if TYPE_CHECKING:
+    from chainladder.core.typing import TriangleLike
+
+
+class DevelopmentBase(
+    BaseEstimator,
+    TransformerMixin,
+    EstimatorIO,
+    Common
+):
     def fit(self, X, y=None, sample_weight=None):
         average_ = self._validate_assumption(y, self.average, axis=3)
         self.average_ = average_.flatten()
@@ -25,8 +42,22 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         )
         return self
 
-    def _set_fit_groups(self, X):
-        """Used for assigning group_index in fit"""
+    def _set_fit_groups(
+            self,
+            X: TriangleLike
+    ) -> TriangleLike:
+        """
+        Used for assigning group_index in fit.
+
+        Parameters
+        ----------
+        X: TriangleLike
+
+        Returns
+        -------
+        TriangleLike, after performing the groupby on it.
+
+        """
         backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
         if self.groupby is None:
             return X.set_backend(backend)
@@ -354,7 +385,11 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             param_array = param_array.astype(type(default_value))
         return param_array.to_numpy()
 
-    def _set_weight_func(self, factor, secondary_rank=None):
+    def _set_weight_func(
+            self,
+            factor: TriangleLike,
+            secondary_rank: TriangleLike = None
+    ):
         w = (~np.isnan(factor.values)).astype(float)
         w = w * self._assign_n_periods_weight_func(factor)
         if self.drop is not None:

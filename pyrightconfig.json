@@ -1,0 +1,8 @@
+{
+    "include": ["chainladder"],
+    "exclude": [".venv"],
+    "venvPath": ".",
+    "extraPaths": ["."],
+    "venv": ".venv",
+    "typeCheckingMode": "basic"
+}
