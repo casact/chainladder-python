@@ -92,7 +92,7 @@ class Development(DevelopmentBase):
     def __init__(
         self,
         n_periods: int = -1,
-        average: str = "volume",
+        average: Literal['volume', 'simple', 'regression'] = "volume",
         sigma_interpolation: Literal['log-linear', 'mack'] = "log-linear",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
@@ -130,7 +130,7 @@ class Development(DevelopmentBase):
         Parameters
         ----------
         X : TriangleLike
-            Set of LDFs to which the munich adjustment will be applied.
+            Set of LDFs to which the Munich adjustment will be applied.
         y : None
             Ignored
         sample_weight : None
