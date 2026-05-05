@@ -55,6 +55,7 @@ dev = [
     "jinja2",
     "ipython",
     "ipykernel",
+    "pyright",
 ]
 docs = [
     "sphinx",
@@ -87,7 +88,7 @@ all = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["chainladder/*", "docs/_ext"]
+testpaths = ["chainladder", "docs/_ext"]
 pythonpath = ["docs/_ext"]
 
 [tool.setuptools]
@@ -97,4 +98,7 @@ include-package-data = true
 include = ["chainladder", "chainladder.*"]
 
 [tool.setuptools.package-data]
-chainladder = ["utils/data/*"]
+chainladder = ["utils/data/*", "py.typed"]
+
+[tool.uv]
+config-settings = {editable_mode="compat"}

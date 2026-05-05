@@ -5,6 +5,8 @@ omit = *tests*
 
 [report]
 show_missing = True
+exclude_also =
+   if TYPE_CHECKING:
 
 # Regexes for lines to exclude from consideration
 exclude_lines =
