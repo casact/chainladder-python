@@ -80,6 +80,7 @@ sp.arange = arange
 sp.array = array
 sp.nan_to_num = nan_to_num
 sp.ones = ones
+sp.cumprod = cumprod
 COO.cumprod = cumprod
 sp.nanmean = nanmean
 sp.sum = COO.sum
