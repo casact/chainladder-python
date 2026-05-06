@@ -53,7 +53,7 @@ class WeightedRegression(BaseEstimator):
             y[w == 0] = xp.nan
         else:
             w2 = w.copy()
-            w2 = sp(data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape)
+            w2 = sp.COO(data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape)
             x, y = x * w2, y * w2
 
         with warnings.catch_warnings():

@@ -1185,7 +1185,7 @@ class Triangle(TriangleBase):
                     else:
                         values = xp.nan_to_num(self.values[..., ::-1])
                         values = num_to_value(values, 1)
-                        values = xp.cumprod(values, -1)[..., ::-1]
+                        values = xp.COO.cumprod(values, -1)[..., ::-1]
                         self.values = values * self.nan_triangle
                         values = num_to_value(values, self.get_array_module(values).nan)
                 else:

@@ -239,7 +239,7 @@ class TriangleSlicer:
                 coords = np.concatenate((before.coords, value.values.coords), axis=1)
                 data = np.concatenate((before.data, value.values.data))
                 self.values = xp.COO(
-                    coords, data, shape=self.shape, prune=True, fill_value=xp.nan
+                    coords, data, shape=self.shape, prune=True, fill_value=xp.COO.nan
                 )
             else:
                 if isinstance(value, TriangleSlicer):

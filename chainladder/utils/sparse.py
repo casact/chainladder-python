@@ -25,7 +25,7 @@ def nan_to_num(a):
 
 
 def ones(*args, **kwargs):
-    return COO(np.ones(*args, **kwargs), fill_value=sp.nan)
+    return COO(np.ones(*args, **kwargs), fill_value=COO.nan)
 
 
 def nansum(a, axis=None, keepdims=None, *args, **kwargs):
@@ -47,8 +47,8 @@ def array(a, *args, **kwargs):
     if kwargs.get("fill_value", None) is not None:
         fill_value = kwargs.pop("fill_value")
     else:
-        fill_value = sp.nan
-    if type(a) == sp:
+        fill_value = COO.nan
+    if type(a) == sp.COO:
         return COO(a, *args, **kwargs, fill_value=fill_value)
     else:
         return COO(np.array(a, *args, **kwargs), fill_value=fill_value)
