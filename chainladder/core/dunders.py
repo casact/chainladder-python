@@ -45,7 +45,7 @@ class TriangleDunders:
             if isinstance(other, np.ndarray) and self.array_backend != 'numpy':
                 obj = self.copy()
                 other = obj.get_array_module().array(other)
-            elif isinstance(other, sp) and self.array_backend != 'sparse':
+            elif isinstance(other, sp.COO) and self.array_backend != 'sparse':
                 obj = self.set_backend('sparse')
             else:
                 obj = self.copy()

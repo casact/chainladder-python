@@ -730,14 +730,14 @@ def num_to_value(
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
 
-            arr: COO = sp(
+            arr: COO = sp.COO(
                 coords=arr.coords,
                 data=arr.data,
                 fill_value=sp.nan, # noqa
                 shape=arr.shape
             )
         else:
-            arr: COO = sp(
+            arr: COO = sp.COO(
                 num_to_nan(np.nan_to_num(arr.todense())),
                 fill_value=value
             )
