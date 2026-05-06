@@ -733,7 +733,7 @@ def num_to_value(
             arr: COO = sp.COO(
                 coords=arr.coords,
                 data=arr.data,
-                fill_value=sp.nan, # noqa
+                fill_value=sp.COO.nan, # noqa
                 shape=arr.shape
             )
         else:
