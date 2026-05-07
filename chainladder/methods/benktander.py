@@ -16,7 +16,8 @@ class Benktander(MethodBase):
         then use 1.0
     n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
-        When n_iters=0, the result is equivalent to the BornhuetterFerguson method.
+        When n_iters=1, the result is equivalent to the BornhuetterFerguson method.
+        When n_iters>>1, the result converges to the traditional Chainladder model.
     apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal distribution
