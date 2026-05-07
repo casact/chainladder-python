@@ -51,53 +51,49 @@ class BornhuetterFerguson(Benktander):
 
     .. testcode::
 
-        raa = cl.load_sample('raa')
-        premium = raa.latest_diagonal*0 + 40000 #zero out and add 40,000 to each origin
+        raa = cl.load_sample("raa")
+        premium = raa.latest_diagonal * 0 + 40_000  # zero out and add 40,000 to each origin
 
-        cl.BornhuetterFerguson(apriori=0.7).fit(
-            X=raa, 
-            sample_weight=premium
-        ).ibnr_
+        ibnr = cl.BornhuetterFerguson(apriori=0.7).fit(X=raa, sample_weight=premium).ibnr_
+        print(ibnr)
 
     .. testoutput::
 
-                2261
-        1981	NaN
-        1982	256
-        1983	718
-        1984	1,596
-        1985	2,659
-        1986	5,239
-        1987	8,574
-        1988	12,715
-        1989	18,585
-        1990	24,861
+                      2261
+        1981           NaN
+        1982    255.707763
+        1983    717.772687
+        1984   1596.061515
+        1985   2658.738155
+        1986   5239.441491
+        1987   8574.335344
+        1988  12714.889984
+        1989  18585.219714
+        1990  24861.068855
 
     One might be tempted to set never set the aprior and modify the sample_weight directly, and they will result in the same answer, but this is not the recommended practice. It not only add confusion, but it alos mixes the model parameter assumption and data together.
 
     .. testcode::
 
-        raa = cl.load_sample('raa')
-        premium = raa.latest_diagonal*0 + 40000*0.7 #premium is modified by 70%
+        raa = cl.load_sample("raa")
+        premium = raa.latest_diagonal * 0 + 40_000 * 0.7  # premium is modified by 70%
 
-        cl.BornhuetterFerguson().fit(
-            X=raa, 
-            sample_weight=premium
-        ).ibnr_
+        ibnr = cl.BornhuetterFerguson().fit(X=raa, sample_weight=premium).ibnr_
+        print(ibnr)
 
     .. testoutput::
 
-                2261
-        1981	NaN
-        1982	256
-        1983	718
-        1984	1,596
-        1985	2,659
-        1986	5,239
-        1987	8,574
-        1988	12,715
-        1989	18,585
-        1990	24,861
+                      2261
+        1981           NaN
+        1982    255.707763
+        1983    717.772687
+        1984   1596.061515
+        1985   2658.738155
+        1986   5239.441491
+        1987   8574.335344
+        1988  12714.889984
+        1989  18585.219714
+        1990  24861.068855
     """
 
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):
