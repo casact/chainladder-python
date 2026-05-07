@@ -21,7 +21,7 @@ You can help improve and shape the project in many ways:
 2. Volunteer to implement code changes for existing issues.  
 3. Ask questions or discuss ideas on the [discussion forum](https://github.com/casact/chainladder-python/discussions).  
 4. Improve documentation where it is unclear.  
-5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/en/latest/gallery/index.html).  
+5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/main/gallery/index.html).  
 
 ---
 
