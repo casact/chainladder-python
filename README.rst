@@ -15,8 +15,8 @@
 .. |Build Status| image:: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml/badge.svg
    :target: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml
 
-.. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=latest
-   :target: https://chainladder-python.readthedocs.io/en/latest/?badge=latest
+.. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=main
+   :target: https://chainladder-python.readthedocs.io/main/
 
 .. |codecov io| image:: https://codecov.io/gh/casact/chainladder-python/branch/master/graphs/badge.svg
    :target: https://codecov.io/github/casact/chainladder-python?branch=latest
