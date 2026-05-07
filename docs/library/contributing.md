@@ -126,7 +126,7 @@ pytest
 
 For documentation changes, rebuild the docs locally with:
 ```bash
-uv run jb build docs
+uv run jb build docs --builder=custom --custom-builder=doctest
 ```
 
 Large or unfocused PRs may delay merging. Each PR should address a single issue or feature to maintain clarity and quality.
