@@ -589,7 +589,7 @@ Release Date: Nov 5, 2020
 - [\#98](https://github.com/casact/chainladder-python/issues/98) Allow
   for more complex trends in estimators with `Trend` transformer Refer
   to this
-  [example](https://chainladder-python.readthedocs.io/en/latest/auto_examples/plot_capecod_onlevel.html#sphx-glr-auto-examples-plot-capecod-onlevel-py)
+  [example](https://chainladder-python.readthedocs.io/stable/gallery/plot_capecod_onlevel.html)
   on how to apply the new estimators.
 
 ### Version 0.7.8
@@ -678,7 +678,7 @@ Release Date: Aug 15, 2020
 
 - Added sparse representation of triangles which substantially increases
   the size limit of in-memory triangles. Check out the new [Large
-  Datasets](https://chainladder-python.readthedocs.io/en/latest/tutorials/large-datasets.html)
+  Datasets](https://chainladder-python.readthedocs.io/stable/getting_started/tutorials/data-tutorial.html)
   tutorial for details
 
 **Bug Fixes**
@@ -808,12 +808,12 @@ Release Date: Jun 2, 2020
 - `TailBondy` now has `earliest_ldf_` attributes to allow for
   diagnostics of the estimator.
 - Substantial improvement to the
-  [documents](https://chainladder-python.readthedocs.io/en/latest/modules/tails.html#tails)
+  [documents](https://chainladder-python.readthedocs.io/stable/user_guide/tails.html)
   on Tails.
 - Introduced the deterministic components of
-  [ClarkLDF](https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.ClarkLDF.html#chainladder.ClarkLDF)
+  [ClarkLDF](https://chainladder-python.readthedocs.io/stable/library/generated/chainladder.ClarkLDF.html)
   and
-  [TailClark](https://chainladder-python.readthedocs.io/en/latest/modules/generated/chainladder.TailClark.html#chainladder.TailClark)
+  [TailClark](https://chainladder-python.readthedocs.io/stable/library/generated/chainladder.TailClark.html)
   estimators to allow for growth curve selection of development
   patterns.
 
