@@ -50,7 +50,7 @@ We have a dedicated documentation website, where you can find installation instr
 
 Visit `Chainladder-Python on Read the Docs`_.
 
-.. _Chainladder-Python on Read the Docs: https://chainladder-python.readthedocs.io/
+.. _Chainladder-Python on Read the Docs: https://chainladder-python.readthedocs.io/stable/
 
 Contributors Working Group
 ----------------------------
