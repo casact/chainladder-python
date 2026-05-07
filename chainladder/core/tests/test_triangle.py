@@ -19,7 +19,7 @@ except ImportError:
 
 def test_repr(raa):
     np.testing.assert_array_equal(
-        pd.read_html(raa._repr_html_())[0].set_index("Unnamed: 0").values,
+        pd.read_html(io.StringIO(raa._repr_html_()))[0].set_index("Unnamed: 0").values,
         raa.to_frame(origin_as_datetime=False).values,
     )
 
