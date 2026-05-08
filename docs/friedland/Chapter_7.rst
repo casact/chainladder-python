@@ -23,8 +23,11 @@ Here is the exhibit from page 106.
 
 .. ipython::
     :doctest:
+
     In [1]: 1 + 1
     Out[2]: 3
+
+Some text to break things up. 
 
 .. ipython::
     :okwarning:
