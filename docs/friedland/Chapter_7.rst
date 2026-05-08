@@ -18,7 +18,15 @@ We will load the underlying dataset for Exhibit I
 
 .. ipython:: python
 
-    tri = cl.load_sample('friendland_us_industry_auto')
+    url = 'https://raw.githubusercontent.com/casact/chainladder-python/refs/heads/master/chainladder/utils/data/friedland_us_industry_auto.csv'
+    c = pd.read_csv(url)
+    tri = cl.Triangle(
+        data = c,
+        origin = 'Accident Year',
+        development = 'Calendar Year',
+        columns = ['Reported Claims','Paid Claims'], 
+        cumulative = True
+    )
     print(tri)
 
 We will define a couple of reusable functions for multiple exhibits in this chapter
