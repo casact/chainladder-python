@@ -32,6 +32,7 @@ We will load the underlying dataset for Exhibit I
 We will define a couple of reusable functions for multiple exhibits in this chapter
 
 .. ipython::
+    :okwarning:
 
     # PART 1 - Data Triangle
     In [1]: tri.round(decimals = 0) 
