@@ -78,6 +78,7 @@ We will define a couple of reusable functions for multiple exhibits in this chap
 Now we use the functions we just defined to actually perform the analysis
 
 .. ipython:: python
+    :okwarning:
 
     reported_devs = standard_analysis(tri['Reported Claims'])
     display_standard_analysis(reported_devs)
