@@ -42,6 +42,8 @@ class ExpectedLoss(Benktander):
 
     .. testcode::
 
+        xyz = cl.load_sample("xyz")
+        
         ibnr = (
             cl.ExpectedLoss()
             .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
