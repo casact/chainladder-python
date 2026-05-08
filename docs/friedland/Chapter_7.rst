@@ -6,7 +6,7 @@ Chapter 7
 -------------
 We will begin by importing the necessary packages
 
-.. execute_code:: python
+.. ipython::
     import numpy as np
     import pandas as pd
     import chainladder as cl
@@ -15,13 +15,13 @@ P106
 
 We will load the underlying dataset for Exhibit I
 
-.. execute_code:: python
+.. ipython::
     tri = cl.load_sample('friendland_us_industry_auto')
     print(tr)
 
 We will define a couple of reusable functions for multiple exhibits in this chapter
 
-.. execute_code:: python
+.. ipython::
     from typing import List
 
     def standard_analysis(tri: cl.Triangle()) -> List[cl.Triangle()]:
@@ -66,6 +66,6 @@ We will define a couple of reusable functions for multiple exhibits in this chap
 
 Now we use the functions we just defined to actually perform the analysis
 
-.. execute_code:: python
+.. ipython::
     reported_devs = standard_analysis(tri['Reported Claims'])
     display_standard_analysis(reported_devs)
