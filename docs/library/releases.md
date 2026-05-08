@@ -43,6 +43,12 @@ Release Date: May 8, 2026
 * fix(tests): use assert in test_n_periods so failures actually fail by @SaguaroDev in [#744](https://github.com/casact/chainladder-python/pull/744)
 * Build(deps): Bump mistune from 3.1.4 to 3.2.1 by @dependabot[bot] in [#748](https://github.com/casact/chainladder-python/pull/748)
 * Update pyproject.toml - Add numpy ([#738](https://github.com/casact/chainladder-python/issues/738)) by @wendy-w2029 in [#750](https://github.com/casact/chainladder-python/pull/750)
+* Add `.github/CODEOWNERS` by @kennethshsu
+* Limit pytest GitHub Actions workflow to run on pull requests (not every push) by @kennethshsu
+* Clarify first-time vs ongoing `uv` setup in contributor docs; ignore local virtualenv doc build dirs in `.gitignore`; refine dates in the multi-trend example by @kennethshsu
+* DOCS: Update VotingChainladder gallery example to agreed `testcode` / `testoutput` format by @genedan
+* Refresh getting-started tutorial notebooks, `docs/library/contributing.md`, and `README.rst` by @henrydingliu
+* Remove `/en/` locale segment from documentation URLs by @kennethshsu
 
 **New Contributors**
 * @priyam0k made their first contribution in [#722](https://github.com/casact/chainladder-python/pull/722)
@@ -192,7 +198,7 @@ Release Date: May 24, 2024
 Release Date: Apr 10, 2024
 
 **What's Changed**
-* Various bug fixes and improvements
+* Fix for [\#509](https://github.com/casact/chainladder-python/issues/509) (triangle / core initialization and packaging metadata).
 
 ### Version 0.8.19
 
@@ -223,7 +229,9 @@ Release Date: Sep 18, 2023
 Release Date: Jun 17, 2023
 
 **What's Changed**
-* Bump of 0.8.16
+* Relax the `pandas<2.0` upper bound in CI/deps metadata.
+* Update `environment-latest.yaml` and `pytest_upstream_nightly.yml` ([#442](https://github.com/casact/chainladder-python/pull/442)).
+* Adjust pytest-related dependency pins.
 
 ### Version 0.8.16
 
@@ -234,7 +242,7 @@ Release Date: Jun 17, 2023
 * fix for [\#411](https://github.com/casact/chainladder-python/issues/411) 
 * fix for [\#438](https://github.com/casact/chainladder-python/issues/438) 
 
-## New Contributors
+**New Contributors**
 * [@MatthewCaseres](https://github.com/MatthewCaseres) made their first contribution.
 * [@andrejakobsen](https://github.com/andrejakobsen) made their first contribution.
 
@@ -275,7 +283,18 @@ Release Date: Apr 11, 2023
 
 Release Date: Nov 25, 2022
 
+**What's Changed**
+* Major documentation refresh for Jupyter Book and CAS Annual Meeting materials: user guide and gallery restructure, new exercises and demos, usage/Colab notes, and bibliography updates (including [#311](https://github.com/casact/chainladder-python/pull/311) and related annual-meeting prep PRs [#335](https://github.com/casact/chainladder-python/pull/335)–[#361](https://github.com/casact/chainladder-python/pull/361)).
+* Additional Friedland and other sample datasets for `load_sample` ([#347](https://github.com/casact/chainladder-python/pull/347), [#353](https://github.com/casact/chainladder-python/pull/353), [#355](https://github.com/casact/chainladder-python/pull/355), [#357](https://github.com/casact/chainladder-python/pull/357), [#358](https://github.com/casact/chainladder-python/pull/358), [#359](https://github.com/casact/chainladder-python/pull/359), [#362](https://github.com/casact/chainladder-python/pull/362), [#363](https://github.com/casact/chainladder-python/pull/363)).
+* `Development` transformer: `std_residuals_` ([#352](https://github.com/casact/chainladder-python/pull/352)).
+* Four-dimensional triangles: extend `drop_high` / `drop_low` (including `drop_above` / `drop_below`) ([#375](https://github.com/casact/chainladder-python/pull/375), [#381](https://github.com/casact/chainladder-python/pull/381)).
+* Semi-annual key for tail handling ([#384](https://github.com/casact/chainladder-python/pull/384)).
+* Triangle `to_frame()` updates and reduced reliance on `origin_as_datetime` inside `to_frame()` ([#360](https://github.com/casact/chainladder-python/pull/360)).
+* Bug fixes and hardening for `Development` and triangles ([#373](https://github.com/casact/chainladder-python/pull/373), [#371](https://github.com/casact/chainladder-python/pull/371), [#368](https://github.com/casact/chainladder-python/pull/368), [#366](https://github.com/casact/chainladder-python/pull/366)); follow-ups by @henrydingliu ([#370](https://github.com/casact/chainladder-python/pull/370)).
+* `DevelopmentCorrelation` / valuation correlation: annotations, intermediate diagnostics, and `p_critical` validation ([#342](https://github.com/casact/chainladder-python/pull/342)).
+* README, GitHub issue templates, and docs environment updates; reduce `to_datetime` deprecation noise.
 
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.8.13...v0.8.14
 
 ### Version 0.8.13
 
@@ -298,6 +317,8 @@ Release Date: Jun 27, 2022
 ### Version 0.8.12
 
 Release Date: Mar 8, 2022
+
+*Note:* There was no `0.8.11` stable release on PyPI; only pre-release tags `v0.8.11-alpha` and `v0.8.11-beta` were published.
 
 **Bug Fixes**
 
