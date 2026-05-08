@@ -5,7 +5,8 @@ from chainladder.methods import Benktander
 
 
 class ExpectedLoss(Benktander):
-    """The deterministic Expected Loss IBNR model
+    """The deterministic Expected Loss IBNR model, it ignores all data in the 
+    triangle, and only uses the apriori to calculate the ultimate losses.
 
     Parameters
     ----------
@@ -34,7 +35,6 @@ class ExpectedLoss(Benktander):
 
     Examples
     --------
-    ExpectedLoss is the deterministic Expected Loss IBNR model. It is a special case of the Benktander model where the apriori is set to 1.0.
 
     .. testsetup::
 
