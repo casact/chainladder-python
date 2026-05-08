@@ -68,7 +68,7 @@ docs = [
     "parso>=0.8",
     "polars",  # For docs examples
     "statsmodels",  # For docs example
-    "sphinx-exec-code"
+    "sphinx-execute-code"
 ]
 test = [
     "lxml",
