@@ -39,6 +39,7 @@ sphinx:
     - sphinx.ext.linkcode
     - numpydoc
     - sphinx.ext.mathjax
+    - IPython.sphinxext.ipython_directive
   local_extensions:
     linkcode: _ext
   config:
