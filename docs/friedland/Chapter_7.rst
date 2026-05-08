@@ -18,7 +18,7 @@ We will load the underlying dataset for Exhibit I
 
 .. ipython:: python
 
-    url = 'https://raw.githubusercontent.com/casact/chainladder-python/refs/heads/master/chainladder/utils/data/friedland_us_industry_auto.csv'
+    url = 'https://raw.githubusercontent.com/casact/chainladder-python/refs/heads/main/chainladder/utils/data/friedland_us_industry_auto.csv'
     c = pd.read_csv(url)
     tri = cl.Triangle(
         data = c,
