@@ -164,13 +164,30 @@ class Benktander(MethodBase):
 
         .. testcode::
 
-            tr = cl.load_sample('ukmotor')
-            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
-            print(cl.Benktander(apriori=1.0, n_iters=2).fit(tr, sample_weight=apriori))
+            xyz = cl.load_sample("xyz")
+
+            ultimate = (
+                cl.Benktander(apriori=1, n_iters=2)
+                .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+                .ultimate_
+            )
+            print(ultimate)
 
         .. testoutput::
 
-            Benktander(n_iters=2)
+                          2261
+            1998  15822.000000
+            1999  24908.397003
+            2000  37547.676656
+            2001  40511.198946
+            2002  49417.354765
+            2003  50042.095135
+            2004  82437.601111
+            2005  95417.171135
+            2006  88485.508416
+            2007  66882.788227
+            2008  50708.755370
+
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
