@@ -46,3 +46,5 @@ parts:
       - file: library/roadmap.md
   - chapters:
     - file: library/releases.md
+  - chapters:
+    - file: friedland/Chapter_7.rst
