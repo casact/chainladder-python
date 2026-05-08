@@ -17,7 +17,7 @@ We will load the underlying dataset for Exhibit I
 
 .. ipython::
     tri = cl.load_sample('friendland_us_industry_auto')
-    print(tr)
+    print(tri)
 
 We will define a couple of reusable functions for multiple exhibits in this chapter
 
