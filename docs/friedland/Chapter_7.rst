@@ -63,3 +63,5 @@ Here is the exhibit from page 106.
     In [3]: cl.Development(n_periods=3, average='volume').fit_transform(tri['Reported Claims']).ldf_.round(decimals = 3) 
     Out[3]: 12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0
+
+Next, we'll move on to Exhibit II. 
