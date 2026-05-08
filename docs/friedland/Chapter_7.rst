@@ -20,6 +20,7 @@ We will load the underlying dataset for Exhibit I
     print(tri)
 
 Here is the exhibit from page 106. 
+
 .. ipython::
     :doctest:
 
