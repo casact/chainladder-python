@@ -42,10 +42,12 @@ Release Date: May 8, 2026
 * Rtd branch fix by @henrydingliu in [#741](https://github.com/casact/chainladder-python/pull/741)
 * fix(tests): use assert in test_n_periods so failures actually fail by @SaguaroDev in [#744](https://github.com/casact/chainladder-python/pull/744)
 * Build(deps): Bump mistune from 3.1.4 to 3.2.1 by @dependabot[bot] in [#748](https://github.com/casact/chainladder-python/pull/748)
+* Update pyproject.toml - Add numpy ([#738](https://github.com/casact/chainladder-python/issues/738)) by @wendy-w2029 in [#750](https://github.com/casact/chainladder-python/pull/750)
 
 **New Contributors**
 * @priyam0k made their first contribution in [#722](https://github.com/casact/chainladder-python/pull/722)
 * @SaguaroDev made their first contribution in [#744](https://github.com/casact/chainladder-python/pull/744)
+* @wendy-w2029 made their first contribution in [#750](https://github.com/casact/chainladder-python/pull/750)
 
 **Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.9.1...v0.9.2
 
