@@ -9,6 +9,8 @@ This chapter dives deeper into understanding the triangle. We will demonstrate h
     >>> import numpy as np
     >>> import pandas as pd
     >>> import chainladder as cl
+    >>> pd.set_option('display.max_columns', None)
+    >>> pd.set_option('display.width', 1000)
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
 
 Table 1 - Summary of Earned Premium and Rate Changes
@@ -77,7 +79,14 @@ To divide losses by premium, we need to turn premium from a ``Series`` into a ``
 .. doctest::
 
     >>> tri['Reported Claims'] * 0 + df["Earned Premiums"]
-
+               12       24       36        48        60       72       84
+    2002  61183.0  69175.0  99322.0  138151.0  107578.0  62438.0  47797.0
+    2003  61183.0  69175.0  99322.0  138151.0  107578.0  62438.0      NaN
+    2004  61183.0  69175.0  99322.0  138151.0  107578.0      NaN      NaN
+    2005  61183.0  69175.0  99322.0  138151.0       NaN      NaN      NaN
+    2006  61183.0  69175.0  99322.0       NaN       NaN      NaN      NaN
+    2007  61183.0  69175.0      NaN       NaN       NaN      NaN      NaN
+    2008  61183.0      NaN      NaN       NaN       NaN      NaN      NaN
 
 That didn't quite work. We want each accident year to have the same premium. The reason why this is happening is that development period is the last dimension (i.e. down a row in a triangle), and origin period (accident year) is the second-last dimension (i.e. rows down a column). Any 1-D collection is automatically assumed to be values down a row, rather than rows down a column (a little unintuitive, as a ``pandas.DataFrame`` is displayed vertically.). So we need a little help in ``numpy`` land to rectify the problem.
 
@@ -97,3 +106,11 @@ Now we can divide seamlessly into our loss triangles
 .. doctest::
 
     >>> (tri['Reported Claims'] / prem_tri).round(decimals=3)
+             12     24     36     48     60     72     84
+    2002  0.209  0.333  0.436  0.616  0.726  0.796  0.787
+    2003  0.140  0.246  0.439  0.587  0.639  0.641    NaN
+    2004  0.171  0.405  0.593  0.722  0.708    NaN    NaN
+    2005  0.208  0.343  0.509  0.511    NaN    NaN    NaN
+    2006  0.252  0.435  0.454    NaN    NaN    NaN    NaN
+    2007  0.312  0.508    NaN    NaN    NaN    NaN    NaN
+    2008  0.390    NaN    NaN    NaN    NaN    NaN    NaN
