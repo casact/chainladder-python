@@ -123,7 +123,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
 .. doctest::
 
     # Prior Selected
-    >>> prior_method =  cl.DevelopmentConstant(
+    >>> reported_pprior_method =  cl.DevelopmentConstant(
     ...      patterns = {
     ...         12:1.16, 
     ...         24:1.057, 
@@ -137,8 +137,8 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
     ...     }, 
     ...     style='ldf'
     ... )
-    >>> prior_ft = prior_method.fit_transform(tri['Reported Claims'])
-    >>> tail_method = cl.TailConstant(
+    >>> reported_pprior_ft = prior_method.fit_transform(tri['Reported Claims'])
+    >>> reported_ptail_method = cl.TailConstant(
     ...     tail = 1,
     ...     attachment_age = 120,
     ...     projection_period = 0
@@ -150,7 +150,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
 
     # Selected
     >>> reported_selected_pattern = tail_method.fit_transform(reported_simple_3)
-    >>> selected_pattern.ldf_.round(decimals=3)
+    >>> reported_selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
 
@@ -161,7 +161,8 @@ The Development class has a ``cdf_`` property that will automatically multiples 
     # CDF to Ultimate
     >>> reported_selected_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
     >>> reported_selected_cdf
-    too lazy to type
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+    (All)   1.292    1.11   1.051   1.023   1.011   1.006   1.003   1.001      1.0      1.0
 
 The triangle manipulation that we used in Chapter 5 can also be used on development patterns. 
 
@@ -280,12 +281,12 @@ PART 4 - Selected Age-to-Age Factors
     ...     style='ldf'
     ... )
     >>> paid_prior_ft = paid_prior_method.fit_transform(tri['Paid Claims'])
-    >>> tail_method = cl.TailConstant(
+    >>> paid_tail_method = cl.TailConstant(
     ...     tail = 1.002,
     ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
-    >>> paid_prior_selected = tail_method.fit_transform(paid_prior_ft)
+    >>> paid_prior_selected = paid_tail_method.fit_transform(paid_prior_ft)
     >>> paid_prior_selected.ldf_
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.707  1.189  1.091  1.044  1.019   1.01  1.005   1.003    1.001    1.002
@@ -319,7 +320,7 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     >>> exhibit['Age'] = age
     >>> exhibit = exhibit[['Age','Reported Claims']] # reordering the columns
     >>> exhibit ['Paid Claims'] = paid_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0) # adding in paid losses
-    >>> reported_cdf = reported_reported_pattern.cdf_.T # transposing the CDF
+    >>> reported_cdf = reported_selected_pattern.cdf_.T # transposing the CDF
     >>> reported_cdf.index = exhibit.index[::-1] # forcing the index to match
     >>> exhibit["Reported CDF"] = reported_cdf 
     >>> paid_cdf = paid_selected_pattern.cdf_.T
@@ -328,7 +329,17 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0)
     >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0)
     >>> exhibit
-    too lazy to type
+          Age  Reported Claims  Reported Ultimate
+    1998  120       47742304.0       4.774230e+07
+    1999  108       51185767.0       5.120467e+07
+    2000   96       54837929.0       5.489024e+07
+    2001   84       56299562.0       5.644257e+07
+    2002   72       58592712.0       5.890327e+07
+    2003   60       57565344.0       5.813573e+07
+    2004   48       56976657.0       5.820476e+07
+    2005   36       56786410.0       5.959697e+07
+    2006   24       54641339.0       6.055018e+07
+    2007   12       48853563.0       6.301997e+07
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
 
@@ -336,16 +347,43 @@ Unfortunately this does not match the table from the text, due to rounding. We w
 
     >>> rounded_exhibit = pd.DataFrame() # initializing a DataFrame
     >>> rounded_exhibit['Age'] = exhibit['Age']
-    >>> rounded_exhibit['Reported Claims'] = exhibit['Reported Claims'].round(decimals=0)
-    >>> rounded_exhibit['Paid Claims'] = exhibit['Paid Claims'].round(decimals=0)
+    >>> rounded_exhibit['Reported Claims'] = exhibit['Reported Claims']
+    >>> rounded_exhibit['Paid Claims'] = exhibit['Paid Claims']
     >>> rounded_reported_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
     >>> rounded_reported_cdf.index = rounded_exhibit.index[::-1]
     >>> rounded_exhibit["Reported CDF"] = rounded_reported_cdf
     >>> rounded_paid_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
     >>> rounded_paid_cdf.index = rounded_exhibit.index[::-1]
     >>> rounded_exhibit["Paid CDF"] = rounded_paid_cdf
-    >>> rounded_exhibit["Reported Ultimate"] = rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"]
-    >>> rounded_exhibit["Paid Ultimate"] = rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"]
+    >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
+    >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
+    >>> df.style.format({'Reported Claims': '{:.0f}','Paid Claims': '{:.0f}','Reported Ultimate': '{:.0f}','Paid Ultimate': '{:.0f}'})
     >>> rounded_exhibit
-    too lazy to type
+          Age  Reported Claims  Reported CDF  Reported Ultimate
+    1998  120       47742304.0         1.000       4.774230e+07
+    1999  108       51185767.0         1.000       5.118577e+07
+    2000   96       54837929.0         1.001       5.489277e+07
+    2001   84       56299562.0         1.003       5.646846e+07
+    2002   72       58592712.0         1.006       5.894427e+07
+    2003   60       57565344.0         1.011       5.819856e+07
+    2004   48       56976657.0         1.023       5.828712e+07
+    2005   36       56786410.0         1.051       5.968252e+07
+    2006   24       54641339.0         1.110       6.065189e+07
+    2007   12       48853563.0         1.292       6.311880e+07
 
+Exhibit I Sheet 4 p109
+========================
+
+This is another common report layout for reserving analyses. The manipulation here are more straight-forward.  
+
+.. doctest::
+
+    >>> unpaid_exhibit = rounded_exhibit[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
+    >>> unpaid_exhibit['Case Outstanding'] = unpaid_exhibit['Reported Claims'] - unpaid_exhibit['Paid Claims']
+    >>> unpaid_exhibit['Reported IBNR'] = unpaid_exhibit['Reported Ultimate'] - unpaid_exhibit['Reported Claims']
+    >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Reported Claims']
+    >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
+    >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
+    >>> pd.options.display.float_format = '{:.0f}'.format
+    >>> unpaid_exhibit
+    too lazy to type
