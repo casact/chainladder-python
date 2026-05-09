@@ -123,37 +123,34 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
 .. doctest::
 
     # Prior Selected
-    >>>  prior_selected = cl.TailConstant(
+    >>>  prior_method =  cl.DevelopmentConstant(
+    ...      patterns = {
+    ...         12:1.16, 
+    ...         24:1.057, 
+    ...         36:1.028, 
+    ...         48:1.012, 
+    ...         60:1.005, 
+    ...         72:1.003, 
+    ...         84:1.001, 
+    ...         96:1.001, 
+    ...         108:1.000
+    ...     }, 
+    ...     style='ldf'
+    ... )
+    >>> prior_ft = prior_method.fit_transform(tri['Reported Claims'])
+    >>> tail_method = cl.TailConstant(
     ...     tail = 1,
     ...     attachment_age = 120,
     ...     projection_period = 0
-    ... ).fit_transform(
-    ...     cl.DevelopmentConstant(
-    ...         patterns = {
-    ...             12:1.16, 
-    ...             24:1.057, 
-    ...             36:1.028, 
-    ...             48:1.012, 
-    ...             60:1.005, 
-    ...             72:1.003, 
-    ...             84:1.001, 
-    ...             96:1.001, 
-    ...             108:1.000
-    ...         }, 
-    ...         style='ldf'
-    ...     ).fit_transform(tri['Reported Claims'])
     ... )
+    >>> prior_selected = tail_method.fit_transform(prior_ft)
     >>> prior_selected.ldf_
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)   1.16  1.057  1.028  1.012  1.005  1.003  1.001   1.001      1.0      1.0
 
     # Selected
-    >>> selected_pattern = cl.TailConstant(
-    ...     tail = 1,
-    ...     attachment_age = 120,
-    ...     projection_period = 0
-    ... ).fit_transform(simple_3)
-    >>> selected_pattern = .ldf_.round(decimals=3)
+    >>> selected_pattern = tail_method.fit_transform(simple_3)
+    >>> selected_pattern = selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
 
@@ -170,5 +167,5 @@ The triangle manipulation that we used in Chapter 5 can also be used on developm
 .. doctest::
 
     # Percent Reported
-    >>> (1 / selecte_cdf).round(decimals = 3)
+    >>> (1 / selected_cdf).round(decimals = 3)
     too lazy to type again
