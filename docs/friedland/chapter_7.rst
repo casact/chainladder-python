@@ -341,17 +341,17 @@ This is a common report layout for reserving analyses. Some ``Pandas`` manipulat
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
     >>> exhibit
-          Age  Reported Claims  Paid Claims
-    1998  120       47742304.0   47644187.0
-    1999  108       51185767.0   51000534.0
-    2000   96       54837929.0   54533225.0
-    2001   84       56299562.0   55878421.0
-    2002   72       58592712.0   57807215.0
-    2003   60       57565344.0   55930654.0
-    2004   48       56976657.0   53774672.0
-    2005   36       56786410.0   50644994.0
-    2006   24       54641339.0   43606497.0
-    2007   12       48853563.0   27229969.0
+          Age  Reported Claims  Paid Claims  Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
+    1998  120       47742304.0   47644187.0      1.000000  1.002000       4.774230e+07   4.773948e+07
+    1999  108       51185767.0   51000534.0      1.000369  1.003870       5.120467e+07   5.119788e+07
+    2000   96       54837929.0   54533225.0      1.000954  1.006219       5.489024e+07   5.487237e+07
+    2001   84       56299562.0   55878421.0      1.002540  1.011036       5.644257e+07   5.649507e+07
+    2002   72       58592712.0   57807215.0      1.005300  1.020604       5.890327e+07   5.899830e+07
+    2003   60       57565344.0   55930654.0      1.009908  1.039752       5.813573e+07   5.815399e+07
+    2004   48       56976657.0   53774672.0      1.021554  1.085341       5.820476e+07   5.836386e+07
+    2005   36       56786410.0   50644994.0      1.049493  1.184218       5.959697e+07   5.997474e+07
+    2006   24       54641339.0   43606497.0      1.108139  1.404485       6.055018e+07   6.124466e+07
+    2007   12       48853563.0   27229969.0      1.289977  2.390688       6.301997e+07   6.509837e+07
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to reconcile to the text. 
 
@@ -405,17 +405,17 @@ This is another common report layout for reserving analyses. The manipulation he
     ...     return output
     >>> unpaid_exhibit = unpaid_summary(rounded_exhibit)
     >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
-          Case Outstanding  Reported Method IBNR  Paid Method IBNR
-    1998           98117.0                   0.0           -2829.0
-    1999          185233.0                   0.0           18769.0
-    2000          304704.0               54838.0           22495.0
-    2001          421141.0              168899.0          193522.0
-    2002          785497.0              351556.0          370647.0
-    2003         1634690.0              633219.0          602536.0
-    2004         3201985.0             1310463.0         1368862.0
-    2005         6141416.0             2896107.0         3177263.0
-    2006        11034842.0             6010547.0         6582183.0
-    2007        21623594.0            14265240.0        16226063.0
+          Case Outstanding  Reported Method IBNR  Paid Method IBNR  Reported Method Unpaid  Paid Method Unpaid
+    1998           98117.0                   0.0           -2829.0                 98117.0             95288.0
+    1999          185233.0                   0.0           18769.0                185233.0            204002.0
+    2000          304704.0               54838.0           22495.0                359542.0            327199.0
+    2001          421141.0              168899.0          193522.0                590040.0            614663.0
+    2002          785497.0              351556.0          370647.0               1137053.0           1156144.0
+    2003         1634690.0              633219.0          602536.0               2267909.0           2237226.0
+    2004         3201985.0             1310463.0         1368862.0               4512448.0           4570847.0
+    2005         6141416.0             2896107.0         3177263.0               9037523.0           9318679.0
+    2006        11034842.0             6010547.0         6582183.0              17045389.0          17617025.0
+    2007        21623594.0            14265240.0        16226063.0              35888834.0          37849657.0
 
 Exhibit II Sheet 1 p110
 ################################
@@ -439,10 +439,10 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
     ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
     ...     selected = {}
-    ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
-    ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
+    ...     selected['CDF to Ultimate'] = devs["selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
     ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
     ...     print('PART 4 - Selected Age-to-Age Factor')
+    ...     print(devs["selected"].ldf_.round(decimals=3))
     ...     print_ldfs(selected)
     ...     return devs
     >>> import re
@@ -578,18 +578,18 @@ Exhibit II Sheet 3 p112
 
     >>> exhibit = rounded_development_summary(reported_devs["selected"],paid_devs["selected"])
     >>> exhibit
-          Age  Reported Claims  Paid Claims
-    1998  132          15822.0      15822.0
-    1999  120          25107.0      24817.0
-    2000  108          37246.0      36782.0
-    2001   96          38798.0      38519.0
-    2002   84          48169.0      44437.0
-    2003   72          44373.0      39320.0
-    2004   60          70288.0      52811.0
-    2005   48          70655.0      40026.0
-    2006   36          48804.0      22819.0
-    2007   24          31732.0      11865.0
-    2008   12          18632.0       3409.0
+          Age  Reported Claims  Paid Claims  Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
+    1998  132          15822.0      15822.0         1.000     1.010            15822.0        15980.0
+    1999  120          25107.0      24817.0         0.999     1.014            25082.0        25164.0
+    2000  108          37246.0      36782.0         0.992     1.031            36948.0        37922.0
+    2001   96          38798.0      38519.0         0.992     1.054            38488.0        40599.0
+    2002   84          48169.0      44437.0         1.003     1.116            48314.0        49592.0
+    2003   72          44373.0      39320.0         1.013     1.268            44950.0        49858.0
+    2004   60          70288.0      52811.0         1.064     1.525            74786.0        80537.0
+    2005   48          70655.0      40026.0         1.085     2.007            76661.0        80332.0
+    2006   36          48804.0      22819.0         1.196     3.160            58370.0        72108.0
+    2007   24          31732.0      11865.0         1.512     6.569            47979.0        77941.0
+    2008   12          18632.0       3409.0         2.551    21.999            47530.0        74995.0
 
 Exhibit II Sheet 4 p113
 ##########################
@@ -598,18 +598,18 @@ Exhibit II Sheet 4 p113
 
     >>> unpaid_exhibit = unpaid_summary(exhibit)
     >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
-          Case Outstanding  Reported Method IBNR  Paid Method IBNR
-    1998               0.0                   0.0             158.0
-    1999             290.0                 -25.0              57.0
-    2000             464.0                -298.0             676.0
-    2001             279.0                -310.0            1801.0
-    2002            3732.0                 145.0            1423.0
-    2003            5053.0                 577.0            5485.0
-    2004           17477.0                4498.0           10249.0
-    2005           30629.0                6006.0            9677.0
-    2006           25985.0                9566.0           23304.0
-    2007           19867.0               16247.0           46209.0
-    2008           15223.0               28898.0           56363.0
+          Case Outstanding  Reported Method IBNR  Paid Method IBNR          Case Outstanding  Reported Method IBNR  Paid Method IBNR  Reported Method Unpaid  Paid Method Unpaid
+    1998               0.0                   0.0             158.0                     0.0               158.0
+    1999             290.0                 -25.0              57.0                   265.0               347.0
+    2000             464.0                -298.0             676.0                   166.0              1140.0
+    2001             279.0                -310.0            1801.0                   -31.0              2080.0
+    2002            3732.0                 145.0            1423.0                  3877.0              5155.0
+    2003            5053.0                 577.0            5485.0                  5630.0             10538.0
+    2004           17477.0                4498.0           10249.0                 21975.0             27726.0
+    2005           30629.0                6006.0            9677.0                 36635.0             40306.0
+    2006           25985.0                9566.0           23304.0                 35551.0             49289.0
+    2007           19867.0               16247.0           46209.0                 36114.0             66076.0
+    2008           15223.0               28898.0           56363.0                 44121.0             71586.0
 
 Exhibit III Sheet 1 p114
 ##########################
