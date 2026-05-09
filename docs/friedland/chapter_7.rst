@@ -13,6 +13,8 @@ This chapter covers the foundational development/chainladder method. In the chai
     >>> import numpy as np
     >>> import pandas as pd
     >>> import chainladder as cl
+    >>> pd.set_option('display.max_columns', None)
+    >>> pd.set_option('display.width', 1000)
 
 Exhibit I Sheet 1 p106
 ##########################
@@ -338,8 +340,7 @@ This is a common report layout for reserving analyses. Some ``Pandas`` manipulat
     ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
-    >>> with pd.option_context('display.width', 1000):
-    ...     print(exhibit)
+    >>> exhibit
           Age  Reported Claims  Paid Claims
     1998  120       47742304.0   47644187.0
     1999  108       51185767.0   51000534.0
@@ -403,8 +404,7 @@ This is another common report layout for reserving analyses. The manipulation he
     ...     output['Paid Method Unpaid'] = output['Paid Method IBNR'] + output['Case Outstanding']
     ...     return output
     >>> unpaid_exhibit = unpaid_summary(rounded_exhibit)
-    >>> with pd.option_context('display.width', 1000):
-    ...     print(unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']])
+    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
           Case Outstanding  Reported Method IBNR  Paid Method IBNR
     1998           98117.0                   0.0           -2829.0
     1999          185233.0                   0.0           18769.0
@@ -436,15 +436,14 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     def print_ldfs(ldf_dict:dict[cl.Triangle()]):
     ...         print(pd.concat([v.to_frame().rename(index={'(All)':k}) for k,v in ldf_dict.items()]))
     ...         return None
+    ...     print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
     ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
     ...     selected = {}
     ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
     ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
     ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
-    ...     with pd.option_context('display.width', 1000):
-    ...         print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
-    ...         print('PART 4 - Selected Age-to-Age Factor')
-    ...         print_ldfs(selected)
+    ...     print('PART 4 - Selected Age-to-Age Factor')
+    ...     print_ldfs(selected)
     ...     return devs
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
@@ -578,8 +577,7 @@ Exhibit II Sheet 3 p112
 .. doctest::
 
     >>> exhibit = rounded_development_summary(reported_devs["selected"],paid_devs["selected"])
-    >>> with pd.option_context('display.width', 1000):
-    ...     print(exhibit)
+    >>> exhibit
           Age  Reported Claims  Paid Claims
     1998  132          15822.0      15822.0
     1999  120          25107.0      24817.0
@@ -599,8 +597,7 @@ Exhibit II Sheet 4 p113
 .. doctest::
 
     >>> unpaid_exhibit = unpaid_summary(exhibit)
-    >>> with pd.option_context('display.width', 1000):
-    ...     print(unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']])
+    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
           Case Outstanding  Reported Method IBNR  Paid Method IBNR
     1998               0.0                   0.0             158.0
     1999             290.0                 -25.0              57.0
