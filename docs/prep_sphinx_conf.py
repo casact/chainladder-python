@@ -10,6 +10,7 @@ CONF = Path(__file__).resolve().parent / "conf.py"
 MARKER = "_DOCS_EXT_DIR = Path(__file__).resolve().parent / '_ext'"
 
 BLOCK = """import sys
+import os
 from pathlib import Path
 _DOCS_EXT_DIR = Path(__file__).resolve().parent / '_ext'
 _p = str(_DOCS_EXT_DIR)
