@@ -6,11 +6,11 @@ Chapter 7
 -------------
 We will begin by importing the necessary packages
 
-.. ipython:: python
+.. doctest::
 
-    import numpy as np
-    import pandas as pd
-    import chainladder as cl
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> import chainladder as cl
 
 We will load the underlying dataset for Exhibit I
 
