@@ -11,4 +11,10 @@ We will begin by importing the necessary packages
     >>> 1 + 1
     3
 
+Some text
+
+.. doctest::
+
+    >>> 1 + 1
+
 Let's see what happens.
