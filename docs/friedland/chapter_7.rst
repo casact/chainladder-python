@@ -417,7 +417,7 @@ This is another common report layout for reserving analyses. The manipulation he
     2006        11034842.0             6010547.0         6582183.0
     2007        21623594.0            14265240.0        16226063.0
 
-Exhibit II Sheets 1 pp110
+Exhibit II Sheet 1 p110
 ################################
 
 Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the entire exhibit into single function. 
