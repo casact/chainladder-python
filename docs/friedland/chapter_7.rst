@@ -161,8 +161,8 @@ The Development estimator has a ``cdf_`` attribute that will automatically multi
     # CDF to Ultimate
     # First without rounding
     >>> reported_selected_pattern.cdf_
-           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
-    (All)   1.292    1.11   1.051   1.023   1.011   1.006   1.003   1.001      1.0      1.0
+             12-Ult    24-Ult    36-Ult    48-Ult    60-Ult  72-Ult   84-Ult    96-Ult   108-Ult  120-Ult
+    (All)  1.289977  1.108139  1.049493  1.021554  1.009908  1.0053  1.00254  1.000954  1.000369      1.0
 
     # Then with rounding
     >>> reported_selected_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
@@ -407,7 +407,7 @@ This is another common report layout for reserving analyses. The manipulation he
 .. doctest::
 
     >>> def unpaid_summary(dev_sum: pd.DataFrame()) -> pd.DataFrame():
-    ...     output = dev_sum[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
+    ...     output = dev_sum.loc[:,['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
     ...     output['Case Outstanding'] = output['Reported Claims'] - output['Paid Claims']
     ...     output['Reported Method IBNR'] = output['Reported Ultimate'] - output['Reported Claims']
     ...     output['Paid Method IBNR'] = output['Paid Ultimate'] - output['Reported Claims']
@@ -525,8 +525,8 @@ Now that we have walked through an analysis step by step, let's introduce some s
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132  132-144
     (All)  1.687  1.265  1.102   1.02   1.05   1.01  1.011     1.0    0.993    0.999      1.0
     CDF to Ultimate
-             12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult  120-Ult  132-Ult
-    (All)  2.551314  1.512338  1.195524  1.084868  1.063596  1.012948  1.002919  0.992007  0.992007    0.999      1.0
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
+    (All)   2.551   1.512   1.196   1.085   1.064   1.013   1.003   0.992    0.992    0.999      1.0
     Percent Reported
            12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
     (All)   0.392   0.661   0.836   0.922    0.94   0.987   0.997   1.008    1.008    1.001      1.0
@@ -536,7 +536,7 @@ Exhibit II Sheet 3 p112
 
 .. doctest::
 
-    >>> paid_devs = dev_exhibit(tri['Paid Claims'],assumptions,'volume_2',1.001)
+    >>> paid_devs = dev_exhibit(tri['Paid Claims'],assumptions,'volume_2',1.01)
     PART 1 - Data Triangle
              12       24       36       48       60       72       84       96       108      120      132
     1998     NaN      NaN   6309.0   8521.0  10082.0  11620.0  13242.0  14419.0  15311.0  15764.0  15822.0
@@ -588,8 +588,8 @@ Exhibit II Sheet 3 p112
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132  132-144
     (All)  3.349  2.079  1.574  1.316  1.203  1.136  1.059   1.022    1.017    1.004     1.01
     CDF to Ultimate
-              12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult  120-Ult  132-Ult
-    (All)  21.998705  6.568738  3.159566  2.007348  1.525341  1.267947  1.116151  1.053967  1.031279  1.01404     1.01
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
+    (All)  21.803    6.51   3.131   1.989   1.512   1.257   1.106   1.045    1.022    1.005    1.001
     Percent Reported
            12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
     (All)   0.045   0.152   0.316   0.498   0.656   0.789   0.896   0.949     0.97    0.986     0.99
