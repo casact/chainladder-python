@@ -437,12 +437,12 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...         print(pd.concat([v.to_frame().rename(index={'(All)':k}) for k,v in ldf_dict.items()]))
     ...         return None
     ...     print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
-    ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
+    ...     devs["Selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
     ...     selected = {}
-    ...     selected['CDF to Ultimate'] = devs["selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
+    ...     selected['CDF to Ultimate'] = devs["Selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
     ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
     ...     print('PART 4 - Selected Age-to-Age Factor')
-    ...     print(devs["selected"].ldf_.round(decimals=3))
+    ...     print_ldfs({'Selected':devs['Selected'].ldf_.round(decimals=3)})
     ...     print_ldfs(selected)
     ...     return devs
     >>> import re
@@ -598,7 +598,7 @@ Exhibit II Sheet 4 p113
 
     >>> unpaid_exhibit = unpaid_summary(exhibit)
     >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
-          Case Outstanding  Reported Method IBNR  Paid Method IBNR          Case Outstanding  Reported Method IBNR  Paid Method IBNR  Reported Method Unpaid  Paid Method Unpaid
+          Case Outstanding  Reported Method IBNR  Paid Method IBNR  Reported Method Unpaid  Paid Method Unpaid
     1998               0.0                   0.0             158.0                     0.0               158.0
     1999             290.0                 -25.0              57.0                   265.0               347.0
     2000             464.0                -298.0             676.0                   166.0              1140.0
