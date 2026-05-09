@@ -34,6 +34,7 @@ dependencies = [
     "scikit-learn>1.4.2",
     "numba>0.54",
     "sparse>=0.9",
+    "numpy",
     "matplotlib",
     "dill",
     "patsy",
