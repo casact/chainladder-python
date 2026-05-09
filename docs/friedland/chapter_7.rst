@@ -338,7 +338,7 @@ This is a common report layout for reserving analyses. Some ``Pandas`` manipulat
     ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
-    >>> with pd.option_context('display.max_columns', None):
+    >>> with pd.option_context('display.width', 1000):
     ...     print(exhibit)
           Age  Reported Claims  Paid Claims
     1998  120       47742304.0   47644187.0
@@ -403,7 +403,7 @@ This is another common report layout for reserving analyses. The manipulation he
     ...     output['Paid Method Unpaid'] = output['Paid Method IBNR'] + output['Case Outstanding']
     ...     return output
     >>> unpaid_exhibit = unpaid_summary(rounded_exhibit)
-    >>> with pd.option_context('display.max_columns', None):
+    >>> with pd.option_context('display.width', 1000):
     ...     print(unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']])
           Case Outstanding  Reported Method IBNR  Paid Method IBNR
     1998           98117.0                   0.0           -2829.0
@@ -441,7 +441,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
     ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
     ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
-    ...     with pd.option_context('display.max_columns', None):
+    ...     with pd.option_context('display.width', 1000):
     ...         print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
     ...         print('PART 4 - Selected Age-to-Age Factor')
     ...         print_ldfs(selected)
@@ -578,7 +578,7 @@ Exhibit II Sheet 3 p112
 .. doctest::
 
     >>> exhibit = rounded_development_summary(reported_devs["selected"],paid_devs["selected"])
-    >>> with pd.option_context('display.max_columns', None):
+    >>> with pd.option_context('display.width', 1000):
     ...     print(exhibit)
           Age  Reported Claims  Paid Claims
     1998  132          15822.0      15822.0
@@ -599,7 +599,7 @@ Exhibit II Sheet 4 p113
 .. doctest::
 
     >>> unpaid_exhibit = unpaid_summary(exhibit)
-    >>> with pd.option_context('display.max_columns', None):
+    >>> with pd.option_context('display.width', 1000):
     ...     print(unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']])
           Case Outstanding  Reported Method IBNR  Paid Method IBNR
     1998               0.0                   0.0             158.0
