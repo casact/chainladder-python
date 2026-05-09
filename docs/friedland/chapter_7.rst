@@ -123,7 +123,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
 .. doctest::
 
     # Prior Selected
-    >>> reported_pprior_method =  cl.DevelopmentConstant(
+    >>> reported_prior_method =  cl.DevelopmentConstant(
     ...      patterns = {
     ...         12:1.16, 
     ...         24:1.057, 
@@ -137,19 +137,19 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
     ...     }, 
     ...     style='ldf'
     ... )
-    >>> reported_pprior_ft = prior_method.fit_transform(tri['Reported Claims'])
-    >>> reported_ptail_method = cl.TailConstant(
+    >>> reported_prior_ft = prior_method.fit_transform(tri['Reported Claims'])
+    >>> reported_tail_method = cl.TailConstant(
     ...     tail = 1,
     ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
-    >>> reported_prior_selected = tail_method.fit_transform(prior_ft)
-    >>> prior_selected.ldf_
+    >>> reported_prior_selected = reported_tail_method.fit_transform(prior_ft)
+    >>> reported_prior_selected.ldf_
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)   1.16  1.057  1.028  1.012  1.005  1.003  1.001   1.001      1.0      1.0
 
     # Selected
-    >>> reported_selected_pattern = tail_method.fit_transform(reported_simple_3)
+    >>> reported_selected_pattern = reported_tail_method.fit_transform(reported_simple_3)
     >>> reported_selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
@@ -295,7 +295,7 @@ PART 4 - Selected Age-to-Age Factors
     >>> paid_selected_pattern = paid_tail_method.fit_transform(paid_simple_3)
     >>> paid_selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
+    (All)  1.702  1.186  1.091  1.044  1.019  1.009  1.005   1.002    1.002    1.002
 
     # CDF to Ultimate
     >>> paid_selected_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
@@ -304,7 +304,7 @@ PART 4 - Selected Age-to-Age Factors
     # Percent Reported
     >>> (1 / paid_selected_cdf).round(decimals = 3)
            12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
-    (All)   0.774   0.901   0.951   0.978   0.989   0.994   0.997   0.999      1.0      1.0
+    (All)   0.418   0.712   0.845   0.922   0.962    0.98   0.989   0.994    0.996    0.998
 
 Exhibit I Sheet 3 p108
 ========================
@@ -314,20 +314,20 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
 .. doctest::
 
     >>> exhibit = pd.DataFrame() # initializing a DataFrame
-    >>> exhibit["Reported Claims"] = reported_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0) # using a vector of losses to anchor the exhibit index
+    >>> exhibit["Reported Claims"] = reported_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False) # using a vector of losses to anchor the exhibit index
     >>> age = reported_selected_pattern.development.iloc[::-1] # flipping the age order
     >>> age.index = exhibit.index # forcing the index to match
     >>> exhibit['Age'] = age
     >>> exhibit = exhibit[['Age','Reported Claims']] # reordering the columns
-    >>> exhibit ['Paid Claims'] = paid_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0) # adding in paid losses
+    >>> exhibit ['Paid Claims'] = paid_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False) # adding in paid losses
     >>> reported_cdf = reported_selected_pattern.cdf_.T # transposing the CDF
     >>> reported_cdf.index = exhibit.index[::-1] # forcing the index to match
     >>> exhibit["Reported CDF"] = reported_cdf 
     >>> paid_cdf = paid_selected_pattern.cdf_.T
     >>> paid_cdf.index = exhibit.index[::-1]
     >>> exhibit["Paid CDF"] = paid_cdf
-    >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0)
-    >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0)
+    >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
+    >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False)
     >>> exhibit
           Age  Reported Claims  Reported Ultimate
     1998  120       47742304.0       4.774230e+07
@@ -357,7 +357,7 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     >>> rounded_exhibit["Paid CDF"] = rounded_paid_cdf
     >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
     >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
-    >>> df.style.format({'Reported Claims': '{:.0f}','Paid Claims': '{:.0f}','Reported Ultimate': '{:.0f}','Paid Ultimate': '{:.0f}'})
+    >>> rounded_exhibit.style.format({'Reported Claims': '{:.0f}','Paid Claims': '{:.0f}','Reported Ultimate': '{:.0f}','Paid Ultimate': '{:.0f}'})
     >>> rounded_exhibit
           Age  Reported Claims  Reported CDF  Reported Ultimate
     1998  120       47742304.0         1.000       4.774230e+07
@@ -384,6 +384,5 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Reported Claims']
     >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
-    >>> pd.options.display.float_format = '{:.0f}'.format
     >>> unpaid_exhibit
     too lazy to type
