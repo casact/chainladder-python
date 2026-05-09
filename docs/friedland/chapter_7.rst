@@ -435,7 +435,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
     >>> assumptions_list = ['simple_5','simple_3','simple_2','volume_4','volume_3','volume_2']
     >>> assumptions = {x:{'n_periods':int(re.match(r'.+_(.+)', x).group(1)),'average':re.match(r'(.+)_', x).group(1)} for x in assumptions_list}
-    >>> assumptions['medial 5x1'] = {'n_periods'=5, 'average'='simple','drop_high' = 1, 'drop_low' = 1}
+    >>> assumptions['medial 5x1'] = {'n_periods':5, 'average':'simple','drop_high':1, 'drop_low':1}
     >>> devs = {}
     >>> tails = {'Reported Claims':1,'Paid Claims':1.01}
     >>> selections = {'Reported Claims':'volume_2','Paid Claims':'volume_2'}
@@ -447,8 +447,8 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...         devs[x][k] = cl.Development(**v).fit_transform(tri[x])
     ...         print(devs[x][k].ldf_.round(decimals=3))
     ...     devs[x]["selected"] = cl.TailConstant(tail = tails[x], attachment_age = 132, projection_period = 0).fit_transform(devs[x][selections[x]])
-    ...     print(devs[x][selected].ldf_.round(decimals=3))
-    ...     sel_cdf = devs[x][selected].ldf_.round(decimals=3).incr_to_cum()
+    ...     print(devs[x]["selected"].ldf_.round(decimals=3))
+    ...     sel_cdf = devs[x]["selected"].ldf_.round(decimals=3).incr_to_cum()
     ...     print(sel_cdf)
     ...     print((1/sel_cdf).round(decimals=3))
     way too lazy to type
