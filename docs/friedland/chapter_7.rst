@@ -404,13 +404,13 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> def unpaid_summary(dev_sum):
     ...     output = dev_sum[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
     ...     output['Case Outstanding'] = output['Reported Claims'] - output['Paid Claims']
-    ...     output['Reported IBNR'] = output['Reported Ultimate'] - output['Reported Claims']
-    ...     output['Paid IBNR'] = output['Paid Ultimate'] - output['Paid Claims']
-    ...     output['Reported Unpaid'] = output['Reported IBNR'] + output['Case Outstanding']
-    ...     output['Paid Unpaid'] = output['Paid IBNR'] + output['Case Outstanding']
+    ...     output['Reported Method IBNR'] = output['Reported Ultimate'] - output['Reported Claims']
+    ...     output['Paid Method IBNR'] = output['Paid Ultimate'] - output['Reported Claims']
+    ...     output['Reported Method Unpaid'] = output['Reported Method IBNR'] + output['Case Outstanding']
+    ...     output['Paid Method Unpaid'] = output['Paid Method IBNR'] + output['Case Outstanding']
     ...     return output
     >>> unpaid_exhibit = unpaid_summary(rounded_exhibit)
-    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']] # only displaying newly calculated columns
+    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR']] # only displaying newly calculated columns
           Case Outstanding  Reported IBNR
     1998           98117.0   0.000000e+00
     1999          185233.0   0.000000e+00
@@ -423,7 +423,7 @@ This is another common report layout for reserving analyses. The manipulation he
     2006        11034842.0   6.010547e+06
     2007        21623594.0   1.426524e+07
 
-    >>> unpaid_exhibit[['Paid IBNR','Reported Unpaid','Paid Unpaid']]
+    >>> unpaid_exhibit[['Reported Method Unpaid','Paid Method Unpaid']]
              Paid IBNR  Reported Unpaid   Paid Unpaid
     1998  9.528837e+04     9.811700e+04  1.934054e+05
     1999  2.040021e+05     1.852330e+05  3.892351e+05
@@ -490,10 +490,10 @@ Exhibit II Sheet 4 p113
 .. doctest::
 
     >>> unpaid_exhibit = unpaid_summary(exhibit)
-    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']]
+    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR']]
     too lazy
 
-    >>> unpaid_exhibit[['Paid IBNR','Reported Unpaid','Paid Unpaid']]
+    >>> unpaid_exhibit[['Reported Method Unpaid','Paid Method Unpaid']]
     too too lazy
 
 Exhibit III Sheet 1 p114
