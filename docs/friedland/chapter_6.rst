@@ -14,7 +14,26 @@ This chapter dives deeper into understanding the triangle. We will demonstrate h
 Table 1 - Summary of Earned Premium and Rate Changes
 #######################################################
 
-WIP
+.. doctest::
+
+    >>> data = [
+    ...     [2002, 61183, None ,0 , None],
+    ...     [2003, 69175, .05, '5.0%', '7.7%'],
+    ...     [2004, 99322, .075, '12.9%', '33.6%'],
+    ...     [2005, 138151, .15, '29.8%', '21.0%'],
+    ...     [2006, 107578, .1, '42.8%', '-29.2%'],
+    ...     [2007, 62438, .2, '14.2%', '-27.5%'],
+    ...     [2008, 47797, .2, '-8.6%', '-4.3%']
+    ... ]
+    >>> columns = [
+    ...     'Calendar Year',
+    ...     'Earned Premiums',
+    ...     'Rate Changes',
+    ...     'Cumulative Average Rate Level',
+    ...     'Annual Exposure Change'
+    ... ]
+    >>> df = pd.DataFrame(data, columns=columns)
+    >>> df
 
 Table 2 - Reported Claim Development Triangle
 ##################################################
@@ -48,3 +67,19 @@ Table 3 - Paid Claim Development Triangle
     2006  3531.0  11778.0  22819.0      NaN      NaN      NaN      NaN
     2007  3529.0  11865.0      NaN      NaN      NaN      NaN      NaN
     2008  3409.0      NaN      NaN      NaN      NaN      NaN      NaN
+
+Table 4 - Ratio of Reported Claims to Earned Premium
+#######################################################
+
+To divide losses by premium, we need to turn premium from a ``Series`` into a ``Triangle``. Here is a nifty trick to do that. 
+
+.. doctest::
+
+    >>> prem_tri = tri['Reported Claims'] * 0 + [[x] for x in df["Earned Premiums"].to_list()] # accident year is the second-order dimension in a Triangle
+    >>> prem_tri
+
+Now we can divide seamlessly into our loss triangles
+
+.. doctest::
+
+    >>> tri['Reported Claims'] / prem_tri
