@@ -17,8 +17,8 @@ This chapter covers the foundational development/chainladder method. In the chai
     >>> import pandas as pd
     >>> import chainladder as cl
 
-p106
-==================
+Exhibit I Sheet 1 p106
+========================
 
 Diving straight into Exhibit 1. We will begin by importing packages and loading the triangle at the top of p106.
 
@@ -69,34 +69,34 @@ PART 3 - Average Age-to-Age Factors
 
     # Simple Average
     # Latest 5
-    >>> simple_5 = cl.Development(n_periods=5, average='simple').fit_transform(tri['Reported Claims'])
-    >>> simple_5.ldf_.round(decimals = 3) 
+    >>> reported_simple_5 = cl.Development(n_periods=5, average='simple').fit_transform(tri['Reported Claims'])
+    >>> reported_simple_5.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.168  1.058  1.027  1.011  1.004  1.003  1.002   1.001      1.0
 
     # Latest 3
-    >>> simple_3 = cl.Development(n_periods=3, average='simple').fit_transform(tri['Reported Claims'])
-    >>> simple_3.ldf_.round(decimals = 3) 
+    >>> reported_simple_3 = cl.Development(n_periods=3, average='simple').fit_transform(tri['Reported Claims'])
+    >>> reported_simple_3.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0
 
     # Medial Average
     # Latest 5x1
-    >>> medial_5x1 = cl.Development(n_periods=5, average='simple',drop_high = 1, drop_low = 1).fit_transform(tri['Reported Claims'])
-    >>> medial_5x1.ldf_.round(decimals = 3) 
+    >>> reported_medial_5x1 = cl.Development(n_periods=5, average='simple',drop_high = 1, drop_low = 1).fit_transform(tri['Reported Claims'])
+    >>> reported_medial_5x1.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.165  1.057  1.027   1.01  1.004  1.003  1.002   1.001      1.0
 
     # Volume-weighted Average
     # Latest 5
-    >>> volume_5 = cl.Development(n_periods=5, average='volume').fit_transform(tri['Reported Claims'])
-    >>> volume_5.ldf_.round(decimals = 3) 
+    >>> reported_volume_5 = cl.Development(n_periods=5, average='volume').fit_transform(tri['Reported Claims'])
+    >>> reported_volume_5.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.168  1.058  1.027  1.011  1.004  1.003  1.002   1.001      1.0
 
     # Latest 3
-    >>> volume_3 = cl.Development(n_periods=3, average='volume').fit_transform(tri['Reported Claims'])
-    >>> volume_3.ldf_.round(decimals = 3) 
+    >>> reported_volume_3 = cl.Development(n_periods=3, average='volume').fit_transform(tri['Reported Claims'])
+    >>> reported_volume_3.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0
 
@@ -106,8 +106,8 @@ We will also fake some geometric averages.
 
     # Geometric Average
     # Latest 4
-    >>> geometric_4 = cl.Development(n_periods=3, average='geometric').fit_transform(tri['Reported Claims'])
-    >>> geometric_4.ldf_.round(decimals = 3) 
+    >>> reported_geometric_4 = cl.Development(n_periods=3, average='geometric').fit_transform(tri['Reported Claims'])
+    >>> reported_geometric_4.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.057  1.027  1.011  1.004  1.003  1.002   1.001      1.0
 
@@ -143,13 +143,13 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
     ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
-    >>> prior_selected = tail_method.fit_transform(prior_ft)
+    >>> reported_prior_selected = tail_method.fit_transform(prior_ft)
     >>> prior_selected.ldf_
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)   1.16  1.057  1.028  1.012  1.005  1.003  1.001   1.001      1.0      1.0
 
     # Selected
-    >>> selected_pattern = tail_method.fit_transform(simple_3)
+    >>> reported_selected_pattern = tail_method.fit_transform(reported_simple_3)
     >>> selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
@@ -159,7 +159,8 @@ The Development class has a ``cdf_`` property that will automatically multiples 
 .. doctest::
 
     # CDF to Ultimate
-    >>> selected_cdf = selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
+    >>> reported_selected_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
+    >>> reported_selected_cdf
     too lazy to type
 
 The triangle manipulation that we used in Chapter 5 can also be used on development patterns. 
@@ -167,11 +168,12 @@ The triangle manipulation that we used in Chapter 5 can also be used on developm
 .. doctest::
 
     # Percent Reported
-    >>> (1 / selected_cdf).round(decimals = 3)
-    too lazy to type again
+    >>> (1 / reported_selected_cdf).round(decimals = 3)
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+    (All)   0.774   0.901   0.951   0.978   0.989   0.994   0.997   0.999      1.0      1.0
 
-p107
-==================
+Exhibit I Sheet 2 p107
+========================
 
 Moving onto the next page, all the calculations are identical to the previous page. In a production workflow, commonly repeated methods and selections can be made into pipelines for repetition. 
 
@@ -181,7 +183,7 @@ PART 1 - Data Triangle
 .. doctest::
 
     >>> tri['Paid Claims'].round(decimals = 0)
-                  12          24          36          48          60          72          84          96         108         120
+                 12          24          36          48          60          72          84          96          108         120
     1998  18539254.0  33231039.0  40062008.0  43892039.0  45896535.0  46765422.0  47221322.0  47446877.0  47555456.0  47644187.0
     1999  20410193.0  36090684.0  43259402.0  47159241.0  49208532.0  50162043.0  50625757.0  50878808.0  51000534.0         NaN
     2000  22120843.0  38976014.0  46389282.0  50562385.0  52735280.0  53740101.0  54284334.0  54533225.0         NaN         NaN
@@ -199,16 +201,16 @@ PART 2 - Age-to-Age Factors
 .. doctest::
     
     >>> tri['Paid Claims'].age_to_age.round(decimals = 3) 
-             12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120
-    1998  1.792469  1.205560  1.095603  1.045669  1.018931  1.009749  1.004777  1.002288  1.001866
-    1999  1.768268  1.198631  1.090150  1.043455  1.019377  1.009244  1.004998  1.002392       NaN
-    2000  1.761959  1.190201  1.089958  1.042975  1.019054  1.010127  1.004585       NaN       NaN
-    2001  1.743900  1.191331  1.090565  1.043566  1.018677  1.009022       NaN       NaN       NaN
-    2002  1.734765  1.194005  1.089153  1.044183  1.018551       NaN       NaN       NaN       NaN
-    2003  1.718935  1.185285  1.091988  1.043790       NaN       NaN       NaN       NaN       NaN
-    2004  1.702514  1.186716  1.092167       NaN       NaN       NaN       NaN       NaN       NaN
-    2005  1.701237  1.186004       NaN       NaN       NaN       NaN       NaN       NaN       NaN
-    2006  1.702795       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+          12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
+    1998  1.792  1.206  1.096  1.046  1.019  1.010  1.005   1.002    1.002
+    1999  1.768  1.199  1.090  1.043  1.019  1.009  1.005   1.002      NaN
+    2000  1.762  1.190  1.090  1.043  1.019  1.010  1.005     NaN      NaN
+    2001  1.744  1.191  1.091  1.044  1.019  1.009    NaN     NaN      NaN
+    2002  1.735  1.194  1.089  1.044  1.019    NaN    NaN     NaN      NaN
+    2003  1.719  1.185  1.092  1.044    NaN    NaN    NaN     NaN      NaN
+    2004  1.703  1.187  1.092    NaN    NaN    NaN    NaN     NaN      NaN
+    2005  1.701  1.186    NaN    NaN    NaN    NaN    NaN     NaN      NaN
+    2006  1.703    NaN    NaN    NaN    NaN    NaN    NaN     NaN      NaN
 
 PART 3 - Average Age-to-Age Factors
 ------------------------------------
@@ -217,45 +219,45 @@ PART 3 - Average Age-to-Age Factors
 
     # Simple Average
     # Latest 5
-    >>> simple_5 = cl.Development(n_periods=5, average='simple').fit_transform(tri['Paid Claims'])
-    >>> simple_5.ldf_.round(decimals = 3) 
+    >>> paid_simple_5 = cl.Development(n_periods=5, average='simple').fit_transform(tri['Paid Claims'])
+    >>> paid_simple_5.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.168  1.058  1.027  1.011  1.004  1.003  1.002   1.001      1.0
+    (All)  1.712  1.189  1.091  1.044  1.019   1.01  1.005   1.002    1.002
 
     # Latest 3
-    >>> simple_3 = cl.Development(n_periods=3, average='simple').fit_transform(tri['Paid Claims'])
-    >>> simple_3.ldf_.round(decimals = 3) 
+    >>> paid_simple_3 = cl.Development(n_periods=3, average='simple').fit_transform(tri['Paid Claims'])
+    >>> paid_simple_3.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0
+    (All)  1.702  1.186  1.091  1.044  1.019  1.009  1.005   1.002    1.002
 
     # Medial Average
     # Latest 5x1
-    >>> medial_5x1 = cl.Development(n_periods=5, average='simple',drop_high = 1, drop_low = 1).fit_transform(tri['Paid Claims'])
-    >>> medial_5x1.ldf_.round(decimals = 3) 
+    >>> paid_medial_5x1 = cl.Development(n_periods=5, average='simple',drop_high = 1, drop_low = 1).fit_transform(tri['Paid Claims'])
+    >>> paid_medial_5x1.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.165  1.057  1.027   1.01  1.004  1.003  1.002   1.001      1.0
+    (All)  1.708  1.188  1.091  1.044  1.019  1.009  1.005   1.002    1.002
 
     # Volume-weighted Average
     # Latest 5
-    >>> volume_5 = cl.Development(n_periods=5, average='volume').fit_transform(tri['Paid Claims'])
-    >>> volume_5.ldf_.round(decimals = 3) 
+    >>> paid_volume_5 = cl.Development(n_periods=5, average='volume').fit_transform(tri['Paid Claims'])
+    >>> paid_volume_5.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.168  1.058  1.027  1.011  1.004  1.003  1.002   1.001      1.0
+    (All)  1.712  1.189  1.091  1.044  1.019   1.01  1.005   1.002    1.002
 
     # Latest 3
-    >>> volume_3 = cl.Development(n_periods=3, average='volume').fit_transform(tri['Paid Claims'])
-    >>> volume_3.ldf_.round(decimals = 3) 
+    >>> paid_volume_3 = cl.Development(n_periods=3, average='volume').fit_transform(tri['Paid Claims'])
+    >>> paid_volume_3.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0
+    (All)  1.702  1.186  1.091  1.044  1.019  1.009  1.005   1.002    1.002
 
 .. code-block:: python
 
     # Geometric Average
     # Latest 4
-    >>> geometric_4 = cl.Development(n_periods=3, average='geometric').fit_transform(tri['Reported Claims'])
-    >>> geometric_4.ldf_.round(decimals = 3) 
+    >>> paid_geometric_4 = cl.Development(n_periods=3, average='geometric').fit_transform(tri['Paid Claims'])
+    >>> paid_geometric_4.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.164  1.057  1.027  1.011  1.004  1.003  1.002   1.001      1.0
+    (All)  1.704  1.188  1.091  1.044  1.019  1.010  1.005   1.002    1.002 
 
 PART 4 - Selected Age-to-Age Factors
 --------------------------------------
@@ -263,41 +265,87 @@ PART 4 - Selected Age-to-Age Factors
 .. doctest::
 
     # Prior Selected
-    >>> prior_method =  cl.DevelopmentConstant(
+    >>> paid_prior_method =  cl.DevelopmentConstant(
     ...      patterns = {
-    ...         12:1.16, 
-    ...         24:1.057, 
-    ...         36:1.028, 
-    ...         48:1.012, 
-    ...         60:1.005, 
-    ...         72:1.003, 
-    ...         84:1.001, 
-    ...         96:1.001, 
-    ...         108:1.000
+    ...         12:1.707, 
+    ...         24:1.189, 
+    ...         36:1.091, 
+    ...         48:1.044, 
+    ...         60:1.019, 
+    ...         72:1.01, 
+    ...         84:1.005, 
+    ...         96:1.003, 
+    ...         108:1.001
     ...     }, 
     ...     style='ldf'
     ... )
-    >>> prior_ft = prior_method.fit_transform(tri['Reported Claims'])
+    >>> paid_prior_ft = paid_prior_method.fit_transform(tri['Paid Claims'])
     >>> tail_method = cl.TailConstant(
-    ...     tail = 1,
+    ...     tail = 1.002,
     ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
-    >>> prior_selected = tail_method.fit_transform(prior_ft)
-    >>> prior_selected.ldf_
+    >>> paid_prior_selected = tail_method.fit_transform(paid_prior_ft)
+    >>> paid_prior_selected.ldf_
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)   1.16  1.057  1.028  1.012  1.005  1.003  1.001   1.001      1.0      1.0
+    (All)  1.707  1.189  1.091  1.044  1.019   1.01  1.005   1.003    1.001    1.002
 
     # Selected
-    >>> selected_pattern = tail_method.fit_transform(simple_3)
-    >>> selected_pattern = selected_pattern.ldf_.round(decimals=3)
+    >>> paid_selected_pattern = paid_tail_method.fit_transform(paid_simple_3)
+    >>> paid_selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
 
     # CDF to Ultimate
-    >>> selected_cdf = selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
+    >>> paid_selected_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
     too lazy to type
 
     # Percent Reported
-    >>> (1 / selected_cdf).round(decimals = 3)
-    too lazy to type again
+    >>> (1 / paid_selected_cdf).round(decimals = 3)
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+    (All)   0.774   0.901   0.951   0.978   0.989   0.994   0.997   0.999      1.0      1.0
+
+Exhibit I Sheet 3 p108
+========================
+
+This is a common report layout for reserving analyses. Some Pandas manipulation is needed to achieve the tabular look.  
+
+.. doctest::
+
+    >>> exhibit = pd.DataFrame() # initializing a DataFrame
+    >>> exhibit["Reported Claims"] = reported_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0) # using a vector of losses to anchor the exhibit index
+    >>> age = reported_selected_pattern.development.iloc[::-1] # flipping the age order
+    >>> age.index = exhibit.index # forcing the index to match
+    >>> exhibit['Age'] = age
+    >>> exhibit = exhibit[['Age','Reported Claims']] # reordering the columns
+    >>> exhibit ['Paid Claims'] = paid_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0) # adding in paid losses
+    >>> reported_cdf = reported_reported_pattern.cdf_.T # transposing the CDF
+    >>> reported_cdf.index = exhibit.index[::-1] # forcing the index to match
+    >>> exhibit["Reported CDF"] = reported_cdf 
+    >>> paid_cdf = paid_selected_pattern.cdf_.T
+    >>> paid_cdf.index = exhibit.index[::-1]
+    >>> exhibit["Paid CDF"] = paid_cdf
+    >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0)
+    >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False).iloc[:,0].fillna(0)
+    >>> exhibit
+    too lazy to type
+
+Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
+
+.. doctest::
+
+    >>> rounded_exhibit = pd.DataFrame() # initializing a DataFrame
+    >>> rounded_exhibit['Age'] = exhibit['Age']
+    >>> rounded_exhibit['Reported Claims'] = exhibit['Reported Claims'].round(decimals=0)
+    >>> rounded_exhibit['Paid Claims'] = exhibit['Paid Claims'].round(decimals=0)
+    >>> rounded_reported_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
+    >>> rounded_reported_cdf.index = rounded_exhibit.index[::-1]
+    >>> rounded_exhibit["Reported CDF"] = rounded_reported_cdf
+    >>> rounded_paid_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
+    >>> rounded_paid_cdf.index = rounded_exhibit.index[::-1]
+    >>> rounded_exhibit["Paid CDF"] = rounded_paid_cdf
+    >>> rounded_exhibit["Reported Ultimate"] = rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"]
+    >>> rounded_exhibit["Paid Ultimate"] = rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"]
+    >>> rounded_exhibit
+    too lazy to type
+
