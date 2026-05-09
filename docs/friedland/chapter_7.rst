@@ -377,8 +377,8 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     ...     paid_cdf = paid.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
     ...     paid_cdf.index = output.index[::-1]
     ...     output["Paid CDF"] = paid_cdf
-    ...     output["Reported Ultimate"] = (output['Reported Claims'] * output["Reported CDF"])
-    ...     output["Paid Ultimate"] = (output['Paid Claims'] * output["Paid CDF"])
+    ...     output["Reported Ultimate"] = (output['Reported Claims'] * output["Reported CDF"]).round(decimals = 0)
+    ...     output["Paid Ultimate"] = (output['Paid Claims'] * output["Paid CDF"]).round(decimals = 0)
     ...     return output
     >>> rounded_exhibit = rounded_development_summary(reported_selected_pattern,paid_selected_pattern)
     >>> rounded_exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']] # only displaying the rounded columns
