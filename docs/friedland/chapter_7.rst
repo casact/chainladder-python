@@ -357,7 +357,6 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     >>> rounded_exhibit["Paid CDF"] = rounded_paid_cdf
     >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
     >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
-    >>> rounded_exhibit.style.format({'Reported Claims': '{:.0f}','Paid Claims': '{:.0f}','Reported Ultimate': '{:.0f}','Paid Ultimate': '{:.0f}'})
     >>> rounded_exhibit
           Age  Reported Claims  Reported CDF  Reported Ultimate
     1998  120       47742304.0         1.000       4.774230e+07
@@ -381,7 +380,7 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> unpaid_exhibit = rounded_exhibit[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
     >>> unpaid_exhibit['Case Outstanding'] = unpaid_exhibit['Reported Claims'] - unpaid_exhibit['Paid Claims']
     >>> unpaid_exhibit['Reported IBNR'] = unpaid_exhibit['Reported Ultimate'] - unpaid_exhibit['Reported Claims']
-    >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Reported Claims']
+    >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Paid Claims']
     >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit
