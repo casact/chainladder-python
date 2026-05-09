@@ -17,15 +17,17 @@ This chapter covers the foundational development/chainladder method. In the chai
 Exhibit I Sheet 1 p106
 ##########################
 
-Diving straight into Exhibit 1. We will begin by importing packages and loading the triangle at the top of p106.
+Diving straight into Exhibit 1. We will begin by importing packages and loading the ``Triangle`` at the top of p106.
 
 PART 1 - Data Triangle
 -----------------------
 
+Let's take a look at the ``Triangle`` we just loaded. 
+
 .. doctest::
 
     >>> tri = cl.load_sample('friedland_us_industry_auto')
-    >>> tri['Reported Claims'].round(decimals = 0)
+    >>> tri['Reported Claims']
                  12          24          36          48          60          72          84          96          108         120
     1998  37017487.0  43169009.0  45568919.0  46784558.0  47337318.0  47533264.0  47634419.0  47689655.0  47724678.0  47742304.0
     1999  38954484.0  46045718.0  48882924.0  50219672.0  50729292.0  50926779.0  51069285.0  51163540.0  51185767.0         NaN
@@ -38,10 +40,10 @@ PART 1 - Data Triangle
     2006  46582684.0  54641339.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN         NaN
     2007  48853563.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN         NaN         NaN
 
-To calculate the triangle of age-to-age factors, use the age-to-age property of the triangle. 
-
 PART 2 - Age-to-Age Factors
 ----------------------------
+
+To calculate age-to-age factors, use the ``age-to-age`` attribute of the ``Triangle``. 
 
 .. doctest::
     
@@ -57,10 +59,10 @@ PART 2 - Age-to-Age Factors
     2005  1.160  1.056    NaN    NaN    NaN    NaN    NaN     NaN      NaN
     2006  1.173    NaN    NaN    NaN    NaN    NaN    NaN     NaN      NaN
 
-To calculate the average age-to-age factors, we will use the ``Development`` class to ``fit_transform`` the original triangle. The specific choice of average paramters (n_period, etc.) are provided to the ``Development`` class. The property that holds the calculated average age-to-age factors is the ``ldf_``. 
-
 PART 3 - Average Age-to-Age Factors
 ------------------------------------
+
+To calculate the average age-to-age factors, we will use the ``Development`` estimator to ``fit_transform`` the original ``Triangle``. This calculates the averages but also preserves the ability to apply other estimators later. The specific choices of average paramters (n_period, etc.) are provided to ``Development``. The attribute for the calculated average age-to-age factors is the ``ldf_``. 
 
 .. doctest::
 
@@ -108,14 +110,12 @@ We will also fake some geometric averages.
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.057  1.027  1.011  1.004  1.003  1.002   1.001      1.0
 
-Now we can select some factors. 
-
 PART 4 - Selected Age-to-Age Factors
 --------------------------------------
 
-For the prior selected, we need to create a hard-coded pattern, using the ``DevelopmentConstant`` class. In a production workflow, you can save the development pattern from the prior analysis and load for reference in the subsequent analysis. 
+For the prior selected, we need to create a hard-coded pattern, using the ``DevelopmentConstant`` estimator. In a production workflow, you can save the development pattern from the prior analysis and load for reference in a subsequent analysis. 
 
-We will also be using the ``TailConstant`` class to add a tail factor to each development pattern. 
+We will also be using the ``TailConstant`` estimator to add a tail factor to selected development patterns. We add the tail factor to a transformed ``Triangle`` (i.e. applying ``fit_transforme`` of the ``Development`` estimator to a ``Triangle``) by using ``fit_transform`` once again. 
 
 .. doctest::
 
@@ -137,7 +137,6 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
     >>> reported_prior_ft = reported_prior_method.fit_transform(tri['Reported Claims'])
     >>> reported_tail_method = cl.TailConstant(
     ...     tail = 1,
-    ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
     >>> reported_prior_selected = reported_tail_method.fit_transform(reported_prior_ft)
@@ -145,23 +144,33 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)   1.16  1.057  1.028  1.012  1.005  1.003  1.001   1.001      1.0      1.0
 
+Next we can select some factors. We can also reuse the `TailConstant` from the previous step. This is fairly common in practice, as tail factors are selected less frequently than the development pattern itself, so need to be carried from analysis to analysis. 
+
+.. doctest::
+
     # Selected
     >>> reported_selected_pattern = reported_tail_method.fit_transform(reported_simple_3)
     >>> reported_selected_pattern.ldf_.round(decimals=3)
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
 
-The Development class has a ``cdf_`` property that will automatically multiply age-to-age factors cumulatively into age-to-ultimate factors. The Friedland text uses the rounded LDF to calculate CDF. Therefore we will manually calculate the rounded age-to-ultimate factors using the ``incr_to_cum()`` method. 
+The Development estimator has a ``cdf_`` attribute that will automatically multiply age-to-age factors cumulatively into age-to-ultimate factors. The Friedland text uses the rounded LDF to calculate CDF. This can be achieved in this package by using the ``incr_to_cum()`` method of the rounded age-to-age factors. 
 
 .. doctest::
 
     # CDF to Ultimate
+    # First without rounding
+    >>> reported_selected_pattern.cdf_
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+    (All)   1.292    1.11   1.051   1.023   1.011   1.006   1.003   1.001      1.0      1.0
+
+    # Then with rounding
     >>> reported_selected_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
     >>> reported_selected_cdf
            12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
     (All)   1.292    1.11   1.051   1.023   1.011   1.006   1.003   1.001      1.0      1.0
 
-The triangle manipulation that we used in Chapter 5 can also be used on development patterns. 
+To calculate % reported, we will use ``Triangle`` manipulation from Chapter 5 directly on the development pattern (which is also a ``Triangle``). 
 
 .. doctest::
 
@@ -173,14 +182,14 @@ The triangle manipulation that we used in Chapter 5 can also be used on developm
 Exhibit I Sheet 2 p107
 ##########################
 
-Moving onto the next page, all the calculations are identical to the previous page. In a production workflow, commonly repeated methods and selections can be made into pipelines for repetition. 
+Moving onto the next page, all the calculations are identical to the previous page. We will manually repeat the same code. In a production workflow, commonly repeated methods and selections can be streamlined, which we will demonstrate in Exhibit II. 
 
 PART 1 - Data Triangle
 -----------------------
 
 .. doctest::
 
-    >>> tri['Paid Claims'].round(decimals = 0)
+    >>> tri['Paid Claims']
                  12          24          36          48          60          72          84          96          108         120
     1998  18539254.0  33231039.0  40062008.0  43892039.0  45896535.0  46765422.0  47221322.0  47446877.0  47555456.0  47644187.0
     1999  20410193.0  36090684.0  43259402.0  47159241.0  49208532.0  50162043.0  50625757.0  50878808.0  51000534.0         NaN
@@ -280,7 +289,6 @@ PART 4 - Selected Age-to-Age Factors
     >>> paid_prior_ft = paid_prior_method.fit_transform(tri['Paid Claims'])
     >>> paid_tail_method = cl.TailConstant(
     ...     tail = 1.002,
-    ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
     >>> paid_prior_selected = paid_tail_method.fit_transform(paid_prior_ft)
@@ -308,11 +316,11 @@ PART 4 - Selected Age-to-Age Factors
 Exhibit I Sheet 3 p108
 ##########################
 
-This is a common report layout for reserving analyses. Some Pandas manipulation is needed to achieve the tabular look.  
+This is a common report layout for reserving analyses. Some ``Pandas`` manipulation is needed to retrieve all the figures from the transformed ``Triangle`` objects and achieve the tabular look. We will create a function to reuse the manipulation throughout this chapter. 
 
 .. doctest::
 
-    >>> def development_summary(reported, paid):
+    >>> def development_summary(reported: cl.Triangle(), paid: cl.Triangle()) -> pd.DataFrame():
     ...     output = pd.DataFrame() # initializing a DataFrame
     ...     output["Reported Claims"] = reported.latest_diagonal.to_frame(origin_as_datetime=False) # using a vector of losses to anchor the exhibit index
     ...     age = reported.development.iloc[::-1] # flipping the age order
@@ -326,7 +334,7 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     ...     paid_cdf = paid.cdf_.T
     ...     paid_cdf.index = output.index[::-1]
     ...     output["Paid CDF"] = paid_cdf
-    ...     output["Reported Ultimate"] = cl.Chainladder().fit(reported).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
+    ...     output["Reported Ultimate"] = cl.Chainladder().fit(reported).ultimate_.to_frame(origin_as_datetime=False) # using the Chainladder estimator to return the ultimate
     ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
@@ -356,11 +364,11 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     2006      1.108139  1.404485       6.055018e+07   6.124466e+07
     2007      1.289977  2.390688       6.301997e+07   6.509837e+07
 
-Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
+Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to reconcile to the text. 
 
 .. doctest::
 
-    >>> def rounded_development_summary(reported, paid):
+    >>> def rounded_development_summary(reported: cl.Triangle(), paid: cl.Triangle()) -> pd.DataFrame():
     ...     output = pd.DataFrame() # initializing a DataFrame
     ...     output["Reported Claims"] = reported.latest_diagonal.to_frame(origin_as_datetime=False) # using a vector of losses to anchor the exhibit index
     ...     age = reported.development.iloc[::-1] # flipping the age order
@@ -374,7 +382,7 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     ...     paid_cdf = paid.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
     ...     paid_cdf.index = output.index[::-1]
     ...     output["Paid CDF"] = paid_cdf
-    ...     output["Reported Ultimate"] = (output['Reported Claims'] * output["Reported CDF"]).round(decimals = 0)
+    ...     output["Reported Ultimate"] = (output['Reported Claims'] * output["Reported CDF"]).round(decimals = 0) # taking a short cut to calculate the ultimate without using Chainladder 
     ...     output["Paid Ultimate"] = (output['Paid Claims'] * output["Paid CDF"]).round(decimals = 0)
     ...     return output
     >>> rounded_exhibit = rounded_development_summary(reported_selected_pattern,paid_selected_pattern)
@@ -394,11 +402,11 @@ Unfortunately this does not match the table from the text, due to rounding. We w
 Exhibit I Sheet 4 p109
 ##########################
 
-This is another common report layout for reserving analyses. The manipulation here are more straight-forward.  
+This is another common report layout for reserving analyses. The manipulation here are more straight-forward that the previous exhibit.  
 
 .. doctest::
 
-    >>> def unpaid_summary(dev_sum):
+    >>> def unpaid_summary(dev_sum: pd.DataFrame()) -> pd.DataFrame():
     ...     output = dev_sum[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
     ...     output['Case Outstanding'] = output['Reported Claims'] - output['Paid Claims']
     ...     output['Reported Method IBNR'] = output['Reported Ultimate'] - output['Reported Claims']
@@ -433,40 +441,39 @@ This is another common report layout for reserving analyses. The manipulation he
     2006              17045389.0          17617025.0
     2007              35888834.0          37849657.0
 
-Exhibit II Sheets 1 & 2 pp110-111
-####################################
+Exhibit II Sheets 1 pp110
+################################
 
-Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the creation of individual ``Development`` objects, 
+Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the entire exhibit into single function. 
 
 .. doctest::
 
+    >>> def dev_exhibit(tri: cl.Triangle, avg_params: dict[str,int], selected_avg: str, tail: float) -> dict[cl.Triangle()]:
+    ...     print('PART 1 - Data Triangle')
+    ...     print(tri)
+    ...     print('PART 2 - Age-to-Age Factors')
+    ...     print(tri.age_to_age)
+    ...     devs = {}
+    ...     print('PART 3 - Average Age-to-Age Factor')
+    ...     for k,v in avg_params.items():
+    ...         print(k)
+    ...         devs[k] = cl.Development(**v).fit_transform(tri)
+    ...         print(devs[k].ldf_.round(decimals=3))
+    ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
+    ...     print('Selected')
+    ...     print(devs["selected"].ldf_.round(decimals=3))
+    ...     sel_cdf = devs["selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
+    ...     print('CDF to Ultimate')
+    ...     print(sel_cdf)
+    ...     print('Percent Reported')    
+    ...     print((1/sel_cdf).round(decimals=3))
+    ...     return devs
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
     >>> assumptions_list = ['simple_5','simple_3','simple_2','volume_4','volume_3','volume_2']
     >>> assumptions = {x:{'n_periods':int(re.match(r'.+_(.+)', x).group(1)),'average':re.match(r'(.+)_', x).group(1)} for x in assumptions_list}
     >>> assumptions['medial 5x1'] = {'n_periods':5, 'average':'simple','drop_high':1, 'drop_low':1}
-    >>> devs = {}
-    >>> tails = {'Reported Claims':1,'Paid Claims':1.01}
-    >>> selections = {'Reported Claims':'volume_2','Paid Claims':'volume_2'}
-    >>> for x in tails.keys():
-    ...     print('PART 1 - Data Triangle')
-    ...     print(tri[x])
-    ...     print('PART 2 - Age-to-Age Factors')
-    ...     print(tri[x].age_to_age)
-    ...     devs[x] = {}
-    ...     print('PART 3 - Average Age-to-Age Factor')
-    ...     for k,v in assumptions.items():
-    ...         print(k)
-    ...         devs[x][k] = cl.Development(**v).fit_transform(tri[x])
-    ...         print(devs[x][k].ldf_.round(decimals=3))
-    ...     devs[x]["selected"] = cl.TailConstant(tail = tails[x], attachment_age = 132, projection_period = 0).fit_transform(devs[x][selections[x]])
-    ...     print('Selected')
-    ...     print(devs[x]["selected"].ldf_.round(decimals=3))
-    ...     sel_cdf = devs[x]["selected"].ldf_.round(decimals=3).incr_to_cum()
-    ...     print('CDF to Ultimate')
-    ...     print(sel_cdf)
-    ...     print('Percent Reported')    
-    ...     print((1/sel_cdf).round(decimals=3))
+    >>> reported_devs = dev_exhibit(tri['Reported Claims'],assumptions,'volume_2',1)
     PART 1 - Data Triangle
               12       24       36       48       60       72       84       96       108      120      132
     1998      NaN      NaN  11171.0  12380.0  13216.0  14067.0  14688.0  16366.0  16163.0  15835.0  15822.0
@@ -523,6 +530,13 @@ Now that we have walked through an analysis step by step, let's introduce some s
     Percent Reported
            12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
     (All)   0.392   0.661   0.836   0.922    0.94   0.987   0.997   1.008    1.008    1.001      1.0
+
+Exhibit II Sheet 3 p112
+##########################
+
+.. doctest::
+
+    >>> paid_devs = dev_exhibit(tri['Paid Claims'],assumptions,'volume_2',1.001)
     PART 1 - Data Triangle
              12       24       36       48       60       72       84       96       108      120      132
     1998     NaN      NaN   6309.0   8521.0  10082.0  11620.0  13242.0  14419.0  15311.0  15764.0  15822.0
@@ -585,7 +599,7 @@ Exhibit II Sheet 3 p112
 
 .. doctest::
 
-    >>> exhibit = rounded_development_summary(devs["Reported Claims"]["selected"],devs["Paid Claims"]["selected"])
+    >>> exhibit = rounded_development_summary(reported_devs["selected"],paid_devs["selected"])
     >>> exhibit[['Age','Reported Claims','Paid Claims']]
           Age  Reported Claims  Paid Claims
     1998  132          15822.0      15822.0
