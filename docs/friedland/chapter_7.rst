@@ -315,21 +315,24 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
 
 .. doctest::
 
-    >>> exhibit = pd.DataFrame() # initializing a DataFrame
-    >>> exhibit["Reported Claims"] = reported_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False) # using a vector of losses to anchor the exhibit index
-    >>> age = reported_selected_pattern.development.iloc[::-1] # flipping the age order
-    >>> age.index = exhibit.index # forcing the index to match
-    >>> exhibit['Age'] = age
-    >>> exhibit = exhibit[['Age','Reported Claims']] # reordering the columns
-    >>> exhibit ['Paid Claims'] = paid_selected_pattern.latest_diagonal.to_frame(origin_as_datetime=False) # adding in paid losses
-    >>> reported_cdf = reported_selected_pattern.cdf_.T # transposing the CDF
-    >>> reported_cdf.index = exhibit.index[::-1] # forcing the index to match
-    >>> exhibit["Reported CDF"] = reported_cdf 
-    >>> paid_cdf = paid_selected_pattern.cdf_.T
-    >>> paid_cdf.index = exhibit.index[::-1]
-    >>> exhibit["Paid CDF"] = paid_cdf
-    >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
-    >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False)
+    >>> def development_summary(reported, paid):
+    ...     output = pd.DataFrame() # initializing a DataFrame
+    ...     output["Reported Claims"] = reported.latest_diagonal.to_frame(origin_as_datetime=False) # using a vector of losses to anchor the exhibit index
+    ...     age = reported.development.iloc[::-1] # flipping the age order
+    ...     age.index = output.index # forcing the index to match
+    ...     output['Age'] = age
+    ...     output = output[['Age','Reported Claims']] # reordering the columns
+    ...     output ['Paid Claims'] = paid.latest_diagonal.to_frame(origin_as_datetime=False) # adding in paid losses
+    ...     reported_cdf = reported.cdf_.T # transposing the CDF
+    ...     reported_cdf.index = output.index[::-1] # forcing the index to match
+    ...     output["Reported CDF"] = reported_cdf 
+    ...     paid_cdf = paid.cdf_.T
+    ...     paid_cdf.index = output.index[::-1]
+    ...     output["Paid CDF"] = paid_cdf
+    ...     output["Reported Ultimate"] = cl.Chainladder().fit(reported).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
+    ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
+    ...     return output
+    >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
     >>> exhibit[['Age','Reported Claims','Paid Claims']] # splitting the display due to the number of columns
           Age  Reported Claims  Paid Claims
     1998  120       47742304.0   47644187.0
@@ -360,18 +363,24 @@ Unfortunately this does not match the table from the text, due to rounding. We w
 
 .. doctest::
 
-    >>> rounded_exhibit = pd.DataFrame() # initializing a DataFrame
-    >>> rounded_exhibit['Age'] = exhibit['Age']
-    >>> rounded_exhibit['Reported Claims'] = exhibit['Reported Claims']
-    >>> rounded_exhibit['Paid Claims'] = exhibit['Paid Claims']
-    >>> rounded_reported_cdf = reported_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
-    >>> rounded_reported_cdf.index = rounded_exhibit.index[::-1]
-    >>> rounded_exhibit["Reported CDF"] = rounded_reported_cdf
-    >>> rounded_paid_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
-    >>> rounded_paid_cdf.index = rounded_exhibit.index[::-1]
-    >>> rounded_exhibit["Paid CDF"] = rounded_paid_cdf
-    >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
-    >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
+    >>> def rounded_development_summary(reported, paid):
+    ...     output = pd.DataFrame() # initializing a DataFrame
+    ...     output["Reported Claims"] = reported.latest_diagonal.to_frame(origin_as_datetime=False) # using a vector of losses to anchor the exhibit index
+    ...     age = reported.development.iloc[::-1] # flipping the age order
+    ...     age.index = output.index # forcing the index to match
+    ...     output['Age'] = age
+    ...     output = output[['Age','Reported Claims']] # reordering the columns
+    ...     output ['Paid Claims'] = paid.latest_diagonal.to_frame(origin_as_datetime=False) # adding in paid losses
+    ...     reported_cdf = reported.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
+    ...     reported_cdf.index = output.index[::-1]
+    ...     output["Reported CDF"] = reported_cdf
+    ...     paid_cdf = paid.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3).T
+    ...     paid_cdf.index = output.index[::-1]
+    ...     output["Paid CDF"] = paid_cdf
+    ...     output["Reported Ultimate"] = (output['Reported Claims'] * output["Reported CDF"])
+    ...     output["Paid Ultimate"] = (output['Paid Claims'] * output["Paid CDF"])
+    ...     return output
+    >>> rounded_exhibit = rounded_development_summary(reported_selected_pattern,paid_selected_pattern)
     >>> rounded_exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']] # only displaying the rounded columns
           Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
     1998         1.000     1.002       4.774230e+07   4.773948e+07
@@ -392,13 +401,16 @@ This is another common report layout for reserving analyses. The manipulation he
 
 .. doctest::
 
-    >>> unpaid_exhibit = rounded_exhibit[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
-    >>> unpaid_exhibit['Case Outstanding'] = unpaid_exhibit['Reported Claims'] - unpaid_exhibit['Paid Claims']
-    >>> unpaid_exhibit['Reported IBNR'] = unpaid_exhibit['Reported Ultimate'] - unpaid_exhibit['Reported Claims']
-    >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Paid Claims']
-    >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
-    >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
-    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']]
+    >>> def unpaid_summary(dev_sum):
+    ...     output = dev_sum[['Reported Claims','Paid Claims','Reported Ultimate','Paid Ultimate']]
+    ...     output['Case Outstanding'] = output['Reported Claims'] - output['Paid Claims']
+    ...     output['Reported IBNR'] = output['Reported Ultimate'] - output['Reported Claims']
+    ...     output['Paid IBNR'] = output['Paid Ultimate'] - output['Paid Claims']
+    ...     output['Reported Unpaid'] = output['Reported IBNR'] + output['Case Outstanding']
+    ...     output['Paid Unpaid'] = output['Paid IBNR'] + output['Case Outstanding']
+    ...     return output
+    >>> unpaid_exhibit = unpaid_summary(rounded_exhibit)
+    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']] # only displaying newly calculated columns
           Case Outstanding  Reported IBNR
     1998           98117.0   0.000000e+00
     1999          185233.0   0.000000e+00
@@ -424,8 +436,8 @@ This is another common report layout for reserving analyses. The manipulation he
     2006  1.761702e+07     1.704539e+07  2.865187e+07
     2007  3.784966e+07     3.588883e+07  5.947325e+07
 
-Exhibit II Sheet 1 p110
-========================
+Exhibit II Sheets 1 & 2 pp110-111
+==================================
 
 Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the creation of individual ``Development`` objects, 
 
@@ -439,18 +451,52 @@ Now that we have walked through an analysis step by step, let's introduce some s
     >>> devs = {}
     >>> tails = {'Reported Claims':1,'Paid Claims':1.01}
     >>> selections = {'Reported Claims':'volume_2','Paid Claims':'volume_2'}
-    >>> for x in tri.columns:
+    >>> for x in tail.keys():
+    ...     print('PART 1 - Data Triangle')
     ...     print(tri[x])
+    ...     print('PART 2 - Age-to-Age Factors')
     ...     print(tri[x].age_to_age)
     ...     devs[x] = {}
+    ...     print('PART 3 - Average Age-to-Age Factor')
     ...     for k,v in assumptions.items():
+    ...         print(k)
     ...         devs[x][k] = cl.Development(**v).fit_transform(tri[x])
     ...         print(devs[x][k].ldf_.round(decimals=3))
     ...     devs[x]["selected"] = cl.TailConstant(tail = tails[x], attachment_age = 132, projection_period = 0).fit_transform(devs[x][selections[x]])
+    ...     print('Selected')
     ...     print(devs[x]["selected"].ldf_.round(decimals=3))
     ...     sel_cdf = devs[x]["selected"].ldf_.round(decimals=3).incr_to_cum()
+    ...     print('CDF to Ultimate')
     ...     print(sel_cdf)
+    ...     print('Percent Reported')    
     ...     print((1/sel_cdf).round(decimals=3))
-    way too lazy to type
+    way too long
 
-let's see what happens
+Exhibit II Sheet 3 p112
+==================================
+
+.. doctest::
+
+    >>> exhibit = rounded_development_summary(devs["Reported Claims"],dev["Paid Claims"])
+    >>> exhibit[['Age','Reported Claims','Paid Claims']]
+    too lazy
+
+    >>> exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']]
+    too too lazy
+
+Exhibit II Sheet 4 p113
+==================================
+
+.. doctest::
+
+    >>> unpaid_exhibit = unpaid_summary(exhibit)
+    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']]
+    too lazy
+
+    >>> unpaid_exhibit[['Paid IBNR','Reported Unpaid','Paid Unpaid']]
+    too too lazy
+
+Exhibit III Sheet 1 p114
+==================================
+
+WIP
