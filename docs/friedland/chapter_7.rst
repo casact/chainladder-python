@@ -116,7 +116,7 @@ Now we can select some factors.
 PART 4 - Selected Age-to-Age Factors
 --------------------------------------
 
-To create a hard-coded pattern, we can use the ``DevelopmentConstant`` class. In a production workflow, you can save the development pattern from the prior analysis and load for reference in the following analysis. 
+For the prior selected, we need to create a hard-coded pattern, using the ``DevelopmentConstant`` class. In a production workflow, you can save the development pattern from the prior analysis and load for reference in the subsequent analysis. 
 
 We will also be using the ``TailConstant`` class to add a tail factor to each development pattern. 
 
@@ -137,7 +137,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
     ...     }, 
     ...     style='ldf'
     ... )
-    >>> reported_prior_ft = prior_method.fit_transform(tri['Reported Claims'])
+    >>> reported_prior_ft = reported_prior_method.fit_transform(tri['Reported Claims'])
     >>> reported_tail_method = cl.TailConstant(
     ...     tail = 1,
     ...     attachment_age = 120,
@@ -154,7 +154,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0      1.0
 
-The Development class has a ``cdf_`` property that will automatically multiples age-to-age factors cumulatively into age-to-ultimate factors. The Friedland text uses the rounded LDF to calculate CDF. Therefore we will manually calculate the rounded age-to-ultimate factors using the ``incr_to_cum()`` method. 
+The Development class has a ``cdf_`` property that will automatically multiply age-to-age factors cumulatively into age-to-ultimate factors. The Friedland text uses the rounded LDF to calculate CDF. Therefore we will manually calculate the rounded age-to-ultimate factors using the ``incr_to_cum()`` method. 
 
 .. doctest::
 
@@ -329,17 +329,18 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
     >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False)
     >>> exhibit
-          Age  Reported Claims  Reported Ultimate
-    1998  120       47742304.0       4.774230e+07
-    1999  108       51185767.0       5.120467e+07
-    2000   96       54837929.0       5.489024e+07
-    2001   84       56299562.0       5.644257e+07
-    2002   72       58592712.0       5.890327e+07
-    2003   60       57565344.0       5.813573e+07
-    2004   48       56976657.0       5.820476e+07
-    2005   36       56786410.0       5.959697e+07
-    2006   24       54641339.0       6.055018e+07
-    2007   12       48853563.0       6.301997e+07
+          Age  Reported Claims  ...  Reported Ultimate  Paid Ultimate
+    1998  120       47742304.0  ...       4.774230e+07   4.773948e+07
+    1999  108       51185767.0  ...       5.120467e+07   5.119788e+07
+    2000   96       54837929.0  ...       5.489024e+07   5.487237e+07
+    2001   84       56299562.0  ...       5.644257e+07   5.649507e+07
+    2002   72       58592712.0  ...       5.890327e+07   5.899830e+07
+    2003   60       57565344.0  ...       5.813573e+07   5.815399e+07
+    2004   48       56976657.0  ...       5.820476e+07   5.836386e+07
+    2005   36       56786410.0  ...       5.959697e+07   5.997474e+07
+    2006   24       54641339.0  ...       6.055018e+07   6.124466e+07
+    2007   12       48853563.0  ...       6.301997e+07   6.509837e+07
+    <BLANKLINE>
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
 
@@ -358,17 +359,18 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
     >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
     >>> rounded_exhibit
-          Age  Reported Claims  Reported CDF  Reported Ultimate
-    1998  120       47742304.0         1.000       4.774230e+07
-    1999  108       51185767.0         1.000       5.118577e+07
-    2000   96       54837929.0         1.001       5.489277e+07
-    2001   84       56299562.0         1.003       5.646846e+07
-    2002   72       58592712.0         1.006       5.894427e+07
-    2003   60       57565344.0         1.011       5.819856e+07
-    2004   48       56976657.0         1.023       5.828712e+07
-    2005   36       56786410.0         1.051       5.968252e+07
-    2006   24       54641339.0         1.110       6.065189e+07
-    2007   12       48853563.0         1.292       6.311880e+07
+          Age  Reported Claims  ...  Reported Ultimate  Paid Ultimate
+    1998  120       47742304.0  ...       4.774230e+07   4.773948e+07
+    1999  108       51185767.0  ...       5.118577e+07   5.120454e+07
+    2000   96       54837929.0  ...       5.489277e+07   5.486042e+07
+    2001   84       56299562.0  ...       5.646846e+07   5.649308e+07
+    2002   72       58592712.0  ...       5.894427e+07   5.896336e+07
+    2003   60       57565344.0  ...       5.819856e+07   5.816788e+07
+    2004   48       56976657.0  ...       5.828712e+07   5.834552e+07
+    2005   36       56786410.0  ...       5.968252e+07   5.996367e+07
+    2006   24       54641339.0  ...       6.065189e+07   6.122352e+07
+    2007   12       48853563.0  ...       6.311880e+07   6.507963e+07
+    <BLANKLINE>
 
 Exhibit I Sheet 4 p109
 ========================
@@ -384,4 +386,15 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit
-    too lazy to type
+          Reported Claims  Paid Claims  ...  Reported Unpaid   Paid Unpaid
+    1998       47742304.0   47644187.0  ...     9.811700e+04  1.934054e+05
+    1999       51185767.0   51000534.0  ...     1.852330e+05  3.892351e+05
+    2000       54837929.0   54533225.0  ...     3.595419e+05  6.319034e+05
+    2001       56299562.0   55878421.0  ...     5.900397e+05  1.035804e+06
+    2002       58592712.0   57807215.0  ...     1.137053e+06  1.941641e+06
+    2003       57565344.0   55930654.0  ...     2.267909e+06  3.871916e+06
+    2004       56976657.0   53774672.0  ...     4.512448e+06  7.772832e+06
+    2005       56786410.0   50644994.0  ...     9.037523e+06  1.546009e+07
+    2006       54641339.0   43606497.0  ...     1.704539e+07  2.865187e+07
+    2007       48853563.0   27229969.0  ...     3.588883e+07  5.947325e+07
+    <BLANKLINE>
