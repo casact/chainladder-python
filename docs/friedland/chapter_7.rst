@@ -466,7 +466,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     selected = {}
     ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
     ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
-    ...     selected['Percent Reported'] = 1/sel_cdf).round(decimals=3)
+    ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
     ...     print_ldfs(selected)
     ...     return devs
     >>> import re
