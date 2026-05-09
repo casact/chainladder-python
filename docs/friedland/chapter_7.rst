@@ -451,7 +451,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     >>> devs = {}
     >>> tails = {'Reported Claims':1,'Paid Claims':1.01}
     >>> selections = {'Reported Claims':'volume_2','Paid Claims':'volume_2'}
-    >>> for x in tail.keys():
+    >>> for x in tails.keys():
     ...     print('PART 1 - Data Triangle')
     ...     print(tri[x])
     ...     print('PART 2 - Age-to-Age Factors')
@@ -477,7 +477,7 @@ Exhibit II Sheet 3 p112
 
 .. doctest::
 
-    >>> exhibit = rounded_development_summary(devs["Reported Claims"],dev["Paid Claims"])
+    >>> exhibit = rounded_development_summary(devs["Reported Claims"]["selected"],devs["Paid Claims"]["selected"])
     >>> exhibit[['Age','Reported Claims','Paid Claims']]
     too lazy
 
