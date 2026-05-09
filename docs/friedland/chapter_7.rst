@@ -123,7 +123,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
 .. doctest::
 
     # Prior Selected
-    >>>  prior_method =  cl.DevelopmentConstant(
+    >>> prior_method =  cl.DevelopmentConstant(
     ...      patterns = {
     ...         12:1.16, 
     ...         24:1.057, 
