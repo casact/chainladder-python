@@ -1,9 +1,6 @@
 ================================================================
-Chapter 7
+Chapter 7 - Development Technique
 ================================================================
-
-Development Technique
-##########################
 
     The development technique, also known as the chain ladder technique, is one of the most frequently used methodologies for estimating unpaid claims.
 
@@ -18,7 +15,7 @@ This chapter covers the foundational development/chainladder method. In the chai
     >>> import chainladder as cl
 
 Exhibit I Sheet 1 p106
-========================
+##########################
 
 Diving straight into Exhibit 1. We will begin by importing packages and loading the triangle at the top of p106.
 
@@ -174,7 +171,7 @@ The triangle manipulation that we used in Chapter 5 can also be used on developm
     (All)   0.774   0.901   0.951   0.978   0.989   0.994   0.997   0.999      1.0      1.0
 
 Exhibit I Sheet 2 p107
-========================
+##########################
 
 Moving onto the next page, all the calculations are identical to the previous page. In a production workflow, commonly repeated methods and selections can be made into pipelines for repetition. 
 
@@ -309,7 +306,7 @@ PART 4 - Selected Age-to-Age Factors
     (All)   0.418   0.712   0.845   0.922   0.962    0.98   0.989   0.994    0.996    0.998
 
 Exhibit I Sheet 3 p108
-========================
+##########################
 
 This is a common report layout for reserving analyses. Some Pandas manipulation is needed to achieve the tabular look.  
 
@@ -395,7 +392,7 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     2007         1.292     2.390         63118803.0     65079626.0
 
 Exhibit I Sheet 4 p109
-========================
+##########################
 
 This is another common report layout for reserving analyses. The manipulation here are more straight-forward.  
 
@@ -437,7 +434,7 @@ This is another common report layout for reserving analyses. The manipulation he
     2007              35888834.0          37849657.0
 
 Exhibit II Sheets 1 & 2 pp110-111
-==================================
+####################################
 
 Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the creation of individual ``Development`` objects, 
 
@@ -584,7 +581,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     (All)   0.045   0.152   0.316   0.498   0.656   0.789   0.896   0.949     0.97    0.986     0.99
 
 Exhibit II Sheet 3 p112
-==================================
+##########################
 
 .. doctest::
 
@@ -618,7 +615,7 @@ Exhibit II Sheet 3 p112
     2008         2.551    21.999            47530.0        74995.0
 
 Exhibit II Sheet 4 p113
-==================================
+##########################
 
 .. doctest::
 
@@ -652,6 +649,6 @@ Exhibit II Sheet 4 p113
     2008                 44121.0             71586.0
 
 Exhibit III Sheet 1 p114
-==================================
+##########################
 
 WIP
