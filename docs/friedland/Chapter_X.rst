@@ -2,14 +2,14 @@
 Estimating Unpaid Claims Using Basic Techniques
 ================================================================
 
-Chapter 7
+First
 -------------
 We will begin by importing the necessary packages
 
-.. ipython::
+.. doctest::
     :doctest:
 
-    In [1]: 1 + 1
-    Out[2]: 3
+    >>> 1 + 1
+    3
 
 Let's see what happens.
