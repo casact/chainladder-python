@@ -47,6 +47,6 @@ parts:
   - chapters:
     - file: library/releases.md
   - chapters:
-    - file: friedland/Chapter_X.rst
+    - file: friedland/index.rst
       sections:
-      - file: friedland/Chapter_7.rst
+      - file: friedland/chapter_7.rst
