@@ -5,7 +5,9 @@ from chainladder.methods import Benktander
 
 
 class ExpectedLoss(Benktander):
-    """The deterministic Expected Loss IBNR model
+    """The deterministic Expected Loss IBNR model, it ignores all data in the 
+    triangle, and only uses the sample_weight modified by the apriori to 
+    calculate the ultimate losses.
 
     Parameters
     ----------
@@ -31,6 +33,67 @@ class ExpectedLoss(Benktander):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        xyz = cl.load_sample("xyz")
+        
+        ibnr = (
+            cl.ExpectedLoss()
+            .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+            .ibnr_
+        )
+        print(ibnr)
+
+    .. testoutput::
+        
+                 2261
+        1998   4178.0
+        1999   6683.0
+        2000   8218.0
+        2001  11481.0
+        2002  16746.0
+        2003  29855.0
+        2004  46511.0
+        2005  98125.0
+        2006  84759.0
+        2007  50573.0
+        2008  44388.0
+
+    We can specify the apriori as a percentage of the premium.
+
+    .. testcode::
+
+        xyz = cl.load_sample("xyz")
+
+        ibnr = (
+            cl.ExpectedLoss(apriori=0.9)
+            .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+            .ibnr_
+        )
+        print(ibnr)
+
+    .. testoutput::
+        
+                 2261
+        1998   2178.0
+        1999   3533.0
+        2000   3718.0
+        2001   6481.0
+        2002  10627.7
+        2003  22937.5
+        2004  36578.8
+        2005  84309.9
+        2006  74001.2
+        2007  44329.2
+        2008  39608.3
     """
 
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):

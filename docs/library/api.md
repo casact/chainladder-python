@@ -101,6 +101,7 @@ Classes
    Chainladder
    MackChainladder
    BornhuetterFerguson
+   ExpectedLoss
    Benktander
    CapeCod
 
