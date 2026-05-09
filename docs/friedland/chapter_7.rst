@@ -456,17 +456,18 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     devs = {}
     ...     print('PART 3 - Average Age-to-Age Factor')
     ...     for k,v in avg_params.items():
-    ...         print(k)
     ...         devs[k] = cl.Development(**v).fit_transform(tri)
-    ...         print(devs[k].ldf_.round(decimals=3))
+    ...     def print_ldfs(ldf_dict:dict[cl.Triangle()]):
+    ...         print(pd.concat([v.to_frame().rename(index={'(All)':k}) for k,v in ldf_dict.items()]))
+    ...         return None
+    ...     print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
+    ...     print('PART 4 - Selected Age-to-Age Factor')
     ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
-    ...     print('Selected')
-    ...     print(devs["selected"].ldf_.round(decimals=3))
-    ...     sel_cdf = devs["selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
-    ...     print('CDF to Ultimate')
-    ...     print(sel_cdf)
-    ...     print('Percent Reported')    
-    ...     print((1/sel_cdf).round(decimals=3))
+    ...     selected = {}
+    ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
+    ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
+    ...     selected['Percent Reported'] = 1/sel_cdf).round(decimals=3)
+    ...     print_ldfs(selected)
     ...     return devs
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
@@ -531,7 +532,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
            12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
     (All)   0.392   0.661   0.836   0.922    0.94   0.987   0.997   1.008    1.008    1.001      1.0
 
-Exhibit II Sheet 3 p112
+Exhibit II Sheet 2 p111
 ##########################
 
 .. doctest::
