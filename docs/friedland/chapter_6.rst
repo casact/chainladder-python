@@ -33,7 +33,8 @@ Table 1 - Summary of Earned Premium and Rate Changes
     ...     'Annual Exposure Change'
     ... ]
     >>> df = pd.DataFrame(data, columns=columns)
-    >>> df
+    >>> with pd.option_context('display.width', 1000):
+    ...     print(df)
 
 Table 2 - Reported Claim Development Triangle
 ##################################################
@@ -75,11 +76,24 @@ To divide losses by premium, we need to turn premium from a ``Series`` into a ``
 
 .. doctest::
 
-    >>> prem_tri = tri['Reported Claims'] * 0 + [[x] for x in df["Earned Premiums"].to_list()] # accident year is the second-order dimension in a Triangle
+    >>> tri['Reported Claims'] * 0 + df["Earned Premiums"]
+
+
+That didn't quite work. We want each accident year to have the same premium. The reason why this is happening is that development period is the last dimension (i.e. down a row in a triangle), and origin period (accident year) is the second-last dimension (i.e. rows down a column). Any 1-D collection is automatically assumed to be values down a row, rather than rows down a column (a little unintuitive, as a ``pandas.DataFrame`` is displayed vertically.). So we need a little help in ``numpy`` land to rectify the problem.
+
+    >>> prem_tri = tri['Reported Claims'] * 0 + df["Earned Premiums"].to_numpy().reshape(-1,1) # accident year is the second-order dimension in a Triangle
     >>> prem_tri
+                12        24        36        48       60       72       84
+    2002   61183.0   61183.0   61183.0   61183.0  61183.0  61183.0  61183.0
+    2003   69175.0   69175.0   69175.0   69175.0  69175.0  69175.0      NaN
+    2004   99322.0   99322.0   99322.0   99322.0  99322.0      NaN      NaN
+    2005  138151.0  138151.0  138151.0  138151.0      NaN      NaN      NaN
+    2006  107578.0  107578.0  107578.0       NaN      NaN      NaN      NaN
+    2007   62438.0   62438.0       NaN       NaN      NaN      NaN      NaN
+    2008   47797.0       NaN       NaN       NaN      NaN      NaN      NaN
 
 Now we can divide seamlessly into our loss triangles
 
 .. doctest::
 
-    >>> tri['Reported Claims'] / prem_tri
+    >>> (tri['Reported Claims'] / prem_tri).round(decimals=3)
