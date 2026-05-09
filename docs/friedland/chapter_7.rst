@@ -143,7 +143,7 @@ We will also be using the ``TailConstant`` class to add a tail factor to each de
     ...     attachment_age = 120,
     ...     projection_period = 0
     ... )
-    >>> reported_prior_selected = reported_tail_method.fit_transform(prior_ft)
+    >>> reported_prior_selected = reported_tail_method.fit_transform(reported_prior_ft)
     >>> reported_prior_selected.ldf_
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
     (All)   1.16  1.057  1.028  1.012  1.005  1.003  1.001   1.001      1.0      1.0
@@ -299,6 +299,7 @@ PART 4 - Selected Age-to-Age Factors
 
     # CDF to Ultimate
     >>> paid_selected_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
+    >>> paid_selected_cdf
     too lazy to type
 
     # Percent Reported
@@ -328,7 +329,7 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     >>> exhibit["Paid CDF"] = paid_cdf
     >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
     >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False)
-    >>> exhibit
+    >>> exhibit[['Age','Reported Claims','Paid Claims']] # splitting the display due to the number of columns
           Age  Reported Claims  ...  Reported Ultimate  Paid Ultimate
     1998  120       47742304.0  ...       4.774230e+07   4.773948e+07
     1999  108       51185767.0  ...       5.120467e+07   5.119788e+07
@@ -341,6 +342,9 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     2006   24       54641339.0  ...       6.055018e+07   6.124466e+07
     2007   12       48853563.0  ...       6.301997e+07   6.509837e+07
     <BLANKLINE>
+
+    >>> exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']]
+    too lazy to type
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
 
@@ -358,7 +362,7 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     >>> rounded_exhibit["Paid CDF"] = rounded_paid_cdf
     >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
     >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
-    >>> rounded_exhibit
+    >>> rounded_exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']] # only displaying the rounded columns
           Age  Reported Claims  ...  Reported Ultimate  Paid Ultimate
     1998  120       47742304.0  ...       4.774230e+07   4.773948e+07
     1999  108       51185767.0  ...       5.118577e+07   5.120454e+07
@@ -385,7 +389,7 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Paid Claims']
     >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
-    >>> unpaid_exhibit
+    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR','Paid IBNR','Reported Unpaid','Paid Unpaid']] # only displaying the newly calculated columns
           Reported Claims  Paid Claims  ...  Reported Unpaid   Paid Unpaid
     1998       47742304.0   47644187.0  ...     9.811700e+04  1.934054e+05
     1999       51185767.0   51000534.0  ...     1.852330e+05  3.892351e+05
