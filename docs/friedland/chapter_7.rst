@@ -342,7 +342,6 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     2005   36       56786410.0   50644994.0
     2006   24       54641339.0   43606497.0
     2007   12       48853563.0   27229969.0
-**********************************************************************
 
     >>> exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']]
           Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
@@ -356,7 +355,6 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     2005      1.049493  1.184218       5.959697e+07   5.997474e+07
     2006      1.108139  1.404485       6.055018e+07   6.124466e+07
     2007      1.289977  2.390688       6.301997e+07   6.509837e+07
-**********************************************************************
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
 
@@ -401,21 +399,30 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']]
-          Reported Claims  Paid Claims  ...  Reported Unpaid   Paid Unpaid
-    1998       47742304.0   47644187.0  ...     9.811700e+04  1.934054e+05
-    1999       51185767.0   51000534.0  ...     1.852330e+05  3.892351e+05
-    2000       54837929.0   54533225.0  ...     3.595419e+05  6.319034e+05
-    2001       56299562.0   55878421.0  ...     5.900397e+05  1.035804e+06
-    2002       58592712.0   57807215.0  ...     1.137053e+06  1.941641e+06
-    2003       57565344.0   55930654.0  ...     2.267909e+06  3.871916e+06
-    2004       56976657.0   53774672.0  ...     4.512448e+06  7.772832e+06
-    2005       56786410.0   50644994.0  ...     9.037523e+06  1.546009e+07
-    2006       54641339.0   43606497.0  ...     1.704539e+07  2.865187e+07
-    2007       48853563.0   27229969.0  ...     3.588883e+07  5.947325e+07
-    <BLANKLINE>
+          Case Outstanding  Reported IBNR
+    1998           98117.0   0.000000e+00
+    1999          185233.0   0.000000e+00
+    2000          304704.0   5.483793e+04
+    2001          421141.0   1.688987e+05
+    2002          785497.0   3.515563e+05
+    2003         1634690.0   6.332188e+05
+    2004         3201985.0   1.310463e+06
+    2005         6141416.0   2.896107e+06
+    2006        11034842.0   6.010547e+06
+    2007        21623594.0   1.426524e+07
 
     >>> unpaid_exhibit[['Paid IBNR','Reported Unpaid','Paid Unpaid']]
-    too lazy to type
+             Paid IBNR  Reported Unpaid   Paid Unpaid
+    1998  9.528837e+04     9.811700e+04  1.934054e+05
+    1999  2.040021e+05     1.852330e+05  3.892351e+05
+    2000  3.271994e+05     3.595419e+05  6.319034e+05
+    2001  6.146626e+05     5.900397e+05  1.035804e+06
+    2002  1.156144e+06     1.137053e+06  1.941641e+06
+    2003  2.237226e+06     2.267909e+06  3.871916e+06
+    2004  4.570847e+06     4.512448e+06  7.772832e+06
+    2005  9.318679e+06     9.037523e+06  1.546009e+07
+    2006  1.761702e+07     1.704539e+07  2.865187e+07
+    2007  3.784966e+07     3.588883e+07  5.947325e+07
 
 Exhibit II Sheet 1 p110
 ========================
@@ -427,7 +434,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
     >>> assumptions_list = ['simple_5','simple_3','simple_2','volume_4','volume_3','volume_2']
-    >>> assumptions = {x:{'n_periods':int(re.match(r'.+_(.+)', s).group(1)),'average':re.match(r'(.+)_', s).group(1)} for x in assumptions_list}
+    >>> assumptions = {x:{'n_periods':int(re.match(r'.+_(.+)', x).group(1)),'average':re.match(r'(.+)_', x).group(1)} for x in assumptions_list}
     >>> assumptions['medial 5x1'] = {'n_periods'=5, 'average'='simple','drop_high' = 1, 'drop_low' = 1}
     >>> devs = {}
     >>> tails = {'Reported Claims':1,'Paid Claims':1.01}
