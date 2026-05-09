@@ -33,6 +33,7 @@ parts:
   - chapters:
     - file: friedland/index.rst
       sections:
+      - file: friedland/chapter_6.rst
       - file: friedland/chapter_7.rst
   - chapters:
     - file: gallery/index.md
