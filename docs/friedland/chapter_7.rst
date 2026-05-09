@@ -300,7 +300,8 @@ PART 4 - Selected Age-to-Age Factors
     # CDF to Ultimate
     >>> paid_selected_cdf = paid_selected_pattern.ldf_.round(decimals = 3).incr_to_cum().round(decimals = 3)
     >>> paid_selected_cdf
-    too lazy to type
+           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+    (All)    2.39   1.404   1.184   1.085    1.04    1.02   1.011   1.006    1.004    1.002
 
     # Percent Reported
     >>> (1 / paid_selected_cdf).round(decimals = 3)
@@ -330,21 +331,32 @@ This is a common report layout for reserving analyses. Some Pandas manipulation 
     >>> exhibit["Reported Ultimate"] = cl.Chainladder().fit(reported_selected_pattern).ultimate_.to_frame(origin_as_datetime=False) # using the chainladder predictor to return the ultimate
     >>> exhibit["Paid Ultimate"] = cl.Chainladder().fit(paid_selected_pattern).ultimate_.to_frame(origin_as_datetime=False)
     >>> exhibit[['Age','Reported Claims','Paid Claims']] # splitting the display due to the number of columns
-          Age  Reported Claims  ...  Reported Ultimate  Paid Ultimate
-    1998  120       47742304.0  ...       4.774230e+07   4.773948e+07
-    1999  108       51185767.0  ...       5.120467e+07   5.119788e+07
-    2000   96       54837929.0  ...       5.489024e+07   5.487237e+07
-    2001   84       56299562.0  ...       5.644257e+07   5.649507e+07
-    2002   72       58592712.0  ...       5.890327e+07   5.899830e+07
-    2003   60       57565344.0  ...       5.813573e+07   5.815399e+07
-    2004   48       56976657.0  ...       5.820476e+07   5.836386e+07
-    2005   36       56786410.0  ...       5.959697e+07   5.997474e+07
-    2006   24       54641339.0  ...       6.055018e+07   6.124466e+07
-    2007   12       48853563.0  ...       6.301997e+07   6.509837e+07
-    <BLANKLINE>
+          Age  Reported Claims  Paid Claims
+    1998  120       47742304.0   47644187.0
+    1999  108       51185767.0   51000534.0
+    2000   96       54837929.0   54533225.0
+    2001   84       56299562.0   55878421.0
+    2002   72       58592712.0   57807215.0
+    2003   60       57565344.0   55930654.0
+    2004   48       56976657.0   53774672.0
+    2005   36       56786410.0   50644994.0
+    2006   24       54641339.0   43606497.0
+    2007   12       48853563.0   27229969.0
+**********************************************************************
 
     >>> exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']]
-    too lazy to type
+          Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
+    1998      1.000000  1.002000       4.774230e+07   4.773948e+07
+    1999      1.000369  1.003870       5.120467e+07   5.119788e+07
+    2000      1.000954  1.006219       5.489024e+07   5.487237e+07
+    2001      1.002540  1.011036       5.644257e+07   5.649507e+07
+    2002      1.005300  1.020604       5.890327e+07   5.899830e+07
+    2003      1.009908  1.039752       5.813573e+07   5.815399e+07
+    2004      1.021554  1.085341       5.820476e+07   5.836386e+07
+    2005      1.049493  1.184218       5.959697e+07   5.997474e+07
+    2006      1.108139  1.404485       6.055018e+07   6.124466e+07
+    2007      1.289977  2.390688       6.301997e+07   6.509837e+07
+**********************************************************************
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to demonstrate parity. 
 
@@ -363,18 +375,17 @@ Unfortunately this does not match the table from the text, due to rounding. We w
     >>> rounded_exhibit["Reported Ultimate"] = (rounded_exhibit['Reported Claims'] * rounded_exhibit["Reported CDF"])
     >>> rounded_exhibit["Paid Ultimate"] = (rounded_exhibit['Paid Claims'] * rounded_exhibit["Paid CDF"])
     >>> rounded_exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']] # only displaying the rounded columns
-          Age  Reported Claims  ...  Reported Ultimate  Paid Ultimate
-    1998  120       47742304.0  ...       4.774230e+07   4.773948e+07
-    1999  108       51185767.0  ...       5.118577e+07   5.120454e+07
-    2000   96       54837929.0  ...       5.489277e+07   5.486042e+07
-    2001   84       56299562.0  ...       5.646846e+07   5.649308e+07
-    2002   72       58592712.0  ...       5.894427e+07   5.896336e+07
-    2003   60       57565344.0  ...       5.819856e+07   5.816788e+07
-    2004   48       56976657.0  ...       5.828712e+07   5.834552e+07
-    2005   36       56786410.0  ...       5.968252e+07   5.996367e+07
-    2006   24       54641339.0  ...       6.065189e+07   6.122352e+07
-    2007   12       48853563.0  ...       6.311880e+07   6.507963e+07
-    <BLANKLINE>
+          Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
+    1998         1.000     1.002       4.774230e+07   4.773948e+07
+    1999         1.000     1.004       5.118577e+07   5.120454e+07
+    2000         1.001     1.006       5.489277e+07   5.486042e+07
+    2001         1.003     1.011       5.646846e+07   5.649308e+07
+    2002         1.006     1.020       5.894427e+07   5.896336e+07
+    2003         1.011     1.040       5.819856e+07   5.816788e+07
+    2004         1.023     1.085       5.828712e+07   5.834552e+07
+    2005         1.051     1.184       5.968252e+07   5.996367e+07
+    2006         1.110     1.404       6.065189e+07   6.122352e+07
+    2007         1.292     2.390       6.311880e+07   6.507963e+07
 
 Exhibit I Sheet 4 p109
 ========================
@@ -389,7 +400,7 @@ This is another common report layout for reserving analyses. The manipulation he
     >>> unpaid_exhibit['Paid IBNR'] = unpaid_exhibit['Paid Ultimate'] - unpaid_exhibit['Paid Claims']
     >>> unpaid_exhibit['Reported Unpaid'] = unpaid_exhibit['Reported IBNR'] + unpaid_exhibit['Case Outstanding']
     >>> unpaid_exhibit['Paid Unpaid'] = unpaid_exhibit['Paid IBNR'] + unpaid_exhibit['Case Outstanding']
-    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR','Paid IBNR','Reported Unpaid','Paid Unpaid']] # only displaying the newly calculated columns
+    >>> unpaid_exhibit[['Case Outstanding','Reported IBNR']]
           Reported Claims  Paid Claims  ...  Reported Unpaid   Paid Unpaid
     1998       47742304.0   47644187.0  ...     9.811700e+04  1.934054e+05
     1999       51185767.0   51000534.0  ...     1.852330e+05  3.892351e+05
@@ -402,3 +413,29 @@ This is another common report layout for reserving analyses. The manipulation he
     2006       54641339.0   43606497.0  ...     1.704539e+07  2.865187e+07
     2007       48853563.0   27229969.0  ...     3.588883e+07  5.947325e+07
     <BLANKLINE>
+
+    >>> unpaid_exhibit[['Paid IBNR','Reported Unpaid','Paid Unpaid']]
+    too lazy to type
+
+Exhibit II Sheet 1 p110
+========================
+
+Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the creation of individual ``Development`` objects, 
+
+.. doctest::
+
+    >>> import re
+    >>> tri = cl.load_sample('friedland_xyz_auto_bi')
+    >>> assumptions_list = ['simple_5','simple_3','simple_2','volume_4','volume_3','volume_2']
+    >>> assumptions = {x:{'n_periods':int(re.match(r'.+_(.+)', s).group(1)),'average':re.match(r'(.+)_', s).group(1)} for x in assumptions_list}
+    >>> devs = {}    
+    >>> for x in ["Reported Claims","Paid Claims"]:
+    ...     print(tri[x])
+    ...     print(tri[x].age_to_age)
+    ...     devs[x] = {}
+    ...     for k,v in assumptions.items():
+    ...         devs[x][k] = cl.Development(**v).fit_transform(tri[x])
+    ...         print(devs[x][k].ldf_)
+    way too lazy to type
+
+let's see what happens
