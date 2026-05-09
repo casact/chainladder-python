@@ -338,7 +338,7 @@ This is a common report layout for reserving analyses. Some ``Pandas`` manipulat
     ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
-    >>> pd.set_option('display.max_columns', None):
+    >>> with pd.set_option('display.max_columns', None):
     ...     exhibit
           Age  Reported Claims  Paid Claims
     1998  120       47742304.0   47644187.0
@@ -466,7 +466,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
     ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
     ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
-    ...     pd.set_option('display.max_columns', None):
+    ...     with pd.set_option('display.max_columns', None):
     ...         print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
     ...         print('PART 4 - Selected Age-to-Age Factor')
     ...         print_ldfs(selected)
