@@ -338,7 +338,8 @@ This is a common report layout for reserving analyses. Some ``Pandas`` manipulat
     ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
-    >>> exhibit[['Age','Reported Claims','Paid Claims']] # splitting the display due to the number of columns
+    >>> pd.set_option('display.max_columns', None):
+    ...     exhibit
           Age  Reported Claims  Paid Claims
     1998  120       47742304.0   47644187.0
     1999  108       51185767.0   51000534.0
@@ -460,14 +461,15 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     def print_ldfs(ldf_dict:dict[cl.Triangle()]):
     ...         print(pd.concat([v.to_frame().rename(index={'(All)':k}) for k,v in ldf_dict.items()]))
     ...         return None
-    ...     print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
-    ...     print('PART 4 - Selected Age-to-Age Factor')
     ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
     ...     selected = {}
     ...     selected['Selected'] = devs["selected"].ldf_.round(decimals=3)
     ...     selected['CDF to Ultimate'] = selected['Selected'].incr_to_cum().round(decimals=3)
     ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
-    ...     print_ldfs(selected)
+    ...     pd.set_option('display.max_columns', None):
+    ...         print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
+    ...         print('PART 4 - Selected Age-to-Age Factor')
+    ...         print_ldfs(selected)
     ...     return devs
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
