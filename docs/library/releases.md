@@ -43,6 +43,7 @@ Release Date: May 8, 2026
 * fix(tests): use assert in test_n_periods so failures actually fail by @SaguaroDev in [#744](https://github.com/casact/chainladder-python/pull/744)
 * Build(deps): Bump mistune from 3.1.4 to 3.2.1 by @dependabot[bot] in [#748](https://github.com/casact/chainladder-python/pull/748)
 * Update pyproject.toml - Add numpy ([#738](https://github.com/casact/chainladder-python/issues/738)) by @wendy-w2029 in [#750](https://github.com/casact/chainladder-python/pull/750)
+* Enhance docstrings and examples for improved clarity for many estimators by @kennethshsu in [#747](https://github.com/casact/chainladder-python/pull/747)
 * Add `.github/CODEOWNERS` by @kennethshsu
 * Limit pytest GitHub Actions workflow to run on pull requests (not every push) by @kennethshsu
 * Clarify first-time vs ongoing `uv` setup in contributor docs; ignore local virtualenv doc build dirs in `.gitignore`; refine dates in the multi-trend example by @kennethshsu
