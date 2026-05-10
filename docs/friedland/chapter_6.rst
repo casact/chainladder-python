@@ -135,8 +135,8 @@ Now we can divide two triangles seamlessly
     2007  0.312  0.508    NaN    NaN    NaN    NaN    NaN
     2008  0.390    NaN    NaN    NaN    NaN    NaN    NaN
 
-Table 5 - Ratio of Reported Claims to Earned Premium
-#######################################################
+Table 5 - Ratio of Reported Claims to On-Level Earned Premium
+################################################################
 
     We calculate the on-level premium using the average rate level changes by year and restating the earned premium for each year as if it was written at the 2008 rate level.
 
@@ -162,7 +162,6 @@ And the actual Table 5 is straight-forward.
 .. doctest::
 
     >>> (tri['Reported Claims'] / ol_prem_tri).round(decimals=3)
-
              12     24     36     48     60     72     84
     2002  0.229  0.364  0.477  0.674  0.794  0.871  0.862
     2003  0.160  0.282  0.504  0.674  0.735  0.737    NaN
@@ -286,7 +285,7 @@ Table 13 – Average Paid Claim Development Triangle
     2008  12351.0      NaN      NaN      NaN      NaN      NaN      NaN
 
 Table 14 – Average Case Outstanding Development Triangle
-#######################################################
+#########################################################
 
 .. doctest::
 
