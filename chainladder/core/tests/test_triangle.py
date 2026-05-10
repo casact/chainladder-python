@@ -1014,11 +1014,14 @@ def test_triangle_init_from_dict() -> None:
 
 def test_xs(clrd):
     assert clrd.xs('Adriatic Ins Co') == clrd.loc['Adriatic Ins Co']
-    assert clrd.xs('Adriatic Ins Co',drop_leve = True).index == clrd.loc['Adriatic Ins Co'].index
+    # when slicing with .loc on the first term in the index, Triangle will drop the term 
+    assert clrd.xs('Adriatic Ins Co',drop_level = True).index.equals(clrd.loc['Adriatic Ins Co'].index)
     assert clrd.xs(('Agway Ins Co','comauto')) == clrd.loc['Agway Ins Co','comauto']
-    assert clrd.xs(('Agway Ins Co','comauto')).index == clrd.loc['Agway Ins Co','comauto'].index
+    assert clrd.xs(('Agway Ins Co','comauto')).index.equals(clrd.loc['Agway Ins Co','comauto'].index)
+    # when all index terms are included in xs and drop_level is True, the default 'Total' index value is provided
+    assert clrd.xs(('Agway Ins Co','comauto'), drop_level=True).index.equals(cl.load_sample('genins').index)
     assert clrd.xs('comauto',level=1) == clrd.loc[clrd['LOB'] == 'comauto']
-    assert clrd.xs('comauto',level=1).index == clrd.loc[clrd['LOB'] == 'comauto'].index
+    assert clrd.xs('comauto',level=1).index.equals(clrd.loc[clrd['LOB'] == 'comauto'].index)
 
 def test_validate_assumption(raa: Triangle) -> None:
     """
