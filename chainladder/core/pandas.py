@@ -447,8 +447,10 @@ class TrianglePandas:
     
     def xs(self,index_key,level=None,drop_level=False):
         '''
-        mimics xs from pandas. key difference is that axis is always 0 and therefore not an argument in the function 
-        main use case for this function is when slicing the 2nd field in the index
+        mimics xs from pandas. key differences 
+            - is always 0 and therefore not an argument in the function 
+            - drop-level is set to be False be default, to retain Triangle.loc behavior
+        main use case for this function is when slicing beyond the first field in the index (such as LOB in the clrd dataset)
         '''
         mi = pd.MultiIndex.from_frame(self.index)
 
