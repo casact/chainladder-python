@@ -444,6 +444,28 @@ class TrianglePandas:
 
     def round(self, decimals=0, *args, **kwargs):
         return round(self, decimals)
+    
+    def xs(self,index_key,level=None,drop_level=True):
+        '''
+        mimics xs from pandas. key difference is that axis is always 0 and therefore not an argument in the function 
+        main use case for this function is when slicing the 2nd field in the index
+        '''
+        mi = pd.MultiIndex.from_frame(self.index)
+        df = pd.DataFrame(data=list(range(len(self.index))),index = mi)
+
+        lvl = 0 if level is None else level
+        loc, new_ax = mi.get_loc_level(index_key, level=lvl, drop_level=drop_level)
+
+        # create the tuple of the indexer
+        _indexer = [slice(None)] * df.ndim
+        _indexer[0] = loc
+        indexer = tuple(_indexer)
+        result = self.iloc[indexer]
+        if new_ax is not None:
+            result.index = new_ax.to_frame().reset_index(names='__discard__')[new_ax.names]
+        else:
+            result.index = pd.DataFrame(data=['Total'],columns=['Total'])
+        return result
 
 
 def add_triangle_agg_func(

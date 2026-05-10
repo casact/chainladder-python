@@ -1012,6 +1012,10 @@ def test_triangle_init_from_dict() -> None:
 
     assert tri_from_df == tri_from_dict
 
+def test_xs(clrd):
+    assert clrd.xs('Adriatic Ins Co') == clrd.loc['Adriatic Ins Co']
+    assert clrd.xs(('Agway Ins Co','comauto')) == clrd.loc['Agway Ins Co','comauto']
+    assert clrd.xs('comauto',level=1) == clrd.loc[clrd['LOB'] == 'comauto']
 
 def test_validate_assumption(raa: Triangle) -> None:
     """
