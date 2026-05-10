@@ -50,11 +50,18 @@ We need to manually load this table of premium and rate change figures. Note tha
     5           2007            62438        -0.200                          0.142                  -0.275
     6           2008            47797        -0.200                         -0.086                  -0.043
 
+We take a different approach from Friedland to calculate the on-level factors in order to leverage the functionality available in the chainladder package. This approach is more direct since we are almost always after on-leveled premium. We are calculating Cumulative Average Rate Level merely to demonstrate parity with the text. 
+
     To simplify the analysis in this chapter and in Part 3, assume that the rate changes in the above table represent the average earned rate level for the year
 
     -- Friedland, p84
 
-What this assumption means in practice, is that the rate change figures are already on an earned basis. We match this assumption through (1) setting the rate change dates to the beginning of the year, and (2) specifying that vertial_line = True to the utility function ``parallelogram_olf`` (related to, but not to be confused with the estimator ``ParallelogramOLF``). 
+What this assumption means in practice, is that the rate change figures are already on an earned basis. This tells us to do these two things as we call the utility function ``parallelogram_olf``
+
+* setting the rate change dates to the beginning of the year
+* specifying that ``vertial_line = True``
+
+Note that this utility function is related to, but not to be confused with, the estimator ``ParallelogramOLF``. 
 
 Table 2 - Reported Claim Development Triangle
 ##################################################
