@@ -445,7 +445,7 @@ class TrianglePandas:
     def round(self, decimals=0, *args, **kwargs):
         return round(self, decimals)
     
-    def xs(self,index_key,level=None,drop_level=True):
+    def xs(self,index_key,level=None,drop_level=False):
         '''
         mimics xs from pandas. key difference is that axis is always 0 and therefore not an argument in the function 
         main use case for this function is when slicing the 2nd field in the index
@@ -461,13 +461,11 @@ class TrianglePandas:
         indexer = tuple(_indexer)
         result = self.iloc[indexer]
         if new_ax is not None:
-            new_ax_df = new_ax.to_frame().reset_index(allow_duplicates = True)[new_ax.names]
-            new_ax_df = new_ax_df.loc[:,new_ax_df.columns.duplicated()]
+            new_ax_df = new_ax.to_frame(index=None)[new_ax.names]
             result.index = new_ax_df
         else:
             result.index = pd.DataFrame(data=['Total'],columns=['Total'])
         return result
-
 
 def add_triangle_agg_func(
         cls: Type[TrianglePandas],
