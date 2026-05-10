@@ -16,27 +16,37 @@ This chapter dives deeper into understanding the triangle. We will demonstrate h
 Table 1 - Summary of Earned Premium and Rate Changes
 #######################################################
 
+We need to manually load this table of premium and rate change figures. Note that we are not loading the last two columns, as they can be derived based on premium and rate change. 
+
 .. doctest::
 
     >>> data = [
-    ...     [2002, 61183, None ,0 , None],
-    ...     [2003, 69175, .05, '5.0%', .077],
-    ...     [2004, 99322, .075, '12.9%', .336],
-    ...     [2005, 138151, .15, '29.8%', .21],
-    ...     [2006, 107578, .1, '42.8%', -.292],
-    ...     [2007, 62438, .2, '14.2%', -.275],
-    ...     [2008, 47797, .2, '-8.6%', -.043]
+    ...     [2002, 61183, 0],
+    ...     [2003, 69175, .05],
+    ...     [2004, 99322, .075],
+    ...     [2005, 138151, .15],
+    ...     [2006, 107578, .1],
+    ...     [2007, 62438, -.2],
+    ...     [2008, 47797, -.2]
     ... ]
     >>> columns = [
     ...     'Calendar Year',
     ...     'Earned Premiums',
-    ...     'Rate Changes',
-    ...     'Cumulative Average Rate Level',
-    ...     'Annual Exposure Change'
+    ...     'Rate Changes'
     ... ]
-    >>> df = pd.DataFrame(data, columns=columns)
-    >>> with pd.option_context('display.width', 1000):
-    ...     print(df)
+    >>> df_prem = pd.DataFrame(data, columns=columns)
+    >>> df_prem['Date'] = pd.to_datetime(df_prem['Calendar Year'].astype(int).astype(str) + '-01-01') # see discussion below on why we are doing this
+    >>> df_prem['On-level Factor'] = cl.parallelogram_olf(df_prem['Rate Changes'],df_prem['Date'],vertical_line = True).reset_index()['OLF']
+    >>> df_prem['Cumulative Average Rate Level'] = ((1 + df_prem['Rate Changes']).product() / df_prem['On-level Factor'] - 1).round(decimals=3)    
+    >>> df_prem['Premium Change'] = df_prem['Earned Premiums'].div(df_prem['Earned Premiums'].shift(1)).dropna()
+    >>> df_prem['Annual Exposure Change'] = (df_prem['Premium Change'] / (1 + df_prem['Rate Changes']) - 1).round(decimals=3)
+    >>> df_prem[['Calendar Year','Earned Premiums','Rate Changes','Cumulative Average Rate Level','Annual Exposure Change']]
+
+    To simplify the analysis in this chapter and in Part 3, assume that the rate changes in the above table represent the average earned rate level for the year
+
+    -- Friedland, p84
+
+What this assumption means in practice, is that the rate change figures are already on an earned basis. We match this assumption through (1) setting the rate change dates to the beginning of the year, and (2) specifying that vertial_line = True to the utility function ``parallelogram_olf`` (related to, but not to be confused with the estimator ``ParallelogramOLF``). 
 
 Table 2 - Reported Claim Development Triangle
 ##################################################
@@ -78,7 +88,7 @@ To divide losses by premium, we need to turn premium from a ``Series`` into a ``
 
 .. doctest::
 
-    >>> tri['Reported Claims'] * 0 + df["Earned Premiums"]
+    >>> tri['Reported Claims'] * 0 + df_prem["Earned Premiums"]
                12       24       36        48        60       72       84
     2002  61183.0  69175.0  99322.0  138151.0  107578.0  62438.0  47797.0
     2003  61183.0  69175.0  99322.0  138151.0  107578.0  62438.0      NaN
@@ -90,7 +100,9 @@ To divide losses by premium, we need to turn premium from a ``Series`` into a ``
 
 That didn't quite work. We want each accident year to have the same premium. The reason why this is happening is that development period is the last dimension (i.e. down a row in a triangle), and origin period (accident year) is the second-last dimension (i.e. rows down a column). Any 1-D collection is automatically assumed to be values down a row, rather than rows down a column (a little unintuitive, as a ``pandas.DataFrame`` is displayed vertically.). So we need a little help in ``numpy`` land to rectify the problem.
 
-    >>> prem_tri = tri['Reported Claims'] * 0 + df["Earned Premiums"].to_numpy().reshape(-1,1) # accident year is the second-order dimension in a Triangle
+.. doctest::
+
+    >>> prem_tri = tri['Reported Claims'] * 0 + df_prem["Earned Premiums"].to_numpy().reshape(-1,1)
     >>> prem_tri
                 12        24        36        48       60       72       84
     2002   61183.0   61183.0   61183.0   61183.0  61183.0  61183.0  61183.0
@@ -101,7 +113,7 @@ That didn't quite work. We want each accident year to have the same premium. The
     2007   62438.0   62438.0       NaN       NaN      NaN      NaN      NaN
     2008   47797.0       NaN       NaN       NaN      NaN      NaN      NaN
 
-Now we can divide seamlessly into our loss triangles
+Now we can divide two triangles seamlessly
 
 .. doctest::
 
@@ -114,3 +126,92 @@ Now we can divide seamlessly into our loss triangles
     2006  0.252  0.435  0.454    NaN    NaN    NaN    NaN
     2007  0.312  0.508    NaN    NaN    NaN    NaN    NaN
     2008  0.390    NaN    NaN    NaN    NaN    NaN    NaN
+
+Table 5 - Ratio of Reported Claims to Earned Premium
+#######################################################
+
+    We calculate the on-level premium using the average rate level changes by year and restating the earned premium for each year as if it was written at the 2008 rate level.
+
+    -- Friedland, p84
+
+We don't need to follow Friedland's approach here, as we already got on-level factors. 
+
+.. doctest::
+
+    >>> ol_prem_tri = prem_tri * df_prem["On-level Factor"].to_numpy().reshape(-1,1)
+    >>> ol_prem_tri
+
+And the actual Table 5 is straight-forward. 
+
+.. doctest::
+
+    >>> (tri['Reported Claims'] / olprem_tri).round(decimals=3)
+
+Table 6 - Ratio of Paid Claims-to-Reported Claims
+#######################################################
+
+.. doctest::
+
+    >>> (tri['Paid Claims'] / tri['Reported Claims']).round(decimals=3)
+
+Table 7 - Ratio of Reported Claims to Earned Premium
+#######################################################
+
+.. doctest::
+
+    >>> (tri['Paid Claims'] / olprem_tri).round(decimals=3)
+
+Table 7 - Ratio of Reported Claims to Earned Premium
+#######################################################
+
+.. doctest::
+
+    >>> (tri['Paid Claims'] / olprem_tri).round(decimals=3)
+
+Table 8 - Reported Claim Count Development Triangle
+#######################################################
+
+The count data is stored under a different name. 
+
+.. doctest::
+
+    >>> tri_cnt = cl.load_sample('friedland_xyz_freq_sev')
+    >>> tri_cnt = tri_cnt[tri_cnt.origin >= '2002'][tri_cnt.development <= 84]
+    >>> tri_cnt["Reported Claim Counts"]
+
+Table 9 - Closed Claim Count Development Triangle
+#######################################################
+
+.. doctest::
+
+    >>> tri_cnt["Closed Claim Counts"]
+
+Table 10 - Ratio of Closed-to-Reported Claim Counts
+#######################################################
+
+.. doctest::
+
+    >>> (tri_cnt["Reported Claim Counts"] / tri_cnt["Reported Claim Counts"]).round(decimals=3)
+
+Table 12 – Average Reported Claim Development Triangle
+#######################################################
+
+The losses are stored in the thousands. When calcualting severity, we need to multiply back the thousand. 
+
+.. doctest::
+
+    >>> (tri["Reported Claims"] / tri_cnt["Reported Claim Counts"] * 1000).round(decimals=0)
+
+Table 13 – Average Paid Claim Development Triangle
+#######################################################
+
+.. doctest::
+
+    >>> (tri["Paid Claims"] / tri_cnt["Closed Claim Counts"] * 1000).round(decimals=0)
+
+Table 14 – Average Case Outstanding Development Triangle
+#######################################################
+
+.. doctest::
+
+    >>> ((tri["Reported Claims"] - tri["Paid Claims"]) / (tri_cnt["Reported Claim Counts"] - tri_cnt["Closed Claim Counts"]) * 1000).round(decimals=0)
