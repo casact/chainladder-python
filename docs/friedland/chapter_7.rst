@@ -13,6 +13,8 @@ This chapter covers the foundational development/chainladder method. In the chai
     >>> import numpy as np
     >>> import pandas as pd
     >>> import chainladder as cl
+    >>> pd.set_option('display.max_columns', None)
+    >>> pd.set_option('display.width', 1000)
 
 Exhibit I Sheet 1 p106
 ##########################
@@ -338,31 +340,18 @@ This is a common report layout for reserving analyses. Some ``Pandas`` manipulat
     ...     output["Paid Ultimate"] = cl.Chainladder().fit(paid).ultimate_.to_frame(origin_as_datetime=False)
     ...     return output
     >>> exhibit = development_summary(reported_selected_pattern,paid_selected_pattern)
-    >>> exhibit[['Age','Reported Claims','Paid Claims']] # splitting the display due to the number of columns
-          Age  Reported Claims  Paid Claims
-    1998  120       47742304.0   47644187.0
-    1999  108       51185767.0   51000534.0
-    2000   96       54837929.0   54533225.0
-    2001   84       56299562.0   55878421.0
-    2002   72       58592712.0   57807215.0
-    2003   60       57565344.0   55930654.0
-    2004   48       56976657.0   53774672.0
-    2005   36       56786410.0   50644994.0
-    2006   24       54641339.0   43606497.0
-    2007   12       48853563.0   27229969.0
-
-    >>> exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']]
-          Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
-    1998      1.000000  1.002000       4.774230e+07   4.773948e+07
-    1999      1.000369  1.003870       5.120467e+07   5.119788e+07
-    2000      1.000954  1.006219       5.489024e+07   5.487237e+07
-    2001      1.002540  1.011036       5.644257e+07   5.649507e+07
-    2002      1.005300  1.020604       5.890327e+07   5.899830e+07
-    2003      1.009908  1.039752       5.813573e+07   5.815399e+07
-    2004      1.021554  1.085341       5.820476e+07   5.836386e+07
-    2005      1.049493  1.184218       5.959697e+07   5.997474e+07
-    2006      1.108139  1.404485       6.055018e+07   6.124466e+07
-    2007      1.289977  2.390688       6.301997e+07   6.509837e+07
+    >>> exhibit
+          Age  Reported Claims  Paid Claims  Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
+    1998  120       47742304.0   47644187.0      1.000000  1.002000       4.774230e+07   4.773948e+07
+    1999  108       51185767.0   51000534.0      1.000369  1.003870       5.120467e+07   5.119788e+07
+    2000   96       54837929.0   54533225.0      1.000954  1.006219       5.489024e+07   5.487237e+07
+    2001   84       56299562.0   55878421.0      1.002540  1.011036       5.644257e+07   5.649507e+07
+    2002   72       58592712.0   57807215.0      1.005300  1.020604       5.890327e+07   5.899830e+07
+    2003   60       57565344.0   55930654.0      1.009908  1.039752       5.813573e+07   5.815399e+07
+    2004   48       56976657.0   53774672.0      1.021554  1.085341       5.820476e+07   5.836386e+07
+    2005   36       56786410.0   50644994.0      1.049493  1.184218       5.959697e+07   5.997474e+07
+    2006   24       54641339.0   43606497.0      1.108139  1.404485       6.055018e+07   6.124466e+07
+    2007   12       48853563.0   27229969.0      1.289977  2.390688       6.301997e+07   6.509837e+07
 
 Unfortunately this does not match the table from the text, due to rounding. We will construct a separate, rounded exhibit to reconcile to the text. 
 
@@ -415,33 +404,20 @@ This is another common report layout for reserving analyses. The manipulation he
     ...     output['Paid Method Unpaid'] = output['Paid Method IBNR'] + output['Case Outstanding']
     ...     return output
     >>> unpaid_exhibit = unpaid_summary(rounded_exhibit)
-    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR']] # only displaying newly calculated columns
-          Case Outstanding  Reported Method IBNR  Paid Method IBNR
-    1998           98117.0                   0.0           -2829.0
-    1999          185233.0                   0.0           18769.0
-    2000          304704.0               54838.0           22495.0
-    2001          421141.0              168899.0          193522.0
-    2002          785497.0              351556.0          370647.0
-    2003         1634690.0              633219.0          602536.0
-    2004         3201985.0             1310463.0         1368862.0
-    2005         6141416.0             2896107.0         3177263.0
-    2006        11034842.0             6010547.0         6582183.0
-    2007        21623594.0            14265240.0        16226063.0
+    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
+          Case Outstanding  Reported Method IBNR  Paid Method IBNR  Reported Method Unpaid  Paid Method Unpaid
+    1998           98117.0                   0.0           -2829.0                 98117.0             95288.0
+    1999          185233.0                   0.0           18769.0                185233.0            204002.0
+    2000          304704.0               54838.0           22495.0                359542.0            327199.0
+    2001          421141.0              168899.0          193522.0                590040.0            614663.0
+    2002          785497.0              351556.0          370647.0               1137053.0           1156144.0
+    2003         1634690.0              633219.0          602536.0               2267909.0           2237226.0
+    2004         3201985.0             1310463.0         1368862.0               4512448.0           4570847.0
+    2005         6141416.0             2896107.0         3177263.0               9037523.0           9318679.0
+    2006        11034842.0             6010547.0         6582183.0              17045389.0          17617025.0
+    2007        21623594.0            14265240.0        16226063.0              35888834.0          37849657.0
 
-    >>> unpaid_exhibit[['Reported Method Unpaid','Paid Method Unpaid']]
-          Reported Method Unpaid  Paid Method Unpaid
-    1998                 98117.0             95288.0
-    1999                185233.0            204002.0
-    2000                359542.0            327199.0
-    2001                590040.0            614663.0
-    2002               1137053.0           1156144.0
-    2003               2267909.0           2237226.0
-    2004               4512448.0           4570847.0
-    2005               9037523.0           9318679.0
-    2006              17045389.0          17617025.0
-    2007              35888834.0          37849657.0
-
-Exhibit II Sheets 1 pp110
+Exhibit II Sheet 1 p110
 ################################
 
 Now that we have walked through an analysis step by step, let's introduce some scaling by streamlining the entire exhibit into single function. 
@@ -456,17 +432,18 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     devs = {}
     ...     print('PART 3 - Average Age-to-Age Factor')
     ...     for k,v in avg_params.items():
-    ...         print(k)
     ...         devs[k] = cl.Development(**v).fit_transform(tri)
-    ...         print(devs[k].ldf_.round(decimals=3))
-    ...     devs["selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
-    ...     print('Selected')
-    ...     print(devs["selected"].ldf_.round(decimals=3))
-    ...     sel_cdf = devs["selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
-    ...     print('CDF to Ultimate')
-    ...     print(sel_cdf)
-    ...     print('Percent Reported')    
-    ...     print((1/sel_cdf).round(decimals=3))
+    ...     def print_ldfs(ldf_dict:dict[cl.Triangle()]):
+    ...         print(pd.concat([v.to_frame().rename(index={'(All)':k}) for k,v in ldf_dict.items()]))
+    ...         return None
+    ...     print_ldfs({k:v.ldf_.round(decimals=3) for k,v in devs.items()})
+    ...     devs["Selected"] = cl.TailConstant(tail = tail, projection_period = 0).fit_transform(devs[selected_avg])
+    ...     selected = {}
+    ...     selected['CDF to Ultimate'] = devs["Selected"].ldf_.round(decimals=3).incr_to_cum().round(decimals=3)
+    ...     selected['Percent Reported'] = (1/selected['CDF to Ultimate']).round(decimals=3)
+    ...     print('PART 4 - Selected Age-to-Age Factor')
+    ...     print_ldfs({'Selected':devs['Selected'].ldf_.round(decimals=3)})
+    ...     print_ldfs(selected)
     ...     return devs
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
@@ -500,38 +477,22 @@ Now that we have walked through an analysis step by step, let's introduce some s
     2006  1.728479  1.043199       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
     2007  1.629204       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
     PART 3 - Average Age-to-Age Factor
-    simple_5
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.827  1.417  1.247  1.124  1.082   1.04  1.031   0.997    0.991    0.999
-    simple_3
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.671   1.33  1.187  1.083  1.062  1.033  1.003   0.997    0.991    0.999
-    simple_2
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.679  1.263  1.111  1.035   1.05  1.013  1.011   1.002    0.991    0.999
-    volume_4
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.802  1.376  1.185  1.094  1.081  1.033  1.019   0.998    0.993    0.999
-    volume_3
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.674  1.325  1.147   1.06   1.06  1.028  1.005   0.998    0.993    0.999
-    volume_2
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.687  1.265  1.102   1.02   1.05   1.01  1.011     1.0    0.993    0.999
-    medial 5x1
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  1.715  1.419  1.273  1.118   1.08  1.046  1.011   0.993    0.991    0.999
-    Selected
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132  132-144
-    (All)  1.687  1.265  1.102   1.02   1.05   1.01  1.011     1.0    0.993    0.999      1.0
-    CDF to Ultimate
-           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
-    (All)   2.551   1.512   1.196   1.085   1.064   1.013   1.003   0.992    0.992    0.999      1.0
-    Percent Reported
-           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
-    (All)   0.392   0.661   0.836   0.922    0.94   0.987   0.997   1.008    1.008    1.001      1.0
+                12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
+    simple_5    1.827  1.417  1.247  1.124  1.082  1.040  1.031   0.997    0.991    0.999
+    simple_3    1.671  1.330  1.187  1.083  1.062  1.033  1.003   0.997    0.991    0.999
+    simple_2    1.679  1.263  1.111  1.035  1.050  1.013  1.011   1.002    0.991    0.999
+    volume_4    1.802  1.376  1.185  1.094  1.081  1.033  1.019   0.998    0.993    0.999
+    volume_3    1.674  1.325  1.147  1.060  1.060  1.028  1.005   0.998    0.993    0.999
+    volume_2    1.687  1.265  1.102  1.020  1.050  1.010  1.011   1.000    0.993    0.999
+    medial 5x1  1.715  1.419  1.273  1.118  1.080  1.046  1.011   0.993    0.991    0.999
+    PART 4 - Selected Age-to-Age Factor
+              12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132  132-144
+    Selected  1.687  1.265  1.102   1.02   1.05   1.01  1.011     1.0    0.993    0.999      1.0
+                      12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
+    CDF to Ultimate    2.551   1.512   1.196   1.085   1.064   1.013   1.003   0.992    0.992    0.999      1.0
+    Percent Reported   0.392   0.661   0.836   0.922   0.940   0.987   0.997   1.008    1.008    1.001      1.0
 
-Exhibit II Sheet 3 p112
+Exhibit II Sheet 2 p111
 ##########################
 
 .. doctest::
@@ -563,70 +524,40 @@ Exhibit II Sheet 3 p112
     2006  3.335599  1.937426       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
     2007  3.362142       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
     PART 3 - Average Age-to-Age Factor
-    simple_5
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)   3.75   2.11  1.613  1.365   1.22  1.129  1.059   1.035    1.019    1.004
-    simple_3
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  3.571  2.258  1.652   1.39  1.229  1.146  1.049   1.035    1.019    1.004
-    simple_2
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  3.349  2.077  1.576  1.362  1.206  1.143   1.06   1.021    1.019    1.004
-    volume_4
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  3.713  2.206  1.615  1.342  1.218  1.128  1.056    1.03    1.017    1.004
-    volume_3
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)   3.55  2.238  1.619  1.349  1.222  1.141  1.051    1.03    1.017    1.004
-    volume_2
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  3.349  2.079  1.574  1.316  1.203  1.136  1.059   1.022    1.017    1.004
-    medial 5x1
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
-    (All)  3.653  2.062  1.594  1.368  1.229  1.128   1.06   1.025    1.019    1.004
-    Selected
-           12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132  132-144
-    (All)  3.349  2.079  1.574  1.316  1.203  1.136  1.059   1.022    1.017    1.004     1.01
-    CDF to Ultimate
-           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
-    (All)  21.999   6.569    3.16   2.007   1.525   1.268   1.116   1.054    1.031    1.014     1.01
-    Percent Reported
-           12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
-    (All)   0.045   0.152   0.316   0.498   0.656   0.789   0.896   0.949     0.97    0.986     0.99
+                12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132
+    simple_5    3.750  2.110  1.613  1.365  1.220  1.129  1.059   1.035    1.019    1.004
+    simple_3    3.571  2.258  1.652  1.390  1.229  1.146  1.049   1.035    1.019    1.004
+    simple_2    3.349  2.077  1.576  1.362  1.206  1.143  1.060   1.021    1.019    1.004
+    volume_4    3.713  2.206  1.615  1.342  1.218  1.128  1.056   1.030    1.017    1.004
+    volume_3    3.550  2.238  1.619  1.349  1.222  1.141  1.051   1.030    1.017    1.004
+    volume_2    3.349  2.079  1.574  1.316  1.203  1.136  1.059   1.022    1.017    1.004
+    medial 5x1  3.653  2.062  1.594  1.368  1.229  1.128  1.060   1.025    1.019    1.004
+    PART 4 - Selected Age-to-Age Factor
+              12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120  120-132  132-144
+    Selected  3.349  2.079  1.574  1.316  1.203  1.136  1.059   1.022    1.017    1.004     1.01
+                      12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult  132-Ult
+    CDF to Ultimate   21.999   6.569   3.160   2.007   1.525   1.268   1.116   1.054    1.031    1.014     1.01
+    Percent Reported   0.045   0.152   0.316   0.498   0.656   0.789   0.896   0.949    0.970    0.986     0.99
 
 Exhibit II Sheet 3 p112
 ##########################
 
 .. doctest::
 
-    >>> exhibit = rounded_development_summary(reported_devs["selected"],paid_devs["selected"])
-    >>> exhibit[['Age','Reported Claims','Paid Claims']]
-          Age  Reported Claims  Paid Claims
-    1998  132          15822.0      15822.0
-    1999  120          25107.0      24817.0
-    2000  108          37246.0      36782.0
-    2001   96          38798.0      38519.0
-    2002   84          48169.0      44437.0
-    2003   72          44373.0      39320.0
-    2004   60          70288.0      52811.0
-    2005   48          70655.0      40026.0
-    2006   36          48804.0      22819.0
-    2007   24          31732.0      11865.0
-    2008   12          18632.0       3409.0
-
-    >>> exhibit[['Reported CDF','Paid CDF','Reported Ultimate','Paid Ultimate']]
-          Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
-    1998         1.000     1.010            15822.0        15980.0
-    1999         0.999     1.014            25082.0        25164.0
-    2000         0.992     1.031            36948.0        37922.0
-    2001         0.992     1.054            38488.0        40599.0
-    2002         1.003     1.116            48314.0        49592.0
-    2003         1.013     1.268            44950.0        49858.0
-    2004         1.064     1.525            74786.0        80537.0
-    2005         1.085     2.007            76661.0        80332.0
-    2006         1.196     3.160            58370.0        72108.0
-    2007         1.512     6.569            47979.0        77941.0
-    2008         2.551    21.999            47530.0        74995.0
+    >>> exhibit = rounded_development_summary(reported_devs["Selected"],paid_devs["Selected"])
+    >>> exhibit
+          Age  Reported Claims  Paid Claims  Reported CDF  Paid CDF  Reported Ultimate  Paid Ultimate
+    1998  132          15822.0      15822.0         1.000     1.010            15822.0        15980.0
+    1999  120          25107.0      24817.0         0.999     1.014            25082.0        25164.0
+    2000  108          37246.0      36782.0         0.992     1.031            36948.0        37922.0
+    2001   96          38798.0      38519.0         0.992     1.054            38488.0        40599.0
+    2002   84          48169.0      44437.0         1.003     1.116            48314.0        49592.0
+    2003   72          44373.0      39320.0         1.013     1.268            44950.0        49858.0
+    2004   60          70288.0      52811.0         1.064     1.525            74786.0        80537.0
+    2005   48          70655.0      40026.0         1.085     2.007            76661.0        80332.0
+    2006   36          48804.0      22819.0         1.196     3.160            58370.0        72108.0
+    2007   24          31732.0      11865.0         1.512     6.569            47979.0        77941.0
+    2008   12          18632.0       3409.0         2.551    21.999            47530.0        74995.0
 
 Exhibit II Sheet 4 p113
 ##########################
@@ -634,33 +565,19 @@ Exhibit II Sheet 4 p113
 .. doctest::
 
     >>> unpaid_exhibit = unpaid_summary(exhibit)
-    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR']]
-          Case Outstanding  Reported Method IBNR  Paid Method IBNR
-    1998               0.0                   0.0             158.0
-    1999             290.0                 -25.0              57.0
-    2000             464.0                -298.0             676.0
-    2001             279.0                -310.0            1801.0
-    2002            3732.0                 145.0            1423.0
-    2003            5053.0                 577.0            5485.0
-    2004           17477.0                4498.0           10249.0
-    2005           30629.0                6006.0            9677.0
-    2006           25985.0                9566.0           23304.0
-    2007           19867.0               16247.0           46209.0
-    2008           15223.0               28898.0           56363.0
-
-    >>> unpaid_exhibit[['Reported Method Unpaid','Paid Method Unpaid']]
-          Reported Method Unpaid  Paid Method Unpaid
-    1998                     0.0               158.0
-    1999                   265.0               347.0
-    2000                   166.0              1140.0
-    2001                   -31.0              2080.0
-    2002                  3877.0              5155.0
-    2003                  5630.0             10538.0
-    2004                 21975.0             27726.0
-    2005                 36635.0             40306.0
-    2006                 35551.0             49289.0
-    2007                 36114.0             66076.0
-    2008                 44121.0             71586.0
+    >>> unpaid_exhibit[['Case Outstanding','Reported Method IBNR','Paid Method IBNR','Reported Method Unpaid','Paid Method Unpaid']]
+          Case Outstanding  Reported Method IBNR  Paid Method IBNR  Reported Method Unpaid  Paid Method Unpaid
+    1998               0.0                   0.0             158.0                     0.0               158.0
+    1999             290.0                 -25.0              57.0                   265.0               347.0
+    2000             464.0                -298.0             676.0                   166.0              1140.0
+    2001             279.0                -310.0            1801.0                   -31.0              2080.0
+    2002            3732.0                 145.0            1423.0                  3877.0              5155.0
+    2003            5053.0                 577.0            5485.0                  5630.0             10538.0
+    2004           17477.0                4498.0           10249.0                 21975.0             27726.0
+    2005           30629.0                6006.0            9677.0                 36635.0             40306.0
+    2006           25985.0                9566.0           23304.0                 35551.0             49289.0
+    2007           19867.0               16247.0           46209.0                 36114.0             66076.0
+    2008           15223.0               28898.0           56363.0                 44121.0             71586.0
 
 Exhibit III Sheet 1 p114
 ##########################
