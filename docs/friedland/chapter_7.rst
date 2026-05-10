@@ -6,7 +6,7 @@ Chapter 7 - Development Technique
 
     -- Friedland, p84
 
-This chapter covers the foundational development/chainladder method. In the chainladder package, this is implemented in the ``Development`` class. 
+This chapter covers the foundational development/chainladder method. In the chainladder package, this is implemented in the ``Development`` estimator. 
 
 .. doctest::
 
@@ -19,12 +19,12 @@ This chapter covers the foundational development/chainladder method. In the chai
 Exhibit I Sheet 1 p106
 ##########################
 
-Diving straight into Exhibit 1. We will begin by importing packages and loading the ``Triangle`` at the top of p106.
+Diving straight into Exhibit 1. 
 
 PART 1 - Data Triangle
 -----------------------
 
-Let's take a look at the ``Triangle`` we just loaded. 
+We have already imported the necessary packages loading the ``Triangle`` at the top of p106. Let's take a look at the ``Triangle`` we just loaded. 
 
 .. doctest::
 
