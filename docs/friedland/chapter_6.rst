@@ -163,6 +163,15 @@ And the actual Table 5 is straight-forward.
 
     >>> (tri['Reported Claims'] / ol_prem_tri).round(decimals=3)
 
+             12     24     36     48     60     72     84
+    2002  0.229  0.364  0.477  0.674  0.794  0.871  0.862
+    2003  0.160  0.282  0.504  0.674  0.735  0.737    NaN
+    2004  0.211  0.500  0.732  0.892  0.874    NaN    NaN
+    2005  0.295  0.488  0.723  0.726    NaN    NaN    NaN
+    2006  0.393  0.679  0.709    NaN    NaN    NaN    NaN
+    2007  0.390  0.635    NaN    NaN    NaN    NaN    NaN
+    2008  0.390    NaN    NaN    NaN    NaN    NaN    NaN
+
 Table 6 - Ratio of Paid Claims-to-Reported Claims
 #######################################################
 
@@ -184,6 +193,14 @@ Table 7 - Ratio of Paid Claims to Earned Premium
 .. doctest::
 
     >>> (tri['Paid Claims'] / ol_prem_tri).round(decimals=3)
+             12     24     36     48     60     72     84
+    2002  0.041  0.142  0.247  0.395  0.571  0.727  0.795
+    2003  0.029  0.104  0.211  0.380  0.573  0.653    NaN
+    2004  0.028  0.123  0.323  0.540  0.657    NaN    NaN
+    2005  0.031  0.126  0.278  0.412    NaN    NaN    NaN
+    2006  0.051  0.171  0.331    NaN    NaN    NaN    NaN
+    2007  0.071  0.238    NaN    NaN    NaN    NaN    NaN
+    2008  0.071    NaN    NaN    NaN    NaN    NaN    NaN
 
 Table 8 - Reported Claim Count Development Triangle
 #######################################################
@@ -225,6 +242,14 @@ Table 10 - Ratio of Closed-to-Reported Claim Counts
 .. doctest::
 
     >>> (tri_cnt["Closed Claim Counts"] / tri_cnt["Reported Claim Counts"]).round(decimals=3)
+             12     24     36     48     60     72    84
+    2002  0.151  0.401  0.543  0.699  0.857  0.943  0.98
+    2003  0.132  0.380  0.577  0.777  0.925  0.963   NaN
+    2004  0.122  0.391  0.645  0.823  0.899    NaN   NaN
+    2005  0.143  0.488  0.703  0.814    NaN    NaN   NaN
+    2006  0.208  0.551  0.725    NaN    NaN    NaN   NaN
+    2007  0.276  0.626    NaN    NaN    NaN    NaN   NaN
+    2008  0.266    NaN    NaN    NaN    NaN    NaN   NaN
 
 Table 12 – Average Reported Claim Development Triangle
 #######################################################
@@ -242,6 +267,8 @@ The losses are stored in the thousands. When calcualting severity, we need to mu
     2006  18375.0  28440.0  29453.0      NaN      NaN      NaN      NaN
     2007  16340.0  25104.0      NaN      NaN      NaN      NaN      NaN
     2008  17985.0      NaN      NaN      NaN      NaN      NaN      NaN
+
+We see some very slight differences with the table in the text, likely due to rounding (the losses were rounded to the nearest thousand). 
 
 Table 13 – Average Paid Claim Development Triangle
 #######################################################
