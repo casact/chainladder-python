@@ -451,18 +451,19 @@ class TrianglePandas:
         main use case for this function is when slicing the 2nd field in the index
         '''
         mi = pd.MultiIndex.from_frame(self.index)
-        df = pd.DataFrame(data=list(range(len(self.index))),index = mi)
 
         lvl = 0 if level is None else level
         loc, new_ax = mi.get_loc_level(index_key, level=lvl, drop_level=drop_level)
 
         # create the tuple of the indexer
-        _indexer = [slice(None)] * df.ndim
+        _indexer = [slice(None)] * 2
         _indexer[0] = loc
         indexer = tuple(_indexer)
         result = self.iloc[indexer]
         if new_ax is not None:
-            result.index = new_ax.to_frame().reset_index(names='__discard__')[new_ax.names]
+            new_ax_df = new_ax.to_frame().reset_index(allow_duplicates = True)[new_ax.names]
+            new_ax_df = new_ax_df.loc[:,new_ax_df.columns.duplicated()]
+            result.index = new_ax_df
         else:
             result.index = pd.DataFrame(data=['Total'],columns=['Total'])
         return result
