@@ -41,6 +41,14 @@ We need to manually load this table of premium and rate change figures. Note tha
     >>> df_prem['Premium Change'] = df_prem['Earned Premiums'].div(df_prem['Earned Premiums'].shift(1)).dropna()
     >>> df_prem['Annual Exposure Change'] = (df_prem['Premium Change'] / (1 + df_prem['Rate Changes']) - 1).round(decimals=3)
     >>> df_prem[['Calendar Year','Earned Premiums','Rate Changes','Cumulative Average Rate Level','Annual Exposure Change']]
+       Calendar Year  Earned Premiums  Rate Changes  Cumulative Average Rate Level  Annual Exposure Change
+    0           2002            61183         0.000                          0.000                     NaN
+    1           2003            69175         0.050                          0.050                   0.077
+    2           2004            99322         0.075                          0.129                   0.336
+    3           2005           138151         0.150                          0.298                   0.210
+    4           2006           107578         0.100                          0.428                  -0.292
+    5           2007            62438        -0.200                          0.142                  -0.275
+    6           2008            47797        -0.200                         -0.086                  -0.043
 
     To simplify the analysis in this chapter and in Part 3, assume that the rate changes in the above table represent the average earned rate level for the year
 
@@ -140,12 +148,20 @@ We don't need to follow Friedland's approach here, as we already got on-level fa
 
     >>> ol_prem_tri = prem_tri * df_prem["On-level Factor"].to_numpy().reshape(-1,1)
     >>> ol_prem_tri
+                    12            24            36            48            60            72            84
+    2002  55911.227988  55911.227988  55911.227988  55911.227988  55911.227988  55911.227988  55911.227988
+    2003  60204.386000  60204.386000  60204.386000  60204.386000  60204.386000  60204.386000           NaN
+    2004  80411.091200  80411.091200  80411.091200  80411.091200  80411.091200           NaN           NaN
+    2005  97258.304000  97258.304000  97258.304000  97258.304000           NaN           NaN           NaN
+    2006  68849.920000  68849.920000  68849.920000           NaN           NaN           NaN           NaN
+    2007  49950.400000  49950.400000           NaN           NaN           NaN           NaN           NaN
+    2008  47797.000000           NaN           NaN           NaN           NaN           NaN           NaN
 
 And the actual Table 5 is straight-forward. 
 
 .. doctest::
 
-    >>> (tri['Reported Claims'] / olprem_tri).round(decimals=3)
+    >>> (tri['Reported Claims'] / ol_prem_tri).round(decimals=3)
 
 Table 6 - Ratio of Paid Claims-to-Reported Claims
 #######################################################
@@ -153,20 +169,21 @@ Table 6 - Ratio of Paid Claims-to-Reported Claims
 .. doctest::
 
     >>> (tri['Paid Claims'] / tri['Reported Claims']).round(decimals=3)
+             12     24     36     48     60     72     84
+    2002  0.181  0.389  0.519  0.587  0.719  0.834  0.923
+    2003  0.181  0.367  0.418  0.564  0.780  0.886    NaN
+    2004  0.131  0.246  0.441  0.606  0.751    NaN    NaN
+    2005  0.106  0.258  0.385  0.566    NaN    NaN    NaN
+    2006  0.130  0.252  0.468    NaN    NaN    NaN    NaN
+    2007  0.181  0.374    NaN    NaN    NaN    NaN    NaN
+    2008  0.183    NaN    NaN    NaN    NaN    NaN    NaN
 
-Table 7 - Ratio of Reported Claims to Earned Premium
+Table 7 - Ratio of Paid Claims to Earned Premium
 #######################################################
 
 .. doctest::
 
-    >>> (tri['Paid Claims'] / olprem_tri).round(decimals=3)
-
-Table 7 - Ratio of Reported Claims to Earned Premium
-#######################################################
-
-.. doctest::
-
-    >>> (tri['Paid Claims'] / olprem_tri).round(decimals=3)
+    >>> (tri['Paid Claims'] / ol_prem_tri).round(decimals=3)
 
 Table 8 - Reported Claim Count Development Triangle
 #######################################################
@@ -178,6 +195,14 @@ The count data is stored under a different name.
     >>> tri_cnt = cl.load_sample('friedland_xyz_freq_sev')
     >>> tri_cnt = tri_cnt[tri_cnt.origin >= '2002'][tri_cnt.development <= 84]
     >>> tri_cnt["Reported Claim Counts"]
+              12      24      36      48      60      72      84
+    2002  1342.0  1514.0  1548.0  1557.0  1549.0  1552.0  1554.0
+    2003  1373.0  1616.0  1630.0  1626.0  1629.0  1629.0     NaN
+    2004  1932.0  2168.0  2234.0  2249.0  2258.0     NaN     NaN
+    2005  2067.0  2293.0  2367.0  2390.0     NaN     NaN     NaN
+    2006  1473.0  1645.0  1657.0     NaN     NaN     NaN     NaN
+    2007  1192.0  1264.0     NaN     NaN     NaN     NaN     NaN
+    2008  1036.0     NaN     NaN     NaN     NaN     NaN     NaN
 
 Table 9 - Closed Claim Count Development Triangle
 #######################################################
@@ -185,13 +210,21 @@ Table 9 - Closed Claim Count Development Triangle
 .. doctest::
 
     >>> tri_cnt["Closed Claim Counts"]
+             12      24      36      48      60      72      84
+    2002  203.0   607.0   841.0  1089.0  1327.0  1464.0  1523.0
+    2003  181.0   614.0   941.0  1263.0  1507.0  1568.0     NaN
+    2004  235.0   848.0  1442.0  1852.0  2029.0     NaN     NaN
+    2005  295.0  1119.0  1664.0  1946.0     NaN     NaN     NaN
+    2006  307.0   906.0  1201.0     NaN     NaN     NaN     NaN
+    2007  329.0   791.0     NaN     NaN     NaN     NaN     NaN
+    2008  276.0     NaN     NaN     NaN     NaN     NaN     NaN
 
 Table 10 - Ratio of Closed-to-Reported Claim Counts
 #######################################################
 
 .. doctest::
 
-    >>> (tri_cnt["Reported Claim Counts"] / tri_cnt["Reported Claim Counts"]).round(decimals=3)
+    >>> (tri_cnt["Closed Claim Counts"] / tri_cnt["Reported Claim Counts"]).round(decimals=3)
 
 Table 12 – Average Reported Claim Development Triangle
 #######################################################
@@ -201,6 +234,14 @@ The losses are stored in the thousands. When calcualting severity, we need to mu
 .. doctest::
 
     >>> (tri["Reported Claims"] / tri_cnt["Reported Claim Counts"] * 1000).round(decimals=0)
+               12       24       36       48       60       72       84
+    2002   9546.0  13454.0  17220.0  24192.0  28673.0  31380.0  30997.0
+    2003   7029.0  10517.0  18622.0  24966.0  27152.0  27239.0      NaN
+    2004   8797.0  18533.0  26350.0  31884.0  31128.0      NaN      NaN
+    2005  13872.0  20686.0  29717.0  29563.0      NaN      NaN      NaN
+    2006  18375.0  28440.0  29453.0      NaN      NaN      NaN      NaN
+    2007  16340.0  25104.0      NaN      NaN      NaN      NaN      NaN
+    2008  17985.0      NaN      NaN      NaN      NaN      NaN      NaN
 
 Table 13 – Average Paid Claim Development Triangle
 #######################################################
@@ -208,6 +249,14 @@ Table 13 – Average Paid Claim Development Triangle
 .. doctest::
 
     >>> (tri["Paid Claims"] / tri_cnt["Closed Claim Counts"] * 1000).round(decimals=0)
+               12       24       36       48       60       72       84
+    2002  11419.0  13068.0  16435.0  20289.0  24073.0  27752.0  29177.0
+    2003   9630.0  10163.0  13478.0  18125.0  22896.0  25077.0      NaN
+    2004   9451.0  11672.0  17996.0  23455.0  26028.0      NaN      NaN
+    2005  10315.0  10920.0  16270.0  20568.0      NaN      NaN      NaN
+    2006  11502.0  13000.0  19000.0      NaN      NaN      NaN      NaN
+    2007  10726.0  15000.0      NaN      NaN      NaN      NaN      NaN
+    2008  12351.0      NaN      NaN      NaN      NaN      NaN      NaN
 
 Table 14 – Average Case Outstanding Development Triangle
 #######################################################
@@ -215,3 +264,11 @@ Table 14 – Average Case Outstanding Development Triangle
 .. doctest::
 
     >>> ((tri["Reported Claims"] - tri["Paid Claims"]) / (tri_cnt["Reported Claim Counts"] - tri_cnt["Closed Claim Counts"]) * 1000).round(decimals=0)
+               12       24       36       48       60       72        84
+    2002   9212.0  13713.0  18153.0  33274.0  56167.0  91727.0  120387.0
+    2003   6634.0  10734.0  25647.0  48766.0  79721.0  82836.0       NaN
+    2004   8706.0  22941.0  41561.0  71204.0  76319.0      NaN       NaN
+    2005  14464.0  29994.0  61546.0  68984.0      NaN      NaN       NaN
+    2006  20184.0  47368.0  56985.0      NaN      NaN      NaN       NaN
+    2007  18480.0  42002.0      NaN      NaN      NaN      NaN       NaN
+    2008  20030.0      NaN      NaN      NaN      NaN      NaN       NaN
