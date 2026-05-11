@@ -118,11 +118,13 @@ class Location(_LocBase):
         idx = self.key_to_slice(key)
         obj = self.get_idx(idx)
         for attr in _LOCABLES:
-            if hasattr(self.obj,'attr'):
-                if idx[2] == slice(None, None, None) and idx[3] == slice(None, None, None):
-                    if getattr(self.obj,attr,None).index.equals(self.obj.index):
-                        if getattr(self.obj,attr,None).columns.equals(self.obj.columns):
-                            setattr(obj, attr, getattr(self.obj,attr,None).loc[key])
+            if hasattr(self.obj,attr) and hasattr(self.obj,'index') and hasattr(self.obj,'columns'):
+                if hasattr(getattr(self.obj,attr,None),'index') and hasattr(getattr(self.obj,attr,None),'columns'):
+                    if isinstance(idx[2],slice) and isinstance(idx[3],slice):
+                        if idx[2] == slice(None, None, None) and idx[3] == slice(None, None, None):
+                            if getattr(self.obj,attr,None).index.equals(self.obj.index):
+                                if getattr(self.obj,attr,None).columns.equals(self.obj.columns):
+                                    setattr(obj, attr, getattr(self.obj,attr,None).loc[key])
         if len(obj) > 1 and obj.index.iloc[:, 0].nunique() == 1:
             obj.set_index(obj.index.iloc[:, 1:], inplace=True)
         return obj
@@ -195,11 +197,13 @@ class Ilocation(_LocBase):
         idx = self._normalize_index(key)
         obj = self.get_idx(idx)
         for attr in _LOCABLES:
-            if hasattr(self.obj,attr):
-                if idx[2] == slice(None, None, None) and idx[3] == slice(None, None, None):
-                    if getattr(self.obj,attr,None).index.equals(self.obj.index):
-                        if getattr(self.obj,attr,None).columns.equals(self.obj.columns):
-                            setattr(obj, attr, getattr(self.obj,attr,None).iloc[key])
+            if hasattr(self.obj,attr) and hasattr(self.obj,'index') and hasattr(self.obj,'columns'):
+                if hasattr(getattr(self.obj,attr,None),'index') and hasattr(getattr(self.obj,attr,None),'columns'):
+                    if isinstance(idx[2],slice) and isinstance(idx[3],slice):
+                        if idx[2] == slice(None, None, None) and idx[3] == slice(None, None, None):
+                            if getattr(self.obj,attr,None).index.equals(self.obj.index):
+                                if getattr(self.obj,attr,None).columns.equals(self.obj.columns):
+                                    setattr(obj, attr, getattr(self.obj,attr,None).iloc[key])
         return obj
 
     def __setitem__(self, key, values):
