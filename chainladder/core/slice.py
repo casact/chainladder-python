@@ -103,7 +103,7 @@ class _LocBase:
                 (self.obj.values.coords, np.array(key)[:, None]), 1)
             self.obj.values.data = np.concatenate(
                 (self.obj.values.data, np.array([values])), 0)
-            self.obj.values = self.obj.get_array_module()(
+            self.obj.values = self.obj.get_array_module().COO(
                 self.obj.values.coords, self.obj.values.data, prune=True,
                 has_duplicates=False, shape=self.obj.shape,
                 fill_value=self.obj.values.fill_value)
@@ -238,8 +238,8 @@ class TriangleSlicer:
                 value.values.coords[1] = i
                 coords = np.concatenate((before.coords, value.values.coords), axis=1)
                 data = np.concatenate((before.data, value.values.data))
-                self.values = xp(
-                    coords, data, shape=self.shape, prune=True, fill_value=xp.nan
+                self.values = xp.COO(
+                    coords, data, shape=self.shape, prune=True, fill_value=xp.COO.nan
                 )
             else:
                 if isinstance(value, TriangleSlicer):
