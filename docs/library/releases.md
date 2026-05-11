@@ -4,7 +4,7 @@
 
 ### Version 0.9.2
 
-Release Date: May 8, 2026
+Release Date: May 11, 2026
 
 **What's Changed**
 * Bump nbconvert from 7.16.6 to 7.17.0 by @dependabot[bot] in [#672](https://github.com/casact/chainladder-python/pull/672)
@@ -44,12 +44,10 @@ Release Date: May 8, 2026
 * Build(deps): Bump mistune from 3.1.4 to 3.2.1 by @dependabot[bot] in [#748](https://github.com/casact/chainladder-python/pull/748)
 * Update pyproject.toml - Add numpy ([#738](https://github.com/casact/chainladder-python/issues/738)) by @wendy-w2029 in [#750](https://github.com/casact/chainladder-python/pull/750)
 * Enhance docstrings and examples for improved clarity for many estimators by @kennethshsu in [#747](https://github.com/casact/chainladder-python/pull/747)
-* Add `.github/CODEOWNERS` by @kennethshsu
-* Limit pytest GitHub Actions workflow to run on pull requests (not every push) by @kennethshsu
-* Clarify first-time vs ongoing `uv` setup in contributor docs; ignore local virtualenv doc build dirs in `.gitignore`; refine dates in the multi-trend example by @kennethshsu
-* DOCS: Update VotingChainladder gallery example to agreed `testcode` / `testoutput` format by @genedan
-* Refresh getting-started tutorial notebooks, `docs/library/contributing.md`, and `README.rst` by @henrydingliu
-* Remove `/en/` locale segment from documentation URLs by @kennethshsu
+* Fix Adjustments API page linking to chainladder.workflow (#757) by @SaguaroDev in [#762](https://github.com/casact/chainladder-python/pull/762)
+* Annotate matplotlib dependency as required for TriangleDisplay.heatmap() (#758) by @SaguaroDev in [#761](https://github.com/casact/chainladder-python/pull/761)
+* REFACTOR: Reorganize type hierarchy of sparse.py. Move array-level fu… by @genedan in [#739](https://github.com/casact/chainladder-python/pull/739)
+* Build(deps): Bump urllib3 from 2.6.3 to 2.7.0 by @dependabot[bot] in [#767](https://github.com/casact/chainladder-python/pull/767)
 
 **New Contributors**
 * @priyam0k made their first contribution in [#722](https://github.com/casact/chainladder-python/pull/722)
