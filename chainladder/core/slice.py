@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder import Triangle
 
+_LOCABLES = ['ldf_','std_err_','sigma_','std_residuals_']
+
 class _LocBase:
     """
     Base class for pandas style loc/iloc indexing.
@@ -113,7 +115,14 @@ class Location(_LocBase):
     """ class to generate .loc[] functionality """
 
     def __getitem__(self, key):
-        obj = self.get_idx(self.key_to_slice(key))
+        idx = self.key_to_slice(key)
+        obj = self.get_idx(idx)
+        for attr in _LOCABLES:
+            if hasattr(self.obj,'attr'):
+                if idx[2] == slice(None, None, None) and idx[3] == slice(None, None, None):
+                    if getattr(self.obj,attr,None).index.equals(self.obj.index):
+                        if getattr(self.obj,attr,None).columns.equals(self.obj.columns):
+                            setattr(obj, attr, getattr(self.obj,attr,None).loc[key])
         if len(obj) > 1 and obj.index.iloc[:, 0].nunique() == 1:
             obj.set_index(obj.index.iloc[:, 1:], inplace=True)
         return obj
@@ -165,7 +174,6 @@ class Location(_LocBase):
         else:
             raise AttributeError("Unable to slice.")
 
-
     def key_to_slice(self, key):
         """ Converts keys to integer slices """
         key = self.format_key(key)
@@ -184,7 +192,15 @@ class Ilocation(_LocBase):
     """
 
     def __getitem__(self, key: tuple):
-        return self.get_idx(self._normalize_index(key))
+        idx = self._normalize_index(key)
+        obj = self.get_idx(idx)
+        for attr in _LOCABLES:
+            if hasattr(self.obj,attr):
+                if idx[2] == slice(None, None, None) and idx[3] == slice(None, None, None):
+                    if getattr(self.obj,attr,None).index.equals(self.obj.index):
+                        if getattr(self.obj,attr,None).columns.equals(self.obj.columns):
+                            setattr(obj, attr, getattr(self.obj,attr,None).iloc[key])
+        return obj
 
     def __setitem__(self, key, values):
         super().__setitem__(self._normalize_index(key), values)
