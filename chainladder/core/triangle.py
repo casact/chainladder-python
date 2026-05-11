@@ -524,7 +524,7 @@ class Triangle(TriangleBase):
 
         # Construct Sparse multidimensional array.
         self.values: COO = num_to_nan(
-            sp(
+            sp.COO(
                 coords,
                 amts,
                 prune=True,
