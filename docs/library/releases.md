@@ -2,6 +2,60 @@
 
 ## Version 0.9
 
+### Version 0.9.2
+
+Release Date: May 11, 2026
+
+**What's Changed**
+* Bump nbconvert from 7.16.6 to 7.17.0 by @dependabot[bot] in [#672](https://github.com/casact/chainladder-python/pull/672)
+* Adding dict support for renaming columns by @henrydingliu in [#671](https://github.com/casact/chainladder-python/pull/671)
+* Drop python3.9 by @kennethshsu in [#675](https://github.com/casact/chainladder-python/pull/675)
+* Bump pillow from 11.3.0 to 12.1.1 by @dependabot[bot] in [#673](https://github.com/casact/chainladder-python/pull/673)
+* Various fix by @henrydingliu in [#676](https://github.com/casact/chainladder-python/pull/676)
+* Build(deps): Bump tornado from 6.5.2 to 6.5.5 by @dependabot[bot] in [#677](https://github.com/casact/chainladder-python/pull/677)
+* Build(deps): Bump requests from 2.32.5 to 2.33.0 by @dependabot[bot] in [#685](https://github.com/casact/chainladder-python/pull/685)
+* Build(deps): Bump pygments from 2.19.2 to 2.20.0 by @dependabot[bot] in [#688](https://github.com/casact/chainladder-python/pull/688)
+* Build(deps): Bump pillow from 12.1.1 to 12.2.0 by @dependabot[bot] in [#697](https://github.com/casact/chainladder-python/pull/697)
+* Build(deps): Bump pytest from 8.4.2 to 9.0.3 by @dependabot[bot] in [#698](https://github.com/casact/chainladder-python/pull/698)
+* [#689](https://github.com/casact/chainladder-python/issues/689) by @kennethshsu in [#690](https://github.com/casact/chainladder-python/pull/690)
+* Improve docstring for approximation_grain in ParallelogramOLF by @kennethshsu in [#687](https://github.com/casact/chainladder-python/pull/687)
+* Addressed wheel vulnerability by @kennethshsu in [#699](https://github.com/casact/chainladder-python/pull/699)
+* Build(deps): Bump nbconvert from 7.17.0 to 7.17.1 by @dependabot[bot] in [#703](https://github.com/casact/chainladder-python/pull/703)
+* DOCS: Begin work on examples. by @genedan in [#700](https://github.com/casact/chainladder-python/pull/700)
+* Build(deps): Bump lxml from 6.0.2 to 6.1.0 by @dependabot[bot] in [#705](https://github.com/casact/chainladder-python/pull/705)
+* nan_triangle 1D logic overhaul by @danielfong-act in [#702](https://github.com/casact/chainladder-python/pull/702)
+* Add links to object source code in API Reference section by @genedan in [#710](https://github.com/casact/chainladder-python/pull/710)
+* [#707](https://github.com/casact/chainladder-python/issues/707) by @kennethshsu in [#711](https://github.com/casact/chainladder-python/pull/711)
+* Pr template by @kennethshsu in [#712](https://github.com/casact/chainladder-python/pull/712)
+* DOCS: Expand Triangle constructor examples (#704) by @EKtheSage in [#714](https://github.com/casact/chainladder-python/pull/714)
+* FEAT: Initialize triangle from dict. by @genedan in [#706](https://github.com/casact/chainladder-python/pull/706)
+* DOCS: Add examples to Triangle methods and properties (#704) by @EKtheSage in [#719](https://github.com/casact/chainladder-python/pull/719)
+* DOCS: Add examples to deterministic IBNR methods (#704) by @EKtheSage in [#721](https://github.com/casact/chainladder-python/pull/721)
+* Docs/issue 704 tailconstant examples by @priyam0k in [#722](https://github.com/casact/chainladder-python/pull/722)
+* Add Friedland datasets to cl.load_sample() by @genedan in [#730](https://github.com/casact/chainladder-python/pull/730)
+* CHORE: Update workflows to test docs examples. by @genedan in [#713](https://github.com/casact/chainladder-python/pull/713)
+* Added an example and improved docstring for load_sample by @kennethshsu in [#715](https://github.com/casact/chainladder-python/pull/715)
+* Missing testoutput by @kennethshsu in [#731](https://github.com/casact/chainladder-python/pull/731)
+* Fix test indentation and add print statement by @kennethshsu in [#732](https://github.com/casact/chainladder-python/pull/732)
+* Fixed doc site build fails by @kennethshsu in [#733](https://github.com/casact/chainladder-python/pull/733)
+* ENH: Continue work on type hinting, add pyright to check type coverage. by @genedan in [#735](https://github.com/casact/chainladder-python/pull/735)
+* Rtd branch fix by @henrydingliu in [#741](https://github.com/casact/chainladder-python/pull/741)
+* fix(tests): use assert in test_n_periods so failures actually fail by @SaguaroDev in [#744](https://github.com/casact/chainladder-python/pull/744)
+* Build(deps): Bump mistune from 3.1.4 to 3.2.1 by @dependabot[bot] in [#748](https://github.com/casact/chainladder-python/pull/748)
+* Update pyproject.toml - Add numpy ([#738](https://github.com/casact/chainladder-python/issues/738)) by @wendy-w2029 in [#750](https://github.com/casact/chainladder-python/pull/750)
+* Enhance docstrings and examples for improved clarity for many estimators by @kennethshsu in [#747](https://github.com/casact/chainladder-python/pull/747)
+* Fix Adjustments API page linking to chainladder.workflow (#757) by @SaguaroDev in [#762](https://github.com/casact/chainladder-python/pull/762)
+* Annotate matplotlib dependency as required for TriangleDisplay.heatmap() (#758) by @SaguaroDev in [#761](https://github.com/casact/chainladder-python/pull/761)
+* REFACTOR: Reorganize type hierarchy of sparse.py. Move array-level fu… by @genedan in [#739](https://github.com/casact/chainladder-python/pull/739)
+* Build(deps): Bump urllib3 from 2.6.3 to 2.7.0 by @dependabot[bot] in [#767](https://github.com/casact/chainladder-python/pull/767)
+
+**New Contributors**
+* @priyam0k made their first contribution in [#722](https://github.com/casact/chainladder-python/pull/722)
+* @SaguaroDev made their first contribution in [#744](https://github.com/casact/chainladder-python/pull/744)
+* @wendy-w2029 made their first contribution in [#750](https://github.com/casact/chainladder-python/pull/750)
+
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.9.1...v0.9.2
+
 ### Version 0.9.1
 
 Release Date: Jan 30, 2026
@@ -143,7 +197,7 @@ Release Date: May 24, 2024
 Release Date: Apr 10, 2024
 
 **What's Changed**
-* Various bug fixes and improvements
+* Fix for [\#509](https://github.com/casact/chainladder-python/issues/509) (triangle / core initialization and packaging metadata).
 
 ### Version 0.8.19
 
@@ -174,7 +228,9 @@ Release Date: Sep 18, 2023
 Release Date: Jun 17, 2023
 
 **What's Changed**
-* Bump of 0.8.16
+* Relax the `pandas<2.0` upper bound in CI/deps metadata.
+* Update `environment-latest.yaml` and `pytest_upstream_nightly.yml` ([#442](https://github.com/casact/chainladder-python/pull/442)).
+* Adjust pytest-related dependency pins.
 
 ### Version 0.8.16
 
@@ -185,7 +241,7 @@ Release Date: Jun 17, 2023
 * fix for [\#411](https://github.com/casact/chainladder-python/issues/411) 
 * fix for [\#438](https://github.com/casact/chainladder-python/issues/438) 
 
-## New Contributors
+**New Contributors**
 * [@MatthewCaseres](https://github.com/MatthewCaseres) made their first contribution.
 * [@andrejakobsen](https://github.com/andrejakobsen) made their first contribution.
 
@@ -226,7 +282,18 @@ Release Date: Apr 11, 2023
 
 Release Date: Nov 25, 2022
 
+**What's Changed**
+* Major documentation refresh for Jupyter Book and CAS Annual Meeting materials: user guide and gallery restructure, new exercises and demos, usage/Colab notes, and bibliography updates (including [#311](https://github.com/casact/chainladder-python/pull/311) and related annual-meeting prep PRs [#335](https://github.com/casact/chainladder-python/pull/335)–[#361](https://github.com/casact/chainladder-python/pull/361)).
+* Additional Friedland and other sample datasets for `load_sample` ([#347](https://github.com/casact/chainladder-python/pull/347), [#353](https://github.com/casact/chainladder-python/pull/353), [#355](https://github.com/casact/chainladder-python/pull/355), [#357](https://github.com/casact/chainladder-python/pull/357), [#358](https://github.com/casact/chainladder-python/pull/358), [#359](https://github.com/casact/chainladder-python/pull/359), [#362](https://github.com/casact/chainladder-python/pull/362), [#363](https://github.com/casact/chainladder-python/pull/363)).
+* `Development` transformer: `std_residuals_` ([#352](https://github.com/casact/chainladder-python/pull/352)).
+* Four-dimensional triangles: extend `drop_high` / `drop_low` (including `drop_above` / `drop_below`) ([#375](https://github.com/casact/chainladder-python/pull/375), [#381](https://github.com/casact/chainladder-python/pull/381)).
+* Semi-annual key for tail handling ([#384](https://github.com/casact/chainladder-python/pull/384)).
+* Triangle `to_frame()` updates and reduced reliance on `origin_as_datetime` inside `to_frame()` ([#360](https://github.com/casact/chainladder-python/pull/360)).
+* Bug fixes and hardening for `Development` and triangles ([#373](https://github.com/casact/chainladder-python/pull/373), [#371](https://github.com/casact/chainladder-python/pull/371), [#368](https://github.com/casact/chainladder-python/pull/368), [#366](https://github.com/casact/chainladder-python/pull/366)); follow-ups by @henrydingliu ([#370](https://github.com/casact/chainladder-python/pull/370)).
+* `DevelopmentCorrelation` / valuation correlation: annotations, intermediate diagnostics, and `p_critical` validation ([#342](https://github.com/casact/chainladder-python/pull/342)).
+* README, GitHub issue templates, and docs environment updates; reduce `to_datetime` deprecation noise.
 
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.8.13...v0.8.14
 
 ### Version 0.8.13
 
@@ -249,6 +316,8 @@ Release Date: Jun 27, 2022
 ### Version 0.8.12
 
 Release Date: Mar 8, 2022
+
+*Note:* There was no `0.8.11` stable release on PyPI; only pre-release tags `v0.8.11-alpha` and `v0.8.11-beta` were published.
 
 **Bug Fixes**
 
