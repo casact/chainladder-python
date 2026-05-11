@@ -7,8 +7,8 @@ from chainladder.core.io import EstimatorIO
 
 
 class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
-    """
-    Estimator to create and apply on-level factors to a Triangle object.  This
+    f"""
+    Estimator to create and apply on-level factors to a Triangle object. This
     is commonly used for premium vectors expressed as a Triangle object.
 
     Parameters
@@ -21,10 +21,13 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         5% decrease should be stated as -0.05
     date_col: str
         A list-like set of effective dates corresponding to each of the changes
-    approximation_grain: str
-        The resolution of the internal calendar used for calculating the on-level factors: 
-        monthly ('M') or daily ('D'). Daily is finer and adjusts for leap years when assigning
-        factors to origin periods.
+    approximation_grain: str {"M", "D"} (default="M")
+        The resolution of the internal calendar spacing used for calculating the 
+        on-level factors: monthly ('M') or daily ('D'). In each `approximation_grain`, 
+        they are treated as a period, and a weighted current rate level is estimated.
+        While in daily mode, each day is treated as a full period. Daily is finer 
+        and adjusts for leap years when assigning factors to origin periods. 
+        The Friedland text uses monthly, but daily is more accurate.
     policy_length: int (default=12)
         The length of the policy in months.
     vertical_line:
