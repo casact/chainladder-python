@@ -1,16 +1,26 @@
 
 import numpy as np
 import pytest
+import chainladder as cl
 
+_LOCABLES = cl.core.slice._LOCABLES
 
 def test_slice_by_boolean(clrd):
     assert (
         clrd[clrd["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
         == clrd.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"])
+    clrd_devs = cl.Development().fit_transform(clrd)
+    locable = getattr(clrd_devs,_LOCABLES[0])
+    assert (
+        locable[locable["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
+        == getattr(clrd_devs.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"],_LOCABLES[0]))
 
 
 def test_slice_by_loc(clrd):
     assert clrd.loc["Aegis Grp"].loc["comauto"].index.iloc[0, 0] == "comauto"
+    clrd_devs = cl.Development().fit_transform(clrd)
+    locable = getattr(clrd_devs,_LOCABLES[0])
+    assert locable.loc["Aegis Grp"].loc["comauto"].index.iloc[0, 0] == "comauto"
 
 
 def test_slice_origin(raa):
@@ -25,21 +35,37 @@ def test_slice_development(raa):
 
 def test_slice_by_loc_iloc(clrd):
     assert clrd.groupby("LOB").sum().loc["comauto"].index.iloc[0, 0] == "comauto"
+    clrd_devs = cl.Development().fit_transform(clrd.groupby("LOB").sum())
+    locable = getattr(clrd_devs,_LOCABLES[0])
+    assert locable.loc["comauto"].index.iloc[0, 0] == "comauto"
     assert len(clrd.loc[clrd.index.iloc[150]]) == 1
 
 
 def test_slicers_honor_order(clrd):
+    clrd_devs = cl.Development().fit_transform(clrd.groupby("LOB").sum())
     clrd = clrd.groupby("LOB").sum()
+    locable = getattr(clrd_devs,_LOCABLES[0])
     assert clrd.iloc[[1, 0], :].iloc[0, 1] == clrd.iloc[1, 1]  # row
+    assert locable.iloc[[1, 0], :].iloc[0, 1] == getattr(clrd_devs.iloc[1, 1],_LOCABLES[0])  # row
     assert clrd.iloc[[1, 0], [1, 0]].iloc[0, 0] == clrd.iloc[1, 1]  # col
+    assert locable.iloc[[1, 0], [1, 0]].iloc[0, 0] == getattr(clrd_devs.iloc[1, 1],_LOCABLES[0])  # col
     assert clrd.loc[:, ["CumPaidLoss", "IncurLoss"]].iloc[0, 0] == clrd.iloc[0, 1]
+    assert locable.loc[:, ["CumPaidLoss", "IncurLoss"]].iloc[0, 0] == getattr(clrd_devs.iloc[0, 1],_LOCABLES[0])
     assert (
         clrd.loc[["ppauto", "medmal"], ["CumPaidLoss", "IncurLoss"]].iloc[0, 0]
         == clrd.iloc[3]["CumPaidLoss"]
     )
     assert (
+        locable.loc[["ppauto", "medmal"], ["CumPaidLoss", "IncurLoss"]].iloc[0, 0]
+        == getattr(clrd_devs.iloc[3]["CumPaidLoss"],_LOCABLES[0])
+    )
+    assert (
         clrd.loc[clrd["LOB"] == "comauto", ["CumPaidLoss", "IncurLoss"]]
         == clrd[clrd["LOB"] == "comauto"].iloc[:, [1, 0]]
+    )
+    assert (
+        locable.loc[clrd["LOB"] == "comauto", ["CumPaidLoss", "IncurLoss"]]
+        == getattr(clrd_devs[clrd["LOB"] == "comauto"].iloc[:, [1, 0]],_LOCABLES[0])
     )
     assert clrd.groupby("LOB").sum() == clrd
 
@@ -52,7 +78,10 @@ def test_backends(clrd):
 
 
 def test_union_columns(clrd):
+    clrd_devs = cl.Development().fit_transform(clrd)
+    locable = getattr(clrd_devs,_LOCABLES[0])
     assert clrd.iloc[:, :3] + clrd.iloc[:, 3:] == clrd
+    assert locable.iloc[:, :3] + getattr(clrd_devs.iloc[:, 3:],_LOCABLES[0]) == getattr(clrd_devs,_LOCABLES[0])
 
 
 def test_4loc(clrd):
@@ -72,14 +101,22 @@ def test_4loc(clrd):
 
 
 def test_loc_ellipsis(clrd):
+    clrd_devs = cl.Development().fit_transform(clrd)
+    locable = getattr(clrd_devs,_LOCABLES[0])
     assert (
         clrd.loc["Aegis Grp"] == clrd.loc["Adriatic Ins Co":"Aegis Grp"].loc["Aegis Grp"]
     )
+    assert (
+        locable.loc["Aegis Grp"] == getattr(clrd_devs.loc["Adriatic Ins Co":"Aegis Grp"].loc["Aegis Grp"],_LOCABLES[0])
+    )
     assert clrd.loc["Aegis Grp", ..., :] == clrd.loc["Aegis Grp"]
+    assert locable.loc["Aegis Grp", ..., :] == getattr(clrd_devs.loc["Aegis Grp"],_LOCABLES[0])
     assert clrd.loc[..., 24:] == clrd.loc[..., :, 24:]
     assert clrd.loc[:, ..., 24:] == clrd.loc[..., :, 24:]
     assert clrd.loc[:, "CumPaidLoss"] == clrd.loc[:, "CumPaidLoss", ...]
+    assert locable.loc[:, "CumPaidLoss"] == getattr(clrd_devs.loc[:, "CumPaidLoss", ...],_LOCABLES[0])
     assert clrd.loc[..., "CumPaidLoss", :, :] == clrd.loc[:, "CumPaidLoss", :, :]
+    assert locable.loc[..., "CumPaidLoss", :, :] == getattr(clrd_devs.loc[:, "CumPaidLoss", :, :],_LOCABLES[0])
 
 
 def test_missing_first_lag(raa):
@@ -90,15 +127,22 @@ def test_missing_first_lag(raa):
 
 
 def test_reverse_slice_integrity(clrd):
+    clrd_devs = cl.Development().fit_transform(clrd)
+    locable = getattr(clrd_devs,_LOCABLES[0])
     assert clrd.iloc[::-1, ::-1].shape == clrd.shape
     assert np.all(clrd.iloc[:, ::-1].columns.values == clrd.columns[::-1])
     assert clrd.iloc[clrd.index.index[::-1]] + clrd == 2 * clrd
-
+    assert locable.iloc[::-1, ::-1].shape == locable.shape
+    assert np.all(locable.iloc[:, ::-1].columns.values == locable.columns[::-1])
+    assert locable.iloc[locable.index.index[::-1]] + locable == 2 * locable
 
 def test_loc_tuple(clrd):
+    clrd_devs = cl.Development().fit_transform(clrd)
+    locable = getattr(clrd_devs,_LOCABLES[0])
     assert len(clrd.loc[("Adriatic Ins Co", "othliab")]) == 1
     assert clrd.loc[clrd.index] == clrd
-
+    assert len(locable.loc[("Adriatic Ins Co", "othliab")]) == 1
+    assert locable.loc[locable.index] == locable
 
 def test_at_iat(raa):
     raa1 = raa.copy()
@@ -111,6 +155,17 @@ def test_at_iat(raa):
     raa2.iat[-1, -1, 4, 0] = 5
     assert raa1 == raa2
 
+def test_at_iat_exceptions(raa):
+    with pytest.raises(ValueError):
+        raa.iat[0,0,4,:]
+    with pytest.raises(ValueError):
+        raa.at['Total','values', '1985', 0:2]
+
+def test_loc_iloc_exceptions(raa):
+    with pytest.raises(ValueError):
+        raa.loc['Total','values',:,[12,36,48]]
+    with pytest.raises(ValueError):
+        raa.loc['Something','values',:,:]
 
 @pytest.mark.xfail
 def test_sparse_at_iat(prism):
