@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chainladder"
-version = "0.9.1"
+version = "0.9.2"
 authors = [
     {name = "John Bogaardt", email = "jbogaardt@gmail.com"},
 ]
@@ -30,11 +30,12 @@ classifiers = [
 ]
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
-    "pandas >=2.0, <3.0",
+    "pandas >=2.3.3, <3.0",
     "scikit-learn>1.4.2",
     "numba>0.54",
     "sparse>=0.9",
-    "matplotlib",
+    "numpy",
+    "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",
     "patsy",
 ]
@@ -55,6 +56,7 @@ dev = [
     "jinja2",
     "ipython",
     "ipykernel",
+    "pyright",
 ]
 docs = [
     "sphinx",
@@ -86,6 +88,10 @@ all = [
     "chainladder[dev,docs,test]",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["chainladder", "docs/_ext"]
+pythonpath = ["docs/_ext"]
+
 [tool.setuptools]
 include-package-data = true
 
@@ -93,4 +99,7 @@ include-package-data = true
 include = ["chainladder", "chainladder.*"]
 
 [tool.setuptools.package-data]
-chainladder = ["utils/data/*"]
+chainladder = ["utils/data/*", "py.typed"]
+
+[tool.uv]
+config-settings = {editable_mode="compat"}

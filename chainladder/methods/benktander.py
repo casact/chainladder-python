@@ -16,6 +16,8 @@ class Benktander(MethodBase):
         then use 1.0
     n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
+        When n_iters=1, the result is equivalent to the BornhuetterFerguson method.
+        When n_iters>>1, the result converges to the traditional Chainladder model.
     apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal distribution
@@ -34,6 +36,98 @@ class Benktander(MethodBase):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
+
+    Examples
+    --------
+    Benktander is the iterated Bornhuetter-Ferguson model. Like BF, it
+    requires a per-origin apriori expected ultimate supplied through
+    ``sample_weight``. The ``n_iters`` parameter interpolates between BF
+    (``n_iters=1``) and chainladder (``n_iters`` large): each additional
+    iteration shifts the ultimate further toward the chainladder estimate.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        xyz = cl.load_sample("xyz")
+
+        ibnr = cl.Benktander().fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
+        print(ibnr)
+
+    .. testoutput::
+
+                      2261
+        1998           NaN
+        1999    115.472127
+        2000    914.033812
+        2001   2432.394513
+        2002   6037.026677
+        2003  13928.934651
+        2004  33925.451475
+        2005  69724.761575
+        2006  73410.593920
+        2007  52977.560411
+        2008  45873.769490
+
+    When `n_iters=1`, the model is exactly the same as the BornhuetterFerguson model.
+
+    .. testcode::
+
+        xyz = cl.load_sample("xyz")
+
+        bk_ibnr = (
+            cl.Benktander(n_iters=1)
+            .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+            .ibnr_
+        )
+        bf_ibnr = (
+            cl.BornhuetterFerguson()
+            .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+            .ibnr_
+        )
+        print(bk_ibnr - bf_ibnr)
+
+    .. testoutput::
+
+              2261
+        1998   NaN
+        1999   NaN
+        2000   NaN
+        2001   NaN
+        2002   NaN
+        2003   NaN
+        2004   NaN
+        2005   NaN
+        2006   NaN
+        2007   NaN
+        2008   NaN
+
+    When `n_iters>>1`, the model converges to the traditional Chainladder model.
+
+    .. testcode::
+
+        xyz = cl.load_sample("xyz")
+
+        bk_ibnr = cl.Benktander(n_iters=1000).fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
+        cl_ibnr = cl.Chainladder().fit(xyz["Paid"]).ibnr_
+        print(bk_ibnr - cl_ibnr)
+
+    .. testoutput::
+
+                      2261
+        1998           NaN
+        1999           NaN
+        2000           NaN
+        2001  1.455192e-11
+        2002 -7.275958e-12
+        2003  7.275958e-12
+        2004  1.455192e-11
+        2005 -1.455192e-11
+        2006  2.910383e-11
+        2007 -5.820766e-11
+        2008 -7.275958e-11
     """
 
     def __init__(self, apriori=1.0, n_iters=1, apriori_sigma=0, random_state=None):
@@ -58,6 +152,42 @@ class Benktander(MethodBase):
         -------
         self: object
             Returns the instance itself.
+
+        Examples
+        --------
+        Fit returns the estimator itself, with ``ultimate_`` populated. The
+        repr shows non-default parameters.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            xyz = cl.load_sample("xyz")
+
+            ultimate = (
+                cl.Benktander(apriori=1, n_iters=2)
+                .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+                .ultimate_
+            )
+            print(ultimate)
+
+        .. testoutput::
+
+                          2261
+            1998  15822.000000
+            1999  24908.397003
+            2000  37547.676656
+            2001  40511.198946
+            2002  49417.354765
+            2003  50042.095135
+            2004  82437.601111
+            2005  95417.171135
+            2006  88485.508416
+            2007  66882.788227
+            2008  50708.755370
+
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
@@ -81,6 +211,37 @@ class Benktander(MethodBase):
         -------
         X_new: Triangle
             Loss data with Benktander ultimate applied
+
+        Examples
+        --------
+        Fit on a prior-period view of the data, then apply the model to the
+        current Triangle and a refreshed apriori.
+
+        .. testsetup::
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            apriori_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 14000
+            apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
+            model = cl.Benktander(apriori=1.0, n_iters=2).fit(
+                tr_prior, sample_weight=apriori_prior
+            )
+
+            print(model.predict(tr, sample_weight=apriori).ultimate_)
+
+        .. testoutput::
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13642.189922
+            2010  12740.812082
+            2011  13516.188545
+            2012  15914.716737
+            2013  17193.715555
         """
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)

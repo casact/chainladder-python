@@ -21,7 +21,7 @@ You can help improve and shape the project in many ways:
 2. Volunteer to implement code changes for existing issues.  
 3. Ask questions or discuss ideas on the [discussion forum](https://github.com/casact/chainladder-python/discussions).  
 4. Improve documentation where it is unclear.  
-5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/en/latest/gallery/index.html).  
+5. Create new examples or tutorials in the [examples section](https://chainladder-python.readthedocs.io/main/gallery/index.html).  
 
 ---
 
@@ -116,10 +116,17 @@ Contributions to documentation are especially helpful for new users.
 - Follow established naming conventions  
 - Include new unit tests with reasonable coverage  
 
-All PRs should be run locally before submission:  
+All PRs should be run locally before submission.
+
+For codebase tests, run:
 
 ```bash
-pytest chainladder
+pytest
+```
+
+For documentation changes, rebuild the docs locally with:
+```bash
+uv run jb build docs --builder=custom --custom-builder=doctest
 ```
 
 Large or unfocused PRs may delay merging. Each PR should address a single issue or feature to maintain clarity and quality.

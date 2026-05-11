@@ -130,3 +130,6 @@ coverage_html_report
 
 # IntelliJ .idea folder
 .idea
+
+# Local scratch directory (handoff notes, throwaway scripts, etc.)
+.scratch/

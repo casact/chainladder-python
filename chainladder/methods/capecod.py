@@ -12,28 +12,34 @@ class CapeCod(Benktander):
 
     Parameters
     ----------
-    trend: float (default=0.0)
-        The cape cod trend assumption.  Any Trend transformer on X will
+    trend: float, optional (default=0.0)
+        The cape cod trend assumption. Any Trend transformer on X will
         override this argument.
-    decay: float (defaut=1.0)
-        The cape cod decay assumption
+    decay: float, optional (default=1.0)
+        The cape cod decay assumption. This parameter is required by the 
+        Generalized Cape Cod Method, as discussed in [Using Best Practices to
+         Determine a Best Reserve Estimate](https://www.casact.org/sites/default/files/database/forum_98fforum_struhuss.pdf) 
+         by Struzzieri and Hussian. As the `decay` factor approaches 1 
+         (the default value), the result approaches the traditional Cape Cod 
+         method. As the `decay` factor approaches 0, the result approaches 
+         the `Chainladder` method.
     n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
+    groupby: str or list, optional (default=None)
+        An option to group levels of the triangle index together for the
+        purposes of deriving the apriori measures. If omitted, each level of
+        the triangle index will receive its own apriori computation.
     apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal
         distribution using this argument as a standard deviation.
     random_state: int, RandomState instance or None, optional (default=None)
-        Seed for sampling from the apriori distribution.  This is ignored when
+        Seed for sampling from the apriori distribution. This is ignored when
         using as a deterministic method.
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
         by np.random.
-    groupby:
-        An option to group levels of the triangle index together for the
-        purposes of deriving the apriori measures.  If omitted, each level of
-        the triangle index will receive its own apriori computation.
 
 
     Attributes
@@ -48,6 +54,121 @@ class CapeCod(Benktander):
         The trended apriori vector developed by the Cape Cod Method
     detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
+
+    Examples
+    --------
+    Unlike Bornhuetter-Ferguson and Benktander, CapeCod derives the apriori
+    loss ratio from the data itself. ``sample_weight`` represents exposure
+    (e.g. earned premium) rather than an apriori expected ultimate.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        xyz = cl.load_sample("xyz")
+
+        ibnr = (
+            cl.CapeCod().fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
+        )
+        print(ibnr)
+    
+    .. testoutput::
+    
+                      2261
+        1998           NaN
+        1999     88.211299
+        2000    698.247374
+        2001   1858.151261
+        2002   4611.796594
+        2003  10640.571396
+        2004  25916.281295
+        2005  53264.037933
+        2006  56079.713590
+        2007  40470.540502
+        2008  35043.822927
+
+    With default ``decay=1`` and ``trend=0``, every origin receives the same
+    apriori loss ratio: the exposure-weighted mean loss ratio across all
+    origins.
+
+    .. testcode::
+
+        apriori = (
+            cl.CapeCod()
+            .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+            .apriori_
+        )
+        print(apriori)
+
+    .. testoutput::
+
+                  2261
+        1998  0.763919
+        1999  0.763919
+        2000  0.763919
+        2001  0.763919
+        2002  0.763919
+        2003  0.763919
+        2004  0.763919
+        2005  0.763919
+        2006  0.763919
+        2007  0.763919
+        2008  0.763919
+
+    Setting ``decay`` below 1 down-weights distant origins when computing
+    each origin's apriori, so each origin receives its own loss-ratio
+    estimate that drifts toward more recent experience.
+
+    .. testcode::
+
+        apriori = cl.CapeCod(decay=0.5).fit(
+            X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal
+        ).apriori_
+        print(apriori)
+
+    .. testoutput::
+
+                  2261
+        1998  0.797751
+        1999  0.799990
+        2000  0.804890
+        2001  0.793706
+        2002  0.777420
+        2003  0.748556
+        2004  0.740594
+        2005  0.687204
+        2006  0.705757
+        2007  0.784466
+        2008  0.830368
+
+    Setting ``trend`` projects the loss ratio forward over the experience
+    period.
+
+    .. testcode::
+
+        apriori = (
+            cl.CapeCod(decay=0.5, trend=0.03)
+            .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
+            .apriori_
+        )
+        print(apriori)
+
+    .. testoutput::
+
+                  2261
+        1998  1.027105
+        1999  1.014959
+        2000  1.001927
+        2001  0.966406
+        2002  0.924906
+        2003  0.869767
+        2004  0.841331
+        2005  0.765515
+        2006  0.773005
+        2007  0.847345
+        2008  0.890327
     """
 
     def __init__(
@@ -81,6 +202,25 @@ class CapeCod(Benktander):
         -------
         self: object
             Returns the instance itself.
+
+        Examples
+        --------
+        Fit returns the estimator itself, with ``ultimate_`` and
+        ``apriori_`` populated. The repr shows non-default parameters.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+            print(cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure))
+
+        .. testoutput:
+
+            CapeCod(trend=0.05)
         """
 
         if sample_weight is None:
@@ -138,6 +278,37 @@ class CapeCod(Benktander):
         -------
         X_new: Triangle
             Loss data with CapeCod ultimate applied
+
+        Examples
+        --------
+        Fit on a prior-period view of the data, then apply the model to the
+        current Triangle and a refreshed exposure.
+
+        .. testsetup:
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('ukmotor')
+            tr_prior = tr[tr.valuation < tr.valuation_date]
+            exposure_prior = cl.Chainladder().fit(tr_prior).ultimate_ * 0 + 20000
+            exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
+            model = cl.CapeCod(trend=0.05).fit(
+                tr_prior, sample_weight=exposure_prior
+            )
+            print(model.predict(tr, sample_weight=exposure).ultimate_)
+
+        .. testoutput::
+
+                          2261
+            2007  12690.000000
+            2008  12746.000000
+            2009  13631.353487
+            2010  12896.639975
+            2011  13806.211939
+            2012  15991.144199
+            2013  17489.630279
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")

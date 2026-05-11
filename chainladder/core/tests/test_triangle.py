@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import chainladder as cl
-import pandas as pd
-import numpy as np
-import pytest
 import io
-from datetime import datetime
+import numpy as np
+import pandas as pd
+import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 try:
     from IPython.core.display import HTML
-except:
+except ImportError:
     HTML = None
 
 
@@ -950,3 +956,71 @@ def test_fillzero():
     zero = raa - raa[raa.origin=='1982']
     filled = zero.fillzero()
     assert (filled[filled.origin == '1982'][filled.development == 24].values.flatten()[0]) == 0
+    
+def test_2x2_triangle():
+        
+    df = pd.DataFrame(data={
+        'origin': [2022, 2022, 2023],
+        'development': [2022, 2023, 2023],
+        'reported': [78000, 222000, 78000]}
+    )
+    tri_from_df = cl.Triangle(
+        data=df,
+        origin='origin',
+        development='development',
+        columns=['reported'],
+        cumulative=True
+    )
+    tri_from_df
+    assert np.array_equal(tri_from_df.cum_to_incr().values,np.array([[[[ 78000., 144000.],
+    [ 78000., np.float64(np.nan)]]]]), equal_nan=True)
+
+
+def test_triangle_init_from_dict() -> None:
+    """
+    Tests the initialization of a triangle by supplying a dict to the data parameter. The triangle
+    created should be equal to that of one created with a pandas DataFrame containing the same data.
+    """
+
+    # Common data.
+    data_dict = {
+            'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+            'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+            'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655]
+    }
+
+    # Initialze via DataFrame.
+    df = pd.DataFrame(
+        data=data_dict
+    )
+    tri_from_df = cl.Triangle(
+        data=df,
+        origin='origin',
+        development='development',
+        columns=['reported'],
+        cumulative=True
+    )
+
+    # Initialize via dict.
+    tri_from_dict = cl.Triangle(
+        data=data_dict,
+        origin='origin',
+        development='development',
+        columns=['reported'],
+        cumulative=True
+    )
+
+    assert tri_from_df == tri_from_dict
+
+
+def test_validate_assumption(raa: Triangle) -> None:
+    """
+    Tests Common._validate_assumption.
+    """
+
+    # Check incorrect type provided to value argument.
+    with pytest.raises(TypeError):
+        raa._validate_assumption(
+            triangle=raa,
+            value=raa, axis=3  # noqa - incorrect type provided on purpose.
+        )
