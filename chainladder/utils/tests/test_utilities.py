@@ -142,6 +142,35 @@ def test_policy_length():
         == [1.129333, 1.013023, 0.994975, 1, 1]
     ).all()
 
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-07-01", "2011-10-01", "2012-04-01"],
+            "RateChange": [0.35, 0.149, -0.095],
+        }
+    )
+    data = pd.DataFrame(
+        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
+    )
+    prem_tri = cl.Triangle(data, origin="Year", columns="EarnedPremium", cumulative=True)
+
+    prem_tri = cl.ParallelogramOLF(
+        rate_history,
+        change_col="RateChange",
+        date_col="EffDate",
+        policy_length=12,
+        approximation_grain="M",
+    ).fit_transform(prem_tri)
+    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.344949, 1.069526, 0.966045, 0.996730, 1]).all()
+
+    prem_tri = cl.ParallelogramOLF(
+        rate_history,
+        change_col="RateChange",
+        date_col="EffDate",
+        policy_length=6,
+        approximation_grain="M",
+    ).fit_transform(prem_tri)
+    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.290842, 1.030251, 0.958285, 1, 1]).all()
+
 
 def test_triangle_json_io(clrd):
     xp = clrd.get_array_module()
