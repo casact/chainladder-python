@@ -22,12 +22,16 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     date_col: str
         A list-like set of effective dates corresponding to each of the changes
     approximation_grain: str {"M", "D"} (default="M")
-        The resolution of the internal calendar spacing used for calculating the 
-        on-level factors: monthly ('M') or daily ('D'). In each `approximation_grain`, 
-        they are treated as a period, and a weighted current rate level is estimated.
-        While in daily mode, each day is treated as a full period. Daily is finer 
-        and adjusts for leap years when assigning factors to origin periods. 
-        The Friedland text uses monthly, but daily is more accurate.
+        The resolution of the internal calendar spacing used to calculate on-level 
+        factors can be set to monthly (`'M'`) or daily (`'D'`). Under each 
+        `approximation_grain`, periods are treated as discrete intervals and a 
+        weighted current rate level is estimated. In monthly mode, each month is 
+        treated as an equal-length period, consistent with the methodology presented 
+        in the Friedland text, although this assumes that all months within a year 
+        contain the same number of days. In daily mode, each calendar day is treated 
+        as a full period, providing finer granularity and more accurately accounting 
+        for differences in month length and leap years when assigning factors to 
+        origin periods.
     policy_length: int (default=12)
         The length of the policy in months.
     vertical_line:
