@@ -1,5 +1,6 @@
 import chainladder as cl
 import numpy as np
+import pytest
 
 
 def test_schmidt():
@@ -55,15 +56,16 @@ def test_pipeline():
     clrd = cl.load_sample("clrd").groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     dev = cl.Development().fit_transform(clrd)
     ult = cl.Chainladder().fit(clrd)
-    dev1 = cl.IncrementalAdditive(
-        n_periods=7,
-        drop_valuation=1995,
-        drop=("1992", 12),
-        drop_above=1.05,
-        drop_below=-1,
-        drop_high=1,
-        drop_low=1,
-    ).fit(clrd, sample_weight=ult.ultimate_ * 3)
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev1 = cl.IncrementalAdditive(
+            n_periods=7,
+            drop_valuation=1995,
+            drop=("1992", 12),
+            drop_above=1.05,
+            drop_below=-1,
+            drop_high=1,
+            drop_low=1,
+        ).fit(clrd, sample_weight=ult.ultimate_ * 3)
     pipe = cl.Pipeline(
         steps=[
             ("n_periods", cl.IncrementalAdditive(n_periods=7)),
@@ -76,7 +78,8 @@ def test_pipeline():
             ("drop_hilo", cl.IncrementalAdditive(drop_high=1, drop_low=1)),
         ]
     )
-    dev2 = pipe.fit(X=clrd, sample_weight=ult.ultimate_ * 3)
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev2 = pipe.fit(X=clrd, sample_weight=ult.ultimate_ * 3)
     assert np.array_equal(
         dev1.zeta_.values, dev2.named_steps.drop_hilo.zeta_.values, True
     )
