@@ -464,10 +464,9 @@ def parallelogram_olf(
 ):
     """Parallelogram approach to on-leveling."""
     if approximation_grain not in ["M", "D"]:
-        raise ValueError("approximation_grain must be " "M" " or " "D" "")
+        raise ValueError("approximation_grain must be M or D")
 
     dates = pd.to_datetime(dates)
-    # print("dates", dates)
 
     if start_date:
         start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
@@ -479,27 +478,23 @@ def parallelogram_olf(
 
     lookback_years = max(1, -(-policy_length // 12))
 
-    date_freq = {
-        "M": "MS",
-        "D": "D",
-    }
-
     date_idx = pd.date_range(
         pd.to_datetime(start_date)
         - pd.tseries.offsets.DateOffset(years=lookback_years),
         pd.to_datetime(end_date),
-        freq=date_freq[approximation_grain],
+        freq={"M": "MS", "D": "D"}[approximation_grain],
     )
     print(
         "date_idx (first 3, last 3)\n",
         date_idx[:3].tolist() + date_idx[-3:].tolist(),
     )
 
-    rate_changes = pd.Series(np.array(values), np.array(dates))
-    rate_changes = rate_changes.reindex(date_idx, fill_value=0)
-
-    cum_rate_changes = np.cumprod(1 + rate_changes.values)
-    cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
+    rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
+        date_idx, fill_value=0
+    )
+    cum_rate_changes = pd.Series(
+        np.cumprod(1 + rate_changes.values), rate_changes.index
+    )
     crl = cum_rate_changes.iloc[-1]
 
     rolling_num_base = {
@@ -526,27 +521,19 @@ def parallelogram_olf(
             cum_avg = cum_rate_changes
 
         else:  # parallelogram method, rate change impact is overtime
-            if approximation_grain == "D":
-                average_period = rolling_num_base
-                if is_leap_year:
-                    average_period += 1
-            elif approximation_grain == "M":
-                average_period = rolling_num_base + leap_day
-
-            # print("average_period\n", average_period)
+            # In monthly mode `leap_day` is forced to 0 above, so this is just
+            # `rolling_num_base`; in daily mode it adds 1 day for leap years.
+            average_period = rolling_num_base + leap_day
             cum_avg = cum_rate_changes.rolling(average_period).mean()
-            # print("cum_rate_changes\n", cum_rate_changes)
-            # print("cum_avg before\n", cum_avg)
             cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
-            # print("cum_avg after\n", cum_avg)
 
         cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
-        # print("cum_avg\n", cum_avg)
 
         fcrl = cum_avg.groupby(cum_avg.index.to_period(grain)).mean().reset_index()
         fcrl.columns = ["Origin", "OLF"]
         fcrl["Origin"] = fcrl["Origin"].astype(str)
         fcrl["OLF"] = crl / fcrl["OLF"]
+
         return fcrl
 
     fcrl_non_leaps, fcrl_leaps = _fcrl_for_leap(False), _fcrl_for_leap(True)
