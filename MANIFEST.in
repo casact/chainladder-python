@@ -5,6 +5,7 @@ include README.rst
 include chainladder/utils/data/abc.csv
 include chainladder/utils/data/auto.csv
 include chainladder/utils/data/clrd.csv
+include chainladder/utils/data/clrd2025.csv
 include chainladder/utils/data/genins.csv
 include chainladder/utils/data/liab.csv
 include chainladder/utils/data/m3ir5.csv

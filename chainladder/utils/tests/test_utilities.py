@@ -242,3 +242,27 @@ def test_load_sample() -> None:
     # Load each file.
     for dataset in datasets:
         cl.load_sample(dataset)
+
+
+def test_load_sample_clrd2025() -> None:
+    """
+    Tests the clrd2025 sample (CAS Schedule P 1998-2007 refresh).
+    """
+    tri = cl.load_sample("clrd2025")
+
+    # Six LOBs in the CAS Schedule P refresh.
+    expected_lobs = {
+        "comauto", "medmal", "othliab", "ppauto", "prodliab", "wkcomp"
+    }
+    assert set(tri.index["LOB"].unique()) == expected_lobs
+
+    # Modern column names (IncurredLosses rather than IncurLoss).
+    expected_columns = {
+        "IncurredLosses", "CumPaidLoss", "BulkLoss",
+        "EarnedPremDIR", "EarnedPremCeded", "EarnedPremNet",
+    }
+    assert set(str(c) for c in tri.vdims) == expected_columns
+
+    # Accident years span 1998-2007.
+    assert str(tri.origin.min()) == "1998"
+    assert "2007" in [str(o) for o in tri.origin]
