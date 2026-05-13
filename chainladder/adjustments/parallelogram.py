@@ -106,7 +106,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
                 r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
                 date = r[self.date_col]
                 values = r[self.change_col]
-                olf = parallelogram_olf(values=values, date=date, **kw).values[
+                olf = parallelogram_olf(values=values, dates=date, **kw).values[
                     None, None
                 ]
                 if X.array_backend == "cupy":
@@ -119,7 +119,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
             date = r[self.date_col]
             values = r[self.change_col]
-            olf = parallelogram_olf(values=values, date=date, **kw)
+            olf = parallelogram_olf(values=values, dates=date, **kw)
             self.olf_ = ((idx * 0 + 1) * olf.values[None, None]).latest_diagonal
         return self
 

@@ -520,7 +520,7 @@ def read_json(json_str, array_backend=None):
 
 def parallelogram_olf(
     values,
-    date,
+    dates,
     start_date=None,
     end_date=None,
     grain="Y",
@@ -529,83 +529,61 @@ def parallelogram_olf(
     vertical_line=False,
 ):
     """Parallelogram approach to on-leveling."""
-    date = pd.to_datetime(date)
+    if approximation_grain not in ['M', 'D']:
+        raise ValueError("approximation_grain must be " "M" " or " "D" "")
+
+    dates = pd.to_datetime(dates)
+    print("dates", dates)
+
     if not start_date:
-        start_date = "{}-01-01".format(date.min().year)
+        start_date = "{}-01-01".format(dates.min().year)
     if not end_date:
-        end_date = "{}-12-31".format(date.max().year)
+        end_date = "{}-12-31".format(dates.max().year)
     start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
 
     date_freq = {
         "M": "MS",
         "D": "D",
     }
-    if approximation_grain not in ['M', 'D']:
-        raise ValueError("approximation_grain must be " "M" " or " "D" "")
+
     date_idx = pd.date_range(
         start_date - pd.tseries.offsets.DateOffset(years=1),
         end_date,
         freq=date_freq[approximation_grain],
     )
-
-    rate_changes = pd.Series(np.array(values), np.array(date))
+    
+    rate_changes = pd.Series(np.array(values), np.array(dates))
     rate_changes = rate_changes.reindex(date_idx, fill_value=0)
 
     cum_rate_changes = np.cumprod(1 + rate_changes.values)
     cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
+    print("cum_rate_changes\n", cum_rate_changes)
     crl = cum_rate_changes.iloc[-1]
+    print("crl", crl)
 
-    cum_avg_rate_non_leaps = cum_rate_changes
-    cum_avg_rate_leaps = cum_rate_changes
+    rolling_num_base = {
+        "M": policy_length,
+        "D": 365 * int(policy_length / 12),
+    }[approximation_grain]
+    dropdates_base = {"M": 12, "D": 366}[approximation_grain]
 
-    if not vertical_line:
-        rolling_num = {
-            "M": policy_length,
-            "D": 365*int(policy_length/12),
-        }
+    def _fcrl_for_leap_extra(leap_extra):
+        cum_avg = cum_rate_changes
+        if not vertical_line:
+            cum_avg = cum_rate_changes.rolling(
+                rolling_num_base + leap_extra
+            ).mean()
+            cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
+        cum_avg = cum_avg.iloc[dropdates_base + leap_extra :]
+        fcrl = (
+            cum_avg.groupby(cum_avg.index.to_period(grain)).mean().reset_index()
+        )
+        fcrl.columns = ["Origin", "OLF"]
+        fcrl["Origin"] = fcrl["Origin"].astype(str)
+        fcrl["OLF"] = crl / fcrl["OLF"]
+        return fcrl
 
-        cum_avg_rate_non_leaps = cum_rate_changes.rolling(
-            rolling_num[approximation_grain]
-        ).mean()
-        cum_avg_rate_non_leaps = (
-            cum_avg_rate_non_leaps + cum_avg_rate_non_leaps.shift(1).values
-        ) / 2
-
-        cum_avg_rate_leaps = cum_rate_changes.rolling(
-            rolling_num[approximation_grain] + 1
-        ).mean()
-        cum_avg_rate_leaps = (
-            cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
-        ) / 2
-
-    dropdates_num = {
-        "M": 12,
-        "D": 366,
-    }
-    cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
-        dropdates_num[approximation_grain] :
-    ]
-    cum_avg_rate_leaps = cum_avg_rate_leaps.iloc[
-        dropdates_num[approximation_grain] + 1 :
-    ]
-
-    fcrl_non_leaps = (
-        cum_avg_rate_non_leaps.groupby(cum_avg_rate_non_leaps.index.to_period(grain))
-        .mean()
-        .reset_index()
-    )
-    fcrl_non_leaps.columns = ["Origin", "OLF"]
-    fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
-    fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
-
-    fcrl_leaps = (
-        cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
-        .mean()
-        .reset_index()
-    )
-    fcrl_leaps.columns = ["Origin", "OLF"]
-    fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
-    fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
+    fcrl_non_leaps, fcrl_leaps = _fcrl_for_leap_extra(0), _fcrl_for_leap_extra(1)
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
     combined["is_leap"] = pd.to_datetime(
