@@ -144,6 +144,19 @@ def load_sample(
             "loss",
             "exposure"
         ]
+    if key.lower() in [
+        "friedland_uspp_auto_increasing_case",
+        "friedland_uspp_auto_increasing_claim",
+        "friedland_uspp_auto_steady_state",
+        "friedland_uspp_increasing_claim_case"
+    ]:
+        origin: str = "Accident Year"
+        development: str = "Calendar Year"
+        columns: list = [
+            "Reported Claims",
+            "Paid Claims",
+            "Earned Premium"
+        ]
     if key.lower() in ["prism"]:
         columns: list = [
             "reportedCount",
@@ -197,7 +210,7 @@ def read_csv(
         **kwargs
         ) -> Triangle:
     """
-    Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
+    Function that creates Triangle directly from input. Wrapper for pandas dataframe:
     https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
 
     Parameters
