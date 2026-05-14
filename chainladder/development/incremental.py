@@ -68,6 +68,28 @@ class IncrementalAdditive(DevelopmentBase):
     incremental_: Triangle
         A triangle of full incremental values.
 
+    Examples
+    --------
+    The incremental additive method expresses each incremental as a share of
+    exposure, then applies averaged patterns. Pass cumulative losses as ``X``
+    and an exposure triangle (often latest-diagonal weights) as
+    ``sample_weight``.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("ia_sample")
+        model = cl.IncrementalAdditive().fit(
+            tri["loss"], sample_weight=tri["exposure"].latest_diagonal
+        )
+        print(model.ldf_.shape)
+
+    .. testoutput::
+
+        (1, 1, 6, 5)
 
     """
 

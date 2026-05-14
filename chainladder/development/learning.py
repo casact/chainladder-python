@@ -50,6 +50,45 @@ class DevelopmentML(DevelopmentBase):
         The estimated loss development patterns.
     cdf_: Triangle
         The estimated cumulative development patterns.
+
+    Examples
+    --------
+    Wrap a scikit-learn ``Pipeline`` whose first step builds a design matrix
+    (here via :class:`~chainladder.utils.utility_functions.PatsyFormula`) and
+    whose last step is a regression with no intercept. The fitted ``ldf_``
+    summarizes implied link ratios.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("genins")
+        est = cl.DevelopmentML(
+            Pipeline(
+                steps=[
+                    ("design_matrix", PatsyFormula("C(development)")),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=[tri.columns[0]],
+            fit_incrementals=False,
+        ).fit(tri)
+        print(est.ldf_.shape)
+        print(float(np.round(est.ldf_.values[0, 0, 0, 0], 6)))
+
+    .. testoutput::
+
+        (1, 1, 10, 9)
+        3.515035
+
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,

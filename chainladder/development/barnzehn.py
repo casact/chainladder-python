@@ -33,6 +33,30 @@ class BarnettZehnwirth(TweedieGLM):
     gamma: list of int
     iota: list of int
 
+    Examples
+    --------
+    Fit a Probabilistic Trend Family model with a patsy formula on the ``abc``
+    sample triangle. Coefficients summarize origin and development effects on
+    logged incremental losses.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("abc")
+        model = cl.BarnettZehnwirth(formula="C(origin)+C(development)").fit(tri)
+        print(repr(model))
+        print([float(x) for x in np.round(model.coef_.values.flatten()[:3], 3)])
+
+    .. testoutput::
+
+        BarnettZehnwirth(formula='C(origin)+C(development)')
+        [11.837, 0.179, 0.345]
+
     """
 
     def __init__(self, drop=None,drop_valuation=None,formula=None, response=None, alpha=None, gamma=None, iota=None):

@@ -76,6 +76,32 @@ class TweedieGLM(DevelopmentBase):
     ----------
     model_: sklearn.Pipeline
         A scikit-learn Pipeline of the GLM
+
+    Examples
+    --------
+    With the default one-hot design on origin and development, a Poisson
+    (``power=1``) GLM on incremental counts produces development factors that
+    align closely with the volume-weighted chainladder for typical triangles.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("genins")
+        glm = cl.TweedieGLM().fit(tri)
+        print(repr(glm))
+        dev = glm.transform(tri)
+        ult_glm = cl.Chainladder().fit(dev).ultimate_.values[0, 0, 0, -1]
+        ult_cl = cl.Chainladder().fit(tri).ultimate_.values[0, 0, 0, -1]
+        print(ult_glm == ult_cl)
+
+    .. testoutput::
+
+        TweedieGLM()
+        True
+
     """
 
     def __init__(self, design_matrix='C(development) + C(origin)',

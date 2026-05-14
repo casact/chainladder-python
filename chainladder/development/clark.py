@@ -54,6 +54,30 @@ class ClarkLDF(DevelopmentBase):
     norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
 
+    Examples
+    --------
+    Fit Clark's LDF curve to a cumulative triangle. The estimator recovers
+    smooth age-to-age factors implied by a loglogistic (or Weibull) growth
+    curve.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("ukmotor")
+        model = cl.ClarkLDF(growth="loglogistic").fit(tri)
+        print(float(np.round(model.ldf_.values[0, 0, 0, 0], 6)))
+        print(float(np.round(model.theta_.values[0, 0], 4)))
+
+    .. testoutput::
+
+        1.917318
+        30.3322
+
     """
 
     def __init__(
