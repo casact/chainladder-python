@@ -72,6 +72,8 @@ class DevelopmentConstant(DevelopmentBase):
                     pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                     .fillna(1)[obj.ddims].values)
                 ldf = xp.array(ldf[None, :, None, :])
+            else:
+                raise ValueError('callable axis needs to be 0 or 1')
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]

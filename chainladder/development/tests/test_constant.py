@@ -1,6 +1,7 @@
 import chainladder as cl
 import numpy as np
 import pandas as pd
+import pytest
 
 
 def test_constant_cdf(raa):
@@ -51,6 +52,8 @@ def test_constant_callable_axis1(clrd, atol):
         """ A function that returns different CDFs depending on a specified column """
         patterns = pd.DataFrame(cdfs, index=range(12, 132, 12)).T
         return patterns.loc[x.loc['columns']].to_dict()
+    with pytest.raises(ValueError):
+        xerror = cl.DevelopmentConstant(patterns=paid_cdfs, callable_axis=2, style='cdf').fit(agway)
     lhs = cl.DevelopmentConstant(patterns=paid_cdfs, callable_axis=1, style='cdf').fit(agway).cdf_.sum().sum()
     rhs = sum([sum(l[:-1]) for l in cdfs.values()])
     assert abs(lhs - rhs) < atol
