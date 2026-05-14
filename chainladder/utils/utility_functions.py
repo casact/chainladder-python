@@ -502,7 +502,7 @@ def parallelogram_olf(
     }[approximation_grain]
 
     def _fcrl_for_leap(is_leap_year: bool):
-        # In monthly mode every month is treated as an equal-length period, so a
+        # In monthly mode every month is treated as an equal length period, so a
         # leap day has no effect on the rolling window or the lookback drop.
         if approximation_grain == "M":
             is_leap_year = False
@@ -516,9 +516,9 @@ def parallelogram_olf(
             cum_avg = cum_rate_changes
 
         else:  # parallelogram method, rate change impact is overtime
-            # In monthly mode `leap_day` is forced to 0 above, so this is just
-            # `rolling_num_base`; in daily mode it adds 1 day for leap years.
-            average_period = rolling_num_base + leap_day
+            #
+            average_period = max(rolling_num_base + leap_day, 1)
+
             cum_avg = cum_rate_changes.rolling(average_period).mean()
             cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
 
