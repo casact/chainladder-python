@@ -283,3 +283,102 @@ def test_policy_length():
         .notna()
         .all()
     )
+
+
+def test_rate_impact_middle_of_year():
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-01-01"],
+            "RateChange": [0.20],
+        }
+    )
+    data = pd.DataFrame(
+        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
+    )
+    prem_tri = cl.Triangle(
+        data,
+        origin="Year",
+        columns="EarnedPremium",
+        cumulative=True,
+    )
+
+    monthly = np.round(
+        cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="M",
+        )
+        .fit_transform(prem_tri)
+        .olf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    # print(monthly)
+    daily = np.round(
+        cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="D",
+        )
+        .fit_transform(prem_tri)
+        .olf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    assert np.all(
+        monthly == daily
+    )  # when rate change is effective on 1/1, there's no difference in daily or monthly approximatation
+
+
+def test_rate_impact_beginning_of_year():
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-07-01"],
+            "RateChange": [0.20],
+        }
+    )
+    data = pd.DataFrame(
+        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
+    )
+    prem_tri = cl.Triangle(
+        data,
+        origin="Year",
+        columns="EarnedPremium",
+        cumulative=True,
+    )
+
+    monthly = np.round(
+        cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="M",
+        )
+        .fit_transform(prem_tri)
+        .olf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    # print(monthly)
+    daily = np.round(
+        cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="D",
+        )
+        .fit_transform(prem_tri)
+        .olf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    assert np.array_equal(
+        np.where(monthly > daily, ">", np.where(monthly == daily, "=", "<")),
+        np.array([">", ">", ">", "=", "="]),
+    )  # this is true becuase there are less "days" in the first half of the year (from Jan - Jun) compared to (Jul - Dec), and only the first three origins would need to be brought to current rate level
