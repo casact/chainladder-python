@@ -3,6 +3,7 @@ import chainladder as cl
 import pandas as pd
 import numpy as np
 
+
 def test_parallelogram(clrd):
     lob = ["wkcomp"] * 3 + ["comauto"] * 3 + ["wkcomp"] * 2
     values = [0.05, 0.02, -0.1, 0.05, 0.05, 0.05, 0.2, 1 / 1.1 - 1]
@@ -33,6 +34,7 @@ def test_parallelogram(clrd):
     assert X.get_array_module().all(
         X.olf_.loc["wkcomp", "EarnedPremNet", "1996"].values - 1.1 < 0.005
     )
+
 
 def test_non_vertical_line():
     true_olf = (
@@ -177,7 +179,9 @@ def test_policy_length():
     data = pd.DataFrame(
         {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
     )
-    prem_tri = cl.Triangle(data, origin="Year", columns="EarnedPremium", cumulative=True)
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
 
     prem_tri = cl.ParallelogramOLF(
         rate_history,
@@ -186,7 +190,10 @@ def test_policy_length():
         policy_length=12,
         approximation_grain="M",
     ).fit_transform(prem_tri)
-    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.344949, 1.069526, 0.966045, 0.996730, 1]).all()
+    assert (
+        np.round(prem_tri.olf_.values.flatten(), 6)
+        == [1.344949, 1.069526, 0.966045, 0.996730, 1]
+    ).all()
 
     prem_tri = cl.ParallelogramOLF(
         rate_history,
@@ -195,4 +202,39 @@ def test_policy_length():
         policy_length=6,
         approximation_grain="M",
     ).fit_transform(prem_tri)
-    assert (np.round(prem_tri.olf_.values.flatten(),6) == [1.290842, 1.030251, 0.958285, 1, 1]).all()
+    assert (
+        np.round(prem_tri.olf_.values.flatten(), 6)
+        == [1.290842, 1.030251, 0.958285, 1, 1]
+    ).all()
+
+    rate_history = pd.DataFrame(
+        {
+            "EffDate": ["2010-07-01"],
+            "RateChange": [0.20],
+        }
+    )
+    data = pd.DataFrame(
+        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
+    )
+    prem_tri = cl.Triangle(
+        data,
+        origin="Year",
+        columns="EarnedPremium",
+        cumulative=True,
+    )
+
+    lhs = np.round(
+        cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="M",
+        )
+        .fit_transform(prem_tri)
+        .olf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    rhs = [1.185185, 1.090909, 1.010526, 1, 1]
+    assert np.all(lhs == rhs)
