@@ -471,22 +471,17 @@ def parallelogram_olf(
     if start_date:
         start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
     else:
-        start_date = "{}-01-01".format(dates.min().year)
+        start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
 
     if not end_date:
-        end_date = "{}-12-31".format(dates.max().year)
+        end_date = pd.to_datetime("{}-12-31".format(dates.max().year))
 
     lookback_years = max(1, -(-policy_length // 12))
 
     date_idx = pd.date_range(
-        pd.to_datetime(start_date)
-        - pd.tseries.offsets.DateOffset(years=lookback_years),
-        pd.to_datetime(end_date),
+        start_date - pd.tseries.offsets.DateOffset(years=lookback_years),
+        end_date,
         freq={"M": "MS", "D": "D"}[approximation_grain],
-    )
-    print(
-        "date_idx (first 3, last 3)\n",
-        date_idx[:3].tolist() + date_idx[-3:].tolist(),
     )
 
     rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
@@ -536,21 +531,18 @@ def parallelogram_olf(
 
         return fcrl
 
-    fcrl_non_leaps, fcrl_leaps = _fcrl_for_leap(False), _fcrl_for_leap(True)
+    fcrl_non_leaps = _fcrl_for_leap(False)
+    fcrl_leaps = fcrl_non_leaps if approximation_grain == "M" else _fcrl_for_leap(True)
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
     combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
+        combined["Origin_non_leaps"], format="%Y" + ("-%m" if grain == "M" else "")
     ).dt.is_leap_year
 
-    if approximation_grain == "M":
-        combined["final_OLF"] = combined["OLF_non_leaps"]
-    else:
-        combined["final_OLF"] = np.where(
-            combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
-        )
+    combined["final_OLF"] = np.where(
+        combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+    )
 
-    print("combined\n", combined)
     combined.drop(
         ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"], axis=1, inplace=True
     )
