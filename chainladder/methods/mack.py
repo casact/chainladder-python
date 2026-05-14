@@ -79,6 +79,22 @@ class MackChainladder(Chainladder):
 
         columns        values
         (Total,)  1424.531543
+
+    Mack's total error depends on how ``ldf_`` and ``sigma_`` were produced.
+    Here the same triangle is pre-smoothed with :class:`Development` using
+    ``average='simple'`` instead of the default volume weights before fitting
+    ``MackChainladder``, which raises the aggregate Mack standard error.
+
+    .. testcode::
+
+        tr = cl.load_sample("ukmotor")
+        tr_simple = cl.Development(average="simple").fit_transform(tr)
+        print(cl.MackChainladder().fit(tr_simple).total_mack_std_err_)
+
+    .. testoutput::
+
+        columns        values
+        (Total,)  1591.603339
     """
 
     def fit(self, X, y=None, sample_weight=None):
@@ -268,6 +284,7 @@ class MackChainladder(Chainladder):
         --------
 
         .. testsetup::
+
             import chainladder as cl
 
         .. testcode::
@@ -340,9 +357,11 @@ class MackChainladder(Chainladder):
         error per origin.
 
         .. testsetup::
+
             import chainladder as cl
 
         .. testcode::
+
             tr = cl.load_sample('ukmotor')
             model = cl.MackChainladder().fit(tr)
             print(model.mack_std_err_.iloc[..., -3:, -3:])

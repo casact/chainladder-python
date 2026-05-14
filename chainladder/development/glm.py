@@ -79,9 +79,8 @@ class TweedieGLM(DevelopmentBase):
 
     Examples
     --------
-    With the default one-hot design on origin and development, a Poisson
-    (``power=1``) GLM on incremental counts produces development factors that
-    align closely with the volume-weighted chainladder for typical triangles.
+    ``design_matrix`` controls which patsy terms enter the GLM; dropping
+    ``C(origin)`` changes the first fitted LDF.
 
     .. testsetup::
 
@@ -89,18 +88,35 @@ class TweedieGLM(DevelopmentBase):
 
     .. testcode::
 
+        import numpy as np
+
         tri = cl.load_sample("genins")
-        glm = cl.TweedieGLM().fit(tri)
-        print(repr(glm))
-        dev = glm.transform(tri)
-        ult_glm = cl.Chainladder().fit(dev).ultimate_.values[0, 0, 0, -1]
-        ult_cl = cl.Chainladder().fit(tri).ultimate_.values[0, 0, 0, -1]
-        print(ult_glm == ult_cl)
+        m_full = cl.TweedieGLM(
+            power=1, design_matrix="C(development) + C(origin)"
+        ).fit(tri)
+        m_dev = cl.TweedieGLM(power=1, design_matrix="C(development)").fit(tri)
+        print(float(np.round(m_full.ldf_.values[0, 0, 0, 0], 4)))
+        print(float(np.round(m_dev.ldf_.values[0, 0, 0, 0], 4)))
 
     .. testoutput::
 
-        TweedieGLM()
-        True
+        3.491
+        3.5085
+
+    ``power`` and ``link`` select the Tweedie family; a Normal GLM
+    (``power=0`` with ``link='identity'``) yields a different pattern.
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("genins")
+        m = cl.TweedieGLM(power=0, link="identity").fit(tri)
+        print(float(np.round(m.ldf_.values[0, 0, 0, 0], 2)))
+
+    .. testoutput::
+
+        2.31
 
     """
 

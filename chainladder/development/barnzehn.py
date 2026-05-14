@@ -35,9 +35,9 @@ class BarnettZehnwirth(TweedieGLM):
 
     Examples
     --------
-    Fit a Probabilistic Trend Family model with a patsy formula on the ``abc``
-    sample triangle. Coefficients summarize origin and development effects on
-    logged incremental losses.
+    A patsy ``formula`` and the built-in ``alpha`` / ``gamma`` / ``iota`` PTF
+    specification can both fit the same triangle; the leading fitted
+    coefficient differs because the design matrices differ.
 
     .. testsetup::
 
@@ -48,14 +48,19 @@ class BarnettZehnwirth(TweedieGLM):
         import numpy as np
 
         tri = cl.load_sample("abc")
-        model = cl.BarnettZehnwirth(formula="C(origin)+C(development)").fit(tri)
-        print(repr(model))
-        print([float(x) for x in np.round(model.coef_.values.flatten()[:3], 3)])
+        m_formula = cl.BarnettZehnwirth(
+            formula="C(origin)+C(development)"
+        ).fit(tri)
+        m_ptf = cl.BarnettZehnwirth(
+            alpha=[0, 5], gamma=[0, 2, 5], iota=[0, 7, 11]
+        ).fit(tri)
+        print(float(np.round(m_formula.coef_.values.flatten()[0], 3)))
+        print(float(np.round(m_ptf.coef_.values.flatten()[0], 3)))
 
     .. testoutput::
 
-        BarnettZehnwirth(formula='C(origin)+C(development)')
-        [11.837, 0.179, 0.345]
+        11.837
+        12.151
 
     """
 
