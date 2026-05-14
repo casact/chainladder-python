@@ -238,3 +238,48 @@ def test_policy_length():
     )
     rhs = [1.185185, 1.090909, 1.010526, 1, 1]
     assert np.all(lhs == rhs)
+
+    data = [
+        [2002, 61183, 0],
+        [2003, 69175, 0.05],
+        [2004, 99322, 0.075],
+        [2005, 138151, 0.15],
+        [2006, 107578, 0.1],
+        [2007, 62438, -0.2],
+        [2008, 47797, -0.2],
+    ]
+    columns = ["Calendar Year", "Earned Premiums", "Rate Changes"]
+    df_prem = pd.DataFrame(data, columns=columns)
+    df_prem["Date"] = pd.to_datetime(
+        df_prem["Calendar Year"].astype(int).astype(str) + "-01-01"
+    )
+
+    assert (
+        cl.parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"])
+        .reset_index()["OLF"]
+        .notna()
+        .all()
+    )
+    assert (
+        cl.parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"], policy_length=12)
+        .reset_index()["OLF"]
+        .notna()
+        .all()
+    )
+    assert (
+        cl.parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"], policy_length=6)
+        .reset_index()["OLF"]
+        .notna()
+        .all()
+    )
+    assert (
+        cl.parallelogram_olf(
+            df_prem["Rate Changes"],
+            df_prem["Date"],
+            policy_length=6,
+            approximation_grain="D",
+        )
+        .reset_index()["OLF"]
+        .notna()
+        .all()
+    )
