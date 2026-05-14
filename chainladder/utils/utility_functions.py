@@ -114,7 +114,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
         development: str = "DevelopmentYear"
         index: list = ["GRNAME", "LOB"]
         columns: list = [
-            "IncurredLosses",
+            "IncurLoss",
             "CumPaidLoss",
             "BulkLoss",
             "EarnedPremDIR",
@@ -506,7 +506,7 @@ def parallelogram_olf(
 
     rolling_num_base = {
         "M": policy_length,
-        "D": 365 * int(policy_length / 12),
+        "D": int(365 * policy_length / 12),
     }[approximation_grain]
     dropdates_base = {
         "M": 12 * lookback_years,
