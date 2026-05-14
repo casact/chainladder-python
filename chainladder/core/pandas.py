@@ -25,6 +25,9 @@ if TYPE_CHECKING:
         Series
     )
     from types import ModuleType
+    from pandas._typing import(
+        IndexLabel
+    )
     from typing import (
         Literal,
         Self,
@@ -445,11 +448,14 @@ class TrianglePandas:
     def round(self, decimals=0, *args, **kwargs):
         return round(self, decimals)
 
-    def xs(self,index_key,level=None,drop_level=False):
+    def xs(
+        self,
+        index_key:IndexLabel,
+        level:IndexLabel | None = None,
+        drop_level:bool = True):
         '''
-        mimics xs from pandas. key differences 
-            - is always 0 and therefore not an argument in the function 
-            - drop-level is set to be False be default, to retain Triangle.loc behavior
+        mimics xs from pandas. key difference
+            - this function only slides the index, therefore axis is always 0 and not an argument in the function
         main use case for this function is when slicing beyond the first field in the index (such as LOB in the clrd dataset)
         '''
         mi = pd.MultiIndex.from_frame(self.index)
