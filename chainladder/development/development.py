@@ -15,7 +15,7 @@ from typing import (
     Callable,
     Literal,
     # Self,  # Make use of this once Python 3.10 is deprecated.
-    TYPE_CHECKING
+    TYPE_CHECKING,
 )
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class Development(DevelopmentBase):
         all origin periods, set n_periods = -1
     average: string or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.  Options include
-        'volume', 'simple', and 'regression'. If numeric values are supplied,
+        'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
         then (2-average) in the style of Zehnwirth & Barnett is used
         for the exponent of the regression weights.
     sigma_interpolation: string optional (default = 'log-linear')
@@ -92,8 +92,8 @@ class Development(DevelopmentBase):
     def __init__(
         self,
         n_periods: int = -1,
-        average: Literal['volume', 'simple', 'regression'] = "volume",
-        sigma_interpolation: Literal['log-linear', 'mack'] = "log-linear",
+        average: Literal["volume", "simple", "regression", "geometric"] = "volume",
+        sigma_interpolation: Literal["log-linear", "mack"] = "log-linear",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
@@ -120,11 +120,7 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
-    def fit(
-            self, X: TriangleLike,
-            y: None = None,
-            sample_weight: None = None
-    ):
+    def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
         """Fit the model with X.
 
         Parameters
@@ -154,7 +150,7 @@ class Development(DevelopmentBase):
         average_: np.ndarray = self._validate_assumption(X, self.average, axis=3)[
             ..., : X.shape[3] - 1
         ]
-
+        print("average_", average_)
         # noinspection PyAttributeOutsideInit
         self.average_: np.ndarray = average_.flatten()
         n_periods_: np.ndarray = self._validate_assumption(X, self.n_periods, axis=3)[
@@ -164,6 +160,9 @@ class Development(DevelopmentBase):
         x: ArrayLike
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
+        print("x", x)
+        print("y", y)
+
         exponent: ArrayLike = xp.array(
             [{"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]]
         )
@@ -216,8 +215,6 @@ class Development(DevelopmentBase):
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         return self
-
-
 
     def transform(self, X):
         """If X and self are of different shapes, align self to X, else
