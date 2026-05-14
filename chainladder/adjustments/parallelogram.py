@@ -8,7 +8,7 @@ from chainladder.core.io import EstimatorIO
 
 class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     """
-    Estimator to create and apply on-level factors to a Triangle object.  This
+    Estimator to create and apply on-level factors to a Triangle object. This
     is commonly used for premium vectors expressed as a Triangle object.
 
     Parameters
@@ -21,10 +21,19 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         5% decrease should be stated as -0.05
     date_col: str
         A list-like set of effective dates corresponding to each of the changes
-    approximation_grain: str
-        The resolution of the internal calendar used for calculating the on-level factors: 
-        monthly ('M') or daily ('D'). Daily is finer and adjusts for leap years when assigning
-        factors to origin periods.
+    approximation_grain: str {"M", "D"} (default="M")
+        The resolution of the internal calendar spacing used to calculate on-level
+        factors can be set to monthly (`'M'`) or daily (`'D'`). Under each
+        `approximation_grain`, periods are treated as discrete intervals and a
+        weighted current rate level is estimated. In monthly mode, each month is
+        treated as an equal-length period, consistent with the methodology presented
+        in the Friedland text, although this assumes that all months within a year
+        contain the same number of days. In daily mode, each calendar day is treated
+        as a full period, providing finer granularity and more accurately accounting
+        for differences in month length and leap years when assigning factors to
+        origin periods.
+    policy_length: int (default=12)
+        The length of the policy in months.
     vertical_line:
         Rates are typically stated on an effective date basis and premiums on
         and earned basis.  By default, this argument is False and produces
@@ -45,12 +54,14 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         change_col="",
         date_col="",
         approximation_grain="M",
+        policy_length=12,
         vertical_line=False,
     ):
         self.rate_history = rate_history
         self.change_col = change_col
         self.date_col = date_col
         self.approximation_grain = approximation_grain
+        self.policy_length = policy_length
         self.vertical_line = vertical_line
 
     def fit(self, X, y=None, sample_weight=None):
@@ -86,6 +97,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             start_date=X.origin[0].to_timestamp(how="s"),
             end_date=X.origin[-1].to_timestamp(how="e"),
             grain=X.origin_grain,
+            policy_length=self.policy_length,
             vertical_line=self.vertical_line,
             approximation_grain=self.approximation_grain,
         )
@@ -98,7 +110,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
                 r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
                 date = r[self.date_col]
                 values = r[self.change_col]
-                olf = parallelogram_olf(values=values, date=date, **kw).values[
+                olf = parallelogram_olf(values=values, dates=date, **kw).values[
                     None, None
                 ]
                 if X.array_backend == "cupy":
@@ -111,7 +123,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
             date = r[self.date_col]
             values = r[self.change_col]
-            olf = parallelogram_olf(values=values, date=date, **kw)
+            olf = parallelogram_olf(values=values, dates=date, **kw)
             self.olf_ = ((idx * 0 + 1) * olf.values[None, None]).latest_diagonal
         return self
 
