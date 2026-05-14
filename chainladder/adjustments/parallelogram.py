@@ -7,7 +7,7 @@ from chainladder.core.io import EstimatorIO
 
 
 class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
-    f"""
+    """
     Estimator to create and apply on-level factors to a Triangle object. This
     is commonly used for premium vectors expressed as a Triangle object.
 
@@ -22,15 +22,15 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     date_col: str
         A list-like set of effective dates corresponding to each of the changes
     approximation_grain: str {"M", "D"} (default="M")
-        The resolution of the internal calendar spacing used to calculate on-level 
-        factors can be set to monthly (`'M'`) or daily (`'D'`). Under each 
-        `approximation_grain`, periods are treated as discrete intervals and a 
-        weighted current rate level is estimated. In monthly mode, each month is 
-        treated as an equal-length period, consistent with the methodology presented 
-        in the Friedland text, although this assumes that all months within a year 
-        contain the same number of days. In daily mode, each calendar day is treated 
-        as a full period, providing finer granularity and more accurately accounting 
-        for differences in month length and leap years when assigning factors to 
+        The resolution of the internal calendar spacing used to calculate on-level
+        factors can be set to monthly (`'M'`) or daily (`'D'`). Under each
+        `approximation_grain`, periods are treated as discrete intervals and a
+        weighted current rate level is estimated. In monthly mode, each month is
+        treated as an equal-length period, consistent with the methodology presented
+        in the Friedland text, although this assumes that all months within a year
+        contain the same number of days. In daily mode, each calendar day is treated
+        as a full period, providing finer granularity and more accurately accounting
+        for differences in month length and leap years when assigning factors to
         origin periods.
     policy_length: int (default=12)
         The length of the policy in months.
