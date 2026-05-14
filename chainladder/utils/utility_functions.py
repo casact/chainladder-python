@@ -40,7 +40,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
 
         Datasets that are commonly used in examples are: raa, clrd, and prism.
 
-        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
+        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, clrd2025, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
 
     Returns
     -------
@@ -114,7 +114,19 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
         development: str = "DevelopmentYear"
         index: list = ["GRNAME", "LOB"]
         columns: list = [
-            "IncurLoss",
+            "IncurredLosses",
+            "CumPaidLoss",
+            "BulkLoss",
+            "EarnedPremDIR",
+            "EarnedPremCeded",
+            "EarnedPremNet",
+        ]
+    if key.lower() == "clrd2025":
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        index: list = ["GRNAME", "LOB"]
+        columns: list = [
+            "IncurredLosses",
             "CumPaidLoss",
             "BulkLoss",
             "EarnedPremDIR",
