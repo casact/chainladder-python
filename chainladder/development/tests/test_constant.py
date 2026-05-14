@@ -53,4 +53,4 @@ def test_constant_callable_axis1(clrd, atol):
         return patterns.loc[x.loc['columns']].to_dict()
     lhs = cl.DevelopmentConstant(patterns=paid_cdfs, callable_axis=1, style='cdf').fit(agway).cdf_.sum().sum()
     rhs = sum([sum(l[:-1]) for l in cdfs.values()])
-    assert (lhs - rhs) < atol
+    assert abs(lhs - rhs) < atol
