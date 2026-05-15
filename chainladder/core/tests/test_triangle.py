@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 import chainladder as cl
-import pandas as pd
-import numpy as np
-import pytest
 import io
+import numpy as np
+import pandas as pd
+import pytest
 
 from io import StringIO
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
 try:
     from IPython.core.display import HTML
-except:
+except ImportError:
     HTML = None
 
 
@@ -318,7 +325,7 @@ def test_groupby_axis1(clrd, prism):
     clrd = clrd.sum("origin").sum("development")
     groups = [i.find("Loss") >= 0 for i in clrd.columns]
     assert np.all(
-        clrd.to_frame(origin_as_datetime=False).T.groupby(groups).sum().T
+        clrd.to_frame(origin_as_datetime=False).groupby(groups, axis=1).sum()
         == clrd.groupby(groups, axis=1).sum().to_frame(origin_as_datetime=False)
     )
     assert np.all(
@@ -909,7 +916,7 @@ def test_single_valuation_date_preserves_exact_date():
     )
 
     # Valuation date should be end of October 2025, not converted to a fiscal year
-    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999')
+    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999999')
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
 def test_OXDX_triangle():
@@ -1006,3 +1013,16 @@ def test_triangle_init_from_dict() -> None:
     )
 
     assert tri_from_df == tri_from_dict
+
+
+def test_validate_assumption(raa: Triangle) -> None:
+    """
+    Tests Common._validate_assumption.
+    """
+
+    # Check incorrect type provided to value argument.
+    with pytest.raises(TypeError):
+        raa._validate_assumption(
+            triangle=raa,
+            value=raa, axis=3  # noqa - incorrect type provided on purpose.
+        )
