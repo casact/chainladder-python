@@ -209,11 +209,15 @@ class Development(DevelopmentBase):
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
+        print("self.ldf_\n", self.ldf_)
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
+
+        if "geometric" in average_[0, 0, 0]:
+            print("in geometric - needs additional processing")
 
         return self
 
