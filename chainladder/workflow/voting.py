@@ -239,6 +239,41 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         1988  23106.943030
         1989  20004.502125
         1990  21605.832631
+
+    ``weights`` and ``default_weighting`` change how sub-model ultimates are
+    blended; skewing weights toward ``Chainladder`` pulls the ensemble away
+    from ``BornhuetterFerguson`` on late accident years.
+
+    .. testcode::
+
+        import numpy as np
+
+        raa = cl.load_sample("raa")
+        cl_ult = cl.Chainladder().fit(raa).ultimate_
+        apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)
+        estimators = [
+            ("bcl", cl.Chainladder()),
+            ("bf", cl.BornhuetterFerguson(apriori=1.0)),
+        ]
+        even = cl.VotingChainladder(
+            estimators=estimators,
+            weights=None,
+            default_weighting=(0.5, 0.5),
+        ).fit(raa, sample_weight=apriori)
+        w = np.ones((1, 1, raa.shape[2], 2))
+        w[..., 0] = 0.9
+        w[..., 1] = 0.1
+        skewed = cl.VotingChainladder(estimators=estimators, weights=w).fit(
+            raa, sample_weight=apriori
+        )
+        print(round(float(even.ultimate_.values[0, 0, -1, 0]), 2))
+        print(round(float(skewed.ultimate_.values[0, 0, -1, 0]), 2))
+
+    .. testoutput::
+
+        19694.23
+        18660.8
+
     """
 
     @_deprecate_positional_args

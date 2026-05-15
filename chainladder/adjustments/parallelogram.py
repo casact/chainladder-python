@@ -46,6 +46,57 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
 
     olf_:
         A triangle representation of the on-level factors
+
+    Examples
+    --------
+    ``policy_length`` sets the earning window used in the parallelogram
+    geometry; a longer policy smooths rate changes over more months and
+    shifts the first on-level factor.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import pandas as pd
+
+    .. testcode::
+
+        rate_history = pd.DataFrame(
+            {"EffDate": ["2010-07-01"], "RateChange": [0.20]}
+        )
+        data = pd.DataFrame(
+            {
+                "Year": [2010, 2011, 2012, 2013, 2014],
+                "EarnedPremium": [10000] * 5,
+            }
+        )
+
+        def prem():
+            return cl.Triangle(
+                data, origin="Year", columns="EarnedPremium", cumulative=True
+            )
+
+        olf_12 = cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=12,
+            approximation_grain="M",
+        ).fit_transform(prem())
+        olf_24 = cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="M",
+        ).fit_transform(prem())
+        print(round(float(olf_12.olf_.values[0, 0, 0, 0]), 6))
+        print(round(float(olf_24.olf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        1.170732
+        1.185185
+
     """
 
     def __init__(
