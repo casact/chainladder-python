@@ -1,30 +1,36 @@
 .. -*- mode: rst -*-
 
-.. |PyPI version| image:: https://badgen.net/pypi/v/chainladder
-   :target: https://pypi.python.org/pypi/chainladder
-
 .. |Python versions| image:: https://badgen.net/pypi/python/chainladder
    :target: https://pypi.python.org/pypi/chainladder
 
-.. |License| image:: https://badgen.net/pypi/license/chainladder
+.. |PyPI version| image:: https://badgen.net/pypi/v/chainladder
    :target: https://pypi.python.org/pypi/chainladder
 
 .. |Downloads| image:: https://badgen.net/pypi/dm/chainladder
    :target: https://pypi.python.org/pypi/chainladder
 
+.. |Conda-forge version| image:: https://img.shields.io/conda/vn/conda-forge/chainladder.svg?label=conda-forge
+   :target: https://anaconda.org/conda-forge/chainladder
+
+.. |Conda-forge downloads| image:: https://img.shields.io/conda/dn/conda-forge/chainladder.svg?label=conda-forge%20downloads
+   :target: https://anaconda.org/conda-forge/chainladder
+
+.. |License| image:: https://badgen.net/pypi/license/chainladder
+   :target: https://pypi.python.org/pypi/chainladder
+
 .. |Build Status| image:: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml/badge.svg
    :target: https://github.com/casact/chainladder-python/actions/workflows/pytest.yml
-
-.. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=main
-   :target: https://chainladder-python.readthedocs.io/main/
 
 .. |codecov io| image:: https://codecov.io/gh/casact/chainladder-python/branch/master/graphs/badge.svg
    :target: https://codecov.io/github/casact/chainladder-python?branch=latest
 
+.. |Documentation Status| image:: https://readthedocs.org/projects/chainladder-python/badge/?version=main
+   :target: https://chainladder-python.readthedocs.io/main/
+
 chainladder (python)
 ====================
 
-|PyPI version| |Python versions| |License| |Downloads| |Build Status| |codecov io| |Documentation Status|
+|Python versions| |PyPI version| |Downloads| |Conda-forge version| |Conda-forge downloads| |License| |Build Status| |codecov io| |Documentation Status|
 
 chainladder: Property and Casualty Loss Reserving in Python
 ------------------------------------------------------------
@@ -34,7 +40,7 @@ Welcome! The chainladder package was built to be able to handle all of your actu
 This package strives to be minimalistic in needing its own API. The syntax mimics popular packages `pandas`_ for data manipulation and `scikit-learn`_ for model
 construction. An actuary that is already familiar with these tools will be able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
 
-Chainladder is built by a group of volunteers, and we need YOUR help!
+Chainladder is built by a group of volunteers, and we need ***YOUR*** help!
 
 This package is written in Python, if you are looking for a similar package written in R, please visit `chainladder`_.
 
@@ -43,10 +49,10 @@ This package is written in Python, if you are looking for a similar package writ
 .. _chainladder: https://github.com/mages/ChainLadder
 
 
-Dedicated Documentation Site
+Documentation Site
 ----------------------------
 
-We have a dedicated documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change log history, and more.
+We have a documentation website, where you can find installation instructions, tutorials, example galleries, sample datasets,  API references, change log history, and more.
 
 Visit `Chainladder-Python on Read the Docs`_.
 
