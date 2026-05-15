@@ -224,42 +224,15 @@ class Development(DevelopmentBase):
             print("link_ratio\n", link_ratio)
             print("self.w_\n", self.w_)
             print("weighted link_ratio\n", self.w_ * link_ratio)
-            
-            geo_means = np.array([
-                gmean(col[~np.isnan(col)])
-                for col in (self.w_ * link_ratio)).T
-            ])
-            print("geo_means\n", geo_means)
+            weighted_link_ratios = self.w_ * link_ratio
+            weighted_link_ratios = np.where(
+                weighted_link_ratios == 0, np.nan, weighted_link_ratios
+            )
+            geo_means_link_ratios = gmean(
+                weighted_link_ratios, axis=2, nan_policy="omit"
+            )
 
-            # params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
-
-            # from chainladder.utils.utility_functions import num_to_nan
-
-            # w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
-            # xp = self.xp
-            # if xp != sp:
-            #     x[w == 0] = xp.nan
-            #     y[w == 0] = xp.nan
-            # else:
-            #     w2 = w.copy()
-            #     w2 = sp.COO(
-            #         data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape
-            #     )
-            #     x, y = x * w2, y * w2
-
-            # with warnings.catch_warnings():
-            #     warnings.simplefilter("ignore", category=RuntimeWarning)
-            #     slope = num_to_nan(
-            #         xp.nansum(w * x * y, axis)
-            #         - xp.nansum(x * w, axis) * xp.nanmean(y, axis)
-            #     ) / num_to_nan(
-            #         xp.nansum(w * x * x, axis)
-            #         - xp.nanmean(x, axis) * xp.nansum(w * x, axis)
-            #     )
-            #     intercept = xp.nanmean(y, axis) - slope * xp.nanmean(x, axis)
-
-            # self.slope_ = slope[..., None]
-            # self.intercept_ = intercept[..., None]
+            print("geo_means_link_ratios\n", geo_means_link_ratios)
 
         return self
 
