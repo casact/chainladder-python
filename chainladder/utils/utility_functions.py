@@ -664,12 +664,13 @@ def num_to_value(arr: ArrayLike, value) -> ArrayLike:
             arr: COO = sp.COO(
                 coords=arr.coords,
                 data=arr.data,
-                fill_value=sp.COO.nan,  # noqa
-                shape=arr.shape,
+                fill_value=sp.COO.nan, # noqa
+                shape=arr.shape
             )
         else:
             arr: COO = sp.COO(
-                num_to_nan(np.nan_to_num(arr.todense())), fill_value=value
+                num_to_nan(np.nan_to_num(arr.todense())),
+                fill_value=value
             )
     else:
         arr[arr == 0] = value

@@ -31,6 +31,11 @@ parts:
       - file: user_guide/workflow.ipynb
       - file: user_guide/utilities.ipynb
   - chapters:
+    - file: friedland/index.rst
+      sections:
+      - file: friedland/chapter_6.rst
+      - file: friedland/chapter_7.rst
+  - chapters:
     - file: gallery/index.md
   - chapters:
     - file: library/api.rst    
