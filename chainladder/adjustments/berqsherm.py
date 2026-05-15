@@ -42,6 +42,43 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         Two-period Exponential intercept parameters
     b_: Triangle
         Two-period Exponential slope parameters
+
+    Examples
+    --------
+    ``trend`` tilts the case-adequacy adjustment before ``Incurred`` is rebuilt;
+    on the ``MedMal`` slice the column totals move materially between ``0%``
+    and ``15%`` annual drift.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        tri = cl.load_sample("berqsherm").loc["MedMal"]
+        base = cl.BerquistSherman(
+            paid_amount="Paid",
+            incurred_amount="Incurred",
+            reported_count="Reported",
+            closed_count="Closed",
+            trend=0.0,
+        ).fit(tri)
+        tilted = cl.BerquistSherman(
+            paid_amount="Paid",
+            incurred_amount="Incurred",
+            reported_count="Reported",
+            closed_count="Closed",
+            trend=0.15,
+        ).fit(tri)
+        print(round(float(np.nansum(base.adjusted_triangle_["Incurred"].values)), 2))
+        print(round(float(np.nansum(tilted.adjusted_triangle_["Incurred"].values)), 2))
+
+    .. testoutput::
+
+        1407473237.41
+        1126985253.66
+
     """
 
     def __init__(

@@ -46,6 +46,34 @@ class DevelopmentCorrelation:
     confidence_interval: tuple
         Range within which ``t_expectation`` must fall for independence assumption
         to be significant.
+
+    Examples
+    --------
+    ``p_critical`` sets how wide the acceptance band is for the Spearman
+    composite statistic; tightening it can flip ``t_critical`` even when the
+    point estimate is unchanged.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        loose = cl.DevelopmentCorrelation(tri, p_critical=0.5)
+        tight = cl.DevelopmentCorrelation(tri, p_critical=0.99)
+        print(bool(loose.t_critical.iloc[0, 0]))
+        print(bool(tight.t_critical.iloc[0, 0]))
+        print(round(float(loose.confidence_interval[0]), 6))
+        print(round(float(tight.confidence_interval[0]), 6))
+
+    .. testoutput::
+
+        False
+        True
+        -0.127467
+        -0.002369
+
     """
 
     def __init__(self, triangle, p_critical: float = 0.5):
@@ -171,6 +199,35 @@ class ValuationCorrelation:
         The expected value of Z.
     z_variance : Triangle or DataFrame
         The variance value of Z.
+
+    Examples
+    --------
+    ``total=True`` follows Mack (1993) and returns ``DataFrame`` summaries;
+    ``total=False`` follows Mack (1997) and keeps a ``Triangle`` of
+    valuation-year diagnostics.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        agg = cl.ValuationCorrelation(tri, p_critical=0.1, total=True)
+        yearly = cl.ValuationCorrelation(tri, p_critical=0.1, total=False)
+        print(type(agg.z_critical).__name__)
+        print(type(yearly.z_critical).__name__)
+        print(yearly.z_critical.shape)
+        print(int(np.nansum(yearly.z_critical.values)))
+
+    .. testoutput::
+
+        DataFrame
+        Triangle
+        (1, 1, 1, 9)
+        0
+
     """
 
     def __init__(self, triangle: Triangle, p_critical: float = 0.1, total: bool = True):

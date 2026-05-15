@@ -30,6 +30,78 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
     trend_:
         A triangle representation of the trend factors
 
+    Examples
+    --------
+    The same annual decimal trend is applied along ``origin`` or
+    ``valuation`` axes, producing different factor surfaces.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        origin = cl.Trend(0.05, axis="origin").fit(tri)
+        val = cl.Trend(0.05, axis="valuation").fit(tri)
+        print(round(float(origin.trend_.values[0, 0, 2, 3]), 6))
+        print(round(float(val.trend_.values[0, 0, 2, 3]), 6))
+
+    .. testoutput::
+
+        1.4071
+        1.215506
+
+    Multiple ``trends`` with paired ``dates`` compound only across the
+    windows you specify, so the factors need not match a single flat trend.
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        flat = cl.Trend(0.10, axis="origin").fit(tri)
+        piece = cl.Trend(
+            trends=[0.05, 0.05],
+            dates=[(None, "1985"), ("1985", None)],
+            axis="origin",
+        ).fit(tri)
+        print(round(float(flat.trend_.values[0, 0, 0, 0]), 6))
+        print(round(float(piece.trend_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        2.357948
+        1.551328
+
+    ``trend_`` holds the compounded factor surface; ``transform`` applies it
+    so a downstream ``CapeCod`` can be run with ``trend=0`` while still
+    reflecting the staged annual assumptions.
+
+    .. testcode::
+
+        tr = cl.load_sample("clrd")[["CumPaidLoss", "EarnedPremDIR"]].sum()
+        t_step = cl.Trend(
+            trends=[0.04, 0.02],
+            dates=[(None, "1995"), ("1995", None)],
+            axis="origin",
+        ).fit(tr["CumPaidLoss"])
+        paid_leveled = t_step.transform(tr["CumPaidLoss"])
+        ibnr = (
+            cl.CapeCod()
+            .fit(
+                paid_leveled,
+                sample_weight=tr["EarnedPremDIR"].latest_diagonal,
+            )
+            .ibnr_
+        )
+        print(round(float(t_step.trend_.values[0, 0, 2, 3]), 6))
+        print(int(round(float(np.nansum(ibnr.values)), 0)))
+
+    .. testoutput::
+
+        1.21562
+        29278236
+
     """
 
     def __init__(self, trends=0.0, dates=None, axis="origin"):

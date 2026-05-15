@@ -46,6 +46,41 @@ class BootstrapODPSample(DevelopmentBase):
         A set of triangles represented by each simulation
     scale_:
         The scale parameter to be used in generating process risk
+
+    Examples
+    --------
+    ``n_periods`` is forwarded to the internal ``Development`` fit, which
+    changes the Pearson scale, while ``hat_adj`` toggles the residual
+    standardization used before resampling.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        hat = cl.BootstrapODPSample(
+            n_sims=5, random_state=42, hat_adj=True
+        ).fit(tri)
+        nohat = cl.BootstrapODPSample(
+            n_sims=5, random_state=42, hat_adj=False
+        ).fit(tri)
+        short_hist = cl.BootstrapODPSample(
+            n_sims=5, random_state=42, n_periods=3
+        ).fit(tri)
+        print(round(float(hat.scale_), 6))
+        print(round(float(short_hist.scale_), 6))
+        print(round(float(hat.resampled_triangles_.mean().values[0, 0, 0, 0]), 4))
+        print(round(float(nohat.resampled_triangles_.mean().values[0, 0, 0, 0]), 4))
+
+    .. testoutput::
+
+        983.635027
+        322.397502
+        1455.5201
+        1532.5693
+
     """
 
     def __init__(

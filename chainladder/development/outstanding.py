@@ -49,6 +49,36 @@ class CaseOutstanding(DevelopmentBase):
         The paid to prior case ratios used for fitting the estimator
     paid_ldf_:
         The selected paid to prior case ratios of the fitted estimator
+
+    Examples
+    --------
+    ``paid_n_periods`` and ``case_n_periods`` control how many recent origin
+    years inform the ``Development`` weights that smooth the paid and case
+    patterns.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("usauto")
+        all_years = cl.CaseOutstanding(
+            paid_to_incurred=("paid", "incurred")
+        ).fit(tri)
+        three = cl.CaseOutstanding(
+            paid_to_incurred=("paid", "incurred"),
+            paid_n_periods=3,
+            case_n_periods=3,
+        ).fit(tri)
+        print(round(float(all_years.paid_ldf_.values[0, 0, 0, 0]), 6))
+        print(round(float(three.paid_ldf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        0.842814
+        0.833138
+
     """
 
     def __init__(
