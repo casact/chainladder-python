@@ -160,11 +160,12 @@ class Development(DevelopmentBase):
         x: ArrayLike
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        print("x", x)
-        print("y", y)
 
         exponent: ArrayLike = xp.array(
-            [{"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]]
+            [
+                {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[x]
+                for x in average_[0, 0, 0]
+            ]
         )
         exponent = xp.nan_to_num(exponent * (y * 0 + 1))
         link_ratio: ArrayLike = y / x
@@ -172,19 +173,19 @@ class Development(DevelopmentBase):
         if hasattr(X, "w_v2_"):
             self.w_v2_ = self._set_weight_func(
                 factor=obj.age_to_age * X.w_v2_,
-                # secondary_rank=obj.iloc[..., :-1, :-1]
             )
         else:
             self.w_v2_ = self._set_weight_func(
                 factor=obj.age_to_age,
-                # secondary_rank=obj.iloc[..., :-1, :-1]
             )
 
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
         w = num_to_nan(self.w_ / (x ** (exponent)))
+        print("self.w_\n", self.w_)
 
+        # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
 
         if self.n_periods != 1:
@@ -192,8 +193,8 @@ class Development(DevelopmentBase):
         else:
             warnings.warn(
                 "Setting n_periods=1 does not allow enough degrees "
-                "of freedom to support calculation of all regression"
-                " statistics.  Only LDFs have been calculated."
+                "of freedom to support calculation of all regression "
+                "statistics. Only LDFs have been calculated."
             )
 
         params.std_err_ = xp.nan_to_num(params.std_err_) + xp.nan_to_num(
