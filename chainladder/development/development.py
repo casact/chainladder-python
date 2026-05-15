@@ -186,10 +186,50 @@ class Development(DevelopmentBase):
         print("self.w_\n", self.w_)
 
         # fitting the regression parameters
+
+        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
+
+        if self.n_periods != 1:
+            params = params.sigma_fill(self.sigma_interpolation)
+        else:
+            warnings.warn(
+                "Setting n_periods=1 does not allow enough degrees "
+                "of freedom to support calculation of all regression "
+                "statistics. Only LDFs have been calculated."
+            )
+
+        params.std_err_ = xp.nan_to_num(params.std_err_) + xp.nan_to_num(
+            (1 - xp.nan_to_num(params.std_err_ * 0 + 1))
+            * params.sigma_
+            / xp.swapaxes(xp.sqrt(x ** (2 - exponent))[..., 0:1, :], -1, -2)
+        )
+
+        params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
+        params = xp.swapaxes(params, 2, 3)
+
+        self.ldf_ = self._param_property(obj, params, 0)
+        self.sigma_ = self._param_property(obj, params, 1)
+        self.std_err_ = self._param_property(obj, params, 2)
+        print("self.ldf_\n", self.ldf_)
+
+        resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
+        std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
+        resid = resid / num_to_nan(std)
+        self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
+
         if "geometric" in average_[0, 0, 0]:
+            from scipy.stats import gmean
+
             print("in geometric - needs additional processing")
             print("link_ratio\n", link_ratio)
             print("self.w_\n", self.w_)
+            print("weighted link_ratio\n", self.w_ * link_ratio)
+            
+            geo_means = np.array([
+                gmean(col[~np.isnan(col)])
+                for col in (self.w_ * link_ratio)).T
+            ])
+            print("geo_means\n", geo_means)
 
             # params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
 
@@ -220,37 +260,6 @@ class Development(DevelopmentBase):
 
             # self.slope_ = slope[..., None]
             # self.intercept_ = intercept[..., None]
-
-        else:
-            params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
-
-            if self.n_periods != 1:
-                params = params.sigma_fill(self.sigma_interpolation)
-            else:
-                warnings.warn(
-                    "Setting n_periods=1 does not allow enough degrees "
-                    "of freedom to support calculation of all regression "
-                    "statistics. Only LDFs have been calculated."
-                )
-
-            params.std_err_ = xp.nan_to_num(params.std_err_) + xp.nan_to_num(
-                (1 - xp.nan_to_num(params.std_err_ * 0 + 1))
-                * params.sigma_
-                / xp.swapaxes(xp.sqrt(x ** (2 - exponent))[..., 0:1, :], -1, -2)
-            )
-
-            params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
-            params = xp.swapaxes(params, 2, 3)
-
-            self.ldf_ = self._param_property(obj, params, 0)
-            self.sigma_ = self._param_property(obj, params, 1)
-            self.std_err_ = self._param_property(obj, params, 2)
-            print("self.ldf_\n", self.ldf_)
-
-            resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-            std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
-            resid = resid / num_to_nan(std)
-            self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         return self
 
