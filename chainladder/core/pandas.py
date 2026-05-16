@@ -600,7 +600,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
             )
             obj.origin_grain = self.obj._get_grain(odims)
             split = obj.origin_grain.split("-")
-            obj.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+            obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
             obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:
