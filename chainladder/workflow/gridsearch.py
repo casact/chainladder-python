@@ -57,38 +57,36 @@ class GridSearch(BaseEstimator):
 
     Examples
     --------
-    Each row of ``results_`` is one ``ParameterGrid`` draw; changing
-    ``param_grid`` changes how many fits run and the reported scores.
+    Use ``GridSearch`` when you want to compare modeling choices with the
+    same scoring rule. Here the grid compares simple and volume averages by
+    reading the fitted development ``sigma_`` from each candidate pipeline.
 
     .. testsetup::
 
         import chainladder as cl
-        import numpy as np
-
     .. testcode::
 
         clrd = cl.load_sample("clrd")
         medmal = clrd.groupby("LOB").sum().loc["medmal"]["CumPaidLoss"]
-        prem = clrd.groupby("LOB").sum().loc["medmal"]["EarnedPremDIR"].latest_diagonal
         pipe = cl.Pipeline(
-            [("dev", cl.Development()), ("benk", cl.Benktander())]
+            [("dev", cl.Development()), ("cl", cl.Chainladder())]
         )
-        param_grid = {"benk__n_iters": [1, 4]}
+        param_grid = {"dev__average": ["simple", "volume"]}
         scoring = {
-            "IBNR": lambda m: float(np.nansum(m.named_steps.benk.ibnr_.values))
+            "sigma": lambda m: float(m.named_steps.dev.sigma_.values.sum())
         }
         grid = cl.GridSearch(
             pipe, param_grid, scoring=scoring, n_jobs=1
-        ).fit(medmal, benk__sample_weight=prem)
+        ).fit(medmal)
         print(len(grid.results_))
-        print(int(round(grid.results_["IBNR"].iloc[0], 0)))
-        print(int(round(grid.results_["IBNR"].iloc[1], 0)))
+        print(round(grid.results_["sigma"].iloc[0], 3))
+        print(round(grid.results_["sigma"].iloc[1], 3))
 
     .. testoutput::
 
         2
-        1624377
-        1442665
+        1.422
+        206.183
 
     """
 
@@ -179,15 +177,14 @@ class Pipeline(PipelineSL, EstimatorIO):
 
     Examples
     --------
-    Hyper-parameters are set with the ``step__param`` naming convention from
-    scikit-learn. Here ``Development`` averaging changes aggregate IBNR from
-    the same ``Chainladder`` final step.
+    Use ``Pipeline`` when the same triangle should pass through several
+    estimators as one workflow. The ``step__param`` naming convention lets you
+    change one step, here ``Development.average``, without rebuilding the
+    whole pipeline.
 
     .. testsetup::
 
         import chainladder as cl
-        import numpy as np
-
     .. testcode::
 
         tri = cl.load_sample("raa")
@@ -197,13 +194,9 @@ class Pipeline(PipelineSL, EstimatorIO):
                 ("cl", cl.Chainladder()),
             ]
         )
-        ib_simple = int(
-            round(float(np.nansum(pipe.fit_predict(tri).ibnr_.values)), 0)
-        )
+        ib_simple = int(round(float(pipe.fit_predict(tri).ibnr_.sum()), 0))
         pipe.set_params(dev__average="volume")
-        ib_volume = int(
-            round(float(np.nansum(pipe.fit_predict(tri).ibnr_.values)), 0)
-        )
+        ib_volume = int(round(float(pipe.fit_predict(tri).ibnr_.sum()), 0))
         print(ib_simple)
         print(ib_volume)
 
