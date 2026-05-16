@@ -17,7 +17,7 @@ except ImportError:
     db = None
 
 if TYPE_CHECKING:
-    from chainladder import Triangle, Options
+    from chainladder import Triangle
     from collections.abc import Callable
     from numpy import ndarray
     from numpy.typing import ArrayLike

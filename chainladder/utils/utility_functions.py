@@ -899,6 +899,25 @@ def date_delta_adjustment(date: str) -> str:
     ----------
     date: str
         A date in "YYYY-MM-DD" format.
+
+    Returns
+    -------
+    The original date, minus one unit of the default precision level of pandas, e.g., nanosecond for pandas 2
+    or microsecond for pandas 3.
+
+    Examples
+    --------
+
+    .. testcode::
+
+        import pandas as pd
+
+        print(date_delta_adjustment("2025-11-01"))
+
+    .. testoutput::
+
+        '2025-10-31 23:59:59.999999999'
+
     """
 
     res: str = str(
