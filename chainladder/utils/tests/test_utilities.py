@@ -5,6 +5,8 @@ import copy
 import numpy as np
 import pandas as pd
 
+from chainladder.utils.utility_functions import date_delta_adjustment
+
 from pathlib import Path
 
 
@@ -167,3 +169,17 @@ def test_load_sample_clrd2025() -> None:
     # Accident years span 1998-2007.
     assert str(tri.origin.min()) == "1998"
     assert "2007" in [str(o) for o in tri.origin]
+
+
+def test_date_delta_adjustment() -> None:
+    """
+    Tests the date adjustment depending on Pandas default precision, nanosecond for Pandas 2, microsecond for Pandas 3.
+    """
+    result = date_delta_adjustment("2025-11-01")
+
+    expected = (
+        "2025-10-31 23:59:59.999999999"
+        if cl.options.DT64_UNIT == "ns"
+        else "2025-10-31 23:59:59.999999"
+    )
+    assert result == expected
