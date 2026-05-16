@@ -56,8 +56,9 @@ class ClarkLDF(DevelopmentBase):
 
     Examples
     --------
-    ``growth`` selects the incremental curve; the first LDF cell moves slightly
-    between ``loglogistic`` (default) and ``weibull``.
+    Compare curve families when the selected growth curve materially affects
+    the fitted development pattern. The same triangle can be fit with the
+    default loglogistic curve or with the Weibull curve.
 
     .. testsetup::
 
@@ -78,8 +79,9 @@ class ClarkLDF(DevelopmentBase):
         1.917
         1.912
 
-    Passing ``sample_weight`` switches to Cape Cod: ``method_`` becomes
-    ``cape_cod`` and ``elr_`` is estimated.
+    Provide exposure when the goal is a Cape Cod fit rather than a pure LDF
+    fit. Passing ``sample_weight`` changes ``method_`` to ``cape_cod`` and
+    estimates ``elr_``.
 
     .. testcode::
 
@@ -93,8 +95,9 @@ class ClarkLDF(DevelopmentBase):
         cape_cod
         0.002002
 
-    ``groupby`` pools index levels before fitting so one parameter set is
-    returned per group (here, line of business on ``clrd``).
+    Pool similar segments before fitting when each individual triangle is too
+    sparse for separate curve parameters. Here line of business produces one
+    parameter set per ``LOB``.
 
     .. testcode::
 
