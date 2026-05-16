@@ -68,7 +68,7 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels",  # For docs example
+    "statsmodels"  # For docs example
 ]
 test = [
     "lxml",
