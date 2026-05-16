@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from chainladder import Triangle
     from numpy.typing import ArrayLike
     from pandas import DataFrame
-    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from sparse import COO
     from types import ModuleType
     from typing import AnyStr
@@ -904,7 +903,7 @@ def date_delta_adjustment(date: str) -> str:
 
     res: str = str(
         pd.Timestamp(date) - \
-        pd.Timedelta(1, unit=np.datetime_data(options.DT64_DTYPE)[0])
+        pd.Timedelta(1, unit=options.DT64_UNIT)
     )
 
     return res
