@@ -4,8 +4,6 @@
 from __future__ import annotations
 
 import pandas as pd
-from packaging import version
-
 import numpy as np
 import warnings
 

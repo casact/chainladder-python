@@ -6,7 +6,6 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 import warnings
-from packaging import version
 from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
