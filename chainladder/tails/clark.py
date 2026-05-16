@@ -47,8 +47,9 @@ class TailClark(TailBase):
 
     Examples
     --------
-    ``growth`` is passed through to the underlying ``ClarkLDF`` tail fit, so
-    the extrapolated tail LDF changes with the curve family.
+    Compare Clark growth curves when the selected tail shape is part of the
+    modeling judgment. The tail LDF changes because each curve extrapolates the
+    remaining development differently.
 
     .. testsetup::
 

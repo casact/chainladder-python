@@ -58,9 +58,9 @@ class TailCurve(TailBase):
 
     Examples
     --------
-    ``curve`` selects the regression form used in the tail extrapolation; the
-    implied last-period LDF differs between ``exponential`` and
-    ``inverse_power`` on the same ``tail_sample`` triangle.
+    Compare parametric tail curves when the same development pattern can
+    support multiple extrapolation shapes. The last-period LDF reflects the
+    selected curve family.
 
     .. testsetup::
 

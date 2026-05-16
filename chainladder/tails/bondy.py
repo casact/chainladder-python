@@ -46,8 +46,9 @@ class TailBondy(TailBase):
 
     Examples
     --------
-    ``earliest_age`` controls which link ratios enter the Bondy exponent fit,
-    shifting the estimated ``b_`` parameter.
+    Start the Bondy fit later when earlier link ratios are too volatile for the
+    selected tail. The fitted exponent changes because fewer ages enter the
+    tail regression.
 
     .. testsetup::
 
