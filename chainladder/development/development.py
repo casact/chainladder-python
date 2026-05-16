@@ -231,14 +231,15 @@ class Development(DevelopmentBase):
                 weighted_link_ratios, axis=2, nan_policy="omit"
             )
 
-            print("geo_means_link_ratios\n", np.round(geo_means_link_ratios, 6))
-            print("geo_means_link_ratios.shape\n", geo_means_link_ratios.shape)
             self.ldf_ = geo_means_link_ratios.reshape(
                 geo_means_link_ratios.shape[0],
                 geo_means_link_ratios.shape[1],
                 1,
                 geo_means_link_ratios.shape[2],
             )
+            print("geo_means_link_ratios\n", np.round(geo_means_link_ratios, 6))
+            self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
+            print("self.ldf_\n", self.ldf_)
 
         return self
 
