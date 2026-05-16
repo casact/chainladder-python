@@ -249,12 +249,6 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             ]
             origin: str = "Accident Half-Year"
             development: str = "Calendar Half-Year"
-        if "uspp" in key.lower():
-            columns: list = [
-                "Reported Claims",
-                "Paid Claims",
-                "Earned Premium"
-            ]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
@@ -271,6 +265,43 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
 
 
 def read_pickle(path):
+    """Load an object serialized with ``to_pickle`` (``dill`` format).
+
+    Parameters
+    ----------
+    path : str or path-like
+        Path to the pickle file.
+
+    Returns
+    -------
+    object
+        The deserialized triangle or estimator.
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import tempfile
+        import os
+
+    .. testcode::
+
+        import chainladder as cl
+
+        tri = cl.load_sample("raa")
+        fd, p = tempfile.mkstemp(suffix=".pkl")
+        os.close(fd)
+        tri.to_pickle(p)
+        back = cl.read_pickle(p)
+        os.remove(p)
+        print(back == tri)
+
+    .. testoutput::
+
+        True
+
+    """
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
@@ -407,6 +438,26 @@ def read_csv(
 
 
 def read_json(json_str, array_backend=None):
+    """Deserialize JSON produced by ``to_json`` (triangle, estimator, or pipeline).
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development(average="volume")
+        dev2 = cl.read_json(dev.to_json())
+        print(dev2.get_params()["average"])
+
+    .. testoutput::
+
+        volume
+
+    """
     from chainladder import Triangle
     from chainladder.workflow import Pipeline
 
@@ -602,6 +653,25 @@ def concat(
     Returns
     -------
     Updated triangle
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum().iloc[:2]
+        tri = clrd[["CumPaidLoss", "IncurLoss"]]
+        both = cl.concat([tri.iloc[:, 0:1], tri.iloc[:, 1:2]], axis=1)
+        print(both.shape[1])
+
+    .. testoutput::
+
+        2
+
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
@@ -706,10 +776,50 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
 
 def minimum(x1, x2):
+    """Element-wise minimum of two triangles (delegates to ``Triangle.minimum``).
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        lo = cl.minimum(tri, tri * 0.5)
+        print(round(float(lo.values[0, 0, 0, 0]), 4))
+
+    .. testoutput::
+
+        2506.0
+
+    """
     return x1.minimum(x2)
 
 
 def maximum(x1, x2):
+    """Element-wise maximum of two triangles (delegates to ``Triangle.maximum``).
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        hi = cl.maximum(tri, tri * 0.5)
+        print(round(float(hi.values[0, 0, 0, 0]), 4))
+
+    .. testoutput::
+
+        5012.0
+
+    """
     return x1.maximum(x2)
 
 
@@ -740,6 +850,77 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     ----------
     design_info_:
         The patsy instructions for generating the design_matrix, X.
+
+    Examples
+    --------
+    ``TweedieGLM`` passes ``design_matrix`` through ``PatsyFormula`` when
+    building its internal ``DevelopmentML`` pipeline. Adding ``C(origin)``
+    expands the GLM and changes the fitted ``ldf_``.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        genins = cl.load_sample("genins")
+        by_dev = cl.TweedieGLM(design_matrix="C(development)").fit(genins)
+        by_both = cl.TweedieGLM(
+            design_matrix="C(development) + C(origin)"
+        ).fit(genins)
+        print(len(by_dev.coef_))
+        print(len(by_both.coef_))
+        print(round(float(by_dev.ldf_.values[0, 0, 0, 0]), 6))
+        print(round(float(by_both.ldf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        10
+        19
+        3.508469
+        3.491031
+
+    The same formula strings are used explicitly as a pipeline step in
+    ``DevelopmentML``.
+
+    .. testcode::
+
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        genins = cl.load_sample("genins")
+        col = genins.columns[0]
+        dev_only = cl.DevelopmentML(
+            Pipeline(
+                [
+                    ("design_matrix", PatsyFormula("C(development)")),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=col,
+            fit_incrementals=False,
+        ).fit(genins)
+        with_origin = cl.DevelopmentML(
+            Pipeline(
+                [
+                    (
+                        "design_matrix",
+                        PatsyFormula("C(development) + C(origin)"),
+                    ),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=col,
+            fit_incrementals=False,
+        ).fit(genins)
+        print(len(dev_only.estimator_ml.named_steps.model.coef_))
+        print(len(with_origin.estimator_ml.named_steps.model.coef_))
+
+    .. testoutput::
+
+        10
+        19
 
     """
 
