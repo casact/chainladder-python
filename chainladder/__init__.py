@@ -1,10 +1,20 @@
+import numpy as np
+import pandas as pd
 from sklearn.utils import deprecated
+
+_DT64_DTYPE = pd.to_datetime(["2000-01-01"]).dtype
+_ULT_VAL: str = str(
+    pd.Timestamp("2262-01-01") - \
+    pd.Timedelta(1, unit=np.datetime_data(_DT64_DTYPE)[0])
+)
 
 class Options:
     ARRAY_BACKEND = "numpy"
     AUTO_SPARSE = True
     ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
-    ULT_VAL = "2261-12-31 23:59:59.999999"
+    ULT_VAL: str = _ULT_VAL
+    DT64_UNIT: str = np.datetime_data(_DT64_DTYPE)[0]
+    DT64_DTYPE: str = str(_DT64_DTYPE)
 
     @classmethod
     def get_option(cls, option=None):
@@ -18,7 +28,7 @@ class Options:
         self.set_option('ARRAY_BACKEND', "numpy")
         self.set_option('AUTO_SPARSE', True)
         self.set_option('ARRAY_PRIORITY', ["dask", "sparse", "cupy", "numpy"])
-        self.set_option('ULT_VAL', "2261-12-31 23:59:59.999999")
+        self.set_option('ULT_VAL', _ULT_VAL)
 
     def describe_option(self):
         pass

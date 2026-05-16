@@ -10,6 +10,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from chainladder import options
 from chainladder.utils.sparse import sp
 from io import StringIO
 from patsy import dmatrix  # noqa
@@ -648,7 +649,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == "datetime64[us]" and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == options.DT64_DTYPE and type(out.ddims) == np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
@@ -890,3 +891,20 @@ def PTF_formula(
     if formula_parts:
         return "+".join(formula_parts)
     return ""
+
+def date_delta_adjustment(date: str) -> str:
+    """
+    Subtracts the default pandas datetime delta from a date in "YYYY-MM-DD" string format.
+
+    Parameters
+    ----------
+    date: str
+        A date in "YYYY-MM-DD" format.
+    """
+
+    res: str = str(
+        pd.Timestamp(date) - \
+        pd.Timedelta(1, unit=np.datetime_data(options.DT64_DTYPE)[0])
+    )
+
+    return res
