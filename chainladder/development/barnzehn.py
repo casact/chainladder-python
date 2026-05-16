@@ -35,10 +35,12 @@ class BarnettZehnwirth(TweedieGLM):
 
     Examples
     --------
-    Use an explicit patsy ``formula`` when you want direct control over the
-    regression design, or use the PTF ``alpha`` / ``gamma`` / ``iota`` pieces
-    when the model should follow Barnett-Zehnwirth trend groupings. The two
-    specifications fit the same triangle but produce different design matrices.
+    Choose how to describe the regression structure before fitting the model.
+    A patsy ``formula`` is useful when you want direct control over origin and
+    development factors. The PTF ``alpha`` / ``gamma`` / ``iota`` arguments are
+    a shorthand for Barnett-Zehnwirth period, trend, and final-period groupings.
+    Both approaches fit the same triangle here; the different coefficients show
+    that the selected structure changes the design matrix being estimated.
 
     .. testsetup::
 

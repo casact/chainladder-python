@@ -71,9 +71,11 @@ class IncrementalAdditive(DevelopmentBase):
 
     Examples
     --------
-    Use ``IncrementalAdditive`` when incremental losses should be modeled
-    against an exposure base rather than developed from age-to-age ratios. The
-    ``ia_sample`` data include both loss and exposure columns for this workflow.
+    Use ``IncrementalAdditive`` when the reserving assumption is driven by
+    incremental loss per unit of exposure, rather than by observed age-to-age
+    ratios alone. The example passes the latest exposure diagonal as
+    ``sample_weight``; the fitted object still returns development patterns, so
+    it can be used in the same workflow as other development estimators.
 
     .. testsetup::
 

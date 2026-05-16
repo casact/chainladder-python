@@ -54,9 +54,11 @@ class DevelopmentML(DevelopmentBase):
     Examples
     --------
     Choose the response scale before fitting a machine-learning development
-    model. Setting ``fit_incrementals=True`` models incremental dollar amounts;
-    setting it to ``False`` models cumulative values before translating the
-    result back into development patterns.
+    model. In this class, ``fit_incrementals=True`` means the scikit-learn model
+    is trained on actual incremental dollar amounts. Setting it to ``False``
+    trains on cumulative values instead. Both fitted models are translated back
+    into ``ldf_``, so the comparison is about the training target, not a request
+    to model age-to-age factors directly.
 
     .. testsetup::
 
