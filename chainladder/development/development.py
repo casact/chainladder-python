@@ -209,6 +209,7 @@ class Development(DevelopmentBase):
         print("params\n", params)
 
         self.ldf_ = self._param_property(obj, params, 0)
+        print("self.ldf_\n", self.ldf_)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
 
@@ -231,7 +232,13 @@ class Development(DevelopmentBase):
             )
 
             print("geo_means_link_ratios\n", np.round(geo_means_link_ratios, 6))
-            self.ldf_ = [geo_means_link_ratios]
+            print("geo_means_link_ratios.shape\n", geo_means_link_ratios.shape)
+            self.ldf_ = geo_means_link_ratios.reshape(
+                geo_means_link_ratios.shape[0],
+                geo_means_link_ratios.shape[1],
+                1,
+                geo_means_link_ratios.shape[2],
+            )
 
         return self
 
