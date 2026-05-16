@@ -37,11 +37,11 @@ class Triangle(TriangleBase):
     ----------
     data: DataFrame or DataFrameXchg, or dict
         A single dataframe that contains columns representing all other
-        arguments to the Triangle constructor. If using pandas version > 1.5.2,
-        one may supply a DataFrame-like object (referred to as DataFrameXchg)
-        supporting the __dataframe__ protocol, which will then be converted to
-        a pandas DataFrame. If supplying a dict, it must be structured such that
-        a pandas DataFrame created from it will be accepted by the constructor.
+        arguments to the Triangle constructor. One may supply a DataFrame-like
+        object (referred to as DataFrameXchg) supporting the __dataframe__ protocol,
+        which will then be converted to a pandas DataFrame. If supplying a dict,
+        it must be structured such that a pandas DataFrame created from it will be
+        accepted by the constructor.
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
@@ -473,9 +473,9 @@ class Triangle(TriangleBase):
         self.is_cumulative: bool = cumulative
         self.virtual_columns = VirtualColumns(self)
         self._pattern: bool = pattern
-        
+
         split: list[str] = self.origin_grain.split("-")
-        self.origin_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        self.origin_grain: str = {"2Q": "S"}.get(split[0], split[0])
 
         if len(split) == 1:
             self.origin_close: str = "DEC"
@@ -483,7 +483,8 @@ class Triangle(TriangleBase):
             self.origin_close: str = split[1]
 
         split: list[str] = self.development_grain.split("-")
-        self.development_grain: str = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+        self.development_grain: str = {"2Q": "S"}.get(split[0], split[0])
+
         grain_sort: list = ["Y", "S", "Q", "M"]
         self.development_grain: str = grain_sort[
             max(
@@ -670,11 +671,7 @@ class Triangle(TriangleBase):
             return pd.Series(["(All)"])
         else:
             freq = {
-                "Y": (
-                    "Y"
-                    if version.Version(pd.__version__) >= version.Version("2.2.0")
-                    else "A"
-                ),
+                "Y": "Y",
                 "S": "2Q",
                 "H": "2Q",
             }.get(self.origin_grain, self.origin_grain)
@@ -682,10 +679,10 @@ class Triangle(TriangleBase):
             return pd.DatetimeIndex(self.odims, name="origin").to_period(freq=freq)
 
     @origin.setter
-    def origin(self, value):
+    def origin(self, value) -> None:
         self._len_check(self.origin, value)
         freq = {
-            "Y": "A" if float(".".join(pd.__version__.split(".")[:-1])) < 2.2 else "Y",
+            "Y": "Y",
             "S": "2Q",
         }.get(self.origin_grain, self.origin_grain)
         freq = freq if freq == "M" else freq + "-" + self.origin_close
