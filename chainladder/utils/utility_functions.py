@@ -249,6 +249,12 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             ]
             origin: str = "Accident Half-Year"
             development: str = "Calendar Half-Year"
+        if "uspp" in key.lower():
+            columns: list = [
+                "Reported Claims",
+                "Paid Claims",
+                "Earned Premium"
+            ]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
@@ -279,6 +285,8 @@ def read_pickle(path):
 
     Examples
     --------
+    Use ``read_pickle`` when a triangle or estimator was saved with
+    ``to_pickle`` and should be restored as the same chainladder object.
 
     .. testsetup::
 
@@ -442,6 +450,8 @@ def read_json(json_str, array_backend=None):
 
     Examples
     --------
+    Use ``read_json`` to round-trip model configuration through JSON, for
+    example when a fitted workflow needs to be persisted outside Python.
 
     .. testsetup::
 
@@ -656,6 +666,8 @@ def concat(
 
     Examples
     --------
+    Concatenate along the column axis when separate triangles share the same
+    index, origin, and development axes but carry different measures.
 
     .. testsetup::
 
@@ -780,6 +792,7 @@ def minimum(x1, x2):
 
     Examples
     --------
+    Cap a triangle cell-by-cell by comparing it with another triangle of limits.
 
     .. testsetup::
 
@@ -804,6 +817,8 @@ def maximum(x1, x2):
 
     Examples
     --------
+    Floor a triangle cell-by-cell by comparing it with another triangle of
+    minimum acceptable values.
 
     .. testsetup::
 
@@ -853,9 +868,9 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
     Examples
     --------
-    ``TweedieGLM`` passes ``design_matrix`` through ``PatsyFormula`` when
-    building its internal ``DevelopmentML`` pipeline. Adding ``C(origin)``
-    expands the GLM and changes the fitted ``ldf_``.
+    Add origin effects when a development-only GLM is too restrictive.
+    ``TweedieGLM`` sends ``design_matrix`` through ``PatsyFormula`` before
+    fitting, so adding ``C(origin)`` expands the model matrix.
 
     .. testsetup::
 
@@ -880,8 +895,8 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         3.508469
         3.491031
 
-    The same formula strings are used explicitly as a pipeline step in
-    ``DevelopmentML``.
+    Use the same formula strings explicitly in ``DevelopmentML`` when building
+    a custom scikit-learn pipeline.
 
     .. testcode::
 
