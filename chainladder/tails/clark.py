@@ -45,6 +45,28 @@ class TailClark(TailBase):
     norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
 
+    Examples
+    --------
+    ``growth`` is passed through to the underlying ``ClarkLDF`` tail fit, so
+    the extrapolated tail LDF changes with the curve family.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development().fit_transform(cl.load_sample("raa"))
+        log = cl.TailClark(growth="loglogistic").fit(dev)
+        wei = cl.TailClark(growth="weibull").fit(dev)
+        print(round(float(log.ldf_.values[0, 0, 0, -1]), 6))
+        print(round(float(wei.ldf_.values[0, 0, 0, -1]), 6))
+
+    .. testoutput::
+
+        1.188919
+        1.013531
+
     """
 
     def __init__(self, growth="loglogistic", truncation_age=None,

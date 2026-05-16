@@ -44,6 +44,28 @@ class TailBondy(TailBase):
     --------
     TailCurve
 
+    Examples
+    --------
+    ``earliest_age`` controls which link ratios enter the Bondy exponent fit,
+    shifting the estimated ``b_`` parameter.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development().fit_transform(cl.load_sample("raa"))
+        b_def = cl.TailBondy().fit(dev)
+        b_12 = cl.TailBondy(earliest_age=12).fit(dev)
+        print(round(float(b_def.b_.iloc[0, 0]), 6))
+        print(round(float(b_12.b_.iloc[0, 0]), 6))
+
+    .. testoutput::
+
+        0.5
+        0.48451
+
     """
 
     def __init__(self, earliest_age=None, attachment_age=None, projection_period=12):
