@@ -35,9 +35,10 @@ class BarnettZehnwirth(TweedieGLM):
 
     Examples
     --------
-    A patsy ``formula`` and the built-in ``alpha`` / ``gamma`` / ``iota`` PTF
-    specification can both fit the same triangle; the leading fitted
-    coefficient differs because the design matrices differ.
+    Use an explicit patsy ``formula`` when you want direct control over the
+    regression design, or use the PTF ``alpha`` / ``gamma`` / ``iota`` pieces
+    when the model should follow Barnett-Zehnwirth trend groupings. The two
+    specifications fit the same triangle but produce different design matrices.
 
     .. testsetup::
 

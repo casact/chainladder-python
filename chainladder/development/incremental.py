@@ -71,7 +71,9 @@ class IncrementalAdditive(DevelopmentBase):
 
     Examples
     --------
-    Basic fit on ``ia_sample`` with exposure on the latest diagonal.
+    Use ``IncrementalAdditive`` when incremental losses should be modeled
+    against an exposure base rather than developed from age-to-age ratios. The
+    ``ia_sample`` data include both loss and exposure columns for this workflow.
 
     .. testsetup::
 
@@ -89,9 +91,9 @@ class IncrementalAdditive(DevelopmentBase):
 
         (1, 1, 6, 5)
 
-    ``future_trend`` (when non-zero) changes extrapolated incrementals in the
-    lower triangle even when ``trend`` is held at zero; here the summed
-    fitted incrementals increase.
+    Apply ``future_trend`` when the completed lower triangle should reflect a
+    prospective trend assumption. Holding historical ``trend`` at zero isolates
+    the effect on the fitted future incrementals.
 
     .. testcode::
 

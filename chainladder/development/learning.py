@@ -53,8 +53,10 @@ class DevelopmentML(DevelopmentBase):
 
     Examples
     --------
-    ``fit_incrementals`` toggles whether the pipeline fits on incrementals
-    versus cumulatives, which shifts the implied ``ldf_``.
+    Choose the response scale before fitting a machine-learning development
+    model. Setting ``fit_incrementals=True`` models incremental dollar amounts;
+    setting it to ``False`` models cumulative values before translating the
+    result back into development patterns.
 
     .. testsetup::
 
@@ -89,9 +91,9 @@ class DevelopmentML(DevelopmentBase):
         3.508
         3.515
 
-    With ``weighted_step='model'``, ``sample_weight`` is forwarded into the
-    final regressor; squaring the triangle as a crude weight changes the first
-    LDF versus an unweighted fit.
+    Pass sample weights into the scikit-learn step when observations should not
+    contribute equally to the regression. ``weighted_step='model'`` forwards the
+    weights into the final estimator in the pipeline.
 
     .. testcode::
 
