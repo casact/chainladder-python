@@ -18,7 +18,7 @@ class DevelopmentConstant(DevelopmentBase):
     style: string, optional (default='ldf')
         Type of pattern given to the Estimator. Options include 'cdf' or 'ldf'.
     callable_axis: 0 or 1
-        If a callable is supplied, the axis, index (0) or column (1) along which to apply
+        If a callable is supplied, the axis (index or column) along which to apply
         the callable. If patterns is not a callable, then this parameter is ignored.
     groupby:
         option to group levels of the triangle index together for the purposes
@@ -31,6 +31,34 @@ class DevelopmentConstant(DevelopmentBase):
         The estimated loss development patterns
     cdf_: Triangle
         The estimated cumulative development patterns
+
+    Examples
+    --------
+    ``patterns`` is interpreted as multiplicative link ratios when
+    ``style='ldf'``; swapping in a flat manual ladder changes the fitted
+    pattern immediately.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        dev = cl.Development().fit(tri)
+        n = dev.ldf_.shape[3]
+        fitted = {(i + 1) * 12: float(dev.ldf_.values[0, 0, 0, i]) for i in range(n)}
+        flat = {(i + 1) * 12: 1.2 for i in range(n)}
+        const_fitted = cl.DevelopmentConstant(patterns=fitted, style="ldf").fit(tri)
+        const_flat = cl.DevelopmentConstant(patterns=flat, style="ldf").fit(tri)
+        print(round(float(const_flat.ldf_.values[0, 0, 0, 0]), 4))
+        print(round(float(const_fitted.ldf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        1.2
+        2.999359
+
     """
 
     def __init__(self, patterns=None, style="ldf", callable_axis=0, groupby=None):
@@ -60,20 +88,11 @@ class DevelopmentConstant(DevelopmentBase):
         xp = obj.get_array_module()
         obj = obj.iloc[..., :1, :-1]*0+1
         if callable(self.patterns):
-            if self.callable_axis == 0:
-                ldf = obj.index.apply(self.patterns, axis=1)                
-                ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims].values)
-                ldf = xp.array(ldf[:, None, None, :])
-            elif self.callable_axis == 1:
-                ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
-                ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims].values)
-                ldf = xp.array(ldf[None, :, None, :])
-            else:
-                raise ValueError('callable axis needs to be 0 or 1')
+            ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
+            ldf = (
+                pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                  .fillna(1)[obj.ddims].values)
+            ldf = xp.array(ldf[:, None, None, :])
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
