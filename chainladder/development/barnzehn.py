@@ -33,6 +33,35 @@ class BarnettZehnwirth(TweedieGLM):
     gamma: list of int
     iota: list of int
 
+    Examples
+    --------
+    A patsy ``formula`` and the built-in ``alpha`` / ``gamma`` / ``iota`` PTF
+    specification can both fit the same triangle; the leading fitted
+    coefficient differs because the design matrices differ.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("abc")
+        m_formula = cl.BarnettZehnwirth(
+            formula="C(origin)+C(development)"
+        ).fit(tri)
+        m_ptf = cl.BarnettZehnwirth(
+            alpha=[0, 5], gamma=[0, 2, 5], iota=[0, 7, 11]
+        ).fit(tri)
+        print(float(np.round(m_formula.coef_.values.flatten()[0], 3)))
+        print(float(np.round(m_ptf.coef_.values.flatten()[0], 3)))
+
+    .. testoutput::
+
+        11.837
+        12.151
+
     """
 
     def __init__(self, drop=None,drop_valuation=None,formula=None, response=None, alpha=None, gamma=None, iota=None):

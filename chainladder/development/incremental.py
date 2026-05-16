@@ -69,6 +69,47 @@ class IncrementalAdditive(DevelopmentBase):
         A triangle of full incremental values.
 
 
+    Examples
+    --------
+    Basic fit on ``ia_sample`` with exposure on the latest diagonal.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("ia_sample")
+        model = cl.IncrementalAdditive().fit(
+            tri["loss"], sample_weight=tri["exposure"].latest_diagonal
+        )
+        print(model.ldf_.shape)
+
+    .. testoutput::
+
+        (1, 1, 6, 5)
+
+    ``future_trend`` (when non-zero) changes extrapolated incrementals in the
+    lower triangle even when ``trend`` is held at zero; here the summed
+    fitted incrementals increase.
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("ia_sample")
+        loss = tri["loss"]
+        sw = tri["exposure"].latest_diagonal
+        m0 = cl.IncrementalAdditive(trend=0, future_trend=0).fit(loss, sample_weight=sw)
+        m1 = cl.IncrementalAdditive(trend=0, future_trend=0.1).fit(loss, sample_weight=sw)
+        print(float(np.round(np.nansum(m0.incremental_.values), 1)))
+        print(float(np.round(np.nansum(m1.incremental_.values), 1)))
+
+    .. testoutput::
+
+        30988.1
+        33360.1
+
     """
 
     def __init__(

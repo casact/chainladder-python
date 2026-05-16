@@ -76,6 +76,48 @@ class TweedieGLM(DevelopmentBase):
     ----------
     model_: sklearn.Pipeline
         A scikit-learn Pipeline of the GLM
+
+    Examples
+    --------
+    ``design_matrix`` controls which patsy terms enter the GLM; dropping
+    ``C(origin)`` changes the first fitted LDF.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("genins")
+        m_full = cl.TweedieGLM(
+            power=1, design_matrix="C(development) + C(origin)"
+        ).fit(tri)
+        m_dev = cl.TweedieGLM(power=1, design_matrix="C(development)").fit(tri)
+        print(float(np.round(m_full.ldf_.values[0, 0, 0, 0], 4)))
+        print(float(np.round(m_dev.ldf_.values[0, 0, 0, 0], 4)))
+
+    .. testoutput::
+
+        3.491
+        3.5085
+
+    ``power`` and ``link`` select the Tweedie family; a Normal GLM
+    (``power=0`` with ``link='identity'``) yields a different pattern.
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("genins")
+        m = cl.TweedieGLM(power=0, link="identity").fit(tri)
+        print(float(np.round(m.ldf_.values[0, 0, 0, 0], 2)))
+
+    .. testoutput::
+
+        2.31
+
     """
 
     def __init__(self, design_matrix='C(development) + C(origin)',

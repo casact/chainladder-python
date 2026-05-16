@@ -50,6 +50,81 @@ class DevelopmentML(DevelopmentBase):
         The estimated loss development patterns.
     cdf_: Triangle
         The estimated cumulative development patterns.
+
+    Examples
+    --------
+    ``fit_incrementals`` toggles whether the pipeline fits on incrementals
+    versus cumulatives, which shifts the implied ``ldf_``.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("genins")
+        pipe = Pipeline(
+            steps=[
+                ("design_matrix", PatsyFormula("C(development)")),
+                ("model", LinearRegression(fit_intercept=False)),
+            ]
+        )
+        m_incr = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=True
+        ).fit(tri)
+        m_cum = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=False
+        ).fit(tri)
+        print(float(np.round(m_incr.ldf_.values[0, 0, 0, 0], 4)))
+        print(float(np.round(m_cum.ldf_.values[0, 0, 0, 0], 4)))
+
+    .. testoutput::
+
+        3.508
+        3.515
+
+    With ``weighted_step='model'``, ``sample_weight`` is forwarded into the
+    final regressor; squaring the triangle as a crude weight changes the first
+    LDF versus an unweighted fit.
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("genins")
+        pipe = Pipeline(
+            steps=[
+                ("design_matrix", PatsyFormula("C(development)")),
+                ("model", LinearRegression(fit_intercept=False)),
+            ]
+        )
+        m0 = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=False
+        ).fit(tri)
+        m1 = cl.DevelopmentML(
+            pipe,
+            y_ml=[tri.columns[0]],
+            fit_incrementals=False,
+            weighted_step="model",
+        ).fit(tri, sample_weight=tri * tri)
+        print(float(np.round(m0.ldf_.values[0, 0, 0, 0], 4)))
+        print(float(np.round(m1.ldf_.values[0, 0, 0, 0], 4)))
+
+    .. testoutput::
+
+        3.515
+        3.4459
+
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
