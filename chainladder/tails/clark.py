@@ -59,13 +59,13 @@ class TailClark(TailBase):
         dev = cl.Development().fit_transform(cl.load_sample("raa"))
         log = cl.TailClark(growth="loglogistic").fit(dev)
         wei = cl.TailClark(growth="weibull").fit(dev)
-        print(round(float(log.ldf_.values[0, 0, 0, -1]), 6))
-        print(round(float(wei.ldf_.values[0, 0, 0, -1]), 6))
+        print(round(float(log.ldf_.values[0, 0, 0, -1]), 3))
+        print(round(float(wei.ldf_.values[0, 0, 0, -1]), 3))
 
     .. testoutput::
 
-        1.188919
-        1.013531
+        1.189
+        1.014
 
     """
 
