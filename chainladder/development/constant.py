@@ -88,11 +88,20 @@ class DevelopmentConstant(DevelopmentBase):
         xp = obj.get_array_module()
         obj = obj.iloc[..., :1, :-1]*0+1
         if callable(self.patterns):
-            ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
-            ldf = (
-                pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                  .fillna(1)[obj.ddims].values)
-            ldf = xp.array(ldf[:, None, None, :])
+            if self.callable_axis == 0:
+                ldf = obj.index.apply(self.patterns, axis=1)
+                ldf = (
+                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    .fillna(1)[obj.ddims].values)
+                ldf = xp.array(ldf[:, None, None, :])
+            elif self.callable_axis == 1:
+                ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
+                ldf = (
+                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    .fillna(1)[obj.ddims].values)
+                ldf = xp.array(ldf[None, :, None, :])
+            else:
+                raise ValueError('callable axis needs to be 0 or 1')
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
