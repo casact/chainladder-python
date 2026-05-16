@@ -206,11 +206,11 @@ class Development(DevelopmentBase):
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
+        print("params\n", params)
 
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
-        print("self.ldf_\n", self.ldf_)
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
@@ -221,10 +221,8 @@ class Development(DevelopmentBase):
             from scipy.stats import gmean
 
             print("in geometric - needs additional processing")
-            print("link_ratio\n", link_ratio)
-            print("self.w_\n", self.w_)
-            print("weighted link_ratio\n", self.w_ * link_ratio)
-            weighted_link_ratios = self.w_ * link_ratio
+
+            weighted_link_ratios = link_ratio * self.w_
             weighted_link_ratios = np.where(
                 weighted_link_ratios == 0, np.nan, weighted_link_ratios
             )
@@ -232,7 +230,8 @@ class Development(DevelopmentBase):
                 weighted_link_ratios, axis=2, nan_policy="omit"
             )
 
-            print("geo_means_link_ratios\n", geo_means_link_ratios)
+            print("geo_means_link_ratios\n", np.round(geo_means_link_ratios, 6))
+            self.ldf_ = [geo_means_link_ratios]
 
         return self
 
