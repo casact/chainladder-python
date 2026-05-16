@@ -12,18 +12,10 @@ import pandas as pd
 
 from chainladder.utils.sparse import sp
 from io import StringIO
-from patsy import dmatrix # noqa
-from sklearn.base import (
-    BaseEstimator,
-    TransformerMixin
-)
+from patsy import dmatrix  # noqa
+from sklearn.base import BaseEstimator, TransformerMixin
 
-from typing import (
-    Iterable,
-    Union,
-    Optional,
-    TYPE_CHECKING
-)
+from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -33,29 +25,22 @@ if TYPE_CHECKING:
     from sparse import COO
     from types import ModuleType
     from typing import AnyStr
-    from pandas._typing import (
-        FilePath,
-        ReadCsvBuffer
-    )
+    from pandas._typing import FilePath, ReadCsvBuffer
 
 
-def load_sample(
-        key: str,
-        *args,
-        **kwargs
-) -> Triangle:
+def load_sample(key: str, *args, **kwargs) -> Triangle:
     """Function to load a dataset already included in the chainladder package. These consist of CSV
     files located in the repository directory chainladder/utils/data.
 
     Parameters
     ----------
     key: str (not case sensitive)
-        The name of the dataset. The name should match the file name, without extension, of one of 
+        The name of the dataset. The name should match the file name, without extension, of one of
         the files in the sample data folder.
 
-        Datasets that are commonly used in examples are: raa, clrd, and prism. 
-        
-        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
+        Datasets that are commonly used in examples are: raa, clrd, and prism.
+
+        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, clrd2025, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
 
     Returns
     -------
@@ -64,7 +49,7 @@ def load_sample(
 
     Examples
     --------
-    
+
     Loading "raa" as an example.
 
     .. testsetup::
@@ -95,7 +80,6 @@ def load_sample(
     """
     from chainladder import Triangle
 
-
     # Set base path to be the parent directory of this file, e.g., the utils folder.
     utils_path: AnyStr = os.path.dirname(os.path.abspath(__file__))
 
@@ -110,8 +94,10 @@ def load_sample(
             what data are available.
             
             You supplied: {}
-            """.format(key)
-         )
+            """.format(
+                key
+            )
+        )
 
     # Set initial values for arguments to Triangle __init__. These may be overridden by
     # values specific to the data set.
@@ -121,27 +107,26 @@ def load_sample(
     index: list | None = None
     cumulative: bool = True
 
-    if key.lower() in [
-        "mcl",
-        "usaa",
-        "quarterly",
-        "auto",
-        "usauto",
-        "tail_sample"
-    ]:
-        columns: list = [
-            "incurred",
-            "paid"
-        ]
+    if key.lower() in ["mcl", "usaa", "quarterly", "auto", "usauto", "tail_sample"]:
+        columns: list = ["incurred", "paid"]
     if key.lower() == "clrd":
         origin: str = "AccidentYear"
         development: str = "DevelopmentYear"
-        index: list = [
-            "GRNAME",
-            "LOB"
-        ]
+        index: list = ["GRNAME", "LOB"]
         columns: list = [
             "IncurLoss",
+            "CumPaidLoss",
+            "BulkLoss",
+            "EarnedPremDIR",
+            "EarnedPremCeded",
+            "EarnedPremNet",
+        ]
+    if key.lower() == "clrd2025":
+        origin: str = "AccidentYear"
+        development: str = "DevelopmentYear"
+        index: list = ["GRNAME", "LOB"]
+        columns: list = [
+            "IncurredLosses",
             "CumPaidLoss",
             "BulkLoss",
             "EarnedPremDIR",
@@ -152,158 +137,124 @@ def load_sample(
         origin: str = "AccidentYear"
         development: str = "DevelopmentYear"
         index: list = ["LOB"]
-        columns: list = [
-            "Incurred",
-            "Paid",
-            "Reported",
-            "Closed"
-        ]
+        columns: list = ["Incurred", "Paid", "Reported", "Closed"]
     if key.lower() == "xyz":
         origin: str = "AccidentYear"
         development: str = "DevelopmentYear"
-        columns: list = [
-            "Incurred",
-            "Paid",
-            "Reported",
-            "Closed",
-            "Premium"
-        ]
-    if key.lower() in [
-        "liab",
-        "auto"
-    ]:
+        columns: list = ["Incurred", "Paid", "Reported", "Closed", "Premium"]
+    if key.lower() in ["liab", "auto"]:
         index: list = ["lob"]
-    if key.lower() in [
-        "cc_sample",
-        "ia_sample"
-    ]:
-        columns: list = [
-            "loss",
-            "exposure"
-        ]
+    if key.lower() in ["cc_sample", "ia_sample"]:
+        columns: list = ["loss", "exposure"]
     if key.lower() in ["prism"]:
-        columns: list = [
-            "reportedCount",
-            "closedPaidCount",
-            "Paid",
-            "Incurred"
-        ]
+        columns: list = ["reportedCount", "closedPaidCount", "Paid", "Incurred"]
         index: list = [
             "ClaimNo",
             "Line",
             "Type",
             "ClaimLiability",
             "Limit",
-            "Deductible"
+            "Deductible",
         ]
         origin: str = "AccidentDate"
         development: str = "PaymentDate"
         cumulative: bool = False
-    if 'mack_1997' in key.lower():
-        columns = ['Case Incurred']
-        origin = 'Accident Year'
-        development = 'Calendar Year'
+    if "mack_1997" in key.lower():
+        columns = ["Case Incurred"]
+        origin = "Accident Year"
+        development = "Calendar Year"
         cumulative: bool = True
     # Friedland datasets
-    if 'friedland' in key.lower():
-        columns: list = [
-            'Paid Claims',
-            'Reported Claims'
-        ]
+    if "friedland" in key.lower():
+        columns: list = ["Paid Claims", "Reported Claims"]
         origin: str = "Accident Year"
-        development: str = 'Calendar Year'
+        development: str = "Calendar Year"
         cumulative: bool = True
         index: None = None
-        if 'autoprop' in key.lower():
+        if "autoprop" in key.lower():
             columns: list = [
-                'Reported ALAE',
-                'Paid ALAE',
-                'Reported Claims',
-                'Paid Claims'
+                "Reported ALAE",
+                "Paid ALAE",
+                "Reported Claims",
+                "Paid Claims",
             ]
-        if 'auto_salsub' in key.lower():
+        if "auto_salsub" in key.lower():
             columns: list = [
-                'Reported Salvage and Subrogation',
-                'Received Salvage and Subrogation',
-                'Reported Claims',
-                'Paid Claims'
+                "Reported Salvage and Subrogation",
+                "Received Salvage and Subrogation",
+                "Reported Claims",
+                "Paid Claims",
             ]
-        if 'berq_sher_auto' in key.lower():
+        if "berq_sher_auto" in key.lower():
             columns: list = [
-                'Paid Claims',
-                'Closed Claim Counts',
-                'Reported Claim Counts',
-                'Disposal Rate'
+                "Paid Claims",
+                "Closed Claim Counts",
+                "Reported Claim Counts",
+                "Disposal Rate",
             ]
-        if 'gl_insurer' in key.lower():
+        if "gl_insurer" in key.lower():
             columns: list = [
-                'Closed Claim Counts',
-                'Reported Claim Counts',
-                'Disposal Rate',
-                'Paid Claims'
+                "Closed Claim Counts",
+                "Reported Claim Counts",
+                "Disposal Rate",
+                "Paid Claims",
             ]
-        if 'med_mal' in key.lower():
+        if "med_mal" in key.lower():
             columns: list = [
-                'Reported Claims',
-                'Paid Claims',
-                'Case Outstanding',
-                'Open Claim Counts'
+                "Reported Claims",
+                "Paid Claims",
+                "Case Outstanding",
+                "Open Claim Counts",
             ]
-        if 'qs' in key.lower():
+        if "qs" in key.lower():
             columns: list = [
-                'Gross Reported Claims',
-                'Net Reported Claims',
-                'Net to Gross'
+                "Gross Reported Claims",
+                "Net Reported Claims",
+                "Net to Gross",
             ]
-        if 'auto_case' in key.lower():
+        if "auto_case" in key.lower():
+            columns: list = ["Case Outstanding", "Paid Claims"]
+        if "wc_self_insurer" in key.lower():
             columns: list = [
-                'Case Outstanding',
-                'Paid Claims'
+                "Closed Claim Counts",
+                "Reported Claim Counts",
+                "Paid Claims",
+                "Paid Severities",
+                "Reported Claims",
+                "Reported Severities",
             ]
-        if 'wc_self_insurer' in key.lower():
+        if "xol" in key.lower():
             columns: list = [
-                'Closed Claim Counts',
-                'Reported Claim Counts',
-                'Paid Claims',
-                'Paid Severities',
-                'Reported Claims',
-                'Reported Severities'
+                "Gross Reported Claims",
+                "Net Reported Claims",
+                "Ceded Reported Claims",
             ]
-        if 'xol' in key.lower():
+        if "xyz_case" in key.lower():
+            columns: list = ["Case Outstanding", "Paid Claims"]
+        if "xyz_disp" in key.lower():
+            columns: list = ["Disposal Rate", "Closed Claim Counts", "Paid Claims"]
+        if "xyz_freq_sev" in key.lower():
             columns: list = [
-                'Gross Reported Claims',
-                'Net Reported Claims',
-                'Ceded Reported Claims'
+                "Closed Claim Counts",
+                "Reported Claim Counts",
+                "Reported Claims",
+                "Reported Severities",
             ]
-        if 'xyz_case' in key.lower():
+        if "auto_freq_sev" in key.lower():
             columns: list = [
-                'Case Outstanding',
-                'Paid Claims'
-            ]
-        if 'xyz_disp' in key.lower():
-            columns: list = [
-                'Disposal Rate',
-                'Closed Claim Counts',
-                'Paid Claims'
-            ]
-        if 'xyz_freq_sev' in key.lower():
-            columns: list = [
-                'Closed Claim Counts',
-                'Reported Claim Counts',
-                'Reported Claims',
-                'Reported Severities'
-            ]
-        if 'auto_freq_sev' in key.lower():
-            columns: list = [
-                'Closed Claim Counts',
-                'Reported Claim Counts',
-                'Reported Claims',
-                'Reported Severity'
+                "Closed Claim Counts",
+                "Reported Claim Counts",
+                "Reported Claims",
+                "Reported Severity",
             ]
             origin: str = "Accident Half-Year"
             development: str = "Calendar Half-Year"
-
-
+        if "uspp" in key.lower():
+            columns: list = [
+                "Reported Claims",
+                "Paid Claims",
+                "Earned Premium"
+            ]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
@@ -315,7 +266,7 @@ def load_sample(
         columns=columns,
         cumulative=cumulative,
         *args,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -323,21 +274,22 @@ def read_pickle(path):
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
+
 def read_csv(
-        filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
-        origin: Optional[str | list] = None,
-        development: Optional[str | list] = None,
-        columns: Optional[str | list] = None,
-        index: Optional[str | list] = None,
-        origin_format: Optional[str] = None,
-        development_format: Optional[str] = None,
-        cumulative: Optional[bool] = None,
-        array_backend: str = None,
-        pattern=False,
-        trailing: bool = True,
-        *args, 
-        **kwargs
-        ) -> Triangle:
+    filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
+    origin: Optional[str | list] = None,
+    development: Optional[str | list] = None,
+    columns: Optional[str | list] = None,
+    index: Optional[str | list] = None,
+    origin_format: Optional[str] = None,
+    development_format: Optional[str] = None,
+    cumulative: Optional[bool] = None,
+    array_backend: str = None,
+    pattern=False,
+    trailing: bool = True,
+    *args,
+    **kwargs,
+) -> Triangle:
     """
     Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
     https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
@@ -345,11 +297,11 @@ def read_csv(
     Parameters
     ----------
     filepath_or_buffer: str, path object or file-like object
-        Any valid string path is acceptable. The string could be a URL. Valid URL schemes 
-        include http, ftp, s3, gs, and file. For file URLs, a host is expected. A local 
+        Any valid string path is acceptable. The string could be a URL. Valid URL schemes
+        include http, ftp, s3, gs, and file. For file URLs, a host is expected. A local
         file could be: file://localhost/path/to/table.csv.
         If you want to pass in a path object, pandas accepts any os.PathLike.
-        By file-like object, we refer to objects with a read() method, such as a 
+        By file-like object, we refer to objects with a read() method, such as a
         file handle (e.g. via builtin open function) or StringIO.
     origin: str or list
          A representation of the accident, reporting or more generally the
@@ -428,18 +380,17 @@ def read_csv(
         convertible to DataFrame.
     """
 
-
     from chainladder import Triangle
 
-    #Chainladder implementation of: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
-    #This will allow the user to create a trignel directly from csv instead in csv -> dataframe -> triangle
+    # Chainladder implementation of: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+    # This will allow the user to create a trignel directly from csv instead in csv -> dataframe -> triangle
 
-    #create a data frame using the *args and **kwargs that the user specified
-    local_dataframe = pd.read_csv(filepath_or_buffer,*args, **kwargs)
+    # create a data frame using the *args and **kwargs that the user specified
+    local_dataframe = pd.read_csv(filepath_or_buffer, *args, **kwargs)
 
-    #pass the created local_dataframe in the Triangle constructor 
+    # pass the created local_dataframe in the Triangle constructor
     local_triangle = Triangle(
-        data = local_dataframe, 
+        data=local_dataframe,
         origin=origin,
         development=development,
         columns=columns,
@@ -449,10 +400,11 @@ def read_csv(
         cumulative=cumulative,
         array_backend=array_backend,
         pattern=pattern,
-        trailing = trailing
+        trailing=trailing,
     )
 
     return local_triangle
+
 
 def read_json(json_str, array_backend=None):
     from chainladder import Triangle
@@ -520,109 +472,97 @@ def read_json(json_str, array_backend=None):
 
 def parallelogram_olf(
     values,
-    date,
+    dates,
     start_date=None,
     end_date=None,
     grain="Y",
+    policy_length=12,
     approximation_grain="M",
     vertical_line=False,
 ):
     """Parallelogram approach to on-leveling."""
-    date = pd.to_datetime(date)
-    if not start_date:
-        start_date = "{}-01-01".format(date.min().year)
-    if not end_date:
-        end_date = "{}-12-31".format(date.max().year)
-    start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+    if approximation_grain not in ["M", "D"]:
+        raise ValueError("approximation_grain must be M or D")
 
-    date_freq = {
-        "M": "MS",
-        "D": "D",
-    }
-    if approximation_grain not in ['M', 'D']:
-        raise ValueError("approximation_grain must be " "M" " or " "D" "")
+    dates = pd.to_datetime(dates)
+
+    if start_date:
+        start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+    else:
+        start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
+
+    if not end_date:
+        end_date = pd.to_datetime("{}-12-31".format(dates.max().year))
+
+    lookback_years = max(1, -(-policy_length // 12))
+
     date_idx = pd.date_range(
-        start_date - pd.tseries.offsets.DateOffset(years=1),
+        start_date - pd.tseries.offsets.DateOffset(years=lookback_years),
         end_date,
-        freq=date_freq[approximation_grain],
+        freq={"M": "MS", "D": "D"}[approximation_grain],
     )
 
-    rate_changes = pd.Series(np.array(values), np.array(date))
-    rate_changes = rate_changes.reindex(date_idx, fill_value=0)
-
-    cum_rate_changes = np.cumprod(1 + rate_changes.values)
-    cum_rate_changes = pd.Series(cum_rate_changes, rate_changes.index)
+    rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
+        date_idx, fill_value=0
+    )
+    cum_rate_changes = pd.Series(
+        np.cumprod(1 + rate_changes.values), rate_changes.index
+    )
     crl = cum_rate_changes.iloc[-1]
 
-    cum_avg_rate_non_leaps = cum_rate_changes
-    cum_avg_rate_leaps = cum_rate_changes
+    rolling_num_base = {
+        "M": policy_length,
+        "D": int(365 * policy_length / 12),
+    }[approximation_grain]
+    dropdates_base = {
+        "M": 12 * lookback_years,
+        "D": 366 * lookback_years,
+    }[approximation_grain]
 
-    if not vertical_line:
-        rolling_num = {
-            "M": 12,
-            "D": 365,
-        }
+    def _fcrl_for_leap(is_leap_year: bool):
+        # In monthly mode every month is treated as an equal length period, so a
+        # leap day has no effect on the rolling window or the lookback drop.
+        if approximation_grain == "M":
+            is_leap_year = False
 
-        cum_avg_rate_non_leaps = cum_rate_changes.rolling(
-            rolling_num[approximation_grain]
-        ).mean()
-        cum_avg_rate_non_leaps = (
-            cum_avg_rate_non_leaps + cum_avg_rate_non_leaps.shift(1).values
-        ) / 2
+        if is_leap_year:
+            leap_day = 1
+        else:
+            leap_day = 0
 
-        cum_avg_rate_leaps = cum_rate_changes.rolling(
-            rolling_num[approximation_grain] + 1
-        ).mean()
-        cum_avg_rate_leaps = (
-            cum_avg_rate_leaps + cum_avg_rate_leaps.shift(1).values
-        ) / 2
+        if vertical_line:  # rectangle method, rate change impact is immediate
+            cum_avg = cum_rate_changes
 
-    dropdates_num = {
-        "M": 12,
-        "D": 366,
-    }
-    cum_avg_rate_non_leaps = cum_avg_rate_non_leaps.iloc[
-        dropdates_num[approximation_grain] :
-    ]
-    cum_avg_rate_leaps = cum_avg_rate_leaps.iloc[
-        dropdates_num[approximation_grain] + 1 :
-    ]
+        else:  # parallelogram method, rate change impact is overtime
+            #
+            average_period = max(rolling_num_base + leap_day, 1)
 
-    fcrl_non_leaps = (
-        cum_avg_rate_non_leaps.groupby(cum_avg_rate_non_leaps.index.to_period(grain))
-        .mean()
-        .reset_index()
-    )
-    fcrl_non_leaps.columns = ["Origin", "OLF"]
-    fcrl_non_leaps["Origin"] = fcrl_non_leaps["Origin"].astype(str)
-    fcrl_non_leaps["OLF"] = crl / fcrl_non_leaps["OLF"]
+            cum_avg = cum_rate_changes.rolling(average_period).mean()
+            cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
 
-    fcrl_leaps = (
-        cum_avg_rate_leaps.groupby(cum_avg_rate_leaps.index.to_period(grain))
-        .mean()
-        .reset_index()
-    )
-    fcrl_leaps.columns = ["Origin", "OLF"]
-    fcrl_leaps["Origin"] = fcrl_leaps["Origin"].astype(str)
-    fcrl_leaps["OLF"] = crl / fcrl_leaps["OLF"]
+        cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
+
+        fcrl = cum_avg.groupby(cum_avg.index.to_period(grain)).mean().reset_index()
+        fcrl.columns = ["Origin", "OLF"]
+        fcrl["Origin"] = fcrl["Origin"].astype(str)
+        fcrl["OLF"] = crl / fcrl["OLF"]
+
+        return fcrl
+
+    fcrl_non_leaps = _fcrl_for_leap(False)
+    fcrl_leaps = fcrl_non_leaps if approximation_grain == "M" else _fcrl_for_leap(True)
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
     combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y" + ("-%M" if grain == "M" else "")
+        combined["Origin_non_leaps"], format="%Y" + ("-%m" if grain == "M" else "")
     ).dt.is_leap_year
-    
 
-    if approximation_grain == "M":
-        combined["final_OLF"] = combined["OLF_non_leaps"]
-    else:
-        combined["final_OLF"] = np.where(
-            combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
-        )
+    combined["final_OLF"] = np.where(
+        combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+    )
 
     combined.drop(
-        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"],
-        axis=1,
-        inplace=True,
+        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"], axis=1, inplace=True
     )
     combined.columns = ["Origin", "OLF"]
 
@@ -717,10 +657,7 @@ def concat(
         return out
 
 
-def num_to_value(
-        arr: ArrayLike,
-        value
-) -> ArrayLike:
+def num_to_value(arr: ArrayLike, value) -> ArrayLike:
     """
     Function that turns all zeros to nan values in an array.
     """
@@ -730,16 +667,15 @@ def num_to_value(
             arr.coords = arr.coords[:, arr.data != 0]
             arr.data = arr.data[arr.data != 0]
 
-            arr: COO = sp(
+            arr: COO = sp.COO(
                 coords=arr.coords,
                 data=arr.data,
-                fill_value=sp.nan, # noqa
-                shape=arr.shape
+                fill_value=sp.COO.nan,  # noqa
+                shape=arr.shape,
             )
         else:
-            arr: COO = sp(
-                num_to_nan(np.nan_to_num(arr.todense())),
-                fill_value=value
+            arr: COO = sp.COO(
+                num_to_nan(np.nan_to_num(arr.todense())), fill_value=value
             )
     else:
         arr[arr == 0] = value
@@ -764,10 +700,7 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
     from chainladder import Triangle
 
     # Take the nan specific to the module of the backend used. e.g., numpy, cupy, sparse, etc.
-    xp: ModuleType = Triangle.get_array_module(
-        None,
-        arr=arr
-    )
+    xp: ModuleType = Triangle.get_array_module(None, arr=arr)
 
     return num_to_value(arr, xp.nan)
 
@@ -779,11 +712,16 @@ def minimum(x1, x2):
 def maximum(x1, x2):
     return x1.maximum(x2)
 
-def to_period(dateseries: pd.Series, freq:str):
-    if freq[:2] != '2Q':
+
+def to_period(dateseries: pd.Series, freq: str):
+    if freq[:2] != "2Q":
         return dateseries.dt.to_period(freq)
     else:
-        return dateseries.where(dateseries.dt.to_period(freq).dt.strftime('%q').isin(['1','3']),dateseries.dt.date + pd.DateOffset(months=-3)).dt.to_period(freq)
+        return dateseries.where(
+            dateseries.dt.to_period(freq).dt.strftime("%q").isin(["1", "3"]),
+            dateseries.dt.date + pd.DateOffset(months=-3),
+        ).dt.to_period(freq)
+
 
 class PatsyFormula(BaseEstimator, TransformerMixin):
     """A sklearn-style Transformer for patsy formulas.
@@ -911,30 +849,44 @@ def model_diagnostics(model, name=None, groupby=None):
     return concat(triangles, 0)
 
 
-def PTF_formula(alpha: list = None, gamma: list = None, iota: list = None,dgrain: int = 12):
-    """ Helper formula that builds a patsy formula string for the BarnettZehnwirth 
-    estimator.  Each axis's parameters can be grouped together. Groups of origin 
-    parameters (alpha) are set equal, and are specified by the first period in each bin. 
-    Groups of development (gamma) and valuation (iota) parameters are fit to 
+def PTF_formula(
+    alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
+):
+    """Helper formula that builds a patsy formula string for the BarnettZehnwirth
+    estimator.  Each axis's parameters can be grouped together. Groups of origin
+    parameters (alpha) are set equal, and are specified by the first period in each bin.
+    Groups of development (gamma) and valuation (iota) parameters are fit to
     separate linear trends, specified a list denoting the endpoints of the linear pieces.
     In other words, development and valuation trends are fit to a piecewise linear model.
     A triangle must be supplied to provide some critical information.
     """
-    formula_parts=[]
-    if(alpha):
+    formula_parts = []
+    if alpha:
         # The intercept term takes the place of the first alpha
-        for ind,a in enumerate(alpha):
-            if(a==0):
-                alpha=alpha[:ind]+alpha[(ind+1):]
-        formula_parts += ['+'.join([f'I({x} <= origin)' for x in alpha])]
-    if(gamma): 
+        for ind, a in enumerate(alpha):
+            if a == 0:
+                alpha = alpha[:ind] + alpha[(ind + 1) :]
+        formula_parts += ["+".join([f"I({x} <= origin)" for x in alpha])]
+    if gamma:
         # preprocess gamma to align with grain
-        graingamma = [(i+1)*dgrain for i in gamma]
-        for ind in range(1,len(graingamma)):
-            formula_parts += ['+'.join([f'I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development))/{dgrain})'])]
-    if(iota):
-        for ind in range(1,len(iota)):
-            formula_parts += ['+'.join([f'I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind-1]},valuation))'])]
-    if(formula_parts):
-        return '+'.join(formula_parts)
-    return ''
+        graingamma = [(i + 1) * dgrain for i in gamma]
+        for ind in range(1, len(graingamma)):
+            formula_parts += [
+                "+".join(
+                    [
+                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development))/{dgrain})"
+                    ]
+                )
+            ]
+    if iota:
+        for ind in range(1, len(iota)):
+            formula_parts += [
+                "+".join(
+                    [
+                        f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind-1]},valuation))"
+                    ]
+                )
+            ]
+    if formula_parts:
+        return "+".join(formula_parts)
+    return ""

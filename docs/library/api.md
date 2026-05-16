@@ -101,14 +101,15 @@ Classes
    Chainladder
    MackChainladder
    BornhuetterFerguson
+   ExpectedLoss
    Benktander
    CapeCod
 
 .. _adjustments_ref:
 
-:mod:`chainladder.workflow`: Adjustments
-========================================
-.. automodule:: chainladder.workflow
+:mod:`chainladder.adjustments`: Adjustments
+===========================================
+.. automodule:: chainladder.adjustments
  :no-members:
  :no-inherited-members:
 

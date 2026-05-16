@@ -524,7 +524,7 @@ class Triangle(TriangleBase):
 
         # Construct Sparse multidimensional array.
         self.values: COO = num_to_nan(
-            sp(
+            sp.COO(
                 coords,
                 amts,
                 prune=True,
@@ -917,7 +917,7 @@ class Triangle(TriangleBase):
         self._pattern = pattern
 
     @property
-    def is_ultimate(self) ->  np.bool:
+    def is_ultimate(self) ->  bool:
         """
         Indicates whether the Triangle includes an ultimate valuation column.
 
@@ -942,7 +942,7 @@ class Triangle(TriangleBase):
         .. testcode::
 
             tr = cl.load_sample('ukmotor')
-            print(bool(tr.is_ultimate))
+            print(tr.is_ultimate)
 
         .. testoutput::
 
@@ -954,13 +954,13 @@ class Triangle(TriangleBase):
         .. testcode::
 
             ult = cl.Chainladder().fit(tr).ultimate_
-            print(bool(ult.is_ultimate))
+            print(ult.is_ultimate)
 
         .. testoutput::
 
             True
         """
-        return sum(self.valuation >= options.ULT_VAL[:4]) > 0
+        return bool((self.valuation >= options.ULT_VAL[:4]).any())
 
     @property
     def latest_diagonal(self) -> Triangle:

@@ -116,10 +116,17 @@ Contributions to documentation are especially helpful for new users.
 - Follow established naming conventions  
 - Include new unit tests with reasonable coverage  
 
-All PRs should be run locally before submission:  
+All PRs should be run locally before submission.
+
+For codebase tests, run:
 
 ```bash
-pytest chainladder
+pytest
+```
+
+For documentation changes, rebuild the docs locally with:
+```bash
+uv run jb build docs --builder=custom --custom-builder=doctest
 ```
 
 Large or unfocused PRs may delay merging. Each PR should address a single issue or feature to maintain clarity and quality.

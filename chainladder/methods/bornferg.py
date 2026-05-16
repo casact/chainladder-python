@@ -10,9 +10,14 @@ class BornhuetterFerguson(Benktander):
     Parameters
     ----------
     apriori: float, optional (default=1.0)
-        Multiplier for the sample_weight used in the Bornhuetter Ferguson
-        method. If sample_weight is already an apriori measure of ultimate,
-        then use 1.0
+        Multiplier for the `sample_weight` used in the Bornhuetter Ferguson
+        method. If `sample_weight` is already an apriori measure of ultimate,
+        then use 1.0. 
+        The recommended pratice is to seperate the model parameter assumption 
+        and data apart.
+        For example, if the apriori s 80% of premium, it is recommended to set 
+        the aprior as 0.8 and leave the premium data in `sample_weight` argument 
+        unmodified.
     apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
         bootstrap model, the model samples aprioris from a lognormal distribution
@@ -35,14 +40,10 @@ class BornhuetterFerguson(Benktander):
     Examples
     --------
     Bornhuetter-Ferguson requires an apriori expected ultimate per origin,
-    supplied through ``sample_weight``. ``sample_weight`` must be a
-    chainladder Triangle aligned with ``X``, not a scalar; passing
-    ``sample_weight=14000`` would raise ``AttributeError`` because the model
-    accesses ``.shape``.
+    supplied through ``sample_weight``.
 
     A common idiom for building a flat per-origin apriori is to take any
-    same-shape Triangle, zero it out, and add the desired value. Below uses
-    the chainladder ultimate as the shape donor.
+    same-shape Triangle, zero it out, and add the desired value. Here is an example.
 
     .. testsetup::
 
@@ -50,40 +51,49 @@ class BornhuetterFerguson(Benktander):
 
     .. testcode::
 
-        tr = cl.load_sample('ukmotor')
-        cl_ult = cl.Chainladder().fit(tr).ultimate_
-        apriori = cl_ult * 0 + float(cl_ult.sum()) / 7
-        print(apriori)
+        raa = cl.load_sample("raa")
+        premium = raa.latest_diagonal * 0 + 40_000  # zero out and add 40,000 to each origin
+
+        ibnr = cl.BornhuetterFerguson(apriori=0.7).fit(X=raa, sample_weight=premium).ibnr_
+        print(ibnr)
 
     .. testoutput::
 
                       2261
-        2007  14903.967562
-        2008  14903.967562
-        2009  14903.967562
-        2010  14903.967562
-        2011  14903.967562
-        2012  14903.967562
-        2013  14903.967562
+        1981           NaN
+        1982    255.707763
+        1983    717.772687
+        1984   1596.061515
+        1985   2658.738155
+        1986   5239.441491
+        1987   8574.335344
+        1988  12714.889984
+        1989  18585.219714
+        1990  24861.068855
 
-    Fit with that apriori. The BF ultimates pull the immature origins toward
-    the apriori while leaving mature origins close to chainladder.
+    One might be tempted to set never set the aprior and modify the sample_weight directly, and they will result in the same answer, but this is not the recommended practice. It not only add confusion, but it alos mixes the model parameter assumption and data together.
 
     .. testcode::
 
-        model = cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
-        print(model.ultimate_)
+        raa = cl.load_sample("raa")
+        premium = raa.latest_diagonal * 0 + 40_000 * 0.7  # premium is modified by 70%
+
+        ibnr = cl.BornhuetterFerguson().fit(X=raa, sample_weight=premium).ibnr_
+        print(ibnr)
 
     .. testoutput::
 
                       2261
-        2007  12690.000000
-        2008  13145.318280
-        2009  14095.125641
-        2010  13412.748068
-        2011  14150.549749
-        2012  15999.244850
-        2013  16658.824705
+        1981           NaN
+        1982    255.707763
+        1983    717.772687
+        1984   1596.061515
+        1985   2658.738155
+        1986   5239.441491
+        1987   8574.335344
+        1988  12714.889984
+        1989  18585.219714
+        1990  24861.068855
     """
 
     def __init__(self, apriori=1.0, apriori_sigma=0.0, random_state=None):

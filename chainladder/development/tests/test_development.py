@@ -69,12 +69,11 @@ def test_drophighlow():
     )
     assert np.all(lhs == rhs)
 
-    lhs = np.round(
-        cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2)
-        .fit(raa)
-        .cdf_.values,
-        4,
-    ).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(
+            drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2
+        ).fit(raa)
+    lhs = np.round(dev.cdf_.values, 4).flatten()
     rhs = np.array(
         [
             5.7403,
@@ -90,31 +89,33 @@ def test_drophighlow():
     )
     assert np.all(lhs == rhs)
 
-    lhs = np.round(cl.Development(drop_high=1).fit(raa).cdf_.values, 4).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(drop_high=1).fit(raa)
+    lhs = np.round(dev.cdf_.values, 4).flatten()
     rhs = np.array(
         [7.2190, 2.5629, 1.6592, 1.3570, 1.1734, 1.0669, 1.0419, 1.0121, 1.0092]
     )
     assert np.all(lhs == rhs)
 
-    lhs = np.round(
-        cl.Development(drop_high=1, drop_low=1).fit(raa).cdf_.values, 4
-    ).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(drop_high=1, drop_low=1).fit(raa)
+    lhs = np.round(dev.cdf_.values, 4).flatten()
     rhs = np.array(
         [9.0982, 2.8731, 1.8320, 1.4713, 1.2522, 1.0963, 1.0604, 1.0263, 1.0092]
     )
     assert np.all(lhs == rhs)
 
-    lhs = np.round(
-        cl.Development(drop_high=[2, 1, 1], drop_low=1).fit(raa).cdf_.values, 4
-    ).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(drop_high=[2, 1, 1], drop_low=1).fit(raa)
+    lhs = np.round(dev.cdf_.values, 4).flatten()
     rhs = np.array(
         [8.4905, 3.0589, 1.9504, 1.5664, 1.3142, 1.1403, 1.0822, 1.0426, 1.0092]
     )
     assert np.all(lhs == rhs)
 
-    lhs = np.round(
-        cl.Development(drop_high=1, drop_low=1, n_periods=5).fit(raa).cdf_.values, 4
-    ).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(drop_high=1, drop_low=1, n_periods=5).fit(raa)
+    lhs = np.round(dev.cdf_.values, 4).flatten()
     rhs = np.array(
         [16.3338, 3.2092, 1.8124, 1.4793, 1.2522, 1.0963, 1.0604, 1.0263, 1.0092]
     )
@@ -274,27 +275,31 @@ def test_new_drop_4(clrd):
 def test_new_drop_5(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
-    compare_new_drop(
-        cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd), clrd
-    )
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd)
+    compare_new_drop(dev, clrd)
 
 
 def test_new_drop_5a(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
-    assert np.array_equal(
-        cl.Development(drop_high=1, drop_low=1, preserve=3)
-        ._set_weight_func(clrd.age_to_age, clrd.age_to_age)
-        .values,
-        cl.Development(
-            drop_high=True,
-            drop_low=[True, True, True, True, True, True, True, True, True],
-            preserve=3,
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        lhs = (
+            cl.Development(drop_high=1, drop_low=1, preserve=3)
+            ._set_weight_func(clrd.age_to_age, clrd.age_to_age)
+            .values
         )
-        ._set_weight_func(clrd.age_to_age)
-        .values,
-        True,
-    )
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        rhs = (
+            cl.Development(
+                drop_high=True,
+                drop_low=[True, True, True, True, True, True, True, True, True],
+                preserve=3,
+            )
+            ._set_weight_func(clrd.age_to_age)
+            .values
+        )
+    assert np.array_equal(lhs, rhs, True)
 
 
 def test_new_drop_6(clrd):
@@ -306,9 +311,11 @@ def test_new_drop_6(clrd):
 def test_new_drop_7(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below with preserve
-    compare_new_drop(
-        cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd), clrd
-    )
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev = cl.Development(
+            drop_above=1.01, drop_below=0.95, preserve=3
+        ).fit(clrd)
+    compare_new_drop(dev, clrd)
 
 
 def test_new_drop_8():
@@ -404,15 +411,16 @@ def test_4d_drop(clrd):
 
 def test_pipeline(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
-    dev1 = cl.Development(
-        n_periods=7,
-        drop_valuation=1995,
-        drop=("1992", 12),
-        drop_above=1.05,
-        drop_below=0.95,
-        drop_high=1,
-        drop_low=1,
-    ).fit(clrd)
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev1 = cl.Development(
+            n_periods=7,
+            drop_valuation=1995,
+            drop=("1992", 12),
+            drop_above=1.05,
+            drop_below=0.95,
+            drop_high=1,
+            drop_low=1,
+        ).fit(clrd)
     pipe = cl.Pipeline(
         steps=[
             ("n_periods", cl.Development(n_periods=7)),
@@ -422,7 +430,8 @@ def test_pipeline(clrd):
             ("drop_hilo", cl.Development(drop_high=1, drop_low=1)),
         ]
     )
-    dev2 = pipe.fit(X=clrd)
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        dev2 = pipe.fit(X=clrd)
     assert np.array_equal(
         dev1.w_v2_.values, dev2.named_steps.drop_hilo.w_v2_.values, True
     )

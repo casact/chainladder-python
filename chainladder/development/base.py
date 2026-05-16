@@ -248,6 +248,13 @@ class DevelopmentBase(
 
         weights = index_array_weights
 
+        # NOTE: The "Some exclusions have been ignored..." UserWarning below is
+        # asserted by the test suite (see chainladder/development/tests/
+        # test_development.py and test_incremental.py, which use
+        # pytest.warns(..., match="exclusions have been ignored")).
+        # Do not modify the warning message or remove the warnings.warn(...)
+        # call without updating the corresponding pytest.warns matchers,
+        # otherwise those tests will fail.
         if warning_flag:
             if preserve == 1:
                 warning = (
@@ -324,6 +331,13 @@ class DevelopmentBase(
             index_array_weights,
         )
 
+        # NOTE: The "Some exclusions have been ignored..." UserWarning below is
+        # asserted by the test suite (see chainladder/development/tests/
+        # test_development.py and test_incremental.py, which use
+        # pytest.warns(..., match="exclusions have been ignored")).
+        # Do not modify the warning message or remove the warnings.warn(...)
+        # call without updating the corresponding pytest.warns matchers,
+        # otherwise those tests will fail.
         if warning_flag:
             if preserve == 1:
                 warning = (
@@ -535,6 +549,13 @@ class DevelopmentBase(
             ldf_count[..., None] < preserve_array[..., None], w, index_array_weights
         )
 
+        # NOTE: The "Some exclusions have been ignored..." UserWarning below is
+        # asserted by the test suite (see chainladder/development/tests/
+        # test_development.py and test_incremental.py, which use
+        # pytest.warns(..., match="exclusions have been ignored")).
+        # Do not modify the warning message or remove the warnings.warn(...)
+        # call without updating the corresponding pytest.warns matchers,
+        # otherwise those tests will fail.
         if warning_flag:
             if self.preserve == 1:
                 warning = (
@@ -607,6 +628,13 @@ class DevelopmentBase(
             factor_ranks.transpose((0, 1, 3, 2)) < max_rank[..., None]
         ) & (factor_ranks.transpose((0, 1, 3, 2)) > min_rank[..., None] - 1)
 
+        # NOTE: The "Some exclusions have been ignored..." UserWarning below is
+        # asserted by the test suite (see chainladder/development/tests/
+        # test_development.py and test_incremental.py, which use
+        # pytest.warns(..., match="exclusions have been ignored")).
+        # Do not modify the warning message or remove the warnings.warn(...)
+        # call without updating the corresponding pytest.warns matchers,
+        # otherwise those tests will fail.
         if warning_flag:
             if self.preserve == 1:
                 warning = (
