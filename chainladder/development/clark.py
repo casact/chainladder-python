@@ -54,6 +54,58 @@ class ClarkLDF(DevelopmentBase):
     norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
 
+    Examples
+    --------
+    ``growth`` selects the incremental curve; the first LDF cell moves slightly
+    between ``loglogistic`` (default) and ``weibull``.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("ukmotor")
+        m_log = cl.ClarkLDF(growth="loglogistic").fit(tri)
+        m_wei = cl.ClarkLDF(growth="weibull").fit(tri)
+        print(float(np.round(m_log.ldf_.values[0, 0, 0, 0], 3)))
+        print(float(np.round(m_wei.ldf_.values[0, 0, 0, 0], 3)))
+
+    .. testoutput::
+
+        1.917
+        1.912
+
+    Passing ``sample_weight`` switches to Cape Cod: ``method_`` becomes
+    ``cape_cod`` and ``elr_`` is estimated.
+
+    .. testcode::
+
+        tri = cl.load_sample("ukmotor")
+        m = cl.ClarkLDF().fit(tri, sample_weight=tri * 0 + 1e7)
+        print(m.method_)
+        print(float(np.round(m.elr_.values[0, 0], 6)))
+
+    .. testoutput::
+
+        cape_cod
+        0.002002
+
+    ``groupby`` pools index levels before fitting so one parameter set is
+    returned per group (here, line of business on ``clrd``).
+
+    .. testcode::
+
+        clrd = cl.load_sample("clrd").groupby("LOB")[["IncurLoss"]].sum()
+        m = cl.ClarkLDF(groupby="LOB").fit(clrd)
+        print(m.theta_.shape)
+
+    .. testoutput::
+
+        (6, 1)
+
     """
 
     def __init__(
