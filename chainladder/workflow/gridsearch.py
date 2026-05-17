@@ -54,6 +54,40 @@ class GridSearch(BaseEstimator):
     results_: DataFrame
         A DataFrame with each param_grid key as a column and the ``scoring``
         score as the last column
+
+    Examples
+    --------
+    Use ``GridSearch`` when you want to compare modeling choices with the
+    same scoring rule. Here the grid compares simple and volume averages by
+    reading the fitted development ``sigma_`` from each candidate pipeline.
+
+    .. testsetup::
+
+        import chainladder as cl
+    .. testcode::
+
+        clrd = cl.load_sample("clrd")
+        medmal = clrd.groupby("LOB").sum().loc["medmal"]["CumPaidLoss"]
+        pipe = cl.Pipeline(
+            [("dev", cl.Development()), ("cl", cl.Chainladder())]
+        )
+        param_grid = {"dev__average": ["simple", "volume"]}
+        scoring = {
+            "sigma": lambda m: float(m.named_steps.dev.sigma_.values.sum())
+        }
+        grid = cl.GridSearch(
+            pipe, param_grid, scoring=scoring, n_jobs=1
+        ).fit(medmal)
+        print(len(grid.results_))
+        print(round(grid.results_["sigma"].iloc[0], 3))
+        print(round(grid.results_["sigma"].iloc[1], 3))
+
+    .. testoutput::
+
+        2
+        1.422
+        206.183
+
     """
 
     def __init__(self, estimator, param_grid, scoring, verbose=0,
@@ -139,7 +173,39 @@ class Pipeline(PipelineSL, EstimatorIO):
     ----------
     named_steps: bunch object, a dictionary with attribute access
         Read-only attribute to access any step parameter by user given name.
-        Keys are step names and values are steps parameters."""
+        Keys are step names and values are steps parameters.
+
+    Examples
+    --------
+    Use ``Pipeline`` when the same triangle should pass through several
+    estimators as one workflow. The ``step__param`` naming convention lets you
+    change one step, here ``Development.average``, without rebuilding the
+    whole pipeline.
+
+    .. testsetup::
+
+        import chainladder as cl
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        pipe = cl.Pipeline(
+            [
+                ("dev", cl.Development(average="simple")),
+                ("cl", cl.Chainladder()),
+            ]
+        )
+        ib_simple = int(round(float(pipe.fit_predict(tri).ibnr_.sum()), 0))
+        pipe.set_params(dev__average="volume")
+        ib_volume = int(round(float(pipe.fit_predict(tri).ibnr_.sum()), 0))
+        print(ib_simple)
+        print(ib_volume)
+
+    .. testoutput::
+
+        93643
+        52135
+
+    """
 
     def fit(self, X, y=None, sample_weight=None, **fit_params):
         if sample_weight:
