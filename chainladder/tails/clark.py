@@ -45,6 +45,29 @@ class TailClark(TailBase):
     norm_resid_: Triangle
         The "Normalized" Residuals of the model according to Clark.
 
+    Examples
+    --------
+    Compare Clark growth curves when the selected tail shape is part of the
+    modeling judgment. The tail LDF changes because each curve extrapolates the
+    remaining development differently.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development().fit_transform(cl.load_sample("raa"))
+        log = cl.TailClark(growth="loglogistic").fit(dev)
+        wei = cl.TailClark(growth="weibull").fit(dev)
+        print(round(float(log.ldf_.values[0, 0, 0, -1]), 3))
+        print(round(float(wei.ldf_.values[0, 0, 0, -1]), 3))
+
+    .. testoutput::
+
+        1.189
+        1.014
+
     """
 
     def __init__(self, growth="loglogistic", truncation_age=None,

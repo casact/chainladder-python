@@ -55,6 +55,31 @@ class TailCurve(TailBase):
         Slope parameter of the curve fit.
     intercept : DataFrame
         Intercept parameter of the curve fit.
+
+    Examples
+    --------
+    Compare parametric tail curves when the same development pattern can
+    support multiple extrapolation shapes. The last-period LDF reflects the
+    selected curve family.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("tail_sample")
+        dev = cl.Development().fit_transform(tri)
+        exp = cl.TailCurve(curve="exponential", extrap_periods=5).fit(dev)
+        inv = cl.TailCurve(curve="inverse_power", extrap_periods=5).fit(dev)
+        print(round(float(exp.ldf_.values[0, 0, 0, -1]), 6))
+        print(round(float(inv.ldf_.values[0, 0, 0, -1]), 6))
+
+    .. testoutput::
+
+        1.0093
+        1.039271
+
     """
 
     def __init__(
