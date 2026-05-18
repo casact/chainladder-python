@@ -425,14 +425,17 @@ def test_simple_avg():
         6,
     )
 
-    def avg_last4(s):
-        vals = s.dropna().tail(4)
+    def avg_last4(s, n):
+        vals = s.dropna().tail(m)
         return vals.mean() if len(vals) > 0 else np.nan
 
-    avg_means = df.apply(avg_last4)
+    avg_means = df.apply(lambda s: avg_lastn(s, 4))
     rhs = np.round(avg_means.values.flatten(), 6)
 
     assert np.all(lhs == rhs)
+
+def test_simple_geometric_avg():
+
 
 
 def compare_new_drop(dev, tri):
