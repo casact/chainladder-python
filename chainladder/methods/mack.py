@@ -42,9 +42,10 @@ class MackChainladder(Chainladder):
 
     Examples
     --------
-    Fit the Mack chainladder method and inspect the headline summary table,
-    which combines the deterministic chainladder estimate with Mack's
-    stochastic standard error.
+    Use ``MackChainladder`` when the IBNR point estimate alone is not
+    sufficient and a measure of reserve uncertainty is also needed.
+    ``summary_`` shows the deterministic chainladder ultimate alongside
+    Mack's per-origin prediction error.
 
     .. testsetup::
 
@@ -67,9 +68,10 @@ class MackChainladder(Chainladder):
         2012   9650.0   7162.150646  16812.150646    693.166178
         2013   6283.0  14396.919151  20679.919151    901.408385
 
-    The deterministic chainladder ultimates match those of
-    :class:`Chainladder`. Mack's contribution is the stochastic standard error
-    in the rightmost column, which can be aggregated across origins.
+    ``total_mack_std_err_`` aggregates the prediction error across all
+    origins. It exceeds the quadrature sum of the per-origin errors in
+    ``summary_`` because parameter risk is correlated across origins: all
+    origins share the same estimated age-to-age factors.
 
     .. testcode::
 
@@ -80,10 +82,12 @@ class MackChainladder(Chainladder):
         columns        values
         (Total,)  1424.531543
 
-    Mack's total error depends on how ``ldf_`` and ``sigma_`` were produced.
-    Here the same triangle is pre-smoothed with :class:`Development` using
-    ``average='simple'`` instead of the default volume weights before fitting
-    ``MackChainladder``, which raises the aggregate Mack standard error.
+    The Mack standard error is sensitive to how the upstream development
+    factors were estimated. Using simple (unweighted) averaging in
+    :class:`Development` before fitting ``MackChainladder`` gives equal
+    weight to each accident year regardless of size. On a small triangle
+    this raises the aggregate standard error relative to volume weighting,
+    since thinner years contribute more uncertainty.
 
     .. testcode::
 
@@ -114,8 +118,10 @@ class MackChainladder(Chainladder):
 
         Examples
         --------
-        Fitting attaches the ``ultimate_`` and Mack std error attributes to
-        the estimator and returns the estimator itself.
+        After fitting, ``ibnr_`` holds the point estimate per origin and
+        ``mack_std_err_`` holds the prediction error. The ratio of the two
+        gives a coefficient of variation that shows which origins carry the
+        most reserve uncertainty relative to their size.
 
         .. testsetup::
 
@@ -123,12 +129,24 @@ class MackChainladder(Chainladder):
 
         .. testcode::
 
+            import numpy as np
+
             tr = cl.load_sample('ukmotor')
-            cl.MackChainladder().fit(tr)
+            model = cl.MackChainladder().fit(tr)
+            print(model.ibnr_.to_frame(origin_as_datetime=False).round(1))
+            print(np.round(model.mack_std_err_.values[0, 0, :, -1], 1))
 
         .. testoutput::
 
-            MackChainladder()
+                     2261
+            2007      NaN
+            2008    350.9
+            2009   1037.5
+            2010   2044.9
+            2011   3663.4
+            2012   7162.2
+            2013  14396.9
+            [  nan  27.2  36.5 144.5 427.6 693.2 901.4]
         """
         super().fit(X, y, sample_weight)
         if "sigma_" not in self.X_:
@@ -168,8 +186,11 @@ class MackChainladder(Chainladder):
 
         Examples
         --------
-        Fit the model and apply it to a Triangle with the same shape, then
-        read the Mack standard error off the resulting Triangle.
+        ``predict`` re-applies the fitted age-to-age factors and sigma
+        estimates to a new triangle without refitting. A common use is
+        sensitivity testing: scale the reported losses by an adverse factor
+        and call ``predict`` to see how the Mack standard error responds,
+        holding the development pattern fixed.
 
         .. testsetup::
 
@@ -179,13 +200,16 @@ class MackChainladder(Chainladder):
 
             tr = cl.load_sample('ukmotor')
             model = cl.MackChainladder().fit(tr)
-            predicted = model.predict(tr)
-            print(predicted.total_mack_std_err_)
+            tr_adverse = tr * 1.05
+            print(model.predict(tr).total_mack_std_err_)
+            print(model.predict(tr_adverse).total_mack_std_err_)
 
         .. testoutput::
 
             columns        values
             (Total,)  1424.531543
+            columns        values
+            (Total,)  1475.539173
         """
         X_new = super().predict(X, sample_weight)
         X_new.sigma_ = getattr(X_new, "sigma_", self.X_.sigma_)

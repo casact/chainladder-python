@@ -35,12 +35,31 @@ class BarnettZehnwirth(TweedieGLM):
 
     Examples
     --------
-    Choose how to describe the regression structure before fitting the model.
-    A patsy ``formula`` is useful when you want direct control over origin and
-    development factors. The PTF ``alpha`` / ``gamma`` / ``iota`` arguments are
-    a shorthand for Barnett-Zehnwirth period, trend, and final-period groupings.
-    Both approaches fit the same triangle here; the different coefficients show
-    that the selected structure changes the design matrix being estimated.
+    Standard ``Development`` assumes loss development ratios are stable across
+    accident years. When a triangle shows a calendar-year effect (e.g., recent
+    diagonals are systematically heavier or lighter across all accident years
+    due to inflation or a shift in case reserving practices), that assumption
+    breaks down. ``BarnettZehnwirth`` addresses this by fitting a log-linear
+    model that decomposes the triangle into separate origin, development, and
+    calendar-year trend components.
+
+    Two interfaces let you specify the trend structure. The ``formula``
+    argument takes any patsy expression directly. The Probabilistic Trend
+    Family (PTF) arguments provide a structured shorthand: ``alpha`` groups
+    accident years that share the same level effect, ``gamma`` defines
+    breakpoints for a piecewise linear development-age trend, and ``iota``
+    defines breakpoints for a piecewise linear calendar-year (diagonal) trend.
+
+    The ``abc`` triangle has 11 accident years (1977-1987) and 11 development
+    ages (12-132 months). Suppose an actuary notices from the triangle (or
+    from external information such as a change in inflation or legal
+    environment) that accident years before 1982 behave differently from those
+    after, that development speed changes at the 36-month and 72-month marks,
+    and that calendar-year trends shift at two points in the diagonal sequence.
+    Those observations translate directly into ``alpha=[0, 5]``,
+    ``gamma=[0, 2, 5]``, and ``iota=[0, 7, 11]``. The first three fitted
+    coefficients differ from the unconstrained ``formula`` model, reflecting
+    the additional structure the actuary has imposed.
 
     .. testsetup::
 
@@ -57,13 +76,13 @@ class BarnettZehnwirth(TweedieGLM):
         m_ptf = cl.BarnettZehnwirth(
             alpha=[0, 5], gamma=[0, 2, 5], iota=[0, 7, 11]
         ).fit(tri)
-        print(float(np.round(m_formula.coef_.values.flatten()[0], 3)))
-        print(float(np.round(m_ptf.coef_.values.flatten()[0], 3)))
+        print(np.round(m_formula.coef_.values.flatten()[:3], 3))
+        print(np.round(m_ptf.coef_.values.flatten()[:3], 3))
 
     .. testoutput::
 
-        11.837
-        12.151
+        [11.837  0.179  0.345]
+        [12.151  0.274 -0.064]
 
     """
 

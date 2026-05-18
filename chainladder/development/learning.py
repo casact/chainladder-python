@@ -53,12 +53,22 @@ class DevelopmentML(DevelopmentBase):
 
     Examples
     --------
-    Choose the response scale before fitting a machine-learning development
-    model. In this class, ``fit_incrementals=True`` means the scikit-learn model
-    is trained on actual incremental dollar amounts. Setting it to ``False``
-    trains on cumulative values instead. Both fitted models are translated back
-    into ``ldf_``, so the comparison is about the training target, not a request
-    to model age-to-age factors directly.
+    ``DevelopmentML`` bridges scikit-learn and the chainladder workflow:
+    it converts a Triangle to a tabular DataFrame, fits any sklearn-compatible
+    estimator or Pipeline against it, then converts the predictions back into
+    ``ldf_`` patterns usable with tail selection, ``Chainladder``, and other
+    methods.
+
+    ``fit_incrementals`` controls what the estimator is trained to predict.
+    When an actuary believes the period-to-period change in losses is more
+    predictable from development age than the cumulative total is, training
+    on incrementals (``fit_incrementals=True``) is more appropriate. When
+    the cumulative level is the more natural target, use
+    ``fit_incrementals=False``. Both options produce an ``ldf_``, but the
+    fitted pattern differs because the training target changes. (Whether the
+    incremental values represent dollar amounts depends on the estimator:
+    a ``LinearRegression`` with no log transform trains on raw dollar
+    increments, while a log-space transform would fit log-scale values.)
 
     .. testsetup::
 
@@ -85,17 +95,27 @@ class DevelopmentML(DevelopmentBase):
         m_cum = cl.DevelopmentML(
             pipe, y_ml=[tri.columns[0]], fit_incrementals=False
         ).fit(tri)
-        print(float(np.round(m_incr.ldf_.values[0, 0, 0, 0], 4)))
-        print(float(np.round(m_cum.ldf_.values[0, 0, 0, 0], 4)))
+        print(m_incr.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(m_cum.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
 
     .. testoutput::
 
-        3.508
-        3.515
+        [3.508  1.7435 1.4379 1.1655]
+        [3.515  1.735  1.3993 1.152 ]
 
-    Pass sample weights into the scikit-learn step when observations should not
-    contribute equally to the regression. ``weighted_step='model'`` forwards the
-    weights into the final estimator in the pipeline.
+    By default the regression treats each cell equally regardless of its loss
+    size. An actuary who prefers development patterns to reflect the
+    experience of larger accident years more heavily (similar to traditional
+    volume-weighted averages) can pass ``sample_weight`` to ``fit``. However,
+    passing ``sample_weight`` alone is not enough: without ``weighted_step``,
+    the weights are computed internally but never forwarded to the sklearn
+    estimator. ``weighted_step`` takes the name of a step in the Pipeline as
+    a string and routes the weights to that step using sklearn's
+    ``step_name__sample_weight`` fit-params convention. In the example below,
+    ``weighted_step='model'`` matches the name given to the
+    ``LinearRegression`` step, so it receives ``sample_weight=tri * tri``
+    (squared cumulative losses) during fitting, giving larger-loss accident
+    years proportionally more influence on the development pattern.
 
     .. testcode::
 
@@ -121,13 +141,52 @@ class DevelopmentML(DevelopmentBase):
             fit_incrementals=False,
             weighted_step="model",
         ).fit(tri, sample_weight=tri * tri)
-        print(float(np.round(m0.ldf_.values[0, 0, 0, 0], 4)))
-        print(float(np.round(m1.ldf_.values[0, 0, 0, 0], 4)))
+        print(m0.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(m1.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
 
     .. testoutput::
 
-        3.515
-        3.4459
+        [3.515  1.735  1.3993 1.152 ]
+        [3.4459 1.7749 1.4053 1.1377]
+
+    Loss development has a natural time-series structure: the cumulative loss
+    at one age is directly related to the amount at the prior age. The
+    ``autoregressive`` parameter lets the model re-feed its own predictions
+    as lagged inputs when filling in the lower triangle. Each tuple in the
+    list specifies ``(column_name, lag, source_column)``: the Triangle column
+    ``source_column`` is shifted by ``lag`` periods and added to the tabular
+    DataFrame under ``column_name``. During prediction, each period's output
+    becomes the next period's lagged input automatically. The
+    ``column_name`` must also appear in the Pipeline formula so the estimator
+    can use it as a feature.
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("genins")
+        col = tri.columns[0]
+        pipe = Pipeline(
+            steps=[
+                ("design_matrix", PatsyFormula("C(development) + lag_loss")),
+                ("model", LinearRegression(fit_intercept=False)),
+            ]
+        )
+        m = cl.DevelopmentML(
+            pipe,
+            y_ml=[col],
+            autoregressive=[("lag_loss", -1, col)],
+            fit_incrementals=False,
+        ).fit(tri)
+        print(m.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+
+    .. testoutput::
+
+        [3.4815 1.6246 1.3017 1.0065]
 
     """
 

@@ -52,15 +52,30 @@ class CaseOutstanding(DevelopmentBase):
 
     Examples
     --------
-    ``paid_n_periods`` and ``case_n_periods`` control how many recent origin
-    years inform the ``Development`` weights that smooth the paid and case
-    patterns.
+    ``CaseOutstanding`` is appropriate when an actuary tracks both paid and
+    incurred losses and wants development patterns grounded in case reserve
+    movements rather than cumulative-to-cumulative ratios. The method models
+    incremental payments as a percentage of the prior period's case reserve
+    (``paid_ldf_``) and case reserve run-off as a percentage of the prior
+    period's case reserve (``case_ldf_``). The ``paid_to_incurred`` tuple
+    tells the estimator which triangle columns represent the paid and incurred
+    series.
+
+    When case reserving practices have changed recently (e.g., a company
+    tightened case adequacy standards in the last three years), including all
+    historical origin years in the pattern averages would mix old and new
+    reserving regimes. Setting ``paid_n_periods=3`` and ``case_n_periods=3``
+    restricts the averages to the three most recent origin years, reflecting
+    the current reserving philosophy. The shift in the first four ``paid_ldf_``
+    values below shows how much the pattern changes when older data is excluded.
 
     .. testsetup::
 
         import chainladder as cl
 
     .. testcode::
+
+        import numpy as np
 
         tri = cl.load_sample("usauto")
         all_years = cl.CaseOutstanding(
@@ -71,13 +86,13 @@ class CaseOutstanding(DevelopmentBase):
             paid_n_periods=3,
             case_n_periods=3,
         ).fit(tri)
-        print(round(float(all_years.paid_ldf_.values[0, 0, 0, 0]), 6))
-        print(round(float(three.paid_ldf_.values[0, 0, 0, 0]), 6))
+        print(all_years.paid_ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(three.paid_ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
 
     .. testoutput::
 
-        0.842814
-        0.833138
+        [0.8428 0.71   0.7084 0.6968]
+        [0.8331 0.7008 0.7139 0.7144]
 
     """
 

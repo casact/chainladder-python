@@ -71,11 +71,15 @@ class IncrementalAdditive(DevelopmentBase):
 
     Examples
     --------
-    Use ``IncrementalAdditive`` when the reserving assumption is driven by
-    incremental loss per unit of exposure, rather than by observed age-to-age
-    ratios alone. The example passes the latest exposure diagonal as
-    ``sample_weight``; the fitted object still returns development patterns, so
-    it can be used in the same workflow as other development estimators.
+    Use ``IncrementalAdditive`` when incremental losses per unit of exposure
+    are expected to be more stable across accident years than age-to-age
+    factors. This is common in lines where claim payments are driven by
+    exposure volume: for example, a workers' compensation book where
+    claim costs per payroll dollar are steady even as the cumulative reported
+    losses grow at different rates by accident year. Passing the latest
+    exposure diagonal as ``sample_weight`` normalises each period's
+    incremental by exposure before averaging. The fitted ``ldf_`` slots
+    directly into ``Chainladder`` or any other method.
 
     .. testsetup::
 
@@ -83,19 +87,26 @@ class IncrementalAdditive(DevelopmentBase):
 
     .. testcode::
 
+        import numpy as np
+
         tri = cl.load_sample("ia_sample")
         model = cl.IncrementalAdditive().fit(
             tri["loss"], sample_weight=tri["exposure"].latest_diagonal
         )
-        print(model.ldf_.shape)
+        print(model.ldf_.to_frame(origin_as_datetime=False).iloc[0].values.round(4))
 
     .. testoutput::
 
-        (1, 1, 6, 5)
+        [1.8531 1.3062 1.2332 1.1161 1.0444]
 
-    Apply ``future_trend`` when the completed lower triangle should reflect a
-    prospective trend assumption. Holding historical ``trend`` at zero isolates
-    the effect on the fitted future incrementals.
+    When the reserve will be carried for multiple future years, an actuary
+    may want to apply a prospective trend to the projected incremental
+    payments. Setting ``future_trend=0.1`` grows projected incremental
+    payments by 10% per period relative to the fitted historical pattern,
+    while ``trend=0`` keeps historical development unchanged so only the
+    forward projection is affected. The difference in the sum of all
+    projected incrementals shows how the future trend assumption flows
+    through to the total reserve.
 
     .. testcode::
 

@@ -79,8 +79,16 @@ class TweedieGLM(DevelopmentBase):
 
     Examples
     --------
-    ``design_matrix`` controls which patsy terms enter the GLM; dropping
-    ``C(origin)`` changes the first fitted LDF.
+    ``TweedieGLM`` with ``power=1`` and log link implements the
+    Over-Dispersed Poisson (ODP) model, the standard GLM equivalent of
+    volume-weighted chainladder. Its main advantage over column-by-column
+    development is that it fits the entire triangle simultaneously, which
+    allows parameter reduction: replacing categorical dummies (one per
+    accident year or development age) with continuous trend terms lowers the
+    parameter count while often staying close to the traditional result. The
+    default categorical design matrix replicates chainladder; switching to
+    continuous ``development + origin`` terms is a more parsimonious choice
+    when data are sparse.
 
     .. testsetup::
 
@@ -91,32 +99,42 @@ class TweedieGLM(DevelopmentBase):
         import numpy as np
 
         tri = cl.load_sample("genins")
-        m_full = cl.TweedieGLM(
+        m_cat = cl.TweedieGLM(
             power=1, design_matrix="C(development) + C(origin)"
         ).fit(tri)
-        m_dev = cl.TweedieGLM(power=1, design_matrix="C(development)").fit(tri)
-        print(float(np.round(m_full.ldf_.values[0, 0, 0, 0], 4)))
-        print(float(np.round(m_dev.ldf_.values[0, 0, 0, 0], 4)))
+        m_cont = cl.TweedieGLM(
+            power=1, design_matrix="development + origin"
+        ).fit(tri)
+        print(m_cat.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(m_cont.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
 
     .. testoutput::
 
-        3.491
-        3.5085
+        [3.491  1.7474 1.4574 1.1739]
+        [1.9277 1.4465 1.2864 1.2065]
 
-    ``power`` and ``link`` select the Tweedie family; a Normal GLM
-    (``power=0`` with ``link='identity'``) yields a different pattern.
+    The ``power`` parameter selects the variance-mean relationship. For lines
+    where some development periods show no incremental activity, the compound
+    Poisson-Gamma distribution (``1 < power < 2``) is more appropriate than
+    pure Poisson (``power=1``). The ``alpha`` parameter (default 1.0) controls
+    L2 regularization strength: increasing it smooths fitted coefficients on
+    sparse or over-parameterised triangles. If the optimizer raises a
+    ``ConvergenceWarning``, increase ``max_iter`` (default 100).
 
     .. testcode::
 
         import numpy as np
 
         tri = cl.load_sample("genins")
-        m = cl.TweedieGLM(power=0, link="identity").fit(tri)
-        print(float(np.round(m.ldf_.values[0, 0, 0, 0], 2)))
+        m_poisson = cl.TweedieGLM(power=1, link="log").fit(tri)
+        m_tweedie = cl.TweedieGLM(power=1.5, link="log").fit(tri)
+        print(m_poisson.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(m_tweedie.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
 
     .. testoutput::
 
-        2.31
+        [3.491  1.7474 1.4574 1.1739]
+        [3.7032 1.7569 1.4591 1.1776]
 
     """
 
