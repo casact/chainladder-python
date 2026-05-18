@@ -312,9 +312,7 @@ def test_new_drop_7(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below with preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        dev = cl.Development(
-            drop_above=1.01, drop_below=0.95, preserve=3
-        ).fit(clrd)
+        dev = cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd)
     compare_new_drop(dev, clrd)
 
 
@@ -391,6 +389,28 @@ def test_new_drop_10():
         )
         == 1.0000
     )
+
+
+def test_geometric():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(n_periods=4, average="geometric")
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def geo_last4(s):
+        vals = s.dropna().tail(4)
+        return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
+
+    geo_means = df.apply(geo_last4)
+    rhs = np.round(geo_means.values.flatten(), 6)
+
+    assert np.all(lhs == rhs)
 
 
 def compare_new_drop(dev, tri):
