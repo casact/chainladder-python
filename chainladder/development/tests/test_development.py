@@ -425,17 +425,40 @@ def test_simple_avg():
         6,
     )
 
-    def avg_last4(s, n):
+    def sim_lastn(s, n):
         vals = s.dropna().tail(m)
         return vals.mean() if len(vals) > 0 else np.nan
 
-    avg_means = df.apply(lambda s: avg_lastn(s, 4))
+    avg_means = df.apply(lambda s: sim_lastn(s, 4))
     rhs = np.round(avg_means.values.flatten(), 6)
 
     assert np.all(lhs == rhs)
 
-def test_simple_geometric_avg():
 
+def test_simple_geometric_avg():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(n_periods=4, average="simple")
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def sim_lastn(s, n):
+        vals = s.dropna().tail(m)
+        return vals.mean() if len(vals) > 0 else np.nan
+
+    def geo_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
+
+    avg_means = df.apply(lambda s: sim_lastn(s, 4))
+    rhs = np.round(avg_means.values.flatten(), 6)
+
+    assert np.all(lhs == rhs)
 
 
 def compare_new_drop(dev, tri):
