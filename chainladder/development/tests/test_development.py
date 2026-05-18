@@ -391,7 +391,7 @@ def test_new_drop_10():
     )
 
 
-def test_geometric():
+def test_geometric_avg():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     df = tri.link_ratio.to_frame()
 
@@ -403,12 +403,34 @@ def test_geometric():
         6,
     )
 
-    def geo_last4(s):
-        vals = s.dropna().tail(4)
+    def geo_lastn(s, n):
+        vals = s.dropna().tail(n)
         return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
 
-    geo_means = df.apply(geo_last4)
+    geo_means = df.apply(lambda s: geo_lastn(s, 4))
     rhs = np.round(geo_means.values.flatten(), 6)
+
+    assert np.all(lhs == rhs)
+
+
+def test_simple_avg():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(n_periods=4, average="simple")
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def avg_last4(s):
+        vals = s.dropna().tail(4)
+        return vals.mean() if len(vals) > 0 else np.nan
+
+    avg_means = df.apply(avg_last4)
+    rhs = np.round(avg_means.values.flatten(), 6)
 
     assert np.all(lhs == rhs)
 
