@@ -426,7 +426,7 @@ def test_simple_avg():
     )
 
     def sim_lastn(s, n):
-        vals = s.dropna().tail(m)
+        vals = s.dropna().tail(n)
         return vals.mean() if len(vals) > 0 else np.nan
 
     avg_means = df.apply(lambda s: sim_lastn(s, 4))
@@ -440,7 +440,20 @@ def test_simple_geometric_avg():
     df = tri.link_ratio.to_frame()
 
     lhs = np.round(
-        cl.Development(n_periods=4, average="simple")
+        cl.Development(
+            n_periods=4,
+            average=[
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+            ],
+        )
         .fit_transform(tri)
         .ldf_.to_frame()
         .values.flatten(),
@@ -448,7 +461,7 @@ def test_simple_geometric_avg():
     )
 
     def sim_lastn(s, n):
-        vals = s.dropna().tail(m)
+        vals = s.dropna().tail(n)
         return vals.mean() if len(vals) > 0 else np.nan
 
     def geo_lastn(s, n):
