@@ -244,14 +244,14 @@ class Development(DevelopmentBase):
             final_ldf_ = np.where(
                 self.average_ == "geometric", geo_means_link_ratios, params
             )
+            self.ldf_ = self._param_property(obj, final_ldf_, 0)
 
-            # zero out the sigma and std_err for the whole array whenever
+            # zero out the sigma, std_err, and std_residuals_ for the whole array whenever
             # geometric average is used (becuase everything is wrong and useless)
             nan_params = params.copy()
             nan_params[..., 1, :] = xp.nan
             nan_params[..., 2, :] = xp.nan
 
-            self.ldf_ = self._param_property(obj, final_ldf_, 0)
             self.sigma_ = self._param_property(obj, nan_params, 1)
             self.std_err_ = self._param_property(obj, nan_params, 2)
             self.std_residuals_ = self.std_residuals_ * np.nan
