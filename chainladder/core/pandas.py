@@ -25,6 +25,9 @@ if TYPE_CHECKING:
         Series
     )
     from types import ModuleType
+    from pandas._typing import(
+        IndexLabel
+    )
     from typing import (
         Literal,
         Self,
@@ -445,6 +448,32 @@ class TrianglePandas:
     def round(self, decimals=0, *args, **kwargs):
         return round(self, decimals)
 
+    def xs(
+        self,
+        index_key:IndexLabel,
+        level:IndexLabel | None = None,
+        drop_level:bool = True):
+        '''
+        mimics xs from pandas. key difference
+            - this function only slides the index, therefore axis is always 0 and not an argument in the function
+        main use case for this function is when slicing beyond the first field in the index (such as LOB in the clrd dataset)
+        '''
+        mi = pd.MultiIndex.from_frame(self.index)
+
+        lvl = 0 if level is None else level
+        loc, new_ax = mi.get_loc_level(index_key, level=lvl, drop_level=drop_level)
+
+        # create the tuple of the indexer
+        _indexer = [slice(None)] * 2
+        _indexer[0] = loc
+        indexer = tuple(_indexer)
+        result = self.iloc[indexer]
+        if new_ax is not None:
+            new_ax_df = new_ax.to_frame(index=None)[new_ax.names]
+            result.index = new_ax_df
+        else:
+            result.index = pd.DataFrame(data=['Total'],columns=['Total'])
+        return result
 
 def add_triangle_agg_func(
         cls: Type[TrianglePandas],

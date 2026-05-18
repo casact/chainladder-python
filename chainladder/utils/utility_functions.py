@@ -249,6 +249,12 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             ]
             origin: str = "Accident Half-Year"
             development: str = "Calendar Half-Year"
+        if "uspp" in key.lower():
+            columns: list = [
+                "Reported Claims",
+                "Paid Claims",
+                "Earned Premium"
+            ]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
