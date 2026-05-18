@@ -285,8 +285,8 @@ def read_pickle(path):
 
     Examples
     --------
-    Use ``read_pickle`` when a triangle or estimator was saved with
-    ``to_pickle`` and should be restored as the same chainladder object.
+    A fitted ``Development`` transformer can be saved to disk and restored
+    later so the same patterns can be applied to new data without re-fitting.
 
     .. testsetup::
 
@@ -298,16 +298,17 @@ def read_pickle(path):
         import chainladder as cl
 
         tri = cl.load_sample("raa")
+        dev = cl.Development(average="volume").fit(tri)
         fd, p = tempfile.mkstemp(suffix=".pkl")
         os.close(fd)
-        tri.to_pickle(p)
-        back = cl.read_pickle(p)
+        dev.to_pickle(p)
+        restored = cl.read_pickle(p)
         os.remove(p)
-        print(back == tri)
+        print(restored.transform(tri).ldf_.values[0, 0, 0, :4].round(4))
 
     .. testoutput::
 
-        True
+        [2.9994 1.6235 1.2709 1.1717]
 
     """
     with open(path, "rb") as pkl:
@@ -450,8 +451,9 @@ def read_json(json_str, array_backend=None):
 
     Examples
     --------
-    Use ``read_json`` to round-trip model configuration through JSON, for
-    example when a fitted workflow needs to be persisted outside Python.
+    When a full reserving workflow needs to be stored as text—in a database,
+    config file, or REST API—``to_json`` serializes the pipeline and
+    ``read_json`` reconstructs it with all step parameters intact.
 
     .. testsetup::
 
@@ -459,12 +461,19 @@ def read_json(json_str, array_backend=None):
 
     .. testcode::
 
-        dev = cl.Development(average="volume")
-        dev2 = cl.read_json(dev.to_json())
-        print(dev2.get_params()["average"])
+        from chainladder.workflow import Pipeline
+
+        pipe = Pipeline([
+            ("dev", cl.Development(average="volume")),
+            ("cl", cl.Chainladder()),
+        ])
+        pipe2 = cl.read_json(pipe.to_json())
+        print([step[0] for step in pipe2.steps])
+        print(pipe2.named_steps["dev"].get_params()["average"])
 
     .. testoutput::
 
+        ['dev', 'cl']
         volume
 
     """
@@ -666,8 +675,10 @@ def concat(
 
     Examples
     --------
-    Concatenate along the column axis when separate triangles share the same
-    index, origin, and development axes but carry different measures.
+    When paid and incurred triangles are constructed separately, ``concat``
+    along ``axis=1`` combines them into one multi-column triangle.
+    ``MunichAdjustment`` requires both columns in the same object, so
+    concatenating them first is the natural setup step.
 
     .. testsetup::
 
@@ -675,14 +686,18 @@ def concat(
 
     .. testcode::
 
-        clrd = cl.load_sample("clrd").groupby("LOB").sum().iloc[:2]
-        tri = clrd[["CumPaidLoss", "IncurLoss"]]
-        both = cl.concat([tri.iloc[:, 0:1], tri.iloc[:, 1:2]], axis=1)
-        print(both.shape[1])
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()
+        wkcomp = clrd.iloc[5:6]
+        paid = wkcomp["CumPaidLoss"]
+        incurred = wkcomp["IncurLoss"]
+        combined = cl.concat([paid, incurred], axis=1)
+        adj = cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "IncurLoss"))
+        result = adj.fit_transform(combined)
+        print(result.ldf_["CumPaidLoss"].values[0, 0, 0, :4].round(4))
 
     .. testoutput::
 
-        2
+        [2.2342 1.3548 1.1517 1.0883]
 
     """
     if type(objs) not in (list, tuple):
@@ -788,11 +803,19 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
 
 def minimum(x1, x2):
-    """Element-wise minimum of two triangles (delegates to ``Triangle.minimum``).
+    """Element-wise minimum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.minimum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+    x2 : Triangle or scalar
 
     Examples
     --------
-    Cap a triangle cell-by-cell by comparing it with another triangle of limits.
+    When two chainladder runs use different development factor selections,
+    the ultimates may disagree at each origin. ``minimum`` picks the lower
+    ultimate at each origin, producing the low-side scenario.
 
     .. testsetup::
 
@@ -801,24 +824,41 @@ def minimum(x1, x2):
     .. testcode::
 
         tri = cl.load_sample("raa")
-        lo = cl.minimum(tri, tri * 0.5)
-        print(round(float(lo.values[0, 0, 0, 0]), 4))
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        print(ult_vol.values[0, 0, -5:, 0].round(0))
+        print(ult_sim.values[0, 0, -5:, 0].round(0))
+        low_side = cl.minimum(ult_vol, ult_sim)
+        print(low_side.values[0, 0, -5:, 0].round(0))
 
     .. testoutput::
 
-        2506.0
+        [19501. 17749. 24019. 16045. 18402.]
+        [19807. 18201. 25475. 17776. 55781.]
+        [19501. 17749. 24019. 16045. 18402.]
 
     """
     return x1.minimum(x2)
 
 
 def maximum(x1, x2):
-    """Element-wise maximum of two triangles (delegates to ``Triangle.maximum``).
+    """Element-wise maximum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.maximum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+    x2 : Triangle or scalar
 
     Examples
     --------
-    Floor a triangle cell-by-cell by comparing it with another triangle of
-    minimum acceptable values.
+    ``maximum`` picks the higher ultimate at each origin, producing the
+    high-side scenario. This is useful for stress testing or setting a
+    conservative reserve when two methods produce different estimates.
 
     .. testsetup::
 
@@ -827,12 +867,22 @@ def maximum(x1, x2):
     .. testcode::
 
         tri = cl.load_sample("raa")
-        hi = cl.maximum(tri, tri * 0.5)
-        print(round(float(hi.values[0, 0, 0, 0]), 4))
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        print(ult_vol.values[0, 0, -5:, 0].round(0))
+        print(ult_sim.values[0, 0, -5:, 0].round(0))
+        high_side = cl.maximum(ult_vol, ult_sim)
+        print(high_side.values[0, 0, -5:, 0].round(0))
 
     .. testoutput::
 
-        5012.0
+        [19501. 17749. 24019. 16045. 18402.]
+        [19807. 18201. 25475. 17776. 55781.]
+        [19807. 18201. 25475. 17776. 55781.]
 
     """
     return x1.maximum(x2)
@@ -868,9 +918,11 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
     Examples
     --------
-    Add origin effects when a development-only GLM is too restrictive.
-    ``TweedieGLM`` sends ``design_matrix`` through ``PatsyFormula`` before
-    fitting, so adding ``C(origin)`` expands the model matrix.
+    If a development-only Poisson GLM produces residuals that vary
+    systematically by accident year, adding ``C(origin)`` to the formula
+    introduces origin-level intercepts and reduces that structure. The
+    expanded model matrix has more columns (one per development period plus one
+    per origin), which ``PatsyFormula`` builds from the same R-style string.
 
     .. testsetup::
 
@@ -895,8 +947,10 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         3.508469
         3.491031
 
-    Use the same formula strings explicitly in ``DevelopmentML`` when building
-    a custom scikit-learn pipeline.
+    When ``TweedieGLM`` is not flexible enough (for example, when you need a
+    non-Tweedie model or a continuous origin term), build a custom
+    ``DevelopmentML`` pipeline and use ``PatsyFormula`` as the preprocessing
+    step with the same formula syntax.
 
     .. testcode::
 
@@ -916,26 +970,11 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
             y_ml=col,
             fit_incrementals=False,
         ).fit(genins)
-        with_origin = cl.DevelopmentML(
-            Pipeline(
-                [
-                    (
-                        "design_matrix",
-                        PatsyFormula("C(development) + C(origin)"),
-                    ),
-                    ("model", LinearRegression(fit_intercept=False)),
-                ]
-            ),
-            y_ml=col,
-            fit_incrementals=False,
-        ).fit(genins)
-        print(len(dev_only.estimator_ml.named_steps.model.coef_))
-        print(len(with_origin.estimator_ml.named_steps.model.coef_))
+        print(dev_only.ldf_.values[0, 0, 0, :4].round(4))
 
     .. testoutput::
 
-        10
-        19
+        [3.515  1.735  1.3993 1.152 ]
 
     """
 
