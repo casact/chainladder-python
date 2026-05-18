@@ -211,8 +211,8 @@ class Development(DevelopmentBase):
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
-        print("self.sigma_\n", self.sigma_)
-        print("self.std_err_\n", self.std_err_)
+        # print("self.sigma_\n", self.sigma_)
+        # print("self.std_err_\n", self.std_err_)
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
@@ -261,9 +261,9 @@ class Development(DevelopmentBase):
             # self.sigma_ = self.sigma_.values * 0 + np.nan
             # self.std_err_ = np.where(
             #     self.average_ == "geometric", final_ldf_ * np.nan, 0
-            # )
-            print("self.sigma_\n", self.sigma_)
-            print("self.std_err_\n", self.std_err_)
+            # # )
+            # print("self.sigma_\n", self.sigma_)
+            # print("self.std_err_\n", self.std_err_)
 
         # print("self.ldf_\n", self.ldf_)
 
