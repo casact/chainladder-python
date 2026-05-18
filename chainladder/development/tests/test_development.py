@@ -468,8 +468,83 @@ def test_simple_geometric_avg():
         vals = s.dropna().tail(n)
         return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
 
-    avg_means = df.apply(lambda s: sim_lastn(s, 4))
-    rhs = np.round(avg_means.values.flatten(), 6)
+    sim_avg = df.apply(lambda s: s.dropna().tail(4).mean())
+    geo_avg = df.apply(
+        lambda s: s.dropna().tail(4).prod() ** (1 / len(s.dropna().tail(4)))
+    )
+
+    methods = np.array(
+        [
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+        ]
+    )
+
+    rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
+
+    assert np.all(lhs == rhs)
+
+
+def test_simple_geometric_avg2():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(
+            n_periods=4,
+            average=[
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+            ],
+        )
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def sim_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.mean() if len(vals) > 0 else np.nan
+
+    def geo_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
+
+    sim_avg = df.apply(lambda s: s.dropna().tail(4).mean())
+    geo_avg = df.apply(
+        lambda s: s.dropna().tail(4).prod() ** (1 / len(s.dropna().tail(4)))
+    )
+
+    methods = np.array(
+        [
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+        ]
+    )
+
+    rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
 
     assert np.all(lhs == rhs)
 
