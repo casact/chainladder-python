@@ -239,7 +239,7 @@ class Development(DevelopmentBase):
                 geo_means_link_ratios.shape[2],
             )
 
-            self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
+            # self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
             final_ldf_ = np.where(
                 self.average_ == "geometric", geo_means_link_ratios, params
             )
@@ -252,7 +252,7 @@ class Development(DevelopmentBase):
             nan_params[..., 1, :] = xp.nan
             nan_params[..., 2, :] = xp.nan
 
-            self.ldf_ = self._param_property(obj, nan_params, 0)
+            # self.ldf_ = self._param_property(obj, nan_params, 0)
             self.sigma_ = self._param_property(obj, nan_params, 1)
             self.std_err_ = self._param_property(obj, nan_params, 2)
 
