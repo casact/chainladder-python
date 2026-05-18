@@ -11,15 +11,18 @@ import pandas as pd
 
 
 class CaseOutstanding(DevelopmentBase):
-    """A determinisic method based on outstanding case reserves.
+    """ Deterministic development from prior-lag case reserves.
 
-    The CaseOutstanding method is a deterministic approach that develops
-    patterns of incremental payments as a percent of previous period case
-    reserves as well as patterns for case reserves as a percent of previous
-    period case reserves.  Although the patterns produces by the approach
-    approximate incremental payments and case outstanding, they are converted
-    into comparable multiplicative patterns for usage with the various IBNR
-    methods.
+    Estimates incremental paid amounts and case-reserve runoff as fractions of
+    the prior lag's carried case reserve. Like
+    :class:`~chainladder.MunichAdjustment` and
+    :class:`~chainladder.BerquistSherman`, this is useful when case reserves
+    should inform paid ultimates. A triangle with both paid and incurred columns
+    is required.
+
+    The incremental ``paid_ldf_`` patterns are not multiplicative link ratios;
+    the estimator also builds origin-specific implied multiplicative ``ldf_``
+    so standard IBNR methods can be applied.
 
     .. versionadded:: 0.8.0
 
@@ -33,41 +36,28 @@ class CaseOutstanding(DevelopmentBase):
         all origin periods, set paid_n_periods=-1
     case_n_periods: integer, optional (default=-1)
         number of origin periods to be used in the case pattern averages. For
-        all origin periods, set paid_n_periods=-1
+        all origin periods, set case_n_periods=-1
 
     Attributes
     ----------
     ldf_: Triangle
-        The estimated (multiplicative) loss development patterns.
+        Implied multiplicative loss development patterns (by paid/incurred
+        column); each origin period has its own pattern.
     cdf_: Triangle
         The estimated (multiplicative) cumulative development patterns.
     case_to_prior_case_: Triangle
-        The case to prior case ratios used for fitting the estimator
-    case_ldf_:
-        The selected case to prior case ratios of the fitted estimator
+        Case-to-prior-case incremental ratios by origin (for review).
+    case_ldf_: Triangle
+        Selected case-to-prior-case ratios averaged across origins.
     paid_to_prior_case_: Triangle
-        The paid to prior case ratios used for fitting the estimator
-    paid_ldf_:
-        The selected paid to prior case ratios of the fitted estimator
+        Paid-to-prior-case incremental ratios by origin (for review).
+    paid_ldf_: Triangle
+        Selected paid-to-prior-case ratios averaged across origins.
 
     Examples
     --------
-    ``CaseOutstanding`` is appropriate when an actuary tracks both paid and
-    incurred losses and wants development patterns grounded in case reserve
-    movements rather than cumulative-to-cumulative ratios. The method models
-    incremental payments as a percentage of the prior period's case reserve
-    (``paid_ldf_``) and case reserve run-off as a percentage of the prior
-    period's case reserve (``case_ldf_``). The ``paid_to_incurred`` tuple
-    tells the estimator which triangle columns represent the paid and incurred
-    series.
-
-    When case reserving practices have changed recently (e.g., a company
-    tightened case adequacy standards in the last three years), including all
-    historical origin years in the pattern averages would mix old and new
-    reserving regimes. Setting ``paid_n_periods=3`` and ``case_n_periods=3``
-    restricts the averages to the three most recent origin years, reflecting
-    the current reserving philosophy. The shift in the first four ``paid_ldf_``
-    values below shows how much the pattern changes when older data is excluded.
+    On ``usauto``, incremental paid in 12–24 is about 84% of case outstanding
+    at lag 12 (first entry in ``paid_ldf_`` at development 24–36):
 
     .. testsetup::
 
@@ -78,21 +68,51 @@ class CaseOutstanding(DevelopmentBase):
         import numpy as np
 
         tri = cl.load_sample("usauto")
-        all_years = cl.CaseOutstanding(
+        model = cl.CaseOutstanding(
             paid_to_incurred=("paid", "incurred")
         ).fit(tri)
-        three = cl.CaseOutstanding(
-            paid_to_incurred=("paid", "incurred"),
-            paid_n_periods=3,
-            case_n_periods=3,
-        ).fit(tri)
-        print(all_years.paid_ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
-        print(three.paid_ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(np.round(model.paid_ldf_.values[0, 0, 0, :4], 4))
 
     .. testoutput::
 
         [0.8428 0.71   0.7084 0.6968]
-        [0.8331 0.7008 0.7139 0.7144]
+
+    Implied multiplicative ``ldf_`` differ by accident year; the 1998 origin
+    paid pattern is shown below (compare to volume-weighted chainladder).
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("usauto")
+        model = cl.CaseOutstanding(
+            paid_to_incurred=("paid", "incurred")
+        ).fit(tri)
+        print(np.round(model.ldf_["paid"].values[0, 0, 0, :4], 4))
+
+    .. testoutput::
+
+        [1.7925 1.2056 1.0956 1.0457]
+
+    Review origin-level ``paid_to_prior_case_`` and ``case_to_prior_case_``
+    when tuning ``paid_n_periods`` and ``case_n_periods``; fitted selections
+    appear in ``paid_ldf_`` and ``case_ldf_``.
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("usauto")
+        model = cl.CaseOutstanding(
+            paid_to_incurred=("paid", "incurred")
+        ).fit(tri)
+        print(np.round(model.case_to_prior_case_.values[0, 0, 0, :4], 4))
+        print(np.round(model.case_ldf_.values[0, 0, 0, :4], 4))
+
+    .. testoutput::
+
+        [0.5378 0.5541 0.5253 0.4981]
+        [0.534  0.5638 0.5296 0.49  ]
 
     """
 
@@ -110,7 +130,7 @@ class CaseOutstanding(DevelopmentBase):
         Parameters
         ----------
         X : Triangle
-            Set of LDFs to which the munich adjustment will be applied.
+            Triangle with paid and incurred columns for ``paid_to_incurred``.
         y : Ignored
         sample_weight : Ignored
 

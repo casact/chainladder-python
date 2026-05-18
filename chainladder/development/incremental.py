@@ -11,15 +11,26 @@ import warnings
 class IncrementalAdditive(DevelopmentBase):
     """ The Incremental Additive Method.
 
+    This estimator implements the additive method of Schmidt (2006), Section 4.7:
+    expected incremental losses satisfy ``E[Z_{i,k}] = eta_i * gamma_k``, where
+    ``eta_i`` is exposure (``sample_weight``, e.g. premium) for accident year
+    ``i`` and ``gamma_k`` is an incremental loss ratio at development age ``k``
+    that is common to all accident years. The fitted ``zeta_`` estimates those
+    common ``gamma_k``; unobserved incrementals are completed as
+    ``zeta_ * sample_weight``. Dollar ``incremental_`` differ by origin because
+    exposure differs; implied multiplicative ``ldf_`` are derived from the
+    completed incremental triangle and can also differ by origin.
+
     Parameters
     ----------
     trend: float (default=0.0)
-        A multiplicative trend amount used to trend each incremental development
-        period the valuation_date of the Triangle.
+        Implementation extension (not in Schmidt, 2006): multiplicative trend
+        applied to incremental losses before ``zeta_`` is estimated, trending
+        each development period to the triangle valuation date.
     future_trend: float (default=None)
-        The trend to apply to the incremental development periods in the lower
-        half of the completed Triangle. If None, then will be set to the value of
-        the trend parameter.
+        Implementation extension: trend applied when projecting incrementals
+        beyond the valuation date into the lower triangle. If None, uses
+        ``trend``.
     n_periods: integer, optional (default=-1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods=-1
@@ -54,12 +65,12 @@ class IncrementalAdditive(DevelopmentBase):
         The raw incrementals as a percent of exposure trended to the valuation
         date of the Triangle. Only those used in the fitting.
     zeta_: Triangle
-        The fitted incrementals as a percent of exposure trended to the valuation
-        date of the Triangle.
+        Fitted incremental loss ratios ``gamma_k`` (common across accident years)
+        as a percent of exposure, trended to the valuation date of the Triangle.
     cum_zeta_: Triangle
         The fitted cumulative percent of exposure trended to the valuation date of 
         the Triangle
-    w_: ndarray
+    w_ : ndarray
         The weight used in the zeta fitting
     w_tri_: Triangle
         Triangle of w_
@@ -71,15 +82,10 @@ class IncrementalAdditive(DevelopmentBase):
 
     Examples
     --------
-    Use ``IncrementalAdditive`` when incremental losses per unit of exposure
-    are expected to be more stable across accident years than age-to-age
-    factors. This is common in lines where claim payments are driven by
-    exposure volume: for example, a workers' compensation book where
-    claim costs per payroll dollar are steady even as the cumulative reported
-    losses grow at different rates by accident year. Passing the latest
-    exposure diagonal as ``sample_weight`` normalises each period's
-    incremental by exposure before averaging. The fitted ``ldf_`` slots
-    directly into ``Chainladder`` or any other method.
+    Schmidt (2006), Example F, uses the ``ia_sample`` triangle: cumulative
+    ``loss`` with latest ``exposure`` as ``sample_weight`` (premiums). Fitted
+    ``incremental_`` are dollars by origin and age; ``zeta_`` is one pattern
+    shared across origins; implied ``ldf_`` can still vary by origin.
 
     .. testsetup::
 
@@ -90,40 +96,71 @@ class IncrementalAdditive(DevelopmentBase):
         import numpy as np
 
         tri = cl.load_sample("ia_sample")
-        model = cl.IncrementalAdditive().fit(
+        ia = cl.IncrementalAdditive().fit(
             tri["loss"], sample_weight=tri["exposure"].latest_diagonal
         )
-        print(model.ldf_.to_frame(origin_as_datetime=False).iloc[0].values.round(4))
+        print(np.round(ia.incremental_.values[0, 0, -1, :], 0))
+        print(np.round(ia.ldf_.values[0, 0, :3, :3], 4))
 
     .. testoutput::
 
-        [1.8531 1.3062 1.2332 1.1161 1.0444]
+        [1889. 1811. 1256. 1157.  740.  300.]
+        [[1.8531 1.3062 1.2332]
+         [1.8895 1.3191 1.2336]
+         [1.9233 1.3288 1.2301]]
 
-    When the reserve will be carried for multiple future years, an actuary
-    may want to apply a prospective trend to the projected incremental
-    payments. Setting ``future_trend=0.1`` grows projected incremental
-    payments by 10% per period relative to the fitted historical pattern,
-    while ``trend=0`` keeps historical development unchanged so only the
-    forward projection is affected. The difference in the sum of all
-    projected incrementals shows how the future trend assumption flows
-    through to the total reserve.
+    A volume-weighted estimate of the common ``gamma_k`` across origins,
+    multiplied by latest exposure, reproduces the fitted incrementals in the
+    lower triangle (here at age 72), as in Schmidt's additive predictors.
 
     .. testcode::
 
         import numpy as np
 
         tri = cl.load_sample("ia_sample")
-        loss = tri["loss"]
-        sw = tri["exposure"].latest_diagonal
-        m0 = cl.IncrementalAdditive(trend=0, future_trend=0).fit(loss, sample_weight=sw)
-        m1 = cl.IncrementalAdditive(trend=0, future_trend=0.1).fit(loss, sample_weight=sw)
-        print(float(np.round(np.nansum(m0.incremental_.values), 1)))
-        print(float(np.round(np.nansum(m1.incremental_.values), 1)))
+        ia = cl.IncrementalAdditive().fit(
+            tri["loss"], sample_weight=tri["exposure"].latest_diagonal
+        )
+        zeta = tri["loss"].cum_to_incr().sum("origin") / tri["exposure"].sum("origin")
+        projected = (
+            zeta.values[0, 0, 0, -1]
+            * tri["exposure"].latest_diagonal.values[0, 0, -1, 0]
+        )
+        fitted = ia.incremental_.values[0, 0, -1, -1]
+        print(np.isclose(projected, fitted))
 
     .. testoutput::
 
-        30988.1
-        33360.1
+        True
+
+    The ``trend`` and ``future_trend`` parameters are not part of Schmidt
+    (2006); they are chainladder extensions for trending incrementals before
+    fitting ``zeta_`` and when projecting the lower triangle. The effect is
+    material on projected dollars (not on cumulative link-ratio semantics).
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("ia_sample")
+        sw = tri["exposure"].latest_diagonal
+        base = cl.IncrementalAdditive().fit(tri["loss"], sample_weight=sw)
+        trended = cl.IncrementalAdditive(trend=0.02, future_trend=0.05).fit(
+            tri["loss"], sample_weight=sw
+        )
+        print(float(np.round(base.incremental_.values[0, 0, -1, -1], 0)))
+        print(float(np.round(trended.incremental_.values[0, 0, -1, -1], 0)))
+
+    .. testoutput::
+
+        300.0
+        383.0
+
+    References
+    ----------
+    Schmidt, K. (2006). Methods and Models of Loss Reserving Based on Run-Off
+    Triangles: A Unifying Survey. CAS Forum, Fall 2006, Section 4.7 (Additive
+    Method). https://www.casact.org/sites/default/files/database/forum_06fforum_273.pdf
 
     """
 

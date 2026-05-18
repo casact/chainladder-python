@@ -12,27 +12,32 @@ from chainladder import options
 
 
 class DevelopmentML(DevelopmentBase):
-    """ A Estimator that interfaces with machine learning (ML) tools that implement
-    the scikit-learn API.
+    """ Interface to scikit-learn estimators for loss development patterns.
 
-    The `DevelopmentML` estimator is used to generate ``ldf_`` patterns from
-    the data.
+    ``DevelopmentML`` lets reserving workflows use any sklearn-compatible
+    regressor (often inside a :class:`~sklearn.pipeline.Pipeline`). It converts
+    a :class:`~chainladder.Triangle` to a tabular design matrix, fits the ML
+    model, predicts through the terminal development age to complete the lower
+    triangle, and expresses the result as ``ldf_`` for tails and IBNR methods.
+    :class:`~chainladder.TweedieGLM` is a special case with
+    :class:`~sklearn.linear_model.TweedieRegressor` as the only ML step.
 
     .. versionadded:: 0.8.1
 
 
     Parameters
     ----------
-    estimator_ml: skearn Estimator
+    estimator_ml: sklearn Estimator
         Any sklearn compatible regression estimator, including Pipelines and
     y_ml: list or str or sklearn_transformer
         The response column(s) for the machine learning algorithm. It must be
         present within the Triangle.
-    autoregressive: tuple, (autoregressive_col_name, lag, source_col_name)
-        The subset of response column(s) to use as lagged features for the
-        Time Series aspects of the model. Predictions from one development period
-        get used as featues in the next development period. Lags should be negative
-        integers.
+    autoregressive: list of tuple
+        Each tuple is ``(feature_name, lag, source_column)``. ``feature_name`` must
+        also appear in the pipeline design matrix. ``DevelopmentML`` fills that
+        column with lagged ``source_column`` values and, when projecting forward,
+        replaces it with the prior development period's prediction. Lags should be
+        negative integers (for example ``-12`` on a monthly triangle is one year).
     weight_step: str
         Step name within estimator_ml that is weighted
     drop: tuple or list of tuples
@@ -53,26 +58,50 @@ class DevelopmentML(DevelopmentBase):
 
     Examples
     --------
-    ``DevelopmentML`` bridges scikit-learn and the chainladder workflow:
-    it converts a Triangle to a tabular DataFrame, fits any sklearn-compatible
-    estimator or Pipeline against it, then converts the predictions back into
-    ``ldf_`` patterns usable with tail selection, ``Chainladder``, and other
-    methods.
-
-    ``fit_incrementals`` controls what the estimator is trained to predict.
-    When an actuary believes the period-to-period change in losses is more
-    predictable from development age than the cumulative total is, training
-    on incrementals (``fit_incrementals=True``) is more appropriate. When
-    the cumulative level is the more natural target, use
-    ``fit_incrementals=False``. Both options produce an ``ldf_``, but the
-    fitted pattern differs because the training target changes. (Whether the
-    incremental values represent dollar amounts depends on the estimator:
-    a ``LinearRegression`` with no log transform trains on raw dollar
-    increments, while a log-space transform would fit log-scale values.)
+    Features from any triangle axis can enter an sklearn
+    :class:`~sklearn.compose.ColumnTransformer` or
+    :class:`~sklearn.pipeline.Pipeline`. On ``clrd`` grouped by line of business,
+    one-hot-encode ``LOB`` and ``development``, pass ``origin`` through, and fit
+    a linear model (the user guide uses ``RandomForestRegressor`` the same way).
 
     .. testsetup::
 
         import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.compose import ColumnTransformer
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import OneHotEncoder
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()["CumPaidLoss"]
+        design_matrix = ColumnTransformer(
+            transformers=[
+                ("dummy", OneHotEncoder(drop="first"), ["LOB", "development"]),
+                ("passthrough", "passthrough", ["origin"]),
+            ]
+        )
+        estimator_ml = Pipeline(
+            steps=[
+                ("design_matrix", design_matrix),
+                ("model", LinearRegression()),
+            ]
+        )
+        m = cl.DevelopmentML(estimator_ml=estimator_ml, y_ml="CumPaidLoss").fit(
+            clrd
+        )
+        print(m.ldf_.shape)
+        print(np.round(m.ldf_.values[0, 0, 0, :4], 4))
+
+    .. testoutput::
+
+        (6, 1, 10, 9)
+        [1.7448 0.9854 0.8117 0.6495]
+
+    ``fit_incrementals`` chooses whether the ML response is built from
+    incremental or cumulative triangle values before ``ldf_`` is derived.
 
     .. testcode::
 
@@ -95,27 +124,17 @@ class DevelopmentML(DevelopmentBase):
         m_cum = cl.DevelopmentML(
             pipe, y_ml=[tri.columns[0]], fit_incrementals=False
         ).fit(tri)
-        print(m_incr.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
-        print(m_cum.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(float(np.round(m_incr.ldf_.values[0, 0, 0, 0], 4)))
+        print(float(np.round(m_cum.ldf_.values[0, 0, 0, 0], 4)))
 
     .. testoutput::
 
-        [3.508  1.7435 1.4379 1.1655]
-        [3.515  1.735  1.3993 1.152 ]
+        3.508
+        3.515
 
-    By default the regression treats each cell equally regardless of its loss
-    size. An actuary who prefers development patterns to reflect the
-    experience of larger accident years more heavily (similar to traditional
-    volume-weighted averages) can pass ``sample_weight`` to ``fit``. However,
-    passing ``sample_weight`` alone is not enough: without ``weighted_step``,
-    the weights are computed internally but never forwarded to the sklearn
-    estimator. ``weighted_step`` takes the name of a step in the Pipeline as
-    a string and routes the weights to that step using sklearn's
-    ``step_name__sample_weight`` fit-params convention. In the example below,
-    ``weighted_step='model'`` matches the name given to the
-    ``LinearRegression`` step, so it receives ``sample_weight=tri * tri``
-    (squared cumulative losses) during fitting, giving larger-loss accident
-    years proportionally more influence on the development pattern.
+    Autoregressive features use prior development predictions as covariates.
+    The lag column must be named in both ``autoregressive`` and the pipeline
+    (for example in a :class:`~chainladder.PatsyFormula`).
 
     .. testcode::
 
@@ -125,68 +144,28 @@ class DevelopmentML(DevelopmentBase):
 
         from chainladder.utils.utility_functions import PatsyFormula
 
-        tri = cl.load_sample("genins")
-        pipe = Pipeline(
-            steps=[
-                ("design_matrix", PatsyFormula("C(development)")),
-                ("model", LinearRegression(fit_intercept=False)),
-            ]
-        )
-        m0 = cl.DevelopmentML(
-            pipe, y_ml=[tri.columns[0]], fit_incrementals=False
-        ).fit(tri)
-        m1 = cl.DevelopmentML(
-            pipe,
-            y_ml=[tri.columns[0]],
-            fit_incrementals=False,
-            weighted_step="model",
-        ).fit(tri, sample_weight=tri * tri)
-        print(m0.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
-        print(m1.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
-
-    .. testoutput::
-
-        [3.515  1.735  1.3993 1.152 ]
-        [3.4459 1.7749 1.4053 1.1377]
-
-    Loss development has a natural time-series structure: the cumulative loss
-    at one age is directly related to the amount at the prior age. The
-    ``autoregressive`` parameter lets the model re-feed its own predictions
-    as lagged inputs when filling in the lower triangle. Each tuple in the
-    list specifies ``(column_name, lag, source_column)``: the Triangle column
-    ``source_column`` is shifted by ``lag`` periods and added to the tabular
-    DataFrame under ``column_name``. During prediction, each period's output
-    becomes the next period's lagged input automatically. The
-    ``column_name`` must also appear in the Pipeline formula so the estimator
-    can use it as a feature.
-
-    .. testcode::
-
-        import numpy as np
-        from sklearn.linear_model import LinearRegression
-        from sklearn.pipeline import Pipeline
-
-        from chainladder.utils.utility_functions import PatsyFormula
-
-        tri = cl.load_sample("genins")
+        tri = cl.load_sample("raa")
         col = tri.columns[0]
         pipe = Pipeline(
             steps=[
-                ("design_matrix", PatsyFormula("C(development) + lag_loss")),
+                (
+                    "design_matrix",
+                    PatsyFormula("C(development) + pred_lag"),
+                ),
                 ("model", LinearRegression(fit_intercept=False)),
             ]
         )
         m = cl.DevelopmentML(
             pipe,
-            y_ml=[col],
-            autoregressive=[("lag_loss", -1, col)],
-            fit_incrementals=False,
+            y_ml=col,
+            fit_incrementals=True,
+            autoregressive=[("pred_lag", -12, col)],
         ).fit(tri)
-        print(m.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        print(float(np.round(m.ldf_.values[0, 0, 0, 0], 4)))
 
     .. testoutput::
 
-        [3.4815 1.6246 1.3017 1.0065]
+        3.0297
 
     """
 

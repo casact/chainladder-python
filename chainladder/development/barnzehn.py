@@ -15,6 +15,12 @@ class BarnettZehnwirth(TweedieGLM):
     """ This estimator enables modeling from the Probabilistic Trend Family as
     described by Barnett and Zehnwirth.
 
+    The model is fit on log-incremental losses and produces multiplicative
+    ``ldf_`` patterns for use with IBNR estimators. Specify the regression
+    structure either with a patsy ``formula`` or with PTF period groupings
+    (``alpha``, ``gamma``, ``iota``) that define origin, trend, and
+    final-period cohorts.
+
     .. versionadded:: 0.8.2
 
     Parameters
@@ -35,31 +41,10 @@ class BarnettZehnwirth(TweedieGLM):
 
     Examples
     --------
-    Standard ``Development`` assumes loss development ratios are stable across
-    accident years. When a triangle shows a calendar-year effect (e.g., recent
-    diagonals are systematically heavier or lighter across all accident years
-    due to inflation or a shift in case reserving practices), that assumption
-    breaks down. ``BarnettZehnwirth`` addresses this by fitting a log-linear
-    model that decomposes the triangle into separate origin, development, and
-    calendar-year trend components.
-
-    Two interfaces let you specify the trend structure. The ``formula``
-    argument takes any patsy expression directly. The Probabilistic Trend
-    Family (PTF) arguments provide a structured shorthand: ``alpha`` groups
-    accident years that share the same level effect, ``gamma`` defines
-    breakpoints for a piecewise linear development-age trend, and ``iota``
-    defines breakpoints for a piecewise linear calendar-year (diagonal) trend.
-
-    The ``abc`` triangle has 11 accident years (1977-1987) and 11 development
-    ages (12-132 months). Suppose an actuary notices from the triangle (or
-    from external information such as a change in inflation or legal
-    environment) that accident years before 1982 behave differently from those
-    after, that development speed changes at the 36-month and 72-month marks,
-    and that calendar-year trends shift at two points in the diagonal sequence.
-    Those observations translate directly into ``alpha=[0, 5]``,
-    ``gamma=[0, 2, 5]``, and ``iota=[0, 7, 11]``. The first three fitted
-    coefficients differ from the unconstrained ``formula`` model, reflecting
-    the additional structure the actuary has imposed.
+    When many accident years are available but you want a smaller number of
+    origin cohorts, specify ``alpha``, ``gamma``, and ``iota`` instead of a
+    separate factor for every year. The fitted design has fewer parameters than
+    a fully saturated origin-by-development formula on the same triangle.
 
     .. testsetup::
 
@@ -67,22 +52,36 @@ class BarnettZehnwirth(TweedieGLM):
 
     .. testcode::
 
-        import numpy as np
-
         tri = cl.load_sample("abc")
-        m_formula = cl.BarnettZehnwirth(
-            formula="C(origin)+C(development)"
-        ).fit(tri)
         m_ptf = cl.BarnettZehnwirth(
             alpha=[0, 5], gamma=[0, 2, 5], iota=[0, 7, 11]
         ).fit(tri)
-        print(np.round(m_formula.coef_.values.flatten()[:3], 3))
-        print(np.round(m_ptf.coef_.values.flatten()[:3], 3))
+        m_full = cl.BarnettZehnwirth(
+            formula="C(origin)+C(development)"
+        ).fit(tri)
+        print(len(m_ptf.coef_.values.flatten()))
+        print(len(m_full.coef_.values.flatten()))
 
     .. testoutput::
 
-        [11.837  0.179  0.345]
-        [12.151  0.274 -0.064]
+        6
+        21
+
+    Use a patsy ``formula`` when the reserving structure needs explicit terms
+    (for example separate origin and development factors) rather than the PTF
+    cohort shorthand.
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("abc")
+        m = cl.BarnettZehnwirth(formula="C(origin)+C(development)").fit(tri)
+        print(np.round(m.ldf_.values[0, 0, :4, 0], 4))
+
+    .. testoutput::
+
+        [2.2854 2.2854 2.2854 2.2854]
 
     """
 

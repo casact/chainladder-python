@@ -11,12 +11,21 @@ from chainladder.utils.utility_functions import PatsyFormula
 
 
 class TweedieGLM(DevelopmentBase):
-    """ This estimator creates development patterns with a GLM using a Tweedie distribution.
+    """ GLM reserving with scikit-learn's Tweedie distribution.
 
-    The Tweedie family includes several of the more popular distributions including
-    the normal, ODP poisson, and gamma distributions.  This class is a special case
-    of `DevleopmentML`.  It restricts to just GLM using a TweedieRegressor and
-    provides an R-like formulation of the design matrix.
+    Implements the GLM reserving structure of Taylor and McGuire. The Tweedie
+    family covers normal, ODP Poisson, gamma, and related targets via ``power``
+    and ``link``. Covariates from any triangle axis can enter through a patsy
+    ``design_matrix`` while staying close to traditional chainladder methods when
+    origin and development are coded categorically.
+
+    Triangles are converted to long-format tables internally (as with
+    ``Triangle.to_frame(keepdims=True)``); origin periods are restated as years
+    from the earliest origin for sklearn compatibility, and the response is
+    converted to an incremental basis before fitting. This class is a special
+    case of :class:`~chainladder.DevelopmentML` that uses only
+    :class:`~sklearn.linear_model.TweedieRegressor` behind a
+    :class:`~chainladder.utils.utility_functions.PatsyFormula` step.
 
     .. versionadded:: 0.8.1
 
@@ -29,7 +38,7 @@ class TweedieGLM(DevelopmentBase):
     design_matrix: formula-like
         A patsy formula describing the independent variables, X of the GLM
     response:  str
-        Column name for the reponse variable of the GLM.  If ommitted, then the
+        Column name for the response variable of the GLM. If omitted, then the
         first column of the Triangle will be used.
     power: float, default=1
             The power determines the underlying target distribution according
@@ -79,16 +88,11 @@ class TweedieGLM(DevelopmentBase):
 
     Examples
     --------
-    ``TweedieGLM`` with ``power=1`` and log link implements the
-    Over-Dispersed Poisson (ODP) model, the standard GLM equivalent of
-    volume-weighted chainladder. Its main advantage over column-by-column
-    development is that it fits the entire triangle simultaneously, which
-    allows parameter reduction: replacing categorical dummies (one per
-    accident year or development age) with continuous trend terms lowers the
-    parameter count while often staying close to the traditional result. The
-    default categorical design matrix replicates chainladder; switching to
-    continuous ``development + origin`` terms is a more parsimonious choice
-    when data are sparse.
+    Volume-weighted chainladder development can be replicated with a
+    Poisson-log GLM on incremental paid losses: categorical origin and
+    development in ``design_matrix``, ``power=1``, and ``link='log'``. The
+    resulting ``ldf_`` matches :class:`~chainladder.Development` closely on
+    ``genins``.
 
     .. testsetup::
 
@@ -99,42 +103,68 @@ class TweedieGLM(DevelopmentBase):
         import numpy as np
 
         tri = cl.load_sample("genins")
-        m_cat = cl.TweedieGLM(
-            power=1, design_matrix="C(development) + C(origin)"
+        odp = cl.TweedieGLM(
+            design_matrix="C(development) + C(origin)",
+            power=1,
+            link="log",
         ).fit(tri)
-        m_cont = cl.TweedieGLM(
-            power=1, design_matrix="development + origin"
-        ).fit(tri)
-        print(m_cat.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
-        print(m_cont.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        trad = cl.Development().fit(tri)
+        print(round(float(odp.ldf_.values[0, 0, 0, 0]), 4))
+        print(round(float(trad.ldf_.values[0, 0, 0, 0]), 4))
+        print(np.round(odp.ldf_.values[0, 0, :4, 0], 4))
 
     .. testoutput::
 
-        [3.491  1.7474 1.4574 1.1739]
-        [1.9277 1.4465 1.2864 1.2065]
+        3.491
+        3.4906
+        [3.491 3.491 3.491 3.491]
 
-    The ``power`` parameter selects the variance-mean relationship. For lines
-    where some development periods show no incremental activity, the compound
-    Poisson-Gamma distribution (``1 < power < 2``) is more appropriate than
-    pure Poisson (``power=1``). The ``alpha`` parameter (default 1.0) controls
-    L2 regularization strength: increasing it smooths fitted coefficients on
-    sparse or over-parameterised triangles. If the optimizer raises a
-    ``ConvergenceWarning``, increase ``max_iter`` (default 100).
+    Patsy R-style formulas set ``design_matrix``; continuous ``development``
+    and ``origin`` terms yield a small coefficient table via ``coef_``.
+
+    .. testcode::
+
+        tri = cl.load_sample("genins")
+        glm = cl.TweedieGLM(design_matrix="development + origin").fit(tri)
+        print(len(glm.coef_))
+        print(round(float(glm.coef_.iloc[0, 0]), 6))
+        print(round(float(glm.coef_.iloc[1, 0]), 6))
+
+    .. testoutput::
+
+        3
+        13.516322
+        -0.006251
+
+    On multi-LOB triangles, interaction terms can keep the model parsimonious
+    (10 coefficients here versus 18+ in a full categorical chainladder). The
+    percent difference in ``cdf_`` versus :class:`~chainladder.Development`
+    stays within about 1% at each ultimate lag:
 
     .. testcode::
 
         import numpy as np
 
-        tri = cl.load_sample("genins")
-        m_poisson = cl.TweedieGLM(power=1, link="log").fit(tri)
-        m_tweedie = cl.TweedieGLM(power=1.5, link="log").fit(tri)
-        print(m_poisson.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
-        print(m_tweedie.ldf_.to_frame(origin_as_datetime=False).iloc[0].values[:4].round(4))
+        clrd = cl.load_sample("clrd")["CumPaidLoss"].groupby("LOB").sum()
+        clrd = clrd[clrd["LOB"].isin(["ppauto", "comauto"])]
+        dev = cl.TweedieGLM(
+            design_matrix=(
+                "LOB+LOB:C(np.minimum(development, 36))"
+                "+LOB:development+LOB:origin"
+            ),
+            max_iter=1000,
+        ).fit(clrd)
+        trad = cl.Development().fit(clrd)
+        pct = ((dev.cdf_.iloc[..., 0, :] / trad.cdf_) - 1).to_frame().round(3)
+        print(len(dev.coef_))
+        print(np.round(pct.loc["comauto"].values, 3))
+        print(np.round(pct.loc["ppauto"].values, 3))
 
     .. testoutput::
 
-        [3.491  1.7474 1.4574 1.1739]
-        [3.7032 1.7569 1.4591 1.1776]
+        10
+        [ 0.002  0.003 -0.01   0.003  0.011  0.008  0.005 -0.    -0.002]
+        [ 0.006  0.003 -0.     0.001  0.002  0.001  0.001  0.001  0.001]
 
     """
 
