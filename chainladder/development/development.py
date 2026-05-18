@@ -254,11 +254,7 @@ class Development(DevelopmentBase):
             self.ldf_ = self._param_property(obj, final_ldf_, 0)
             self.sigma_ = self._param_property(obj, nan_params, 1)
             self.std_err_ = self._param_property(obj, nan_params, 2)
-            # print("resid before:\n", resid)
-            # print("resid after:\n", resid)
             self.std_residuals_ = self.std_residuals_ * np.nan
-            # print("std_residuals_:\n", self.std_residuals_)
-            # self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         else:
             pass
