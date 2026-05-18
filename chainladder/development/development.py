@@ -234,7 +234,7 @@ class Development(DevelopmentBase):
             # Because calculating the LDFs, by defintion, is aggregating away
             # one of the dimensions (the origins), we need to reshape it back to
             # 4D triangle form
-            self.ldf_ = geo_means_link_ratios.reshape(
+            geo_means_link_ratios = geo_means_link_ratios.reshape(
                 geo_means_link_ratios.shape[0],
                 geo_means_link_ratios.shape[1],
                 1,
