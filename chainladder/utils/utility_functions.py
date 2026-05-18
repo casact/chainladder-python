@@ -271,6 +271,46 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
 
 
 def read_pickle(path):
+    """Load an object serialized with ``to_pickle`` (``dill`` format).
+
+    Parameters
+    ----------
+    path : str or path-like
+        Path to the pickle file.
+
+    Returns
+    -------
+    object
+        The deserialized triangle or estimator.
+
+    Examples
+    --------
+    A fitted ``Development`` transformer can be saved to disk and restored
+    later so the same patterns can be applied to new data without re-fitting.
+
+    .. testsetup::
+
+        import tempfile
+        import os
+
+    .. testcode::
+
+        import chainladder as cl
+
+        tri = cl.load_sample("raa")
+        dev = cl.Development(average="volume").fit(tri)
+        fd, p = tempfile.mkstemp(suffix=".pkl")
+        os.close(fd)
+        dev.to_pickle(p)
+        restored = cl.read_pickle(p)
+        os.remove(p)
+        print(restored.transform(tri).ldf_.values[0, 0, 0, :4].round(4))
+
+    .. testoutput::
+
+        [2.9994 1.6235 1.2709 1.1717]
+
+    """
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
@@ -407,6 +447,36 @@ def read_csv(
 
 
 def read_json(json_str, array_backend=None):
+    """Deserialize JSON produced by ``to_json`` (triangle, estimator, or pipeline).
+
+    Examples
+    --------
+    When a full reserving workflow needs to be stored as text—in a database,
+    config file, or REST API—``to_json`` serializes the pipeline and
+    ``read_json`` reconstructs it with all step parameters intact.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        from chainladder.workflow import Pipeline
+
+        pipe = Pipeline([
+            ("dev", cl.Development(average="volume")),
+            ("cl", cl.Chainladder()),
+        ])
+        pipe2 = cl.read_json(pipe.to_json())
+        print([step[0] for step in pipe2.steps])
+        print(pipe2.named_steps["dev"].get_params()["average"])
+
+    .. testoutput::
+
+        ['dev', 'cl']
+        volume
+
+    """
     from chainladder import Triangle
     from chainladder.workflow import Pipeline
 
@@ -602,6 +672,33 @@ def concat(
     Returns
     -------
     Updated triangle
+
+    Examples
+    --------
+    When paid and incurred triangles are constructed separately, ``concat``
+    along ``axis=1`` combines them into one multi-column triangle.
+    ``MunichAdjustment`` requires both columns in the same object, so
+    concatenating them first is the natural setup step.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()
+        wkcomp = clrd.iloc[5:6]
+        paid = wkcomp["CumPaidLoss"]
+        incurred = wkcomp["IncurLoss"]
+        combined = cl.concat([paid, incurred], axis=1)
+        adj = cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "IncurLoss"))
+        result = adj.fit_transform(combined)
+        print(result.ldf_["CumPaidLoss"].values[0, 0, 0, :4].round(4))
+
+    .. testoutput::
+
+        [2.2342 1.3548 1.1517 1.0883]
+
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
@@ -706,10 +803,88 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
 
 def minimum(x1, x2):
+    """Element-wise minimum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.minimum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+    x2 : Triangle or scalar
+
+    Examples
+    --------
+    When two chainladder runs use different development factor selections,
+    the ultimates may disagree at each origin. ``minimum`` picks the lower
+    ultimate at each origin, producing the low-side scenario.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        print(ult_vol.values[0, 0, -5:, 0].round(0))
+        print(ult_sim.values[0, 0, -5:, 0].round(0))
+        low_side = cl.minimum(ult_vol, ult_sim)
+        print(low_side.values[0, 0, -5:, 0].round(0))
+
+    .. testoutput::
+
+        [19501. 17749. 24019. 16045. 18402.]
+        [19807. 18201. 25475. 17776. 55781.]
+        [19501. 17749. 24019. 16045. 18402.]
+
+    """
     return x1.minimum(x2)
 
 
 def maximum(x1, x2):
+    """Element-wise maximum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.maximum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+    x2 : Triangle or scalar
+
+    Examples
+    --------
+    ``maximum`` picks the higher ultimate at each origin, producing the
+    high-side scenario. This is useful for stress testing or setting a
+    conservative reserve when two methods produce different estimates.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        print(ult_vol.values[0, 0, -5:, 0].round(0))
+        print(ult_sim.values[0, 0, -5:, 0].round(0))
+        high_side = cl.maximum(ult_vol, ult_sim)
+        print(high_side.values[0, 0, -5:, 0].round(0))
+
+    .. testoutput::
+
+        [19501. 17749. 24019. 16045. 18402.]
+        [19807. 18201. 25475. 17776. 55781.]
+        [19807. 18201. 25475. 17776. 55781.]
+
+    """
     return x1.maximum(x2)
 
 
@@ -740,6 +915,66 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     ----------
     design_info_:
         The patsy instructions for generating the design_matrix, X.
+
+    Examples
+    --------
+    If a development-only Poisson GLM produces residuals that vary
+    systematically by accident year, adding ``C(origin)`` to the formula
+    introduces origin-level intercepts and reduces that structure. The
+    expanded model matrix has more columns (one per development period plus one
+    per origin), which ``PatsyFormula`` builds from the same R-style string.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        genins = cl.load_sample("genins")
+        by_dev = cl.TweedieGLM(design_matrix="C(development)").fit(genins)
+        by_both = cl.TweedieGLM(
+            design_matrix="C(development) + C(origin)"
+        ).fit(genins)
+        print(len(by_dev.coef_))
+        print(len(by_both.coef_))
+        print(round(float(by_dev.ldf_.values[0, 0, 0, 0]), 6))
+        print(round(float(by_both.ldf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        10
+        19
+        3.508469
+        3.491031
+
+    When ``TweedieGLM`` is not flexible enough (for example, when you need a
+    non-Tweedie model or a continuous origin term), build a custom
+    ``DevelopmentML`` pipeline and use ``PatsyFormula`` as the preprocessing
+    step with the same formula syntax.
+
+    .. testcode::
+
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        genins = cl.load_sample("genins")
+        col = genins.columns[0]
+        dev_only = cl.DevelopmentML(
+            Pipeline(
+                [
+                    ("design_matrix", PatsyFormula("C(development)")),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=col,
+            fit_incrementals=False,
+        ).fit(genins)
+        print(dev_only.ldf_.values[0, 0, 0, :4].round(4))
+
+    .. testoutput::
+
+        [3.515  1.735  1.3993 1.152 ]
 
     """
 
