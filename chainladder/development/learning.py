@@ -12,27 +12,32 @@ from chainladder import options
 
 
 class DevelopmentML(DevelopmentBase):
-    """ A Estimator that interfaces with machine learning (ML) tools that implement
-    the scikit-learn API.
+    """ Interface to scikit-learn estimators for loss development patterns.
 
-    The `DevelopmentML` estimator is used to generate ``ldf_`` patterns from
-    the data.
+    ``DevelopmentML`` lets reserving workflows use any sklearn-compatible
+    regressor (often inside a :class:`~sklearn.pipeline.Pipeline`). It converts
+    a :class:`~chainladder.Triangle` to a tabular design matrix, fits the ML
+    model, predicts through the terminal development age to complete the lower
+    triangle, and expresses the result as ``ldf_`` for tails and IBNR methods.
+    :class:`~chainladder.TweedieGLM` is a special case with
+    :class:`~sklearn.linear_model.TweedieRegressor` as the only ML step.
 
     .. versionadded:: 0.8.1
 
 
     Parameters
     ----------
-    estimator_ml: skearn Estimator
+    estimator_ml: sklearn Estimator
         Any sklearn compatible regression estimator, including Pipelines and
     y_ml: list or str or sklearn_transformer
         The response column(s) for the machine learning algorithm. It must be
         present within the Triangle.
-    autoregressive: tuple, (autoregressive_col_name, lag, source_col_name)
-        The subset of response column(s) to use as lagged features for the
-        Time Series aspects of the model. Predictions from one development period
-        get used as featues in the next development period. Lags should be negative
-        integers.
+    autoregressive: list of tuple
+        Each tuple is ``(feature_name, lag, source_column)``. ``feature_name`` must
+        also appear in the pipeline design matrix. ``DevelopmentML`` fills that
+        column with lagged ``source_column`` values and, when projecting forward,
+        replaces it with the prior development period's prediction. Lags should be
+        negative integers (for example ``-12`` on a monthly triangle is one year).
     weight_step: str
         Step name within estimator_ml that is weighted
     drop: tuple or list of tuples
@@ -50,6 +55,118 @@ class DevelopmentML(DevelopmentBase):
         The estimated loss development patterns.
     cdf_: Triangle
         The estimated cumulative development patterns.
+
+    Examples
+    --------
+    Features from any triangle axis can enter an sklearn
+    :class:`~sklearn.compose.ColumnTransformer` or
+    :class:`~sklearn.pipeline.Pipeline`. On ``clrd`` grouped by line of business,
+    one-hot-encode ``LOB`` and ``development``, pass ``origin`` through, and fit
+    a linear model (the user guide uses ``RandomForestRegressor`` the same way).
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.compose import ColumnTransformer
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import OneHotEncoder
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()["CumPaidLoss"]
+        design_matrix = ColumnTransformer(
+            transformers=[
+                ("dummy", OneHotEncoder(drop="first"), ["LOB", "development"]),
+                ("passthrough", "passthrough", ["origin"]),
+            ]
+        )
+        estimator_ml = Pipeline(
+            steps=[
+                ("design_matrix", design_matrix),
+                ("model", LinearRegression()),
+            ]
+        )
+        m = cl.DevelopmentML(estimator_ml=estimator_ml, y_ml="CumPaidLoss").fit(
+            clrd
+        )
+        print(m.ldf_.shape)
+        print(np.round(m.ldf_.values[0, 0, 0, :4], 4))
+
+    .. testoutput::
+
+        (6, 1, 10, 9)
+        [1.7448 0.9854 0.8117 0.6495]
+
+    ``fit_incrementals`` chooses whether the ML response is built from
+    incremental or cumulative triangle values before ``ldf_`` is derived.
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("genins")
+        pipe = Pipeline(
+            steps=[
+                ("design_matrix", PatsyFormula("C(development)")),
+                ("model", LinearRegression(fit_intercept=False)),
+            ]
+        )
+        m_incr = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=True
+        ).fit(tri)
+        m_cum = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=False
+        ).fit(tri)
+        print(float(np.round(m_incr.ldf_.values[0, 0, 0, 0], 4)))
+        print(float(np.round(m_cum.ldf_.values[0, 0, 0, 0], 4)))
+
+    .. testoutput::
+
+        3.508
+        3.515
+
+    Autoregressive features use prior development predictions as covariates.
+    The lag column must be named in both ``autoregressive`` and the pipeline
+    (for example in a :class:`~chainladder.PatsyFormula`).
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("raa")
+        col = tri.columns[0]
+        pipe = Pipeline(
+            steps=[
+                (
+                    "design_matrix",
+                    PatsyFormula("C(development) + pred_lag"),
+                ),
+                ("model", LinearRegression(fit_intercept=False)),
+            ]
+        )
+        m = cl.DevelopmentML(
+            pipe,
+            y_ml=col,
+            fit_incrementals=True,
+            autoregressive=[("pred_lag", -12, col)],
+        ).fit(tri)
+        print(float(np.round(m.ldf_.values[0, 0, 0, 0], 4)))
+
+    .. testoutput::
+
+        3.0297
+
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
