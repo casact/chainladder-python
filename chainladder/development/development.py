@@ -161,6 +161,9 @@ class Development(DevelopmentBase):
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
 
+        # the 0 on geometric average is merely a placeholder,
+        # it cannot be easily expressed in weighted regression exponent form,
+        # the LDFs need to be calculated manually
         exponent: ArrayLike = xp.array(
             [
                 {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[x]
@@ -183,10 +186,8 @@ class Development(DevelopmentBase):
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
         w = num_to_nan(self.w_ / (x ** (exponent)))
-        print("self.w_\n", self.w_)
 
         # fitting the regression parameters
-
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
 
         if self.n_periods != 1:
@@ -206,10 +207,8 @@ class Development(DevelopmentBase):
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
-        print("params\n", params)
 
         self.ldf_ = self._param_property(obj, params, 0)
-        print("self.ldf_\n", self.ldf_)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
 
@@ -218,10 +217,10 @@ class Development(DevelopmentBase):
         resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
+        # if geometric average is used, we need to calculate LDFs
+        # manually without the use of the weighted regression
         if "geometric" in average_[0, 0, 0]:
             from scipy.stats import gmean
-
-            print("in geometric - needs additional processing")
 
             weighted_link_ratios = link_ratio * self.w_
             weighted_link_ratios = np.where(
@@ -230,16 +229,32 @@ class Development(DevelopmentBase):
             geo_means_link_ratios = gmean(
                 weighted_link_ratios, axis=2, nan_policy="omit"
             )
-
+            # Because calculating the LDFs, by defintion, is aggregating away
+            # one of the dimensions (the origins), we need to reshape it back to 4D triangle form
             self.ldf_ = geo_means_link_ratios.reshape(
                 geo_means_link_ratios.shape[0],
                 geo_means_link_ratios.shape[1],
                 1,
                 geo_means_link_ratios.shape[2],
             )
-            print("geo_means_link_ratios\n", np.round(geo_means_link_ratios, 6))
+
+            print("regression ldfs self.ldf_\n", self.ldf_)
             self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
-            print("self.ldf_\n", self.ldf_)
+            print("geoself.ldf_\n", self.ldf_)
+            final_ldf_ = np.where(
+                self.average_ == "geometric", geo_means_link_ratios, params
+            )
+            print("final_ldf_\n", final_ldf_)
+
+            self.ldf_ = self._param_property(obj, final_ldf_, 0)
+            self.sigma_ = np.where(
+                self.average_ == "geometric", final_ldf_ * np.nan, params
+            )
+            self.std_err_ = np.where(
+                self.average_ == "geometric", final_ldf_ * np.nan, params
+            )
+
+        print("self.ldf_\n", self.ldf_)
 
         return self
 
