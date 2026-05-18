@@ -150,7 +150,8 @@ class Development(DevelopmentBase):
         average_: np.ndarray = self._validate_assumption(X, self.average, axis=3)[
             ..., : X.shape[3] - 1
         ]
-        print("average_", average_)
+        # print("average_", average_)
+
         # noinspection PyAttributeOutsideInit
         self.average_: np.ndarray = average_.flatten()
         n_periods_: np.ndarray = self._validate_assumption(X, self.n_periods, axis=3)[
@@ -238,13 +239,13 @@ class Development(DevelopmentBase):
                 geo_means_link_ratios.shape[2],
             )
 
-            print("regression ldfs self.ldf_\n", self.ldf_)
+            # print("regression ldfs self.ldf_\n", self.ldf_)
             self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
-            print("geoself.ldf_\n", self.ldf_)
+            # print("geoself.ldf_\n", self.ldf_)
             final_ldf_ = np.where(
                 self.average_ == "geometric", geo_means_link_ratios, params
             )
-            print("final_ldf_\n", final_ldf_)
+            # print("final_ldf_\n", final_ldf_)
 
             self.ldf_ = self._param_property(obj, final_ldf_, 0)
             self.sigma_ = np.where(
@@ -254,7 +255,7 @@ class Development(DevelopmentBase):
                 self.average_ == "geometric", final_ldf_ * np.nan, params
             )
 
-        print("self.ldf_\n", self.ldf_)
+        # print("self.ldf_\n", self.ldf_)
 
         return self
 
