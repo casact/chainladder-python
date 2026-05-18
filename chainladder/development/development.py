@@ -229,6 +229,7 @@ class Development(DevelopmentBase):
             geo_means_link_ratios = gmean(
                 weighted_link_ratios, axis=2, nan_policy="omit"
             )
+
             # Because calculating the LDFs, by defintion, is aggregating away
             # one of the dimensions (the origins), we need to reshape it back to
             # 4D triangle form
@@ -239,22 +240,21 @@ class Development(DevelopmentBase):
                 geo_means_link_ratios.shape[2],
             )
 
-            # self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
             final_ldf_ = np.where(
                 self.average_ == "geometric", geo_means_link_ratios, params
             )
 
-            self.ldf_ = self._param_property(obj, final_ldf_, 0)
-
-            nan_params = params.copy()
             # zero out the sigma and std_err for the whole array whenever
             # geometric average is used (becuase everything is wrong and useless)
+            nan_params = params.copy()
             nan_params[..., 1, :] = xp.nan
             nan_params[..., 2, :] = xp.nan
 
-            # self.ldf_ = self._param_property(obj, nan_params, 0)
+            self.ldf_ = self._param_property(obj, final_ldf_, 0)
             self.sigma_ = self._param_property(obj, nan_params, 1)
             self.std_err_ = self._param_property(obj, nan_params, 2)
+            # TODO fix std_residuals_
+            # self.std_residuals_ = self._param_property(obj, nan_params, 3)
 
         else:
             pass
