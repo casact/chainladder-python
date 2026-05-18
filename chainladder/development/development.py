@@ -211,8 +211,6 @@ class Development(DevelopmentBase):
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
-        # print("self.sigma_\n", self.sigma_)
-        # print("self.std_err_\n", self.std_err_)
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
@@ -232,7 +230,8 @@ class Development(DevelopmentBase):
                 weighted_link_ratios, axis=2, nan_policy="omit"
             )
             # Because calculating the LDFs, by defintion, is aggregating away
-            # one of the dimensions (the origins), we need to reshape it back to 4D triangle form
+            # one of the dimensions (the origins), we need to reshape it back to
+            # 4D triangle form
             self.ldf_ = geo_means_link_ratios.reshape(
                 geo_means_link_ratios.shape[0],
                 geo_means_link_ratios.shape[1],
@@ -240,17 +239,16 @@ class Development(DevelopmentBase):
                 geo_means_link_ratios.shape[2],
             )
 
-            # print("regression ldfs self.ldf_\n", self.ldf_)
             self.ldf_ = self._param_property(obj, geo_means_link_ratios, 0)
-            # print("geoself.ldf_\n", self.ldf_)
             final_ldf_ = np.where(
                 self.average_ == "geometric", geo_means_link_ratios, params
             )
-            # print("final_ldf_\n", final_ldf_)
 
             self.ldf_ = self._param_property(obj, final_ldf_, 0)
 
             nan_params = params.copy()
+            # zero out the sigma and std_err for the whole array whenever
+            # geometric average is used (becuase everything is wrong and useless)
             nan_params[..., 1, :] = xp.nan
             nan_params[..., 2, :] = xp.nan
 
@@ -258,14 +256,8 @@ class Development(DevelopmentBase):
             self.sigma_ = self._param_property(obj, nan_params, 1)
             self.std_err_ = self._param_property(obj, nan_params, 2)
 
-            # self.sigma_ = self.sigma_.values * 0 + np.nan
-            # self.std_err_ = np.where(
-            #     self.average_ == "geometric", final_ldf_ * np.nan, 0
-            # # )
-            # print("self.sigma_\n", self.sigma_)
-            # print("self.std_err_\n", self.std_err_)
-
-        # print("self.ldf_\n", self.ldf_)
+        else:
+            pass
 
         return self
 
