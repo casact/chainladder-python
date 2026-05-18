@@ -412,6 +412,26 @@ def test_geometric_avg():
 
     assert np.all(lhs == rhs)
 
+    lhs_sigma = (
+        cl.Development(n_periods=4, average="geometric")
+        .fit_transform(tri)
+        .sigma_.to_frame()
+        .values.flatten()
+    )
+    rhs_sigma = np.full(9, np.nan)
+
+    assert np.array_equal(lhs_sigma, rhs_sigma, equal_nan=True)
+
+    lhs_std_err = (
+        cl.Development(n_periods=4, average="geometric")
+        .fit_transform(tri)
+        .std_err_.to_frame()
+        .values.flatten()
+    )
+    rhs_std_error = np.full(9, np.nan)
+
+    assert np.array_equal(lhs_std_err, rhs_std_error, equal_nan=True)
+
 
 def test_simple_avg():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
