@@ -670,7 +670,6 @@ class Triangle(TriangleBase):
             return pd.Series(["(All)"])
         else:
             freq = {
-                "Y": "Y",
                 "S": "2Q",
                 "H": "2Q",
             }.get(self.origin_grain, self.origin_grain)
@@ -681,7 +680,6 @@ class Triangle(TriangleBase):
     def origin(self, value) -> None:
         self._len_check(self.origin, value)
         freq = {
-            "Y": "Y",
             "S": "2Q",
         }.get(self.origin_grain, self.origin_grain)
         freq = freq if freq == "M" else freq + "-" + self.origin_close
