@@ -161,6 +161,17 @@ class Development(DevelopmentBase):
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
 
+        # the 0 on geometric average is merely a placeholder,
+        # it cannot be easily expressed in weighted regression exponent form,
+        # the LDFs need to be calculated manually
+        exponent: ArrayLike = xp.array(
+            [
+                {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[x]
+                for x in average_[0, 0, 0]
+            ]
+        )
+        exponent = xp.nan_to_num(exponent * (y * 0 + 1))
+
         link_ratio: ArrayLike = y / x
 
         if hasattr(X, "w_v2_"):
