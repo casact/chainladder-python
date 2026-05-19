@@ -3,7 +3,6 @@ import pytest
 import chainladder as cl
 import copy
 import numpy as np
-import pandas as pd
 
 from chainladder.utils.utility_functions import date_delta_adjustment
 from pathlib import Path
@@ -182,3 +181,34 @@ def test_date_delta_adjustment() -> None:
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
+
+
+def test_reset_option() -> None:
+    """
+    Tests cl.options.reset_option.
+
+    Returns
+    -------
+    None
+
+    """
+
+    original_ult_val = cl.options.ULT_VAL
+    original_dt64_unit = cl.options.DT64_UNIT
+    original_dt64_dtype = cl.options.DT64_DTYPE
+
+    cl.options.set_option('ARRAY_BACKEND', 'sparse')
+    cl.options.set_option('AUTO_SPARSE', False)
+    cl.options.set_option('ARRAY_PRIORITY', ['numpy'])
+    cl.options.set_option('ULT_VAL', 'fake')
+    cl.options.set_option('DT64_UNIT', 'fake')
+    cl.options.set_option('DT64_DTYPE', 'fake')
+
+    cl.options.reset_option()
+
+    assert cl.options.ARRAY_BACKEND == 'numpy'
+    assert cl.options.AUTO_SPARSE == True
+    assert cl.options.ARRAY_PRIORITY == ['dask', 'sparse', 'cupy', 'numpy']
+    assert cl.options.ULT_VAL == original_ult_val
+    assert cl.options.DT64_UNIT == original_dt64_unit
+    assert cl.options.DT64_DTYPE == original_dt64_dtype
