@@ -37,34 +37,38 @@ class Triangle(TriangleBase):
     data: DataFrame or DataFrameXchg, or dict
         A single dataframe that contains columns representing all other
         arguments to the Triangle constructor. One may supply a DataFrame-like
-        object (referred to as DataFrameXchg) supporting the __dataframe__ protocol,
-        which will then be converted to a pandas DataFrame. If supplying a dict,
-        it must be structured such that a pandas DataFrame created from it will be
-        accepted by the constructor.
-    origin: str or list
-         A representation of the accident, reporting or more generally the
-         origin period of the triangle that will map to the Origin dimension
-    development: str or list
-        A representation of the development/valuation periods of the triangle
-        that will map to the Development dimension
+        object (referred to as DataFrameXchg) supporting the __dataframe__
+        protocol, which will then be converted to a pandas DataFrame. If
+        supplying a dict, it must be structured such that a pandas DataFrame
+        created from it will be accepted by the constructor. If omitted (or
+        if all arguments are omitted), an empty Triangle is returned.
+    origin: str
+         Name of the column in ``data`` representing the accident, reporting,
+         or more generally the origin period. Maps to the Origin dimension.
+    development: str
+        Name of the column in ``data`` representing the development or
+        valuation period. Maps to the Development dimension. If omitted, the
+        Triangle is treated as having a single development period (e.g. a
+        latest-diagonal-only view).
     columns: str or list
-        A representation of the numeric data of the triangle that will map to
-        the columns dimension.  If None, then a single 'Total' key will be
-        generated.
-    index: str or list or None
-        A representation of the index of the triangle that will map to the
-        index dimension.  If None, then a single 'Total' key will be generated.
-    origin_format: optional str
-        A string representation of the date format of the origin arg. If
-        omitted then date format will be inferred by pandas.
-    development_format: optional str
-        A string representation of the date format of the development arg. If
-        omitted then date format will be inferred by pandas.
+        Name(s) of the column(s) in ``data`` holding the numeric values that
+        will map to the columns dimension. If omitted, a single ``'Total'``
+        key is generated.
+    index: str or list
+        Name(s) of the column(s) in ``data`` that will map to the index
+        dimension. If omitted, a single ``'Total'`` key is generated.
+    origin_format: str
+        A string representation of the date format of the origin column
+        (e.g. ``'%Y-%m-%d'``). If omitted, the date format is inferred by
+        pandas.
+    development_format: str
+        A string representation of the date format of the development column.
+        If omitted, the date format is inferred by pandas.
     cumulative: bool
         Whether the triangle is cumulative or incremental.  This attribute is
         required to use the ``grain`` and ``dev_to_val`` methods and will be
         automatically set when invoking ``cum_to_incr`` or ``incr_to_cum`` methods.
-    trailing: bool
+    trailing: bool, default True
         Controls how the period-end month is inferred from origin and
         development dates. When False, December is treated as the period end
         (i.e., calendar fiscal periods). When True, the period end is inferred
