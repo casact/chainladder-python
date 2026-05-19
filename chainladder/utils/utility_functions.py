@@ -10,6 +10,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from chainladder import options
 from chainladder.utils.sparse import sp
 from io import StringIO
 from patsy import dmatrix  # noqa
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
     from chainladder import Triangle
     from numpy.typing import ArrayLike
     from pandas import DataFrame
-    from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from sparse import COO
     from types import ModuleType
     from typing import AnyStr
@@ -648,7 +648,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == "datetime64[ns]" and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == options.DT64_DTYPE and type(out.ddims) == np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
@@ -890,3 +890,48 @@ def PTF_formula(
     if formula_parts:
         return "+".join(formula_parts)
     return ""
+
+def date_delta_adjustment(date: str) -> str:
+    """
+    Subtracts the default pandas datetime delta from a date in "YYYY-MM-DD" string format.
+
+    Parameters
+    ----------
+    date: str
+        A date in "YYYY-MM-DD" format.
+
+    Returns
+    -------
+    The original date, minus one unit of the default precision level of pandas, e.g., nanosecond for Pandas 2
+    or microsecond for Pandas 3.
+
+    Examples
+    --------
+
+    .. testcode::
+        :options: +SKIP
+
+        import pandas as pd
+
+        print(date_delta_adjustment("2025-11-01"))
+
+    If using Pandas 2:
+
+    .. testoutput::
+
+        '2025-10-31 23:59:59.999999999'
+
+    If using Pandas 3:
+
+    .. testoutput::
+
+        '2025-10-31 23:59:59.999999'
+    """
+
+
+    res: str = str(
+        pd.Timestamp(date) - \
+        pd.Timedelta(1, unit=options.DT64_UNIT)
+    )
+
+    return res
