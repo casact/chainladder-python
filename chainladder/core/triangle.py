@@ -577,7 +577,7 @@ class Triangle(TriangleBase):
         if (
             development
             and len(development) == 1
-                and pd.api.types.is_datetime64_dtype(data[development[0]])
+                and data[development[0]].dtype.kind == 'M'
         ):
             u = data[data[development[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
