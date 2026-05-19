@@ -456,7 +456,7 @@ def read_json(json_str, array_backend=None):
                 setattr(getattr(tri, k), "development_grain", tri.development_grain)
         if "dfs" in json_dict.keys():
             for k, v in json_dict["dfs"].items():
-                df = pd.read_json(v)
+                df = pd.read_json(StringIO(v))
                 if len(df.columns) == 1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
