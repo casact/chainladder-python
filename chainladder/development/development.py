@@ -189,6 +189,10 @@ class Development(DevelopmentBase):
 
         # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
+        print("x:\n", x)
+        print("y:\n", y)
+        print("w:\n", w)
+        print("params:\n", params)
 
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
