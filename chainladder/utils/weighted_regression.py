@@ -13,10 +13,11 @@ class WeightedRegression(BaseEstimator):
     the implementation of the Mack stochastic properties.
     """
 
-    def __init__(self, axis=None, thru_orig=False, xp=None):
+    def __init__(self, axis=None, thru_orig=False, xp=None, average=None):
         self.axis = axis
         self.thru_orig = thru_orig
         self.xp = xp
+        self.average = average
 
     def infer_x_w(self):
         xp = self.xp
@@ -26,56 +27,34 @@ class WeightedRegression(BaseEstimator):
             self.x = xp.cumsum(xp.ones(self.y.shape), self.axis)
         return self
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None, sample_weight=None, average=None):
         self.x = X
         self.y = y
         self.w = sample_weight
+        self.average = average
+
         if self.x is None:
             self.infer_x_w()
+
         if self.thru_orig:
             self._fit_OLS_thru_orig()
         else:
             self._fit_OLS()
-        return self
-
-    def _fit_OLS(self):
-        """Given a set of w, x, y, and an axis, this Function
-        returns OLS slope and intercept.
-        TODO:
-            Make this work with n_periods = 1 without numpy warning.
-        """
-        from chainladder.utils.utility_functions import num_to_nan
-
-        w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
-        xp = self.xp
-        if xp != sp:
-            x[w == 0] = xp.nan
-            y[w == 0] = xp.nan
-        else:
-            w2 = w.copy()
-            w2 = sp.COO(data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape)
-            x, y = x * w2, y * w2
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            slope = num_to_nan(
-                xp.nansum(w * x * y, axis)
-                - xp.nansum(x * w, axis) * xp.nanmean(y, axis)
-            ) / num_to_nan(
-                xp.nansum(w * x * x, axis)
-                - xp.nanmean(x, axis) * xp.nansum(w * x, axis)
-            )
-            intercept = xp.nanmean(y, axis) - slope * xp.nanmean(x, axis)
-
-        self.slope_ = slope[..., None]
-        self.intercept_ = intercept[..., None]
 
         return self
 
     def _fit_OLS_thru_orig(self):
         from chainladder.utils.utility_functions import num_to_nan
 
-        w, x, y, axis = self.w, self.x, self.y, self.axis
+        print(" IN _fit_OLS_thru_orig ")
+        x, y, w, axis, average_ = self.x, self.y, self.w, self.axis, self.average
+
+        print("x\n", x)
+        print("y\n", y)
+        print("w\n", w)
+        print("axis\n", axis)
+        print("average\n", average_)
+
         xp = self.xp
         d = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
         coef = num_to_nan(xp.nansum(w * x * y, axis)) / d
@@ -93,6 +72,42 @@ class WeightedRegression(BaseEstimator):
         self.slope_ = coef
         self.sigma_ = sigma
         self.std_err_ = std_err
+        return self
+
+    def _fit_OLS(self):
+        """Given a set of w, x, y, and an axis, this Function
+        returns OLS slope and intercept.
+        TODO:
+            Make this work with n_periods = 1 without numpy warning.
+        """
+        from chainladder.utils.utility_functions import num_to_nan
+
+        w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
+        xp = self.xp
+        if xp != sp:
+            x[w == 0] = xp.nan
+            y[w == 0] = xp.nan
+        else:
+            w2 = w.copy()
+            w2 = sp.COO(
+                data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape
+            )
+            x, y = x * w2, y * w2
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            slope = num_to_nan(
+                xp.nansum(w * x * y, axis)
+                - xp.nansum(x * w, axis) * xp.nanmean(y, axis)
+            ) / num_to_nan(
+                xp.nansum(w * x * x, axis)
+                - xp.nanmean(x, axis) * xp.nansum(w * x, axis)
+            )
+            intercept = xp.nanmean(y, axis) - slope * xp.nanmean(x, axis)
+
+        self.slope_ = slope[..., None]
+        self.intercept_ = intercept[..., None]
+
         return self
 
     def sigma_fill(self, interpolation):

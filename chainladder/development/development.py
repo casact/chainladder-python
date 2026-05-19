@@ -171,6 +171,7 @@ class Development(DevelopmentBase):
             ]
         )
         exponent = xp.nan_to_num(exponent * (y * 0 + 1))
+
         link_ratio: ArrayLike = y / x
 
         if hasattr(X, "w_v2_"):
@@ -188,11 +189,9 @@ class Development(DevelopmentBase):
         w = num_to_nan(self.w_ / (x ** (exponent)))
 
         # fitting the regression parameters
-        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
-        print("x:\n", x)
-        print("y:\n", y)
-        print("w:\n", w)
-        print("params:\n", params)
+        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
+            x, y, w, average_
+        )
 
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
