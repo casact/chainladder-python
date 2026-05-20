@@ -46,14 +46,11 @@ class WeightedRegression(BaseEstimator):
     def _fit_OLS_thru_orig(self):
         from chainladder.utils.utility_functions import num_to_nan
 
-        x, y, w, axis, average_ = self.x, self.y, self.w, self.axis, self.average
-
-        print("x\n", x)
-        print("y\n", y)
-        print("w\n", w)
-        print("axis\n", axis)
-        print("average\n", average_)
-
+        x = self.x
+        y = self.y
+        w = self.w
+        axis = self.axis
+        average_ = self.average
         xp = self.xp
 
         if average_ is not None:
@@ -69,9 +66,29 @@ class WeightedRegression(BaseEstimator):
             exponent = xp.nan_to_num(exponent * (y * 0 + 1))
             w = num_to_nan(w / (x**exponent))
 
+        print("average_\n", average_)
+
         denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
         print("denominator\n", denominator)
+
         coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
+
+        if average_ is not None:
+            is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]], dtype=bool)
+            # reshape is_geo to the same shape as coef
+            is_geo = is_geo.reshape((1,) * (coef.ndim - 1) + (is_geo.shape[-1],))
+            print("is_geo\n", is_geo)
+
+            ln_y = xp.where(self.w == 0, xp.nan, xp.log(y))
+            ln_x = xp.where(self.w == 0, xp.nan, xp.log(x))
+            geo_coef = xp.exp(
+                num_to_nan(xp.nanmean(ln_y, axis))
+                - num_to_nan(xp.nanmean(ln_x, axis))
+            )
+            print("geo_coef\n", geo_coef)
+            coef = xp.where(is_geo, geo_coef, coef)
+            print("coef\n", coef)
+
         print("w * x * y\n", w * x * y)
         print("xp.nansum(w * x * y, axis)\n", xp.nansum(w * x * y, axis))
         print(
