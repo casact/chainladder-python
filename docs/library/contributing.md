@@ -105,8 +105,10 @@ Contributions to documentation are especially helpful for new users.
 **Guidelines for PRs:**  
 
 **PRs must:**  
+- Be submitted using the pull request template 
 - Pass all existing unit tests  
-- Undergo independent peer review  
+- Disclose usage of AI coding agents
+- Undergo independent peer review by a qualified Actuary
 
 **PRs are encouraged to:**  
 - Be small, focused, and modular  
@@ -121,7 +123,7 @@ All PRs should be run locally before submission.
 For codebase tests, run:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 For documentation changes, rebuild the docs locally with:
