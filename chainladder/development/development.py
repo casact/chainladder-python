@@ -161,17 +161,6 @@ class Development(DevelopmentBase):
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
 
-        # the 0 on geometric average is merely a placeholder,
-        # it cannot be easily expressed in weighted regression exponent form,
-        # the LDFs need to be calculated manually
-        exponent: ArrayLike = xp.array(
-            [
-                {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[x]
-                for x in average_[0, 0, 0]
-            ]
-        )
-        exponent = xp.nan_to_num(exponent * (y * 0 + 1))
-
         link_ratio: ArrayLike = y / x
 
         if hasattr(X, "w_v2_"):
@@ -186,11 +175,10 @@ class Development(DevelopmentBase):
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
-        w = num_to_nan(self.w_ / (x ** (exponent)))
 
         # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
-            x, y, w, average_
+            x, y, self.w_, average_
         )
 
         if self.n_periods != 1:
@@ -202,11 +190,7 @@ class Development(DevelopmentBase):
                 "statistics. Only LDFs have been calculated."
             )
 
-        params.std_err_ = xp.nan_to_num(params.std_err_) + xp.nan_to_num(
-            (1 - xp.nan_to_num(params.std_err_ * 0 + 1))
-            * params.sigma_
-            / xp.swapaxes(xp.sqrt(x ** (2 - exponent))[..., 0:1, :], -1, -2)
-        )
+        params.development_post_fit()
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
@@ -215,10 +199,8 @@ class Development(DevelopmentBase):
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
 
-        resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-        resid = resid / num_to_nan(
-            xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
-        )
+        resid = obj.iloc[..., :-1].copy()
+        resid.values = params.std_residuals_
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         # if geometric average is used, we need to calculate LDFs
