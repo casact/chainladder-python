@@ -53,45 +53,40 @@ class WeightedRegression(BaseEstimator):
         average_ = self.average
         xp = self.xp
 
-        if average_ is not None:
-            # the 0 on geometric average is merely a placeholder,
-            # it cannot be easily expressed in weighted regression exponent form,
-            # the LDFs need to be calculated manually
-            exponent = xp.array(
-                [
-                    {"regression": 0, "volume": 1, "simple": 2, "geometric": 1}[a]
-                    for a in average_[0, 0, 0]
-                ]
+        if average_ is None:
+            denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
+            coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
+        else:
+            # calculate the coef using regression framework
+            exponent_map = {"regression": 0, "volume": 1, "simple": 2, "geometric": 1}
+            is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]])
+            exponent = xp.nan_to_num(
+                xp.array([exponent_map[a] for a in average_[0, 0, 0]]) * (y * 0 + 1)
             )
-            exponent = xp.nan_to_num(exponent * (y * 0 + 1))
             w = num_to_nan(w / (x**exponent))
+            denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
+            reg_coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
 
-        denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
-        coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
-
-        if average_ is not None:
-            is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]], dtype=bool)
-            # reshape is_geo to the same shape as coef
-            is_geo = is_geo.reshape((1,) * (coef.ndim - 1) + (is_geo.shape[-1],))
-            print("is_geo\n", is_geo)
-
+            # special case for geometric average, still using the framework,
+            # but using the log link function and taking the differences
             geo_coef = xp.exp(
                 num_to_nan(xp.nanmean(self.w * xp.log(y), axis))
                 - num_to_nan(xp.nanmean((y * 0 + 1) * self.w * xp.log(x), axis))
             )
-            print("x\n", xp.nanmean((y * 0 + 1) * self.w * xp.log(x), axis))
-            print("y\n", self.w * xp.log(y))
 
-            print("geo_coef\n", geo_coef)
-            coef = xp.where(is_geo, geo_coef, coef)
+            # consolidate
+            coef = xp.where(
+                is_geo.reshape((1,) * (reg_coef.ndim - 1) + (is_geo.shape[-1],)),
+                geo_coef,
+                reg_coef,
+            )
 
-        print("coef\n", coef)
         fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
         fitted_value = fitted_value * x * (y * 0 + 1)
 
         residual = (y - fitted_value) * xp.sqrt(w)
-        wss_residual = xp.nansum(residual**2, axis)
 
+        wss_residual = xp.nansum(residual**2, axis)
         mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
         mse_denom = num_to_nan(mse_denom)
         mse = wss_residual / mse_denom
