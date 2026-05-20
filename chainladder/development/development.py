@@ -186,10 +186,11 @@ class Development(DevelopmentBase):
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
+        w = num_to_nan(self.w_ / (x ** (exponent)))
 
         # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
-            x, y, self.w_, average_
+            x, y, w, average_
         )
 
         if self.n_periods != 1:
@@ -201,8 +202,6 @@ class Development(DevelopmentBase):
                 "statistics. Only LDFs have been calculated."
             )
 
-        params.development_post_fit()
-
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
 
@@ -211,7 +210,6 @@ class Development(DevelopmentBase):
         self.std_err_ = self._param_property(obj, params, 2)
 
         resid = obj.iloc[..., :-1].copy()
-        resid.values = params.std_residuals_
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         # if geometric average is used, we need to calculate LDFs
