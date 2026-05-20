@@ -287,7 +287,7 @@ requires-dist = [
     { name = "numba", specifier = ">0.54" },
     { name = "numpy" },
     { name = "numpydoc", marker = "extra == 'docs'" },
-    { name = "pandas", specifier = ">=2.3.3,<3.0" },
+    { name = "pandas", specifier = ">=2.3.3" },
     { name = "parso", marker = "extra == 'docs'", specifier = ">=0.8" },
     { name = "patsy" },
     { name = "polars", marker = "extra == 'docs'" },
