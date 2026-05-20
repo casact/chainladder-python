@@ -6,6 +6,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from chainladder import options
 from chainladder.utils.utility_functions import num_to_nan
 from typing import TYPE_CHECKING
 
@@ -534,7 +535,7 @@ def add_triangle_agg_func(
         # If axis is development, set the ddims to be the valuation date.
         if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
             obj.ddims = pd.DatetimeIndex(
-                [self.valuation_date], dtype="datetime64[ns]", freq=None
+                [self.valuation_date], dtype=options.DT64_DTYPE, freq=None
             )
         obj._set_slicers()
         if auto_sparse:
@@ -600,7 +601,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
             )
             obj.origin_grain = self.obj._get_grain(odims)
             split = obj.origin_grain.split("-")
-            obj.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+            obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
             obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:

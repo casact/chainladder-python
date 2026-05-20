@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from chainladder.utils.utility_functions import date_delta_adjustment
+
+from io import StringIO
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -19,7 +23,7 @@ except ImportError:
 
 def test_repr(raa):
     np.testing.assert_array_equal(
-        pd.read_html(raa._repr_html_())[0].set_index("Unnamed: 0").values,
+        pd.read_html(StringIO(raa._repr_html_()))[0].set_index("Unnamed: 0").values,
         raa.to_frame(origin_as_datetime=False).values,
     )
 
@@ -323,7 +327,7 @@ def test_groupby_axis1(clrd, prism):
     clrd = clrd.sum("origin").sum("development")
     groups = [i.find("Loss") >= 0 for i in clrd.columns]
     assert np.all(
-        clrd.to_frame(origin_as_datetime=False).groupby(groups, axis=1).sum()
+        clrd.to_frame(origin_as_datetime=False).T.groupby(groups).sum().T
         == clrd.groupby(groups, axis=1).sum().to_frame(origin_as_datetime=False)
     )
     assert np.all(
@@ -914,7 +918,8 @@ def test_single_valuation_date_preserves_exact_date():
     )
 
     # Valuation date should be end of October 2025, not converted to a fiscal year
-    assert triangle.valuation_date == pd.Timestamp('2025-10-31 23:59:59.999999999')
+    val_date_exp: str = date_delta_adjustment("2025-11-01")
+    assert triangle.valuation_date == pd.Timestamp(val_date_exp)
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
 def test_OXDX_triangle():

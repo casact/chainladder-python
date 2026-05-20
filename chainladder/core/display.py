@@ -188,30 +188,18 @@ class TriangleDisplay:
                 shape_size - 1
             ) + 1
             gmap = gmap.replace(np.nan, (shape_size + 1) / 2)
-            if pd.__version__ >= "1.3":
-                default_output = (
-                    data.style.format(fmt_str)
-                    .background_gradient(
-                        cmap=cmap,
-                        low=low,
-                        high=high,
-                        axis=None,
-                        subset=subset,
-                        gmap=gmap,
-                    )
-                    .to_html()
+            default_output = (
+                data.style.format(fmt_str)
+                .background_gradient(
+                    cmap=cmap,
+                    low=low,
+                    high=high,
+                    axis=None,
+                    subset=subset,
+                    gmap=gmap,
                 )
-            else:
-                default_output = (
-                    data.style.format(fmt_str)
-                    .background_gradient(
-                        cmap=cmap,
-                        low=low,
-                        high=high,
-                        axis=axis,
-                    )
-                    .render()
-                )
+                .to_html()
+            )
             output_xnan = re.sub("<td.*nan.*td>", "<td></td>", default_output)
         else:
             raise ValueError("heatmap() only works with a single triangle.")

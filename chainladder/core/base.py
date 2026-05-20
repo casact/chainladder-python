@@ -4,8 +4,6 @@
 from __future__ import annotations
 
 import pandas as pd
-from packaging import version
-
 import numpy as np
 import warnings
 
@@ -423,11 +421,7 @@ class TriangleBase(
         months: np.ndarray = (dates.dt.year * 12 + dates.dt.month).unique()
         diffs: np.ndarray = np.diff(np.sort(months))
         if np.all(np.mod(diffs,12) == 0):
-            grain = (
-                "Y"
-                if version.Version(pd.__version__) >= version.Version("2.2.0")
-                else "A"
-            )
+            grain = "Y"
         elif np.all(np.mod(diffs,6) == 0):
             grain = "2Q"
         elif np.all(np.mod(diffs,3) == 0):
@@ -540,12 +534,12 @@ class TriangleBase(
         ddim_arr = ddims - ddims[0]
         origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
         val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
-        val_array = val_array.astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        val_array = val_array.astype(options.DT64_DTYPE) - np.timedelta64(1, options.DT64_UNIT)
         val_array = val_array[:, None]
         s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
         val_array = (
             val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
-        ).astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        ).astype(options.DT64_DTYPE) - np.timedelta64(1, options.DT64_UNIT)
         if ddims[-1] == 9999:
             ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate(
@@ -584,10 +578,10 @@ class TriangleBase(
         else:
             raise NotImplementedError()
 
-    def _interchange_dataframe(self, data: DataFrameXchg) -> DataFrame:
+    @staticmethod
+    def _interchange_dataframe(data: DataFrameXchg) -> DataFrame:
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
-        Requires pandas version > 1.5.2.
 
         Parameters
         ----------
@@ -598,16 +592,9 @@ class TriangleBase(
         out: pd.DataFrame
             A pandas DataFrame.
         """
-        # Check if pandas version is greater than 1.5.2
-        if version.parse(pd.__version__) >= version.parse("1.5.2"):
-            return pd.api.interchange.from_dataframe(data)
 
-        else:
-            # Raise an error prompting the user to upgrade pandas
-            raise NotImplementedError(
-                "Your version of pandas does not support the DataFrame interchange API. "
-                "Please upgrade pandas to a version greater than 1.5.2 to use this feature."
-            )
+        return pd.api.interchange.from_dataframe(data)
+
 
     def __array_function__(self, func, types, args, kwargs):
         from chainladder.utils.utility_functions import concat
