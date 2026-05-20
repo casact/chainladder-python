@@ -161,17 +161,6 @@ class Development(DevelopmentBase):
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
 
-        # the 0 on geometric average is merely a placeholder,
-        # it cannot be easily expressed in weighted regression exponent form,
-        # the LDFs need to be calculated manually
-        exponent: ArrayLike = xp.array(
-            [
-                {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[x]
-                for x in average_[0, 0, 0]
-            ]
-        )
-        exponent = xp.nan_to_num(exponent * (y * 0 + 1))
-
         link_ratio: ArrayLike = y / x
 
         if hasattr(X, "w_v2_"):
@@ -186,11 +175,10 @@ class Development(DevelopmentBase):
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
-        w = num_to_nan(self.w_ / (x ** (exponent)))
 
         # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
-            x, y, w, average_
+            x, y, num_to_nan(self.w_), average_
         )
 
         if self.n_periods != 1:

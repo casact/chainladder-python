@@ -46,7 +46,6 @@ class WeightedRegression(BaseEstimator):
     def _fit_OLS_thru_orig(self):
         from chainladder.utils.utility_functions import num_to_nan
 
-        print(" IN _fit_OLS_thru_orig ")
         x, y, w, axis, average_ = self.x, self.y, self.w, self.axis, self.average
 
         print("x\n", x)
@@ -56,6 +55,19 @@ class WeightedRegression(BaseEstimator):
         print("average\n", average_)
 
         xp = self.xp
+
+        if average_ is not None:
+            # the 0 on geometric average is merely a placeholder,
+            # it cannot be easily expressed in weighted regression exponent form,
+            # the LDFs need to be calculated manually
+            exponent = xp.array(
+                [
+                    {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[a]
+                    for a in average_[0, 0, 0]
+                ]
+            )
+            exponent = xp.nan_to_num(exponent * (y * 0 + 1))
+            w = num_to_nan(w / (x**exponent))
 
         denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
         print("denominator\n", denominator)
