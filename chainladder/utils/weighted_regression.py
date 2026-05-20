@@ -69,7 +69,6 @@ class WeightedRegression(BaseEstimator):
         print("average_\n", average_)
 
         denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
-        print("denominator\n", denominator)
 
         coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
 
@@ -79,22 +78,17 @@ class WeightedRegression(BaseEstimator):
             is_geo = is_geo.reshape((1,) * (coef.ndim - 1) + (is_geo.shape[-1],))
             print("is_geo\n", is_geo)
 
-            ln_y = xp.where(self.w == 0, xp.nan, xp.log(y))
-            ln_x = xp.where(self.w == 0, xp.nan, xp.log(x))
+            # w_sum = num_to_nan(xp.nansum((y * 0 + 1) * self.w, axis))
             geo_coef = xp.exp(
-                num_to_nan(xp.nanmean(ln_y, axis))
-                - num_to_nan(xp.nanmean(ln_x, axis))
+                num_to_nan(xp.nanmean(self.w * xp.log(y), axis))
+                - num_to_nan(xp.nanmean(self.w * xp.log(x), axis))
             )
+            print("self.w * xp.log(y)\n", self.w * xp.log(y))
+            print("self.w * xp.log(x)\n", self.w * xp.log(x))
+
             print("geo_coef\n", geo_coef)
             coef = xp.where(is_geo, geo_coef, coef)
-            print("coef\n", coef)
 
-        print("w * x * y\n", w * x * y)
-        print("xp.nansum(w * x * y, axis)\n", xp.nansum(w * x * y, axis))
-        print(
-            "num_to_nan(xp.nansum(w * x * y, axis))\n",
-            num_to_nan(xp.nansum(w * x * y, axis)),
-        )
         print("coef\n", coef)
         fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
         fitted_value = fitted_value * x * (y * 0 + 1)
