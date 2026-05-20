@@ -30,6 +30,8 @@ class Options:
         self.set_option('AUTO_SPARSE', True)
         self.set_option('ARRAY_PRIORITY', ["dask", "sparse", "cupy", "numpy"])
         self.set_option('ULT_VAL', _ULT_VAL)
+        self.set_option('DT64_UNIT', np.datetime_data(_DT64_DTYPE)[0])
+        self.set_option('DT64_DTYPE', str(_DT64_DTYPE))
 
     def describe_option(self):
         pass
