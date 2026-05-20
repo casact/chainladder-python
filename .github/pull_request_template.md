@@ -1,5 +1,5 @@
 ## Summary of Changes  
-<!-- Keep this short and concise, with a few sentences maximum. Ensure it accurately reflects the PR subject line, which will be used in the release notes. -->
+<!-- Keep this short and concise, with a few sentences max. Make sure it accurately reflects the PR subject line, which will be used in the release notes. -->
 
 
 ## Related GitHub Issue(s)  
@@ -7,7 +7,7 @@
 
 
 ## Additional Context for Reviewers  
-<!-- Include any additional info that would be helpful for reviewers. If applicable, disclose any AI tools used and approximately how much of the diff was AI-genereated. You do not need to disclose publicly available AI tools used such as bugbot. Please also disclose your actuarial credentials if you are not an ACAS or FCAS. -->
+<!-- Include any additional info that would be helpful for reviewers. If applicable, disclose any AI tools used and approximately how much of the diff was AI-genereated. You do not need to disclose publicly available AI tools used (e.g. bugbot). Please also disclose your actuarial credentials if you are not an ACAS or FCAS. -->
 
 
 ## Checklist
