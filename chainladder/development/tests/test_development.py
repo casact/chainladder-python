@@ -547,6 +547,7 @@ def test_simple_geometric_avg2():
     rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
 
     assert np.all(lhs == rhs)
+    
  def test_sigma():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     sigma = np.round(
