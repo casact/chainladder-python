@@ -177,7 +177,6 @@ class Development(DevelopmentBase):
             * self._drop_adjustment(obj, link_ratio)
         )
 
-        # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
             x, y, self.w_, average_
         )
@@ -199,50 +198,9 @@ class Development(DevelopmentBase):
         self.std_err_ = self._param_property(obj, params, 2)
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-        std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
+        std = xp.sqrt((1 / num_to_nan(self.w_)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
-
-        # # if geometric average is used, we need to calculate LDFs
-        # # manually without the use of the weighted regression
-        # if "geometric" in average_[0, 0, 0]:
-        #     from scipy.stats import gmean
-
-        #     weighted_link_ratios = link_ratio * self.w_
-        #     weighted_link_ratios = np.where(
-        #         weighted_link_ratios == 0, np.nan, weighted_link_ratios
-        #     )
-        #     geo_means_link_ratios = gmean(
-        #         weighted_link_ratios, axis=2, nan_policy="omit"
-        #     )
-
-        #     # Because calculating the LDFs, by defintion, is aggregating away
-        #     # one of the dimensions (the origins), we need to reshape it back to
-        #     # 4D triangle form
-        #     geo_means_link_ratios = geo_means_link_ratios.reshape(
-        #         geo_means_link_ratios.shape[0],
-        #         geo_means_link_ratios.shape[1],
-        #         1,
-        #         geo_means_link_ratios.shape[2],
-        #     )
-
-        #     final_ldf_ = np.where(
-        #         self.average_ == "geometric", geo_means_link_ratios, params
-        #     )
-        #     self.ldf_ = self._param_property(obj, final_ldf_, 0)
-
-        #     # zero out the sigma, std_err, and std_residuals_ for the whole array whenever
-        #     # geometric average is used (becuase everything is wrong and useless)
-        #     nan_params = params.copy()
-        #     nan_params[..., 1, :] = xp.nan
-        #     nan_params[..., 2, :] = xp.nan
-
-        #     self.sigma_ = self._param_property(obj, nan_params, 1)
-        #     self.std_err_ = self._param_property(obj, nan_params, 2)
-        #     self.std_residuals_ = self.std_residuals_ * np.nan
-
-        # else:
-        #     pass
 
         return self
 
