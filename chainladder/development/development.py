@@ -176,7 +176,6 @@ class Development(DevelopmentBase):
             self._assign_n_periods_weight(obj, n_periods_)
             * self._drop_adjustment(obj, link_ratio)
         )
-        print("OUTSIDE self.w_\n", self.w_)
 
         # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
@@ -199,7 +198,9 @@ class Development(DevelopmentBase):
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
 
-        resid = obj.iloc[..., :-1].copy()
+        resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
+        std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
+        resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         # # if geometric average is used, we need to calculate LDFs
