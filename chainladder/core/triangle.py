@@ -74,6 +74,10 @@ class Triangle(TriangleBase):
         (i.e., calendar fiscal periods). When True, the period end is inferred
         from the data itself. This is useful when origin dates do not align
         with calendar period boundaries.
+    array_backend: str, optional (default = None)
+        Backend used to store the underlying values array. One of
+        ``'numpy'``, ``'sparse'``, or ``'cupy'`` (if installed). If
+        ``None``, falls back to ``cl.options.ARRAY_BACKEND``.
 
     Attributes
     ----------
