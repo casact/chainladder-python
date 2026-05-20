@@ -172,13 +172,15 @@ class Development(DevelopmentBase):
                 factor=obj.age_to_age,
             )
 
-        self.w_ = self._assign_n_periods_weight(
-            obj, n_periods_
-        ) * self._drop_adjustment(obj, link_ratio)
+        self.w_ = num_to_nan(
+            self._assign_n_periods_weight(obj, n_periods_)
+            * self._drop_adjustment(obj, link_ratio)
+        )
+        print("OUTSIDE self.w_\n", self.w_)
 
         # fitting the regression parameters
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
-            x, y, num_to_nan(self.w_), average_
+            x, y, self.w_, average_
         )
 
         if self.n_periods != 1:

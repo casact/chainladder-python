@@ -59,7 +59,7 @@ class WeightedRegression(BaseEstimator):
             # the LDFs need to be calculated manually
             exponent = xp.array(
                 [
-                    {"regression": 0, "volume": 1, "simple": 2, "geometric": 0}[a]
+                    {"regression": 0, "volume": 1, "simple": 2, "geometric": 1}[a]
                     for a in average_[0, 0, 0]
                 ]
             )
@@ -67,6 +67,7 @@ class WeightedRegression(BaseEstimator):
             w = num_to_nan(w / (x**exponent))
 
         print("average_\n", average_)
+        print("w\n", w)
 
         denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
 
@@ -83,8 +84,6 @@ class WeightedRegression(BaseEstimator):
                 num_to_nan(xp.nanmean(self.w * xp.log(y), axis))
                 - num_to_nan(xp.nanmean(self.w * xp.log(x), axis))
             )
-            print("self.w * xp.log(y)\n", self.w * xp.log(y))
-            print("self.w * xp.log(x)\n", self.w * xp.log(x))
 
             print("geo_coef\n", geo_coef)
             coef = xp.where(is_geo, geo_coef, coef)
