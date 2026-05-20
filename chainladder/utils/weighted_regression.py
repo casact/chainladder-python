@@ -66,10 +66,7 @@ class WeightedRegression(BaseEstimator):
             exponent = xp.nan_to_num(exponent * (y * 0 + 1))
             w = num_to_nan(w / (x**exponent))
 
-        print("average_\n", average_)
-
         denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
-
         coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
 
         if average_ is not None:
@@ -91,18 +88,24 @@ class WeightedRegression(BaseEstimator):
         print("coef\n", coef)
         fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
         fitted_value = fitted_value * x * (y * 0 + 1)
+
         residual = (y - fitted_value) * xp.sqrt(w)
         wss_residual = xp.nansum(residual**2, axis)
+
         mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
         mse_denom = num_to_nan(mse_denom)
         mse = wss_residual / mse_denom
+
         std_err = xp.sqrt(mse / denominator)
         std_err = std_err[..., None]
+
         coef = coef[..., None]
         sigma = xp.sqrt(mse)[..., None]
+
         self.slope_ = coef
         self.sigma_ = sigma
         self.std_err_ = std_err
+
         return self
 
     def _fit_OLS(self):
