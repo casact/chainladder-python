@@ -98,9 +98,17 @@ class WeightedRegression(BaseEstimator):
         coef = coef[..., None]
         sigma = xp.sqrt(mse)[..., None]
 
+        self._fitted_value = fitted_value
+        self._w_reg = w
+
+        resid = y - fitted_value
+        std = xp.sqrt((1 / num_to_nan(w)) * (sigma**2).squeeze(-1)[..., None, :])
+        std_residuals_ = resid / num_to_nan(std)
+
         self.slope_ = coef
         self.sigma_ = sigma
         self.std_err_ = std_err
+        self.std_residuals_ = std_residuals_
 
         return self
 

@@ -183,12 +183,19 @@ class Development(DevelopmentBase):
 
         if self.n_periods != 1:
             params = params.sigma_fill(self.sigma_interpolation)
+            resid = params.y - params._fitted_value
+            std = xp.sqrt(
+                (1 / num_to_nan(params._w_reg))
+                * (params.sigma_**2).squeeze(-1)[..., None, :]
+            )
+            std_residuals_ = resid / num_to_nan(std)
         else:
             warnings.warn(
                 "Setting n_periods=1 does not allow enough degrees "
                 "of freedom to support calculation of all regression "
                 "statistics. Only LDFs have been calculated."
             )
+            std_residuals_ = params.std_residuals_
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
@@ -197,9 +204,8 @@ class Development(DevelopmentBase):
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
 
-        resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-        std = xp.sqrt((1 / num_to_nan(self.w_)) * (self.sigma_**2).values)
-        resid = resid / num_to_nan(std)
+        resid = obj.iloc[..., :-1].copy()
+        resid.values = std_residuals_
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         return self
