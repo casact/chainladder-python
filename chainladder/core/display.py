@@ -205,8 +205,8 @@ class TriangleDisplay:
             raise ValueError("heatmap() only works with a single triangle.")
         if HTML:
             return HTML(output_xnan)
-        elif HTML is None:
-            raise ImportError("heatmap requires IPython.")
+        else:
+            raise ImportError("heatmap() requires IPython.")
 
     @property
     def _dimensionality(self) -> str:
