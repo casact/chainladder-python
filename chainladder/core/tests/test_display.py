@@ -1,20 +1,59 @@
 from __future__ import annotations
 
+import chainladder as cl
 import importlib
-import sys
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+import sys
 
-import chainladder as cl
 
-from unittest import mock
 from chainladder.core.display import TriangleDisplay
-
+from lxml import etree, html as lxml_html
+from unittest import mock
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+
+
+def check_html(html: str) -> None:
+    """
+    Parse the HTML and raise an assertion error if it is malformed.
+
+    Parameters
+    ----------
+    html: str
+        The HTML string.
+
+    Returns
+    -------
+    None
+
+    """
+
+    parser = etree.HTMLParser()
+    lxml_html.fromstring(html, parser=parser)
+
+    # Raise assertion error if one is detected. If so, print the error log as a list.
+    assert len(parser.error_log) == 0, list(parser.error_log)
+
+def test_check_html() -> None:
+    """
+    Make sure check_html does its job on a malformed string.
+
+    Parameters
+    ----------
+    html: str
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(AssertionError):
+        check_html("<b><i>text</b></i>")
+
 
 def test_dimensionality_empty(empty_triangle: Triangle) -> None:
     """
@@ -118,8 +157,9 @@ def test_repr_html_single(raa):
     None
 
     """
-    assert "<table" in raa._repr_html_()
-
+    html_str: str = raa._repr_html_()
+    assert "<table" in html_str
+    check_html(html=html_str)
 
 def test_repr_html_multi(clrd: Triangle) -> None:
     """
@@ -135,10 +175,10 @@ def test_repr_html_multi(clrd: Triangle) -> None:
     None
 
     """
-    html = clrd._repr_html_()
-    assert "Triangle Summary" in html
-    assert "<table" in html
-
+    html_str = clrd._repr_html_()
+    assert "Triangle Summary" in html_str
+    assert "<table" in html_str
+    check_html(html=html_str)
 
 def test_get_format_str_all_nan() -> None:
     """
