@@ -56,6 +56,7 @@ class WeightedRegression(BaseEstimator):
         if average_ is None:
             denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
             coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
+
         else:
             # calculate the coef using regression framework
             exponent_map = {"regression": 0, "volume": 1, "simple": 2, "geometric": 1}
