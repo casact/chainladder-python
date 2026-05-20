@@ -84,3 +84,7 @@ def xyz(request):
 @pytest.fixture
 def atol():
     return 1e-4
+
+@pytest.fixture
+def empty_triangle():
+    return cl.Triangle()
