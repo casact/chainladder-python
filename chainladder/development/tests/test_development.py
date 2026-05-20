@@ -547,8 +547,9 @@ def test_simple_geometric_avg2():
     rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
 
     assert np.all(lhs == rhs)
-    
- def test_sigma():
+
+
+def test_sigma():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     sigma = np.round(
         cl.Development(
@@ -560,7 +561,6 @@ def test_simple_geometric_avg2():
         .values.flatten(),
         6,
     )
-    sigma
     sigma_expected = [
         0.006371,
         0.001693,
@@ -572,6 +572,7 @@ def test_simple_geometric_avg2():
         0.000212,
         0.000128,
     ]
+
     assert np.all(sigma == sigma_expected)
 
 
@@ -587,7 +588,6 @@ def test_stderror():
         .values.flatten(),
         6,
     )
-    std_error
     std_error_expected = [
         0.003186,
         0.000847,
@@ -614,7 +614,6 @@ def test_std_residuals():
         .values,
         6,
     )
-    std_residuals
     std_residuals_expected = [
         [0.0, 0.0, 0.0, 0.0, 0.0, -1.342157, -1.144874, 0.707107, 0.0],
         [0.0, 0.0, 0.0, 0.0, -0.847023, 0.576855, 0.702623, -0.707107, np.nan],
