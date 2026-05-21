@@ -7,7 +7,7 @@
 
 
 ## Additional Context for Reviewers  
-<!-- Include any additional info that would be helpful for reviewers. If applicable, disclose any AI tools used and approximately how much of the diff was AI-genereated. You do not need to disclose publicly available AI tools used (e.g. bugbot). Please also disclose your actuarial credentials if you are not an ACAS or FCAS. -->
+<!-- Include any additional info that would be helpful for reviewers. If applicable, disclose any AI tools used and if AI-generated content dominates the diffs. You do not need to disclose AI tools used visible to the public (e.g. bugbot). Please also disclose your actuarial credentials if you are not an ACAS or FCAS. -->
 
 
 ## Checklist
