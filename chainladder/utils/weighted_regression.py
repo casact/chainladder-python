@@ -73,6 +73,15 @@ class WeightedRegression(BaseEstimator):
             # but using the log link function and taking the differences
             is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]])
             if is_geo.any():
+
+                if xp.any((y == 0) & (x == 0)):
+                    warnings.warn(
+                        "Zero values present in triangle data used for geometric "
+                        "averaging; link ratios calculated may be invalid. "
+                        "Consider using a different average method.",
+                        UserWarning,
+                    )
+
                 w_geo = num_to_nan(self.w)
                 geo_coef = xp.exp(
                     xp.nanmean(w_geo * xp.log(y), axis)
