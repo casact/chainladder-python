@@ -192,7 +192,7 @@ def test_date_delta_adjustment() -> None:
     )
     assert result == expected
 
-def test_read_pickle(raa: Triangle, tmp_path: Path) -> None:
+def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
     """
     Create a triangle, dump a pickle of it, and then read it back in. The ingested pickle should result
     in an equal copy of the triangle that was dumped.
@@ -213,6 +213,31 @@ def test_read_pickle(raa: Triangle, tmp_path: Path) -> None:
     with open(pkl_path, "wb") as f:
         dill.dump(raa, f)
     assert cl.read_pickle(str(pkl_path)) == raa
+
+
+def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
+    """
+    Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
+    produce the same LDFs that the original estimator does.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    tmp_path: Path
+        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+
+    Returns
+    -------
+    None
+
+    """
+
+    pkl_path = tmp_path / "estimator.pkl"
+    dev = cl.Development().fit(raa)
+    with open(pkl_path, "wb") as f:
+        dill.dump(dev, f)
+    assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
 
 
 def test_concat_type_error() -> None:
