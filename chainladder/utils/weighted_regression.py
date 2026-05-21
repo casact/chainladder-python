@@ -54,6 +54,7 @@ class WeightedRegression(BaseEstimator):
         xp = self.xp
 
         if average_ is None:
+            self.exponent_ = xp.nan_to_num(y * 0)
             denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
             coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
 
@@ -64,6 +65,7 @@ class WeightedRegression(BaseEstimator):
             exponent = xp.nan_to_num(
                 xp.array([exponent_map[a] for a in average_[0, 0, 0]]) * (y * 0 + 1)
             )
+            self.exponent_ = exponent
             w = num_to_nan(w / (x**exponent))
             denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
             reg_coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
@@ -159,7 +161,13 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def std_err_fill(self):
-        """currently handled in development.py which doesn't feel right"""
+        """Fill undefined std_err_ where regression has insufficient observations."""
+        xp = self.xp
+        self.std_err_ = xp.nan_to_num(self.std_err_) + xp.nan_to_num(
+            (1 - xp.nan_to_num(self.std_err_ * 0 + 1))
+            * self.sigma_
+            / xp.swapaxes(xp.sqrt(self.x ** (2 - self.exponent_))[..., 0:1, :], -1, -2)
+        )
         return self
 
     def loglinear_interpolation(self, y):
