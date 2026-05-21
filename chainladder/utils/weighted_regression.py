@@ -71,7 +71,8 @@ class WeightedRegression(BaseEstimator):
 
             # special case for geometric average, still using the framework,
             # but using the log link function and taking the differences
-            if any(a == "geometric" for a in average_[0, 0, 0]):
+            is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]])
+            if is_geo.any():
                 w_geo = num_to_nan(self.w)
                 geo_coef = xp.exp(
                     xp.nanmean(w_geo * xp.log(y), axis)
