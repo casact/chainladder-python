@@ -61,7 +61,6 @@ class WeightedRegression(BaseEstimator):
         else:
             # calculate the coef using regression framework
             exponent_map = {"regression": 0, "volume": 1, "simple": 2, "geometric": 1}
-            is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]])
             exponent = xp.nan_to_num(
                 xp.array([exponent_map[a] for a in average_[0, 0, 0]]) * (y * 0 + 1)
             )
@@ -72,18 +71,21 @@ class WeightedRegression(BaseEstimator):
 
             # special case for geometric average, still using the framework,
             # but using the log link function and taking the differences
-            w_geo = num_to_nan(self.w)
-            geo_coef = xp.exp(
-                xp.nanmean(w_geo * xp.log(y), axis)
-                - xp.nanmean((y * 0 + 1) * w_geo * xp.log(x), axis)
-            )
+            if any(a == "geometric" for a in average_[0, 0, 0]):
+                w_geo = num_to_nan(self.w)
+                geo_coef = xp.exp(
+                    xp.nanmean(w_geo * xp.log(y), axis)
+                    - xp.nanmean((y * 0 + 1) * w_geo * xp.log(x), axis)
+                )
 
-            # consolidate
-            coef = xp.where(
-                is_geo.reshape((1,) * (reg_coef.ndim - 1) + (is_geo.shape[-1],)),
-                geo_coef,
-                reg_coef,
-            )
+                # consolidate
+                coef = xp.where(
+                    is_geo.reshape((1,) * (reg_coef.ndim - 1) + (is_geo.shape[-1],)),
+                    geo_coef,
+                    reg_coef,
+                )
+            else:
+                coef = reg_coef
 
         fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
         fitted_value = fitted_value * x * (y * 0 + 1)
