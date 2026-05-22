@@ -1,5 +1,5 @@
 ===============
-:octicon:`log` Friedland Text
+:octicon:`log` Friedland Recreation
 ===============
 
 Estimating Unpaid Claims Using Basic Techniques
