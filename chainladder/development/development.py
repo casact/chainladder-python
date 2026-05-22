@@ -15,7 +15,7 @@ from typing import (
     Callable,
     Literal,
     # Self,  # Make use of this once Python 3.10 is deprecated.
-    TYPE_CHECKING
+    TYPE_CHECKING,
 )
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class Development(DevelopmentBase):
         all origin periods, set n_periods = -1
     average: string or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.  Options include
-        'volume', 'simple', and 'regression'. If numeric values are supplied,
+        'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
         then (2-average) in the style of Zehnwirth & Barnett is used
         for the exponent of the regression weights.
     sigma_interpolation: string optional (default = 'log-linear')
@@ -92,8 +92,8 @@ class Development(DevelopmentBase):
     def __init__(
         self,
         n_periods: int = -1,
-        average: Literal['volume', 'simple', 'regression'] = "volume",
-        sigma_interpolation: Literal['log-linear', 'mack'] = "log-linear",
+        average: Literal["volume", "simple", "regression", "geometric"] = "volume",
+        sigma_interpolation: Literal["log-linear", "mack"] = "log-linear",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
@@ -120,11 +120,7 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
-    def fit(
-            self, X: TriangleLike,
-            y: None = None,
-            sample_weight: None = None
-    ):
+    def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
         """Fit the model with X.
 
         Parameters
@@ -164,44 +160,36 @@ class Development(DevelopmentBase):
         x: ArrayLike
         y: ArrayLike
         x, y = tri_array[..., :-1], tri_array[..., 1:]
-        exponent: ArrayLike = xp.array(
-            [{"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]]
-        )
-        exponent = xp.nan_to_num(exponent * (y * 0 + 1))
+
         link_ratio: ArrayLike = y / x
 
         if hasattr(X, "w_v2_"):
             self.w_v2_ = self._set_weight_func(
                 factor=obj.age_to_age * X.w_v2_,
-                # secondary_rank=obj.iloc[..., :-1, :-1]
             )
         else:
             self.w_v2_ = self._set_weight_func(
                 factor=obj.age_to_age,
-                # secondary_rank=obj.iloc[..., :-1, :-1]
             )
 
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
         ) * self._drop_adjustment(obj, link_ratio)
-        w = num_to_nan(self.w_ / (x ** (exponent)))
 
-        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(x, y, w)
+        params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
+            x, y, self.w_, average_
+        )
 
         if self.n_periods != 1:
-            params = params.sigma_fill(self.sigma_interpolation)
+            params.sigma_fill(self.sigma_interpolation).std_err_fill()
+            w_reg = params._w_reg
         else:
             warnings.warn(
                 "Setting n_periods=1 does not allow enough degrees "
-                "of freedom to support calculation of all regression"
-                " statistics.  Only LDFs have been calculated."
+                "of freedom to support calculation of all regression "
+                "statistics. Only LDFs have been calculated."
             )
-
-        params.std_err_ = xp.nan_to_num(params.std_err_) + xp.nan_to_num(
-            (1 - xp.nan_to_num(params.std_err_ * 0 + 1))
-            * params.sigma_
-            / xp.swapaxes(xp.sqrt(x ** (2 - exponent))[..., 0:1, :], -1, -2)
-        )
+            w_reg = params._w_reg
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
         params = xp.swapaxes(params, 2, 3)
@@ -211,13 +199,11 @@ class Development(DevelopmentBase):
         self.std_err_ = self._param_property(obj, params, 2)
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
-        std = xp.sqrt((1 / num_to_nan(w)) * (self.sigma_**2).values)
+        std = xp.sqrt((1 / num_to_nan(w_reg)) * (self.sigma_**2).values)
         resid = resid / num_to_nan(std)
         self.std_residuals_ = resid[resid.valuation < obj.valuation_date].fillzero()
 
         return self
-
-
 
     def transform(self, X):
         """If X and self are of different shapes, align self to X, else
