@@ -260,7 +260,7 @@ PART 3 - Average Age-to-Age Factors
     >>> paid_geometric_4 = cl.Development(n_periods=4, average='geometric').fit_transform(tri['Paid Claims'])
     >>> paid_geometric_4.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
-    (All)  1.704  1.188  1.091  1.044  1.019  1.010  1.005   1.002    1.002 
+    (All)  1.706  1.188  1.091  1.044  1.019  1.010  1.005   1.002    1.002 
 
 PART 4 - Selected Age-to-Age Factors
 --------------------------------------
