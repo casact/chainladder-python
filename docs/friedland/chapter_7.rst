@@ -101,10 +101,6 @@ To calculate the average age-to-age factors, we will use the ``Development`` est
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.056  1.027  1.012  1.005  1.003  1.002   1.001      1.0
 
-We will also fake some geometric averages.
-
-.. code-block:: python
-
     # Geometric Average
     # Latest 4
     >>> reported_geometric_4 = cl.Development(n_periods=4, average='geometric').fit_transform(tri['Reported Claims'])
@@ -259,11 +255,9 @@ PART 3 - Average Age-to-Age Factors
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.702  1.186  1.091  1.044  1.019  1.009  1.005   1.002    1.002
 
-.. code-block:: python
-
     # Geometric Average
     # Latest 4
-    >>> paid_geometric_4 = cl.Development(n_periods=3, average='geometric').fit_transform(tri['Paid Claims'])
+    >>> paid_geometric_4 = cl.Development(n_periods=4, average='geometric').fit_transform(tri['Paid Claims'])
     >>> paid_geometric_4.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.704  1.188  1.091  1.044  1.019  1.010  1.005   1.002    1.002 
@@ -447,7 +441,7 @@ Now that we have walked through an analysis step by step, let's introduce some s
     ...     return devs
     >>> import re
     >>> tri = cl.load_sample('friedland_xyz_auto_bi')
-    >>> assumptions_list = ['simple_5','simple_3','simple_2','volume_4','volume_3','volume_2']
+    >>> assumptions_list = ['simple_5','simple_3','simple_2','volume_4','volume_3','volume_2','geometric_3']
     >>> assumptions = {x:{'n_periods':int(re.match(r'.+_(.+)', x).group(1)),'average':re.match(r'(.+)_', x).group(1)} for x in assumptions_list}
     >>> assumptions['medial 5x1'] = {'n_periods':5, 'average':'simple','drop_high':1, 'drop_low':1}
     >>> reported_devs = dev_exhibit(tri['Reported Claims'],assumptions,'volume_2',1)
