@@ -107,7 +107,7 @@ We will also fake some geometric averages.
 
     # Geometric Average
     # Latest 4
-    >>> reported_geometric_4 = cl.Development(n_periods=3, average='geometric').fit_transform(tri['Reported Claims'])
+    >>> reported_geometric_4 = cl.Development(n_periods=4, average='geometric').fit_transform(tri['Reported Claims'])
     >>> reported_geometric_4.ldf_.round(decimals = 3) 
            12-24  24-36  36-48  48-60  60-72  72-84  84-96  96-108  108-120
     (All)  1.164  1.057  1.027  1.011  1.004  1.003  1.002   1.001      1.0
