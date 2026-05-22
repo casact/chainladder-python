@@ -7,10 +7,10 @@
 
 
 ## Additional Context for Reviewers  
-<!-- Include any additional info that would be helpful for reviewers. If applicable, disclose any AI tools used and if AI-generated content dominates the diffs. You do not need to disclose AI tools used visible to the public (e.g. bugbot). Please also disclose your actuarial credentials if you are not an ACAS or FCAS. -->
+<!-- Include any additional info that would be helpful for reviewers. If applicable, disclose any AI tools used and if AI-generated content dominates the diffs. You do not need to disclose AI tools used visible to the public (e.g. bugbot). -->
 
 
 ## Checklist
 - [ ] I passed tests locally for both code (`uv run pytest`) and documentation changes (`uv run jb build docs --builder=custom --custom-builder=doctest`)
-- [ ] I am an Associate of the Casualty Actuarial Society (ACAS) or a Fellow of the Casualty Actuarial Society (FCAS). If you are not a member of the CAS, please disclose this in the "Additional Context for Reviewers" section.
-- [ ] I attest that I am personally responsible for every diff in this PR, including both code and documentation changes. As the human in the loop, I sign off on any AI-assisted or AI-generated content and attest that I am not submitting "AI slop."
+- [ ] I am an Associate of the Casualty Actuarial Society (ACAS) or a Fellow of the Casualty Actuarial Society (FCAS).
+- [ ] I have reviewed every diff in this PR, including both code and documentation changes. I acknowledge that reviewers have the discretion to close any pull request deemed to be too verbose or overly reliant on AI.

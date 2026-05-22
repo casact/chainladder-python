@@ -102,21 +102,23 @@ Contributions to documentation are especially helpful for new users.
 
 ## Pull Requests (PRs)
 
-**Guidelines for PRs:**  
+**Guidelines for PRs:** 
+
+We welcome all pull requests! Please keep in mind that each PR undergoes a thorough, line-by-line quality review and must pass all existing unit tests. Be prepared to answer questions from the maintainers and make revisions as needed.
 
 **PRs must:**  
-- Be submitted using the pull request template 
-- Pass all existing unit tests  
-- Disclose usage of AI coding agents
-- Undergo independent peer review by a qualified Actuary
+- Be submitted using the pull request template
+- Pass all existing unit tests
+- Disclose usage of any AI coding agents
+- Undergo independent peer review by another actuary
 
 **PRs are encouraged to:**  
-- Be small, focused, and modular  
-- Link to relevant Issue ticket(s)  
-- Include docstring updates for any code changes  
-- Update the documentation site for corresponding changes  
-- Follow established naming conventions  
-- Include new unit tests with reasonable coverage  
+- Be small, focused, and modular
+- Link to relevant Issue ticket(s)
+- Include docstring updates for any code changes
+- Update the documentation site for corresponding changes
+- Follow established naming conventions
+- Include new unit tests with reasonable coverage
 
 All PRs should be run locally before submission.
 
@@ -126,7 +128,7 @@ For codebase tests, run:
 uv run pytest
 ```
 
-For documentation changes, rebuild the docs locally with:
+For documentation changes, run:
 ```bash
 uv run jb build docs --builder=custom --custom-builder=doctest
 ```
