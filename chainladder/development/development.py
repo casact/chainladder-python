@@ -34,33 +34,40 @@ class Development(DevelopmentBase):
     n_periods: integer, optional (default = -1)
         number of origin periods to be used in the ldf average calculation. For
         all origin periods, set n_periods = -1
-    average: string or float, optional (default = 'volume')
-        type of averaging to use for ldf average calculation.  Options include
-        'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
+    average: literal (or list of literals), or float, optional (default = 'volume')
+        type of averaging to use for ldf average calculation.
+        Options include 'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
         then (2-average) in the style of Zehnwirth & Barnett is used
         for the exponent of the regression weights.
     sigma_interpolation: string optional (default = 'log-linear')
         Options include 'log-linear' and 'mack'
     drop: tuple or list of tuples
-        Drops specific origin/development combination(s)
+        Drops specific origin/development combination(s). See order of operations
+        below when combined with multiple drop parameters.
     drop_high: bool, int, list of bools, or list of ints (default = None)
         Drops highest (by rank) link ratio(s) from LDF calculation
         If a boolean variable is passed, drop_high is set to 1, dropping only the
-        highest value
-        Note that drop_high is performed after consideration of n_periods (if used)
+        highest value. Protected by ``preserve``.
+        See order of operations below when combined with multiple drop parameters.
     drop_low: bool, int, list of bools, or list of ints (default = None)
         Drops lowest (by rank) link ratio(s) from LDF calculation
         If a boolean variable is passed, drop_low is set to 1, dropping only the
-        lowest value
-        Note that drop_low is performed after consideration of n_periods (if used)
+        lowest value. Protected by ``preserve``.
+        See order of operations below when combined with multiple drop parameters.
     drop_above: float or list of floats (default = numpy.inf)
-        Drops all link ratio(s) above the given parameter from the LDF calculation
+        Drops all link ratio(s) above the given parameter from the LDF calculation.
+        Protected by ``preserve``.
+        See order of operations below when combined with multiple drop parameters.
     drop_below: float or list of floats (default = 0.00)
-        Drops all link ratio(s) below the given parameter from the LDF calculation
+        Drops all link ratio(s) below the given parameter from the LDF calculation.
+        Protected by ``preserve``.
+        See order of operations below when combined with multiple drop parameters.
     preserve: int (default = 1)
-        The minimum number of link ratio(s) required for LDF calculation
+        The minimum number of link ratio(s) required for LDF calculation.
+        See order of operations below when combined with multiple drop parameters.
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
+        See order of operations below when combined with multiple drop parameters.
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
@@ -72,6 +79,20 @@ class Development(DevelopmentBase):
         of estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
 
+    Notes (Order of Drop Operations)
+    -----
+    When multiple drop parameters are used together, the weights are built in this order:
+
+    1. ``n_periods`` — limit to the most recent origin periods.
+    2. ``drop`` — remove specific origin/development cells.
+    3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
+    4. ``drop_high`` / ``drop_low`` — remove highest/lowest link ratios by rank
+       (eligible factors from ``n_periods`` are used; protected by ``preserve``,
+       which may relax exclusions from this step if too few ratios would remain then this step is skipped).
+    5. ``drop_above`` / ``drop_below`` — remove link ratios outside a range
+       (Protected by``preserve``, which may relax exclusions from this step if too few ratios would remain
+       then this step is skipped).
+    6. Calculate the loss development factors using ``average`` method.
 
     Attributes
     ----------
@@ -86,6 +107,78 @@ class Development(DevelopmentBase):
     std_residuals_: Triangle
         A Triangle representing the weighted standardized residuals of the
         estimator as described in Barnett and Zehnwirth.
+
+    Examples
+    --------
+
+    There are lots of parameters to control the development pattern selection.
+    One should exercise caution when multiple drop parameters are used together.
+
+    We can drop a specific origin/development combination by passing a tuple to the drop parameter.
+
+    ..  testsetup::
+
+        import chainladder as cl
+
+    ..  testcode::
+
+        tri = cl.load_sample("xyz")
+        ldf = cl.Development(drop=("2004", 12)).fit(tri["Incurred"]).ldf_
+        print(ldf)
+
+    ..  testoutput::
+
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
+        (All)  1.582216  1.339353  1.193406  1.095906  1.076968  1.033612  1.019016  0.997636  0.992918  0.999179
+
+    We can also drop all link ratio(s) above the given parameter by passing a list of floats to the drop_above parameter.
+
+    ..  testcode::
+
+        tri = cl.load_sample("xyz")
+        ldf = (
+            cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00])
+            .fit(tri["Incurred"])
+            .ldf_
+        )
+        print(ldf)
+
+    ..  testoutput::
+
+                  12-24     24-36     36-48     48-60     60-72     72-84    84-96    96-108   108-120   120-132
+        (All)  1.582216  1.301914  1.142205  1.071625  1.059935  1.022835  1.00511  0.997636  0.992918  0.999179
+
+    We can also use multiple drop parameters together.
+    Let's say, we want to drop all link ratio(s) above 1.2 and below 1.0, but only drop these link ratios when there are 5 or more link ratios remaining.
+
+    ..  testcode::
+
+        tri = cl.load_sample("xyz")
+        ldf = (
+            cl.Development(drop_above=1.2, drop_below=1.0, preserve=5).fit(tri["Incurred"]).ldf_
+        )
+        print(ldf)
+
+    ..  testoutput::
+
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
+        (All)  1.675693  1.339353  1.193406  1.119324  1.076968  1.033612  1.019016  0.997636  0.992918  0.999179
+
+    Using other average methods, we can see that the loss development factors are different.
+
+    ..  testcode::
+
+        tri = cl.load_sample("xyz")
+        ldf = (
+            cl.Development(average="simple").fit(tri["Incurred"]).ldf_
+        )
+        print(ldf)
+
+    ..  testoutput::
+
+                  12-24    24-36    36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
+        (All)  1.659537  1.35064  1.22277  1.119155  1.079301  1.039863  1.031011  0.997274  0.990571  0.999179
+
 
     """
 
