@@ -97,10 +97,12 @@ class BootstrapODPSample(DevelopmentBase):
         51301.13
         16149.47
 
-    Outlier link ratios can distort the residual distribution that the
-    bootstrap re-samples from. Setting ``drop_high=True`` excludes the highest
-    link ratio in each development column before computing residuals, which
-    shrinks ``scale_`` and tightens the simulated distribution.
+    The estimator also supports a leave-one-out sensitivity check on the
+    residual distribution. Setting ``drop_high=True`` excludes the highest
+    link ratio in each development column before computing residuals, without
+    making any outlier judgement, so the resulting ``scale_`` measures how
+    influential the column maxima are on the bootstrap. For the RAA triangle
+    this shrinks ``scale_`` from 983.64 to 648.94.
 
     .. testcode::
 
