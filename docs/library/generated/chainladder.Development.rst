@@ -4,3 +4,4 @@
 .. currentmodule:: chainladder
 
 .. autoclass:: Development
+    :members:
