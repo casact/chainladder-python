@@ -27,6 +27,10 @@ PART 1 - Data Triangle
 We have already imported the necessary packages loading the ``Triangle`` at the top of p106. Let's take a look at the ``Triangle`` we just loaded. 
 
 .. doctest::
+    
+    >>> cl.load_sample('friedland_us_industry_auto')._repr_html_()
+
+.. doctest::
 
     >>> tri = cl.load_sample('friedland_us_industry_auto')
     >>> tri['Reported Claims']
