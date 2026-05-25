@@ -219,8 +219,7 @@ class ValuationCorrelation:
     example from a one-off reserve strengthening or a change in case
     reserving practice). ``ValuationCorrelation`` flags any diagonal on
     which the split of high versus low link ratios is unlikely under random
-    ordering, and can be evaluated per-diagonal (``total=False``, Mack 1997)
-    or for the whole triangle (``total=True``, Mack 1993).
+    ordering.
 
     .. testsetup::
 
@@ -240,6 +239,10 @@ class ValuationCorrelation:
     No diagonal crosses the 90% threshold, so the calendar-effect assumption
     is supported. If any cell read ``True`` you would inspect that diagonal
     before relying on Mack or chain-ladder ultimates.
+
+    The same test can be aggregated to a whole-triangle form
+    (``total=True``, Mack 1993) instead of the per-diagonal form
+    (``total=False``, Mack 1997) shown above:
 
     .. testcode::
 
