@@ -26,6 +26,8 @@ class Chainladder(MethodBase):
     full_triangle_:
         The ultimates back-filled to each development period in **X** retaining
         the known data
+    summary: Pandas Dataframe
+        a summary exhibit that contains actual, ldf, cdf, and ultimate
 
     Examples
     --------
@@ -188,6 +190,7 @@ class Chainladder(MethodBase):
         """
         X_new = super().predict(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, sample_weight)
+        X_new.summary = self._get_summary(X_new,X_new.ultimate_)
         return X_new
 
     def _get_ultimate(self, X, sample_weight=None):

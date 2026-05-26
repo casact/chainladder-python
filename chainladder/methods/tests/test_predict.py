@@ -1,5 +1,6 @@
 import chainladder as cl
 import pandas as pd
+import numpy as np
 import pytest 
 
 raa = cl.load_sample("RAA")
@@ -8,37 +9,36 @@ cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
 apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)  # Mean Chainladder Ultimate
 apriori_1989 = apriori[apriori.origin < "1990"]
 
+@pytest.mark.parametrize(
+    "estimators",
+    [
+        cl.CapeCod,
+        cl.BornhuetterFerguson,
+        cl.ExpectedLoss,
+        cl.Benktander,
+        cl.Chainladder
+    ],
+)
+def test_predict_and_weights(estimators,atol):
+    est = estimators().fit(raa_1989, sample_weight=apriori_1989)
+    pred = est.predict(raa, sample_weight=apriori)
+    assert pred
+    assert np.all(abs(est.summary['actual'].values - raa_1989.latest_diagonal.values.reshape(-1)) < atol)
+    assert np.all(abs(pred.summary['actual'].values - raa.latest_diagonal.values.reshape(-1)) < atol)
+    assert np.all(abs(est.summary['ultimate'].values - est.ultimate_.values.reshape(-1)) < atol)
+    assert np.all(abs(pred.summary['ultimate'].values - pred.ultimate_.values.reshape(-1)) < atol)
+    #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    if estimators != cl.Chainladder:
+        with pytest.raises(ValueError):
+            estimators().fit(raa_1989)
+        with pytest.raises(ValueError):
+            estimators().fit(raa_1989, sample_weight=apriori_1989).predict(raa)
 
-def test_cc_predict():
-    cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
-    assert cc.predict(raa, sample_weight=apriori)
-
-def test_bf_predict():
-    bf = cl.BornhuetterFerguson().fit(raa_1989, sample_weight=apriori_1989)
-    assert bf.predict(raa, sample_weight=apriori)
-
-def test_el_predict():
-    bf = cl.ExpectedLoss().fit(raa_1989, sample_weight=apriori_1989)
-    assert bf.predict(raa, sample_weight=apriori)
 
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
     assert mack.predict(raa_1989)
 
-def test_capecod_fit_weight():
-    """
-    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    """
-    with pytest.raises(ValueError):
-        cl.CapeCod().fit(raa_1989)
-
-def test_capecod_predict_weight():
-    """
-    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    """
-    with pytest.raises(ValueError):
-        cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
-        cc.predict(raa)
 
 def test_bs_random_state_predict(clrd):
     tri = clrd.groupby("LOB").sum().loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]

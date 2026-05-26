@@ -54,6 +54,8 @@ class CapeCod(Benktander):
         The trended apriori vector developed by the Cape Cod Method
     detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
+    summary: Pandas Dataframe
+        a summary exhibit that contains actual, ldf, cdf, and ultimate
 
     Examples
     --------

@@ -65,6 +65,38 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         else:
             return self.X_.sum('development')
 
+    @property
+    def summary(self):
+        return self._get_summary(self.X_,self.ultimate_)
+
+    def _get_summary(self,X,ult):
+        #columns for melt
+        ids = X.key_labels + ['origin','development','valuation']
+        #create dataframe for amount
+        amount = X.latest_diagonal.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='actual')
+        amount_index = X.key_labels + ['origin','column']
+        amount = amount[amount_index + ['development','actual']]
+        amount.set_index(amount_index,inplace=True)
+        #create dataframe for ultimate
+        ultimate = ult.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='ultimate')
+        #columns for melt for dev factors
+        dev_ids = X.ldf_.key_labels + ['origin','development','valuation']
+        #create dataframe for ldf
+        ldf = X.ldf_.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=dev_ids,var_name = 'column',value_name='ldf')
+        dev_factor_index = X.ldf_.key_labels + ['development','column']
+        ldf = ldf[dev_factor_index + ['ldf']]
+        ldf.set_index(dev_factor_index,inplace=True)
+        #create dataframe for cdf
+        cdf = X.cdf_.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=dev_ids,var_name = 'column',value_name='cdf')
+        cdf = cdf[dev_factor_index + ['cdf']]
+        cdf.set_index(dev_factor_index,inplace=True)
+        #assemble full summary. start from ultimate, as some methods (e.g. BF) return an ultimate without any actual amount
+        output = ultimate.drop(columns=['development','valuation'])
+        output = output.join(amount,amount_index,how='left')
+        output = output.join(ldf,on=dev_factor_index,how='left')
+        output = output.join(cdf,on=dev_factor_index,how='left')
+        return output[X.key_labels + ['column','origin','development','actual','ldf','cdf','ultimate']]
+
     def fit(self, X, y=None, sample_weight=None):
         """Applies the chainladder technique to triangle **X**
 
