@@ -82,11 +82,6 @@ def clrd(request):
 
 
 @pytest.fixture
-def clrd(request):
-    yield from _sample_fixture(request, "clrd")
-
-
-@pytest.fixture
 def genins(request):
     yield from _sample_fixture(request, "genins")
 
