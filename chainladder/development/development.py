@@ -178,10 +178,6 @@ class Development(DevelopmentBase):
     ..  testcode::
 
         tri = cl.load_sample("xyz")
-        print(cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00]).fit_transform(tri["Incurred"]).link_ratio)
-
-    ..  testoutput::
-
         print(
             cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00])
             .fit_transform(tri["Incurred"])
