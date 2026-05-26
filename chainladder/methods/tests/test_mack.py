@@ -8,10 +8,10 @@ def test_mack_to_triangle():
                 cl.Development().fit_transform(cl.load_sample("ABC"))
             )
         )
-        .summary_
+        .mack_summary_
         == cl.MackChainladder()
         .fit(cl.Development().fit_transform(cl.load_sample("ABC")))
-        .summary_
+        .mack_summary_
     )
 
 
