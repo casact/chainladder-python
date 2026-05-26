@@ -27,7 +27,8 @@ def raa(request):
         cl.options.set_option("ARRAY_BACKEND", "sparse")
     else:
         cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("raa")
+    yield cl.load_sample("raa")
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
@@ -36,7 +37,8 @@ def qtr(request):
         cl.options.set_option("ARRAY_BACKEND", "sparse")
     else:
         cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("quarterly")
+    yield cl.load_sample("quarterly")
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
@@ -45,7 +47,8 @@ def clrd(request):
         cl.options.set_option("ARRAY_BACKEND", "sparse")
     else:
         cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("clrd")
+    yield cl.load_sample("clrd")
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
@@ -54,13 +57,15 @@ def genins(request):
         cl.options.set_option("ARRAY_BACKEND", "sparse")
     else:
         cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("genins")
+    yield cl.load_sample("genins")
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
 def prism(request):
     cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("prism")
+    yield cl.load_sample("prism")
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
@@ -69,7 +74,8 @@ def prism_dense(request):
         cl.options.set_option("ARRAY_BACKEND", "sparse")
     else:
         cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("prism").sum()
+    yield cl.load_sample("prism").sum()
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
@@ -78,7 +84,8 @@ def xyz(request):
         cl.options.set_option("ARRAY_BACKEND", "sparse")
     else:
         cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("xyz")
+    yield cl.load_sample("xyz")
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
 @pytest.fixture
