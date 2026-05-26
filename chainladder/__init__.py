@@ -14,7 +14,14 @@ class Options:
     ARRAY_BACKEND: str
         The default array backend for chainladder.
     AUTO_SPARSE: bool
-
+        Controls whether chainladder automatically converts a triangle's backing array to a sparse representation
+        when it would be memory-efficient to do so.
+    DT64_DTYPE: str
+        The default datetime64 data type, extracted from Pandas installation.
+    DT64_UNIT: str
+        The default datetime64 precision, extracted from Pandas installation.
+    ULT_VAL: str
+        The default ultimate valuation datetime, precision set to default of Pandas installation.
 
     """
     def __init__(self):
