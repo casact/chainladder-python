@@ -33,8 +33,8 @@ class ExpectedLoss(Benktander):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
-    summary: Pandas Dataframe
-        a summary exhibit that contains actual, ldf, cdf, and ultimate
+    summary_: Pandas Dataframe
+        a summary exhibit that contains latest, ldf, cdf, and ultimate
 
     Examples
     --------

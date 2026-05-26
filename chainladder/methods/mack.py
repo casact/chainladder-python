@@ -27,8 +27,8 @@ class MackChainladder(Chainladder):
     full_triangle_:
         The ultimates back-filled to each development period in **X** retaining
         the known data
-    summary_:
-        summary of the model
+    mack_summary_:
+        summary of the mack model
     full_std_err_:
         The full standard error
     total_process_risk_:
@@ -39,6 +39,8 @@ class MackChainladder(Chainladder):
         The total prediction error by origin period
     total_mack_std_err_:
         The total prediction error across all origin periods
+    summary_: Pandas Dataframe
+        a summary exhibit that contains latest, ldf, cdf, and ultimate
 
     Examples
     --------
@@ -54,7 +56,7 @@ class MackChainladder(Chainladder):
 
         tr = cl.load_sample('ukmotor')
         model = cl.MackChainladder().fit(tr)
-        print(model.summary_)
+        print(model.mack_summary_)
 
     .. testoutput:
 
@@ -401,7 +403,7 @@ class MackChainladder(Chainladder):
         return pd.DataFrame(out, index=obj.index, columns=obj.columns)
 
     @property
-    def summary_(self):
+    def mack_summary_(self):
         """
         Headline Mack summary table by origin: latest diagonal, IBNR,
         ultimate, and Mack standard error.
@@ -423,7 +425,7 @@ class MackChainladder(Chainladder):
 
             tr = cl.load_sample('ukmotor')
             model = cl.MackChainladder().fit(tr)
-            print(model.summary_)
+            print(model.mack_summary_)
 
         .. testoutput::
 

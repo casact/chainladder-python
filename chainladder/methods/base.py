@@ -66,16 +66,16 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             return self.X_.sum('development')
 
     @property
-    def summary(self):
+    def summary_(self):
         return self._get_summary(self.X_,self.ultimate_)
 
     def _get_summary(self,X,ult):
         #columns for melt
         ids = X.key_labels + ['origin','development','valuation']
         #create dataframe for amount
-        amount = X.incr_to_cum().latest_diagonal.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='actual')
+        amount = X.incr_to_cum().latest_diagonal.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='latest')
         amount_index = X.key_labels + ['origin','column']
-        amount = amount[amount_index + ['development','actual']]
+        amount = amount[amount_index + ['development','latest']]
         amount.set_index(amount_index,inplace=True)
         #create dataframe for ultimate
         ultimate = ult.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='ultimate')
@@ -95,7 +95,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         output = output.join(amount,on=amount_index,how='left')
         output = output.join(ldf,on=dev_factor_index,how='left')
         output = output.join(cdf,on=dev_factor_index,how='left')
-        return output[X.key_labels + ['column','origin','development','actual','ldf','cdf','ultimate']]
+        return output[X.key_labels + ['column','origin','development','latest','ldf','cdf','ultimate']]
 
     def fit(self, X, y=None, sample_weight=None):
         """Applies the chainladder technique to triangle **X**

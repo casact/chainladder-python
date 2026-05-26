@@ -23,12 +23,15 @@ def test_predict_and_weights(estimators,atol):
     est = estimators().fit(raa_1989, sample_weight=apriori_1989)
     pred = est.predict(raa, sample_weight=apriori)
     assert pred
-    assert np.all(abs(est.summary['actual'].values - raa_1989.latest_diagonal.values.reshape(-1)) < atol)
-    assert np.all(abs(pred.summary['actual'].values - raa.latest_diagonal.values.reshape(-1)) < atol)
-    assert np.all(abs(est.summary['ultimate'].values - est.ultimate_.values.reshape(-1)) < atol)
-    assert np.all(abs(pred.summary['ultimate'].values - pred.ultimate_.values.reshape(-1)) < atol)
+    assert np.all(abs(est.summary_['latest'].values - raa_1989.latest_diagonal.values.reshape(-1)) < atol)
+    assert np.all(abs(pred.summary_['latest'].values - raa.latest_diagonal.values.reshape(-1)) < atol)
+    assert np.all(abs(est.summary_['ultimate'].values - est.ultimate_.values.reshape(-1)) < atol)
+    assert np.all(abs(pred.summary_['ultimate'].values - pred.ultimate_.values.reshape(-1)) < atol)
     #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    if estimators != cl.Chainladder:
+    if estimators == cl.Chainladder:
+        assert np.all(abs(est.summary_['ultimate'].values / est.summary_['latest'].values - est.summary_['cdf'].values) < atol)
+        assert np.all(abs(pred.summary_['ultimate'].values / pred.summary_['latest'].values - pred.summary_['cdf'].values) < atol)
+    else:
         with pytest.raises(ValueError):
             estimators().fit(raa_1989)
         with pytest.raises(ValueError):
