@@ -36,6 +36,9 @@ class Benktander(MethodBase):
         The ultimate losses per the method
     ibnr_: Triangle
         The IBNR per the method
+    summary: Pandas Dataframe
+        a summary exhibit that contains actual, ldf, cdf, and ultimate
+
 
     Examples
     --------
@@ -243,9 +246,12 @@ class Benktander(MethodBase):
             2012  15914.716737
             2013  17193.715555
         """
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
+        X_new.summary = self._get_summary(X_new,X_new.ultimate_)
         X_new.n_iters = self.n_iters
         X_new.apriori = self.apriori
         return X_new
