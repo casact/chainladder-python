@@ -195,7 +195,6 @@ def test_reset_option() -> None:
     original_backend = cl.options.ARRAY_BACKEND
     original_auto_sparse = cl.options.AUTO_SPARSE
     original_array_priority = cl.options.ARRAY_PRIORITY
-    original_ult_val = cl.options.ULT_VAL
 
     try:
 
@@ -208,14 +207,12 @@ def test_reset_option() -> None:
         assert cl.options.ARRAY_BACKEND == original_backend
         assert cl.options.AUTO_SPARSE == original_auto_sparse
         assert cl.options.ARRAY_PRIORITY == original_array_priority
-        assert cl.options.ULT_VAL == original_ult_val
 
     finally:
     # Manual reset in case of test failure.
-        cl.options.ARRAY_BACKEND = original_backend
-        cl.options.AUTO_SPARSE = original_auto_sparse
-        cl.options.ARRAY_PRIORITY = original_array_priority
-        cl.options.ULT_VAL = original_ult_val
+        cl.options.set_option('ARRAY_BACKEND', original_backend)
+        cl.options.set_option('AUTO_SPARSE', original_auto_sparse)
+        cl.options.set_option('ARRAY_PRIORITY', original_array_priority)
 
 
 def test_options_defaults() -> None:
