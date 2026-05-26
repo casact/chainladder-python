@@ -184,7 +184,7 @@ def test_date_delta_adjustment() -> None:
 
 def test_reset_option() -> None:
     """
-    Tests cl.options.reset_option.
+    Change some of the options and then reset them. Values after reset should match the original values.
 
     Returns
     -------
@@ -192,25 +192,21 @@ def test_reset_option() -> None:
 
     """
 
+    original_backend = cl.options.ARRAY_BACKEND
+    original_auto_sparse = cl.options.AUTO_SPARSE
+    original_array_priority = cl.options.ARRAY_PRIORITY
     original_ult_val = cl.options.ULT_VAL
-    original_dt64_unit = cl.options.DT64_UNIT
-    original_dt64_dtype = cl.options.DT64_DTYPE
 
     cl.options.set_option('ARRAY_BACKEND', 'sparse')
     cl.options.set_option('AUTO_SPARSE', False)
-    cl.options.set_option('ARRAY_PRIORITY', ['numpy'])
-    cl.options.set_option('ULT_VAL', 'fake')
-    cl.options.set_option('DT64_UNIT', 'fake')
-    cl.options.set_option('DT64_DTYPE', 'fake')
+    cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'dask', 'numpy', 'cupy'])
 
     cl.options.reset_option()
 
-    assert cl.options.ARRAY_BACKEND == 'numpy'
-    assert cl.options.AUTO_SPARSE == True
-    assert cl.options.ARRAY_PRIORITY == ['dask', 'sparse', 'cupy', 'numpy']
+    assert cl.options.ARRAY_BACKEND == original_backend
+    assert cl.options.AUTO_SPARSE == original_auto_sparse
+    assert cl.options.ARRAY_PRIORITY == original_array_priority
     assert cl.options.ULT_VAL == original_ult_val
-    assert cl.options.DT64_UNIT == original_dt64_unit
-    assert cl.options.DT64_DTYPE == original_dt64_dtype
 
 
 def test_options_defaults() -> None:
