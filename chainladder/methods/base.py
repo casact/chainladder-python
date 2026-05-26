@@ -92,7 +92,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         cdf.set_index(dev_factor_index,inplace=True)
         #assemble full summary. start from ultimate, as some methods (e.g. BF) return an ultimate without any actual amount
         output = ultimate.drop(columns=['development','valuation'])
-        output = output.join(amount,amount_index,how='left')
+        output = output.join(amount,on=amount_index,how='left')
         output = output.join(ldf,on=dev_factor_index,how='left')
         output = output.join(cdf,on=dev_factor_index,how='left')
         return output[X.key_labels + ['column','origin','development','actual','ldf','cdf','ultimate']]
