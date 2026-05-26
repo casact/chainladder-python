@@ -16,8 +16,6 @@ jb build .
 
 The rendered site is written to `docs/_build/html/`. Open `docs/_build/html/index.html` in a browser to review changes.
 
-`jb build .` reads `_config.yml` and `_toc.yml`, then hands off to Sphinx using the extensions declared in `conf.py`. A full build currently emits warnings; cleaning those up is tracked under [#841](https://github.com/casact/chainladder-python/issues/841).
-
 The underlying Sphinx targets are also available through `make html`, `make doctest`, `make linkcheck` (or `make.bat` on Windows) if you want finer-grained control.
 
 ## Source files (edit these)
@@ -28,7 +26,7 @@ The underlying Sphinx targets are also available through `make html`, `make doct
 | `_toc.yml` | Book structure and page ordering. |
 | `_config.yml` | Jupyter Book configuration (title, theme, Sphinx extensions). |
 | `conf.py` | Sphinx configuration (autosummary, intersphinx, numpydoc, etc.). |
-| `getting_started/` | Install, quickstart, and tutorial notebooks. |
+| `getting_started/` | Install, onboarding, and Quickstart notebooks. |
 | `user_guide/` | Long-form topic notebooks (triangle, development, tails, methods, adjustments, workflow, utils). |
 | `library/api.md` | API reference index. Lists every public class/function via `autosummary` directives. |
 | `library/releases.md` | Release notes. |
@@ -46,20 +44,3 @@ These are produced by the build and should not be edited directly. Edits will be
 | --- | --- |
 | `_build/` | `jb build .` / `sphinx-build`. Gitignored. |
 | `library/generated/*.rst` | `sphinx.ext.autosummary` (`autosummary_generate = True` in `conf.py`, driven by the `:toctree: generated/` directives in `library/api.md`). |
-
-## What to edit for which part of the site
-
-| You want to change... | Edit... |
-| --- | --- |
-| The home page | `intro.md` |
-| Page order or sidebar nav | `_toc.yml` |
-| Site title, theme, Sphinx extensions | `_config.yml` and `conf.py` |
-| Which classes/functions appear in the API reference | `library/api.md` (autosummary lists) |
-| The content of a class or function's API page | The docstring of that class/function in `chainladder/**/*.py` |
-| Release notes | `library/releases.md` |
-| A tutorial or user guide topic | The relevant notebook under `getting_started/` or `user_guide/` |
-| A gallery example | The relevant notebook under `gallery/` |
-
-## Known issues
-
-A clean `jb build .` currently emits a number of Sphinx warnings; cleanup is tracked in [#841](https://github.com/casact/chainladder-python/issues/841) and its sub-issues. Please do not silence warnings ad-hoc as part of unrelated PRs.
