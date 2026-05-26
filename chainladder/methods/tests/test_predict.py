@@ -23,8 +23,8 @@ def test_predict_and_weights(estimators,atol):
     est = estimators().fit(raa_1989, sample_weight=apriori_1989)
     pred = est.predict(raa, sample_weight=apriori)
     assert pred
-    assert np.all(abs(est.summary['actual'].values - raa_1989.latest_diagonal.values.reshape(-1)) < atol)
-    assert np.all(abs(pred.summary['actual'].values - raa.latest_diagonal.values.reshape(-1)) < atol)
+    assert np.all(abs(est.summary['latest'].values - raa_1989.latest_diagonal.values.reshape(-1)) < atol)
+    assert np.all(abs(pred.summary['latest'].values - raa.latest_diagonal.values.reshape(-1)) < atol)
     assert np.all(abs(est.summary['ultimate'].values - est.ultimate_.values.reshape(-1)) < atol)
     assert np.all(abs(pred.summary['ultimate'].values - pred.ultimate_.values.reshape(-1)) < atol)
     #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
