@@ -73,7 +73,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         #columns for melt
         ids = X.key_labels + ['origin','development','valuation']
         #create dataframe for amount
-        amount = X.latest_diagonal.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='actual')
+        amount = X.incr_to_cum().latest_diagonal.to_frame(implicit_axis=True,keepdims=True).reset_index().melt(id_vars=ids,var_name = 'column',value_name='actual')
         amount_index = X.key_labels + ['origin','column']
         amount = amount[amount_index + ['development','actual']]
         amount.set_index(amount_index,inplace=True)
