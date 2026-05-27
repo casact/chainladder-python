@@ -160,7 +160,7 @@ def test_constant_callable_axis1(clrd, atol):
         .fit(agway)
         .cdf_
     )
-    assert np.all(abs(lhs.values[0, :, 0, :] - patterns.values[:, :-1]) < atol)
+    assert np.all(abs(lhs.values[0, :, 0, :] - patterns.values) < atol)
 
 
 def test_constant_pattern_no_tail():
