@@ -258,14 +258,13 @@ def test_set_option_consistency() -> None:
     None
 
     """
-    original = cl.options.ARRAY_BACKEND
     try:
         cl.options.set_option('ARRAY_BACKEND', 'sparse')
         assert cl.options.ARRAY_BACKEND == 'sparse'
         assert cl.options.get_option('ARRAY_BACKEND') == 'sparse'
     finally:
         # Reset the options to default if the test fails.
-        cl.options.set_option('ARRAY_BACKEND', original)
+        cl.options.reset_option('ARRAY_BACKEND')
 
 def test_reset_single_option() -> None:
     """

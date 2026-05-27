@@ -1,3 +1,17 @@
+"""
+The chainladder-python package was built to be able to handle all of your actuarial reserving needs in python.
+It consists of popular actuarial tools, such as triangle data manipulation, link ratios calculation, and
+IBNR estimates using both deterministic and stochastic models. We build this package so you no longer have to rely
+on outdated software and tools when performing actuarial pricing or reserving indications.
+
+This package strives to be minimalistic in needing its own API. The syntax mimics popular packages such as pandas for
+data manipulation and scikit-learn for model construction. An actuary that is already familiar with these tools will be
+able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
+"""
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import copy
 import numpy as np
 import pandas as pd
