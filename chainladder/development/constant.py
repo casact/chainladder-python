@@ -55,7 +55,7 @@ class DevelopmentConstant(DevelopmentBase):
         """
         from chainladder import options
 
-        print("In DevelopmentConstant fit")
+        # print("In DevelopmentConstant fit")
 
         # convert to cumulative triangle
         if X.is_cumulative == False:
@@ -76,30 +76,30 @@ class DevelopmentConstant(DevelopmentBase):
         else:  # static patterns
             pattern = self.patterns
 
-        print("pattern\n", pattern)
+        # print("pattern\n", pattern)
         # print("len(pattern)\n", len(pattern))
         # print("len(obj.ddims)\n", len(obj.ddims))
 
         # the pattern provided is longer than the development triangle
         if len(pattern) > len(obj.ddims) - 1:
-            print("len(pattern) > len(obj.ddims) - 1")
+            # print("len(pattern) > len(obj.ddims) - 1")
 
             from chainladder.tails import TailConstant
 
             sorted_keys = sorted(pattern.keys())
-            print("sorted_keys\n", sorted_keys)
+            # print("sorted_keys\n", sorted_keys)
             tail_cdf = pattern[sorted_keys[len(obj.ddims) - 1]]
-            print("tail_cdf\n", tail_cdf)
+            # print("tail_cdf\n", tail_cdf)
 
             normalized_pattern_values = np.array(list(pattern.values())) / tail_cdf
 
             # Zip the original keys back with the new vectorized array
             pattern = dict(zip(pattern.keys(), normalized_pattern_values))
 
-            print("pattern\n", pattern)
+            # print("pattern\n", pattern)
 
             tail = TailConstant(tail=tail_cdf, projection_period=0).fit(obj)
-            print("tail.cdf_\n", tail.cdf_)
+            # print("tail.cdf_\n", tail.cdf_)
 
             if tail_cdf == 1:
                 obj = tail.ldf_.iloc[..., :1, :-1] * 0 + 1
@@ -107,10 +107,10 @@ class DevelopmentConstant(DevelopmentBase):
                 obj = tail.ldf_.iloc[..., :1, :] * 0 + 1
 
         else:
-            print("len(pattern) < len(obj.ddims)")
+            # print("len(pattern) < len(obj.ddims)")
             obj = obj.iloc[..., :1, :-1] * 0 + 1
 
-        print("obj\n", obj)
+        # print("obj\n", obj)
 
         if callable(self.patterns):
             if self.callable_axis == 0:
@@ -131,8 +131,6 @@ class DevelopmentConstant(DevelopmentBase):
             print("ldf\n", ldf)
 
         else:
-            print("self.patterns\n", self.patterns)
-            print("obj.ddims\n", obj.ddims)
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
