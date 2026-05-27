@@ -102,10 +102,11 @@ class DevelopmentConstant(DevelopmentBase):
 
             trimmed_keys = sorted_keys[:n_dev_periods]
             print("trimmed_keys\n", trimmed_keys)
-            tail_key = trimmed_keys[-1]
-            print("tail_key\n", tail_key)
+
+            tail_key = sorted_keys[n_dev_periods]
             tail_cdf = cdf_patterns[tail_key]
-            print("tail_cdf\n", tail_cdf)
+            print("TAIL BEGINS", tail_key, tail_cdf)
+
             for k in trimmed_keys:
                 cdf_patterns[int(k)] = float(cdf_patterns[k]) / tail_cdf
 
@@ -125,6 +126,7 @@ class DevelopmentConstant(DevelopmentBase):
             obj = obj.iloc[..., :1, :-1] * 0 + 1
             tail_key = None
             tail_cdf = 1
+
         # pattern is exact, no tail needed
         else:
             obj = obj.iloc[..., :1, :-1] * 0 + 1
@@ -187,8 +189,6 @@ class DevelopmentConstant(DevelopmentBase):
         #     ldf[..., -1] = ldf[..., -1] * tail_cdf
         # else:
         ldf[..., -1] = ldf[..., -1] * tail_cdf
-
-        # print("ldf after tail\n", ldf)
 
         obj = obj * ldf
         obj._set_slicers()
