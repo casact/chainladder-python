@@ -46,6 +46,74 @@ class BootstrapODPSample(DevelopmentBase):
         A set of triangles represented by each simulation
     scale_:
         The scale parameter to be used in generating process risk
+
+    Examples
+    --------
+
+    Generate ODP bootstrap samples of the RAA sample triangle. The estimator
+    re-samples standardized Pearson residuals to produce ``n_sims`` synthetic
+    triangles stacked along the index axis of ``resampled_triangles_``, and
+    exposes the scale parameter ``scale_`` used to generate process risk.
+    ``random_state`` and a small ``n_sims`` keep the output deterministic
+    and fast.
+
+    .. testsetup::
+
+        import warnings
+        warnings.filterwarnings("ignore")
+        import chainladder as cl
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        boot = cl.BootstrapODPSample(n_sims=100, random_state=42).fit(raa)
+        print(boot.resampled_triangles_.shape)
+        print(round(float(boot.scale_), 2))
+
+    .. testoutput::
+
+        (100, 1, 10, 10)
+        983.64
+
+    Because ``resampled_triangles_`` is itself a Triangle (with the simulation
+    index along the first axis), it can be fed straight into any downstream
+    reserving estimator to obtain a stochastic distribution of ultimates and
+    IBNR. Below, a deterministic chain-ladder is fit on the resampled triangle
+    and the total IBNR is summarised across the 100 simulations.
+
+    .. testcode::
+
+        sims = cl.BootstrapODPSample(
+            n_sims=100, random_state=42
+        ).fit_transform(raa)
+        ibnr = cl.Chainladder().fit(sims).ibnr_.sum('origin')
+        print(ibnr.shape)
+        print(round(float(ibnr.mean()), 2))
+        print(round(float(ibnr.std()), 2))
+
+    .. testoutput::
+
+        (100, 1, 1, 1)
+        51301.13
+        16149.47
+
+    The estimator also supports a leave-one-out sensitivity check on the
+    residual distribution. Setting ``drop_high=True`` excludes the highest
+    link ratio in each development column before computing residuals, without
+    making any outlier judgement, so the resulting ``scale_`` measures how
+    influential the column maxima are on the bootstrap. For the RAA triangle
+    this shrinks ``scale_`` from 983.64 to 648.94.
+
+    .. testcode::
+
+        boot_dh = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, drop_high=True
+        ).fit(raa)
+        print(round(float(boot_dh.scale_), 2))
+
+    .. testoutput::
+
+        648.94
     """
 
     def __init__(

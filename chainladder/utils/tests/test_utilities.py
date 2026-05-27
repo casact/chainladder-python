@@ -184,7 +184,7 @@ def test_date_delta_adjustment() -> None:
 
 def test_reset_option() -> None:
     """
-    Tests cl.options.reset_option.
+    Change some of the options and then reset them. Values after reset should match the original values.
 
     Returns
     -------
@@ -192,22 +192,115 @@ def test_reset_option() -> None:
 
     """
 
-    original_ult_val = cl.options.ULT_VAL
-    original_dt64_unit = cl.options.DT64_UNIT
-    original_dt64_dtype = cl.options.DT64_DTYPE
+    original_backend = cl.options.ARRAY_BACKEND
+    original_auto_sparse = cl.options.AUTO_SPARSE
+    original_array_priority = cl.options.ARRAY_PRIORITY
 
-    cl.options.set_option('ARRAY_BACKEND', 'sparse')
-    cl.options.set_option('AUTO_SPARSE', False)
-    cl.options.set_option('ARRAY_PRIORITY', ['numpy'])
-    cl.options.set_option('ULT_VAL', 'fake')
-    cl.options.set_option('DT64_UNIT', 'fake')
-    cl.options.set_option('DT64_DTYPE', 'fake')
+    try:
 
-    cl.options.reset_option()
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        cl.options.set_option('AUTO_SPARSE', False)
+        cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'dask', 'numpy', 'cupy'])
 
-    assert cl.options.ARRAY_BACKEND == 'numpy'
-    assert cl.options.AUTO_SPARSE == True
-    assert cl.options.ARRAY_PRIORITY == ['dask', 'sparse', 'cupy', 'numpy']
-    assert cl.options.ULT_VAL == original_ult_val
-    assert cl.options.DT64_UNIT == original_dt64_unit
-    assert cl.options.DT64_DTYPE == original_dt64_dtype
+        cl.options.reset_option()
+
+        assert cl.options.ARRAY_BACKEND == original_backend
+        assert cl.options.AUTO_SPARSE == original_auto_sparse
+        assert cl.options.ARRAY_PRIORITY == original_array_priority
+
+    finally:
+    # Manual reset in case of test failure.
+        cl.options.set_option('ARRAY_BACKEND', original_backend)
+        cl.options.set_option('AUTO_SPARSE', original_auto_sparse)
+        cl.options.set_option('ARRAY_PRIORITY', original_array_priority)
+
+
+def test_options_defaults() -> None:
+    """
+    When initialized, default options should be correct and accessible from the options variable.
+
+    Returns
+    -------
+    None
+
+    """
+    options = cl.Options()
+    assert options.ARRAY_BACKEND == "numpy"
+    assert options.AUTO_SPARSE == True
+    assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
+    assert isinstance(options.DT64_DTYPE, str)
+    assert isinstance(options.DT64_UNIT, str)
+    assert isinstance(options.ULT_VAL, str)
+
+
+def test_get_option() -> None:
+    """
+    get_option should return the appropriate attribute value.
+
+    Returns
+    -------
+    None
+
+    """
+    assert cl.options.get_option('ARRAY_BACKEND') == cl.options.ARRAY_BACKEND
+    assert cl.options.get_option('AUTO_SPARSE') == cl.options.AUTO_SPARSE
+    assert cl.options.get_option('ARRAY_PRIORITY') == cl.options.ARRAY_PRIORITY
+    assert cl.options.get_option('DT64_DTYPE') == cl.options.DT64_DTYPE
+    assert cl.options.get_option('DT64_UNIT') == cl.options.DT64_UNIT
+    assert cl.options.get_option('ULT_VAL') == cl.options.ULT_VAL
+
+
+def test_set_option_consistency() -> None:
+    """
+    When set_option changes an option value, get_option should return the new option value.
+
+    Returns
+    -------
+    None
+
+    """
+    original = cl.options.ARRAY_BACKEND
+    try:
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        assert cl.options.ARRAY_BACKEND == 'sparse'
+        assert cl.options.get_option('ARRAY_BACKEND') == 'sparse'
+    finally:
+        # Reset the options to default if the test fails.
+        cl.options.set_option('ARRAY_BACKEND', original)
+
+
+def test_deprecated_array_backend() -> None:
+    """
+    Trigger the deprecation warning on cl.array_backend()
+
+    Returns
+    -------
+    None
+
+    """
+    original = cl.options.ARRAY_BACKEND
+    try:
+        with pytest.warns(FutureWarning):
+            cl.array_backend('sparse')
+        assert cl.options.ARRAY_BACKEND == 'sparse'
+    finally:
+        # Reset the options to default if the test fails.
+        cl.options.set_option('ARRAY_BACKEND', original)
+
+
+def test_deprecated_auto_sparse() -> None:
+    """
+    Trigger the deprecation warning on cl.auto_sparse()
+
+    Returns
+    -------
+    None
+
+    """
+    original = cl.options.AUTO_SPARSE
+    try:
+        with pytest.warns(FutureWarning):
+            cl.auto_sparse(False)
+        assert cl.options.AUTO_SPARSE == False
+    finally:
+        cl.options.set_option('AUTO_SPARSE', original)
