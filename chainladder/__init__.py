@@ -1,6 +1,4 @@
 import copy
-from threading import settrace_all_threads
-
 import numpy as np
 import pandas as pd
 from importlib.metadata import version
@@ -95,7 +93,7 @@ class Options:
 
         if option is not None:
             self._validate_option(option)
-            setattr(self, option, self._defaults[option])
+            setattr(self, option, copy.deepcopy(self._defaults[option]))
         else:
             self.__init__()
 
