@@ -4,6 +4,7 @@
 from chainladder.development.base import DevelopmentBase
 import pandas as pd
 import numpy as np
+import warnings
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -63,59 +64,74 @@ class DevelopmentConstant(DevelopmentBase):
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
 
+        n_dev_periods = len(obj.ddims)
         xp = obj.get_array_module()
 
         if callable(self.patterns):
             if self.callable_axis == 0:  # varying patterns by index
-                pattern = self.patterns(obj.index.iloc[0])
+                patterns = self.patterns(obj.index.iloc[0])
             elif self.callable_axis == 1:  # varying patterns by column
-                pattern = self.patterns(obj.columns.to_frame(index=False).iloc[0])
+                patterns = self.patterns(obj.columns.to_frame(index=False).iloc[0])
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
 
         else:  # static patterns
-            pattern = self.patterns
+            patterns = self.patterns
 
         # convert patterns to CDFs so it's easier to work with
-        sorted_keys = sorted(pattern.keys())
-        pattern_values = np.array([float(pattern[k]) for k in sorted_keys])
+        sorted_keys = sorted(patterns.keys())
+        pattern_values = np.array([float(patterns[k]) for k in sorted_keys])
         if self.style == "ldf":
-            pattern = dict(zip(sorted_keys, np.cumprod(pattern_values[::-1])[::-1]))
+            cdf_patterns = dict(
+                zip(sorted_keys, np.cumprod(pattern_values[::-1])[::-1])
+            )
+        else:
+            cdf_patterns = patterns
 
-        # print("pattern\n", pattern)
-        # print("len(pattern)\n", len(pattern))
-        # print("len(obj.ddims)\n", len(obj.ddims))
+        print("CDF patterns\n", cdf_patterns)
 
-        # the pattern provided is longer than the development triangle
-        if len(pattern) > len(obj.ddims) - 1:
-            # print("len(pattern) > len(obj.ddims) - 1")
+        # patterns provided is longer than the triangle development periods,
+        # this step resizes and gets tail_cdf to apply to the tail of the triangle later
+        if len(cdf_patterns) > len(obj.ddims) - 1:
+            # print("patterns is longer than the triangle development periods")
 
-            from chainladder.tails import TailConstant
-
-            # print("sorted_keys\n", sorted_keys)
-            tail_cdf = pattern[sorted_keys[len(obj.ddims) - 1]]
-            # print("tail_cdf\n", tail_cdf)
-
-            normalized_pattern_values = np.array(list(pattern.values())) / tail_cdf
-
-            # Zip the original keys back with the new vectorized array
-            pattern = dict(zip(pattern.keys(), normalized_pattern_values))
-
-            # print("pattern\n", pattern)
-
-            tail = TailConstant(tail=tail_cdf, projection_period=0).fit(obj)
-            # print("tail.cdf_\n", tail.cdf_)
+            tail_key = sorted_keys[len(obj.ddims) - 1]
+            tail_cdf = cdf_patterns[tail_key]
 
             if tail_cdf == 1:
-                obj = tail.ldf_.iloc[..., :1, :-1] * 0 + 1
+                obj = obj.iloc[..., :1, :-1] * 0 + 1
             else:
-                obj = tail.ldf_.iloc[..., :1, :] * 0 + 1
-
+                obj = obj.iloc[..., :1, :] * 0 + 1
         else:
-            # print("len(pattern) < len(obj.ddims)")
             obj = obj.iloc[..., :1, :-1] * 0 + 1
+            tail_key = None
+            tail_cdf = 1
 
-        # print("obj\n", obj)
+        # warn if the patterns are shorter than the triangle development periods
+        if len(cdf_patterns) < n_dev_periods:
+            warnings.warn(
+                "Supplied patterns are shorter than the triangle development "
+                "periods. Missing ages will be filled with a factor of 1.0.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        # fill the cdf_patterns dictionary with 1.0 for any development periods
+        for ddim in obj.ddims:
+            if not any(ddim == k or int(ddim) == int(k) for k in cdf_patterns):
+                cdf_patterns[int(ddim)] = 1.0
+            if self.style == "ldf" and not any(
+                ddim == k or int(ddim) == int(k) for k in patterns
+            ):
+                patterns[int(ddim)] = 1.0
+
+        print("obj to fill\n", obj)
+        print("tail_cdf", tail_key, tail_cdf)
+
+        # from chainladder.tails import TailConstant
+
+        # tail = TailConstant(tail=tail_cdf, projection_period=0).fit(obj)
+        # print("tail.cdf_\n", tail.cdf_)
 
         if callable(self.patterns):
             if self.callable_axis == 0:
@@ -124,24 +140,30 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
+
             ldf = (
                 pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                 .fillna(1)[obj.ddims]
                 .values
             )
+
             if self.callable_axis == 0:
                 ldf = xp.array(ldf[:, None, None, :])
             else:
                 ldf = xp.array(ldf[None, :, None, :])
 
         else:
-            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
+            fit_patterns = patterns if self.style == "ldf" else cdf_patterns
+            ldf = xp.array([float(fit_patterns[int(item)]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
 
+        print("final ldf\n", ldf)
         obj = obj * ldf
+        # tail = TailConstant(tail=tail_cdf, projection_period=0).fit(obj)
+        # print("tail.cdf_\n", tail.cdf_)
         obj._set_slicers()
 
         self.ldf_ = obj
