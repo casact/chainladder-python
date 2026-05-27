@@ -65,9 +65,22 @@ class DevelopmentConstant(DevelopmentBase):
             obj = self._set_fit_groups(X).val_to_dev().copy()
 
         xp = obj.get_array_module()
-        print("obj.iloc[..., :1, :] * 0 + 1\n", obj.iloc[..., :1, :] * 0 + 1)
-        # obj = obj.iloc[..., :1, :-1] * 0 + 1
-        obj = obj.iloc[..., :1, :] * 0 + 1
+
+        if callable(self.patterns):
+            if self.callable_axis == 0:
+                pattern = self.patterns(obj.index.iloc[0])
+            elif self.callable_axis == 1:
+                pattern = self.patterns(obj.columns.to_frame(index=False).iloc[0])
+            else:
+                raise ValueError("callable axis needs to be 0 or 1")
+        else:
+            pattern = self.patterns
+
+        if len(pattern) > len(obj.ddims):
+            obj = obj.iloc[..., :1, :-1] * 0 + 1
+        else:
+            obj = obj.iloc[..., :1, :] * 0 + 1
+
         print("obj\n", obj)
 
         if callable(self.patterns):
@@ -95,6 +108,8 @@ class DevelopmentConstant(DevelopmentBase):
                 raise ValueError("callable axis needs to be 0 or 1")
 
         else:
+            print("self.patterns\n", self.patterns)
+            print("obj.ddims\n", obj.ddims)
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
