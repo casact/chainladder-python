@@ -186,100 +186,7 @@ def test_constant_pattern_no_tail():
     )
 
 
-def test_constant_pattern_exact_cdf():
-    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
-    reported_patterns = {
-        12: 1.1,
-        24: 1.1,
-        36: 1.1,
-        48: 1.1,
-        60: 1.1,
-        72: 1.1,
-        84: 1.1,
-        96: 1.1,
-    }
-
-    reported_BI_claim = cl.DevelopmentConstant(
-        patterns=reported_patterns, style="cdf"
-    ).fit_transform(auto_bi["Reported Claims"])
-
-    assert np.all(
-        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
-        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
-    )
-
-
-def test_constant_pattern_exact_ldf():
-    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
-    reported_patterns = {
-        12: 1.1,
-        24: 1.1,
-        36: 1.1,
-        48: 1.1,
-        60: 1.1,
-        72: 1.1,
-        84: 1.1,
-        96: 1.1,
-    }
-
-    reported_BI_claim = cl.DevelopmentConstant(
-        patterns=reported_patterns, style="ldf"
-    ).fit_transform(auto_bi["Reported Claims"])
-
-    assert np.all(
-        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
-        == np.array([2.143589, 1.948717, 1.771561, 1.61051, 1.4641, 1.331, 1.21, 1.1])
-    )
-
-
-def test_constant_pattern_short_cdf():
-    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
-    reported_patterns = {
-        12: 1.1,
-        24: 1.1,
-        36: 1.1,
-        48: 1.1,
-        60: 1.1,
-        72: 1.1,
-        # 84: 1.1,
-        # 96: 1.1,
-    }
-
-    reported_BI_claim = cl.DevelopmentConstant(
-        patterns=reported_patterns, style="cdf"
-    ).fit_transform(auto_bi["Reported Claims"])
-
-    assert np.all(
-        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
-        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.0, 1.0])
-    )
-
-
-def test_constant_pattern_short_ldf():
-    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
-    reported_patterns = {
-        12: 1.1,
-        24: 1.1,
-        36: 1.1,
-        48: 1.1,
-        60: 1.1,
-        72: 1.1,
-        # 84: 1.1,
-        # 96: 1.1,
-    }
-
-    reported_BI_claim = cl.DevelopmentConstant(
-        patterns=reported_patterns, style="ldf"
-    ).fit_transform(auto_bi["Reported Claims"])
-
-    assert np.all(
-        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
-        == np.array([1.771561, 1.61051, 1.4641, 1.331, 1.21, 1.1, 1.0, 1.0])
-    )
-
-
-def test_constant_pattern_long_cdf():
-    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
+def test_constant_pattern_exact_cdf(raa):
     reported_patterns = {
         12: 1.1,
         24: 1.1,
@@ -293,17 +200,17 @@ def test_constant_pattern_long_cdf():
         120: 1.1,
     }
 
-    reported_BI_claim = cl.DevelopmentConstant(
+    result = cl.DevelopmentConstant(
         patterns=reported_patterns, style="cdf"
-    ).fit_transform(auto_bi["Reported Claims"])
+    ).fit_transform(raa)
+
     assert np.all(
-        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
-        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
     )
 
 
-def test_constant_pattern_long_ldf():
-    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
+def test_constant_pattern_exact_ldf(raa):
     reported_patterns = {
         12: 1.1,
         24: 1.1,
@@ -317,14 +224,125 @@ def test_constant_pattern_long_ldf():
         120: 1.1,
     }
 
-    reported_BI_claim = cl.DevelopmentConstant(
+    result = cl.DevelopmentConstant(
         patterns=reported_patterns, style="ldf"
-    ).fit_transform(auto_bi["Reported Claims"])
+    ).fit_transform(raa)
 
     assert np.all(
-        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
         == np.array(
             [
+                2.593742,
+                2.357948,
+                2.143589,
+                1.948717,
+                1.771561,
+                1.61051,
+                1.4641,
+                1.331,
+                1.21,
+                1.1,
+            ]
+        )
+    )
+
+
+def test_constant_pattern_short_cdf(raa):
+    reported_patterns = {
+        12: 1.1,
+        24: 1.1,
+        36: 1.1,
+        48: 1.1,
+        60: 1.1,
+        72: 1.1,
+        # 84: 1.1,
+        # 96: 1.1,
+        # 108: 1.1,
+        # 120: 1.1,
+    }
+
+    result = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="cdf"
+    ).fit_transform(raa)
+
+    assert np.all(
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.0, 1.0, 1.0])
+    )
+
+
+def test_constant_pattern_short_ldf(raa):
+    reported_patterns = {
+        12: 1.1,
+        24: 1.1,
+        36: 1.1,
+        48: 1.1,
+        60: 1.1,
+        72: 1.1,
+        # 84: 1.1,
+        # 96: 1.1,
+        # 108: 1.1,
+        # 120: 1.1,
+    }
+
+    result = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="ldf"
+    ).fit_transform(raa)
+
+    assert np.all(
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.array([1.771561, 1.61051, 1.4641, 1.331, 1.21, 1.1, 1.0, 1.0, 1.0])
+    )
+
+
+def test_constant_pattern_long_cdf(raa):
+    reported_patterns = {
+        12: 1.1,
+        24: 1.1,
+        36: 1.1,
+        48: 1.1,
+        60: 1.1,
+        72: 1.1,
+        84: 1.1,
+        96: 1.1,
+        108: 1.1,
+        120: 1.1,
+        132: 1.1,
+    }
+
+    result = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="cdf"
+    ).fit_transform(raa)
+    assert np.all(
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
+    )
+
+
+def test_constant_pattern_long_ldf(raa):
+    reported_patterns = {
+        12: 1.1,
+        24: 1.1,
+        36: 1.1,
+        48: 1.1,
+        60: 1.1,
+        72: 1.1,
+        84: 1.1,
+        96: 1.1,
+        108: 1.1,
+        120: 1.1,
+        132: 1.1,
+    }
+
+    result = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="ldf"
+    ).fit_transform(raa)
+
+    assert np.all(
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.array(
+            [
+                2.853117,
                 2.593742,
                 2.357948,
                 2.143589,

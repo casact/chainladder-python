@@ -95,6 +95,8 @@ class DevelopmentConstant(DevelopmentBase):
 
         # patterns provided is longer than the triangle development periods,
         # this step resizes and gets tail_cdf to apply to the tail of the triangle later
+        # n_dev_periods - 1 has - 1 at the end because the last period is assumed at
+        # ultimate by defualt, unless there's a tail
         if len(cdf_patterns) > n_dev_periods:
             print(
                 "patterns is longer than the triangle development periods, tail needed"
@@ -129,7 +131,7 @@ class DevelopmentConstant(DevelopmentBase):
 
         # pattern is exact, no tail needed
         else:
-            obj = obj.iloc[..., :1, :-1] * 0 + 1
+            obj = obj.iloc[..., :1, :] * 0 + 1
             tail_key = None
             tail_cdf = 1
 
