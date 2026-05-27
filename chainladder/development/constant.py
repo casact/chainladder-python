@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
 import pandas as pd
+import numpy as np
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -55,8 +56,6 @@ class DevelopmentConstant(DevelopmentBase):
         from chainladder import options
 
         print("In DevelopmentConstant fit")
-        print("X\n", X)
-        print("X.is_cumulative\n", X.is_cumulative)
 
         # convert to cumulative triangle
         if X.is_cumulative == False:
@@ -78,20 +77,35 @@ class DevelopmentConstant(DevelopmentBase):
             pattern = self.patterns
 
         print("pattern\n", pattern)
-        print("len(pattern)\n", len(pattern))
-        print("len(obj.ddims)\n", len(obj.ddims))
+        # print("len(pattern)\n", len(pattern))
+        # print("len(obj.ddims)\n", len(obj.ddims))
 
         # the pattern provided is longer than the development triangle
         if len(pattern) > len(obj.ddims) - 1:
+            print("len(pattern) > len(obj.ddims) - 1")
+
             from chainladder.tails import TailConstant
 
             sorted_keys = sorted(pattern.keys())
-            excess_cdf = pattern[sorted_keys[len(obj.ddims) - 1]]
-            print("len(pattern) > len(obj.ddims) - 1")
-            print("excess_cdf\n", excess_cdf)
-            tail = TailConstant(tail=excess_cdf, projection_period=0).fit(obj)
-            dev_slice = slice(None, -1) if excess_cdf == 1 else slice(None)
-            obj = tail.ldf_.iloc[..., :1, dev_slice] * 0 + 1
+            print("sorted_keys\n", sorted_keys)
+            tail_cdf = pattern[sorted_keys[len(obj.ddims) - 1]]
+            print("tail_cdf\n", tail_cdf)
+
+            normalized_pattern_values = np.array(list(pattern.values())) / tail_cdf
+
+            # Zip the original keys back with the new vectorized array
+            pattern = dict(zip(pattern.keys(), normalized_pattern_values))
+
+            print("pattern\n", pattern)
+
+            tail = TailConstant(tail=tail_cdf, projection_period=0).fit(obj)
+            print("tail.cdf_\n", tail.cdf_)
+
+            if tail_cdf == 1:
+                obj = tail.ldf_.iloc[..., :1, :-1] * 0 + 1
+            else:
+                obj = tail.ldf_.iloc[..., :1, :] * 0 + 1
+
         else:
             print("len(pattern) < len(obj.ddims)")
             obj = obj.iloc[..., :1, :-1] * 0 + 1
