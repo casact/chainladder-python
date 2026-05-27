@@ -56,8 +56,6 @@ class DevelopmentConstant(DevelopmentBase):
         """
         from chainladder import options
 
-        # print("In DevelopmentConstant fit")
-
         # convert to cumulative triangle
         if not X.is_cumulative:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
