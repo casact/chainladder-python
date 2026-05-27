@@ -1,7 +1,12 @@
 import numpy as np
 import pandas as pd
 from importlib.metadata import version
-from sklearn.utils import deprecated
+
+
+# Get the default datetime64 data type and precision, extracted from Pandas installation.
+# Used for cross-version compatibility between Pandas 2 and Pandas 3.
+__dt64_dtype__: str = pd.to_datetime(["2000-01-01"]).dtype.name
+__dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 
 
 class Options:
@@ -16,10 +21,9 @@ class Options:
     AUTO_SPARSE: bool
         Controls whether chainladder automatically converts a triangle's backing array to a sparse representation
         when it would be memory-efficient to do so.
-    DT64_DTYPE: str
-        The default datetime64 data type, extracted from Pandas installation.
-    DT64_UNIT: str
-        The default datetime64 precision, extracted from Pandas installation.
+    ARRAY_PRIORITY: list
+        Determines which backend wins when two triangles with different backends interact, i.e.,
+        when comparing or concatenating them.
     ULT_VAL: str
         The default ultimate valuation datetime, precision set to default of Pandas installation.
 
@@ -28,12 +32,12 @@ class Options:
         self.ARRAY_BACKEND = "numpy"
         self.AUTO_SPARSE = True
         self.ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
-        self.DT64_DTYPE: str = pd.to_datetime(["2000-01-01"]).dtype.name
-        self.DT64_UNIT: str = np.datetime_data(self.DT64_DTYPE)[0]
         self.ULT_VAL = str(
             pd.Timestamp("2262-01-01") - \
-            pd.Timedelta(1, unit=self.DT64_UNIT)
+            pd.Timedelta(1, unit=__dt64_unit__)
         )
+        # Store initial values as defaults.
+        self.defaults = {**vars(self)}
 
     def get_option(self, option: str) -> str | bool | list:
         """
@@ -49,6 +53,7 @@ class Options:
         The option value.
 
         """
+        self._validate_option(option)
         return getattr(self, option)
 
     def set_option(
@@ -71,32 +76,35 @@ class Options:
         None
 
         """
-
+        self._validate_option(option)
         setattr(self, option, value)
 
-    def reset_option(self) -> None:
+    def reset_option(self, option: str | None = None) -> None:
         """
-        Restores the default options.
+        Restores the default value for the specified option. Restores default values for
+        all options if option is None.
 
         Returns
         -------
         None
 
         """
-        self.__init__()
 
-    def describe_option(self):
+        if option:
+            self._validate_option(option)
+            setattr(self, option, self.defaults[option])
+        else:
+            self.__init__()
+
+    def _validate_option(self, option: str) -> None:
+
+        if option not in self.defaults:
+            raise ValueError(f"Invalid option(s): {option}. Must be one of {list(self.defaults)}.")
+
+    def describe_option(self, option: str) -> str:
         pass
 
 options = Options()
-
-@deprecated("In an upcoming version of the package, this function will be deprecated. Use `chainladder.options.set_option('ARRAY_BACKEND', value)` to avoid breakage.")
-def array_backend(array_backend="numpy"):
-    options.set_option('ARRAY_BACKEND', array_backend)
-
-@deprecated("In an upcoming version of the package, this function will be deprecated. Use `chainladder.options.set_option('AUTO_SPARSE', value)` to avoid breakage.")
-def auto_sparse(auto_sparse=True):
-    options.set_option('AUTO_SPARSE', auto_sparse)
 
 
 from chainladder.utils import *  # noqa (API Import)
