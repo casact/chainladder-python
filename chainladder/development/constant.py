@@ -59,7 +59,7 @@ class DevelopmentConstant(DevelopmentBase):
         # print("In DevelopmentConstant fit")
 
         # convert to cumulative triangle
-        if X.is_cumulative == False:
+        if not X.is_cumulative:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
@@ -73,7 +73,6 @@ class DevelopmentConstant(DevelopmentBase):
                 patterns = self.patterns(obj.columns.to_frame(index=False).iloc[0])
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
-
         else:  # static patterns
             patterns = self.patterns
 
@@ -87,36 +86,21 @@ class DevelopmentConstant(DevelopmentBase):
         else:
             cdf_patterns = patterns
 
-        print("CDF patterns\n", cdf_patterns)
-
         n_dev_periods = len(obj.ddims)
-        print("triangle_periods\n", n_dev_periods)
-        print("pattern periods\n", len(cdf_patterns))
 
         # patterns provided is longer than the triangle development periods,
         # this step resizes and gets tail_cdf to apply to the tail of the triangle later
         # n_dev_periods - 1 has - 1 at the end because the last period is assumed at
         # ultimate by defualt, unless there's a tail
         if len(cdf_patterns) > n_dev_periods:
-            print(
-                "patterns is longer than the triangle development periods, tail needed"
-            )
-
-            trimmed_keys = sorted_keys[:n_dev_periods]
-            print("trimmed_keys\n", trimmed_keys)
-
-            tail_key = sorted_keys[n_dev_periods]
-            tail_cdf = cdf_patterns[tail_key]
-            print("TAIL BEGINS", tail_key, tail_cdf)
-
-            for k in trimmed_keys:
+            tail_cdf = cdf_patterns[sorted_keys[n_dev_periods]]
+            for k in sorted_keys[:n_dev_periods]:
                 cdf_patterns[int(k)] = float(cdf_patterns[k]) / tail_cdf
-
-            if tail_cdf == 1:
-                obj = obj.iloc[..., :1, :-1] * 0 + 1
-            else:
-                obj = obj.iloc[..., :1, :] * 0 + 1
-
+            obj = (
+                obj.iloc[..., :1, :-1] * 0 + 1
+                if tail_cdf == 1
+                else obj.iloc[..., :1, :] * 0 + 1
+            )
         # warn if the patterns are shorter than the triangle development periods
         elif len(cdf_patterns) < n_dev_periods:
             warnings.warn(
@@ -126,13 +110,10 @@ class DevelopmentConstant(DevelopmentBase):
                 stacklevel=2,
             )
             obj = obj.iloc[..., :1, :-1] * 0 + 1
-            tail_key = None
             tail_cdf = 1
-
         # pattern is exact, no tail needed
         else:
             obj = obj.iloc[..., :1, :] * 0 + 1
-            tail_key = None
             tail_cdf = 1
 
         # fill the cdf_patterns dictionary with 1.0 for any development periods
@@ -143,8 +124,6 @@ class DevelopmentConstant(DevelopmentBase):
                 ddim == k or int(ddim) == int(k) for k in patterns
             ):
                 patterns[int(ddim)] = 1.0
-
-        print("TAIL BEGINS", tail_key, tail_cdf)
 
         if callable(self.patterns):
             if self.callable_axis == 0:
@@ -159,47 +138,25 @@ class DevelopmentConstant(DevelopmentBase):
                 .fillna(1)[obj.ddims]
                 .values
             )
-
             if self.callable_axis == 0:
                 ldf = xp.array(ldf[:, None, None, :])
             else:
                 ldf = xp.array(ldf[None, :, None, :])
-
         else:
             fit_patterns = patterns if self.style == "ldf" else cdf_patterns
             ldf = xp.array([float(fit_patterns[int(item)]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
-        print("ldf before cdf\n", ldf)
-
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
 
         # apply tail_cdf to the last ldfs of the triangle
-        # print("before ldf\n", ldf)
-        # if len(cdf_patterns) > len(obj.ddims) - 1:
-        #     ldf[..., -1] = ldf[..., -1] * tail_cdf
-        print("ldf after cdf\n", ldf)
-
-        # from chainladder.tails import TailConstant
-
-        # tail = TailConstant(tail=tail_cdf, projection_period=0).fit_transform(obj)
-        # print("tail.ldf_\n", tail.ldf_)
-        # print("tail.cdf_\n", tail.cdf_)
-
-        # if self.style == "ldf":
-        #     ldf[..., -1] = ldf[..., -1] * tail_cdf
-        # else:
         ldf[..., -1] = ldf[..., -1] * tail_cdf
 
         obj = obj * ldf
         obj._set_slicers()
 
-        print("obj filled \n", obj)
-
         self.ldf_ = obj
-        # self.ldf_ = tail.ldf_
-        print("FINAL self.ldf_\n", self.ldf_)
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
