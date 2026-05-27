@@ -76,6 +76,12 @@ class DevelopmentConstant(DevelopmentBase):
         else:  # static patterns
             pattern = self.patterns
 
+        # convert patterns to CDFs so it's easier to work with
+        sorted_keys = sorted(pattern.keys())
+        pattern_values = np.array([float(pattern[k]) for k in sorted_keys])
+        if self.style == "ldf":
+            pattern = dict(zip(sorted_keys, np.cumprod(pattern_values[::-1])[::-1]))
+
         # print("pattern\n", pattern)
         # print("len(pattern)\n", len(pattern))
         # print("len(obj.ddims)\n", len(obj.ddims))
@@ -86,7 +92,6 @@ class DevelopmentConstant(DevelopmentBase):
 
             from chainladder.tails import TailConstant
 
-            sorted_keys = sorted(pattern.keys())
             # print("sorted_keys\n", sorted_keys)
             tail_cdf = pattern[sorted_keys[len(obj.ddims) - 1]]
             # print("tail_cdf\n", tail_cdf)

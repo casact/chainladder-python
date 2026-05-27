@@ -207,3 +207,27 @@ def test_constant_pattern_has_tail():
         np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
         == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02, 1.005])
     )
+
+
+def test_constant_pattern_has_longtail():
+    reported_patterns = {
+        12: 4.0,
+        24: 2.9,
+        36: 1.8,
+        48: 1.4,
+        60: 1.2,
+        72: 1.1,
+        84: 1.03,
+        96: 1.02,
+        108: 1.005,
+        120: 1.003,
+    }
+    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
+    reported_BI_claim = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="cdf"
+    ).fit_transform(auto_bi["Reported Claims"])
+
+    assert np.all(
+        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
+        == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02, 1.005])
+    )
