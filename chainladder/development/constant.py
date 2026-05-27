@@ -58,54 +58,55 @@ class DevelopmentConstant(DevelopmentBase):
         print("X\n", X)
         print("X.is_cumulative\n", X.is_cumulative)
 
+        # convert to cumulative triangle
         if X.is_cumulative == False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
-
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
 
         xp = obj.get_array_module()
 
         if callable(self.patterns):
-            if self.callable_axis == 0:
+            if self.callable_axis == 0:  # varying patterns by index
                 pattern = self.patterns(obj.index.iloc[0])
-            elif self.callable_axis == 1:
+            elif self.callable_axis == 1:  # varying patterns by column
                 pattern = self.patterns(obj.columns.to_frame(index=False).iloc[0])
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
-        else:
+
+        else:  # static patterns
             pattern = self.patterns
 
+        print("pattern\n", pattern)
+        print("len(pattern)\n", len(pattern))
+        print("len(obj.ddims)\n", len(obj.ddims))
+
+        # obj = obj.iloc[..., :1, :-1] * 0 + 1
         if len(pattern) > len(obj.ddims):
+            print("len(pattern) > len(obj.ddims)")
             obj = obj.iloc[..., :1, :-1] * 0 + 1
         else:
-            obj = obj.iloc[..., :1, :] * 0 + 1
+            print("len(pattern) <= len(obj.ddims)")
+            obj = obj.iloc[..., :1, :-1] * 0 + 1
 
         print("obj\n", obj)
 
         if callable(self.patterns):
+            ldf = (
+                pd.concat(
+                    axis.apply(self.patterns, axis=1)
+                    .apply(pd.DataFrame, index=[0])
+                    .values,
+                    axis=0,
+                )
+                .fillna(1)[obj.ddims]
+                .values
+            )
             if self.callable_axis == 0:
-                ldf = obj.index.apply(self.patterns, axis=1)
-                ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
-                    .values
-                )
                 ldf = xp.array(ldf[:, None, None, :])
-                print("ldf\n", ldf)
-
-            elif self.callable_axis == 1:
-                ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
-                ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
-                    .values
-                )
-                ldf = xp.array(ldf[None, :, None, :])
-                print("ldf\n", ldf)
-
             else:
-                raise ValueError("callable axis needs to be 0 or 1")
+                ldf = xp.array(ldf[None, :, None, :])
+            print("ldf\n", ldf)
 
         else:
             print("self.patterns\n", self.patterns)
