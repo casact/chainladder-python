@@ -172,7 +172,8 @@ def test_constant_pattern_no_tail():
         60: 1.2,
         72: 1.1,
         84: 1.03,
-        96: 1.02,  # 108: 1.005,
+        96: 1.02,
+        # 108: 1.005,
     }
     auto_bi = cl.load_sample("friedland_auto_bi_insurer")
     reported_BI_claim = cl.DevelopmentConstant(
