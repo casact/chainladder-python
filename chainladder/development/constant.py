@@ -81,24 +81,32 @@ class DevelopmentConstant(DevelopmentBase):
         print("len(pattern)\n", len(pattern))
         print("len(obj.ddims)\n", len(obj.ddims))
 
-        # obj = obj.iloc[..., :1, :-1] * 0 + 1
-        if len(pattern) > len(obj.ddims):
-            print("len(pattern) > len(obj.ddims)")
-            obj = obj.iloc[..., :1, :-1] * 0 + 1
+        # the pattern provided is longer than the development triangle
+        if len(pattern) > len(obj.ddims) - 1:
+            from chainladder.tails import TailConstant
+
+            sorted_keys = sorted(pattern.keys())
+            excess_cdf = pattern[sorted_keys[len(obj.ddims) - 1]]
+            print("len(pattern) > len(obj.ddims) - 1")
+            print("excess_cdf\n", excess_cdf)
+            tail = TailConstant(tail=excess_cdf, projection_period=0).fit(obj)
+            dev_slice = slice(None, -1) if excess_cdf == 1 else slice(None)
+            obj = tail.ldf_.iloc[..., :1, dev_slice] * 0 + 1
         else:
-            print("len(pattern) <= len(obj.ddims)")
+            print("len(pattern) < len(obj.ddims)")
             obj = obj.iloc[..., :1, :-1] * 0 + 1
 
         print("obj\n", obj)
 
         if callable(self.patterns):
+            if self.callable_axis == 0:
+                ldf = obj.index.apply(self.patterns, axis=1)
+            elif self.callable_axis == 1:
+                ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
+            else:
+                raise ValueError("callable axis needs to be 0 or 1")
             ldf = (
-                pd.concat(
-                    axis.apply(self.patterns, axis=1)
-                    .apply(pd.DataFrame, index=[0])
-                    .values,
-                    axis=0,
-                )
+                pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                 .fillna(1)[obj.ddims]
                 .values
             )
