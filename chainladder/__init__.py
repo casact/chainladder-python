@@ -1,4 +1,6 @@
 import copy
+from threading import settrace_all_threads
+
 import numpy as np
 import pandas as pd
 from importlib.metadata import version
@@ -38,7 +40,7 @@ class Options:
             pd.Timedelta(1, unit=__dt64_unit__)
         )
         # Store initial values as defaults.
-        self.defaults = copy.deepcopy(vars(self))
+        self._defaults = copy.deepcopy({k: v for k, v in vars(self).items() if not k.startswith('_')})
 
     def get_option(self, option: str) -> str | bool | list:
         """
@@ -91,16 +93,16 @@ class Options:
 
         """
 
-        if option:
+        if option is not None:
             self._validate_option(option)
-            setattr(self, option, self.defaults[option])
+            setattr(self, option, self._defaults[option])
         else:
             self.__init__()
 
     def _validate_option(self, option: str) -> None:
 
-        if option not in self.defaults:
-            raise ValueError(f"Invalid option(s): {option}. Must be one of {list(self.defaults)}.")
+        if option not in self._defaults:
+            raise ValueError(f"Invalid option(s): {option}. Must be one of {list(self._defaults)}.")
 
     def describe_option(self, option: str) -> str:
         pass
