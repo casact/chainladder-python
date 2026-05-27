@@ -7,6 +7,9 @@ on outdated software and tools when performing actuarial pricing or reserving in
 This package strives to be minimalistic in needing its own API. The syntax mimics popular packages such as pandas for
 data manipulation and scikit-learn for model construction. An actuary that is already familiar with these tools will be
 able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
+
+The __init__.py file governs package configuration, including datetime datatypes and precision, backend and ultimate
+valuation defaults, as well as package metadata such as version number.
 """
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
