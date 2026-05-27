@@ -128,7 +128,6 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = xp.array(ldf[:, None, None, :])
             else:
                 ldf = xp.array(ldf[None, :, None, :])
-            print("ldf\n", ldf)
 
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
