@@ -276,3 +276,27 @@ def test_constant_pattern_short_ldf():
         np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
         == np.array([1.771561, 1.61051, 1.4641, 1.331, 1.21, 1.1, 1.0, 1.0])
     )
+
+
+def test_constant_pattern_long_cdf():
+    auto_bi = cl.load_sample("friedland_auto_bi_insurer")
+    reported_patterns = {
+        12: 1.1,
+        24: 1.1,
+        36: 1.1,
+        48: 1.1,
+        60: 1.1,
+        72: 1.1,
+        84: 1.1,
+        96: 1.1,
+        108: 1.1,
+        120: 1.1,
+    }
+
+    reported_BI_claim = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="cdf"
+    ).fit_transform(auto_bi["Reported Claims"])
+    assert np.all(
+        np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
+        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
+    )
