@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import pandas as pd
 from importlib.metadata import version
@@ -37,7 +38,7 @@ class Options:
             pd.Timedelta(1, unit=__dt64_unit__)
         )
         # Store initial values as defaults.
-        self.defaults = {**vars(self)}
+        self.defaults = copy.deepcopy(vars(self))
 
     def get_option(self, option: str) -> str | bool | list:
         """
