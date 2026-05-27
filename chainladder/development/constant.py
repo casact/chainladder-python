@@ -56,6 +56,7 @@ class DevelopmentConstant(DevelopmentBase):
         else:
             cdf_patterns = {int(k): float(patterns[k]) for k in sorted_keys}
 
+        # seperate the tail from the patterns
         if len(cdf_patterns) > n_dev_periods:
             tail_cdf = float(cdf_patterns[sorted_keys[n_dev_periods]])
 
@@ -65,7 +66,7 @@ class DevelopmentConstant(DevelopmentBase):
             return cdf_patterns, tail_cdf
 
         else:
-            return patterns, 1.0
+            return cdf_patterns, 1.0
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -89,91 +90,89 @@ class DevelopmentConstant(DevelopmentBase):
             obj = self._set_fit_groups(X).val_to_dev().copy()
 
         xp = obj.get_array_module()
+        tri_dev_periods = len(obj.ddims)
 
         if callable(self.patterns):
-            if self.callable_axis == 0:  # varying patterns by index
-                patterns = self.patterns(obj.index.iloc[0])
-            elif self.callable_axis == 1:  # varying patterns by column
-                patterns = self.patterns(obj.columns.to_frame(index=False).iloc[0])
+            # on index
+            if self.callable_axis == 0:
+                rows = obj.index
+            # on columns
+            elif self.callable_axis == 1:
+                rows = obj.columns.to_frame(index=False)
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
-        else:  # static patterns
+
+            patterns = self.patterns(rows.iloc[0])
+        else:
+            # force the patterns to a dictionary
             patterns = dict(self.patterns)
 
-        n_dev_periods = len(obj.ddims)
-        cdf_patterns, tail_cdf = self._prepare_cdf_patterns(patterns, n_dev_periods)
-        sorted_keys = sorted(cdf_patterns.keys())
+        # seperate cdf_patterns and tail_cdf
+        cdf_patterns, tail_cdf = self._prepare_cdf_patterns(patterns, tri_dev_periods)
 
-        # patterns provided is longer than the triangle development periods,
-        # this step resizes and gets tail_cdf to apply to the tail of the triangle later
-        # n_dev_periods - 1 has - 1 at the end because the last period is assumed at
-        # ultimate by defualt, unless there's a tail
-        if len(cdf_patterns) > n_dev_periods:
-            obj = (
-                obj.iloc[..., :1, :-1] * 0 + 1
-                if tail_cdf == 1
-                else obj.iloc[..., :1, :] * 0 + 1
-            )
-
-        # warn if the patterns are shorter than the triangle development periods
-        elif len(cdf_patterns) < n_dev_periods:
+        if len(cdf_patterns) < tri_dev_periods:
             warnings.warn(
                 "Supplied patterns are shorter than the triangle development "
                 "periods. Missing ages will be filled with a factor of 1.0.",
                 UserWarning,
                 stacklevel=2,
             )
-            obj = obj.iloc[..., :1, :-1] * 0 + 1
             tail_cdf = 1
 
-        # pattern is exact, no tail needed
+        elif len(cdf_patterns) == tri_dev_periods:
+            tail_cdf = 1
+
+        pattern_dev_periods = len(cdf_patterns)
+
+        if pattern_dev_periods < tri_dev_periods:
+            include_last = False
+        elif pattern_dev_periods == tri_dev_periods:
+            include_last = True
         else:
-            obj = obj.iloc[..., :1, :] * 0 + 1
-            tail_cdf = 1
+            include_last = tail_cdf != 1
 
-        # fill the cdf_patterns dictionary with 1.0 for any missing development periods
-        for ddim in obj.ddims:
-            if not any(ddim == k or int(ddim) == int(k) for k in cdf_patterns):
-                cdf_patterns[int(ddim)] = 1.0
-            if self.style == "ldf" and not any(
-                ddim == k or int(ddim) == int(k) for k in patterns
-            ):
-                patterns[int(ddim)] = 1.0
+        dev_slice = slice(None) if include_last else slice(None, -1)
+
+        # this is the object to fill out the patterns, skeleton frame
+        obj = obj.iloc[..., :1, dev_slice] * 0 + 1
 
         if callable(self.patterns):
-            if self.callable_axis == 0:
-                rows = obj.index
-            elif self.callable_axis == 1:
-                rows = obj.columns.to_frame(index=False)
-            else:
-                raise ValueError("callable axis needs to be 0 or 1")
 
-            def _callable_row(row_pattern):
-                raw_patterns = self.patterns(row_pattern)
+            def _callable_row(row):
+                raw_patterns = self.patterns(row)
                 cdf_row, row_tail_cdf = self._prepare_cdf_patterns(
-                    raw_patterns, n_dev_periods
+                    raw_patterns, tri_dev_periods
                 )
                 fit_row = raw_patterns if self.style == "ldf" else cdf_row
                 return dict(fit_row), row_tail_cdf
 
             prepared = rows.apply(_callable_row, axis=1)
-            fit_patterns = prepared.apply(lambda item: item[0])
-            tail_cdfs = prepared.apply(lambda item: item[1])
-
             ldf = (
-                pd.concat(fit_patterns.apply(pd.DataFrame, index=[0]).values, axis=0)
+                pd.concat(
+                    [pd.DataFrame(item[0], index=[0]) for item in prepared],
+                    axis=0,
+                )
                 .fillna(1)[obj.ddims]
                 .values
             )
+            tail_cdfs = xp.array([item[1] for item in prepared])
 
             if self.callable_axis == 0:
                 ldf = xp.array(ldf[:, None, None, :])
-                tail_cdfs = xp.array(tail_cdfs.values)[:, None, None]
+                tail_cdfs = tail_cdfs[:, None, None]
             else:
                 ldf = xp.array(ldf[None, :, None, :])
-                tail_cdfs = xp.array(tail_cdfs.values)[None, :, None]
+                tail_cdfs = tail_cdfs[None, :, None]
 
         else:
+            for ddim in obj.ddims:
+                if not any(ddim == k or int(ddim) == int(k) for k in cdf_patterns):
+                    cdf_patterns[int(ddim)] = 1.0
+                if self.style == "ldf" and not any(
+                    ddim == k or int(ddim) == int(k) for k in patterns
+                ):
+                    patterns[int(ddim)] = 1.0
+
             fit_patterns = patterns if self.style == "ldf" else cdf_patterns
             ldf = xp.array([float(fit_patterns[int(item)]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
