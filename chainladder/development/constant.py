@@ -72,7 +72,7 @@ class DevelopmentConstant(DevelopmentBase):
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:  # static patterns
-            patterns = self.patterns
+            patterns = dict(self.patterns)
 
         # convert patterns to CDFs so it's easier to work with
         sorted_keys = sorted(patterns.keys())
