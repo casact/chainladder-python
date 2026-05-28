@@ -48,25 +48,24 @@ class DevelopmentConstant(DevelopmentBase):
         sorted_keys = sorted(patterns.keys())
         pattern_values = np.array([float(patterns[k]) for k in sorted_keys])
 
-        # build the cdf patterns, up to the needed periods
+        # convert ldfs to cdfs; cdf patterns are used as-is
         if self.style == "ldf":
-            cdf_patterns = dict(
-                zip(sorted_keys, np.cumprod(pattern_values[::-1])[::-1])
-            )
+            cdf_values = np.cumprod(pattern_values[::-1])[::-1]
         else:
-            cdf_patterns = {int(k): float(patterns[k]) for k in sorted_keys}
+            cdf_values = pattern_values
 
-        # seperate the tail from the patterns
-        if len(cdf_patterns) > n_dev_periods:
-            tail_cdf = float(cdf_patterns[sorted_keys[n_dev_periods]])
+        cdf_patterns = {int(k): float(v) for k, v in zip(sorted_keys, cdf_values)}
 
-            for k in sorted_keys[:n_dev_periods]:
-                cdf_patterns[int(k)] = cdf_patterns[int(k)] / tail_cdf
-
-            return cdf_patterns, tail_cdf
-
-        else:
+        # patterns that fit within the triangle have no tail
+        if len(cdf_patterns) <= n_dev_periods:
             return cdf_patterns, 1.0
+
+        # separate the tail factor and rebase the remaining cdfs onto it
+        tail_cdf = cdf_patterns[int(sorted_keys[n_dev_periods])]
+        for k in sorted_keys[:n_dev_periods]:
+            cdf_patterns[int(k)] /= tail_cdf
+
+        return cdf_patterns, tail_cdf
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -112,6 +111,7 @@ class DevelopmentConstant(DevelopmentBase):
         cdf_patterns, tail_cdf = self._prepare_cdf_patterns(patterns, tri_dev_periods)
         pattern_dev_periods = len(cdf_patterns)
 
+        # determine whether to include the last development period in the patterns
         if pattern_dev_periods < tri_dev_periods:
             warnings.warn(
                 "Supplied patterns are shorter than the triangle development "
@@ -159,15 +159,13 @@ class DevelopmentConstant(DevelopmentBase):
                 tail_cdfs = tail_cdfs[None, :, None]
 
         else:
-            for ddim in obj.ddims:
-                if not any(ddim == k or int(ddim) == int(k) for k in cdf_patterns):
-                    cdf_patterns[int(ddim)] = 1.0
-                if self.style == "ldf" and not any(
-                    ddim == k or int(ddim) == int(k) for k in patterns
-                ):
-                    patterns[int(ddim)] = 1.0
-
             fit_patterns = patterns if self.style == "ldf" else cdf_patterns
+
+            # fill any triangle ages missing from the patterns with a factor of 1.0
+            for ddim in obj.ddims:
+                if not any(ddim == k or int(ddim) == int(k) for k in fit_patterns):
+                    fit_patterns[int(ddim)] = 1.0
+
             ldf = xp.array([float(fit_patterns[int(item)]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
             tail_cdfs = tail_cdf
