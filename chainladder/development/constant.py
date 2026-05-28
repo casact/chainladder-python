@@ -107,24 +107,18 @@ class DevelopmentConstant(DevelopmentBase):
             # force the patterns to a dictionary
             patterns = dict(self.patterns)
 
-        # seperate cdf_patterns and tail_cdf
+        # separate the cdf patterns from the tail; _prepare_cdf_patterns already
+        # returns tail_cdf=1 when the patterns do not extend past the triangle.
         cdf_patterns, tail_cdf = self._prepare_cdf_patterns(patterns, tri_dev_periods)
+        pattern_dev_periods = len(cdf_patterns)
 
-        if len(cdf_patterns) < tri_dev_periods:
+        if pattern_dev_periods < tri_dev_periods:
             warnings.warn(
                 "Supplied patterns are shorter than the triangle development "
                 "periods. Missing ages will be filled with a factor of 1.0.",
                 UserWarning,
                 stacklevel=2,
             )
-            tail_cdf = 1
-
-        elif len(cdf_patterns) == tri_dev_periods:
-            tail_cdf = 1
-
-        pattern_dev_periods = len(cdf_patterns)
-
-        if pattern_dev_periods < tri_dev_periods:
             include_last = False
         elif pattern_dev_periods == tri_dev_periods:
             include_last = True
