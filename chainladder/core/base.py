@@ -9,7 +9,11 @@ import warnings
 
 from abc import ABC, abstractmethod
 
-from chainladder import options
+from chainladder import (
+    __dt64_unit__,
+    __dt64_dtype__,
+    options
+)
 
 from chainladder.core.common import Common
 from chainladder.core.display import TriangleDisplay
@@ -534,12 +538,12 @@ class TriangleBase(
         ddim_arr = ddims - ddims[0]
         origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
         val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
-        val_array = val_array.astype(options.DT64_DTYPE) - np.timedelta64(1, options.DT64_UNIT)
+        val_array = val_array.astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         val_array = val_array[:, None]
         s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
         val_array = (
             val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
-        ).astype(options.DT64_DTYPE) - np.timedelta64(1, options.DT64_UNIT)
+        ).astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         if ddims[-1] == 9999:
             ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate(
