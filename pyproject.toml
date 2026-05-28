@@ -103,3 +103,8 @@ chainladder = ["utils/data/*", "py.typed"]
 
 [tool.uv]
 config-settings = {editable_mode="compat"}
+
+[dependency-groups]
+dev = [
+    "jupyterlab>=4.5.7",
+]
