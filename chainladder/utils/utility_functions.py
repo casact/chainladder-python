@@ -249,17 +249,11 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             ]
             origin: str = "Accident Half-Year"
             development: str = "Calendar Half-Year"
-        if "auto_bi_insurer" in key.lower():
+        if "auto_bi_insurer" in key.lower() or "uspp" in key.lower():
             columns: list = [
                 "Paid Claims",
                 "Reported Claims",
                 "Earned Premium",
-            ]
-        if "uspp" in key.lower():
-            columns: list = [
-                "Reported Claims",
-                "Paid Claims",
-                "Earned Premium"
             ]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
@@ -897,6 +891,7 @@ def PTF_formula(
         return "+".join(formula_parts)
     return ""
 
+
 def date_delta_adjustment(date: str) -> str:
     """
     Subtracts the default pandas datetime delta from a date in "YYYY-MM-DD" string format.
@@ -934,10 +929,6 @@ def date_delta_adjustment(date: str) -> str:
         '2025-10-31 23:59:59.999999'
     """
 
-
-    res: str = str(
-        pd.Timestamp(date) - \
-        pd.Timedelta(1, unit=options.DT64_UNIT)
-    )
+    res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=options.DT64_UNIT))
 
     return res
