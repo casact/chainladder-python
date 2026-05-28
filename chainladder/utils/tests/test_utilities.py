@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
-
+    from pytest import MonkeyPatch
 
 
 
@@ -382,6 +382,25 @@ def test_describe_option_return_string() -> None:
     assert 'ARRAY_BACKEND : str' in result
     assert '[default: numpy]' in result
     assert '[currently: numpy]' in result
+
+
+def test_describe_option_no_docstring_match(monkeypatch: MonkeyPatch) -> None:
+    """
+    When the class docstring has no entry for an option, describe_option should fall back
+    to 'No description available.' rather than raising an error.
+
+    Parameters
+    ----------
+    monkeypatch: MonkeyPatch
+        The pytest built-in monkeypatch fixture.
+
+    Returns
+    -------
+    None
+    """
+    monkeypatch.setattr(cl.Options, '__doc__', '')
+    result = cl.options.describe_option('ARRAY_BACKEND', _print_desc=False)
+    assert 'No description available.' in result
 
 
 def test_describe_option_invalid() -> None:
