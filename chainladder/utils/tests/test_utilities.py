@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pytest
 
 import chainladder as cl
@@ -9,6 +10,10 @@ from chainladder import (
 )
 from chainladder.utils.utility_functions import date_delta_adjustment
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pytest import CaptureFixture
 
 
 
@@ -292,3 +297,101 @@ def test_reset_option_invalid() -> None:
     """
     with pytest.raises(ValueError):
         cl.options.reset_option('NOT_A_REAL_OPTION')
+
+
+def test_describe_option(capsys: CaptureFixture[str]) -> None:
+    """
+    Supply an option to cl.options.describe_option(). Attribute name, type, default/current
+    settings should be captured in the output.
+
+    Parameters
+    ----------
+    capsys: CaptureFixture[str]
+        pytest built-in fixture to capture stdout
+
+    Returns
+    -------
+    None
+
+    """
+    cl.options.describe_option('ARRAY_BACKEND')
+    captured = capsys.readouterr()
+    assert 'ARRAY_BACKEND : str' in captured.out
+    assert '[default: numpy]' in captured.out
+    assert '[currently: numpy]' in captured.out
+
+def test_describe_option_multi(capsys) -> None:
+    """
+    Supply two options to cl.options.describe_option(). Attribute names, types, default/current
+    settings should be captured in the output.
+
+    Parameters
+    ----------
+    capsys: CaptureFixture[str]
+        pytest built-in fixture to capture stdout
+
+    Returns
+    -------
+    None
+
+    """
+    cl.options.describe_option('ARRAY_BACKEND|AUTO_SPARSE')
+    captured = capsys.readouterr()
+    assert 'ARRAY_BACKEND : str' in captured.out
+    assert '[default: numpy]' in captured.out
+    assert '[currently: numpy]' in captured.out
+    assert 'AUTO_SPARSE : bool' in captured.out
+    assert '[default: True]' in captured.out
+    assert '[currently: True]' in captured.out
+    assert 'ARRAY_PRIORITY' not in captured.out
+
+
+def test_describe_option_all(capsys) -> None:
+    """
+    Execute cl.options.describe_option() with default arguments. All attributes
+    should be captured.
+
+    Parameters
+    ----------
+    capsys: CaptureFixture[str]
+        pytest built-in fixture to capture stdout
+
+    Returns
+    -------
+    None
+
+    """
+    cl.options.describe_option()
+    captured = capsys.readouterr()
+    for key in cl.Options()._defaults:
+        assert key in captured.out
+
+
+def test_describe_option_return_string() -> None:
+    """
+    Execute cl.options.desribe_option() with _print_desc=False. Should return a string. Check
+    if attribute info is in the string.
+
+    Returns
+    -------
+    None
+
+    """
+    result = cl.options.describe_option('ARRAY_BACKEND', _print_desc=False)
+    assert isinstance(result, str)
+    assert 'ARRAY_BACKEND : str' in result
+    assert '[default: numpy]' in result
+    assert '[currently: numpy]' in result
+
+
+def test_describe_option_invalid() -> None:
+    """
+    Execute cl.options.desribe_option() with an invalid argument. Should raise a ValueError.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError):
+        cl.options.describe_option('NOT_A_REAL_OPTION')
