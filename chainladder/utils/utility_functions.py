@@ -932,6 +932,6 @@ def date_delta_adjustment(date: str) -> str:
         '2025-10-31 23:59:59.999999'
     """
 
-    res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=options.DT64_UNIT))
+    res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=__dt64_unit__))
 
     return res
