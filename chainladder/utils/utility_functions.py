@@ -249,6 +249,12 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             ]
             origin: str = "Accident Half-Year"
             development: str = "Calendar Half-Year"
+        if "auto_bi_insurer" in key.lower():
+            columns: list = [
+                "Paid Claims",
+                "Reported Claims",
+                "Earned Premium",
+            ]
         if "uspp" in key.lower():
             columns: list = [
                 "Reported Claims",
