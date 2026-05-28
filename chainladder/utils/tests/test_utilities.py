@@ -4,6 +4,9 @@ import chainladder as cl
 import copy
 import numpy as np
 
+from chainladder import (
+    __dt64_unit__
+)
 from chainladder.utils.utility_functions import date_delta_adjustment
 from pathlib import Path
 
@@ -177,7 +180,7 @@ def test_date_delta_adjustment() -> None:
 
     expected = (
         "2025-10-31 23:59:59.999999999"
-        if cl.options.DT64_UNIT == "ns"
+        if __dt64_unit__ == "ns"
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
@@ -228,8 +231,6 @@ def test_options_defaults() -> None:
     assert options.ARRAY_BACKEND == "numpy"
     assert options.AUTO_SPARSE == True
     assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
-    assert isinstance(options.DT64_DTYPE, str)
-    assert isinstance(options.DT64_UNIT, str)
     assert isinstance(options.ULT_VAL, str)
 
 
@@ -245,8 +246,6 @@ def test_get_option() -> None:
     assert cl.options.get_option('ARRAY_BACKEND') == cl.options.ARRAY_BACKEND
     assert cl.options.get_option('AUTO_SPARSE') == cl.options.AUTO_SPARSE
     assert cl.options.get_option('ARRAY_PRIORITY') == cl.options.ARRAY_PRIORITY
-    assert cl.options.get_option('DT64_DTYPE') == cl.options.DT64_DTYPE
-    assert cl.options.get_option('DT64_UNIT') == cl.options.DT64_UNIT
     assert cl.options.get_option('ULT_VAL') == cl.options.ULT_VAL
 
 
@@ -259,48 +258,37 @@ def test_set_option_consistency() -> None:
     None
 
     """
-    original = cl.options.ARRAY_BACKEND
     try:
         cl.options.set_option('ARRAY_BACKEND', 'sparse')
         assert cl.options.ARRAY_BACKEND == 'sparse'
         assert cl.options.get_option('ARRAY_BACKEND') == 'sparse'
     finally:
         # Reset the options to default if the test fails.
-        cl.options.set_option('ARRAY_BACKEND', original)
+        cl.options.reset_option('ARRAY_BACKEND')
 
-
-def test_deprecated_array_backend() -> None:
+def test_reset_single_option() -> None:
     """
-    Trigger the deprecation warning on cl.array_backend()
+    Set an option and check its value, then reset it and check its value.
 
     Returns
     -------
     None
 
     """
-    original = cl.options.ARRAY_BACKEND
-    try:
-        with pytest.warns(FutureWarning):
-            cl.array_backend('sparse')
-        assert cl.options.ARRAY_BACKEND == 'sparse'
-    finally:
-        # Reset the options to default if the test fails.
-        cl.options.set_option('ARRAY_BACKEND', original)
+    cl.options.set_option('ARRAY_BACKEND', 'sparse')
+    assert cl.options.ARRAY_BACKEND == 'sparse'
+    # Return backend to original state.
+    cl.options.reset_option('ARRAY_BACKEND')
+    assert cl.options.ARRAY_BACKEND == 'numpy'
 
 
-def test_deprecated_auto_sparse() -> None:
+def test_reset_option_invalid() -> None:
     """
-    Trigger the deprecation warning on cl.auto_sparse()
+    Supply in invalid option to cl.options.reset_option() and raise an error.
 
     Returns
     -------
     None
-
     """
-    original = cl.options.AUTO_SPARSE
-    try:
-        with pytest.warns(FutureWarning):
-            cl.auto_sparse(False)
-        assert cl.options.AUTO_SPARSE == False
-    finally:
-        cl.options.set_option('AUTO_SPARSE', original)
+    with pytest.raises(ValueError):
+        cl.options.reset_option('NOT_A_REAL_OPTION')

@@ -10,7 +10,10 @@ import os
 import numpy as np
 import pandas as pd
 
-from chainladder import options
+from chainladder import (
+    __dt64_unit__,
+    __dt64_dtype__
+)
 from chainladder.utils.sparse import sp
 from io import StringIO
 from patsy import dmatrix  # noqa
@@ -648,7 +651,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == options.DT64_DTYPE and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) == np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
@@ -931,7 +934,7 @@ def date_delta_adjustment(date: str) -> str:
 
     res: str = str(
         pd.Timestamp(date) - \
-        pd.Timedelta(1, unit=options.DT64_UNIT)
+        pd.Timedelta(1, unit=__dt64_unit__)
     )
 
     return res
