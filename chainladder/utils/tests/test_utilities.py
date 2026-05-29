@@ -292,3 +292,63 @@ def test_reset_option_invalid() -> None:
     """
     with pytest.raises(ValueError):
         cl.options.reset_option('NOT_A_REAL_OPTION')
+
+
+def test_set_option_cupy_backend_deprecated() -> None:
+    """
+    Setting ARRAY_BACKEND to 'cupy' should emit a DeprecationWarning. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        with pytest.warns(DeprecationWarning, match="cupy"):
+            cl.options.set_option('ARRAY_BACKEND', 'cupy')
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+
+
+def test_set_option_cupy_priority_deprecated() -> None:
+    """
+    Setting ARRAY_PRIORITY to a list containing 'cupy' should emit a
+    DeprecationWarning. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        with pytest.warns(DeprecationWarning, match="cupy"):
+            cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'cupy', 'numpy'])
+    finally:
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_option_non_cupy_no_warning(recwarn) -> None:
+    """
+    Setting backends other than 'cupy' should not emit a DeprecationWarning.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy'])
+        assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_backend_cupy_deprecated(clrd) -> None:
+    """
+    Triangle.set_backend('cupy') should emit a DeprecationWarning. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(DeprecationWarning, match="cupy"):
+        clrd.set_backend('cupy')

@@ -16,6 +16,7 @@ valuation defaults, as well as package metadata such as version number.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
+import warnings
 import numpy as np
 import pandas as pd
 from importlib.metadata import version
@@ -95,6 +96,20 @@ class Options:
 
         """
         self._validate_option(option)
+        if option == "ARRAY_BACKEND" and value == "cupy":
+            warnings.warn(
+                "The 'cupy' array backend is deprecated and will be removed in a "
+                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        elif option == "ARRAY_PRIORITY" and "cupy" in value:
+            warnings.warn(
+                "The 'cupy' array backend is deprecated and will be removed in a "
+                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         setattr(self, option, value)
 
     def reset_option(self, option: str | None = None) -> None:

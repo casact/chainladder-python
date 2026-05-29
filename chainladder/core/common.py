@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -172,6 +174,13 @@ class Common:
             else:
                 raise ValueError("Unable to determine array backend.")
         if inplace:
+            if backend == "cupy":
+                warnings.warn(
+                    "The 'cupy' array backend is deprecated and will be removed in a "
+                    "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             # Coming from dask - compute and then recall this method
             # going to dask  -
             if old_backend == "dask" and backend != "dask":
