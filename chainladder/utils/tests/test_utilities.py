@@ -344,11 +344,20 @@ def test_set_option_non_cupy_no_warning(recwarn) -> None:
 
 def test_set_backend_cupy_deprecated(clrd) -> None:
     """
-    Triangle.set_backend('cupy') should emit a DeprecationWarning. See issue #843.
+    Triangle.set_backend('cupy') should emit exactly one DeprecationWarning,
+    pointing at the caller. See issue #843.
 
     Returns
     -------
     None
     """
-    with pytest.warns(DeprecationWarning, match="cupy"):
-        clrd.set_backend('cupy')
+    with pytest.warns(DeprecationWarning, match="cupy") as record:
+        clrd.set_backend('cupy', deep=True)
+    cupy_warnings = [
+        w for w in record
+        if issubclass(w.category, DeprecationWarning) and "cupy" in str(w.message)
+    ]
+    # A single warning should fire at the user's call site, not once per
+    # internal recursive / deep child conversion.
+    assert len(cupy_warnings) == 1
+    assert cupy_warnings[0].filename == __file__

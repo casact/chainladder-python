@@ -149,7 +149,7 @@ class Common:
         return func(self, *args, **kwargs)
 
     def set_backend(
-        self, backend: str, inplace: bool = False, deep: bool = False, **kwargs
+        self, backend: str, inplace: bool = False, deep: bool = False, _warn: bool = True, **kwargs
     ):
         """
         Converts triangle array_backend.
@@ -166,6 +166,16 @@ class Common:
         -------
             Triangle with updated array_backend
         """
+        # Warn once, at the public entry point, so stacklevel=2 points at the
+        # user's call site rather than an internal recursive call. The _warn
+        # flag suppresses duplicate warnings from internal recursion below.
+        if _warn and backend == "cupy":
+            warnings.warn(
+                "The 'cupy' array backend is deprecated and will be removed in a "
+                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if hasattr(self, "array_backend"):
             old_backend: str = self.array_backend
         else:
@@ -174,13 +184,6 @@ class Common:
             else:
                 raise ValueError("Unable to determine array backend.")
         if inplace:
-            if backend == "cupy":
-                warnings.warn(
-                    "The 'cupy' array backend is deprecated and will be removed in a "
-                    "future release. See https://github.com/casact/chainladder-python/issues/843.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
             # Coming from dask - compute and then recall this method
             # going to dask  -
             if old_backend == "dask" and backend != "dask":
@@ -214,7 +217,7 @@ class Common:
                 if deep:
                     for k, v in vars(self).items():
                         if isinstance(v, Common):
-                            v.set_backend(backend, inplace=True, deep=True)
+                            v.set_backend(backend, inplace=True, deep=True, _warn=False)
                 if hasattr(self, "array_backend"):
                     self.array_backend = backend
             else:
@@ -222,7 +225,7 @@ class Common:
             return self
         else:
             obj = self.copy()
-            return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)
+            return obj.set_backend(backend=backend, inplace=True, deep=deep, _warn=False, **kwargs)
 
     @staticmethod
     def _validate_assumption(
