@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
 import pandas as pd
+import numpy as np
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -61,7 +62,7 @@ class DevelopmentConstant(DevelopmentBase):
         obj = obj.iloc[..., :1, :-1]*0+1
         if callable(self.patterns):
             if self.callable_axis == 0:
-                ldf = obj.index.apply(self.patterns, axis=1)                
+                ldf = obj.index.apply(self.patterns, axis=1)
                 ldf = (
                     pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                     .fillna(1)[obj.ddims].values)
@@ -75,7 +76,11 @@ class DevelopmentConstant(DevelopmentBase):
             else:
                 raise ValueError('callable axis needs to be 0 or 1')
         else:
-            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
+            extra_dims = [x for x in self.patterns.keys() if x > np.max(obj.ddims)]
+            if extra_dims:
+                obj.values = xp.concatenate([obj.values]+[obj.iloc[...,-1:].values]*len(extra_dims), -1)
+                obj.ddims = np.concatenate((obj.ddims, extra_dims), 0,)
+            ldf = xp.array([float(self.patterns.get(item,1)) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
