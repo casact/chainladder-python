@@ -4,6 +4,9 @@ import chainladder as cl
 import copy
 import numpy as np
 
+from chainladder import (
+    __dt64_unit__
+)
 from chainladder.utils.utility_functions import date_delta_adjustment
 from pathlib import Path
 
@@ -177,14 +180,14 @@ def test_date_delta_adjustment() -> None:
 
     expected = (
         "2025-10-31 23:59:59.999999999"
-        if cl.options.DT64_UNIT == "ns"
+        if __dt64_unit__ == "ns"
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
 
 def test_reset_option() -> None:
     """
-    Tests cl.options.reset_option.
+    Change some of the options and then reset them. Values after reset should match the original values.
 
     Returns
     -------
@@ -192,22 +195,100 @@ def test_reset_option() -> None:
 
     """
 
-    original_ult_val = cl.options.ULT_VAL
-    original_dt64_unit = cl.options.DT64_UNIT
-    original_dt64_dtype = cl.options.DT64_DTYPE
+    original_backend = cl.options.ARRAY_BACKEND
+    original_auto_sparse = cl.options.AUTO_SPARSE
+    original_array_priority = cl.options.ARRAY_PRIORITY
 
+    try:
+
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        cl.options.set_option('AUTO_SPARSE', False)
+        cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'dask', 'numpy', 'cupy'])
+
+        cl.options.reset_option()
+
+        assert cl.options.ARRAY_BACKEND == original_backend
+        assert cl.options.AUTO_SPARSE == original_auto_sparse
+        assert cl.options.ARRAY_PRIORITY == original_array_priority
+
+    finally:
+    # Manual reset in case of test failure.
+        cl.options.set_option('ARRAY_BACKEND', original_backend)
+        cl.options.set_option('AUTO_SPARSE', original_auto_sparse)
+        cl.options.set_option('ARRAY_PRIORITY', original_array_priority)
+
+
+def test_options_defaults() -> None:
+    """
+    When initialized, default options should be correct and accessible from the options variable.
+
+    Returns
+    -------
+    None
+
+    """
+    options = cl.Options()
+    assert options.ARRAY_BACKEND == "numpy"
+    assert options.AUTO_SPARSE == True
+    assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
+    assert isinstance(options.ULT_VAL, str)
+
+
+def test_get_option() -> None:
+    """
+    get_option should return the appropriate attribute value.
+
+    Returns
+    -------
+    None
+
+    """
+    assert cl.options.get_option('ARRAY_BACKEND') == cl.options.ARRAY_BACKEND
+    assert cl.options.get_option('AUTO_SPARSE') == cl.options.AUTO_SPARSE
+    assert cl.options.get_option('ARRAY_PRIORITY') == cl.options.ARRAY_PRIORITY
+    assert cl.options.get_option('ULT_VAL') == cl.options.ULT_VAL
+
+
+def test_set_option_consistency() -> None:
+    """
+    When set_option changes an option value, get_option should return the new option value.
+
+    Returns
+    -------
+    None
+
+    """
+    try:
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        assert cl.options.ARRAY_BACKEND == 'sparse'
+        assert cl.options.get_option('ARRAY_BACKEND') == 'sparse'
+    finally:
+        # Reset the options to default if the test fails.
+        cl.options.reset_option('ARRAY_BACKEND')
+
+def test_reset_single_option() -> None:
+    """
+    Set an option and check its value, then reset it and check its value.
+
+    Returns
+    -------
+    None
+
+    """
     cl.options.set_option('ARRAY_BACKEND', 'sparse')
-    cl.options.set_option('AUTO_SPARSE', False)
-    cl.options.set_option('ARRAY_PRIORITY', ['numpy'])
-    cl.options.set_option('ULT_VAL', 'fake')
-    cl.options.set_option('DT64_UNIT', 'fake')
-    cl.options.set_option('DT64_DTYPE', 'fake')
-
-    cl.options.reset_option()
-
+    assert cl.options.ARRAY_BACKEND == 'sparse'
+    # Return backend to original state.
+    cl.options.reset_option('ARRAY_BACKEND')
     assert cl.options.ARRAY_BACKEND == 'numpy'
-    assert cl.options.AUTO_SPARSE == True
-    assert cl.options.ARRAY_PRIORITY == ['dask', 'sparse', 'cupy', 'numpy']
-    assert cl.options.ULT_VAL == original_ult_val
-    assert cl.options.DT64_UNIT == original_dt64_unit
-    assert cl.options.DT64_DTYPE == original_dt64_dtype
+
+
+def test_reset_option_invalid() -> None:
+    """
+    Supply in invalid option to cl.options.reset_option() and raise an error.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError):
+        cl.options.reset_option('NOT_A_REAL_OPTION')

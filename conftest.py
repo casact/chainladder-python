@@ -1,5 +1,17 @@
+from __future__ import annotations
+
 import pytest
 import chainladder as cl
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from chainladder import Triangle
+    from typing import (
+        Any,
+        Callable
+    )
 
 
 def pytest_generate_tests(metafunc):
@@ -21,64 +33,72 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("xyz", ["normal_run", "sparse_only_run"], indirect=True)
 
 
+def _sample_fixture(
+        request: Any,
+        sample: str,
+        transform: Callable[[Triangle], Triangle] | None = None
+    ) -> Iterator[Triangle]:
+    """
+    Common template fixture for using sample data in unit tests.
+
+    Parameters
+    ----------
+    request:Any
+        The pytest request built-in.
+    sample: str
+        The name of the sample data set to be loaded, e.g., raa, clrd, etc.
+    transform: Callable[[Triangle], Triangle] | None
+        An optional transformation to be applied to the triangle supplied as a lambda function.
+
+    Yields
+    -------
+    A Triangle, with backend set according to request.param.
+
+    """
+
+    # Set the backend to sparse for a sparse-only-run.
+    cl.options.set_option("ARRAY_BACKEND", "sparse" if request.param == "sparse_only_run" else "numpy")
+    # Load the sample data.
+    tri = cl.load_sample(sample)
+    # Apply a transformation if supplied, then yield the triangle to the test.
+    yield transform(tri) if transform else tri
+    # After the test, reset the backend to default numpy.
+    cl.options.set_option("ARRAY_BACKEND", "numpy")
+
+
 @pytest.fixture
 def raa(request):
-    if request.param == "sparse_only_run":
-        cl.options.set_option("ARRAY_BACKEND", "sparse")
-    else:
-        cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("raa")
+    yield from _sample_fixture(request, "raa")
 
 
 @pytest.fixture
 def qtr(request):
-    if request.param == "sparse_only_run":
-        cl.options.set_option("ARRAY_BACKEND", "sparse")
-    else:
-        cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("quarterly")
+    yield from _sample_fixture(request, "quarterly")
 
 
 @pytest.fixture
 def clrd(request):
-    if request.param == "sparse_only_run":
-        cl.options.set_option("ARRAY_BACKEND", "sparse")
-    else:
-        cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("clrd")
+    yield from _sample_fixture(request, "clrd")
 
 
 @pytest.fixture
 def genins(request):
-    if request.param == "sparse_only_run":
-        cl.options.set_option("ARRAY_BACKEND", "sparse")
-    else:
-        cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("genins")
+    yield from _sample_fixture(request, "genins")
 
 
 @pytest.fixture
 def prism(request):
-    cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("prism")
+    yield from _sample_fixture(request, "prism")
 
 
 @pytest.fixture
 def prism_dense(request):
-    if request.param == "sparse_only_run":
-        cl.options.set_option("ARRAY_BACKEND", "sparse")
-    else:
-        cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("prism").sum()
+    yield from _sample_fixture(request, "prism", transform=lambda t: t.sum())
 
 
 @pytest.fixture
 def xyz(request):
-    if request.param == "sparse_only_run":
-        cl.options.set_option("ARRAY_BACKEND", "sparse")
-    else:
-        cl.options.set_option("ARRAY_BACKEND", "numpy")
-    return cl.load_sample("xyz")
+    yield from _sample_fixture(request, "xyz")
 
 
 @pytest.fixture
