@@ -184,6 +184,24 @@ def test_constant_pattern_no_tail():
         np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
         == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02])
     )
+    assert np.all(
+        np.round(reported_BI_claim.ldf_.to_frame().values.flatten(), 6)
+        == np.round(
+            np.array(
+                [
+                    4.0 / 2.9,
+                    2.9 / 1.8,
+                    1.8 / 1.4,
+                    1.4 / 1.2,
+                    1.2 / 1.1,
+                    1.1 / 1.03,
+                    1.03 / 1.02,
+                    1.02,
+                ]
+            ),
+            6,
+        )
+    )
 
 
 def test_constant_pattern_has_tail():
@@ -207,6 +225,25 @@ def test_constant_pattern_has_tail():
         np.round(reported_BI_claim.cdf_.to_frame().values.flatten(), 6)
         == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02, 1.005])
     )
+    assert np.all(
+        np.round(reported_BI_claim.ldf_.to_frame().values.flatten(), 6)
+        == np.round(
+            np.array(
+                [
+                    4.0 / 2.9,
+                    2.9 / 1.8,
+                    1.8 / 1.4,
+                    1.4 / 1.2,
+                    1.2 / 1.1,
+                    1.1 / 1.03,
+                    1.03 / 1.02,
+                    1.02 / 1.005,
+                    1.005,
+                ]
+            ),
+            6,
+        )
+    )
 
 
 def test_constant_pattern_exact_cdf(raa):
@@ -228,8 +265,12 @@ def test_constant_pattern_exact_cdf(raa):
     ).fit_transform(raa)
 
     assert np.all(
-        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        result.cdf_.to_frame().values.flatten()
         == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
+    )
+    assert np.all(
+        result.ldf_.to_frame().values.flatten()
+        == np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.1])
     )
 
 
@@ -253,17 +294,37 @@ def test_constant_pattern_exact_ldf(raa):
 
     assert np.all(
         np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.round(
+            np.array(
+                [
+                    1.1**10,
+                    1.1**9,
+                    1.1**8,
+                    1.1**7,
+                    1.1**6,
+                    1.1**5,
+                    1.1**4,
+                    1.1**3,
+                    1.1**2,
+                    1.1,
+                ]
+            ),
+            6,
+        )
+    )
+    assert np.all(
+        result.ldf_.to_frame().values.flatten()
         == np.array(
             [
-                2.593742,
-                2.357948,
-                2.143589,
-                1.948717,
-                1.771561,
-                1.61051,
-                1.4641,
-                1.331,
-                1.21,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
                 1.1,
             ]
         )
@@ -289,8 +350,12 @@ def test_constant_pattern_short_cdf(raa):
     ).fit_transform(raa)
 
     assert np.all(
-        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        result.cdf_.to_frame().values.flatten()
         == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.0, 1.0, 1.0])
+    )
+    assert np.all(
+        result.ldf_.to_frame().values.flatten()
+        == np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.0, 1.0, 1.0])
     )
 
 
@@ -314,7 +379,13 @@ def test_constant_pattern_short_ldf(raa):
 
     assert np.all(
         np.round(result.cdf_.to_frame().values.flatten(), 6)
-        == np.array([1.771561, 1.61051, 1.4641, 1.331, 1.21, 1.1, 1.0, 1.0, 1.0])
+        == np.round(
+            np.array([1.1**6, 1.1**5, 1.1**4, 1.1**3, 1.1**2, 1.1, 1.0, 1.0, 1.0]), 6
+        )
+    )
+    assert np.all(
+        result.ldf_.to_frame().values.flatten()
+        == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.0, 1.0, 1.0])
     )
 
 
@@ -340,6 +411,10 @@ def test_constant_pattern_long_cdf(raa):
         np.round(result.cdf_.to_frame().values.flatten(), 6)
         == np.array([1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1])
     )
+    assert np.all(
+        np.round(result.ldf_.to_frame().values.flatten(), 6)
+        == np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.1])
+    )
 
 
 def test_constant_pattern_long_ldf(raa):
@@ -363,18 +438,38 @@ def test_constant_pattern_long_ldf(raa):
 
     assert np.all(
         np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.round(
+            np.array(
+                [
+                    1.1**11,
+                    1.1**10,
+                    1.1**9,
+                    1.1**8,
+                    1.1**7,
+                    1.1**6,
+                    1.1**5,
+                    1.1**4,
+                    1.1**3,
+                    1.1**2,
+                ]
+            ),
+            6,
+        )
+    )
+    assert np.all(
+        result.ldf_.to_frame().values.flatten()
         == np.array(
             [
-                2.853117,
-                2.593742,
-                2.357948,
-                2.143589,
-                1.948717,
-                1.771561,
-                1.61051,
-                1.4641,
-                1.331,
-                1.21,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1**2,
             ]
         )
     )
