@@ -21,8 +21,9 @@ import inspect
 import re
 import numpy as np
 import pandas as pd
-from importlib.metadata import version
+import warnings
 
+from importlib.metadata import version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -34,6 +35,14 @@ if TYPE_CHECKING:
 __dt64_dtype__: str = pd.to_datetime(["2000-01-01"]).dtype.name
 __dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 
+option_warning: str = ("In a future release, the parameter 'option' will be renamed to 'pat' to stay consistent "
+                       "with the Pandas API.")
+
+def _resolve_pat(pat: str | None, option: str | None):
+    if option is not None:
+        warnings.warn(option_warning, FutureWarning, stacklevel=2)
+        return option
+    return pat
 
 class Options:
     """
@@ -65,13 +74,19 @@ class Options:
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({k: v for k, v in vars(self).items() if not k.startswith('_')})
 
-    def get_option(self, pat: str) -> str | bool | list:
+    def get_option(self, pat: str | None = None, *, option: str | None = None) -> str | bool | list:
         """
         Get the option value for the specified option.
 
+        .. deprecated:: 0.9.3
+            The ``option`` parameter is renamed to ``pat``. Using ``option`` will raise a
+            ``FutureWarning`` and will be removed in a future release.
+
         Parameters
         ----------
-        pat: str
+        pat: str | None
+            The option you wish to get the values for.
+        option: str | None
             The option you wish to get the values for.
 
         Returns
@@ -79,6 +94,7 @@ class Options:
         The option value.
 
         """
+        _resolve_pat(pat=pat, option=option)
         self._validate_option(pat)
         return getattr(self, pat)
 
@@ -115,7 +131,6 @@ class Options:
         None
 
         """
-
         if pat is not None:
             self._validate_option(pat)
             setattr(self, pat, copy.deepcopy(self._defaults[pat]))
@@ -136,7 +151,6 @@ class Options:
         None
 
         """
-
         if pat not in self._defaults:
             raise ValueError(f"Invalid option(s): {pat}. Must be one of {list(self._defaults)}.")
 
