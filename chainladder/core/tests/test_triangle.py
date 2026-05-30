@@ -660,13 +660,13 @@ def test_full_triangle_and_full_expectation(raa,atol):
     assert (np.allclose(
         cl_fit_cum.full_expectation_.values,
         cl_predict_cum.full_expectation_.values,
-        atol
+        atol=atol
         )
     )
     assert (np.allclose(
-        cl_fit_incr.full_expectation_.fillzero.values,
-        cl_predict_incr.full_expectation_.fillzero.values,
-        atol
+        cl_fit_incr.full_expectation_.fillzero().values,
+        cl_predict_incr.full_expectation_.fillzero().values,
+        atol=atol
         )
     )
     assert (
