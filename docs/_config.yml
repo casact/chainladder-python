@@ -43,6 +43,8 @@ sphinx:
     linkcode: _ext
   config:
     autosummary_generate: True
+    templates_path: ['_templates']
+    numpydoc_show_class_members: False
     bibtex_reference_style: author_year
 
 parse:
