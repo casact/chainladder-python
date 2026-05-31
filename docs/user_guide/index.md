@@ -15,7 +15,7 @@ Data object to manage and manipulate reserving data
 
 **Application**: Extend pandas syntax to manipulate reserving triangles
 
-```{glue:} ../gallery/plot_triangle_from_pandas
+```{glue:} plot_triangle_from_pandas
 ```
 +++
 **Classes**: **[Triangle](triangle)**, ...
@@ -48,6 +48,7 @@ Extrapolate development patterns beyond the known data.
 **Applications**: Long-tailed lines of business use cases
 
 ```{glue:} plot_exponential_smoothing
+:doc: tail
 ```
 
 +++
@@ -66,6 +67,7 @@ Generate IBNR estimates and associated statistics
 **Applications**: Constructing reserve estimates
 
 ```{glue:} plot_mack
+:doc: methods
 ```
 
 +++
