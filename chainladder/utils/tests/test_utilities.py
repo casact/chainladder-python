@@ -178,6 +178,53 @@ def test_list_samples() -> None:
     assert df.loc["prism", "cumulative"] == SAMPLES["prism"]["cumulative"]
 
 
+def test_sdist_ships_all_samples(tmp_path) -> None:
+    """
+    Build a source distribution and assert it contains every sample CSV.
+
+    This is the guard against MANIFEST.in drifting out of sync with the data
+    folder again (the bug behind #774: the old per-file include list shipped
+    only 22 of the bundled CSVs). It is deliberately self-skipping rather than
+    a hard requirement of the fast suite: it needs the ``build`` package and a
+    source checkout (a pyproject.toml at the repo root), and it shells out to a
+    full sdist build, so it no-ops in environments that lack either.
+    """
+    import subprocess
+    import sys
+    import tarfile
+
+    pytest.importorskip("build", reason="requires the build package")
+
+    # Locate the repo root (the directory containing pyproject.toml). When
+    # running from an installed wheel there is no source tree, so skip.
+    repo_root: Path = Path(__file__).resolve().parents[3]
+    if not (repo_root / "pyproject.toml").is_file():
+        pytest.skip("not running from a source checkout")
+
+    data_dir: Path = Path(__file__).parent.parent / "data"
+    expected_csvs = {f.name for f in data_dir.glob("*.csv")}
+
+    subprocess.run(
+        [sys.executable, "-m", "build", "--sdist", "--outdir", str(tmp_path)],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+    )
+
+    sdists = list(tmp_path.glob("*.tar.gz"))
+    assert len(sdists) == 1, f"expected one sdist, found {sdists}"
+
+    with tarfile.open(sdists[0]) as tar:
+        shipped = {
+            Path(name).name
+            for name in tar.getnames()
+            if "/utils/data/" in name and name.endswith(".csv")
+        }
+
+    missing = expected_csvs - shipped
+    assert not missing, f"sdist is missing sample CSVs: {sorted(missing)}"
+
+
 def test_load_sample_clrd2025() -> None:
     """
     Tests the clrd2025 sample (CAS Schedule P 1998-2007 refresh).
