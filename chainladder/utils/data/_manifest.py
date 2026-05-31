@@ -5,7 +5,8 @@ Single source of truth for the metadata of every CSV in
 
 * :func:`chainladder.load_sample` -- to build the ``Triangle`` for a sample.
 * :func:`chainladder.list_samples` -- to list available samples.
-* ``docs/library/sample_data.md`` -- regenerated from this registry.
+* ``docs/library/sample_data.ipynb`` -- renders the sample table live via
+  ``cl.list_samples()``.
 * ``MANIFEST.in`` -- ships ``chainladder/utils/data/*.csv`` via a wildcard.
 
 Adding a new sample dataset is a one-entry change here (plus dropping the
