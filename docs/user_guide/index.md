@@ -15,7 +15,7 @@ Data object to manage and manipulate reserving data
 
 **Application**: Extend pandas syntax to manipulate reserving triangles
 
-```{glue:} plot_triangle_from_pandas
+```{glue:} ../gallery/plot_triangle_from_pandas
 ```
 +++
 **Classes**: **[Triangle](triangle)**, ...
