@@ -1,7 +1,3 @@
----
-orphan: true
----
-
 # chainladder documentation
 
 This folder contains everything that builds the [chainladder-python docs site](https://chainladder-python.readthedocs.io/). It is organised as a [Jupyter Book](https://jupyterbook.org/) v1.x project on top of Sphinx, with the API reference produced by `sphinx.ext.autosummary` from the package docstrings.
