@@ -39,7 +39,7 @@ parts:
     - file: gallery/index.md
   - chapters:
     - file: library/api.rst    
-      entries:
+      sections:
         - glob: generated/*
   - chapters:
     - file: library/about.md
