@@ -109,7 +109,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     # manifest (chainladder/utils/data/_manifest.py). The manifest is the
     # single source of truth for sample-dataset metadata, replacing the long
     # per-dataset if/elif chain that previously lived here and duplicated the
-    # column names already present in the tests and docs/library/sample_data.md.
+    # column names already present in the tests and the sample-data docs.
     config: dict = SAMPLES[key.lower()]
     origin = config["origin"]
     development = config["development"]
