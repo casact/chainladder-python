@@ -67,6 +67,7 @@ def cumprod(a, axis=None, dtype=None, out=None):
 
 
 def floor(x):
+    x = x.copy()
     x.data = np.floor(x.data)
     return x
 
