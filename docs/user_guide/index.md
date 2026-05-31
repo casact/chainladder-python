@@ -48,7 +48,6 @@ Extrapolate development patterns beyond the known data.
 **Applications**: Long-tailed lines of business use cases
 
 ```{image} ../images/plot_exponential_smoothing.png
-:doc: tail.ipynb
 ```
 
 +++
@@ -67,7 +66,6 @@ Generate IBNR estimates and associated statistics
 **Applications**: Constructing reserve estimates
 
 ```{image} ../images/plot_mack.png
-:doc: methods.ipynb
 ```
 
 +++
