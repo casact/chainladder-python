@@ -19,6 +19,7 @@ Classes
 .. currentmodule:: chainladder
 
 .. autosummary::
+  :toctree: generated/
   :template: class_inherited
 
   Triangle
