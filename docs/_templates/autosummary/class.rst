@@ -1,4 +1,4 @@
-{{ fullname | escape | underline }}
+{{ objname | escape | underline }}
 
 .. currentmodule:: {{ module }}
 
@@ -21,6 +21,6 @@
    :nosignatures:
 
 {% for method in inherited %}
-   {{ fullname }}.{{ method }}
+   {{ objname }}.{{ method }}
 {% endfor %}
 {% endif %}
