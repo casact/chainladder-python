@@ -4,7 +4,11 @@ import chainladder as cl
 import copy
 import numpy as np
 
+from chainladder import (
+    __dt64_unit__
+)
 from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.data._manifest import SAMPLES
 from pathlib import Path
 
 
@@ -127,23 +131,98 @@ def test_invalid_sample() -> None:
 
 def test_load_sample() -> None:
     """
-    Tests whether the supported sample data sets load.
+    Tests whether every sample data set declared in the manifest loads.
+
+    Iterating over the manifest (rather than globbing the data directory)
+    means adding a new sample is a one-entry change in
+    ``chainladder/utils/data/_manifest.py`` and this test picks it up
+    automatically, while non-data files in the folder (``__init__.py``,
+    ``_manifest.py``) are never mistaken for datasets.
     """
-
-    # Get the folder containing the datasets.
-    data_dir: Path = Path(__file__).parent.parent / 'data'
-
-    # Files to exclude from cl.load_sample().
-    files_to_excl: list = [
-        '__init__'
-    ]
-
-    # Gather list of files to test.
-    datasets = [f.stem for f in data_dir.iterdir() if f.is_file() and f.stem not in files_to_excl]
-
-    # Load each file.
-    for dataset in datasets:
+    # Every manifest entry must load and have a matching CSV on disk.
+    data_dir: Path = Path(__file__).parent.parent / "data"
+    for dataset in SAMPLES:
+        assert (data_dir / f"{dataset}.csv").is_file(), (
+            f"manifest lists '{dataset}' but {dataset}.csv is missing"
+        )
         cl.load_sample(dataset)
+
+    # Conversely, every CSV on disk must be declared in the manifest, so a
+    # newly added data file can't silently go unregistered.
+    csv_stems = {f.stem for f in data_dir.glob("*.csv")}
+    assert csv_stems == set(SAMPLES), (
+        "manifest and data directory are out of sync: "
+        f"only in dir={csv_stems - set(SAMPLES)}, "
+        f"only in manifest={set(SAMPLES) - csv_stems}"
+    )
+
+
+def test_list_samples() -> None:
+    """
+    Tests cl.list_samples(): the manifest-driven catalog of bundled datasets.
+    """
+    df = cl.list_samples()
+    # One row per manifest entry, indexed by sample name.
+    assert df.index.name == "name"
+    assert set(df.index) == set(SAMPLES)
+    assert {"index", "columns", "cumulative", "origin_grain", "development_grain"} <= set(df.columns)
+
+    # The fast path skips loading data and therefore omits the grain columns.
+    fast = cl.list_samples(include_grain=False)
+    assert set(fast.index) == set(SAMPLES)
+    assert "origin_grain" not in fast.columns
+    assert "development_grain" not in fast.columns
+
+    # Metadata matches the manifest source of truth.
+    assert df.loc["clrd2025", "columns"] == SAMPLES["clrd2025"]["columns"]
+    assert df.loc["prism", "cumulative"] == SAMPLES["prism"]["cumulative"]
+
+
+def test_sdist_ships_all_samples(tmp_path) -> None:
+    """
+    Build a source distribution and assert it contains every sample CSV.
+
+    This is the guard against MANIFEST.in drifting out of sync with the data
+    folder again (the bug behind #774: the old per-file include list shipped
+    only 22 of the bundled CSVs). It is deliberately self-skipping rather than
+    a hard requirement of the fast suite: it needs the ``build`` package and a
+    source checkout (a pyproject.toml at the repo root), and it shells out to a
+    full sdist build, so it no-ops in environments that lack either.
+    """
+    import subprocess
+    import sys
+    import tarfile
+
+    pytest.importorskip("build", reason="requires the build package")
+
+    # Locate the repo root (the directory containing pyproject.toml). When
+    # running from an installed wheel there is no source tree, so skip.
+    repo_root: Path = Path(__file__).resolve().parents[3]
+    if not (repo_root / "pyproject.toml").is_file():
+        pytest.skip("not running from a source checkout")
+
+    data_dir: Path = Path(__file__).parent.parent / "data"
+    expected_csvs = {f.name for f in data_dir.glob("*.csv")}
+
+    subprocess.run(
+        [sys.executable, "-m", "build", "--sdist", "--outdir", str(tmp_path)],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+    )
+
+    sdists = list(tmp_path.glob("*.tar.gz"))
+    assert len(sdists) == 1, f"expected one sdist, found {sdists}"
+
+    with tarfile.open(sdists[0]) as tar:
+        shipped = {
+            Path(name).name
+            for name in tar.getnames()
+            if "/utils/data/" in name and name.endswith(".csv")
+        }
+
+    missing = expected_csvs - shipped
+    assert not missing, f"sdist is missing sample CSVs: {sorted(missing)}"
 
 
 def test_load_sample_clrd2025() -> None:
@@ -177,7 +256,7 @@ def test_date_delta_adjustment() -> None:
 
     expected = (
         "2025-10-31 23:59:59.999999999"
-        if cl.options.DT64_UNIT == "ns"
+        if __dt64_unit__ == "ns"
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
@@ -228,8 +307,6 @@ def test_options_defaults() -> None:
     assert options.ARRAY_BACKEND == "numpy"
     assert options.AUTO_SPARSE == True
     assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
-    assert isinstance(options.DT64_DTYPE, str)
-    assert isinstance(options.DT64_UNIT, str)
     assert isinstance(options.ULT_VAL, str)
 
 
@@ -245,8 +322,6 @@ def test_get_option() -> None:
     assert cl.options.get_option('ARRAY_BACKEND') == cl.options.ARRAY_BACKEND
     assert cl.options.get_option('AUTO_SPARSE') == cl.options.AUTO_SPARSE
     assert cl.options.get_option('ARRAY_PRIORITY') == cl.options.ARRAY_PRIORITY
-    assert cl.options.get_option('DT64_DTYPE') == cl.options.DT64_DTYPE
-    assert cl.options.get_option('DT64_UNIT') == cl.options.DT64_UNIT
     assert cl.options.get_option('ULT_VAL') == cl.options.ULT_VAL
 
 
@@ -259,48 +334,37 @@ def test_set_option_consistency() -> None:
     None
 
     """
-    original = cl.options.ARRAY_BACKEND
     try:
         cl.options.set_option('ARRAY_BACKEND', 'sparse')
         assert cl.options.ARRAY_BACKEND == 'sparse'
         assert cl.options.get_option('ARRAY_BACKEND') == 'sparse'
     finally:
         # Reset the options to default if the test fails.
-        cl.options.set_option('ARRAY_BACKEND', original)
+        cl.options.reset_option('ARRAY_BACKEND')
 
-
-def test_deprecated_array_backend() -> None:
+def test_reset_single_option() -> None:
     """
-    Trigger the deprecation warning on cl.array_backend()
+    Set an option and check its value, then reset it and check its value.
 
     Returns
     -------
     None
 
     """
-    original = cl.options.ARRAY_BACKEND
-    try:
-        with pytest.warns(FutureWarning):
-            cl.array_backend('sparse')
-        assert cl.options.ARRAY_BACKEND == 'sparse'
-    finally:
-        # Reset the options to default if the test fails.
-        cl.options.set_option('ARRAY_BACKEND', original)
+    cl.options.set_option('ARRAY_BACKEND', 'sparse')
+    assert cl.options.ARRAY_BACKEND == 'sparse'
+    # Return backend to original state.
+    cl.options.reset_option('ARRAY_BACKEND')
+    assert cl.options.ARRAY_BACKEND == 'numpy'
 
 
-def test_deprecated_auto_sparse() -> None:
+def test_reset_option_invalid() -> None:
     """
-    Trigger the deprecation warning on cl.auto_sparse()
+    Supply in invalid option to cl.options.reset_option() and raise an error.
 
     Returns
     -------
     None
-
     """
-    original = cl.options.AUTO_SPARSE
-    try:
-        with pytest.warns(FutureWarning):
-            cl.auto_sparse(False)
-        assert cl.options.AUTO_SPARSE == False
-    finally:
-        cl.options.set_option('AUTO_SPARSE', original)
+    with pytest.raises(ValueError):
+        cl.options.reset_option('NOT_A_REAL_OPTION')

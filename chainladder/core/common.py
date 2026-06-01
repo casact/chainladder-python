@@ -126,7 +126,11 @@ class Common:
                 + "' object has no attribute 'full_expectation_'"
             )
 
-        return _get_full_expectation(self.cdf_, self.ultimate_, self.X_.is_cumulative)
+        if hasattr(self, "X_"):
+            X = self.X_
+        else:
+            X = self
+        return _get_full_expectation(self.cdf_, self.ultimate_, X.is_cumulative)
 
     @property
     def full_triangle_(self):

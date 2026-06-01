@@ -165,10 +165,10 @@ Functions
    :template: function.rst
 
    load_sample
+   list_samples
    read_pickle
    read_json
    concat
-   load_sample
    minimum
    maximum
 

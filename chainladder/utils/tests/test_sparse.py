@@ -97,9 +97,10 @@ def test_floor_rounds_down() -> None:
     np.testing.assert_array_equal(result.todense(), [1.0, 2.0, -1.0])
 
 
-def test_floor_mutates_in_place() -> None:
+def test_floor_returns_copy() -> None:
     """
-    Checks in-place mutation of floor function.
+    Checks that floor returns a copy and does not mutate its input,
+    mirroring np.floor (see issue #740).
 
     Returns
     -------
@@ -107,4 +108,6 @@ def test_floor_mutates_in_place() -> None:
     """
     a = array([1.2, 2.7, -0.3])
     result: COO = floor(a)
-    assert result is a
+    assert result is not a
+    np.testing.assert_array_equal(result.todense(), [1.0, 2.0, -1.0])
+    np.testing.assert_array_equal(a.todense(), [1.2, 2.7, -0.3])

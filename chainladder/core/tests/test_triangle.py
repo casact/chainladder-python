@@ -637,7 +637,7 @@ def test_origin_as_datetime_arg(clrd):
     )
 
 
-def test_full_triangle_and_full_expectation(raa):
+def test_full_triangle_and_full_expectation(raa,atol):
     raa_cum = raa
     assert raa_cum.is_cumulative == True
 
@@ -647,24 +647,38 @@ def test_full_triangle_and_full_expectation(raa):
     assert raa_incr.incr_to_cum() == raa_cum
 
     cl_fit_incr = cl.Chainladder().fit(X=raa_incr)
+    cl_predict_incr = cl.Chainladder().fit_predict(X=raa_incr)
     assert cl_fit_incr.X_.is_cumulative == False
 
     cl_fit_cum = cl.Chainladder().fit(X=raa_cum)
+    cl_predict_cum = cl.Chainladder().fit_predict(X=raa_cum)
     assert cl_fit_cum.X_.is_cumulative == True
 
     assert cl_fit_incr.cdf_ == cl_fit_cum.cdf_
     assert cl_fit_incr.ultimate_ == cl_fit_cum.ultimate_
 
-    assert (
-        cl_fit_cum.full_expectation_ - cl_fit_incr.full_expectation_.incr_to_cum()
-        < 0.00001
+    assert (np.allclose(
+        cl_fit_cum.full_expectation_.values,
+        cl_predict_cum.full_expectation_.values,
+        atol=atol
+        )
+    )
+    assert (np.allclose(
+        cl_fit_incr.full_expectation_.fillzero().values,
+        cl_predict_incr.full_expectation_.fillzero().values,
+        atol=atol
+        )
     )
     assert (
-        cl_fit_cum.full_triangle_ - cl_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+        cl_fit_cum.full_expectation_ - cl_fit_incr.full_expectation_.incr_to_cum()
+        < atol
+    )
+    assert (
+        cl_fit_cum.full_triangle_ - cl_fit_incr.full_triangle_.incr_to_cum() < atol
     )
     assert (cl_fit_cum.full_triangle_ - raa_cum) - (
         cl_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
-    ) < 0.00001
+    ) < atol
 
     bf_fit_incr = cl.BornhuetterFerguson(apriori=1).fit(
         X=raa_incr, sample_weight=raa_incr.incr_to_cum().latest_diagonal * 0
@@ -681,19 +695,19 @@ def test_full_triangle_and_full_expectation(raa):
 
     assert (
         bf_fit_cum.full_expectation_ - bf_fit_incr.full_expectation_.incr_to_cum()
-        < 0.00001
+        < atol
     )
     assert (
-        bf_fit_cum.full_triangle_ - bf_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+        bf_fit_cum.full_triangle_ - bf_fit_incr.full_triangle_.incr_to_cum() < atol
     )
     assert (bf_fit_cum.full_triangle_ - raa_cum) - (
         bf_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
-    ) < 0.00001
+    ) < atol
 
     assert (
         cl.Chainladder().fit(raa_incr).full_triangle_
         - cl.Chainladder().fit(raa_cum).full_triangle_.cum_to_incr()
-        <= 0.0001
+        <= atol
     )
     bk_fit_incr = cl.Benktander(apriori=1.00, n_iters=2).fit(
         X=raa_incr, sample_weight=raa_incr.incr_to_cum().latest_diagonal * 0
@@ -704,14 +718,14 @@ def test_full_triangle_and_full_expectation(raa):
 
     assert (
         bk_fit_cum.full_expectation_ - bk_fit_incr.full_expectation_.incr_to_cum()
-        < 0.00001
+        < atol
     )
     assert (
-        bk_fit_cum.full_triangle_ - bk_fit_incr.full_triangle_.incr_to_cum() < 0.00001
+        bk_fit_cum.full_triangle_ - bk_fit_incr.full_triangle_.incr_to_cum() < atol
     )
     assert (bk_fit_cum.full_triangle_ - raa_cum) - (
         bk_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
-    ) < 0.00001
+    ) < atol
 
 
 def test_halfyear_grain():
