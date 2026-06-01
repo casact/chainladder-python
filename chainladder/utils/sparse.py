@@ -66,7 +66,8 @@ def cumprod(a, axis=None, dtype=None, out=None):
     return array(np.cumprod(a.todense(), axis=axis, dtype=dtype, out=out))
 
 
-def floor(x):
+def floor(x: COO) -> COO:
+    x = x.copy()
     x.data = np.floor(x.data)
     return x
 
