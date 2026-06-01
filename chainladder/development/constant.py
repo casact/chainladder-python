@@ -109,6 +109,13 @@ class DevelopmentConstant(DevelopmentBase):
         # separate the cdf patterns from the tail; _prepare_cdf_patterns already
         # returns tail_cdf=1 when the patterns do not extend past the triangle.
         cdf_patterns, tail_cdf = self._prepare_cdf_patterns(patterns, tri_dev_periods)
+
+        # drops everything in the tail that is 1, recursively
+        while (
+            cdf_patterns[max(cdf_patterns)] == 1 and len(cdf_patterns) > tri_dev_periods
+        ):
+            del cdf_patterns[max(cdf_patterns)]
+
         pattern_dev_periods = len(cdf_patterns)
 
         # determine whether to include the last development period in the patterns
@@ -120,8 +127,10 @@ class DevelopmentConstant(DevelopmentBase):
                 stacklevel=2,
             )
             include_last = False
+
         elif pattern_dev_periods == tri_dev_periods:
             include_last = True
+
         else:
             include_last = tail_cdf != 1
 
