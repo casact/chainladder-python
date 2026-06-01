@@ -58,6 +58,16 @@ class TriangleBase(
         return self.values.shape
 
     @property
+    def dimensionality(self):
+        """The dimensionality of the Triangle.
+
+        Returns ``'empty'`` for a Triangle instantiated without data
+        (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
+        single triangle, and ``'multi'`` for a multidimensional Triangle.
+        """
+        return self._dimensionality
+
+    @property
     def empty(self):
         """Whether the Triangle contains any data.
 

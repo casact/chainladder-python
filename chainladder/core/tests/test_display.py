@@ -74,39 +74,23 @@ def test_dimensionality_empty(empty_triangle: Triangle) -> None:
 
 
 def test_empty_attribute_empty(empty_triangle: Triangle) -> None:
-    """
-    An empty triangle should report ``empty`` as True, mirroring pandas.
-
-    Parameters
-    ----------
-    empty_triangle: Triangle
-        An empty triangle.
-
-    Returns
-    -------
-    None
-
-    """
-
     assert empty_triangle.empty is True
 
 
 def test_empty_attribute_multi(clrd: Triangle) -> None:
-    """
-    A populated triangle should report ``empty`` as False.
-
-    Parameters
-    ----------
-    clrd: Triangle
-        The clrd sample data set.
-
-    Returns
-    -------
-    None
-
-    """
-
     assert clrd.empty is False
+
+
+def test_dimensionality_attribute_empty(empty_triangle: Triangle) -> None:
+    assert empty_triangle.dimensionality == "empty"
+
+
+def test_dimensionality_attribute_single(raa: Triangle) -> None:
+    assert raa.dimensionality == "single"
+
+
+def test_dimensionality_attribute_multi(clrd: Triangle) -> None:
+    assert clrd.dimensionality == "multi"
 
 
 def test_dimensionality_multi(clrd: Triangle) -> None:
