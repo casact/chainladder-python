@@ -8,6 +8,7 @@ from chainladder import (
     __dt64_unit__
 )
 from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.data._manifest import SAMPLES
 from pathlib import Path
 
 
@@ -130,23 +131,98 @@ def test_invalid_sample() -> None:
 
 def test_load_sample() -> None:
     """
-    Tests whether the supported sample data sets load.
+    Tests whether every sample data set declared in the manifest loads.
+
+    Iterating over the manifest (rather than globbing the data directory)
+    means adding a new sample is a one-entry change in
+    ``chainladder/utils/data/_manifest.py`` and this test picks it up
+    automatically, while non-data files in the folder (``__init__.py``,
+    ``_manifest.py``) are never mistaken for datasets.
     """
-
-    # Get the folder containing the datasets.
-    data_dir: Path = Path(__file__).parent.parent / 'data'
-
-    # Files to exclude from cl.load_sample().
-    files_to_excl: list = [
-        '__init__'
-    ]
-
-    # Gather list of files to test.
-    datasets = [f.stem for f in data_dir.iterdir() if f.is_file() and f.stem not in files_to_excl]
-
-    # Load each file.
-    for dataset in datasets:
+    # Every manifest entry must load and have a matching CSV on disk.
+    data_dir: Path = Path(__file__).parent.parent / "data"
+    for dataset in SAMPLES:
+        assert (data_dir / f"{dataset}.csv").is_file(), (
+            f"manifest lists '{dataset}' but {dataset}.csv is missing"
+        )
         cl.load_sample(dataset)
+
+    # Conversely, every CSV on disk must be declared in the manifest, so a
+    # newly added data file can't silently go unregistered.
+    csv_stems = {f.stem for f in data_dir.glob("*.csv")}
+    assert csv_stems == set(SAMPLES), (
+        "manifest and data directory are out of sync: "
+        f"only in dir={csv_stems - set(SAMPLES)}, "
+        f"only in manifest={set(SAMPLES) - csv_stems}"
+    )
+
+
+def test_list_samples() -> None:
+    """
+    Tests cl.list_samples(): the manifest-driven catalog of bundled datasets.
+    """
+    df = cl.list_samples()
+    # One row per manifest entry, indexed by sample name.
+    assert df.index.name == "name"
+    assert set(df.index) == set(SAMPLES)
+    assert {"index", "columns", "cumulative", "origin_grain", "development_grain"} <= set(df.columns)
+
+    # The fast path skips loading data and therefore omits the grain columns.
+    fast = cl.list_samples(include_grain=False)
+    assert set(fast.index) == set(SAMPLES)
+    assert "origin_grain" not in fast.columns
+    assert "development_grain" not in fast.columns
+
+    # Metadata matches the manifest source of truth.
+    assert df.loc["clrd2025", "columns"] == SAMPLES["clrd2025"]["columns"]
+    assert df.loc["prism", "cumulative"] == SAMPLES["prism"]["cumulative"]
+
+
+def test_sdist_ships_all_samples(tmp_path) -> None:
+    """
+    Build a source distribution and assert it contains every sample CSV.
+
+    This is the guard against MANIFEST.in drifting out of sync with the data
+    folder again (the bug behind #774: the old per-file include list shipped
+    only 22 of the bundled CSVs). It is deliberately self-skipping rather than
+    a hard requirement of the fast suite: it needs the ``build`` package and a
+    source checkout (a pyproject.toml at the repo root), and it shells out to a
+    full sdist build, so it no-ops in environments that lack either.
+    """
+    import subprocess
+    import sys
+    import tarfile
+
+    pytest.importorskip("build", reason="requires the build package")
+
+    # Locate the repo root (the directory containing pyproject.toml). When
+    # running from an installed wheel there is no source tree, so skip.
+    repo_root: Path = Path(__file__).resolve().parents[3]
+    if not (repo_root / "pyproject.toml").is_file():
+        pytest.skip("not running from a source checkout")
+
+    data_dir: Path = Path(__file__).parent.parent / "data"
+    expected_csvs = {f.name for f in data_dir.glob("*.csv")}
+
+    subprocess.run(
+        [sys.executable, "-m", "build", "--sdist", "--outdir", str(tmp_path)],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+    )
+
+    sdists = list(tmp_path.glob("*.tar.gz"))
+    assert len(sdists) == 1, f"expected one sdist, found {sdists}"
+
+    with tarfile.open(sdists[0]) as tar:
+        shipped = {
+            Path(name).name
+            for name in tar.getnames()
+            if "/utils/data/" in name and name.endswith(".csv")
+        }
+
+    missing = expected_csvs - shipped
+    assert not missing, f"sdist is missing sample CSVs: {sorted(missing)}"
 
 
 def test_load_sample_clrd2025() -> None:
