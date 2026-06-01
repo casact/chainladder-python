@@ -77,7 +77,7 @@ SAMPLES: dict = {
         "origin": 'Accident Year',
         "development": 'Calendar Year',
         "index": None,
-        "columns": ['Paid Claims', 'Reported Claims'],
+        "columns": ['Paid Claims', 'Reported Claims', 'Earned Premium'],
         "cumulative": True,
     },
     "friedland_auto_freq_sev": {
