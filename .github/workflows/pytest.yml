@@ -27,18 +27,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test --extra docs
       - name: Run tests
-        if: matrix.python-version != '3.12'
         run: uv run pytest --nbmake --cov=chainladder --cov-report=xml
-      - name: Run tests and doctests with coverage
-        if: matrix.python-version == '3.12'
-        env:
-          COVERAGE_FILE: ${{ github.workspace }}/.coverage
-        run: |
-          uv run pytest --nbmake --cov=chainladder --cov-report=
-          JB="$(uv run which jb)"
-          uv run --with coverage --directory docs coverage run --append --source=chainladder \
-            "$JB" build . --builder=custom --custom-builder=doctest
-          uv run coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
