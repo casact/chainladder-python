@@ -40,5 +40,7 @@ nb_output_stderr = 'show'
 numfig = True
 pygments_style = 'sphinx'
 suppress_warnings = ['myst.domains']
+templates_path = ['_templates']
+numpydoc_show_class_members = False
 use_jupyterbook_latex = True
 use_multitoc_numbering = True
