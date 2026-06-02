@@ -25,11 +25,7 @@ jobs:
           version: "latest"
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: |
-          uv sync --extra test
-          if [ "${{ matrix.python-version }}" = "3.12" ]; then
-            uv sync --extra docs
-          fi
+        run: uv sync --extra test --extra docs
       - name: Run tests
         if: matrix.python-version != '3.12'
         run: uv run pytest --nbmake --cov=chainladder --cov-report=xml
