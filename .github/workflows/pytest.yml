@@ -82,7 +82,7 @@ jobs:
         run: |
           uv run --with coverage coverage run --source=chainladder \
             "$(uv run which jb)" build . --builder=custom --custom-builder=doctest
-          uv run --with coverage coverage xml
+          uv run --with coverage coverage xml -o "${{ github.workspace }}/coverage.xml"
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
