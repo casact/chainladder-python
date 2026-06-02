@@ -33,10 +33,7 @@ SAMPLES: dict = {
     "abc": {
         "origin": "origin",
         "development": "development",
-        "origin": "origin",
-        "development": "development",
         "index": None,
-        "columns": ["values"],
         "columns": ["values"],
         "cumulative": True,
     },
@@ -195,7 +192,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
+        "columns": ["Paid Claims", "Reported Claims", "Earned Premium"],
         "cumulative": True,
     },
     "friedland_us_industry_auto_case": {
