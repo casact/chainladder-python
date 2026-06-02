@@ -25,9 +25,24 @@ jobs:
           version: "latest"
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: uv sync --extra test
+        run: |
+          uv sync --extra test
+          if [ "${{ matrix.python-version }}" = "3.12" ]; then
+            uv sync --extra docs
+          fi
       - name: Run tests
+        if: matrix.python-version != '3.12'
         run: uv run pytest --nbmake --cov=chainladder --cov-report=xml
+      - name: Run tests and doctests with coverage
+        if: matrix.python-version == '3.12'
+        env:
+          COVERAGE_FILE: ${{ github.workspace }}/.coverage
+        run: |
+          uv run pytest --nbmake --cov=chainladder --cov-report=
+          JB="$(uv run which jb)"
+          uv run --with coverage --directory docs coverage run --append --source=chainladder \
+            "$JB" build . --builder=custom --custom-builder=doctest
+          uv run coverage xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -76,18 +91,4 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra docs
       - name: Run doctests
-        working-directory: docs
-        env:
-          COVERAGE_FILE: ${{ github.workspace }}/.coverage
-        run: |
-          uv run --with coverage coverage run --source=chainladder \
-            "$(uv run which jb)" build . --builder=custom --custom-builder=doctest
-          uv run --with coverage coverage xml -o "${{ github.workspace }}/coverage.xml"
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+        run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest
