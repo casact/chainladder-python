@@ -76,4 +76,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra docs
       - name: Run doctests
-        run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest
+        working-directory: docs
+        env:
+          COVERAGE_FILE: ${{ github.workspace }}/.coverage
+        run: |
+          uv run --with coverage coverage run --source=chainladder \
+            "$(uv run which jb)" build . --builder=custom --custom-builder=doctest
+          uv run --with coverage coverage xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
