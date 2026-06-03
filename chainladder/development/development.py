@@ -79,7 +79,7 @@ class Development(DevelopmentBase):
         of estimating patterns.  If omitted, each level of the triangle
         index will receive its own patterns.
 
-    .. notes ::
+    .. note ::
 
         (Order of Drop Operations)
         
