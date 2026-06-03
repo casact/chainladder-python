@@ -15,6 +15,7 @@ from chainladder import (
     __dt64_dtype__
 )
 from chainladder.utils.sparse import sp
+from chainladder.utils.data._manifest import SAMPLES
 from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -43,7 +44,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
 
         Datasets that are commonly used in examples are: raa, clrd, and prism.
 
-        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, clrd2025, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
+        For the complete list of available datasets, call :func:`list_samples`.
 
     Returns
     -------
@@ -86,10 +87,10 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     # Set base path to be the parent directory of this file, e.g., the utils folder.
     utils_path: AnyStr = os.path.dirname(os.path.abspath(__file__))
 
-    # Validate that the file indicated by the key argument exists.
-    dataset_path: str = os.path.join(utils_path, "data", key.lower() + ".csv")
-
-    if not os.path.exists(dataset_path):
+    # Validate the key against the sample-dataset manifest. The manifest is the
+    # authoritative list of available samples; every entry has a matching CSV in
+    # the data folder.
+    if key.lower() not in SAMPLES:
         raise ValueError(
             """
             Invalid key supplied. The key should match the name, without extension, of one of the file names
@@ -102,162 +103,19 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             )
         )
 
-    # Set initial values for arguments to Triangle __init__. These may be overridden by
-    # values specific to the data set.
-    origin: str = "origin"
-    development: str = "development"
-    columns: list = ["values"]
-    index: list | None = None
-    cumulative: bool = True
+    dataset_path: str = os.path.join(utils_path, "data", key.lower() + ".csv")
 
-    if key.lower() in ["mcl", "usaa", "quarterly", "auto", "usauto", "tail_sample"]:
-        columns: list = ["incurred", "paid"]
-    if key.lower() == "clrd":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        index: list = ["GRNAME", "LOB"]
-        columns: list = [
-            "IncurLoss",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ]
-    if key.lower() == "clrd2025":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        index: list = ["GRNAME", "LOB"]
-        columns: list = [
-            "IncurredLosses",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ]
-    if key.lower() == "berqsherm":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        index: list = ["LOB"]
-        columns: list = ["Incurred", "Paid", "Reported", "Closed"]
-    if key.lower() == "xyz":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        columns: list = ["Incurred", "Paid", "Reported", "Closed", "Premium"]
-    if key.lower() in ["liab", "auto"]:
-        index: list = ["lob"]
-    if key.lower() in ["cc_sample", "ia_sample"]:
-        columns: list = ["loss", "exposure"]
-    if key.lower() in ["prism"]:
-        columns: list = ["reportedCount", "closedPaidCount", "Paid", "Incurred"]
-        index: list = [
-            "ClaimNo",
-            "Line",
-            "Type",
-            "ClaimLiability",
-            "Limit",
-            "Deductible",
-        ]
-        origin: str = "AccidentDate"
-        development: str = "PaymentDate"
-        cumulative: bool = False
-    if "mack_1997" in key.lower():
-        columns = ["Case Incurred"]
-        origin = "Accident Year"
-        development = "Calendar Year"
-        cumulative: bool = True
-    # Friedland datasets
-    if "friedland" in key.lower():
-        columns: list = ["Paid Claims", "Reported Claims"]
-        origin: str = "Accident Year"
-        development: str = "Calendar Year"
-        cumulative: bool = True
-        index: None = None
-        if "autoprop" in key.lower():
-            columns: list = [
-                "Reported ALAE",
-                "Paid ALAE",
-                "Reported Claims",
-                "Paid Claims",
-            ]
-        if "auto_salsub" in key.lower():
-            columns: list = [
-                "Reported Salvage and Subrogation",
-                "Received Salvage and Subrogation",
-                "Reported Claims",
-                "Paid Claims",
-            ]
-        if "berq_sher_auto" in key.lower():
-            columns: list = [
-                "Paid Claims",
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Disposal Rate",
-            ]
-        if "gl_insurer" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Disposal Rate",
-                "Paid Claims",
-            ]
-        if "med_mal" in key.lower():
-            columns: list = [
-                "Reported Claims",
-                "Paid Claims",
-                "Case Outstanding",
-                "Open Claim Counts",
-            ]
-        if "qs" in key.lower():
-            columns: list = [
-                "Gross Reported Claims",
-                "Net Reported Claims",
-                "Net to Gross",
-            ]
-        if "auto_case" in key.lower():
-            columns: list = ["Case Outstanding", "Paid Claims"]
-        if "wc_self_insurer" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Paid Claims",
-                "Paid Severities",
-                "Reported Claims",
-                "Reported Severities",
-            ]
-        if "xol" in key.lower():
-            columns: list = [
-                "Gross Reported Claims",
-                "Net Reported Claims",
-                "Ceded Reported Claims",
-            ]
-        if "xyz_case" in key.lower():
-            columns: list = ["Case Outstanding", "Paid Claims"]
-        if "xyz_disp" in key.lower():
-            columns: list = ["Disposal Rate", "Closed Claim Counts", "Paid Claims"]
-        if "xyz_freq_sev" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Reported Claims",
-                "Reported Severities",
-            ]
-        if "auto_freq_sev" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Reported Claims",
-                "Reported Severity",
-            ]
-            origin: str = "Accident Half-Year"
-            development: str = "Calendar Half-Year"
-        if "uspp" in key.lower():
-            columns: list = [
-                "Reported Claims",
-                "Paid Claims",
-                "Earned Premium"
-            ]
+    # Look up the Triangle configuration for this sample from the central
+    # manifest (chainladder/utils/data/_manifest.py). The manifest is the
+    # single source of truth for sample-dataset metadata, replacing the long
+    # per-dataset if/elif chain that previously lived here and duplicated the
+    # column names already present in the tests and the sample-data docs.
+    config: dict = SAMPLES[key.lower()]
+    origin = config["origin"]
+    development = config["development"]
+    index = config["index"]
+    columns = config["columns"]
+    cumulative = config["cumulative"]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
@@ -271,6 +129,72 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
         *args,
         **kwargs,
     )
+
+
+# Human-readable labels for the single-character grain codes a Triangle exposes
+# via ``origin_grain`` / ``development_grain``.
+_GRAIN_LABELS: dict = {
+    "Y": "Annual",
+    "S": "Semiannual",
+    "Q": "Quarter",
+    "M": "Month",
+}
+
+
+def list_samples(include_grain: bool = True) -> DataFrame:
+    """List the sample datasets bundled with the chainladder package.
+
+    The returned table is driven by the sample-dataset manifest
+    (``chainladder/utils/data/_manifest.py``), the same source
+    :func:`load_sample` reads, so it always reflects exactly what is loadable.
+
+    Parameters
+    ----------
+    include_grain: bool
+        If ``True`` (default), load each sample to report its origin and
+        development grain (and the number of origin/development periods). This
+        is the slower path because every Triangle is built. Set to ``False`` to
+        return just the manifest metadata (name, index, columns, cumulative)
+        without loading any data.
+
+    Returns
+    -------
+        pandas.DataFrame indexed by sample name, with columns ``index``,
+        ``columns``, ``cumulative`` and, when ``include_grain`` is ``True``,
+        ``origin_grain``, ``development_grain``, ``origin_periods`` and
+        ``development_periods``.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        import chainladder as cl
+        cl.list_samples()                    # full table, grain included
+        cl.list_samples(include_grain=False) # fast, metadata only
+    """
+    records: list = []
+    for name in sorted(SAMPLES):
+        config: dict = SAMPLES[name]
+        record: dict = {
+            "name": name,
+            "index": config["index"],
+            "columns": config["columns"],
+            "cumulative": config["cumulative"],
+        }
+        if include_grain:
+            triangle = load_sample(name)
+            record["origin_grain"] = _GRAIN_LABELS.get(
+                triangle.origin_grain, triangle.origin_grain
+            )
+            record["development_grain"] = _GRAIN_LABELS.get(
+                triangle.development_grain, triangle.development_grain
+            )
+            record["origin_periods"] = len(triangle.origin)
+            record["development_periods"] = triangle.development.shape[0]
+        records.append(record)
+
+    return pd.DataFrame.from_records(records).set_index("name")
 
 
 def read_pickle(path):

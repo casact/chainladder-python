@@ -184,6 +184,28 @@ class Options:
         self._validate_option(pat)
         if value is _UNSET:
             raise TypeError("set_option() missing required argument: 'value'.")
+        if pat == "ARRAY_BACKEND" and value == "cupy":
+            warnings.warn(
+                "The 'cupy' array backend is deprecated and will be removed in a "
+                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        elif pat == "ARRAY_PRIORITY" and "cupy" in value:
+            # Only warn when 'cupy' is prioritized ahead of a non-deprecated
+            # backend ('numpy' or 'sparse'), i.e. cupy would actually be
+            # selected over a supported backend.
+            cupy_index = value.index("cupy")
+            if any(
+                backend in value and value.index(backend) > cupy_index
+                for backend in ("numpy", "sparse")
+            ):
+                warnings.warn(
+                    "The 'cupy' array backend is deprecated and will be removed in a "
+                    "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
         setattr(self, pat, value)
 
     def reset_option(

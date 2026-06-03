@@ -20,7 +20,7 @@ Classes
 
 .. autosummary::
   :toctree: generated/
-  :template: class_inherited.rst
+  :template: class_inherited
 
   Triangle
   DevelopmentCorrelation
@@ -43,7 +43,7 @@ Classes
 
 .. autosummary::
   :toctree: generated/
-  :template: class.rst
+  :template: class
 
   Development
   DevelopmentConstant
@@ -72,7 +72,7 @@ Classes
 
 .. autosummary::
   :toctree: generated/
-  :template: class.rst
+  :template: class
 
   TailConstant
   TailCurve
@@ -96,7 +96,7 @@ Classes
 
 .. autosummary::
    :toctree: generated/
-   :template: class.rst
+   :template: class
 
    Chainladder
    MackChainladder
@@ -119,7 +119,7 @@ Classes
 
 .. autosummary::
  :toctree: generated/
- :template: class.rst
+ :template: class
 
  BootstrapODPSample
  BerquistSherman
@@ -140,7 +140,7 @@ Classes
 
 .. autosummary::
   :toctree: generated/
-  :template: class.rst
+  :template: class
 
   Pipeline
   VotingChainladder
@@ -162,13 +162,13 @@ Functions
 
 .. autosummary::
    :toctree: generated/
-   :template: function.rst
+   :template: function
 
    load_sample
+   list_samples
    read_pickle
    read_json
    concat
-   load_sample
    minimum
    maximum
 
@@ -178,7 +178,7 @@ Classes
 
 .. autosummary::
  :toctree: generated/
- :template: class.rst
+ :template: class
 
  PatsyFormula
 
