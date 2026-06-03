@@ -191,7 +191,7 @@ class Options:
                 DeprecationWarning,
                 stacklevel=2,
             )
-        elif pat == "ARRAY_PRIORITY" and "cupy" in value:
+        elif pat == "ARRAY_PRIORITY" and isinstance(value, list) and "cupy" in value:
             # Only warn when 'cupy' is prioritized ahead of a non-deprecated
             # backend ('numpy' or 'sparse'), i.e. cupy would actually be
             # selected over a supported backend.
