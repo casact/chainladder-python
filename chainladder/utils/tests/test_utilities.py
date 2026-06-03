@@ -311,8 +311,8 @@ def test_set_option_cupy_backend_deprecated() -> None:
 
 def test_set_option_cupy_priority_deprecated() -> None:
     """
-    Setting ARRAY_PRIORITY to a list containing 'cupy' should emit a
-    DeprecationWarning. See issue #843.
+    Setting ARRAY_PRIORITY with 'cupy' ahead of a non-deprecated backend
+    ('numpy' or 'sparse') should emit a DeprecationWarning. See issue #843.
 
     Returns
     -------
@@ -320,7 +320,24 @@ def test_set_option_cupy_priority_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="cupy"):
-            cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'cupy', 'numpy'])
+            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'dask', 'sparse', 'numpy'])
+    finally:
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_option_cupy_priority_last_no_warning(recwarn) -> None:
+    """
+    Setting ARRAY_PRIORITY with 'cupy' ranked below every non-deprecated
+    backend should not warn, since cupy would never be selected over a
+    supported backend. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy', 'cupy'])
+        assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
         cl.options.reset_option('ARRAY_PRIORITY')
 

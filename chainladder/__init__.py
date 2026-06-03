@@ -104,12 +104,20 @@ class Options:
                 stacklevel=2,
             )
         elif option == "ARRAY_PRIORITY" and "cupy" in value:
-            warnings.warn(
-                "The 'cupy' array backend is deprecated and will be removed in a "
-                "future release. See https://github.com/casact/chainladder-python/issues/843.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            # Only warn when 'cupy' is prioritized ahead of a non-deprecated
+            # backend ('numpy' or 'sparse'), i.e. cupy would actually be
+            # selected over a supported backend.
+            cupy_index = value.index("cupy")
+            if any(
+                backend in value and value.index(backend) > cupy_index
+                for backend in ("numpy", "sparse")
+            ):
+                warnings.warn(
+                    "The 'cupy' array backend is deprecated and will be removed in a "
+                    "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
         setattr(self, option, value)
 
     def reset_option(self, option: str | None = None) -> None:

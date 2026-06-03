@@ -161,6 +161,13 @@ class Common:
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
+        deep : bool
+            Whether to also convert the backend of nested Triangle-like
+            attributes (e.g. fitted estimator components).
+        _warn : bool
+            Internal flag controlling whether a deprecation warning is emitted.
+            Set to ``False`` on internal recursive calls so the warning fires
+            only once, at the user's call site. Not part of the public API.
 
         Returns
         -------
