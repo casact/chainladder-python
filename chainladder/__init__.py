@@ -24,10 +24,16 @@ import pandas as pd
 import warnings
 
 from importlib.metadata import version
-from typing import TYPE_CHECKING
+from typing import (
+    Any,
+    Literal,
+    overload,
+    TYPE_CHECKING
+)
 
 if TYPE_CHECKING:
     from re import Match
+    from types import FrameType
 
 
 # Get the default datetime64 data type and precision, extracted from Pandas installation.
@@ -35,13 +41,58 @@ if TYPE_CHECKING:
 __dt64_dtype__: str = pd.to_datetime(["2000-01-01"]).dtype.name
 __dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 
-option_warning: str = ("In a future release, the parameter 'option' will be renamed to 'pat' to stay consistent "
-                       "with the Pandas API.")
+# Sentinel pattern used to mark a parameter as required and validate it.
+_UNSET: Any = object()
 
-def _resolve_pat(pat: str | None, option: str | None):
+option_warning: str = (
+    "The parameter 'option' is deprecated and will be removed in a future release. Use 'pat' instead."
+)
+
+
+@overload
+def _resolve_pat(pat: str | None, option: str | None, required: Literal[True] = ...) -> str: ...
+@overload
+def _resolve_pat(pat: str | None, option: str | None, required: Literal[False]) -> str | None: ...
+def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> str | None:
+    """
+    Handles backward compatibility of 'options' parameter in options functions. Checks whether option or pat is
+    assigned a value and returns it. This value is meant to be assigned to the 'pat' parameter of the calling function.
+
+    Parameters
+    ----------
+    pat: str | None
+        The 'pat' parameter of the calling function.
+    option: str | None
+        The 'option' parameter of the calling function.
+    required: bool
+        Whether pat or option are required parameters in the calling function. Defaults to True.
+
+    Returns
+    -------
+        The value to be assigned to the 'pat' parameter of the calling function.
+
+    """
+    # Raise an error if the user accidentally assigns a value to both 'pat' and 'option'.
+    if pat is not None and option is not None:
+        raise TypeError("Cannot specify both 'pat' and 'option'.")
+    # Raise the deprecation warning if the user assigns a value to 'option'.
     if option is not None:
-        warnings.warn(option_warning, FutureWarning, stacklevel=2)
-        return option
+        warnings.warn(option_warning, FutureWarning, stacklevel=3)
+        pat: str = option
+    # Raise an error if neither 'option' nor 'pat' is assigned.
+    if pat is None and required:
+        # Determine the name of the calling function.
+        err: str = "Unable to determine calling function."
+        frame: FrameType | None = inspect.currentframe()
+        if frame is None:
+            raise AttributeError(err)
+        else:
+            f_back: FrameType | None = frame.f_back
+        if f_back is None:
+            raise AttributeError(err)
+        else:
+            caller: str = f_back.f_code.co_name
+        raise TypeError(f"{caller}() missing required argument: 'pat'.")
     return pat
 
 class Options:
@@ -74,13 +125,17 @@ class Options:
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({k: v for k, v in vars(self).items() if not k.startswith('_')})
 
-    def get_option(self, pat: str | None = None, *, option: str | None = None) -> str | bool | list:
+    def get_option(
+            self,
+            pat: str | None = None,
+            *,
+            option: str | None = None
+    ) -> str | bool | list:
         """
         Get the option value for the specified option.
 
         .. deprecated:: 0.9.3
-            The ``option`` parameter is renamed to ``pat``. Using ``option`` will raise a
-            ``FutureWarning`` and will be removed in a future release.
+            The ``option`` parameter is deprecated; use ``pat`` instead.
 
         Parameters
         ----------
@@ -94,43 +149,69 @@ class Options:
         The option value.
 
         """
-        _resolve_pat(pat=pat, option=option)
+        pat: str = _resolve_pat(pat=pat, option=option)
         self._validate_option(pat)
         return getattr(self, pat)
 
     def set_option(
             self,
-            pat: str,
-            value: str | bool | list
+            pat: str | None = None,
+            value: str | bool | list = _UNSET,
+            *,
+            option: str | None = None
     ) -> None:
         """
         Set the option value for the specified option.
 
+        .. deprecated:: 0.9.3
+            The ``option`` parameter is deprecated; use ``pat`` instead.
+
         Parameters
         ----------
-        pat: str
+        pat: str | None
             The option you wish to set the value for.
         value: str | bool | list
             The option value.
+        option: str | None
+            The option you wish to set the values for.
 
         Returns
         -------
         None
 
         """
+        pat: str = _resolve_pat(pat=pat, option=option)
         self._validate_option(pat)
+        if value is _UNSET:
+            raise TypeError("set_option() missing required argument: 'value'.")
         setattr(self, pat, value)
 
-    def reset_option(self, pat: str | None = None) -> None:
+    def reset_option(
+            self,
+            pat: str | None = None,
+            *,
+            option: str | None = None
+    ) -> None:
         """
         Restores the default value for the specified option. Restores default values for
-        all options if option is None.
+        all options if pat is None.
+
+        .. deprecated:: 0.9.3
+            The ``option`` parameter is deprecated; use ``pat`` instead.
+
+        Parameters
+        ----------
+        pat: str | None
+            The option you wish to reset the value for.
+        option: str | None
+            The option you wish to reset the value for.
 
         Returns
         -------
         None
 
         """
+        pat = _resolve_pat(pat=pat, option=option, required=False)
         if pat is not None:
             self._validate_option(pat)
             setattr(self, pat, copy.deepcopy(self._defaults[pat]))
@@ -139,7 +220,7 @@ class Options:
 
     def _validate_option(self, pat: str) -> None:
         """
-        Check whether string assigned to option is one of the configurable options in the Option class.
+        Check whether string assigned to option is one of the configurable options in the Options class.
 
         Parameters
         ----------
@@ -154,7 +235,7 @@ class Options:
         if pat not in self._defaults:
             raise ValueError(f"Invalid option(s): {pat}. Must be one of {list(self._defaults)}.")
 
-    def describe_option(self, pat: str = "", _print_desc=True) -> None | str:
+    def describe_option(self, pat: str = "", _print_desc: bool=True) -> None | str:
         """
         Print the description for one or more options.
 
@@ -171,7 +252,7 @@ class Options:
 
         Returns
         -------
-        None
+        The description for the specified option(s) if _print_desc=False, otherwise, `None`.
 
         Examples
         --------
@@ -218,12 +299,16 @@ class Options:
 
         .. testoutput::
 
-            "AUTO_SPARSE : bool\n    Controls whether chainladder automatically converts a triangle's backing array
-            to a sparse representation\n    when it would be memory-efficient to do so.\n
-            [default: True] [currently: True]"
+            AUTO_SPARSE : bool
+                Controls whether chainladder automatically converts a triangle's backing array to a sparse representation
+                when it would be memory-efficient to do so.
+                [default: True] [currently: True]
         """
         # Match option names against pat as a regex. Empty pattern matches all.
-        keys: list[str] = [key for key in self._defaults if re.search(pat, key)]
+        try:
+            keys = [key for key in self._defaults if re.search(pat, key)]
+        except re.error:
+            raise ValueError(f"'{pat}' is not a valid regular expression.")
 
         if pat and not keys:
             raise ValueError(f"No option matching '{pat}'. Must be one of {list(self._defaults)}.")
@@ -239,7 +324,7 @@ class Options:
                 # Look for pattern matching structure of an attribute. e.g., the attribute name, followed by
                 # the type name, then the attribute description indented on the next line. Search will be
                 # split up into groups, specified by parentheses ().
-                pattern=rf"^{key}:\s*(\S+)\n((?:[ \t]+.+\n?)+)",
+                pattern=rf"^{re.escape(key)}:\s*(\S+)\n((?:[ \t]+.+\n?)+)",
                 string=doc,
                 flags=re.MULTILINE  # Needed to specify '^' as starting line anchor for each line.
             )

@@ -384,6 +384,41 @@ def test_describe_option_return_string() -> None:
     assert '[currently: numpy]' in result
 
 
+def test_deprecated_option_kwarg_warns() -> None:
+    """
+    Passing option= to get_option or set_option should emit a FutureWarning.
+    """
+    with pytest.warns(FutureWarning, match="'option'"):
+        cl.options.get_option(option='ARRAY_BACKEND')
+
+    try:
+        with pytest.warns(FutureWarning, match="'option'"):
+            cl.options.set_option(option='ARRAY_BACKEND', value='numpy')
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+
+
+def test_deprecated_option_kwarg_reset_option_warns() -> None:
+    """
+    Passing option= to reset_option should emit a FutureWarning.
+    """
+    try:
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        with pytest.warns(FutureWarning, match="'option'"):
+            cl.options.reset_option(option='ARRAY_BACKEND')
+        assert cl.options.ARRAY_BACKEND == 'numpy'
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+
+
+def test_get_option_missing_pat_raises() -> None:
+    """
+    Calling get_option() with neither pat nor option should raise TypeError.
+    """
+    with pytest.raises(TypeError, match="missing required argument"):
+        cl.options.get_option()
+
+
 def test_describe_option_no_docstring_match(monkeypatch: MonkeyPatch) -> None:
     """
     When the class docstring has no entry for an option, describe_option should fall back
@@ -414,3 +449,27 @@ def test_describe_option_invalid() -> None:
     """
     with pytest.raises(ValueError):
         cl.options.describe_option('NOT_A_REAL_OPTION')
+
+
+def test_both_pat_and_option_raises() -> None:
+    """
+    Passing both pat and option to get_option, set_option, or reset_option should raise TypeError.
+    """
+    with pytest.raises(TypeError, match="Cannot specify both"):
+        cl.options.get_option(pat='ARRAY_BACKEND', option='ARRAY_BACKEND')
+
+
+def test_set_option_missing_value_raises() -> None:
+    """
+    Calling set_option with pat but no value should raise TypeError.
+    """
+    with pytest.raises(TypeError, match="missing required argument"):
+        cl.options.set_option('ARRAY_BACKEND')
+
+
+def test_describe_option_invalid_regex() -> None:
+    """
+    Passing a malformed regular expression to describe_option should raise ValueError.
+    """
+    with pytest.raises(ValueError, match="not a valid regular expression"):
+        cl.options.describe_option('[')
