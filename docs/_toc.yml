@@ -38,7 +38,7 @@ parts:
   - chapters:
     - file: gallery/index.md
   - chapters:
-    - file: library/api.rst    
+    - file: library/api.md    
   - chapters:
     - file: library/about.md
       sections:
