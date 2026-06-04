@@ -49,6 +49,9 @@ def test_link_ratio(raa, atol):
         raa.link_ratio * raa.iloc[:, :, :-1, :-1].values - raa.values[:, :, :-1, 1:]
     ).sum().sum() < atol
 
+def test_align_pattern(raa, atol):
+    with pytest.raises(ValueError):
+        raa.align_pattern(raa)
 
 def test_incr_to_cum(clrd):
     clrd.cum_to_incr().incr_to_cum() == clrd
