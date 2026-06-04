@@ -725,7 +725,6 @@ def model_diagnostics(
     if groupby is not None:
         tri = tri.groupby(groupby).sum()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
-        obj.ibnr_ = obj.ibnr_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
     tri = tri.cum_to_incr()
@@ -773,7 +772,10 @@ def model_diagnostics(
         if groupby is None:
             out["LDF"] = obj.ldf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
             out["CDF"] = obj.cdf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
-        out["IBNR"] = obj.ibnr_[col]
+        if groupby is not None:
+            out["IBNR"] = obj.ibnr_[col].groupby(groupby).sum()
+        else:
+            out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
             out["Run Off " + str(i + 1)] = run_off[col].iloc[..., i]
