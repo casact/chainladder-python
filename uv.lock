@@ -194,7 +194,6 @@ source = { editable = "." }
 dependencies = [
     { name = "dill" },
     { name = "matplotlib" },
-    { name = "numba" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pandas" },
@@ -285,8 +284,7 @@ requires-dist = [
     { name = "matplotlib" },
     { name = "nbmake", marker = "extra == 'test'" },
     { name = "nbsphinx", marker = "extra == 'docs'" },
-    { name = "numba", specifier = ">0.54" },
-    { name = "numpy" },
+    { name = "numpy", specifier = ">=2.0" },
     { name = "numpydoc", marker = "extra == 'docs'" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "parso", marker = "extra == 'docs'", specifier = ">=0.8" },
