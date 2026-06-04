@@ -114,6 +114,8 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     columns = config["columns"]
     cumulative = config["cumulative"]
 
+    development_format = config.get("development_format", None)
+
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
     return Triangle(
@@ -123,6 +125,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
         index=index,
         columns=columns,
         cumulative=cumulative,
+        development_format=development_format,
         *args,
         **kwargs,
     )
