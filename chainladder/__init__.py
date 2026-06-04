@@ -14,12 +14,26 @@ valuation defaults, as well as package metadata such as version number.
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 
 import copy
-import warnings
+import inspect
+import re
 import numpy as np
 import pandas as pd
+import warnings
+
 from importlib.metadata import version
+from typing import (
+    Any,
+    Literal,
+    overload,
+    TYPE_CHECKING
+)
+
+if TYPE_CHECKING:
+    from re import Match
+    from types import FrameType
 
 
 # Get the default datetime64 data type and precision, extracted from Pandas installation.
@@ -27,6 +41,62 @@ from importlib.metadata import version
 __dt64_dtype__: str = pd.to_datetime(["2000-01-01"]).dtype.name
 __dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 
+# Sentinel pattern used to mark a parameter as required and validate it.
+_UNSET: Any = object()
+
+option_warning: str = (
+    "The parameter 'option' is deprecated and will be removed in a future release. Use 'pat' instead."
+)
+
+
+@overload
+def _resolve_pat(pat: str | None, option: str | None, required: Literal[True] = ...) -> str: ...
+@overload
+def _resolve_pat(pat: str | None, option: str | None, required: Literal[False]) -> str | None: ...
+def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> str | None:
+    """
+    Handles backward compatibility of 'options' parameter in options functions. Checks whether option or pat is
+    assigned a value and returns it. This value is meant to be assigned to the 'pat' parameter of the calling function.
+
+    Once the 'options' parameter is fully removed, this function can be deleted or generalized as a backwards
+    compatibility tool to assist in the renaming and deprecation of function parameters.
+
+    Parameters
+    ----------
+    pat: str | None
+        The 'pat' parameter of the calling function.
+    option: str | None
+        The 'option' parameter of the calling function.
+    required: bool
+        Whether pat or option are required parameters in the calling function. Defaults to True.
+
+    Returns
+    -------
+        The value to be assigned to the 'pat' parameter of the calling function.
+
+    """
+    # Raise an error if the user accidentally assigns a value to both 'pat' and 'option'.
+    if pat is not None and option is not None:
+        raise TypeError("Cannot specify both 'pat' and 'option'.")
+    # Raise the deprecation warning if the user assigns a value to 'option'.
+    if option is not None:
+        warnings.warn(option_warning, FutureWarning, stacklevel=3)
+        pat: str = option
+    # Raise an error if neither 'option' nor 'pat' is assigned.
+    if pat is None and required:
+        # Determine the name of the calling function.
+        err: str = "Unable to determine calling function."
+        frame: FrameType | None = inspect.currentframe()
+        if frame is None:
+            raise AttributeError(err)
+        else:
+            f_back: FrameType | None = frame.f_back
+        if f_back is None:
+            raise AttributeError(err)
+        else:
+            caller: str = f_back.f_code.co_name
+        raise TypeError(f"{caller}() missing required argument: 'pat'.")
+    return pat
 
 class Options:
     """
@@ -58,13 +128,23 @@ class Options:
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({k: v for k, v in vars(self).items() if not k.startswith('_')})
 
-    def get_option(self, option: str) -> str | bool | list:
+    def get_option(
+            self,
+            pat: str | None = None,
+            *,
+            option: str | None = None
+    ) -> str | bool | list:
         """
         Get the option value for the specified option.
 
+        .. deprecated:: 0.9.3
+            The ``option`` parameter is deprecated; use ``pat`` instead.
+
         Parameters
         ----------
-        option: str
+        pat: str | None
+            The option you wish to get the values for.
+        option: str | None
             The option you wish to get the values for.
 
         Returns
@@ -72,38 +152,49 @@ class Options:
         The option value.
 
         """
-        self._validate_option(option)
-        return getattr(self, option)
+        pat: str = _resolve_pat(pat=pat, option=option)
+        self._validate_option(pat)
+        return getattr(self, pat)
 
     def set_option(
             self,
-            option: str,
-            value: str | bool | list
+            pat: str | None = None,
+            value: str | bool | list = _UNSET,
+            *,
+            option: str | None = None
     ) -> None:
         """
         Set the option value for the specified option.
 
+        .. deprecated:: 0.9.3
+            The ``option`` parameter is deprecated; use ``pat`` instead.
+
         Parameters
         ----------
-        option: str
+        pat: str | None
             The option you wish to set the value for.
         value: str | bool | list
             The option value.
+        option: str | None
+            The option you wish to set the values for.
 
         Returns
         -------
         None
 
         """
-        self._validate_option(option)
-        if option == "ARRAY_BACKEND" and value == "cupy":
+        pat: str = _resolve_pat(pat=pat, option=option)
+        self._validate_option(pat)
+        if value is _UNSET:
+            raise TypeError("set_option() missing required argument: 'value'.")
+        if pat == "ARRAY_BACKEND" and value == "cupy":
             warnings.warn(
                 "The 'cupy' array backend is deprecated and will be removed in a "
                 "future release. See https://github.com/casact/chainladder-python/issues/843.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-        elif option == "ARRAY_PRIORITY" and "cupy" in value:
+        elif pat == "ARRAY_PRIORITY" and isinstance(value, list) and "cupy" in value:
             # Only warn when 'cupy' is prioritized ahead of a non-deprecated
             # backend ('numpy' or 'sparse'), i.e. cupy would actually be
             # selected over a supported backend.
@@ -118,32 +209,176 @@ class Options:
                     DeprecationWarning,
                     stacklevel=2,
                 )
-        setattr(self, option, value)
+        setattr(self, pat, value)
 
-    def reset_option(self, option: str | None = None) -> None:
+    def reset_option(
+            self,
+            pat: str | None = None,
+            *,
+            option: str | None = None
+    ) -> None:
         """
         Restores the default value for the specified option. Restores default values for
-        all options if option is None.
+        all options if pat is None.
+
+        .. deprecated:: 0.9.3
+            The ``option`` parameter is deprecated; use ``pat`` instead.
+
+        Parameters
+        ----------
+        pat: str | None
+            The option you wish to reset the value for.
+        option: str | None
+            The option you wish to reset the value for.
 
         Returns
         -------
         None
 
         """
-
-        if option is not None:
-            self._validate_option(option)
-            setattr(self, option, copy.deepcopy(self._defaults[option]))
+        pat = _resolve_pat(pat=pat, option=option, required=False)
+        if pat is not None:
+            self._validate_option(pat)
+            setattr(self, pat, copy.deepcopy(self._defaults[pat]))
         else:
             self.__init__()
 
-    def _validate_option(self, option: str) -> None:
+    def _validate_option(self, pat: str) -> None:
+        """
+        Check whether string assigned to option is one of the configurable options in the Options class.
 
-        if option not in self._defaults:
-            raise ValueError(f"Invalid option(s): {option}. Must be one of {list(self._defaults)}.")
+        Parameters
+        ----------
+        pat: str
+            The option you want to check.
 
-    def describe_option(self, option: str) -> str:
-        pass
+        Returns
+        -------
+        None
+
+        """
+        if pat not in self._defaults:
+            raise ValueError(f"Invalid option(s): {pat}. Must be one of {list(self._defaults)}.")
+
+    def describe_option(self, pat: str = "", _print_desc: bool=True) -> None | str:
+        """
+        Print the description for one or more options.
+
+        Call with no arguments to get a listing for all options.
+
+        Parameters
+        ----------
+        pat: str, default ""
+            The name of the option(s) you want described. Supplying an empty string will describe all options.
+            For multiple options, separate them with a pipe, |.
+        _print_desc: bool, default True
+            If True (default) the description(s) will be printed to stdout.
+            Otherwise, the description(s) will be returned as a string.
+
+        Returns
+        -------
+        The description for the specified option(s) if _print_desc=False, otherwise, `None`.
+
+        Examples
+        --------
+
+        Describe information on a single option by passing the option name to `pat`.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            cl.options.describe_option("AUTO_SPARSE")
+
+        .. testoutput::
+
+            AUTO_SPARSE : bool
+                Controls whether chainladder automatically converts a triangle's backing array to a sparse representation
+                when it would be memory-efficient to do so.
+                [default: True] [currently: True]
+
+        You can use a regexp to look up information on multiple options.
+
+        .. testcode::
+
+            cl.options.describe_option("AUTO_SPARSE|ARRAY_BACKEND")
+
+        .. testoutput::
+
+            ARRAY_BACKEND : str
+                The default array backend for chainladder.
+                [default: numpy] [currently: numpy]
+            AUTO_SPARSE : bool
+                Controls whether chainladder automatically converts a triangle's backing array to a sparse representation
+                when it would be memory-efficient to do so.
+                [default: True] [currently: True]
+
+        Setting `_print_desc=False` will return a string
+
+        .. testcode::
+
+            res = cl.options.describe_option("AUTO_SPARSE", _print_desc=False)
+            print(res)
+
+        .. testoutput::
+
+            AUTO_SPARSE : bool
+                Controls whether chainladder automatically converts a triangle's backing array to a sparse representation
+                when it would be memory-efficient to do so.
+                [default: True] [currently: True]
+        """
+        # Match option names against pat as a regex. Empty pattern matches all.
+        try:
+            keys = [key for key in self._defaults if re.search(pat, key)]
+        except re.error:
+            raise ValueError(f"'{pat}' is not a valid regular expression.")
+
+        if pat and not keys:
+            raise ValueError(f"No option matching '{pat}'. Must be one of {list(self._defaults)}.")
+
+        # Extract class docstring and clean up indentation.
+        doc: str = inspect.cleandoc(self.__class__.__doc__)
+
+        # Holds the output.
+        lines: list[str] = []
+        for key in keys:
+            # Find a match for the specified option in the docstring.
+            match: Match[str] | None = re.search(
+                # Look for pattern matching structure of an attribute. e.g., the attribute name, followed by
+                # the type name, then the attribute description indented on the next line. Search will be
+                # split up into groups, specified by parentheses ().
+                pattern=rf"^{re.escape(key)}:\s*(\S+)\n((?:[ \t]+.+\n?)+)",
+                string=doc,
+                flags=re.MULTILINE  # Needed to specify '^' as starting line anchor for each line.
+            )
+
+            # If there's a match, extract the attribute type and description.
+            if match:
+                type_hint: str = match.group(1)  # Type annotation captured by (\S+)
+                description: str = inspect.cleandoc(match.group(2))  # Description block captured by ((?:[ \t]+.+\n?)+).
+            else:
+                type_hint: str = ""
+                description: str = "No description available."
+
+            # Indent the description relative to the attribute name.
+            indented: str = "\n    ".join(description.splitlines())
+            # Extract the default option values.
+            default: str | bool | list = self._defaults[key]
+            # Extract the current option values.
+            current: str | bool | list = getattr(self, key)
+            # Write the option followed by a type hint.
+            header: str = f"{key} : {type_hint}" if type_hint else key
+            # Indent the description relative to the header.
+            lines.append(f"{header}\n    {indented}\n    [default: {default}] [currently: {current}]")
+
+        output: str = "\n".join(lines)
+        # Print output by default, otherwise return the string.
+        if _print_desc:
+            print(output)
+            return None
+        return output
 
 options = Options()
 
