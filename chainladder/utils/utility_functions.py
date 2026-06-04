@@ -767,8 +767,8 @@ def model_diagnostics(
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
-        out["LDF"] = obj.ldf_.align_pattern(tri.incr_to_cum())[col]
-        out["CDF"] = obj.cdf_.align_pattern(tri.incr_to_cum())[col]
+        out["LDF"] = obj.ldf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+        out["CDF"] = obj.cdf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
         out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
