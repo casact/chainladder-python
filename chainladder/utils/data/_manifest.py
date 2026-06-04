@@ -172,7 +172,6 @@ SAMPLES: dict = {
             "Open Claim Counts",
         ],
         "cumulative": True,
-        "development_format": "%Y",
     },
     "friedland_qs": {
         "origin": "Accident Year",
