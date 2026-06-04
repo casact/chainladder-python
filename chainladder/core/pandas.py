@@ -72,6 +72,7 @@ class TrianglePandas:
             **kwargs
     ) -> DataFrame | Series:
         """ Converts a triangle to a pandas.DataFrame.
+
         Parameters
         ----------
         origin_as_datetime : bool
@@ -84,9 +85,10 @@ class TrianglePandas:
         implicit_axis : bool
             When keepdims is True, this denotes whether to include the implicit
             valuation axis in addition to the origin and development.
+
         Returns
         -------
-            DataFrame or Series representation of the Triangle.
+        DataFrame or Series representation of the Triangle.
         """
 
         # Identify the axes that increase the dimensionality of the triangle, i.e., those whose length is > 1.
@@ -204,7 +206,7 @@ class TrianglePandas:
             supplied as a string, returns the integer representation. If
             supplied as an integer, returns the same integer.
 
-        Returns`
+        Returns
         -------
         The integer representation of the requested axis
 
@@ -252,6 +254,7 @@ class TrianglePandas:
 
     def fillna(self, value=None, inplace=False):
         """Fill nan with 'value' by axis.
+
         Parameters
         ----------
         value: single value or array-like values, default = None
@@ -277,6 +280,7 @@ class TrianglePandas:
 
     def fillzero(self, inplace=False):
         """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
+
         Parameters
         ----------
         inplace: boolean, default = False
@@ -457,9 +461,11 @@ class TrianglePandas:
         level:IndexLabel | None = None,
         drop_level:bool = True):
         '''
-        mimics xs from pandas. key difference
-            - this function only slides the index, therefore axis is always 0 and not an argument in the function
-        main use case for this function is when slicing beyond the first field in the index (such as LOB in the clrd dataset)
+        Mimics xs from pandas. key difference is that  this function only slices 
+        the index, therefore axis is always 0 and not an argument in the function
+        
+        Main use case for this function is when slicing beyond the first field in 
+        the index (such as LOB in the clrd dataset)
         '''
         mi = pd.MultiIndex.from_frame(self.index)
 
