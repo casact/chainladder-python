@@ -39,6 +39,7 @@
    plot_triangle_slicing
    plot_value_at_risk
    plot_voting_chainladder
+   plot_loss_development
 
 ```
 

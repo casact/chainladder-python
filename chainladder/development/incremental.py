@@ -62,7 +62,7 @@ class IncrementalAdditive(DevelopmentBase):
     w_: ndarray
         The weight used in the zeta fitting
     w_tri_: Triangle
-        Triangle of w\_
+        Triangle of ``w_``
     sample_weight: Triangle
         The exposure used to obtain incremental factor
     incremental_: Triangle
