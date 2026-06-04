@@ -917,7 +917,7 @@ class Triangle(TriangleBase):
     def align_pattern(self, X, sample_weight=None):
         """ Vertically align a selected pattern to origin period latest diagonal. """
         if not self._pattern:
-            raise ValueError("Triangle is a selected pattern, such as .ldf_ or .cdf_")
+            raise ValueError("Triangle is not a selected pattern, such as .ldf_ or .cdf_")
         valuation = X.valuation_date
         pattern = self.iloc[..., : X.shape[-1]]
         a = X.iloc[0, 0] * 0
