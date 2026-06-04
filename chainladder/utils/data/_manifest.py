@@ -27,6 +27,8 @@ case) to the keyword arguments passed to ``Triangle``:
     Measure column name(s) loaded into the Triangle.
 ``cumulative``
     ``True`` if the measures are cumulative, ``False`` if incremental.
+``development_format``
+    Optional. Passed to ``Triangle`` by :func:`chainladder.load_sample`.
 """
 
 SAMPLES: dict = {
@@ -157,6 +159,7 @@ SAMPLES: dict = {
             "Paid Claims",
         ],
         "cumulative": True,
+        "development_format": "%Y-12-31",
     },
     "friedland_med_mal": {
         "origin": "Accident Year",
@@ -169,6 +172,7 @@ SAMPLES: dict = {
             "Open Claim Counts",
         ],
         "cumulative": True,
+        "development_format": "%Y",
     },
     "friedland_qs": {
         "origin": "Accident Year",

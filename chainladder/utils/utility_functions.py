@@ -10,10 +10,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from chainladder import (
-    __dt64_unit__,
-    __dt64_dtype__
-)
+from chainladder import __dt64_unit__, __dt64_dtype__
 from chainladder.utils.sparse import sp
 from chainladder.utils.data._manifest import SAMPLES
 from io import StringIO
@@ -117,6 +114,8 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     columns = config["columns"]
     cumulative = config["cumulative"]
 
+    development_format = config.get("development_format", None)
+
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
     return Triangle(
@@ -126,6 +125,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
         index=index,
         columns=columns,
         cumulative=cumulative,
+        development_format=development_format,
         *args,
         **kwargs,
     )
@@ -818,6 +818,7 @@ def PTF_formula(
         return "+".join(formula_parts)
     return ""
 
+
 def date_delta_adjustment(date: str) -> str:
     """
     Subtracts the default pandas datetime delta from a date in "YYYY-MM-DD" string format.
@@ -855,10 +856,6 @@ def date_delta_adjustment(date: str) -> str:
         '2025-10-31 23:59:59.999999'
     """
 
-
-    res: str = str(
-        pd.Timestamp(date) - \
-        pd.Timedelta(1, unit=__dt64_unit__)
-    )
+    res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=__dt64_unit__))
 
     return res
