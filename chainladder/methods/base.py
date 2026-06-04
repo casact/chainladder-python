@@ -25,19 +25,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def _align_cdf(self, X, sample_weight=None):
         """ Vertically align CDF to origin period latest diagonal. """
-        valuation = X.valuation_date
-        cdf = X.cdf_.iloc[..., : X.shape[-1]]
-        a = X.iloc[0, 0] * 0
-        a = a + a.nan_triangle
-        if X.array_backend == "sparse":
-            a = a - a[a.valuation < a.valuation_date]
-        if sample_weight:
-            X = X * a + sample_weight * a
-        else:
-            X = X * a
-        cdf = X / X * cdf
-        cdf.valuation_date = valuation
-        return cdf.latest_diagonal
+        return X.cdf_.align_pattern(X,sample_weight)
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """

@@ -23,7 +23,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
+    from chainladder import Triangle, MethodBase
     from numpy.typing import ArrayLike
     from pandas import DataFrame
     from sparse import COO
@@ -689,7 +689,10 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         return dmatrix(self.design_info_, X)
 
 
-def model_diagnostics(model, name=None, groupby=None):
+def model_diagnostics(
+        model:MethodBase|Triangle, 
+        name:str|None=None, 
+        groupby:str|list(str)|None=None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
@@ -707,25 +710,29 @@ def model_diagnostics(model, name=None, groupby=None):
     -------
     Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
     """
-    from chainladder import Pipeline
+    from chainladder import Pipeline, Triangle
 
     if isinstance(model, Pipeline):
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
+    if isinstance(model, Triangle):
+        tri = obj
+    else:
+        tri = obj.X_
     if groupby is not None:
-        obj.X_ = obj.X_.groupby(groupby).sum().cum_to_incr()
+        tri = tri.groupby(groupby).sum().cum_to_incr()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
     else:
-        obj.X_ = obj.X_.incr_to_cum()
-    val = obj.X_.valuation
-    latest = obj.X_.sum("development")
+        tri = tri.cum_to_incr()
+    val = tri.valuation
+    latest = tri.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
-    run_off = run_off[run_off.development > str(obj.X_.valuation_date)]
+    run_off = run_off[run_off.development > str(tri.valuation_date)]
     run_off = run_off.iloc[
-        ..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[obj.X_.development_grain]
+        ..., : {"M": 12, "S": 6, "Q": 4, "Y": 1}[tri.development_grain]
     ]
 
     triangles = []
@@ -735,18 +742,18 @@ def model_diagnostics(model, name=None, groupby=None):
         idx["Model"] = obj.__class__.__name__ if name is None else name
         idx = idx[list(idx.columns[-2:]) + list(idx.columns[:-2])]
         out = latest[col].rename("columns", ["Latest"])
-        if obj.X_.development_grain in ["M"]:
-            out["Month Incremental"] = obj.X_[col][val == obj.X_.valuation_date].sum(
+        if tri.development_grain in ["M"]:
+            out["Month Incremental"] = tri[col][val == tri.valuation_date].sum(
                 "development"
             )
         if (
-            obj.X_.development_grain in ["M", "Q"]
+            tri.development_grain in ["M", "Q"]
             and pd.Period(out.valuation_date, freq="Q").to_timestamp(how="s")
             > val.min()
         ):
             out["Quarter Incremental"] = (
-                obj.X_
-                - obj.X_[
+                tri
+                - tri[
                     val
                     < pd.Period(out.valuation_date, freq="Q")
                     .to_timestamp(how="s")
@@ -757,10 +764,12 @@ def model_diagnostics(model, name=None, groupby=None):
             out["Quarter Incremental"] = 0
         if pd.Period(out.valuation_date, freq="Y").to_timestamp(how="s") > val.min():
             out["Year Incremental"] = (
-                obj.X_ - obj.X_[val < str(obj.X_.valuation_date.year)]
+                tri - tri[val < str(tri.valuation_date.year)]
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
+        out["LDF"] = obj.ldf_.align_pattern(tri)[col]
+        out["CDF"] = obj.cdf_.align_pattern(tri)[col]
         out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
