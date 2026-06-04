@@ -58,6 +58,9 @@ def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> 
     Handles backward compatibility of 'options' parameter in options functions. Checks whether option or pat is
     assigned a value and returns it. This value is meant to be assigned to the 'pat' parameter of the calling function.
 
+    Once the 'options' parameter is fully removed, this function can be deleted or generalized as a backwards
+    compatibility tool to assist in the renaming and deprecation of function parameters.
+
     Parameters
     ----------
     pat: str | None
