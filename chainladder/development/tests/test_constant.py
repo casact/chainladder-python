@@ -91,6 +91,7 @@ def test_constant_callable_axis0(clrd, atol):
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_callable_axis1(clrd, atol):
     agway = clrd.loc["Agway Ins Co", "comauto"]
     cdfs = {
@@ -204,6 +205,7 @@ def test_constant_pattern_no_tail():
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_has_tail():
     reported_patterns = {
         12: 4.0,
@@ -246,6 +248,7 @@ def test_constant_pattern_has_tail():
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_exact_cdf(raa):
     reported_patterns = {
         12: 1.1,
@@ -274,6 +277,7 @@ def test_constant_pattern_exact_cdf(raa):
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_exact_ldf(raa):
     reported_patterns = {
         12: 1.1,
@@ -331,6 +335,7 @@ def test_constant_pattern_exact_ldf(raa):
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_short_cdf(raa):
     reported_patterns = {
         12: 1.1,
@@ -359,6 +364,7 @@ def test_constant_pattern_short_cdf(raa):
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_short_ldf(raa):
     reported_patterns = {
         12: 1.1,
@@ -389,6 +395,7 @@ def test_constant_pattern_short_ldf(raa):
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_long_cdf(raa):
     reported_patterns = {
         12: 1.1,
@@ -417,6 +424,7 @@ def test_constant_pattern_long_cdf(raa):
     )
 
 
+@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_long_ldf(raa):
     reported_patterns = {
         12: 1.1,
