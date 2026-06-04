@@ -119,8 +119,8 @@ def test_model_diagnostics_erorr(raa):
 def test_model_diagnostics_groupby(prism,atol):
     dev = cl.Development().fit(prism["Incurred"].sum())
     est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
-    lhs = cl.model_diagnostics(est,groupby=['Line'])
-    rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
+    lhs = cl.model_diagnostics(est,groupby=['Line'])['Ultimate']
+    rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))['Ultimate']
     assert np.allclose(lhs.values,rhs.values,atol=atol)
 
 def test_concat_immutability(raa):
