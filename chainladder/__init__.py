@@ -25,8 +25,6 @@ import warnings
 
 from importlib.metadata import version
 from typing import (
-    Any,
-    Literal,
     overload,
     TYPE_CHECKING
 )
@@ -34,6 +32,9 @@ from typing import (
 if TYPE_CHECKING:
     from re import Match
     from types import FrameType
+    from typing import Any, Literal
+del TYPE_CHECKING
+del annotations
 
 
 # Get the default datetime64 data type and precision, extracted from Pandas installation.
@@ -44,7 +45,7 @@ __dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 # Sentinel pattern used to mark a parameter as required and validate it.
 _UNSET: Any = object()
 
-option_warning: str = (
+_option_warning: str = (
     "The parameter 'option' is deprecated and will be removed in a future release. Use 'pat' instead."
 )
 
@@ -53,6 +54,7 @@ option_warning: str = (
 def _resolve_pat(pat: str | None, option: str | None, required: Literal[True] = ...) -> str: ...
 @overload
 def _resolve_pat(pat: str | None, option: str | None, required: Literal[False]) -> str | None: ...
+del overload
 def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> str | None:
     """
     Handles backward compatibility of 'options' parameter in options functions. Checks whether option or pat is
@@ -80,7 +82,7 @@ def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> 
         raise TypeError("Cannot specify both 'pat' and 'option'.")
     # Raise the deprecation warning if the user assigns a value to 'option'.
     if option is not None:
-        warnings.warn(option_warning, FutureWarning, stacklevel=3)
+        warnings.warn(_option_warning, FutureWarning, stacklevel=3)
         pat: str = option
     # Raise an error if neither 'option' nor 'pat' is assigned.
     if pat is None and required:
