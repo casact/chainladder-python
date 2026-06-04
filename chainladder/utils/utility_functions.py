@@ -721,12 +721,11 @@ def model_diagnostics(
     else:
         tri = obj.X_
     if groupby is not None:
-        tri = tri.groupby(groupby).sum().cum_to_incr()
+        tri = tri.groupby(groupby).sum()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
-    else:
-        tri = tri.cum_to_incr()
+    tri = tri.cum_to_incr()
     val = tri.valuation
     latest = tri.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
@@ -768,8 +767,8 @@ def model_diagnostics(
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
-        out["LDF"] = obj.ldf_.align_pattern(tri)[col]
-        out["CDF"] = obj.cdf_.align_pattern(tri)[col]
+        out["LDF"] = obj.ldf_.align_pattern(tri.incr_to_cum())[col]
+        out["CDF"] = obj.cdf_.align_pattern(tri.incr_to_cum())[col]
         out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
