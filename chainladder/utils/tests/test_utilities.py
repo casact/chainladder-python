@@ -121,7 +121,7 @@ def test_model_diagnostics_groupby(prism,atol):
     est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
     lhs = cl.model_diagnostics(est,groupby=['Line'])
     rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
-    assert np.allcose(lhs.values,rhs.values,atol=atol)
+    assert np.allclose(lhs.values,rhs.values,atol=atol)
 
 def test_concat_immutability(raa):
     u = cl.Chainladder().fit(raa).ultimate_
