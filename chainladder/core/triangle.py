@@ -914,8 +914,24 @@ class Triangle(TriangleBase):
         """
         return self._pattern
 
-    def align_pattern(self, X, sample_weight=None):
-        """ Vertically align a selected pattern to origin period latest diagonal. """
+    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
+        """ 
+        Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
+
+        Parameters
+        ----------
+        X: Triangle
+        The target triangle to align to
+        
+        sample_weight:  Triangle, option (default=None)
+        Exposure triangle
+
+        Returns
+        -------
+        Triangle
+            Triangle of selected pattern across origin periods
+
+        """
         if not self._pattern:
             raise ValueError("Triangle is not a selected pattern, such as .ldf_ or .cdf_")
         valuation = X.valuation_date

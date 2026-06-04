@@ -690,7 +690,7 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
 
 def model_diagnostics(
-        model:MethodBase|Triangle, 
+        model:Triangle|MethodBase|Pipeline, 
         name:str|None=None, 
         groupby:str|list(str)|None=None) -> Triangle:
     """A helper function that summarizes various vectors of an
@@ -698,17 +698,17 @@ def model_diagnostics(
 
     Parameters
     ----------
-    model:
-        A chainladder IBNR estimator or Pipeline
-    name:
+    model: Triangle|MethodBase|Pipeline
+        A predicted Triangle, chainladder IBNR estimator or Pipeline
+    name: str, optional (default=None)
         An alias to give the model. This will be added to the index of the return
         triangle.
-    groupby:
-        The index level at which the model should be summarized
+    groupby: str|list(str), optional (default=None)
+        The index level at which the model should be summarized. No development pattern will be included if groupby is used
 
     Returns
     -------
-    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
+    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, LDF, CDF, etc.
     """
     from chainladder import Pipeline, Triangle
 
@@ -716,6 +716,8 @@ def model_diagnostics(
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
+    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+        raise ValueError("model does not have ultimate_/ibnr_/ldf_")
     if isinstance(model, Triangle):
         tri = obj
     else:
@@ -723,6 +725,7 @@ def model_diagnostics(
     if groupby is not None:
         tri = tri.groupby(groupby).sum()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
+        obj.ibnr_ = obj.ibnr_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
     tri = tri.cum_to_incr()
@@ -767,8 +770,9 @@ def model_diagnostics(
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
-        out["LDF"] = obj.ldf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
-        out["CDF"] = obj.cdf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+        if groupby is None:
+            out["LDF"] = obj.ldf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(tri.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
         out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
         for i in range(run_off.shape[-1]):
