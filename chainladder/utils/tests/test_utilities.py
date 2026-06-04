@@ -368,3 +368,89 @@ def test_reset_option_invalid() -> None:
     """
     with pytest.raises(ValueError):
         cl.options.reset_option('NOT_A_REAL_OPTION')
+
+
+def test_set_option_cupy_backend_deprecated() -> None:
+    """
+    Setting ARRAY_BACKEND to 'cupy' should emit a DeprecationWarning. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        with pytest.warns(DeprecationWarning, match="cupy"):
+            cl.options.set_option('ARRAY_BACKEND', 'cupy')
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+
+
+def test_set_option_cupy_priority_deprecated() -> None:
+    """
+    Setting ARRAY_PRIORITY with 'cupy' ahead of a non-deprecated backend
+    ('numpy' or 'sparse') should emit a DeprecationWarning. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        with pytest.warns(DeprecationWarning, match="cupy"):
+            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'dask', 'sparse', 'numpy'])
+    finally:
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_option_cupy_priority_last_no_warning(recwarn) -> None:
+    """
+    Setting ARRAY_PRIORITY with 'cupy' ranked below every non-deprecated
+    backend should not warn, since cupy would never be selected over a
+    supported backend. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy', 'cupy'])
+        assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
+    finally:
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_option_non_cupy_no_warning(recwarn) -> None:
+    """
+    Setting backends other than 'cupy' should not emit a DeprecationWarning.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy'])
+        assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_backend_cupy_deprecated(clrd) -> None:
+    """
+    Triangle.set_backend('cupy') should emit exactly one DeprecationWarning,
+    pointing at the caller. See issue #843.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(DeprecationWarning, match="cupy") as record:
+        clrd.set_backend('cupy', deep=True)
+    cupy_warnings = [
+        w for w in record
+        if issubclass(w.category, DeprecationWarning) and "cupy" in str(w.message)
+    ]
+    # A single warning should fire at the user's call site, not once per
+    # internal recursive / deep child conversion.
+    assert len(cupy_warnings) == 1
+    assert cupy_warnings[0].filename == __file__
