@@ -274,14 +274,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
-        "cumulative": True,
-    },
-    "friedland_xyz_case": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Case Outstanding", "Paid Claims"],
+        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities"],
         "cumulative": True,
     },
     "friedland_xyz_disp": {
@@ -289,18 +282,6 @@ SAMPLES: dict = {
         "development": "Calendar Year",
         "index": None,
         "columns": ["Disposal Rate", "Closed Claim Counts", "Paid Claims"],
-        "cumulative": True,
-    },
-    "friedland_xyz_freq_sev": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": [
-            "Closed Claim Counts",
-            "Reported Claim Counts",
-            "Reported Claims",
-            "Reported Severities",
-        ],
         "cumulative": True,
     },
     "genins": {
