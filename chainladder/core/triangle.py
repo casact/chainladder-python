@@ -34,7 +34,7 @@ class Triangle(TriangleBase):
 
     Parameters
     ----------
-    data: DataFrame or DataFrameXchg, or dict
+    data: DataFrame | DataFrameXchg |dict
         A single dataframe that contains columns representing all other
         arguments to the Triangle constructor. One may supply a DataFrame-like
         object (referred to as DataFrameXchg) supporting the __dataframe__

@@ -409,17 +409,17 @@ class TriangleBase(
                     try:
                         datetime_values = cast(DatetimeIndex, pd.to_datetime(**date_inference))
                         break
-                    except ValueError:
+                    except (ValueError, UserWarning):
                         pass
-                    # Quarterly edge case.
-                    except UserWarning:
-                        datetime_values = pd.PeriodIndex(datetime_arg, freq='Q').to_timestamp(how=start_end)
-                        break
 
             if datetime_values is None:
-                raise ValueError(
-                    "Unable to infer datetime for field(s): " + str(fields) +
-                    ". Please check the underlying data or any supplied format arguments."
+                # Quarterly edge case.
+                try:
+                    datetime_values: DatetimeIndex = pd.PeriodIndex(datetime_arg, freq='Q').to_timestamp(how=start_end)
+                except ValueError:
+                    raise ValueError(
+                        "Unable to infer datetime for field(s): " + str(fields) +
+                        ". Please check the underlying data or any supplied format arguments."
                     )
             datetime_mapping = dict(zip(datetime_arg, datetime_values))
             target: Series = target_field.map(arg=datetime_mapping)
