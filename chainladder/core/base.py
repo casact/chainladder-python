@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
+import re
 import warnings
 
 from abc import ABC, abstractmethod
@@ -379,13 +380,16 @@ class TriangleBase(
         else:
             target_field: Series = data[fields].iloc[:, 0]
 
+        # Used for specifying start/end of a period when constructing timestamps.
+        # period_end is a boolean that if true, means that the timestamp should be the end of the period.
+        start_end: str = {1: "e", 0: "s"}[period_end]
+
         if hasattr(target_field, "dt"):
             # If the target field is already a non-period datetime, no conversion is needed.
             target: Series = target_field
-            # If the target field is a period, convert to timestamp. period_end is a boolean that if true,
-            # means that the timestamp should be the end of the period.
+            # If the target field is a period, convert to timestamp.
             if type(target.iloc[0]) == pd.Period:
-                return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
+                return target.dt.to_timestamp(how=start_end)
         else:
             datetime_arg: np.ndarray = target_field.unique()
             date_format = [{"arg": datetime_arg, "format": date_format}] if date_format else []
@@ -404,6 +408,9 @@ class TriangleBase(
                     break
                 except ValueError:
                     pass
+                # Quarterly edge case.
+                except UserWarning:
+                    datetime_mapping = dict(zip(datetime_arg, pd.PeriodIndex(datetime_arg, freq='Q').to_timestamp(how={1: "e", 0: "s"}[period_end])))
 
             if datetime_mapping is None:
                 raise ValueError(
