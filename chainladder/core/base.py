@@ -29,7 +29,8 @@ from chainladder.utils.sparse import sp
 
 from typing import (
     Optional,
-    TYPE_CHECKING
+    TYPE_CHECKING,
+    cast
 )
 
 if TYPE_CHECKING:
@@ -401,22 +402,24 @@ class TriangleBase(
                 {"arg": datetime_arg},
             ]
 
-            datetime_mapping: None | dict = None
+            datetime_values: DatetimeIndex | None = None
             for date_inference in date_inference_list:
                 try:
-                    datetime_mapping = dict(zip(datetime_arg, pd.to_datetime(**date_inference)))
+                    datetime_values = cast(DatetimeIndex, pd.to_datetime(**date_inference))
                     break
                 except ValueError:
                     pass
                 # Quarterly edge case.
                 except UserWarning:
-                    datetime_mapping = dict(zip(datetime_arg, pd.PeriodIndex(datetime_arg, freq='Q').to_timestamp(how={1: "e", 0: "s"}[period_end])))
+                    datetime_values: DatetimeIndex = pd.PeriodIndex(datetime_arg, freq='Q').to_timestamp(how=start_end)
+                    break
 
-            if datetime_mapping is None:
+            if datetime_values is None:
                 raise ValueError(
                     "Unable to infer datetime for field(s): " + str(fields) +
                     ". Please check the underlying data or any supplied format arguments."
                     )
+            datetime_mapping = dict(zip(datetime_arg, datetime_values))
             target: Series = target_field.map(arg=datetime_mapping)
 
         return target
