@@ -403,7 +403,7 @@ class TriangleBase(
             ]
 
             datetime_values: DatetimeIndex | None = None
-            with warnings.catch_warnings():
+            with warnings.catch_warnings(record=False):
                 warnings.filterwarnings('error', category=UserWarning)
                 for date_inference in date_inference_list:
                     try:
@@ -411,6 +411,7 @@ class TriangleBase(
                         break
                     except ValueError:
                         pass
+                    # Quarterly edge case.
                     except UserWarning:
                         datetime_values = pd.PeriodIndex(datetime_arg, freq='Q').to_timestamp(how=start_end)
                         break
