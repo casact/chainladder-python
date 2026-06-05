@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-import re
 import warnings
 
 from abc import ABC, abstractmethod
@@ -27,6 +26,8 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
+from pandas import DatetimeIndex
+
 from typing import (
     Optional,
     TYPE_CHECKING,
@@ -39,7 +40,6 @@ if TYPE_CHECKING:
         Series
     )
     from numpy.typing import ArrayLike
-    from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from pandas._libs.tslibs.timestamps import Timestamp
     from types import ModuleType
