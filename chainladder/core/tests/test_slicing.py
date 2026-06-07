@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import numpy as np
 import pytest
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 def test_slice_by_boolean(clrd):
     assert (
@@ -123,6 +129,85 @@ def test_at_iat_exceptions(raa):
 @pytest.mark.xfail
 def test_sparse_at_iat(prism):
     prism.iloc[0, 0, 0, 0] = 1.0
+
+
+def test_empty_index_raises(raa: Triangle) -> None:
+    """
+    Pass an empty list to Triangle.iloc and raise an empty Triangle error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError, match="Slice returns empty Triangle"):
+        raa.iloc[[], :]
+
+
+def test_get_idx_fancy_origin_raises(raa: Triangle) -> None:
+    """
+    Attempt fancy indexing on origin axis, raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
+        raa.iloc[0, 0, [0, 1, 5], :]
+
+
+def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
+    """
+    Attempt fancy indexing on development axis, raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
+        raa.iloc[0, 0, :, [0, 1, 5]]
+
+
+def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+    """
+    Pass lists of non-contiguous index expressions of the index and column axes to Triangle.iloc. Check the values
+    of the index and columns returned.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    result = clrd.iloc[[0, 1, 5], [0, 1, 5], :, :]
+    expected_index = [
+        ['Adriatic Ins Co', 'othliab'],
+        ['Adriatic Ins Co', 'ppauto'],
+        ['Agency Ins Co Of MD Inc', 'ppauto'],
+    ]
+    assert result.index.values.tolist() == expected_index
+    assert result.columns.tolist() == ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
 
 
 def test_sparse_at_iat1(prism):
