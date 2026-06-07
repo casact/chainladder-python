@@ -4,6 +4,7 @@ import pytest
 import chainladder as cl
 import copy
 import numpy as np
+import pandas as pd
 
 from chainladder import (
     __dt64_unit__
@@ -390,6 +391,21 @@ def test_set_option_cupy_backend_deprecated() -> None:
         cl.options.reset_option('ARRAY_BACKEND')
 
 
+def test_set_option_dask_backend_deprecated() -> None:
+    """
+    Setting ARRAY_BACKEND to 'dask' should emit a DeprecationWarning. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        with pytest.warns(DeprecationWarning, match="dask"):
+            cl.options.set_option('ARRAY_BACKEND', 'dask')
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+
+
 def test_set_option_cupy_priority_deprecated() -> None:
     """
     Setting ARRAY_PRIORITY with 'cupy' ahead of a non-deprecated backend
@@ -401,31 +417,49 @@ def test_set_option_cupy_priority_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="cupy"):
-            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'dask', 'sparse', 'numpy'])
+            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'numpy', 'sparse', 'dask'])
     finally:
         cl.options.reset_option('ARRAY_PRIORITY')
 
 
-def test_set_option_cupy_priority_last_no_warning(recwarn) -> None:
+def test_set_option_dask_priority_deprecated() -> None:
     """
-    Setting ARRAY_PRIORITY with 'cupy' ranked below every non-deprecated
-    backend should not warn, since cupy would never be selected over a
-    supported backend. See issue #843.
+    Setting ARRAY_PRIORITY with 'dask' ahead of a non-deprecated backend
+    ('numpy' or 'sparse') should emit a DeprecationWarning. See issue #842.
 
     Returns
     -------
     None
     """
     try:
-        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy', 'cupy'])
+        with pytest.warns(DeprecationWarning, match="dask"):
+            cl.options.set_option('ARRAY_PRIORITY', ['dask', 'numpy', 'sparse', 'cupy'])
+    finally:
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_option_deprecated_priority_last_no_warning(recwarn) -> None:
+    """
+    Setting ARRAY_PRIORITY with the deprecated backends ('cupy' and 'dask')
+    ranked below every non-deprecated backend should not warn, since neither
+    would ever be selected over a supported backend. See issues #842 and #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        cl.options.set_option('ARRAY_PRIORITY', ['numpy', 'sparse', 'dask', 'cupy'])
         assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
         cl.options.reset_option('ARRAY_PRIORITY')
 
 
-def test_set_option_non_cupy_no_warning(recwarn) -> None:
+def test_set_option_supported_backend_no_warning(recwarn) -> None:
     """
-    Setting backends other than 'cupy' should not emit a DeprecationWarning.
+    Setting a non-deprecated backend ('sparse'), and a priority list where no
+    deprecated backend precedes a supported one, should not emit a
+    DeprecationWarning.
 
     Returns
     -------
@@ -433,7 +467,7 @@ def test_set_option_non_cupy_no_warning(recwarn) -> None:
     """
     try:
         cl.options.set_option('ARRAY_BACKEND', 'sparse')
-        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy'])
+        cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'numpy'])
         assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
         cl.options.reset_option('ARRAY_BACKEND')
@@ -459,6 +493,67 @@ def test_set_backend_cupy_deprecated(clrd) -> None:
     # internal recursive / deep child conversion.
     assert len(cupy_warnings) == 1
     assert cupy_warnings[0].filename == __file__
+
+
+def test_set_backend_dask_deprecated(clrd) -> None:
+    """
+    Triangle.set_backend('dask') should emit exactly one DeprecationWarning,
+    pointing at the caller. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(DeprecationWarning, match="dask") as record:
+        try:
+            clrd.set_backend('dask', deep=True)
+        except Exception:
+            # The actual conversion can fail when the optional 'dask'
+            # dependency is not installed; we only care that the deprecation
+            # warning fired at the public entry point.
+            pass
+    dask_warnings = [
+        w for w in record
+        if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+    ]
+    assert len(dask_warnings) == 1
+    assert dask_warnings[0].filename == __file__
+
+
+def test_triangle_dask_input_deprecated() -> None:
+    """
+    Passing a non-pandas (Dask) dataframe to the Triangle constructor should
+    emit a DeprecationWarning. The 'dask' dependency is optional and not
+    installed in the test environment, so a pandas subclass is used to take
+    the same non-pandas code path in ``_aggregate_data``. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    class _NonPandasFrame(pd.DataFrame):
+        @property
+        def _constructor(self):
+            return _NonPandasFrame
+
+    data = _NonPandasFrame({
+        "origin": [2020, 2020, 2021],
+        "development": [2020, 2021, 2021],
+        "values": [100.0, 150.0, 200.0],
+    })
+    with pytest.warns(DeprecationWarning, match="dask") as record:
+        cl.Triangle(
+            data,
+            origin="origin",
+            development="development",
+            columns="values",
+        )
+    dask_warnings = [
+        w for w in record
+        if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+    ]
+    assert len(dask_warnings) == 1
+    assert dask_warnings[0].filename == __file__
 
 
 def test_describe_option(capsys: CaptureFixture[str]) -> None:
