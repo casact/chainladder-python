@@ -82,8 +82,9 @@ class _LocBase:
         if isinstance(arr, slice):
             return arr
         # If arr is int, construct a contiguous slice and return it.
-        if isinstance(arr, int):
+        elif isinstance(arr, (int, np.int32, np.int64)):
             return slice(arr, arr + 1)
+        arr = cast(np.ndarray, arr)
         # For single-element array, add 1 to return a contiguous slice.
         if len(arr) == 1:
             return slice(arr[0], arr[0] + 1)
