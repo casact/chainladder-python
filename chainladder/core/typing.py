@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from chainladder import Triangle
 
 # Alias for a Triangle or any object that behaves like one.
-TriangleLike: TypeAlias = Triangle
+TriangleLike: TypeAlias = "Triangle"
 
 # A raw indexing expression as passed by the user to an indexer such as
 # .iloc[] or .loc[] before normalization.
