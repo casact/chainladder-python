@@ -12,7 +12,8 @@ from abc import ABC, abstractmethod
 from chainladder import (
     __dt64_unit__,
     __dt64_dtype__,
-    options
+    options,
+    _deprecated_backend_message
 )
 
 from chainladder.core.common import Common
@@ -162,6 +163,14 @@ class TriangleBase(
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:
+            # A non-pandas input here is a Dask dataframe. stacklevel=3 points
+            # the warning at the user's Triangle(...) call (warn -> this
+            # method -> Triangle.__init__ -> user).
+            warnings.warn(
+                _deprecated_backend_message("dask"),
+                DeprecationWarning,
+                stacklevel=3,
+            )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
             data["__development__"] = development_date
