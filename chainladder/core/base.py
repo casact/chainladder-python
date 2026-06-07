@@ -105,7 +105,7 @@ class TriangleBase(
         columns = str_to_list(columns)
         origin = str_to_list(origin)
         development = str_to_list(development)
-        if not all(pd.api.types.is_numeric_dtype(data[col]) for col in columns):
+        if not all(pd.api.types.is_numeric_dtype(dt) for dt in data[columns].dtypes):
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
