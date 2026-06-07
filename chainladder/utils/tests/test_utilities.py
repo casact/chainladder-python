@@ -522,21 +522,27 @@ def test_set_backend_dask_deprecated(clrd) -> None:
 
 def test_triangle_dask_input_deprecated() -> None:
     """
-    Passing a non-pandas (Dask) dataframe to the Triangle constructor should
-    emit a DeprecationWarning. The 'dask' dependency is optional and not
-    installed in the test environment, so a pandas subclass is used to take
-    the same non-pandas code path in ``_aggregate_data``. See issue #842.
+    Passing a Dask dataframe to the Triangle constructor should emit a
+    DeprecationWarning. The 'dask' dependency is optional and not installed in
+    the test environment, so a pandas subclass whose module is spoofed to
+    'dask' is used to take the same non-pandas code path in ``_aggregate_data``
+    while still supporting the pandas operations performed there. See issue
+    #842.
 
     Returns
     -------
     None
     """
-    class _NonPandasFrame(pd.DataFrame):
+    class _FakeDaskFrame(pd.DataFrame):
         @property
         def _constructor(self):
-            return _NonPandasFrame
+            return _FakeDaskFrame
 
-    data = _NonPandasFrame({
+    # The warning is gated on the data's top-level module being 'dask', so the
+    # detection mirrors a real dask dataframe (e.g. dask.dataframe.core).
+    _FakeDaskFrame.__module__ = "dask.dataframe.core"
+
+    data = _FakeDaskFrame({
         "origin": [2020, 2020, 2021],
         "development": [2020, 2021, 2021],
         "values": [100.0, 150.0, 200.0],
@@ -554,6 +560,40 @@ def test_triangle_dask_input_deprecated() -> None:
     ]
     assert len(dask_warnings) == 1
     assert dask_warnings[0].filename == __file__
+
+
+def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
+    """
+    Passing a pandas subclass (not a Dask dataframe) to the Triangle
+    constructor should not emit the dask DeprecationWarning, even though such
+    inputs take the same non-pandas code path in ``_aggregate_data``. See
+    issue #842.
+
+    Returns
+    -------
+    None
+    """
+    class _PandasSubclass(pd.DataFrame):
+        @property
+        def _constructor(self):
+            return _PandasSubclass
+
+    data = _PandasSubclass({
+        "origin": [2020, 2020, 2021],
+        "development": [2020, 2021, 2021],
+        "values": [100.0, 150.0, 200.0],
+    })
+    cl.Triangle(
+        data,
+        origin="origin",
+        development="development",
+        columns="values",
+    )
+    dask_warnings = [
+        w for w in recwarn
+        if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+    ]
+    assert dask_warnings == []
 
 
 def test_describe_option(capsys: CaptureFixture[str]) -> None:
