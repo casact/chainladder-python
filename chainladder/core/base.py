@@ -163,14 +163,18 @@ class TriangleBase(
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:
-            # A non-pandas input here is a Dask dataframe. stacklevel=3 points
-            # the warning at the user's Triangle(...) call (warn -> this
-            # method -> Triangle.__init__ -> user).
-            warnings.warn(
-                _deprecated_backend_message("dask"),
-                DeprecationWarning,
-                stacklevel=3,
-            )
+            # A non-pandas input that reaches this branch is a Dask dataframe.
+            # Only the Dask backend is deprecated, so gate the warning on the
+            # data's module rather than warning for every pandas subclass that
+            # also takes this path. stacklevel=3 points the warning at the
+            # user's Triangle(...) call (warn -> this method ->
+            # Triangle.__init__ -> user).
+            if type(data).__module__.split(".")[0] == "dask":
+                warnings.warn(
+                    _deprecated_backend_message("dask"),
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
             data["__development__"] = development_date
