@@ -1161,7 +1161,7 @@ def test_input_validation_non_numeric_columns_raises() -> None:
     """
     df = pd.DataFrame({
         'origin': [1995, 1996],
-        'dev': [1995, 1996],
+        'development': [1995, 1996],
         'reported': ['1000', '2000'],
     })
     with pytest.raises(TypeError, match="column attribute must be numeric"):
