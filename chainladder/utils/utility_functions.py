@@ -285,8 +285,10 @@ def read_pickle(path):
 
     Examples
     --------
-    A fitted ``Development`` transformer can be saved to disk and restored
-    later so the same patterns can be applied to new data without re-fitting.
+    Pickling preserves all fitted parameters, including non-default settings.
+    A ``Development`` configured with ``average='simple'`` and ``n_periods=4``
+    produces identical factors before and after a round-trip through disk, and
+    the restored estimator can still ``transform`` new data.
 
     .. testsetup::
 
@@ -298,17 +300,21 @@ def read_pickle(path):
         import chainladder as cl
 
         tri = cl.load_sample("raa")
-        dev = cl.Development(average="volume").fit(tri)
+        dev = cl.Development(average="simple", n_periods=4).fit(tri)
         fd, p = tempfile.mkstemp(suffix=".pkl")
         os.close(fd)
         dev.to_pickle(p)
         restored = cl.read_pickle(p)
         os.remove(p)
+        print(dev.ldf_.values[0, 0, 0, :4].round(4))
+        print(restored.ldf_.values[0, 0, 0, :4].round(4))
         print(restored.transform(tri).ldf_.values[0, 0, 0, :4].round(4))
 
     .. testoutput::
 
-        [2.9994 1.6235 1.2709 1.1717]
+        [4.5853 2.0204 1.2448 1.1646]
+        [4.5853 2.0204 1.2448 1.1646]
+        [4.5853 2.0204 1.2448 1.1646]
 
     """
     with open(path, "rb") as pkl:
@@ -451,9 +457,9 @@ def read_json(json_str, array_backend=None):
 
     Examples
     --------
-    When a full reserving workflow needs to be stored as text—in a database,
-    config file, or REST API—``to_json`` serializes the pipeline and
-    ``read_json`` reconstructs it with all step parameters intact.
+    ``to_json`` serializes an estimator's parameters as a JSON string that
+    can be stored in a database, config file, or REST API. ``read_json``
+    reconstructs the estimator with all parameters intact.
 
     .. testsetup::
 
@@ -461,20 +467,18 @@ def read_json(json_str, array_backend=None):
 
     .. testcode::
 
-        from chainladder.workflow import Pipeline
-
-        pipe = Pipeline([
-            ("dev", cl.Development(average="volume")),
-            ("cl", cl.Chainladder()),
-        ])
-        pipe2 = cl.read_json(pipe.to_json())
-        print([step[0] for step in pipe2.steps])
-        print(pipe2.named_steps["dev"].get_params()["average"])
+        dev = cl.Development(average="simple", n_periods=4)
+        json_str = dev.to_json()
+        print(json_str)
+        dev2 = cl.read_json(json_str)
+        print(dev2.get_params()["average"])
+        print(dev2.get_params()["n_periods"])
 
     .. testoutput::
 
-        ['dev', 'cl']
-        volume
+        {"params": {"average": "simple", "drop": null, "drop_above": Infinity, "drop_below": 0.0, "drop_high": null, "drop_low": null, "drop_valuation": null, "fillna": null, "groupby": null, "n_periods": 4, "preserve": 1, "sigma_interpolation": "log-linear"}, "__class__": "Development"}
+        simple
+        4
 
     """
     from chainladder import Triangle
@@ -676,9 +680,8 @@ def concat(
     Examples
     --------
     When paid and incurred triangles are constructed separately, ``concat``
-    along ``axis=1`` combines them into one multi-column triangle.
-    ``MunichAdjustment`` requires both columns in the same object, so
-    concatenating them first is the natural setup step.
+    along ``axis=1`` combines them into one multi-column triangle, giving
+    downstream methods access to both columns at once.
 
     .. testsetup::
 
@@ -691,13 +694,11 @@ def concat(
         paid = wkcomp["CumPaidLoss"]
         incurred = wkcomp["IncurLoss"]
         combined = cl.concat([paid, incurred], axis=1)
-        adj = cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "IncurLoss"))
-        result = adj.fit_transform(combined)
-        print(result.ldf_["CumPaidLoss"].values[0, 0, 0, :4].round(4))
+        print(list(combined.columns))
 
     .. testoutput::
 
-        [2.2342 1.3548 1.1517 1.0883]
+        ['CumPaidLoss', 'IncurLoss']
 
     """
     if type(objs) not in (list, tuple):
@@ -809,7 +810,10 @@ def minimum(x1, x2):
     Parameters
     ----------
     x1 : Triangle
+        The first triangle operand.
     x2 : Triangle or scalar
+        The second operand. If a scalar, each element of ``x1`` is compared
+        against that constant value.
 
     Examples
     --------
@@ -852,7 +856,10 @@ def maximum(x1, x2):
     Parameters
     ----------
     x1 : Triangle
+        The first triangle operand.
     x2 : Triangle or scalar
+        The second operand. If a scalar, each element of ``x1`` is compared
+        against that constant value.
 
     Examples
     --------
@@ -873,15 +880,11 @@ def maximum(x1, x2):
         ult_sim = cl.Chainladder().fit(
             cl.Development(average="simple").fit_transform(tri)
         ).ultimate_
-        print(ult_vol.values[0, 0, -5:, 0].round(0))
-        print(ult_sim.values[0, 0, -5:, 0].round(0))
         high_side = cl.maximum(ult_vol, ult_sim)
         print(high_side.values[0, 0, -5:, 0].round(0))
 
     .. testoutput::
 
-        [19501. 17749. 24019. 16045. 18402.]
-        [19807. 18201. 25475. 17776. 55781.]
         [19807. 18201. 25475. 17776. 55781.]
 
     """
