@@ -116,14 +116,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
             Returns the instance itself.
         """
 
-        if hasattr(X, "w_"):
-            self.w_ = self._set_weight_func(
-                X=X * X.w_,
-            )
-        else:
-            self.w_ = self._set_weight_func(
-                X=X,
-            )
+        self.w_ = self._set_weight_func(X=X,secondary_rank=sample_weight)
         return self
 
     def transform(self, X: TriangleLike):
