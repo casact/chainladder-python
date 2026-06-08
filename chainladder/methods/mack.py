@@ -130,23 +130,27 @@ class MackChainladder(Chainladder):
         .. testcode::
 
             import numpy as np
+            import pandas as pd
 
             tr = cl.load_sample('ukmotor')
             model = cl.MackChainladder().fit(tr)
-            print(model.ibnr_.to_frame(origin_as_datetime=False).round(1))
-            print(np.round(model.mack_std_err_.values[0, 0, :, -1], 1))
+            df = model.ibnr_.to_frame(origin_as_datetime=False).round(1)
+            df.columns = ["IBNR"]
+            df["Mack Std Err"] = np.round(
+                model.mack_std_err_.values[0, 0, :, -1], 1
+            )
+            print(df)
 
         .. testoutput::
 
-                     2261
-            2007      NaN
-            2008    350.9
-            2009   1037.5
-            2010   2044.9
-            2011   3663.4
-            2012   7162.2
-            2013  14396.9
-            [  nan  27.2  36.5 144.5 427.6 693.2 901.4]
+                     IBNR  Mack Std Err
+            2007      NaN           NaN
+            2008    350.9          27.2
+            2009   1037.5          36.5
+            2010   2044.9         144.5
+            2011   3663.4         427.6
+            2012   7162.2         693.2
+            2013  14396.9         901.4
         """
         super().fit(X, y, sample_weight)
         if "sigma_" not in self.X_:
@@ -188,9 +192,14 @@ class MackChainladder(Chainladder):
         --------
         ``predict`` re-applies the fitted age-to-age factors and sigma
         estimates to a new triangle without refitting. A common use is
-        sensitivity testing: scale the reported losses by an adverse factor
-        and call ``predict`` to see how the Mack standard error responds,
-        holding the development pattern fixed.
+        sensitivity testing: hold the development pattern fixed and scale
+        the reported losses by an adverse factor to see how the Mack
+        standard error responds. Under Mack (1993), the prediction error
+        scales approximately proportionally with the reserve level because
+        sigma is estimated from the original fit and held fixed; applying the
+        factors to a uniformly scaled triangle would give exactly proportional
+        results, but scaling only the reported diagonal (as below) gives a
+        slightly smaller increase.
 
         .. testsetup::
 
