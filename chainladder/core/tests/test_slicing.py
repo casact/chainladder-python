@@ -126,6 +126,43 @@ def test_at_iat_exceptions(raa):
         raa.at["Total", "values", "1985", 0:2]
 
 
+def test_other_key_unsupported_iterable_raises(raa: Triangle) -> None:
+    """
+    Pass a nonsense key to raa.loc[], should raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(AttributeError, match="Unable to slice"):
+        raa.loc[:, (0, 1)]
+
+
+def test_at_setitem_triangle_value(raa: Triangle) -> None:
+    """
+    Use Triangle.at to set a single value via a TriangleSlicer.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = raa.copy()
+    tri.at["Total", "values", "1981", 12] = tri.iloc[0, 0, 1:2, 0:1]
+    assert tri.at["Total", "values", "1981", 12] == 106.0
+
+
 @pytest.mark.xfail
 def test_sparse_at_iat(prism):
     prism.iloc[0, 0, 0, 0] = 1.0
