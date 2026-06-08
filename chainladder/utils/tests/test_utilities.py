@@ -120,6 +120,36 @@ def test_concat_immutability(raa):
     assert u == u_new
 
 
+def test_to_pickle_read_pickle(raa):
+    import tempfile
+    import os
+    dev = cl.Development(average="simple", n_periods=4).fit(raa)
+    fd, path = tempfile.mkstemp(suffix=".pkl")
+    os.close(fd)
+    try:
+        dev.to_pickle(path)
+        restored = cl.read_pickle(path)
+        assert restored.average == dev.average
+        assert restored.n_periods == dev.n_periods
+        np.testing.assert_array_almost_equal(
+            restored.ldf_.values, dev.ldf_.values
+        )
+    finally:
+        os.remove(path)
+
+
+def test_maximum(raa):
+    ult_vol = cl.Chainladder().fit(
+        cl.Development(average="volume").fit_transform(raa)
+    ).ultimate_
+    ult_sim = cl.Chainladder().fit(
+        cl.Development(average="simple").fit_transform(raa)
+    ).ultimate_
+    high_side = cl.maximum(ult_vol, ult_sim)
+    assert (high_side.values >= ult_vol.values).all() or np.isnan(high_side.values).any()
+    assert (high_side.values >= ult_sim.values).all() or np.isnan(high_side.values).any()
+
+
 def test_invalid_sample() -> None:
     """
     Test that an invalid sample name provided to cl.load_sample() raises an error.
