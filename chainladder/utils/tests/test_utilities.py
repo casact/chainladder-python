@@ -148,6 +148,22 @@ def test_load_sample() -> None:
         cl.load_sample(dataset)
 
 
+def test_load_sample_uspp() -> None:
+    """Tests uspp Friedland triangles load with the correct three-column schema."""
+    for key in [
+        "friedland_uspp_auto_increasing_case",
+        "friedland_uspp_auto_increasing_claim",
+        "friedland_uspp_auto_steady_state",
+        "friedland_uspp_increasing_claim_case",
+    ]:
+        tri = cl.load_sample(key)
+        assert set(str(c) for c in tri.vdims) == {
+            "Reported Claims",
+            "Paid Claims",
+            "Earned Premium",
+        }
+
+
 def test_load_sample_clrd2025() -> None:
     """
     Tests the clrd2025 sample (CAS Schedule P 1998-2007 refresh).
