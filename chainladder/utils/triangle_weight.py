@@ -441,7 +441,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
             raise Exception("The entire triangle has been dropped via drop_valuation.")
         return w
     
-    def _drop_x_func(self, X):
+    def _drop_x_func(self, X: TriangleLike) -> TriangleLike:
         """
         Generates weights for the `drop_above` and `drop_below` parameters
 
