@@ -221,7 +221,6 @@ def test_drophighlow_inequal(prism,atol):
     no_drop = dev0.fit_transform(tri).cdf_.to_frame().values
     drop_high = dev1.fit_transform(tri).cdf_.to_frame().values
     drop_low = dev2.fit_transform(tri).cdf_.to_frame().values
-    print(_FutureDevelopment(dev2).fit(tri).ldf_)
     assert (drop_low >= no_drop).all()
     assert (no_drop >= drop_high).all()
     assert (_FutureDevelopment(dev2).fit(tri).ldf_.values >= _FutureDevelopment(dev0).fit(tri).ldf_.values).all()
@@ -305,7 +304,6 @@ def test_drop_valuation_2(qtr):
     dev2 = cl.Development(drop_valuation="1995-03-31")
     dev3 = cl.Development(drop_valuation="1995-06-30")
     dev4 = cl.Development(drop_valuation="1995-09-30")
-
     assert (
         dev1.fit_transform(qtr["incurred"]).cdf_
         != dev2.fit_transform(qtr["incurred"]).cdf_
