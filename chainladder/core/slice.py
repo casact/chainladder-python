@@ -377,7 +377,7 @@ class Location(_LocBase):
             raise AttributeError("Unable to slice.")
 
 
-    def key_to_slice(self, key: _LabelKey) -> tuple:
+    def key_to_slice(self, key: _LabelKey) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
         Converts keys to integer slices.
 
@@ -392,7 +392,7 @@ class Location(_LocBase):
         """
 
         # Preprocess key into a normalized 4-D key.
-        key: tuple[_LabelKey, _LabelKey, _LabelKey, _LabelKey] = self.format_key(key)
+        key = self.format_key(key)
         # Transform into integer-based slices.
         out = (self.index_key(key[0]),
                 self.other_key(key[1], 'columns'),
@@ -400,8 +400,8 @@ class Location(_LocBase):
                 self.other_key(key[3], 'development'))
         return out
 
-    def __setitem__(self, key, values):
-        super().__setitem__(self.key_to_slice(key), values)
+    def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
+        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
 
 class Ilocation(_LocBase):
     """
