@@ -58,17 +58,17 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
     
             (Order of Drop Operations)
             
-            When multiple drop parameters are used together, the weights are built in this order:
+            When multiple drop parameters are used together, the weights are built in this order (steps 4 and 5 are reversed from `Development`):
         
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
             3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
-            4. ``drop_high`` / ``drop_low`` — remove highest/lowest link ratios by rank
-               (eligible factors from ``n_periods`` are used; protected by ``preserve``,
-               which may relax exclusions from this step if too few ratios would remain then this step is skipped).
-            5. ``drop_above`` / ``drop_below`` — remove link ratios outside a range
+            4. ``drop_above`` / ``drop_below`` — remove link ratios outside a range
                (Protected by``preserve``, which may relax exclusions from this step if too few ratios would remain
                then this step is skipped).
+            5. ``drop_high`` / ``drop_low`` — remove highest/lowest link ratios by rank
+               (eligible factors from ``n_periods`` are used; protected by ``preserve``,
+               which may relax exclusions from this step if too few ratios would remain then this step is skipped).
             6. Calculate the loss development factors using ``average`` method.
 
     Attributes
