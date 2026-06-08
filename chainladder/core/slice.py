@@ -3,15 +3,20 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import pandas as pd
 import numpy as np
-from sparse import _slicing
-from chainladder.utils.utility_functions import num_to_nan
+import pandas as pd
 
-from typing import TYPE_CHECKING
+from chainladder.core.typing import _AxisKey
+from chainladder.utils.utility_functions import num_to_nan
+from sparse import _slicing
+from typing import (
+    cast,
+    TYPE_CHECKING
+)
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+    from chainladder.core.typing import IndexExpression
 
 class _LocBase:
     """
@@ -21,42 +26,78 @@ class _LocBase:
     def __init__(self, obj):
         self.obj = obj
 
-    def get_idx(self, idx: tuple):
-        """ Returns a slice of the original Triangle """
-        obj = self.obj.copy()
-        i_idx = _LocBase._contig_slice(idx[0])
-        c_idx = _LocBase._contig_slice(idx[1])
-        o_idx = _LocBase._contig_slice(idx[2])
-        d_idx = _LocBase._contig_slice(idx[3])
+    def get_idx(self, idx: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]) -> Triangle:
+        """
+        Returns a slice of the original Triangle
+
+        Parameters
+        ----------
+        idx: tuple
+            The index to slice on.
+
+        Returns
+        -------
+        The requested slice of the original Triangle.
+
+        """
+        obj: Triangle = self.obj.copy()
+        idx = cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], idx)
+        i_idx: slice | np.ndarray = _LocBase._contig_slice(idx[0])
+        c_idx: slice | np.ndarray = _LocBase._contig_slice(idx[1])
+        o_idx: slice | np.ndarray = _LocBase._contig_slice(idx[2])
+        d_idx: slice | np.ndarray = _LocBase._contig_slice(idx[3])
         if type(o_idx) != slice or type(d_idx) != slice:
             raise ValueError("Fancy indexing on origin/development is not supported.")
         if type(i_idx) is slice or type(c_idx) is slice:
             obj.values = obj.values[i_idx, c_idx, o_idx, d_idx]
+        # Case when index and column indexing expressions are arrays.
         else:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
+        # Set the new dimension values.
         obj.kdims = obj.kdims[i_idx]
         obj.vdims = obj.vdims[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
+        # Set indexers.
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
-        obj.valuation_date = np.minimum(obj.valuation.max(), obj.valuation_date)
+        obj.valuation_date = cast(pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date))
         return obj
 
     @staticmethod
-    def _contig_slice(arr):
-        """ Try to make a contiguous slicer from an array of indices """
-        if type(arr) is slice:
+    def _contig_slice(arr: _AxisKey) -> slice | np.ndarray:
+        """
+        Try to make a contiguous slicer from an _AxisKey.
+
+        Parameters
+        ----------
+        arr: _AxisKey
+            The _AxisKey to be transformed into a contiguous slicer.
+
+        Returns
+        -------
+        slice | np.ndarray
+            A contiguous slice, if it can be constructed, otherwise, the original arr.
+        """
+
+        # If arr is already a slice, return it.
+        if isinstance(arr, slice):
             return arr
-        if type(arr) in [int, np.int64, np.int32]:
-            arr = [arr]
+        # If arr is int, construct a contiguous slice and return it.
+        elif isinstance(arr, (int, np.int32, np.int64)):
+            return slice(arr, arr + 1)
+        arr = cast(np.ndarray, arr)
+        # For single-element array, add 1 to return a contiguous slice.
         if len(arr) == 1:
             return slice(arr[0], arr[0] + 1)
         diff = np.diff(arr)
         if len(diff) == 0:
-            raise ValueError("Slice returns empty Triangle")
+            raise ValueError("Slice returns empty Triangle.")
+        # Case when each step is the same.
         if max(diff) == min(diff):
             step = max(diff)
+        # Return the original array if no conversion is possible.
         else:
             return arr
+        # Normalize the boundaries and step.
         step = None if step == 1 else step
         min_arr = None if min(arr) == 0 else min(arr)
         max_arr = max(arr) + 1
@@ -74,15 +115,33 @@ class _LocBase:
         )
         self.obj.values.__setitem__(self._normalize_index(key), values)
 
-    def _normalize_index(self, key: tuple) -> tuple:
-        key: tuple = _slicing.normalize_index(key, self.obj.shape)
+    def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
+        """
+        Converts an indexing expression into a standard 4-D format. When the indexing has fewer dimensions than 4,
+        slices for the remaining dimensions are added.
+
+        Parameters
+        ----------
+        key: IndexExpression
+            The indexing expression passed to the calling indexer.
+
+        Returns
+        -------
+        tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]
+            A normalized, 4-D indexing expression.
+
+        """
+        # Apply sparse normalization, fills out the rest of the dimensions using the shape of the Triangle.
+        key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey] = _slicing.normalize_index(key, self.obj.shape)
         l = []
+        # Preserve start/stop/step boundaries if the user has specified them, otherwise replace them with None.
+        # None indicates "go-to-boundary" for the slice.
         for n, i in enumerate(key):
             if type(i) is slice:
-                start = i.start if i.start > 0 else None
-                stop = i.stop if i.stop > -1 else None
-                stop = None if stop == self.obj.shape[n] else stop
-                step = None if start is None and stop is None else i.step
+                start: int | None= i.start if i.start > 0 else None
+                stop: int | None = i.stop if i.stop > -1 else None
+                stop: int | None = None if stop == self.obj.shape[n] else stop
+                step: int | None = None if start is None and stop is None else i.step
                 l.append(slice(start, stop, step))
             else:
                 l.append(i)
@@ -118,7 +177,7 @@ class Location(_LocBase):
             obj.set_index(obj.index.iloc[:, 1:], inplace=True)
         return obj
 
-    def format_key(self, key):
+    def format_key(self, key) -> tuple:
         """ Converts keys to loc slices """
         if (type(key) is tuple and len(key) > 1
             and len(self.obj.key_labels) > 1 and type(key[1]) is str
@@ -129,13 +188,15 @@ class Location(_LocBase):
         key_mask = tuple([i if i is Ellipsis else 0 for i in key])
         if len(key_mask) < len(self.obj.shape) and Ellipsis not in key_mask:
             key_mask = tuple(list(key_mask) + [Ellipsis])
-        key_mask = list(self._normalize_index(key_mask))
+        normalized = self._normalize_index(key_mask)
         key = [item for item in key if item is not Ellipsis]
+        key_mask = []
         for i in range(len(self.obj.shape)):
-            if key_mask[i] == 0:
-                key_mask[i] = key[0]
-                key.pop(0)
-        return key_mask
+            if normalized[i] == 0:
+                key_mask.append(key.pop(0))
+            else:
+                key_mask.append(normalized[i])
+        return tuple(key_mask)
 
     def index_key(self, key):
         if type(key) == pd.Series and len(key) != len(self.obj):
@@ -166,13 +227,13 @@ class Location(_LocBase):
             raise AttributeError("Unable to slice.")
 
 
-    def key_to_slice(self, key):
+    def key_to_slice(self, key) -> tuple:
         """ Converts keys to integer slices """
         key = self.format_key(key)
-        out = [self.index_key(key[0]),
+        out = (self.index_key(key[0]),
                 self.other_key(key[1], 'columns'),
                 self.other_key(key[2], 'origin'),
-                self.other_key(key[3], 'development')]
+                self.other_key(key[3], 'development'))
         return out
 
     def __setitem__(self, key, values):
@@ -283,7 +344,7 @@ class TriangleSlicer:
 
 
 class At(Location):
-    def _check_index(self, key):
+    def _check_index(self, key) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         idx = self.key_to_slice(key)
         for item in idx:
             if type(item) is slice:
@@ -320,7 +381,7 @@ class At(Location):
 
 
 class Iat(Ilocation):
-    def _check_index(self, key):
+    def _check_index(self, key) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         idx = self._normalize_index(key)
         types = {type(i) for i in idx}
         if len(types) > 1 or list(types)[0] != int:
