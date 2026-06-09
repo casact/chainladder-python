@@ -51,7 +51,7 @@ def test_slice_development(raa: Triangle) -> None:
 
     """
     assert raa[raa.development < 72].shape == (1, 1, 10, 5)
-    assert raa.loc[..., 24:].development.min() <= 24
+    assert raa.loc[..., 24:].development.min() == 24
 
 
 def test_slice_by_loc_iloc(clrd):
