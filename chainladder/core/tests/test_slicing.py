@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder import Triangle
 
-def test_slice_by_boolean(clrd):
+def test_slice_by_boolean(clrd : Triangle) -> None:
     assert (
         clrd[clrd["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
         == clrd.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"]
@@ -19,14 +19,39 @@ def test_slice_by_loc(clrd):
     assert clrd.loc["Aegis Grp"].loc["comauto"].index.iloc[0, 0] == "comauto"
 
 
-def test_slice_origin(raa):
+def test_slice_origin(raa: Triangle) -> None:
+    """
+    Slice the Triangle on the origin. Check the shape and year boundary.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture
+
+    Returns
+    -------
+    None
+    """
     assert raa[raa.origin > "1985"].shape == (1, 1, 5, 10)
-    _= raa.loc[..., raa.origin <= "1994", :]
+    assert raa.loc[..., raa.origin <= "1985", :].origin.max().year == 1985
 
 
-def test_slice_development(raa):
+def test_slice_development(raa: Triangle) -> None:
+    """
+    Slice the Triangle on the development axis. Check the shape and development periods.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture
+
+    Returns
+    -------
+    None
+
+    """
     assert raa[raa.development < 72].shape == (1, 1, 10, 5)
-    _= raa.loc[..., 24:]
+    assert raa.loc[..., 24:].development.max() <= 120
 
 
 def test_slice_by_loc_iloc(clrd):
