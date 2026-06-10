@@ -1,3 +1,6 @@
+"""
+Test pandas-style slicing on the Triangle class.
+"""
 from __future__ import annotations
 
 import numpy as np
@@ -188,6 +191,30 @@ def test_at_setitem_triangle_value(raa: Triangle) -> None:
     assert tri.at["Total", "values", "1981", 12] == 106.0
 
 
+def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
+    """
+    Assign a Triangle to a .loc[] slice.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = clrd.copy()
+    sub = tri.loc["Aegis Grp", "comauto"].copy()
+    if tri.array_backend == "sparse":
+        with pytest.raises(ValueError, match="Setting values with sparse backend requires .at or .iat"):
+            tri.loc["Aegis Grp", "comauto"] = sub * 2
+    else:
+        tri.loc["Aegis Grp", "comauto"] = sub * 2
+        assert tri.loc["Aegis Grp", "comauto"] == sub * 2
+
+
 @pytest.mark.xfail
 def test_sparse_at_iat(prism):
     prism.iloc[0, 0, 0, 0] = 1.0
@@ -279,6 +306,88 @@ def test_sparse_at_iat1(prism):
     assert t == prism
 
 
+def test_setitem_virtual_column_numpy_backend(raa: Triangle) -> None:
+    """
+    Assign a callable (virtual column) to a new key on a numpy-backed Triangle.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.copy()
+    assert tri.array_backend == "numpy"
+    tri["double"] = lambda x: x["values"] * 2
+    assert "double" in tri.columns
+    assert tri["double"] == tri["values"] * 2
+
+
+def test_setitem_value_backend_conversion(raa: Triangle) -> None:
+    """
+    Assign a Triangle value with a different array_backend than the target.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.copy()
+    value = (tri["values"] * 2).set_backend("sparse")
+    assert tri.array_backend != value.array_backend
+    tri["values"] = value
+    assert tri.array_backend == raa.array_backend
+    assert tri["values"] == raa["values"] * 2
+
+
+def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
+    """
+    Reassign an existing column to a Triangle value on a non-sparse backend.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.copy()
+    assert tri.array_backend != "sparse"
+    value = tri["values"] * 2
+    tri["values"] = value
+    assert tri["values"] == raa["values"] * 2
+
+
+def test_setitem_existing_column_array_value(raa: Triangle) -> None:
+    """
+    Reassign an existing column to a raw array value on a non-sparse backend.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.copy()
+    assert tri.array_backend != "sparse"
+    value = (tri["values"] * 3).values
+    assert not isinstance(value, type(tri))
+    tri["values"] = value
+    assert tri["values"] == raa["values"] * 3
+
+
 def test_sparse_column_assignment(prism):
     t = prism.copy()
     out = t["Paid"]
@@ -288,3 +397,33 @@ def test_sparse_column_assignment(prism):
     t["Paid3"] = lambda x: x["Paid"]  # New from virtual
     assert out == t["Paid"]
     assert t.shape == (34244, 6, 120, 120)
+
+
+def test_setitem_new_column_misaligned_triangle(raa: Triangle) -> None:
+    """
+    Assigning a misaligned Triangle (fewer origin periods) to a new column.
+    Aligns the new column onto the existing origin grid, filling missing
+    origins with NaN.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+
+    tri = raa.copy()
+    misaligned = raa[raa.origin > "1985"]
+    misaligned.columns = ["misaligned"]
+    # Check the shape, new column should be added.
+    assert tri.shape == (1, 2, 10, 10)
+    new_col = tri["misaligned"]
+    # Origin periods 1985 and prior should be nan.
+    assert np.isnan(new_col.values[0, 0, :5, :]).all()
+    # Origin periods 1986 and beyond should match.
+    assert np.allclose(
+        new_col.values[0, 0, 5:, :], misaligned.values[0, 0, :, :], equal_nan=True
+    )
