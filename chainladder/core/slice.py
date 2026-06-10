@@ -25,7 +25,10 @@ from typing import (
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-    from collections.abc import Callable
+    from collections.abc import (
+        Callable,
+        Sequence
+    )
     from chainladder.core.typing import (
         BackendArray,
         IndexExpression
@@ -463,7 +466,7 @@ class TriangleSlicer:
                 out: Triangle = self.virtual_columns[key].copy()
                 out.virtual_columns.columns = {}
                 return out
-            keys: list[str | int] = [key] if isinstance(key, (str, int)) else key
+            keys: Sequence[str | int] = [key] if isinstance(key, (str, int, float, np.generic)) else key
             # Identify the position of each requested element within the valuation dimension.
             idx = [list(self.vdims).index(item) for item in keys]
             return self.iloc[:, idx]

@@ -417,7 +417,7 @@ def test_setitem_new_column_misaligned_triangle(raa: Triangle) -> None:
 
     tri = raa.copy()
     misaligned = raa[raa.origin > "1985"]
-    misaligned.columns = ["misaligned"]
+    tri["misaligned"] = misaligned
     # Check the shape, new column should be added.
     assert tri.shape == (1, 2, 10, 10)
     new_col = tri["misaligned"]

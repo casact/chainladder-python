@@ -10,7 +10,10 @@ from chainladder import (
     __dt64_dtype__
 )
 from chainladder.utils.utility_functions import num_to_nan
-from typing import cast, TYPE_CHECKING
+from typing import (
+    cast,
+    TYPE_CHECKING
+)
 
 
 try:
