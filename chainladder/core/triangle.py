@@ -18,10 +18,15 @@ try:
 except ImportError:
     db = None
 
-from typing import Optional, TYPE_CHECKING
+from typing import (
+    cast,
+    Optional,
+    TYPE_CHECKING
+)
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
+    from chainladder.core.typing import BackendArray
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
@@ -531,7 +536,7 @@ class Triangle(TriangleBase):
         )
 
         # Construct Sparse multidimensional array.
-        self.values: COO = num_to_nan(
+        self.values: BackendArray = cast("BackendArray", num_to_nan(
             sp.COO(
                 coords,
                 amts,
@@ -545,7 +550,7 @@ class Triangle(TriangleBase):
                     len(self.ddims),
                 ),
             )
-        )
+        ))
         # Deal with array backend.
         self.array_backend = "sparse"
         if array_backend is None:

@@ -10,7 +10,7 @@ from chainladder import (
     __dt64_dtype__
 )
 from chainladder.utils.utility_functions import num_to_nan
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 
 try:
@@ -20,9 +20,9 @@ except ImportError:
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+    from chainladder.core.typing import BackendArray
     from collections.abc import Callable
     from numpy import ndarray
-    from numpy.typing import ArrayLike
     from pandas import (
         DataFrame,
         Series
@@ -548,7 +548,7 @@ def add_triangle_agg_func(
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()
-        obj.values: ArrayLike = num_to_nan(obj.values)
+        obj.values = cast("BackendArray", num_to_nan(obj.values))
         if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
         else:
