@@ -7,7 +7,7 @@ import pandas as pd
 
 
 class DevelopmentConstant(DevelopmentBase):
-    """A Estimator that allows for including of external patterns into a
+    """An Estimator that allows for including of external patterns into a
         Development style model. When this estimator is fit against a triangle,
         only the grain of the existing triangle is retained.
 
@@ -61,7 +61,6 @@ class DevelopmentConstant(DevelopmentBase):
             obj = self._set_fit_groups(X).val_to_dev().copy()
 
         xp = obj.get_array_module()
-        patterns = self.patterns
 
         if callable(self.patterns):
             if self.callable_axis == 0:
@@ -83,8 +82,6 @@ class DevelopmentConstant(DevelopmentBase):
         # pattern supplied is much shorter than the triangle
         if pattern_length < len(obj.ddims) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
-            if not callable(self.patterns):
-                patterns = {item: self.patterns.get(item, 1.0) for item in obj.ddims}
         # pattern supplied is exactly one short of the triangle
         elif pattern_length == len(obj.ddims) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
@@ -122,7 +119,7 @@ class DevelopmentConstant(DevelopmentBase):
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:
-            ldf = xp.array([float(patterns[item]) for item in obj.ddims])
+            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":
