@@ -64,32 +64,43 @@ class DevelopmentConstant(DevelopmentBase):
         patterns = self.patterns
 
         if callable(self.patterns):
-            obj = obj.iloc[..., 0, :-1] * 0 + 1
+            if self.callable_axis == 0:
+                sample_pattern = obj.index.apply(self.patterns, axis=1).iloc[0]
+            elif self.callable_axis == 1:
+                sample_pattern = (
+                    obj.columns.to_frame(index=False)
+                    .apply(self.patterns, axis=1)
+                    .iloc[0]
+                )
+            else:
+                raise ValueError("callable axis needs to be 0 or 1")
+            pattern_length = len(sample_pattern)
+            pattern_ddims = sorted(sample_pattern.keys())
         else:
             pattern_length = len(self.patterns)
+            pattern_ddims = sorted(self.patterns.keys())
 
-            # pattern supplied is much shorter than the triangle
-            if pattern_length < len(obj.ddims) - 1:
-                obj = obj.iloc[..., 0, :-1] * 0 + 1
-                # extending the pattern with 1.0 to fill
+        # pattern supplied is much shorter than the triangle
+        if pattern_length < len(obj.ddims) - 1:
+            obj = obj.iloc[..., 0, :-1] * 0 + 1
+            if not callable(self.patterns):
                 patterns = {item: self.patterns.get(item, 1.0) for item in obj.ddims}
-            # pattern supplied is exactly one short of the triangle
-            elif pattern_length == len(obj.ddims) - 1:
-                obj = obj.iloc[..., 0, :-1] * 0 + 1
-            # pattern supplied is exactly the same length as the triangle
-            elif pattern_length == len(obj.ddims):
-                obj = obj.iloc[..., 0, :] * 0 + 1
-            # pattern supplied is longer than the triangle
-            else:
-                obj = obj.iloc[..., 0, :] * 0 + 1
-                pattern_ddims = sorted(self.patterns.keys())
-                extra = len(pattern_ddims) - len(obj.ddims)
-                if extra > 0:
-                    tail = xp.ones(obj.shape)[..., -1:]
-                    tail = xp.repeat(tail, extra, -1)
-                    obj.values = xp.concatenate((obj.values, tail), -1)
-                    obj.ddims = np.array(pattern_ddims)
-                    obj._set_slicers()
+        # pattern supplied is exactly one short of the triangle
+        elif pattern_length == len(obj.ddims) - 1:
+            obj = obj.iloc[..., 0, :-1] * 0 + 1
+        # pattern supplied is exactly the same length as the triangle
+        elif pattern_length == len(obj.ddims):
+            obj = obj.iloc[..., 0, :] * 0 + 1
+        # pattern supplied is longer than the triangle
+        else:
+            obj = obj.iloc[..., 0, :] * 0 + 1
+            extra = len(pattern_ddims) - len(obj.ddims)
+            if extra > 0:
+                tail = xp.ones(obj.shape)[..., -1:]
+                tail = xp.repeat(tail, extra, -1)
+                obj.values = xp.concatenate((obj.values, tail), -1)
+                obj.ddims = np.array(pattern_ddims)
+                obj._set_slicers()
 
         if callable(self.patterns):
             if self.callable_axis == 0:
