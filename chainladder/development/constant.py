@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
+import numpy as np
 import pandas as pd
 
 
@@ -58,6 +59,7 @@ class DevelopmentConstant(DevelopmentBase):
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
+
         xp = obj.get_array_module()
         patterns = self.patterns
 
@@ -80,8 +82,14 @@ class DevelopmentConstant(DevelopmentBase):
             # pattern supplied is longer than the triangle
             else:
                 obj = obj.iloc[..., 0, :] * 0 + 1
-                obj.reshape(obj.shape[0], obj.shape[1], obj.shape[2], 12)
-                # TODO need to extend the patterns to the full length of the triangle
+                pattern_ddims = sorted(self.patterns.keys())
+                extra = len(pattern_ddims) - len(obj.ddims)
+                if extra > 0:
+                    tail = xp.ones(obj.shape)[..., -1:]
+                    tail = xp.repeat(tail, extra, -1)
+                    obj.values = xp.concatenate((obj.values, tail), -1)
+                    obj.ddims = np.array(pattern_ddims)
+                    obj._set_slicers()
 
         if callable(self.patterns):
             if self.callable_axis == 0:
