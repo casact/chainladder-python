@@ -59,16 +59,29 @@ class DevelopmentConstant(DevelopmentBase):
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
         xp = obj.get_array_module()
+        patterns = self.patterns
 
-        if len(self.patterns.keys()) < len(obj.ddims):
+        if callable(self.patterns):
             obj = obj.iloc[..., 0, :-1] * 0 + 1
-        elif len(self.patterns.keys()) == len(obj.ddims):
-            obj = obj.iloc[..., 0, :] * 0 + 1
         else:
-            obj = obj.iloc[..., 0, :] * 0 + 1
-            obj.reshape(obj.shape[0], obj.shape[1], obj.shape[2], 12)
-            # TODO need to extend the patterns to the full length of the triangle
-            pass
+            pattern_length = len(self.patterns)
+
+            # pattern supplied is much shorter than the triangle
+            if pattern_length < len(obj.ddims) - 1:
+                obj = obj.iloc[..., 0, :-1] * 0 + 1
+                # extending the pattern with 1.0 to fill
+                patterns = {item: self.patterns.get(item, 1.0) for item in obj.ddims}
+            # pattern supplied is exactly one short of the triangle
+            elif pattern_length == len(obj.ddims) - 1:
+                obj = obj.iloc[..., 0, :-1] * 0 + 1
+            # pattern supplied is exactly the same length as the triangle
+            elif pattern_length == len(obj.ddims):
+                obj = obj.iloc[..., 0, :] * 0 + 1
+            # pattern supplied is longer than the triangle
+            else:
+                obj = obj.iloc[..., 0, :] * 0 + 1
+                obj.reshape(obj.shape[0], obj.shape[1], obj.shape[2], 12)
+                # TODO need to extend the patterns to the full length of the triangle
 
         if callable(self.patterns):
             if self.callable_axis == 0:
@@ -90,13 +103,15 @@ class DevelopmentConstant(DevelopmentBase):
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:
-            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
+            ldf = xp.array([float(patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
+
         obj = obj * ldf
         obj._set_slicers()
+
         self.ldf_ = obj
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
