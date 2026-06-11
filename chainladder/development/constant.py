@@ -18,7 +18,7 @@ class DevelopmentConstant(DevelopmentBase):
     style: string, optional (default='ldf')
         Type of pattern given to the Estimator. Options include 'cdf' or 'ldf'.
     callable_axis: 0 or 1
-        If a callable is supplied, the axis (index or column) along which to apply
+        If a callable is supplied, the axis, index (0) or column (1) along which to apply
         the callable. If patterns is not a callable, then this parameter is ignored.
     groupby:
         option to group levels of the triangle index together for the purposes
@@ -41,6 +41,7 @@ class DevelopmentConstant(DevelopmentBase):
     .. testsetup::
 
         import chainladder as cl
+        import numpy as np
 
     .. testcode::
 
@@ -51,13 +52,13 @@ class DevelopmentConstant(DevelopmentBase):
         flat = {(i + 1) * 12: 1.2 for i in range(n)}
         const_fitted = cl.DevelopmentConstant(patterns=fitted, style="ldf").fit(tri)
         const_flat = cl.DevelopmentConstant(patterns=flat, style="ldf").fit(tri)
-        print(round(float(const_flat.ldf_.values[0, 0, 0, 0]), 4))
-        print(round(float(const_fitted.ldf_.values[0, 0, 0, 0]), 6))
+        print(np.round(const_flat.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(const_fitted.ldf_.values[0, 0, 0, :], 4))
 
     .. testoutput::
 
-        1.2
-        2.999359
+        [1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2]
+        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092]
 
     """
 
