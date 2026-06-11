@@ -1061,3 +1061,188 @@ def test_xs(clrd):
     assert clrd.xs('comauto',level=1).index.equals(clrd.xs('comauto',level='LOB').index)
 
 
+def test_get_array_module_with_explicit_arr(raa: Triangle) -> None:
+    """
+    Supply a ndarray to Triangle.get_array_module(), which should be np (numpy).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    assert raa.get_array_module(np.array([1.0])) is np
+
+
+def test_get_array_module_invalid_backend_raises(raa: Triangle) -> None:
+    """
+    Simulate typo in setting array backend, should raise an exception.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = raa.copy()
+    tri.array_backend = 'mumpy'
+    with pytest.raises(Exception, match="Array backend is invalid or not properly set"):
+        tri.get_array_module()
+
+
+def test_set_development_no_development_column() -> None:
+    """
+    Initialize a triangle without a development dimension specified. Development will default to being
+    a single period set to the latest origin period.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(
+        {
+            'origin': [1995, 1996, 1997],
+            'reported': [1.0, 2.0, 3.0]
+        }
+    )
+    tri = cl.Triangle(
+        data=df,
+        origin='origin',
+        columns='reported',
+        cumulative=True
+    )
+    assert tri.shape[-1] == 1
+    assert tri.development[0] == str(tri.origin[-1])
+
+
+def test_set_development_age_instead_of_date_raises() -> None:
+    """
+    Initialize a triangle with incorrect development periods specified. Should raise a ValueError.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(
+        {
+            'origin': [1995, 1996],
+            'development': [12, 24],
+            'reported': [1.0, 2.0]
+        }
+    )
+    with pytest.raises(ValueError, match="Development lags could not be determined"):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
+def test_input_validation_non_numeric_columns_raises() -> None:
+    """
+    Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame({
+        'origin': [1995, 1996],
+        'development': [1995, 1996],
+        'reported': ['1000', '2000'],
+    })
+    with pytest.raises(TypeError, match="column attribute must be numeric"):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
+def test_input_validation_duplicate_columns_raises() -> None:
+    """
+    Initialize a triangle with duplicate column names. Raise an AttributeError.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(
+        [[1995, 1995, 1.0, 2.0], [1996, 1996, 3.0, 4.0]],
+        columns=pd.Index(['origin', 'development', 'reported', 'reported'])
+    )
+    with pytest.raises(AttributeError, match="Columns are required to have unique names"):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
+def test_get_axis_value(raa) -> None:
+    """
+    Extract the Triangle axes using integer indices and string specifications.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    assert raa._get_axis_value(0).equals(raa.index)
+    assert raa._get_axis_value("index").equals(raa.index)
+    assert raa._get_axis_value(1).equals(raa.columns)
+    assert raa._get_axis_value("columns").equals(raa.columns)
+    assert raa._get_axis_value(2).equals(raa.origin)
+    assert raa._get_axis_value("origin").equals(raa.origin)
+    assert raa._get_axis_value(3).equals(raa.development)
+    assert raa._get_axis_value("development").equals(raa.development)
+    # Negative index support in TrianglePandas().get_axis()
+    assert raa._get_axis_value(-4).equals(raa.index)
+    assert raa._get_axis_value(-1).equals(raa.development)
+    with pytest.raises(ValueError):
+        raa._get_axis_value("dev")
+
+
+def test_to_datetime_uninferrable_format_raises() -> None:
+    """
+    Initialize a triangle with incorrect date format on the origin axis. Should raise a ValueError.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError, match="Unable to infer datetime"):
+        cl.Triangle(
+            data={
+                'origin': ['1995/Q1', '1996/Q1'],
+                'development': ['1995Q1', '1996Q1'],
+                'value': [1.0, 2.0]},
+            origin='origin',
+            development='development',
+            columns='value',
+            cumulative=True
+        )

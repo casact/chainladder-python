@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from chainladder import options
+from chainladder import _DEPRECATED_BACKENDS, _deprecated_backend_message
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
@@ -180,10 +181,9 @@ class Common:
         # Warn once, at the public entry point, so stacklevel=2 points at the
         # user's call site rather than an internal recursive call. The _warn
         # flag suppresses duplicate warnings from internal recursion below.
-        if _warn and backend == "cupy":
+        if _warn and backend in _DEPRECATED_BACKENDS:
             warnings.warn(
-                "The 'cupy' array backend is deprecated and will be removed in a "
-                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                _deprecated_backend_message(backend),
                 DeprecationWarning,
                 stacklevel=2,
             )

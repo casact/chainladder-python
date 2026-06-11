@@ -49,6 +49,23 @@ _option_warning: str = (
     "The parameter 'option' is deprecated and will be removed in a future release. Use 'pat' instead."
 )
 
+# Array backends slated for removal, mapped to the issue tracking each one.
+# Selecting one of these (via set_option, ARRAY_PRIORITY, or set_backend, or by
+# passing a Dask dataframe to the Triangle constructor) emits a
+# DeprecationWarning.
+_DEPRECATED_BACKENDS: dict[str, str] = {
+    "cupy": "https://github.com/casact/chainladder-python/issues/843",
+    "dask": "https://github.com/casact/chainladder-python/issues/842",
+}
+
+
+def _deprecated_backend_message(backend: str) -> str:
+    """Build the deprecation message for a soon-to-be-removed array backend."""
+    return (
+        f"The '{backend}' array backend is deprecated and will be removed in a "
+        f"future release. See {_DEPRECATED_BACKENDS[backend]}."
+    )
+
 
 @overload
 def _resolve_pat(pat: str | None, option: str | None, required: Literal[True] = ...) -> str: ...
@@ -189,28 +206,30 @@ class Options:
         self._validate_option(pat)
         if value is _UNSET:
             raise TypeError("set_option() missing required argument: 'value'.")
-        if pat == "ARRAY_BACKEND" and value == "cupy":
+        if pat == "ARRAY_BACKEND" and value in _DEPRECATED_BACKENDS:
             warnings.warn(
-                "The 'cupy' array backend is deprecated and will be removed in a "
-                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                _deprecated_backend_message(value),
                 DeprecationWarning,
                 stacklevel=2,
             )
-        elif pat == "ARRAY_PRIORITY" and isinstance(value, list) and "cupy" in value:
-            # Only warn when 'cupy' is prioritized ahead of a non-deprecated
-            # backend ('numpy' or 'sparse'), i.e. cupy would actually be
-            # selected over a supported backend.
-            cupy_index = value.index("cupy")
-            if any(
-                backend in value and value.index(backend) > cupy_index
-                for backend in ("numpy", "sparse")
-            ):
-                warnings.warn(
-                    "The 'cupy' array backend is deprecated and will be removed in a "
-                    "future release. See https://github.com/casact/chainladder-python/issues/843.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
+        elif pat == "ARRAY_PRIORITY" and isinstance(value, list):
+            # Only warn when a deprecated backend ('cupy' or 'dask') is
+            # prioritized ahead of a non-deprecated backend ('numpy' or
+            # 'sparse'), i.e. it would actually be selected over a supported
+            # backend. The position in the list determines precedence.
+            for backend in _DEPRECATED_BACKENDS:
+                if backend not in value:
+                    continue
+                backend_index = value.index(backend)
+                if any(
+                    supported in value and value.index(supported) > backend_index
+                    for supported in ("numpy", "sparse")
+                ):
+                    warnings.warn(
+                        _deprecated_backend_message(backend),
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
         setattr(self, pat, value)
 
     def reset_option(

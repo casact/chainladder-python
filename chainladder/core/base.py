@@ -12,7 +12,8 @@ from abc import ABC, abstractmethod
 from chainladder import (
     __dt64_unit__,
     __dt64_dtype__,
-    options
+    options,
+    _deprecated_backend_message
 )
 
 from chainladder.core.common import Common
@@ -105,7 +106,7 @@ class TriangleBase(
         columns = str_to_list(columns)
         origin = str_to_list(origin)
         development = str_to_list(development)
-        if "object" in data[columns].dtypes:
+        if not all(pd.api.types.is_numeric_dtype(dt) for dt in data[columns].dtypes):
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
@@ -162,6 +163,18 @@ class TriangleBase(
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:
+            # A non-pandas input that reaches this branch is a Dask dataframe.
+            # Only the Dask backend is deprecated, so gate the warning on the
+            # data's module rather than warning for every pandas subclass that
+            # also takes this path. stacklevel=3 points the warning at the
+            # user's Triangle(...) call (warn -> this method ->
+            # Triangle.__init__ -> user).
+            if type(data).__module__.split(".")[0] == "dask":
+                warnings.warn(
+                    _deprecated_backend_message("dask"),
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
             data["__development__"] = development_date

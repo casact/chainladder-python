@@ -211,13 +211,9 @@ Table 7 - Ratio of Paid Claims to Earned Premium
 Table 8 - Reported Claim Count Development Triangle
 #######################################################
 
-The count data is stored under a different name. 
-
 .. doctest::
 
-    >>> tri_cnt = cl.load_sample('friedland_xyz_freq_sev')
-    >>> tri_cnt = tri_cnt[tri_cnt.origin >= '2002'][tri_cnt.development <= 84]
-    >>> tri_cnt["Reported Claim Counts"]
+    >>> tri["Reported Claim Counts"]
               12      24      36      48      60      72      84
     2002  1342.0  1514.0  1548.0  1557.0  1549.0  1552.0  1554.0
     2003  1373.0  1616.0  1630.0  1626.0  1629.0  1629.0     NaN
@@ -232,7 +228,7 @@ Table 9 - Closed Claim Count Development Triangle
 
 .. doctest::
 
-    >>> tri_cnt["Closed Claim Counts"]
+    >>> tri["Closed Claim Counts"]
              12      24      36      48      60      72      84
     2002  203.0   607.0   841.0  1089.0  1327.0  1464.0  1523.0
     2003  181.0   614.0   941.0  1263.0  1507.0  1568.0     NaN
@@ -247,7 +243,7 @@ Table 10 - Ratio of Closed-to-Reported Claim Counts
 
 .. doctest::
 
-    >>> (tri_cnt["Closed Claim Counts"] / tri_cnt["Reported Claim Counts"]).round(decimals=3)
+    >>> (tri["Closed Claim Counts"] / tri["Reported Claim Counts"]).round(decimals=3)
              12     24     36     48     60     72    84
     2002  0.151  0.401  0.543  0.699  0.857  0.943  0.98
     2003  0.132  0.380  0.577  0.777  0.925  0.963   NaN
@@ -264,7 +260,7 @@ The losses are stored in the thousands. When calcualting severity, we need to mu
 
 .. doctest::
 
-    >>> (tri["Reported Claims"] / tri_cnt["Reported Claim Counts"] * 1000).round(decimals=0)
+    >>> (tri["Reported Claims"] / tri["Reported Claim Counts"] * 1000).round(decimals=0)
                12       24       36       48       60       72       84
     2002   9546.0  13454.0  17220.0  24192.0  28673.0  31380.0  30997.0
     2003   7029.0  10517.0  18622.0  24966.0  27152.0  27239.0      NaN
@@ -281,7 +277,7 @@ Table 13 – Average Paid Claim Development Triangle
 
 .. doctest::
 
-    >>> (tri["Paid Claims"] / tri_cnt["Closed Claim Counts"] * 1000).round(decimals=0)
+    >>> (tri["Paid Claims"] / tri["Closed Claim Counts"] * 1000).round(decimals=0)
                12       24       36       48       60       72       84
     2002  11419.0  13068.0  16435.0  20289.0  24073.0  27752.0  29177.0
     2003   9630.0  10163.0  13478.0  18125.0  22896.0  25077.0      NaN
@@ -296,7 +292,7 @@ Table 14 – Average Case Outstanding Development Triangle
 
 .. doctest::
 
-    >>> ((tri["Reported Claims"] - tri["Paid Claims"]) / (tri_cnt["Reported Claim Counts"] - tri_cnt["Closed Claim Counts"]) * 1000).round(decimals=0)
+    >>> ((tri["Reported Claims"] - tri["Paid Claims"]) / (tri["Reported Claim Counts"] - tri["Closed Claim Counts"]) * 1000).round(decimals=0)
                12       24       36       48       60       72        84
     2002   9212.0  13713.0  18153.0  33274.0  56167.0  91727.0  120387.0
     2003   6634.0  10734.0  25647.0  48766.0  79721.0  82836.0       NaN
