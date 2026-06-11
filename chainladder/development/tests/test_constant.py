@@ -204,7 +204,6 @@ def test_constant_pattern_no_tail():
     )
 
 
-@pytest.mark.xfail(reason="coming with #864")
 def test_constant_pattern_has_tail():
     reported_patterns = {
         12: 4.0,
