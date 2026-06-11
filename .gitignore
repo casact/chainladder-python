@@ -51,6 +51,7 @@ coverage-doctest.xml
 *.cover
 .hypothesis/
 
+
 # Translations
 *.mo
 *.pot
@@ -135,3 +136,6 @@ coverage_html_report
 
 # Local scratch directory (handoff notes, throwaway scripts, etc.)
 .scratch/
+
+# IDEs
+.vscode/
