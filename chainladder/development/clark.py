@@ -56,9 +56,14 @@ class ClarkLDF(DevelopmentBase):
 
     Examples
     --------
-    Compare curve families when the selected growth curve materially affects
-    the fitted development pattern. The same triangle can be fit with the
-    default loglogistic curve or with the Weibull curve.
+    An actuary fitting Clark's method must choose between the two growth
+    curve families. Within the triangle the two curves often fit similar
+    development patterns, but the loglogistic curve carries a heavier tail,
+    so the choice drives how much development the model projects beyond the
+    observed data. Fitting both curves to the same triangle and comparing
+    the full fitted pattern, along with the percent of ultimate each curve
+    implies has emerged at a mature age (here, 240 months), shows how much
+    of the estimate rides on the curve selection.
 
     .. testsetup::
 
@@ -71,43 +76,87 @@ class ClarkLDF(DevelopmentBase):
         tri = cl.load_sample("ukmotor")
         m_log = cl.ClarkLDF(growth="loglogistic").fit(tri)
         m_wei = cl.ClarkLDF(growth="weibull").fit(tri)
-        print(float(np.round(m_log.ldf_.values[0, 0, 0, 0], 3)))
-        print(float(np.round(m_wei.ldf_.values[0, 0, 0, 0], 3)))
+        print(np.round(m_log.ldf_.values[0, 0, 0, :], 3))
+        print(np.round(m_wei.ldf_.values[0, 0, 0, :], 3))
+        print(float(np.round(m_log.G_(240.0).values[0, 0, 0, 0], 3)))
+        print(float(np.round(m_wei.G_(240.0).values[0, 0, 0, 0], 3)))
 
     .. testoutput::
 
-        1.917
-        1.912
+        [1.917 1.268 1.141 1.089 1.063 1.047]
+        [1.912 1.276 1.143 1.087 1.058 1.04 ]
+        0.85
+        0.993
 
-    Provide exposure when the goal is a Cape Cod fit rather than a pure LDF
-    fit. Passing ``sample_weight`` changes ``method_`` to ``cape_cod`` and
-    estimates ``elr_``.
+    The in-triangle factors are nearly identical, but the curves disagree
+    about the tail: the loglogistic fit implies only 85% of ultimate has
+    emerged by 240 months versus more than 99% for the weibull fit. The
+    actuary should validate the implied tail against other benchmarks
+    before relying on either curve.
+
+    To use Clark's Cape Cod method instead of the LDF method, pass a
+    premium vector as ``sample_weight`` when fitting. No other parameters
+    are needed. The fitted estimator records the method in ``method_`` and
+    exposes the fitted expected loss ratios in ``elr_``.
 
     .. testcode::
 
-        tri = cl.load_sample("ukmotor")
-        m = cl.ClarkLDF().fit(tri, sample_weight=tri * 0 + 1e7)
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()
+        m = cl.ClarkLDF().fit(
+            clrd["CumPaidLoss"],
+            sample_weight=clrd["EarnedPremDIR"].latest_diagonal,
+        )
         print(m.method_)
-        print(float(np.round(m.elr_.values[0, 0], 6)))
+        print(m.elr_.round(3))
 
     .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
 
         cape_cod
-        0.002002
+                  CumPaidLoss
+        LOB
+        comauto         0.680
+        medmal          0.701
+        othliab         0.624
+        ppauto          0.826
+        prodliab        0.671
+        wkcomp          0.698
 
-    Pool similar segments before fitting when each individual triangle is too
-    sparse for separate curve parameters. Here line of business produces one
-    parameter set per ``LOB``.
+    The ``clrd`` sample holds 775 company-level triangles, and most
+    individual companies are too small to support their own curve fit.
+    Rather than running a separate optimization on each thin triangle, the
+    actuary can pass ``groupby`` to pool the companies into one fit per
+    line of business, producing a single ``(omega_, theta_)`` parameter
+    pair for each ``LOB``.
 
     .. testcode::
 
-        clrd = cl.load_sample("clrd").groupby("LOB")[["IncurLoss"]].sum()
+        clrd = cl.load_sample("clrd")[["CumPaidLoss"]]
+        print(len(clrd.index))
         m = cl.ClarkLDF(groupby="LOB").fit(clrd)
-        print(m.theta_.shape)
+        print(m.omega_.round(3))
+        print(m.theta_.round(3))
 
     .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
 
-        (6, 1)
+        775
+                  CumPaidLoss
+        LOB
+        comauto         1.082
+        medmal          1.889
+        othliab         1.468
+        ppauto          1.149
+        prodliab        1.441
+        wkcomp          1.107
+                  CumPaidLoss
+        LOB
+        comauto        20.481
+        medmal         35.128
+        othliab        37.745
+        ppauto         10.023
+        prodliab       64.352
+        wkcomp         20.111
 
     """
 
