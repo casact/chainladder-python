@@ -25,9 +25,36 @@ jobs:
           version: "latest"
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: uv sync --extra test
+        run: uv sync --extra test --extra docs
       - name: Run tests
         run: uv run pytest --nbmake --cov=chainladder --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+  linux-pandas3:
+    name: (${{ matrix.python-version }}, pandas3, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'ubuntu-latest' ]
+        python-version: [ '3.14' ]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --extra test
+      - name: Run tests
+        run: uv run --with "pandas>=3,<4" pytest --nbmake --cov=chainladder --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -49,5 +76,18 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra docs
       - name: Run doctests
-        run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest
-        
+        env:
+          COVERAGE_FILE: ${{ github.workspace }}/.coverage.doctest
+        run: |
+          JB="$(uv run which jb)"
+          uv run --with coverage --directory docs coverage run --source=chainladder \
+            "$JB" build . --builder=custom --custom-builder=doctest
+          uv run --with coverage coverage xml -o "${{ github.workspace }}/coverage-doctest.xml"
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage-doctest.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
