@@ -58,11 +58,20 @@ class DevelopmentML(DevelopmentBase):
 
     Examples
     --------
-    Features from any triangle axis can enter an sklearn
-    :class:`~sklearn.compose.ColumnTransformer` or
-    :class:`~sklearn.pipeline.Pipeline`. On ``clrd`` grouped by line of business,
-    one-hot-encode ``LOB`` and ``development``, pass ``origin`` through, and fit
-    a linear model (the user guide uses ``RandomForestRegressor`` the same way).
+    On multi-LOB triangles such as ``clrd``, an actuary may want a single
+    model fit to all lines at once while letting each line keep its own
+    development pattern. This is the same business problem as the multi-LOB
+    example in :class:`~chainladder.TweedieGLM`; ``DevelopmentML`` generalizes
+    it to any sklearn estimator. Features from any triangle axis can enter an
+    sklearn :class:`~sklearn.compose.ColumnTransformer` or
+    :class:`~sklearn.pipeline.Pipeline`: here, one-hot-encode ``LOB`` and
+    ``development``, pass ``origin`` through, and fit a linear model (the user
+    guide uses ``RandomForestRegressor`` the same way). Note that
+    ``LinearRegression`` on raw dollar amounts is used for illustration only.
+    Without a log link it can produce LDFs below 1.0 in the later development
+    columns, as seen in the output here, which is not GAAP-compatible.
+    :class:`~chainladder.TweedieGLM` with a log link is the recommended
+    choice in practice.
 
     .. testsetup::
 
@@ -100,8 +109,12 @@ class DevelopmentML(DevelopmentBase):
         (6, 1, 10, 9)
         [1.7448 0.9854 0.8117 0.6495]
 
-    ``fit_incrementals`` chooses whether the ML response is built from
-    incremental or cumulative triangle values before ``ldf_`` is derived.
+    An actuary who wants to test whether fitting on incremental versus
+    cumulative losses changes the implied reserve can toggle
+    ``fit_incrementals`` and compare the full ``ldf_`` patterns. The two
+    bases agree at the early ages but diverge in the tail, where the
+    cumulative fit (``m_cum``) drops below 1.0 in the final column,
+    another symptom of the unlinked ``LinearRegression`` noted above.
 
     .. testcode::
 
@@ -124,48 +137,13 @@ class DevelopmentML(DevelopmentBase):
         m_cum = cl.DevelopmentML(
             pipe, y_ml=[tri.columns[0]], fit_incrementals=False
         ).fit(tri)
-        print(float(np.round(m_incr.ldf_.values[0, 0, 0, 0], 4)))
-        print(float(np.round(m_cum.ldf_.values[0, 0, 0, 0], 4)))
+        print(np.round(m_incr.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(m_cum.ldf_.values[0, 0, 0, :], 4))
 
     .. testoutput::
 
-        3.508
-        3.515
-
-    Autoregressive features use prior development predictions as covariates.
-    The lag column must be named in both ``autoregressive`` and the pipeline
-    (for example in a :class:`~chainladder.PatsyFormula`).
-
-    .. testcode::
-
-        import numpy as np
-        from sklearn.linear_model import LinearRegression
-        from sklearn.pipeline import Pipeline
-
-        from chainladder.utils.utility_functions import PatsyFormula
-
-        tri = cl.load_sample("raa")
-        col = tri.columns[0]
-        pipe = Pipeline(
-            steps=[
-                (
-                    "design_matrix",
-                    PatsyFormula("C(development) + pred_lag"),
-                ),
-                ("model", LinearRegression(fit_intercept=False)),
-            ]
-        )
-        m = cl.DevelopmentML(
-            pipe,
-            y_ml=col,
-            fit_incrementals=True,
-            autoregressive=[("pred_lag", -12, col)],
-        ).fit(tri)
-        print(float(np.round(m.ldf_.values[0, 0, 0, 0], 4)))
-
-    .. testoutput::
-
-        3.0297
+        [3.508  1.7435 1.4379 1.1655 1.0991 1.0832 1.0511 1.0693 1.0135]
+        [3.515  1.735  1.3993 1.152  1.0988 1.0926 1.0332 1.0245 0.8507]
 
     """
 

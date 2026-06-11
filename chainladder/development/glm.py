@@ -88,11 +88,14 @@ class TweedieGLM(DevelopmentBase):
 
     Examples
     --------
-    Volume-weighted chainladder development can be replicated with a
-    Poisson-log GLM on incremental paid losses: categorical origin and
-    development in ``design_matrix``, ``power=1``, and ``link='log'``. The
-    resulting ``ldf_`` matches :class:`~chainladder.Development` closely on
-    ``genins``.
+    Patsy's ``C()`` wraps a column in categorical dummies, with one
+    coefficient per level. Removing ``C()`` converts that axis to a continuous
+    linear trend with a single slope. The categorical ``design_matrix``
+    (default) replicates volume-weighted chainladder; the continuous version
+    is more parsimonious and can be preferable when data are sparse. If the
+    solver raises a ``ConvergenceWarning``, increase ``max_iter`` from its
+    default of 100, as done for the categorical model here. The ``comauto``
+    triangle illustrates the difference in fitted ``ldf_``:
 
     .. testsetup::
 
@@ -102,43 +105,33 @@ class TweedieGLM(DevelopmentBase):
 
         import numpy as np
 
-        tri = cl.load_sample("genins")
-        odp = cl.TweedieGLM(
-            design_matrix="C(development) + C(origin)",
+        tri = cl.load_sample("clrd")["CumPaidLoss"].groupby("LOB").sum()
+        comauto = tri[tri["LOB"] == "comauto"]
+        m_cat = cl.TweedieGLM(
             power=1,
-            link="log",
-        ).fit(tri)
-        trad = cl.Development().fit(tri)
-        print(round(float(odp.ldf_.values[0, 0, 0, 0]), 4))
-        print(round(float(trad.ldf_.values[0, 0, 0, 0]), 4))
-        print(np.round(odp.ldf_.values[0, 0, :4, 0], 4))
+            design_matrix="C(development) + C(origin)",
+            max_iter=1000,
+        ).fit(comauto)
+        m_cont = cl.TweedieGLM(
+            power=1, design_matrix="development + origin"
+        ).fit(comauto)
+        print(np.round(m_cat.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(m_cont.ldf_.values[0, 0, 0, :], 4))
 
     .. testoutput::
 
-        3.491
-        3.4906
-        [3.491 3.491 3.491 3.491]
-
-    Patsy R-style formulas set ``design_matrix``; continuous ``development``
-    and ``origin`` terms yield a small coefficient table via ``coef_``.
-
-    .. testcode::
-
-        tri = cl.load_sample("genins")
-        glm = cl.TweedieGLM(design_matrix="development + origin").fit(tri)
-        print(len(glm.coef_))
-        print(round(float(glm.coef_.iloc[0, 0]), 6))
-        print(round(float(glm.coef_.iloc[1, 0]), 6))
-
-    .. testoutput::
-
-        3
-        13.516322
-        -0.006251
+        [2.0459 1.352  1.1739 1.088  1.0403 1.021  1.0093 1.0062 1.007 ]
+        [1.6993 1.2878 1.1563 1.0945 1.0604 1.0398 1.0268 1.0182 1.0125]
 
     On multi-LOB triangles, interaction terms can keep the model parsimonious
-    (10 coefficients here versus 18+ in a full categorical chainladder). The
-    percent difference in ``cdf_`` versus :class:`~chainladder.Development`
+    (10 coefficients here versus 18+ in a full categorical chainladder). In
+    the ``design_matrix`` below, ``LOB`` gives each line its own level, and
+    ``LOB:C(np.minimum(development, 36))`` gives each line separate
+    categorical factors for the early ages where development is steepest,
+    with ``np.minimum`` pooling every age beyond 36 months into a single
+    level. ``LOB:development`` and ``LOB:origin`` then carry the later ages
+    and origin years as continuous linear trends per line. The percent
+    difference in ``cdf_`` versus :class:`~chainladder.Development`
     stays within about 1% at each ultimate lag:
 
     .. testcode::
