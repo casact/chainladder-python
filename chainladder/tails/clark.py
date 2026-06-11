@@ -47,9 +47,19 @@ class TailClark(TailBase):
 
     Examples
     --------
-    Compare Clark growth curves when the selected tail shape is part of the
-    modeling judgment. The tail LDF changes because each curve extrapolates the
-    remaining development differently.
+    Clark's method fits a parametric growth curve to the percent of ultimate
+    loss reported at each age, so a single fit both smooths the in-triangle
+    development and extrapolates it beyond the edge of the triangle. The
+    choice of growth curve is the key judgment because the two supported
+    families have fundamentally different right tails:
+
+    - ``loglogistic`` decays polynomially (a power-law tail). The unreported
+      fraction shrinks slowly with age, so material development persists to
+      very old ages, as is typical of excess casualty and other long-tailed
+      business.
+    - ``weibull`` decays exponentially. The growth curve flattens quickly,
+      implying development is essentially complete shortly beyond the edge
+      of the triangle.
 
     .. testsetup::
 
@@ -60,13 +70,45 @@ class TailClark(TailBase):
         dev = cl.Development().fit_transform(cl.load_sample("raa"))
         log = cl.TailClark(growth="loglogistic").fit(dev)
         wei = cl.TailClark(growth="weibull").fit(dev)
-        print(round(float(log.ldf_.values[0, 0, 0, -1]), 3))
-        print(round(float(wei.ldf_.values[0, 0, 0, -1]), 3))
+        print(log.ldf_.values[0, 0, 0, :].round(3))
+        print(wei.ldf_.values[0, 0, 0, :].round(3))
+        print(round(float(log.tail_.iloc[0, 0]), 3))
+        print(round(float(wei.tail_.iloc[0, 0]), 3))
 
     .. testoutput::
 
-        1.189
-        1.014
+        [2.999 1.624 1.271 1.172 1.113 1.042 1.033 1.017 1.029 1.023 1.189]
+        [2.999 1.624 1.271 1.172 1.113 1.042 1.033 1.017 1.014 1.009 1.014]
+        1.216
+        1.022
+
+    Inside the triangle, where the observed factors constrain both curves,
+    the two fits barely differ. Beyond age 120 only the assumed shape of the
+    curve matters: the loglogistic projects 21.6% of additional development
+    while the weibull projects 2.2%. The gap is not noise. It is the direct
+    consequence of the loglogistic's power-law decay continuing to release
+    losses for decades, while the weibull's exponential decay extinguishes
+    development almost immediately.
+
+    Because the loglogistic tail dies out so slowly, Clark recommends
+    establishing a truncation age at which losses can be considered fully
+    developed rather than extrapolating indefinitely. Capping the same
+    loglogistic fit at age 240 gives a more defensible provision:
+
+    .. testcode::
+
+        trunc = cl.TailClark(growth="loglogistic", truncation_age=240).fit(dev)
+        print(round(float(trunc.tail_.iloc[0, 0]), 3))
+
+    .. testoutput::
+
+        1.127
+
+    To assess whether the selected growth curve is consistent with the data,
+    review the ``norm_resid_`` attribute: residuals scattered randomly
+    around zero indicate an adequate fit, while systematic patterns by age
+    suggest the other family, a different development estimator, or a
+    truncated projection should be considered.
 
     """
 
