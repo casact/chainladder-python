@@ -169,6 +169,7 @@ class Pipeline(PipelineSL, EstimatorIO):
         directly. Use the attribute ``named_steps`` or ``steps`` to
         inspect estimators within the pipeline. Caching the
         transformers is advantageous when fitting is time consuming.
+
     Attributes
     ----------
     named_steps: bunch object, a dictionary with attribute access
