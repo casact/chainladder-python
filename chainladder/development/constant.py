@@ -6,7 +6,7 @@ import pandas as pd
 
 
 class DevelopmentConstant(DevelopmentBase):
-    """ A Estimator that allows for including of external patterns into a
+    """A Estimator that allows for including of external patterns into a
         Development style model. When this estimator is fit against a triangle,
         only the grain of the existing triangle is retained.
 
@@ -53,30 +53,46 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import options
+
         if X.is_cumulative == False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
         xp = obj.get_array_module()
-        obj = obj.iloc[..., :1, :-1]*0+1
+
+        if len(self.patterns.keys()) < len(obj.ddims):
+            obj = obj.iloc[..., 0, :-1] * 0 + 1
+        elif len(self.patterns.keys()) == len(obj.ddims):
+            obj = obj.iloc[..., 0, :] * 0 + 1
+        else:
+            obj = obj.iloc[..., 0, :] * 0 + 1
+            obj.reshape(obj.shape[0], obj.shape[1], obj.shape[2], 12)
+            # TODO need to extend the patterns to the full length of the triangle
+            pass
+
         if callable(self.patterns):
             if self.callable_axis == 0:
-                ldf = obj.index.apply(self.patterns, axis=1)                
+                ldf = obj.index.apply(self.patterns, axis=1)
                 ldf = (
                     pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims].values)
+                    .fillna(1)[obj.ddims]
+                    .values
+                )
                 ldf = xp.array(ldf[:, None, None, :])
             elif self.callable_axis == 1:
                 ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
                 ldf = (
                     pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims].values)
+                    .fillna(1)[obj.ddims]
+                    .values
+                )
                 ldf = xp.array(ldf[None, :, None, :])
             else:
-                raise ValueError('callable axis needs to be 0 or 1')
+                raise ValueError("callable axis needs to be 0 or 1")
         else:
             ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
+
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
         obj = obj * ldf
@@ -88,7 +104,7 @@ class DevelopmentConstant(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
