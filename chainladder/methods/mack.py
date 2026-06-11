@@ -242,7 +242,7 @@ class MackChainladder(Chainladder):
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
         weight = xp.sqrt(full.values[..., : len(X.ddims)] ** (2 - val))
         obj.values = X.sigma_.values / num_to_nan(weight)
-        w = lxp.concatenate((X.w_, lxp.ones((1, 1, val.shape[2], 1))), 3)
+        w = lxp.concatenate((X.w_, lxp.ones((val.shape[0], val.shape[1], val.shape[2], 1))), 3)
         w[xp.isnan(w)] = 1
         obj.values = xp.nan_to_num(obj.values) * xp.array(w)
         obj.valuation_date = full.valuation_date
