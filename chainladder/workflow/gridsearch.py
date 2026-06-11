@@ -57,13 +57,17 @@ class GridSearch(BaseEstimator):
 
     Examples
     --------
-    Use ``GridSearch`` when you want to compare modeling choices with the
-    same scoring rule. Here the grid compares simple and volume averages by
-    reading the fitted development ``sigma_`` from each candidate pipeline.
+    Suppose an actuary reserving the industry medical malpractice line wants
+    to see how the choice between simple and volume-weighted averaging
+    affects the variability of the fitted development factors. ``GridSearch``
+    fits one pipeline per candidate in ``param_grid``, and the ``scoring``
+    callables can record any fitted attribute, such as the full vector of
+    ``sigma_`` by development age.
 
     .. testsetup::
 
         import chainladder as cl
+
     .. testcode::
 
         clrd = cl.load_sample("clrd")
@@ -72,21 +76,27 @@ class GridSearch(BaseEstimator):
             [("dev", cl.Development()), ("cl", cl.Chainladder())]
         )
         param_grid = {"dev__average": ["simple", "volume"]}
-        scoring = {
-            "sigma": lambda m: float(m.named_steps.dev.sigma_.values.sum())
-        }
+
+        def sigma_by_age(model):
+            sigma = model.named_steps.dev.sigma_
+            return sigma.values[0, 0, 0, :].round(3).tolist()
+
         grid = cl.GridSearch(
-            pipe, param_grid, scoring=scoring, n_jobs=1
+            pipe, param_grid, scoring={"sigma": sigma_by_age}, n_jobs=1
         ).fit(medmal)
-        print(len(grid.results_))
-        print(round(grid.results_["sigma"].iloc[0], 3))
-        print(round(grid.results_["sigma"].iloc[1], 3))
+        for _, row in grid.results_.iterrows():
+            print(row["dev__average"], row["sigma"])
 
     .. testoutput::
 
-        2
-        1.422
-        206.183
+        simple [1.163, 0.102, 0.057, 0.038, 0.026, 0.016, 0.007, 0.01, 0.003]
+        volume [116.206, 26.551, 18.805, 15.471, 11.936, 7.286, 3.458, 4.49, 1.978]
+
+    Both candidates agree that development factor variability is concentrated
+    in the 12-24 age and tapers as the line matures. The two rows are on very
+    different scales because each averaging choice fits a different weighted
+    regression, so ``sigma_`` magnitudes are only comparable between
+    candidates that share an averaging method.
 
     """
 
@@ -178,33 +188,52 @@ class Pipeline(PipelineSL, EstimatorIO):
 
     Examples
     --------
-    Use ``Pipeline`` when the same triangle should pass through several
-    estimators as one workflow. The ``step__param`` naming convention lets you
-    change one step, here ``Development.average``, without rebuilding the
-    whole pipeline.
+    A ``Pipeline`` wraps transformers and a final estimator into one compact
+    estimator, so an entire reserving analysis is specified by hyperparameters
+    alone. The user guide builds a pipeline that develops every company in the
+    CAS loss reserve database with pooled line-of-business patterns through
+    the ``groupby`` hyperparameter of ``Development``. Comparing it against
+    the same pipeline without ``groupby`` shows why that pooling matters:
+    standalone patterns are fit to each company's own thin data.
 
     .. testsetup::
 
         import chainladder as cl
+        import pandas as pd
+
     .. testcode::
 
-        tri = cl.load_sample("raa")
-        pipe = cl.Pipeline(
-            [
-                ("dev", cl.Development(average="simple")),
-                ("cl", cl.Chainladder()),
-            ]
+        clrd = cl.load_sample("clrd")["CumPaidLoss"]
+        industry = cl.Pipeline(
+            [("dev", cl.Development(groupby="LOB")), ("model", cl.Chainladder())]
         )
-        ib_simple = int(round(float(pipe.fit_predict(tri).ibnr_.sum()), 0))
-        pipe.set_params(dev__average="volume")
-        ib_volume = int(round(float(pipe.fit_predict(tri).ibnr_.sum()), 0))
-        print(ib_simple)
-        print(ib_volume)
+        standalone = cl.Pipeline(
+            [("dev", cl.Development()), ("model", cl.Chainladder())]
+        )
+        ibnr_industry = industry.fit(clrd).named_steps.model.ibnr_
+        ibnr_standalone = standalone.fit(clrd).named_steps.model.ibnr_
+        summary = pd.DataFrame(
+            {
+                "industry": ibnr_industry.groupby("LOB").sum().sum("origin").to_frame(),
+                "standalone": ibnr_standalone.groupby("LOB").sum().sum("origin").to_frame(),
+            }
+        ).astype(int).rename_axis(None)
+        print(summary)
 
     .. testoutput::
 
-        93643
-        52135
+                  industry  standalone
+        comauto    1743192     1683207
+        medmal     1330330     1455883
+        othliab    1640597   -14285800
+        ppauto    17138458    17327738
+        prodliab    531648      577127
+        wkcomp     2777812     2498151
+
+    The two pipelines differ in a single hyperparameter, yet the standalone
+    fit lets a handful of small companies with erratic development drive the
+    other liability line to a negative aggregate IBNR, while the pooled
+    patterns keep every line at a reasonable estimate.
 
     """
 
