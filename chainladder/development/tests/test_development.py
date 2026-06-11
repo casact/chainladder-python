@@ -312,9 +312,7 @@ def test_new_drop_7(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below with preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        dev = cl.Development(
-            drop_above=1.01, drop_below=0.95, preserve=3
-        ).fit(clrd)
+        dev = cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd)
     compare_new_drop(dev, clrd)
 
 
@@ -391,6 +389,264 @@ def test_new_drop_10():
         )
         == 1.0000
     )
+
+
+def test_geometric_avg():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(n_periods=4, average="geometric")
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def geo_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
+
+    geo_means = df.apply(lambda s: geo_lastn(s, 4))
+    rhs = np.round(geo_means.values.flatten(), 6)
+
+    assert np.all(lhs == rhs)
+
+
+def test_simple_avg():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(n_periods=4, average="simple")
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def sim_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.mean() if len(vals) > 0 else np.nan
+
+    avg_means = df.apply(lambda s: sim_lastn(s, 4))
+    rhs = np.round(avg_means.values.flatten(), 6)
+
+    assert np.all(lhs == rhs)
+
+
+def test_simple_geometric_avg():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(
+            n_periods=4,
+            average=[
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+            ],
+        )
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def sim_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.mean() if len(vals) > 0 else np.nan
+
+    def geo_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
+
+    sim_avg = df.apply(lambda s: s.dropna().tail(4).mean())
+    geo_avg = df.apply(
+        lambda s: s.dropna().tail(4).prod() ** (1 / len(s.dropna().tail(4)))
+    )
+
+    methods = np.array(
+        [
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+        ]
+    )
+
+    rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
+
+    assert np.all(lhs == rhs)
+
+
+def test_simple_geometric_avg2():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    df = tri.link_ratio.to_frame()
+
+    lhs = np.round(
+        cl.Development(
+            n_periods=4,
+            average=[
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+                "geometric",
+                "simple",
+            ],
+        )
+        .fit_transform(tri)
+        .ldf_.to_frame()
+        .values.flatten(),
+        6,
+    )
+
+    def sim_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.mean() if len(vals) > 0 else np.nan
+
+    def geo_lastn(s, n):
+        vals = s.dropna().tail(n)
+        return vals.prod() ** (1 / len(vals)) if len(vals) > 0 else np.nan
+
+    sim_avg = df.apply(lambda s: s.dropna().tail(4).mean())
+    geo_avg = df.apply(
+        lambda s: s.dropna().tail(4).prod() ** (1 / len(s.dropna().tail(4)))
+    )
+
+    methods = np.array(
+        [
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+            "geometric",
+            "simple",
+        ]
+    )
+
+    rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
+
+    assert np.all(lhs == rhs)
+
+
+def test_sigma():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    sigma = np.round(
+        cl.Development(
+            n_periods=4,
+            average="simple",
+        )
+        .fit_transform(tri)
+        .sigma_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    sigma_expected = [
+        0.006371,
+        0.001693,
+        0.001274,
+        0.001823,
+        0.000612,
+        0.000349,
+        0.000371,
+        0.000212,
+        0.000128,
+    ]
+
+    assert np.all(sigma == sigma_expected)
+
+
+def test_stderror():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    std_error = np.round(
+        cl.Development(
+            n_periods=4,
+            average="simple",
+        )
+        .fit_transform(tri)
+        .std_err_.to_frame()
+        .values.flatten(),
+        6,
+    )
+    std_error_expected = [
+        0.003186,
+        0.000847,
+        0.000637,
+        0.000912,
+        0.000306,
+        0.000175,
+        0.000214,
+        0.00015,
+        0.000128,
+    ]
+    assert np.all(std_error == std_error_expected)
+
+
+def test_std_residuals():
+    tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
+    std_residuals = np.round(
+        cl.Development(
+            n_periods=4,
+            average="simple",
+        )
+        .fit_transform(tri)
+        .std_residuals_.to_frame()
+        .values,
+        6,
+    )
+    std_residuals_expected = [
+        [0.0, 0.0, 0.0, 0.0, 0.0, -1.342157, -1.144874, 0.707107, 0.0],
+        [0.0, 0.0, 0.0, 0.0, -0.847023, 0.576855, 0.702623, -0.707107, np.nan],
+        [0.0, 0.0, 0.0, -0.74519, 1.213508, 0.917912, 0.442251, np.nan, np.nan],
+        [0.0, 0.0, -0.251713, 1.337416, 0.426182, -0.15261, np.nan, np.nan, np.nan],
+        [0.0, 1.426642, 1.023636, 0.194113, -0.792667, np.nan, np.nan, np.nan, np.nan],
+        [
+            -0.19898,
+            -0.056297,
+            0.505912,
+            -0.78634,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+        ],
+        [
+            -0.727376,
+            -0.791472,
+            -1.277835,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+        ],
+        [-0.537388, -0.578874, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        [1.463744, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+    ]
+
+    assert np.array_equal(std_residuals, std_residuals_expected, equal_nan=True)
 
 
 def compare_new_drop(dev, tri):

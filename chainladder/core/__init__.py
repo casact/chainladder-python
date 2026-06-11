@@ -3,3 +3,9 @@ from chainladder.core.correlation import (
     DevelopmentCorrelation,
     ValuationCorrelation,
 )  # noqa (API import)
+
+__all__ = [
+    "Triangle",
+    "DevelopmentCorrelation",
+    "ValuationCorrelation",
+]
