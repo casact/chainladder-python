@@ -30,11 +30,10 @@ classifiers = [
 ]
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
-    "pandas >=2.3.3, <3.0",
+    "pandas >=2.3.3",
     "scikit-learn>1.4.2",
-    "numba>0.54",
     "sparse>=0.9",
-    "numpy",
+    "numpy>=2.0",
     "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",
     "patsy",
@@ -68,7 +67,7 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels",  # For docs example
+    "statsmodels"  # For docs example
 ]
 test = [
     "lxml",
