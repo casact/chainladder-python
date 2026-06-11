@@ -146,8 +146,9 @@ def test_maximum(raa):
         cl.Development(average="simple").fit_transform(raa)
     ).ultimate_
     high_side = cl.maximum(ult_vol, ult_sim)
-    assert (high_side.values >= ult_vol.values).all() or np.isnan(high_side.values).any()
-    assert (high_side.values >= ult_sim.values).all() or np.isnan(high_side.values).any()
+    np.testing.assert_array_almost_equal(
+        high_side.values, np.maximum(ult_vol.values, ult_sim.values)
+    )
 
 
 def test_invalid_sample() -> None:

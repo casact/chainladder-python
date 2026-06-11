@@ -306,15 +306,15 @@ def read_pickle(path):
         dev.to_pickle(p)
         restored = cl.read_pickle(p)
         os.remove(p)
-        print(dev.ldf_.values[0, 0, 0, :4].round(4))
-        print(restored.ldf_.values[0, 0, 0, :4].round(4))
-        print(restored.transform(tri).ldf_.values[0, 0, 0, :4].round(4))
+        print(dev.ldf_.values[0, 0, 0, :].round(4))
+        print(restored.ldf_.values[0, 0, 0, :].round(4))
+        print(restored.transform(tri).ldf_.values[0, 0, 0, :].round(4))
 
     .. testoutput::
 
-        [4.5853 2.0204 1.2448 1.1646]
-        [4.5853 2.0204 1.2448 1.1646]
-        [4.5853 2.0204 1.2448 1.1646]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
 
     """
     with open(path, "rb") as pkl:
@@ -940,15 +940,15 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         ).fit(genins)
         print(len(by_dev.coef_))
         print(len(by_both.coef_))
-        print(round(float(by_dev.ldf_.values[0, 0, 0, 0]), 6))
-        print(round(float(by_both.ldf_.values[0, 0, 0, 0]), 6))
+        print(by_dev.ldf_.values[0, 0, 0, :].round(4))
+        print(by_both.ldf_.values[0, 0, 0, :].round(4))
 
     .. testoutput::
 
         10
         19
-        3.508469
-        3.491031
+        [3.5085 1.7436 1.4379 1.1656 1.0991 1.0832 1.0511 1.0693 1.0135]
+        [3.491  1.7474 1.4574 1.1739 1.1038 1.0863 1.0539 1.0766 1.0177]
 
     When ``TweedieGLM`` is not flexible enough (for example, when you need a
     non-Tweedie model or a continuous origin term), build a custom
@@ -973,11 +973,11 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
             y_ml=col,
             fit_incrementals=False,
         ).fit(genins)
-        print(dev_only.ldf_.values[0, 0, 0, :4].round(4))
+        print(dev_only.ldf_.values[0, 0, 0, :].round(4))
 
     .. testoutput::
 
-        [3.515  1.735  1.3993 1.152 ]
+        [3.515  1.735  1.3993 1.152  1.0988 1.0926 1.0332 1.0245 0.8507]
 
     """
 
