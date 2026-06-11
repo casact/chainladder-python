@@ -46,6 +46,45 @@ class DevelopmentCorrelation:
     confidence_interval: tuple
         Range within which ``t_expectation`` must fall for independence assumption
         to be significant.
+
+    Examples
+    --------
+
+    Mack (1997) lists "successive development factors are uncorrelated" as
+    one of the assumptions underpinning the chain-ladder method. Before
+    relying on a ``Chainladder`` or ``MackChainladder`` ultimate it is good
+    practice to test that assumption on the triangle at hand.
+    ``DevelopmentCorrelation`` performs Mack's weighted Spearman rank test
+    across consecutive development columns and exposes both the test
+    statistic ``t_expectation`` and the no-correlation
+    ``confidence_interval``, so the decision is visible rather than reduced
+    to a single boolean.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        dc = cl.DevelopmentCorrelation(raa, p_critical=0.5)
+        print(round(float(dc.t_expectation.iloc[0, 0]), 4))
+        print(round(float(dc.confidence_interval[0]), 4))
+        print(round(float(dc.confidence_interval[1]), 4))
+        print(bool(dc.t_critical.iloc[0, 0]))
+
+    .. testoutput::
+
+        0.0696
+        -0.1275
+        0.1275
+        False
+
+    The Spearman statistic ``0.0696`` lies inside the 50% confidence band
+    ``(-0.1275, 0.1275)`` derived from ``t_variance = 2 / ((I - 2)(I - 3))``,
+    so the test does not reject independence and chain-ladder is appropriate
+    for RAA on this dimension. See the Mack chain-ladder section of the user
+    guide for the full assumption set.
     """
 
     def __init__(self, triangle, p_critical: float = 0.5):
@@ -171,6 +210,53 @@ class ValuationCorrelation:
         The expected value of Z.
     z_variance : Triangle or DataFrame
         The variance value of Z.
+
+    Examples
+    --------
+
+    Mack's second prerequisite for the chain-ladder method is that no
+    calendar period systematically inflates or deflates link ratios (for
+    example from a one-off reserve strengthening or a change in case
+    reserving practice). ``ValuationCorrelation`` flags any diagonal on
+    which the split of high versus low link ratios is unlikely under random
+    ordering.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        vc = cl.ValuationCorrelation(raa, p_critical=0.1, total=False)
+        print(vc.z_critical)
+
+    .. testoutput::
+
+               1982   1983   1984   1985   1986   1987   1988   1989   1990
+        1981  False  False  False  False  False  False  False  False  False
+
+    No diagonal crosses the 90% threshold, so the calendar-effect assumption
+    is supported. If any cell read ``True`` you would inspect that diagonal
+    before relying on Mack or chain-ladder ultimates.
+
+    The same test can be aggregated to a whole-triangle form
+    (``total=True``, Mack 1993) instead of the per-diagonal form
+    (``total=False``, Mack 1997) shown above:
+
+    .. testcode::
+
+        vc_total = cl.ValuationCorrelation(raa, p_critical=0.1, total=True)
+        print(round(float(vc_total.z.iloc[0, 0]), 4))
+        print(bool(vc_total.z_critical.iloc[0, 0]))
+
+    .. testoutput::
+
+        14.0
+        False
+
+    The whole-triangle ``z`` statistic also falls inside the no-effect band,
+    confirming the per-diagonal result.
     """
 
     def __init__(self, triangle: Triangle, p_critical: float = 0.1, total: bool = True):

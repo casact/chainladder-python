@@ -4,14 +4,17 @@
 from __future__ import annotations
 
 import pandas as pd
-from packaging import version
-
 import numpy as np
 import warnings
 
 from abc import ABC, abstractmethod
 
-from chainladder import options
+from chainladder import (
+    __dt64_unit__,
+    __dt64_dtype__,
+    options,
+    _deprecated_backend_message
+)
 
 from chainladder.core.common import Common
 from chainladder.core.display import TriangleDisplay
@@ -55,6 +58,26 @@ class TriangleBase(
     def shape(self):
         return self.values.shape
 
+    @property
+    def dimensionality(self):
+        """The dimensionality of the Triangle.
+
+        Returns ``'empty'`` for a Triangle instantiated without data
+        (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
+        single triangle, and ``'multi'`` for a multidimensional Triangle.
+        """
+        return self._dimensionality
+
+    @property
+    def empty(self):
+        """Whether the Triangle contains any data.
+
+        Mirrors ``pandas.DataFrame.empty``. Returns ``True`` for a Triangle
+        instantiated without data (e.g. ``cl.Triangle()``), whose ``values``
+        have not been populated, and ``False`` otherwise.
+        """
+        return self._dimensionality == "empty"
+
     @staticmethod
     def _input_validation(
             data: DataFrame,
@@ -83,7 +106,7 @@ class TriangleBase(
         columns = str_to_list(columns)
         origin = str_to_list(origin)
         development = str_to_list(development)
-        if "object" in data[columns].dtypes:
+        if not all(pd.api.types.is_numeric_dtype(dt) for dt in data[columns].dtypes):
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
@@ -140,6 +163,18 @@ class TriangleBase(
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:
+            # A non-pandas input that reaches this branch is a Dask dataframe.
+            # Only the Dask backend is deprecated, so gate the warning on the
+            # data's module rather than warning for every pandas subclass that
+            # also takes this path. stacklevel=3 points the warning at the
+            # user's Triangle(...) call (warn -> this method ->
+            # Triangle.__init__ -> user).
+            if type(data).__module__.split(".")[0] == "dask":
+                warnings.warn(
+                    _deprecated_backend_message("dask"),
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
             data["__development__"] = development_date
@@ -423,11 +458,7 @@ class TriangleBase(
         months: np.ndarray = (dates.dt.year * 12 + dates.dt.month).unique()
         diffs: np.ndarray = np.diff(np.sort(months))
         if np.all(np.mod(diffs,12) == 0):
-            grain = (
-                "Y"
-                if version.Version(pd.__version__) >= version.Version("2.2.0")
-                else "A"
-            )
+            grain = "Y"
         elif np.all(np.mod(diffs,6) == 0):
             grain = "2Q"
         elif np.all(np.mod(diffs,3) == 0):
@@ -540,12 +571,12 @@ class TriangleBase(
         ddim_arr = ddims - ddims[0]
         origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
         val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
-        val_array = val_array.astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        val_array = val_array.astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         val_array = val_array[:, None]
         s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
         val_array = (
             val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
-        ).astype("datetime64[ns]") - np.timedelta64(1, "ns")
+        ).astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         if ddims[-1] == 9999:
             ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate(
@@ -584,10 +615,10 @@ class TriangleBase(
         else:
             raise NotImplementedError()
 
-    def _interchange_dataframe(self, data: DataFrameXchg) -> DataFrame:
+    @staticmethod
+    def _interchange_dataframe(data: DataFrameXchg) -> DataFrame:
         """
         Convert an object supporting the __dataframe__ protocol to a pandas DataFrame.
-        Requires pandas version > 1.5.2.
 
         Parameters
         ----------
@@ -598,16 +629,9 @@ class TriangleBase(
         out: pd.DataFrame
             A pandas DataFrame.
         """
-        # Check if pandas version is greater than 1.5.2
-        if version.parse(pd.__version__) >= version.parse("1.5.2"):
-            return pd.api.interchange.from_dataframe(data)
 
-        else:
-            # Raise an error prompting the user to upgrade pandas
-            raise NotImplementedError(
-                "Your version of pandas does not support the DataFrame interchange API. "
-                "Please upgrade pandas to a version greater than 1.5.2 to use this feature."
-            )
+        return pd.api.interchange.from_dataframe(data)
+
 
     def __array_function__(self, func, types, args, kwargs):
         from chainladder.utils.utility_functions import concat

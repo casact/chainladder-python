@@ -24,3 +24,22 @@ jobs:
         run: uv sync --extra test
       - name: Run tests
         run: uv run pytest chainladder -m "not r"
+  linux-pandas3:
+    name: (${{ matrix.python-version }}, pandas3, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: ['3.14']
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --extra test
+      - name: Run tests
+        run: uv run --with "pandas>=3,<4" pytest chainladder -m "not r"
