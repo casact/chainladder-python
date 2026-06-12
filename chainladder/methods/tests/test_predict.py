@@ -1,4 +1,5 @@
 import chainladder as cl
+import numpy as np
 import pandas as pd
 import pytest 
 
@@ -47,7 +48,7 @@ def test_predict_and_weights(estimators,atol):
         equal_nan=True
     )   
     #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    if estimators != cl.Chainladder:
+    if estimators in [cl.CapeCod,cl.BornhuetterFerguson,cl.ExpectedLoss,cl.Benktander]:
         with pytest.raises(ValueError):
             estimators().fit(raa_1989)
         with pytest.raises(ValueError):
