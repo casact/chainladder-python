@@ -918,6 +918,40 @@ class Triangle(TriangleBase):
     def is_pattern(self, pattern: bool):
         self._pattern = pattern
 
+    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
+        """ 
+        Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
+
+        Parameters
+        ----------
+        X: Triangle
+        The target triangle to align to
+        
+        sample_weight:  Triangle, option (default=None)
+        Exposure triangle
+
+        Returns
+        -------
+        Triangle
+            Triangle of selected pattern across origin periods
+
+        """
+        if not self._pattern:
+            raise ValueError("Triangle is not a selected pattern, such as .ldf_ or .cdf_")
+        valuation = X.valuation_date
+        pattern = self.iloc[..., : X.shape[-1]]
+        a = X.iloc[0, 0] * 0
+        a = a + a.nan_triangle
+        if X.array_backend == "sparse":
+            a = a - a[a.valuation < a.valuation_date]
+        if sample_weight:
+            X = X * a + sample_weight * a
+        else:
+            X = X * a
+        pattern = X / X * pattern
+        pattern.valuation_date = valuation
+        return pattern.latest_diagonal
+    
     @property
     def is_ultimate(self) ->  bool:
         """
