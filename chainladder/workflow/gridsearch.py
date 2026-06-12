@@ -59,10 +59,10 @@ class GridSearch(BaseEstimator):
     --------
     Suppose an actuary reserving the industry medical malpractice line wants
     to see how the choice between simple and volume-weighted averaging
-    affects the variability of the fitted development factors. ``GridSearch``
-    fits one pipeline per candidate in ``param_grid``, and the ``scoring``
-    callables can record any fitted attribute, such as the full vector of
-    ``sigma_`` by development age.
+    affects the fitted development pattern. ``GridSearch`` fits one pipeline
+    per candidate in ``param_grid``, and the ``scoring`` callables can record
+    any fitted attribute, such as the full vector of ``ldf_`` by development
+    age.
 
     .. testsetup::
 
@@ -77,26 +77,28 @@ class GridSearch(BaseEstimator):
         )
         param_grid = {"dev__average": ["simple", "volume"]}
 
-        def sigma_by_age(model):
-            sigma = model.named_steps.dev.sigma_
-            return sigma.values[0, 0, 0, :].round(3).tolist()
+        def ldf_by_age(model):
+            ldf = model.named_steps.dev.ldf_
+            return ldf.values[0, 0, 0, :].round(3).tolist()
 
         grid = cl.GridSearch(
-            pipe, param_grid, scoring={"sigma": sigma_by_age}, n_jobs=1
+            pipe, param_grid, scoring={"ldf": ldf_by_age}, n_jobs=1
         ).fit(medmal)
         for _, row in grid.results_.iterrows():
-            print(row["dev__average"], row["sigma"])
+            print(row["dev__average"], row["ldf"])
 
     .. testoutput::
 
-        simple [1.163, 0.102, 0.057, 0.038, 0.026, 0.016, 0.007, 0.01, 0.003]
-        volume [116.206, 26.551, 18.805, 15.471, 11.936, 7.286, 3.458, 4.49, 1.978]
+        simple [6.076, 1.976, 1.384, 1.2, 1.102, 1.068, 1.039, 1.029, 1.018]
+        volume [5.856, 1.963, 1.376, 1.199, 1.099, 1.067, 1.039, 1.028, 1.018]
 
-    Both candidates agree that development factor variability is concentrated
-    in the 12-24 age and tapers as the line matures. The two rows are on very
-    different scales because each averaging choice fits a different weighted
-    regression, so ``sigma_`` magnitudes are only comparable between
-    candidates that share an averaging method.
+    Because both rows are loss development factors, they are directly
+    comparable age by age. Simple averaging gives every origin year an equal
+    vote, while volume weighting lets the origin years with the most losses
+    dominate, and for this triangle that distinction matters most at the
+    immature 12-24 age (6.076 versus 5.856). The two candidates converge as
+    the line matures, so the averaging choice mainly moves the reserve
+    carried for the most recent origin years.
 
     """
 
@@ -189,51 +191,55 @@ class Pipeline(PipelineSL, EstimatorIO):
     Examples
     --------
     A ``Pipeline`` wraps transformers and a final estimator into one compact
-    estimator, so an entire reserving analysis is specified by hyperparameters
-    alone. The user guide builds a pipeline that develops every company in the
-    CAS loss reserve database with pooled line-of-business patterns through
-    the ``groupby`` hyperparameter of ``Development``. Comparing it against
-    the same pipeline without ``groupby`` shows why that pooling matters:
-    standalone patterns are fit to each company's own thin data.
+    estimator, so an entire reserving workflow is specified in one place. A
+    classic workflow chains three steps: select development patterns from
+    the triangle, extrapolate a tail beyond the observed ages, and hand the
+    completed patterns to an IBNR method. Fitting the pipeline runs every
+    step in order, and ``named_steps`` exposes each fitted step by name.
 
     .. testsetup::
 
         import chainladder as cl
-        import pandas as pd
 
     .. testcode::
 
-        clrd = cl.load_sample("clrd")["CumPaidLoss"]
-        industry = cl.Pipeline(
-            [("dev", cl.Development(groupby="LOB")), ("model", cl.Chainladder())]
+        genins = cl.load_sample("genins")
+        pipe = cl.Pipeline(
+            [
+                ("dev", cl.Development(average="volume")),
+                ("tail", cl.TailCurve(curve="exponential")),
+                ("model", cl.Chainladder()),
+            ]
         )
-        standalone = cl.Pipeline(
-            [("dev", cl.Development()), ("model", cl.Chainladder())]
+        pipe.fit(genins)
+        ibnr = (
+            pipe.named_steps.model.ibnr_.to_frame(origin_as_datetime=False)
+            .iloc[:, 0]
+            .astype(int)
+            .rename("IBNR")
         )
-        ibnr_industry = industry.fit(clrd).named_steps.model.ibnr_
-        ibnr_standalone = standalone.fit(clrd).named_steps.model.ibnr_
-        summary = pd.DataFrame(
-            {
-                "industry": ibnr_industry.groupby("LOB").sum().sum("origin").to_frame(),
-                "standalone": ibnr_standalone.groupby("LOB").sum().sum("origin").to_frame(),
-            }
-        ).astype(int).rename_axis(None)
-        print(summary)
+        print(ibnr)
 
     .. testoutput::
 
-                  industry  standalone
-        comauto    1743192     1683207
-        medmal     1330330     1455883
-        othliab    1640597   -14285800
-        ppauto    17138458    17327738
-        prodliab    531648      577127
-        wkcomp     2777812     2498151
+        2001     115089
+        2002     254924
+        2003     628182
+        2004     865921
+        2005    1128201
+        2006    1570234
+        2007    2344628
+        2008    4120446
+        2009    4445414
+        2010    4772416
+        Freq: Y-DEC, Name: IBNR, dtype: int64
 
-    The two pipelines differ in a single hyperparameter, yet the standalone
-    fit lets a handful of small companies with erratic development drive the
-    other liability line to a negative aggregate IBNR, while the pooled
-    patterns keep every line at a reasonable estimate.
+    Each step feeds the next: the volume-weighted patterns from ``dev`` are
+    extended past the edge of the triangle by the exponential tail in
+    ``tail``, and the chainladder ``model`` projects every origin year to
+    ultimate with those completed patterns. The full origin-by-origin IBNR
+    comes from the final step, while intermediate results such as the fitted
+    tail factor remain available through ``pipe.named_steps.tail``.
 
     """
 
