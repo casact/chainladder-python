@@ -116,7 +116,7 @@ def test_concat(clrd):
 
 
 def test_model_diagnostics(qtr,atol):
-    md = cl.model_diagnostics(cl.Chainladder().fit(qtr))
+    md = cl.model_diagnostics(cl.Chainladder().fit_predict(qtr))
     assert np.allclose(md['Latest'].values.swapaxes(0,1),qtr.latest_diagonal.values,atol=atol,equal_nan=True)
 
 
