@@ -22,25 +22,16 @@ def test_predict_and_weights(estimators,atol):
     est = estimators().fit(raa_1989, sample_weight=apriori_1989)
     pred = est.predict(raa, sample_weight=apriori)
     assert pred
+    #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    if estimators != cl.Chainladder:
+        with pytest.raises(ValueError):
+            estimators().fit(raa_1989)
+        with pytest.raises(ValueError):
+            estimators().fit(raa_1989, sample_weight=apriori_1989).predict(raa)
 
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
     assert mack.predict(raa_1989)
-
-def test_capecod_fit_weight():
-    """
-    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    """
-    with pytest.raises(ValueError):
-        cl.CapeCod().fit(raa_1989)
-
-def test_capecod_predict_weight():
-    """
-    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    """
-    with pytest.raises(ValueError):
-        cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
-        cc.predict(raa)
 
 def test_bs_random_state_predict(clrd):
     tri = clrd.groupby("LOB").sum().loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]
