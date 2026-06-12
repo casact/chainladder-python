@@ -243,6 +243,8 @@ class Benktander(MethodBase):
             2012  15914.716737
             2013  17193.715555
         """
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)
