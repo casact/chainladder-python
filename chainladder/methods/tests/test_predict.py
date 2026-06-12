@@ -8,18 +8,20 @@ cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
 apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)  # Mean Chainladder Ultimate
 apriori_1989 = apriori[apriori.origin < "1990"]
 
-
-def test_cc_predict():
-    cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
-    assert cc.predict(raa, sample_weight=apriori)
-
-def test_bf_predict():
-    bf = cl.BornhuetterFerguson().fit(raa_1989, sample_weight=apriori_1989)
-    assert bf.predict(raa, sample_weight=apriori)
-
-def test_el_predict():
-    bf = cl.ExpectedLoss().fit(raa_1989, sample_weight=apriori_1989)
-    assert bf.predict(raa, sample_weight=apriori)
+@pytest.mark.parametrize(
+    "estimators",
+    [
+        cl.CapeCod,
+        cl.BornhuetterFerguson,
+        cl.ExpectedLoss,
+        cl.Benktander,
+        cl.Chainladder
+    ],
+)
+def test_predict_and_weights(estimators,atol):
+    est = estimators().fit(raa_1989, sample_weight=apriori_1989)
+    pred = est.predict(raa, sample_weight=apriori)
+    assert pred
 
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
