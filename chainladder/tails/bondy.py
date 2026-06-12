@@ -44,6 +44,75 @@ class TailBondy(TailBase):
     --------
     TailCurve
 
+    Examples
+    --------
+    Suppose an actuary needs a tail provision for a reinsurance triangle
+    that stops at age 120. Without any hyperparameters, ``TailBondy``
+    reproduces the classic Bondy method: the exponent ``b_`` keeps its
+    starting value of 0.5, which makes the tail a simple repeat of the last
+    observed development factor. Comparing the original pattern with the
+    extended one shows this directly: the appended factors compound to the
+    last observed factor of 1.0092.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development().fit_transform(cl.load_sample("raa"))
+        bondy = cl.TailBondy().fit(dev)
+        print(dev.ldf_.values[0, 0, 0, :].round(4))
+        print(bondy.ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092]
+        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092 1.0046
+         1.0046]
+
+    Setting ``earliest_age`` turns this into the Generalized Bondy method:
+    every development factor from that age forward enters the regression and
+    the Bondy exponent is estimated from the data. The exponent measures how
+    quickly development decays. Each log development factor is assumed to be
+    ``b_`` times the prior one, so an estimate below 0.5 means the pattern
+    decays faster than the classic Bondy assumption implies (a lighter
+    tail), while an estimate above 0.5 signals more persistent development
+    (a heavier tail). The full ``ldf_`` shows the fitted pattern only
+    diverges from the classic Bondy fit beyond the edge of the triangle:
+
+    .. testcode::
+
+        gen = cl.TailBondy(earliest_age=12).fit(dev)
+        print(round(float(gen.b_.iloc[0, 0]), 4))
+        print(gen.ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        0.4845
+        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092 1.0016
+         1.0015]
+
+    Although 0.4845 looks close to 0.5, the exponent compounds through the
+    tail formula (the tail is the last fitted factor raised to
+    ``b_ / (1 - b_)``), so the tail provision falls from 0.92% to 0.31% of
+    losses, roughly a threefold difference in the booked tail:
+
+    .. testcode::
+
+        print(round(float(bondy.tail_.iloc[0, 0]), 4))
+        print(round(float(gen.tail_.iloc[0, 0]), 4))
+
+    .. testoutput::
+
+        1.0092
+        1.0031
+
+    The choice of ``earliest_age`` is a judgment call: include enough ages
+    for a stable estimate of ``b_``, but exclude immature ages whose
+    volatile link ratios would distort the decay rate the exponent is meant
+    to capture.
+
     """
 
     def __init__(self, earliest_age=None, attachment_age=None, projection_period=12):
