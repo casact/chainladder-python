@@ -263,7 +263,14 @@ def test_sdist_ships_all_samples(tmp_path) -> None:
 
 
 def test_load_sample_uspp() -> None:
-    """Tests uspp Friedland triangles load with the correct three-column schema."""
+    """Pin the manifest column schema for the uspp Friedland family.
+
+    Loadability of every sample is already covered by ``test_load_sample``,
+    but no other test asserts the columns a sample is configured with. This
+    guards the manifest entries for the uspp datasets against the regression
+    where ``Earned Premium`` was dropped from their column config, in the
+    same dataset-specific style as ``test_load_sample_clrd2025`` below.
+    """
     for key in [
         "friedland_uspp_auto_increasing_case",
         "friedland_uspp_auto_increasing_claim",
