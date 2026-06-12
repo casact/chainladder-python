@@ -20,7 +20,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
+    from chainladder import Triangle, MethodBase
     from numpy.typing import ArrayLike
     from pandas import DataFrame
     from sparse import COO
@@ -689,15 +689,18 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         return dmatrix(self.design_info_, X)
 
 
-def model_diagnostics(model, name=None, groupby=None):
+def model_diagnostics(
+        model:Triangle|MethodBase|Pipeline, 
+        name:str|None=None, 
+        groupby:str|list(str)|None=None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
     Parameters
     ----------
-    model:
-        A chainladder IBNR estimator or Pipeline
-    name:
+    model: Triangle|MethodBase|Pipeline
+        A predicted Triangle, chainladder IBNR estimator or Pipeline
+    name: str, optional (default=None)
         An alias to give the model. This will be added to the index of the return
         triangle.
     groupby:
@@ -713,13 +716,16 @@ def model_diagnostics(model, name=None, groupby=None):
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
+    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+        raise ValueError("model does not have ultimate_/ibnr_/ldf_")
+    if isinstance(model, Triangle):
+        obj.X_ = obj
     if groupby is not None:
         obj.X_ = obj.X_.groupby(groupby).sum().cum_to_incr()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
-    else:
-        obj.X_ = obj.X_.incr_to_cum()
+    obj.X_ = obj.X_.incr_to_cum()
     val = obj.X_.valuation
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
@@ -761,8 +767,8 @@ def model_diagnostics(model, name=None, groupby=None):
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
-        out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
+        out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
             out["Run Off " + str(i + 1)] = run_off[col].iloc[..., i]
         if hasattr(obj, "expectation_"):
