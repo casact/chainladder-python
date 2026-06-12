@@ -88,14 +88,9 @@ class TweedieGLM(DevelopmentBase):
 
     Examples
     --------
-    Patsy's ``C()`` wraps a column in categorical dummies, with one
-    coefficient per level. Removing ``C()`` converts that axis to a continuous
-    linear trend with a single slope. The categorical ``design_matrix``
-    (default) replicates volume-weighted chainladder; the continuous version
-    is more parsimonious and can be preferable when data are sparse. If the
-    solver raises a ``ConvergenceWarning``, increase ``max_iter`` from its
-    default of 100, as done for the categorical model here. The ``comauto``
-    triangle illustrates the difference in fitted ``ldf_``:
+    With its default parameters (a Poisson GLM with log link and the
+    categorical ``design_matrix`` of ``"C(development) + C(origin)"``),
+    ``TweedieGLM`` replicates volume-weighted chainladder development:
 
     .. testsetup::
 
@@ -105,22 +100,48 @@ class TweedieGLM(DevelopmentBase):
 
         import numpy as np
 
+        tri = cl.load_sample("genins")
+        glm = cl.TweedieGLM().fit(tri)
+        trad = cl.Development(average="volume").fit(tri)
+        print(np.round(glm.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(trad.ldf_.values[0, 0, 0, :], 4))
+
+    .. testoutput::
+
+        [3.491  1.7474 1.4574 1.1739 1.1038 1.0863 1.0539 1.0766 1.0177]
+        [3.4906 1.7473 1.4574 1.1739 1.1038 1.0863 1.0539 1.0766 1.0177]
+
+    On some triangles the solver needs more than the default 100 iterations
+    and sklearn raises a ``ConvergenceWarning``; increase ``max_iter`` until
+    the warning goes away. The ``comauto`` line of ``clrd`` is one such
+    triangle:
+
+    .. testcode::
+
         tri = cl.load_sample("clrd")["CumPaidLoss"].groupby("LOB").sum()
         comauto = tri[tri["LOB"] == "comauto"]
-        m_cat = cl.TweedieGLM(
-            power=1,
-            design_matrix="C(development) + C(origin)",
-            max_iter=1000,
-        ).fit(comauto)
-        m_cont = cl.TweedieGLM(
-            power=1, design_matrix="development + origin"
-        ).fit(comauto)
+        m_cat = cl.TweedieGLM(power=1, max_iter=1000).fit(comauto)
         print(np.round(m_cat.ldf_.values[0, 0, 0, :], 4))
-        print(np.round(m_cont.ldf_.values[0, 0, 0, :], 4))
 
     .. testoutput::
 
         [2.0459 1.352  1.1739 1.088  1.0403 1.021  1.0093 1.0062 1.007 ]
+
+    Patsy's ``C()`` wraps a column in categorical dummies, with one
+    coefficient per level. Removing ``C()`` converts that axis to a
+    continuous linear trend with a single slope, a more parsimonious fit
+    that can be preferable when data are sparse. Compare the continuous
+    fit below to the categorical ``m_cat`` above on the same triangle:
+
+    .. testcode::
+
+        m_cont = cl.TweedieGLM(
+            power=1, design_matrix="development + origin"
+        ).fit(comauto)
+        print(np.round(m_cont.ldf_.values[0, 0, 0, :], 4))
+
+    .. testoutput::
+
         [1.6993 1.2878 1.1563 1.0945 1.0604 1.0398 1.0268 1.0182 1.0125]
 
     On multi-LOB triangles, interaction terms can keep the model parsimonious

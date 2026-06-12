@@ -88,12 +88,14 @@ class BarnettZehnwirth(TweedieGLM):
         ).fit(tri)
         ldf_f = m_formula.ldf_.to_frame(origin_as_datetime=False)
         ldf_p = m_ptf.ldf_.to_frame(origin_as_datetime=False)
-        print(np.round(ldf_f.values[0], 4))   # formula: same for every origin
+        print(np.round(ldf_f.values[0], 4))   # formula: earliest origin
+        print(np.round(ldf_f.values[-1], 4))  # formula: latest origin
         print(np.round(ldf_p.values[0], 4))   # PTF: earliest origin
         print(np.round(ldf_p.values[-1], 4))  # PTF: latest origin
 
     .. testoutput::
 
+        [2.2854 1.4138 1.1976 1.1128 1.0721 1.048  1.0342 1.0264 1.0208 1.0168]
         [2.2854 1.4138 1.1976 1.1128 1.0721 1.048  1.0342 1.0264 1.0208 1.0168]
         [1.9716 1.4788 1.1794 1.0843 1.0431 1.0428 1.0425 1.0423 1.0421 1.0419]
         [1.9727 1.4625 1.1692 1.0774 1.0384 1.037  1.0357 1.0345 1.0333 1.0322]

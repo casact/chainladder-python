@@ -65,13 +65,9 @@ class DevelopmentML(DevelopmentBase):
     it to any sklearn estimator. Features from any triangle axis can enter an
     sklearn :class:`~sklearn.compose.ColumnTransformer` or
     :class:`~sklearn.pipeline.Pipeline`: here, one-hot-encode ``LOB`` and
-    ``development``, pass ``origin`` through, and fit a linear model (the user
-    guide uses ``RandomForestRegressor`` the same way). Note that
-    ``LinearRegression`` on raw dollar amounts is used for illustration only.
-    Without a log link it can produce LDFs below 1.0 in the later development
-    columns, as seen in the output here, which is not GAAP-compatible.
-    :class:`~chainladder.TweedieGLM` with a log link is the recommended
-    choice in practice.
+    ``development``, pass ``origin`` through, and fit the same
+    ``RandomForestRegressor`` the user guide uses. ``random_state`` pins the
+    forest so the fitted pattern is reproducible.
 
     .. testsetup::
 
@@ -81,7 +77,7 @@ class DevelopmentML(DevelopmentBase):
 
         import numpy as np
         from sklearn.compose import ColumnTransformer
-        from sklearn.linear_model import LinearRegression
+        from sklearn.ensemble import RandomForestRegressor
         from sklearn.pipeline import Pipeline
         from sklearn.preprocessing import OneHotEncoder
 
@@ -95,40 +91,43 @@ class DevelopmentML(DevelopmentBase):
         estimator_ml = Pipeline(
             steps=[
                 ("design_matrix", design_matrix),
-                ("model", LinearRegression()),
+                ("model", RandomForestRegressor(random_state=42)),
             ]
         )
         m = cl.DevelopmentML(estimator_ml=estimator_ml, y_ml="CumPaidLoss").fit(
             clrd
         )
         print(m.ldf_.shape)
-        print(np.round(m.ldf_.values[0, 0, 0, :4], 4))
+        print(np.round(m.ldf_.values[0, 0, 0, :], 4))
 
     .. testoutput::
 
         (6, 1, 10, 9)
-        [1.7448 0.9854 0.8117 0.6495]
+        [2.5988 1.412  1.2037 1.11   1.0701 1.0434 1.0272 1.0366 1.0714]
 
     An actuary who wants to test whether fitting on incremental versus
-    cumulative losses changes the implied reserve can toggle
-    ``fit_incrementals`` and compare the full ``ldf_`` patterns. The two
-    bases agree at the early ages but diverge in the tail, where the
-    cumulative fit (``m_cum``) drops below 1.0 in the final column,
-    another symptom of the unlinked ``LinearRegression`` noted above.
+    cumulative losses changes the implied development can toggle
+    ``fit_incrementals`` and compare the full ``ldf_`` patterns. A log-link
+    Poisson GLM (the same specification :class:`~chainladder.TweedieGLM`
+    uses) keeps the fitted values positive, so the implied factors stay
+    above 1.0 on either basis. The two bases agree closely here, diverging
+    modestly at the oldest ages.
 
     .. testcode::
 
         import numpy as np
-        from sklearn.linear_model import LinearRegression
+        from sklearn.linear_model import TweedieRegressor
         from sklearn.pipeline import Pipeline
 
         from chainladder.utils.utility_functions import PatsyFormula
 
-        tri = cl.load_sample("genins")
+        tri = cl.load_sample("ukmotor")
         pipe = Pipeline(
             steps=[
-                ("design_matrix", PatsyFormula("C(development)")),
-                ("model", LinearRegression(fit_intercept=False)),
+                ("design_matrix", PatsyFormula("C(development) + C(origin)")),
+                ("model", TweedieRegressor(
+                    power=1, link="log", fit_intercept=False
+                )),
             ]
         )
         m_incr = cl.DevelopmentML(
@@ -142,8 +141,8 @@ class DevelopmentML(DevelopmentBase):
 
     .. testoutput::
 
-        [3.508  1.7435 1.4379 1.1655 1.0991 1.0832 1.0511 1.0693 1.0135]
-        [3.515  1.735  1.3993 1.152  1.0988 1.0926 1.0332 1.0245 0.8507]
+        [1.904  1.2858 1.1493 1.0989 1.0537 1.0333]
+        [1.892  1.2822 1.1453 1.1033 1.0547 1.0457]
 
     """
 
