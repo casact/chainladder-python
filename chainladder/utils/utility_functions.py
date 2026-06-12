@@ -725,7 +725,7 @@ def model_diagnostics(
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
-    obj.X_ = obj.X_.incr_to_cum()
+    obj.X_ = obj.X_.cum_to_incr()
     val = obj.X_.valuation
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
