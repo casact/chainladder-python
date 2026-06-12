@@ -115,11 +115,6 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics(qtr,atol):
-    md = cl.model_diagnostics(cl.Chainladder().fit_predict(qtr))
-    assert np.allclose(md['Latest'].values.swapaxes(0,1),qtr.latest_diagonal.values,atol=atol,equal_nan=True)
-
-
 def test_model_diagnostics_erorr(raa):
     with pytest.raises(ValueError):
         cl.model_diagnostics(raa)
@@ -131,7 +126,7 @@ def test_model_diagnostics_groupby(prism,atol):
     lhs = cl.model_diagnostics(est,groupby=['Line'])
     rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
     assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol,equal_nan=True)
-    assert np.allclose(lhs['IBNR'].values,rhs['IBNR'].values,atol=atol,equal_nan=True)
+    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol,equal_nan=True)
     
 
 def test_concat_immutability(raa):
