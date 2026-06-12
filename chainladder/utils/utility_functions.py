@@ -710,7 +710,7 @@ def model_diagnostics(
     -------
     Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
     """
-    from chainladder import Pipeline
+    from chainladder import Pipeline, Triangle
 
     if isinstance(model, Pipeline):
         obj = copy.deepcopy(model.steps[-1][-1])
