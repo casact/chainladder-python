@@ -45,13 +45,41 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         tri = cl.load_sample("raa")
         origin = cl.Trend(0.05, axis="origin").fit(tri)
         val = cl.Trend(0.05, axis="valuation").fit(tri)
-        print(round(float(origin.trend_.values[0, 0, 2, 3]), 6))
-        print(round(float(val.trend_.values[0, 0, 2, 3]), 6))
+        print(np.round(origin.trend_, 4))
 
     .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
 
-        1.4071
-        1.215506
+                 12      24      36      48      60      72      84      96      108     120
+        1981  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513
+        1982  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775     NaN
+        1983  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071     NaN     NaN
+        1984  1.3401  1.3401  1.3401  1.3401  1.3401  1.3401  1.3401     NaN     NaN     NaN
+        1985  1.2763  1.2763  1.2763  1.2763  1.2763  1.2763     NaN     NaN     NaN     NaN
+        1986  1.2155  1.2155  1.2155  1.2155  1.2155     NaN     NaN     NaN     NaN     NaN
+        1987  1.1576  1.1576  1.1576  1.1576     NaN     NaN     NaN     NaN     NaN     NaN
+        1988  1.1025  1.1025  1.1025     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1989  1.0500  1.0500     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+
+    .. testcode::
+
+        print(np.round(val.trend_, 4))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                 12      24      36      48      60      72      84      96    108  120
+        1981  1.5513  1.4775  1.4071  1.3401  1.2763  1.2155  1.1576  1.1025  1.05  1.0
+        1982  1.4775  1.4071  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.00  NaN
+        1983  1.4071  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000   NaN  NaN
+        1984  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000     NaN   NaN  NaN
+        1985  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000     NaN     NaN   NaN  NaN
+        1986  1.2155  1.1576  1.1025  1.0500  1.0000     NaN     NaN     NaN   NaN  NaN
+        1987  1.1576  1.1025  1.0500  1.0000     NaN     NaN     NaN     NaN   NaN  NaN
+        1988  1.1025  1.0500  1.0000     NaN     NaN     NaN     NaN     NaN   NaN  NaN
+        1989  1.0500  1.0000     NaN     NaN     NaN     NaN     NaN     NaN   NaN  NaN
+        1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN   NaN  NaN
 
     Multiple ``trends`` with paired ``dates`` compound only across the
     windows you specify, so the factors need not match a single flat trend.
@@ -65,13 +93,41 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
             dates=[(None, "1985"), ("1985", None)],
             axis="origin",
         ).fit(tri)
-        print(round(float(flat.trend_.values[0, 0, 0, 0]), 6))
-        print(round(float(piece.trend_.values[0, 0, 0, 0]), 6))
+        print(np.round(flat.trend_, 4))
 
     .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
 
-        2.357948
-        1.551328
+                 12      24      36      48      60      72      84      96      108     120
+        1981  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579
+        1982  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436     NaN
+        1983  1.9487  1.9487  1.9487  1.9487  1.9487  1.9487  1.9487  1.9487     NaN     NaN
+        1984  1.7716  1.7716  1.7716  1.7716  1.7716  1.7716  1.7716     NaN     NaN     NaN
+        1985  1.6105  1.6105  1.6105  1.6105  1.6105  1.6105     NaN     NaN     NaN     NaN
+        1986  1.4641  1.4641  1.4641  1.4641  1.4641     NaN     NaN     NaN     NaN     NaN
+        1987  1.3310  1.3310  1.3310  1.3310     NaN     NaN     NaN     NaN     NaN     NaN
+        1988  1.2100  1.2100  1.2100     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1989  1.1000  1.1000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+
+    .. testcode::
+
+        print(np.round(piece.trend_, 4))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                 12      24      36      48      60      72      84      96      108     120
+        1981  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513
+        1982  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775     NaN
+        1983  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071     NaN     NaN
+        1984  1.3401  1.3401  1.3401  1.3401  1.3401  1.3401  1.3401     NaN     NaN     NaN
+        1985  1.2763  1.2763  1.2763  1.2763  1.2763  1.2763     NaN     NaN     NaN     NaN
+        1986  1.2155  1.2155  1.2155  1.2155  1.2155     NaN     NaN     NaN     NaN     NaN
+        1987  1.1576  1.1576  1.1576  1.1576     NaN     NaN     NaN     NaN     NaN     NaN
+        1988  1.1025  1.1025  1.1025     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1989  1.0500  1.0500     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
 
     ``trend_`` holds the compounded factor surface; ``transform`` applies it
     so a downstream ``CapeCod`` can be run with ``trend=0`` while still
@@ -94,12 +150,23 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
             )
             .ibnr_
         )
-        print(round(float(t_step.trend_.values[0, 0, 2, 3]), 6))
+        print(np.round(t_step.trend_, 4))
         print(int(round(float(np.nansum(ibnr.values)), 0)))
 
     .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
 
-        1.21562
+                 12      24      36      48      60      72      84      96      108     120
+        1988  1.2647  1.2647  1.2647  1.2647  1.2647  1.2647  1.2647  1.2647  1.2647  1.2647
+        1989  1.2399  1.2399  1.2399  1.2399  1.2399  1.2399  1.2399  1.2399  1.2399     NaN
+        1990  1.2156  1.2156  1.2156  1.2156  1.2156  1.2156  1.2156  1.2156     NaN     NaN
+        1991  1.1918  1.1918  1.1918  1.1918  1.1918  1.1918  1.1918     NaN     NaN     NaN
+        1992  1.1684  1.1684  1.1684  1.1684  1.1684  1.1684     NaN     NaN     NaN     NaN
+        1993  1.1455  1.1455  1.1455  1.1455  1.1455     NaN     NaN     NaN     NaN     NaN
+        1994  1.1230  1.1230  1.1230  1.1230     NaN     NaN     NaN     NaN     NaN     NaN
+        1995  1.0816  1.0816  1.0816     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1996  1.0400  1.0400     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
+        1997  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
         29278236
 
     """

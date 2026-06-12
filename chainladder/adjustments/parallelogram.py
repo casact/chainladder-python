@@ -176,13 +176,31 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             policy_length=24,
             approximation_grain="M",
         ).fit_transform(prem())
-        print(round(float(olf_12.olf_.values[0, 0, 0, 0]), 6))
-        print(round(float(olf_24.olf_.values[0, 0, 0, 0]), 6))
+        print(np.round(olf_12.olf_, 6))
 
     ..  testoutput::
+        :options: +NORMALIZE_WHITESPACE
 
-        1.170732
-        1.185185
+                  2014
+        2010  1.170732
+        2011  1.021277
+        2012  1.000000
+        2013  1.000000
+        2014  1.000000
+
+    ..  testcode::
+
+        print(np.round(olf_24.olf_, 6))
+
+    ..  testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                  2014
+        2010  1.185185
+        2011  1.090909
+        2012  1.010526
+        2013  1.000000
+        2014  1.000000
 
     """
 
