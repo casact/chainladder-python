@@ -81,28 +81,30 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         1989  1.0500  1.0000     NaN     NaN     NaN     NaN     NaN     NaN   NaN  NaN
         1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN   NaN  NaN
 
-    Multiple ``trends`` with paired ``dates`` compound only across the
-    windows you specify, so the factors need not match a single flat trend.
+    Multiple ``trends`` with paired ``dates`` apply a different annual trend
+    to each window, producing a surface that matches neither single flat
+    trend. Each tuple runs from the recent anchor back to the older bound, so
+    here a 10% trend covers the recent origins (1985 and later) and a 5% trend
+    the earlier ones.
 
     .. testcode::
 
         tri = cl.load_sample("raa")
-        flat = cl.Trend(0.10, axis="origin").fit(tri)
         piece = cl.Trend(
-            trends=[0.05, 0.05],
+            trends=[0.10, 0.05],
             dates=[(None, "1985"), ("1985", None)],
             axis="origin",
         ).fit(tri)
-        print(np.round(flat.trend_, 4))
+        print(np.round(piece.trend_, 4))
 
     .. testoutput::
         :options: +NORMALIZE_WHITESPACE
 
                  12      24      36      48      60      72      84      96      108     120
-        1981  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579  2.3579
-        1982  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436  2.1436     NaN
-        1983  1.9487  1.9487  1.9487  1.9487  1.9487  1.9487  1.9487  1.9487     NaN     NaN
-        1984  1.7716  1.7716  1.7716  1.7716  1.7716  1.7716  1.7716     NaN     NaN     NaN
+        1981  2.0429  2.0429  2.0429  2.0429  2.0429  2.0429  2.0429  2.0429  2.0429  2.0429
+        1982  1.9456  1.9456  1.9456  1.9456  1.9456  1.9456  1.9456  1.9456  1.9456     NaN
+        1983  1.8529  1.8529  1.8529  1.8529  1.8529  1.8529  1.8529  1.8529     NaN     NaN
+        1984  1.7647  1.7647  1.7647  1.7647  1.7647  1.7647  1.7647     NaN     NaN     NaN
         1985  1.6105  1.6105  1.6105  1.6105  1.6105  1.6105     NaN     NaN     NaN     NaN
         1986  1.4641  1.4641  1.4641  1.4641  1.4641     NaN     NaN     NaN     NaN     NaN
         1987  1.3310  1.3310  1.3310  1.3310     NaN     NaN     NaN     NaN     NaN     NaN
@@ -110,48 +112,32 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         1989  1.1000  1.1000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
         1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
 
-    .. testcode::
+    The recent origins (1985-1990) follow the 10% path exactly, matching a
+    single flat 10% trend, while the earlier origins compound the extra 5% on
+    top and rise above a flat 5% surface, so the staged factors track neither
+    flat trend alone.
 
-        print(np.round(piece.trend_, 4))
-
-    .. testoutput::
-        :options: +NORMALIZE_WHITESPACE
-
-                 12      24      36      48      60      72      84      96      108     120
-        1981  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513  1.5513
-        1982  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775  1.4775     NaN
-        1983  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071  1.4071     NaN     NaN
-        1984  1.3401  1.3401  1.3401  1.3401  1.3401  1.3401  1.3401     NaN     NaN     NaN
-        1985  1.2763  1.2763  1.2763  1.2763  1.2763  1.2763     NaN     NaN     NaN     NaN
-        1986  1.2155  1.2155  1.2155  1.2155  1.2155     NaN     NaN     NaN     NaN     NaN
-        1987  1.1576  1.1576  1.1576  1.1576     NaN     NaN     NaN     NaN     NaN     NaN
-        1988  1.1025  1.1025  1.1025     NaN     NaN     NaN     NaN     NaN     NaN     NaN
-        1989  1.0500  1.0500     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
-        1990  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
-
-    ``trend_`` holds the compounded factor surface; ``transform`` applies it
-    so a downstream ``CapeCod`` can be run with ``trend=0`` while still
-    reflecting the staged annual assumptions.
+    Because ``trend_`` is a stored factor surface, ``transform`` can pre-level
+    a triangle so a downstream ``CapeCod`` reflects staged annual assumptions
+    that a single scalar ``trend`` could not express. Leveling the losses lifts
+    the a-priori for the older years, so total IBNR rises against an unleveled
+    fit (29.3M versus 26.4M):
 
     .. testcode::
 
         tr = cl.load_sample("clrd")[["CumPaidLoss", "EarnedPremDIR"]].sum()
+        sample_weight = tr["EarnedPremDIR"].latest_diagonal
         t_step = cl.Trend(
             trends=[0.04, 0.02],
             dates=[(None, "1995"), ("1995", None)],
             axis="origin",
         ).fit(tr["CumPaidLoss"])
         paid_leveled = t_step.transform(tr["CumPaidLoss"])
-        ibnr = (
-            cl.CapeCod()
-            .fit(
-                paid_leveled,
-                sample_weight=tr["EarnedPremDIR"].latest_diagonal,
-            )
-            .ibnr_
-        )
+        leveled = cl.CapeCod(trend=0).fit(paid_leveled, sample_weight=sample_weight)
+        unleveled = cl.CapeCod(trend=0).fit(tr["CumPaidLoss"], sample_weight=sample_weight)
         print(np.round(t_step.trend_, 4))
-        print(int(round(float(np.nansum(ibnr.values)), 0)))
+        print(int(round(float(np.nansum(leveled.ibnr_.values)), 0)))
+        print(int(round(float(np.nansum(unleveled.ibnr_.values)), 0)))
 
     .. testoutput::
         :options: +NORMALIZE_WHITESPACE
@@ -168,6 +154,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         1996  1.0400  1.0400     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
         1997  1.0000     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN
         29278236
+        26370689
 
     """
 
