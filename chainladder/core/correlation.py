@@ -85,6 +85,23 @@ class DevelopmentCorrelation:
     so the test does not reject independence and chain-ladder is appropriate
     for RAA on this dimension. See the Mack chain-ladder section of the user
     guide for the full assumption set.
+
+    ``p_critical`` sets how wide that acceptance band is. Raising it
+    tightens the band, so the same Spearman statistic can flip
+    ``t_critical`` even though the point estimate is unchanged:
+
+    .. testcode::
+
+        tight = cl.DevelopmentCorrelation(raa, p_critical=0.99)
+        print(round(float(tight.confidence_interval[0]), 4))
+        print(round(float(tight.confidence_interval[1]), 4))
+        print(bool(tight.t_critical.iloc[0, 0]))
+
+    .. testoutput::
+
+        -0.0024
+        0.0024
+        True
     """
 
     def __init__(self, triangle, p_critical: float = 0.5):
@@ -242,7 +259,9 @@ class ValuationCorrelation:
 
     The same test can be aggregated to a whole-triangle form
     (``total=True``, Mack 1993) instead of the per-diagonal form
-    (``total=False``, Mack 1997) shown above:
+    (``total=False``, Mack 1997) shown above. In total form the ``z`` and
+    ``z_critical`` attributes are returned as DataFrames rather than
+    Triangles:
 
     .. testcode::
 

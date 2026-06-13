@@ -32,6 +32,35 @@ class DevelopmentConstant(DevelopmentBase):
         The estimated loss development patterns
     cdf_: Triangle
         The estimated cumulative development patterns
+
+    Examples
+    --------
+    ``patterns`` is interpreted as multiplicative link ratios when
+    ``style='ldf'``; swapping in a flat manual ladder changes the fitted
+    pattern immediately.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        dev = cl.Development().fit(tri)
+        n = dev.ldf_.shape[3]
+        fitted = {(i + 1) * 12: float(dev.ldf_.values[0, 0, 0, i]) for i in range(n)}
+        flat = {(i + 1) * 12: 1.2 for i in range(n)}
+        const_fitted = cl.DevelopmentConstant(patterns=fitted, style="ldf").fit(tri)
+        const_flat = cl.DevelopmentConstant(patterns=flat, style="ldf").fit(tri)
+        print(np.round(const_flat.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(const_fitted.ldf_.values[0, 0, 0, :], 4))
+
+    .. testoutput::
+
+        [1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2]
+        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092]
+
     """
 
     def __init__(self, patterns=None, style="ldf", callable_axis=0, groupby=None):

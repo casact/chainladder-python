@@ -42,6 +42,68 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         Two-period Exponential intercept parameters
     b_: Triangle
         Two-period Exponential slope parameters
+
+    Examples
+    --------
+    ``trend`` tilts the case-adequacy adjustment before ``Incurred`` is rebuilt;
+    on the ``MedMal`` slice the inner diagonals of the adjusted ``Incurred``
+    triangle restate materially between ``0%`` and ``15%`` annual drift, while
+    the latest diagonal is preserved.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        tri = cl.load_sample("berqsherm").loc["MedMal"]
+        base = cl.BerquistSherman(
+            paid_amount="Paid",
+            incurred_amount="Incurred",
+            reported_count="Reported",
+            closed_count="Closed",
+            trend=0.0,
+        ).fit(tri)
+        tilted = cl.BerquistSherman(
+            paid_amount="Paid",
+            incurred_amount="Incurred",
+            reported_count="Reported",
+            closed_count="Closed",
+            trend=0.15,
+        ).fit(tri)
+        print(np.round(base.adjusted_triangle_["Incurred"], 0))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                      12          24          36          48          60          72          84          96
+        1969   9883293.0  27420103.0  35879085.0  43105257.0  33438702.0  30397324.0  25723694.0  23506000.0
+        1970   8641763.0  31305782.0  41543535.0  48550616.0  38203864.0  36222888.0  32216000.0         NaN
+        1971  11733960.0  43887171.0  61649896.0  64917222.0  51410209.0  48377000.0         NaN         NaN
+        1972  13638651.0  50987209.0  66696278.0  72777529.0  61163000.0         NaN         NaN         NaN
+        1973  14387930.0  45470590.0  56577593.0  73733000.0         NaN         NaN         NaN         NaN
+        1974  13630366.0  47189379.0  63477000.0         NaN         NaN         NaN         NaN         NaN
+        1975  15036351.0  48904000.0         NaN         NaN         NaN         NaN         NaN         NaN
+        1976  15791000.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN
+
+    .. testcode::
+
+        print(np.round(tilted.adjusted_triangle_["Incurred"], 0))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                      12          24          36          48          60          72          84          96
+        1969   3793504.0  12084942.0  18563821.0  25924316.0  23516364.0  24979245.0  24016864.0  23506000.0
+        1970   3760482.0  15830500.0  24615996.0  33169802.0  30722141.0  33362729.0  32216000.0         NaN
+        1971   5982185.0  25583831.0  41384825.0  50323342.0  46191356.0  48377000.0         NaN         NaN
+        1972   7819355.0  33794110.0  51361061.0  64559286.0  61163000.0         NaN         NaN         NaN
+        1973   9533246.0  34585431.0  49667342.0  73733000.0         NaN         NaN         NaN         NaN
+        1974  10348458.0  41241243.0  63477000.0         NaN         NaN         NaN         NaN         NaN
+        1975  13102479.0  48904000.0         NaN         NaN         NaN         NaN         NaN         NaN
+        1976  15791000.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN
+
     """
 
     def __init__(

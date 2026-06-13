@@ -114,6 +114,29 @@ class BootstrapODPSample(DevelopmentBase):
     .. testoutput::
 
         648.94
+
+    Two further levers control how the residual pool is built. ``n_periods``
+    restricts the internal ``Development`` fit to the most recent origin
+    periods, which changes the Pearson residuals and therefore ``scale_``,
+    while ``hat_adj`` swaps the hat matrix adjustment for the simpler
+    degree-of-freedom adjustment when standardizing residuals before
+    resampling.
+
+    .. testcode::
+
+        short_hist = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, n_periods=3
+        ).fit(raa)
+        dof = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, hat_adj=False
+        ).fit(raa)
+        print(round(float(short_hist.scale_), 2))
+        print(round(float(dof.scale_), 2))
+
+    .. testoutput::
+
+        322.4
+        983.64
     """
 
     def __init__(
