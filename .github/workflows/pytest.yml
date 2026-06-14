@@ -105,3 +105,11 @@ jobs:
         run: uv sync --extra docs
       - name: Run doctests
         run: uv run --with "pandas>=3,<4" --directory docs jb build . --builder=custom --custom-builder=doctest
+      - name: Upload sphinx error logs
+        if: failure() || always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sphinx-error-logs
+          path: /tmp/sphinx-err-*.log
+          if-no-files-found: ignore
+
