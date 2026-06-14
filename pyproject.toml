@@ -36,7 +36,7 @@ dependencies = [
     "numpy>=2.0",
     "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",
-    "patsy",
+    "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
 ]
 
 [project.urls]
@@ -67,7 +67,7 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels"  # For docs example
+    "statsmodels>=0.14.6"  # For docs example; <0.14.6 fails to import under pandas 3
 ]
 test = [
     "lxml",
@@ -77,7 +77,7 @@ test = [
     "ipython",
     "pytest-cov",  # For coverage testing
     "dask",
-    'statsmodels'
+    'statsmodels>=0.14.6'
 ]
 performance = [
     "dask",  # For distributed computing
