@@ -110,5 +110,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: myst-error-logs
-          path: docs/_build/doctest/reports/*.log
+          path: docs/_build/doctest/reports/**/*.log
           if-no-files-found: ignore
