@@ -1,7 +1,9 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
-omit = *tests*
+omit =
+    *tests*
+    */core/typing.py
 
 [report]
 show_missing = True

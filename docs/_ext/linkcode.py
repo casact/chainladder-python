@@ -49,15 +49,30 @@ def linkcode_resolve(domain: str, info: dict) -> str | None:
     mod: ModuleType = importlib.import_module(info["module"])
 
     obj: ModuleType = mod
-    # Extract the part.
+    # Extract the part. Some documented members (e.g. instance attributes pulled
+    # in via :inherited-members:) are not accessible on the object itself; skip
+    # linking those rather than crashing the build.
     for part in info["fullname"].split("."):
-        obj: type = getattr(obj, part)
+        try:
+            obj: type = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    # Resolve properties to their underlying getter function.
+    if isinstance(obj, property):
+        obj = obj.fget
+        if obj is None:
+            return None
 
     # Unwrap any decorators.
     obj: type = inspect.unwrap(obj)
 
-    # Get the path of the source file.
-    source_file: str = inspect.getsourcefile(obj)
+    # Get the path of the source file. Some objects (e.g. C-level callables or
+    # dynamically created members) are not introspectable; skip linking those.
+    try:
+        source_file: str = inspect.getsourcefile(obj)
+    except TypeError:
+        return None
 
     # If the source file cannot be found, return the URL pointing to a .py file named after the module.
     if source_file is None:
@@ -65,7 +80,11 @@ def linkcode_resolve(domain: str, info: dict) -> str | None:
         return url_base + "%s.py" % filename
 
     # Extract the lines and locate the starting line position.
-    source_lines, start_line = inspect.getsourcelines(obj)
+    try:
+        source_lines, start_line = inspect.getsourcelines(obj)
+    except (TypeError, OSError):
+        filename: str = info["module"].replace(".", "/")
+        return url_base + "%s.py" % filename
 
     # Get the root path.
     root_path: str = os.path.abspath(os.path.join(cl.__file__, "..", ".."))

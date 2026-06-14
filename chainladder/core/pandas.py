@@ -6,6 +6,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from chainladder import (
+    __dt64_dtype__
+)
 from chainladder.utils.utility_functions import num_to_nan
 from typing import TYPE_CHECKING
 
@@ -25,6 +28,9 @@ if TYPE_CHECKING:
         Series
     )
     from types import ModuleType
+    from pandas._typing import(
+        IndexLabel
+    )
     from typing import (
         Literal,
         Self,
@@ -66,6 +72,7 @@ class TrianglePandas:
             **kwargs
     ) -> DataFrame | Series:
         """ Converts a triangle to a pandas.DataFrame.
+
         Parameters
         ----------
         origin_as_datetime : bool
@@ -78,9 +85,10 @@ class TrianglePandas:
         implicit_axis : bool
             When keepdims is True, this denotes whether to include the implicit
             valuation axis in addition to the origin and development.
+
         Returns
         -------
-            DataFrame or Series representation of the Triangle.
+        DataFrame or Series representation of the Triangle.
         """
 
         # Identify the axes that increase the dimensionality of the triangle, i.e., those whose length is > 1.
@@ -198,7 +206,7 @@ class TrianglePandas:
             supplied as a string, returns the integer representation. If
             supplied as an integer, returns the same integer.
 
-        Returns`
+        Returns
         -------
         The integer representation of the requested axis
 
@@ -246,6 +254,7 @@ class TrianglePandas:
 
     def fillna(self, value=None, inplace=False):
         """Fill nan with 'value' by axis.
+
         Parameters
         ----------
         value: single value or array-like values, default = None
@@ -271,6 +280,7 @@ class TrianglePandas:
 
     def fillzero(self, inplace=False):
         """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
+
         Parameters
         ----------
         inplace: boolean, default = False
@@ -445,6 +455,34 @@ class TrianglePandas:
     def round(self, decimals=0, *args, **kwargs):
         return round(self, decimals)
 
+    def xs(
+        self,
+        index_key:IndexLabel,
+        level:IndexLabel | None = None,
+        drop_level:bool = True):
+        '''
+        Mimics xs from pandas. key difference is that  this function only slices 
+        the index, therefore axis is always 0 and not an argument in the function
+        
+        Main use case for this function is when slicing beyond the first field in 
+        the index (such as LOB in the clrd dataset)
+        '''
+        mi = pd.MultiIndex.from_frame(self.index)
+
+        lvl = 0 if level is None else level
+        loc, new_ax = mi.get_loc_level(index_key, level=lvl, drop_level=drop_level)
+
+        # create the tuple of the indexer
+        _indexer = [slice(None)] * 2
+        _indexer[0] = loc
+        indexer = tuple(_indexer)
+        result = self.iloc[indexer]
+        if new_ax is not None:
+            new_ax_df = new_ax.to_frame(index=None)[new_ax.names]
+            result.index = new_ax_df
+        else:
+            result.index = pd.DataFrame(data=['Total'],columns=['Total'])
+        return result
 
 def add_triangle_agg_func(
         cls: Type[TrianglePandas],
@@ -505,7 +543,7 @@ def add_triangle_agg_func(
         # If axis is development, set the ddims to be the valuation date.
         if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
             obj.ddims = pd.DatetimeIndex(
-                [self.valuation_date], dtype="datetime64[ns]", freq=None
+                [self.valuation_date], dtype=__dt64_dtype__, freq=None
             )
         obj._set_slicers()
         if auto_sparse:
@@ -571,7 +609,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
             )
             obj.origin_grain = self.obj._get_grain(odims)
             split = obj.origin_grain.split("-")
-            obj.origin_grain = {"A": "Y", "2Q": "S"}.get(split[0], split[0])
+            obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
             obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:

@@ -2,11 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development.base import DevelopmentBase
+import numpy as np
 import pandas as pd
 
 
 class DevelopmentConstant(DevelopmentBase):
-    """ A Estimator that allows for including of external patterns into a
+    """An Estimator that allows for including of external patterns into a
         Development style model. When this estimator is fit against a triangle,
         only the grain of the existing triangle is retained.
 
@@ -18,7 +19,7 @@ class DevelopmentConstant(DevelopmentBase):
     style: string, optional (default='ldf')
         Type of pattern given to the Estimator. Options include 'cdf' or 'ldf'.
     callable_axis: 0 or 1
-        If a callable is supplied, the axis (index or column) along which to apply
+        If a callable is supplied, the axis, index (0) or column (1) along which to apply
         the callable. If patterns is not a callable, then this parameter is ignored.
     groupby:
         option to group levels of the triangle index together for the purposes
@@ -31,6 +32,35 @@ class DevelopmentConstant(DevelopmentBase):
         The estimated loss development patterns
     cdf_: Triangle
         The estimated cumulative development patterns
+
+    Examples
+    --------
+    ``patterns`` is interpreted as multiplicative link ratios when
+    ``style='ldf'``; swapping in a flat manual ladder changes the fitted
+    pattern immediately.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        dev = cl.Development().fit(tri)
+        n = dev.ldf_.shape[3]
+        fitted = {(i + 1) * 12: float(dev.ldf_.values[0, 0, 0, i]) for i in range(n)}
+        flat = {(i + 1) * 12: 1.2 for i in range(n)}
+        const_fitted = cl.DevelopmentConstant(patterns=fitted, style="ldf").fit(tri)
+        const_flat = cl.DevelopmentConstant(patterns=flat, style="ldf").fit(tri)
+        print(np.round(const_flat.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(const_fitted.ldf_.values[0, 0, 0, :], 4))
+
+    .. testoutput::
+
+        [1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2]
+        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092]
+
     """
 
     def __init__(self, patterns=None, style="ldf", callable_axis=0, groupby=None):
@@ -53,25 +83,80 @@ class DevelopmentConstant(DevelopmentBase):
             Returns the instance itself.
         """
         from chainladder import options
+
         if X.is_cumulative == False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
+
         xp = obj.get_array_module()
-        obj = obj.iloc[..., :1, :-1]*0+1
+
         if callable(self.patterns):
-            ldf = obj.index.apply(self.patterns, axis=self.callable_axis)
-            ldf = (
-                pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                  .fillna(1)[obj.ddims].values)
-            ldf = xp.array(ldf[:, None, None, :])
+            if self.callable_axis == 0:
+                sample_pattern = obj.index.apply(self.patterns, axis=1).iloc[0]
+            elif self.callable_axis == 1:
+                sample_pattern = (
+                    obj.columns.to_frame(index=False)
+                    .apply(self.patterns, axis=1)
+                    .iloc[0]
+                )
+            else:
+                raise ValueError("callable axis needs to be 0 or 1")
+            pattern_length = len(sample_pattern)
+            pattern_ddims = sorted(sample_pattern.keys())
         else:
-            ldf = xp.array([float(self.patterns[item]) for item in obj.ddims])
+            pattern_length = len(self.patterns)
+            pattern_ddims = sorted(self.patterns.keys())
+
+        # pattern supplied is much shorter than the triangle
+        if pattern_length < len(obj.ddims) - 1:
+            obj = obj.iloc[..., 0, :-1] * 0 + 1
+        # pattern supplied is exactly one short of the triangle
+        elif pattern_length == len(obj.ddims) - 1:
+            obj = obj.iloc[..., 0, :-1] * 0 + 1
+        # pattern supplied is exactly the same length as the triangle
+        elif pattern_length == len(obj.ddims):
+            obj = obj.iloc[..., 0, :] * 0 + 1
+        # pattern supplied is longer than the triangle
+        else:
+            obj = obj.iloc[..., 0, :] * 0 + 1
+            extra = len(pattern_ddims) - len(obj.ddims)
+            if extra > 0:
+                tail = xp.ones(obj.shape)[..., -1:]
+                tail = xp.repeat(tail, extra, -1)
+                obj.values = xp.concatenate((obj.values, tail), -1)
+                obj.ddims = np.array(pattern_ddims)
+                obj._set_slicers()
+
+        if callable(self.patterns):
+            if self.callable_axis == 0:
+                ldf = obj.index.apply(self.patterns, axis=1)
+                ldf = (
+                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    .fillna(1)[obj.ddims]
+                    .values
+                )
+                ldf = xp.array(ldf[:, None, None, :])
+            elif self.callable_axis == 1:
+                ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
+                ldf = (
+                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    .fillna(1)[obj.ddims]
+                    .values
+                )
+                ldf = xp.array(ldf[None, :, None, :])
+            else:
+                raise ValueError("callable axis needs to be 0 or 1")
+        else:
+            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
+
         if self.style == "cdf":
             ldf = xp.concatenate((ldf[..., :-1] / ldf[..., 1:], ldf[..., -1:]), -1)
+
         obj = obj * ldf
         obj._set_slicers()
+
         self.ldf_ = obj
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
@@ -79,7 +164,7 @@ class DevelopmentConstant(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

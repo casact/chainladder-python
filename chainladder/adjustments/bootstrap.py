@@ -46,6 +46,97 @@ class BootstrapODPSample(DevelopmentBase):
         A set of triangles represented by each simulation
     scale_:
         The scale parameter to be used in generating process risk
+
+    Examples
+    --------
+
+    Generate ODP bootstrap samples of the RAA sample triangle. The estimator
+    re-samples standardized Pearson residuals to produce ``n_sims`` synthetic
+    triangles stacked along the index axis of ``resampled_triangles_``, and
+    exposes the scale parameter ``scale_`` used to generate process risk.
+    ``random_state`` and a small ``n_sims`` keep the output deterministic
+    and fast.
+
+    .. testsetup::
+
+        import warnings
+        warnings.filterwarnings("ignore")
+        import chainladder as cl
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        boot = cl.BootstrapODPSample(n_sims=100, random_state=42).fit(raa)
+        print(boot.resampled_triangles_.shape)
+        print(round(float(boot.scale_), 2))
+
+    .. testoutput::
+
+        (100, 1, 10, 10)
+        983.64
+
+    Because ``resampled_triangles_`` is itself a Triangle (with the simulation
+    index along the first axis), it can be fed straight into any downstream
+    reserving estimator to obtain a stochastic distribution of ultimates and
+    IBNR. Below, a deterministic chain-ladder is fit on the resampled triangle
+    and the total IBNR is summarised across the 100 simulations.
+
+    .. testcode::
+
+        sims = cl.BootstrapODPSample(
+            n_sims=100, random_state=42
+        ).fit_transform(raa)
+        ibnr = cl.Chainladder().fit(sims).ibnr_.sum('origin')
+        print(ibnr.shape)
+        print(round(float(ibnr.mean()), 2))
+        print(round(float(ibnr.std()), 2))
+
+    .. testoutput::
+
+        (100, 1, 1, 1)
+        51301.13
+        16149.47
+
+    The estimator also supports a leave-one-out sensitivity check on the
+    residual distribution. Setting ``drop_high=True`` excludes the highest
+    link ratio in each development column before computing residuals, without
+    making any outlier judgement, so the resulting ``scale_`` measures how
+    influential the column maxima are on the bootstrap. For the RAA triangle
+    this shrinks ``scale_`` from 983.64 to 648.94.
+
+    .. testcode::
+
+        boot_dh = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, drop_high=True
+        ).fit(raa)
+        print(round(float(boot_dh.scale_), 2))
+
+    .. testoutput::
+
+        648.94
+
+    Two further levers control how the residual pool is built. ``n_periods``
+    restricts the internal ``Development`` fit to the most recent origin
+    periods, which changes the Pearson residuals and therefore ``scale_``,
+    while ``hat_adj`` swaps the hat matrix adjustment for the simpler
+    degree-of-freedom adjustment when standardizing residuals before
+    resampling.
+
+    .. testcode::
+
+        short_hist = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, n_periods=3
+        ).fit(raa)
+        dof = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, hat_adj=False
+        ).fit(raa)
+        print(round(float(short_hist.scale_), 2))
+        print(round(float(dof.scale_), 2))
+
+    .. testoutput::
+
+        322.4
+        983.64
     """
 
     def __init__(
@@ -165,12 +256,16 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_residual = xp.concatenate(tuple(resampled_residual), 0).reshape(
             self.n_sims, exp_incr_triangle.shape[0], exp_incr_triangle.shape[1]
         )
-        resampled_residual = resampled_residual
         b = xp.repeat(exp_incr_triangle[None, ...], self.n_sims, 0)
         resampled_triangles = (resampled_residual * xp.sqrt(abs(b)) + b).cumsum(2)
         resampled_triangles = xp.swapaxes(resampled_triangles[None, ...], 0, 1)
         obj = X.copy()
-        obj.kdims = np.arange(self.n_sims)
+        if X.key_labels == ['Total']:
+            obj.kdims = np.arange(self.n_sims)
+            obj.key_labels = ['Simulation_#']
+        else:
+            obj.kdims = np.concat([np.tile(X.kdims,(self.n_sims,1)),np.arange(self.n_sims).reshape(-1,1)],axis=1)
+            obj.key_labels = X.key_labels + ['Simulation_#']
         obj.values = resampled_triangles
         obj._set_slicers()
         return obj, scale_phi
