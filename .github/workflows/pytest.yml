@@ -106,8 +106,9 @@ jobs:
       - name: Run doctests
         run: uv run --with "pandas>=3,<4" --directory docs jb build . --builder=custom --custom-builder=doctest
       - name: Upload mystnb error logs
-        if: failure()
+        if: failure() || always()
         uses: actions/upload-artifact@v4
         with:
           name: myst-error-logs
           path: docs/_build/doctest/reports/*.log
+          if-no-files-found: ignore
