@@ -128,6 +128,37 @@ def test_concat_immutability(raa):
     assert u == u_new
 
 
+def test_to_pickle_read_pickle(raa):
+    import tempfile
+    import os
+    dev = cl.Development(average="simple", n_periods=4).fit(raa)
+    fd, path = tempfile.mkstemp(suffix=".pkl")
+    os.close(fd)
+    try:
+        dev.to_pickle(path)
+        restored = cl.read_pickle(path)
+        assert restored.average == dev.average
+        assert restored.n_periods == dev.n_periods
+        np.testing.assert_array_almost_equal(
+            restored.ldf_.values, dev.ldf_.values
+        )
+    finally:
+        os.remove(path)
+
+
+def test_maximum(raa):
+    ult_vol = cl.Chainladder().fit(
+        cl.Development(average="volume").fit_transform(raa)
+    ).ultimate_
+    ult_sim = cl.Chainladder().fit(
+        cl.Development(average="simple").fit_transform(raa)
+    ).ultimate_
+    high_side = cl.maximum(ult_vol, ult_sim)
+    np.testing.assert_array_almost_equal(
+        high_side.values, np.maximum(ult_vol.values, ult_sim.values)
+    )
+
+
 def test_invalid_sample() -> None:
     """
     Test that an invalid sample name provided to cl.load_sample() raises an error.
@@ -229,6 +260,29 @@ def test_sdist_ships_all_samples(tmp_path) -> None:
 
     missing = expected_csvs - shipped
     assert not missing, f"sdist is missing sample CSVs: {sorted(missing)}"
+
+
+def test_load_sample_uspp() -> None:
+    """Pin the manifest column schema for the uspp Friedland family.
+
+    Loadability of every sample is already covered by ``test_load_sample``,
+    but no other test asserts the columns a sample is configured with. This
+    guards the manifest entries for the uspp datasets against the regression
+    where ``Earned Premium`` was dropped from their column config, in the
+    same dataset-specific style as ``test_load_sample_clrd2025`` below.
+    """
+    for key in [
+        "friedland_uspp_auto_increasing_case",
+        "friedland_uspp_auto_increasing_claim",
+        "friedland_uspp_auto_steady_state",
+        "friedland_uspp_increasing_claim_case",
+    ]:
+        tri = cl.load_sample(key)
+        assert set(str(c) for c in tri.vdims) == {
+            "Reported Claims",
+            "Paid Claims",
+            "Earned Premium",
+        }
 
 
 def test_load_sample_clrd2025() -> None:

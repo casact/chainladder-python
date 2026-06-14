@@ -198,6 +198,52 @@ def list_samples(include_grain: bool = True) -> DataFrame:
 
 
 def read_pickle(path):
+    """Load an object serialized with ``to_pickle`` (``dill`` format).
+
+    Parameters
+    ----------
+    path : str or path-like
+        Path to the pickle file.
+
+    Returns
+    -------
+    object
+        The deserialized triangle or estimator.
+
+    Examples
+    --------
+    Pickling preserves all fitted parameters, including non-default settings.
+    A ``Development`` configured with ``average='simple'`` and ``n_periods=4``
+    produces identical factors before and after a round-trip through disk, and
+    the restored estimator can still ``transform`` new data.
+
+    .. testsetup::
+
+        import tempfile
+        import os
+
+    .. testcode::
+
+        import chainladder as cl
+
+        tri = cl.load_sample("raa")
+        dev = cl.Development(average="simple", n_periods=4).fit(tri)
+        fd, p = tempfile.mkstemp(suffix=".pkl")
+        os.close(fd)
+        dev.to_pickle(p)
+        restored = cl.read_pickle(p)
+        os.remove(p)
+        print(dev.ldf_.values[0, 0, 0, :].round(4))
+        print(restored.ldf_.values[0, 0, 0, :].round(4))
+        print(restored.transform(tri).ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+
+    """
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
@@ -334,6 +380,34 @@ def read_csv(
 
 
 def read_json(json_str, array_backend=None):
+    """Deserialize JSON produced by ``to_json`` (triangle, estimator, or pipeline).
+
+    Examples
+    --------
+    ``to_json`` serializes an estimator's parameters as a JSON string that
+    can be stored in a database, config file, or REST API. ``read_json``
+    reconstructs the estimator with all parameters intact.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development(average="simple", n_periods=4)
+        json_str = dev.to_json()
+        print(json_str)
+        dev2 = cl.read_json(json_str)
+        print(dev2.get_params()["average"])
+        print(dev2.get_params()["n_periods"])
+
+    .. testoutput::
+
+        {"params": {"average": "simple", "drop": null, "drop_above": Infinity, "drop_below": 0.0, "drop_high": null, "drop_low": null, "drop_valuation": null, "fillna": null, "groupby": null, "n_periods": 4, "preserve": 1, "sigma_interpolation": "log-linear"}, "__class__": "Development"}
+        simple
+        4
+
+    """
     from chainladder import Triangle
     from chainladder.workflow import Pipeline
 
@@ -529,6 +603,30 @@ def concat(
     Returns
     -------
     Updated triangle
+
+    Examples
+    --------
+    When paid and incurred triangles are constructed separately, ``concat``
+    along ``axis=1`` combines them into one multi-column triangle, giving
+    downstream methods access to both columns at once.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()
+        wkcomp = clrd.iloc[5:6]
+        paid = wkcomp["CumPaidLoss"]
+        incurred = wkcomp["IncurLoss"]
+        combined = cl.concat([paid, incurred], axis=1)
+        print(list(combined.columns))
+
+    .. testoutput::
+
+        ['CumPaidLoss', 'IncurLoss']
+
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
@@ -633,10 +731,90 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
 
 def minimum(x1, x2):
+    """Element-wise minimum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.minimum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+        The first triangle operand.
+    x2 : Triangle or scalar
+        The second operand. If a scalar, each element of ``x1`` is compared
+        against that constant value.
+
+    Examples
+    --------
+    When two chainladder runs use different development factor selections,
+    the ultimates may disagree at each origin. ``minimum`` picks the lower
+    ultimate at each origin, producing the low-side scenario.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        print(ult_vol.values[0, 0, -5:, 0].round(0))
+        print(ult_sim.values[0, 0, -5:, 0].round(0))
+        low_side = cl.minimum(ult_vol, ult_sim)
+        print(low_side.values[0, 0, -5:, 0].round(0))
+
+    .. testoutput::
+
+        [19501. 17749. 24019. 16045. 18402.]
+        [19807. 18201. 25475. 17776. 55781.]
+        [19501. 17749. 24019. 16045. 18402.]
+
+    """
     return x1.minimum(x2)
 
 
 def maximum(x1, x2):
+    """Element-wise maximum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.maximum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+        The first triangle operand.
+    x2 : Triangle or scalar
+        The second operand. If a scalar, each element of ``x1`` is compared
+        against that constant value.
+
+    Examples
+    --------
+    ``maximum`` picks the higher ultimate at each origin, producing the
+    high-side scenario. This is useful for stress testing or setting a
+    conservative reserve when two methods produce different estimates.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        high_side = cl.maximum(ult_vol, ult_sim)
+        print(high_side.values[0, 0, -5:, 0].round(0))
+
+    .. testoutput::
+
+        [19807. 18201. 25475. 17776. 55781.]
+
+    """
     return x1.maximum(x2)
 
 
@@ -667,6 +845,66 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     ----------
     design_info_:
         The patsy instructions for generating the design_matrix, X.
+
+    Examples
+    --------
+    If a development-only Poisson GLM produces residuals that vary
+    systematically by accident year, adding ``C(origin)`` to the formula
+    introduces origin-level intercepts and reduces that structure. The
+    expanded model matrix has more columns (one per development period plus one
+    per origin), which ``PatsyFormula`` builds from the same R-style string.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        genins = cl.load_sample("genins")
+        by_dev = cl.TweedieGLM(design_matrix="C(development)").fit(genins)
+        by_both = cl.TweedieGLM(
+            design_matrix="C(development) + C(origin)"
+        ).fit(genins)
+        print(len(by_dev.coef_))
+        print(len(by_both.coef_))
+        print(by_dev.ldf_.values[0, 0, 0, :].round(4))
+        print(by_both.ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        10
+        19
+        [3.5085 1.7436 1.4379 1.1656 1.0991 1.0832 1.0511 1.0693 1.0135]
+        [3.491  1.7474 1.4574 1.1739 1.1038 1.0863 1.0539 1.0766 1.0177]
+
+    When ``TweedieGLM`` is not flexible enough (for example, when you need a
+    non-Tweedie model or a continuous origin term), build a custom
+    ``DevelopmentML`` pipeline and use ``PatsyFormula`` as the preprocessing
+    step with the same formula syntax.
+
+    .. testcode::
+
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        genins = cl.load_sample("genins")
+        col = genins.columns[0]
+        dev_only = cl.DevelopmentML(
+            Pipeline(
+                [
+                    ("design_matrix", PatsyFormula("C(development)")),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=col,
+            fit_incrementals=False,
+        ).fit(genins)
+        print(dev_only.ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        [3.515  1.735  1.3993 1.152  1.0988 1.0926 1.0332 1.0245 0.8507]
 
     """
 

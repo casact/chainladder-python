@@ -55,6 +55,76 @@ class TailCurve(TailBase):
         Slope parameter of the curve fit.
     intercept : DataFrame
         Intercept parameter of the curve fit.
+
+    Examples
+    --------
+    Suppose a reserving actuary has credible development factors through age
+    120, but the line is clearly still developing at the oldest observed
+    ages, so a tail factor must be appended. ``TailCurve`` extrapolates one
+    by regressing the observed development factors against age and extending
+    the fitted curve beyond the edge of the triangle. The two main curve
+    families encode very different assumptions about how quickly the
+    remaining development decays:
+
+    - ``exponential`` regresses ``ln(ldf - 1)`` against age, so the
+      development portion of each factor decays geometrically. This yields a
+      light tail that converges quickly, appropriate when development is
+      expected to run off within a few periods of the triangle edge.
+    - ``inverse_power`` regresses ``ln(ldf - 1)`` against the log of age,
+      giving a power-law decay. Development persists much longer, producing a
+      heavier and more conservative tail suited to long-tailed lines. Because
+      it approaches its asymptote slowly, it is also far more sensitive to
+      the ``extrap_periods`` parameter than the exponential curve.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development().fit_transform(cl.load_sample("tail_sample")["paid"])
+        exp = cl.TailCurve(curve="exponential").fit(dev)
+        inv = cl.TailCurve(curve="inverse_power").fit(dev)
+        print(exp.ldf_)
+        print(inv.ldf_)
+
+    .. testoutput::
+
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132   132-144
+        (All)  2.026309  1.559087  1.320123  1.184491  1.107264  1.074001  1.046207  1.032158  1.023925  1.012067  1.020099
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132   132-144
+        (All)  2.026309  1.559087  1.320123  1.184491  1.107264  1.074001  1.046207  1.032158  1.023925  1.027083  1.325559
+
+    The same nine observed factors support either a 3.2% tail under
+    exponential decay (``1.012067 * 1.020099``) or a 36.1% tail under the
+    inverse power curve (``1.027083 * 1.325559``). To judge which family the
+    data actually supports, attach each fitted curve at an early age and
+    compare the smoothed factors against the observed ones over the ages
+    where data exists:
+
+    .. testcode::
+
+        print(dev.ldf_)
+        print(cl.TailCurve(curve="exponential", attachment_age=24).fit(dev).ldf_)
+        print(cl.TailCurve(curve="inverse_power", attachment_age=24).fit(dev).ldf_)
+
+    .. testoutput::
+
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120
+        (All)  2.026309  1.559087  1.320123  1.184491  1.107264  1.074001  1.046207  1.032158  1.023925
+                  12-24     24-36     36-48     48-60     60-72     72-84    84-96    96-108   108-120   120-132   132-144
+        (All)  2.026309  1.531333  1.331052  1.206265  1.128515  1.080073  1.04989  1.031084  1.019367  1.012067  1.020099
+                  12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132   132-144
+        (All)  2.026309  1.466969  1.227905  1.136998  1.092314  1.066862  1.050903  1.040192  1.032632  1.027083  1.325559
+
+    The exponential curve tracks the observed decay closely at every age.
+    The inverse power curve understates development at the middle ages and
+    overstates it at the oldest ages, and that overstatement at the oldest
+    ages is exactly what compounds into its 36.1% tail. On this data the
+    lighter exponential tail is the better supported selection; booking the
+    inverse power tail instead would require external support, such as
+    industry benchmarks for an unusually long-tailed line.
+
     """
 
     def __init__(
