@@ -691,3 +691,45 @@ def test_pipeline(clrd):
     assert np.array_equal(
         dev1.w_v2_.values, dev2.named_steps.drop_hilo.w_v2_.values, True
     )
+
+def test_sigma1(atol):
+    data = {
+        "valuation": [
+            1981,1982,1983,1984,1985,
+            1982,1983,1984,1985,
+            1983,1984,1985,
+            1984,1985,
+            1985,
+        ],
+        "origin": [
+            1981,1981,1981,1981,1981,
+            1982,1982,1982,1982,
+            1983,1983,1983,
+            1984,1984,
+            1985,
+        ],
+        "values": [
+            1000,1385,1700,1905,2000,
+            1000,1395,1700,1895,
+            1000,1405,1700,
+            1000,1415,
+            1000,
+        ],
+    }
+    tri = cl.Triangle(
+        data,
+        origin="origin",
+        development="valuation",
+        columns=["values"],
+        cumulative=True,
+    )
+    assert np.allclose(
+        cl.Development(average='simple').fit(tri).sigma_.values,
+        cl.Development(average='volume').fit(tri).sigma_.values,
+        atol = atol
+    )        
+    assert np.allclose(
+        cl.Development(average='simple').fit(tri).sigma_.values,
+        cl.Development(average='regression').fit(tri).sigma_.values,
+        atol = atol
+    )      
