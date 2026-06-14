@@ -102,8 +102,6 @@ jobs:
           version: "latest"
           python-version: "3.12"
       - name: Install dependencies
-        run: |
-          uv sync --extra docs
-          uv pip install "pandas>=3"
+        run: uv sync --extra docs
       - name: Run doctests
-        run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest
+        run: uv run --with "pandas>=3,<4" --directory docs jb build . --builder=custom --custom-builder=doctest
