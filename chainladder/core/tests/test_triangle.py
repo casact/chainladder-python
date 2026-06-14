@@ -403,6 +403,37 @@ def test_create_full_triangle(raa):
     assert a == b
 
 
+def test_create_triangle_with_ultimates(raa):
+    """Round-trip and direct import of triangles with ultimate values."""
+    ult = cl.Chainladder().fit(raa).ultimate_
+    round_tripped = cl.Triangle(
+        ult.to_frame(keepdims=True, origin_as_datetime=True),
+        origin="origin",
+        development="valuation",
+        columns="values",
+        cumulative=True,
+    )
+    assert round_tripped.is_ultimate
+    assert round_tripped == ult
+
+    direct = cl.Triangle(
+        pd.DataFrame(
+            {
+                "origin": pd.to_datetime(["1981-01-01", "1982-01-01"]),
+                "valuation": pd.to_datetime(
+                    [cl.options.ULT_VAL, cl.options.ULT_VAL]
+                ),
+                "paid": [10000.0, 12000.0],
+            }
+        ),
+        origin="origin",
+        development="valuation",
+        columns="paid",
+        cumulative=True,
+    )
+    assert direct.is_ultimate
+
+
 def test_groupby_getitem(clrd):
     assert (
         clrd.groupby("LOB")["CumPaidLoss"].sum()
