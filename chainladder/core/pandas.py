@@ -76,15 +76,24 @@ class TrianglePandas:
         Parameters
         ----------
         origin_as_datetime : bool
-            Whether the origin vector should be converted from PeriodIndex
-            into a datetime dtype. Default is False.
+            When all dimensions are returned, whether the origin vector should be 
+            converted from PeriodIndex into a datetime dtype. Default is True.
         keepdims : bool
             If True, the triangle will be converted to a DataFrame with all
             dimensions intact.  The argument will force a consistent DataFrame
-            format regardless of whether any dimensions are of length 1.
+            format regardless of whether any dimensions are of length 1. 
+
+            If False, but 3 or more dimensions (index, column, origin, and development)
+            have lengths greater than 1, this parameter is treated as True. 
+
+            If False, and 2 or fewer dimensions (index, column, origin, and development)
+            have lengths greater than 1, those dimensions will no longer be included 
+            in the returning DataFrame
+            
+            Default is False.
         implicit_axis : bool
-            When keepdims is True, this denotes whether to include the implicit
-            valuation axis in addition to the origin and development.
+            When implicit_axis is True, this denotes whether to include the implicit
+            valuation axis in addition to the origin and development. Default is False.
 
         Returns
         -------
