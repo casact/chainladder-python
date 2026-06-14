@@ -79,6 +79,7 @@ test = [
     "dask",
     'statsmodels'
 ]
+pandas3 = ["pandas>=3"]
 performance = [
     "dask",  # For distributed computing
     "cupy",  # For GPU acceleration (if available)
