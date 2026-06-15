@@ -481,6 +481,10 @@ class TrianglePandas:
     def round(self, decimals=0, *args, **kwargs):
         """Round each element to the given number of decimal places.
 
+        Uses banker's rounding (round half to even). For example,
+        ``(8.5).round(0)`` returns 8, not 9. For conventional rounding,
+        add a small epsilon before rounding, e.g. ``(tri + 1e-9).round(0)``.
+
         Parameters
         ----------
         decimals : int, default 0
