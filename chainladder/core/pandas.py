@@ -429,12 +429,12 @@ class TrianglePandas:
         return obj
 
     def head(self, n=5):
-        """Return the first ``n`` rows along the index axis.
+        """Return the first ``n`` triangles along the index axis.
 
         Parameters
         ----------
         n : int, default 5
-            Number of rows to select.
+            Number of triangles to select.
 
         Returns
         -------
@@ -443,12 +443,12 @@ class TrianglePandas:
         return self.iloc[:n]
 
     def tail(self, n=5):
-        """Return the last ``n`` rows along the index axis.
+        """Return the last ``n`` triangles along the index axis.
 
         Parameters
         ----------
         n : int, default 5
-            Number of rows to select.
+            Number of triangles to select.
 
         Returns
         -------
