@@ -274,7 +274,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities"],
+        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities", "Earned Premium"],
         "cumulative": True,
     },
     "friedland_xyz_disp": {

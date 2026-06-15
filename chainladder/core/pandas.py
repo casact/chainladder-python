@@ -444,9 +444,17 @@ class TrianglePandas:
         return self.get_array_module().log(self)
 
     def minimum(self, other):
+        """Element-wise minimum of this Triangle and another operand.
+
+        See :func:`chainladder.minimum` for parameters, usage, and examples.
+        """
         return self.get_array_module().minimum(self, other)
 
     def maximum(self, other):
+        """Element-wise maximum of this Triangle and another operand.
+
+        See :func:`chainladder.maximum` for parameters, usage, and examples.
+        """
         return self.get_array_module().maximum(self, other)
 
     def sqrt(self):
