@@ -438,9 +438,21 @@ class TrianglePandas:
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
     def exp(self):
+        """Return the exponential of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().exp(self)
 
     def log(self):
+        """Return the natural logarithm of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().log(self)
 
     def minimum(self, other):
@@ -458,9 +470,26 @@ class TrianglePandas:
         return self.get_array_module().maximum(self, other)
 
     def sqrt(self):
+        """Return the non-negative square root of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().sqrt(self)
 
     def round(self, decimals=0, *args, **kwargs):
+        """Round each element to the given number of decimal places.
+
+        Parameters
+        ----------
+        decimals : int, default 0
+            Number of decimal places to round to.
+
+        Returns
+        -------
+        Triangle
+        """
         return round(self, decimals)
 
     def xs(
