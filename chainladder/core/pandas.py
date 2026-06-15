@@ -429,12 +429,40 @@ class TrianglePandas:
         return obj
 
     def head(self, n=5):
+        """Return the first ``n`` triangles along the index axis.
+
+        Parameters
+        ----------
+        n : int, default 5
+            Number of triangles to select.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[:n]
 
     def tail(self, n=5):
+        """Return the last ``n`` triangles along the index axis.
+
+        Parameters
+        ----------
+        n : int, default 5
+            Number of triangles to select.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs):
+        """Sort Triangle rows by index labels.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
     def exp(self):
