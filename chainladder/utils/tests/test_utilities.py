@@ -115,9 +115,24 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics_erorr(raa):
+def test_model_diagnostics_erorr(raa,atol):
     with pytest.raises(ValueError):
         cl.model_diagnostics(raa)
+    est = cl.Chainladder().fit(raa)
+    emerg = est.full_expectation_.cum_to_incr()
+    md = cl.model_diagnostics(est)
+    assert np.allclose(
+        md['Run Off 1'].values,
+        emerg[emerg.valuation.year==1991].latest_diagonal.values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        md['Year Incremental'].values,
+        raa.cum_to_incr().latest_diagonal.values,
+        atol=atol,
+        equal_nan=True
+    )
 
 
 def test_model_diagnostics_groupby(prism,atol):
