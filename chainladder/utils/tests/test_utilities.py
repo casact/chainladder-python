@@ -118,7 +118,8 @@ def test_concat(clrd):
 def test_model_diagnostics_erorr(raa,atol):
     with pytest.raises(ValueError):
         cl.model_diagnostics(raa)
-    est = cl.Chainladder().fit(raa)
+    dev = cl.Development().fit_transform(raa)
+    est = cl.Chainladder().fit(dev)
     emerg = est.full_expectation_.cum_to_incr()
     md = cl.model_diagnostics(est)
     assert np.allclose(
@@ -130,6 +131,18 @@ def test_model_diagnostics_erorr(raa,atol):
     assert np.allclose(
         md['Year Incremental'].values,
         raa.cum_to_incr().latest_diagonal.values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        md['LDF'].values.flatten()[:0:-1],
+        dev.ldf_.values.flatten(),
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        md['CDF'].values.flatten()[:0:-1],
+        dev.cdf_.values.flatten(),
         atol=atol,
         equal_nan=True
     )
