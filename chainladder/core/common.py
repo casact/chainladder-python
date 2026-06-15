@@ -166,6 +166,14 @@ class Common:
         -------
         object
             The return value of ``func``.
+
+        Examples
+        --------
+        Keep development periods from 48 onward:
+
+        >>> import chainladder as cl
+        >>> raa = cl.load_sample('raa')
+        >>> raa.pipe(lambda tri: tri.loc[..., 48:])
         """
         return func(self, *args, **kwargs)
 
