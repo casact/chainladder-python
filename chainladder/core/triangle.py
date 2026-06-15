@@ -1846,6 +1846,11 @@ class Triangle(TriangleBase):
         return obj
 
     def broadcast_axis(self, axis, value):
+        """Broadcast values along an axis.
+
+        .. deprecated::
+            Use Triangle arithmetic for broadcasting instead.
+        """
         warnings.warn(
             """
             Broadcast axis is deprecated in favor of broadcasting
@@ -1854,6 +1859,13 @@ class Triangle(TriangleBase):
         return self
 
     def copy(self):
+        """Return a shallow copy of the Triangle.
+
+        Returns
+        -------
+        Triangle
+            A new Triangle with copied ``values`` and shared metadata.
+        """
         X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))
         X._set_slicers()
@@ -2149,6 +2161,22 @@ class Triangle(TriangleBase):
         return obj
 
     def reindex(self, columns=None, fill_value=np.nan):
+        """Conform Triangle columns to a new set of labels.
+
+        Any column in ``columns`` that is not already present is added and
+        filled with ``fill_value``.
+
+        Parameters
+        ----------
+        columns : list
+            Column labels for the returned Triangle.
+        fill_value : float, default nan
+            Value assigned to newly added columns.
+
+        Returns
+        -------
+        Triangle
+        """
         obj = self.copy()
         for column in columns:
             if column not in obj.columns:
