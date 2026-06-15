@@ -946,7 +946,16 @@ def model_diagnostics(
 
     Returns
     -------
-    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
+    Triangle with relevant figures as columns, including 
+    - Latest
+    - Month/Quarter/Year Incremental: Actual emergence from the latest month/quarter/year
+    - LDF
+    - CDF
+    - Ultimate
+    - IBNR
+    - Run Off 1/2/3...: Expected emergence for the next development period
+
+    Columns from the original Triangle are cross-joined into the index
     """
     from chainladder import Pipeline, Triangle
 
@@ -1005,6 +1014,9 @@ def model_diagnostics(
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
+        if groupby is None:
+            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
         out["Ultimate"] = obj.ultimate_[col]
         out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
