@@ -410,19 +410,19 @@ def test_new_drop_5a(clrd):
     # drop_hi/low without preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         lhs = (
-            cl.Development(drop_high=1, drop_low=1, preserve=3)
-            ._set_weight_func(clrd.age_to_age, clrd.age_to_age)
-            .values
+            cl.TriangleWeight(drop_high=1, drop_low=1, preserve=3)
+            .fit(X=clrd.age_to_age, sample_weight = clrd.age_to_age)
+            .w_.values
         )
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         rhs = (
-            cl.Development(
+            cl.TriangleWeight(
                 drop_high=True,
                 drop_low=[True, True, True, True, True, True, True, True, True],
                 preserve=3,
             )
-            ._set_weight_func(clrd.age_to_age)
-            .values
+            .fit(X=clrd.age_to_age, sample_weight = clrd.age_to_age)
+            .w_.values
         )
     assert np.array_equal(lhs, rhs, True)
 
@@ -775,8 +775,8 @@ def test_std_residuals():
 
 def compare_new_drop(dev, tri):
     assert np.array_equal(
-        dev._set_weight_func(tri.age_to_age, tri.age_to_age).values,
-        dev.transform(tri).age_to_age.values * 0 + 1,
+        _FutureDevelopment(dev).fit(tri).ldf_.values,
+        dev.transform(tri).ldf_.values,
         True,
     )
 
