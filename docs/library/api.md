@@ -169,8 +169,10 @@ Functions
    read_pickle
    read_json
    concat
-   minimum
+   date_delta_adjustment
    maximum
+   minimum
+   model_diagnostics   
 
 Classes
 -------
