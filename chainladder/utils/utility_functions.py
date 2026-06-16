@@ -20,7 +20,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle, MethodBase
+    from chainladder import Triangle, MethodBase, Pipeline
     from numpy.typing import ArrayLike
     from pandas import DataFrame
     from sparse import COO
@@ -629,6 +629,35 @@ def concat(
 
         ['CumPaidLoss', 'IncurLoss']
 
+    When two triangles possess a column that the other does not have, their concatenation will fill in the
+    missing values of each sub-triangle with xp.nan.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample('clrd')
+        clrd = clrd.groupby("LOB").sum()
+        t1 = clrd.loc["wkcomp"][["IncurLoss"]].rename("columns", ["A"])
+        t2 = clrd.loc["comauto"][["CumPaidLoss"]].rename("columns", ["B"])
+        result = cl.concat([t1, t2], axis=0)
+        print(result.loc["wkcomp"]["B"])
+
+    .. testoutput::
+
+              12   24   36   48   60   72   84   96   108  120
+        1988  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1989  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1990  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1991  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1992  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1993  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1994  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1995  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1996  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1997  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
