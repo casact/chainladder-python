@@ -947,13 +947,13 @@ def model_diagnostics(
     Returns
     -------
     Triangle with relevant figures as columns, including 
-    - Latest
-    - Month/Quarter/Year Incremental: Actual emergence from the latest month/quarter/year
-    - LDF
-    - CDF
-    - Ultimate
-    - IBNR
-    - Run Off 1/2/3...: Expected emergence for the next development period
+    - ``Latest``: Cumulative value at the latest valuation date, equivalent to ``latest_diagonal``
+    - ``Month/Quarter/Year Incremental``: Actual emergence between the latest valuation and the one prior valuation date
+    - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``)
+    - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``)
+    - ``Ultimate``: Projected ultimate loss from the fitted IBNR model (``ultimate_``)
+    - ``IBNR``: Ultiamte - Latest
+    - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
 
     Columns from the original Triangle are cross-joined into the index
     """
