@@ -1845,14 +1845,6 @@ class Triangle(TriangleBase):
         obj.values = obj.values * trend
         return obj
 
-    def broadcast_axis(self, axis, value):
-        warnings.warn(
-            """
-            Broadcast axis is deprecated in favor of broadcasting
-            using Triangle arithmetic."""
-        )
-        return self
-
     def copy(self):
         X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))

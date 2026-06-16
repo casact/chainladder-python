@@ -16,8 +16,9 @@ class DevelopmentConstant(DevelopmentBase):
     patterns: dict or callable
         A dictionary key:value representation of age(in months):value. If callable
         is supplied, callable must return a dict for each element of the callable axis
-    style: string, optional (default='ldf')
-        Type of pattern given to the Estimator. Options include 'cdf' or 'ldf'.
+    style: Literal['cdf', 'ldf'], optional (default='ldf')
+        Type of pattern given to the Estimator. `cdf` for cumulative development factors
+        and `ldf` for (non-cumulative) loss development factors.
     callable_axis: 0 or 1
         If a callable is supplied, the axis, index (0) or column (1) along which to apply
         the callable. If patterns is not a callable, then this parameter is ignored.
@@ -35,31 +36,73 @@ class DevelopmentConstant(DevelopmentBase):
 
     Examples
     --------
-    ``patterns`` is interpreted as multiplicative link ratios when
-    ``style='ldf'``; swapping in a flat manual ladder changes the fitted
-    pattern immediately.
+    Commonly, we will have to use a pattern from another source, such as a pattern populated
+    by the regulator to develop our triangle.
+
+    Once we have the pattern, we can use the DevelopmentConstant estimator to develop our
+    triangle. Further IBNR models will use these patterns to develop triangles to ultimate.
 
     .. testsetup::
 
         import chainladder as cl
         import numpy as np
+        import pandas as pd
 
     .. testcode::
 
-        tri = cl.load_sample("raa")
-        dev = cl.Development().fit(tri)
-        n = dev.ldf_.shape[3]
-        fitted = {(i + 1) * 12: float(dev.ldf_.values[0, 0, 0, i]) for i in range(n)}
-        flat = {(i + 1) * 12: 1.2 for i in range(n)}
-        const_fitted = cl.DevelopmentConstant(patterns=fitted, style="ldf").fit(tri)
-        const_flat = cl.DevelopmentConstant(patterns=flat, style="ldf").fit(tri)
-        print(np.round(const_flat.ldf_.values[0, 0, 0, :], 4))
-        print(np.round(const_fitted.ldf_.values[0, 0, 0, :], 4))
+        xyz = cl.load_sample("xyz")
+        reported_patterns = {
+            12: 4.0,
+            24: 2.9,
+            36: 1.8,
+            48: 1.4,
+            60: 1.2,
+            72: 1.1,
+            84: 1.03,
+            96: 1.02,
+            108: 1.005,
+        }
+        print(np.round(cl.DevelopmentConstant(patterns=reported_patterns, style="cdf").fit_transform(
+            xyz["Incurred"]
+        ).ldf_,4))
+        print(np.round(cl.DevelopmentConstant(patterns=reported_patterns, style="cdf").fit_transform(
+            xyz["Incurred"]
+        ).cdf_,4))
 
     .. testoutput::
 
-        [1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2 1.2]
-        [2.9994 1.6235 1.2709 1.1717 1.1134 1.0419 1.0333 1.0169 1.0092]
+                12-24   24-36   36-48   48-60   60-72  72-84   84-96  96-108  108-120  120-132
+        (All)  1.3793  1.6111  1.2857  1.1667  1.0909  1.068  1.0098  1.0149    1.005      1.0
+               12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+        (All)     4.0     2.9     1.8     1.4     1.2     1.1    1.03    1.02    1.005      1.0
+
+    When patterns vary by triangle index (such as LOBs), pass a callable to ``patterns`` and set
+    ``callable_axis=0`` to apply it along the index.
+
+    .. testcode::
+
+        clrd = cl.load_sample("clrd")
+        agway = clrd.loc["Agway Ins Co", "CumPaidLoss"]
+        cdfs = {
+            "comauto": [3.832, 1.874, 1.386, 1.181, 1.085, 1.043, 1.022, 1.013, 1.007, 1],
+            "medmal": [24.168, 4.127, 2.103, 1.528, 1.275, 1.161, 1.088, 1.047, 1.018, 1],
+            "othliab": [10.887, 3.416, 1.957, 1.433, 1.231, 1.119, 1.06, 1.031, 1.011, 1],
+            "ppauto": [2.559, 1.417, 1.181, 1.084, 1.04, 1.019, 1.009, 1.004, 1.001, 1],
+            "prodliab": [13.703, 5.613, 2.92, 1.765, 1.385, 1.177, 1.072, 1.034, 1.008, 1],
+            "wkcomp": [4.106, 1.865, 1.418, 1.234, 1.141, 1.09, 1.056, 1.03, 1.01, 1],
+        }
+        patterns = pd.DataFrame(cdfs, index=range(12, 132, 12)).T
+        model = cl.DevelopmentConstant(
+            patterns=lambda x: patterns.loc[x.loc["LOB"]].to_dict(),
+            callable_axis=0,
+            style="cdf",
+        )
+        print(model.fit_transform(agway).cdf_.loc["comauto"])
+
+    .. testoutput::
+
+               12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+        (All)   3.832   1.874   1.386   1.181   1.085   1.043   1.022   1.013    1.007      1.0
 
     """
 
