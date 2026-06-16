@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import pytest
 
 import chainladder as cl
 import copy
+import dill
 import numpy as np
 import pandas as pd
 
@@ -11,13 +13,19 @@ from chainladder import (
 )
 from chainladder.utils.utility_functions import date_delta_adjustment
 from chainladder.utils.data._manifest import SAMPLES
+from chainladder.utils.utility_functions import (
+    date_delta_adjustment,
+    maximum,
+    minimum
+)
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
     from pytest import MonkeyPatch
-
+    from chainladder import Triangle
 
 
 def test_triangle_json_io(clrd):
@@ -115,8 +123,18 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics(qtr):
-    cl.model_diagnostics(cl.Chainladder().fit(qtr))
+def test_model_diagnostics_erorr(raa):
+    with pytest.raises(ValueError):
+        cl.model_diagnostics(raa)
+
+
+def test_model_diagnostics_groupby(prism,atol):
+    dev = cl.Development().fit(prism["Incurred"].sum())
+    est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
+    lhs = cl.model_diagnostics(est,groupby=['Line'])
+    rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
+    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol,equal_nan=True)
+    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol,equal_nan=True)
 
 
 def test_concat_immutability(raa):
@@ -320,6 +338,207 @@ def test_date_delta_adjustment() -> None:
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
+
+def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
+    """
+    Create a triangle, dump a pickle of it, and then read it back in. The ingested pickle should result
+    in an equal copy of the triangle that was dumped.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    tmp_path: Path
+        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+
+    Returns
+    -------
+    None
+
+    """
+    pkl_path = tmp_path / "triangle.pkl"
+    with open(pkl_path, "wb") as f:
+        dill.dump(raa, f)
+    assert cl.read_pickle(str(pkl_path)) == raa
+
+
+def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
+    """
+    Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
+    produce the same LDFs that the original estimator does.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    tmp_path: Path
+        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+
+    Returns
+    -------
+    None
+
+    """
+
+    pkl_path = tmp_path / "estimator.pkl"
+    dev = cl.Development().fit(raa)
+    with open(pkl_path, "wb") as f:
+        dill.dump(dev, f)
+    assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
+
+
+def test_concat_type_error() -> None:
+    """
+    Supply a string to cl.concat() and raise a TypeError. Concat expects a list or tuple, so supplying a string
+    will raise the error.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(TypeError):
+        cl.concat("not_a_list", axis=0)
+
+
+def test_concat_empty_error() -> None:
+    """
+    Supply an empty list to cl.concat(). Trigger a ValueError since the length of the list must be greater than 0.
+    Returns
+    -------
+
+    """
+    with pytest.raises(ValueError):
+        cl.concat([], axis=0)
+
+
+def test_concat_mismatched_columns(clrd: Triangle) -> None:
+    """
+    Concatenate two triangles where each has a column that the other does not have. This creates new columns
+    for each triangle which then get filled with xp.nan.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = clrd.groupby("LOB").sum()
+    t1 = tri.loc["wkcomp"][["IncurLoss"]].rename("columns", ["A"])
+    t2 = tri.loc["comauto"][["CumPaidLoss"]].rename("columns", ["B"])
+    result = cl.concat([t1, t2], axis=0)
+
+    # Check that new triangle has both columns.
+    assert set(result.columns) == {"A", "B"}
+    xp = result.get_array_module()
+
+    # Check that each new column is filled with xp.nan corresponding
+    # to the index that did not previously have the column.
+    assert xp.all(xp.isnan(result.loc["wkcomp"]["B"].values))
+    assert xp.all(xp.isnan(result.loc["comauto"]["A"].values))
+
+
+def test_concat_sort(clrd: Triangle) -> None:
+    """
+    Concat two triangles with indexes in reverse alphabetical order then sort the index. Check to see
+    that the index gets sorted alphabetically.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = clrd.groupby("LOB").sum()
+    lobs_expected = ["comauto", "wkcomp"]
+    result = cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0, sort=True)
+    lobs = list(result.index["LOB"])
+    assert lobs == lobs_expected
+
+
+def test_concat_axis1(raa: Triangle) -> None:
+    """
+    Concat two triangles along the column axis. Check if columns are unique.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    Returns
+    -------
+    None
+
+    """
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    result = cl.concat([t1, t2], axis=1)
+    assert set(result.columns) == {"A", "B"}
+
+
+def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
+    """
+    Concat two triangles along the column axis with the same column names. Raise an assertion error since
+    columns must be unique.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(AssertionError):
+        cl.concat([raa, raa], axis=1)
+
+
+def test_maximum(raa: Triangle) -> None:
+    """
+    Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    result = maximum(raa, 5000)
+    xp = result.get_array_module()
+    assert xp.all(xp.nan_to_num(result.values, nan=5000) >= 5000)
+
+
+def test_minimum(raa):
+    """
+    Run cl.minimum(raa, 5000) and check if each element in the resulting triangle is at most 5000.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    result = minimum(raa, 5000)
+    xp = result.get_array_module()
+    assert xp.all(xp.nan_to_num(result.values, nan=5000) <= 5000)
+
 
 def test_reset_option() -> None:
     """

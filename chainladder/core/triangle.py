@@ -1845,19 +1845,6 @@ class Triangle(TriangleBase):
         obj.values = obj.values * trend
         return obj
 
-    def broadcast_axis(self, axis, value):
-        """Broadcast values along an axis.
-
-        .. deprecated::
-            Use Triangle arithmetic for broadcasting instead.
-        """
-        warnings.warn(
-            """
-            Broadcast axis is deprecated in favor of broadcasting
-            using Triangle arithmetic."""
-        )
-        return self
-
     def copy(self):
         """Return a shallow copy of the Triangle.
 

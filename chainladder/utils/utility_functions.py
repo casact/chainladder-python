@@ -20,7 +20,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
+    from chainladder import Triangle, MethodBase, Pipeline
     from numpy.typing import ArrayLike
     from pandas import DataFrame
     from sparse import COO
@@ -579,7 +579,7 @@ def set_common_backend(objs):
 
 
 def concat(
-    objs: Iterable,
+    objs: list | tuple,
     axis: Union[int, str],
     ignore_index: bool = False,
     sort: bool = False,
@@ -599,6 +599,8 @@ def concat(
         concatenating objects where the concatenation axis does not have
         meaningful indexing information. Note the index values on the other
         axes are still respected in the join.
+    sort: bool
+        If True, sort the result along the desired axis.
 
     Returns
     -------
@@ -627,6 +629,35 @@ def concat(
 
         ['CumPaidLoss', 'IncurLoss']
 
+    When two triangles possess a column that the other does not have, their concatenation will fill in the
+    missing values of each sub-triangle with xp.nan.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample('clrd')
+        clrd = clrd.groupby("LOB").sum()
+        t1 = clrd.loc["wkcomp"][["IncurLoss"]].rename("columns", ["A"])
+        t2 = clrd.loc["comauto"][["CumPaidLoss"]].rename("columns", ["B"])
+        result = cl.concat([t1, t2], axis=0)
+        print(result.loc["wkcomp"]["B"])
+
+    .. testoutput::
+
+              12   24   36   48   60   72   84   96   108  120
+        1988  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1989  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1990  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1991  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1992  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1993  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1994  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1995  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1996  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1997  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
@@ -649,6 +680,9 @@ def concat(
                     obj = copy.deepcopy(obj)
                     obj[col] = xp.nan
                     objs[num] = obj
+            # Make sure columns are in the same order for all objs to ensure proper indexing.
+            if list(objs[num].columns) != all_columns:
+                objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
@@ -927,15 +961,18 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         return dmatrix(self.design_info_, X)
 
 
-def model_diagnostics(model, name=None, groupby=None):
+def model_diagnostics(
+        model:Triangle|MethodBase|Pipeline, 
+        name:str|None=None, 
+        groupby:str|list(str)|None=None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
     Parameters
     ----------
-    model:
-        A chainladder IBNR estimator or Pipeline
-    name:
+    model: Triangle|MethodBase|Pipeline
+        A predicted Triangle, chainladder IBNR estimator or Pipeline
+    name: str, optional (default=None)
         An alias to give the model. This will be added to the index of the return
         triangle.
     groupby:
@@ -945,19 +982,22 @@ def model_diagnostics(model, name=None, groupby=None):
     -------
     Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
     """
-    from chainladder import Pipeline
+    from chainladder import Pipeline, Triangle
 
     if isinstance(model, Pipeline):
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
+    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+        raise ValueError("model does not have ultimate_/ibnr_/ldf_")
+    if isinstance(model, Triangle):
+        obj.X_ = obj
     if groupby is not None:
         obj.X_ = obj.X_.groupby(groupby).sum().cum_to_incr()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
-    else:
-        obj.X_ = obj.X_.incr_to_cum()
+    obj.X_ = obj.X_.cum_to_incr()
     val = obj.X_.valuation
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
@@ -999,8 +1039,8 @@ def model_diagnostics(model, name=None, groupby=None):
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
-        out["IBNR"] = obj.ibnr_[col]
         out["Ultimate"] = obj.ultimate_[col]
+        out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
             out["Run Off " + str(i + 1)] = run_off[col].iloc[..., i]
         if hasattr(obj, "expectation_"):

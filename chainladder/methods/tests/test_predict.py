@@ -1,4 +1,5 @@
 import chainladder as cl
+import numpy as np
 import pandas as pd
 import pytest 
 
@@ -22,8 +23,32 @@ def test_predict_and_weights(estimators,atol):
     est = estimators().fit(raa_1989, sample_weight=apriori_1989)
     pred = est.predict(raa, sample_weight=apriori)
     assert pred
+    assert np.allclose(
+        raa_1989.latest_diagonal.values.swapaxes(0,1),
+        cl.model_diagnostics(est)['Latest'].values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        raa.latest_diagonal.values.swapaxes(0,1),
+        cl.model_diagnostics(pred)['Latest'].values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        est.ultimate_.values.swapaxes(0,1),
+        cl.model_diagnostics(est)['Ultimate'].values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        pred.ultimate_.values.swapaxes(0,1),
+        cl.model_diagnostics(pred)['Ultimate'].values,
+        atol=atol,
+        equal_nan=True
+    )   
     #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    if estimators != cl.Chainladder:
+    if estimators in [cl.CapeCod,cl.BornhuetterFerguson,cl.ExpectedLoss,cl.Benktander]:
         with pytest.raises(ValueError):
             estimators().fit(raa_1989)
         with pytest.raises(ValueError):
@@ -73,8 +98,8 @@ def test_misaligned_index(prism):
 
 
 def test_misaligned_index2(clrd):
+    w = clrd["EarnedPremDIR"].latest_diagonal
     clrd = clrd["CumPaidLoss"]
-    w = cl.load_sample("clrd")["EarnedPremDIR"].latest_diagonal
     bcl = cl.Chainladder().fit(cl.Development(groupby=["LOB"]).fit_transform(clrd))
     bbk = cl.Benktander().fit(
         cl.Development(groupby=["LOB"]).fit_transform(clrd), sample_weight=w
@@ -140,19 +165,19 @@ def test_misaligned_index2(clrd):
     assert abs(a - b) < 1e-5
 
 
-def test_align_cdfs():
-    ld = cl.load_sample("raa").latest_diagonal * 0 + 40000
-    model = cl.BornhuetterFerguson().fit(cl.load_sample("raa"), sample_weight=ld)
+def test_align_cdfs(raa):
+    ld = raa.latest_diagonal * 0 + 40000
+    model = cl.BornhuetterFerguson().fit(raa, sample_weight=ld)
     a = model.ultimate_.iloc[..., :4, :]
     b = model.predict(
-        cl.load_sample("raa").dev_to_val().iloc[..., :4, -1].val_to_dev(),
+        raa.dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :],
     ).ultimate_
     assert a == b
-    model = cl.Chainladder().fit(cl.load_sample("raa"), sample_weight=ld)
+    model = cl.Chainladder().fit(raa, sample_weight=ld)
     a = model.ultimate_.iloc[..., :4, :]
     b = model.predict(
-        cl.load_sample("raa").dev_to_val().iloc[..., :4, -1].val_to_dev(),
+        raa.dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :],
     ).ultimate_
     assert a == b
