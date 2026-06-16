@@ -71,8 +71,6 @@ class TrianglePandas:
             origin_as_datetime: bool = True,
             keepdims: bool = False,
             implicit_axis: bool = False,
-            *args,
-            **kwargs
     ) -> DataFrame | Series:
         """ Converts a triangle to a pandas.DataFrame.
 
@@ -145,8 +143,11 @@ class TrianglePandas:
                     col_order: list = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col]: Series = np.nan
+            # Create physical columns out of virtual ones.
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
+                # Fill na to enable floating-point computation.
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+                # Coerce 0 to np.nan.
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
@@ -254,6 +255,7 @@ class TrianglePandas:
                     self.development <= ddim.max())
             ]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
+        # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
