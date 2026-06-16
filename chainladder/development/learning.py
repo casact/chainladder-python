@@ -158,7 +158,6 @@ class DevelopmentML(DevelopmentBase):
     def _prep_w_ml(self,X,sample_weight=None):
         weight_base = (~np.isnan(X.values)).astype(float)
         weight = weight_base.copy()
-        weight1 = weight_base.copy()
         weight = weight * TriangleWeight(drop=self.drop,drop_valuation=self.drop_valuation).fit(X).w_.fillzero().values
         if sample_weight is not None:
             weight = weight * sample_weight.values 
