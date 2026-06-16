@@ -20,7 +20,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle, MethodBase
+    from chainladder import Triangle, MethodBase, Pipeline
     from numpy.typing import ArrayLike
     from pandas import DataFrame
     from sparse import COO
@@ -579,7 +579,7 @@ def set_common_backend(objs):
 
 
 def concat(
-    objs: Iterable,
+    objs: list | tuple,
     axis: Union[int, str],
     ignore_index: bool = False,
     sort: bool = False,
@@ -599,6 +599,8 @@ def concat(
         concatenating objects where the concatenation axis does not have
         meaningful indexing information. Note the index values on the other
         axes are still respected in the join.
+    sort: bool
+        If True, sort the result along the desired axis.
 
     Returns
     -------
@@ -627,6 +629,35 @@ def concat(
 
         ['CumPaidLoss', 'IncurLoss']
 
+    When two triangles possess a column that the other does not have, their concatenation will fill in the
+    missing values of each sub-triangle with xp.nan.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample('clrd')
+        clrd = clrd.groupby("LOB").sum()
+        t1 = clrd.loc["wkcomp"][["IncurLoss"]].rename("columns", ["A"])
+        t2 = clrd.loc["comauto"][["CumPaidLoss"]].rename("columns", ["B"])
+        result = cl.concat([t1, t2], axis=0)
+        print(result.loc["wkcomp"]["B"])
+
+    .. testoutput::
+
+              12   24   36   48   60   72   84   96   108  120
+        1988  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1989  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1990  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1991  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1992  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1993  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1994  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1995  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1996  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1997  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
@@ -649,6 +680,9 @@ def concat(
                     obj = copy.deepcopy(obj)
                     obj[col] = xp.nan
                     objs[num] = obj
+            # Make sure columns are in the same order for all objs to ensure proper indexing.
+            if list(objs[num].columns) != all_columns:
+                objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
