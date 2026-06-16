@@ -9,6 +9,7 @@ import pandas as pd
 from chainladder import (
     __dt64_dtype__
 )
+from chainladder.core.typing import TriangleProtocol
 from chainladder.utils.utility_functions import num_to_nan
 from typing import (
     cast,
@@ -43,7 +44,7 @@ if TYPE_CHECKING:
 
 
 class TriangleGroupBy:
-    def __init__(self, obj, by, axis=0, **kwargs):
+    def __init__(self, obj: Triangle, by, axis=0, **kwargs):
         self.obj = obj.copy()
         self.axis = self.obj._get_axis(axis)
         self.by = by
@@ -67,7 +68,7 @@ class TriangleGroupBy:
 
 class TrianglePandas:
     def to_frame(
-            self,
+            self: TriangleProtocol,
             origin_as_datetime: bool = True,
             keepdims: bool = False,
             implicit_axis: bool = False,
@@ -235,7 +236,7 @@ class TrianglePandas:
                     "integer representation of the desired axis."
                 )
 
-    def dropna(self):
+    def dropna(self: TriangleProtocol):
         """Method that removes origin/development vectors from edge of a
         triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
@@ -259,7 +260,7 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self, value=None, inplace=False):
+    def fillna(self: TriangleProtocol, value=None, inplace=False):
         """Fill nan with 'value' by axis.
 
         Parameters
@@ -285,7 +286,7 @@ class TrianglePandas:
             new_obj = self.copy()
             return new_obj.fillna(value=value, inplace=True)
 
-    def fillzero(self, inplace=False):
+    def fillzero(self: TriangleProtocol, inplace=False):
         """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
 
         Parameters
@@ -369,7 +370,7 @@ class TrianglePandas:
         return concat((self, other), 0)
 
     def rename(
-            self,
+            self: TriangleProtocol,
             axis: Literal['index', 'columns', 'origin', 'development'] | int,
             value: list | str | dict
     ) -> Self:
@@ -417,7 +418,7 @@ class TrianglePandas:
                 )
         return self
 
-    def astype(self, dtype, inplace=True):
+    def astype(self: TriangleProtocol, dtype, inplace=True):
         """Copy of the array, cast to a specified type.
 
         Parameters
@@ -435,43 +436,43 @@ class TrianglePandas:
         obj.values = obj.values.astype(dtype)
         return obj
 
-    def head(self, n=5):
+    def head(self: TriangleProtocol, n=5):
         return self.iloc[:n]
 
-    def tail(self, n=5):
+    def tail(self: TriangleProtocol, n=5):
         return self.iloc[-n:]
 
-    def sort_index(self, *args, **kwargs):
+    def sort_index(self: TriangleProtocol, *args, **kwargs):
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
-    def exp(self):
+    def exp(self: TriangleProtocol):
         return self.get_array_module().exp(self)
 
-    def log(self):
+    def log(self: TriangleProtocol):
         return self.get_array_module().log(self)
 
-    def minimum(self, other):
+    def minimum(self: TriangleProtocol, other):
         """Element-wise minimum of this Triangle and another operand.
 
         See :func:`chainladder.minimum` for parameters, usage, and examples.
         """
         return self.get_array_module().minimum(self, other)
 
-    def maximum(self, other):
+    def maximum(self: TriangleProtocol, other):
         """Element-wise maximum of this Triangle and another operand.
 
         See :func:`chainladder.maximum` for parameters, usage, and examples.
         """
         return self.get_array_module().maximum(self, other)
 
-    def sqrt(self):
+    def sqrt(self: TriangleProtocol):
         return self.get_array_module().sqrt(self)
 
     def round(self, decimals=0, *args, **kwargs):
         return round(self, decimals)
 
     def xs(
-        self,
+        self: TriangleProtocol,
         index_key:IndexLabel,
         level:IndexLabel | None = None,
         drop_level:bool = True):

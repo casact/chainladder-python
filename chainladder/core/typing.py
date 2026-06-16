@@ -12,6 +12,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import ModuleType
     from chainladder import Triangle
     from chainladder.core.slice import (
@@ -19,9 +20,11 @@ if TYPE_CHECKING:
         Iat,
         Ilocation,
         Location,
+        TriangleSlicer,
         VirtualColumns
     )
     from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
     from sparse import COO
 
 # Alias for a Triangle or any object that behaves like one.
@@ -52,9 +55,28 @@ class TriangleProtocol(Protocol):
     @property
     def index(self) -> pd.DataFrame: ...
 
+    @property
+    def is_val_tri(self) -> bool: ...
+
+    @property
+    def columns(self) -> pd.Index: ...
+
+    @property
+    def origin(self) -> pd.PeriodIndex: ...
+
+    @property
+    def development(self) -> pd.Series: ...
+
+    @property
+    def valuation_date(self) -> pd.Timestamp: ...
+
+    @property
+    def nan_triangle(self) -> BackendArray: ...
+
     key_labels: list[str]
     values: BackendArray
     vdims: np.ndarray
+    kdims: np.ndarray
     array_backend: str
     iloc: Ilocation
     loc: Location
@@ -62,9 +84,20 @@ class TriangleProtocol(Protocol):
     at: At
     virtual_columns: VirtualColumns
 
-    def get_array_module(self, arr: ArrayLike = None) -> ModuleType: ...
+    def get_array_module(self, arr: ArrayLike | None = None) -> ModuleType: ...
     def copy(self) -> Triangle: ...
     def set_backend(self, backend: str, inplace: bool = False, **kwargs) -> Triangle: ...
     def drop(self, labels: str | int | list | None = None, axis: int = 1) -> Triangle: ...
+    def val_to_dev(self) -> Triangle: ...
+    def _repr_format(self, origin_as_datetime: bool = False) -> pd.DataFrame: ...
     def _slice(self, key: pd.Series | np.ndarray, axis: Literal['ddims', 'odims']) -> Triangle: ...
     def _slice_valuation(self, key: np.ndarray) -> Triangle: ...
+    def to_frame(
+        self,
+        origin_as_datetime: bool = True,
+        keepdims: bool = False,
+        implicit_axis: bool = False,
+    ) -> DataFrame | Series: ...
+    def sum(self, axis: str | int | None = None, *args, **kwargs) -> Triangle: ...
+    def __getitem__(self, key: pd.Series | np.ndarray | str | list[str] | int) -> Triangle | Series: ...
+    def __setitem__(self, key: str | int, value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]) -> None: ...
