@@ -169,7 +169,6 @@ Functions
    read_pickle
    read_json
    concat
-   date_delta_adjustment
    maximum
    minimum
    model_diagnostics   
