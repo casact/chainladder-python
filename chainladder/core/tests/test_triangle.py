@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import chainladder as cl
 import io
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -261,6 +263,27 @@ def test_dropna(clrd):
     assert a == (1, 1, 2, 2)
 
 
+def test_dropna_latest_diagonal(raa: Triangle) -> None:
+    """
+    dropna() on a single-development-period triangle (shape[-1] == 1), where first origin period is nan.
+    First origin period should be eliminated.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    t = raa.copy()
+    t.values[:, :, 0, :] = np.nan
+    result = t.latest_diagonal.dropna()
+    assert result.shape == (1, 1, 9, 1)
+    assert result.origin.min().year == 1982
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
@@ -334,6 +357,179 @@ def test_groupby_axis1(clrd, prism):
     prism.sum().grain("OYDY")
 
 
+def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
+    """
+    Verify _auto_sparse functionality in groupby agg func.
+
+    For prism, the grouped result is sparse
+    but small enough that _auto_sparse() converts it back to numpy; passing
+    auto_sparse=False bypasses that conversion and leaves it sparse.
+
+    Parameters
+    ----------
+    prism: Triangle
+        The prism sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result_default   = prism.groupby("Line").sum()
+    result_no_sparse = prism.groupby("Line").sum(auto_sparse=False)
+
+    assert result_default.array_backend == "numpy"
+    assert result_no_sparse.array_backend == "sparse"
+    assert result_default == result_no_sparse
+
+
+def test_get_axis_none(clrd: Triangle) -> None:
+    """
+    Pass axis=None to TriangleGroupBy. Should be the same as passing axis=0.
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.groupby("LOB", axis=None).sum() == clrd.groupby("LOB", axis=0).sum()
+
+
+def test_astype(raa: Triangle) -> None:
+    """
+    Cast values in triangle to another data type.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert raa.astype("float32").values.dtype == np.float32
+
+
+def test_head(clrd: Triangle) -> None:
+    """
+    Triangle.head(n) returns a Triangle limited to the first n rows of the index axis.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.head(3).shape[0] == 3
+    assert list(clrd.head(3).index['LOB']) == ['othliab', 'ppauto', 'comauto']
+
+
+def test_tail(clrd: Triangle) -> None:
+    """
+    Triangle.tail(n) returns a Triangle limited to the last n rows of the index axis.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.tail(3).shape[0] == 3
+    assert list(clrd.tail(3).index['LOB']) == ['wkcomp', 'comauto', 'wkcomp']
+
+
+def test_add_df_passthru(raa: Triangle) -> None:
+    """
+    Check equivalent behavior between Triangle and DataFrame passed-thru methods.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    frame = raa.to_frame()
+
+    # String serialization
+    assert raa.to_csv() == frame.to_csv()
+    assert raa.to_html() == frame.to_html()
+
+    # DataFrame-returning methods
+    assert raa.describe().equals(frame.describe())
+    assert raa.drop_duplicates().equals(frame.drop_duplicates())
+    assert raa.melt().equals(frame.melt())
+    assert raa.unstack().equals(frame.unstack())
+
+
+def test_plot(raa: Triangle) -> None:
+    """
+    TrianglePandas.plot() delegates to to_frame(origin_as_datetime=False).plot().
+    Each plotted line must carry the same y-values as the equivalent DataFrame plot.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    matplotlib.use("Agg")
+
+
+    try:
+        ax_tri = raa.plot()
+        ax_df  = raa.to_frame(origin_as_datetime=False).plot()
+
+        lines_tri = ax_tri.get_lines()
+        lines_df  = ax_df.get_lines()
+
+        assert len(lines_tri) == len(lines_df)
+        for lt, ld in zip(lines_tri, lines_df):
+            np.testing.assert_array_equal(lt.get_ydata(orig=True), ld.get_ydata(orig=True))
+    finally:
+        plt.close("all")
+
+
+def test_T(raa: Triangle, clrd: Triangle) -> None: # noqa
+    """
+    Transpose a triangle and check the dimensions.
+`
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set triangle.
+    clrd: Triangle
+        The clrd sample data set triangle.
+
+    Returns
+    -------
+    None
+    """
+
+    # Single-dimensional triangle: development periods become rows, origins become columns.
+    t = raa.T
+    assert t.shape == (raa.shape[3], raa.shape[2])
+    assert list(t.index) == list(raa.development)
+    assert list(t.columns) == list(raa.origin)
+    # Multidimensional triangle: to_frame() is long format.
+    # Transposed columns are origin, development, and columns dimensions of the Triangle.
+    assert clrd.T.shape[0] == 2 + clrd.shape[1]
+    assert list(clrd.T.index) == ['origin', 'development'] + list(clrd.columns)
+
 def test_partial_year(prism):
     before = prism["Paid"].sum().incr_to_cum()
     before = before[before.valuation <= "2017-08"].latest_diagonal
@@ -354,13 +550,6 @@ def test_array_protocol(raa, clrd):
     assert np.concatenate((clrd.iloc[:200], clrd.iloc[200:]), 0) == cl.concat(
         (clrd.iloc[:200], clrd.iloc[200:]), 0
     )
-
-
-# def test_dask_backend(raa):
-#     """ Dask backend not fully implemented """
-#    raa1 = cl.Chainladder().fit(raa.set_backend('dask')).ultimate_
-#    raa2 = cl.Chainladder().fit(raa).ultimate_
-#    assert (raa1 == raa2).compute()
 
 
 def test_partial_val_dev(raa):
@@ -415,6 +604,32 @@ def test_virtual_column(prism):
     prism["P"] = prism["Paid"]
     prism["Paid"] = lambda x: x["P"]
     assert prism["Paid"] == prism["P"]
+
+
+def test_to_frame_keepdims_virtual_column(clrd: Triangle) -> None:
+    """
+    to_frame(keepdims=True) computes virtual columns and propagates NaN
+    for rows where the underlying physical column has no data.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    t = clrd.copy()
+    t["BulkLossDoubled"] = lambda x: x["BulkLoss"] * 2
+    df = t.to_frame(keepdims=True)
+
+    # Where BulkLoss has no data, the virtual column must also be NaN.
+    assert df.loc[df["BulkLoss"].isna(), "BulkLossDoubled"].isna().all()
+
+    # Where BulkLoss has data, the virtual column must compute correctly.
+    mask = df["BulkLoss"].notna()
+    assert (df.loc[mask, "BulkLossDoubled"] == df.loc[mask, "BulkLoss"] * 2).all()
 
 
 def test_correct_valutaion(raa):
