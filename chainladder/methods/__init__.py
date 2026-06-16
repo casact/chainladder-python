@@ -5,3 +5,13 @@ from chainladder.methods.benktander import Benktander  # noqa (API import)
 from chainladder.methods.bornferg import BornhuetterFerguson  # noqa (API import)
 from chainladder.methods.capecod import CapeCod  # noqa (API import)
 from chainladder.methods.expectedloss import ExpectedLoss  # noqa (API import)
+
+__all__ = [
+    "MethodBase",
+    "Chainladder",
+    "MackChainladder",
+    "Benktander",
+    "BornhuetterFerguson",
+    "CapeCod",
+    "ExpectedLoss",
+]
