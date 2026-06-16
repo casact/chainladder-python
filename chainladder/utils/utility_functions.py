@@ -949,13 +949,14 @@ def model_diagnostics(
     Triangle with relevant figures as columns, including 
     - ``Latest``: Cumulative value at the latest valuation date, equivalent to ``latest_diagonal``
     - ``Month/Quarter/Year Incremental``: Actual emergence between the latest valuation and the one prior valuation date
-    - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``)
-    - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``)
+    - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``); ignored if ``groupby`` is supplied
+    - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``); ignored if ``groupby`` is supplied
     - ``Ultimate``: Projected ultimate loss from the fitted IBNR model (``ultimate_``)
     - ``IBNR``: Ultiamte - Latest
     - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
+    - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
 
-    Columns from the original Triangle are cross-joined into the index
+    Columns from the original Triangle are cross-joined into the index. ``Measure`` will contain all the columns from the original Triangle. 
     """
     from chainladder import Pipeline, Triangle
 
