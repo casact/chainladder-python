@@ -47,6 +47,36 @@ class MunichAdjustment(DevelopmentBase):
     cdf_: Triangle
         The estimated bivariate cumulative development patterns
 
+    Examples
+    --------
+    ``fillna=True`` imputes missing paid/incurred amounts with simple
+    chainladder expectations so the bivariate regression can still run.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        mcl = cl.load_sample("mcl").copy()
+        arr = np.asarray(mcl.values, dtype=float, copy=True)
+        arr[0, 1, 0, 2] = np.nan
+        mcl.values = arr
+        dev = cl.Development().fit_transform(mcl)
+        try:
+            cl.MunichAdjustment(("paid", "incurred"), fillna=False).fit(dev)
+            print("no_error")
+        except ValueError:
+            print("ValueError")
+        filled = cl.MunichAdjustment(("paid", "incurred"), fillna=True).fit(dev)
+        print(round(float(filled.ldf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        ValueError
+        2.151329
+
     """
 
     def __init__(self, paid_to_incurred=None, fillna=False):

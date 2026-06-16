@@ -139,6 +139,69 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         2007   62438.0   62438.0       NaN       NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN
         2008   47797.0       NaN       NaN       NaN      NaN      NaN      NaN      NaN      NaN      NaN      NaN
 
+    To isolate the effect of ``policy_length``, take a flat earned premium
+    vector with a single +20% rate change effective mid-year. Because a
+    24-month policy earns each rate change over a longer window, the
+    parallelogram is wider and the first origin period picks up a larger
+    on-level factor than under annual policies.
+
+    ..  testcode::
+
+        rate_history = pd.DataFrame(
+            {"EffDate": ["2010-07-01"], "RateChange": [0.20]}
+        )
+        data = pd.DataFrame(
+            {
+                "Year": [2010, 2011, 2012, 2013, 2014],
+                "EarnedPremium": [10000] * 5,
+            }
+        )
+
+        def prem():
+            return cl.Triangle(
+                data, origin="Year", columns="EarnedPremium", cumulative=True
+            )
+
+        olf_12 = cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=12,
+            approximation_grain="M",
+        ).fit_transform(prem())
+        olf_24 = cl.ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            policy_length=24,
+            approximation_grain="M",
+        ).fit_transform(prem())
+        print(np.round(olf_12.olf_, 6))
+
+    ..  testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                  2014
+        2010  1.170732
+        2011  1.021277
+        2012  1.000000
+        2013  1.000000
+        2014  1.000000
+
+    ..  testcode::
+
+        print(np.round(olf_24.olf_, 6))
+
+    ..  testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                  2014
+        2010  1.185185
+        2011  1.090909
+        2012  1.010526
+        2013  1.000000
+        2014  1.000000
+
     """
 
     def __init__(

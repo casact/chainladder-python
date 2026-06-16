@@ -100,19 +100,20 @@ class WeightedRegression(BaseEstimator):
         fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
         fitted_value = fitted_value * x * (y * 0 + 1)
 
-        residual = (y - fitted_value) * xp.sqrt(w)
+        residual = (y - fitted_value)
 
-        wss_residual = xp.nansum(residual**2, axis)
+        wss_residual = xp.nansum(residual**2 * w, axis)
         mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
         mse_denom = num_to_nan(mse_denom)
         mse = wss_residual / mse_denom
 
         std_err = xp.sqrt(mse / denominator)
-        std_err = std_err[..., None]
-
+        sigma = std_err * xp.sqrt(mse_denom + 1)
+        
         coef = coef[..., None]
-        sigma = xp.sqrt(mse)[..., None]
-
+        sigma = sigma[..., None]
+        std_err = std_err[..., None]
+        
         self._w_reg = w
 
         self.slope_ = coef
