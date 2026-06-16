@@ -12,27 +12,32 @@ from chainladder import options
 
 
 class DevelopmentML(DevelopmentBase):
-    """ A Estimator that interfaces with machine learning (ML) tools that implement
-    the scikit-learn API.
+    """ Interface to scikit-learn estimators for loss development patterns.
 
-    The `DevelopmentML` estimator is used to generate ``ldf_`` patterns from
-    the data.
+    ``DevelopmentML`` lets reserving workflows use any sklearn-compatible
+    regressor (often inside a :class:`~sklearn.pipeline.Pipeline`). It converts
+    a :class:`~chainladder.Triangle` to a tabular design matrix, fits the ML
+    model, predicts through the terminal development age to complete the lower
+    triangle, and expresses the result as ``ldf_`` for tails and IBNR methods.
+    :class:`~chainladder.TweedieGLM` is a special case with
+    :class:`~sklearn.linear_model.TweedieRegressor` as the only ML step.
 
     .. versionadded:: 0.8.1
 
 
     Parameters
     ----------
-    estimator_ml: skearn Estimator
+    estimator_ml: sklearn Estimator
         Any sklearn compatible regression estimator, including Pipelines and
     y_ml: list or str or sklearn_transformer
         The response column(s) for the machine learning algorithm. It must be
         present within the Triangle.
-    autoregressive: tuple, (autoregressive_col_name, lag, source_col_name)
-        The subset of response column(s) to use as lagged features for the
-        Time Series aspects of the model. Predictions from one development period
-        get used as featues in the next development period. Lags should be negative
-        integers.
+    autoregressive: list of tuple
+        Each tuple is ``(feature_name, lag, source_column)``. ``feature_name`` must
+        also appear in the pipeline design matrix. ``DevelopmentML`` fills that
+        column with lagged ``source_column`` values and, when projecting forward,
+        replaces it with the prior development period's prediction. Lags should be
+        negative integers (for example ``-12`` on a monthly triangle is one year).
     weight_step: str
         Step name within estimator_ml that is weighted
     drop: tuple or list of tuples
@@ -50,6 +55,95 @@ class DevelopmentML(DevelopmentBase):
         The estimated loss development patterns.
     cdf_: Triangle
         The estimated cumulative development patterns.
+
+    Examples
+    --------
+    On multi-LOB triangles such as ``clrd``, an actuary may want a single
+    model fit to all lines at once while letting each line keep its own
+    development pattern. This is the same business problem as the multi-LOB
+    example in :class:`~chainladder.TweedieGLM`; ``DevelopmentML`` generalizes
+    it to any sklearn estimator. Features from any triangle axis can enter an
+    sklearn :class:`~sklearn.compose.ColumnTransformer` or
+    :class:`~sklearn.pipeline.Pipeline`: here, one-hot-encode ``LOB`` and
+    ``development``, pass ``origin`` through, and fit the same
+    ``RandomForestRegressor`` the user guide uses. ``random_state`` pins the
+    forest so the fitted pattern is reproducible.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.compose import ColumnTransformer
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import OneHotEncoder
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()["CumPaidLoss"]
+        design_matrix = ColumnTransformer(
+            transformers=[
+                ("dummy", OneHotEncoder(drop="first"), ["LOB", "development"]),
+                ("passthrough", "passthrough", ["origin"]),
+            ]
+        )
+        estimator_ml = Pipeline(
+            steps=[
+                ("design_matrix", design_matrix),
+                ("model", RandomForestRegressor(random_state=42)),
+            ]
+        )
+        m = cl.DevelopmentML(estimator_ml=estimator_ml, y_ml="CumPaidLoss").fit(
+            clrd
+        )
+        print(m.ldf_.shape)
+        print(np.round(m.ldf_.values[0, 0, 0, :], 4))
+
+    .. testoutput::
+
+        (6, 1, 10, 9)
+        [2.5988 1.412  1.2037 1.11   1.0701 1.0434 1.0272 1.0366 1.0714]
+
+    An actuary who wants to test whether fitting on incremental versus
+    cumulative losses changes the implied development can toggle
+    ``fit_incrementals`` and compare the full ``ldf_`` patterns. A log-link
+    Poisson GLM (the same specification :class:`~chainladder.TweedieGLM`
+    uses) keeps the fitted values positive, so the implied factors stay
+    above 1.0 on either basis. The two bases agree closely here, diverging
+    modestly at the oldest ages.
+
+    .. testcode::
+
+        import numpy as np
+        from sklearn.linear_model import TweedieRegressor
+        from sklearn.pipeline import Pipeline
+
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        tri = cl.load_sample("ukmotor")
+        pipe = Pipeline(
+            steps=[
+                ("design_matrix", PatsyFormula("C(development) + C(origin)")),
+                ("model", TweedieRegressor(
+                    power=1, link="log", fit_intercept=False
+                )),
+            ]
+        )
+        m_incr = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=True
+        ).fit(tri)
+        m_cum = cl.DevelopmentML(
+            pipe, y_ml=[tri.columns[0]], fit_incrementals=False
+        ).fit(tri)
+        print(np.round(m_incr.ldf_.values[0, 0, 0, :], 4))
+        print(np.round(m_cum.ldf_.values[0, 0, 0, :], 4))
+
+    .. testoutput::
+
+        [1.904  1.2858 1.1493 1.0989 1.0537 1.0333]
+        [1.892  1.2822 1.1453 1.1033 1.0547 1.0457]
+
     """
 
     def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,

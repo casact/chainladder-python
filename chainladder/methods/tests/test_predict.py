@@ -1,4 +1,5 @@
 import chainladder as cl
+import numpy as np
 import pandas as pd
 import pytest 
 
@@ -8,37 +9,54 @@ cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
 apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)  # Mean Chainladder Ultimate
 apriori_1989 = apriori[apriori.origin < "1990"]
 
-
-def test_cc_predict():
-    cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
-    assert cc.predict(raa, sample_weight=apriori)
-
-def test_bf_predict():
-    bf = cl.BornhuetterFerguson().fit(raa_1989, sample_weight=apriori_1989)
-    assert bf.predict(raa, sample_weight=apriori)
-
-def test_el_predict():
-    bf = cl.ExpectedLoss().fit(raa_1989, sample_weight=apriori_1989)
-    assert bf.predict(raa, sample_weight=apriori)
+@pytest.mark.parametrize(
+    "estimators",
+    [
+        cl.CapeCod,
+        cl.BornhuetterFerguson,
+        cl.ExpectedLoss,
+        cl.Benktander,
+        cl.Chainladder
+    ],
+)
+def test_predict_and_weights(estimators,atol):
+    est = estimators().fit(raa_1989, sample_weight=apriori_1989)
+    pred = est.predict(raa, sample_weight=apriori)
+    assert pred
+    assert np.allclose(
+        raa_1989.latest_diagonal.values.swapaxes(0,1),
+        cl.model_diagnostics(est)['Latest'].values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        raa.latest_diagonal.values.swapaxes(0,1),
+        cl.model_diagnostics(pred)['Latest'].values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        est.ultimate_.values.swapaxes(0,1),
+        cl.model_diagnostics(est)['Ultimate'].values,
+        atol=atol,
+        equal_nan=True
+    )
+    assert np.allclose(
+        pred.ultimate_.values.swapaxes(0,1),
+        cl.model_diagnostics(pred)['Ultimate'].values,
+        atol=atol,
+        equal_nan=True
+    )   
+    #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    if estimators in [cl.CapeCod,cl.BornhuetterFerguson,cl.ExpectedLoss,cl.Benktander]:
+        with pytest.raises(ValueError):
+            estimators().fit(raa_1989)
+        with pytest.raises(ValueError):
+            estimators().fit(raa_1989, sample_weight=apriori_1989).predict(raa)
 
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
     assert mack.predict(raa_1989)
-
-def test_capecod_fit_weight():
-    """
-    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    """
-    with pytest.raises(ValueError):
-        cl.CapeCod().fit(raa_1989)
-
-def test_capecod_predict_weight():
-    """
-    Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    """
-    with pytest.raises(ValueError):
-        cc = cl.CapeCod().fit(raa_1989, sample_weight=apriori_1989)
-        cc.predict(raa)
 
 def test_bs_random_state_predict(clrd):
     tri = clrd.groupby("LOB").sum().loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]
@@ -80,8 +98,8 @@ def test_misaligned_index(prism):
 
 
 def test_misaligned_index2(clrd):
+    w = clrd["EarnedPremDIR"].latest_diagonal
     clrd = clrd["CumPaidLoss"]
-    w = cl.load_sample("clrd")["EarnedPremDIR"].latest_diagonal
     bcl = cl.Chainladder().fit(cl.Development(groupby=["LOB"]).fit_transform(clrd))
     bbk = cl.Benktander().fit(
         cl.Development(groupby=["LOB"]).fit_transform(clrd), sample_weight=w
@@ -147,19 +165,19 @@ def test_misaligned_index2(clrd):
     assert abs(a - b) < 1e-5
 
 
-def test_align_cdfs():
-    ld = cl.load_sample("raa").latest_diagonal * 0 + 40000
-    model = cl.BornhuetterFerguson().fit(cl.load_sample("raa"), sample_weight=ld)
+def test_align_cdfs(raa):
+    ld = raa.latest_diagonal * 0 + 40000
+    model = cl.BornhuetterFerguson().fit(raa, sample_weight=ld)
     a = model.ultimate_.iloc[..., :4, :]
     b = model.predict(
-        cl.load_sample("raa").dev_to_val().iloc[..., :4, -1].val_to_dev(),
+        raa.dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :],
     ).ultimate_
     assert a == b
-    model = cl.Chainladder().fit(cl.load_sample("raa"), sample_weight=ld)
+    model = cl.Chainladder().fit(raa, sample_weight=ld)
     a = model.ultimate_.iloc[..., :4, :]
     b = model.predict(
-        cl.load_sample("raa").dev_to_val().iloc[..., :4, -1].val_to_dev(),
+        raa.dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :],
     ).ultimate_
     assert a == b

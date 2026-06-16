@@ -205,6 +205,12 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
 
     Examples
     --------
+    An actuary reserving the RAA excess casualty book leans on the
+    development-based ``Chainladder`` method for the mature accident years
+    but shifts toward the more stable exposure-based methods in the recent,
+    least developed years. The ``weights`` matrix has one row per accident
+    year and one column per estimator, phasing the blend from ``Chainladder``
+    to ``BornhuetterFerguson`` and ``CapeCod``.
 
     .. testsetup::
 
@@ -239,6 +245,34 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         1988  23106.943030
         1989  20004.502125
         1990  21605.832631
+
+    Building on the example above and reusing its ``estimators``, ``raa`` and
+    ``apriori``, the actuary can instead blend all three methods in every
+    accident year. Omitting ``weights`` applies ``default_weighting`` to each
+    accident year; here ``Chainladder`` receives half of the total weight.
+
+    .. testcode::
+
+        blended = cl.VotingChainladder(
+            estimators=estimators, default_weighting=(2, 1, 1)
+        )
+        blended.fit(raa, sample_weight=apriori)
+        print(blended.ultimate_)
+
+    .. testoutput::
+
+                      2261
+        1981  18834.000000
+        1982  16879.886803
+        1983  24052.325782
+        1984  28502.440672
+        1985  28581.789739
+        1986  19703.210223
+        1987  18348.274023
+        1988  23483.819232
+        1989  17908.906366
+        1990  19849.185129
+
     """
 
     @_deprecate_positional_args

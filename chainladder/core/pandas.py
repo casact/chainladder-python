@@ -78,15 +78,17 @@ class TrianglePandas:
 
         Parameters
         ----------
-        origin_as_datetime : bool
-            Whether the origin vector should be converted from PeriodIndex
-            into a datetime dtype. Default is False.
-        keepdims : bool
-            If True, the triangle will be converted to a DataFrame with all
-            dimensions intact.  The argument will force a consistent DataFrame
-            format regardless of whether any dimensions are of length 1.
-        implicit_axis : bool
-            When keepdims is True, this denotes whether to include the implicit
+        origin_as_datetime : bool (default = True)
+            When all dimensions are returned, whether the origin vector 
+            should be converted from PeriodIndex into a datetime dtype. 
+        keepdims : bool (default = False)
+            Converted DataFrame will keep all dimensions intact and maintain a consistent
+            format regardless of whether any dimensions are of length 1. 
+
+            Ignored when 3 or more dimensions (index, column, origin, and development)
+            have lengths greater than 1
+        implicit_axis : bool (default = False)
+            When implicit_axis is True, this denotes whether to include the implicit
             valuation axis in addition to the origin and development.
 
         Returns
@@ -447,9 +449,17 @@ class TrianglePandas:
         return self.get_array_module().log(self)
 
     def minimum(self, other):
+        """Element-wise minimum of this Triangle and another operand.
+
+        See :func:`chainladder.minimum` for parameters, usage, and examples.
+        """
         return self.get_array_module().minimum(self, other)
 
     def maximum(self, other):
+        """Element-wise maximum of this Triangle and another operand.
+
+        See :func:`chainladder.maximum` for parameters, usage, and examples.
+        """
         return self.get_array_module().maximum(self, other)
 
     def sqrt(self):

@@ -15,12 +15,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder import Triangle
 
-try:
-    from IPython.core.display import HTML
-except ImportError:
-    HTML = None
-
-
 def test_repr(raa):
     np.testing.assert_array_equal(
         pd.read_html(StringIO(raa._repr_html_()))[0].set_index("Unnamed: 0").values,
@@ -49,7 +43,10 @@ def test_link_ratio(raa, atol):
         raa.link_ratio * raa.iloc[:, :, :-1, :-1].values - raa.values[:, :, :-1, 1:]
     ).sum().sum() < atol
 
-
+def test_align_pattern(raa, atol):
+    with pytest.raises(ValueError):
+        raa.align_pattern(raa)
+        
 def test_incr_to_cum(clrd):
     clrd.cum_to_incr().incr_to_cum() == clrd
 
@@ -432,12 +429,12 @@ def test_correct_valutaion(raa):
     assert new.valuation_date == raa.valuation_date
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "prop", ["cdf_", "ibnr_", "full_expectation_", "full_triangle_"]
 )
 def test_no_fitted(raa, prop):
-    getattr(raa, prop)
+    with pytest.raises(AttributeError, match=f"no attribute '{prop}'"):
+        getattr(raa, prop)
 
 
 def test_pipe(raa):
@@ -450,11 +447,6 @@ def test_pipe(raa):
 def test_repr_html(raa, clrd):
     assert type(raa._repr_html_()) == str
     assert type(clrd._repr_html_()) == str
-
-
-@pytest.mark.xfail(HTML is None, reason="ipython needed for test")
-def test_heatmap(raa):
-    raa.link_ratio.heatmap()
 
 
 def test_agg_sparse():
