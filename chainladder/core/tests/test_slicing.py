@@ -1,6 +1,3 @@
-"""
-Test pandas-style slicing on the Triangle class.
-"""
 from __future__ import annotations
 
 import numpy as np
