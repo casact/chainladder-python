@@ -651,6 +651,16 @@ class TriangleBase(
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
+        """Materialize a lazy dask-backed Triangle.
+
+        When ``values`` is a dask array, compute it and update
+        ``array_backend`` to match the resulting array type. Returns ``self``
+        unchanged when the Triangle is already materialized.
+
+        Returns
+        -------
+        Triangle
+        """
         if hasattr(self.values, "chunks"):
             obj = self.copy()
             obj.values = obj.values.compute(*args, **kwargs)

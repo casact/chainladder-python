@@ -37,7 +37,7 @@ body:
         help with this ticket.
   - type: checkboxes
     attributes:
-      label: Would you be willing to contribute this ticket?:
+      label: Would you be willing to contribute this ticket?
       options:
         - label: Yes, absolutely!
           required: false

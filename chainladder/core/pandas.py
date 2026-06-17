@@ -71,8 +71,6 @@ class TrianglePandas:
             origin_as_datetime: bool = True,
             keepdims: bool = False,
             implicit_axis: bool = False,
-            *args,
-            **kwargs
     ) -> DataFrame | Series:
         """ Converts a triangle to a pandas.DataFrame.
 
@@ -145,8 +143,11 @@ class TrianglePandas:
                     col_order: list = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col]: Series = np.nan
+            # Create physical columns out of virtual ones.
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
+                # Fill na to enable floating-point computation.
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+                # Coerce 0 to np.nan.
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
@@ -254,6 +255,7 @@ class TrianglePandas:
                     self.development <= ddim.max())
             ]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
+        # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
@@ -434,18 +436,58 @@ class TrianglePandas:
         return obj
 
     def head(self, n=5):
+        """Return the first ``n`` triangles along the index axis.
+
+        Parameters
+        ----------
+        n : int, default 5
+            Number of triangles to select.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[:n]
 
     def tail(self, n=5):
+        """Return the last ``n`` triangles along the index axis.
+
+        Parameters
+        ----------
+        n : int, default 5
+            Number of triangles to select.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs):
+        """Sort Triangle rows by index labels.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
     def exp(self):
+        """Return the exponential of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().exp(self)
 
     def log(self):
+        """Return the natural logarithm of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().log(self)
 
     def minimum(self, other):
@@ -463,9 +505,30 @@ class TrianglePandas:
         return self.get_array_module().maximum(self, other)
 
     def sqrt(self):
+        """Return the non-negative square root of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().sqrt(self)
 
     def round(self, decimals=0, *args, **kwargs):
+        """Round each element to the given number of decimal places.
+
+        Uses banker's rounding (round half to even). For example,
+        ``(8.5).round(0)`` returns 8, not 9. For conventional rounding,
+        add a small epsilon before rounding, e.g. ``(tri + 1e-9).round(0)``.
+
+        Parameters
+        ----------
+        decimals : int, default 0
+            Number of decimal places to round to.
+
+        Returns
+        -------
+        Triangle
+        """
         return round(self, decimals)
 
     def xs(
