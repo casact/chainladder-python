@@ -54,7 +54,6 @@ class TriangleProtocol(Protocol):
 
     key_labels: list[str]
     values: BackendArray
-    vdims: np.ndarray
     array_backend: str
     iloc: Ilocation
     loc: Location
