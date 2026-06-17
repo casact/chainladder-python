@@ -151,6 +151,30 @@ class Common:
         return _get_full_triangle(X, self.ultimate_, X.is_cumulative)
 
     def pipe(self, func, *args, **kwargs):
+        """Apply ``func(self, *args, **kwargs)``.
+
+        Parameters
+        ----------
+        func : callable
+            Function to apply to the Triangle.
+        *args
+            Positional arguments passed to ``func``.
+        **kwargs
+            Keyword arguments passed to ``func``.
+
+        Returns
+        -------
+        object
+            The return value of ``func``.
+
+        Examples
+        --------
+        Keep development periods from 48 onward:
+
+        >>> import chainladder as cl
+        >>> raa = cl.load_sample('raa')
+        >>> raa.pipe(lambda tri: tri.loc[..., 48:])
+        """
         return func(self, *args, **kwargs)
 
     def set_backend(

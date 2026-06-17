@@ -1,6 +1,3 @@
-"""
-Test pandas-style slicing on the Triangle class.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -277,7 +274,7 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
         assert tri.loc["Aegis Grp", "comauto"] == sub * 2
 
 
-@pytest.mark.xfail
+
 def test_sparse_at_iat(prism):
     with pytest.raises(ValueError, match="Setting values with sparse backend requires .at or .iat"):
         prism.iloc[0, 0, 0, 0] = 1.0

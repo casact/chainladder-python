@@ -6,7 +6,6 @@ Support pandas-style slicing to the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import importlib
 import numpy as np
 import pandas as pd
 
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Literal
 
-_slicing = importlib.import_module("sparse._slicing")
+from sparse import _slicing  # noqa
 
 class _LocBase:
     """
@@ -568,12 +567,12 @@ class TriangleSlicer:
         # Key is new, create a column and update data.
         else:
             self.vdims = np.append(self.vdims, key)
-            if isinstance(value, (int, float)):
+            if isinstance(value, (int, float, np.generic)):
                 # Broadcast scalar across the Triangle's shape.
                 value = self.iloc[:, 0] * 0 + value
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
-            except ValueError:
+            except (ValueError, AttributeError):
                 # For misaligned triangle support.
                 conc = (self.values, (self.iloc[:, 0] * 0 + cast("Triangle", value)).values)
                 self.values = xp.concatenate(conc, axis=1)

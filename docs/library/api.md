@@ -169,8 +169,9 @@ Functions
    read_pickle
    read_json
    concat
-   minimum
    maximum
+   minimum
+   model_diagnostics   
 
 Classes
 -------

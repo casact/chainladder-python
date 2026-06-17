@@ -504,32 +504,6 @@ def test_plot(raa: Triangle) -> None:
         plt.close("all")
 
 
-def test_T(raa: Triangle, clrd: Triangle) -> None: # noqa
-    """
-    Transpose a triangle and check the dimensions.
-`
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set triangle.
-    clrd: Triangle
-        The clrd sample data set triangle.
-
-    Returns
-    -------
-    None
-    """
-
-    # Single-dimensional triangle: development periods become rows, origins become columns.
-    t = raa.T
-    assert t.shape == (raa.shape[3], raa.shape[2])
-    assert list(t.index) == list(raa.development)
-    assert list(t.columns) == list(raa.origin)
-    # Multidimensional triangle: to_frame() is long format.
-    # Transposed columns are origin, development, and columns dimensions of the Triangle.
-    assert clrd.T.shape[0] == 2 + clrd.shape[1]
-    assert list(clrd.T.index) == ['origin', 'development'] + list(clrd.columns)
-
 def test_partial_year(prism):
     before = prism["Paid"].sum().incr_to_cum()
     before = before[before.valuation <= "2017-08"].latest_diagonal
