@@ -6,7 +6,6 @@ Support pandas-style slicing to the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import importlib
 import numpy as np
 import pandas as pd
 
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Literal
 
-_slicing = importlib.import_module("sparse._slicing")
+from sparse import _slicing  # noqa
 
 class _LocBase:
     """
