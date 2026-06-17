@@ -1,22 +1,31 @@
 from __future__ import annotations
+
 import pytest
 
 import chainladder as cl
 import copy
+import dill
 import numpy as np
+import pandas as pd
 
 from chainladder import (
     __dt64_unit__
 )
 from chainladder.utils.utility_functions import date_delta_adjustment
 from chainladder.utils.data._manifest import SAMPLES
+from chainladder.utils.utility_functions import (
+    date_delta_adjustment,
+    maximum,
+    minimum
+)
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
     from pytest import MonkeyPatch
-
+    from chainladder import Triangle
 
 
 def test_triangle_json_io(clrd):
@@ -114,8 +123,18 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics(qtr):
-    cl.model_diagnostics(cl.Chainladder().fit(qtr))
+def test_model_diagnostics_erorr(raa):
+    with pytest.raises(ValueError):
+        cl.model_diagnostics(raa)
+
+
+def test_model_diagnostics_groupby(prism,atol):
+    dev = cl.Development().fit(prism["Incurred"].sum())
+    est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
+    lhs = cl.model_diagnostics(est,groupby=['Line'])
+    rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
+    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol,equal_nan=True)
+    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol,equal_nan=True)
 
 
 def test_concat_immutability(raa):
@@ -125,6 +144,37 @@ def test_concat_immutability(raa):
     u_new = copy.deepcopy(u)
     cl.concat((l, u), axis=3)
     assert u == u_new
+
+
+def test_to_pickle_read_pickle(raa):
+    import tempfile
+    import os
+    dev = cl.Development(average="simple", n_periods=4).fit(raa)
+    fd, path = tempfile.mkstemp(suffix=".pkl")
+    os.close(fd)
+    try:
+        dev.to_pickle(path)
+        restored = cl.read_pickle(path)
+        assert restored.average == dev.average
+        assert restored.n_periods == dev.n_periods
+        np.testing.assert_array_almost_equal(
+            restored.ldf_.values, dev.ldf_.values
+        )
+    finally:
+        os.remove(path)
+
+
+def test_maximum(raa):
+    ult_vol = cl.Chainladder().fit(
+        cl.Development(average="volume").fit_transform(raa)
+    ).ultimate_
+    ult_sim = cl.Chainladder().fit(
+        cl.Development(average="simple").fit_transform(raa)
+    ).ultimate_
+    high_side = cl.maximum(ult_vol, ult_sim)
+    np.testing.assert_array_almost_equal(
+        high_side.values, np.maximum(ult_vol.values, ult_sim.values)
+    )
 
 
 def test_invalid_sample() -> None:
@@ -230,6 +280,29 @@ def test_sdist_ships_all_samples(tmp_path) -> None:
     assert not missing, f"sdist is missing sample CSVs: {sorted(missing)}"
 
 
+def test_load_sample_uspp() -> None:
+    """Pin the manifest column schema for the uspp Friedland family.
+
+    Loadability of every sample is already covered by ``test_load_sample``,
+    but no other test asserts the columns a sample is configured with. This
+    guards the manifest entries for the uspp datasets against the regression
+    where ``Earned Premium`` was dropped from their column config, in the
+    same dataset-specific style as ``test_load_sample_clrd2025`` below.
+    """
+    for key in [
+        "friedland_uspp_auto_increasing_case",
+        "friedland_uspp_auto_increasing_claim",
+        "friedland_uspp_auto_steady_state",
+        "friedland_uspp_increasing_claim_case",
+    ]:
+        tri = cl.load_sample(key)
+        assert set(str(c) for c in tri.vdims) == {
+            "Reported Claims",
+            "Paid Claims",
+            "Earned Premium",
+        }
+
+
 def test_load_sample_clrd2025() -> None:
     """
     Tests the clrd2025 sample (CAS Schedule P 1998-2007 refresh).
@@ -265,6 +338,207 @@ def test_date_delta_adjustment() -> None:
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
+
+def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
+    """
+    Create a triangle, dump a pickle of it, and then read it back in. The ingested pickle should result
+    in an equal copy of the triangle that was dumped.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    tmp_path: Path
+        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+
+    Returns
+    -------
+    None
+
+    """
+    pkl_path = tmp_path / "triangle.pkl"
+    with open(pkl_path, "wb") as f:
+        dill.dump(raa, f)
+    assert cl.read_pickle(str(pkl_path)) == raa
+
+
+def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
+    """
+    Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
+    produce the same LDFs that the original estimator does.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    tmp_path: Path
+        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+
+    Returns
+    -------
+    None
+
+    """
+
+    pkl_path = tmp_path / "estimator.pkl"
+    dev = cl.Development().fit(raa)
+    with open(pkl_path, "wb") as f:
+        dill.dump(dev, f)
+    assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
+
+
+def test_concat_type_error() -> None:
+    """
+    Supply a string to cl.concat() and raise a TypeError. Concat expects a list or tuple, so supplying a string
+    will raise the error.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(TypeError):
+        cl.concat("not_a_list", axis=0)
+
+
+def test_concat_empty_error() -> None:
+    """
+    Supply an empty list to cl.concat(). Trigger a ValueError since the length of the list must be greater than 0.
+    Returns
+    -------
+
+    """
+    with pytest.raises(ValueError):
+        cl.concat([], axis=0)
+
+
+def test_concat_mismatched_columns(clrd: Triangle) -> None:
+    """
+    Concatenate two triangles where each has a column that the other does not have. This creates new columns
+    for each triangle which then get filled with xp.nan.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = clrd.groupby("LOB").sum()
+    t1 = tri.loc["wkcomp"][["IncurLoss"]].rename("columns", ["A"])
+    t2 = tri.loc["comauto"][["CumPaidLoss"]].rename("columns", ["B"])
+    result = cl.concat([t1, t2], axis=0)
+
+    # Check that new triangle has both columns.
+    assert set(result.columns) == {"A", "B"}
+    xp = result.get_array_module()
+
+    # Check that each new column is filled with xp.nan corresponding
+    # to the index that did not previously have the column.
+    assert xp.all(xp.isnan(result.loc["wkcomp"]["B"].values))
+    assert xp.all(xp.isnan(result.loc["comauto"]["A"].values))
+
+
+def test_concat_sort(clrd: Triangle) -> None:
+    """
+    Concat two triangles with indexes in reverse alphabetical order then sort the index. Check to see
+    that the index gets sorted alphabetically.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = clrd.groupby("LOB").sum()
+    lobs_expected = ["comauto", "wkcomp"]
+    result = cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0, sort=True)
+    lobs = list(result.index["LOB"])
+    assert lobs == lobs_expected
+
+
+def test_concat_axis1(raa: Triangle) -> None:
+    """
+    Concat two triangles along the column axis. Check if columns are unique.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    Returns
+    -------
+    None
+
+    """
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    result = cl.concat([t1, t2], axis=1)
+    assert set(result.columns) == {"A", "B"}
+
+
+def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
+    """
+    Concat two triangles along the column axis with the same column names. Raise an assertion error since
+    columns must be unique.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(AssertionError):
+        cl.concat([raa, raa], axis=1)
+
+
+def test_maximum(raa: Triangle) -> None:
+    """
+    Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    result = maximum(raa, 5000)
+    xp = result.get_array_module()
+    assert xp.all(xp.nan_to_num(result.values, nan=5000) >= 5000)
+
+
+def test_minimum(raa):
+    """
+    Run cl.minimum(raa, 5000) and check if each element in the resulting triangle is at most 5000.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    result = minimum(raa, 5000)
+    xp = result.get_array_module()
+    assert xp.all(xp.nan_to_num(result.values, nan=5000) <= 5000)
+
 
 def test_reset_option() -> None:
     """
@@ -390,6 +664,21 @@ def test_set_option_cupy_backend_deprecated() -> None:
         cl.options.reset_option('ARRAY_BACKEND')
 
 
+def test_set_option_dask_backend_deprecated() -> None:
+    """
+    Setting ARRAY_BACKEND to 'dask' should emit a DeprecationWarning. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        with pytest.warns(DeprecationWarning, match="dask"):
+            cl.options.set_option('ARRAY_BACKEND', 'dask')
+    finally:
+        cl.options.reset_option('ARRAY_BACKEND')
+
+
 def test_set_option_cupy_priority_deprecated() -> None:
     """
     Setting ARRAY_PRIORITY with 'cupy' ahead of a non-deprecated backend
@@ -401,31 +690,49 @@ def test_set_option_cupy_priority_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="cupy"):
-            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'dask', 'sparse', 'numpy'])
+            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'numpy', 'sparse', 'dask'])
     finally:
         cl.options.reset_option('ARRAY_PRIORITY')
 
 
-def test_set_option_cupy_priority_last_no_warning(recwarn) -> None:
+def test_set_option_dask_priority_deprecated() -> None:
     """
-    Setting ARRAY_PRIORITY with 'cupy' ranked below every non-deprecated
-    backend should not warn, since cupy would never be selected over a
-    supported backend. See issue #843.
+    Setting ARRAY_PRIORITY with 'dask' ahead of a non-deprecated backend
+    ('numpy' or 'sparse') should emit a DeprecationWarning. See issue #842.
 
     Returns
     -------
     None
     """
     try:
-        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy', 'cupy'])
+        with pytest.warns(DeprecationWarning, match="dask"):
+            cl.options.set_option('ARRAY_PRIORITY', ['dask', 'numpy', 'sparse', 'cupy'])
+    finally:
+        cl.options.reset_option('ARRAY_PRIORITY')
+
+
+def test_set_option_deprecated_priority_last_no_warning(recwarn) -> None:
+    """
+    Setting ARRAY_PRIORITY with the deprecated backends ('cupy' and 'dask')
+    ranked below every non-deprecated backend should not warn, since neither
+    would ever be selected over a supported backend. See issues #842 and #843.
+
+    Returns
+    -------
+    None
+    """
+    try:
+        cl.options.set_option('ARRAY_PRIORITY', ['numpy', 'sparse', 'dask', 'cupy'])
         assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
         cl.options.reset_option('ARRAY_PRIORITY')
 
 
-def test_set_option_non_cupy_no_warning(recwarn) -> None:
+def test_set_option_supported_backend_no_warning(recwarn) -> None:
     """
-    Setting backends other than 'cupy' should not emit a DeprecationWarning.
+    Setting a non-deprecated backend ('sparse'), and a priority list where no
+    deprecated backend precedes a supported one, should not emit a
+    DeprecationWarning.
 
     Returns
     -------
@@ -433,7 +740,7 @@ def test_set_option_non_cupy_no_warning(recwarn) -> None:
     """
     try:
         cl.options.set_option('ARRAY_BACKEND', 'sparse')
-        cl.options.set_option('ARRAY_PRIORITY', ['dask', 'sparse', 'numpy'])
+        cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'numpy'])
         assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
         cl.options.reset_option('ARRAY_BACKEND')
@@ -459,6 +766,107 @@ def test_set_backend_cupy_deprecated(clrd) -> None:
     # internal recursive / deep child conversion.
     assert len(cupy_warnings) == 1
     assert cupy_warnings[0].filename == __file__
+
+
+def test_set_backend_dask_deprecated(clrd) -> None:
+    """
+    Triangle.set_backend('dask') should emit exactly one DeprecationWarning,
+    pointing at the caller. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(DeprecationWarning, match="dask") as record:
+        try:
+            clrd.set_backend('dask', deep=True)
+        except Exception:
+            # The actual conversion can fail when the optional 'dask'
+            # dependency is not installed; we only care that the deprecation
+            # warning fired at the public entry point.
+            pass
+    dask_warnings = [
+        w for w in record
+        if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+    ]
+    assert len(dask_warnings) == 1
+    assert dask_warnings[0].filename == __file__
+
+
+def test_triangle_dask_input_deprecated() -> None:
+    """
+    Passing a Dask dataframe to the Triangle constructor should emit a
+    DeprecationWarning. The 'dask' dependency is optional and not installed in
+    the test environment, so a pandas subclass whose module is spoofed to
+    'dask' is used to take the same non-pandas code path in ``_aggregate_data``
+    while still supporting the pandas operations performed there. See issue
+    #842.
+
+    Returns
+    -------
+    None
+    """
+    class _FakeDaskFrame(pd.DataFrame):
+        @property
+        def _constructor(self):
+            return _FakeDaskFrame
+
+    # The warning is gated on the data's top-level module being 'dask', so the
+    # detection mirrors a real dask dataframe (e.g. dask.dataframe.core).
+    _FakeDaskFrame.__module__ = "dask.dataframe.core"
+
+    data = _FakeDaskFrame({
+        "origin": [2020, 2020, 2021],
+        "development": [2020, 2021, 2021],
+        "values": [100.0, 150.0, 200.0],
+    })
+    with pytest.warns(DeprecationWarning, match="dask") as record:
+        cl.Triangle(
+            data,
+            origin="origin",
+            development="development",
+            columns="values",
+        )
+    dask_warnings = [
+        w for w in record
+        if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+    ]
+    assert len(dask_warnings) == 1
+    assert dask_warnings[0].filename == __file__
+
+
+def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
+    """
+    Passing a pandas subclass (not a Dask dataframe) to the Triangle
+    constructor should not emit the dask DeprecationWarning, even though such
+    inputs take the same non-pandas code path in ``_aggregate_data``. See
+    issue #842.
+
+    Returns
+    -------
+    None
+    """
+    class _PandasSubclass(pd.DataFrame):
+        @property
+        def _constructor(self):
+            return _PandasSubclass
+
+    data = _PandasSubclass({
+        "origin": [2020, 2020, 2021],
+        "development": [2020, 2021, 2021],
+        "values": [100.0, 150.0, 200.0],
+    })
+    cl.Triangle(
+        data,
+        origin="origin",
+        development="development",
+        columns="values",
+    )
+    dask_warnings = [
+        w for w in recwarn
+        if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+    ]
+    assert dask_warnings == []
 
 
 def test_describe_option(capsys: CaptureFixture[str]) -> None:

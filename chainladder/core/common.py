@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from chainladder import options
+from chainladder import _DEPRECATED_BACKENDS, _deprecated_backend_message
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
@@ -150,6 +151,30 @@ class Common:
         return _get_full_triangle(X, self.ultimate_, X.is_cumulative)
 
     def pipe(self, func, *args, **kwargs):
+        """Apply ``func(self, *args, **kwargs)``.
+
+        Parameters
+        ----------
+        func : callable
+            Function to apply to the Triangle.
+        *args
+            Positional arguments passed to ``func``.
+        **kwargs
+            Keyword arguments passed to ``func``.
+
+        Returns
+        -------
+        object
+            The return value of ``func``.
+
+        Examples
+        --------
+        Keep development periods from 48 onward:
+
+        >>> import chainladder as cl
+        >>> raa = cl.load_sample('raa')
+        >>> raa.pipe(lambda tri: tri.loc[..., 48:])
+        """
         return func(self, *args, **kwargs)
 
     def set_backend(
@@ -180,10 +205,9 @@ class Common:
         # Warn once, at the public entry point, so stacklevel=2 points at the
         # user's call site rather than an internal recursive call. The _warn
         # flag suppresses duplicate warnings from internal recursion below.
-        if _warn and backend == "cupy":
+        if _warn and backend in _DEPRECATED_BACKENDS:
             warnings.warn(
-                "The 'cupy' array backend is deprecated and will be removed in a "
-                "future release. See https://github.com/casact/chainladder-python/issues/843.",
+                _deprecated_backend_message(backend),
                 DeprecationWarning,
                 stacklevel=2,
             )

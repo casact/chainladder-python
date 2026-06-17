@@ -27,6 +27,8 @@ case) to the keyword arguments passed to ``Triangle``:
     Measure column name(s) loaded into the Triangle.
 ``cumulative``
     ``True`` if the measures are cumulative, ``False`` if incremental.
+``development_format``
+    Optional. Passed to ``Triangle`` by :func:`chainladder.load_sample`.
 """
 
 SAMPLES: dict = {
@@ -102,6 +104,7 @@ SAMPLES: dict = {
             "Reported Claim Counts",
             "Reported Claims",
             "Reported Severity",
+            "Paid Claims",
         ],
         "cumulative": True,
     },
@@ -157,6 +160,7 @@ SAMPLES: dict = {
             "Paid Claims",
         ],
         "cumulative": True,
+        "development_format": "%Y-12-31",
     },
     "friedland_med_mal": {
         "origin": "Accident Year",
@@ -251,6 +255,7 @@ SAMPLES: dict = {
             "Paid Severities",
             "Reported Claims",
             "Reported Severities",
+            "Payroll",
         ],
         "cumulative": True,
     },
@@ -269,14 +274,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
-        "cumulative": True,
-    },
-    "friedland_xyz_case": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Case Outstanding", "Paid Claims"],
+        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities", "Earned Premium"],
         "cumulative": True,
     },
     "friedland_xyz_disp": {
@@ -284,18 +282,6 @@ SAMPLES: dict = {
         "development": "Calendar Year",
         "index": None,
         "columns": ["Disposal Rate", "Closed Claim Counts", "Paid Claims"],
-        "cumulative": True,
-    },
-    "friedland_xyz_freq_sev": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": [
-            "Closed Claim Counts",
-            "Reported Claim Counts",
-            "Reported Claims",
-            "Reported Severities",
-        ],
         "cumulative": True,
     },
     "genins": {
