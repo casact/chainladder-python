@@ -3,6 +3,7 @@ import pytest
 
 import chainladder as cl
 import copy
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -18,6 +19,35 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
     from pytest import MonkeyPatch
 
+
+class _FakeBag:
+    """
+    Minimal stand-in for a dask bag that runs the mapped function eagerly.
+
+    Lets the dask-accelerated parallel-compute paths be exercised in tests even
+    though the optional 'dask' dependency is not installed. See issue #842.
+    """
+
+    def __init__(self, seq):
+        self._seq = list(seq)
+        self._func = None
+        self._args = ()
+
+    def map(self, func, *args):
+        self._func = func
+        self._args = args
+        return self
+
+    def compute(self, scheduler=None):
+        return [self._func(item, *self._args) for item in self._seq]
+
+
+class _FakeDaskBag:
+    """Stands in for the ``dask.bag`` module in the parallel-compute paths."""
+
+    @staticmethod
+    def from_sequence(seq):
+        return _FakeBag(seq)
 
 
 def test_triangle_json_io(clrd):
@@ -594,6 +624,111 @@ def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
         if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
     ]
     assert dask_warnings == []
+
+
+def test_dask_parallel_deprecated_warns_once() -> None:
+    """
+    The dask-accelerated parallel-compute paths share a one-time
+    DeprecationWarning helper. Calling it repeatedly in the same process should
+    warn at most once, so the automatic dask paths don't flood output. See
+    issue #842.
+
+    Returns
+    -------
+    None
+    """
+    cl._dask_parallel_warned = False
+    try:
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            cl._warn_dask_parallel_deprecated()
+            cl._warn_dask_parallel_deprecated()
+        dask_warnings = [
+            w for w in record
+            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+        ]
+        assert len(dask_warnings) == 1
+    finally:
+        cl._dask_parallel_warned = False
+
+
+def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
+    """
+    A groupby aggregation on a sparse-backed triangle uses the dask 'bag'
+    parallel-compute path when dask is available, which should emit the dask
+    DeprecationWarning. dask is optional and not installed in the test
+    environment, so a fake bag stands in for it. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    cl._dask_parallel_warned = False
+    monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
+    sparse_clrd = cl.load_sample("clrd").set_backend("sparse")
+    try:
+        with pytest.warns(DeprecationWarning, match="dask") as record:
+            sparse_clrd.groupby("LOB").sum()
+        dask_warnings = [
+            w for w in record
+            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+        ]
+        assert len(dask_warnings) == 1
+    finally:
+        cl._dask_parallel_warned = False
+
+
+def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
+    """
+    Converting an incremental sparse-backed triangle to cumulative uses the
+    dask 'bag' parallel-compute path when dask is available, which should emit
+    the dask DeprecationWarning. A fake bag stands in for the optional 'dask'
+    dependency. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    cl._dask_parallel_warned = False
+    monkeypatch.setattr("chainladder.core.triangle.db", _FakeDaskBag)
+    incremental_sparse = cl.load_sample("raa").cum_to_incr().set_backend("sparse")
+    try:
+        with pytest.warns(DeprecationWarning, match="dask") as record:
+            incremental_sparse.incr_to_cum()
+        dask_warnings = [
+            w for w in record
+            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+        ]
+        assert len(dask_warnings) == 1
+    finally:
+        cl._dask_parallel_warned = False
+
+
+def test_dask_parallel_numpy_groupby_no_warning(
+        monkeypatch: MonkeyPatch,
+        recwarn,
+) -> None:
+    """
+    The dask 'bag' parallel-compute path is gated on the sparse backend, so a
+    groupby aggregation on a numpy-backed triangle should not warn even when a
+    dask bag is available. See issue #842.
+
+    Returns
+    -------
+    None
+    """
+    cl._dask_parallel_warned = False
+    monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
+    numpy_clrd = cl.load_sample("clrd").set_backend("numpy")
+    try:
+        numpy_clrd.groupby("LOB").sum()
+        dask_warnings = [
+            w for w in recwarn
+            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+        ]
+        assert dask_warnings == []
+    finally:
+        cl._dask_parallel_warned = False
 
 
 def test_describe_option(capsys: CaptureFixture[str]) -> None:
