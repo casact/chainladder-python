@@ -8,7 +8,7 @@ import pandas as pd
 import warnings
 
 from chainladder.development.base import DevelopmentBase
-from chainladder.utils import WeightedRegression
+from chainladder.utils import WeightedRegression, TriangleWeight
 from chainladder.utils.utility_functions import num_to_nan
 
 from typing import (
@@ -395,14 +395,21 @@ class Development(DevelopmentBase):
 
         link_ratio: ArrayLike = y / x
 
+        tw = TriangleWeight(
+            n_periods = self.n_periods,
+            drop_high = self.drop_high,
+            drop_low = self.drop_low,
+            drop_above = self.drop_above,
+            drop_below = self.drop_below,
+            drop_valuation = self.drop_valuation,
+            preserve = self.preserve,
+            drop = self.drop
+        )
+
         if hasattr(X, "w_v2_"):
-            self.w_v2_ = self._set_weight_func(
-                factor=obj.age_to_age * X.w_v2_,
-            )
+            self.w_v2_ = tw.fit(obj.age_to_age * X.w_v2_).w_
         else:
-            self.w_v2_ = self._set_weight_func(
-                factor=obj.age_to_age,
-            )
+            self.w_v2_ = tw.fit(obj.age_to_age).w_
 
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
