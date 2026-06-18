@@ -1,3 +1,6 @@
+"""
+Mirror pandas API onto the Triangle class.
+"""
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -24,6 +27,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+    from chainladder.utils.sparse import COO
     from chainladder.core.typing import BackendArray
     from collections.abc import Callable
     from numpy import ndarray
@@ -36,6 +40,7 @@ if TYPE_CHECKING:
         IndexLabel
     )
     from typing import (
+        Any,
         Literal,
         Self,
         Type
@@ -102,15 +107,16 @@ class TrianglePandas:
         if keepdims:
             is_val_tri: bool = self.is_val_tri
             obj: Triangle = self.val_to_dev().set_backend("sparse")
+            obj.values = cast("COO", obj.values)
             out: DataFrame = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
-            out["columns"]: Series = obj.columns[obj.values.coords[1]]
+            out["columns"] = obj.columns[obj.values.coords[1]]
             missing_cols: list = list(set(self.columns) - set(out['columns']))
             if origin_as_datetime:
-                out["origin"]: Series = obj.odims[obj.values.coords[2]]
+                out["origin"] = obj.odims[obj.values.coords[2]]
             else:
-                out["origin"]: Series = obj.origin[obj.values.coords[2]]
-            out["development"]: Series = obj.ddims[obj.values.coords[3]]
-            out["values"]: Series = obj.values.data
+                out["origin"] = obj.origin[obj.values.coords[2]]
+            out["development"] = obj.ddims[obj.values.coords[3]]
+            out["values"] = obj.values.data
             out: DataFrame = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
             )
@@ -119,21 +125,25 @@ class TrianglePandas:
                 out.columns.get_level_values(1)[2:]
             )
 
-            valuation: DataFrame = pd.DataFrame(
+            valuation_series = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
                 index=obj.odims if origin_as_datetime else obj.origin, 
                 columns=obj.ddims
-            ).unstack().rename('valuation').reset_index().rename(
-                columns={'level_0': 'development', 'level_1': 'origin'})
-
+            ).unstack()
+            valuation_series.name = 'valuation'
+            valuation: DataFrame = valuation_series.reset_index().rename(
+                columns={
+                    'level_0': 'development',
+                    'level_1': 'origin'}
+            )
             val_dict: dict = dict(zip(list(zip(
                 valuation['origin'], valuation['development'])),
                 valuation['valuation']))
             if len(out) > 0:
-                out['valuation']: Series = out.apply(
+                out['valuation'] = out.apply(
                     lambda x: val_dict[(x['origin'], x['development'])], axis=1)
             else:
-                out['valuation']: Series = self.valuation_date
+                out['valuation'] = self.valuation_date
             col_order: list = list(self.columns)
             if implicit_axis:
                 col_order: list = ['origin', 'development', 'valuation'] + col_order
@@ -143,7 +153,7 @@ class TrianglePandas:
                 else:
                     col_order: list = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
-                out[col]: Series = np.nan
+                out[col] = np.nan
             # Create physical columns out of virtual ones.
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
                 # Fill na to enable floating-point computation.
@@ -190,33 +200,62 @@ class TrianglePandas:
                     implicit_axis=implicit_axis
                 )
 
-    def plot(self, *args, **kwargs):
-        """Passthrough of pandas functionality"""
+    def plot(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Passthrough of pandas functionality. Calls DataFrame.plot() after the
+        Triangle is transformed into a pandas DataFrame.
+
+        Parameters
+        ----------
+        *args: Any
+            Positional arguments passed to ``pandas.DataFrame.plot``.
+        **kwargs: Any
+            Keyword arguments passed to ``pandas.DataFrame.plot``, e.g.
+            ``kind``, ``ax``, ``title``, ``subplots``. See the pandas
+            documentation for the full list of supported parameters.
+
+        Returns
+        -------
+        None
+        """
         return self.to_frame(origin_as_datetime=False).plot(*args, **kwargs)
 
-    def hvplot(self, *args, **kwargs):
-        """Passthrough of pandas functionality"""
+    def hvplot(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Passthrough of pandas functionality. Generate an interactive plot
+        of a Triangle after it has been transformed into a DataFrame().
+
+        Parameters
+        ----------
+        *args: Any
+            Positional arguments passed to ``pandas.DataFrame.hvplot``.
+        **kwargs: Any
+            Keyword arguments passed to ``pandas.DataFrame.hvplot``.
+        Returns
+        -------
+        Any
+        """
         df = self.to_frame(origin_as_datetime=True)
         if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(axis: str | int| None) -> int:
+    def _get_axis(axis: Literal['index', 'columns', 'origin', 'development'] | int | None) -> int:
         """
         Returns the integer representation of the requested axis.
 
         Parameters
         ----------
-        axis: str | int | None
+        axis: Literal['index', 'columns', 'origin', 'development'] | int | None
             String or integer representation of the requested axis. If
             supplied as a string, returns the integer representation. If
             supplied as an integer, returns the same integer.
 
         Returns
         -------
-        The integer representation of the requested axis
-
+        int
+            The integer representation of the requested axis
         """
 
         ax = {
@@ -236,11 +275,16 @@ class TrianglePandas:
                     "integer representation of the desired axis."
                 )
 
-    def dropna(self: TriangleProtocol):
-        """Method that removes origin/development vectors from edge of a
+    def dropna(self: TriangleProtocol) -> Triangle:
+        """
+        Method that removes origin/development vectors from edge of a
         triangle that are all missing values. This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
+
+        Returns
+        -------
+        Triangle
         """
         obj = self.sum(axis=0).sum(axis=1)
         xp = obj.get_array_module()
