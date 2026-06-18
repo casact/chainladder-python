@@ -110,9 +110,9 @@ class Triangle(TriangleBase):
         Displays age-to-age ratios for the triangle.
     valuation_date : date
         The latest valuation date of the data
-    loc: Triangle
+    loc: Location
         pandas-style ``loc`` accessor
-    iloc: Triangle
+    iloc: Ilocation
         pandas-style ``iloc`` accessor
     latest_diagonal: Triangle
         The latest diagonal of the triangle
