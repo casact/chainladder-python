@@ -35,3 +35,13 @@ body:
       description: >-
         Such as papers, spreadsheet workbooks, screenshots, or datasets that may
         help with this ticket.
+  - type: checkboxes
+    attributes:
+      label: Would you be willing to contribute this ticket?
+      options:
+        - label: Yes, absolutely!
+          required: false
+        - label: Yes, but I would like some help.
+          required: false
+        - label: No.
+          required: false

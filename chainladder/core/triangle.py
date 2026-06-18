@@ -18,10 +18,15 @@ try:
 except ImportError:
     db = None
 
-from typing import Optional, TYPE_CHECKING
+from typing import (
+    cast,
+    Optional,
+    TYPE_CHECKING
+)
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
+    from chainladder.core.typing import BackendArray
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
@@ -531,7 +536,7 @@ class Triangle(TriangleBase):
         )
 
         # Construct Sparse multidimensional array.
-        self.values: COO = num_to_nan(
+        self.values: BackendArray = cast("BackendArray", num_to_nan(
             sp.COO(
                 coords,
                 amts,
@@ -545,7 +550,7 @@ class Triangle(TriangleBase):
                     len(self.ddims),
                 ),
             )
-        )
+        ))
         # Deal with array backend.
         self.array_backend = "sparse"
         if array_backend is None:
@@ -918,6 +923,40 @@ class Triangle(TriangleBase):
     def is_pattern(self, pattern: bool):
         self._pattern = pattern
 
+    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
+        """ 
+        Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
+
+        Parameters
+        ----------
+        X: Triangle
+        The target triangle to align to
+        
+        sample_weight:  Triangle, option (default=None)
+        Exposure triangle
+
+        Returns
+        -------
+        Triangle
+            Triangle of selected pattern across origin periods
+
+        """
+        if not self._pattern:
+            raise ValueError("Triangle is not a selected pattern, such as .ldf_ or .cdf_")
+        valuation = X.valuation_date
+        pattern = self.iloc[..., : X.shape[-1]]
+        a = X.iloc[0, 0] * 0
+        a = a + a.nan_triangle
+        if X.array_backend == "sparse":
+            a = a - a[a.valuation < a.valuation_date]
+        if sample_weight:
+            X = X * a + sample_weight * a
+        else:
+            X = X * a
+        pattern = X / X * pattern
+        pattern.valuation_date = valuation
+        return pattern.latest_diagonal
+    
     @property
     def is_ultimate(self) ->  bool:
         """
@@ -1812,15 +1851,14 @@ class Triangle(TriangleBase):
         obj.values = obj.values * trend
         return obj
 
-    def broadcast_axis(self, axis, value):
-        warnings.warn(
-            """
-            Broadcast axis is deprecated in favor of broadcasting
-            using Triangle arithmetic."""
-        )
-        return self
-
     def copy(self):
+        """Return a shallow copy of the Triangle.
+
+        Returns
+        -------
+        Triangle
+            A new Triangle with copied ``values`` and shared metadata.
+        """
         X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))
         X._set_slicers()
@@ -2116,6 +2154,22 @@ class Triangle(TriangleBase):
         return obj
 
     def reindex(self, columns=None, fill_value=np.nan):
+        """Conform Triangle columns to a new set of labels.
+
+        Any column in ``columns`` that is not already present is added and
+        filled with ``fill_value``.
+
+        Parameters
+        ----------
+        columns : list
+            Column labels for the returned Triangle.
+        fill_value : float, default nan
+            Value assigned to newly added columns.
+
+        Returns
+        -------
+        Triangle
+        """
         obj = self.copy()
         for column in columns:
             if column not in obj.columns:

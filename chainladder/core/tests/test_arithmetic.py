@@ -59,7 +59,6 @@ def test_index_broadcasting4(clrd):
     assert (a.index == c.index).all().all()
 
 
-@pytest.mark.xfail
 def test_index_broadacsting4(clrd):
     """ If one triangle has key_labels that are not a subset of the other, then fail """
     a = clrd['CumPaidLoss']
@@ -67,7 +66,8 @@ def test_index_broadacsting4(clrd):
     idx = b.index
     idx['New Field'] = 'New'
     b.index = idx
-    c = a + b
+    with pytest.raises(ValueError, match="Index broadcasting is ambiguous"):
+        a + b
 
 def test_index_broadcasting5(clrd):
     """ If a and b have shared key labels but no matching levels, then they will stack """

@@ -8,7 +8,7 @@ import pandas as pd
 import warnings
 
 from chainladder.development.base import DevelopmentBase
-from chainladder.utils import WeightedRegression
+from chainladder.utils import WeightedRegression, TriangleWeight
 from chainladder.utils.utility_functions import num_to_nan
 
 from typing import (
@@ -281,6 +281,43 @@ class Development(DevelopmentBase):
                   12-24    24-36    36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
         (All)  1.659537  1.35064  1.22277  1.119155  1.079301  1.039863  1.031011  0.997274  0.990571  0.999179
 
+    Finally, the ``groupby`` parameter pools index levels together when
+    estimating patterns. Suppose an actuary developing every company in the
+    CAS loss reserve database wants industry line-of-business patterns
+    rather than patterns fit to each company's own thin data. Comparing the
+    pooled fit against the standalone fit shows why that pooling matters.
+
+    ..  testcode::
+
+        import pandas as pd
+
+        clrd = cl.load_sample("clrd")["CumPaidLoss"]
+        industry_dev = cl.Development(groupby="LOB").fit_transform(clrd)
+        standalone_dev = cl.Development().fit_transform(clrd)
+        ibnr_industry = cl.Chainladder().fit(industry_dev).ibnr_
+        ibnr_standalone = cl.Chainladder().fit(standalone_dev).ibnr_
+        summary = pd.DataFrame(
+            {
+                "industry": ibnr_industry.groupby("LOB").sum().sum("origin").to_frame(),
+                "standalone": ibnr_standalone.groupby("LOB").sum().sum("origin").to_frame(),
+            }
+        ).astype(int).rename_axis(None)
+        print(summary)
+
+    ..  testoutput::
+
+                  industry  standalone
+        comauto    1743192     1683207
+        medmal     1330330     1455883
+        othliab    1640597   -14285800
+        ppauto    17138458    17327738
+        prodliab    531648      577127
+        wkcomp     2777812     2498151
+
+    The two fits differ in a single parameter, yet the standalone fit lets a
+    handful of small companies with erratic development drive the other
+    liability line to a negative aggregate IBNR, while the pooled patterns
+    keep every line at a reasonable estimate.
 
     """
 
@@ -358,14 +395,21 @@ class Development(DevelopmentBase):
 
         link_ratio: ArrayLike = y / x
 
+        tw = TriangleWeight(
+            n_periods = self.n_periods,
+            drop_high = self.drop_high,
+            drop_low = self.drop_low,
+            drop_above = self.drop_above,
+            drop_below = self.drop_below,
+            drop_valuation = self.drop_valuation,
+            preserve = self.preserve,
+            drop = self.drop
+        )
+
         if hasattr(X, "w_v2_"):
-            self.w_v2_ = self._set_weight_func(
-                factor=obj.age_to_age * X.w_v2_,
-            )
+            self.w_v2_ = tw.fit(obj.age_to_age * X.w_v2_).w_
         else:
-            self.w_v2_ = self._set_weight_func(
-                factor=obj.age_to_age,
-            )
+            self.w_v2_ = tw.fit(obj.age_to_age).w_
 
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_

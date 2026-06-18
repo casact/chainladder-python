@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import chainladder as cl
 import io
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -14,12 +16,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-
-try:
-    from IPython.core.display import HTML
-except ImportError:
-    HTML = None
-
 
 def test_repr(raa):
     np.testing.assert_array_equal(
@@ -49,7 +45,10 @@ def test_link_ratio(raa, atol):
         raa.link_ratio * raa.iloc[:, :, :-1, :-1].values - raa.values[:, :, :-1, 1:]
     ).sum().sum() < atol
 
-
+def test_align_pattern(raa, atol):
+    with pytest.raises(ValueError):
+        raa.align_pattern(raa)
+        
 def test_incr_to_cum(clrd):
     clrd.cum_to_incr().incr_to_cum() == clrd
 
@@ -264,6 +263,27 @@ def test_dropna(clrd):
     assert a == (1, 1, 2, 2)
 
 
+def test_dropna_latest_diagonal(raa: Triangle) -> None:
+    """
+    dropna() on a single-development-period triangle (shape[-1] == 1), where first origin period is nan.
+    First origin period should be eliminated.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    t = raa.copy()
+    t.values[:, :, 0, :] = np.nan
+    result = t.latest_diagonal.dropna()
+    assert result.shape == (1, 1, 9, 1)
+    assert result.origin.min().year == 1982
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
@@ -337,6 +357,153 @@ def test_groupby_axis1(clrd, prism):
     prism.sum().grain("OYDY")
 
 
+def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
+    """
+    Verify _auto_sparse functionality in groupby agg func.
+
+    For prism, the grouped result is sparse
+    but small enough that _auto_sparse() converts it back to numpy; passing
+    auto_sparse=False bypasses that conversion and leaves it sparse.
+
+    Parameters
+    ----------
+    prism: Triangle
+        The prism sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result_default   = prism.groupby("Line").sum()
+    result_no_sparse = prism.groupby("Line").sum(auto_sparse=False)
+
+    assert result_default.array_backend == "numpy"
+    assert result_no_sparse.array_backend == "sparse"
+    assert result_default == result_no_sparse
+
+
+def test_get_axis_none(clrd: Triangle) -> None:
+    """
+    Pass axis=None to TriangleGroupBy. Should be the same as passing axis=0.
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.groupby("LOB", axis=None).sum() == clrd.groupby("LOB", axis=0).sum()
+
+
+def test_astype(raa: Triangle) -> None:
+    """
+    Cast values in triangle to another data type.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert raa.astype("float32").values.dtype == np.float32
+
+
+def test_head(clrd: Triangle) -> None:
+    """
+    Triangle.head(n) returns a Triangle limited to the first n rows of the index axis.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.head(3).shape[0] == 3
+    assert list(clrd.head(3).index['LOB']) == ['othliab', 'ppauto', 'comauto']
+
+
+def test_tail(clrd: Triangle) -> None:
+    """
+    Triangle.tail(n) returns a Triangle limited to the last n rows of the index axis.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.tail(3).shape[0] == 3
+    assert list(clrd.tail(3).index['LOB']) == ['wkcomp', 'comauto', 'wkcomp']
+
+
+def test_add_df_passthru(raa: Triangle) -> None:
+    """
+    Check equivalent behavior between Triangle and DataFrame passed-thru methods.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    frame = raa.to_frame()
+
+    # String serialization
+    assert raa.to_csv() == frame.to_csv()
+    assert raa.to_html() == frame.to_html()
+
+    # DataFrame-returning methods
+    assert raa.describe().equals(frame.describe())
+    assert raa.drop_duplicates().equals(frame.drop_duplicates())
+    assert raa.melt().equals(frame.melt())
+    assert raa.unstack().equals(frame.unstack())
+
+
+def test_plot(raa: Triangle) -> None:
+    """
+    TrianglePandas.plot() delegates to to_frame(origin_as_datetime=False).plot().
+    Each plotted line must carry the same y-values as the equivalent DataFrame plot.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    matplotlib.use("Agg")
+
+
+    try:
+        ax_tri = raa.plot()
+        ax_df  = raa.to_frame(origin_as_datetime=False).plot()
+
+        lines_tri = ax_tri.get_lines()
+        lines_df  = ax_df.get_lines()
+
+        assert len(lines_tri) == len(lines_df)
+        for lt, ld in zip(lines_tri, lines_df):
+            np.testing.assert_array_equal(lt.get_ydata(orig=True), ld.get_ydata(orig=True))
+    finally:
+        plt.close("all")
+
+
 def test_partial_year(prism):
     before = prism["Paid"].sum().incr_to_cum()
     before = before[before.valuation <= "2017-08"].latest_diagonal
@@ -357,13 +524,6 @@ def test_array_protocol(raa, clrd):
     assert np.concatenate((clrd.iloc[:200], clrd.iloc[200:]), 0) == cl.concat(
         (clrd.iloc[:200], clrd.iloc[200:]), 0
     )
-
-
-# def test_dask_backend(raa):
-#     """ Dask backend not fully implemented """
-#    raa1 = cl.Chainladder().fit(raa.set_backend('dask')).ultimate_
-#    raa2 = cl.Chainladder().fit(raa).ultimate_
-#    assert (raa1 == raa2).compute()
 
 
 def test_partial_val_dev(raa):
@@ -420,6 +580,32 @@ def test_virtual_column(prism):
     assert prism["Paid"] == prism["P"]
 
 
+def test_to_frame_keepdims_virtual_column(clrd: Triangle) -> None:
+    """
+    to_frame(keepdims=True) computes virtual columns and propagates NaN
+    for rows where the underlying physical column has no data.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    t = clrd.copy()
+    t["BulkLossDoubled"] = lambda x: x["BulkLoss"] * 2
+    df = t.to_frame(keepdims=True)
+
+    # Where BulkLoss has no data, the virtual column must also be NaN.
+    assert df.loc[df["BulkLoss"].isna(), "BulkLossDoubled"].isna().all()
+
+    # Where BulkLoss has data, the virtual column must compute correctly.
+    mask = df["BulkLoss"].notna()
+    assert (df.loc[mask, "BulkLossDoubled"] == df.loc[mask, "BulkLoss"] * 2).all()
+
+
 def test_correct_valutaion(raa):
     new = cl.Triangle(
         raa.iloc[..., :-3, :].latest_diagonal.to_frame(
@@ -432,12 +618,12 @@ def test_correct_valutaion(raa):
     assert new.valuation_date == raa.valuation_date
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
     "prop", ["cdf_", "ibnr_", "full_expectation_", "full_triangle_"]
 )
 def test_no_fitted(raa, prop):
-    getattr(raa, prop)
+    with pytest.raises(AttributeError, match=f"no attribute '{prop}'"):
+        getattr(raa, prop)
 
 
 def test_pipe(raa):
@@ -450,11 +636,6 @@ def test_pipe(raa):
 def test_repr_html(raa, clrd):
     assert type(raa._repr_html_()) == str
     assert type(clrd._repr_html_()) == str
-
-
-@pytest.mark.xfail(HTML is None, reason="ipython needed for test")
-def test_heatmap(raa):
-    raa.link_ratio.heatmap()
 
 
 def test_agg_sparse():
@@ -1059,6 +1240,171 @@ def test_xs(clrd):
     # level works with either integer index or name of the index column
     assert clrd.xs('comauto',level=1) == clrd.xs('comauto',level='LOB')
     assert clrd.xs('comauto',level=1).index.equals(clrd.xs('comauto',level='LOB').index)
+
+
+def test_get_array_module_with_explicit_arr(raa: Triangle) -> None:
+    """
+    Supply a ndarray to Triangle.get_array_module(), which should be np (numpy).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    assert raa.get_array_module(np.array([1.0])) is np
+
+
+def test_get_array_module_invalid_backend_raises(raa: Triangle) -> None:
+    """
+    Simulate typo in setting array backend, should raise an exception.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    tri = raa.copy()
+    tri.array_backend = 'mumpy'
+    with pytest.raises(Exception, match="Array backend is invalid or not properly set"):
+        tri.get_array_module()
+
+
+def test_set_development_no_development_column() -> None:
+    """
+    Initialize a triangle without a development dimension specified. Development will default to being
+    a single period set to the latest origin period.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(
+        {
+            'origin': [1995, 1996, 1997],
+            'reported': [1.0, 2.0, 3.0]
+        }
+    )
+    tri = cl.Triangle(
+        data=df,
+        origin='origin',
+        columns='reported',
+        cumulative=True
+    )
+    assert tri.shape[-1] == 1
+    assert tri.development[0] == str(tri.origin[-1])
+
+
+def test_set_development_age_instead_of_date_raises() -> None:
+    """
+    Initialize a triangle with incorrect development periods specified. Should raise a ValueError.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(
+        {
+            'origin': [1995, 1996],
+            'development': [12, 24],
+            'reported': [1.0, 2.0]
+        }
+    )
+    with pytest.raises(ValueError, match="Development lags could not be determined"):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
+def test_input_validation_non_numeric_columns_raises() -> None:
+    """
+    Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame({
+        'origin': [1995, 1996],
+        'development': [1995, 1996],
+        'reported': ['1000', '2000'],
+    })
+    with pytest.raises(TypeError, match="column attribute must be numeric"):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
+def test_input_validation_duplicate_columns_raises() -> None:
+    """
+    Initialize a triangle with duplicate column names. Raise an AttributeError.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(
+        [[1995, 1995, 1.0, 2.0], [1996, 1996, 3.0, 4.0]],
+        columns=pd.Index(['origin', 'development', 'reported', 'reported'])
+    )
+    with pytest.raises(AttributeError, match="Columns are required to have unique names"):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
+def test_get_axis_value(raa) -> None:
+    """
+    Extract the Triangle axes using integer indices and string specifications.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    assert raa._get_axis_value(0).equals(raa.index)
+    assert raa._get_axis_value("index").equals(raa.index)
+    assert raa._get_axis_value(1).equals(raa.columns)
+    assert raa._get_axis_value("columns").equals(raa.columns)
+    assert raa._get_axis_value(2).equals(raa.origin)
+    assert raa._get_axis_value("origin").equals(raa.origin)
+    assert raa._get_axis_value(3).equals(raa.development)
+    assert raa._get_axis_value("development").equals(raa.development)
+    # Negative index support in TrianglePandas().get_axis()
+    assert raa._get_axis_value(-4).equals(raa.index)
+    assert raa._get_axis_value(-1).equals(raa.development)
+    with pytest.raises(ValueError):
+        raa._get_axis_value("dev")
 
 
 def test_to_datetime_uninferrable_format_raises() -> None:

@@ -106,7 +106,7 @@ class TriangleBase(
         columns = str_to_list(columns)
         origin = str_to_list(origin)
         development = str_to_list(development)
-        if "object" in data[columns].dtypes:
+        if not all(pd.api.types.is_numeric_dtype(dt) for dt in data[columns].dtypes):
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
@@ -651,6 +651,16 @@ class TriangleBase(
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
+        """Materialize a lazy dask-backed Triangle.
+
+        When ``values`` is a dask array, compute it and update
+        ``array_backend`` to match the resulting array type. Returns ``self``
+        unchanged when the Triangle is already materialized.
+
+        Returns
+        -------
+        Triangle
+        """
         if hasattr(self.values, "chunks"):
             obj = self.copy()
             obj.values = obj.values.compute(*args, **kwargs)

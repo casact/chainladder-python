@@ -11,7 +11,10 @@ from chainladder import (
     _warn_dask_parallel_deprecated,
 )
 from chainladder.utils.utility_functions import num_to_nan
-from typing import TYPE_CHECKING
+from typing import (
+    cast,
+    TYPE_CHECKING
+)
 
 
 try:
@@ -21,9 +24,9 @@ except ImportError:
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+    from chainladder.core.typing import BackendArray
     from collections.abc import Callable
     from numpy import ndarray
-    from numpy.typing import ArrayLike
     from pandas import (
         DataFrame,
         Series
@@ -69,22 +72,22 @@ class TrianglePandas:
             origin_as_datetime: bool = True,
             keepdims: bool = False,
             implicit_axis: bool = False,
-            *args,
-            **kwargs
     ) -> DataFrame | Series:
         """ Converts a triangle to a pandas.DataFrame.
 
         Parameters
         ----------
-        origin_as_datetime : bool
-            Whether the origin vector should be converted from PeriodIndex
-            into a datetime dtype. Default is False.
-        keepdims : bool
-            If True, the triangle will be converted to a DataFrame with all
-            dimensions intact.  The argument will force a consistent DataFrame
-            format regardless of whether any dimensions are of length 1.
-        implicit_axis : bool
-            When keepdims is True, this denotes whether to include the implicit
+        origin_as_datetime : bool (default = True)
+            When all dimensions are returned, whether the origin vector 
+            should be converted from PeriodIndex into a datetime dtype. 
+        keepdims : bool (default = False)
+            Converted DataFrame will keep all dimensions intact and maintain a consistent
+            format regardless of whether any dimensions are of length 1. 
+
+            Ignored when 3 or more dimensions (index, column, origin, and development)
+            have lengths greater than 1
+        implicit_axis : bool (default = False)
+            When implicit_axis is True, this denotes whether to include the implicit
             valuation axis in addition to the origin and development.
 
         Returns
@@ -141,8 +144,11 @@ class TrianglePandas:
                     col_order: list = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col]: Series = np.nan
+            # Create physical columns out of virtual ones.
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
+                # Fill na to enable floating-point computation.
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
+                # Coerce 0 to np.nan.
                 out.loc[out[col] == 0, col] = np.nan
 
             return out[col_order]
@@ -250,6 +256,7 @@ class TrianglePandas:
                     self.development <= ddim.max())
             ]
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
+        # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
@@ -430,30 +437,99 @@ class TrianglePandas:
         return obj
 
     def head(self, n=5):
+        """Return the first ``n`` triangles along the index axis.
+
+        Parameters
+        ----------
+        n : int, default 5
+            Number of triangles to select.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[:n]
 
     def tail(self, n=5):
+        """Return the last ``n`` triangles along the index axis.
+
+        Parameters
+        ----------
+        n : int, default 5
+            Number of triangles to select.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs):
+        """Sort Triangle rows by index labels.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
     def exp(self):
+        """Return the exponential of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().exp(self)
 
     def log(self):
+        """Return the natural logarithm of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().log(self)
 
     def minimum(self, other):
+        """Element-wise minimum of this Triangle and another operand.
+
+        See :func:`chainladder.minimum` for parameters, usage, and examples.
+        """
         return self.get_array_module().minimum(self, other)
 
     def maximum(self, other):
+        """Element-wise maximum of this Triangle and another operand.
+
+        See :func:`chainladder.maximum` for parameters, usage, and examples.
+        """
         return self.get_array_module().maximum(self, other)
 
     def sqrt(self):
+        """Return the non-negative square root of each element.
+
+        Returns
+        -------
+        Triangle
+        """
         return self.get_array_module().sqrt(self)
 
     def round(self, decimals=0, *args, **kwargs):
+        """Round each element to the given number of decimal places.
+
+        Uses banker's rounding (round half to even). For example,
+        ``(8.5).round(0)`` returns 8, not 9. For conventional rounding,
+        add a small epsilon before rounding, e.g. ``(tri + 1e-9).round(0)``.
+
+        Parameters
+        ----------
+        decimals : int, default 0
+            Number of decimal places to round to.
+
+        Returns
+        -------
+        Triangle
+        """
         return round(self, decimals)
 
     def xs(
@@ -549,7 +625,7 @@ def add_triangle_agg_func(
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()
-        obj.values: ArrayLike = num_to_nan(obj.values)
+        obj.values = cast("BackendArray", num_to_nan(obj.values))
         if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
         else:
