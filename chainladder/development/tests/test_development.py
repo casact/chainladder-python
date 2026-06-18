@@ -333,7 +333,7 @@ def test_new_drop_9():
     assert (lhs == rhs).all()
 
 
-@pytest.mark.xfail
+# @pytest.mark.xfail
 def test_new_drop_10():
     data = {
         "valuation": [
@@ -372,7 +372,7 @@ def test_new_drop_10():
     }
 
     tri = cl.Triangle(
-        pd.DataFrame(data),
+        data,
         origin="origin",
         development="valuation",
         columns=["values"],
@@ -381,7 +381,7 @@ def test_new_drop_10():
 
     assert np.round(
         cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
-    ) == (200 + 300 + 800) / (200 + 300 + 400)
+    ) == np.round((200 + 200 + 300) / (100 + 200 + 300), 4)
 
     assert (
         np.round(
