@@ -297,7 +297,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-xdist", marker = "extra == 'dev'" },
     { name = "scikit-learn", specifier = ">1.4.2" },
-    { name = "sparse", specifier = ">=0.9,<=0.17.0" },
+    { name = "sparse", specifier = ">=0.9" },
     { name = "sphinx", marker = "extra == 'docs'" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'" },
     { name = "sphinx-togglebutton", marker = "extra == 'docs'" },
