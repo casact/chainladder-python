@@ -12,7 +12,8 @@ import pandas as pd
 
 from chainladder.core.typing import (
     _AxisKey,
-    _LabelKey
+    _LabelKey,
+    TriangleProtocol
 )
 
 from chainladder.utils.utility_functions import num_to_nan
@@ -24,10 +25,17 @@ from typing import (
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-    from chainladder.core.typing import IndexExpression
+    from collections.abc import (
+        Callable,
+        Sequence
+    )
+    from chainladder.core.typing import (
+        BackendArray,
+        IndexExpression
+    )
     from sparse import COO
+    from types import ModuleType
     from typing import Literal
-
 
 _slicing = importlib.import_module("sparse._slicing")
 
@@ -416,31 +424,75 @@ class Ilocation(_LocBase):
 
 
 class TriangleSlicer:
-    def __getitem__(self, key):
-        """ Boolean Slicer functionality """
-        if type(key) is pd.Series and key.name == "development":
+    """
+    Mixin class to provide square bracket [] slicing functionality to the Triangle class.
+    """
+
+    def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | str | list[str] | int) -> Triangle | pd.Series:
+        """
+        Boolean Slicer functionality.
+
+        Parameters
+        ----------
+        key: pd.Series | np.ndarray | str | list[str] | int
+            The key that you want to slice on.
+        Returns
+        -------
+        Triangle | pd.Series
+            The requested slice of the Triangle, or in the case of an index, a series of index labels.
+        """
+
+        # Determine the axis to which the key applies, and slice accordingly.
+
+        # Case development axis.
+        if isinstance(key, pd.Series) and key.name == "development":
             return self._slice(key, "ddims")
-        if type(key) is np.ndarray:
+        # Case ndarray, could be valuation or origin.
+        if isinstance(key, np.ndarray):
+            # Case valuation, inferred by size of ndarray obtained by filtering on valuation date.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
+            # Otherwise, assume case origin.
             return self._slice(key, "odims")
-        if type(key) is pd.Series:
+        # Case index.
+        if isinstance(key, pd.Series):
             return self.iloc[self.index[key].index]
         elif key in self.key_labels:
             return self.index[key]
+        # Case columns.
         else:
+            # Access virtual columns created by lazy evaluation.
             if type(key) is str and self.virtual_columns.columns.get(key, None):
-                out = self.virtual_columns[key].copy()
+                out: Triangle = self.virtual_columns[key].copy()
                 out.virtual_columns.columns = {}
                 return out
-            key: list = [key] if not hasattr(key, '__iter__') or type(key) is str else key
+            keys: Sequence[str | int] = [key] if isinstance(key, (str, int, float, np.generic)) else key
             # Identify the position of each requested element within the valuation dimension.
-            idx = [list(self.vdims).index(item) for item in key]
+            idx = [list(self.vdims).index(item) for item in keys]
             return self.iloc[:, idx]
 
-    def __setitem__(self, key, value):
-        """ Function for pandas style column setting """
-        xp = self.get_array_module()
+    def __setitem__(
+            self: TriangleProtocol,
+            key: str | int,
+            value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]
+    ) -> None:
+        """
+        Function for pandas-style column setting, i.e., Triangle[...] = value.
+
+        Parameters
+        ----------
+        key: str | int
+            The vdims label of the column to set.
+        value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]
+            The value(s) to assign to the column. A callable defines a virtual
+            (lazily-computed) column.
+
+        Returns
+        -------
+        None
+        """
+        xp: ModuleType = self.get_array_module()
+        # Case callable, create lazy-eval virtual columns, but do not compute.
         if callable(value):
             self.virtual_columns[key] = value
             if self.array_backend == "sparse":
@@ -449,51 +501,107 @@ class TriangleSlicer:
                     self.values.shape = k, v + 1, o, d
                     self.vdims = np.append(self.vdims, key)
                 return
+            # Create a placeholder column.
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
+        # Otherwise, remove column from virtual columns if previously reserved for lazy evaluation.
         else:
             self.virtual_columns.pop(key)
-        if isinstance(value, TriangleSlicer) and value.array_backend != self.array_backend:
-            value = value.set_backend(self.array_backend)
+        if isinstance(value, TriangleSlicer):
+            value = cast("TriangleProtocol", cast(object, value))
+            if value.array_backend != self.array_backend:
+                value = value.set_backend(self.array_backend)
+        # Key exists in columns, replace data.
         if key in self.vdims:
             i = np.where(self.vdims == key)[0][0]
+            # Case sparse backend.
             if self.array_backend == "sparse":
+                # Cast value to sparse backend.
+                value = cast("Triangle", value)
+                after = cast("COO", value.values)
+
+                # Drop existing data where key matches, reassign coordinates.
                 before = self.drop(key).values
+                before = cast("COO", before)
                 bc = before.coords[1, :]
                 before.coords[1] = np.where(bc >= i, bc + 1, bc,)
-                value.values.coords[1] = i
-                coords = np.concatenate((before.coords, value.values.coords), axis=1)
-                data = np.concatenate((before.data, value.values.data))
+
+                # Append assigned data and new coordinates.
+                after.coords[1] = i
+                coords = np.concatenate((before.coords, after.coords), axis=1)
+                data = np.concatenate((before.data, after.data))
+
+                # Create new sparse matrix with updated coords and data, assign to backend array.
                 self.values = xp.COO(
-                    coords, data, shape=self.shape, prune=True, fill_value=xp.COO.nan
+                    coords=coords,
+                    data=data,
+                    shape=self.shape,
+                    prune=True,
+                    fill_value=xp.COO.nan
                 )
+            # Case numpy backend.
             else:
                 if isinstance(value, TriangleSlicer):
                     value = value.values
-                self.values[:, i : i + 1] = value
+                cast(np.ndarray, self.values)[:, i : i + 1] = value
+        # Key is new, create a column and update data.
         else:
-            self.vdims = self.vdims if key in self.vdims else np.append(self.vdims, key)
+            self.vdims = np.append(self.vdims, key)
+            if isinstance(value, (int, float, np.generic)):
+                # Broadcast scalar across the Triangle's shape.
+                value = self.iloc[:, 0] * 0 + value
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
-            except:
-                # For misaligned triangle support
-                conc = (self.values, (self.iloc[:, 0] * 0 + value).values)
+            except (ValueError, AttributeError):
+                # For misaligned triangle support.
+                conc = (self.values, (self.iloc[:, 0] * 0 + cast("Triangle", value)).values)
                 self.values = xp.concatenate(conc, axis=1)
 
-    def _slice_valuation(self, key):
-        """ private method for handling of valuation slicing """
-        obj = self.copy()
-        obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
-        key = key.reshape(self.shape[-2:], order="f")
-        obj.values = num_to_nan(obj.values * obj.get_array_module().array(key))
-        return _LocBase(obj).get_idx(
-            (slice(None), slice(None),
-             np.arange(obj.shape[2])[np.sum(~key, 1) != obj.shape[3]],
-             np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]]))
+    def _slice_valuation(self: TriangleProtocol, key: np.ndarray) -> Triangle:
+        """
+        Private method for handling of valuation slicing.
 
-    def _slice(self, key, axis):
-        """ private method for handling of origin/development slicing """
+        Parameters
+        ----------
+        key: np.ndarray
+            An array the size of the number of cells in origin x development, typically obtained by
+            a comparison against the Triangle's valuation date.
+
+        Returns
+        -------
+        Triangle
+        """
+        obj = self.copy()
+        # Update the triangle's valuation date by computing the max valuation on the remaining cells,
+        # limited by the current valuation date in case the valuation periods extend beyond it, i.e.,
+        # in the case of tails.
+        obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
+        # Filter out values by converting them to nan.
+        key = key.reshape(self.shape[-2:], order="F")
+        obj.values = cast("BackendArray", num_to_nan(obj.values * obj.get_array_module().array(key)))
+        # Recalculate size of the origin and development axes and return the slice.
+        return _LocBase(obj).get_idx((
+            slice(None),
+            slice(None),
+            np.arange(obj.shape[2])[np.sum(~key, 1) != obj.shape[3]],
+            np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]]
+         ))
+
+    def _slice(self: TriangleProtocol, key: pd.Series | np.ndarray, axis: Literal['ddims', 'odims']) -> Triangle:
+        """
+        Private method for handling of origin/development slicing.
+
+        Parameters
+        ----------
+        key: pd.Series | np.ndarray
+            Array specifying the slice to extract.
+        axis: Literal['ddims', 'odims']
+            The axis to which the slice would apply, `ddims` for development, `odims` for origin.
+        """
+
+        # Update the axis, then the values.
         obj = self.copy()
         setattr(obj, axis, getattr(obj, axis)[key])
+        # noinspection PyProtectedMember
         slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
         if axis == "odims":
             slicer = tuple(list(slicer) + [slice(None)])
@@ -501,7 +609,16 @@ class TriangleSlicer:
         return obj
 
     def _set_slicers(self) -> None:
-        """ Call any time the shape of index or column changes """
+        """
+        Set the indexers on the Triangle during initialization. Enables indexing functionality such as Triangle.iloc[],
+        Triangle.loc[], Triangle.iat[], and Triangle.at[].
+
+        Also, call at any time the shape of index or column changes.
+
+        Returns
+        -------
+        None
+        """
         self.iloc, self.loc = Ilocation(self), Location(self)
         self.iat, self.at = Iat(self), At(self)
         self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)

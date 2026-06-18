@@ -406,6 +406,7 @@ options = Options()
 
 from chainladder.utils import (  # noqa (API import)
     WeightedRegression,
+    TriangleWeight,
     parallelogram_olf,
     read_csv,
     read_pickle,
