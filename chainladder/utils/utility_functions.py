@@ -980,7 +980,17 @@ def model_diagnostics(
 
     Returns
     -------
-    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
+    Triangle with relevant figures as columns, including 
+    - ``Latest``: Cumulative value at the latest valuation date, equivalent to ``latest_diagonal``
+    - ``Month/Quarter/Year Incremental``: Actual emergence between the latest valuation and the one prior valuation date
+    - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``); ignored if ``groupby`` is supplied
+    - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``); ignored if ``groupby`` is supplied
+    - ``Ultimate``: Projected ultimate loss from the fitted IBNR model (``ultimate_``)
+    - ``IBNR``: Ultimate - Latest
+    - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
+    - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
+
+    Columns from the original Triangle are cross-joined into the index. ``Measure`` will contain all the columns from the original Triangle. 
     """
     from chainladder import Pipeline, Triangle
 
@@ -1039,6 +1049,9 @@ def model_diagnostics(
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
+        if groupby is None:
+            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
         out["Ultimate"] = obj.ultimate_[col]
         out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
