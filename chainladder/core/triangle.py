@@ -11,7 +11,7 @@ from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value, to_period
-from chainladder import options
+from chainladder import options, _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db
@@ -1242,6 +1242,7 @@ class Triangle(TriangleBase):
                         l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
                         l3 = lambda i: l2(i).sum(3, keepdims=True)
                         if db:
+                            _warn_dask_parallel_deprecated()
                             bag = db.from_sequence(range(self.shape[-1]))
                             bag = bag.map(l3)
                             out = bag.compute(scheduler="threads")
