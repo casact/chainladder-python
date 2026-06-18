@@ -952,7 +952,7 @@ def model_diagnostics(
     - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``); ignored if ``groupby`` is supplied
     - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``); ignored if ``groupby`` is supplied
     - ``Ultimate``: Projected ultimate loss from the fitted IBNR model (``ultimate_``)
-    - ``IBNR``: Ultiamte - Latest
+    - ``IBNR``: Ultimate - Latest
     - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
     - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
 
