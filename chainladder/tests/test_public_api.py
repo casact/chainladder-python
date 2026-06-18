@@ -24,6 +24,7 @@ EXPECTED_PUBLIC_API = {
     "ValuationCorrelation",
     # utils
     "WeightedRegression",
+    "TriangleWeight",
     "parallelogram_olf",
     "read_csv",
     "read_pickle",

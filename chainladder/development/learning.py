@@ -9,6 +9,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, PolynomialFeatu
 from sklearn.compose import ColumnTransformer
 from chainladder.development.base import DevelopmentBase
 from chainladder import options
+from chainladder import TriangleWeight
 
 
 class DevelopmentML(DevelopmentBase):
@@ -250,11 +251,8 @@ class DevelopmentML(DevelopmentBase):
 
     def _prep_w_ml(self,X,sample_weight=None):
         weight_base = (~np.isnan(X.values)).astype(float)
-        weight = weight_base.copy()               
-        if self.drop is not None:
-            weight = weight * self._drop_func(X)
-        if self.drop_valuation is not None:
-            weight = weight * self._drop_valuation_func(X)
+        weight = weight_base.copy()
+        weight = weight * TriangleWeight(drop=self.drop,drop_valuation=self.drop_valuation).fit(X).w_.fillzero().values
         if sample_weight is not None:
             weight = weight * sample_weight.values 
         return weight.flatten()[weight_base.flatten()>0]

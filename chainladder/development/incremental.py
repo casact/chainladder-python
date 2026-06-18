@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from chainladder.development import Development, DevelopmentBase
-from chainladder.utils import WeightedRegression
+from chainladder.utils import WeightedRegression, TriangleWeight
 import numpy as np
 import pandas as pd
 import warnings
@@ -227,10 +227,20 @@ class IncrementalAdditive(DevelopmentBase):
             X_trended = X_incr.trend(self.trend, axis='valuation')
         x = X_trended / sample_weight.values
         #assign weights according to n_periods and drops
+        tw = TriangleWeight(
+            n_periods = self.n_periods,
+            drop_high = self.drop_high,
+            drop_low = self.drop_low,
+            drop_above = self.drop_above,
+            drop_below = self.drop_below,
+            drop_valuation = self.drop_valuation,
+            preserve = self.preserve,
+            drop = self.drop
+        )
         if hasattr(X, "w_"):
-            self.w_tri_ = self._set_weight_func(x * X.w_,X_trended)
+            self.w_tri_ = tw.fit(X=x * X.w_,sample_weight=X_trended).w_
         else:
-            self.w_tri_ = self._set_weight_func(x,X_trended)
+            self.w_tri_ = tw.fit(X=x,sample_weight=X_trended).w_
         self.w_ = self.w_tri_.values
         #calculate factors
         super().fit(sample_weight.values,X_trended.values,self.w_)
