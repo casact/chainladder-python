@@ -6,7 +6,6 @@ from chainladder.methods import Chainladder
 from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
-import warnings
 from chainladder.utils import TriangleWeight, concat
 from chainladder import Triangle
 
@@ -259,7 +258,7 @@ class DisposalRate(DevelopmentBase):
         return X_new
     
     def fit_transform(self, X, y=None, sample_weight=None):
-        """Fit and return predictions for VotingChainladder
+        """Fit and return transformed full_triangle_ based on the Disposal Rate
 
         Parameters
         ----------
@@ -275,8 +274,6 @@ class DisposalRate(DevelopmentBase):
         Returns
         -------
         X_new: Triangle
-            Loss data with VotingChainladder ultimate applied
+            Triangle with new full_triangle_
         """
         return self.fit(X, y, sample_weight).transform(X, sample_weight=sample_weight)
-    def _test(self, X, ult):
-        return 'test'
