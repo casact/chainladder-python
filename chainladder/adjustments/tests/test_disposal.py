@@ -1,6 +1,6 @@
 import chainladder as cl
 import numpy as np
-
+import pytest
 
 def test_disposal():
     tri = cl.load_sample('friedland_gl_insurer')['Closed Claim Counts']
@@ -16,7 +16,7 @@ def test_disposal():
         cumulative=True,
     )
     dr = cl.DisposalRate(n_periods = 5, average = 'simple', drop_high = 1, drop_low = 1).fit_transform(X=tri,sample_weight=ult_tri)
-    assert np.all(dr.disposal_.round(3).values.flatten() - [.200,.433,.585,.710,.791,.862,.882,.912,1.000] <=0.001)
+    assert np.all(abs(dr.disposal_.round(3).values.flatten() - [.200,.433,.585,.710,.791,.862,.882,.912,1.000] <=0.001))
     lhs = (dr.full_triangle_.cum_to_incr()-tri.cum_to_incr()).round(0).values.flatten()
     rhs = np.array([
                                                             77.,  
@@ -28,4 +28,15 @@ def test_disposal():
             67.,    55.,    36.,    31.,    9.,     13.,    39.,  
     140.,   91.,    75.,    49.,    42.,    12.,    18.,    53.
     ])
-    assert np.all(lhs[~np.isnan(lhs)] - rhs <= 1)
+    assert np.all(abs(lhs[~np.isnan(lhs)] - rhs <= 1))
+
+def test_disposal_no_weight(raa):
+    tri = raa.set_backend('sparse')
+    with pytest.raises(ValueError):
+        dr = cl.DisposalRate().fit(tri)
+    ult = cl.Chainladder().fit(tri).ultimate_
+    dr = cl.DisposalRate().fit(tri,sample_weight=ult)
+    with pytest.raises(ValueError):
+        est = dr.transform(tri)
+    
+    
