@@ -295,17 +295,3 @@ class IncrementalAdditive(DevelopmentBase):
         for item in ["ldf_", "w_", "zeta_", "incremental_", "tri_zeta", "fit_zeta_", "sample_weight"]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
-
-    def _param_property(self, factor, params):
-        from chainladder import options
-        
-        obj = factor[factor.origin == factor.origin.min()]
-        xp = factor.get_array_module()
-        obj.values = params
-        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
-        obj.is_pattern = True
-        obj.is_additive = True
-        obj.is_cumulative = False
-        obj.virtual_columns.columns = {}
-        obj._set_slicers()
-        return obj

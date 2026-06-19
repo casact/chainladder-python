@@ -21,7 +21,7 @@ from pandas.api.types import is_string_dtype
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder.core.typing import TriangleLike
+    from chainladder.core import Triangle
 
 
 class DevelopmentBase(
@@ -45,18 +45,18 @@ class DevelopmentBase(
 
     def _set_fit_groups(
             self,
-            X: TriangleLike
-    ) -> TriangleLike:
+            X: Triangle
+    ) -> Triangle:
         """
         Used for assigning group_index in fit.
 
         Parameters
         ----------
-        X: TriangleLike
+        X: Triangle
 
         Returns
         -------
-        TriangleLike, after performing the groupby on it.
+        Triangle, after performing the groupby on it.
 
         """
         backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
@@ -384,3 +384,39 @@ class DevelopmentBase(
                 np.where(X.development == item[1])[0][0],
             ] = 0
         return arr[:, :-1]
+    
+    @staticmethod
+    def _param_property(
+            self, 
+            X: Triangle, 
+            params: np.ndarray
+    ) -> Triangle:
+        """
+        Wrap an array of estimated parameters in a Triangle
+
+        Parameters
+        ----------
+        X: Triangle
+            The Triangle to wrap the parameters with
+
+        params: np.ndarray
+            The parameters to be wrapped
+
+        Returns
+        -------
+        Triangle
+            The wrapped parameters 
+        
+        """
+        from chainladder import options
+        
+        obj: Triangle = X[X.origin == X.origin.min()]
+        xp = X.get_array_module()
+        obj.values = params
+        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
+        obj.is_pattern = True
+        obj.is_additive = True
+        obj.is_cumulative = False
+        obj.virtual_columns.columns = {}
+        obj._set_slicers()
+        return obj
