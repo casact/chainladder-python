@@ -11,7 +11,7 @@ try:
 
     cp.array([1])
     module = "cupy"
-except:
+except Exception:
     if options.ARRAY_BACKEND == "cupy":
         import warnings
 
