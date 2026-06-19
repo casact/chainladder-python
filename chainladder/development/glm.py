@@ -44,19 +44,16 @@ class TweedieGLM(DevelopmentBase):
         The power determines the underlying target distribution according
         to the following table:
 
-       * - Power
-         - Distribution
-       * - 0
-         - Normal
-       * - 1
-         - Poisson
-       * - (1,2)
-         - Compound Poisson Gamma
-       * - 2
-         - Gamma
-       * - 3
-         - Inverse Gaussian
-        
+        .. rst::
+    
+           Power   Distribution
+           =====   ========================
+           0       Normal
+           1       Poisson
+           (1,2)   Compound Poisson Gamma
+           2       Gamma
+           3       Inverse Gaussian
+            
         For ``0 < power < 1``, no distribution exists.
     alpha: float, default=1
         Constant that multiplies the penalty term and thus determines the
