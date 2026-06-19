@@ -387,7 +387,6 @@ class DevelopmentBase(
     
     @staticmethod
     def _param_property(
-            self, 
             X: Triangle, 
             params: np.ndarray
     ) -> Triangle:
