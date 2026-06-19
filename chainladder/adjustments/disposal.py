@@ -2,16 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from chainladder.methods.chainladder import Chainladder
-from sklearn.base import BaseEstimator, TransformerMixin
+from chainladder.methods import Chainladder
+from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
 import warnings
-from chainladder.core.io import EstimatorIO
 from chainladder.utils import TriangleWeight
 
 
-class DisposalRate(BaseEstimator, TransformerMixin, EstimatorIO):
+class DisposalRate(TriangleWeight):
     """
     Class to alter the bottom of a full Triangle using the Disposal Rate method described
     by Friedland.
@@ -140,11 +139,12 @@ class DisposalRate(BaseEstimator, TransformerMixin, EstimatorIO):
     def __init__(
         self,
         n_periods: int = -1,
+        average: str | list[str] = 'volume',
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
         preserve: int = 1,
-        drop_valuation: str | list[str] = None,
+        drop_valuation: str | list[str] | None = None,
         drop_above: float = np.inf,
         drop_below: float = 0.00,
     ):
@@ -171,7 +171,7 @@ class DisposalRate(BaseEstimator, TransformerMixin, EstimatorIO):
         if X.ultimate_.array_backend == "sparse":
             ult = X.ultimate_.set_backend("numpy")
         else:
-            X = X.ultimate_.copy()
+            ult = X.ultimate_.copy()
         #get backend
         self.xp = X.get_array_module()
         self.disposal_rate_tri = X / ult.values
@@ -190,7 +190,7 @@ class DisposalRate(BaseEstimator, TransformerMixin, EstimatorIO):
         else:
             self.w_ = tw.fit(X=self.disposal_rate_tri).w_.values
         #calculate factors
-        super().fit(ult.values,self.disposal_rate_tri.values,self.w_)
+        super().fit(ult,self.disposal_rate_tri,self.w_)
         #keep attributes
         self.zeta_ = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
         return self

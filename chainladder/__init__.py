@@ -445,6 +445,7 @@ from chainladder.adjustments import (  # noqa (API import)
     ParallelogramOLF,
     Trend,
     TrendConstant,
+    DisposalRate,
 )
 from chainladder.tails import (  # noqa (API import)
     TailBase,
