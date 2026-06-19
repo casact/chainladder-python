@@ -146,10 +146,10 @@ class WeightedRegression(BaseEstimator):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             slope = num_to_nan(
                 xp.nansum(w * x * y, axis)
-                - xp.nansum(x * w, axis) * xp.nanmean(y, axis)
+                - xp.nansum(x * w, axis) * xp.nansum(y * w, axis) / xp.nansum(w, axis)
             ) / num_to_nan(
                 xp.nansum(w * x * x, axis)
-                - xp.nanmean(x, axis) * xp.nansum(w * x, axis)
+                - xp.nansum(x * w, axis) * xp.nansum(w * x, axis) / xp.nansum(w, axis)
             )
             intercept = xp.nanmean(y, axis) - slope * xp.nanmean(x, axis)
 
