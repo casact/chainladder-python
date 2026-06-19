@@ -1,6 +1,6 @@
 import chainladder as cl
 import numpy as np
-
+import pytest
 
 def test_disposal():
     tri = cl.load_sample('friedland_gl_insurer')['Closed Claim Counts']
