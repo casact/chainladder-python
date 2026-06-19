@@ -7,12 +7,12 @@ from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
 import warnings
-from chainladder.utils import TriangleWeight
+from chainladder.utils import TriangleWeight, concat
+from chainladder import Triangle
 
-
-class DisposalRate(TriangleWeight):
+class DisposalRate(DevelopmentBase):
     """
-    Class to alter the bottom of a full Triangle using the Disposal Rate method described
+    Calculates the bottom of a fitted full_triangle_ using the Disposal Rate method described
     by Friedland.
 
     Parameters
@@ -70,8 +70,11 @@ class DisposalRate(TriangleWeight):
     disposal_rate_tri: Triangle
         actual disposal rates by origin and development
 
-    disposal_rate_: Triangle
+    disposal_: Triangle
         fitted disposal rates
+
+    incr_disposal_: Triangle
+        incremental of disposal_
 
     Examples
     --------
@@ -149,6 +152,7 @@ class DisposalRate(TriangleWeight):
         drop_below: float = 0.00,
     ):
         self.n_periods = n_periods
+        self.average = average
         self.drop_high = drop_high
         self.drop_low = drop_low
         self.preserve = preserve
@@ -157,21 +161,41 @@ class DisposalRate(TriangleWeight):
         self.drop_below = drop_below
         self.drop = drop
 
-    def fit(self, X, y=None, sample_weight=None):
-        #check for ultimate_
-        if hasattr(X, "ultimate_"):
-            pass
-        else:
-            raise ValueError("X must have ultimate_")
+    def fit(
+            self, 
+            X:Triangle, 
+            y:None=None, 
+            sample_weight:Triangle|None=None
+    ):
+        """
+        Estimate disposal rate for a given Triangle and ultimate
+
+        Parameters
+        ----------
+        X : Triangle
+            Triangle to which the Disposal Rate method is applied
+        y : None
+            Ignored
+        sample_weight : Triangle
+            Ultimate
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+
+        """
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
         #convert to numpy
         if X.array_backend == "sparse":
             X = X.set_backend("numpy").incr_to_cum()
         else:
             X = X.copy().incr_to_cum()
-        if X.ultimate_.array_backend == "sparse":
-            ult = X.ultimate_.set_backend("numpy")
+        if sample_weight.array_backend == "sparse":
+            ult = sample_weight.set_backend("numpy")
         else:
-            ult = X.ultimate_.copy()
+            ult = sample_weight.copy()
         #get backend
         self.xp = X.get_array_module()
         self.disposal_rate_tri = X / ult.values
@@ -190,12 +214,22 @@ class DisposalRate(TriangleWeight):
         else:
             self.w_ = tw.fit(X=self.disposal_rate_tri).w_.values
         #calculate factors
-        super().fit(ult,self.disposal_rate_tri,self.w_)
+        super().fit(ult.values,X.values,self.w_)
         #keep attributes
-        self.zeta_ = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
+        self.disposal_ = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
+        self.disposal_ = concat((self.disposal_,(ult/ult).iloc[:,:,0,:].rename("development", [9999])),axis=3)
+        self.disposal_.is_cumulative = True
+        self.disposal_.is_pattern = False
+        self.incr_disposal_ = self.disposal_.cum_to_incr()
+        self.incr_disposal_.is_pattern = True
+        self.disposal_.is_pattern = True
         return self
 
-    def predict(self, X):
+    def transform(
+            self, 
+            X: Triangle, 
+            sample_weight: Triangle | None = None
+    ) -> Triangle:
         """ If X and self are of different shapes, align self to X, else
         return self.
 
@@ -204,24 +238,45 @@ class DisposalRate(TriangleWeight):
         X: Triangle
             The triangle to be transformed
 
+        sample_weight: Triangle
+            Ultimate
+
         Returns
         -------
             X_new: New triangle with transformed attributes.
         """
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
         X_new = copy.deepcopy(X)
-        X_new[self.paid_amount] = self.adjusted_triangle_[self.paid_amount]
-        X_new[self.incurred_amount] = self.adjusted_triangle_[self.incurred_amount]
-        X_new[self.reported_count] = self.adjusted_triangle_[self.reported_count]
-        X_new[self.closed_count] = self.adjusted_triangle_[self.closed_count]
-        X_new.a_ = self.a_
-        X_new.b_ = self.b_
+        X_new.disposal_rate_tri = self.disposal_rate_tri
+        X_new.disposal_ = self.disposal_
+        X_new.incr_disposal_ = self.incr_disposal_
+        X_new.ultimate_ = sample_weight.latest_diagonal
+        ibnr_pct = 1 - X_new.disposal_.align_pattern(X_new.disposal_rate_tri)
+        run_off = X_new.incr_disposal_ / ibnr_pct * X_new.ibnr_
+        run_off = run_off[run_off.valuation > X_new.valuation_date]
+        X_new.ldf_ = (X_new.cum_to_incr() + run_off).incr_to_cum().age_to_age
         return X_new
+    
+    def fit_transform(self, X, y=None, sample_weight=None):
+        """Fit and return predictions for VotingChainladder
 
-    def set_params(self, **params):
-        from chainladder.utils.utility_functions import read_json
+        Parameters
+        ----------
+        X : Triangle
+            Loss data to which the model will be applied.
 
-        if type(params["reported_count_estimator"]) is str:
-            params["reported_count_estimator"] = read_json(
-                params["reported_count_estimator"]
-            )
-        return super().set_params(**params)
+        y : None
+            Ignored
+
+        sample_weight : Triangle, default=None
+            Ultimate
+
+        Returns
+        -------
+        X_new: Triangle
+            Loss data with VotingChainladder ultimate applied
+        """
+        return self.fit(X, y, sample_weight).transform(X, sample_weight=sample_weight)
+    def _test(self, X, ult):
+        return 'test'
