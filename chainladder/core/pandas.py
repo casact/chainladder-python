@@ -16,6 +16,7 @@ from chainladder.core.typing import TriangleProtocol
 from chainladder.utils.utility_functions import num_to_nan
 from typing import (
     cast,
+    Self,
     TYPE_CHECKING
 )
 
@@ -304,7 +305,7 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self: TriangleProtocol, value=None, inplace=False):
+    def fillna(self: TriangleProtocol, value: int | float | ndarray = None, inplace: bool=False) ->TriangleProtocol:
         """Fill nan with 'value' by axis.
 
         Parameters
@@ -328,7 +329,7 @@ class TrianglePandas:
             return self
         else:
             new_obj = self.copy()
-            return new_obj.fillna(value=value, inplace=True)
+            return cast("TriangleProtocol", cast(object, new_obj)).fillna(value=value, inplace=True)
 
     def fillzero(self: TriangleProtocol, inplace=False):
         """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
