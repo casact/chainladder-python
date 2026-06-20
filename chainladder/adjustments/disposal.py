@@ -77,11 +77,9 @@ class DisposalRate(DevelopmentBase):
 
     Examples
     --------
-    ``trend`` tilts the case-adequacy adjustment before ``Incurred`` is rebuilt;
-    on the ``MedMal`` slice the inner diagonals of the adjusted ``Incurred``
-    triangle restate materially between ``0%`` and ``15%`` annual drift, while
-    the latest diagonal is preserved.
-
+    This adjustment method re-apportions future loss emergence based on a '% of ultimate' emergence pattern. 
+    The ultimate can come from another triangle. A common use case is to forecast payment pattern based on incurred ultimate.
+    
     .. testsetup::
 
         import chainladder as cl
@@ -89,52 +87,60 @@ class DisposalRate(DevelopmentBase):
 
     .. testcode::
 
-        tri = cl.load_sample("berqsherm").loc["MedMal"]
-        base = cl.BerquistSherman(
-            paid_amount="Paid",
-            incurred_amount="Incurred",
-            reported_count="Reported",
-            closed_count="Closed",
-            trend=0.0,
-        ).fit(tri)
-        tilted = cl.BerquistSherman(
-            paid_amount="Paid",
-            incurred_amount="Incurred",
-            reported_count="Reported",
-            closed_count="Closed",
-            trend=0.15,
-        ).fit(tri)
-        print(np.round(base.adjusted_triangle_["Incurred"], 0))
+        clrd = cl.load_sample('clrd').sum()
+        ult = cl.Chainladder().fit(clrd['IncurLoss']).ultimate_
+        dr = cl.DisposalRate().fit_transform(clrd['CumPaidLoss'],sample_weight = ult)
+
+    Once we apply this adjustment method via a `fit_transform`, we can examin the emergence pattern via `disposal_rate_tri`. 
+
+    .. testcode::
+    
+        dr.disposal_rate_tri
 
     .. testoutput::
-        :options: +NORMALIZE_WHITESPACE
+        
+                12        24        36        48        60        72        84        96        108       120
+        1988  0.313923  0.619459  0.774429  0.865377  0.919077  0.948898  0.964643  0.973184  0.980224  0.983063
+        1989  0.321526  0.626023  0.781086  0.872345  0.924842  0.952533  0.967690  0.977373  0.981938       NaN
+        1990  0.329567  0.634056  0.790752  0.880273  0.927029  0.952951  0.968379  0.976049       NaN       NaN
+        1991  0.330035  0.636233  0.791888  0.881010  0.929460  0.954694  0.968533       NaN       NaN       NaN
+        1992  0.342613  0.650521  0.801875  0.885976  0.932865  0.956495       NaN       NaN       NaN       NaN
+        1993  0.353784  0.663303  0.810639  0.894414  0.939009       NaN       NaN       NaN       NaN       NaN
+        1994  0.367530  0.670460  0.814661  0.897244       NaN       NaN       NaN       NaN       NaN       NaN
+        1995  0.379650  0.680979  0.821603       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+        1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+        1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
 
-                      12          24          36          48          60          72          84          96
-        1969   9883293.0  27420103.0  35879085.0  43105257.0  33438702.0  30397324.0  25723694.0  23506000.0
-        1970   8641763.0  31305782.0  41543535.0  48550616.0  38203864.0  36222888.0  32216000.0         NaN
-        1971  11733960.0  43887171.0  61649896.0  64917222.0  51410209.0  48377000.0         NaN         NaN
-        1972  13638651.0  50987209.0  66696278.0  72777529.0  61163000.0         NaN         NaN         NaN
-        1973  14387930.0  45470590.0  56577593.0  73733000.0         NaN         NaN         NaN         NaN
-        1974  13630366.0  47189379.0  63477000.0         NaN         NaN         NaN         NaN         NaN
-        1975  15036351.0  48904000.0         NaN         NaN         NaN         NaN         NaN         NaN
-        1976  15791000.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN
+    The estimated pattern is stored in `disposal_`. 
 
     .. testcode::
 
-        print(np.round(tilted.adjusted_triangle_["Incurred"], 0))
-
+        dr.disposal_
+        
     .. testoutput::
-        :options: +NORMALIZE_WHITESPACE
 
-                      12          24          36          48          60          72          84          96
-        1969   3793504.0  12084942.0  18563821.0  25924316.0  23516364.0  24979245.0  24016864.0  23506000.0
-        1970   3760482.0  15830500.0  24615996.0  33169802.0  30722141.0  33362729.0  32216000.0         NaN
-        1971   5982185.0  25583831.0  41384825.0  50323342.0  46191356.0  48377000.0         NaN         NaN
-        1972   7819355.0  33794110.0  51361061.0  64559286.0  61163000.0         NaN         NaN         NaN
-        1973   9533246.0  34585431.0  49667342.0  73733000.0         NaN         NaN         NaN         NaN
-        1974  10348458.0  41241243.0  63477000.0         NaN         NaN         NaN         NaN         NaN
-        1975  13102479.0  48904000.0         NaN         NaN         NaN         NaN         NaN         NaN
-        1976  15791000.0         NaN         NaN         NaN         NaN         NaN         NaN         NaN
+                12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult  120-Ult  132-Ult
+        (All)  0.112105  0.336242  0.545897  0.693774  0.812877  0.905045  0.942998  0.974365  0.990868      1.0      1.0
+
+    `full_triangle_` now reflects the disposal-rate-based forecast. 
+
+    .. testcode::
+
+        dr.full_triangle_
+        
+    .. testoutput::
+
+                12            24            36            48            60            72            84            96            108           120           9999
+        1988  3577780.0  7.059966e+06  8.826151e+06  9.862687e+06  1.047470e+07  1.081458e+07  1.099401e+07  1.109136e+07  1.117159e+07  1.120395e+07  1.139698e+07
+        1989  4090680.0  7.964702e+06  9.937520e+06  1.109859e+07  1.176649e+07  1.211879e+07  1.231163e+07  1.243483e+07  1.249290e+07  1.251646e+07  1.272270e+07
+        1990  4578442.0  8.808486e+06  1.098535e+07  1.222900e+07  1.287854e+07  1.323867e+07  1.345299e+07  1.355956e+07  1.363458e+07  1.366101e+07  1.389229e+07
+        1991  4648756.0  8.961755e+06  1.115424e+07  1.240959e+07  1.309204e+07  1.344748e+07  1.364241e+07  1.375400e+07  1.382878e+07  1.385512e+07  1.408564e+07
+        1992  5139142.0  9.757699e+06  1.202798e+07  1.328948e+07  1.399282e+07  1.434727e+07  1.454438e+07  1.465904e+07  1.473589e+07  1.476295e+07  1.499983e+07
+        1993  5653379.0  1.059942e+07  1.295381e+07  1.429252e+07  1.500514e+07  1.533589e+07  1.553037e+07  1.564351e+07  1.571933e+07  1.574603e+07  1.597976e+07
+        1994  6246447.0  1.139496e+07  1.384576e+07  1.524933e+07  1.593547e+07  1.629529e+07  1.650686e+07  1.662994e+07  1.671242e+07  1.674147e+07  1.699574e+07
+        1995  6473843.0  1.161215e+07  1.401010e+07  1.527961e+07  1.597603e+07  1.634123e+07  1.655597e+07  1.668088e+07  1.676460e+07  1.679409e+07  1.705215e+07
+        1996  6591599.0  1.147391e+07  1.365956e+07  1.491261e+07  1.559998e+07  1.596045e+07  1.617240e+07  1.629570e+07  1.637833e+07  1.640743e+07  1.666215e+07
+        1997  6451896.0  1.106345e+07  1.330436e+07  1.458909e+07  1.529384e+07  1.566342e+07  1.588073e+07  1.600714e+07  1.609186e+07  1.612170e+07  1.638286e+07
 
     """
 
@@ -216,7 +222,7 @@ class DisposalRate(DevelopmentBase):
         super().fit(ult.values,X.values,self.w_)
         #keep attributes
         self.disposal_ = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
-        self.disposal_ = concat((self.disposal_,(ult/ult).iloc[:,:,0,:].rename("development", [9999])),axis=3)
+        self.disposal_ = concat((self.disposal_,(X.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
         self.disposal_.is_cumulative = True
         self.disposal_.is_pattern = False
         self.incr_disposal_ = self.disposal_.cum_to_incr()
