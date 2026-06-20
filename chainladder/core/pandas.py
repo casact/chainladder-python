@@ -73,6 +73,11 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
+    # Stubs to supress type checker warnings. Refer to typing.TriangleProtocol for actual
+    # typing. Remove once linters improve.
+    if TYPE_CHECKING:
+        values: np.ndarray
+
     def to_frame(
             self: TriangleProtocol,
             origin_as_datetime: bool = True,
@@ -305,12 +310,12 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self: TriangleProtocol, value: int | float | ndarray = None, inplace: bool=False) ->TriangleProtocol:
+    def fillna(self: TriangleProtocol, value: int | float | ndarray, inplace: bool = False) -> Triangle:
         """Fill nan with 'value' by axis.
 
         Parameters
         ----------
-        value: single value or array-like values, default = None
+        value: single value or array-like values
             Value(s) to fill across the axis.
 
         inplace: boolean, default = False
@@ -321,22 +326,26 @@ class TrianglePandas:
         -------
         Triangle
         """
+        if value is None:
+            raise TypeError("Must specify a fill value.")
         if inplace:
-            frame = self + value * 0
             xp = self.get_array_module()
-            fill = (xp.nan_to_num(frame.values) == 0) * (self * 0 + value)
-            self.values = (frame + fill).values
-            return self
+            # Create a triangle will the fill value in the original Triangle's NaN positions.
+            # Positions corresponding to populated positions in teh original Triangle are set to NaN.
+            fill = (xp.nan_to_num(self.values) == 0) * (self * 0 + value)
+            self.values = (self + fill).values
+            return cast("Triangle", cast(object, self))
         else:
             new_obj = self.copy()
-            return cast("TriangleProtocol", cast(object, new_obj)).fillna(value=value, inplace=True)
+            cast("TriangleProtocol", cast(object, new_obj)).fillna(value=value, inplace=True)
+            return new_obj
 
-    def fillzero(self: TriangleProtocol, inplace=False):
-        """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
+    def fillzero(self: TriangleProtocol, inplace: bool = False) -> Triangle:
+        """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working.
 
         Parameters
         ----------
-        inplace: boolean, default = False
+        inplace: bool, default = False
             Whether to modify the triangle object directly (True), or
             return a new modified triangle (False).
 
@@ -346,11 +355,16 @@ class TrianglePandas:
         """
         if inplace:
             xp = self.get_array_module()
-            self.values = np.where((xp.nan_to_num(self.values) == 0) * (self.nan_triangle == 1), self.nan_triangle * 0, self.values)
-            return self
+            # Fill the NaNs by locating their positions within the triangle.
+            self.values = np.where(
+                (xp.nan_to_num(self.values) == 0) * (self.nan_triangle == 1),
+                self.nan_triangle * 0, self.values
+            )
+            return cast("Triangle", cast(object, self))
         else:
             new_obj = self.copy()
-            return new_obj.fillzero(inplace=True)
+            cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
+            return new_obj
 
     def drop(self, labels=None, axis=1):
         """Drop specified labels from rows or columns.
