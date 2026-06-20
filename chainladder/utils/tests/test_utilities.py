@@ -420,6 +420,42 @@ def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
     assert cl.read_pickle(str(pkl_path)) == raa
 
 
+def test_triangle_to_pickle(
+        raa: Triangle,
+        clrd: Triangle,
+        tmp_path: Path
+) -> None:
+    """
+    Dump a pickle of a triangle and read it back in. The read-in triangle should
+    equal the one that was dumped.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    clrd: Triangle
+        The clrd sample data set Triangle.
+    tmp_path: Path
+        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+
+    Returns
+    -------
+    None
+
+    """
+    # Single-dimension case.
+    raa_path = tmp_path / "raa.pkl"
+    raa.to_pickle(str(raa_path))
+    assert raa_path.is_file()
+    assert cl.read_pickle(str(raa_path)) == raa
+
+    # Multidimensional case.
+    clrd_path = tmp_path / "clrd.pkl"
+    clrd.to_pickle(str(clrd_path))
+    assert clrd_path.is_file()
+    assert cl.read_pickle(str(clrd_path)) == clrd
+
+
 def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
     """
     Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
