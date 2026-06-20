@@ -2,7 +2,7 @@ import chainladder as cl
 import numpy as np
 import pytest
 
-def test_disposal():
+def test_friedland_fidelity():
     tri = cl.load_sample('friedland_gl_insurer')['Closed Claim Counts']
     ult_tri = cl.Triangle(
         data = {
@@ -30,13 +30,21 @@ def test_disposal():
     ])
     assert np.all(abs(lhs[~np.isnan(lhs)] - rhs <= 1))
 
-def test_disposal_no_weight(raa):
-    tri = raa.set_backend('sparse')
+def test_no_weight_exception(raa):
     with pytest.raises(ValueError):
-        dr = cl.DisposalRate().fit(tri)
-    ult = cl.Chainladder().fit(tri).ultimate_
-    dr = cl.DisposalRate().fit(tri,sample_weight=ult)
+        dr = cl.DisposalRate().fit(raa)
+    ult = cl.Chainladder().fit(raa).ultimate_
+    dr = cl.DisposalRate().fit(raa,sample_weight=ult)
     with pytest.raises(ValueError):
-        est = dr.transform(tri)
+        est = dr.transform(raa)
     
+def test_cl_parity(raa):
+    """
+    A no-tail, full-triangle, volume-weighted Chainladder estimator coincides with the disposal rate adjustment. 
+    """
+    tri = raa.set_backend('sparse')
+    dev = cl.Development().fit_transform(tri)
+    est = cl.Chainladder().fit(dev)
+    dr = cl.DisposalRate().fit_transform(raa,sample_weight=est.ultimate_)
+    assert np.all(dr.full_triangle_.round(3).values[...,:-1] == est.full_triangle_.round(3).values[...,:-2])
     
