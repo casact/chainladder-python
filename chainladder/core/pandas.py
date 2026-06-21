@@ -291,24 +291,239 @@ class TrianglePandas:
         Returns
         -------
         Triangle
+
+        Examples
+        --------
+
+        In a single-dimension case, an origin period will be dropped if it contains all NaN.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import numpy as np
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [np.nan, np.nan, np.nan, 500, 600, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12     24  36
+            1985    NaN    NaN NaN
+            1986  500.0  600.0 NaN
+            1987  500.0    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     12     24
+            1986  500.0  600.0
+            1987  500.0    NaN
+
+        If the development period has all NaNs, it will be dropped.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [np.nan, 500, 600, np.nan, 600, np.nan],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                  12     24     36
+            1985 NaN  500.0  600.0
+            1986 NaN  600.0    NaN
+            1987 NaN    NaN    NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     24     36
+            1985  500.0  600.0
+            1986  600.0    NaN
+
+        If both the earliest origin and development periods are all NaN, both will be dropped.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [np.nan, np.nan, np.nan, np.nan, 600, np.nan],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     24
+            1986  600.0
+
+        If a period in the middle of the Triangle is all NaN, `Triangle.dropna()` will have no effect.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [500, np.nan, 700, 500, np.nan, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12  24     36
+            1985  500.0 NaN  700.0
+            1986  500.0 NaN    NaN
+            1987  500.0 NaN    NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     12  24     36
+            1985  500.0 NaN  700.0
+            1986  500.0 NaN    NaN
+            1987  500.0 NaN    NaN
+
+        If the last period has a NaN, it will be dropped.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [500, 600, np.nan, 500, 600, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12     24  36
+            1985  500.0  600.0 NaN
+            1986  500.0  600.0 NaN
+            1987  500.0    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     12     24
+            1985  500.0  600.0
+            1986  500.0  600.0
+            1987  500.0    NaN
+
+        In the case of a multi-dimensional Triangle, periods will only be dropped if their aggregate sum across
+        the index and columns results in all NaN for the period.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987] * 2,
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
+                    'lob': ['abc'] * 6 + ['xyz'] * 6,
+                    'paid': [np.nan, np.nan, np.nan, 500, 600, 500] * 2,
+                },
+                origin='origin',
+                development='development',
+                index='lob',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri.loc['abc'])
+
+        .. testoutput::
+
+                     12     24  36
+            1985    NaN    NaN NaN
+            1986  500.0  600.0 NaN
+            1987  500.0    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna().sum())
+
+        .. testoutput::
+
+                      12      24
+            1986  1000.0  1200.0
+            1987  1000.0     NaN
         """
+
+        # Aggregate the triangle across the index and columns.
         obj = self.sum(axis=0).sum(axis=1)
         xp = obj.get_array_module()
+        # Check which origins have all NaNs and indicate with a boolean. 0 means that the nth origin is all NaN.
         odim = list((xp.nansum(obj.values[0, 0, :], -1) != 0).astype("int"))
+        # Find the first origin period with data.
         min_odim = obj.origin[odim.index(1)]
+        # Find the last origin period with data.
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
+        # Case when triangle has multiple development periods, e.g., not latest diagonal or ultimate.
         if obj.shape[-1] != 1:
+            # Flag the development periods that have data.
             ddim = list(
                 (xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
             ddim = obj.development[pd.Series(ddim).astype(bool)]
+            # Slice the Triangle by the development periods that have data.
             obj = self[
                 (self.development >= ddim.min()) & (
                     self.development <= ddim.max())
             ]
-            return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
+            obj = cast("TriangleProtocol", cast(object, obj))
+            # Slice the triangle by the origin periods that have data.
+            return cast("Triangle", obj[(self.origin >= min_odim) & (self.origin <= max_odim)])
         # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
-        return obj
+        return cast("Triangle", obj)
 
     def fillna(self: TriangleProtocol, value: int | float | ndarray, inplace: bool = False) -> Triangle:
         """Fill nan with 'value' by axis.
