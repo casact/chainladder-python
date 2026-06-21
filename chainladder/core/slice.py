@@ -6,7 +6,6 @@ Support pandas-style slicing to the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import importlib
 import numpy as np
 import pandas as pd
 
@@ -37,14 +36,14 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Literal
 
-_slicing = importlib.import_module("sparse._slicing")
+from sparse import _slicing  # noqa
 
 class _LocBase:
     """
     Base class for pandas style loc/iloc indexing.
     """
 
-    def __init__(self, obj):
+    def __init__(self, obj: TriangleProtocol):
         self.obj = obj
 
     def get_idx(self, idx: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]) -> Triangle:
@@ -154,7 +153,7 @@ class _LocBase:
         key = tuple(
             [slice(item, item + 1) if isinstance(item, int) else item for item in key]
         )
-        self.obj.values.__setitem__(self._normalize_index(key), values)
+        cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
 
     def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
@@ -192,15 +191,17 @@ class _LocBase:
     def _sparse_setitem(
             self,
             key: tuple[int, int, int, int],
-            values: int | float
+            values: int | float,
     ) -> None:
         """
         Set slice of Triangle when backend is sparse.
 
         Parameters
         ----------
-        key: tuple[int, int, int, int]
+        key: tuple[int]
+            The location in the backend array to set the value.
         values: int | float
+            The value to set.
 
         Returns
         -------
@@ -209,13 +210,12 @@ class _LocBase:
         """
         # Enforce sparse array type.
         arr: COO = cast("COO", cast(object, self.obj.values))
-        key: tuple = cast("tuple", cast(object, key))
         # Check if a stored value exists at the coordinate point.
         check = (
-            (arr.coords[0] == key[0]) *
-            (arr.coords[1] == key[1]) *
-            (arr.coords[2] == key[2]) *
-            (arr.coords[3] == key[3]))
+                (arr.coords[0] == key[0]) *
+                (arr.coords[1] == key[1]) *
+                (arr.coords[2] == key[2]) *
+                (arr.coords[3] == key[3]))
         # If it does, index the location and assign the value directly.
         if check.max():
             data_index = np.where(check == True)[0][0]
@@ -237,6 +237,27 @@ class _LocBase:
                 shape=self.obj.shape,
                 fill_value=arr.fill_value
             )
+
+    @staticmethod
+    def _to_scalar(values: int | float | TriangleSlicer) -> int | float:
+        """
+        Unwrap a single-element TriangleSlicer into its underlying scalar value.
+
+        Parameters
+        ----------
+        values: int | float | TriangleSlicer
+            The value to unwrap. Non-TriangleSlicer values are returned unchanged.
+
+        Returns
+        -------
+        int | float
+            The scalar value.
+
+        """
+        if isinstance(values, TriangleSlicer):
+            backend_values = cast("BackendArray", cast(object, values.values))
+            return cast("int | float", backend_values[0, 0, 0, 0])
+        return values
 
 
 class Location(_LocBase):
@@ -462,7 +483,7 @@ class TriangleSlicer:
         # Case columns.
         else:
             # Access virtual columns created by lazy evaluation.
-            if type(key) is str and self.virtual_columns.columns.get(key, None):
+            if isinstance(key, str) and self.virtual_columns.columns.get(key, None):
                 out: Triangle = self.virtual_columns[key].copy()
                 out.virtual_columns.columns = {}
                 return out
@@ -546,7 +567,7 @@ class TriangleSlicer:
         # Key is new, create a column and update data.
         else:
             self.vdims = np.append(self.vdims, key)
-            if isinstance(value, (int, float, np.generic)):
+            if isinstance(value, (int, float, np.number)):
                 # Broadcast scalar across the Triangle's shape.
                 value = self.iloc[:, 0] * 0 + value
             try:
@@ -608,7 +629,7 @@ class TriangleSlicer:
         obj.values = obj.values[slicer]
         return obj
 
-    def _set_slicers(self) -> None:
+    def _set_slicers(self: TriangleProtocol) -> None:
         """
         Set the indexers on the Triangle during initialization. Enables indexing functionality such as Triangle.iloc[],
         Triangle.loc[], Triangle.iat[], and Triangle.at[].
@@ -621,79 +642,219 @@ class TriangleSlicer:
         """
         self.iloc, self.loc = Ilocation(self), Location(self)
         self.iat, self.at = Iat(self), At(self)
-        self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
+        self.virtual_columns = VirtualColumns(cast("Triangle", self), self.virtual_columns.columns)
 
 
 class At(Location):
-    def _check_index(self, key) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
-        idx = self.key_to_slice(key)
-        for item in idx:
+    """
+    Single-element accessor. Mirrors pandas.DataFrame.at[].
+    """
+    def _check_index(self, key: _LabelKey) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
+        """
+        Makes sure that the requested key explicitly specifies all 4 axes
+        (index, columns, origin, development) and that it will grab a single
+        element.
+
+        Parameters
+        ----------
+        key: _LabelKey
+
+        Returns
+        -------
+        tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]
+            If the key passes validation, it's returned as a tuple of  integer slices, otherwise an error is raised.
+
+        """
+        err_msg: str = 'Invalid Index in At slicer.'
+        # Unlike loc/iloc, at requires every axis to be specified explicitly.
+        if not isinstance(key, tuple) or len(key) != 4 or Ellipsis in key:
+            raise ValueError(err_msg)
+        # Convert to integer slices.
+        idx = cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key))
+        for n, item in enumerate(idx):
             if type(item) is slice:
-                if item.stop - item.start == 1:
-                    next
-                else:
-                    raise ValueError('Invalid Index in At slicer')
+                # A slice here is always the full axis (slice(None, None, None)),
+                # which only selects a single element if the axis itself has size 1.
+                if self.obj.shape[n] != 1:
+                    raise ValueError(err_msg)
             else:
-                if len(item) == 1:
-                    next
-                else:
-                    raise ValueError('Invalid Index in At slicer')
+                # `item` is always an np.ndarray here, since `index_key` and `other_key`
+                # only ever return a slice or an np.ndarray.
+                if len(cast(np.ndarray, item)) != 1:
+                    raise ValueError(err_msg)
         return idx
 
-    def __getitem__(self, key):
-        obj = self.get_idx(self._check_index(key))
-        if len(obj) > 1 and obj.index.iloc[:, 0].nunique() == 1:
-            idx = obj.index.iloc[:, 1:]
-            obj.index = idx
+    def __getitem__(self, key: _LabelKey) -> float:
+        """
+        Extracts a single element specified by `key`.
+
+        Parameters
+        ----------
+        key: _LabelKey
+            A key to specify the location of the element to be extracted. Must result in a single element.
+
+        Returns
+        -------
+        float
+            A single data element from the Triangle.
+
+        """
+        obj: Triangle = self.get_idx(self._check_index(key))
         return obj.values[0, 0, 0, 0]
 
-    def __setitem__(self, key, values):
+    def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
+        """
+        Sets a single-element of a Triangle to a scalar value.
+
+        Parameters
+        ----------
+        key: _LabelKey
+            The key specifying the element location.
+        values: int | float | TriangleSlicer
+            The scalar value to set the element to.
+
+        Returns
+        -------
+        None
+        """
         key = self._check_index(key)
+        values = self._to_scalar(values)
         if self.obj.array_backend == 'sparse':
-            key = (key[0][0], key[1][0], key[2][0], key[3][0])
+            key = tuple(0 if type(item) is slice else int(cast(np.ndarray, item)[0]) for item in key)
             self._sparse_setitem(key, values)
         else:
-            if isinstance(values, TriangleSlicer):
-                values = values.values
-            key = tuple(
-                [slice(item, item + 1) if type(item) is int else item for item in key]
-            )
-            self.obj.values.__setitem__(self._normalize_index(key), values)
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
 
 
 class Iat(Ilocation):
-    def _check_index(self, key) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
+    """
+    Single-element integer-based accessor. Mirrors pandas.DataFrame.iat[].
+    """
+    def _check_index(self, key: IndexExpression) -> tuple[int, int, int, int]:
+        """
+        Make sure the requested key accesses a single element.
+
+        Parameters
+        ----------
+        key: IndexExpression
+            The integer-based index expression specifying the element location for lookup.
+
+        Returns
+        -------
+        tuple[int]
+
+        """
         idx = self._normalize_index(key)
         types = {type(i) for i in idx}
         if len(types) > 1 or list(types)[0] != int:
             raise ValueError('iAt based indexing can only have integer indexers')
-        return idx
+        return cast("tuple[int, int, int, int]", idx)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: IndexExpression) -> float:
+        """
+        Get a single-element's value given the key.
+
+        Parameters
+        ----------
+        key: IndexExpression
+            The integer-based index expression specifying the element location for lookup.
+
+        Returns
+        -------
+        float
+            The value extracted from the specified location.
+
+        """
         return self.get_idx(self._check_index(key)).values[0, 0, 0, 0]
 
-    def __setitem__(self, key, values):
-        key = self._normalize_index(key)
+    def __setitem__(self, key: IndexExpression, values: int | float | TriangleSlicer) -> None:
+        """
+        Sets a single-element of a Triangle to a scalar value.
+
+        Parameters
+        ----------
+        key: IndexExpression
+            The integer-based index expression specifying the element location to set the value for.
+        values: int | float | TriangleSlice
+            The value to set.
+
+        Returns
+        -------
+
+        """
+        idx = self._check_index(key)
         if self.obj.array_backend == 'sparse':
-            self._sparse_setitem(key, values)
+            self._sparse_setitem(idx, self._to_scalar(values))
         else:
-            super().__setitem__(key, values)
+            super().__setitem__(idx, values)
 
 
 class VirtualColumns:
-    def __init__(self, triangle: TriangleSlicer, columns=None):
+    """
+    A virtual column is a non-computed column that enables lazy evaluation. For example, a column created
+    by assigning a lambda expression.
+    """
+    def __init__(self, triangle: Triangle, columns=None):
         self.triangle = triangle
         self.columns = {} if not columns else columns
 
-    def __getitem__(self, value):
+    def __getitem__(self, value: str | int) -> Triangle:
+        """
+        Look up the callable associated with the virtual column, and then execute it.
+
+        Parameters
+        ----------
+        value: str | int
+            The name of the virtual column you want to get the value for.
+
+        Returns
+        -------
+        Triangle
+
+        """
         return self.columns[value](self.triangle).rename("columns", [value])
 
-    def __setitem__(self, name, value):
+    def __setitem__(self, name: str | int, value: Callable[[Triangle], TriangleSlicer]) -> None:
+        """
+        Set a new Callable for the requested virtual column.
+
+        Parameters
+        ----------
+        name: str | int
+            The name of the virtual column.
+        value: Callable[[Triangle], TriangleSlicer]
+            The callable to set.
+
+        Returns
+        -------
+        None
+
+        """
         self.columns[name] = value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Virtual column string representation.
+
+        Returns
+        -------
+        A string representing the names of the virtual columns.
+        """
         return str(pd.Index(self.columns.keys()))
 
-    def pop(self, key):
+    def pop(self, key: str | int) -> None:
+        """
+        Removes a virtual column.
+
+        Parameters
+        ----------
+        key: str | int
+            The name of the column to remove.
+
+        Returns
+        -------
+        None
+
+        """
         if key in list(self.columns.keys()):
             self.columns.pop(key)

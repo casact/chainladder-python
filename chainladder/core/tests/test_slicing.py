@@ -135,11 +135,11 @@ def test_loc_tuple(clrd):
 def test_at_iat(raa):
     raa1 = raa.copy()
     raa2 = raa.copy()
-    _= raa1.at["Total", "values", "1985", 120]
+    assert raa1.at["Total", "values", "1985", 72] == 26180.0
     raa1.at["Total", "values", "1985", 120] = 5
     raa1.at["Total", "values", "1985", 12] = 5
     raa2.iat[0, 0, 4, -1] = 5
-    _= raa2.iat[0, 0, 4, -1]
+    assert raa2.iat[0, 0, 4, -1] == 5
     raa2.iat[-1, -1, 4, 0] = 5
     assert raa1 == raa2
 
@@ -149,6 +149,68 @@ def test_at_iat_exceptions(raa):
         _= raa.iat[0, 0, 4, :]
     with pytest.raises(ValueError):
         _= raa.at["Total", "values", "1985", 0:2]
+
+
+def test_at_check_index_full_axis_slice_raises(raa: Triangle) -> None:
+    """
+    Triange.at[] requires all 4 axis values. Raise an error otherwise.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="Invalid Index in At slicer"):
+        _= raa.at["Total", "values"]
+
+
+def test_at_check_index_full_axis_slice_on_non_unit_axis_raises(raa: Triangle) -> None:
+    """
+    Calling .at[] with `slice(None, None, None)` to specify the full origin axis.
+    Raise an error because this would correspond to multiple data elements.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="Invalid Index in At slicer"):
+        _= raa.at["Total", "values", slice(None, None, None), 12]
+
+
+def test_at_check_index_full_axis_slice_on_unit_axis(raa: Triangle) -> None:
+    """
+    Calling .at[] with `slice(None, None, None)` to specify the full columns axis.
+    Works since raa only has 1 column.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    assert raa.at["Total", slice(None, None, None), "1985", 12] == raa.at["Total", "values", "1985", 12]
+
+
+def test_at_requires_all_axes(raa: Triangle) -> None:
+    """
+    raa.at[] requires all 4 axes (index, columns, origin, development) to be
+    specified explicitly, mirroring pandas.DataFrame.at[]'s requirement that
+    both axes be given as scalar labels. Ellipsis is not allowed.
+    """
+    with pytest.raises(ValueError, match="Invalid Index in At slicer"):
+        _= raa.at[..., "1985", 12]
 
 
 def test_other_key_unsupported_iterable_raises(raa: Triangle) -> None:
@@ -213,7 +275,20 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
 
 
 
-def test_sparse_at_iat(prism):
+def test_invalid_iloc_sparse_assignment(prism) -> None:
+    """
+    Assignment via Triangle.iloc[] does not work on sparse backend.
+
+    Parameters
+    ----------
+    prism: Triangle
+        The prism sample data set Triangle.
+
+    Returns
+    -------
+    None
+
+    """
     with pytest.raises(ValueError, match="Setting values with sparse backend requires .at or .iat"):
         prism.iloc[0, 0, 0, 0] = 1.0
 
@@ -302,6 +377,47 @@ def test_sparse_at_iat1(prism):
     t.iat[0, 0, 0, 0] = 5.0
     t.at[12138, "reportedCount", "2008-01", 1] = 0
     assert t == prism
+
+
+def test_sparse_iat_setitem_triangleslicer_value(prism: Triangle) -> None:
+    """
+    Iat.[] = value accepts a Triangle (TriangleSlicer) as the assigned value
+    when the backend is sparse, if the slicer resolves to a single value.
+
+    Parameters
+    ----------
+    prism: Triangle
+        The prism sample data set fixture, which uses the sparse backend.
+
+    Returns
+    -------
+    None
+    """
+    t = prism.copy()
+    src = t.iloc[0:1, 0:1, 0:1, 1:2]
+    t.iat[2, 1, 0, 0] = src
+    assert t.iat[2, 1, 0, 0] == src.iat[0, 0, 0, 0]
+
+
+def test_virtual_columns_pop_on_overwrite(raa: Triangle) -> None:
+    """
+    Assigning a non-callable value to a column previously reserved for a
+    lazy virtual column removes that column from VirtualColumns.columns.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    t = raa.copy()
+    t["vcol"] = lambda x: x["values"] * 2
+    assert "vcol" in t.virtual_columns.columns
+    t["vcol"] = t["values"] * 3
+    assert "vcol" not in t.virtual_columns.columns
 
 
 def test_setitem_virtual_column_numpy_backend(raa: Triangle) -> None:

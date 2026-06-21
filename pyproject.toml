@@ -32,7 +32,7 @@ keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
     "pandas >=2.3.3",
     "scikit-learn>1.4.2",
-    "sparse>=0.9, <=0.17.0",
+    "sparse>=0.9",
     "numpy>=2.0",
     "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",

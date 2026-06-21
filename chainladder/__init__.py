@@ -67,6 +67,47 @@ def _deprecated_backend_message(backend: str) -> str:
     )
 
 
+# Tracks whether the one-time dask parallel-compute deprecation warning has
+# already fired this process. The dask 'bag' code paths run automatically
+# whenever dask is installed, so they warn at most once instead of on every
+# operation. See issue #842.
+_dask_parallel_warned: bool = False
+
+
+def _warn_dask_parallel_deprecated(stacklevel: int = 2) -> None:
+    """
+    Emit a one-time DeprecationWarning for dask-accelerated parallel compute.
+
+    The dask ``bag`` scheduler is used as an optional parallel-compute engine
+    for the sparse backend (groupby aggregation, grouped-triangle arithmetic,
+    and incremental-to-cumulative conversion). It is deprecated alongside the
+    dask array backend and will be removed in a future release. Because these
+    paths run automatically on every qualifying operation, the warning fires at
+    most once per process to avoid flooding output.
+
+    Parameters
+    ----------
+    stacklevel: int
+        Forwarded to ``warnings.warn``. Defaults to 2 so the warning points at
+        the chainladder method that triggered the dask path.
+
+    Returns
+    -------
+    None
+
+    """
+    global _dask_parallel_warned
+    if _dask_parallel_warned:
+        return
+    _dask_parallel_warned = True
+    warnings.warn(
+        "Using dask for parallel computation is deprecated and will be removed "
+        f"in a future release. See {_DEPRECATED_BACKENDS['dask']}.",
+        DeprecationWarning,
+        stacklevel=stacklevel,
+    )
+
+
 @overload
 def _resolve_pat(pat: str | None, option: str | None, required: Literal[True] = ...) -> str: ...
 @overload
