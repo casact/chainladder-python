@@ -211,8 +211,8 @@ class DisposalRate(DevelopmentBase):
             ult = sample_weight.copy()
         #calculate disposal rate triangle
         self.xp = X.get_array_module()
-        self.X_ = X.sort_index()
-        self.disposal_rate_tri = X / ult.values
+        self.X_ = X.incr_to_cum().sort_index()
+        self.disposal_rate_tri = self.X_ / ult.values
         #get weights for estimation
         tw = TriangleWeight(
             n_periods = self.n_periods,
