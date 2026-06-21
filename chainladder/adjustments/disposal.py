@@ -2,8 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from chainladder.methods import Chainladder
-from chainladder.methods.base import validate_weight
+from chainladder.methods import Chainladder, MethodBase
 from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
@@ -194,7 +193,7 @@ class DisposalRate(DevelopmentBase):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         #validate dimensions of sample weight
-        validate_weight(X, sample_weight)
+        MethodBase().validate_weight(X, sample_weight)
         #align backeneds
         ult = sample_weight.set_backend(X.array_backend).sort_index()
         #calculate disposal rate triangle
@@ -252,7 +251,7 @@ class DisposalRate(DevelopmentBase):
             raise ValueError("sample_weight is required.")
         X_new = copy.deepcopy(X)
         #validate dimensions of sample weight
-        validate_weight(X, sample_weight)
+        MethodBase().validate_weight(X, sample_weight)
         #align backeneds
         X_new.ultimate_ = sample_weight.set_backend(self.X_.array_backend).latest_diagonal
         X_new.disposal_rate_tri = self.disposal_rate_tri
