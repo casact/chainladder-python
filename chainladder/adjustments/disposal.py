@@ -1,13 +1,19 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 
 from chainladder.methods import Chainladder, MethodBase
 from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
 from chainladder.utils import TriangleWeight, concat
-from chainladder import Triangle
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
+
 
 class DisposalRate(DevelopmentBase):
     """
@@ -194,8 +200,15 @@ class DisposalRate(DevelopmentBase):
             raise ValueError("sample_weight is required.")
         #validate dimensions of sample weight
         MethodBase().validate_weight(X, sample_weight)
-        #align backeneds
-        ult = sample_weight.set_backend(X.array_backend).sort_index()
+        #set backeneds to numpy
+        if X.array_backend == "sparse":
+            X = X.set_backend("numpy")
+        else:
+            X = X.copy()
+        if sample_weight.array_backend == "sparse":
+            ult = sample_weight.set_backend("numpy")
+        else:
+            ult = sample_weight.copy()
         #calculate disposal rate triangle
         self.xp = X.get_array_module()
         self.X_ = X.sort_index()
