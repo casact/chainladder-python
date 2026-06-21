@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 
 from chainladder import (
-    __dt64_dtype__
+    __dt64_dtype__,
+    _warn_dask_parallel_deprecated,
 )
 from chainladder.core.typing import TriangleProtocol
 from chainladder.utils.utility_functions import num_to_nan
@@ -915,6 +916,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
         if db and obj.array_backend == "sparse":
+            _warn_dask_parallel_deprecated()
 
             def aggregate(i, obj, axis, v):
                 return getattr(

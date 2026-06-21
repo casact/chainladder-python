@@ -43,7 +43,7 @@ class _LocBase:
     Base class for pandas style loc/iloc indexing.
     """
 
-    def __init__(self, obj):
+    def __init__(self, obj: TriangleProtocol):
         self.obj = obj
 
     def get_idx(self, idx: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]) -> Triangle:
@@ -153,7 +153,7 @@ class _LocBase:
         key = tuple(
             [slice(item, item + 1) if isinstance(item, int) else item for item in key]
         )
-        self.obj.values.__setitem__(self._normalize_index(key), values)
+        cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
 
     def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
@@ -567,7 +567,7 @@ class TriangleSlicer:
         # Key is new, create a column and update data.
         else:
             self.vdims = np.append(self.vdims, key)
-            if isinstance(value, (int, float, np.generic)):
+            if isinstance(value, (int, float, np.number)):
                 # Broadcast scalar across the Triangle's shape.
                 value = self.iloc[:, 0] * 0 + value
             try:
@@ -723,7 +723,7 @@ class At(Location):
             key = tuple(0 if type(item) is slice else int(cast(np.ndarray, item)[0]) for item in key)
             self._sparse_setitem(key, values)
         else:
-            self.obj.values.__setitem__(self._normalize_index(key), values)
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
 
 
 class Iat(Ilocation):

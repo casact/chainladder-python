@@ -275,7 +275,20 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
 
 
 
-def test_sparse_at_iat(prism):
+def test_invalid_iloc_sparse_assignment(prism) -> None:
+    """
+    Assignment via Triangle.iloc[] does not work on sparse backend.
+
+    Parameters
+    ----------
+    prism: Triangle
+        The prism sample data set Triangle.
+
+    Returns
+    -------
+    None
+
+    """
     with pytest.raises(ValueError, match="Setting values with sparse backend requires .at or .iat"):
         prism.iloc[0, 0, 0, 0] = 1.0
 

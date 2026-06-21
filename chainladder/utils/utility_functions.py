@@ -264,7 +264,7 @@ def read_csv(
     **kwargs,
 ) -> Triangle:
     """
-    Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
+    Function that creates Triangle directly from input. Wrapper for pandas dataframe:
     https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
 
     Parameters
@@ -304,53 +304,6 @@ def read_csv(
         ensure the most recent origin period is a full period and the oldest
         origin is partial. If full origin periods are present in the data, then
         trailing has no effect.
-
-    Attributes
-    ----------
-    index: Series
-        Represents all available levels of the index dimension.
-    columns: Series
-        Represents all available levels of the value dimension.
-    origin: DatetimeIndex
-        Represents all available levels of the origin dimension.
-    development: Series
-        Represents all available levels of the development dimension.
-    key_labels: list
-        Represents the ``index`` axis labels
-    virtual_columns: Series
-        Represents the subset of columns of the triangle that are virtual.
-    valuation: DatetimeIndex
-        Represents all valuation dates of each cell in the Triangle.
-    origin_grain: str
-        The grain of the origin vector ('Y', 'S', 'Q', 'M')
-    development_grain: str
-        The grain of the development vector ('Y', 'S', 'Q', 'M')
-    shape: tuple
-        The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
-    link_ratio, age_to_age
-        Displays age-to-age ratios for the triangle.
-    valuation_date : date
-        The latest valuation date of the data
-    loc: Triangle
-        pandas-style ``loc`` accessor
-    iloc: Triangle
-        pandas-style ``iloc`` accessor
-    latest_diagonal: Triangle
-        The latest diagonal of the triangle
-    is_cumulative: bool
-        Whether the triangle is cumulative or not
-    is_ultimate: bool
-        Whether the triangle has an ultimate valuation
-    is_full: bool
-        Whether lower half of Triangle has been filled in
-    is_val_tri:
-        Whether the triangle development period is expressed as valuation
-        periods.
-    values: array
-        4D numpy array underlying the Triangle instance
-    T: Triangle
-        Transpose index and columns of object.  Only available when Triangle is
-        convertible to DataFrame.
     """
 
     from chainladder import Triangle
@@ -980,7 +933,17 @@ def model_diagnostics(
 
     Returns
     -------
-    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
+    Triangle with relevant figures as columns, including 
+    - ``Latest``: Cumulative value at the latest valuation date, equivalent to ``latest_diagonal``
+    - ``Month/Quarter/Year Incremental``: Actual emergence between the latest valuation and the one prior valuation date
+    - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``); ignored if ``groupby`` is supplied
+    - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``); ignored if ``groupby`` is supplied
+    - ``Ultimate``: Projected ultimate loss from the fitted IBNR model (``ultimate_``)
+    - ``IBNR``: Ultimate - Latest
+    - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
+    - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
+
+    Columns from the original Triangle are cross-joined into the index. ``Measure`` will contain all the columns from the original Triangle. 
     """
     from chainladder import Pipeline, Triangle
 
@@ -1039,6 +1002,9 @@ def model_diagnostics(
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
+        if groupby is None:
+            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
         out["Ultimate"] = obj.ultimate_[col]
         out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
