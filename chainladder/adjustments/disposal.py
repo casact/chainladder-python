@@ -197,6 +197,7 @@ class DisposalRate(DevelopmentBase):
         #align backeneds
         ult = sample_weight.set_backend(X.array_backend).sort_index()
         #calculate disposal rate triangle
+        self.xp = X.get_array_module()
         self.X_ = X.sort_index()
         self.disposal_rate_tri = X / ult.values
         #get weights for estimation
