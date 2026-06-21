@@ -16,7 +16,6 @@ from chainladder.core.typing import TriangleProtocol
 from chainladder.utils.utility_functions import num_to_nan
 from typing import (
     cast,
-    Self,
     TYPE_CHECKING
 )
 
@@ -43,7 +42,6 @@ if TYPE_CHECKING:
     from typing import (
         Any,
         Literal,
-        Self,
         Type
     )
 
@@ -647,7 +645,7 @@ class TrianglePandas:
             self: TriangleProtocol,
             axis: Literal['index', 'columns', 'origin', 'development'] | int,
             value: list | str | dict
-    ) -> Self:
+    ):
         """Alter axes labels.
 
         Parameters
