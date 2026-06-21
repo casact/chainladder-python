@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from chainladder.methods import Chainladder
+from chainladder.methods.base import validate_weight
 from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
@@ -192,18 +193,14 @@ class DisposalRate(DevelopmentBase):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
-        #convert to numpy
-        if X.array_backend == "sparse":
-            X = X.set_backend("numpy").incr_to_cum()
-        else:
-            X = X.copy().incr_to_cum()
-        if sample_weight.array_backend == "sparse":
-            ult = sample_weight.set_backend("numpy")
-        else:
-            ult = sample_weight.copy()
-        #get backend
-        self.xp = X.get_array_module()
+        #validate dimensions of sample weight
+        validate_weight(X, sample_weight)
+        #align backeneds
+        ult = sample_weight.set_backend(X.array_backend).sort_index()
+        #calculate disposal rate triangle
+        self.X_ = X.sort_index()
         self.disposal_rate_tri = X / ult.values
+        #get weights for estimation
         tw = TriangleWeight(
             n_periods = self.n_periods,
             drop_high = self.drop_high,
@@ -214,16 +211,17 @@ class DisposalRate(DevelopmentBase):
             preserve = self.preserve,
             drop = self.drop
         )
-        if hasattr(X, "w_"):
-            self.w_ = tw.fit(X=self.disposal_rate_tri * X.w_).w_.values
+        if hasattr(self.X_, "w_"):
+            self.w_ = tw.fit(X=self.disposal_rate_tri * self.X_.w_).w_.values
         else:
             self.w_ = tw.fit(X=self.disposal_rate_tri).w_.values
         #calculate factors
-        super().fit(ult.values,X.values,self.w_)
+        super().fit(ult.values,self.X_.values,self.w_)
         #keep attributes
         self.disposal_ = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
-        self.disposal_ = concat((self.disposal_,(X.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
+        self.disposal_ = concat((self.disposal_,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
         self.disposal_.is_cumulative = True
+        #pattern multiples from tail and additive adds from head
         self.disposal_.is_pattern = False
         self.incr_disposal_ = self.disposal_.cum_to_incr()
         self.incr_disposal_.is_pattern = True
@@ -253,10 +251,13 @@ class DisposalRate(DevelopmentBase):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = copy.deepcopy(X)
+        #validate dimensions of sample weight
+        validate_weight(X, sample_weight)
+        #align backeneds
+        X_new.ultimate_ = sample_weight.set_backend(self.X_.array_backend).latest_diagonal
         X_new.disposal_rate_tri = self.disposal_rate_tri
         X_new.disposal_ = self.disposal_
         X_new.incr_disposal_ = self.incr_disposal_
-        X_new.ultimate_ = sample_weight.latest_diagonal
         ibnr_pct = 1 - X_new.disposal_.align_pattern(X_new.disposal_rate_tri)
         run_off = X_new.incr_disposal_ / ibnr_pct * X_new.ibnr_
         run_off = run_off[run_off.valuation > X_new.valuation_date]

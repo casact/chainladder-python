@@ -138,7 +138,14 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             process_var = None
         return process_var
 
-    def validate_weight(self, X, sample_weight):
+    @staticmethod
+    def validate_weight(
+            X: Triangle,
+            sample_weight: Triangle
+    ) -> None:
+        '''
+        Checks that the a aprior has valid dimensions
+        '''
         if (
             sample_weight
             and X.shape[:-1] != sample_weight.shape[:-1]
