@@ -50,7 +50,8 @@ def test_cl_parity(raa):
 
 def test_sparse_transform(raa):
     raa_sparse = raa.set_backend('sparse')
+    ult = cl.Chainladder().fit(raa_sparse).ultimate_.set_backend('sparse')
+    dr = cl.DisposalRate().fit_transform(raa_sparse,sample_weight=ult)
     from chainladder.utils.sparse import sp
-    dr = cl.DisposalRate().fit_transform(raa_sparse,sample_weight=cl.Chainladder().fit(raa_sparse).ultimate_)
     assert isinstance(dr.full_triangle_.values,sp.COO)
     
