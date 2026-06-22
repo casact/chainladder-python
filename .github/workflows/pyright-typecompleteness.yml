@@ -1,0 +1,50 @@
+name: Pyright Type Completeness
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  typecompleteness:
+    name: pyright --verifytypes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run pyright --verifytypes on PR head
+        run: uv run pyright --outputjson --verifytypes chainladder > head.json || true
+
+      - name: Run pyright --verifytypes on PR base
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.sha }}
+          git checkout ${{ github.event.pull_request.base.sha }} -- chainladder
+          uv run pyright --outputjson --verifytypes chainladder > base.json || true
+          git checkout ${{ github.event.pull_request.head.sha }} -- chainladder
+
+      - name: Build summary
+        run: |
+          uv run python .github/scripts/pyright_typecompleteness_summary.py \
+            --base base.json \
+            --head head.json \
+            --output summary.md
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pyright-typecompleteness
+          path: summary.md
