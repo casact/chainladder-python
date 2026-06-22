@@ -1,11 +1,7 @@
 name: Pyright Type Completeness Comment
 
-# Split out from type_completeness.yml so the comment can be posted with a
-# write-capable token even for PRs from forks. workflow_run always executes
-# using the workflow file from the default branch, with the base repo's own
-# token, regardless of whether the triggering run came from a fork - and
-# this workflow never checks out or executes the fork's code, only the
-# already-computed summary.md/pr_number.txt artifact it produced.
+# Generate a comment containing type completeness summary. Triggered after completion of
+# preceding workflow Pyright Type Completeness.
 on:
   workflow_run:
     workflows: ["Pyright Type Completeness"]

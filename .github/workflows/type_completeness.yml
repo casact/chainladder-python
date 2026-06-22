@@ -1,5 +1,18 @@
 name: Pyright Type Completeness
 
+# Main workflow for generating type completeness report. Calculates type completeness scores on both a
+# project basis and a patch basis.
+#
+# Results are fed into a subsequent workflow,
+# defined in type_completeness_comment.yml. This workflow must be split into 2 files in order to work
+# securely on PRs from external forks of the repo by splitting read/write permissions.
+#
+# Auxiliary Files
+# ---------------
+# type_completeness_comment.yml - Writes a comment on the PR summarizing the type completeness.
+# ../scripts/type_completeness.py - Parses the resulting JSON to extract coverage statistics.
+# ../scripts/type_completeness_output.sh - Appends the Pyright terminal output to the GitHub action for user review.
+
 on:
   pull_request:
 
@@ -27,12 +40,18 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run pyright --verifytypes on PR head
+        # Get type coverage on the PR head.
+        # head.json -> Machine-readable report
+        # head.txt -> human-readable report
         run: |
           uv run pyright --outputjson --verifytypes chainladder --ignoreexternal > head.json || true
           uv run pyright --verifytypes chainladder --ignoreexternal > head.txt || true
           bash .github/scripts/type_completeness_output.sh head.txt "PR head"
 
       - name: Run pyright --verifytypes on PR base
+        # Get type coverage on main, append terminal output to GitHub actions.
+        # base.json -> Machine-readable report
+        # base.txt -> Human-readable report
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -46,6 +65,7 @@ jobs:
           bash .github/scripts/type_completeness_output.sh base.txt "PR base"
 
       - name: Build summary
+        # Construct summary by feeding JSON files into type_completeness.py.
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -57,12 +77,7 @@ jobs:
 
       - name: Save PR number
         run: echo "${{ github.event.pull_request.number }}" > pr_number.txt
-
-      # This workflow runs on pull_request, so on PRs from forks it only ever
-      # gets a read-only GITHUB_TOKEN and can't post a comment directly. The
-      # artifact is picked up by type_completeness_comment.yml, which runs on
-      # workflow_run (always with the base repo's write-capable token, without
-      # ever checking out or executing the fork's code) and posts the comment.
+        # Generate summary artifact to be read in by subsequent workflow type_completeness_comment.yml.
       - name: Upload summary artifact
         uses: actions/upload-artifact@v4
         with:
