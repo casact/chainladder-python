@@ -1,4 +1,78 @@
+from __future__ import annotations
+import numpy as np
 import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
+from chainladder.utils.sparse import COO
+
+
+def test_arithmetic_ndarray_other_backend(raa: Triangle) -> None:
+    """
+    When the left side of an arithmetic operator has a sparse backend, and the right side is a numpy ndarray,
+    The result should have a sparse backend.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    sparse_raa = raa.set_backend("sparse")
+    other = np.ones(sparse_raa.shape)
+    result = sparse_raa + other
+    assert result.array_backend == "sparse"
+    assert result.set_backend("numpy") == raa + 1
+
+
+def test_arithmetic_coo_other_backend(raa: Triangle) -> None:
+    """
+    When the left side of an arithmetic operator has a numpy backend, and the right side is a sparse COO,
+    The result should have a sparse backend.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    numpy_raa = raa.set_backend("numpy")
+    other = COO.from_numpy(np.ones(numpy_raa.shape))
+    result = numpy_raa + other
+    assert result.array_backend == "sparse"
+    assert result.set_backend("numpy") == raa + 1
+
+
+def test_arithmetic_grain_mismatch_raises(raa: Triangle, qtr: Triangle) -> None:
+    """
+    Add two triangles with different grain. Raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    qtr: Triangle
+        The quarterly sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(
+        ValueError,
+        match="Triangle arithmetic requires both triangles to be the same grain.",
+    ):
+        raa + qtr
 
 
 def test_arithmetic_union(raa):
