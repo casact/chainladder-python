@@ -88,7 +88,7 @@ def render_patch_detail(
     return "\n".join(lines)
 
 
-def build_summary(base_path: Path, head_path: Path) -> str:
+def build_summary(base_path: Path, head_path: Path, run_url: str | None = None) -> str:
     base_tc = load_type_completeness(base_path)
     head_tc = load_type_completeness(head_path)
     base = exported_symbols(base_tc)
@@ -107,6 +107,13 @@ def build_summary(base_path: Path, head_path: Path) -> str:
     sections = [
         "## Pyright Type Completeness",
         "",
+    ]
+    if run_url:
+        sections += [
+            f"[View the full `pyright --verifytypes` output for this commit]({run_url})",
+            "",
+        ]
+    sections += [
         f"**Project (full `chainladder` package, at this PR's head):** "
         f"{project_pct:.1f}% of exported symbols fully typed "
         f"({project_counts['known']} / {sum(project_counts.values())})",
@@ -156,9 +163,14 @@ def main() -> None:
     parser.add_argument("--base", required=True, type=Path)
     parser.add_argument("--head", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--run-url",
+        default=None,
+        help="Link to the workflow run, e.g. for its step summary.",
+    )
     args = parser.parse_args()
 
-    summary = build_summary(args.base, args.head)
+    summary = build_summary(args.base, args.head, run_url=args.run_url)
     args.output.write_text(summary)
     print(summary)
 

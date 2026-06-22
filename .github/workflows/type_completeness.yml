@@ -30,7 +30,7 @@ jobs:
         run: |
           uv run pyright --outputjson --verifytypes chainladder > head.json || true
           uv run pyright --verifytypes chainladder > head.txt || true
-          .github/scripts/append_verifytypes_step_summary.sh head.txt "PR head"
+          bash .github/scripts/type_completeness_output.sh head.txt "PR head"
 
       - name: Run pyright --verifytypes on PR base
         run: |
@@ -39,13 +39,16 @@ jobs:
           uv run pyright --outputjson --verifytypes chainladder > base.json || true
           uv run pyright --verifytypes chainladder > base.txt || true
           git checkout ${{ github.event.pull_request.head.sha }} -- chainladder
-          .github/scripts/append_verifytypes_step_summary.sh base.txt "PR base"
+          bash .github/scripts/type_completeness_output.sh base.txt "PR base"
 
       - name: Build summary
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          uv run python .github/scripts/pyright_typecompleteness_summary.py \
+          uv run python .github/scripts/type_completeness.py \
             --base base.json \
             --head head.json \
+            --run-url "$RUN_URL" \
             --output summary.md
 
       - name: Comment on PR
