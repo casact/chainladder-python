@@ -28,11 +28,23 @@ def status_of(symbol: dict[str, Any]) -> str:
     return "unknown"
 
 
-def exported_symbols(report_path: Path) -> dict[str, dict[str, Any]]:
+def load_type_completeness(report_path: Path) -> dict[str, Any]:
     with report_path.open() as f:
         data = json.load(f)
-    symbols = data["typeCompleteness"]["symbols"]
-    return {s["name"]: s for s in symbols if s["isExported"]}
+    return data["typeCompleteness"]
+
+
+def exported_symbols(type_completeness: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {s["name"]: s for s in type_completeness["symbols"] if s["isExported"]}
+
+
+def other_symbol_counts(type_completeness: dict[str, Any]) -> dict[str, int]:
+    other = type_completeness["otherSymbolCounts"]
+    return {
+        "known": other["withKnownType"],
+        "ambiguous": other["withAmbiguousType"],
+        "unknown": other["withUnknownType"],
+    }
 
 
 def counts_by_status(symbols: list[dict[str, Any]]) -> dict[str, int]:
@@ -77,11 +89,14 @@ def render_patch_detail(
 
 
 def build_summary(base_path: Path, head_path: Path) -> str:
-    base = exported_symbols(base_path)
-    head = exported_symbols(head_path)
+    base_tc = load_type_completeness(base_path)
+    head_tc = load_type_completeness(head_path)
+    base = exported_symbols(base_tc)
+    head = exported_symbols(head_tc)
 
     project_counts = counts_by_status(list(head.values()))
     project_pct = completeness_pct(project_counts)
+    other_counts = other_symbol_counts(head_tc)
 
     patch_names = [
         name
@@ -97,6 +112,16 @@ def build_summary(base_path: Path, head_path: Path) -> str:
         f"({project_counts['known']} / {sum(project_counts.values())})",
         "",
         render_counts_table([("Project (head)", project_counts)]),
+        "",
+        f"Other symbols referenced but not exported by `chainladder`: "
+        f"{sum(other_counts.values())}",
+        "",
+        render_counts_table([("Other (head)", other_counts)]),
+        "",
+        "Symbols without documentation:",
+        f"- Functions without docstring: {head_tc['missingFunctionDocStringCount']}",
+        f"- Functions without default param: {head_tc['missingDefaultParamCount']}",
+        f"- Classes without docstring: {head_tc['missingClassDocStringCount']}",
         "",
     ]
 

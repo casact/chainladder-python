@@ -27,14 +27,19 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run pyright --verifytypes on PR head
-        run: uv run pyright --outputjson --verifytypes chainladder > head.json || true
+        run: |
+          uv run pyright --outputjson --verifytypes chainladder > head.json || true
+          uv run pyright --verifytypes chainladder > head.txt || true
+          .github/scripts/append_verifytypes_step_summary.sh head.txt "PR head"
 
       - name: Run pyright --verifytypes on PR base
         run: |
           git fetch origin ${{ github.event.pull_request.base.sha }}
           git checkout ${{ github.event.pull_request.base.sha }} -- chainladder
           uv run pyright --outputjson --verifytypes chainladder > base.json || true
+          uv run pyright --verifytypes chainladder > base.txt || true
           git checkout ${{ github.event.pull_request.head.sha }} -- chainladder
+          .github/scripts/append_verifytypes_step_summary.sh base.txt "PR base"
 
       - name: Build summary
         run: |
