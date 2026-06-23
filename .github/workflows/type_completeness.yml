@@ -58,9 +58,11 @@ jobs:
         run: |
           git fetch origin "$BASE_SHA"
           MERGE_BASE="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          rm -rf chainladder
           git checkout "$MERGE_BASE" -- chainladder
           uv run pyright --outputjson --verifytypes chainladder --ignoreexternal > base.json || true
           uv run pyright --verifytypes chainladder --ignoreexternal > base.txt || true
+          rm -rf chainladder
           git checkout "$HEAD_SHA" -- chainladder
           bash .github/scripts/type_completeness_output.sh base.txt "PR base"
 
