@@ -283,7 +283,11 @@ class TrianglePandas:
     def dropna(self: TriangleProtocol) -> Triangle:
         """
         Method that removes origin/development vectors from edge of a
-        triangle that are all missing values. This may come in handy for a
+        triangle that are all missing values. Does not work on the interior
+        of a triangle, i.e., when a period has all NaNs but is not the first or last period
+        of the dimension.
+
+        This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
 
@@ -383,6 +387,17 @@ class TrianglePandas:
                 cumulative=True
             )
             print(tri)
+
+        .. testoutput::
+
+                  12     24  36
+            1985 NaN    NaN NaN
+            1986 NaN  600.0 NaN
+            1987 NaN    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna())
 
         .. testoutput::
 
@@ -709,7 +724,7 @@ class TrianglePandas:
         obj.values = obj.values.astype(dtype)
         return obj
 
-    def head(self: TriangleProtocol, n=5):
+    def head(self: TriangleProtocol, n: int=5):
         """Return the first ``n`` triangles along the index axis.
 
         Parameters
@@ -723,7 +738,7 @@ class TrianglePandas:
         """
         return self.iloc[:n]
 
-    def tail(self: TriangleProtocol, n=5):
+    def tail(self: TriangleProtocol, n: int=5):
         """Return the last ``n`` triangles along the index axis.
 
         Parameters
