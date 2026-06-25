@@ -7,6 +7,7 @@ from types import EllipsisType
 from typing import (
     Any,
     Literal,
+    overload,
     Protocol,
     # Self,  # Make use of this once Python 3.10 is deprecated.
     TYPE_CHECKING,
@@ -107,5 +108,8 @@ class TriangleProtocol(Protocol):
     def __radd__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     def __mul__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     def __rmul__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def __getitem__(self, key: pd.Series | np.ndarray | str | list[str] | int) -> Triangle | Series: ...
+    @overload
+    def __getitem__(self, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
+    @overload
+    def __getitem__(self, key: str | int) -> Triangle | Series: ...
     def __setitem__(self, key: str | int, value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]) -> None: ...

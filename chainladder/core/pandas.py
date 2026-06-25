@@ -534,10 +534,10 @@ class TrianglePandas:
             ]
             obj = cast("TriangleProtocol", cast(object, obj))
             # Slice the triangle by the origin periods that have data.
-            return cast("Triangle", obj[(self.origin >= min_odim) & (self.origin <= max_odim)])
+            return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
-        return cast("Triangle", obj)
+        return obj
 
     def fillna(self: TriangleProtocol, value: int | float | ndarray, inplace: bool = False) -> Triangle:
         """Fill nan with 'value' by axis.
