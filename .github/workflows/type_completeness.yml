@@ -1,0 +1,90 @@
+name: Pyright Type Completeness
+
+# Main workflow for generating type completeness report. Calculates type completeness scores on both a
+# project basis and a patch basis.
+#
+# Results are fed into a subsequent workflow,
+# defined in type_completeness_comment.yml. This workflow must be split into 2 files in order to work
+# securely on PRs from external forks of the repo by splitting read/write permissions.
+#
+# Auxiliary Files
+# ---------------
+# type_completeness_comment.yml - Writes a comment on the PR summarizing the type completeness.
+# ../scripts/type_completeness.py - Parses the resulting JSON to extract coverage statistics.
+# ../scripts/type_completeness_output.sh - Appends the Pyright terminal output to the GitHub action for user review.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  typecompleteness:
+    name: pyright --verifytypes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run pyright --verifytypes on PR head
+        # Get type coverage on the PR head.
+        # head.json -> Machine-readable report
+        # head.txt -> human-readable report
+        run: |
+          uv run pyright --outputjson --verifytypes chainladder --ignoreexternal > head.json || true
+          uv run pyright --verifytypes chainladder --ignoreexternal > head.txt || true
+          bash .github/scripts/type_completeness_output.sh head.txt "PR head"
+
+      - name: Run pyright --verifytypes on PR base
+        # Get type coverage on main, append terminal output to GitHub actions.
+        # base.json -> Machine-readable report
+        # base.txt -> Human-readable report
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin "$BASE_SHA"
+          MERGE_BASE="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          rm -rf chainladder
+          git checkout "$MERGE_BASE" -- chainladder
+          uv run pyright --outputjson --verifytypes chainladder --ignoreexternal > base.json || true
+          uv run pyright --verifytypes chainladder --ignoreexternal > base.txt || true
+          rm -rf chainladder
+          git checkout "$HEAD_SHA" -- chainladder
+          bash .github/scripts/type_completeness_output.sh base.txt "PR base"
+
+      - name: Build summary
+        # Construct summary by feeding JSON files into type_completeness.py.
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          uv run python .github/scripts/type_completeness.py \
+            --base base.json \
+            --head head.json \
+            --run-url "$RUN_URL" \
+            --output summary.md
+
+      - name: Save PR number
+        run: echo "${{ github.event.pull_request.number }}" > pr_number.txt
+        # Generate summary artifact to be read in by subsequent workflow type_completeness_comment.yml.
+      - name: Upload summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: type-completeness-summary
+          path: |
+            summary.md
+            pr_number.txt
+          retention-days: 1
