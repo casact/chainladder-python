@@ -1,0 +1,35 @@
+name: Pyright Type Completeness Comment
+
+# Generate a comment containing type completeness summary. Triggered after completion of
+# preceding workflow Pyright Type Completeness.
+on:
+  workflow_run:
+    workflows: ["Pyright Type Completeness"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  actions: read
+
+jobs:
+  comment:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download summary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: type-completeness-summary
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read PR number
+        id: pr
+        run: echo "number=$(cat pr_number.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: pyright-typecompleteness
+          number_force: ${{ steps.pr.outputs.number }}
+          path: summary.md
