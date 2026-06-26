@@ -1,10 +1,17 @@
-mport chainladder as cl
+from __future__ import annotations
+
+import chainladder as cl
 import numpy as np
 import pytest
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
+
 def test_friedland_fidelity() -> None:
     '''
-    Demonstrates 
+    Reconciles to Chapter 11 Exhibit 5 of the Friedland reserving textbook
     '''
     tri = cl.load_sample('friedland_gl_insurer')
     ccc_dev = cl.Development(n_periods=3, average='volume').fit_transform(tri['Closed Claim Counts'])
