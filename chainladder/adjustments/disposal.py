@@ -97,7 +97,7 @@ class DisposalRate(DevelopmentBase):
         ult = cl.Chainladder().fit(clrd['IncurLoss']).ultimate_
         dr = cl.DisposalRate().fit_transform(clrd['CumPaidLoss'],sample_weight = ult)
 
-    Once we apply this adjustment method via a `fit_transform`, we can examin the emergence pattern via `disposal_rate_tri`. 
+    Once we apply this adjustment method via a `fit_transform`, we can examine the emergence pattern via `disposal_rate_tri`. 
 
     .. testcode::
     
