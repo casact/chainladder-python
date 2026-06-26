@@ -1,23 +1,31 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
 import pytest
 
-def test_friedland_fidelity():
-    tri = cl.load_sample('friedland_gl_insurer')['Closed Claim Counts']
-    ult_tri = cl.Triangle(
-        data = {
-            'Closed Claim Counts':[873,720,626,629,588,553,438,609],
-            'ay': [2001,2002,2003,2004,2005,2006,2007,2008],
-            'dev':[2008,2008,2008,2008,2008,2008,2008,2008],
-        },
-        origin = 'ay',
-        development='dev',
-        columns='Closed Claim Counts',
-        cumulative=True,
-    )
-    dr = cl.DisposalRate(n_periods = 5, average = 'simple', drop_high = 1, drop_low = 1).fit_transform(X=tri,sample_weight=ult_tri)
-    assert np.all(abs(dr.disposal_.round(3).values.flatten() - [.200,.433,.585,.710,.791,.862,.882,.912,1.000] <=0.001))
-    lhs = (dr.full_triangle_.cum_to_incr()-tri.cum_to_incr()).round(0).values.flatten()
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
+
+def test_friedland_fidelity() -> None:
+    '''
+    Reconciles to Chapter 11 Exhibit 5 of the Friedland reserving textbook
+    '''
+    tri = cl.load_sample('friedland_gl_insurer')
+    ccc_dev = cl.Development(n_periods=3, average='volume').fit_transform(tri['Closed Claim Counts'])
+    ccc_dev.ldf_ = ccc_dev.ldf_.round(3)
+    ccc_dev_wtail = cl.TailConstant(tail = 1.100, projection_period = 0).fit_transform(ccc_dev)
+    ccc_ult = cl.Chainladder().fit(ccc_dev_wtail).ultimate_
+    rcc_dev = cl.Development(n_periods=3, average='volume').fit_transform(tri['Reported Claim Counts'])
+    rcc_dev.ldf_ = rcc_dev.ldf_.round(3)
+    rcc_ult = cl.Chainladder().fit(rcc_dev).ultimate_
+    ult = (ccc_ult + rcc_ult) / 2
+    dr = cl.DisposalRate(n_periods = 5, average = 'simple', drop_high = 1, drop_low = 1).fit_transform(X=tri['Closed Claim Counts'],sample_weight=ult)
+    assert np.all(dr.disposal_.round(3).values.flatten() == [.200,.433,.585,.710,.791,.862,.882,.912,1.000])
+    #Friedland uses rounded ultimates to calculate bottom half of the triangle, which introduces some rounding discrepancies with the implementation
+    lhs = (dr.full_triangle_.cum_to_incr()-tri['Closed Claim Counts'].cum_to_incr()).round(0).values.flatten()
     rhs = np.array([
                                                             77.,  
                                                     24.,    70.,  
@@ -26,11 +34,14 @@ def test_friedland_fidelity():
                             52.,    45.,    13.,    19.,    56.,  
                     76.,    49.,    43.,    12.,    18.,    54.,  
             67.,    55.,    36.,    31.,    9.,     13.,    39.,  
-    140.,   91.,    75.,    49.,    42.,    12.,    18.,    53.
+    140.,   91.,    75.,    49.,    43.,    12.,    18.,    53.
     ])
     assert np.all(abs(lhs[~np.isnan(lhs)] - rhs <= 1))
 
-def test_no_weight_exception(raa):
+def test_no_weight_exception(raa:Triangle) -> None:
+    '''
+    sample_weight is optional in the default sklearn API. however, we require sample_weight to provide the a priori ultimate. 
+    '''
     with pytest.raises(ValueError):
         dr = cl.DisposalRate().fit(raa)
     ult = cl.Chainladder().fit(raa).ultimate_
@@ -38,7 +49,7 @@ def test_no_weight_exception(raa):
     with pytest.raises(ValueError):
         est = dr.transform(raa)
     
-def test_cl_parity(raa):
+def test_cl_parity(raa:Triangle) -> None:
     """
     A no-tail, full-triangle, volume-weighted Chainladder estimator coincides with the disposal rate adjustment. 
     """
@@ -48,7 +59,10 @@ def test_cl_parity(raa):
     dr = cl.DisposalRate().fit_transform(raa,sample_weight=est.ultimate_)
     assert np.all(dr.full_triangle_.round(3).values[...,:-1] == est.full_triangle_.round(3).values[...,:-2])
 
-def test_sparse_transform(raa):
+def test_sparse_transform(raa:Triangle) -> None:
+    """
+    if the supplied Triangle is sparse, then the resulting full_triangle_ is also sparse 
+    """
     raa_sparse = raa.set_backend('sparse')
     ult = cl.Chainladder().fit(raa_sparse).ultimate_.set_backend('sparse')
     dr = cl.DisposalRate().fit_transform(raa_sparse,sample_weight=ult)
