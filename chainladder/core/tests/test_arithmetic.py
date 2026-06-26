@@ -157,3 +157,66 @@ def test_index_broadacsting6(clrd):
     c = clrd['CumPaidLoss'].iloc[50:100]
     d = a + b - c
     assert d.sort_index() == clrd['CumPaidLoss'].iloc[:150].sort_index()
+
+
+def test_index_broadcasting_ambiguous(clrd: Triangle) -> None:
+    """
+    Attempt to add two triangles with inconsistent indexes. Raise a ValueError.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    a = clrd['CumPaidLoss'].groupby('GRNAME').sum()
+    b = clrd['CumPaidLoss'].groupby('LOB').sum()
+    with pytest.raises(ValueError, match="Index broadcasting is ambiguous"):
+        _= a + b
+
+
+def test_prep_columns_adds_missing_columns(clrd: Triangle) -> None:
+    """
+    When x has columns that y lacks and y has columns that x lacks, missing columns are filled
+    with zeros prior to addition.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    x = clrd[['CumPaidLoss', 'EarnedPremNet']]
+    y = clrd[['CumPaidLoss', 'IncurLoss']]
+    result = x + y
+    assert set(result.columns) == {'CumPaidLoss', 'EarnedPremNet', 'IncurLoss'}
+    assert result['CumPaidLoss'] == clrd['CumPaidLoss'] * 2
+    assert result[['EarnedPremNet', 'IncurLoss']] == clrd[['EarnedPremNet', 'IncurLoss']]
+
+
+def test_prep_columns_reindexes_y(clrd: Triangle) -> None:
+    """
+    Add triangles x and y where x's columns are a superset of y's. Missing columns in y are filled
+    with zeros prior to addition.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    x = clrd[['CumPaidLoss', 'EarnedPremNet', 'IncurLoss']]
+    y = clrd[['CumPaidLoss', 'IncurLoss']]
+    result = x + y
+    assert set(result.columns) == {'CumPaidLoss', 'EarnedPremNet', 'IncurLoss'}
+    assert result[['CumPaidLoss', 'IncurLoss']] == clrd[['CumPaidLoss', 'IncurLoss']] * 2
+    assert result['EarnedPremNet'] == clrd['EarnedPremNet']
