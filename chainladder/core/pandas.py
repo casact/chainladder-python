@@ -1,3 +1,6 @@
+"""
+Mirror pandas API onto the Triangle class.
+"""
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -10,6 +13,7 @@ from chainladder import (
     __dt64_dtype__,
     _warn_dask_parallel_deprecated,
 )
+from chainladder.core.typing import TriangleProtocol
 from chainladder.utils.utility_functions import num_to_nan
 from typing import (
     cast,
@@ -24,6 +28,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+    from chainladder.utils.sparse import COO
     from chainladder.core.typing import BackendArray
     from collections.abc import Callable
     from numpy import ndarray
@@ -36,15 +41,15 @@ if TYPE_CHECKING:
         IndexLabel
     )
     from typing import (
+        Any,
         Literal,
-        Self,
         Type
     )
 
 
 
 class TriangleGroupBy:
-    def __init__(self, obj, by, axis=0, **kwargs):
+    def __init__(self, obj: Triangle, by, axis=0, **kwargs):
         self.obj = obj.copy()
         self.axis = self.obj._get_axis(axis)
         self.by = by
@@ -67,8 +72,13 @@ class TriangleGroupBy:
 
 
 class TrianglePandas:
+    # Stubs to supress type checker warnings. Refer to typing.TriangleProtocol for actual
+    # typing. Remove once linters improve.
+    if TYPE_CHECKING:
+        values: np.ndarray
+
     def to_frame(
-            self,
+            self: TriangleProtocol,
             origin_as_datetime: bool = True,
             keepdims: bool = False,
             implicit_axis: bool = False,
@@ -102,15 +112,16 @@ class TrianglePandas:
         if keepdims:
             is_val_tri: bool = self.is_val_tri
             obj: Triangle = self.val_to_dev().set_backend("sparse")
+            obj.values = cast("COO", obj.values)
             out: DataFrame = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
-            out["columns"]: Series = obj.columns[obj.values.coords[1]]
+            out["columns"] = obj.columns[obj.values.coords[1]]
             missing_cols: list = list(set(self.columns) - set(out['columns']))
             if origin_as_datetime:
-                out["origin"]: Series = obj.odims[obj.values.coords[2]]
+                out["origin"] = obj.odims[obj.values.coords[2]]
             else:
-                out["origin"]: Series = obj.origin[obj.values.coords[2]]
-            out["development"]: Series = obj.ddims[obj.values.coords[3]]
-            out["values"]: Series = obj.values.data
+                out["origin"] = obj.origin[obj.values.coords[2]]
+            out["development"] = obj.ddims[obj.values.coords[3]]
+            out["values"] = obj.values.data
             out: DataFrame = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
             )
@@ -119,21 +130,25 @@ class TrianglePandas:
                 out.columns.get_level_values(1)[2:]
             )
 
-            valuation: DataFrame = pd.DataFrame(
+            valuation_series = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order='F'),
                 index=obj.odims if origin_as_datetime else obj.origin, 
                 columns=obj.ddims
-            ).unstack().rename('valuation').reset_index().rename(
-                columns={'level_0': 'development', 'level_1': 'origin'})
-
+            ).unstack()
+            valuation_series.name = 'valuation'
+            valuation: DataFrame = valuation_series.reset_index().rename(
+                columns={
+                    'level_0': 'development',
+                    'level_1': 'origin'}
+            )
             val_dict: dict = dict(zip(list(zip(
                 valuation['origin'], valuation['development'])),
                 valuation['valuation']))
             if len(out) > 0:
-                out['valuation']: Series = out.apply(
+                out['valuation'] = out.apply(
                     lambda x: val_dict[(x['origin'], x['development'])], axis=1)
             else:
-                out['valuation']: Series = self.valuation_date
+                out['valuation'] = self.valuation_date
             col_order: list = list(self.columns)
             if implicit_axis:
                 col_order: list = ['origin', 'development', 'valuation'] + col_order
@@ -143,7 +158,7 @@ class TrianglePandas:
                 else:
                     col_order: list = ['origin', 'development'] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
-                out[col]: Series = np.nan
+                out[col] = np.nan
             # Create physical columns out of virtual ones.
             for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
                 # Fill na to enable floating-point computation.
@@ -190,33 +205,62 @@ class TrianglePandas:
                     implicit_axis=implicit_axis
                 )
 
-    def plot(self, *args, **kwargs):
-        """Passthrough of pandas functionality"""
+    def plot(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Passthrough of pandas functionality. Calls DataFrame.plot() after the
+        Triangle is transformed into a pandas DataFrame.
+
+        Parameters
+        ----------
+        *args: Any
+            Positional arguments passed to ``pandas.DataFrame.plot``.
+        **kwargs: Any
+            Keyword arguments passed to ``pandas.DataFrame.plot``, e.g.
+            ``kind``, ``ax``, ``title``, ``subplots``. See the pandas
+            documentation for the full list of supported parameters.
+
+        Returns
+        -------
+        None
+        """
         return self.to_frame(origin_as_datetime=False).plot(*args, **kwargs)
 
-    def hvplot(self, *args, **kwargs):
-        """Passthrough of pandas functionality"""
+    def hvplot(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Passthrough of pandas functionality. Generate an interactive plot
+        of a Triangle after it has been transformed into a DataFrame().
+
+        Parameters
+        ----------
+        *args: Any
+            Positional arguments passed to ``pandas.DataFrame.hvplot``.
+        **kwargs: Any
+            Keyword arguments passed to ``pandas.DataFrame.hvplot``.
+        Returns
+        -------
+        Any
+        """
         df = self.to_frame(origin_as_datetime=True)
         if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(axis: str | int| None) -> int:
+    def _get_axis(axis: Literal['index', 'columns', 'origin', 'development'] | int | None) -> int:
         """
         Returns the integer representation of the requested axis.
 
         Parameters
         ----------
-        axis: str | int | None
+        axis: Literal['index', 'columns', 'origin', 'development'] | int | None
             String or integer representation of the requested axis. If
             supplied as a string, returns the integer representation. If
             supplied as an integer, returns the same integer.
 
         Returns
         -------
-        The integer representation of the requested axis
-
+        int
+            The integer representation of the requested axis
         """
 
         ax = {
@@ -236,36 +280,271 @@ class TrianglePandas:
                     "integer representation of the desired axis."
                 )
 
-    def dropna(self):
-        """Method that removes origin/development vectors from edge of a
-        triangle that are all missing values. This may come in handy for a
+    def dropna(self: TriangleProtocol) -> Triangle:
+        """
+        Method that removes origin/development vectors from edge of a
+        triangle that are all missing values. Does not work on the interior
+        of a triangle, i.e., when a period has all NaNs but is not the first or last period
+        of the dimension.
+
+        This may come in handy for a
         new line of business that doesn't have origins/developments of an
         existing line in the same triangle.
+
+        Returns
+        -------
+        Triangle
+
+        Examples
+        --------
+
+        In a single-dimension case, an origin period will be dropped if it contains all NaN.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import numpy as np
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [np.nan, np.nan, np.nan, 500, 600, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12     24  36
+            1985    NaN    NaN NaN
+            1986  500.0  600.0 NaN
+            1987  500.0    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     12     24
+            1986  500.0  600.0
+            1987  500.0    NaN
+
+        If the development period has all NaNs, it will be dropped.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [np.nan, 500, 600, np.nan, 600, np.nan],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                  12     24     36
+            1985 NaN  500.0  600.0
+            1986 NaN  600.0    NaN
+            1987 NaN    NaN    NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     24     36
+            1985  500.0  600.0
+            1986  600.0    NaN
+
+        If both the earliest origin and development periods are all NaN, both will be dropped.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [np.nan, np.nan, np.nan, np.nan, 600, np.nan],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                  12     24  36
+            1985 NaN    NaN NaN
+            1986 NaN  600.0 NaN
+            1987 NaN    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     24
+            1986  600.0
+
+        If a period in the middle of the Triangle is all NaN, `Triangle.dropna()` will have no effect.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [500, np.nan, 700, 500, np.nan, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12  24     36
+            1985  500.0 NaN  700.0
+            1986  500.0 NaN    NaN
+            1987  500.0 NaN    NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     12  24     36
+            1985  500.0 NaN  700.0
+            1986  500.0 NaN    NaN
+            1987  500.0 NaN    NaN
+
+        If the last period has a NaN, it will be dropped.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [500, 600, np.nan, 500, 600, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12     24  36
+            1985  500.0  600.0 NaN
+            1986  500.0  600.0 NaN
+            1987  500.0    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna())
+
+        .. testoutput::
+
+                     12     24
+            1985  500.0  600.0
+            1986  500.0  600.0
+            1987  500.0    NaN
+
+        In the case of a multi-dimensional Triangle, periods will only be dropped if their aggregate sum across
+        the index and columns results in all NaN for the period.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987] * 2,
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
+                    'lob': ['abc'] * 6 + ['xyz'] * 6,
+                    'paid': [np.nan, np.nan, np.nan, 500, 600, 500] * 2,
+                },
+                origin='origin',
+                development='development',
+                index='lob',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri.loc['abc'])
+
+        .. testoutput::
+
+                     12     24  36
+            1985    NaN    NaN NaN
+            1986  500.0  600.0 NaN
+            1987  500.0    NaN NaN
+
+        .. testcode::
+
+            print(tri.dropna().sum())
+
+        .. testoutput::
+
+                      12      24
+            1986  1000.0  1200.0
+            1987  1000.0     NaN
         """
+
+        # Aggregate the triangle across the index and columns.
         obj = self.sum(axis=0).sum(axis=1)
         xp = obj.get_array_module()
+        # Check which origins have all NaNs and indicate with a boolean. 0 means that the nth origin is all NaN.
         odim = list((xp.nansum(obj.values[0, 0, :], -1) != 0).astype("int"))
+        # Find the first origin period with data.
         min_odim = obj.origin[odim.index(1)]
+        # Find the last origin period with data.
         max_odim = obj.origin[::-1][odim[::-1].index(1)]
+        # Case when triangle has multiple development periods, e.g., not latest diagonal or ultimate.
         if obj.shape[-1] != 1:
+            # Flag the development periods that have data.
             ddim = list(
                 (xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
             ddim = obj.development[pd.Series(ddim).astype(bool)]
+            # Slice the Triangle by the development periods that have data.
             obj = self[
                 (self.development >= ddim.min()) & (
                     self.development <= ddim.max())
             ]
+            obj = cast("TriangleProtocol", cast(object, obj))
+            # Slice the triangle by the origin periods that have data.
             return obj[(self.origin >= min_odim) & (self.origin <= max_odim)]
         # Case when Triangle has a single development period, e.g., latest diagonal or ultimate.
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self, value=None, inplace=False):
+    def fillna(self: TriangleProtocol, value: int | float | ndarray, inplace: bool = False) -> Triangle:
         """Fill nan with 'value' by axis.
 
         Parameters
         ----------
-        value: single value or array-like values, default = None
+        value: single value or array-like values
             Value(s) to fill across the axis.
 
         inplace: boolean, default = False
@@ -276,22 +555,26 @@ class TrianglePandas:
         -------
         Triangle
         """
+        if value is None:
+            raise TypeError("Must specify a fill value.")
         if inplace:
-            frame = self + value * 0
             xp = self.get_array_module()
-            fill = (xp.nan_to_num(frame.values) == 0) * (self * 0 + value)
-            self.values = (frame + fill).values
-            return self
+            # Create a triangle will the fill value in the original Triangle's NaN positions.
+            # Positions corresponding to populated positions in teh original Triangle are set to NaN.
+            fill = (xp.nan_to_num(self.values) == 0) * (self * 0 + value)
+            self.values = (self + fill).values
+            return cast("Triangle", cast(object, self))
         else:
             new_obj = self.copy()
-            return new_obj.fillna(value=value, inplace=True)
+            cast("TriangleProtocol", cast(object, new_obj)).fillna(value=value, inplace=True)
+            return new_obj
 
-    def fillzero(self, inplace=False):
-        """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working
+    def fillzero(self: TriangleProtocol, inplace: bool = False) -> Triangle:
+        """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working.
 
         Parameters
         ----------
-        inplace: boolean, default = False
+        inplace: bool, default = False
             Whether to modify the triangle object directly (True), or
             return a new modified triangle (False).
 
@@ -301,11 +584,16 @@ class TrianglePandas:
         """
         if inplace:
             xp = self.get_array_module()
-            self.values = np.where((xp.nan_to_num(self.values) == 0) * (self.nan_triangle == 1), self.nan_triangle * 0, self.values)
-            return self
+            # Fill the NaNs by locating their positions within the triangle.
+            self.values = np.where(
+                (xp.nan_to_num(self.values) == 0) * (self.nan_triangle == 1),
+                self.nan_triangle * 0, self.values
+            )
+            return cast("Triangle", cast(object, self))
         else:
             new_obj = self.copy()
-            return new_obj.fillzero(inplace=True)
+            cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
+            return new_obj
 
     def drop(self, labels=None, axis=1):
         """Drop specified labels from rows or columns.
@@ -370,10 +658,10 @@ class TrianglePandas:
         return concat((self, other), 0)
 
     def rename(
-            self,
+            self: TriangleProtocol,
             axis: Literal['index', 'columns', 'origin', 'development'] | int,
             value: list | str | dict
-    ) -> Self:
+    ):
         """Alter axes labels.
 
         Parameters
@@ -418,7 +706,7 @@ class TrianglePandas:
                 )
         return self
 
-    def astype(self, dtype, inplace=True):
+    def astype(self: TriangleProtocol, dtype, inplace=True):
         """Copy of the array, cast to a specified type.
 
         Parameters
@@ -436,7 +724,7 @@ class TrianglePandas:
         obj.values = obj.values.astype(dtype)
         return obj
 
-    def head(self, n=5):
+    def head(self: TriangleProtocol, n: int=5):
         """Return the first ``n`` triangles along the index axis.
 
         Parameters
@@ -450,7 +738,7 @@ class TrianglePandas:
         """
         return self.iloc[:n]
 
-    def tail(self, n=5):
+    def tail(self: TriangleProtocol, n: int=5):
         """Return the last ``n`` triangles along the index axis.
 
         Parameters
@@ -464,7 +752,7 @@ class TrianglePandas:
         """
         return self.iloc[-n:]
 
-    def sort_index(self, *args, **kwargs):
+    def sort_index(self: TriangleProtocol, *args, **kwargs):
         """Sort Triangle rows by index labels.
 
         Returns
@@ -473,7 +761,7 @@ class TrianglePandas:
         """
         return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
 
-    def exp(self):
+    def exp(self: TriangleProtocol):
         """Return the exponential of each element.
 
         Returns
@@ -482,7 +770,7 @@ class TrianglePandas:
         """
         return self.get_array_module().exp(self)
 
-    def log(self):
+    def log(self: TriangleProtocol):
         """Return the natural logarithm of each element.
 
         Returns
@@ -491,21 +779,21 @@ class TrianglePandas:
         """
         return self.get_array_module().log(self)
 
-    def minimum(self, other):
+    def minimum(self: TriangleProtocol, other):
         """Element-wise minimum of this Triangle and another operand.
 
         See :func:`chainladder.minimum` for parameters, usage, and examples.
         """
         return self.get_array_module().minimum(self, other)
 
-    def maximum(self, other):
+    def maximum(self: TriangleProtocol, other):
         """Element-wise maximum of this Triangle and another operand.
 
         See :func:`chainladder.maximum` for parameters, usage, and examples.
         """
         return self.get_array_module().maximum(self, other)
 
-    def sqrt(self):
+    def sqrt(self: TriangleProtocol):
         """Return the non-negative square root of each element.
 
         Returns
@@ -533,7 +821,7 @@ class TrianglePandas:
         return round(self, decimals)
 
     def xs(
-        self,
+        self: TriangleProtocol,
         index_key:IndexLabel,
         level:IndexLabel | None = None,
         drop_level:bool = True):
