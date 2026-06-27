@@ -178,32 +178,11 @@ def test_index_broadcasting_ambiguous(clrd: Triangle) -> None:
         _= a + b
 
 
-def test_prep_columns_adds_missing_columns(clrd: Triangle) -> None:
+def test_prep_columns_reindexes_superset(clrd: Triangle) -> None:
     """
-    When x has columns that y lacks and y has columns that x lacks, missing columns are filled
-    with zeros prior to addition.
-
-    Parameters
-    ----------
-    clrd: Triangle
-        The clrd sample data set fixture.
-
-    Returns
-    -------
-    None
-    """
-    x = clrd[['CumPaidLoss', 'EarnedPremNet']]
-    y = clrd[['CumPaidLoss', 'IncurLoss']]
-    result = x + y
-    assert set(result.columns) == {'CumPaidLoss', 'EarnedPremNet', 'IncurLoss'}
-    assert result['CumPaidLoss'] == clrd['CumPaidLoss'] * 2
-    assert result[['EarnedPremNet', 'IncurLoss']] == clrd[['EarnedPremNet', 'IncurLoss']]
-
-
-def test_prep_columns_reindexes_y(clrd: Triangle) -> None:
-    """
-    Add triangles x and y where x's columns are a superset of y's. Missing columns in y are filled
-    with zeros prior to addition.
+    When one triangle's columns are a strict superset of the other's, the subset
+    triangle is reindexed with the missing columns filled as zero. Test both
+    directions: x as superset and y as superset.
 
     Parameters
     ----------
@@ -216,7 +195,7 @@ def test_prep_columns_reindexes_y(clrd: Triangle) -> None:
     """
     x = clrd[['CumPaidLoss', 'EarnedPremNet', 'IncurLoss']]
     y = clrd[['CumPaidLoss', 'IncurLoss']]
-    result = x + y
-    assert set(result.columns) == {'CumPaidLoss', 'EarnedPremNet', 'IncurLoss'}
-    assert result[['CumPaidLoss', 'IncurLoss']] == clrd[['CumPaidLoss', 'IncurLoss']] * 2
-    assert result['EarnedPremNet'] == clrd['EarnedPremNet']
+    for result in [x + y, y + x]:
+        assert set(result.columns) == {'CumPaidLoss', 'EarnedPremNet', 'IncurLoss'}
+        assert result[['CumPaidLoss', 'IncurLoss']] == clrd[['CumPaidLoss', 'IncurLoss']] * 2
+        assert result['EarnedPremNet'] == clrd['EarnedPremNet']
