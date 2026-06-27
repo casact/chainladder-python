@@ -14,8 +14,45 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder.core import Triangle
 
+class DisposalMixin:
+    '''
+    This class provides attributes for the DisposalRate adjustment method and transformed `Triangle`    
+    '''
 
-class DisposalRate(DevelopmentBase):
+    @property
+    def disposal_(self) -> Triangle:
+        if not hasattr(self, "_disposal_"):
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'disposal_'")
+        return self._disposal_
+    
+    @disposal_.setter
+    def disposal_(self,value) -> None:
+        output = copy.deepcopy(value)
+        output.is_cumulative = True
+        output.is_pattern = True
+        self._disposal_ = output
+
+    @property
+    def incr_disposal_(self) -> Triangle:
+        if not hasattr(self, "_disposal_"):
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'incr_disposal_'")
+        disposal_copy = copy.deepcopy(self._disposal_)
+        disposal_copy.is_pattern = False
+        output = disposal_copy.cum_to_incr()
+        output.is_pattern = True
+        return output
+
+    @incr_disposal_.setter
+    def incr_disposal_(self,value) -> None:
+        output = copy.deepcopy(value)
+        output.is_pattern = False
+        output = output.incr_to_cum()
+        output.is_pattern = True
+        self._disposal_ = output
+
+class DisposalRate(DevelopmentBase, DisposalMixin):
     """
     Calculates the bottom of a fitted full_triangle_ using the Disposal Rate method described
     by Friedland.
@@ -231,14 +268,8 @@ class DisposalRate(DevelopmentBase):
         #calculate factors
         super().fit(ult.values,self.X_.values,self.w_)
         #keep attributes
-        self.disposal_ = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
-        self.disposal_ = concat((self.disposal_,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
-        self.disposal_.is_cumulative = True
-        #pattern multiples from tail and additive adds from head
-        self.disposal_.is_pattern = False
-        self.incr_disposal_ = self.disposal_.cum_to_incr()
-        self.incr_disposal_.is_pattern = True
-        self.disposal_.is_pattern = True
+        disposal = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
+        self._disposal_ = concat((disposal,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
         return self
 
     def transform(
@@ -270,7 +301,6 @@ class DisposalRate(DevelopmentBase):
         X_new.ultimate_ = sample_weight.set_backend(self.X_.array_backend).latest_diagonal
         X_new.disposal_rate_tri = self.disposal_rate_tri
         X_new.disposal_ = self.disposal_
-        X_new.incr_disposal_ = self.incr_disposal_
         ibnr_pct = 1 - X_new.disposal_.align_pattern(X_new.disposal_rate_tri)
         run_off = X_new.incr_disposal_ / ibnr_pct * X_new.ibnr_
         run_off = run_off[run_off.valuation > X_new.valuation_date]
