@@ -22,9 +22,11 @@ def test_friedland_fidelity() -> None:
     rcc_dev.ldf_ = rcc_dev.ldf_.round(3)
     rcc_ult = cl.Chainladder().fit(rcc_dev).ultimate_
     ult = (ccc_ult + rcc_ult) / 2
-    dr = cl.DisposalRate(n_periods = 5, average = 'simple', drop_high = 1, drop_low = 1).fit_transform(X=tri['Closed Claim Counts'],sample_weight=ult)
-    assert np.all(dr.disposal_.round(3).values.flatten() == [.200,.433,.585,.710,.791,.862,.882,.912,1.000])
+    dr_transformer = cl.DisposalRate(n_periods = 5, average = 'simple', drop_high = 1, drop_low = 1).fit(X=tri['Closed Claim Counts'],sample_weight=ult)
+    dr_transformer.disposal_ = dr_transformer.disposal_.round(3)
+    assert np.all(dr_transformer.disposal_.values.flatten() == [.200,.433,.585,.710,.791,.862,.882,.912,1.000])
     #Friedland uses rounded ultimates to calculate bottom half of the triangle, which introduces some rounding discrepancies with the implementation
+    dr = dr_transformer.transform(X=tri['Closed Claim Counts'],sample_weight=ult.round(0))
     lhs = (dr.full_triangle_.cum_to_incr()-tri['Closed Claim Counts'].cum_to_incr()).round(0).values.flatten()
     rhs = np.array([
                                                             77.,  
