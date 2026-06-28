@@ -1176,25 +1176,24 @@ class Triangle(TriangleBase):
 
         .. testoutput::
             
-                    12        24        36        48        60        72        84        96        108       120
-            1988  0.313923  0.619459  0.774429  0.865377  0.919077  0.948898  0.964643  0.973184  0.980224  0.983063
-            1989  0.321526  0.626023  0.781086  0.872345  0.924842  0.952533  0.967690  0.977373  0.981938       NaN
-            1990  0.329567  0.634056  0.790752  0.880273  0.927029  0.952951  0.968379  0.976049       NaN       NaN
-            1991  0.330035  0.636233  0.791888  0.881010  0.929460  0.954694  0.968533       NaN       NaN       NaN
-            1992  0.342613  0.650521  0.801875  0.885976  0.932865  0.956495       NaN       NaN       NaN       NaN
-            1993  0.353784  0.663303  0.810639  0.894414  0.939009       NaN       NaN       NaN       NaN       NaN
+                    12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult
+            1988       NaN       NaN       NaN       NaN       NaN       NaN  0.964643  0.973184  0.980224  0.983063
+            1989       NaN       NaN       NaN       NaN       NaN  0.952533  0.967690  0.977373  0.981938       NaN
+            1990       NaN       NaN       NaN       NaN  0.927029  0.952951  0.968379  0.976049       NaN       NaN
+            1991       NaN       NaN       NaN  0.881010  0.929460  0.954694  0.968533       NaN       NaN       NaN
+            1992       NaN       NaN  0.801875  0.885976  0.932865  0.956495       NaN       NaN       NaN       NaN
+            1993       NaN  0.663303  0.810639  0.894414  0.939009       NaN       NaN       NaN       NaN       NaN
             1994  0.367530  0.670460  0.814661  0.897244       NaN       NaN       NaN       NaN       NaN       NaN
             1995  0.379650  0.680979  0.821603       NaN       NaN       NaN       NaN       NaN       NaN       NaN
             1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
             1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
-            """
+        """
 
         obj: Triangle = self.incr_to_cum() / self.ultimate_.values
         if not obj.is_full:
             obj = obj[obj.valuation <= obj.valuation_date]
-        if hasattr(obj, "w_"):
-            w_ = obj.w_[..., : len(obj.odims), :]
-            obj = obj * w_ if obj.shape == w_.shape else obj
+        if hasattr(obj, "disposal_w_"):
+            obj = obj * obj.disposal_w_
         obj.is_pattern = True
         obj.is_cumulative = True
         obj.is_disposal_rate = True

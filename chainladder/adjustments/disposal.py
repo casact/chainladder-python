@@ -21,6 +21,9 @@ class DisposalMixin:
 
     @property
     def disposal_rate_(self) -> Triangle:
+        '''
+        Gets the estimated disposal rate
+        '''
         if not hasattr(self, "_disposal_rate_"):
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'disposal_rate_'")
@@ -28,6 +31,9 @@ class DisposalMixin:
     
     @disposal_rate_.setter
     def disposal_rate_(self,value) -> None:
+        '''
+        Sets disposal_rate_
+        '''
         obj = copy.deepcopy(value)
         obj.is_pattern = True
         obj.is_disposal_rate = True
@@ -36,10 +42,16 @@ class DisposalMixin:
 
     @property
     def incr_disposal_rate_(self) -> Triangle:
+        '''
+        Gets the incremental of the estimated disposal rate
+        '''
         return self.disposal_rate_.cum_to_incr()
 
     @incr_disposal_rate_.setter
     def incr_disposal_rate_(self,value) -> None:
+        '''
+        Sets incr_disposal_rate_
+        '''
         obj = copy.deepcopy(value)
         obj.is_pattern = True
         obj.is_disposal_rate = True
@@ -252,12 +264,12 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
             preserve = self.preserve,
             drop = self.drop
         )
-        if hasattr(self.X_, "w_"):
-            self.w_ = tw.fit(X=self.X_.disposal_rate_tri * self.X_.w_).w_.values
+        if hasattr(self.X_, "disposal_w_"):
+            self.disposal_w_ = tw.fit(X=self.X_.disposal_rate_tri * self.X_.disposal_w_).w_.values
         else:
-            self.w_ = tw.fit(X=self.X_.disposal_rate_tri).w_.values
+            self.disposal_w_ = tw.fit(X=self.X_.disposal_rate_tri).w_.values
         #calculate factors
-        super().fit(ult.values,self.X_.values,self.w_)
+        super().fit(ult.values,self.X_.values,self.disposal_w_)
         #keep attributes
         disposal = self._param_property(self.X_.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
         self.disposal_rate_ = concat((disposal,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
@@ -289,6 +301,7 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         #validate dimensions of sample weight
         MethodBase().validate_weight(X, sample_weight)
         #align backeneds
+        X_new.disposal_w_ = self.disposal_w_
         X_new.ultimate_ = sample_weight.set_backend(self.X_.array_backend).latest_diagonal
         X_new.disposal_rate_ = self.disposal_rate_
         ibnr_pct = 1 - X_new.disposal_rate_.align_pattern(X_new.disposal_rate_tri)
