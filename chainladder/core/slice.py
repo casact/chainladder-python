@@ -19,6 +19,7 @@ from chainladder.utils.utility_functions import num_to_nan
 
 from typing import (
     cast,
+    overload,
     TYPE_CHECKING
 )
 
@@ -449,6 +450,10 @@ class TriangleSlicer:
     Mixin class to provide square bracket [] slicing functionality to the Triangle class.
     """
 
+    @overload
+    def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
+    @overload
+    def __getitem__(self: TriangleProtocol, key: str | int) -> Triangle | pd.Series: ...
     def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | str | list[str] | int) -> Triangle | pd.Series:
         """
         Boolean Slicer functionality.
