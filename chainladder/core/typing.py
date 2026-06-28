@@ -79,8 +79,7 @@ class TriangleProtocol(Protocol):
     @development.setter
     def development(self, value: Any) -> None: ...
 
-    @property
-    def valuation_date(self) -> pd.Timestamp: ...
+    valuation_date: pd.Timestamp
 
     @property
     def nan_triangle(self) -> BackendArray: ...

@@ -13,7 +13,6 @@ from chainladder import (
     __dt64_dtype__,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.core.typing import TriangleProtocol
 from chainladder.utils.utility_functions import (
     concat,
     num_to_nan
@@ -33,7 +32,7 @@ except ImportError:
 if TYPE_CHECKING:
     from chainladder import Triangle
     from chainladder.utils.sparse import COO
-    from chainladder.core.typing import BackendArray
+    from chainladder.core.typing import BackendArray, TriangleProtocol
     from collections.abc import Callable
     from numpy import ndarray
     from pandas import (
@@ -49,6 +48,9 @@ if TYPE_CHECKING:
         Literal,
         Type
     )
+    _TrianglePandasBase = TriangleProtocol
+else:
+    _TrianglePandasBase = object
 
 
 
@@ -75,7 +77,7 @@ class TriangleGroupBy:
         )
 
 
-class TrianglePandas(TriangleProtocol):
+class TrianglePandas(_TrianglePandasBase):
 
     def to_frame(
             self,
