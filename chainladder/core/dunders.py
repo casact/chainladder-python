@@ -106,10 +106,8 @@ class TriangleDunders:
                     y = y.groupby(list(common))
             return x, y
 
-        if common != x_labels and common != y_labels:
+        else:
             raise ValueError('Index broadcasting is ambiguous between ' + str(x_labels) + ' and ' + str(y_labels))
-
-        return x, y
 
     def _prep_columns(self, x, y):
         x_backend, y_backend = x.array_backend, y.array_backend

@@ -157,3 +157,45 @@ def test_index_broadacsting6(clrd):
     c = clrd['CumPaidLoss'].iloc[50:100]
     d = a + b - c
     assert d.sort_index() == clrd['CumPaidLoss'].iloc[:150].sort_index()
+
+
+def test_index_broadcasting_ambiguous(clrd: Triangle) -> None:
+    """
+    Attempt to add two triangles with inconsistent indexes. Raise a ValueError.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    a = clrd['CumPaidLoss'].groupby('GRNAME').sum()
+    b = clrd['CumPaidLoss'].groupby('LOB').sum()
+    with pytest.raises(ValueError, match="Index broadcasting is ambiguous"):
+        _= a + b
+
+
+def test_prep_columns_reindexes_superset(clrd: Triangle) -> None:
+    """
+    When one triangle's columns are a strict superset of the other's, the subset
+    triangle is reindexed with the missing columns filled as zero. Test both
+    directions: x as superset and y as superset.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    x = clrd[['CumPaidLoss', 'EarnedPremNet', 'IncurLoss']]
+    y = clrd[['CumPaidLoss', 'IncurLoss']]
+    for result in [x + y, y + x]:
+        assert set(result.columns) == {'CumPaidLoss', 'EarnedPremNet', 'IncurLoss'}
+        assert result[['CumPaidLoss', 'IncurLoss']] == clrd[['CumPaidLoss', 'IncurLoss']] * 2
+        assert result['EarnedPremNet'] == clrd['EarnedPremNet']
