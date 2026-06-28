@@ -20,37 +20,31 @@ class DisposalMixin:
     '''
 
     @property
-    def disposal_(self) -> Triangle:
-        if not hasattr(self, "_disposal_"):
+    def disposal_rate_(self) -> Triangle:
+        if not hasattr(self, "_disposal_rate_"):
             x = self.__class__.__name__
-            raise AttributeError("'" + x + "' object has no attribute 'disposal_'")
-        return self._disposal_
+            raise AttributeError("'" + x + "' object has no attribute 'disposal_rate_'")
+        return self._disposal_rate_
     
-    @disposal_.setter
-    def disposal_(self,value) -> None:
-        output = copy.deepcopy(value)
-        output.is_cumulative = True
-        output.is_pattern = True
-        self._disposal_ = output
+    @disposal_rate_.setter
+    def disposal_rate_(self,value) -> None:
+        obj = copy.deepcopy(value)
+        obj.is_pattern = True
+        obj.is_disposal_rate = True
+        obj.is_cumulative = True
+        self._disposal_rate_ = obj
 
     @property
-    def incr_disposal_(self) -> Triangle:
-        if not hasattr(self, "_disposal_"):
-            x = self.__class__.__name__
-            raise AttributeError("'" + x + "' object has no attribute 'incr_disposal_'")
-        disposal_copy = copy.deepcopy(self._disposal_)
-        disposal_copy.is_pattern = False
-        output = disposal_copy.cum_to_incr()
-        output.is_pattern = True
-        return output
+    def incr_disposal_rate_(self) -> Triangle:
+        return self.disposal_rate_.cum_to_incr()
 
-    @incr_disposal_.setter
-    def incr_disposal_(self,value) -> None:
-        output = copy.deepcopy(value)
-        output.is_pattern = False
-        output = output.incr_to_cum()
-        output.is_pattern = True
-        self._disposal_ = output
+    @incr_disposal_rate_.setter
+    def incr_disposal_rate_(self,value) -> None:
+        obj = copy.deepcopy(value)
+        obj.is_pattern = True
+        obj.is_disposal_rate = True
+        obj.is_cumulative = False
+        self._disposal_rate_ = obj.incr_to_cum()
 
 class DisposalRate(DevelopmentBase, DisposalMixin):
     """
@@ -109,13 +103,10 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
 
     Attributes
     ----------
-    disposal_rate_tri: Triangle
-        actual disposal rates by origin and development
-
-    disposal_: Triangle
+    disposal_rate_: Triangle
         fitted disposal rates
 
-    incr_disposal_: Triangle
+    incr_disposal_rate_: Triangle
         incremental of disposal_
 
     Examples
@@ -154,11 +145,11 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
         1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
 
-    The estimated pattern is stored in `disposal_`. 
+    The estimated pattern is stored in `disposal_rate_`. 
 
     .. testcode::
 
-        dr.disposal_
+        dr.disposal_rate_
         
     .. testoutput::
 
@@ -249,7 +240,7 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         #calculate disposal rate triangle
         self.xp = X.get_array_module()
         self.X_ = X.incr_to_cum().sort_index()
-        self.disposal_rate_tri = self.X_ / ult.values
+        self.X_.ultimate_ = ult
         #get weights for estimation
         tw = TriangleWeight(
             n_periods = self.n_periods,
@@ -262,14 +253,14 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
             drop = self.drop
         )
         if hasattr(self.X_, "w_"):
-            self.w_ = tw.fit(X=self.disposal_rate_tri * self.X_.w_).w_.values
+            self.w_ = tw.fit(X=self.X_.disposal_rate_tri * self.X_.w_).w_.values
         else:
-            self.w_ = tw.fit(X=self.disposal_rate_tri).w_.values
+            self.w_ = tw.fit(X=self.X_.disposal_rate_tri).w_.values
         #calculate factors
         super().fit(ult.values,self.X_.values,self.w_)
         #keep attributes
-        disposal = self._param_property(self.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
-        self._disposal_ = concat((disposal,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
+        disposal = self._param_property(self.X_.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
+        self.disposal_rate_ = concat((disposal,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
         return self
 
     def transform(
@@ -299,10 +290,9 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         MethodBase().validate_weight(X, sample_weight)
         #align backeneds
         X_new.ultimate_ = sample_weight.set_backend(self.X_.array_backend).latest_diagonal
-        X_new.disposal_rate_tri = self.disposal_rate_tri
-        X_new.disposal_ = self.disposal_
-        ibnr_pct = 1 - X_new.disposal_.align_pattern(X_new.disposal_rate_tri)
-        run_off = X_new.incr_disposal_ / ibnr_pct * X_new.ibnr_
+        X_new.disposal_rate_ = self.disposal_rate_
+        ibnr_pct = 1 - X_new.disposal_rate_.align_pattern(X_new.disposal_rate_tri)
+        run_off = X_new.incr_disposal_rate_ / ibnr_pct * X_new.ibnr_
         run_off = run_off[run_off.valuation > X_new.valuation_date]
         X_new.ldf_ = (X_new.cum_to_incr() + run_off).incr_to_cum().age_to_age
         return X_new

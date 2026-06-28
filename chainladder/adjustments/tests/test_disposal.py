@@ -23,8 +23,8 @@ def test_friedland_fidelity() -> None:
     rcc_ult = cl.Chainladder().fit(rcc_dev).ultimate_
     ult = (ccc_ult + rcc_ult) / 2
     dr_transformer = cl.DisposalRate(n_periods = 5, average = 'simple', drop_high = 1, drop_low = 1).fit(X=tri['Closed Claim Counts'],sample_weight=ult)
-    dr_transformer.disposal_ = dr_transformer.disposal_.round(3)
-    assert np.all(dr_transformer.disposal_.values.flatten() == [.200,.433,.585,.710,.791,.862,.882,.912,1.000])
+    dr_transformer.disposal_rate_ = dr_transformer.disposal_rate_.round(3)
+    assert np.all(dr_transformer.disposal_rate_.values.flatten() == [.200,.433,.585,.710,.791,.862,.882,.912,1.000])
     #Friedland uses rounded ultimates to calculate bottom half of the triangle, which introduces some rounding discrepancies with the implementation
     dr = dr_transformer.transform(X=tri['Closed Claim Counts'],sample_weight=ult.round(0))
     lhs = (dr.full_triangle_.cum_to_incr()-tri['Closed Claim Counts'].cum_to_incr()).round(0).values.flatten()
@@ -50,7 +50,16 @@ def test_no_weight_exception(raa:Triangle) -> None:
     dr = cl.DisposalRate().fit(raa,sample_weight=ult)
     with pytest.raises(ValueError):
         est = dr.transform(raa)
-    
+
+def test_no_disposal_exception(raa:Triangle) -> None:
+    '''
+    disposal attributes are available in Triangle through the mixin, but not available before fitting 
+    '''
+    with pytest.raises(AttributeError):
+        _ = raa.disposal_rate_
+    with pytest.raises(AttributeError):
+        _ = raa.incr_disposal_rate_
+
 def test_cl_parity(raa:Triangle) -> None:
     """
     A no-tail, full-triangle, volume-weighted Chainladder estimator coincides with the disposal rate adjustment. 
