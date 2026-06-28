@@ -80,3 +80,12 @@ def test_sparse_transform(raa:Triangle) -> None:
     from chainladder.utils.sparse import sp
     assert isinstance(dr.full_triangle_.values,sp.COO)
     
+def test_setting_incr(raa:Triangle) -> None:
+    """
+    DisposalMixin allows setting incremental disposal rates. Validating that the setting function works properly. 
+    """
+    ult = cl.Chainladder().fit(raa).ultimate_
+    dr = cl.DisposalRate(n_periods = 4).fit(raa,sample_weight=ult)
+    orig_disposal_rate_ = dr.disposal_rate_
+    dr.incr_disposal_rate_ = dr.incr_disposal_rate_ * 2
+    assert dr.disposal_rate_ == orig_disposal_rate_ * 2
