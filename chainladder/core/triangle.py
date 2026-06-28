@@ -106,8 +106,10 @@ class Triangle(TriangleBase):
         The grain of the development vector ('Y', 'S', 'Q', 'M')
     shape: tuple
         The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
-    link_ratio, age_to_age
+    link_ratio, age_to_age: Triangle
         Displays age-to-age ratios for the triangle.
+    disposal_rate_tri: Triangle
+        Displays actual disposal rates by origin and development; must have ultimate_
     valuation_date : date
         The latest valuation date of the data
     loc: Triangle
@@ -923,6 +925,19 @@ class Triangle(TriangleBase):
     def is_pattern(self, pattern: bool):
         self._pattern = pattern
 
+    @property
+    def is_disposal_rate(self) -> bool:
+        """
+        Indicates whether the Triangle holds disposal rates (additive ratios going from head to tail)
+        """
+        if hasattr(self, "_is_disposal_rate"):
+            return self._is_disposal_rate
+        return False
+
+    @is_disposal_rate.setter
+    def is_disposal_rate(self, is_dr: bool) -> None:
+        self._is_disposal_rate = is_dr
+
     def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
         """ 
         Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
@@ -1134,6 +1149,57 @@ class Triangle(TriangleBase):
         """
         return self.link_ratio
 
+    @property
+    def disposal_rate_tri(self) -> Triangle:
+        """
+        Displays disposal rates for the triangle. Must have ultimate_
+
+        Returns
+        -------
+
+        Triangle
+            Triangle of disposal rates
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            clrd = cl.load_sample('clrd').sum()
+            ult = cl.Chainladder().fit(clrd['IncurLoss']).ultimate_
+            dr = cl.DisposalRate().fit_transform(clrd['CumPaidLoss'],sample_weight = ult)
+            dr.disposal_rate_tri
+
+        .. testoutput::
+            
+                    12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult
+            1988       NaN       NaN       NaN       NaN       NaN       NaN  0.964643  0.973184  0.980224  0.983063
+            1989       NaN       NaN       NaN       NaN       NaN  0.952533  0.967690  0.977373  0.981938       NaN
+            1990       NaN       NaN       NaN       NaN  0.927029  0.952951  0.968379  0.976049       NaN       NaN
+            1991       NaN       NaN       NaN  0.881010  0.929460  0.954694  0.968533       NaN       NaN       NaN
+            1992       NaN       NaN  0.801875  0.885976  0.932865  0.956495       NaN       NaN       NaN       NaN
+            1993       NaN  0.663303  0.810639  0.894414  0.939009       NaN       NaN       NaN       NaN       NaN
+            1994  0.367530  0.670460  0.814661  0.897244       NaN       NaN       NaN       NaN       NaN       NaN
+            1995  0.379650  0.680979  0.821603       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+            1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+            1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+        """
+
+        obj: Triangle = self.incr_to_cum() / self.ultimate_.values
+        if not obj.is_full:
+            obj = obj[obj.valuation <= obj.valuation_date]
+        if hasattr(obj, "disposal_w_"):
+            obj = obj * obj.disposal_w_
+        obj.is_pattern = True
+        obj.is_cumulative = True
+        obj.is_disposal_rate = True
+        obj.values = num_to_nan(obj.values)
+        return obj
+
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
 
@@ -1215,14 +1281,13 @@ class Triangle(TriangleBase):
         if inplace:
             xp = self.get_array_module()
             if not self.is_cumulative:
-                if self.is_pattern:
-                    if hasattr(self, "is_additive"):
-                        if self.is_additive:
-                            values = xp.nan_to_num(self.values[..., ::-1])
-                            values = num_to_value(values, 0)
-                            self.values = (
-                                xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
-                            )
+                if self.is_pattern & (not self.is_disposal_rate):
+                    if hasattr(self, "is_additive") and self.is_additive:
+                        values = xp.nan_to_num(self.values[..., ::-1])
+                        values = num_to_value(values, 0)
+                        self.values = (
+                            xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
+                        )
                     else:
                         values = xp.nan_to_num(self.values[..., ::-1])
                         values = num_to_value(values, 1)
@@ -1297,7 +1362,7 @@ class Triangle(TriangleBase):
         if inplace:
             v = self.valuation_date
             if self.is_cumulative or self.is_cumulative is None:
-                if self.is_pattern:
+                if self.is_pattern & (not self.is_disposal_rate):
                     xp = self.get_array_module()
                     self.values = xp.nan_to_num(self.values)
                     values = num_to_value(self.values, 1)
