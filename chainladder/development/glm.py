@@ -41,22 +41,26 @@ class TweedieGLM(DevelopmentBase):
         Column name for the response variable of the GLM. If omitted, then the
         first column of the Triangle will be used.
     power: float, default=1
-            The power determines the underlying target distribution according
-            to the following table:
-            +-------+------------------------+
-            | Power | Distribution           |
-            +=======+========================+
-            | 0     | Normal                 |
-            +-------+------------------------+
-            | 1     | Poisson                |
-            +-------+------------------------+
-            | (1,2) | Compound Poisson Gamma |
-            +-------+------------------------+
-            | 2     | Gamma                  |
-            +-------+------------------------+
-            | 3     | Inverse Gaussian       |
-            +-------+------------------------+
-            For ``0 < power < 1``, no distribution exists.
+        The power determines the underlying target distribution according
+        to the following table:
+
+        .. list-table::
+           :header-rows: 1
+        
+           * - Power
+             - Distribution
+           * - 0
+             - Normal
+           * - 1
+             - Poisson
+           * - (1,2)
+             - Compound Poisson Gamma
+           * - 2
+             - Gamma
+           * - 3
+             - Inverse Gaussian
+            
+        For ``0 < power < 1``, no distribution exists.
     alpha: float, default=1
         Constant that multiplies the penalty term and thus determines the
         regularization strength. ``alpha = 0`` is equivalent to unpenalized

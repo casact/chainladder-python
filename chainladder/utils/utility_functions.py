@@ -943,7 +943,8 @@ def model_diagnostics(
     - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
     - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
 
-    Columns from the original Triangle are cross-joined into the index. ``Measure`` will contain all the columns from the original Triangle. 
+    Columns from the original Triangle are cross-joined into the index. 
+    ``Measure`` will contain all the columns from the original Triangle. 
     """
     from chainladder import Pipeline, Triangle
 
