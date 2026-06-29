@@ -246,7 +246,12 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
                 val_date_min = val_date_min.drop_duplicates().sort_values()
                 z = -n_periods * val_offset[X.development_grain][X.origin_grain]
                 val_date_min = val_date_min[z]
-                w = X[X.valuation >= val_date_min]
+                #adding new path to handle single development triangle (e.g. ultimate_)
+                if X.shape[3] > 1:
+                    w = X[X.valuation >= val_date_min]
+                else:
+                    w = X.copy()
+                    w.values =  (X.valuation >= val_date_min).astype(int).reshape(X.shape)
                 return xp.nan_to_num((w / w).values) * X.nan_triangle
 
         xp = X.get_array_module()
