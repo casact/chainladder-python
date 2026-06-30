@@ -24,9 +24,11 @@ if TYPE_CHECKING:
         Iat,
         Ilocation,
         Location,
+        TriangleSlicer,
         VirtualColumns
     )
     from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
     from sparse import COO
 
 # Alias for a Triangle or any object that behaves like one.
