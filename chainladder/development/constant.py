@@ -114,12 +114,14 @@ class DevelopmentConstant(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
+        
         Parameters
         ----------
         X : Triangle-like
             Set of LDFs to which the munich adjustment will be applied.
         y : Ignored
         sample_weight : Ignored
+        
         Returns
         -------
         self : object
