@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from chainladder.core.common import Common
 from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.sparse import COO
 
 from io import StringIO
 
@@ -1636,3 +1638,173 @@ def test_to_datetime_uninferrable_format_raises() -> None:
             columns='value',
             cumulative=True
         )
+
+
+def test_set_backend_via_ldf(raa: Triangle) -> None:
+    """
+    Call set_backend on a fitted estimator. The estimator has no array_backend attribute
+    of its own, so set_backend resolves the old backend through ldf_ (common.py lines 217-218).
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit(raa)
+    dev.set_backend("sparse", inplace=True, deep=True)
+    assert dev.ldf_.array_backend == "sparse"
+
+
+def test_set_backend_no_array_backend_raises() -> None:
+    """
+    Call set_backend on an unfitted estimator. The estimator has neither array_backend
+    nor ldf_, so set_backend raises ValueError (common.py lines 219-220).
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="Unable to determine array backend"):
+        cl.Development().set_backend("sparse", inplace=True)
+
+
+def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
+    """
+    set_backend(inplace=True) updates self.array_backend when the attribute exists
+    (common.py line 257, true branch of line 256). When called on an object without
+    array_backend (e.g. an unfitted estimator) the attribute is not added.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    # TRUE branch: Triangle has array_backend → it is updated in-place
+    tri = raa.set_backend("numpy")
+    tri.set_backend("sparse", inplace=True)
+    assert tri.array_backend == "sparse"
+
+    # FALSE branch: estimator has no array_backend → attribute is not added
+    dev = cl.Development().fit(raa.set_backend("numpy"))
+    dev.set_backend("sparse", inplace=True)
+    assert not hasattr(dev, "array_backend")
+
+
+def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
+    """
+    set_backend with deep=True iterates vars(self) and recursively converts every
+    nested Common instance (common.py lines 252-255). Without deep=True the nested
+    attributes keep their original backend; with deep=True all are converted.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit(raa.set_backend("numpy"))
+    common_attrs = [k for k, v in vars(dev).items() if isinstance(v, Common)]
+
+    # deep=False: nested Triangle attributes keep numpy
+    dev.set_backend("sparse", inplace=True, deep=False)
+    assert all(getattr(dev, k).array_backend == "numpy" for k in common_attrs)
+
+    # deep=True: every nested Common attribute is converted to sparse
+    dev.set_backend("sparse", inplace=True, deep=True)
+    assert all(getattr(dev, k).array_backend == "sparse" for k in common_attrs)
+
+
+def test_set_backend_inplace_mutates_values(raa: Triangle) -> None:
+    """
+    set_backend(inplace=True) reassigns self.values via the conversion lookup
+    (common.py lines 248-251). Verify the in-place mutation produces the correct
+    array type: numpy -> sparse yields a COO, sparse -> numpy yields an ndarray.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    numpy_tri = raa.set_backend("numpy")
+    numpy_tri.set_backend("sparse", inplace=True)
+    assert isinstance(numpy_tri.values, COO)
+
+    numpy_tri.set_backend("numpy", inplace=True)
+    assert isinstance(numpy_tri.values, np.ndarray)
+
+
+def test_set_backend_invalid_raises(raa: Triangle) -> None:
+    """
+    Pass an unsupported backend name to set_backend. Should raise AttributeError
+    (common.py line 259: the else branch of `if backend in [...]`).
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError):
+        raa.set_backend("invalid_backend", inplace=True)
+
+
+def test_set_backend_roundtrip(raa: Triangle) -> None:
+    """
+    Convert numpy → sparse → numpy and verify values are preserved.
+    Exercises lookup["sparse"]["numpy"] (sp.array) and lookup["numpy"]["sparse"]
+    (x.todense()) in the set_backend conversion table.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    sparse_raa = raa.set_backend("sparse")
+    assert sparse_raa.array_backend == "sparse"
+    restored = sparse_raa.set_backend("numpy")
+    assert restored.array_backend == "numpy"
+    assert restored == raa
+
+
+def test_set_backend_from_dask(raa: Triangle) -> None:
+    """
+    Convert a dask-backend triangle to numpy. Exercises the compute() call on
+    lines 224-226 of common.py, which is only reached when old_backend == 'dask'
+    and backend != 'dask'.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(DeprecationWarning, match="dask"):
+        dask_raa = raa.set_backend("dask")
+    result = dask_raa.set_backend("numpy")
+    assert result.array_backend == "numpy"
+    assert result == raa
