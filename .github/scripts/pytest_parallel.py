@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import termios
 from collections import defaultdict
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Iterator
 
 try:
@@ -244,7 +245,7 @@ def _worker_phase(
     Parameters
     ----------
     lines_iter : Iterator[tuple[str, bool]]
-        Line iterator produced by ``_read_pty_lines``.`
+        Line iterator produced by ``_read_pty_lines``.
     header : list[str]
         Accumulator for lines emitted before the test run begins.
     on_update : Callable[[int, int], None]
@@ -289,7 +290,7 @@ def _test_phase(
     footer: list[str],
     results: dict[str, list[str]],
     file_order: list[str],
-    on_result: Callable[[str], None],
+    on_result: Callable[[str, str], None],
 ) -> None:
     """Consume result lines and call ``on_result`` for each completed test.
 
@@ -307,9 +308,10 @@ def _test_phase(
         (e.g. ``"."``, ``"F"``) collected for that file.
     file_order : list[str]
         Ordered list of file paths in the order they first appear in the output.
-    on_result : Callable[[str], None]
-        Callback invoked with the raw status string (e.g. ``"PASSED"``) for
-        each test result line parsed.
+    on_result : Callable[[str, str], None]
+        Callback invoked with ``(status, file_path)`` for each completed test,
+        where ``status`` is the raw outcome string (e.g. ``"PASSED"``) and
+        ``file_path`` is the path of the file containing the test.
 
     Returns
     -------
@@ -327,7 +329,7 @@ def _test_phase(
             if file_path not in results:
                 file_order.append(file_path)
             results[file_path].append(STATUS_CHAR[status])
-            on_result(status)
+            on_result(status, file_path)
         elif not ANNOUNCEMENT_RE.match(line):
             (footer if in_results else header).append(line)
 
@@ -579,6 +581,66 @@ if HAS_RICH:
 
 # -- entry point --------------------------------------------------------------
 
+def _count_notebook_files(user_args: list[str]) -> int:
+    """Count ``.ipynb`` files that pytest would collect given these arguments.
+
+    Scans the filesystem rather than invoking pytest, so the count is available
+    before the subprocess starts and can be used as a progress-bar denominator.
+
+    Parameters
+    ----------
+    user_args : list[str]
+        The ``sys.argv[1:]`` arguments passed to this script.  Positional
+        (non-flag) entries are treated as pytest path arguments.  When none
+        are present, ``testpaths`` from ``pyproject.toml`` is used instead.
+
+    Returns
+    -------
+    int
+        Total number of ``.ipynb`` files found in the relevant directories.
+    """
+    path_args = [a for a in user_args if not a.startswith("-") and "=" not in a]
+
+    if not path_args:
+        # No explicit paths — fall back to testpaths in pyproject.toml.
+        try:
+            import tomllib  # stdlib in Python 3.11+
+        except ImportError:
+            return 0
+        for candidate in [Path.cwd(), *Path.cwd().parents]:
+            pyproject = candidate / "pyproject.toml"
+            if pyproject.is_file():
+                with pyproject.open("rb") as fh:
+                    cfg = tomllib.load(fh)
+                path_args = (
+                    cfg.get("tool", {})
+                    .get("pytest", {})
+                    .get("ini_options", {})
+                    .get("testpaths", [])
+                )
+                break
+
+    count = 0
+    for p in path_args:
+        path = Path(p)
+        if path.is_dir():
+            # Mirror pytest's collection rules: skip any subdirectory whose
+            # name starts with "_" (e.g. _build, _sources) or "." (hidden).
+            # We check only the *intermediate* parts relative to the scan root
+            # so that an explicitly-named path like "docs/_ext" is still
+            # entered when it IS the root being scanned.
+            count += sum(
+                1 for nb in path.rglob("*.ipynb")
+                if not any(
+                    part.startswith(("_", "."))
+                    for part in nb.relative_to(path).parts[:-1]
+                )
+            )
+        elif path.suffix == ".ipynb" and path.is_file():
+            count += 1
+    return count
+
+
 def main() -> None:
     """
     Run pytest in parallel and reformat its output to sequential dots format.
@@ -596,7 +658,12 @@ def main() -> None:
     None
     """
 
-    # Set up command-line arguments.
+    run_nbmake = "--nbmake" in sys.argv[1:]
+
+    # Scan the filesystem now so we have notebook/unit denominators ready
+    # before pytest starts.  The exact count is confirmed from results later.
+    nb_total_pre = _count_notebook_files(sys.argv[1:]) if run_nbmake else 0
+
     cmd = [
         sys.executable, "-m", "pytest",
         "-n", "auto", "--dist=loadfile", "-v",
@@ -638,7 +705,19 @@ def main() -> None:
         # Execute tests.
         live_counts: dict[str, int] = {key: 0 for key, *_ in COUNTS_SPEC}
         test_progress = _make_progress()
-        test_task = test_progress.add_task("Running tests...", total=total, success=True)
+        # Use the filesystem pre-count as the initial denominator so both bars
+        # show a real number immediately.  After _test_phase the exact counts
+        # from actual results are applied to correct any discrepancy.
+        test_task = test_progress.add_task(
+            "Running tests...", total=total - nb_total_pre, success=True,
+        )
+        nb_task: int | None = None
+        if run_nbmake:
+            nb_task = test_progress.add_task(
+                "Running notebooks...", total=nb_total_pre, success=True,
+            )
+
+        nb_count = 0  # exact notebook count from results; corrects denominators at end
 
         # Render display.
         with Live(
@@ -647,15 +726,24 @@ def main() -> None:
             console=console,
             refresh_per_second=10,
         ) as live:
-            # Tally test counts and advance progress bar.
-            def _on_result_rich(status: str) -> None:
+            # Tally test counts and advance the appropriate progress bar.
+            def _on_result_rich(status: str, file_path: str) -> None:
+                nonlocal nb_count
                 live_counts[status] += 1
-                test_progress.advance(test_task)
+                if nb_task is not None and file_path.endswith(".ipynb"):
+                    nb_count += 1
+                    test_progress.advance(nb_task)
+                else:
+                    test_progress.advance(test_task)
                 live.update(Group(_make_counts_table(live_counts), test_progress))
 
             _test_phase(lines_iter, header, footer, results, file_order, _on_result_rich)
             has_failures = live_counts["FAILED"] + live_counts["ERROR"] > 0
-            test_progress.update(test_task, success=not has_failures)
+            # Now that we know the exact split, pin the denominators so both
+            # bars show N/N and the spinner can display ✓ or ✗.
+            test_progress.update(test_task, total=total - nb_count, success=not has_failures)
+            if nb_task is not None:
+                test_progress.update(nb_task, total=nb_count, success=not has_failures)
             live.update(Group(_make_counts_table(live_counts), test_progress))
 
         _print_results_rich(header, file_order, results, footer)
@@ -673,7 +761,7 @@ def main() -> None:
         completed = 0
         live_counts = {key: 0 for key, *_ in COUNTS_SPEC}
 
-        def _on_result_plain(status: str) -> None:
+        def _on_result_plain(status: str, _: str) -> None:
             nonlocal completed
             live_counts[status] += 1
             completed += 1
