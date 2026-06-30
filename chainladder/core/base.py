@@ -27,6 +27,8 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
+from chainladder.adjustments.disposal import DisposalMixin
+
 from typing import (
     Optional,
     TYPE_CHECKING
@@ -50,7 +52,8 @@ class TriangleBase(
     TriangleDunders,
     TrianglePandas,
     Common,
-    ABC
+    ABC,
+    DisposalMixin
 ):
     """This class handles the initialization of a triangle"""
 
