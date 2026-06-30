@@ -102,3 +102,8 @@ chainladder = ["utils/data/*", "py.typed"]
 
 [tool.uv]
 config-settings = {editable_mode="compat"}
+
+[dependency-groups]
+dev = [
+    "rich>=15.0.0",
+]
