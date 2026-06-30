@@ -1,0 +1,25 @@
+name: Sync main to docs/great-docs-prototype
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge main into docs/great-docs-prototype
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout docs/great-docs-prototype
+          git merge origin/main --no-edit -m "chore: sync main into docs/great-docs-prototype"
+          git push origin docs/great-docs-prototype

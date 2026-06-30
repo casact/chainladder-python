@@ -349,6 +349,62 @@ class Triangle(TriangleBase):
         2024Q2   130.0
         2024Q3   160.0
         2024Q4   140.0
+
+    Triangles with ultimate values
+    ------------------------------
+
+    Triangles produced by reserving methods carry ultimate projections at the
+    sentinel valuation date ``options.ULT_VAL`` (default December 31, 2261).
+    Export with ``to_frame(keepdims=True)`` and reconstruct by passing
+    ``development='valuation'``. Rows whose valuation equals
+    ``options.ULT_VAL`` are recognized as ultimates and stored in the ultimate
+    development column (see also :attr:`is_ultimate`).
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        ult = cl.Chainladder().fit(raa).ultimate_
+        df = ult.to_frame(keepdims=True, origin_as_datetime=True)
+        tri = cl.Triangle(
+            df,
+            origin='origin',
+            development='valuation',
+            columns='values',
+            cumulative=True,
+        )
+        print(tri.is_ultimate)
+
+    .. testoutput::
+
+        True
+
+    Pre-existing ultimate estimates can be supplied directly in long-format
+    data by setting the valuation column to ``options.ULT_VAL`` for each
+    origin.
+
+    .. testcode::
+
+        df = pd.DataFrame(
+            data={
+                'origin': pd.to_datetime(['1981-01-01', '1982-01-01']),
+                'valuation': pd.to_datetime([
+                    cl.options.ULT_VAL, cl.options.ULT_VAL
+                ]),
+                'paid': [10000.0, 12000.0],
+            }
+        )
+        tri = cl.Triangle(
+            df,
+            origin='origin',
+            development='valuation',
+            columns='paid',
+            cumulative=True,
+        )
+        print(tri.is_ultimate)
+
+    .. testoutput::
+
+        True
     """
 
     def __init__(
@@ -587,7 +643,20 @@ class Triangle(TriangleBase):
         origin: list,
         development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Deal with triangles with ultimate values."""
+        """Split ultimate valuation rows from long-format triangle data.
+
+        Ultimate rows are those where the development column equals
+        ``options.ULT_VAL``. This supports round-tripping triangles exported
+        via :meth:`~chainladder.Triangle.to_frame` with ``keepdims=True`` and
+        ``development='valuation'``. It also allows importing pre-existing
+        ultimate estimates by marking the valuation column with
+        ``options.ULT_VAL``.
+
+        Requires a single datetime development column. When ultimate rows are
+        present (and not every row is an ultimate), they are extracted and
+        merged back as the ultimate development column after the base triangle
+        is constructed.
+        """
         ult = None
         if (
             development
