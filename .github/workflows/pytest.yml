@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test
       - name: Run tests
-        run: uv run --with "pandas>=3,<=3.0.3" python .github/scripts/pytest_parallel.py --cov-report=xml chainladder
+        run: uv run --with "pandas>=3,<=3.0.3" python .github/scripts/pytest_parallel.py --cov-report=xml chainladder docs/_ext
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
