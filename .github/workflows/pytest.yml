@@ -58,7 +58,7 @@ jobs:
       - name: Run tests
         run: uv run --with "pandas>=3,<=3.0.3" python .github/scripts/pytest_parallel.py --cov-report=xml
       - name: Run notebook tests
-        run: uv run --with "pandas>=3,<=3.0.3" pytest --nbmake --cov=chainladder --cov-append --cov-report=xml
+        run: uv run --with "pandas>=3,<=3.0.3" pytest docs --nbmake --cov=chainladder --cov-append --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
