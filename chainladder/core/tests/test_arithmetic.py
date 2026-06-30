@@ -188,8 +188,25 @@ def test_rtruediv(raa):
     assert xp.nansum(abs(((1 / raa) * raa).values[0, 0] - raa.nan_triangle)) < 0.00001
 
 
-def test_vector_division(raa):
-    _= raa.latest_diagonal / raa
+def test_vector_division(raa: Triangle) -> None:
+    """
+    Divide latest diagonal by triangle. Each element in the resulting triangle should be equal to the latest
+    diagonal value in the corresponding origin period divided by the original value.
+
+    Parameters
+    ----------
+    raa: Triangle
+
+    Returns
+    -------
+    None
+    """
+    result = raa.latest_diagonal / raa
+    assert result.shape == raa.shape
+    for i in range(raa.shape[2]):
+        orig = raa.iloc[..., i:i+1, :]
+        ld = raa.latest_diagonal.iloc[..., i:i+1, :]
+        assert result.iloc[..., i:i+1, :] == ld / orig
 
 
 def test_multiindex_broadcast(clrd):
