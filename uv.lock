@@ -262,6 +262,7 @@ test = [
     { name = "nbmake" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "pytest-xdist" },
     { name = "statsmodels" },
 ]
 
@@ -301,6 +302,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-xdist", marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'test'" },
     { name = "scikit-learn", specifier = ">1.4.2" },
     { name = "sparse", specifier = ">=0.9" },
     { name = "sphinx", marker = "extra == 'docs'" },
