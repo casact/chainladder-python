@@ -76,6 +76,7 @@ test = [
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
+    "pytest-xdist",
     "dask",
     'statsmodels>=0.14.6'
 ]
