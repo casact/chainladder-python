@@ -431,7 +431,7 @@ class Development(DevelopmentBase):
             w_reg = params._w_reg
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
-        params = xp.swapaxes(params, 2, 3)
+        params = params.swapaxes(2, 3)
 
         self.ldf_ = self._param_property(obj, params, 0)
         self.sigma_ = self._param_property(obj, params, 1)
