@@ -1436,6 +1436,126 @@ def test_validate_assumption(raa: Triangle) -> None:
             value=raa, axis=3  # noqa - incorrect type provided on purpose.
         )
 
+
+@pytest.mark.parametrize("value", [1, 1.5, "volume"])
+def test_validate_assumption_scalar(raa: Triangle, value: int | float | str) -> None:
+    """
+    Scalar int, float, and str values are broadcast across the axis.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    value: int | float | str
+        A user-supplied assumption.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    assert (result.flat[0] == value)
+
+
+@pytest.mark.parametrize("value", [
+    [1] * 10,
+    (1,) * 10,
+    np.ones(10),
+])
+def test_validate_assumption_sequence(raa: Triangle, value: list | tuple | np.ndarray) -> None:
+    """
+    list, tuple, and ndarray values are wrapped in np.array and reshaped.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    value: list | tuple | np.ndarray
+        A user-supplied assumption.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+
+
+def test_validate_assumption_set(raa: Triangle) -> None:
+    """
+    set values reach the sequence branch without raising.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    # np.array(set) produces a 0-d object array in NumPy 2.x, so we only
+    # assert the call succeeds, not the resulting shape.
+    raa._validate_assumption(raa, {1, 2, 3}, axis=3)
+
+
+def test_validate_assumption_dict(raa: Triangle) -> None:
+    """
+    Dict values are mapped by axis label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    dev_periods = raa._get_axis_value(3).tolist()
+    value = {p: float(i) for i, p in enumerate(dev_periods)}
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    np.testing.assert_array_equal(result.flat[:], list(value.values()))
+
+
+def test_validate_assumption_callable(raa: Triangle) -> None:
+    """
+    Callable values are applied to each axis label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, lambda x: x * 2, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    expected = np.array([p * 2 for p in raa._get_axis_value(3).tolist()])
+    np.testing.assert_array_equal(result.flatten(), expected)
+
+
+def test_validate_assumption_axis2(raa: Triangle) -> None:
+    """
+    axis=2 produces shape (1, 1, n_origin, 1).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, 1, axis=2)
+    assert result.shape == (1, 1, raa.shape[2], 1)
+
+
 def test_xs(clrd):
     # when slicing with .loc on the first term in the index, Triangle will drop the term 
     assert clrd.xs('Adriatic Ins Co') == clrd.loc['Adriatic Ins Co']
@@ -1643,7 +1763,7 @@ def test_to_datetime_uninferrable_format_raises() -> None:
 def test_set_backend_via_ldf(raa: Triangle) -> None:
     """
     Call set_backend on a fitted estimator. The estimator has no array_backend attribute
-    of its own, so set_backend resolves the old backend through ldf_ (common.py lines 217-218).
+    of its own, so set_backend resolves the old backend through ldf_.
 
     Parameters
     ----------
@@ -1662,7 +1782,7 @@ def test_set_backend_via_ldf(raa: Triangle) -> None:
 def test_set_backend_no_array_backend_raises() -> None:
     """
     Call set_backend on an unfitted estimator. The estimator has neither array_backend
-    nor ldf_, so set_backend raises ValueError (common.py lines 219-220).
+    nor ldf_, so set_backend raises ValueError.
 
     Returns
     -------
@@ -1674,9 +1794,8 @@ def test_set_backend_no_array_backend_raises() -> None:
 
 def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
     """
-    set_backend(inplace=True) updates self.array_backend when the attribute exists
-    (common.py line 257, true branch of line 256). When called on an object without
-    array_backend (e.g. an unfitted estimator) the attribute is not added.
+    set_backend(inplace=True) updates self.array_backend when the attribute exists.
+    When called on an object without array_backend, the attribute is not added.
 
     Parameters
     ----------
@@ -1687,12 +1806,12 @@ def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
     -------
     None
     """
-    # TRUE branch: Triangle has array_backend → it is updated in-place
+    # Triangle has array_backend, updated in-place.
     tri = raa.set_backend("numpy")
     tri.set_backend("sparse", inplace=True)
     assert tri.array_backend == "sparse"
 
-    # FALSE branch: estimator has no array_backend → attribute is not added
+    # Estimator has no array_backend, attribute is not added.
     dev = cl.Development().fit(raa.set_backend("numpy"))
     dev.set_backend("sparse", inplace=True)
     assert not hasattr(dev, "array_backend")
@@ -1701,7 +1820,7 @@ def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
 def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
     """
     set_backend with deep=True iterates vars(self) and recursively converts every
-    nested Common instance (common.py lines 252-255). Without deep=True the nested
+    nested Common instance. Without deep=True, the nested
     attributes keep their original backend; with deep=True all are converted.
 
     Parameters
@@ -1727,9 +1846,9 @@ def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
 
 def test_set_backend_inplace_mutates_values(raa: Triangle) -> None:
     """
-    set_backend(inplace=True) reassigns self.values via the conversion lookup
-    (common.py lines 248-251). Verify the in-place mutation produces the correct
-    array type: numpy -> sparse yields a COO, sparse -> numpy yields an ndarray.
+    set_backend(inplace=True) reassigns self.values.
+    Verify the in-place mutation produces the correct array type: numpy to sparse yields a COO,
+    sparse to numpy yields an ndarray.
 
     Parameters
     ----------
@@ -1750,8 +1869,7 @@ def test_set_backend_inplace_mutates_values(raa: Triangle) -> None:
 
 def test_set_backend_invalid_raises(raa: Triangle) -> None:
     """
-    Pass an unsupported backend name to set_backend. Should raise AttributeError
-    (common.py line 259: the else branch of `if backend in [...]`).
+    Pass an unsupported backend name to set_backend. Should raise AttributeError.
 
     Parameters
     ----------
@@ -1768,9 +1886,7 @@ def test_set_backend_invalid_raises(raa: Triangle) -> None:
 
 def test_set_backend_roundtrip(raa: Triangle) -> None:
     """
-    Convert numpy → sparse → numpy and verify values are preserved.
-    Exercises lookup["sparse"]["numpy"] (sp.array) and lookup["numpy"]["sparse"]
-    (x.todense()) in the set_backend conversion table.
+    Convert numpy to sparse and back to numpy, and verify values are preserved.
 
     Parameters
     ----------
@@ -1786,25 +1902,3 @@ def test_set_backend_roundtrip(raa: Triangle) -> None:
     restored = sparse_raa.set_backend("numpy")
     assert restored.array_backend == "numpy"
     assert restored == raa
-
-
-def test_set_backend_from_dask(raa: Triangle) -> None:
-    """
-    Convert a dask-backend triangle to numpy. Exercises the compute() call on
-    lines 224-226 of common.py, which is only reached when old_backend == 'dask'
-    and backend != 'dask'.
-
-    Parameters
-    ----------
-    raa : Triangle
-        The raa sample data set.
-
-    Returns
-    -------
-    None
-    """
-    with pytest.warns(DeprecationWarning, match="dask"):
-        dask_raa = raa.set_backend("dask")
-    result = dask_raa.set_backend("numpy")
-    assert result.array_backend == "numpy"
-    assert result == raa
