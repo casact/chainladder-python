@@ -118,12 +118,14 @@ TriangleGroupBy    (returned by Triangle.groupby(); consumed by arithmetic opera
 These classes are related to `Triangle` by **composition**, not inheritance. `Triangle` does not extend `Location` or `Ilocation` — instead, each `Triangle` *instance* holds references to instances of these classes as its own attributes. `TriangleSlicer._set_slicers()` (called during `Triangle.__init__` and whenever the index or column shape changes) creates fresh instances and assigns them:
 
 ```python
-# core/slice.py — TriangleSlicer._set_slicers()
-self.iloc           = Ilocation(self)
-self.loc            = Location(self)
-self.iat            = Iat(self)
-self.at             = At(self)
-self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
+# core/slice.py
+class TriangleSlicer:
+    def _set_slicers(self) -> None:
+        self.iloc = Ilocation(self)
+        self.loc = Location(self)
+        self.iat = Iat(self)
+        self.at = At(self)
+        self.virtual_columns = VirtualColumns(self, self.virtual_columns.columns)
 ```
 
 Each accessor receives a reference back to the owning `Triangle` (`self`), which is how `triangle.iloc[0]` can read and slice the triangle's underlying arrays. The relationship is:
@@ -165,8 +167,8 @@ class TriangleMixin(_MixinBase):
     ...
 ```
 
-This is the pattern recommended by the second answer on
-[Stack Overflow #51930339](https://stackoverflow.com/questions/51930339/how-do-i-correctly-add-type-hints-to-mixin-classes).
+This is the pattern recommended by the Protocols page in the Python documentation.
+[Explicitly declaring implementation](https://typing.python.org/en/latest/spec/protocol.html#explicitly-declaring-implementation).
 
 **Type-hinting methods that accept a Triangle-like object and return `Triangle`**
 
