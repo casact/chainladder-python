@@ -1693,3 +1693,75 @@ def test_set_backend_roundtrip(raa: Triangle) -> None:
     restored = sparse_raa.set_backend("numpy")
     assert restored.array_backend == "numpy"
     assert restored == raa
+
+
+def test_has_zeta_true(raa: Triangle) -> None:
+    """
+    has_zeta returns True after fitting IncrementalAdditive, which sets zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    fitted = cl.IncrementalAdditive().fit(raa, sample_weight=raa.latest_diagonal)
+    assert fitted.has_zeta is True
+
+
+def test_has_zeta_false(raa: Triangle) -> None:
+    """
+    has_zeta returns False for an estimator that does not set zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert cl.Development().fit(raa).has_zeta is False
+
+
+def test_cum_zeta_raises_when_no_zeta(raa: Triangle) -> None:
+    """
+    cum_zeta_ raises AttributeError when the estimator has no zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError):
+        _ = cl.Development().fit(raa).cum_zeta_
+
+
+def test_cum_zeta_returns_incr_to_cum(atol) -> None:
+    """
+    cum_zeta_ returns zeta_.incr_to_cum() when zeta_ is present.
+
+    Parameters
+    ----------
+    atol : float
+        Absolute tolerance fixture.
+
+    Returns
+    -------
+    None
+    """
+    ia = cl.load_sample("ia_sample")
+    fitted = cl.IncrementalAdditive().fit(ia["loss"], sample_weight=ia["exposure"].latest_diagonal)
+    np.testing.assert_allclose(
+        fitted.cum_zeta_.values.flatten(),
+        [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
+        atol=atol,
+    )
