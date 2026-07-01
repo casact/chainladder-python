@@ -286,7 +286,7 @@ requires-dist = [
     { name = "nbsphinx", marker = "extra == 'docs'" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "numpydoc", marker = "extra == 'docs'" },
-    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pandas", specifier = ">=2.3.3,<=3.0.3" },
     { name = "parso", marker = "extra == 'docs'", specifier = ">=0.8" },
     { name = "patsy", specifier = ">=1.0.2" },
     { name = "polars", marker = "extra == 'docs'" },

@@ -193,6 +193,29 @@ def test_base_minimum_exposure_triangle(raa):
     cl.Triangle(d, origin="index", columns=d.columns[-1])
 
 
+def test_development_before_origin_warns_and_drops() -> None:
+    """
+    Rows where development precedes origin are invalid. Triangle.__init__ should
+    emit a UserWarning and silently drop those rows.
+
+    Returns
+    -------
+    None
+    """
+    df = pd.DataFrame({
+        "origin":      [2000, 2000, 2001, 2001],
+        "development": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
+        "value":       [100,  200,  999,  300],
+    })
+    with pytest.warns(UserWarning, match="development before"):
+        tri = cl.Triangle(
+            df, origin="origin", development="development",
+            columns="value", cumulative=True,
+        )
+    # The invalid row (value=999) must not appear in the triangle.
+    assert 999 not in tri.to_frame().values
+
+
 def test_origin_and_value_setters(raa):
     raa2 = raa.copy()
     raa.columns = list(raa.columns)
@@ -380,6 +403,192 @@ def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
     assert result_default.array_backend == "numpy"
     assert result_no_sparse.array_backend == "sparse"
     assert result_default == result_no_sparse
+
+
+def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
+    """
+    When cl.options.AUTO_SPARSE is False, _auto_sparse() returns the triangle
+    unchanged without switching backends.
+
+    Parameters
+    ----------
+    prism : Triangle
+        The prism sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    dense = prism.set_backend("numpy")
+    cl.options.set_option("AUTO_SPARSE", False)
+    try:
+        result = dense._auto_sparse()
+        assert result is dense
+        assert result.array_backend == "numpy"
+    finally:
+        cl.options.reset_option("AUTO_SPARSE")
+
+
+def test_auto_sparse_converts_numpy_to_sparse(prism: Triangle) -> None:
+    """
+    _auto_sparse() should convert a numpy-backed triangle to sparse when it is
+    large enough (> 30Mb) and sparse enough (density <= 20%).
+
+    Parameters
+    ----------
+    prism: Triangle
+        The prism sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    # Slice down to the fewest claims (66) whose dense (index, columns,
+    # origin, development) shape still clears the 30Mb/8-byte-float
+    # threshold in _auto_sparse(); the full prism triangle is ~2B cells and
+    # would need ~15GB as a dense numpy array.
+    small_prism = prism.iloc[:66]
+    dense = small_prism.set_backend("numpy")
+    assert dense.array_backend == "numpy"
+
+    result = dense._auto_sparse()
+
+    assert result is dense
+    assert result.array_backend == "sparse"
+
+
+def test_subtriangles(raa: Triangle) -> None:
+    """
+    subtriangles should list the attributes on a Triangle instance that are
+    themselves Triangle instances, e.g. the ldf_/sigma_/std_err_ triangles
+    attached by Development.fit_transform. A plain Triangle with no such
+    attributes should report an empty list.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert raa.subtriangles == []
+
+    fit = cl.Development().fit_transform(raa)
+
+    assert set(fit.subtriangles) == {
+        "std_err_", "ldf_", "sigma_", "std_residuals_", "w_v2_"
+    }
+
+
+def test_array_dunder(raa: Triangle) -> None:
+    """
+    __array__ lets numpy treat a Triangle as array-like, e.g. via np.asarray()
+    or np.array(), returning the underlying values.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    arr = np.asarray(raa)
+
+    assert arr is raa.values
+    np.testing.assert_array_equal(np.array(raa), raa.values)
+
+
+def test_triangle_from_dataframe_interchange_protocol() -> None:
+    """
+    Triangle() should accept any object supporting the __dataframe__
+    interchange protocol (e.g. a polars DataFrame), converting it to a
+    pandas DataFrame via _interchange_dataframe() under the hood.
+
+    Returns
+    -------
+    None
+    """
+    polars = pytest.importorskip("polars")
+
+    df = pd.DataFrame(
+        {
+            "origin": ["2020-01-01", "2020-01-01", "2021-01-01", "2021-01-01"],
+            "development": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
+            "values": [100, 150, 120, 180],
+        }
+    )
+    pl_df = polars.from_pandas(df)
+    assert hasattr(pl_df, "__dataframe__")
+    assert not isinstance(pl_df, pd.DataFrame)
+
+    tri = cl.Triangle(
+        pl_df,
+        origin="origin",
+        development="development",
+        columns="values",
+        cumulative=True,
+    )
+    expected = cl.Triangle(
+        df,
+        origin="origin",
+        development="development",
+        columns="values",
+        cumulative=True,
+    )
+
+    assert tri == expected
+
+
+def test_array_function_unhandled_raises(raa: Triangle) -> None:
+    """
+    __array_function__ should return NotImplemented for numpy functions that
+    are neither explicitly handled (e.g. np.concatenate, np.round) nor
+    aliases of a Triangle method of the same name (e.g. np.sum). numpy then
+    turns that NotImplemented into a TypeError.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert "stack" not in dir(raa)
+
+    with pytest.raises(TypeError):
+        np.stack([raa, raa])
+
+
+def test_array_function_mixed_types_raises(raa: Triangle) -> None:
+    """
+    __array_function__ should return NotImplemented when one of the
+    dispatching argument types is not a Triangle subclass, even for a
+    handled function like np.concatenate. numpy then turns that
+    NotImplemented into a TypeError.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+
+    class NotATriangle:
+        @staticmethod
+        def __array_function__(_func, _types, _args, _kwargs):
+            return NotImplemented
+
+    with pytest.raises(TypeError):
+        np.concatenate([raa, NotATriangle()])
 
 
 def test_get_axis_none(clrd: Triangle) -> None:
