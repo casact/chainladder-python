@@ -636,14 +636,14 @@ class TrianglePandas(_TrianglePandasBase):
         """
         return self.to_frame(origin_as_datetime=False).T
 
-    def groupby(self, by, axis: Literal[0, 1, 2, 3] = 0) -> TriangleGroupBy:
+    def groupby(self, by: str | list, axis: Literal[0, 1, 2, 3] = 0) -> TriangleGroupBy:
         """
         Group Triangle by index values.  If the triangle is convertable to a
         DataFrame, then it defaults to pandas groupby functionality.
 
         Parameters
         ----------
-        by: str or list
+        by: str | list
             The index to group by
 
         axis: int
@@ -658,7 +658,7 @@ class TrianglePandas(_TrianglePandasBase):
 
     def append(self, other: Triangle) -> Triangle:
         """
-        Append rows another Triangle to self, returning an updated Triangle.
+        Append rows of another Triangle to self, returning an updated Triangle.
 
         Parameters
         ----------
