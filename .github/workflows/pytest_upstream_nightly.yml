@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test
       - name: Run tests
-        run: uv run pytest chainladder -m "not r"
+        run: uv run python .github/scripts/pytest_parallel.py chainladder -m "not r"
   linux-pandas3:
     name: (${{ matrix.python-version }}, pandas3, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -42,4 +42,4 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test
       - name: Run tests
-        run: uv run --with "pandas>=3,<4" pytest chainladder -m "not r"
+        run: uv run --with "pandas>=3,<4" python .github/scripts/pytest_parallel.py chainladder -m "not r"

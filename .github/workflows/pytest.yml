@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test --extra docs
       - name: Run tests
-        run: uv run pytest --nbmake --cov=chainladder --cov-report=xml
+        run: uv run python .github/scripts/pytest_parallel.py --nbmake --cov-report=xml docs chainladder
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -54,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test
       - name: Run tests
-        run: uv run --with "pandas>=3,<=3.0.3" pytest --nbmake --cov=chainladder --cov-report=xml
+        run: uv run --with "pandas>=3,<=3.0.3" python .github/scripts/pytest_parallel.py --cov-report=xml chainladder docs/_ext
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

@@ -76,6 +76,7 @@ test = [
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
+    "pytest-xdist",
     "dask",
     'statsmodels>=0.14.6'
 ]
@@ -102,3 +103,8 @@ chainladder = ["utils/data/*", "py.typed"]
 
 [tool.uv]
 config-settings = {editable_mode="compat"}
+
+[dependency-groups]
+dev = [
+    "rich>=15.0.0",
+]
