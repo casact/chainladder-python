@@ -35,7 +35,7 @@ class _FutureDevelopment(cl.TriangleWeight):
             params = cl.WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
                 reg_x, reg_y, self.w_.values, average_param
             )
-            self.ldf_ = self.dev._param_property(X, xp.swapaxes(params.slope_, 2, 3), 0)
+            self.ldf_ = self.dev._param_property(X, params.slope_.swapaxes(2, 3), 0)
         return self
     
 def test_full_slice(genins):
