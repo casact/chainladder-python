@@ -13,8 +13,11 @@ from chainladder import (
     __dt64_dtype__,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.core.typing import TriangleProtocol
-from chainladder.utils.utility_functions import num_to_nan
+from chainladder.utils.utility_functions import (
+    concat,
+    num_to_nan
+)
+
 from typing import (
     cast,
     TYPE_CHECKING
@@ -29,7 +32,7 @@ except ImportError:
 if TYPE_CHECKING:
     from chainladder import Triangle
     from chainladder.utils.sparse import COO
-    from chainladder.core.typing import BackendArray
+    from chainladder.core.typing import BackendArray, TriangleProtocol
     from collections.abc import Callable
     from numpy import ndarray
     from pandas import (
@@ -45,6 +48,9 @@ if TYPE_CHECKING:
         Literal,
         Type
     )
+    _TrianglePandasBase = TriangleProtocol
+else:
+    _TrianglePandasBase = object
 
 
 
@@ -71,14 +77,10 @@ class TriangleGroupBy:
         )
 
 
-class TrianglePandas:
-    # Stubs to supress type checker warnings. Refer to typing.TriangleProtocol for actual
-    # typing. Remove once linters improve.
-    if TYPE_CHECKING:
-        values: np.ndarray
+class TrianglePandas(_TrianglePandasBase):
 
     def to_frame(
-            self: TriangleProtocol,
+            self,
             origin_as_datetime: bool = True,
             keepdims: bool = False,
             implicit_axis: bool = False,
@@ -112,16 +114,16 @@ class TrianglePandas:
         if keepdims:
             is_val_tri: bool = self.is_val_tri
             obj: Triangle = self.val_to_dev().set_backend("sparse")
-            obj.values = cast("COO", obj.values)
-            out: DataFrame = pd.DataFrame(obj.index.iloc[obj.values.coords[0]])
-            out["columns"] = obj.columns[obj.values.coords[1]]
+            values: COO = cast("COO", obj.values)
+            out: DataFrame = pd.DataFrame(obj.index.iloc[values.coords[0]])
+            out["columns"] = obj.columns[values.coords[1]]
             missing_cols: list = list(set(self.columns) - set(out['columns']))
             if origin_as_datetime:
-                out["origin"] = obj.odims[obj.values.coords[2]]
+                out["origin"] = obj.odims[values.coords[2]]
             else:
-                out["origin"] = obj.origin[obj.values.coords[2]]
-            out["development"] = obj.ddims[obj.values.coords[3]]
-            out["values"] = obj.values.data
+                out["origin"] = obj.origin[values.coords[2]]
+            out["development"] = obj.ddims[values.coords[3]]
+            out["values"] = values.data
             out: DataFrame = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
             )
@@ -280,7 +282,7 @@ class TrianglePandas:
                     "integer representation of the desired axis."
                 )
 
-    def dropna(self: TriangleProtocol) -> Triangle:
+    def dropna(self) -> Triangle:
         """
         Method that removes origin/development vectors from edge of a
         triangle that are all missing values. Does not work on the interior
@@ -539,7 +541,7 @@ class TrianglePandas:
         obj = self[(self.origin >= min_odim) & (self.origin <= max_odim)]
         return obj
 
-    def fillna(self: TriangleProtocol, value: int | float | ndarray, inplace: bool = False) -> Triangle:
+    def fillna(self, value: int | float | ndarray, inplace: bool = False) -> Triangle:
         """Fill nan with 'value' by axis.
 
         Parameters
@@ -569,7 +571,7 @@ class TrianglePandas:
             cast("TriangleProtocol", cast(object, new_obj)).fillna(value=value, inplace=True)
             return new_obj
 
-    def fillzero(self: TriangleProtocol, inplace: bool = False) -> Triangle:
+    def fillzero(self, inplace: bool = False) -> Triangle:
         """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working.
 
         Parameters
@@ -595,7 +597,7 @@ class TrianglePandas:
             cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
             return new_obj
 
-    def drop(self, labels=None, axis=1):
+    def drop(self, labels: str | int | list | None = None, axis: int = 1) -> Triangle:
         """Drop specified labels from rows or columns.
 
         Remove rows or columns by specifying label names and corresponding axis,
@@ -604,7 +606,7 @@ class TrianglePandas:
         Parameters
         -----------
 
-        label: single label or list-like
+        labels:  str | int | list | None
             Index or column labels to drop.
 
         axis: {0 or ‘index’, 1 or ‘columns’}, default 1
@@ -620,29 +622,43 @@ class TrianglePandas:
         if axis == 1:
             return self[[item for item in self.columns if item not in labels]]
         else:
-            raise NotImplementedError("drop only inpemented for column axis")
+            raise NotImplementedError("Triangle.drop() only implemented for column axis.")
 
     @property
-    def T(self):
+    def T(self) -> DataFrame: # noqa: N802
+        """
+        Converts the Triangle to a Pandas DataFrame and then transposes it.
+
+        Returns
+        -------
+        DataFrame
+
+        """
         return self.to_frame(origin_as_datetime=False).T
 
-    def groupby(self, by, axis=0, *args, **kwargs):
-        """Group Triangle by index values.  If the triangle is convertable to a
+    def groupby(self, by: str | list, axis: Literal[0, 1, 2, 3] = 0) -> TriangleGroupBy:
+        """
+        Group Triangle by index values.  If the triangle is convertable to a
         DataFrame, then it defaults to pandas groupby functionality.
 
         Parameters
         ----------
-        by: str or list
+        by: str | list
             The index to group by
+
+        axis: int
+            The axis the groupby applies to.
 
         Returns
         -------
+        TriangleGroupBy
             GroupBy object (pandas or Triangle)
         """
-        return TriangleGroupBy(self, by, axis)
+        return TriangleGroupBy(cast("Triangle", cast(object, self)), by, axis)
 
-    def append(self, other):
-        """Append rows of other to the end of caller, returning a new object.
+    def append(self, other: Triangle) -> Triangle:
+        """
+        Append rows of another Triangle to self, returning an updated Triangle.
 
         Parameters
         ----------
@@ -653,20 +669,19 @@ class TrianglePandas:
         -------
             New Triangle with appended data.
         """
-        from chainladder.utils.utility_functions import concat
 
         return concat((self, other), 0)
 
     def rename(
-            self: TriangleProtocol,
+            self,
             axis: Literal['index', 'columns', 'origin', 'development'] | int,
             value: list | str | dict
-    ):
+    ) -> Triangle:
         """Alter axes labels.
 
         Parameters
         ----------
-        axis: str or int
+        axis: Literal['index', 'columns', 'origin', 'development'] | int
             A value of 0 <= axis <= 4 corresponding to axes 'index',
             'columns', 'origin', 'development' respectively.  Both the
             int and str representation can be used.
@@ -679,7 +694,7 @@ class TrianglePandas:
             Triangle with relabeled axis.
         """
         
-        if type(value) is dict:
+        if isinstance(value, dict):
             if axis == "columns" or axis == 1:
                 full_dict = dict(zip(self.columns.values,self.columns.values))
                 full_dict.update(value)
@@ -704,9 +719,9 @@ class TrianglePandas:
                     "'columns', 'origin', or 'development', or an integer in the interval [0, 4] specifying the"
                     " axis to be modified."
                 )
-        return self
+        return cast("Triangle", cast(object, self))
 
-    def astype(self: TriangleProtocol, dtype, inplace=True):
+    def astype(self, dtype, inplace=True) -> Triangle:
         """Copy of the array, cast to a specified type.
 
         Parameters
@@ -722,9 +737,9 @@ class TrianglePandas:
         """
         obj = self.copy() if inplace is False else self
         obj.values = obj.values.astype(dtype)
-        return obj
+        return cast("Triangle", obj)
 
-    def head(self: TriangleProtocol, n: int=5):
+    def head(self, n: int = 5) -> Triangle:
         """Return the first ``n`` triangles along the index axis.
 
         Parameters
@@ -738,7 +753,7 @@ class TrianglePandas:
         """
         return self.iloc[:n]
 
-    def tail(self: TriangleProtocol, n: int=5):
+    def tail(self, n: int = 5) -> Triangle:
         """Return the last ``n`` triangles along the index axis.
 
         Parameters
@@ -752,16 +767,20 @@ class TrianglePandas:
         """
         return self.iloc[-n:]
 
-    def sort_index(self: TriangleProtocol, *args, **kwargs):
+    def sort_index(self, *args, **kwargs) -> Triangle:
         """Sort Triangle rows by index labels.
 
         Returns
         -------
         Triangle
         """
-        return self.iloc[self.index.sort_values(self.key_labels, *args, **kwargs).index]
+        sorted_index: DataFrame = cast(
+            "DataFrame",
+            self.index.sort_values(self.key_labels, *args, **kwargs)
+        )
+        return self.iloc[sorted_index.index]
 
-    def exp(self: TriangleProtocol):
+    def exp(self) -> Triangle:
         """Return the exponential of each element.
 
         Returns
@@ -770,7 +789,7 @@ class TrianglePandas:
         """
         return self.get_array_module().exp(self)
 
-    def log(self: TriangleProtocol):
+    def log(self) -> Triangle:
         """Return the natural logarithm of each element.
 
         Returns
@@ -779,21 +798,22 @@ class TrianglePandas:
         """
         return self.get_array_module().log(self)
 
-    def minimum(self: TriangleProtocol, other):
+    def minimum(self, other: Triangle | int | float) -> Triangle:
         """Element-wise minimum of this Triangle and another operand.
+
 
         See :func:`chainladder.minimum` for parameters, usage, and examples.
         """
         return self.get_array_module().minimum(self, other)
 
-    def maximum(self: TriangleProtocol, other):
+    def maximum(self, other: Triangle | int | float) -> Triangle:
         """Element-wise maximum of this Triangle and another operand.
 
         See :func:`chainladder.maximum` for parameters, usage, and examples.
         """
         return self.get_array_module().maximum(self, other)
 
-    def sqrt(self: TriangleProtocol):
+    def sqrt(self) -> Triangle:
         """Return the non-negative square root of each element.
 
         Returns
@@ -802,7 +822,7 @@ class TrianglePandas:
         """
         return self.get_array_module().sqrt(self)
 
-    def round(self, decimals=0, *args, **kwargs):
+    def round(self, decimals: int = 0) -> Triangle:
         """Round each element to the given number of decimal places.
 
         Uses banker's rounding (round half to even). For example,
@@ -818,20 +838,34 @@ class TrianglePandas:
         -------
         Triangle
         """
-        return round(self, decimals)
+        return cast("Triangle", cast(object, self.__round__(decimals)))
 
     def xs(
-        self: TriangleProtocol,
-        index_key:IndexLabel,
-        level:IndexLabel | None = None,
-        drop_level:bool = True):
-        '''
+        self,
+        index_key: IndexLabel,
+        level: IndexLabel | None = None,
+        drop_level: bool = True) -> Triangle:
+        """
         Mimics xs from pandas. key difference is that  this function only slices 
         the index, therefore axis is always 0 and not an argument in the function
         
         Main use case for this function is when slicing beyond the first field in 
         the index (such as LOB in the clrd dataset)
-        '''
+
+        Parameters
+        ----------
+        index_key: IndexLabel
+            Label contained in the index.
+        level: IndexLabel | None = None
+            Level to take the cross-section on.
+        drop_level: bool = True
+            If False, returns object with same levels as self.
+
+        Returns
+        -------
+        Triangle
+            Cross-section from the original Triangle corresponding to the selected index levels.
+        """
         mi = pd.MultiIndex.from_frame(self.index)
 
         lvl = 0 if level is None else level
@@ -846,7 +880,7 @@ class TrianglePandas:
             new_ax_df = new_ax.to_frame(index=None)[new_ax.names]
             result.index = new_ax_df
         else:
-            result.index = pd.DataFrame(data=['Total'],columns=['Total'])
+            result.index = pd.DataFrame(data=['Total'], columns=pd.Index(['Total']))
         return result
 
 def add_triangle_agg_func(
@@ -1048,15 +1082,15 @@ df_passthru = (
         "pct_chg",
     ]
 )
-for item in df_passthru:
-    add_df_passthru(TrianglePandas, item)
+for method in df_passthru:
+    add_df_passthru(TrianglePandas, method)
 
 agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var"]
 agg_funcs = agg_funcs + ["std", "cumsum", "quantile"]
-for k in agg_funcs:
-    add_groupby_agg_func(TriangleGroupBy, k, k)
+for func in agg_funcs:
+    add_groupby_agg_func(TriangleGroupBy, func, func)
 agg_funcs = {item: "nan" + item for item in agg_funcs}
 more_aggs = ["diff"]
 agg_funcs = {**agg_funcs, **{item: item for item in more_aggs}}
-for k, v in agg_funcs.items():
-    add_triangle_agg_func(TrianglePandas, k, v)
+for method, func in agg_funcs.items():
+    add_triangle_agg_func(TrianglePandas, method, func)

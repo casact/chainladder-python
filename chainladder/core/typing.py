@@ -58,21 +58,28 @@ class TriangleProtocol(Protocol):
 
     @property
     def index(self) -> pd.DataFrame: ...
+    @index.setter
+    def index(self, value: pd.DataFrame) -> None: ...
 
     @property
     def is_val_tri(self) -> bool: ...
 
     @property
     def columns(self) -> pd.Index: ...
+    @columns.setter
+    def columns(self, value: Any) -> None: ...
 
     @property
     def origin(self) -> pd.PeriodIndex: ...
+    @origin.setter
+    def origin(self, value: Any) -> None: ...
 
     @property
     def development(self) -> pd.Series: ...
+    @development.setter
+    def development(self, value: Any) -> None: ...
 
-    @property
-    def valuation_date(self) -> pd.Timestamp: ...
+    valuation_date: pd.Timestamp
 
     @property
     def nan_triangle(self) -> BackendArray: ...
@@ -102,8 +109,9 @@ class TriangleProtocol(Protocol):
         implicit_axis: bool = False,
     ) -> DataFrame | Series: ...
     def sum(self, axis: str | int | None = None, *args, **kwargs) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def fillna(self, value: int | float | ndarray | None = None, inplace: bool = False) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def fillna(self, value: int | float | ndarray, inplace: bool = False) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     def fillzero(self, inplace: bool = False) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def __round__(self, ndigits: int = 0) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     def __add__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     def __radd__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     def __mul__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.

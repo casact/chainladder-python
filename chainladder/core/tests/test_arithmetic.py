@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+import pandas as pd
 import pytest
 
 from typing import TYPE_CHECKING
@@ -75,6 +76,67 @@ def test_arithmetic_grain_mismatch_raises(raa: Triangle, qtr: Triangle) -> None:
         raa + qtr
 
 
+def test_non_overlapping_odims(raa: Triangle) -> None:
+    """
+    Union of same-shape triangles with non-overlapping origin rows.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    a = raa.iloc[..., :5, :]
+    b = raa.iloc[..., 5:, :]
+    result = a + b
+    assert result == raa
+
+
+def test_arithmetic_union_val_tri(raa: Triangle) -> None:
+    """
+    Union of non-overlapping valuation triangle slices preserves DatetimeIndex ddims.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    val_raa = raa.dev_to_val()
+    a = val_raa[val_raa.valuation < '1987']
+    b = val_raa[val_raa.valuation >= '1987']
+    result = a + b
+    assert isinstance(result.ddims, pd.DatetimeIndex)
+    assert result.shape == val_raa.shape
+    assert result == val_raa
+
+
+def test_origin_broadcasting(raa: Triangle) -> None:
+    """
+    Adding a single-origin triangle to a multi-origin triangle broadcasts odims.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    single_origin = raa.sum('origin')
+    single_origin['values'] = 500
+    result = raa + single_origin
+    assert result.shape == raa.shape
+    assert result == raa + 500
+
+
 def test_arithmetic_union(raa):
     assert raa.shape == (raa - raa[raa.valuation < "1987"]).shape
     assert raa[raa.valuation<'1986'] + raa[raa.valuation>='1986'] == raa
@@ -90,13 +152,61 @@ def test_arithmetic_1(raa):
     assert 1 - (x / x) ==  0 * x * 0
 
 
+def test_eq_non_triangle(raa: Triangle) -> None:
+    """
+    Triangle compared to a non-Triangle returns False.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    assert (raa == 42) is False
+    assert (raa == "foo") is False
+    assert (raa == None) is False
+
+
+def test_pow_groupby(clrd: Triangle) -> None:
+    """__pow__ via TriangleGroupBy path when index keys differ between operands."""
+    a = clrd["CumPaidLoss"]
+    result = a ** a.groupby("LOB").sum()
+    assert result.shape == a.shape
+    # x^0 == 1 for every computed cell: predictable value check without overflow
+    zeros_gb = (a * 0).groupby("LOB").sum()
+    result_exp_zero = (a ** zeros_gb).set_backend("numpy")
+    non_nan = result_exp_zero.values[~np.isnan(result_exp_zero.values)]
+    assert len(non_nan) > 0
+    assert np.all(non_nan == 1.0)
+
+
 def test_rtruediv(raa):
     xp = raa.get_array_module()
     assert xp.nansum(abs(((1 / raa) * raa).values[0, 0] - raa.nan_triangle)) < 0.00001
 
 
-def test_vector_division(raa):
-    raa.latest_diagonal / raa
+def test_vector_division(raa: Triangle) -> None:
+    """
+    Divide latest diagonal by triangle. Each element in the resulting triangle should be equal to the latest
+    diagonal value in the corresponding origin period divided by the original value.
+
+    Parameters
+    ----------
+    raa: Triangle
+
+    Returns
+    -------
+    None
+    """
+    result = raa.latest_diagonal / raa
+    assert result.shape == raa.shape
+    for i in range(raa.shape[2]):
+        orig = raa.iloc[..., i:i+1, :]
+        ld = raa.latest_diagonal.iloc[..., i:i+1, :]
+        assert result.iloc[..., i:i+1, :] == ld / orig
 
 
 def test_multiindex_broadcast(clrd):
@@ -141,7 +251,7 @@ def test_index_broadacsting4(clrd):
     idx['New Field'] = 'New'
     b.index = idx
     with pytest.raises(ValueError, match="Index broadcasting is ambiguous"):
-        a + b
+        _= a + b
 
 def test_index_broadcasting5(clrd):
     """ If a and b have shared key labels but no matching levels, then they will stack """
