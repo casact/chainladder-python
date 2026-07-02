@@ -335,7 +335,7 @@ class ClarkLDF(DevelopmentBase):
         if sample_weight:
             self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
         ultimate_ = (
-            xp.swapaxes(self._G(age=(latest_age - age_offset)[::-1]), -1, -2)
+            self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2)
             * ld.values
         )
         self.incremental_fits_ = X.copy()
