@@ -367,7 +367,7 @@ class Location(_LocBase):
         # Case scalar, locate position in first level of index.
         else:
             idx = np.where(self.obj.kdims[:, 0]==key)[0]
-        return idx
+        return _LocBase._contig_slice(idx)
 
     def other_key(
             self,
@@ -402,7 +402,7 @@ class Location(_LocBase):
         if type(key) in [slice, list]:
             return obj_idx.loc[key].values
         if not hasattr(key, '__iter__') or type(key) is str:
-            return np.array([obj_idx.loc[key]])
+            return _LocBase._contig_slice(np.array([obj_idx.loc[key]]))
         else:
             raise AttributeError("Unable to slice.")
 
