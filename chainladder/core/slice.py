@@ -367,7 +367,7 @@ class Location(_LocBase):
         # Case scalar, locate position in first level of index.
         else:
             idx = np.where(self.obj.kdims[:, 0]==key)[0]
-        return _LocBase._contig_slice(idx)
+        return idx
 
     def other_key(
             self,
@@ -402,7 +402,7 @@ class Location(_LocBase):
         if type(key) in [slice, list]:
             return obj_idx.loc[key].values
         if not hasattr(key, '__iter__') or type(key) is str:
-            return _LocBase._contig_slice(np.array([obj_idx.loc[key]]))
+            return np.array([obj_idx.loc[key]])
         else:
             raise AttributeError("Unable to slice.")
 
@@ -431,7 +431,9 @@ class Location(_LocBase):
         return out
 
     def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
-        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
+        raw_slice = self.key_to_slice(key)
+        contig_slice = [_LocBase._contig_slice(x) for x in raw_slice]
+        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], contig_slice), values)
 
 class Ilocation(_LocBase):
     """
