@@ -174,7 +174,7 @@ class WeightedRegression(BaseEstimator):
         self.std_err_ = xp.nan_to_num(self.std_err_) + xp.nan_to_num(
             (1 - xp.nan_to_num(self.std_err_ * 0 + 1))
             * self.sigma_
-            / xp.swapaxes(xp.sqrt(self.x ** (2 - self.exponent_))[..., 0:1, :], -1, -2)
+            / xp.sqrt(self.x ** (2 - self.exponent_))[..., 0:1, :].swapaxes(-1, -2)
         )
         return self
 
