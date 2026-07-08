@@ -75,5 +75,11 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: uv sync --extra docs
+      - name: Generate autosummary stubs
+        # sphinx-build decides which documents the doctest builder will test
+        # *before* the autosummary extension has generated library/generated/*.rst
+        # (those files are gitignored, so they don't exist on a fresh checkout).
+        # Without this, every class/method docstring page is silently skipped.
+        run: uv run --directory docs sphinx-autogen -o library/generated library/api.md
       - name: Run doctests
         run: uv run --directory docs sphinx-build -b doctest . _build/doctest
