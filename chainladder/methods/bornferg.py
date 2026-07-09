@@ -176,7 +176,7 @@ class BornhuetterFerguson(Benktander):
 
             print(model.predict(tr, sample_weight=apriori).ultimate_)
 
-        .. testoutput
+        .. testoutput::
 
                           2261
             2007  12690.000000
