@@ -124,6 +124,7 @@ class Chainladder(MethodBase):
         attribute access.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
