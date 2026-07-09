@@ -358,11 +358,21 @@ class Triangle(TriangleBase):
             columns='values',
             cumulative=True,
         )
-        print(tri.is_ultimate)
+        print(tri)
 
     .. testoutput::
 
-        True
+                      2261
+        1981  18834.000000
+        1982  16857.953917
+        1983  24083.370924
+        1984  28703.142163
+        1985  28926.736343
+        1986  19501.103184
+        1987  17749.302590
+        1988  24019.192510
+        1989  16044.984101
+        1990  18402.442529
 
     Pre-existing ultimate estimates can be supplied directly in long-format
     data by setting the valuation column to ``options.ULT_VAL`` for each
@@ -386,11 +396,13 @@ class Triangle(TriangleBase):
             columns='paid',
             cumulative=True,
         )
-        print(tri.is_ultimate)
+        print(tri)
 
     .. testoutput::
 
-        True
+                 2261
+        1981  10000.0
+        1982  12000.0
     """
 
     def __init__(
