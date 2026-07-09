@@ -142,7 +142,7 @@ class ClarkLDF(DevelopmentBase):
 
         775
                   CumPaidLoss
-        LOB
+        LOB                  
         comauto         1.082
         medmal          1.889
         othliab         1.468
@@ -150,12 +150,12 @@ class ClarkLDF(DevelopmentBase):
         prodliab        1.441
         wkcomp          1.107
                   CumPaidLoss
-        LOB
+        LOB                  
         comauto        20.481
-        medmal         35.128
-        othliab        37.745
+        medmal         35.130
+        othliab        37.746
         ppauto         10.023
-        prodliab       64.352
+        prodliab       64.347
         wkcomp         20.111
 
     """
