@@ -123,6 +123,7 @@ class BornhuetterFerguson(Benktander):
         Fit returns the estimator itself, with ``ultimate_`` populated.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
@@ -160,6 +161,7 @@ class BornhuetterFerguson(Benktander):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
