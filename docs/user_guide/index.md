@@ -15,7 +15,7 @@ Data object to manage and manipulate reserving data
 
 **Application**: Extend pandas syntax to manipulate reserving triangles
 
-```{glue:} plot_triangle_from_pandas
+```{image} ../images/plot_triangle_from_pandas.png
 ```
 +++
 **Classes**: **[Triangle](triangle)**, ...
@@ -30,7 +30,7 @@ Tooling to generate loss development patterns
 
 **Applications**: Comprehensive library for development
 
-```{glue:} plot_clarkldf
+```{image} ../images/plot_clarkldf.png
 ```
 +++
 
@@ -47,7 +47,7 @@ Extrapolate development patterns beyond the known data.
 
 **Applications**: Long-tailed lines of business use cases
 
-```{glue:} plot_exponential_smoothing
+```{image} ../images/plot_exponential_smoothing.png
 ```
 
 +++
@@ -65,7 +65,7 @@ Generate IBNR estimates and associated statistics
 
 **Applications**: Constructing reserve estimates
 
-```{glue:} plot_mack
+```{image} ../images/plot_mack.png
 ```
 
 +++
@@ -83,7 +83,7 @@ Common actuarial data adjustments
 
 **Applications**: Simulation, trending, on-leveling
 
-```{glue:} plot_stochastic_bornferg
+```{image} ../images/plot_stochastic_bornferg.png
 ```
 
 +++
@@ -100,7 +100,7 @@ Workflow tools for complex analyses
 
 **Application**: Scenario testing, ensembling
 
-```{glue:} plot_voting_chainladder
+```{image} ../images/plot_voting_chainladder.png
 ```
 
 +++

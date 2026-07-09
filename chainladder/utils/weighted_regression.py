@@ -13,10 +13,11 @@ class WeightedRegression(BaseEstimator):
     the implementation of the Mack stochastic properties.
     """
 
-    def __init__(self, axis=None, thru_orig=False, xp=None):
+    def __init__(self, axis=None, thru_orig=False, xp=None, average=None):
         self.axis = axis
         self.thru_orig = thru_orig
         self.xp = xp
+        self.average = average
 
     def infer_x_w(self):
         xp = self.xp
@@ -26,16 +27,99 @@ class WeightedRegression(BaseEstimator):
             self.x = xp.cumsum(xp.ones(self.y.shape), self.axis)
         return self
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None, sample_weight=None, average=None):
         self.x = X
         self.y = y
         self.w = sample_weight
+        self.average = average
+
         if self.x is None:
             self.infer_x_w()
+
         if self.thru_orig:
             self._fit_OLS_thru_orig()
         else:
             self._fit_OLS()
+
+        return self
+
+    def _fit_OLS_thru_orig(self):
+        from chainladder.utils.utility_functions import num_to_nan
+
+        x = self.x
+        y = self.y
+        w = self.w
+        axis = self.axis
+        average_ = self.average
+        xp = self.xp
+
+        if average_ is None:
+            self.exponent_ = xp.nan_to_num(y * 0)
+            denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
+            coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
+
+        else:
+            # calculate the coef using regression framework
+            exponent_map = {"regression": 0, "volume": 1, "simple": 2, "geometric": 1}
+            exponent = xp.nan_to_num(
+                xp.array([exponent_map[a] for a in average_[0, 0, 0]]) * (y * 0 + 1)
+            )
+            self.exponent_ = exponent
+            w = num_to_nan(w / (x**exponent))
+            denominator = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
+            reg_coef = num_to_nan(xp.nansum(w * x * y, axis)) / denominator
+
+            # special case for geometric average, still using the framework,
+            # but using the log link function and taking the differences
+            is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]])
+            if is_geo.any():
+
+                if xp.any((y == 0) & (x == 0)):
+                    warnings.warn(
+                        "Zero values present in triangle data used for geometric "
+                        "averaging; link ratios calculated may be invalid. "
+                        "Consider using a different average method.",
+                        UserWarning,
+                    )
+
+                w_geo = num_to_nan(self.w)
+                geo_coef = xp.exp(
+                    xp.nanmean(w_geo * xp.log(y), axis)
+                    - xp.nanmean((y * 0 + 1) * w_geo * xp.log(x), axis)
+                )
+
+                # consolidate
+                coef = xp.where(
+                    is_geo.reshape((1,) * (reg_coef.ndim - 1) + (is_geo.shape[-1],)),
+                    geo_coef,
+                    reg_coef,
+                )
+            else:
+                coef = reg_coef
+
+        fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
+        fitted_value = fitted_value * x * (y * 0 + 1)
+
+        residual = (y - fitted_value)
+
+        wss_residual = xp.nansum(residual**2 * w, axis)
+        mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
+        mse_denom = num_to_nan(mse_denom)
+        mse = wss_residual / mse_denom
+
+        std_err = xp.sqrt(mse / denominator)
+        sigma = std_err * xp.sqrt(mse_denom + 1)
+        
+        coef = coef[..., None]
+        sigma = sigma[..., None]
+        std_err = std_err[..., None]
+        
+        self._w_reg = w
+
+        self.slope_ = coef
+        self.sigma_ = sigma
+        self.std_err_ = std_err
+
         return self
 
     def _fit_OLS(self):
@@ -53,7 +137,9 @@ class WeightedRegression(BaseEstimator):
             y[w == 0] = xp.nan
         else:
             w2 = w.copy()
-            w2 = sp.COO(data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape)
+            w2 = sp.COO(
+                data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape
+            )
             x, y = x * w2, y * w2
 
         with warnings.catch_warnings():
@@ -72,29 +158,6 @@ class WeightedRegression(BaseEstimator):
 
         return self
 
-    def _fit_OLS_thru_orig(self):
-        from chainladder.utils.utility_functions import num_to_nan
-
-        w, x, y, axis = self.w, self.x, self.y, self.axis
-        xp = self.xp
-        d = num_to_nan(xp.nansum((y * 0 + 1) * w * x * x, axis))
-        coef = num_to_nan(xp.nansum(w * x * y, axis)) / d
-        fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
-        fitted_value = fitted_value * x * (y * 0 + 1)
-        residual = (y - fitted_value) * xp.sqrt(w)
-        wss_residual = xp.nansum(residual**2, axis)
-        mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
-        mse_denom = num_to_nan(mse_denom)
-        mse = wss_residual / mse_denom
-        std_err = xp.sqrt(mse / d)
-        std_err = std_err[..., None]
-        coef = coef[..., None]
-        sigma = xp.sqrt(mse)[..., None]
-        self.slope_ = coef
-        self.sigma_ = sigma
-        self.std_err_ = std_err
-        return self
-
     def sigma_fill(self, interpolation):
         """This Function is designed to take an array of sigmas and does log-
         linear extrapolation where n_obs=1 and sigma cannot be calculated.
@@ -106,7 +169,13 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def std_err_fill(self):
-        """currently handled in development.py which doesn't feel right"""
+        """Fill undefined std_err_ where regression has insufficient observations."""
+        xp = self.xp
+        self.std_err_ = xp.nan_to_num(self.std_err_) + xp.nan_to_num(
+            (1 - xp.nan_to_num(self.std_err_ * 0 + 1))
+            * self.sigma_
+            / xp.sqrt(self.x ** (2 - self.exponent_))[..., 0:1, :].swapaxes(-1, -2)
+        )
         return self
 
     def loglinear_interpolation(self, y):

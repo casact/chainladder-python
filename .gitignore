@@ -50,6 +50,7 @@ coverage.xml
 *.cover
 .hypothesis/
 
+
 # Translations
 *.mo
 *.pot
@@ -69,6 +70,7 @@ instance/
 docs/_build/
 docs/auto_examples/
 docs/modules/generated/
+docs/library/generated/
 
 # PyBuilder
 target/
@@ -133,3 +135,6 @@ coverage_html_report
 
 # Local scratch directory (handoff notes, throwaway scripts, etc.)
 .scratch/
+
+# IDEs
+.vscode/

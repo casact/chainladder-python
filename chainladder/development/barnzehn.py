@@ -15,6 +15,12 @@ class BarnettZehnwirth(TweedieGLM):
     """ This estimator enables modeling from the Probabilistic Trend Family as
     described by Barnett and Zehnwirth.
 
+    The model is fit on log-incremental losses and produces multiplicative
+    ``ldf_`` patterns for use with IBNR estimators. Specify the regression
+    structure either with a patsy ``formula`` or with PTF period groupings
+    (``alpha``, ``gamma``, ``iota``) that define origin, trend, and
+    final-period cohorts.
+
     .. versionadded:: 0.8.2
 
     Parameters
@@ -32,6 +38,67 @@ class BarnettZehnwirth(TweedieGLM):
         List of origin periods denoting the first indices of each group 
     gamma: list of int
     iota: list of int
+
+    Examples
+    --------
+    When many accident years are available but you want a smaller number of
+    origin cohorts, specify ``alpha``, ``gamma``, and ``iota`` instead of a
+    separate factor for every year. The fitted design has fewer parameters than
+    a fully saturated origin-by-development formula on the same triangle.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("abc")
+        m_ptf = cl.BarnettZehnwirth(
+            alpha=[0, 5], gamma=[0, 2, 5], iota=[0, 7, 11]
+        ).fit(tri)
+        m_full = cl.BarnettZehnwirth(
+            formula="C(origin)+C(development)"
+        ).fit(tri)
+        print(len(m_ptf.coef_.values.flatten()))
+        print(len(m_full.coef_.values.flatten()))
+
+    .. testoutput::
+
+        6
+        21
+
+    Use a patsy ``formula`` when the reserving structure needs explicit terms
+    (for example separate origin and development factors) rather than the PTF
+    cohort shorthand. Comparing the full ``ldf_`` patterns of the two models
+    shows the difference in structure: the formula model produces a single
+    pattern shared across all accident years, while the PTF model allows the
+    pattern to shift gradually from the earliest to the latest accident year
+    due to the calendar trend captured in ``iota``.
+
+    .. testcode::
+
+        import numpy as np
+
+        tri = cl.load_sample("abc")
+        m_formula = cl.BarnettZehnwirth(
+            formula="C(origin)+C(development)"
+        ).fit(tri)
+        m_ptf = cl.BarnettZehnwirth(
+            alpha=[0, 5], gamma=[0, 2, 5], iota=[0, 7, 11]
+        ).fit(tri)
+        ldf_f = m_formula.ldf_.to_frame(origin_as_datetime=False)
+        ldf_p = m_ptf.ldf_.to_frame(origin_as_datetime=False)
+        print(np.round(ldf_f.values[0], 4))   # formula: earliest origin
+        print(np.round(ldf_f.values[-1], 4))  # formula: latest origin
+        print(np.round(ldf_p.values[0], 4))   # PTF: earliest origin
+        print(np.round(ldf_p.values[-1], 4))  # PTF: latest origin
+
+    .. testoutput::
+
+        [2.2854 1.4138 1.1976 1.1128 1.0721 1.048  1.0342 1.0264 1.0208 1.0168]
+        [2.2854 1.4138 1.1976 1.1128 1.0721 1.048  1.0342 1.0264 1.0208 1.0168]
+        [1.9716 1.4788 1.1794 1.0843 1.0431 1.0428 1.0425 1.0423 1.0421 1.0419]
+        [1.9727 1.4625 1.1692 1.0774 1.0384 1.037  1.0357 1.0345 1.0333 1.0322]
 
     """
 

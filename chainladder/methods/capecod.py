@@ -18,11 +18,11 @@ class CapeCod(Benktander):
     decay: float, optional (default=1.0)
         The cape cod decay assumption. This parameter is required by the 
         Generalized Cape Cod Method, as discussed in [Using Best Practices to
-         Determine a Best Reserve Estimate](https://www.casact.org/sites/default/files/database/forum_98fforum_struhuss.pdf) 
-         by Struzzieri and Hussian. As the `decay` factor approaches 1 
-         (the default value), the result approaches the traditional Cape Cod 
-         method. As the `decay` factor approaches 0, the result approaches 
-         the `Chainladder` method.
+        Determine a Best Reserve Estimate](https://www.casact.org/sites/default/files/database/forum_98fforum_struhuss.pdf) 
+        by Struzzieri and Hussian. As the `decay` factor approaches 1 
+        (the default value), the result approaches the traditional Cape Cod 
+        method. As the `decay` factor approaches 0, the result approaches 
+        the `Chainladder` method.
     n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
     groupby: str or list, optional (default=None)
@@ -251,11 +251,11 @@ class CapeCod(Benktander):
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
-        weighted_exposure = xp.swapaxes(reported_exposure.values, -1, -2) * decay_matrix
+        weighted_exposure = reported_exposure.values.swapaxes(-1, -2) * decay_matrix
         trended_ultimate = (latest.values * trend_array * X_olf_array) / (
             reported_exposure.values * sw_olf_array
         )
-        trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
+        trended_ultimate = trended_ultimate.swapaxes(-1, -2)
         apriori = xp.nansum(weighted_exposure * trended_ultimate, -1) / xp.nansum(
             weighted_exposure, -1
         )

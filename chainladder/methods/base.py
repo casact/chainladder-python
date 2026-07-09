@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import warnings
@@ -10,6 +12,10 @@ from chainladder.development import Development
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
 
 class MethodBase(BaseEstimator, EstimatorIO, Common):
 
@@ -25,19 +31,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def _align_cdf(self, X, sample_weight=None):
         """ Vertically align CDF to origin period latest diagonal. """
-        valuation = X.valuation_date
-        cdf = X.cdf_.iloc[..., : X.shape[-1]]
-        a = X.iloc[0, 0] * 0
-        a = a + a.nan_triangle
-        if X.array_backend == "sparse":
-            a = a - a[a.valuation < a.valuation_date]
-        if sample_weight:
-            X = X * a + sample_weight * a
-        else:
-            X = X * a
-        cdf = X / X * cdf
-        cdf.valuation_date = valuation
-        return cdf.latest_diagonal
+        return X.cdf_.align_pattern(X,sample_weight)
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
@@ -150,7 +144,14 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             process_var = None
         return process_var
 
-    def validate_weight(self, X, sample_weight):
+    @staticmethod
+    def validate_weight(
+            X: Triangle,
+            sample_weight: Triangle
+    ) -> None:
+        '''
+        Checks that the a aprior has valid dimensions
+        '''
         if (
             sample_weight
             and X.shape[:-1] != sample_weight.shape[:-1]
