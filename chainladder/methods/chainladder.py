@@ -130,7 +130,7 @@ class Chainladder(MethodBase):
         .. testcode::
 
             tr = cl.load_sample('ukmotor')
-            cl.Chainladder().fit(tr)
+            print(cl.Chainladder().fit(tr))
 
         .. testoutput::
 
