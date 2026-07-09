@@ -218,6 +218,7 @@ class Benktander(MethodBase):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
