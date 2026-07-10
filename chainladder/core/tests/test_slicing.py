@@ -273,7 +273,29 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
         tri.loc["Aegis Grp", "comauto"] = sub * 2
         assert tri.loc["Aegis Grp", "comauto"] == sub * 2
 
+def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
+    """
+    Use Triangle.loc to set a few origin or develop period via a TriangleSlicer.
 
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa2 = raa * 2
+    raa_new = raa.copy()
+    raa_new.loc[:,:,:,:60] = raa2.loc[:,:,:,:60]
+    raa_new.loc[:,:,:,72:] = raa2.loc[:,:,:,72:]
+    assert raa_new == raa2
+    raa_new = raa.copy()
+    raa_new.loc[:,:,:'1984',:] = raa2.loc[:,:,:'1984',:]
+    raa_new.loc[:,:,'1985':,:] = raa2.loc[:,:,'1985':,:]
+    assert raa_new == raa2
 
 def test_invalid_iloc_sparse_assignment(prism) -> None:
     """
