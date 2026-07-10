@@ -12,7 +12,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
-
+    from typing import Literal
+    from chainladder.core.typing import BackendArray
 
 class WeightedRegression(BaseEstimator):
     """
@@ -64,9 +65,9 @@ class WeightedRegression(BaseEstimator):
 
     def fit(
             self, 
-            X, 
-            y=None, 
-            sample_weight=None, 
+            X:BackendArray, 
+            y:BackendArray|None=None, 
+            sample_weight:BackendArray|None=None, 
             average: Literal["volume", "simple", "regression", "geometric"] | None = None
     ):
         """
@@ -76,10 +77,10 @@ class WeightedRegression(BaseEstimator):
         ----------
         X : Array
             independent variable for the regression
-        y : None
+        y : Array or None (default = None)
             dependent variable for the regression
-        sample_weight : None
-            which (x,y) pairs should be used for the regression
+        sample_weight : Array or None (default = None)
+            which (x,y) pairs should be used in the regression
         average: literal (or list of literals), or None, optional (default = None)
             type of averaging to use; dictates the weights used in the regression
 
