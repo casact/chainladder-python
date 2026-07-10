@@ -400,14 +400,14 @@ class Triangle(TriangleBase):
                 'valuation': pd.to_datetime([
                     cl.options.ULT_VAL, cl.options.ULT_VAL
                 ]),
-                'paid': [10000.0, 12000.0],
+                'ultimate': [10000.0, 12000.0],
             }
         )
         tri = cl.Triangle(
             df,
             origin='origin',
             development='valuation',
-            columns='paid',
+            columns='ultimate',
             cumulative=True,
         )
         print(tri)
