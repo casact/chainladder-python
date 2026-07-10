@@ -63,7 +63,6 @@ def test_mack1994_hardcode(raa):
     dev = cl.Development(sigma_interpolation = 'mack').fit_transform(raa)
     model = cl.MackChainladder().fit(dev)
     sigma_rhs = dev.sigma_.values.flatten() ** 2
-    print(sigma_rhs)
     assert np.allclose(sigma_sq[:3],sigma_rhs[:3],atol=1)
     assert np.allclose(sigma_sq[3:4],sigma_rhs[3:4],atol=0.1)
     assert np.allclose(sigma_sq[4:5],sigma_rhs[4:5],atol=1)
