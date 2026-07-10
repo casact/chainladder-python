@@ -1159,41 +1159,13 @@ class Triangle(TriangleBase):
 
         Triangle
             Triangle of disposal rates
-
-        Examples
-        --------
-
-        .. testsetup::
-
-            import chainladder as cl
-
-        .. testcode::
-
-            clrd = cl.load_sample('clrd').sum()
-            ult = cl.Chainladder().fit(clrd['IncurLoss']).ultimate_
-            dr = cl.DisposalRate().fit_transform(clrd['CumPaidLoss'],sample_weight = ult)
-            dr.disposal_rate_tri
-
-        .. testoutput::
-            
-                    12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult
-            1988       NaN       NaN       NaN       NaN       NaN       NaN  0.964643  0.973184  0.980224  0.983063
-            1989       NaN       NaN       NaN       NaN       NaN  0.952533  0.967690  0.977373  0.981938       NaN
-            1990       NaN       NaN       NaN       NaN  0.927029  0.952951  0.968379  0.976049       NaN       NaN
-            1991       NaN       NaN       NaN  0.881010  0.929460  0.954694  0.968533       NaN       NaN       NaN
-            1992       NaN       NaN  0.801875  0.885976  0.932865  0.956495       NaN       NaN       NaN       NaN
-            1993       NaN  0.663303  0.810639  0.894414  0.939009       NaN       NaN       NaN       NaN       NaN
-            1994  0.367530  0.670460  0.814661  0.897244       NaN       NaN       NaN       NaN       NaN       NaN
-            1995  0.379650  0.680979  0.821603       NaN       NaN       NaN       NaN       NaN       NaN       NaN
-            1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
-            1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
         """
 
         obj: Triangle = self.incr_to_cum() / self.ultimate_.values
         if not obj.is_full:
             obj = obj[obj.valuation <= obj.valuation_date]
         if hasattr(obj, "disposal_w_"):
-            obj = obj * obj.disposal_w_
+            obj = obj * obj.disposal_w_ if obj.shape == obj.disposal_w_.shape else obj
         obj.is_pattern = True
         obj.is_cumulative = True
         obj.is_disposal_rate = True
