@@ -218,7 +218,7 @@ class CapeCod(Benktander):
             exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
             print(cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure))
 
-        .. testoutput:
+        .. testoutput::
 
             CapeCod(trend=0.05)
         """
