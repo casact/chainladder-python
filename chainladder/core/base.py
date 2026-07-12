@@ -12,7 +12,8 @@ from abc import ABC, abstractmethod
 from chainladder import (
     __dt64_unit__,
     __dt64_dtype__,
-    options
+    options,
+    _deprecated_backend_message
 )
 
 from chainladder.core.common import Common
@@ -26,12 +27,15 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
+from chainladder.adjustments.disposal import DisposalMixin
+
 from typing import (
     Optional,
     TYPE_CHECKING
 )
 
 if TYPE_CHECKING:
+    from chainladder import Triangle
     from pandas import (
         DataFrame,
         Series
@@ -49,13 +53,34 @@ class TriangleBase(
     TriangleDunders,
     TrianglePandas,
     Common,
-    ABC
+    ABC,
+    DisposalMixin
 ):
     """This class handles the initialization of a triangle"""
 
     @property
     def shape(self):
         return self.values.shape
+
+    @property
+    def dimensionality(self):
+        """The dimensionality of the Triangle.
+
+        Returns ``'empty'`` for a Triangle instantiated without data
+        (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
+        single triangle, and ``'multi'`` for a multidimensional Triangle.
+        """
+        return self._dimensionality
+
+    @property
+    def empty(self):
+        """Whether the Triangle contains any data.
+
+        Mirrors ``pandas.DataFrame.empty``. Returns ``True`` for a Triangle
+        instantiated without data (e.g. ``cl.Triangle()``), whose ``values``
+        have not been populated, and ``False`` otherwise.
+        """
+        return self._dimensionality == "empty"
 
     @staticmethod
     def _input_validation(
@@ -85,7 +110,7 @@ class TriangleBase(
         columns = str_to_list(columns)
         origin = str_to_list(origin)
         development = str_to_list(development)
-        if "object" in data[columns].dtypes:
+        if not all(pd.api.types.is_numeric_dtype(dt) for dt in data[columns].dtypes):
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
@@ -142,6 +167,18 @@ class TriangleBase(
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:
+            # A non-pandas input that reaches this branch is a Dask dataframe.
+            # Only the Dask backend is deprecated, so gate the warning on the
+            # data's module rather than warning for every pandas subclass that
+            # also takes this path. stacklevel=3 points the warning at the
+            # user's Triangle(...) call (warn -> this method ->
+            # Triangle.__init__ -> user).
+            if type(data).__module__.split(".")[0] == "dask":
+                warnings.warn(
+                    _deprecated_backend_message("dask"),
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
             data["__development__"] = development_date
@@ -510,7 +547,7 @@ class TriangleBase(
                 "Array backend is invalid or not properly set. Supported backends are: " + ', '.join([*modules])
             ) from e
 
-    def _auto_sparse(self) -> None:
+    def _auto_sparse(self) -> Triangle:
         """
         Auto sparsifies at 30Mb or more and 20% density or less.
         """
@@ -618,6 +655,16 @@ class TriangleBase(
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
+        """Materialize a lazy dask-backed Triangle.
+
+        When ``values`` is a dask array, compute it and update
+        ``array_backend`` to match the resulting array type. Returns ``self``
+        unchanged when the Triangle is already materialized.
+
+        Returns
+        -------
+        Triangle
+        """
         if hasattr(self.values, "chunks"):
             obj = self.copy()
             obj.values = obj.values.compute(*args, **kwargs)

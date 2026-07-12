@@ -1,4 +1,4 @@
-## {octicon}`rocket` Getting Started
+# {octicon}`rocket` Getting Started
 
 We recommend that you try the sandbox tutorial before installing the package on your machine. There's also the more in-depth onboarding tutorial to give you a slightly more comprehensive view of what the package can do.
 

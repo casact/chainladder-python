@@ -11,17 +11,22 @@ from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value, to_period
-from chainladder import options
+from chainladder import options, _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db
 except ImportError:
     db = None
 
-from typing import Optional, TYPE_CHECKING
+from typing import (
+    cast,
+    Optional,
+    TYPE_CHECKING
+)
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
+    from chainladder.core.typing import BackendArray
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
@@ -34,7 +39,7 @@ class Triangle(TriangleBase):
 
     Parameters
     ----------
-    data: DataFrame or DataFrameXchg, or dict
+    data: DataFrame | DataFrameXchg | dict
         A single dataframe that contains columns representing all other
         arguments to the Triangle constructor. One may supply a DataFrame-like
         object (referred to as DataFrameXchg) supporting the __dataframe__
@@ -101,8 +106,10 @@ class Triangle(TriangleBase):
         The grain of the development vector ('Y', 'S', 'Q', 'M')
     shape: tuple
         The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
-    link_ratio, age_to_age
+    link_ratio, age_to_age: Triangle
         Displays age-to-age ratios for the triangle.
+    disposal_rate_tri: Triangle
+        Displays actual disposal rates by origin and development; must have ultimate_
     valuation_date : date
         The latest valuation date of the data
     loc: Triangle
@@ -342,6 +349,74 @@ class Triangle(TriangleBase):
         2024Q2   130.0
         2024Q3   160.0
         2024Q4   140.0
+
+    Triangles with ultimate values
+    ------------------------------
+
+    Triangles produced by reserving methods carry ultimate projections at the
+    sentinel valuation date ``options.ULT_VAL`` (default December 31, 2261).
+    Export with ``to_frame(keepdims=True)`` and reconstruct by passing
+    ``development='valuation'``. Rows whose valuation equals
+    ``options.ULT_VAL`` are recognized as ultimates and stored in the ultimate
+    development column (see also :attr:`is_ultimate`).
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        ult = cl.Chainladder().fit(raa).ultimate_
+        df = ult.to_frame(keepdims=True, origin_as_datetime=True)
+        tri = cl.Triangle(
+            df,
+            origin='origin',
+            development='valuation',
+            columns='values',
+            cumulative=True,
+        )
+        print(tri)
+
+    .. testoutput::
+
+                      2261
+        1981  18834.000000
+        1982  16857.953917
+        1983  24083.370924
+        1984  28703.142163
+        1985  28926.736343
+        1986  19501.103184
+        1987  17749.302590
+        1988  24019.192510
+        1989  16044.984101
+        1990  18402.442529
+
+    Pre-existing ultimate estimates can be supplied directly in long-format
+    data by setting the valuation column to ``options.ULT_VAL`` for each
+    origin.
+
+    .. testcode::
+
+        df = pd.DataFrame(
+            data={
+                'origin': pd.to_datetime(['1981-01-01', '1982-01-01']),
+                'valuation': pd.to_datetime([
+                    cl.options.ULT_VAL, cl.options.ULT_VAL
+                ]),
+                'ultimate': [10000.0, 12000.0],
+            }
+        )
+        tri = cl.Triangle(
+            df,
+            origin='origin',
+            development='valuation',
+            columns='ultimate',
+            cumulative=True,
+        )
+        print(tri)
+
+    .. testoutput::
+
+                 2261
+        1981  10000.0
+        1982  12000.0
     """
 
     def __init__(
@@ -531,7 +606,7 @@ class Triangle(TriangleBase):
         )
 
         # Construct Sparse multidimensional array.
-        self.values: COO = num_to_nan(
+        self.values: BackendArray = cast("BackendArray", num_to_nan(
             sp.COO(
                 coords,
                 amts,
@@ -545,7 +620,7 @@ class Triangle(TriangleBase):
                     len(self.ddims),
                 ),
             )
-        )
+        ))
         # Deal with array backend.
         self.array_backend = "sparse"
         if array_backend is None:
@@ -580,7 +655,20 @@ class Triangle(TriangleBase):
         origin: list,
         development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Deal with triangles with ultimate values."""
+        """Split ultimate valuation rows from long-format triangle data.
+
+        Ultimate rows are those where the development column equals
+        ``options.ULT_VAL``. This supports round-tripping triangles exported
+        via :meth:`~chainladder.Triangle.to_frame` with ``keepdims=True`` and
+        ``development='valuation'``. It also allows importing pre-existing
+        ultimate estimates by marking the valuation column with
+        ``options.ULT_VAL``.
+
+        Requires a single datetime development column. When ultimate rows are
+        present (and not every row is an ultimate), they are extracted and
+        merged back as the ultimate development column after the base triangle
+        is constructed.
+        """
         ult = None
         if (
             development
@@ -919,6 +1007,53 @@ class Triangle(TriangleBase):
         self._pattern = pattern
 
     @property
+    def is_disposal_rate(self) -> bool:
+        """
+        Indicates whether the Triangle holds disposal rates (additive ratios going from head to tail)
+        """
+        if hasattr(self, "_is_disposal_rate"):
+            return self._is_disposal_rate
+        return False
+
+    @is_disposal_rate.setter
+    def is_disposal_rate(self, is_dr: bool) -> None:
+        self._is_disposal_rate = is_dr
+
+    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
+        """ 
+        Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
+
+        Parameters
+        ----------
+        X: Triangle
+        The target triangle to align to
+        
+        sample_weight:  Triangle, option (default=None)
+        Exposure triangle
+
+        Returns
+        -------
+        Triangle
+            Triangle of selected pattern across origin periods
+
+        """
+        if not self._pattern:
+            raise ValueError("Triangle is not a selected pattern, such as .ldf_ or .cdf_")
+        valuation = X.valuation_date
+        pattern = self.iloc[..., : X.shape[-1]]
+        a = X.iloc[0, 0] * 0
+        a = a + a.nan_triangle
+        if X.array_backend == "sparse":
+            a = a - a[a.valuation < a.valuation_date]
+        if sample_weight:
+            X = X * a + sample_weight * a
+        else:
+            X = X * a
+        pattern = X / X * pattern
+        pattern.valuation_date = valuation
+        return pattern.latest_diagonal
+    
+    @property
     def is_ultimate(self) ->  bool:
         """
         Indicates whether the Triangle includes an ultimate valuation column.
@@ -1095,6 +1230,29 @@ class Triangle(TriangleBase):
         """
         return self.link_ratio
 
+    @property
+    def disposal_rate_tri(self) -> Triangle:
+        """
+        Displays disposal rates for the triangle. Must have ultimate_
+
+        Returns
+        -------
+
+        Triangle
+            Triangle of disposal rates
+        """
+
+        obj: Triangle = self.incr_to_cum() / self.ultimate_.values
+        if not obj.is_full:
+            obj = obj[obj.valuation <= obj.valuation_date]
+        if hasattr(obj, "disposal_w_"):
+            obj = obj * obj.disposal_w_ if obj.shape == obj.disposal_w_.shape else obj
+        obj.is_pattern = True
+        obj.is_cumulative = True
+        obj.is_disposal_rate = True
+        obj.values = num_to_nan(obj.values)
+        return obj
+
     def incr_to_cum(self, inplace=False):
         """Method to convert an incremental triangle into a cumulative triangle.
 
@@ -1176,14 +1334,13 @@ class Triangle(TriangleBase):
         if inplace:
             xp = self.get_array_module()
             if not self.is_cumulative:
-                if self.is_pattern:
-                    if hasattr(self, "is_additive"):
-                        if self.is_additive:
-                            values = xp.nan_to_num(self.values[..., ::-1])
-                            values = num_to_value(values, 0)
-                            self.values = (
-                                xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
-                            )
+                if self.is_pattern & (not self.is_disposal_rate):
+                    if hasattr(self, "is_additive") and self.is_additive:
+                        values = xp.nan_to_num(self.values[..., ::-1])
+                        values = num_to_value(values, 0)
+                        self.values = (
+                            xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
+                        )
                     else:
                         values = xp.nan_to_num(self.values[..., ::-1])
                         values = num_to_value(values, 1)
@@ -1203,6 +1360,7 @@ class Triangle(TriangleBase):
                         l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
                         l3 = lambda i: l2(i).sum(3, keepdims=True)
                         if db:
+                            _warn_dask_parallel_deprecated()
                             bag = db.from_sequence(range(self.shape[-1]))
                             bag = bag.map(l3)
                             out = bag.compute(scheduler="threads")
@@ -1257,7 +1415,7 @@ class Triangle(TriangleBase):
         if inplace:
             v = self.valuation_date
             if self.is_cumulative or self.is_cumulative is None:
-                if self.is_pattern:
+                if self.is_pattern & (not self.is_disposal_rate):
                     xp = self.get_array_module()
                     self.values = xp.nan_to_num(self.values)
                     values = num_to_value(self.values, 1)
@@ -1811,15 +1969,14 @@ class Triangle(TriangleBase):
         obj.values = obj.values * trend
         return obj
 
-    def broadcast_axis(self, axis, value):
-        warnings.warn(
-            """
-            Broadcast axis is deprecated in favor of broadcasting
-            using Triangle arithmetic."""
-        )
-        return self
-
     def copy(self):
+        """Return a shallow copy of the Triangle.
+
+        Returns
+        -------
+        Triangle
+            A new Triangle with copied ``values`` and shared metadata.
+        """
         X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))
         X._set_slicers()
@@ -2115,6 +2272,22 @@ class Triangle(TriangleBase):
         return obj
 
     def reindex(self, columns=None, fill_value=np.nan):
+        """Conform Triangle columns to a new set of labels.
+
+        Any column in ``columns`` that is not already present is added and
+        filled with ``fill_value``.
+
+        Parameters
+        ----------
+        columns : list
+            Column labels for the returned Triangle.
+        fill_value : float, default nan
+            Value assigned to newly added columns.
+
+        Returns
+        -------
+        Triangle
+        """
         obj = self.copy()
         for column in columns:
             if column not in obj.columns:

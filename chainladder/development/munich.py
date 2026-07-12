@@ -47,6 +47,36 @@ class MunichAdjustment(DevelopmentBase):
     cdf_: Triangle
         The estimated bivariate cumulative development patterns
 
+    Examples
+    --------
+    ``fillna=True`` imputes missing paid/incurred amounts with simple
+    chainladder expectations so the bivariate regression can still run.
+
+    .. testsetup::
+
+        import chainladder as cl
+        import numpy as np
+
+    .. testcode::
+
+        mcl = cl.load_sample("mcl").copy()
+        arr = np.asarray(mcl.values, dtype=float, copy=True)
+        arr[0, 1, 0, 2] = np.nan
+        mcl.values = arr
+        dev = cl.Development().fit_transform(mcl)
+        try:
+            cl.MunichAdjustment(("paid", "incurred"), fillna=False).fit(dev)
+            print("no_error")
+        except ValueError:
+            print("ValueError")
+        filled = cl.MunichAdjustment(("paid", "incurred"), fillna=True).fit(dev)
+        print(round(float(filled.ldf_.values[0, 0, 0, 0]), 6))
+
+    .. testoutput::
+
+        ValueError
+        2.151329
+
     """
 
     def __init__(self, paid_to_incurred=None, fillna=False):
@@ -193,7 +223,7 @@ class MunichAdjustment(DevelopmentBase):
         modelsI = modelsI.fit(i, p, 1 / i).sigma_fill(X.sigma_interpolation)
         q_f = self._p_to_i_concate(modelsP.slope_, modelsI.slope_, xp)
         rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_, xp)
-        return xp.swapaxes(q_f, -1, -2), xp.swapaxes(rho_sigma, -1, -2)
+        return q_f.swapaxes(-1, -2), rho_sigma.swapaxes(-1, -2)
 
     def _get_MCL_resids(self, X):
         xp = X.get_array_module()

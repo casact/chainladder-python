@@ -10,11 +10,9 @@ import os
 import numpy as np
 import pandas as pd
 
-from chainladder import (
-    __dt64_unit__,
-    __dt64_dtype__
-)
+from chainladder import __dt64_unit__, __dt64_dtype__
 from chainladder.utils.sparse import sp
+from chainladder.utils.data._manifest import SAMPLES
 from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -22,7 +20,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from typing import Iterable, Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
+    from chainladder import Triangle, MethodBase, Pipeline
     from numpy.typing import ArrayLike
     from pandas import DataFrame
     from sparse import COO
@@ -43,7 +41,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
 
         Datasets that are commonly used in examples are: raa, clrd, and prism.
 
-        And a complete list of available datasets is: abc, auto, berqsherm, cc_sample, clrd, clrd2025, genins, ia_sample, liab, m3ir5, mack_1997, mcl, mortgage, mw2008, mw2014, prism, quarterly, raa, tail_sample, ukmotor, usaa, usauto, xyz.
+        For the complete list of available datasets, call :func:`list_samples`.
 
     Returns
     -------
@@ -86,10 +84,10 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     # Set base path to be the parent directory of this file, e.g., the utils folder.
     utils_path: AnyStr = os.path.dirname(os.path.abspath(__file__))
 
-    # Validate that the file indicated by the key argument exists.
-    dataset_path: str = os.path.join(utils_path, "data", key.lower() + ".csv")
-
-    if not os.path.exists(dataset_path):
+    # Validate the key against the sample-dataset manifest. The manifest is the
+    # authoritative list of available samples; every entry has a matching CSV in
+    # the data folder.
+    if key.lower() not in SAMPLES:
         raise ValueError(
             """
             Invalid key supplied. The key should match the name, without extension, of one of the file names
@@ -102,168 +100,21 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             )
         )
 
-    # Set initial values for arguments to Triangle __init__. These may be overridden by
-    # values specific to the data set.
-    origin: str = "origin"
-    development: str = "development"
-    columns: list = ["values"]
-    index: list | None = None
-    cumulative: bool = True
+    dataset_path: str = os.path.join(utils_path, "data", key.lower() + ".csv")
 
-    if key.lower() in ["mcl", "usaa", "quarterly", "auto", "usauto", "tail_sample"]:
-        columns: list = ["incurred", "paid"]
-    if key.lower() == "clrd":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        index: list = ["GRNAME", "LOB"]
-        columns: list = [
-            "IncurLoss",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ]
-    if key.lower() == "clrd2025":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        index: list = ["GRNAME", "LOB"]
-        columns: list = [
-            "IncurredLosses",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ]
-    if key.lower() == "berqsherm":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        index: list = ["LOB"]
-        columns: list = ["Incurred", "Paid", "Reported", "Closed"]
-    if key.lower() == "xyz":
-        origin: str = "AccidentYear"
-        development: str = "DevelopmentYear"
-        columns: list = ["Incurred", "Paid", "Reported", "Closed", "Premium"]
-    if key.lower() in ["liab", "auto"]:
-        index: list = ["lob"]
-    if key.lower() in ["cc_sample", "ia_sample"]:
-        columns: list = ["loss", "exposure"]
-    if key.lower() in ["prism"]:
-        columns: list = ["reportedCount", "closedPaidCount", "Paid", "Incurred"]
-        index: list = [
-            "ClaimNo",
-            "Line",
-            "Type",
-            "ClaimLiability",
-            "Limit",
-            "Deductible",
-        ]
-        origin: str = "AccidentDate"
-        development: str = "PaymentDate"
-        cumulative: bool = False
-    if "mack_1997" in key.lower():
-        columns = ["Case Incurred"]
-        origin = "Accident Year"
-        development = "Calendar Year"
-        cumulative: bool = True
-    # Friedland datasets
-    if "friedland" in key.lower():
-        columns: list = ["Paid Claims", "Reported Claims"]
-        origin: str = "Accident Year"
-        development: str = "Calendar Year"
-        cumulative: bool = True
-        index: None = None
-        if "autoprop" in key.lower():
-            columns: list = [
-                "Reported ALAE",
-                "Paid ALAE",
-                "Reported Claims",
-                "Paid Claims",
-            ]
-        if "auto_salsub" in key.lower():
-            columns: list = [
-                "Reported Salvage and Subrogation",
-                "Received Salvage and Subrogation",
-                "Reported Claims",
-                "Paid Claims",
-            ]
-        if "berq_sher_auto" in key.lower():
-            columns: list = [
-                "Paid Claims",
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Disposal Rate",
-            ]
-        if "gl_insurer" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Disposal Rate",
-                "Paid Claims",
-            ]
-        if "med_mal" in key.lower():
-            columns: list = [
-                "Reported Claims",
-                "Paid Claims",
-                "Case Outstanding",
-                "Open Claim Counts",
-            ]
-        if "qs" in key.lower():
-            columns: list = [
-                "Gross Reported Claims",
-                "Net Reported Claims",
-                "Net to Gross",
-            ]
-        if "auto_case" in key.lower():
-            columns: list = ["Case Outstanding", "Paid Claims"]
-        if "wc_self_insurer" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Paid Claims",
-                "Paid Severities",
-                "Reported Claims",
-                "Reported Severities",
-            ]
-        if "xol" in key.lower():
-            columns: list = [
-                "Gross Reported Claims",
-                "Net Reported Claims",
-                "Ceded Reported Claims",
-            ]
-        if "xyz_case" in key.lower():
-            columns: list = ["Case Outstanding", "Paid Claims"]
-        if "xyz_disp" in key.lower():
-            columns: list = ["Disposal Rate", "Closed Claim Counts", "Paid Claims"]
-        if "xyz_freq_sev" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Reported Claims",
-                "Reported Severities",
-            ]
-        if "auto_freq_sev" in key.lower():
-            columns: list = [
-                "Closed Claim Counts",
-                "Reported Claim Counts",
-                "Reported Claims",
-                "Reported Severity",
-            ]
-            origin: str = "Accident Half-Year"
-            development: str = "Calendar Half-Year"
-        if "uspp" in key.lower():
-            columns: list = [
-                "Reported Claims",
-                "Paid Claims",
-                "Earned Premium"
-            ]
-        if "xyz_auto_bi" in key.lower():
-            columns: list = [
-                "Paid Claims",
-                "Reported Claims",
-                "Earned Premium",
-            ]
+    # Look up the Triangle configuration for this sample from the central
+    # manifest (chainladder/utils/data/_manifest.py). The manifest is the
+    # single source of truth for sample-dataset metadata, replacing the long
+    # per-dataset if/elif chain that previously lived here and duplicated the
+    # column names already present in the tests and the sample-data docs.
+    config: dict = SAMPLES[key.lower()]
+    origin = config["origin"]
+    development = config["development"]
+    index = config["index"]
+    columns = config["columns"]
+    cumulative = config["cumulative"]
+
+    development_format = config.get("development_format", None)
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
@@ -274,12 +125,125 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
         index=index,
         columns=columns,
         cumulative=cumulative,
+        development_format=development_format,
         *args,
         **kwargs,
     )
 
 
+# Human-readable labels for the single-character grain codes a Triangle exposes
+# via ``origin_grain`` / ``development_grain``.
+_GRAIN_LABELS: dict = {
+    "Y": "Annual",
+    "S": "Semiannual",
+    "Q": "Quarter",
+    "M": "Month",
+}
+
+
+def list_samples(include_grain: bool = True) -> DataFrame:
+    """List the sample datasets bundled with the chainladder package.
+
+    The returned table is driven by the sample-dataset manifest
+    (``chainladder/utils/data/_manifest.py``), the same source
+    :func:`load_sample` reads, so it always reflects exactly what is loadable.
+
+    Parameters
+    ----------
+    include_grain: bool
+        If ``True`` (default), load each sample to report its origin and
+        development grain (and the number of origin/development periods). This
+        is the slower path because every Triangle is built. Set to ``False`` to
+        return just the manifest metadata (name, index, columns, cumulative)
+        without loading any data.
+
+    Returns
+    -------
+        pandas.DataFrame indexed by sample name, with columns ``index``,
+        ``columns``, ``cumulative`` and, when ``include_grain`` is ``True``,
+        ``origin_grain``, ``development_grain``, ``origin_periods`` and
+        ``development_periods``.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        import chainladder as cl
+        cl.list_samples()                    # full table, grain included
+        cl.list_samples(include_grain=False) # fast, metadata only
+    """
+    records: list = []
+    for name in sorted(SAMPLES):
+        config: dict = SAMPLES[name]
+        record: dict = {
+            "name": name,
+            "index": config["index"],
+            "columns": config["columns"],
+            "cumulative": config["cumulative"],
+        }
+        if include_grain:
+            triangle = load_sample(name)
+            record["origin_grain"] = _GRAIN_LABELS.get(
+                triangle.origin_grain, triangle.origin_grain
+            )
+            record["development_grain"] = _GRAIN_LABELS.get(
+                triangle.development_grain, triangle.development_grain
+            )
+            record["origin_periods"] = len(triangle.origin)
+            record["development_periods"] = triangle.development.shape[0]
+        records.append(record)
+
+    return pd.DataFrame.from_records(records).set_index("name")
+
+
 def read_pickle(path):
+    """Load an object serialized with ``to_pickle`` (``dill`` format).
+
+    Parameters
+    ----------
+    path : str or path-like
+        Path to the pickle file.
+
+    Returns
+    -------
+    object
+        The deserialized triangle or estimator.
+
+    Examples
+    --------
+    Pickling preserves all fitted parameters, including non-default settings.
+    A ``Development`` configured with ``average='simple'`` and ``n_periods=4``
+    produces identical factors before and after a round-trip through disk, and
+    the restored estimator can still ``transform`` new data.
+
+    .. testsetup::
+
+        import tempfile
+        import os
+
+    .. testcode::
+
+        import chainladder as cl
+
+        tri = cl.load_sample("raa")
+        dev = cl.Development(average="simple", n_periods=4).fit(tri)
+        fd, p = tempfile.mkstemp(suffix=".pkl")
+        os.close(fd)
+        dev.to_pickle(p)
+        restored = cl.read_pickle(p)
+        os.remove(p)
+        print(dev.ldf_.values[0, 0, 0, :].round(4))
+        print(restored.ldf_.values[0, 0, 0, :].round(4))
+        print(restored.transform(tri).ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+        [4.5853 2.0204 1.2448 1.1646 1.1099 1.0433 1.0344 1.018  1.0092]
+
+    """
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
@@ -300,7 +264,7 @@ def read_csv(
     **kwargs,
 ) -> Triangle:
     """
-    Funtion that creates Triangle directly from input. Wrapper for pandas dataframe:
+    Function that creates Triangle directly from input. Wrapper for pandas dataframe:
     https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
 
     Parameters
@@ -340,53 +304,6 @@ def read_csv(
         ensure the most recent origin period is a full period and the oldest
         origin is partial. If full origin periods are present in the data, then
         trailing has no effect.
-
-    Attributes
-    ----------
-    index: Series
-        Represents all available levels of the index dimension.
-    columns: Series
-        Represents all available levels of the value dimension.
-    origin: DatetimeIndex
-        Represents all available levels of the origin dimension.
-    development: Series
-        Represents all available levels of the development dimension.
-    key_labels: list
-        Represents the ``index`` axis labels
-    virtual_columns: Series
-        Represents the subset of columns of the triangle that are virtual.
-    valuation: DatetimeIndex
-        Represents all valuation dates of each cell in the Triangle.
-    origin_grain: str
-        The grain of the origin vector ('Y', 'S', 'Q', 'M')
-    development_grain: str
-        The grain of the development vector ('Y', 'S', 'Q', 'M')
-    shape: tuple
-        The 4D shape of the triangle instance with axes corresponding to (index, columns, origin, development)
-    link_ratio, age_to_age
-        Displays age-to-age ratios for the triangle.
-    valuation_date : date
-        The latest valuation date of the data
-    loc: Triangle
-        pandas-style ``loc`` accessor
-    iloc: Triangle
-        pandas-style ``iloc`` accessor
-    latest_diagonal: Triangle
-        The latest diagonal of the triangle
-    is_cumulative: bool
-        Whether the triangle is cumulative or not
-    is_ultimate: bool
-        Whether the triangle has an ultimate valuation
-    is_full: bool
-        Whether lower half of Triangle has been filled in
-    is_val_tri:
-        Whether the triangle development period is expressed as valuation
-        periods.
-    values: array
-        4D numpy array underlying the Triangle instance
-    T: Triangle
-        Transpose index and columns of object.  Only available when Triangle is
-        convertible to DataFrame.
     """
 
     from chainladder import Triangle
@@ -416,6 +333,34 @@ def read_csv(
 
 
 def read_json(json_str, array_backend=None):
+    """Deserialize JSON produced by ``to_json`` (triangle, estimator, or pipeline).
+
+    Examples
+    --------
+    ``to_json`` serializes an estimator's parameters as a JSON string that
+    can be stored in a database, config file, or REST API. ``read_json``
+    reconstructs the estimator with all parameters intact.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        dev = cl.Development(average="simple", n_periods=4)
+        json_str = dev.to_json()
+        print(json_str)
+        dev2 = cl.read_json(json_str)
+        print(dev2.get_params()["average"])
+        print(dev2.get_params()["n_periods"])
+
+    .. testoutput::
+
+        {"params": {"average": "simple", "drop": null, "drop_above": Infinity, "drop_below": 0.0, "drop_high": null, "drop_low": null, "drop_valuation": null, "fillna": null, "groupby": null, "n_periods": 4, "preserve": 1, "sigma_interpolation": "log-linear"}, "__class__": "Development"}
+        simple
+        4
+
+    """
     from chainladder import Triangle
     from chainladder.workflow import Pipeline
 
@@ -587,7 +532,7 @@ def set_common_backend(objs):
 
 
 def concat(
-    objs: Iterable,
+    objs: list | tuple,
     axis: Union[int, str],
     ignore_index: bool = False,
     sort: bool = False,
@@ -607,10 +552,65 @@ def concat(
         concatenating objects where the concatenation axis does not have
         meaningful indexing information. Note the index values on the other
         axes are still respected in the join.
+    sort: bool
+        If True, sort the result along the desired axis.
 
     Returns
     -------
     Updated triangle
+
+    Examples
+    --------
+    When paid and incurred triangles are constructed separately, ``concat``
+    along ``axis=1`` combines them into one multi-column triangle, giving
+    downstream methods access to both columns at once.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample("clrd").groupby("LOB").sum()
+        wkcomp = clrd.iloc[5:6]
+        paid = wkcomp["CumPaidLoss"]
+        incurred = wkcomp["IncurLoss"]
+        combined = cl.concat([paid, incurred], axis=1)
+        print(list(combined.columns))
+
+    .. testoutput::
+
+        ['CumPaidLoss', 'IncurLoss']
+
+    When two triangles possess a column that the other does not have, their concatenation will fill in the
+    missing values of each sub-triangle with xp.nan.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample('clrd')
+        clrd = clrd.groupby("LOB").sum()
+        t1 = clrd.loc["wkcomp"][["IncurLoss"]].rename("columns", ["A"])
+        t2 = clrd.loc["comauto"][["CumPaidLoss"]].rename("columns", ["B"])
+        result = cl.concat([t1, t2], axis=0)
+        print(result.loc["wkcomp"]["B"])
+
+    .. testoutput::
+
+              12   24   36   48   60   72   84   96   108  120
+        1988  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1989  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1990  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1991  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1992  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1993  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1994  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1995  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1996  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+        1997  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
     """
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
@@ -633,6 +633,9 @@ def concat(
                     obj = copy.deepcopy(obj)
                     obj[col] = xp.nan
                     objs[num] = obj
+            # Make sure columns are in the same order for all objs to ensure proper indexing.
+            if list(objs[num].columns) != all_columns:
+                objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
     mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
@@ -715,10 +718,90 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
 
 def minimum(x1, x2):
+    """Element-wise minimum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.minimum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+        The first triangle operand.
+    x2 : Triangle or scalar
+        The second operand. If a scalar, each element of ``x1`` is compared
+        against that constant value.
+
+    Examples
+    --------
+    When two chainladder runs use different development factor selections,
+    the ultimates may disagree at each origin. ``minimum`` picks the lower
+    ultimate at each origin, producing the low-side scenario.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        print(ult_vol.values[0, 0, -5:, 0].round(0))
+        print(ult_sim.values[0, 0, -5:, 0].round(0))
+        low_side = cl.minimum(ult_vol, ult_sim)
+        print(low_side.values[0, 0, -5:, 0].round(0))
+
+    .. testoutput::
+
+        [19501. 17749. 24019. 16045. 18402.]
+        [19807. 18201. 25475. 17776. 55781.]
+        [19501. 17749. 24019. 16045. 18402.]
+
+    """
     return x1.minimum(x2)
 
 
 def maximum(x1, x2):
+    """Element-wise maximum of two triangles or a triangle and a scalar
+    (delegates to ``Triangle.maximum``).
+
+    Parameters
+    ----------
+    x1 : Triangle
+        The first triangle operand.
+    x2 : Triangle or scalar
+        The second operand. If a scalar, each element of ``x1`` is compared
+        against that constant value.
+
+    Examples
+    --------
+    ``maximum`` picks the higher ultimate at each origin, producing the
+    high-side scenario. This is useful for stress testing or setting a
+    conservative reserve when two methods produce different estimates.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        ult_vol = cl.Chainladder().fit(
+            cl.Development(average="volume").fit_transform(tri)
+        ).ultimate_
+        ult_sim = cl.Chainladder().fit(
+            cl.Development(average="simple").fit_transform(tri)
+        ).ultimate_
+        high_side = cl.maximum(ult_vol, ult_sim)
+        print(high_side.values[0, 0, -5:, 0].round(0))
+
+    .. testoutput::
+
+        [19807. 18201. 25475. 17776. 55781.]
+
+    """
     return x1.maximum(x2)
 
 
@@ -750,6 +833,66 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     design_info_:
         The patsy instructions for generating the design_matrix, X.
 
+    Examples
+    --------
+    If a development-only Poisson GLM produces residuals that vary
+    systematically by accident year, adding ``C(origin)`` to the formula
+    introduces origin-level intercepts and reduces that structure. The
+    expanded model matrix has more columns (one per development period plus one
+    per origin), which ``PatsyFormula`` builds from the same R-style string.
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        genins = cl.load_sample("genins")
+        by_dev = cl.TweedieGLM(design_matrix="C(development)").fit(genins)
+        by_both = cl.TweedieGLM(
+            design_matrix="C(development) + C(origin)"
+        ).fit(genins)
+        print(len(by_dev.coef_))
+        print(len(by_both.coef_))
+        print(by_dev.ldf_.values[0, 0, 0, :].round(4))
+        print(by_both.ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        10
+        19
+        [3.5085 1.7436 1.4379 1.1656 1.0991 1.0832 1.0511 1.0693 1.0135]
+        [3.491  1.7474 1.4574 1.1739 1.1038 1.0863 1.0539 1.0766 1.0177]
+
+    When ``TweedieGLM`` is not flexible enough (for example, when you need a
+    non-Tweedie model or a continuous origin term), build a custom
+    ``DevelopmentML`` pipeline and use ``PatsyFormula`` as the preprocessing
+    step with the same formula syntax.
+
+    .. testcode::
+
+        from sklearn.linear_model import LinearRegression
+        from sklearn.pipeline import Pipeline
+        from chainladder.utils.utility_functions import PatsyFormula
+
+        genins = cl.load_sample("genins")
+        col = genins.columns[0]
+        dev_only = cl.DevelopmentML(
+            Pipeline(
+                [
+                    ("design_matrix", PatsyFormula("C(development)")),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=col,
+            fit_incrementals=False,
+        ).fit(genins)
+        print(dev_only.ldf_.values[0, 0, 0, :].round(4))
+
+    .. testoutput::
+
+        [3.515  1.735  1.3993 1.152  1.0988 1.0926 1.0332 1.0245 0.8507]
+
     """
 
     def __init__(self, formula=None):
@@ -771,15 +914,18 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
         return dmatrix(self.design_info_, X)
 
 
-def model_diagnostics(model, name=None, groupby=None):
+def model_diagnostics(
+        model:Triangle|MethodBase|Pipeline, 
+        name:str|None=None, 
+        groupby:str|list(str)|None=None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
     Parameters
     ----------
-    model:
-        A chainladder IBNR estimator or Pipeline
-    name:
+    model: Triangle|MethodBase|Pipeline
+        A predicted Triangle, chainladder IBNR estimator or Pipeline
+    name: str, optional (default=None)
         An alias to give the model. This will be added to the index of the return
         triangle.
     groupby:
@@ -787,21 +933,35 @@ def model_diagnostics(model, name=None, groupby=None):
 
     Returns
     -------
-    Triangle up select origin vectors, IBNR, ultimate, Latest diagonal, etc.
+    Triangle with relevant figures as columns, including 
+    - ``Latest``: Cumulative value at the latest valuation date, equivalent to ``latest_diagonal``
+    - ``Month/Quarter/Year Incremental``: Actual emergence between the latest valuation and the one prior valuation date
+    - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``); ignored if ``groupby`` is supplied
+    - ``CDF``: Cumulative loss development factor from current age to ultimate (from ``cdf_``); ignored if ``groupby`` is supplied
+    - ``Ultimate``: Projected ultimate loss from the fitted IBNR model (``ultimate_``)
+    - ``IBNR``: Ultimate - Latest
+    - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
+    - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
+
+    Columns from the original Triangle are cross-joined into the index. 
+    ``Measure`` will contain all the columns from the original Triangle. 
     """
-    from chainladder import Pipeline
+    from chainladder import Pipeline, Triangle
 
     if isinstance(model, Pipeline):
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
+    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+        raise ValueError("model does not have ultimate_/ibnr_/ldf_")
+    if isinstance(model, Triangle):
+        obj.X_ = obj
     if groupby is not None:
         obj.X_ = obj.X_.groupby(groupby).sum().cum_to_incr()
         obj.ultimate_ = obj.ultimate_.groupby(groupby).sum()
         if hasattr(obj, "expectation_"):
             obj.expectation_ = obj.expectation_.groupby(groupby).sum()
-    else:
-        obj.X_ = obj.X_.incr_to_cum()
+    obj.X_ = obj.X_.cum_to_incr()
     val = obj.X_.valuation
     latest = obj.X_.sum("development")
     run_off = obj.full_expectation_.iloc[..., :-1].dev_to_val().cum_to_incr()
@@ -843,8 +1003,11 @@ def model_diagnostics(model, name=None, groupby=None):
             ).sum("development")[col]
         else:
             out["Year Incremental"] = 0
-        out["IBNR"] = obj.ibnr_[col]
+        if groupby is None:
+            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
         out["Ultimate"] = obj.ultimate_[col]
+        out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
             out["Run Off " + str(i + 1)] = run_off[col].iloc[..., i]
         if hasattr(obj, "expectation_"):
@@ -900,6 +1063,7 @@ def PTF_formula(
         return "+".join(formula_parts)
     return ""
 
+
 def date_delta_adjustment(date: str) -> str:
     """
     Subtracts the default pandas datetime delta from a date in "YYYY-MM-DD" string format.
@@ -937,10 +1101,6 @@ def date_delta_adjustment(date: str) -> str:
         '2025-10-31 23:59:59.999999'
     """
 
-
-    res: str = str(
-        pd.Timestamp(date) - \
-        pd.Timedelta(1, unit=__dt64_unit__)
-    )
+    res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=__dt64_unit__))
 
     return res

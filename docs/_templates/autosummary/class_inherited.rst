@@ -1,9 +1,9 @@
-{{ fullname | escape | underline }}
+{{ objname | escape | underline }}
 
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
    :members:
-   :undoc-members:
    :inherited-members:
-   :show-inheritance:
+   :undoc-members:
+   :exclude-members: set_fit_request, set_predict_request, set_score_request, set_transform_request, {{ attributes | join(', ') }}

@@ -114,6 +114,29 @@ class BootstrapODPSample(DevelopmentBase):
     .. testoutput::
 
         648.94
+
+    Two further levers control how the residual pool is built. ``n_periods``
+    restricts the internal ``Development`` fit to the most recent origin
+    periods, which changes the Pearson residuals and therefore ``scale_``,
+    while ``hat_adj`` swaps the hat matrix adjustment for the simpler
+    degree-of-freedom adjustment when standardizing residuals before
+    resampling.
+
+    .. testcode::
+
+        short_hist = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, n_periods=3
+        ).fit(raa)
+        dof = cl.BootstrapODPSample(
+            n_sims=100, random_state=42, hat_adj=False
+        ).fit(raa)
+        print(round(float(short_hist.scale_), 2))
+        print(round(float(dof.scale_), 2))
+
+    .. testoutput::
+
+        322.4
+        983.64
     """
 
     def __init__(
@@ -233,12 +256,16 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_residual = xp.concatenate(tuple(resampled_residual), 0).reshape(
             self.n_sims, exp_incr_triangle.shape[0], exp_incr_triangle.shape[1]
         )
-        resampled_residual = resampled_residual
         b = xp.repeat(exp_incr_triangle[None, ...], self.n_sims, 0)
         resampled_triangles = (resampled_residual * xp.sqrt(abs(b)) + b).cumsum(2)
-        resampled_triangles = xp.swapaxes(resampled_triangles[None, ...], 0, 1)
+        resampled_triangles = resampled_triangles[None, ...].swapaxes(0, 1)
         obj = X.copy()
-        obj.kdims = np.arange(self.n_sims)
+        if X.key_labels == ['Total']:
+            obj.kdims = np.arange(self.n_sims)
+            obj.key_labels = ['Simulation_#']
+        else:
+            obj.kdims = np.concat([np.tile(X.kdims,(self.n_sims,1)),np.arange(self.n_sims).reshape(-1,1)],axis=1)
+            obj.key_labels = X.key_labels + ['Simulation_#']
         obj.values = resampled_triangles
         obj._set_slicers()
         return obj, scale_phi

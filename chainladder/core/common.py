@@ -3,10 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
 from chainladder import options
+from chainladder import _DEPRECATED_BACKENDS, _deprecated_backend_message
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
@@ -126,7 +129,11 @@ class Common:
                 + "' object has no attribute 'full_expectation_'"
             )
 
-        return _get_full_expectation(self.cdf_, self.ultimate_, self.X_.is_cumulative)
+        if hasattr(self, "X_"):
+            X = self.X_
+        else:
+            X = self
+        return _get_full_expectation(self.cdf_, self.ultimate_, X.is_cumulative)
 
     @property
     def full_triangle_(self):
@@ -144,10 +151,45 @@ class Common:
         return _get_full_triangle(X, self.ultimate_, X.is_cumulative)
 
     def pipe(self, func, *args, **kwargs):
+        """Apply ``func(self, *args, **kwargs)``.
+
+        Parameters
+        ----------
+        func : callable
+            Function to apply to the Triangle.
+        *args
+            Positional arguments passed to ``func``.
+        **kwargs
+            Keyword arguments passed to ``func``.
+
+        Returns
+        -------
+        object
+            The return value of ``func``.
+
+        Examples
+        --------
+        Keep development periods from 48 onward:
+
+        >>> import chainladder as cl
+        >>> raa = cl.load_sample('raa')
+        >>> raa.pipe(lambda tri: tri.loc[..., 48:])
+                  48       60       72       84       96       108      120
+        1981  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
+        1982  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0      NaN
+        1983  16141.0  18735.0  22214.0  22863.0  23466.0      NaN      NaN
+        1984  21266.0  23425.0  26083.0  27067.0      NaN      NaN      NaN
+        1985  22169.0  25955.0  26180.0      NaN      NaN      NaN      NaN
+        1986  12935.0  15852.0      NaN      NaN      NaN      NaN      NaN
+        1987  12314.0      NaN      NaN      NaN      NaN      NaN      NaN
+        1988      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        1989      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        1990      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        """
         return func(self, *args, **kwargs)
 
     def set_backend(
-        self, backend: str, inplace: bool = False, deep: bool = False, **kwargs
+        self, backend: str, inplace: bool = False, deep: bool = False, _warn: bool = True, **kwargs
     ):
         """
         Converts triangle array_backend.
@@ -159,11 +201,27 @@ class Common:
         inplace : bool
             Whether to mutate the existing Triangle instance or return a new
             one.
+        deep : bool
+            Whether to also convert the backend of nested Triangle-like
+            attributes (e.g. fitted estimator components).
+        _warn : bool
+            Internal flag controlling whether a deprecation warning is emitted.
+            Set to ``False`` on internal recursive calls so the warning fires
+            only once, at the user's call site. Not part of the public API.
 
         Returns
         -------
             Triangle with updated array_backend
         """
+        # Warn once, at the public entry point, so stacklevel=2 points at the
+        # user's call site rather than an internal recursive call. The _warn
+        # flag suppresses duplicate warnings from internal recursion below.
+        if _warn and backend in _DEPRECATED_BACKENDS:
+            warnings.warn(
+                _deprecated_backend_message(backend),
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if hasattr(self, "array_backend"):
             old_backend: str = self.array_backend
         else:
@@ -205,7 +263,7 @@ class Common:
                 if deep:
                     for k, v in vars(self).items():
                         if isinstance(v, Common):
-                            v.set_backend(backend, inplace=True, deep=True)
+                            v.set_backend(backend, inplace=True, deep=True, _warn=False)
                 if hasattr(self, "array_backend"):
                     self.array_backend = backend
             else:
@@ -213,7 +271,7 @@ class Common:
             return self
         else:
             obj = self.copy()
-            return obj.set_backend(backend=backend, inplace=True, deep=deep, **kwargs)
+            return obj.set_backend(backend=backend, inplace=True, deep=deep, _warn=False, **kwargs)
 
     @staticmethod
     def _validate_assumption(
@@ -222,9 +280,15 @@ class Common:
             axis: Literal[0, 1, 2, 3]
     ) -> np.ndarray:
         """
+        Used by development estimators to turn user-supplied assumptions into a uniform NumPy array
+        shaped to broadcast over the triangle.
 
         Parameters
         ----------
+        value: str | int | float | list | tuple | set | np.ndarray | dict | Callable
+            The user-supplied assumption.
+        axis: Literal[0, 1, 2, 3]
+            The axis to broadcast over.
 
         """
         if type(value) in (int, float, str):

@@ -53,7 +53,6 @@ class BornhuetterFerguson(Benktander):
 
         raa = cl.load_sample("raa")
         premium = raa.latest_diagonal * 0 + 40_000  # zero out and add 40,000 to each origin
-
         ibnr = cl.BornhuetterFerguson(apriori=0.7).fit(X=raa, sample_weight=premium).ibnr_
         print(ibnr)
 
@@ -77,7 +76,6 @@ class BornhuetterFerguson(Benktander):
 
         raa = cl.load_sample("raa")
         premium = raa.latest_diagonal * 0 + 40_000 * 0.7  # premium is modified by 70%
-
         ibnr = cl.BornhuetterFerguson().fit(X=raa, sample_weight=premium).ibnr_
         print(ibnr)
 
@@ -123,13 +121,15 @@ class BornhuetterFerguson(Benktander):
         Fit returns the estimator itself, with ``ultimate_`` populated.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
 
             tr = cl.load_sample('ukmotor')
             apriori = cl.Chainladder().fit(tr).ultimate_ * 0 + 14000
-            print(cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori))
+            model = cl.BornhuetterFerguson(apriori=1.0).fit(tr, sample_weight=apriori)
+            print(model)
 
         .. testoutput::
 
@@ -160,6 +160,7 @@ class BornhuetterFerguson(Benktander):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
@@ -171,10 +172,10 @@ class BornhuetterFerguson(Benktander):
             model = cl.BornhuetterFerguson(apriori=1.0).fit(
                 tr_prior, sample_weight=apriori_prior
             )
+            ultimate = model.predict(tr, sample_weight=apriori).ultimate_
+            print(ultimate)
 
-            print(model.predict(tr, sample_weight=apriori).ultimate_)
-
-        .. testoutput
+        .. testoutput::
 
                           2261
             2007  12690.000000

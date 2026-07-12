@@ -49,9 +49,20 @@ def linkcode_resolve(domain: str, info: dict) -> str | None:
     mod: ModuleType = importlib.import_module(info["module"])
 
     obj: ModuleType = mod
-    # Extract the part.
+    # Extract the part. Some documented members (e.g. instance attributes pulled
+    # in via :inherited-members:) are not accessible on the object itself; skip
+    # linking those rather than crashing the build.
     for part in info["fullname"].split("."):
-        obj: type = getattr(obj, part)
+        try:
+            obj: type = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    # Resolve properties to their underlying getter function.
+    if isinstance(obj, property):
+        obj = obj.fget
+        if obj is None:
+            return None
 
     # Resolve properties to their underlying getter function.
     if isinstance(obj, property):

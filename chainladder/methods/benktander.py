@@ -52,7 +52,6 @@ class Benktander(MethodBase):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-
         ibnr = cl.Benktander().fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
         print(ibnr)
 
@@ -76,7 +75,6 @@ class Benktander(MethodBase):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-
         bk_ibnr = (
             cl.Benktander(n_iters=1)
             .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
@@ -109,7 +107,6 @@ class Benktander(MethodBase):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-
         bk_ibnr = cl.Benktander(n_iters=1000).fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
         cl_ibnr = cl.Chainladder().fit(xyz["Paid"]).ibnr_
         print(bk_ibnr - cl_ibnr)
@@ -165,7 +162,6 @@ class Benktander(MethodBase):
         .. testcode::
 
             xyz = cl.load_sample("xyz")
-
             ultimate = (
                 cl.Benktander(apriori=1, n_iters=2)
                 .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
@@ -218,6 +214,7 @@ class Benktander(MethodBase):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
@@ -229,8 +226,8 @@ class Benktander(MethodBase):
             model = cl.Benktander(apriori=1.0, n_iters=2).fit(
                 tr_prior, sample_weight=apriori_prior
             )
-
-            print(model.predict(tr, sample_weight=apriori).ultimate_)
+            ultimate = model.predict(tr, sample_weight=apriori).ultimate_
+            print(ultimate)
 
         .. testoutput::
 
@@ -243,6 +240,8 @@ class Benktander(MethodBase):
             2012  15914.716737
             2013  17193.715555
         """
+        if sample_weight is None:
+            raise ValueError("sample_weight is required.")
         X_new = super().predict(X, sample_weight)
         X_new.expectation_ = self._get_benktander_aprioris(X, sample_weight)
         X_new.ultimate_ = self._get_ultimate(X_new, X_new.expectation_)

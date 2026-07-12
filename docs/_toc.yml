@@ -39,13 +39,13 @@ parts:
   - chapters:
     - file: gallery/index.md
   - chapters:
-    - file: library/api.rst    
+    - file: library/api.md    
   - chapters:
     - file: library/about.md
       sections:
       - file: library/usage.md
       - file: library/references.md
-      - file: library/sample_data.md
+      - file: library/sample_data.ipynb
       - file: library/glossary.md
       - file: library/questions_issues.md
       - file: library/contributing.md
