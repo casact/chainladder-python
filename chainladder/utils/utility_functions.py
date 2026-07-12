@@ -258,6 +258,12 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
                 "Paid Claims",
                 "Earned Premium"
             ]
+        if "xyz_auto_bi" in key.lower():
+            columns: list = [
+                "Paid Claims",
+                "Reported Claims",
+                "Earned Premium",
+            ]
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
