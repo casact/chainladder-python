@@ -64,12 +64,6 @@ def linkcode_resolve(domain: str, info: dict) -> str | None:
         if obj is None:
             return None
 
-    # Resolve properties to their underlying getter function.
-    if isinstance(obj, property):
-        obj = obj.fget
-        if obj is None:
-            return None
-
     # Unwrap any decorators.
     obj: type = inspect.unwrap(obj)
 
