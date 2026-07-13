@@ -508,6 +508,7 @@ from chainladder.workflow import (  # noqa (API import)
     GridSearch,
     Pipeline,
     VotingChainladder,
+    TriangleSelector,
 )
 
 __version__ = version("chainladder")
