@@ -49,6 +49,18 @@ def test_predict_and_weights(estimators,atol):
     )   
     #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
     if estimators in [cl.CapeCod,cl.BornhuetterFerguson,cl.ExpectedLoss,cl.Benktander]:
+        assert np.allclose(
+            est.expectation_.values.swapaxes(0,1),
+            cl.model_diagnostics(est)['Apriori'].values,
+            atol=atol,
+            equal_nan=True
+        )
+        assert np.allclose(
+            pred.expectation_.values.swapaxes(0,1),
+            cl.model_diagnostics(pred)['Apriori'].values,
+            atol=atol,
+            equal_nan=True
+        )   
         with pytest.raises(ValueError):
             estimators().fit(raa_1989)
         with pytest.raises(ValueError):
