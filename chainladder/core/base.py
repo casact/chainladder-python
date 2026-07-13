@@ -27,12 +27,15 @@ from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
+from chainladder.adjustments.disposal import DisposalMixin
+
 from typing import (
     Optional,
     TYPE_CHECKING
 )
 
 if TYPE_CHECKING:
+    from chainladder import Triangle
     from pandas import (
         DataFrame,
         Series
@@ -50,7 +53,8 @@ class TriangleBase(
     TriangleDunders,
     TrianglePandas,
     Common,
-    ABC
+    ABC,
+    DisposalMixin
 ):
     """This class handles the initialization of a triangle"""
 
@@ -543,7 +547,7 @@ class TriangleBase(
                 "Array backend is invalid or not properly set. Supported backends are: " + ', '.join([*modules])
             ) from e
 
-    def _auto_sparse(self) -> None:
+    def _auto_sparse(self) -> Triangle:
         """
         Auto sparsifies at 30Mb or more and 20% density or less.
         """

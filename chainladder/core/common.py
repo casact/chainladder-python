@@ -174,6 +174,17 @@ class Common:
         >>> import chainladder as cl
         >>> raa = cl.load_sample('raa')
         >>> raa.pipe(lambda tri: tri.loc[..., 48:])
+                  48       60       72       84       96       108      120
+        1981  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
+        1982  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0      NaN
+        1983  16141.0  18735.0  22214.0  22863.0  23466.0      NaN      NaN
+        1984  21266.0  23425.0  26083.0  27067.0      NaN      NaN      NaN
+        1985  22169.0  25955.0  26180.0      NaN      NaN      NaN      NaN
+        1986  12935.0  15852.0      NaN      NaN      NaN      NaN      NaN
+        1987  12314.0      NaN      NaN      NaN      NaN      NaN      NaN
+        1988      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        1989      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+        1990      NaN      NaN      NaN      NaN      NaN      NaN      NaN
         """
         return func(self, *args, **kwargs)
 
@@ -269,9 +280,15 @@ class Common:
             axis: Literal[0, 1, 2, 3]
     ) -> np.ndarray:
         """
+        Used by development estimators to turn user-supplied assumptions into a uniform NumPy array
+        shaped to broadcast over the triangle.
 
         Parameters
         ----------
+        value: str | int | float | list | tuple | set | np.ndarray | dict | Callable
+            The user-supplied assumption.
+        axis: Literal[0, 1, 2, 3]
+            The axis to broadcast over.
 
         """
         if type(value) in (int, float, str):

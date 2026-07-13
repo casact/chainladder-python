@@ -13,6 +13,7 @@ from chainladder.utils.utility_functions import (
 
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
+from chainladder import _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db
@@ -105,10 +106,8 @@ class TriangleDunders:
                     y = y.groupby(list(common))
             return x, y
 
-        if common != x_labels and common != y_labels:
+        else:
             raise ValueError('Index broadcasting is ambiguous between ' + str(x_labels) + ' and ' + str(y_labels))
-
-        return x, y
 
     def _prep_columns(self, x, y):
         x_backend, y_backend = x.array_backend, y.array_backend
@@ -247,6 +246,7 @@ class TriangleDunders:
     def _arithmetic_mapper(self, obj, other, f):
         """ Use Dask if available, otherwise basic list comprehension """
         if db and obj.obj.array_backend == 'sparse':
+            _warn_dask_parallel_deprecated()
             bag = db.from_sequence(self._get_key_union(obj, other))
             bag = bag.map(f, self, obj, other)
             c = bag.compute(scheduler='threads')

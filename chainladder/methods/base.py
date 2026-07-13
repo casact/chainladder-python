@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import warnings
@@ -10,6 +12,10 @@ from chainladder.development import Development
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
 
 class MethodBase(BaseEstimator, EstimatorIO, Common):
 
@@ -138,7 +144,14 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             process_var = None
         return process_var
 
-    def validate_weight(self, X, sample_weight):
+    @staticmethod
+    def validate_weight(
+            X: Triangle,
+            sample_weight: Triangle
+    ) -> None:
+        '''
+        Checks that the a aprior has valid dimensions
+        '''
         if (
             sample_weight
             and X.shape[:-1] != sample_weight.shape[:-1]

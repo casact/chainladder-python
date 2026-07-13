@@ -258,7 +258,7 @@ class BootstrapODPSample(DevelopmentBase):
         )
         b = xp.repeat(exp_incr_triangle[None, ...], self.n_sims, 0)
         resampled_triangles = (resampled_residual * xp.sqrt(abs(b)) + b).cumsum(2)
-        resampled_triangles = xp.swapaxes(resampled_triangles[None, ...], 0, 1)
+        resampled_triangles = resampled_triangles[None, ...].swapaxes(0, 1)
         obj = X.copy()
         if X.key_labels == ['Total']:
             obj.kdims = np.arange(self.n_sims)
