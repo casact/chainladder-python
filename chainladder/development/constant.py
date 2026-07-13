@@ -4,8 +4,6 @@
 from chainladder.development.base import DevelopmentBase
 import numpy as np
 import pandas as pd
-import numpy as np
-import warnings
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -114,47 +112,20 @@ class DevelopmentConstant(DevelopmentBase):
         self.callable_axis = callable_axis
         self.groupby = groupby
 
-    def _prepare_cdf_patterns(self, patterns, n_dev_periods):
-
-        patterns = dict(patterns)
-
-        sorted_keys = sorted(patterns.keys())
-        pattern_values = np.array([float(patterns[k]) for k in sorted_keys])
-
-        # build the cdf patterns, up to the needed periods
-        if self.style == "ldf":
-            cdf_patterns = dict(
-                zip(sorted_keys, np.cumprod(pattern_values[::-1])[::-1])
-            )
-        else:
-            cdf_patterns = {int(k): float(patterns[k]) for k in sorted_keys}
-
-        # seperate the tail from the patterns
-        if len(cdf_patterns) > n_dev_periods:
-            tail_cdf = float(cdf_patterns[sorted_keys[n_dev_periods]])
-
-            for k in sorted_keys[:n_dev_periods]:
-                cdf_patterns[int(k)] = cdf_patterns[int(k)] / tail_cdf
-
-            return cdf_patterns, tail_cdf
-
-        else:
-            return cdf_patterns, 1.0
-
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
         
         Parameters
         ----------
         X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
+            Set of LDFs to which the munich adjustment will be applied.
         y : Ignored
         sample_weight : Ignored
         
         Returns
         -------
         self : object
-            Returns the instance itself.
+            Returns the instance itself.
         """
         from chainladder import options
 
@@ -203,7 +174,6 @@ class DevelopmentConstant(DevelopmentBase):
                 obj._set_slicers()
 
         if callable(self.patterns):
-            # on index
             if self.callable_axis == 0:
                 ldf = obj.index.apply(self.patterns, axis=1)
                 ldf = (
@@ -236,7 +206,6 @@ class DevelopmentConstant(DevelopmentBase):
         self.ldf_.is_pattern = True
         self.ldf_.is_cumulative = False
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
-
         return self
 
     def transform(self, X):
