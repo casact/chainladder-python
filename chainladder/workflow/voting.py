@@ -1,18 +1,31 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 from abc import abstractmethod
 
 import numpy as np
 from chainladder.methods.base import MethodBase
 from joblib import Parallel, delayed
-from sklearn.base import clone
+from sklearn.base import (
+    BaseEstimator,
+    clone,
+    TransformerMixin
+)
 from sklearn.ensemble._base import _fit_single_estimator, _BaseHeterogeneousEnsemble
 from sklearn.ensemble._voting import _BaseVoting
 from sklearn.utils import Bunch
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
+from chainladder.core.io import EstimatorIO
+
 from ..core.base import is_chainladder
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
@@ -404,11 +417,91 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
                     f" and {X.shape[1]} for X."
                 )
             weights = self.weights_
+        
+        ultimates = [est.predict(X, sample_weight).ultimate_ for est in self.estimators_]
 
+        shape_check = list(set([ult.shape for ult in ultimates]))
+        if len(shape_check) > 1:
+            raise ValueError(
+                "Estimators returning ultimate_ of different shapes,"
+                "likely due to a mis-specified TriangleSelector transformer in the pipeline"
+            )
+        #weights are broadcasted to the shape of X. However ultimate_ does not always take the shape of X
+        #use shape_check to redim weights 
         ultimate = sum(
             [
-                est.predict(X, sample_weight).ultimate_ * weights[..., i, :]
-                for i, est in enumerate(self.estimators_)
+                ultimates[i] * weights[...,:shape_check[0][1], :, i, :]
+                for i, _ in enumerate(ultimates)
             ]
-        ) / weights.sum(axis=-2)
+        ) / weights[...,:shape_check[0][1], :, :, :].sum(axis=-2)
         return ultimate
+
+class TriangleSelector(
+    BaseEstimator,
+    TransformerMixin,
+    EstimatorIO,
+):
+    """
+    A transformer to assist with creating VotingChainladder workflows that weights between Incured/Paid or Reported/Closed.
+
+    .. versionadded:: 0.10.0
+
+    Parameters
+    ----------
+    col: str
+        which `column` to perform the subsequent estiamtion on
+
+    Examples
+    --------
+    Actuaries commonly uses both incurred and paid losses, or both reported and closed counts for estimating ultimate loss or ultimate count. We can use this helper class to create a singular VotingChainladder pipeline that weighs between incurred/paid methods, or reported/closed methods.
+    
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        clrd = cl.load_sample('clrd').groupby('LOB').sum().loc['othliab']
+        pipe_p = cl.Pipeline(
+            steps=[
+                ('tri_sel', cl.TriangleSelector('CumPaidLoss')),
+                ('dev', cl.Development()),
+                ('model', cl.Chainladder())
+            ]
+        )
+        pipe_i = cl.Pipeline(
+            steps=[
+                ('tri_sel', cl.TriangleSelector('IncurLoss')),
+                ('dev', cl.Development()),
+                ('model', cl.Chainladder())
+            ]
+        )
+
+        estimators = [('incurred', pipe_i), ('paid', pipe_p)]
+        weights = np.array([[0.5, 0.5]] * 4 + [[0.75, 0.25]] * 3 + [[1, 0]] * 3)
+        vot = cl.VotingChainladder(estimators=estimators, weights=weights)
+        vot.fit(clrd)
+        print(vot.ultimate_)
+
+    .. testoutput::
+
+                    2261
+        1988  323181.000000
+        1989  361191.317646
+        1990  384630.467254
+        1991  468742.807511
+        1992  483699.548213
+        1993  557869.162336
+        1994  625042.216134
+        1995  599845.906651
+        1996  672721.951809
+        1997  664061.404455
+    """
+    def __init__(self, col:str):
+        self.col = col
+
+    def fit(self, X:Triangle, y:None=None):
+        return self
+
+    def transform(self, X:Triangle):
+        return X[[self.col]]
