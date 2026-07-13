@@ -216,6 +216,13 @@ SAMPLES: dict = {
         "columns": ["Case Outstanding", "Paid Claims"],
         "cumulative": True,
     },
+    "friedland_uspp": {
+        "origin": "Accident Year",
+        "development": "Calendar Year",
+        "index": ["Scenario"],
+        "columns": ["Reported Claims", "Paid Claims", "Earned Premium"],
+        "cumulative": True,
+    },
     "friedland_uspp_auto_increasing_case": {
         "origin": "Accident Year",
         "development": "Calendar Year",
