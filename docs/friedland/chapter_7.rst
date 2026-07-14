@@ -575,6 +575,18 @@ Exhibit II Sheet 4 p113
     2007           19867.0               16247.0           46209.0                 36114.0             66076.0
     2008           15223.0               28898.0           56363.0                 44121.0             71586.0
 
+Persisting the Selected Estimators
+##################################
+
+The selected reported and paid development estimators are reused in later chapters, such as the Bornhuetter-Ferguson technique in Chapter 9. Rather than refitting them, we persist the fitted estimators with ``to_pickle`` so they can be recalled directly.
+
+.. doctest::
+
+    >>> import os
+    >>> data_dir = os.path.join(os.path.dirname(cl.__file__), "utils", "data")
+    >>> reported_devs["Selected"].to_pickle(os.path.join(data_dir, "friedland_ch7_xyz_reported.pkl"))
+    >>> paid_devs["Selected"].to_pickle(os.path.join(data_dir, "friedland_ch7_xyz_paid.pkl"))
+
 Exhibit III Sheet 1 p114
 ##########################
 
