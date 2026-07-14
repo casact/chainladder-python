@@ -6,24 +6,12 @@
 
 Release Date: TBD
 
-**Highlights**
-* **Pandas 3 and Python 3.14 support** — datetime precision now follows the installed pandas default, string-dtype comparisons, removal of `DataFrame.groupby(..., axis=1)`, and cleanup of dead pandas 1.x code ([#807](https://github.com/casact/chainladder-python/pull/807), [#816](https://github.com/casact/chainladder-python/pull/816), [#817](https://github.com/casact/chainladder-python/pull/817), [#818](https://github.com/casact/chainladder-python/pull/818), [#819](https://github.com/casact/chainladder-python/pull/819), [#820](https://github.com/casact/chainladder-python/pull/820)).
-* **`numpy>=2.0` is now the minimum supported version** ([#899](https://github.com/casact/chainladder-python/pull/899)); `numba` is no longer a direct dependency ([#898](https://github.com/casact/chainladder-python/pull/898)).
-* **Backend deprecations** — the `dask` array backend ([#937](https://github.com/casact/chainladder-python/pull/937)) and dask parallel-compute (bag) paths ([#1008](https://github.com/casact/chainladder-python/pull/1008)), and the `cupy` array backend ([#881](https://github.com/casact/chainladder-python/pull/881)), are deprecated. The `option` parameter of `cl.options.get_option`/`set_option`/`reset_option` is deprecated in favor of `pat`.
-* **New public `TriangleWeight` utility** for `latest_n` and drop-based weighting outside the `Development` estimator ([#941](https://github.com/casact/chainladder-python/pull/941)).
-* **New `DisposalRate` adjustment method** ([#1022](https://github.com/casact/chainladder-python/pull/1022)).
-* **`MackChainladder` multi-triangle (4D) support** ([#873](https://github.com/casact/chainladder-python/pull/873)) plus reconciliation to the Mack papers ([#1096](https://github.com/casact/chainladder-python/pull/1096)); `BootstrapODPSample` multi-index support ([#917](https://github.com/casact/chainladder-python/pull/917)).
-* **New `Development` averaging** — geometric averaging type ([#811](https://github.com/casact/chainladder-python/pull/811)) — and a new `Triangle.xs` method ([#763](https://github.com/casact/chainladder-python/pull/763)).
-* **New `Triangle.empty` attribute** for pandas consistency ([#901](https://github.com/casact/chainladder-python/pull/901)) and a new `cl.options.describe_option` helper ([#877](https://github.com/casact/chainladder-python/pull/877)).
-* **New sample datasets** — `clrd2025`, additional Friedland exhibits, and a centralized sample-dataset manifest surfaced through `list_samples` ([#771](https://github.com/casact/chainladder-python/pull/771), [#787](https://github.com/casact/chainladder-python/pull/787), [#837](https://github.com/casact/chainladder-python/pull/837), [#886](https://github.com/casact/chainladder-python/pull/886), [#1116](https://github.com/casact/chainladder-python/pull/1116)).
-* **Type annotations and tooling** — extensive pandas annotations, an explicit public API surface, a pyright type-completeness workflow, and a new `ARCHITECTURE.md` ([#912](https://github.com/casact/chainladder-python/pull/912), [#1035](https://github.com/casact/chainladder-python/pull/1035), [#1042](https://github.com/casact/chainladder-python/pull/1042), [#1065](https://github.com/casact/chainladder-python/pull/1065), [#1070](https://github.com/casact/chainladder-python/pull/1070)).
-* **Docs and tests** — large expansion of doctest examples and new unit-test suites across slicing, dunders/arithmetic, pandas compatibility, base, and IO.
-
 **What's Changed**
 
-*A curated summary is below. For the complete, unedited list of every merged pull request (including internal integration-branch and CI churn), see the Full Changelog link at the bottom.*
+*Changes are grouped into the standard categories below. See the Full Changelog link for the complete, unedited list of merged pull requests.*
 
 **Enhancements**
+* Add support for pandas 3 and Python 3.14 by @genedan in [#807](https://github.com/casact/chainladder-python/pull/807), [#816](https://github.com/casact/chainladder-python/pull/816), [#817](https://github.com/casact/chainladder-python/pull/817), [#818](https://github.com/casact/chainladder-python/pull/818), [#819](https://github.com/casact/chainladder-python/pull/819), [#820](https://github.com/casact/chainladder-python/pull/820)
 * Add geometric averaging type to the `Development` estimator by @kennethshsu in [#811](https://github.com/casact/chainladder-python/pull/811)
 * Add `TriangleWeight` utility class as a public API by @henrydingliu in [#941](https://github.com/casact/chainladder-python/pull/941)
 * Add `DisposalRate` method by @henrydingliu in [#1022](https://github.com/casact/chainladder-python/pull/1022)
@@ -34,22 +22,14 @@ Release Date: TBD
 * Implement `cl.options.describe_option` by @genedan in [#877](https://github.com/casact/chainladder-python/pull/877)
 * Allow `DevelopmentConstant` to be callable on columns by @henrydingliu in [#796](https://github.com/casact/chainladder-python/pull/796)
 * Return a Python `bool` from `is_ultimate` by @salexanian in [#793](https://github.com/casact/chainladder-python/pull/793)
-
-**Pandas 3 / Python 3.14 support**
-* Replace datetime constants with pandas default datetime precision by @genedan in [#816](https://github.com/casact/chainladder-python/pull/816)
-* Replace object-type comparisons with string comparisons for string dtypes by @genedan in [#819](https://github.com/casact/chainladder-python/pull/819)
-* Replace `DataFrame.groupby(..., axis=1)` with a double transpose by @genedan in [#818](https://github.com/casact/chainladder-python/pull/818)
-* Wrap raw HTML in `StringIO` by @genedan in [#817](https://github.com/casact/chainladder-python/pull/817)
-* pandas 3 / Python 3.14 support by @genedan in [#820](https://github.com/casact/chainladder-python/pull/820)
-* Clean up dead pandas 1.x code by @genedan in [#807](https://github.com/casact/chainladder-python/pull/807)
-
-**API Changes & Deprecations**
-* Deprecate the `dask` array backend by @priyam0k in [#937](https://github.com/casact/chainladder-python/pull/937) and the dask parallel-compute (bag) paths in [#1008](https://github.com/casact/chainladder-python/pull/1008)
-* Deprecate the `cupy` array backend by @priyam0k in [#881](https://github.com/casact/chainladder-python/pull/881)
-* Make API exports explicit by @priyam0k in [#912](https://github.com/casact/chainladder-python/pull/912)
-* Remove deprecated `broadcast_axis` by @kennethshsu in [#991](https://github.com/casact/chainladder-python/pull/991)
-* Set minimum numpy version to 2.0 by @SaguaroDev in [#899](https://github.com/casact/chainladder-python/pull/899)
-* Remove numba as a direct dependency by @SaguaroDev in [#898](https://github.com/casact/chainladder-python/pull/898)
+* Add the `clrd2025` dataset and centralize sample metadata in a manifest surfaced via `list_samples` by @SaguaroDev in [#771](https://github.com/casact/chainladder-python/pull/771), [#886](https://github.com/casact/chainladder-python/pull/886)
+* Add Friedland Exhibit III samples and earned premium by @salexanian in [#787](https://github.com/casact/chainladder-python/pull/787)
+* Add Friedland Chapter 6–7 exhibits by @henrydingliu in [#837](https://github.com/casact/chainladder-python/pull/837)
+* Add the merged Friedland USPP sample dataset by @salexanian in [#1116](https://github.com/casact/chainladder-python/pull/1116)
+* Add Friedland auto BI, GL insurer, GL self-insurer, and US industry auto premium datasets by @kennethshsu in [#870](https://github.com/casact/chainladder-python/pull/870), [#905](https://github.com/casact/chainladder-python/pull/905), [#921](https://github.com/casact/chainladder-python/pull/921), [#904](https://github.com/casact/chainladder-python/pull/904)
+* Add tests for utilities, slicing, dunders/arithmetic, pandas, base, IO, `TriangleDisplay`, and common behavior by @genedan in [#831](https://github.com/casact/chainladder-python/pull/831), [#946](https://github.com/casact/chainladder-python/pull/946), [#950](https://github.com/casact/chainladder-python/pull/950), [#948](https://github.com/casact/chainladder-python/pull/948), [#1038](https://github.com/casact/chainladder-python/pull/1038), [#1046](https://github.com/casact/chainladder-python/pull/1046), [#1002](https://github.com/casact/chainladder-python/pull/1002), [#936](https://github.com/casact/chainladder-python/pull/936), [#1083](https://github.com/casact/chainladder-python/pull/1083), [#1033](https://github.com/casact/chainladder-python/pull/1033), [#825](https://github.com/casact/chainladder-python/pull/825), [#1082](https://github.com/casact/chainladder-python/pull/1082)
+* Replace stale xfails with `pytest.raises` by @EKtheSage in [#977](https://github.com/casact/chainladder-python/pull/977), [#987](https://github.com/casact/chainladder-python/pull/987)
+* Add coverage and various doctest fixes by @henrydingliu in [#1105](https://github.com/casact/chainladder-python/pull/1105), [#1099](https://github.com/casact/chainladder-python/pull/1099), [#1101](https://github.com/casact/chainladder-python/pull/1101)
 
 **Bug Fixes**
 * Fix `sigma_` formula by @henrydingliu in [#965](https://github.com/casact/chainladder-python/pull/965)
@@ -61,14 +41,12 @@ Release Date: TBD
 * Various Mack fixes by @henrydingliu in [#1097](https://github.com/casact/chainladder-python/pull/1097)
 * Various Friedland data fixes by @henrydingliu in [#927](https://github.com/casact/chainladder-python/pull/927), [#967](https://github.com/casact/chainladder-python/pull/967)
 
-**Sample Data**
-* Add the `clrd2025` dataset and centralize sample metadata in a manifest surfaced via `list_samples` by @SaguaroDev in [#771](https://github.com/casact/chainladder-python/pull/771), [#886](https://github.com/casact/chainladder-python/pull/886)
-* Add Friedland Exhibit III samples and earned premium by @salexanian in [#787](https://github.com/casact/chainladder-python/pull/787)
-* Add Friedland Chapter 6–7 exhibits by @henrydingliu in [#837](https://github.com/casact/chainladder-python/pull/837)
-* Add the merged Friedland USPP sample dataset by @salexanian in [#1116](https://github.com/casact/chainladder-python/pull/1116)
-* Add Friedland auto BI, GL insurer, GL self-insurer, and US industry auto premium datasets by @kennethshsu in [#870](https://github.com/casact/chainladder-python/pull/870), [#905](https://github.com/casact/chainladder-python/pull/905), [#921](https://github.com/casact/chainladder-python/pull/921), [#904](https://github.com/casact/chainladder-python/pull/904)
+**Deprecations & Removals**
+* Deprecate the `dask` array backend by @priyam0k in [#937](https://github.com/casact/chainladder-python/pull/937) and the dask parallel-compute (bag) paths in [#1008](https://github.com/casact/chainladder-python/pull/1008)
+* Deprecate the `cupy` array backend by @priyam0k in [#881](https://github.com/casact/chainladder-python/pull/881)
+* Remove deprecated `broadcast_axis` by @kennethshsu in [#991](https://github.com/casact/chainladder-python/pull/991)
 
-**Documentation**
+**Maintenance**
 * Add doctest examples across the development, adjustment, tail, ClarkLDF, workflow, and utility estimators by @EKtheSage in [#799](https://github.com/casact/chainladder-python/pull/799), [#800](https://github.com/casact/chainladder-python/pull/800), [#801](https://github.com/casact/chainladder-python/pull/801), [#802](https://github.com/casact/chainladder-python/pull/802), [#803](https://github.com/casact/chainladder-python/pull/803), [#804](https://github.com/casact/chainladder-python/pull/804)
 * Add doctest examples for `BootstrapODPSample` and the correlation classes by @priyam0k in [#836](https://github.com/casact/chainladder-python/pull/836), [#844](https://github.com/casact/chainladder-python/pull/844)
 * Improve `Development` and `DevelopmentConstant` docstrings and examples by @kennethshsu in [#834](https://github.com/casact/chainladder-python/pull/834), [#993](https://github.com/casact/chainladder-python/pull/993)
@@ -77,22 +55,18 @@ Release Date: TBD
 * Add Semiannual (S) grain documentation by @SaguaroDev in [#814](https://github.com/casact/chainladder-python/pull/814)
 * Add `ARCHITECTURE.md` by @genedan in [#1070](https://github.com/casact/chainladder-python/pull/1070)
 * Various docstring fixes by @henrydingliu in [#1020](https://github.com/casact/chainladder-python/pull/1020)
-
-**Typing & Refactoring**
 * Add pandas type annotations by @genedan in [#1035](https://github.com/casact/chainladder-python/pull/1035), [#1065](https://github.com/casact/chainladder-python/pull/1065)
 * Add a pyright type-completeness workflow by @genedan in [#1042](https://github.com/casact/chainladder-python/pull/1042)
+* Make API exports explicit by @priyam0k in [#912](https://github.com/casact/chainladder-python/pull/912)
 * Refactor `cl.__init__.py` and remove dead Python 3.8 code by @genedan in [#857](https://github.com/casact/chainladder-python/pull/857), [#867](https://github.com/casact/chainladder-python/pull/867)
 * Refactor `swapaxes` to object by @henrydingliu in [#1084](https://github.com/casact/chainladder-python/pull/1084)
 * Enhance `utils.model_diagnostics` by @henrydingliu in [#953](https://github.com/casact/chainladder-python/pull/953), [#954](https://github.com/casact/chainladder-python/pull/954), [#959](https://github.com/casact/chainladder-python/pull/959), [#955](https://github.com/casact/chainladder-python/pull/955), [#982](https://github.com/casact/chainladder-python/pull/982)
 
-**Testing & CI**
-* Add tests for utilities, slicing, dunders/arithmetic, pandas, base, IO, `TriangleDisplay`, and common behavior by @genedan in [#831](https://github.com/casact/chainladder-python/pull/831), [#946](https://github.com/casact/chainladder-python/pull/946), [#950](https://github.com/casact/chainladder-python/pull/950), [#948](https://github.com/casact/chainladder-python/pull/948), [#1038](https://github.com/casact/chainladder-python/pull/1038), [#1046](https://github.com/casact/chainladder-python/pull/1046), [#1002](https://github.com/casact/chainladder-python/pull/1002), [#936](https://github.com/casact/chainladder-python/pull/936), [#1083](https://github.com/casact/chainladder-python/pull/1083), [#1033](https://github.com/casact/chainladder-python/pull/1033), [#825](https://github.com/casact/chainladder-python/pull/825), [#1082](https://github.com/casact/chainladder-python/pull/1082)
-* Replace stale xfails with `pytest.raises` by @EKtheSage in [#977](https://github.com/casact/chainladder-python/pull/977), [#987](https://github.com/casact/chainladder-python/pull/987)
-* Add coverage and various doctest fixes by @henrydingliu in [#1105](https://github.com/casact/chainladder-python/pull/1105), [#1099](https://github.com/casact/chainladder-python/pull/1099), [#1101](https://github.com/casact/chainladder-python/pull/1101)
-
 **Dependencies**
-* Bump idna, tornado, bleach, soupsieve, and mistune by @dependabot[bot] in [#822](https://github.com/casact/chainladder-python/pull/822), [#962](https://github.com/casact/chainladder-python/pull/962), [#1001](https://github.com/casact/chainladder-python/pull/1001), [#1007](https://github.com/casact/chainladder-python/pull/1007), [#1107](https://github.com/casact/chainladder-python/pull/1107), [#1108](https://github.com/casact/chainladder-python/pull/1108)
+* Set minimum numpy version to 2.0 by @SaguaroDev in [#899](https://github.com/casact/chainladder-python/pull/899)
+* Remove numba as a direct dependency by @SaguaroDev in [#898](https://github.com/casact/chainladder-python/pull/898)
 * Pin to avoid pandas 3.0.4 and set a maximum sparse version by @henrydingliu in [#1072](https://github.com/casact/chainladder-python/pull/1072), [#957](https://github.com/casact/chainladder-python/pull/957)
+* Bump idna, tornado, bleach, soupsieve, and mistune by @dependabot[bot] in [#822](https://github.com/casact/chainladder-python/pull/822), [#962](https://github.com/casact/chainladder-python/pull/962), [#1001](https://github.com/casact/chainladder-python/pull/1001), [#1007](https://github.com/casact/chainladder-python/pull/1007), [#1107](https://github.com/casact/chainladder-python/pull/1107), [#1108](https://github.com/casact/chainladder-python/pull/1108)
 
 **New Contributors**
 * @salexanian made their first contribution in [#793](https://github.com/casact/chainladder-python/pull/793)
