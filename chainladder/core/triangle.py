@@ -109,7 +109,7 @@ class Triangle(TriangleBase):
     link_ratio, age_to_age: Triangle
         Displays age-to-age ratios for the triangle.
     disposal_rate_tri: Triangle
-        Displays actual disposal rates by origin and development; must have ultimate_
+        Displays actual disposal rates by origin and development; must have ``ultimate_``
     valuation_date : date
         The latest valuation date of the data
     loc: Triangle
@@ -1233,7 +1233,7 @@ class Triangle(TriangleBase):
     @property
     def disposal_rate_tri(self) -> Triangle:
         """
-        Displays disposal rates for the triangle. Must have ultimate_
+        Displays disposal rates for the triangle. Must have ``ultimate_``
 
         Returns
         -------
