@@ -131,8 +131,6 @@ class TriangleBase(
                 period_end=True,
                 date_format=development_format
             )
-            if development_format == "%Y-12-31":
-                development_date = development_date.dt.to_period("Y").dt.to_timestamp(how="e")
         else:
             o_max: Timestamp  = pd.Period(
                 value=origin_date.max(),

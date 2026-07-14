@@ -158,7 +158,6 @@ SAMPLES: dict = {
         "columns": [
             "Reported Claims",
             "Paid Claims",
-            "Population",
         ],
         "cumulative": True,
         "development_format": "%Y-12-31",
@@ -186,7 +185,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims", "Earned Premium"],
+        "columns": ["Paid Claims", "Reported Claims"],
         "cumulative": True,
     },
     "friedland_us_auto_incr_claim": {
@@ -200,7 +199,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims", "Earned Premium"],
+        "columns": ["Paid Claims", "Reported Claims"],
         "cumulative": True,
     },
     "friedland_us_industry_auto": {
