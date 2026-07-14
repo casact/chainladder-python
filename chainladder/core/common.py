@@ -101,6 +101,24 @@ class Common:
         return self.ldf_.incr_to_cum()
 
     @property
+    def pct_reported_(self):
+        """Percentage of ultimate reported (or paid) at each development age,
+        equal to the inverse of the cumulative development factor."""
+        if not self.has_ldf:
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'pct_reported_'")
+        return 1 / self.cdf_
+
+    @property
+    def pct_unreported_(self):
+        """Percentage of ultimate still unreported (or unpaid) at each
+        development age, equal to ``1 - 1 / cdf_``."""
+        if not self.has_ldf:
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'pct_unreported_'")
+        return 1 - 1 / self.cdf_
+
+    @property
     def cum_zeta_(self):
         if not self.has_zeta:
             x = self.__class__.__name__
