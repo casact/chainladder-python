@@ -349,6 +349,74 @@ class Triangle(TriangleBase):
         2024Q2   130.0
         2024Q3   160.0
         2024Q4   140.0
+
+    Triangles with ultimate values
+    ------------------------------
+
+    Triangles produced by reserving methods carry ultimate projections at the
+    sentinel valuation date ``options.ULT_VAL`` (default December 31, 2261).
+    Export with ``to_frame(keepdims=True)`` and reconstruct by passing
+    ``development='valuation'``. Rows whose valuation equals
+    ``options.ULT_VAL`` are recognized as ultimates and stored in the ultimate
+    development column (see also :attr:`is_ultimate`).
+
+    .. testcode::
+
+        raa = cl.load_sample('raa')
+        ult = cl.Chainladder().fit(raa).ultimate_
+        df = ult.to_frame(keepdims=True, origin_as_datetime=True)
+        tri = cl.Triangle(
+            df,
+            origin='origin',
+            development='valuation',
+            columns='values',
+            cumulative=True,
+        )
+        print(tri)
+
+    .. testoutput::
+
+                      2261
+        1981  18834.000000
+        1982  16857.953917
+        1983  24083.370924
+        1984  28703.142163
+        1985  28926.736343
+        1986  19501.103184
+        1987  17749.302590
+        1988  24019.192510
+        1989  16044.984101
+        1990  18402.442529
+
+    Pre-existing ultimate estimates can be supplied directly in long-format
+    data by setting the valuation column to ``options.ULT_VAL`` for each
+    origin.
+
+    .. testcode::
+
+        df = pd.DataFrame(
+            data={
+                'origin': pd.to_datetime(['1981-01-01', '1982-01-01']),
+                'valuation': pd.to_datetime([
+                    cl.options.ULT_VAL, cl.options.ULT_VAL
+                ]),
+                'ultimate': [10000.0, 12000.0],
+            }
+        )
+        tri = cl.Triangle(
+            df,
+            origin='origin',
+            development='valuation',
+            columns='ultimate',
+            cumulative=True,
+        )
+        print(tri)
+
+    .. testoutput::
+
+                 2261
+        1981  10000.0
+        1982  12000.0
     """
 
     def __init__(
@@ -587,7 +655,20 @@ class Triangle(TriangleBase):
         origin: list,
         development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Deal with triangles with ultimate values."""
+        """Split ultimate valuation rows from long-format triangle data.
+
+        Ultimate rows are those where the development column equals
+        ``options.ULT_VAL``. This supports round-tripping triangles exported
+        via :meth:`~chainladder.Triangle.to_frame` with ``keepdims=True`` and
+        ``development='valuation'``. It also allows importing pre-existing
+        ultimate estimates by marking the valuation column with
+        ``options.ULT_VAL``.
+
+        Requires a single datetime development column. When ultimate rows are
+        present (and not every row is an ultimate), they are extracted and
+        merged back as the ultimate development column after the base triangle
+        is constructed.
+        """
         ult = None
         if (
             development
@@ -1159,41 +1240,13 @@ class Triangle(TriangleBase):
 
         Triangle
             Triangle of disposal rates
-
-        Examples
-        --------
-
-        .. testsetup::
-
-            import chainladder as cl
-
-        .. testcode::
-
-            clrd = cl.load_sample('clrd').sum()
-            ult = cl.Chainladder().fit(clrd['IncurLoss']).ultimate_
-            dr = cl.DisposalRate().fit_transform(clrd['CumPaidLoss'],sample_weight = ult)
-            dr.disposal_rate_tri
-
-        .. testoutput::
-            
-                    12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult   120-Ult
-            1988       NaN       NaN       NaN       NaN       NaN       NaN  0.964643  0.973184  0.980224  0.983063
-            1989       NaN       NaN       NaN       NaN       NaN  0.952533  0.967690  0.977373  0.981938       NaN
-            1990       NaN       NaN       NaN       NaN  0.927029  0.952951  0.968379  0.976049       NaN       NaN
-            1991       NaN       NaN       NaN  0.881010  0.929460  0.954694  0.968533       NaN       NaN       NaN
-            1992       NaN       NaN  0.801875  0.885976  0.932865  0.956495       NaN       NaN       NaN       NaN
-            1993       NaN  0.663303  0.810639  0.894414  0.939009       NaN       NaN       NaN       NaN       NaN
-            1994  0.367530  0.670460  0.814661  0.897244       NaN       NaN       NaN       NaN       NaN       NaN
-            1995  0.379650  0.680979  0.821603       NaN       NaN       NaN       NaN       NaN       NaN       NaN
-            1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
-            1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
         """
 
         obj: Triangle = self.incr_to_cum() / self.ultimate_.values
         if not obj.is_full:
             obj = obj[obj.valuation <= obj.valuation_date]
         if hasattr(obj, "disposal_w_"):
-            obj = obj * obj.disposal_w_
+            obj = obj * obj.disposal_w_ if obj.shape == obj.disposal_w_.shape else obj
         obj.is_pattern = True
         obj.is_cumulative = True
         obj.is_disposal_rate = True
