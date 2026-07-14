@@ -857,3 +857,14 @@ def test_sigma1(atol):
         cl.Development(average='regression').fit(tri).sigma_.values,
         atol = atol
     )      
+
+
+def test_pct_reported_and_unreported(raa):
+    dev = cl.Development().fit(raa)
+    xp = dev.cdf_.get_array_module()
+    xp.testing.assert_array_equal(dev.pct_reported_.values, (1 / dev.cdf_).values)
+    xp.testing.assert_array_equal(dev.pct_unreported_.values, (1 - 1 / dev.cdf_).values)
+    # reported + unreported percentages sum to one where defined
+    total = (dev.pct_reported_ + dev.pct_unreported_).values
+    assert np.allclose(np.nan_to_num(total), np.nan_to_num(dev.cdf_.values * 0 + 1))
+
