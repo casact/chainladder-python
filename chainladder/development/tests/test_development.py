@@ -868,3 +868,13 @@ def test_pct_reported_and_unreported(raa):
     total = (dev.pct_reported_ + dev.pct_unreported_).values
     assert np.allclose(np.nan_to_num(total), np.nan_to_num(dev.cdf_.values * 0 + 1))
 
+
+def test_pct_reported_requires_ldf(raa):
+    # An unfitted triangle has no ldf_, so both properties raise AttributeError.
+    assert not raa.has_ldf
+    with pytest.raises(AttributeError):
+        raa.pct_reported_
+    with pytest.raises(AttributeError):
+        raa.pct_unreported_
+
+
