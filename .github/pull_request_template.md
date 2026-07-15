@@ -7,4 +7,6 @@
 ## Additional Context for Reviewers  
 
 
+Please add type hints to new or modified Python code where applicable.
+
 - [ ] I passed tests locally for both code (`uv run pytest`) and documentation changes (`uv run jb build docs --builder=custom --custom-builder=doctest`)
