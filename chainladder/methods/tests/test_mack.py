@@ -29,14 +29,14 @@ def test_multi_triangle_mack(clrd,atol):
         for j in range(len(tri.columns)):
             assert np.all(abs(mack.full_std_err_.iloc[i,j].values-cl.MackChainladder().fit(tri.iloc[i,j]).full_std_err_.values) < atol)
 
-def test_mack1997_hardcode():
+def test_mack1999_hardcode():
     """
     Reconciles key MackChainladder statistics to values provided in the paper
     """
-    #sourced from Table 1, p365 of Mack(1997)
+    #sourced from Table 1, p365 of Mack(1999)
     ldf_se = [2.24,.517,.122,.051,.042,.023,.015,.012]
     sigma = [1337,988.5,440.1,207.0,164.2,74.6,35.49,16.89]
-    #sourced from Table 2, p366 of Mack(1997)
+    #sourced from Table 2, p366 of Mack(1999)
     ibnr_se = [0,61,140,319,596,1038,1298,1806,2182]
 
     tri = cl.load_sample("mortgage")

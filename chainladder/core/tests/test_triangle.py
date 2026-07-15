@@ -309,6 +309,35 @@ def test_dropna_latest_diagonal(raa: Triangle) -> None:
     assert result.origin.min().year == 1982
 
 
+def test_drop_column_string_axis(clrd):
+    """drop() should accept 'columns' as a string alias for axis 1."""
+    result = clrd.drop(labels="CumPaidLoss", axis="columns")
+    assert "CumPaidLoss" not in result.columns
+    assert clrd.drop(labels="CumPaidLoss", axis="columns") == clrd.drop(
+        labels="CumPaidLoss", axis=1
+    )
+
+
+def test_drop_column_integer_axis(clrd):
+    """drop() should continue to accept the integer axis 1."""
+    result = clrd.drop(labels="CumPaidLoss", axis=1)
+    assert "CumPaidLoss" not in result.columns
+
+
+def test_drop_non_column_axis_raises(clrd):
+    """drop() only supports the column axis for now."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(labels="commauto", axis="index")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(labels="commauto", axis=0)
+
+
+def test_drop_invalid_axis_raises(clrd):
+    """An unrecognized axis should raise a ValueError."""
+    with pytest.raises(ValueError):
+        clrd.drop(labels="CumPaidLoss", axis="bogus")
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
@@ -776,6 +805,37 @@ def test_create_full_triangle(raa):
         columns="values",
     )
     assert a == b
+
+
+def test_create_triangle_with_ultimates(raa):
+    """Round-trip and direct import of triangles with ultimate values."""
+    ult = cl.Chainladder().fit(raa).ultimate_
+    round_tripped = cl.Triangle(
+        ult.to_frame(keepdims=True, origin_as_datetime=True),
+        origin="origin",
+        development="valuation",
+        columns="values",
+        cumulative=True,
+    )
+    assert round_tripped.is_ultimate
+    assert round_tripped == ult
+
+    direct = cl.Triangle(
+        pd.DataFrame(
+            {
+                "origin": pd.to_datetime(["1981-01-01", "1982-01-01"]),
+                "valuation": pd.to_datetime(
+                    [cl.options.ULT_VAL, cl.options.ULT_VAL]
+                ),
+                "ultimate": [10000.0, 12000.0],
+            }
+        ),
+        origin="origin",
+        development="valuation",
+        columns="ultimate",
+        cumulative=True,
+    )
+    assert direct.is_ultimate
 
 
 def test_groupby_getitem(clrd):
