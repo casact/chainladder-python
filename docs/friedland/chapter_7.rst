@@ -578,14 +578,16 @@ Exhibit II Sheet 4 p113
 Persisting the Selected Estimators
 ##################################
 
-The selected reported and paid development estimators are reused in later chapters, such as the Bornhuetter-Ferguson technique in Chapter 9. Rather than refitting them, we persist the fitted estimators with ``to_pickle`` so they can be recalled directly.
+The selected reported and paid development estimators are reused in later chapters, such as the Bornhuetter-Ferguson technique in Chapter 9. Rather than refitting them, we persist the fitted estimators with ``to_json`` so they can be recalled directly. JSON is used rather than a pickle so the saved estimators load reliably across package and dependency versions.
 
 .. doctest::
 
     >>> import os
     >>> data_dir = os.path.join(os.path.dirname(cl.__file__), "utils", "data")
-    >>> reported_devs["Selected"].to_pickle(os.path.join(data_dir, "friedland_ch7_xyz_reported.pkl"))
-    >>> paid_devs["Selected"].to_pickle(os.path.join(data_dir, "friedland_ch7_xyz_paid.pkl"))
+    >>> with open(os.path.join(data_dir, "friedland_ch7_xyz_reported.json"), "w") as f:
+    ...     _ = f.write(reported_devs["Selected"].to_json())
+    >>> with open(os.path.join(data_dir, "friedland_ch7_xyz_paid.json"), "w") as f:
+    ...     _ = f.write(paid_devs["Selected"].to_json())
 
 Exhibit III Sheet 1 p114
 ##########################

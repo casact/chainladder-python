@@ -116,9 +116,6 @@ references/
 settings.json
 
 *.pkl
-# Friedland Chapter 7 selected estimators, persisted for reuse in Chapter 9
-!chainladder/utils/data/friedland_ch7_xyz_reported.pkl
-!chainladder/utils/data/friedland_ch7_xyz_paid.pkl
 
 # macOS related files
 *.DS_Store
