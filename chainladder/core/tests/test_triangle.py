@@ -313,7 +313,7 @@ def test_drop_column_string_axis(clrd):
     """drop() should accept 'columns' as a string alias for axis 1."""
     result = clrd.drop(labels="CumPaidLoss", axis="columns")
     assert "CumPaidLoss" not in result.columns
-    assert result.drop(labels="CumPaidLoss", axis="columns") == result.drop(
+    assert clrd.drop(labels="CumPaidLoss", axis="columns") == clrd.drop(
         labels="CumPaidLoss", axis=1
     )
 
