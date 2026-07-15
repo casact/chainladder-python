@@ -338,6 +338,37 @@ def test_drop_invalid_axis_raises(clrd):
         clrd.drop(labels="CumPaidLoss", axis="bogus")
 
 
+def test_drop_columns_alternative(clrd):
+    """columns= should be equivalent to labels=..., axis=1."""
+    result = clrd.drop(columns="CumPaidLoss")
+    assert "CumPaidLoss" not in result.columns
+    assert result == clrd.drop(labels="CumPaidLoss", axis=1)
+
+
+def test_drop_columns_alternative_list(clrd):
+    """columns= should accept a list of labels."""
+    result = clrd.drop(columns=["CumPaidLoss", "IncurLoss"])
+    assert "CumPaidLoss" not in result.columns
+    assert "IncurLoss" not in result.columns
+    assert result == clrd.drop(labels=["CumPaidLoss", "IncurLoss"], axis=1)
+
+
+def test_drop_labels_and_alternative_raises(clrd):
+    """Specifying labels together with an alternative should raise ValueError."""
+    with pytest.raises(ValueError):
+        clrd.drop(labels="CumPaidLoss", columns="IncurLoss")
+
+
+def test_drop_index_origin_development_alternatives_raise(clrd):
+    """index/origin/development alternatives route to unimplemented axes."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(index="commauto")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(origin="1995")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(development="12")
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
