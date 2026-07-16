@@ -1,25 +1,61 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 import numpy as np
 from chainladder.utils.sparse import sp
 from sklearn.base import BaseEstimator
 import warnings
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    from types import ModuleType
+    from typing import Literal
+    from chainladder.core.typing import BackendArray
 
 class WeightedRegression(BaseEstimator):
-    """Helper class that fits a system of regression equations
+    """
+    Helper class that fits a system of regression equations
     as a closed-form solution.  This greatly speeds up
     the implementation of the Mack stochastic properties.
+
+    Parameters
+    ----------
+    axis: integer (default = 2)
+        the axis along with the perform the regression; 
+        axis of 2 is along the origin periods; 
+        axis of 3 is along the development periods;
+    thru_orig: bool (default = False)
+        whether the regression is forced to go through the origin
+    xp: ModuleType (default = numpy)
+        array module for calculations
+
+    Attributes
+    ----------
+    slope_: Triangle
+        coefficients of the regression
+    sigma_: Triangle
+        standard deviation of the Triangle values according to Mack (1997), not be confused with sigma from the regression
+    std_err_: DatetimeIndex
+        standard error of estimator``slope_``
     """
 
-    def __init__(self, axis=None, thru_orig=False, xp=None, average=None):
+    def __init__(
+            self, 
+            axis: int = 2, 
+            thru_orig: bool = False, 
+            xp: ModuleType = np, 
+    ):
         self.axis = axis
         self.thru_orig = thru_orig
         self.xp = xp
-        self.average = average
 
     def infer_x_w(self):
+        """
+        Creates dummy X and/or w for the regression when none are given
+        """
         xp = self.xp
         if self.w is None:
             self.w = xp.ones(self.y.shape)
@@ -27,7 +63,32 @@ class WeightedRegression(BaseEstimator):
             self.x = xp.cumsum(xp.ones(self.y.shape), self.axis)
         return self
 
-    def fit(self, X, y=None, sample_weight=None, average=None):
+    def fit(
+            self, 
+            X:BackendArray, 
+            y:BackendArray|None=None, 
+            sample_weight:BackendArray|None=None, 
+            average: Literal["volume", "simple", "regression", "geometric"] | None = None
+    ):
+        """
+        Fit the model with X.
+
+        Parameters
+        ----------
+        X : Array
+            independent variable for the regression
+        y : Array or None (default = None)
+            dependent variable for the regression
+        sample_weight : Array or None (default = None)
+            which (x,y) pairs should be used in the regression
+        average: literal (or list of literals), or None, optional (default = None)
+            type of averaging to use; dictates the weights used in the regression
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         self.x = X
         self.y = y
         self.w = sample_weight
@@ -44,6 +105,10 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def _fit_OLS_thru_orig(self):
+        """
+        Given a set of w, x, y, and an axis, this Function returns OLS slope
+        and other statistics, while forcing an intercept of 0
+        """
         from chainladder.utils.utility_functions import num_to_nan
 
         x = self.x
@@ -106,19 +171,14 @@ class WeightedRegression(BaseEstimator):
         mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
         mse_denom = num_to_nan(mse_denom)
         mse = wss_residual / mse_denom
-
+        sigma = xp.sqrt(mse)
         std_err = xp.sqrt(mse / denominator)
-        sigma = std_err * xp.sqrt(mse_denom + 1)
-        
-        coef = coef[..., None]
-        sigma = sigma[..., None]
-        std_err = std_err[..., None]
         
         self._w_reg = w
 
-        self.slope_ = coef
-        self.sigma_ = sigma
-        self.std_err_ = std_err
+        self.slope_ = coef[..., None]
+        self.sigma_ = sigma[..., None]
+        self.std_err_ = std_err[..., None]
 
         return self
 

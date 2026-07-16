@@ -75,5 +75,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: uv sync --extra docs
+      - name: Generate autosummary stubs
+        run: uv run --directory docs sphinx-autogen -o library/generated library/api.md
       - name: Run doctests
         run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest
