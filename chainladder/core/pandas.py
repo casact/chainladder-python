@@ -1090,7 +1090,7 @@ df_passthru = (
 for method in df_passthru:
     add_df_passthru(TrianglePandas, method)
 
-agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var"]
+agg_funcs = ["sum", "mean", "median", "prod", "var"]
 agg_funcs = agg_funcs + ["std", "cumsum", "quantile"]
 for func in agg_funcs:
     add_groupby_agg_func(TriangleGroupBy, func, func)

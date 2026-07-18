@@ -185,6 +185,22 @@ def test_quantile_vs_median(clrd):
     )
 
 
+def test_min_max_not_registered_as_agg_passthroughs(clrd: Triangle) -> None:
+    """
+    Triangle.min/max are intentionally not exposed via aggregate passthroughs.
+    """
+    groupby = clrd.groupby("LOB")
+
+    for method in ("min", "max"):
+        with pytest.raises(AttributeError):
+            getattr(clrd, method)
+        with pytest.raises(AttributeError):
+            getattr(groupby, method)
+
+    assert callable(getattr(clrd, "mean"))
+    assert callable(getattr(groupby, "mean"))
+
+
 def test_base_minimum_exposure_triangle(raa):
     d = (
         (raa.latest_diagonal * 0 + 50000)
