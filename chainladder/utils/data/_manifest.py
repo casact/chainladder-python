@@ -181,25 +181,11 @@ SAMPLES: dict = {
         "columns": ["Gross Reported Claims", "Net Reported Claims", "Net to Gross"],
         "cumulative": True,
     },
-    "friedland_us_auto_chg_prod_mix": {
+    "friedland_us_auto": {
         "origin": "Accident Year",
         "development": "Calendar Year",
-        "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
-        "cumulative": True,
-    },
-    "friedland_us_auto_incr_claim": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
-        "cumulative": True,
-    },
-    "friedland_us_auto_steady_state": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
+        "index": ["Scenario"],
+        "columns": ["Paid Claims", "Reported Claims", "Earned Premium"],
         "cumulative": True,
     },
     "friedland_us_industry_auto": {
