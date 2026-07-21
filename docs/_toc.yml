@@ -36,6 +36,7 @@ parts:
       - file: friedland/chapter_6.rst
       - file: friedland/chapter_7.rst
       - file: friedland/chapter_9.ipynb
+      - file: friedland/chapter_10.ipynb
   - chapters:
     - file: gallery/index.md
   - chapters:
