@@ -27,6 +27,8 @@ Release Date: TBD
 * Add Friedland Chapter 6–7 exhibits by @henrydingliu in [#837](https://github.com/casact/chainladder-python/pull/837)
 * Add the merged Friedland USPP sample dataset by @salexanian in [#1116](https://github.com/casact/chainladder-python/pull/1116)
 * Add Friedland auto BI, GL insurer, GL self-insurer, and US industry auto premium datasets by @kennethshsu in [#870](https://github.com/casact/chainladder-python/pull/870), [#905](https://github.com/casact/chainladder-python/pull/905), [#921](https://github.com/casact/chainladder-python/pull/921), [#904](https://github.com/casact/chainladder-python/pull/904)
+* Add Friedland Chapter 9 (Bornhuetter-Ferguson) documentation by @priyam0k in [#1126](https://github.com/casact/chainladder-python/pull/1126)
+* Add `pct_reported_` and `pct_unreported_` properties by @priyam0k in [#1126](https://github.com/casact/chainladder-python/pull/1126)
 * Add tests for utilities, slicing, dunders/arithmetic, pandas, base, IO, `TriangleDisplay`, and common behavior by @genedan in [#831](https://github.com/casact/chainladder-python/pull/831), [#946](https://github.com/casact/chainladder-python/pull/946), [#950](https://github.com/casact/chainladder-python/pull/950), [#948](https://github.com/casact/chainladder-python/pull/948), [#1038](https://github.com/casact/chainladder-python/pull/1038), [#1046](https://github.com/casact/chainladder-python/pull/1046), [#1002](https://github.com/casact/chainladder-python/pull/1002), [#936](https://github.com/casact/chainladder-python/pull/936), [#1083](https://github.com/casact/chainladder-python/pull/1083), [#1033](https://github.com/casact/chainladder-python/pull/1033), [#825](https://github.com/casact/chainladder-python/pull/825), [#1082](https://github.com/casact/chainladder-python/pull/1082)
 * Replace stale xfails with `pytest.raises` by @EKtheSage in [#977](https://github.com/casact/chainladder-python/pull/977), [#987](https://github.com/casact/chainladder-python/pull/987)
 * Add coverage and various doctest fixes by @henrydingliu in [#1105](https://github.com/casact/chainladder-python/pull/1105), [#1099](https://github.com/casact/chainladder-python/pull/1099), [#1101](https://github.com/casact/chainladder-python/pull/1101)
@@ -40,6 +42,7 @@ Release Date: TBD
 * Make `quarterly.csv` development dates ISO 8601-compatible by @genedan in [#930](https://github.com/casact/chainladder-python/pull/930)
 * Various Mack fixes by @henrydingliu in [#1097](https://github.com/casact/chainladder-python/pull/1097)
 * Various Friedland data fixes by @henrydingliu in [#927](https://github.com/casact/chainladder-python/pull/927), [#967](https://github.com/casact/chainladder-python/pull/967)
+* Accept string axis in `Triangle.drop()` by @priyam0k in [#1123](https://github.com/casact/chainladder-python/pull/1123)
 
 **Deprecations & Removals**
 * Deprecate the `dask` array backend by @priyam0k in [#937](https://github.com/casact/chainladder-python/pull/937) and the dask parallel-compute (bag) paths in [#1008](https://github.com/casact/chainladder-python/pull/1008)
@@ -66,7 +69,7 @@ Release Date: TBD
 * Set minimum numpy version to 2.0 by @SaguaroDev in [#899](https://github.com/casact/chainladder-python/pull/899)
 * Remove numba as a direct dependency by @SaguaroDev in [#898](https://github.com/casact/chainladder-python/pull/898)
 * Pin to avoid pandas 3.0.4 and set a maximum sparse version by @henrydingliu in [#1072](https://github.com/casact/chainladder-python/pull/1072), [#957](https://github.com/casact/chainladder-python/pull/957)
-* Bump idna, tornado, bleach, soupsieve, and mistune by @dependabot[bot] in [#822](https://github.com/casact/chainladder-python/pull/822), [#962](https://github.com/casact/chainladder-python/pull/962), [#1001](https://github.com/casact/chainladder-python/pull/1001), [#1007](https://github.com/casact/chainladder-python/pull/1007), [#1107](https://github.com/casact/chainladder-python/pull/1107), [#1108](https://github.com/casact/chainladder-python/pull/1108)
+* Bump idna, tornado, bleach, soupsieve, mistune, and pillow by @dependabot[bot] in [#822](https://github.com/casact/chainladder-python/pull/822), [#962](https://github.com/casact/chainladder-python/pull/962), [#1001](https://github.com/casact/chainladder-python/pull/1001), [#1007](https://github.com/casact/chainladder-python/pull/1007), [#1107](https://github.com/casact/chainladder-python/pull/1107), [#1108](https://github.com/casact/chainladder-python/pull/1108), [#1141](https://github.com/casact/chainladder-python/pull/1141)
 
 **New Contributors**
 * @salexanian made their first contribution in [#793](https://github.com/casact/chainladder-python/pull/793)
