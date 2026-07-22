@@ -597,7 +597,11 @@ class TrianglePandas(_TrianglePandasBase):
             cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
             return new_obj
 
-    def drop(self, labels: str | int | list | None = None, axis: int = 1) -> Triangle:
+    def drop(
+        self,
+        labels: str | int | list | None = None,
+        axis: Literal["index", "columns", "origin", "development"] | int = 1,
+    ) -> Triangle:
         """Drop specified labels from rows or columns.
 
         Remove rows or columns by specifying label names and corresponding axis,
@@ -618,6 +622,7 @@ class TrianglePandas(_TrianglePandasBase):
         Triangle
 
         """
+        axis = self._get_axis(axis)
         labels = [labels] if type(labels) is str else list(labels)
         if axis == 1:
             return self[[item for item in self.columns if item not in labels]]
