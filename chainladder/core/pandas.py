@@ -682,9 +682,7 @@ class TrianglePandas(_TrianglePandasBase):
         result = self
         for ax, ax_labels in to_drop.items():
             ax_labels = (
-                list(ax_labels)
-                if isinstance(ax_labels, (list, tuple))
-                else [ax_labels]
+                [ax_labels] if np.isscalar(ax_labels) else list(ax_labels)
             )
             if ax == 1:
                 result = result[

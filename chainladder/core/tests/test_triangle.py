@@ -375,6 +375,15 @@ def test_drop_integer_label_routes_to_axis(clrd):
         clrd.drop(development=12)
 
 
+def test_drop_columns_alternative_index_like(clrd):
+    """columns= should accept list-likes such as pd.Index and ndarray."""
+    labels = clrd.columns[:2]
+    result = clrd.drop(columns=labels)
+    assert all(label not in result.columns for label in labels)
+    assert result == clrd.drop(columns=list(labels))
+    assert result == clrd.drop(columns=labels.values)
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
