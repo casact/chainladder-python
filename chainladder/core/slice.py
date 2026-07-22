@@ -431,7 +431,9 @@ class Location(_LocBase):
         return out
 
     def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
-        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
+        raw_slice = self.key_to_slice(key)
+        contig_slice = [_LocBase._contig_slice(x) for x in raw_slice]
+        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], contig_slice), values)
 
 class Ilocation(_LocBase):
     """
