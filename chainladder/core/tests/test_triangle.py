@@ -369,6 +369,12 @@ def test_drop_index_origin_development_alternatives_raise(clrd):
         clrd.drop(development="12")
 
 
+def test_drop_integer_label_routes_to_axis(clrd):
+    """A bare int label should route to its axis, not raise TypeError."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(development=12)
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
