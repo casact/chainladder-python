@@ -637,6 +637,35 @@ class TrianglePandas(_TrianglePandasBase):
         -------
         Triangle
 
+        Examples
+        --------
+
+        Drop a single column with the ``labels``/``axis`` form or the
+        ``columns`` alternative; the two are equivalent.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.load_sample('clrd')
+            print(tri.drop(columns='CumPaidLoss').columns.tolist())
+
+        .. testoutput::
+
+            ['IncurLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+
+        A list of labels can be dropped from an axis as well.
+
+        .. testcode::
+
+            print(tri.drop(columns=['CumPaidLoss', 'IncurLoss']).columns.tolist())
+
+        .. testoutput::
+
+            ['BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+
         """
         alternatives = {0: index, 1: columns, 2: origin, 3: development}
         if any(value is not None for value in alternatives.values()):
