@@ -37,6 +37,7 @@ sphinx:
     - sphinx.ext.autosummary
     - sphinx.ext.doctest
     - sphinx.ext.linkcode
+    - sphinx.ext.intersphinx
     - numpydoc
     - sphinx.ext.mathjax
   local_extensions:
@@ -46,6 +47,10 @@ sphinx:
     templates_path: ['_templates']
     numpydoc_show_class_members: False
     bibtex_reference_style: author_year
+    intersphinx_mapping:
+      sklearn:
+        - https://scikit-learn.org/stable/
+        - null
 
 parse:
   myst_enable_extensions:

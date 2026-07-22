@@ -162,7 +162,7 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
     individual predictions based on a matrix of weights to form a
     final prediction.
 
-    Read more in the :ref:`User Guide <voting>`.
+    Read more in the :ref:`User Guide <workflow:votingchainladder>`.
 
     .. versionadded:: 0.8.0
 
