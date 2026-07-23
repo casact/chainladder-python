@@ -369,11 +369,9 @@ def test_drop_labels_and_alternative_raises(clrd):
 
 
 def test_drop_index_origin_development_alternatives_raise(clrd):
-    """index/origin/development alternatives route to unimplemented axes."""
+    """index/development alternatives route to unimplemented axes."""
     with pytest.raises(NotImplementedError):
         clrd.drop(index="commauto")
-    with pytest.raises(NotImplementedError):
-        clrd.drop(origin="1995")
     with pytest.raises(NotImplementedError):
         clrd.drop(development="12")
 
@@ -391,6 +389,52 @@ def test_drop_columns_alternative_index_like(clrd):
     assert all(label not in result.columns for label in labels)
     assert result == clrd.drop(columns=list(labels))
     assert result == clrd.drop(columns=labels.values)
+
+
+@pytest.fixture
+def origin_tri():
+    return cl.Triangle(
+        data={
+            "origin": [1985, 1985, 1985, 1986, 1986, 1987],
+            "development": [1985, 1986, 1987, 1986, 1987, 1987],
+            "paid": [300, 400, 500, 500, 600, 500],
+        },
+        origin="origin",
+        development="development",
+        columns=["paid"],
+        cumulative=True,
+    )
+
+
+def test_drop_origin_last(origin_tri):
+    """origin= should drop the last origin period."""
+    result = origin_tri.drop(origin="1987")
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+
+
+def test_drop_origin_first(origin_tri):
+    """origin= should drop the first origin period."""
+    result = origin_tri.drop(origin="1985")
+    assert result.origin.astype(str).tolist() == ["1986", "1987"]
+
+
+def test_drop_origin_axis_equivalents(origin_tri):
+    """labels + axis=2/'origin' should equal the origin= alternative."""
+    expected = origin_tri.drop(origin="1987")
+    assert expected == origin_tri.drop(labels="1987", axis=2)
+    assert expected == origin_tri.drop(labels="1987", axis="origin")
+
+
+def test_drop_origin_interior_raises(origin_tri):
+    """Dropping an interior origin period should raise ValueError."""
+    with pytest.raises(ValueError):
+        origin_tri.drop(origin="1986")
+
+
+def test_drop_origin_missing_raises(origin_tri):
+    """Dropping an origin label that does not exist should raise KeyError."""
+    with pytest.raises(KeyError):
+        origin_tri.drop(origin="1999")
 
 
 def test_exposure_tri():
