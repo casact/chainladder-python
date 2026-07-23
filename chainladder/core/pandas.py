@@ -601,33 +601,100 @@ class TrianglePandas(_TrianglePandasBase):
         self,
         labels: str | int | list | None = None,
         axis: Literal["index", "columns", "origin", "development"] | int = 1,
+        index: str | int | list | None = None,
+        columns: str | int | list | None = None,
+        origin: str | int | list | None = None,
+        development: str | int | list | None = None,
     ) -> Triangle:
         """Drop specified labels from rows or columns.
 
-        Remove rows or columns by specifying label names and corresponding axis,
-        or by specifying directly index or column names.
+        Remove labels by specifying label names and corresponding axis, or by
+        specifying directly ``index``, ``columns``, ``origin``, or
+        ``development`` names.
 
         Parameters
         -----------
 
         labels:  str | int | list | None
-            Index or column labels to drop.
+            Index or column labels to drop. A single label or list-like.
 
-        axis: {0 or ‘index’, 1 or ‘columns’}, default 1
-            Whether to drop labels from the index (0 or ‘index’)
-            or columns (1 or ‘columns’).
+        axis: {0 or ‘index’, 1 or ‘columns’, 2 or 'origin', 3 or 'development'}, default 1
+            The axis to drop ``labels`` from.
+
+        index: str | int | list | None
+            Alternative to ``axis=0``. Equivalent to ``labels, axis=0``.
+
+        columns: str | int | list | None
+            Alternative to ``axis=1``. Equivalent to ``labels, axis=1``.
+
+        origin: str | int | list | None
+            Alternative to ``axis=2``. Equivalent to ``labels, axis=2``.
+
+        development: str | int | list | None
+            Alternative to ``axis=3``. Equivalent to ``labels, axis=3``.
 
         Returns
         -------
         Triangle
 
+        Examples
+        --------
+
+        Drop a single column with the ``labels``/``axis`` form or the
+        ``columns`` alternative; the two are equivalent.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.load_sample('clrd')
+            print(tri.columns.tolist())
+            print(tri.drop(columns='CumPaidLoss').columns.tolist())
+
+        .. testoutput::
+
+            ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+            ['IncurLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+
+        A list of labels can be dropped from an axis as well.
+
+        .. testcode::
+
+            print(tri.drop(columns=['CumPaidLoss', 'IncurLoss']).columns.tolist())
+
+        .. testoutput::
+
+            ['BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+
         """
-        axis = self._get_axis(axis)
-        labels = [labels] if type(labels) is str else list(labels)
-        if axis == 1:
-            return self[[item for item in self.columns if item not in labels]]
+        alternatives = {0: index, 1: columns, 2: origin, 3: development}
+        if any(value is not None for value in alternatives.values()):
+            if labels is not None:
+                raise ValueError(
+                    "Cannot specify both 'labels' and any of 'index', "
+                    "'columns', 'origin', or 'development'."
+                )
+            to_drop = {
+                ax: value for ax, value in alternatives.items() if value is not None
+            }
         else:
-            raise NotImplementedError("Triangle.drop() only implemented for column axis.")
+            to_drop = {self._get_axis(axis): labels}
+        result = self
+        for ax, ax_labels in to_drop.items():
+            ax_labels = (
+                [ax_labels] if np.isscalar(ax_labels) else list(ax_labels)
+            )
+            if ax == 1:
+                result = result[
+                    [item for item in result.columns if item not in ax_labels]
+                ]
+            else:
+                raise NotImplementedError(
+                    "Triangle.drop() only implemented for column axis."
+                )
+        return result
 
     @property
     def T(self) -> DataFrame: # noqa: N802
