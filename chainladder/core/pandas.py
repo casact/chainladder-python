@@ -668,6 +668,20 @@ class TrianglePandas(_TrianglePandasBase):
 
             ['BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
 
+        Origin periods can be dropped with ``origin`` (or ``axis=2``), but only
+        the first or last period may be removed so the triangle stays contiguous.
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.origin.astype(str).tolist()[-3:])
+            print(raa.drop(origin='1990').origin.astype(str).tolist()[-3:])
+
+        .. testoutput::
+
+            ['1988', '1989', '1990']
+            ['1987', '1988', '1989']
+
         """
         alternatives = {0: index, 1: columns, 2: origin, 3: development}
         if any(value is not None for value in alternatives.values()):
@@ -690,9 +704,29 @@ class TrianglePandas(_TrianglePandasBase):
                 result = result[
                     [item for item in result.columns if item not in ax_labels]
                 ]
+            elif ax == 2:
+                origin_labels = np.array(result.origin.astype(str))
+                drop_labels = [str(label) for label in ax_labels]
+                missing = [
+                    label for label in drop_labels if label not in origin_labels
+                ]
+                if missing:
+                    raise KeyError(f"{missing} not found in the origin axis.")
+                keep = ~np.isin(origin_labels, drop_labels)
+                kept_positions = np.flatnonzero(keep)
+                if len(kept_positions) and not np.array_equal(
+                    kept_positions,
+                    np.arange(kept_positions[0], kept_positions[-1] + 1),
+                ):
+                    raise ValueError(
+                        "Only the first or last origin periods may be dropped; "
+                        "dropping an interior origin period would leave a gap."
+                    )
+                result = result[keep]
             else:
                 raise NotImplementedError(
-                    "Triangle.drop() only implemented for column axis."
+                    "Triangle.drop() only implemented for the column and "
+                    "origin axes."
                 )
         return result
 
