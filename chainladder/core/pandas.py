@@ -650,10 +650,12 @@ class TrianglePandas(_TrianglePandasBase):
         .. testcode::
 
             tri = cl.load_sample('clrd')
+            print(tri.columns.tolist())
             print(tri.drop(columns='CumPaidLoss').columns.tolist())
 
         .. testoutput::
 
+            ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
             ['IncurLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
 
         A list of labels can be dropped from an axis as well.
