@@ -4,7 +4,7 @@
 
 ### Version 0.10.0
 
-Release Date: TBD
+Release Date: July 29, 2026
 
 **What's Changed**
 
