@@ -71,9 +71,11 @@ Release Date: July 29, 2026
 * Pin to avoid pandas 3.0.4 and set a maximum sparse version by @henrydingliu in [#1072](https://github.com/casact/chainladder-python/pull/1072), [#957](https://github.com/casact/chainladder-python/pull/957)
 * Bump idna, tornado, bleach, soupsieve, mistune, and pillow by @dependabot[bot] in [#822](https://github.com/casact/chainladder-python/pull/822), [#962](https://github.com/casact/chainladder-python/pull/962), [#1001](https://github.com/casact/chainladder-python/pull/1001), [#1007](https://github.com/casact/chainladder-python/pull/1007), [#1107](https://github.com/casact/chainladder-python/pull/1107), [#1108](https://github.com/casact/chainladder-python/pull/1108), [#1141](https://github.com/casact/chainladder-python/pull/1141)
 
-**New Contributors**
-* @salexanian made their first contribution in [#793](https://github.com/casact/chainladder-python/pull/793)
-* @etw002 made their first contribution in [#1009](https://github.com/casact/chainladder-python/pull/1009)
+**Contributors**
+
+Welcome Shahen Alexanian (@salexanian) and Ethan Wang (@etw002) for making their first contributions! 🎉
+
+Incorporated 520 commits from 8 collaborators, including returning contributors Gene Dan (@genedan), Kenneth Hsu (@kennethshsu), Henry Liu (@henrydingliu), Ethan Kang (@EKtheSage), Priyam Alok (@priyam0k), and Nick Kinney (@SaguaroDev).
 
 **Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.9.2...v0.10.0
 
