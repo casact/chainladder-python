@@ -21,6 +21,7 @@ Release Date: July 29, 2026
 * Add `empty` attribute to `Triangle` for pandas consistency by @priyam0k in [#901](https://github.com/casact/chainladder-python/pull/901)
 * Implement `cl.options.describe_option` by @genedan in [#877](https://github.com/casact/chainladder-python/pull/877)
 * Allow `DevelopmentConstant` to be callable on columns by @henrydingliu in [#796](https://github.com/casact/chainladder-python/pull/796)
+* Allow different policy lengths in `ParallelogramOLF` by @kennethshsu in [#772](https://github.com/casact/chainladder-python/pull/772)
 * Return a Python `bool` from `is_ultimate` by @salexanian in [#793](https://github.com/casact/chainladder-python/pull/793)
 * Add the `clrd2025` dataset and centralize sample metadata in a manifest surfaced via `list_samples` by @SaguaroDev in [#771](https://github.com/casact/chainladder-python/pull/771), [#886](https://github.com/casact/chainladder-python/pull/886)
 * Add Friedland Exhibit III samples and earned premium by @salexanian in [#787](https://github.com/casact/chainladder-python/pull/787)
@@ -54,6 +55,7 @@ Release Date: July 29, 2026
 * Add doctest examples for `BootstrapODPSample` and the correlation classes by @priyam0k in [#836](https://github.com/casact/chainladder-python/pull/836), [#844](https://github.com/casact/chainladder-python/pull/844)
 * Improve `Development` and `DevelopmentConstant` docstrings and examples by @kennethshsu in [#834](https://github.com/casact/chainladder-python/pull/834), [#993](https://github.com/casact/chainladder-python/pull/993)
 * Clarify the `Triangle` constructor docstring and document `array_backend`/`pattern` by @SaguaroDev in [#812](https://github.com/casact/chainladder-python/pull/812), [#813](https://github.com/casact/chainladder-python/pull/813)
+* Render API methods inline via custom autosummary templates by @priyam0k and @henrydingliu in [#885](https://github.com/casact/chainladder-python/pull/885), [#893](https://github.com/casact/chainladder-python/pull/893), [#900](https://github.com/casact/chainladder-python/pull/900)
 * Document creating triangles with preexisting ultimates by @EKtheSage in [#968](https://github.com/casact/chainladder-python/pull/968)
 * Add Semiannual (S) grain documentation by @SaguaroDev in [#814](https://github.com/casact/chainladder-python/pull/814)
 * Add `ARCHITECTURE.md` by @genedan in [#1070](https://github.com/casact/chainladder-python/pull/1070)
@@ -75,7 +77,7 @@ Release Date: July 29, 2026
 
 Welcome Shahen Alexanian (@salexanian) and Ethan Wang (@etw002) for making their first contributions! 🎉
 
-Incorporated 520 commits from 8 collaborators, including returning contributors Gene Dan (@genedan), Kenneth Hsu (@kennethshsu), Henry Liu (@henrydingliu), Ethan Kang (@EKtheSage), Priyam Alok (@priyam0k), and Nick Kinney (@SaguaroDev).
+Incorporated 523 commits from 8 collaborators, including returning contributors Gene Dan (@genedan), Kenneth Hsu (@kennethshsu), Henry Liu (@henrydingliu), Ethan Kang (@EKtheSage), Priyam Alok (@priyam0k), and Nick Kinney (@SaguaroDev).
 
 **Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.9.2...v0.10.0
 
