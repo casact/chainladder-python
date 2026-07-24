@@ -63,6 +63,7 @@ docs = [
     "nbsphinx",
     "numpydoc",
     "jupyter-book<2.0",  # Pin to v1.x - v2 doesn't support autodoc/autosummary yet
+    "sphinx-book-theme>=1.1.4",
     "sphinx-togglebutton",
     "ipython",
     "parso>=0.8",
