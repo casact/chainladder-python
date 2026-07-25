@@ -290,6 +290,16 @@ class TriangleDunders:
     def __len__(self):
         return self.shape[0]
 
+    # A Triangle is a 4-D container, not a 1-D sequence. Without this, Python
+    # falls back to the legacy iteration protocol (repeatedly calling
+    # __getitem__(0), __getitem__(1), ...), which treats the integer as a
+    # column label and raises. That also makes libraries such as pandas
+    # misclassify a Triangle as a sequence (see is_sequence) and attempt to
+    # iterate it when formatting a Triangle stored in a DataFrame cell,
+    # crashing the display. Declaring the type non-iterable makes pandas fall
+    # back to str(triangle) and render the summary instead (GH #142).
+    __iter__ = None
+
     def __neg__(self):
         obj = self.copy()
         obj.values = -obj.values
