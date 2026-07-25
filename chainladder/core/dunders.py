@@ -110,8 +110,6 @@ class TriangleDunders:
             raise ValueError('Index broadcasting is ambiguous between ' + str(x_labels) + ' and ' + str(y_labels))
 
     def _prep_columns(self, x, y):
-        x_backend, y_backend = x.array_backend, y.array_backend
-        
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.vdims = y.vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
@@ -140,13 +138,7 @@ class TriangleDunders:
             # Ensure both triangles have the same column order
             x = x[new_x_cols]
             y = y[new_x_cols]
-        
-        # Reset backends only if they've changed
-        if x.array_backend != x_backend:
-            x = x.set_backend(x_backend, inplace=True)
-        if y.array_backend != y_backend:
-            y = y.set_backend(y_backend, inplace=True)
-        
+
         return x, y
 
     def _prep_origin_development(self, obj, other):
