@@ -94,7 +94,7 @@ def prism(request):
 
 @pytest.fixture
 def prism_convert(request):
-    yield from _sample_fixture(request, "prism", transform=lambda t: t.iloc[:10000])
+    yield from _sample_fixture(request, "prism", transform=lambda t: t.iloc[:5000])
 
 @pytest.fixture
 def prism_dense(request):

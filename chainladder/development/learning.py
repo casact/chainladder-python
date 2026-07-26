@@ -250,12 +250,14 @@ class DevelopmentML(DevelopmentBase):
         return df
 
     def _prep_w_ml(self,X,sample_weight=None):
-        weight_base = (~np.isnan(X.values)).astype(float)
+        #scikit-learn requires a dense sample_weight
+        backend = "cupy" if X.array_backend == "cupy" else "numpy"
+        obj = X.set_backend(backend)
+        weight_base = (~np.isnan(obj.values)).astype(float)
         weight = weight_base.copy()
-        weight = weight * TriangleWeight(drop=self.drop,drop_valuation=self.drop_valuation).fit(X).w_.fillzero().values
+        weight = weight * TriangleWeight(drop=self.drop,drop_valuation=self.drop_valuation).fit(obj).w_.fillzero().values
         if sample_weight is not None:
-            weight = weight * sample_weight.values 
-        idx = np.where(weight_base.flatten()>0) if X.array_backend != 'sparse' else (weight_base.flatten()>0).coords[0]
+            weight = weight * sample_weight.set_backend(backend).values 
         return weight.flatten()[weight_base.flatten()>0]
 
     def fit(self, X, y=None, sample_weight=None):
