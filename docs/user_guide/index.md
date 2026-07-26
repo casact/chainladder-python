@@ -35,7 +35,7 @@ Tooling to generate loss development patterns
 +++
 
 **Algorithms**: {ref}`Development <development:development>`,
-{py:class}`chainladder.ClarkLDF`, …
+{ref}`ClarkLDF <development:clarkldf>`, …
 
 ````
 
@@ -52,8 +52,8 @@ Extrapolate development patterns beyond the known data.
 ```
 
 +++
-**Algorithms**: {py:class}`chainladder.TailCurve`,
-{py:class}`chainladder.TailConstant`, …
+**Algorithms**: {ref}`TailCurve <tails:tailcurve>`,
+{ref}`TailConstant <tails:tailconstant>`, …
 ````
 
 ````{grid-item-card}
@@ -71,8 +71,8 @@ Generate IBNR estimates and associated statistics
 ```
 
 +++
-**Algorithms**: {py:class}`chainladder.Chainladder`,
-{py:class}`chainladder.CapeCod`, …
+**Algorithms**: {ref}`Chainladder <methods:chainladder>`,
+{ref}`CapeCod <methods:capecod>`, …
 ````
 
 ````{grid-item-card}
@@ -90,8 +90,8 @@ Common actuarial data adjustments
 ```
 
 +++
-**Classes**: {py:class}`chainladder.BootstrapODPSample`,
-{py:class}`chainladder.Trend`, …
+**Classes**: {ref}`BootstrapODPSample <adjustments:bootstrapodpsample>`,
+{ref}`Trend <adjustments:trend>`, …
 ````
 
 ````{grid-item-card}
@@ -108,8 +108,8 @@ Workflow tools for complex analyses
 ```
 
 +++
-**Utilities**: {py:class}`chainladder.Pipeline`,
-{py:class}`chainladder.VotingChainladder`, …
+**Utilities**: {ref}`Pipeline <workflow:pipeline>`,
+{ref}`VotingChainladder <workflow:votingchainladder>`, …
 ````
 
 `````
