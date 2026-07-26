@@ -164,8 +164,7 @@ def test_printer(raa):
 def test_value_order(clrd):
     a = clrd[["CumPaidLoss", "BulkLoss"]]
     b = clrd[["BulkLoss", "CumPaidLoss"]]
-    xp = a.get_array_module()
-    xp.testing.assert_array_equal(a.values[:, -1], b.values[:, 0])
+    assert a.iloc[:, -1] == b.iloc[:, 0]
 
 
 def test_trend(raa, atol):
@@ -436,7 +435,7 @@ def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
     assert result_default == result_no_sparse
 
 
-def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
+def test_auto_sparse_disabled_returns_self(prism_convert: Triangle) -> None:
     """
     When cl.options.AUTO_SPARSE is False, _auto_sparse() returns the triangle
     unchanged without switching backends.
@@ -450,7 +449,7 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     -------
     None
     """
-    dense = prism.set_backend("numpy")
+    dense = prism_convert.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
         result = dense._auto_sparse()
