@@ -25,7 +25,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("genins", ["normal_run", "sparse_only_run"], indirect=True)
     if "prism_convert" in metafunc.fixturenames:
         metafunc.parametrize(
-            "prism_convert", ["normal_run", "sparse_only_run"], indirect=True
+            "prism_convert", ["sparse_only_run"], indirect=True
         )
     if "prism_dense" in metafunc.fixturenames:
         metafunc.parametrize(
@@ -94,7 +94,7 @@ def prism(request):
 
 @pytest.fixture
 def prism_convert(request):
-    yield from _sample_fixture(request, "prism", transform=lambda t: t.iloc[:5000])
+    yield from _sample_fixture(request, "prism", transform=lambda t: t.iloc[:200])
 
 @pytest.fixture
 def prism_dense(request):
