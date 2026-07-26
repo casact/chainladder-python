@@ -302,8 +302,7 @@ def test_dropna_latest_diagonal(raa: Triangle) -> None:
     None
     """
     t = raa.copy()
-    xp = t.get_array_module()
-    t.values[:, :, 0, :] = xp.nan
+    t.values[:, :, 0, :] = np.nan
     result = t.latest_diagonal.dropna()
     assert result.shape == (1, 1, 9, 1)
     assert result.origin.min().year == 1982
