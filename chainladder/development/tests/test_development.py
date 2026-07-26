@@ -22,7 +22,9 @@ class _FutureDevelopment(cl.TriangleWeight):
     
     def fit(self, X, y: None = None, sample_weight: None = None):
         if hasattr(X,'age_to_age'):
-            super().fit(X.incr_to_cum().age_to_age)
+            #following precedent _set_fit_groups() from DevelopmentBase
+            backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
+            super().fit(X.set_backend(backend).incr_to_cum().age_to_age)
             xp = X.get_array_module()
             indices = X.values.shape[0]
             columns = X.values.shape[1]
