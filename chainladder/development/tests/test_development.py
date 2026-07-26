@@ -24,20 +24,21 @@ class _FutureDevelopment(cl.TriangleWeight):
         if hasattr(X,'age_to_age'):
             #following precedent _set_fit_groups() from DevelopmentBase
             backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
-            super().fit(X.set_backend(backend).incr_to_cum().age_to_age)
-            xp = X.get_array_module()
-            indices = X.values.shape[0]
-            columns = X.values.shape[1]
-            origins = X.age_to_age.values.shape[2]
-            reg_x = X.incr_to_cum().values[...,:origins,:-1]
-            reg_y = X.incr_to_cum().values[...,:origins,1:]
+            obj = X.set_backend(backend)
+            super().fit(obj.incr_to_cum().age_to_age)
+            xp = obj.get_array_module()
+            indices = obj.values.shape[0]
+            columns = obj.values.shape[1]
+            origins = obj.age_to_age.values.shape[2]
+            reg_x = obj.incr_to_cum().values[...,:origins,:-1]
+            reg_y = obj.incr_to_cum().values[...,:origins,1:]
             dev_len = reg_x.shape[3]
             average_param = self._cascade_param(dev_len, self.average, "volume")
             average_param = np.tile(average_param,(indices,columns,1,1))
             params = cl.WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
                 reg_x, reg_y, self.w_.values, average_param
             )
-            self.ldf_ = self.dev._param_property(X, params.slope_.swapaxes(2, 3), 0)
+            self.ldf_ = self.dev._param_property(obj, params.slope_.swapaxes(2, 3), 0)
         return self
     
 def test_full_slice(genins):
