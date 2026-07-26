@@ -255,6 +255,7 @@ class DevelopmentML(DevelopmentBase):
         weight = weight * TriangleWeight(drop=self.drop,drop_valuation=self.drop_valuation).fit(X).w_.fillzero().values
         if sample_weight is not None:
             weight = weight * sample_weight.values 
+        idx = np.where(weight_base.flatten()>0) if X.array_backend != 'sparse' else (weight_base.flatten()>0).coords[0]
         return weight.flatten()[weight_base.flatten()>0]
 
     def fit(self, X, y=None, sample_weight=None):
