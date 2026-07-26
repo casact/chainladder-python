@@ -34,7 +34,7 @@ Tooling to generate loss development patterns
 ```
 +++
 
-**Algorithms**: {py:class}`chainladder.Development`,
+**Algorithms**: {ref}`Development <development:development>`,
 {py:class}`chainladder.ClarkLDF`, …
 
 ````
