@@ -57,12 +57,14 @@ def _sample_fixture(
     """
 
     # Set the backend to sparse for a sparse-only-run.
+    cl.options.set_option("AUTO_SPARSE", False)
     cl.options.set_option("ARRAY_BACKEND", "sparse" if request.param == "sparse_only_run" else "numpy")
     # Load the sample data.
     tri = cl.load_sample(sample)
     # Apply a transformation if supplied, then yield the triangle to the test.
     yield transform(tri) if transform else tri
     # After the test, reset the backend to default numpy.
+    cl.options.set_option("AUTO_SPARSE", True)
     cl.options.set_option("ARRAY_BACKEND", "numpy")
 
 
