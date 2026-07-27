@@ -254,7 +254,11 @@ class Benktander(MethodBase):
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)
-            apriori = random_state.normal(self.apriori, self.apriori_sigma, X.shape[0])
+            # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
+            cov = self.apriori_sigma / self.apriori
+            sigma_log = np.sqrt(np.log1p(cov ** 2))
+            mu_log = np.log(self.apriori) - 0.5 * sigma_log ** 2
+            apriori = random_state.lognormal(mu_log, sigma_log, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
             apriori.kdims = X.kdims
