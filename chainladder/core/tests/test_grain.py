@@ -6,8 +6,8 @@ import pytest
 
 
 def test_grain(qtr):
+    #this is a dense only test, as grain() follows auto_sparse
     actual = qtr.iloc[0, 0].grain("OYDY")
-    xp = actual.get_array_module()
     nan = xp.nan
     expected = xp.array(
         [
@@ -25,7 +25,7 @@ def test_grain(qtr):
             [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
         ]
     )
-    xp.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
+    np.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
 
 
 def test_grain_returns_valid_tri(qtr):
