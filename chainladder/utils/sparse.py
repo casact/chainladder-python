@@ -15,13 +15,13 @@ sp.exp = np.exp
 sp.abs = np.abs
 
 
-def nan_to_num(a):
+def nan_to_num(a,nan=0.0):
     if type(a) in [int, float, np.int64, np.float64]:
         return np.nan_to_num(a)
     if hasattr(a, "fill_value"):
         a = a.copy()
-        a.data[np.isnan(a.data)] = 0.0
-    return COO(coords=a.coords, data=a.data, fill_value=0.0, shape=a.shape)
+        a.data[np.isnan(a.data)] = nan
+    return COO(coords=a.coords, data=a.data, fill_value=nan, shape=a.shape)
 
 
 def ones(*args, **kwargs):
