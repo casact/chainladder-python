@@ -8,8 +8,8 @@ import pytest
 def test_grain(qtr):
     #this is a dense only test, as grain() follows auto_sparse
     actual = qtr.iloc[0, 0].grain("OYDY")
-    nan = xp.nan
-    expected = xp.array(
+    nan = np.nan
+    expected = np.array(
         [
             [44, 621, 950, 1020, 1070, 1069, 1089, 1094, 1097, 1099, 1100, 1100],
             [42, 541, 1052, 1169, 1238, 1249, 1266, 1269, 1296, 1300, 1300, nan],
