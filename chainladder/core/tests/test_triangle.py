@@ -179,9 +179,7 @@ def test_shift(qtr):
 
 def test_quantile_vs_median(clrd):
     xp = clrd.get_array_module()
-    xp.testing.assert_array_equal(
-        clrd.quantile(q=0.5)["CumPaidLoss"].values, clrd.median()["CumPaidLoss"].values
-    )
+    assert clrd.quantile(q=0.5)["CumPaidLoss"] == clrd.median()["CumPaidLoss"]
 
 
 def test_base_minimum_exposure_triangle(raa):
