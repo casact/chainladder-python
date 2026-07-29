@@ -303,7 +303,19 @@ def test_dropna_latest_diagonal(raa: Triangle) -> None:
     None
     """
     t = raa.copy()
-    t.values[:, :, 0, :] = np.nan
+
+    def set_first_origin_nan(values) -> None:
+        """
+        Sets the values for the first origin period to nan.
+        """
+        values[:, :, 0, :] = np.nan
+
+    if t.array_backend == "sparse":
+        # Sparse COO arrays don't support in-place item assignment.
+        with pytest.raises(TypeError, match="sparse backend"):
+            set_first_origin_nan(t.values)
+        return
+    set_first_origin_nan(t.values)
     result = t.latest_diagonal.dropna()
     assert result.shape == (1, 1, 9, 1)
     assert result.origin.min().year == 1982
@@ -575,8 +587,12 @@ def test_array_dunder(raa: Triangle) -> None:
     """
     arr = np.asarray(raa)
 
-    assert arr is raa.values
-    np.testing.assert_array_equal(np.array(raa), raa.values)
+    if raa.array_backend == "numpy":
+        # No conversion needed, so __array__ returns the same object.
+        assert arr is raa.values
+    else:
+        np.testing.assert_array_equal(arr, raa.values.todense())
+    np.testing.assert_array_equal(np.array(raa), raa.set_backend("numpy").values)
 
 
 def test_triangle_from_dataframe_interchange_protocol() -> None:
