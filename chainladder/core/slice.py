@@ -556,8 +556,9 @@ class TriangleSlicer:
                 keep = before.coords[1, :] != i
 
                 # Append assigned data and new coordinates.
-                after.coords[1] = i
-                coords = np.concatenate((before.coords[:, keep], after.coords), axis=1)
+                after_coords = after.coords.copy()
+                after_coords[1] = i
+                coords = np.concatenate((before.coords[:, keep], after_coords), axis=1)
                 data = np.concatenate((before.data[keep], after.data))
 
                 # Create new sparse matrix with updated coords and data, assign to backend array.
