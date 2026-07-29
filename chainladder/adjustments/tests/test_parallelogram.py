@@ -382,3 +382,71 @@ def test_rate_impact_beginning_of_year():
         np.where(monthly > daily, ">", np.where(monthly == daily, "=", "<")),
         np.array([">", ">", ">", "=", "="]),
     )  # this is true becuase there are less "days" in the first half of the year (from Jan - Jun) compared to (Jul - Dec), and only the first three origins would need to be brought to current rate level
+
+
+def test_cumulative_tort_reform():
+    """Cumulative on-level factors can be supplied directly. See GH #922."""
+    tort = pd.DataFrame(
+        {
+            "EffDate": ["1998-01-01", "2003-01-01", "2004-01-01"],
+            "Factor": [0.67, 0.75, 1.00],
+        }
+    )
+    olf = (
+        cl.ParallelogramOLF(
+            rate_history=tort,
+            change_col="Factor",
+            date_col="EffDate",
+            policy_length=12,
+            approximation_grain="M",
+            vertical_line=True,
+            cumulative=True,
+        )
+        .fit_transform(cl.load_sample("friedland_gl_self_insurer")["Reported Claims"])
+        .olf_
+    )
+    assert np.all(
+        np.round(olf.to_frame().values.flatten(), 6)
+        == [0.67, 0.67, 0.67, 0.67, 0.67, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0]
+    )
+
+
+def test_cumulative_matches_incremental():
+    """Cumulative factors and their incremental equivalent agree."""
+    data = pd.DataFrame(
+        {"Year": list(range(2006, 2016)), "EarnedPremium": [10_000] * 10}
+    )
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
+    dates = ["2006-01-01", "2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"]
+    changes = [0.0, 0.035, 0.05, 0.10, -0.01]
+    levels = np.cumprod(np.array(changes) + 1)
+    factors = levels[-1] / levels
+
+    for grain in ["M", "D"]:
+        for vertical_line in [True, False]:
+            kw = dict(
+                date_col="EffDate",
+                approximation_grain=grain,
+                vertical_line=vertical_line,
+            )
+            incremental = cl.ParallelogramOLF(
+                pd.DataFrame({"EffDate": dates, "RateChange": changes}),
+                change_col="RateChange",
+                **kw,
+            ).fit_transform(prem_tri)
+            cumulative = cl.ParallelogramOLF(
+                pd.DataFrame({"EffDate": dates, "Factor": factors}),
+                change_col="Factor",
+                cumulative=True,
+                **kw,
+            ).fit_transform(prem_tri)
+            assert np.allclose(
+                incremental.olf_.values, cumulative.olf_.values
+            ), (grain, vertical_line)
+
+
+def test_cumulative_rejects_non_positive():
+    with pytest.raises(ValueError, match="positive"):
+        cl.parallelogram_olf([1.0, 0.0], ["2010-01-01", "2011-01-01"], cumulative=True)

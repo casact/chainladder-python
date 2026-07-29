@@ -433,8 +433,16 @@ def parallelogram_olf(
     policy_length=12,
     approximation_grain="M",
     vertical_line=False,
+    cumulative=False,
 ):
-    """Parallelogram approach to on-leveling."""
+    """Parallelogram approach to on-leveling.
+
+    When ``cumulative`` is False (default), ``values`` are incremental rate
+    changes expressed as decimals.  When True, ``values`` are cumulative
+    on-level factors already stated relative to one another, and each value is
+    in force from its effective date until the next one.  The earliest value is
+    extended backwards to cover the lookback window.
+    """
     if approximation_grain not in ["M", "D"]:
         raise ValueError("approximation_grain must be M or D")
 
@@ -456,12 +464,20 @@ def parallelogram_olf(
         freq={"M": "MS", "D": "D"}[approximation_grain],
     )
 
-    rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
-        date_idx, fill_value=0
-    )
-    cum_rate_changes = pd.Series(
-        np.cumprod(1 + rate_changes.values), rate_changes.index
-    )
+    if cumulative:
+        factors = pd.Series(np.array(values, dtype="float64"), np.array(dates))
+        if (factors <= 0).any():
+            raise ValueError("cumulative on-level factors must be positive")
+        # An on-level factor is the current rate level divided by the rate
+        # level in force, so the implied rate level is its reciprocal.
+        cum_rate_changes = (1 / factors).reindex(date_idx).ffill().bfill()
+    else:
+        rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
+            date_idx, fill_value=0
+        )
+        cum_rate_changes = pd.Series(
+            np.cumprod(1 + rate_changes.values), rate_changes.index
+        )
     crl = cum_rate_changes.iloc[-1]
 
     rolling_num_base = {
