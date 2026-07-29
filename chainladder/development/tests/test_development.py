@@ -22,7 +22,7 @@ class _FutureDevelopment(cl.TriangleWeight):
     
     def fit(self, X, y: None = None, sample_weight: None = None):
         if hasattr(X,'age_to_age'):
-            #following precedent _set_fit_groups() from DevelopmentBase
+            #following precedent set by _set_fit_groups() from DevelopmentBase to force triangle to be dense
             backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
             obj = X.set_backend(backend)
             super().fit(obj.incr_to_cum().age_to_age)

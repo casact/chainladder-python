@@ -6,7 +6,7 @@ import pytest
 
 
 def test_grain(qtr):
-    #this is a dense only test, as grain() follows auto_sparse
+    #this test is dense only in practice, since grain() applies auto_sparse, which is True by default
     actual = qtr.iloc[0, 0].grain("OYDY")
     nan = np.nan
     expected = np.array(

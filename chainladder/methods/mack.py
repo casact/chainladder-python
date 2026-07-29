@@ -494,6 +494,7 @@ class MackChainladder(Chainladder):
         # This might be better as a dataframe
         obj = self.ultimate_.copy()
         backend = obj.array_backend
+        # forcing these four triangles to the same backend
         cols = (
             self.X_.latest_diagonal.set_backend(backend).values,
             self.ibnr_.set_backend(backend).values,
