@@ -54,6 +54,9 @@ def nanquantile(a:COO, q:float, axis:int=0, keepdims:bool=False):
         result cast back to COO for consistency.
     """
 
+    if a.size == 0:
+        return COO(np.array([]))
+
     # coordinates that survive the reduction
     keep_axes = tuple(i for i in range(a.ndim) if i != axis)
     keep_shape = tuple(a.shape[i] for i in keep_axes)

@@ -440,8 +440,8 @@ def test_auto_sparse_disabled_returns_self(prism_convert: Triangle) -> None:
 
     Parameters
     ----------
-    prism : Triangle
-        The prism sample data set Triangle.
+    prism_convert : Triangle
+        The prism sample data set Triangle, reduced for test speed.
 
     Returns
     -------

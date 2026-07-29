@@ -4,9 +4,11 @@ from chainladder.utils.sparse import (
     array,
     floor,
     COO,
-    where
+    where,
+    nanquantile
 )
 
+from sparse import all as sparse_all
 
 def test_array_from_list_default_fill_value() -> None:
     """
@@ -111,3 +113,38 @@ def test_floor_returns_copy() -> None:
     assert result is not a
     np.testing.assert_array_equal(result.todense(), [1.0, 2.0, -1.0])
     np.testing.assert_array_equal(a.todense(), [1.2, 2.7, -0.3])
+
+def test_empty_nanquantile() -> None:
+    """
+    Checks that nanquantile returns an empty array if an empty array is passed in; 
+    mirrors np.nanquantile in spirit.
+
+    Returns
+    -------
+    None
+    """
+    empty_a = COO(np.array([]))
+    assert nanquantile(empty_a,0.5) == COO(np.array([]))
+
+def test_1D_nanquantile() -> None:
+    """
+    Checks that nanquantile performs in 1D special case.
+
+    Returns
+    -------
+    None
+    """
+    a = COO(np.array([1,2,3,4]))
+    assert nanquantile(a,0.5) == 2.5
+    assert sparse_all(nanquantile(a,0.5,keepdims = True) == COO(np.array([2.5])))
+
+def test_keepdims_nanquantile() -> None:
+    """
+    Checks that nanquantile keeps dimension when instructed.
+
+    Returns
+    -------
+    None
+    """
+    a = COO(np.array([[1,2,3,4],[3,4,5,6]]))
+    assert sparse_all(nanquantile(a,0.5,keepdims = True) == COO(np.array([[2,3,4,5]])))
