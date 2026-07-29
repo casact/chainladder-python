@@ -437,6 +437,12 @@ def test_drop_origin_missing_raises(origin_tri):
         origin_tri.drop(origin="1999")
 
 
+def test_drop_origin_period_label(origin_tri):
+    """origin= should accept a pd.Period, the origin axis's native label type."""
+    result = origin_tri.drop(origin=origin_tri.origin[-1])
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
