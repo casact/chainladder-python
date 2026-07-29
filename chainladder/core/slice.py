@@ -541,20 +541,25 @@ class TriangleSlicer:
             i = np.where(self.vdims == key)[0][0]
             # Case sparse backend.
             if self.array_backend == "sparse":
-                # Cast value to sparse backend.
-                value = cast("Triangle", value)
-                after = cast("COO", value.values)
+                # Unwrap a Triangle-valued assignment to its raw array. A raw
+                # COO array can also be passed directly, mirroring the numpy
+                # branch below.
+                if isinstance(value, TriangleSlicer):
+                    value = cast("Triangle", value)
+                    after = cast("COO", value.values)
+                else:
+                    after = cast("COO", value)
 
-                # Drop existing data where key matches, reassign coordinates.
-                before = self.drop(key).values
-                before = cast("COO", before)
-                bc = before.coords[1, :]
-                before.coords[1] = np.where(bc >= i, bc + 1, bc,)
+                # Filter out existing data at the target column directly from
+                # self.values' own coordinates.
+                before = cast("COO", self.values)
+                keep = before.coords[1, :] != i
 
                 # Append assigned data and new coordinates.
-                after.coords[1] = i
-                coords = np.concatenate((before.coords, after.coords), axis=1)
-                data = np.concatenate((before.data, after.data))
+                after_coords = after.coords.copy()
+                after_coords[1] = i
+                coords = np.concatenate((before.coords[:, keep], after_coords), axis=1)
+                data = np.concatenate((before.data[keep], after.data))
 
                 # Create new sparse matrix with updated coords and data, assign to backend array.
                 self.values = xp.COO(
@@ -577,7 +582,7 @@ class TriangleSlicer:
                 value = self.iloc[:, 0] * 0 + value
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, AssertionError):
                 # For misaligned triangle support.
                 conc = (self.values, (self.iloc[:, 0] * 0 + cast("Triangle", value)).values)
                 self.values = xp.concatenate(conc, axis=1)
