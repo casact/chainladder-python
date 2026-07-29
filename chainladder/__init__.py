@@ -197,7 +197,7 @@ class Options:
         """
         Get the option value for the specified option.
 
-        .. deprecated:: 0.9.3
+        .. deprecated:: 0.10.0
             The ``option`` parameter is deprecated; use ``pat`` instead.
 
         Parameters
@@ -226,7 +226,7 @@ class Options:
         """
         Set the option value for the specified option.
 
-        .. deprecated:: 0.9.3
+        .. deprecated:: 0.10.0
             The ``option`` parameter is deprecated; use ``pat`` instead.
 
         Parameters
@@ -283,7 +283,7 @@ class Options:
         Restores the default value for the specified option. Restores default values for
         all options if pat is None.
 
-        .. deprecated:: 0.9.3
+        .. deprecated:: 0.10.0
             The ``option`` parameter is deprecated; use ``pat`` instead.
 
         Parameters
