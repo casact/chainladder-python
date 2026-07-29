@@ -124,7 +124,7 @@ def test_empty_nanquantile() -> None:
     None
     """
     empty_a = COO(np.array([]))
-    assert nanquantile(empty_a,0.5) == COO(np.array([]))
+    assert nanquantile(empty_a,0.5).size == 0
 
 def test_1D_nanquantile() -> None:
     """
