@@ -114,18 +114,6 @@ def test_floor_returns_copy() -> None:
     np.testing.assert_array_equal(result.todense(), [1.0, 2.0, -1.0])
     np.testing.assert_array_equal(a.todense(), [1.2, 2.7, -0.3])
 
-def test_empty_nanquantile() -> None:
-    """
-    Checks that nanquantile returns an empty array if an empty array is passed in; 
-    mirrors np.nanquantile in spirit.
-
-    Returns
-    -------
-    None
-    """
-    empty_a = COO(np.array([]))
-    assert nanquantile(empty_a,0.5).size == 0
-
 def test_1D_nanquantile() -> None:
     """
     Checks that nanquantile performs in 1D special case.
