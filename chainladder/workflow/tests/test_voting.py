@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 import numpy as np
 import chainladder as cl
 import pytest
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 @pytest.fixture
 def triangle_data():
@@ -184,3 +190,35 @@ def test_voting(raa):
             21605.83,
         ]
     ).all()
+
+def test_tri_sel(clrd:Triangle) -> None:
+    '''
+    starter test for the TriangleSelector class
+    '''
+    tri = clrd.sum()
+    assert tri['CumPaidLoss'] == cl.TriangleSelector('CumPaidLoss').fit_transform(tri)
+
+def test_mismatching_tri_sel(clrd:Triangle) -> None:
+    '''
+    checking that an error is raised when different number of columns are specified by estimators in a VotingChainladder
+    '''
+    tri = clrd.groupby('LOB').sum().loc['othliab']
+    pipe_p = cl.Pipeline(
+        steps=[
+            ('tri_sel', cl.TriangleSelector('CumPaidLoss')),
+            ('dev', cl.Development()),
+            ('model', cl.Chainladder())
+        ]
+    )
+    pipe_i = cl.Pipeline(
+        steps=[
+            ('dev', cl.Development()),
+            ('model', cl.Chainladder())
+        ]
+    )
+
+    estimators = [('incurred', pipe_i), ('paid', pipe_p)]
+    weights = np.array([[0.5, 0.5]] * 4 + [[0.75, 0.25]] * 3 + [[1, 0]] * 3)
+    vot = cl.VotingChainladder(estimators=estimators, weights=weights)
+    with pytest.raises(ValueError):
+        vot.fit(tri)

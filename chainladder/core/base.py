@@ -610,6 +610,8 @@ class TriangleBase(
         return [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
 
     def __array__(self):
+        if self.array_backend == "sparse":
+            return self.values.todense()
         return self.values
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
