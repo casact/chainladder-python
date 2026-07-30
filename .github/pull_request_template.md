@@ -6,5 +6,5 @@
 
 ## Additional Context for Reviewers  
 
-
-- [ ] I passed tests locally for both code (`uv run pytest`) and documentation changes (`uv run jb build docs --builder=custom --custom-builder=doctest`)
+## Checklist
+- [ ] I passed tests locally for both code (`uv run pytest`) and documentation changes (`uv run --directory docs jb build . --builder=custom --custom-builder=doctest`)
