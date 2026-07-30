@@ -16,5 +16,5 @@ python:
   install:
     - method: uv
       command: sync
-      groups:
+      extras:
         - docs
