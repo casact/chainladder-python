@@ -69,7 +69,6 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "pyarrow",
     "statsmodels>=0.14.6"  # For docs example; <0.14.6 fails to import under pandas 3
 ]
 test = [
@@ -79,6 +78,7 @@ test = [
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
+    "polars",
     "dask",
     'statsmodels>=0.14.6'
 ]
