@@ -25,13 +25,13 @@ sp.exp = np.exp
 sp.abs = np.abs
 
 
-def nan_to_num(a,nan=0.0):
+def nan_to_num(a, nan = 0.0):
     if type(a) in [int, float, np.int64, np.float64]:
         return np.nan_to_num(a)
     if hasattr(a, "fill_value"):
         a = a.copy()
         a.data[np.isnan(a.data)] = nan
-    return COO(coords=a.coords, data=a.data, fill_value=nan, shape=a.shape)
+    return COO(coords=a.coords, data=a.data, fill_value = nan, shape = a.shape)
 
 
 def ones(*args, **kwargs):
@@ -43,7 +43,7 @@ def nansum(a, axis=None, keepdims=None, *args, **kwargs):
         axis=axis, keepdims=keepdims, *args, **kwargs
     )
 
-def nanquantile(a:COO, q:float, axis:int=0, keepdims:bool=False):
+def nanquantile(a: COO, q: float, axis: int = 0, keepdims: bool = False):
     """
     mimics np.nanquantile
 
@@ -101,7 +101,7 @@ def nanquantile(a:COO, q:float, axis:int=0, keepdims:bool=False):
 
     return COO(out)
 
-def nanmedian(a:COO, axis:int=0, keepdims:bool=False):
+def nanmedian(a: COO, axis: int = 0, keepdims: bool = False):
     """
     mimics np.nanmean
 
@@ -119,7 +119,7 @@ def nanmedian(a:COO, axis:int=0, keepdims:bool=False):
     out : COO
         result cast back to COO for consistency.
     """
-    return nanquantile(a,0.5,axis,keepdims)
+    return nanquantile(a, 0.5, axis, keepdims)
 
 def nanmean(a, axis=None, keepdims=None):
     n = nansum(a, axis=axis, keepdims=keepdims)
