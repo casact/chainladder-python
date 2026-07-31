@@ -6,8 +6,18 @@ import sparse as sp
 from sparse import COO as COO
 from sparse import elemwise
 
+def _setitem_not_supported(self, key, value) -> None: # noqa
+    raise TypeError(
+        """
+        In-place item assignment (e.g. `triangle.values[...] = value`) is not 
+        supported on the sparse backend. Use numpy backend for in-place assignment.
+        """
+    )
+
+
 sp.isnan = np.isnan
 COO.nan = np.array([1.0, np.nan])[-1]
+COO.__setitem__ = _setitem_not_supported
 setattr(sp, 'testing', np.testing)
 sp.sqrt = np.sqrt
 sp.log = np.log

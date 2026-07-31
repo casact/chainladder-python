@@ -116,7 +116,19 @@ def test_loc_ellipsis(clrd):
 
 def test_missing_first_lag(raa):
     x = raa.copy()
-    x.values[:, :, :, 0] = 0
+
+    def set_missing(values) -> None:
+        """
+        Sets the missing values for the first lag.
+        """
+        values[:, :, :, 0] = 0
+
+    if x.array_backend == "sparse":
+        # Sparse COO arrays don't support in-place item assignment.
+        with pytest.raises(TypeError, match="sparse backend"):
+            set_missing(x.values)
+        return
+    set_missing(x.values)
     x = x.sum(0)
     assert x.link_ratio.shape == (1, 1, 9, 9)
 
@@ -434,7 +446,8 @@ def test_setitem_virtual_column_numpy_backend(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    assert tri.array_backend == "numpy"
+    if tri.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
     tri["double"] = lambda x: x["values"] * 2
     assert "double" in tri.columns
     assert tri["double"] == tri["values"] * 2
@@ -454,7 +467,8 @@ def test_setitem_value_backend_conversion(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    value = (tri["values"] * 2).set_backend("sparse")
+    other_backend = "numpy" if tri.array_backend == "sparse" else "sparse"
+    value = (tri["values"] * 2).set_backend(other_backend)
     assert tri.array_backend != value.array_backend
     tri["values"] = value
     assert tri.array_backend == raa.array_backend
@@ -475,7 +489,6 @@ def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    assert tri.array_backend != "sparse"
     value = tri["values"] * 2
     tri["values"] = value
     assert tri["values"] == raa["values"] * 2
@@ -483,7 +496,7 @@ def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
 
 def test_setitem_existing_column_array_value(raa: Triangle) -> None:
     """
-    Reassign an existing column to a raw array value on a non-sparse backend.
+    Reassign an existing column to a raw array value.
 
     Parameters
     ----------
@@ -495,7 +508,6 @@ def test_setitem_existing_column_array_value(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    assert tri.array_backend != "sparse"
     value = (tri["values"] * 3).values
     assert not isinstance(value, type(tri))
     tri["values"] = value
@@ -534,7 +546,8 @@ def test_setitem_new_column_misaligned_triangle(raa: Triangle) -> None:
     tri["misaligned"] = misaligned
     # Check the shape, new column should be added.
     assert tri.shape == (1, 2, 10, 10)
-    new_col = tri["misaligned"]
+    new_col = tri["misaligned"].set_backend("numpy")
+    misaligned = misaligned.set_backend("numpy")
     # Origin periods 1985 and prior should be nan.
     assert np.isnan(new_col.values[0, 0, :5, :]).all()
     # Origin periods 1986 and beyond should match.

@@ -300,7 +300,19 @@ def test_dropna_latest_diagonal(raa: Triangle) -> None:
     None
     """
     t = raa.copy()
-    t.values[:, :, 0, :] = np.nan
+
+    def set_first_origin_nan(values) -> None:
+        """
+        Sets the values for the first origin period to nan.
+        """
+        values[:, :, 0, :] = np.nan
+
+    if t.array_backend == "sparse":
+        # Sparse COO arrays don't support in-place item assignment.
+        with pytest.raises(TypeError, match="sparse backend"):
+            set_first_origin_nan(t.values)
+        return
+    set_first_origin_nan(t.values)
     result = t.latest_diagonal.dropna()
     assert result.shape == (1, 1, 9, 1)
     assert result.origin.min().year == 1982
@@ -333,6 +345,52 @@ def test_drop_invalid_axis_raises(clrd):
     """An unrecognized axis should raise a ValueError."""
     with pytest.raises(ValueError):
         clrd.drop(labels="CumPaidLoss", axis="bogus")
+
+
+def test_drop_columns_alternative(clrd):
+    """columns= should be equivalent to labels=..., axis=1."""
+    result = clrd.drop(columns="CumPaidLoss")
+    assert "CumPaidLoss" not in result.columns
+    assert result == clrd.drop(labels="CumPaidLoss", axis=1)
+
+
+def test_drop_columns_alternative_list(clrd):
+    """columns= should accept a list of labels."""
+    result = clrd.drop(columns=["CumPaidLoss", "IncurLoss"])
+    assert "CumPaidLoss" not in result.columns
+    assert "IncurLoss" not in result.columns
+    assert result == clrd.drop(labels=["CumPaidLoss", "IncurLoss"], axis=1)
+
+
+def test_drop_labels_and_alternative_raises(clrd):
+    """Specifying labels together with an alternative should raise ValueError."""
+    with pytest.raises(ValueError):
+        clrd.drop(labels="CumPaidLoss", columns="IncurLoss")
+
+
+def test_drop_index_origin_development_alternatives_raise(clrd):
+    """index/origin/development alternatives route to unimplemented axes."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(index="commauto")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(origin="1995")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(development="12")
+
+
+def test_drop_integer_label_routes_to_axis(clrd):
+    """A bare int label should route to its axis, not raise TypeError."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(development=12)
+
+
+def test_drop_columns_alternative_index_like(clrd):
+    """columns= should accept list-likes such as pd.Index and ndarray."""
+    labels = clrd.columns[:2]
+    result = clrd.drop(columns=labels)
+    assert all(label not in result.columns for label in labels)
+    assert result == clrd.drop(columns=list(labels))
+    assert result == clrd.drop(columns=labels.values)
 
 
 def test_exposure_tri():
@@ -526,8 +584,12 @@ def test_array_dunder(raa: Triangle) -> None:
     """
     arr = np.asarray(raa)
 
-    assert arr is raa.values
-    np.testing.assert_array_equal(np.array(raa), raa.values)
+    if raa.array_backend == "numpy":
+        # No conversion needed, so __array__ returns the same object.
+        assert arr is raa.values
+    else:
+        np.testing.assert_array_equal(arr, raa.values.todense())
+    np.testing.assert_array_equal(np.array(raa), raa.set_backend("numpy").values)
 
 
 def test_triangle_from_dataframe_interchange_protocol() -> None:
