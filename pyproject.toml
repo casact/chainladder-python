@@ -79,6 +79,7 @@ test = [
     "ipython",
     "pytest-cov",  # For coverage testing
     "polars",
+    "pyarrow",
     "dask",
     'statsmodels>=0.14.6'
 ]
