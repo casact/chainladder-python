@@ -62,8 +62,8 @@ def test_commutative(qtr, atol):
 )
 @pytest.mark.parametrize("alt", [0, 1, 2])
 @pytest.mark.parametrize("trailing", [False, True])
-def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
-    t = prism_dense["Paid"]
+def test_different_forms_of_grain(monthly, grain, trailing, alt, atol):
+    t = monthly["Paid"]
     if alt == 1:
         t = t.dev_to_val().copy()
     if alt == 2:
@@ -75,8 +75,8 @@ def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
     assert abs(a - b).sum().sum() < atol
 
 
-def test_asymmetric_origin_grain(prism_dense):
-    x = prism_dense.iloc[..., 8:, :].incr_to_cum()
+def test_asymmetric_origin_grain(monthly):
+    x = monthly.iloc[..., 8:, :].incr_to_cum()
     x = x[x.valuation < x.valuation_date]
     assert x.grain("OYDM").development[0] == 1
 

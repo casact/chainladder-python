@@ -491,21 +491,22 @@ def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
     assert result_default == result_no_sparse
 
 
-def test_auto_sparse_disabled_returns_self(prism_convert: Triangle) -> None:
+def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     """
     When cl.options.AUTO_SPARSE is False, _auto_sparse() returns the triangle
     unchanged without switching backends.
 
     Parameters
     ----------
-    prism_convert : Triangle
-        The prism sample data set Triangle, reduced for test speed.
+    prism : Triangle
+        The prism sample data set Triangle.
 
     Returns
     -------
     None
     """
-    dense = prism_convert.set_backend("numpy")
+    small_prism = prism.iloc[:66]
+    dense = small_prism.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
         result = dense._auto_sparse()
