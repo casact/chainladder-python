@@ -269,9 +269,15 @@ class Common:
             axis: Literal[0, 1, 2, 3]
     ) -> np.ndarray:
         """
+        Used by development estimators to turn user-supplied assumptions into a uniform NumPy array
+        shaped to broadcast over the triangle.
 
         Parameters
         ----------
+        value: str | int | float | list | tuple | set | np.ndarray | dict | Callable
+            The user-supplied assumption.
+        axis: Literal[0, 1, 2, 3]
+            The axis to broadcast over.
 
         """
         if type(value) in (int, float, str):

@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from chainladder.core.common import Common
 from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.sparse import COO
 
 from io import StringIO
 
@@ -1434,6 +1436,126 @@ def test_validate_assumption(raa: Triangle) -> None:
             value=raa, axis=3  # noqa - incorrect type provided on purpose.
         )
 
+
+@pytest.mark.parametrize("value", [1, 1.5, "volume"])
+def test_validate_assumption_scalar(raa: Triangle, value: int | float | str) -> None:
+    """
+    Scalar int, float, and str values are broadcast across the axis.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    value: int | float | str
+        A user-supplied assumption.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    assert (result.flat[0] == value)
+
+
+@pytest.mark.parametrize("value", [
+    [1] * 10,
+    (1,) * 10,
+    np.ones(10),
+])
+def test_validate_assumption_sequence(raa: Triangle, value: list | tuple | np.ndarray) -> None:
+    """
+    list, tuple, and ndarray values are wrapped in np.array and reshaped.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    value: list | tuple | np.ndarray
+        A user-supplied assumption.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+
+
+def test_validate_assumption_set(raa: Triangle) -> None:
+    """
+    set values reach the sequence branch without raising.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    # np.array(set) produces a 0-d object array in NumPy 2.x, so we only
+    # assert the call succeeds, not the resulting shape.
+    raa._validate_assumption(raa, {1, 2, 3}, axis=3)
+
+
+def test_validate_assumption_dict(raa: Triangle) -> None:
+    """
+    Dict values are mapped by axis label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    dev_periods = raa._get_axis_value(3).tolist()
+    value = {p: float(i) for i, p in enumerate(dev_periods)}
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    np.testing.assert_array_equal(result.flat[:], list(value.values()))
+
+
+def test_validate_assumption_callable(raa: Triangle) -> None:
+    """
+    Callable values are applied to each axis label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, lambda x: x * 2, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    expected = np.array([p * 2 for p in raa._get_axis_value(3).tolist()])
+    np.testing.assert_array_equal(result.flatten(), expected)
+
+
+def test_validate_assumption_axis2(raa: Triangle) -> None:
+    """
+    axis=2 produces shape (1, 1, n_origin, 1).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, 1, axis=2)
+    assert result.shape == (1, 1, raa.shape[2], 1)
+
+
 def test_xs(clrd):
     # when slicing with .loc on the first term in the index, Triangle will drop the term 
     assert clrd.xs('Adriatic Ins Co') == clrd.loc['Adriatic Ins Co']
@@ -1636,3 +1758,219 @@ def test_to_datetime_uninferrable_format_raises() -> None:
             columns='value',
             cumulative=True
         )
+
+
+def test_set_backend_via_ldf(raa: Triangle) -> None:
+    """
+    Call set_backend on a fitted estimator. The estimator has no array_backend attribute
+    of its own, so set_backend resolves the old backend through ldf_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit(raa)
+    dev.set_backend("sparse", inplace=True, deep=True)
+    assert dev.ldf_.array_backend == "sparse"
+
+
+def test_set_backend_no_array_backend_raises() -> None:
+    """
+    Call set_backend on an unfitted estimator. The estimator has neither array_backend
+    nor ldf_, so set_backend raises ValueError.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="Unable to determine array backend"):
+        cl.Development().set_backend("sparse", inplace=True)
+
+
+def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
+    """
+    set_backend(inplace=True) updates self.array_backend when the attribute exists.
+    When called on an object without array_backend, the attribute is not added.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    # Triangle has array_backend, updated in-place.
+    tri = raa.set_backend("numpy")
+    tri.set_backend("sparse", inplace=True)
+    assert tri.array_backend == "sparse"
+
+    # Estimator has no array_backend, attribute is not added.
+    dev = cl.Development().fit(raa.set_backend("numpy"))
+    dev.set_backend("sparse", inplace=True)
+    assert not hasattr(dev, "array_backend")
+
+
+def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
+    """
+    set_backend with deep=True iterates vars(self) and recursively converts every
+    nested Common instance. Without deep=True, the nested
+    attributes keep their original backend; with deep=True all are converted.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit(raa.set_backend("numpy"))
+    common_attrs = [k for k, v in vars(dev).items() if isinstance(v, Common)]
+
+    # deep=False: nested Triangle attributes keep numpy
+    dev.set_backend("sparse", inplace=True, deep=False)
+    assert all(getattr(dev, k).array_backend == "numpy" for k in common_attrs)
+
+    # deep=True: every nested Common attribute is converted to sparse
+    dev.set_backend("sparse", inplace=True, deep=True)
+    assert all(getattr(dev, k).array_backend == "sparse" for k in common_attrs)
+
+
+def test_set_backend_inplace_mutates_values(raa: Triangle) -> None:
+    """
+    set_backend(inplace=True) reassigns self.values.
+    Verify the in-place mutation produces the correct array type: numpy to sparse yields a COO,
+    sparse to numpy yields an ndarray.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    numpy_tri = raa.set_backend("numpy")
+    numpy_tri.set_backend("sparse", inplace=True)
+    assert isinstance(numpy_tri.values, COO)
+
+    numpy_tri.set_backend("numpy", inplace=True)
+    assert isinstance(numpy_tri.values, np.ndarray)
+
+
+def test_set_backend_invalid_raises(raa: Triangle) -> None:
+    """
+    Pass an unsupported backend name to set_backend. Should raise AttributeError.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError):
+        raa.set_backend("invalid_backend", inplace=True)
+
+
+def test_set_backend_roundtrip(raa: Triangle) -> None:
+    """
+    Convert numpy to sparse and back to numpy, and verify values are preserved.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    sparse_raa = raa.set_backend("sparse")
+    assert sparse_raa.array_backend == "sparse"
+    restored = sparse_raa.set_backend("numpy")
+    assert restored.array_backend == "numpy"
+    assert restored == raa
+
+
+def test_has_zeta_true(raa: Triangle) -> None:
+    """
+    has_zeta returns True after fitting IncrementalAdditive, which sets zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    fitted = cl.IncrementalAdditive().fit(raa, sample_weight=raa.latest_diagonal)
+    assert fitted.has_zeta is True
+
+
+def test_has_zeta_false(raa: Triangle) -> None:
+    """
+    has_zeta returns False for an estimator that does not set zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert cl.Development().fit(raa).has_zeta is False
+
+
+def test_cum_zeta_raises_when_no_zeta(raa: Triangle) -> None:
+    """
+    cum_zeta_ raises AttributeError when the estimator has no zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError):
+        _ = cl.Development().fit(raa).cum_zeta_
+
+
+def test_cum_zeta_returns_incr_to_cum(atol) -> None:
+    """
+    cum_zeta_ returns zeta_.incr_to_cum() when zeta_ is present.
+
+    Parameters
+    ----------
+    atol : float
+        Absolute tolerance fixture.
+
+    Returns
+    -------
+    None
+    """
+    ia = cl.load_sample("ia_sample")
+    fitted = cl.IncrementalAdditive().fit(ia["loss"], sample_weight=ia["exposure"].latest_diagonal)
+    np.testing.assert_allclose(
+        fitted.cum_zeta_.values.flatten(),
+        [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
+        atol=atol,
+    )

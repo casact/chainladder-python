@@ -223,7 +223,7 @@ class MunichAdjustment(DevelopmentBase):
         modelsI = modelsI.fit(i, p, 1 / i).sigma_fill(X.sigma_interpolation)
         q_f = self._p_to_i_concate(modelsP.slope_, modelsI.slope_, xp)
         rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_, xp)
-        return xp.swapaxes(q_f, -1, -2), xp.swapaxes(rho_sigma, -1, -2)
+        return q_f.swapaxes(-1, -2), rho_sigma.swapaxes(-1, -2)
 
     def _get_MCL_resids(self, X):
         xp = X.get_array_module()
