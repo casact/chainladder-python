@@ -465,12 +465,21 @@ def parallelogram_olf(
     )
 
     if cumulative:
-        factors = pd.Series(np.array(values, dtype="float64"), np.array(dates))
+        factors = pd.Series(
+            np.array(values, dtype="float64"), pd.to_datetime(np.array(dates))
+        ).sort_index()
         if (factors <= 0).any():
             raise ValueError("cumulative on-level factors must be positive")
-        # An on-level factor is the current rate level divided by the rate
-        # level in force, so the implied rate level is its reciprocal.
-        cum_rate_changes = (1 / factors).reindex(date_idx).ffill().bfill()
+        # An on-level factor is the current rate level divided by the rate level
+        # in force, so the implied rate level is its reciprocal. Each factor is
+        # in force from its effective date until the next (a backward/asof match,
+        # so off-grid or pre-window dates are honored); dates before the first
+        # factor take the earliest, extending it back over the lookback window.
+        level = 1 / factors
+        pos = np.searchsorted(level.index.values, date_idx.values, side="right") - 1
+        cum_rate_changes = pd.Series(
+            level.values[np.clip(pos, 0, None)], index=date_idx
+        )
     else:
         rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
             date_idx, fill_value=0

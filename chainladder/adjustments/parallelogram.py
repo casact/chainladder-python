@@ -292,7 +292,9 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
     def _combine_duplicate_dates(self, r):
         """Collapse multiple rate entries sharing an effective date."""
         if self.cumulative:
-            return r.groupby(self.date_col)[self.change_col].prod().reset_index()
+            # Cumulative factors are absolute rate levels, not compounding
+            # increments, so the last factor stated for a date wins.
+            return r.groupby(self.date_col)[self.change_col].last().reset_index()
         r[self.change_col] = r[self.change_col] + 1
         return (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
 
