@@ -164,8 +164,7 @@ def test_printer(raa):
 def test_value_order(clrd):
     a = clrd[["CumPaidLoss", "BulkLoss"]]
     b = clrd[["BulkLoss", "CumPaidLoss"]]
-    xp = a.get_array_module()
-    xp.testing.assert_array_equal(a.values[:, -1], b.values[:, 0])
+    assert a.iloc[:, -1] == b.iloc[:, 0]
 
 
 def test_trend(raa, atol):
@@ -180,9 +179,7 @@ def test_shift(qtr):
 
 def test_quantile_vs_median(clrd):
     xp = clrd.get_array_module()
-    xp.testing.assert_array_equal(
-        clrd.quantile(q=0.5)["CumPaidLoss"].values, clrd.median()["CumPaidLoss"].values
-    )
+    assert clrd.quantile(q=0.5)["CumPaidLoss"] == clrd.median()["CumPaidLoss"]
 
 
 def test_base_minimum_exposure_triangle(raa):
@@ -508,7 +505,8 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     -------
     None
     """
-    dense = prism.set_backend("numpy")
+    small_prism = prism.iloc[:66]
+    dense = small_prism.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
         result = dense._auto_sparse()

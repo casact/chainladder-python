@@ -23,12 +23,12 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("clrd", ["normal_run", "sparse_only_run"], indirect=True)
     if "genins" in metafunc.fixturenames:
         metafunc.parametrize("genins", ["normal_run", "sparse_only_run"], indirect=True)
-    if "prism_dense" in metafunc.fixturenames:
+    if "monthly" in metafunc.fixturenames:
         metafunc.parametrize(
-            "prism_dense", ["normal_run", "sparse_only_run"], indirect=True
+            "monthly", ["normal_run", "sparse_only_run"], indirect=True
         )
     if "prism" in metafunc.fixturenames:
-        metafunc.parametrize("prism", ["normal_run"], indirect=True)
+        metafunc.parametrize("prism", ["sparse_only_run"], indirect=True)
     if "xyz" in metafunc.fixturenames:
         metafunc.parametrize("xyz", ["normal_run", "sparse_only_run"], indirect=True)
 
@@ -56,14 +56,12 @@ def _sample_fixture(
 
     """
 
-    # Set the backend to sparse for a sparse-only-run.
-    cl.options.set_option("ARRAY_BACKEND", "sparse" if request.param == "sparse_only_run" else "numpy")
     # Load the sample data.
     tri = cl.load_sample(sample)
-    # Apply a transformation if supplied, then yield the triangle to the test.
-    yield transform(tri) if transform else tri
-    # After the test, reset the backend to default numpy.
-    cl.options.set_option("ARRAY_BACKEND", "numpy")
+    # Apply a transformation if supplied
+    tri = transform(tri) if transform else tri
+    # Set the backend to sparse for a sparse-only-run, then yield the triangle to the test.
+    yield tri.set_backend("sparse" if request.param == "sparse_only_run" else "numpy")
 
 
 @pytest.fixture
@@ -90,9 +88,8 @@ def genins(request):
 def prism(request):
     yield from _sample_fixture(request, "prism")
 
-
 @pytest.fixture
-def prism_dense(request):
+def monthly(request):
     yield from _sample_fixture(request, "prism", transform=lambda t: t.sum())
 
 

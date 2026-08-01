@@ -15,11 +15,10 @@ def test_mack_to_triangle():
         .summary_
     )
 
-def test_mack_malformed():
-    a  = cl.load_sample('raa')
-    b = a.iloc[:, :, :-1]
-    x = cl.MackChainladder().fit(a) 
-    y = cl.MackChainladder().fit(b)
+def test_mack_malformed(raa):
+    raa_alt = raa.copy().iloc[:, :, :-1]
+    x = cl.MackChainladder().fit(raa) 
+    y = cl.MackChainladder().fit(raa_alt)
     assert x.process_risk_.iloc[:,:,:-1] == y.process_risk_
 
 def test_multi_triangle_mack(clrd,atol):
