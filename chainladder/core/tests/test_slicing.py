@@ -367,11 +367,15 @@ def test_set_fancy_origin_raises(raa: Triangle) -> None:
     None
 
     """
+    raa_copy = raa.copy()
     if raa.array_backend == "sparse":
         pytest.skip("Test is specific to the numpy backend.")
     else:
         with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
-            raa.iloc[0, 0, [0, 1, 5], :] = raa.iloc[0, 0, :3, :]
+            raa_copy.iloc[0, 0, [0, 1, 5], :] = raa.iloc[0, 0, :3, :]
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.loc['Total', 'values', ['1983', '1984', '1986'], :] = raa.iloc[0, 0, :3, :]
+
 
 def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
     """
@@ -404,11 +408,15 @@ def test_set_fancy_development_raises(raa: Triangle) -> None:
     None
 
     """
+    raa_copy = raa.copy()
     if raa.array_backend == "sparse":
         pytest.skip("Test is specific to the numpy backend.")
     else:
         with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
-            raa.iloc[0, 0, :, [0, 1, 5]] = raa.iloc[0, 0, :, :3]
+            raa_copy.iloc[0, 0, :, [0, 1, 5]] = raa.iloc[0, 0, :, :3]
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.loc['Total', 'values', :, [12, 24, 48]] = raa.iloc[0, 0, :, :3]
+
 
 def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     """
@@ -434,10 +442,10 @@ def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     assert result.index.values.tolist() == expected_index
     assert result.columns.tolist() == ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
 
-def test_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     """
     Set lists of non-contiguous indexes and column through Triangle.loc. Check the values
-    of the index and columns returned.
+    of the assigned triangles.
 
     Parameters
     ----------
@@ -473,6 +481,38 @@ def test_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
         clrd_copy = clrd.copy()
         clrd_copy.loc[dest_index,dest_col] = clrd.loc[val_index,val_col]
         assert clrd_copy.loc[dest_index,dest_col] == clrd.loc[val_index,val_col]
+
+def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+    """
+    Set lists of non-contiguous indexes and column through Triangle.iloc. Check the values
+    of the assigned triangles.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    if clrd.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        dest_index = [0,1,5]
+        val_index = [1,4,6]
+        dest_col = [2,3,5]
+        val_col = [1,2,4]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[dest_index] = clrd.iloc[val_index]
+        assert clrd_copy.iloc[dest_index] == clrd.iloc[val_index]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[:,dest_col] = clrd.iloc[:,val_col]
+        assert clrd_copy.iloc[:,dest_col] == clrd.iloc[:,val_col]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[dest_index,dest_col] = clrd.iloc[val_index,val_col]
+        assert clrd_copy.iloc[dest_index,dest_col] == clrd.iloc[val_index,val_col]
 
 def test_sparse_at_iat1(prism):
     t = prism.copy()

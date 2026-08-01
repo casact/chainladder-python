@@ -150,11 +150,13 @@ class _LocBase:
             raise ValueError('Setting values with sparse backend requires .at or .iat')
         if isinstance(values, TriangleSlicer):
             values = values.values
+        # attempt to make keys contig
+        contig_key = tuple([_LocBase._contig_slice(x) for x in key])
         # Create a slice for any key elements that are integers, otherwise preserve the slice or array.
-        key = tuple(
-            [slice(item, item + 1) if isinstance(item, int) else item for item in key]
+        tuple_key = tuple(
+            [slice(item, item + 1) if isinstance(item, int) else item for item in contig_key]
         )
-        norm_key = self._normalize_index(key)
+        norm_key = self._normalize_index(tuple_key)
         if type(norm_key[2]) != slice or type(norm_key[3]) != slice:
             raise ValueError("Setting while fancy indexing on origin/development is not supported.")
         if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
@@ -453,10 +455,7 @@ class Location(_LocBase):
         None
 
         """
-        raw_slice = self.key_to_slice(key)
-        # _LocBase expects key to be contiguous if possible
-        contig_slice = [_LocBase._contig_slice(x) for x in raw_slice]
-        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], contig_slice), values)
+        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
 
 class Ilocation(_LocBase):
     """
