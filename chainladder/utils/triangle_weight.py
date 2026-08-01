@@ -253,7 +253,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
                 #adding new path to handle full triangle (e.g. full_triangle_, ultimate_, et.c)
                 if X.is_full: 
                     w = X.copy()
-                    w.values[:,:,:z,:] = np.nan
+                    w.values[:,:,:-n_periods,:] = np.nan
                 else:
                     val_date_min = X.valuation[X.valuation <= X.valuation_date]
                     val_date_min = val_date_min.drop_duplicates().sort_values()
