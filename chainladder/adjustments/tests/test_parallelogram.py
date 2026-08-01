@@ -450,3 +450,60 @@ def test_cumulative_matches_incremental():
 def test_cumulative_rejects_non_positive():
     with pytest.raises(ValueError, match="positive"):
         cl.parallelogram_olf([1.0, 0.0], ["2010-01-01", "2011-01-01"], cumulative=True)
+
+
+def test_cumulative_factor_predates_window():
+    """A factor in force before the triangle window is honored, not dropped.
+
+    The earliest factor's effective date (2000) predates the triangle's
+    lookback window (origins start 2003), so it must still apply to the first
+    origins rather than being backfilled with a later factor. See GH #922.
+    """
+    data = pd.DataFrame({"Year": list(range(2003, 2009)), "EarnedPremium": [1000] * 6})
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
+    factors = pd.DataFrame(
+        {"EffDate": ["2000-01-01", "2005-01-01"], "Factor": [0.5, 1.0]}
+    )
+    olf = (
+        cl.ParallelogramOLF(
+            rate_history=factors,
+            change_col="Factor",
+            date_col="EffDate",
+            approximation_grain="M",
+            vertical_line=True,
+            cumulative=True,
+        )
+        .fit_transform(prem_tri)
+        .olf_
+    )
+    assert np.all(
+        np.round(olf.to_frame().values.flatten(), 6) == [0.5, 0.5, 1.0, 1.0, 1.0, 1.0]
+    )
+
+
+def test_cumulative_duplicate_date_last_wins():
+    """Duplicate effective dates keep the last cumulative factor, not a product."""
+    dup = pd.DataFrame(
+        {
+            "EffDate": ["1998-01-01", "2003-01-01", "2003-01-01", "2004-01-01"],
+            "Factor": [0.67, 0.67, 0.75, 1.00],
+        }
+    )
+    olf = (
+        cl.ParallelogramOLF(
+            rate_history=dup,
+            change_col="Factor",
+            date_col="EffDate",
+            approximation_grain="M",
+            vertical_line=True,
+            cumulative=True,
+        )
+        .fit_transform(cl.load_sample("friedland_gl_self_insurer")["Reported Claims"])
+        .olf_
+    )
+    assert np.all(
+        np.round(olf.to_frame().values.flatten(), 6)
+        == [0.67, 0.67, 0.67, 0.67, 0.67, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0]
+    )
