@@ -18,7 +18,7 @@ Data object to manage and manipulate reserving data
 ```{image} ../images/plot_triangle_from_pandas.png
 ```
 +++
-**Classes**: {ref}`Triangle <triangle>`, …
+**Classes**: {ref}`Triangle <triangle:structure>`, …
 ````
 
 ````{grid-item-card}
