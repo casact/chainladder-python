@@ -350,8 +350,10 @@ class Triangle(TriangleBase):
         2024Q3   160.0
         2024Q4   140.0
 
-    Triangles with ultimate values
-    ------------------------------
+    Notes
+    -----
+
+    **Triangles with ultimate values**
 
     Triangles produced by reserving methods carry ultimate projections at the
     sentinel valuation date ``options.ULT_VAL`` (default December 31, 2261).
@@ -394,6 +396,7 @@ class Triangle(TriangleBase):
 
     .. testcode::
 
+        import pandas as pd
         df = pd.DataFrame(
             data={
                 'origin': pd.to_datetime(['1981-01-01', '1982-01-01']),
