@@ -154,7 +154,14 @@ class _LocBase:
         key = tuple(
             [slice(item, item + 1) if isinstance(item, int) else item for item in key]
         )
-        cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
+        norm_key = self._normalize_index(key)
+        if type(norm_key[2]) != slice or type(norm_key[3]) != slice:
+            raise ValueError("Setting while fancy indexing on origin/development is not supported.")
+        if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
+        else:
+            #the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(np.ix_(norm_key[0], norm_key[1])+(norm_key[2], norm_key[3]), values)
 
     def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
@@ -431,7 +438,23 @@ class Location(_LocBase):
         return out
 
     def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
+        """
+        Supports the .loc[] for setting Triangle values. Only supported for numpy backend.
+
+        Parameters
+        ----------
+        key: _LabelKey
+            Indicates the location of the Triangle you want to set values for.
+        values: int | float | TriangleSlicer
+            The value(s) you want to assign to the slice of the Triangle.
+
+        Returns
+        -------
+        None
+
+        """
         raw_slice = self.key_to_slice(key)
+        # _LocBase expects key to be contiguous if possible
         contig_slice = [_LocBase._contig_slice(x) for x in raw_slice]
         super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], contig_slice), values)
 
