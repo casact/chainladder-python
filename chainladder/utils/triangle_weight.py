@@ -117,7 +117,13 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         self : object
             Returns the instance itself.
         """
-        self.w_ = self._set_weight_func(X=X,secondary_rank=sample_weight)
+        # bulk of the logic was refactored from `DevelopmentBase`, which only had numpy support
+        # using _set_fit_group to explicitly guard against fitting sparse triangles
+        # forcing numpy here to avoid major refactoring
+        # in practie, there is no realistic use case for a sparse triangle to need weights
+        backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
+        obj = X.set_backend(backend)
+        self.w_ = self._set_weight_func(X=obj,secondary_rank=sample_weight)
         return self
 
     def transform(self, X: TriangleProtocol) -> Triangle:
