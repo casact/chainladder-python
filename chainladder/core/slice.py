@@ -191,7 +191,7 @@ class _LocBase:
                 start: int | None= i.start if i.start > 0 else None
                 stop: int | None = i.stop if i.stop > -1 else None
                 stop: int | None = None if stop == self.obj.shape[n] else stop
-                step: int | None = None if start is None and stop is None else i.step
+                step: int | None = None if start is None and stop is None and (i.step == 1) else i.step
                 l.append(slice(start, stop, step))
             else:
                 l.append(i)
