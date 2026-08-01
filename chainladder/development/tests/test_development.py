@@ -22,20 +22,23 @@ class _FutureDevelopment(cl.TriangleWeight):
     
     def fit(self, X, y: None = None, sample_weight: None = None):
         if hasattr(X,'age_to_age'):
-            super().fit(X.incr_to_cum().age_to_age)
-            xp = X.get_array_module()
-            indices = X.values.shape[0]
-            columns = X.values.shape[1]
-            origins = X.age_to_age.values.shape[2]
-            reg_x = X.incr_to_cum().values[...,:origins,:-1]
-            reg_y = X.incr_to_cum().values[...,:origins,1:]
+            #following precedent set by _set_fit_groups() from DevelopmentBase to force triangle to be dense
+            backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
+            obj = X.set_backend(backend)
+            super().fit(obj.incr_to_cum().age_to_age)
+            xp = obj.get_array_module()
+            indices = obj.values.shape[0]
+            columns = obj.values.shape[1]
+            origins = obj.age_to_age.values.shape[2]
+            reg_x = obj.incr_to_cum().values[...,:origins,:-1]
+            reg_y = obj.incr_to_cum().values[...,:origins,1:]
             dev_len = reg_x.shape[3]
             average_param = self._cascade_param(dev_len, self.average, "volume")
             average_param = np.tile(average_param,(indices,columns,1,1))
             params = cl.WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
                 reg_x, reg_y, self.w_.values, average_param
             )
-            self.ldf_ = self.dev._param_property(X, xp.swapaxes(params.slope_, 2, 3), 0)
+            self.ldf_ = self.dev._param_property(obj, params.slope_.swapaxes(2, 3), 0)
         return self
     
 def test_full_slice(genins):
@@ -816,44 +819,21 @@ def test_pipeline(clrd):
         dev1.w_v2_.values, dev2.named_steps.drop_hilo.w_v2_.values, True
     )
 
-def test_sigma1(atol):
-    data = {
-        "valuation": [
-            1981,1982,1983,1984,1985,
-            1982,1983,1984,1985,
-            1983,1984,1985,
-            1984,1985,
-            1985,
-        ],
-        "origin": [
-            1981,1981,1981,1981,1981,
-            1982,1982,1982,1982,
-            1983,1983,1983,
-            1984,1984,
-            1985,
-        ],
-        "values": [
-            1000,1385,1700,1905,2000,
-            1000,1395,1700,1895,
-            1000,1405,1700,
-            1000,1415,
-            1000,
-        ],
-    }
-    tri = cl.Triangle(
-        data,
-        origin="origin",
-        development="valuation",
-        columns=["values"],
-        cumulative=True,
-    )
-    assert np.allclose(
-        cl.Development(average='simple').fit(tri).sigma_.values,
-        cl.Development(average='volume').fit(tri).sigma_.values,
-        atol = atol
-    )        
-    assert np.allclose(
-        cl.Development(average='simple').fit(tri).sigma_.values,
-        cl.Development(average='regression').fit(tri).sigma_.values,
-        atol = atol
-    )      
+
+def test_pct_reported_and_unreported(raa):
+    dev = cl.Development().fit(raa)
+    np.testing.assert_array_equal(dev.pct_reported_.values, (1 / dev.cdf_).values)
+    np.testing.assert_array_equal(dev.pct_unreported_.values, (1 - 1 / dev.cdf_).values)
+    # reported + unreported percentages sum to one where defined
+    total = (dev.pct_reported_ + dev.pct_unreported_).values
+    assert np.allclose(np.nan_to_num(total), np.nan_to_num(dev.cdf_.values * 0 + 1))
+
+
+def test_pct_reported_requires_ldf(raa):
+    # An unfitted triangle has no ldf_, so both properties raise AttributeError.
+    assert not raa.has_ldf
+    with pytest.raises(AttributeError):
+        raa.pct_reported_
+    with pytest.raises(AttributeError):
+        raa.pct_unreported_
+

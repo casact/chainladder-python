@@ -575,6 +575,20 @@ Exhibit II Sheet 4 p113
     2007         19867.280               16247.0           46207.0               36114.280           66074.280
     2008         15223.124               28898.0           56360.0               44121.124           71583.124
 
+Persisting the Selected Estimators
+##################################
+
+The selected reported and paid development estimators are reused in later chapters, such as the Bornhuetter-Ferguson technique in Chapter 9. Rather than refitting them, we persist the fitted estimators with ``to_json`` so they can be recalled directly. JSON is used rather than a pickle so the saved estimators load reliably across package and dependency versions.
+
+.. doctest::
+
+    >>> import os
+    >>> data_dir = os.path.join(os.path.dirname(cl.__file__), "utils", "data")
+    >>> with open(os.path.join(data_dir, "friedland_ch7_xyz_reported.json"), "w") as f:
+    ...     _ = f.write(reported_devs["Selected"].to_json())
+    >>> with open(os.path.join(data_dir, "friedland_ch7_xyz_paid.json"), "w") as f:
+    ...     _ = f.write(paid_devs["Selected"].to_json())
+
 Exhibit III Sheet 1 p114
 ##########################
 

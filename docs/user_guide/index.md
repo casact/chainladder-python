@@ -8,7 +8,7 @@ Here are a few examples that we have came up with, hopefully the code is simple 
 ````{grid-item-card}
 :columns: 6
 
-**[Triangles](triangle)**
+**{doc}`Triangles <triangle>`**
 ^^^
 
 Data object to manage and manipulate reserving data
@@ -18,13 +18,13 @@ Data object to manage and manipulate reserving data
 ```{image} ../images/plot_triangle_from_pandas.png
 ```
 +++
-**Classes**: **[Triangle](triangle)**, ...
+**Classes**: **{py:class}`chainladder.Triangle`**, ...
 ````
 
 ````{grid-item-card}
 :columns: 6
 
-**[Development](development)**
+**{doc}`Development <development>`**
 ^^^
 Tooling to generate loss development patterns
 
@@ -34,14 +34,15 @@ Tooling to generate loss development patterns
 ```
 +++
 
-**Algorithms**: [Development](development:development), [ClarkLDF](development:clarkldf), …
+**Algorithms**: {ref}`Development <development:development>`,
+{ref}`ClarkLDF <development:clarkldf>`, …
 
 ````
 
 ````{grid-item-card}
 :columns: 6
 
-**[Tail Estimation](tails)**
+**{doc}`Tail Estimation <tails>`**
 ^^^
 Extrapolate development patterns beyond the known data.
 
@@ -51,13 +52,14 @@ Extrapolate development patterns beyond the known data.
 ```
 
 +++
-**Algorithms**: [TailCurve](tails:tailcurve), [TailConstant](tails:tailconstant), …
+**Algorithms**: {ref}`TailCurve <tails:tailcurve>`,
+{ref}`TailConstant <tails:tailconstant>`, …
 ````
 
 ````{grid-item-card}
 :columns: 6
 
-**[IBNR Models](methods)**
+**{doc}`IBNR Models <methods>`**
 ^^^
 
 Generate IBNR estimates and associated statistics
@@ -69,13 +71,14 @@ Generate IBNR estimates and associated statistics
 ```
 
 +++
-**Algorithms**: [Chainladder](methods:chainladder), [CapeCod](methods:capecod), …
+**Algorithms**: {ref}`Chainladder <methods:chainladder>`,
+{ref}`CapeCod <methods:capecod>`, …
 ````
 
 ````{grid-item-card}
 :columns: 6
 
-**[Adjustments](adjustments)**
+**{doc}`Adjustments <adjustments>`**
 ^^^
 Common actuarial data adjustments
 
@@ -87,13 +90,14 @@ Common actuarial data adjustments
 ```
 
 +++
-**Classes**: [BootstrapODPSample](adjustments:bootstrapodpsample), [Trend](adjustments:trend), …
+**Classes**: {ref}`BootstrapODPSample <adjustments:bootstrapodpsample>`,
+{ref}`Trend <adjustments:trend>`, …
 ````
 
 ````{grid-item-card}
 :columns: 6
 
-**[Workflow](workflow)**
+**{doc}`Workflow <workflow>`**
 ^^^
 
 Workflow tools for complex analyses
@@ -104,7 +108,8 @@ Workflow tools for complex analyses
 ```
 
 +++
-**Utilities**: [Pipeline](workflow:pipeline), [VotingChainladder](workflow:votingchainladder), …
+**Utilities**: {ref}`Pipeline <workflow:pipeline>`,
+{ref}`VotingChainladder <workflow:votingchainladder>`, …
 ````
 
 `````

@@ -124,12 +124,13 @@ class Chainladder(MethodBase):
         attribute access.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
 
             tr = cl.load_sample('ukmotor')
-            cl.Chainladder().fit(tr)
+            print(cl.Chainladder().fit(tr))
 
         .. testoutput::
 

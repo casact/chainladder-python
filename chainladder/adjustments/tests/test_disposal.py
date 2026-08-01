@@ -60,6 +60,26 @@ def test_no_disposal_exception(raa:Triangle) -> None:
     with pytest.raises(AttributeError):
         _ = raa.incr_disposal_rate_
 
+def test_full_disposal_rate_tri(clrd) -> None:
+    '''
+    tests disposal rate for full triangle
+    '''
+    total = clrd.sum()
+    est = cl.Chainladder().fit(total['CumPaidLoss'])
+    ult = est.ultimate_
+    full_tri = est.full_triangle_
+    full_tri.ultimate_ = ult
+    assert full_tri.disposal_rate_tri.iat[-1,-1,-1,-1] == 1.
+
+def test_weighted_disposal_rate_tri(clrd) -> None:
+    '''
+    tests disposal rate triangle when there are weights
+    '''
+    total = clrd.sum()
+    ult = cl.Chainladder().fit(total['CumPaidLoss']).ultimate_
+    dr = cl.DisposalRate(n_periods = 4).fit_transform(total['CumPaidLoss'],sample_weight = ult)
+    assert np.all(np.isnan(dr.disposal_rate_tri.values[:,:,0:6,0:1]))
+
 def test_cl_parity(raa:Triangle) -> None:
     """
     A no-tail, full-triangle, volume-weighted Chainladder estimator coincides with the disposal rate adjustment. 

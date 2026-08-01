@@ -6,8 +6,18 @@ import sparse as sp
 from sparse import COO as COO
 from sparse import elemwise
 
+def _setitem_not_supported(self, key, value) -> None: # noqa
+    raise TypeError(
+        """
+        In-place item assignment (e.g. `triangle.values[...] = value`) is not 
+        supported on the sparse backend. Use numpy backend for in-place assignment.
+        """
+    )
+
+
 sp.isnan = np.isnan
 COO.nan = np.array([1.0, np.nan])[-1]
+COO.__setitem__ = _setitem_not_supported
 setattr(sp, 'testing', np.testing)
 sp.sqrt = np.sqrt
 sp.log = np.log
@@ -15,13 +25,13 @@ sp.exp = np.exp
 sp.abs = np.abs
 
 
-def nan_to_num(a):
+def nan_to_num(a, nan = 0.0):
     if type(a) in [int, float, np.int64, np.float64]:
         return np.nan_to_num(a)
     if hasattr(a, "fill_value"):
         a = a.copy()
-        a.data[np.isnan(a.data)] = 0.0
-    return COO(coords=a.coords, data=a.data, fill_value=0.0, shape=a.shape)
+        a.data[np.isnan(a.data)] = nan
+    return COO(coords=a.coords, data=a.data, fill_value = nan, shape = a.shape)
 
 
 def ones(*args, **kwargs):
@@ -33,7 +43,83 @@ def nansum(a, axis=None, keepdims=None, *args, **kwargs):
         axis=axis, keepdims=keepdims, *args, **kwargs
     )
 
+def nanquantile(a: COO, q: float, axis: int = 0, keepdims: bool = False):
+    """
+    mimics np.nanquantile
 
+    Parameters
+    ----------
+    x : COO
+        input sparse array.
+    q : float
+        quantiles in [0, 1].
+    axis : int
+        Axis over which the quantile is applied.
+    keepdims : bool
+        Match NumPy keepdims behavior.
+
+    Returns
+    -------
+    out : COO
+        result cast back to COO for consistency.
+    """
+
+    # coordinates that survive the reduction
+    keep_axes = tuple(i for i in range(a.ndim) if i != axis)
+    keep_shape = tuple(a.shape[i] for i in keep_axes)
+
+    if not keep_axes:
+        out = np.nanquantile(a.data, q)
+        if keepdims:
+            out = np.asarray(out).reshape(
+                tuple(1 for _ in range(a.ndim))
+            )
+        return COO(out)
+
+    # map every stored value to an output location
+    keep_coords = a.coords[list(keep_axes)]
+    group_ids = np.ravel_multi_index(keep_coords, keep_shape)
+    
+    # sort by group
+    order = np.argsort(group_ids)
+    group_ids = group_ids[order]
+    values = a.data[order]
+
+    out = np.full(np.prod(keep_shape), np.nan)
+
+    starts = np.r_[0, np.flatnonzero(np.diff(group_ids)) + 1]
+    ends = np.r_[starts[1:], len(group_ids)]
+
+    for start, end in zip(starts, ends):
+        gid = group_ids[start]
+        out[gid] = np.nanquantile(values[start:end], q)
+
+    out = out.reshape(keep_shape)
+
+    if keepdims:
+        out = np.expand_dims(out,axis)
+
+    return COO(out)
+
+def nanmedian(a: COO, axis: int = 0, keepdims: bool = False):
+    """
+    mimics np.nanmean
+
+    Parameters
+    ----------
+    x : COO
+        input sparse array.
+    axis : int
+        Axis over which the median is applied.
+    keepdims : bool
+        Match NumPy keepdims behavior.
+
+    Returns
+    -------
+    out : COO
+        result cast back to COO for consistency.
+    """
+    return nanquantile(a, 0.5, axis, keepdims)
 
 def nanmean(a, axis=None, keepdims=None):
     n = nansum(a, axis=axis, keepdims=keepdims)
@@ -85,3 +171,5 @@ sp.cumprod = cumprod
 COO.cumprod = cumprod
 sp.nanmean = nanmean
 sp.sum = COO.sum
+sp.nanquantile = nanquantile
+sp.nanmedian = nanmedian

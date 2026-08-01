@@ -52,7 +52,6 @@ class Benktander(MethodBase):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-
         ibnr = cl.Benktander().fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
         print(ibnr)
 
@@ -76,7 +75,6 @@ class Benktander(MethodBase):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-
         bk_ibnr = (
             cl.Benktander(n_iters=1)
             .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
@@ -109,7 +107,6 @@ class Benktander(MethodBase):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-
         bk_ibnr = cl.Benktander(n_iters=1000).fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
         cl_ibnr = cl.Chainladder().fit(xyz["Paid"]).ibnr_
         print(bk_ibnr - cl_ibnr)
@@ -165,7 +162,6 @@ class Benktander(MethodBase):
         .. testcode::
 
             xyz = cl.load_sample("xyz")
-
             ultimate = (
                 cl.Benktander(apriori=1, n_iters=2)
                 .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
@@ -218,6 +214,7 @@ class Benktander(MethodBase):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
@@ -229,8 +226,8 @@ class Benktander(MethodBase):
             model = cl.Benktander(apriori=1.0, n_iters=2).fit(
                 tr_prior, sample_weight=apriori_prior
             )
-
-            print(model.predict(tr, sample_weight=apriori).ultimate_)
+            ultimate = model.predict(tr, sample_weight=apriori).ultimate_
+            print(ultimate)
 
         .. testoutput::
 
@@ -257,7 +254,11 @@ class Benktander(MethodBase):
         xp = X.get_array_module()
         if self.apriori_sigma != 0:
             random_state = xp.random.RandomState(self.random_state)
-            apriori = random_state.normal(self.apriori, self.apriori_sigma, X.shape[0])
+            # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
+            cov = self.apriori_sigma / self.apriori
+            sigma_log = np.sqrt(np.log1p(cov ** 2))
+            mu_log = np.log(self.apriori) - 0.5 * sigma_log ** 2
+            apriori = random_state.lognormal(mu_log, sigma_log, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
             apriori.kdims = X.kdims
