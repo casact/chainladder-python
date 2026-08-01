@@ -396,6 +396,7 @@ class Triangle(TriangleBase):
 
     .. testcode::
 
+        import pandas as pd
         df = pd.DataFrame(
             data={
                 'origin': pd.to_datetime(['1981-01-01', '1982-01-01']),
