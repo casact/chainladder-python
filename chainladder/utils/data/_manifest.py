@@ -282,7 +282,7 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities", "Earned Premium"],
+        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities", "Earned Premium","Incremental Paid Severity"],
         "cumulative": True,
     },
     "genins": {
