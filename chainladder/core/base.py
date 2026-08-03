@@ -427,7 +427,7 @@ class TriangleBase(
                     "Unable to infer datetime for field(s): " + str(fields) +
                     ". Please check the underlying data or any supplied format arguments."
                     )
-            target: Series = target_field.map(arg=datetime_mapping)
+            target: Series = target_field.map(func=datetime_mapping)
 
         return target
 
