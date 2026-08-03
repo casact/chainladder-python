@@ -6,10 +6,10 @@ import pytest
 
 
 def test_grain(qtr):
+    #this test is dense only in practice, since grain() applies auto_sparse, which is True by default
     actual = qtr.iloc[0, 0].grain("OYDY")
-    xp = actual.get_array_module()
-    nan = xp.nan
-    expected = xp.array(
+    nan = np.nan
+    expected = np.array(
         [
             [44, 621, 950, 1020, 1070, 1069, 1089, 1094, 1097, 1099, 1100, 1100],
             [42, 541, 1052, 1169, 1238, 1249, 1266, 1269, 1296, 1300, 1300, nan],
@@ -25,7 +25,7 @@ def test_grain(qtr):
             [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
         ]
     )
-    xp.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
+    np.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
 
 
 def test_grain_returns_valid_tri(qtr):
@@ -62,8 +62,8 @@ def test_commutative(qtr, atol):
 )
 @pytest.mark.parametrize("alt", [0, 1, 2])
 @pytest.mark.parametrize("trailing", [False, True])
-def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
-    t = prism_dense["Paid"]
+def test_different_forms_of_grain(monthly, grain, trailing, alt, atol):
+    t = monthly["Paid"]
     if alt == 1:
         t = t.dev_to_val().copy()
     if alt == 2:
@@ -75,8 +75,8 @@ def test_different_forms_of_grain(prism_dense, grain, trailing, alt, atol):
     assert abs(a - b).sum().sum() < atol
 
 
-def test_asymmetric_origin_grain(prism_dense):
-    x = prism_dense.iloc[..., 8:, :].incr_to_cum()
+def test_asymmetric_origin_grain(monthly):
+    x = monthly.iloc[..., 8:, :].incr_to_cum()
     x = x[x.valuation < x.valuation_date]
     assert x.grain("OYDM").development[0] == 1
 
