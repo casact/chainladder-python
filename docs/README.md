@@ -9,9 +9,8 @@ If you only want to read the docs, use the published site. This README is for co
 From the repository root:
 
 ```bash
-pip install -e .[docs]
-cd docs
-jb build .
+uv sync --extra docs
+uv run --directory docs jb build .
 ```
 
 The rendered site is written to `docs/_build/html/`. Open `docs/_build/html/index.html` in a browser to review changes.
