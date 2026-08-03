@@ -37,6 +37,7 @@ del TYPE_CHECKING
 del annotations
 
 
+
 # Get the default datetime64 data type and precision, extracted from Pandas installation.
 # Used for cross-version compatibility between Pandas 2 and Pandas 3.
 __dt64_dtype__: str = pd.to_datetime(["2000-01-01"]).dtype.name
