@@ -427,8 +427,7 @@ class TriangleBase(
                     "Unable to infer datetime for field(s): " + str(fields) +
                     ". Please check the underlying data or any supplied format arguments."
                     )
-            # DataFrame.map already accepts func on 2.3
-            target: Series = target_field.to_frame().map(func=datetime_mapping).iloc[:,0]
+            target: Series = target_field.map(datetime_mapping)
 
         return target
 
