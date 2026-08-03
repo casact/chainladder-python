@@ -440,7 +440,7 @@ class TriangleBase(
         For tabular format, this will convert the origin/valuation
         difference to a development lag.
         """
-        return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
+        return ((valuation - origin) / (365.25 / 12)).dt.round("1D").dt.days
 
     @staticmethod
     def _get_grain(
