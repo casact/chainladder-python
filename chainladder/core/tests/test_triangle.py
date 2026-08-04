@@ -1472,6 +1472,29 @@ def test_1d_annual_valuation_date() -> None:
     assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
     assert tri.development_grain == "Y"
 
+def test_1d_monthly_valuation_date() -> None:
+    # Month is specified (%Y-%m), so keep January month-end — do not roll to year-end.
+    year_data = [
+        [1998, "2008-01", 900000, 890000],
+        [1999, "2008-01", 1200000, 1170000],
+        [2000, "2008-01", 1300000, 1265000],
+        [2001, "2008-01", 1800000, 1600000],
+        [2002, "2008-01", 1450000, 1200000],
+    ]
+    year_df = pd.DataFrame(
+        data=year_data, columns=["origin", "dev", "revenue", "expense"]
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y-%m",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
+    assert tri.development_grain == "M"
+
 
 def test_OXDX_triangle():
     
