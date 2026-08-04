@@ -487,10 +487,11 @@ class Triangle(TriangleBase):
                 development
                 and not data[development[0]].astype(str).str.fullmatch(r"\d{4}").all()
             )
-            if (
-                (len(data) == 1 or dev_has_no_month)
-                and self.origin_grain.split("-")[0] in ["Y", "A"]
-            ):
+            # if (
+            #     (len(data) == 1 or dev_has_no_month)
+            #     and self.origin_grain.split("-")[0] in ["Y", "A"]
+            # ):
+            if len(data) == 1 or dev_has_no_month:
                 # if development has no monthly values, match origin
                 self.development_grain = self.origin_grain
             else:
@@ -1475,10 +1476,14 @@ class Triangle(TriangleBase):
         ddims = len(ddims.drop_duplicates())
         if ddims == 1 and sign == -1:
             ddims = len(obj.odims)
-        if obj.values.density > 0 and obj.values.coords[-1].min() < 0:
-            obj.values.coords[-1] = obj.values.coords[-1] - min(
-                obj.values.coords[-1].min(), min_slide
-            )
+        if obj.values.density > 0:
+            if obj.values.coords[-1].min() < 0:
+                obj.values.coords[-1] = obj.values.coords[-1] - min(
+                    obj.values.coords[-1].min(), min_slide
+                )
+            # The lag axis is stepped in development grain while ddims above is
+            # counted in origin periods, so it can be too short to hold the
+            # offset coordinates when the two grains differ.
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if options.AUTO_SPARSE == False or backend == "cupy":
