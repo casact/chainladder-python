@@ -682,6 +682,42 @@ class TrianglePandas(_TrianglePandasBase):
             ['1988', '1989', '1990']
             ['1987', '1988', '1989']
 
+        Dropping an origin period also trims any development periods that are
+        left entirely NaN, so the triangle is trimmed rather than left with
+        empty development columns.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [300, 400, 500, 500, 600, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12     24     36
+            1985  300.0  400.0  500.0
+            1986  500.0  600.0    NaN
+            1987  500.0    NaN    NaN
+
+        .. testcode::
+
+            print(tri.drop(origin='1985'))
+
+        .. testoutput::
+
+                     12     24
+            1986  500.0  600.0
+            1987  500.0    NaN
+
         """
         alternatives = {0: index, 1: columns, 2: origin, 3: development}
         if any(value is not None for value in alternatives.values()):
@@ -725,6 +761,24 @@ class TrianglePandas(_TrianglePandasBase):
                         "dropping an interior origin period would leave a gap."
                     )
                 result = result[keep]
+                # Trim any development periods that were left entirely NaN by
+                # the origin drop, so dropping origins trims the triangle
+                # rather than leaving empty development columns behind. This is
+                # what makes origin dropping more useful than plain 4D slicing
+                # (gh-1055).
+                if result.shape[-1] > 1:
+                    xp = result.get_array_module()
+                    agg = result.sum(axis=0).sum(axis=1)
+                    dev_has_data = list(
+                        (xp.nansum(agg.values[0, 0, :], -2) != 0).astype("int")
+                    )
+                    dev_labels = agg.development[
+                        pd.Series(dev_has_data).astype(bool)
+                    ]
+                    result = result[
+                        (result.development >= dev_labels.min())
+                        & (result.development <= dev_labels.max())
+                    ]
             else:
                 raise NotImplementedError(
                     "Triangle.drop() only implemented for the column and "
