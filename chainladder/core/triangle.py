@@ -482,7 +482,16 @@ class Triangle(TriangleBase):
         )
 
         if len(development_date.unique()) == 1:
-            if len(data) == 1 and self.origin_grain.split("-")[0] in ["Y", "A"]:
+            # checks if development has any non-yearly values
+            dev_has_no_month = not bool(
+                development
+                and not data[development[0]].astype(str).str.fullmatch(r"\d{4}").all()
+            )
+            if (
+                (len(data) == 1 or dev_has_no_month)
+                and self.origin_grain.split("-")[0] in ["Y", "A"]
+            ):
+                # if development has no monthly values, match origin
                 self.development_grain = self.origin_grain
             else:
                 dev_date = pd.to_datetime(development_date.iloc[0])
