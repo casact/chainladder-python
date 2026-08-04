@@ -160,7 +160,6 @@ SAMPLES: dict = {
             "Paid Claims",
         ],
         "cumulative": True,
-        "development_format": "%Y-12-31",
     },
     "friedland_med_mal": {
         "origin": "Accident Year",
