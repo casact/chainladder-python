@@ -487,10 +487,7 @@ class Triangle(TriangleBase):
                 development
                 and not data[development[0]].astype(str).str.fullmatch(r"\d{4}").all()
             )
-            # if (
-            #     (len(data) == 1 or dev_has_no_month)
-            #     and self.origin_grain.split("-")[0] in ["Y", "A"]
-            # ):
+
             if len(data) == 1 or dev_has_no_month:
                 # if development has no monthly values, match origin
                 self.development_grain = self.origin_grain
