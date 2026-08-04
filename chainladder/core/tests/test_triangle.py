@@ -1473,7 +1473,6 @@ def test_1d_annual_valuation_date() -> None:
     assert tri.development_grain == "Y"
 
 def test_1d_monthly_valuation_date() -> None:
-    # Month is specified (%Y-%m), so keep January month-end — do not roll to year-end.
     year_data = [
         [1998, "2008-01", 900000, 890000],
         [1999, "2008-01", 1200000, 1170000],
@@ -1495,6 +1494,9 @@ def test_1d_monthly_valuation_date() -> None:
     assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
     assert tri.development_grain == "M"
 
+def test_friedland_gl_self_insurer_grain() -> None:
+    data_valuation_date = cl.load_sample('friedland_gl_self_insurer').valuation_date
+    assert pd.to_datetime(data_valuation_date).date() == pd.Timestamp("2008-12-31").date()
 
 def test_OXDX_triangle():
     
