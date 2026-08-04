@@ -1478,9 +1478,6 @@ class Triangle(TriangleBase):
                 obj.values.coords[-1] = obj.values.coords[-1] - min(
                     obj.values.coords[-1].min(), min_slide
                 )
-            # The lag axis is stepped in development grain while ddims above is
-            # counted in origin periods, so it can be too short to hold the
-            # offset coordinates when the two grains differ.
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if options.AUTO_SPARSE == False or backend == "cupy":
