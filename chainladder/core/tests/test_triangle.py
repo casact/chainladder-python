@@ -410,12 +410,32 @@ def test_drop_origin_last(origin_tri):
     """origin= should drop the last origin period."""
     result = origin_tri.drop(origin="1987")
     assert result.origin.astype(str).tolist() == ["1985", "1986"]
+    # The oldest origin (1985) still populates the latest development period,
+    # so nothing should be trimmed off the development axis.
+    assert result.development.tolist() == origin_tri.development.tolist()
 
 
 def test_drop_origin_first(origin_tri):
     """origin= should drop the first origin period."""
     result = origin_tri.drop(origin="1985")
     assert result.origin.astype(str).tolist() == ["1986", "1987"]
+
+
+def test_drop_origin_trims_empty_development(origin_tri):
+    """Dropping an origin should trim development periods left all NaN."""
+    # Dropping the oldest origin (1985) empties the latest development period,
+    # which should be trimmed automatically (gh-1055).
+    result = origin_tri.drop(origin="1985")
+    assert result.development.tolist() == origin_tri.development.tolist()[:-1]
+    assert result.shape[-1] == origin_tri.shape[-1] - 1
+
+
+def test_drop_origin_keeps_populated_development(origin_tri):
+    """Dropping an origin should keep development periods that still have data."""
+    # Dropping the newest origin (1987) leaves every development period
+    # populated, so the development axis should be unchanged.
+    result = origin_tri.drop(origin="1987")
+    assert result.development.tolist() == origin_tri.development.tolist()
 
 
 def test_drop_origin_axis_equivalents(origin_tri):
