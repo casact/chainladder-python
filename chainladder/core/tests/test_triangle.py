@@ -1494,7 +1494,7 @@ def test_1d_monthly_valuation_date() -> None:
     assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
     assert tri.development_grain == "M"
 
-def test_1d_monthly_valuation_date_expanded_dev_date -> None:
+def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
     year_df = pd.DataFrame(
         {
             "origin": [1998, 1999, 2000, 2001, 2002],
