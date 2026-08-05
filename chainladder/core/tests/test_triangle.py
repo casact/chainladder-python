@@ -1494,6 +1494,25 @@ def test_1d_monthly_valuation_date() -> None:
     assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
     assert tri.development_grain == "M"
 
+def test_1d_monthly_valuation_date_expanded_dev_date -> None:
+    year_df = pd.DataFrame(
+        {
+            "origin": [1998, 1999, 2000, 2001, 2002],
+            "dev": [2008.0, 2008.0, 2008.0, 2008.0, 2008.0],
+            "expense": [890000, 1170000, 1265000, 1600000, 1200000],
+        }
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert tri.development_grain == "Y"
+
 def test_friedland_gl_self_insurer_grain() -> None:
     data_valuation_date = cl.load_sample('friedland_gl_self_insurer').valuation_date
     assert pd.to_datetime(data_valuation_date).date() == pd.Timestamp("2008-12-31").date()
