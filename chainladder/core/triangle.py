@@ -482,10 +482,10 @@ class Triangle(TriangleBase):
         )
 
         if len(development_date.unique()) == 1:
-            # checks if development has any non-yearly values
-            dev_has_no_month = not bool(
-                development
-                and not data[development[0]].astype(str).str.fullmatch(r"\d{4}").all()
+            # checks if development is not empty, and if ithas any non-yearly values
+            dev_has_no_month = not development or all(
+                data[col].astype(str).str.fullmatch(r"\d{4}").all()
+                for col in development
             )
 
             if len(data) == 1 or dev_has_no_month:
