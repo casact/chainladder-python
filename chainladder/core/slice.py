@@ -150,11 +150,20 @@ class _LocBase:
             raise ValueError('Setting values with sparse backend requires .at or .iat')
         if isinstance(values, TriangleSlicer):
             values = values.values
+        # attempt to make keys contig
+        contig_key = tuple([_LocBase._contig_slice(x) for x in key])
         # Create a slice for any key elements that are integers, otherwise preserve the slice or array.
-        key = tuple(
-            [slice(item, item + 1) if isinstance(item, int) else item for item in key]
+        tuple_key = tuple(
+            [slice(item, item + 1) if isinstance(item, int) else item for item in contig_key]
         )
-        cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
+        norm_key = self._normalize_index(tuple_key)
+        if type(norm_key[2]) != slice or type(norm_key[3]) != slice:
+            raise ValueError("Setting while fancy indexing on origin/development is not supported.")
+        if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
+        else:
+            #the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(np.ix_(norm_key[0], norm_key[1])+(norm_key[2], norm_key[3]), values)
 
     def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
@@ -182,7 +191,7 @@ class _LocBase:
                 start: int | None= i.start if i.start > 0 else None
                 stop: int | None = i.stop if i.stop > -1 else None
                 stop: int | None = None if stop == self.obj.shape[n] else stop
-                step: int | None = None if start is None and stop is None else i.step
+                step: int | None = None if start is None and stop is None and (i.step == 1) else i.step
                 l.append(slice(start, stop, step))
             else:
                 l.append(i)
@@ -431,6 +440,21 @@ class Location(_LocBase):
         return out
 
     def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
+        """
+        Supports the .loc[] for setting Triangle values. Only supported for numpy backend.
+
+        Parameters
+        ----------
+        key: _LabelKey
+            Indicates the location of the Triangle you want to set values for.
+        values: int | float | TriangleSlicer
+            The value(s) you want to assign to the slice of the Triangle.
+
+        Returns
+        -------
+        None
+
+        """
         super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
 
 class Ilocation(_LocBase):
