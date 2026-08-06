@@ -438,9 +438,10 @@ def parallelogram_olf(
     """Parallelogram approach to on-leveling.
 
     When ``cumulative`` is False (default), ``values`` are incremental rate
-    changes expressed as decimals.  When True, ``values`` are cumulative
-    on-level factors already stated relative to one another, and each value is
-    in force from its effective date until the next one.  The earliest value is
+    changes expressed as decimals (0-centric, e.g. 0.05 for +5%). When True,
+    ``values`` are cumulative rate level factors stated relative to one another
+    (1-centric, e.g. 0.67 for 67% rate level, 1.00 for current level), and each value is
+    in force from its effective date until the next one. The earliest value is
     extended backwards to cover the lookback window.
     """
     if approximation_grain not in ["M", "D"]:
