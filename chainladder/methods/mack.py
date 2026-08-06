@@ -40,6 +40,11 @@ class MackChainladder(Chainladder):
     total_mack_std_err_:
         The total prediction error across all origin periods
 
+    See Also
+    --------
+    Chainladder : Deterministic counterpart for ultimate and IBNR estimates.
+    BornhuetterFerguson : Apriori-weighted alternative to pure development.
+
     Examples
     --------
     Use ``MackChainladder`` when the IBNR point estimate alone is not

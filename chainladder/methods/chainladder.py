@@ -27,6 +27,11 @@ class Chainladder(MethodBase):
         The ultimates back-filled to each development period in **X** retaining
         the known data
 
+    See Also
+    --------
+    MackChainladder : Stochastic extension with parameter and process risk.
+    BornhuetterFerguson : Blends development with an apriori ultimate estimate.
+
     Examples
     --------
     Fit the chainladder method to a loss triangle and inspect the projected

@@ -37,6 +37,12 @@ class BornhuetterFerguson(Benktander):
     ibnr_: Triangle
         The IBNR per the method
 
+    See Also
+    --------
+    Chainladder : Projects ultimate losses entirely from development patterns.
+    MackChainladder : Adds prediction error estimates to chainladder projections.
+    Benktander : Iterative generalization of the Bornhuetter-Ferguson method.
+
     Examples
     --------
     Bornhuetter-Ferguson requires an apriori expected ultimate per origin,
