@@ -463,6 +463,40 @@ def test_drop_origin_period_label(origin_tri):
     assert result.origin.astype(str).tolist() == ["1985", "1986"]
 
 
+def test_drop_origin_single_dev_period():
+    """Dropping an origin from a triangle with a single development period
+    should skip the dev-trimming logic (``if result.shape[-1] > 1``).
+    """
+    tri = cl.Triangle(
+        data={
+            "origin": [1985, 1986, 1987],
+            "development": [1985, 1986, 1987],
+            "paid": [100, 200, 300],
+        },
+        origin="origin",
+        development="development",
+        columns=["paid"],
+        cumulative=True,
+    )
+    assert tri.shape[-1] == 1, "fixture should have exactly 1 development period"
+    result = tri.drop(origin="1987")
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+    assert result.shape[-1] == 1
+
+
+def test_fillna_none_raises(raa):
+    """fillna(None) should raise TypeError."""
+    with pytest.raises(TypeError, match="Must specify a fill value"):
+        raa.fillna(None)
+
+
+def test_transpose_property(raa):
+    """The .T property should return a transposed DataFrame."""
+    result = raa.T
+    expected = raa.to_frame(origin_as_datetime=False).T
+    pd.testing.assert_frame_equal(result, expected)
+
+
 def test_exposure_tri():
     x = cl.load_sample("auto")
     x = x[x.development == 12]
