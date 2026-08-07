@@ -42,8 +42,7 @@ class MackChainladder(Chainladder):
 
     See Also
     --------
-    Chainladder : Deterministic counterpart for ultimate and IBNR estimates.
-    BornhuetterFerguson : Apriori-weighted alternative to pure development.
+    BootstrapODPSample : Generates ODP bootstrap samples for reserve uncertainty.
 
     Examples
     --------

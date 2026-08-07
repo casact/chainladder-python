@@ -29,8 +29,10 @@ class Chainladder(MethodBase):
 
     See Also
     --------
-    MackChainladder : Stochastic extension with parameter and process risk.
-    BornhuetterFerguson : Blends development with an apriori ultimate estimate.
+    ExpectedLoss : Uses only an apriori expected ultimate.
+    BornhuetterFerguson : Blends development with an apriori ultimate.
+    Benktander : Iterative Bornhuetter-Ferguson method.
+    CapeCod : Estimates apriori loss ratios from exposure.
 
     Examples
     --------

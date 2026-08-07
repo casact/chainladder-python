@@ -40,8 +40,9 @@ class BornhuetterFerguson(Benktander):
     See Also
     --------
     Chainladder : Projects ultimate losses entirely from development patterns.
-    MackChainladder : Adds prediction error estimates to chainladder projections.
+    ExpectedLoss : Uses only an apriori expected ultimate.
     Benktander : Iterative generalization of the Bornhuetter-Ferguson method.
+    CapeCod : Estimates apriori loss ratios from exposure.
 
     Examples
     --------

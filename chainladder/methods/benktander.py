@@ -37,6 +37,13 @@ class Benktander(MethodBase):
     ibnr_: Triangle
         The IBNR per the method
 
+    See Also
+    --------
+    Chainladder : Projects ultimate losses entirely from development patterns.
+    ExpectedLoss : Uses only an apriori expected ultimate.
+    BornhuetterFerguson : Blends development with an apriori ultimate.
+    CapeCod : Estimates apriori loss ratios from exposure.
+
     Examples
     --------
     Benktander is the iterated Bornhuetter-Ferguson model. Like BF, it
