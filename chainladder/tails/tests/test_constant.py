@@ -5,7 +5,7 @@ from chainladder.utils.cupy import cp
 def test_constant_balances(qtr):
     xp = qtr.get_array_module()
     if xp == None:
-        pass
+        pass #
     assert (
         round(
             float(
