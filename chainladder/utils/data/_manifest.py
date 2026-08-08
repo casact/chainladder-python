@@ -158,6 +158,7 @@ SAMPLES: dict = {
         "columns": [
             "Reported Claims",
             "Paid Claims",
+            "Population",
         ],
         "cumulative": True,
         "development_format": "%Y-12-31",
