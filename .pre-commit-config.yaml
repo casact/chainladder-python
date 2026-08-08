@@ -5,8 +5,8 @@ repos:
     rev: v0.16.1
     hooks:
       - id: ruff
-        args: [--fix]
-        stages: [pre-commit]
+        args: [--fix, --config, "lint.per-file-ignores={}"]
+        stages: [pre-push]
 
   - repo: local
     hooks:
