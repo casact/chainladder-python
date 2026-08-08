@@ -45,16 +45,13 @@ jobs:
 
           echo "files=$files" >> "$GITHUB_OUTPUT"
 
-      - name: Install ruff
+      - name: Install uv
         if: steps.changed.outputs.files != ''
-        run: pip install ruff==0.16.1
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
 
       - name: Run ruff
         if: steps.changed.outputs.files != ''
         run: |
-          # Edited/changed files must clear the full rule set, not just the
-          # subset not already grandfathered in pyproject.toml's per-file-ignores.
-          # Invoked directly (not via astral-sh/ruff-action) because that action
-          # both emits native ::error:: annotations AND registers a problem
-          # matcher that re-scans the same output, doubling every annotation.
-          ruff check --config lint.per-file-ignores={} --output-format=github ${{ steps.changed.outputs.files }}
+          uvx ruff@0.16.1 check --config lint.per-file-ignores={} --output-format=github ${{ steps.changed.outputs.files }}
