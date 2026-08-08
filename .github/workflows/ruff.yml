@@ -1,5 +1,8 @@
 name: Ruff
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -17,7 +20,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed Python files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.event.pull_request.base.ref }}"
+          else
+            base="${{ github.event.before }}"
+            # New branch or force-push: 'before' may not exist locally (or be all-zeros).
+            if ! git cat-file -e "$base" 2>/dev/null; then
+              base="HEAD^"
+              git cat-file -e "$base" 2>/dev/null || base=""
+            fi
+          fi
+
+          if [ -z "$base" ]; then
+            files=$(git ls-files '*.py')
+          else
+            files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.py')
+          fi
+
+          {
+            echo "files<<EOF"
+            echo "$files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run ruff
+        if: steps.changed.outputs.files != ''
         uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
         with:
           version: "0.16.1"
+          src: ${{ steps.changed.outputs.files }}
