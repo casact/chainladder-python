@@ -37,8 +37,6 @@ jobs:
             fi
           fi
 
-          # ruff-action splits both `args` and `src` on a literal space, not
-          # newlines, so the file list must be space-joined on one line.
           if [ -z "$base" ]; then
             files=$(git ls-files '*.py' | xargs)
           else
@@ -47,12 +45,16 @@ jobs:
 
           echo "files=$files" >> "$GITHUB_OUTPUT"
 
+      - name: Install ruff
+        if: steps.changed.outputs.files != ''
+        run: pip install ruff==0.16.1
+
       - name: Run ruff
         if: steps.changed.outputs.files != ''
-        uses: astral-sh/ruff-action@4919ec5cf1f49eff0871dbcea0da843445b837e6 # v3.6.1
-        with:
-          version: "0.16.1"
+        run: |
           # Edited/changed files must clear the full rule set, not just the
           # subset not already grandfathered in pyproject.toml's per-file-ignores.
-          args: check --config lint.per-file-ignores={}
-          src: ${{ steps.changed.outputs.files }}
+          # Invoked directly (not via astral-sh/ruff-action) because that action
+          # both emits native ::error:: annotations AND registers a problem
+          # matcher that re-scans the same output, doubling every annotation.
+          ruff check --config lint.per-file-ignores={} --output-format=github ${{ steps.changed.outputs.files }}
