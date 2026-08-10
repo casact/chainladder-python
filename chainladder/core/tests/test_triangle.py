@@ -171,10 +171,9 @@ def test_trend(raa, atol):
     assert abs((raa.trend(0.05).trend((1 / 1.05) - 1) - raa).sum().sum()) < 1e-5
 
 
-def test_shift(qtr):
+def test_valuation_shift(qtr):
     x = qtr.iloc[0, 0]
-    xp = x.get_array_module()
-    xp.testing.assert_array_equal(x[x.valuation <= x.valuation_date].values, x.values)
+    assert x[x.valuation <= x.valuation_date] == x
 
 
 def test_quantile_vs_median(clrd):
@@ -369,11 +368,9 @@ def test_drop_labels_and_alternative_raises(clrd):
 
 
 def test_drop_index_origin_development_alternatives_raise(clrd):
-    """index/origin/development alternatives route to unimplemented axes."""
+    """index/development alternatives route to unimplemented axes."""
     with pytest.raises(NotImplementedError):
         clrd.drop(index="commauto")
-    with pytest.raises(NotImplementedError):
-        clrd.drop(origin="1995")
     with pytest.raises(NotImplementedError):
         clrd.drop(development="12")
 
@@ -391,6 +388,102 @@ def test_drop_columns_alternative_index_like(clrd):
     assert all(label not in result.columns for label in labels)
     assert result == clrd.drop(columns=list(labels))
     assert result == clrd.drop(columns=labels.values)
+
+
+@pytest.fixture
+def origin_tri():
+    return cl.Triangle(
+        data={
+            "origin": [1985, 1985, 1985, 1986, 1986, 1987],
+            "development": [1985, 1986, 1987, 1986, 1987, 1987],
+            "paid": [300, 400, 500, 500, 600, 500],
+        },
+        origin="origin",
+        development="development",
+        columns=["paid"],
+        cumulative=True,
+    )
+
+
+def test_drop_origin_last(origin_tri):
+    """origin= should drop the last origin period."""
+    result = origin_tri.drop(origin="1987")
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+    # The oldest origin (1985) still populates the latest development period,
+    # so nothing should be trimmed off the development axis.
+    assert result.development.tolist() == origin_tri.development.tolist()
+
+
+def test_drop_origin_first(origin_tri):
+    """origin= should drop the first origin period."""
+    result = origin_tri.drop(origin="1985")
+    assert result.origin.astype(str).tolist() == ["1986", "1987"]
+
+
+def test_drop_origin_trims_empty_development(origin_tri):
+    """Dropping an origin should trim development periods left all NaN."""
+    # Dropping the oldest origin (1985) empties the latest development period,
+    # which should be trimmed automatically (gh-1055).
+    result = origin_tri.drop(origin="1985")
+    assert result.development.tolist() == origin_tri.development.tolist()[:-1]
+    assert result.shape[-1] == origin_tri.shape[-1] - 1
+
+
+def test_drop_origin_keeps_populated_development(origin_tri):
+    """Dropping an origin should keep development periods that still have data."""
+    # Dropping the newest origin (1987) leaves every development period
+    # populated, so the development axis should be unchanged.
+    result = origin_tri.drop(origin="1987")
+    assert result.development.tolist() == origin_tri.development.tolist()
+
+
+def test_drop_origin_axis_equivalents(origin_tri):
+    """labels + axis=2/'origin' should equal the origin= alternative."""
+    expected = origin_tri.drop(origin="1987")
+    assert expected == origin_tri.drop(labels="1987", axis=2)
+    assert expected == origin_tri.drop(labels="1987", axis="origin")
+
+
+def test_drop_origin_interior_raises(origin_tri):
+    """Dropping an interior origin period should raise ValueError."""
+    with pytest.raises(ValueError):
+        origin_tri.drop(origin="1986")
+
+
+def test_drop_origin_missing_raises(origin_tri):
+    """Dropping an origin label that does not exist should raise KeyError."""
+    with pytest.raises(KeyError):
+        origin_tri.drop(origin="1999")
+
+
+def test_drop_origin_period_label(origin_tri):
+    """origin= should accept a pd.Period, the origin axis's native label type."""
+    result = origin_tri.drop(origin=origin_tri.origin[-1])
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+
+
+def test_drop_origin_single_dev_period(raa):
+    """Dropping an origin from a triangle with a single development period
+    should skip the dev-trimming logic (``if result.shape[-1] > 1``).
+    """
+    single_dev = raa[raa.development == 12]
+    assert single_dev.shape[-1] == 1
+    result = single_dev.drop(origin="1990")
+    assert result.origin.astype(str).tolist()[-1] == "1989"
+    assert result.shape[-1] == 1
+
+
+def test_fillna_none_raises(raa):
+    """fillna(None) should raise TypeError."""
+    with pytest.raises(TypeError, match="Must specify a fill value"):
+        raa.fillna(None)
+
+
+def test_transpose_property(raa):
+    """The .T property should return a transposed DataFrame."""
+    result = raa.T
+    expected = raa.to_frame(origin_as_datetime=False).T
+    pd.testing.assert_frame_equal(result, expected)
 
 
 def test_exposure_tri():
@@ -1448,6 +1541,75 @@ def test_single_valuation_date_preserves_exact_date():
     assert triangle.valuation_date == pd.Timestamp(val_date_exp)
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
+
+
+def test_1d_annual_valuation_date() -> None:
+    year_data = [
+        [1998, 2008, 900000, 890000],
+        [1999, 2008, 1200000, 1170000],
+        [2000, 2008, 1300000, 1265000],
+        [2001, 2008, 1800000, 1600000],
+        [2002, 2008, 1450000, 1200000],
+    ]
+    year_df = pd.DataFrame(
+        data=year_data, columns=["origin", "dev", "revenue", "expense"]
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert tri.development_grain == "Y"
+
+def test_1d_monthly_valuation_date() -> None:
+    year_data = [
+        [1998, "2008-01", 900000, 890000],
+        [1999, "2008-01", 1200000, 1170000],
+        [2000, "2008-01", 1300000, 1265000],
+        [2001, "2008-01", 1800000, 1600000],
+        [2002, "2008-01", 1450000, 1200000],
+    ]
+    year_df = pd.DataFrame(
+        data=year_data, columns=["origin", "dev", "revenue", "expense"]
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y-%m",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
+    assert tri.development_grain == "M"
+
+def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
+    year_df = pd.DataFrame(
+        {
+            "origin": [1998, 1999, 2000, 2001, 2002],
+            "dev": [2008.0, 2008.0, 2008.0, 2008.0, 2008.0],
+            "expense": [890000, 1170000, 1265000, 1600000, 1200000],
+        }
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert tri.development_grain == "Y"
+
+def test_friedland_gl_self_insurer_grain() -> None:
+    data_valuation_date = cl.load_sample('friedland_gl_self_insurer').valuation_date
+    assert pd.to_datetime(data_valuation_date).date() == pd.Timestamp("2008-12-31").date()
+
 def test_OXDX_triangle():
     
     for x in [12,6,3,1]:

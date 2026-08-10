@@ -55,6 +55,13 @@ class CapeCod(Benktander):
     detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
 
+    See Also
+    --------
+    Chainladder : Projects ultimate losses entirely from development patterns.
+    ExpectedLoss : Uses only an apriori expected ultimate.
+    BornhuetterFerguson : Blends development with an apriori ultimate.
+    Benktander : Iterative Bornhuetter-Ferguson method.
+
     Examples
     --------
     Unlike Bornhuetter-Ferguson and Benktander, CapeCod derives the apriori

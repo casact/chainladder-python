@@ -50,12 +50,14 @@ Repository = "https://github.com/casact/chainladder-python"
 dev = [
     "lxml",
     "pytest",
-    "pytest-cov", 
+    "pytest-cov",
     "pytest-xdist",
     "jinja2",
     "ipython",
     "ipykernel",
     "pyright",
+    "ruff",
+    "pre-commit",
 ]
 docs = [
     "sphinx",
@@ -94,6 +96,65 @@ all = [
 [tool.pytest.ini_options]
 testpaths = ["chainladder", "docs/_ext"]
 pythonpath = ["docs/_ext"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+# Grandfathered violations that predate enabling this rule set. New and
+# newly-touched code is still held to the full ruleset above; these files
+# are exempted only from the specific codes they already violated so the
+# check can be required without blocking unrelated PRs. Remove entries as
+# files are cleaned up.
+[tool.ruff.lint.per-file-ignores]
+"chainladder/adjustments/bootstrap.py" = ["E721", "E722", "F841"]
+"chainladder/adjustments/disposal.py" = ["F401"]
+"chainladder/adjustments/tests/test_berqsherm.py" = ["F841"]
+"chainladder/adjustments/tests/test_disposal.py" = ["F841"]
+"chainladder/adjustments/trend.py" = ["F401"]
+"chainladder/core/base.py" = ["E721"]
+"chainladder/core/common.py" = ["F401"]
+"chainladder/core/correlation.py" = ["E741"]
+"chainladder/core/dunders.py" = ["E721", "E722", "F841"]
+"chainladder/core/io.py" = ["E731"]
+"chainladder/core/pandas.py" = ["E721", "F841"]
+"chainladder/core/slice.py" = ["E712", "E721", "E741"]
+"chainladder/core/tests/rtest_correlation.py" = ["E722", "F821"]
+"chainladder/core/tests/test_arithmetic.py" = ["E711"]
+"chainladder/core/tests/test_display.py" = ["E722"]
+"chainladder/core/tests/test_grain.py" = ["F401", "F841"]
+"chainladder/core/tests/test_triangle.py" = ["E712", "E721", "F811", "F841"]
+"chainladder/core/triangle.py" = ["E712", "E721", "E731", "F401", "F841"]
+"chainladder/development/base.py" = ["E712", "F401", "F841"]
+"chainladder/development/clark.py" = ["E721", "E731"]
+"chainladder/development/constant.py" = ["E712"]
+"chainladder/development/glm.py" = ["F401"]
+"chainladder/development/incremental.py" = ["E721", "F401"]
+"chainladder/development/learning.py" = ["E711", "F401"]
+"chainladder/development/tests/rtest_clark.py" = ["E722"]
+"chainladder/development/tests/rtest_development.py" = ["E722", "F401"]
+"chainladder/development/tests/rtest_munich.py" = ["E722", "F401"]
+"chainladder/development/tests/test_constant.py" = ["F841"]
+"chainladder/development/tests/test_development.py" = ["E722"]
+"chainladder/development/tests/test_incremental.py" = ["F841"]
+"chainladder/development/tests/test_munich.py" = ["F841"]
+"chainladder/methods/base.py" = ["F401"]
+"chainladder/methods/capecod.py" = ["F401"]
+"chainladder/methods/mack.py" = ["F401"]
+"chainladder/methods/tests/rtest_mack.py" = ["E722", "F401"]
+"chainladder/tails/bondy.py" = ["F401"]
+"chainladder/tails/curve.py" = ["E721", "F401"]
+"chainladder/tails/tests/rtest_exponential.py" = ["E722", "F401"]
+"chainladder/tails/tests/test_constant.py" = ["F401"]
+"chainladder/utils/cupy.py" = ["E722", "F401"]
+"chainladder/utils/dask.py" = ["E722", "E741"]
+"chainladder/utils/sparse.py" = ["E721"]
+"chainladder/utils/tests/test_utilities.py" = ["E712", "E741", "F811", "F841"]
+"chainladder/utils/triangle_weight.py" = ["F401"]
+"chainladder/utils/utility_functions.py" = ["E721", "F401"]
+"chainladder/workflow/tests/test_voting.py" = ["E731"]
 
 [tool.setuptools]
 include-package-data = true
