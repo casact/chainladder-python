@@ -173,8 +173,7 @@ def test_trend(raa, atol):
 
 def test_valuation_shift(qtr):
     x = qtr.iloc[0, 0]
-    xp = x.get_array_module()
-    xp.testing.assert_array_equal(x[x.valuation <= x.valuation_date].values, x.values)
+    assert x[x.valuation <= x.valuation_date] == x
 
 
 def test_quantile_vs_median(clrd):
