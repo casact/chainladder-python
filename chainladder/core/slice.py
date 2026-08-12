@@ -163,7 +163,10 @@ class _LocBase:
             cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
         else:
             #the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
-            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(np.ix_(norm_key[0], norm_key[1])+(norm_key[2], norm_key[3]), values)
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(
+                np.ix_(norm_key[0], norm_key[1]) + (norm_key[2], norm_key[3]), 
+                values
+            )
 
     def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
@@ -478,7 +481,10 @@ class TriangleSlicer:
     def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
     @overload
     def __getitem__(self: TriangleProtocol, key: str | int) -> Triangle | pd.Series: ...
-    def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | str | list[str] | int) -> Triangle | pd.Series:
+    def __getitem__(
+            self: TriangleProtocol, 
+            key: pd.Series | np.ndarray | str | list[str] | int
+    ) -> Triangle | pd.Series:
         """
         Boolean Slicer functionality.
 
