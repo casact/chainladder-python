@@ -17,7 +17,7 @@ from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from typing import Iterable, Union, Optional, TYPE_CHECKING
+from typing import Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle, MethodBase, Pipeline
@@ -719,7 +719,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
