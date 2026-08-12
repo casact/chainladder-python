@@ -367,18 +367,16 @@ def test_drop_labels_and_alternative_raises(clrd):
         clrd.drop(labels="CumPaidLoss", columns="IncurLoss")
 
 
-def test_drop_index_origin_development_alternatives_raise(clrd):
-    """index/development alternatives route to unimplemented axes."""
+def test_drop_index_alternative_raises(clrd):
+    """index alternative routes to unimplemented index axis."""
     with pytest.raises(NotImplementedError):
         clrd.drop(index="commauto")
-    with pytest.raises(NotImplementedError):
-        clrd.drop(development="12")
 
 
 def test_drop_integer_label_routes_to_axis(clrd):
-    """A bare int label should route to its axis, not raise TypeError."""
-    with pytest.raises(NotImplementedError):
-        clrd.drop(development=12)
+    """A bare int label should route to its axis, dropping the development label."""
+    result = clrd.drop(development=120)
+    assert 120 not in result.development.tolist()
 
 
 def test_drop_columns_alternative_index_like(clrd):
@@ -471,6 +469,37 @@ def test_drop_origin_single_dev_period(raa):
     result = single_dev.drop(origin="1990")
     assert result.origin.astype(str).tolist()[-1] == "1989"
     assert result.shape[-1] == 1
+
+
+def test_drop_development_last(raa):
+    """development= should drop the last development period."""
+    result = raa.drop(development=120)
+    assert result.development.tolist() == raa.development.tolist()[:-1]
+
+
+def test_drop_development_first(raa):
+    """development= should drop the first development period."""
+    result = raa.drop(development=12)
+    assert result.development.tolist() == raa.development.tolist()[1:]
+
+
+def test_drop_development_axis_equivalents(raa):
+    """labels + axis=3/'development' should equal the development= alternative."""
+    expected = raa.drop(development=120)
+    assert expected == raa.drop(labels=120, axis=3)
+    assert expected == raa.drop(labels=120, axis="development")
+
+
+def test_drop_development_interior_raises(raa):
+    """Dropping an interior development period should raise ValueError."""
+    with pytest.raises(ValueError):
+        raa.drop(development=24)
+
+
+def test_drop_development_missing_raises(raa):
+    """Dropping a development label that does not exist should raise KeyError."""
+    with pytest.raises(KeyError):
+        raa.drop(development=999)
 
 
 def test_fillna_none_raises(raa):

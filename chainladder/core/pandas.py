@@ -718,6 +718,19 @@ class TrianglePandas(_TrianglePandasBase):
             1986  500.0  600.0
             1987  500.0    NaN
 
+        Development periods can also be dropped with ``development`` (or ``axis=3``).
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.development.tolist())
+            print(raa.drop(development=120).development.tolist())
+
+        .. testoutput::
+
+            [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+            [12, 24, 36, 48, 60, 72, 84, 96, 108]
+
         """
         alternatives = {0: index, 1: columns, 2: origin, 3: development}
         if any(value is not None for value in alternatives.values()):
@@ -779,10 +792,29 @@ class TrianglePandas(_TrianglePandasBase):
                         (result.development >= dev_labels.min())
                         & (result.development <= dev_labels.max())
                     ]
+            elif ax == 3:
+                dev_labels = np.array(result.development.astype(str))
+                drop_labels = [str(label) for label in ax_labels]
+                missing = [
+                    label for label in drop_labels if label not in dev_labels
+                ]
+                if missing:
+                    raise KeyError(f"{missing} not found in the development axis.")
+                keep = ~np.isin(dev_labels, drop_labels)
+                kept_positions = np.flatnonzero(keep)
+                if len(kept_positions) and not np.array_equal(
+                    kept_positions,
+                    np.arange(kept_positions[0], kept_positions[-1] + 1),
+                ):
+                    raise ValueError(
+                        "Only the first or last development periods may be dropped; "
+                        "dropping an interior development period would leave a gap."
+                    )
+                result = result._slice(keep, "ddims")
             else:
                 raise NotImplementedError(
-                    "Triangle.drop() only implemented for the column and "
-                    "origin axes."
+                    "Triangle.drop() only implemented for the column, "
+                    "origin, and development axes."
                 )
         return result
 
