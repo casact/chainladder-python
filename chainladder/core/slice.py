@@ -67,7 +67,7 @@ class _LocBase:
         c_idx: slice | np.ndarray = _LocBase._contig_slice(idx[1])
         o_idx: slice | np.ndarray = _LocBase._contig_slice(idx[2])
         d_idx: slice | np.ndarray = _LocBase._contig_slice(idx[3])
-        if type(o_idx) != slice or type(d_idx) != slice:
+        if type(o_idx) is not slice or type(d_idx) is not slice:
             raise ValueError("Fancy indexing on origin/development is not supported.")
         if type(i_idx) is slice or type(c_idx) is slice:
             obj.values = obj.values[i_idx, c_idx, o_idx, d_idx]
@@ -157,7 +157,7 @@ class _LocBase:
             [slice(item, item + 1) if isinstance(item, int) else item for item in contig_key]
         )
         norm_key = self._normalize_index(tuple_key)
-        if type(norm_key[2]) != slice or type(norm_key[3]) != slice:
+        if type(norm_key[2]) is not slice or type(norm_key[3]) is not slice:
             raise ValueError("Setting while fancy indexing on origin/development is not supported.")
         if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
             cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
@@ -183,7 +183,7 @@ class _LocBase:
         """
         # Apply sparse normalization, fills out the rest of the dimensions using the shape of the Triangle.
         key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey] = _slicing.normalize_index(key, self.obj.shape)
-        l = []
+        key_list = []
         # Preserve start/stop/step boundaries if the user has specified them, otherwise replace them with None.
         # None indicates "go-to-boundary" for the slice.
         for n, i in enumerate(key):
@@ -192,10 +192,10 @@ class _LocBase:
                 stop: int | None = i.stop if i.stop > -1 else None
                 stop: int | None = None if stop == self.obj.shape[n] else stop
                 step: int | None = None if start is None and stop is None and (i.step == 1) else i.step
-                l.append(slice(start, stop, step))
+                key_list.append(slice(start, stop, step))
             else:
-                l.append(i)
-        key = tuple(l)
+                key_list.append(i)
+        key = tuple(key_list)
         return key
 
     def _sparse_setitem(
@@ -228,7 +228,7 @@ class _LocBase:
                 (arr.coords[3] == key[3]))
         # If it does, index the location and assign the value directly.
         if check.max():
-            data_index = np.where(check == True)[0][0]
+            data_index = np.where(check)[0][0]
             arr.data[data_index] = values
         # Otherwise, create a new sparse array with the updated coordinates and data.
         else:
@@ -780,7 +780,7 @@ class Iat(Ilocation):
         """
         idx = self._normalize_index(key)
         types = {type(i) for i in idx}
-        if len(types) > 1 or list(types)[0] != int:
+        if len(types) > 1 or list(types)[0] is not int:
             raise ValueError('iAt based indexing can only have integer indexers')
         return cast("tuple[int, int, int, int]", idx)
 
