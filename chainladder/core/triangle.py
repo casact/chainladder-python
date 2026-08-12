@@ -482,7 +482,18 @@ class Triangle(TriangleBase):
         )
 
         if len(development_date.unique()) == 1:
-            if len(data) == 1 and self.origin_grain.split("-")[0] in ["Y", "A"]:
+            # checks if development is not empty, and if ithas any non-yearly values
+            dev_has_no_month = not development or all(
+                pd.to_numeric(data[col], errors="coerce")
+                .astype("Int64")
+                .astype(str)
+                .str.fullmatch(r"\d{4}")
+                .all()
+                for col in development
+            )
+
+            if len(data) == 1 or dev_has_no_month:
+                # if development has no monthly values, match origin
                 self.development_grain = self.origin_grain
             else:
                 dev_date = pd.to_datetime(development_date.iloc[0])
@@ -1466,10 +1477,11 @@ class Triangle(TriangleBase):
         ddims = len(ddims.drop_duplicates())
         if ddims == 1 and sign == -1:
             ddims = len(obj.odims)
-        if obj.values.density > 0 and obj.values.coords[-1].min() < 0:
-            obj.values.coords[-1] = obj.values.coords[-1] - min(
-                obj.values.coords[-1].min(), min_slide
-            )
+        if obj.values.density > 0:
+            if obj.values.coords[-1].min() < 0:
+                obj.values.coords[-1] = obj.values.coords[-1] - min(
+                    obj.values.coords[-1].min(), min_slide
+                )
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
         if options.AUTO_SPARSE == False or backend == "cupy":

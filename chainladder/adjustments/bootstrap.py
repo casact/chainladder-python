@@ -47,6 +47,10 @@ class BootstrapODPSample(DevelopmentBase):
     scale_:
         The scale parameter to be used in generating process risk
 
+    See Also
+    --------
+    MackChainladder : Estimates prediction error for chainladder reserves.
+
     Examples
     --------
 
