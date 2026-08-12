@@ -17,3 +17,12 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
+
+      - id: doctest
+        name: doctest
+        entry: bash -c 'uv run --directory docs sphinx-autogen -o library/generated library/api.md && 
+          uv run --directory docs jb build . --builder=custom --custom-builder=doctest'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
