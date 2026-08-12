@@ -427,7 +427,7 @@ class TriangleBase(
                     "Unable to infer datetime for field(s): " + str(fields) +
                     ". Please check the underlying data or any supplied format arguments."
                     )
-            target: Series = target_field.map(arg=datetime_mapping)
+            target: Series = target_field.map(datetime_mapping)
 
         return target
 
@@ -440,7 +440,7 @@ class TriangleBase(
         For tabular format, this will convert the origin/valuation
         difference to a development lag.
         """
-        return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
+        return ((valuation - origin) / (365.25 / 12)).dt.round("1D").dt.days
 
     @staticmethod
     def _get_grain(
@@ -608,6 +608,8 @@ class TriangleBase(
         return [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
 
     def __array__(self):
+        if self.array_backend == "sparse":
+            return self.values.todense()
         return self.values
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):

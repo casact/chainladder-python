@@ -433,8 +433,17 @@ def parallelogram_olf(
     policy_length=12,
     approximation_grain="M",
     vertical_line=False,
+    cumulative=False,
 ):
-    """Parallelogram approach to on-leveling."""
+    """Parallelogram approach to on-leveling.
+
+    When ``cumulative`` is False (default), ``values`` are incremental rate
+    changes expressed as decimals (0-centric, e.g. 0.05 for +5%). When True,
+    ``values`` are cumulative rate level factors stated relative to one another
+    (1-centric, e.g. 0.67 for 67% rate level, 1.00 for current level), and each value is
+    in force from its effective date until the next one. The earliest value is
+    extended backwards to cover the lookback window.
+    """
     if approximation_grain not in ["M", "D"]:
         raise ValueError("approximation_grain must be M or D")
 
@@ -456,12 +465,29 @@ def parallelogram_olf(
         freq={"M": "MS", "D": "D"}[approximation_grain],
     )
 
-    rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
-        date_idx, fill_value=0
-    )
-    cum_rate_changes = pd.Series(
-        np.cumprod(1 + rate_changes.values), rate_changes.index
-    )
+    if cumulative:
+        factors = pd.Series(
+            np.array(values, dtype="float64"), pd.to_datetime(np.array(dates))
+        ).sort_index()
+        if (factors <= 0).any():
+            raise ValueError("cumulative on-level factors must be positive")
+        # An on-level factor is the current rate level divided by the rate level
+        # in force, so the implied rate level is its reciprocal. Each factor is
+        # in force from its effective date until the next (a backward/asof match,
+        # so off-grid or pre-window dates are honored); dates before the first
+        # factor take the earliest, extending it back over the lookback window.
+        level = 1 / factors
+        pos = np.searchsorted(level.index.values, date_idx.values, side="right") - 1
+        cum_rate_changes = pd.Series(
+            level.values[np.clip(pos, 0, None)], index=date_idx
+        )
+    else:
+        rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
+            date_idx, fill_value=0
+        )
+        cum_rate_changes = pd.Series(
+            np.cumprod(1 + rate_changes.values), rate_changes.index
+        )
     crl = cum_rate_changes.iloc[-1]
 
     rolling_num_base = {

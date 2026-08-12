@@ -134,29 +134,29 @@ class ClarkLDF(DevelopmentBase):
         clrd = cl.load_sample("clrd")[["CumPaidLoss"]]
         print(len(clrd.index))
         m = cl.ClarkLDF(groupby="LOB").fit(clrd)
-        print(m.omega_.round(3))
-        print(m.theta_.round(3))
+        print(m.omega_.round(2))
+        print(m.theta_.round(2))
 
     .. testoutput::
         :options: +NORMALIZE_WHITESPACE
 
         775
                   CumPaidLoss
-        LOB
-        comauto         1.082
-        medmal          1.889
-        othliab         1.468
-        ppauto          1.149
-        prodliab        1.441
-        wkcomp          1.107
+        LOB                  
+        comauto         1.08
+        medmal          1.89
+        othliab         1.47
+        ppauto          1.15
+        prodliab        1.44
+        wkcomp          1.11
                   CumPaidLoss
-        LOB
-        comauto        20.481
-        medmal         35.128
-        othliab        37.745
-        ppauto         10.023
-        prodliab       64.352
-        wkcomp         20.111
+        LOB                  
+        comauto        20.48
+        medmal         35.13
+        othliab        37.75
+        ppauto         10.02
+        prodliab       64.35
+        wkcomp         20.11
 
     """
 

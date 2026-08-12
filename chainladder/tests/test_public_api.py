@@ -75,6 +75,7 @@ EXPECTED_PUBLIC_API = {
     "GridSearch",
     "Pipeline",
     "VotingChainladder",
+    "TriangleSelector",
     # package-level objects
     "Options",
     "options",

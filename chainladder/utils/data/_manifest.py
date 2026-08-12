@@ -158,9 +158,9 @@ SAMPLES: dict = {
         "columns": [
             "Reported Claims",
             "Paid Claims",
+            "Population",
         ],
         "cumulative": True,
-        "development_format": "%Y-12-31",
     },
     "friedland_med_mal": {
         "origin": "Accident Year",
@@ -181,25 +181,11 @@ SAMPLES: dict = {
         "columns": ["Gross Reported Claims", "Net Reported Claims", "Net to Gross"],
         "cumulative": True,
     },
-    "friedland_us_auto_chg_prod_mix": {
+    "friedland_us_auto": {
         "origin": "Accident Year",
         "development": "Calendar Year",
-        "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
-        "cumulative": True,
-    },
-    "friedland_us_auto_incr_claim": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
-        "cumulative": True,
-    },
-    "friedland_us_auto_steady_state": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Paid Claims", "Reported Claims"],
+        "index": ["Scenario"],
+        "columns": ["Paid Claims", "Reported Claims", "Earned Premium"],
         "cumulative": True,
     },
     "friedland_us_industry_auto": {
@@ -214,6 +200,13 @@ SAMPLES: dict = {
         "development": "Calendar Year",
         "index": None,
         "columns": ["Case Outstanding", "Paid Claims"],
+        "cumulative": True,
+    },
+    "friedland_uspp": {
+        "origin": "Accident Year",
+        "development": "Calendar Year",
+        "index": ["Scenario"],
+        "columns": ["Reported Claims", "Paid Claims", "Earned Premium"],
         "cumulative": True,
     },
     "friedland_uspp_auto_increasing_case": {

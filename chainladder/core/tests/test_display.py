@@ -8,6 +8,7 @@ import pytest
 import sys
 
 
+from collections.abc import Iterable
 from chainladder.core.display import TriangleDisplay
 from lxml import etree, html as lxml_html
 from unittest import mock
@@ -257,6 +258,49 @@ def test_repr_format_semi_annual(prism: Triangle) -> None:
     semi = prism.grain("OSDM")
     df = semi._repr_format()
     assert any("H1" in str(i) or "H2" in str(i) for i in df.index)
+
+
+def test_triangle_not_iterable(raa: Triangle) -> None:
+    """
+    A Triangle is a 4-D container, not a 1-D sequence, so it must not be
+    iterable (GH #142). This prevents pandas from misclassifying it as a
+    sequence and iterating it while formatting a DataFrame cell.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    assert not isinstance(raa, Iterable)
+    with pytest.raises(TypeError):
+        iter(raa)
+
+
+def test_triangle_in_dataframe_cell_display(clrd: Triangle) -> None:
+    """
+    Storing a Triangle in a DataFrame cell and displaying the DataFrame must
+    not crash (GH #142).
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    df = pd.DataFrame(data=[["clrd", clrd]], columns=["name", "cl_triangle"])
+    # Both the text and HTML representations previously raised because pandas
+    # iterated the Triangle stored in the cell.
+    assert isinstance(repr(df), str)
+    assert isinstance(df._repr_html_(), str)
 
 
 def test_heatmap_multi_raises(clrd: Triangle) -> None:

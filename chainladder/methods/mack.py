@@ -40,6 +40,10 @@ class MackChainladder(Chainladder):
     total_mack_std_err_:
         The total prediction error across all origin periods
 
+    See Also
+    --------
+    BootstrapODPSample : Generates ODP bootstrap samples for reserve uncertainty.
+
     Examples
     --------
     Use ``MackChainladder`` when the IBNR point estimate alone is not
@@ -335,6 +339,7 @@ class MackChainladder(Chainladder):
 
     def _mack_recursion(self, est, X=None):
         obj = X.copy()
+        backend = X.array_backend
         xp = obj.get_array_module()
         risk_arr = xp.zeros((*X.shape[:3], 1))
         if est == "total_parameter_risk_":
@@ -343,14 +348,16 @@ class MackChainladder(Chainladder):
             future_std_err = (
                 X._full_triangle_ - X[X.valuation < X.valuation_date]
             ).iloc[:, :, :, : X.shape[3]] * X.std_err_.values
-            t1_t = xp.nan_to_num(future_std_err.sum("origin").values)
+            #sum applies auto_sparse, so backend needs to be forced
+            t1_t = xp.nan_to_num(future_std_err.sum("origin").set_backend(backend).values)
             obj.odims = obj.odims[0:1]
         else:
             nans = xp.nan_to_num(X.nan_triangle[None, None])
             nans = 1 - xp.concatenate((nans, xp.zeros((1, 1, X.shape[2], 1))), 3)
             full_tri = X._full_triangle_.values[..., : len(X.ddims)]
             if est == "parameter_risk_":
-                t1_t = xp.nan_to_num(full_tri) * obj.std_err_.values
+                #std_err_ is always numpy
+                t1_t = xp.nan_to_num(full_tri) * obj.std_err_.set_backend(backend).values
             else:
                 t1_t = xp.nan_to_num(full_tri) * self._get_full_std_err_(X).values
         extend = X.ldf_.shape[-1] - X.shape[-1] + 1
@@ -490,11 +497,13 @@ class MackChainladder(Chainladder):
         """
         # This might be better as a dataframe
         obj = self.ultimate_.copy()
+        backend = obj.array_backend
+        # forcing these four triangles to the same backend
         cols = (
-            self.X_.latest_diagonal.values,
-            self.ibnr_.values,
-            self.ultimate_.values,
-            self.mack_std_err_.values[..., -1:],
+            self.X_.latest_diagonal.set_backend(backend).values,
+            self.ibnr_.set_backend(backend).values,
+            self.ultimate_.set_backend(backend).values,
+            self.mack_std_err_.set_backend(backend).values[..., -1:],
         )
         obj.values = obj.get_array_module().concatenate(cols, 3)
         obj.ddims = ["Latest", "IBNR", "Ultimate", "Mack Std Err"]

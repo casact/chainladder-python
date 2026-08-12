@@ -61,11 +61,11 @@ class _FakeDaskBag:
 def test_triangle_json_io(clrd):
     xp = clrd.get_array_module()
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
-    xp.testing.assert_array_equal(clrd.values, clrd2.values)
-    xp.testing.assert_array_equal(clrd.kdims, clrd2.kdims)
-    xp.testing.assert_array_equal(clrd.vdims, clrd2.vdims)
-    xp.testing.assert_array_equal(clrd.odims, clrd2.odims)
-    xp.testing.assert_array_equal(clrd.ddims, clrd2.ddims)
+    assert clrd == clrd2
+    assert np.all(clrd.kdims == clrd2.kdims)
+    assert np.all(clrd.vdims == clrd2.vdims)
+    assert np.all(clrd.odims == clrd2.odims)
+    assert np.all(clrd.ddims == clrd2.ddims)
     assert np.all(clrd.valuation == clrd2.valuation)
 
 
@@ -222,16 +222,20 @@ def test_to_pickle_read_pickle(raa):
         os.remove(path)
 
 
-def test_maximum(raa):
+def test_maximum_minimum_1(raa):
     ult_vol = cl.Chainladder().fit(
         cl.Development(average="volume").fit_transform(raa)
     ).ultimate_
     ult_sim = cl.Chainladder().fit(
         cl.Development(average="simple").fit_transform(raa)
     ).ultimate_
-    high_side = cl.maximum(ult_vol, ult_sim)
+    high_side = maximum(ult_vol, ult_sim)
+    low_side = minimum(ult_vol, ult_sim)
     np.testing.assert_array_almost_equal(
         high_side.values, np.maximum(ult_vol.values, ult_sim.values)
+    )
+    np.testing.assert_array_almost_equal(
+        low_side.values, np.minimum(ult_vol.values, ult_sim.values)
     )
 
 
@@ -596,7 +600,7 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
         cl.concat([raa, raa], axis=1)
 
 
-def test_maximum(raa: Triangle) -> None:
+def test_maximum_2(raa: Triangle) -> None:
     """
     Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.
 
@@ -615,7 +619,7 @@ def test_maximum(raa: Triangle) -> None:
     assert xp.all(xp.nan_to_num(result.values, nan=5000) >= 5000)
 
 
-def test_minimum(raa):
+def test_minimum_2(raa):
     """
     Run cl.minimum(raa, 5000) and check if each element in the resulting triangle is at most 5000.
 
