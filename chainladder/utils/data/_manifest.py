@@ -158,9 +158,9 @@ SAMPLES: dict = {
         "columns": [
             "Reported Claims",
             "Paid Claims",
+            "Population",
         ],
         "cumulative": True,
-        "development_format": "%Y-12-31",
     },
     "friedland_med_mal": {
         "origin": "Accident Year",

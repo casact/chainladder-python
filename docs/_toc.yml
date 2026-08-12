@@ -38,6 +38,7 @@ parts:
         title: Chapter 7 - Part I
       - file: friedland/chapter_7_part_2.ipynb
         title: Chapter 7 - Part II
+      - file: friedland/chapter_8.ipynb
       - file: friedland/chapter_9.ipynb
       - file: friedland/chapter_10.ipynb
   - chapters:
