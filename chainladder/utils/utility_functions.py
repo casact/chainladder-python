@@ -424,6 +424,27 @@ def read_json(json_str, array_backend=None):
         return cl.__dict__[json_dict["__class__"]]().set_params(**json_dict["params"])
 
 
+def _origin_periods(index, grain):
+    """Bucket a DatetimeIndex into origin periods of the given Triangle grain.
+
+    ``DatetimeIndex.to_period`` covers "Y", "Q" and "M" directly. It has no
+    semiannual frequency, and "2Q" does not stand in for one: pandas ignores the
+    multiple when converting to periods, so ``to_period("2Q")`` returns the same
+    four buckets a year that ``to_period("Q")`` does. "S" is therefore built by
+    collapsing each half year onto the quarter it starts in, which also matches
+    how Triangle labels a semiannual origin (``"%YQ%q"``).
+    """
+    if grain == "S":
+        quarters = index.to_period("Q")
+        return pd.PeriodIndex(
+            [
+                pd.Period(year=q.year, quarter=1 if q.quarter <= 2 else 3, freq="Q")
+                for q in quarters
+            ]
+        )
+    return index.to_period(grain)
+
+
 def parallelogram_olf(
     values,
     dates,
@@ -522,8 +543,13 @@ def parallelogram_olf(
 
         cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
 
-        fcrl = cum_avg.groupby(cum_avg.index.to_period(grain)).mean().reset_index()
+        periods = _origin_periods(cum_avg.index, grain)
+        fcrl = cum_avg.groupby(periods).mean().reset_index()
         fcrl.columns = ["Origin", "OLF"]
+        # Carry the leap flag off the periods while they are still periods. It
+        # used to be recovered by strptime-parsing the stringified label, which
+        # only ever worked for the "Y" and "M" label shapes.
+        fcrl["is_leap"] = pd.PeriodIndex(fcrl["Origin"]).is_leap_year
         fcrl["Origin"] = fcrl["Origin"].astype(str)
         fcrl["OLF"] = crl / fcrl["OLF"]
 
@@ -533,16 +559,23 @@ def parallelogram_olf(
     fcrl_leaps = fcrl_non_leaps if approximation_grain == "M" else _fcrl_for_leap(True)
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
-    combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y" + ("-%m" if grain == "M" else "")
-    ).dt.is_leap_year
 
     combined["final_OLF"] = np.where(
-        combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+        combined["is_leap_non_leaps"],
+        combined["OLF_leaps"],
+        combined["OLF_non_leaps"],
     )
 
     combined.drop(
-        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"], axis=1, inplace=True
+        [
+            "OLF_non_leaps",
+            "is_leap_non_leaps",
+            "Origin_leaps",
+            "OLF_leaps",
+            "is_leap_leaps",
+        ],
+        axis=1,
+        inplace=True,
     )
     combined.columns = ["Origin", "OLF"]
 
