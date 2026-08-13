@@ -22,6 +22,32 @@ class TriangleIO:
         protocol :
             The pickle protocol to use.
 
+        Examples
+        --------
+        Write a Triangle to disk and restore it with :func:`chainladder.read_pickle`.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import os
+            import tempfile
+
+            raa = cl.load_sample('raa')
+            fd, path = tempfile.mkstemp(suffix='.pkl')
+            os.close(fd)
+            raa.to_pickle(path)
+            restored = cl.read_pickle(path)
+            os.remove(path)
+            print(restored.shape)
+            print(restored == raa)
+
+        .. testoutput::
+
+            (1, 1, 10, 10)
+            True
         """
         with open(path, "wb") as pkl:
             dill.dump(self, pkl)
@@ -32,6 +58,29 @@ class TriangleIO:
         Returns
         -------
             string representation of object in json format
+
+        Examples
+        --------
+        ``to_json`` returns a string that :func:`chainladder.read_json` can
+        turn back into a Triangle.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import json
+
+            raa = cl.load_sample('raa')
+            payload = json.loads(raa.to_json())
+            print(sorted(payload.keys()))
+            print(cl.read_json(raa.to_json()) == raa)
+
+        .. testoutput::
+
+            ['data', 'dfs', 'metadata', 'sub_tris']
+            True
         """
         metadata = {
             "is_val_tri": self.is_val_tri,
@@ -68,6 +117,33 @@ class EstimatorIO:
             File path and name of pickle object.
         protocol :
             The pickle protocol to use.
+
+        Examples
+        --------
+        Fitted estimators pickle the same way as Triangles. Restore with
+        :func:`chainladder.read_pickle`.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import os
+            import tempfile
+
+            fd, path = tempfile.mkstemp(suffix='.pkl')
+            os.close(fd)
+            cl.Development(n_periods=3).to_pickle(path)
+            restored = cl.read_pickle(path)
+            os.remove(path)
+            print(type(restored).__name__)
+            print(restored.n_periods)
+
+        .. testoutput::
+
+            Development
+            3
         """
         with open(path, "wb") as pkl:
             dill.dump(self, pkl)
@@ -78,6 +154,28 @@ class EstimatorIO:
         Returns
         -------
             string representation of object in json format
+
+        Examples
+        --------
+        Estimator JSON stores constructor parameters and the class name, so
+        :func:`chainladder.read_json` can rebuild the same estimator.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import json
+
+            payload = json.loads(cl.Development(n_periods=3).to_json())
+            print(payload['__class__'])
+            print(payload['params']['n_periods'])
+
+        .. testoutput::
+
+            Development
+            3
         """
         params = self.get_params(deep=False)
         j = lambda v: v.to_json() if isinstance(v, BaseEstimator) else v
