@@ -501,6 +501,28 @@ def test_drop_development_missing_raises(raa):
         raa.drop(development=999)
 
 
+def test_drop_no_labels_raises(raa):
+    """Calling drop() without labels or axis keywords should raise ValueError."""
+    with pytest.raises(ValueError, match="Need to specify at least one of"):
+        raa.drop()
+
+
+def test_drop_both_labels_and_alternative_raises(raa):
+    """Specifying both labels and an axis keyword should raise ValueError."""
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        raa.drop(labels="CumPaidLoss", columns="CumPaidLoss")
+
+
+def test_drop_errors_ignore(raa):
+    """errors='ignore' should suppress KeyError for missing labels."""
+    res_col = raa.drop(columns="nonexistent_col", errors="ignore")
+    assert res_col == raa
+    res_dev = raa.drop(development=999, errors="ignore")
+    assert res_dev == raa
+    with pytest.raises(ValueError, match="errors must be"):
+        raa.drop(columns="CumPaidLoss", errors="invalid")
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):

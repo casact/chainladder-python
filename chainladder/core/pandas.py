@@ -605,6 +605,8 @@ class TrianglePandas(_TrianglePandasBase):
         columns: str | int | list | None = None,
         origin: str | int | list | None = None,
         development: str | int | list | None = None,
+        level: int | str | None = None,
+        errors: str = "raise",
     ) -> Triangle:
         """Drop specified labels from rows or columns.
 
@@ -632,6 +634,12 @@ class TrianglePandas(_TrianglePandasBase):
 
         development: str | int | list | None
             Alternative to ``axis=3``. Equivalent to ``labels, axis=3``.
+
+        level: int | str | None, default None
+            For MultiIndex, level from which the labels will be removed.
+
+        errors: {'ignore', 'raise'}, default 'raise'
+            If 'ignore', suppress error and only existing labels are dropped.
 
         Returns
         -------
@@ -732,6 +740,8 @@ class TrianglePandas(_TrianglePandasBase):
             [12, 24, 36, 48, 60, 72, 84, 96, 108]
 
         """
+        if errors not in ("raise", "ignore"):
+            raise ValueError(f"errors must be 'raise' or 'ignore', got '{errors}'")
         alternatives = {0: index, 1: columns, 2: origin, 3: development}
         if any(value is not None for value in alternatives.values()):
             if labels is not None:
@@ -743,6 +753,11 @@ class TrianglePandas(_TrianglePandasBase):
                 ax: value for ax, value in alternatives.items() if value is not None
             }
         else:
+            if labels is None:
+                raise ValueError(
+                    "Need to specify at least one of 'labels', 'index', "
+                    "'columns', 'origin', or 'development'."
+                )
             to_drop = {self._get_axis(axis): labels}
         result = self
         for ax, ax_labels in to_drop.items():
@@ -752,6 +767,9 @@ class TrianglePandas(_TrianglePandasBase):
                 else [ax_labels]
             )
             if ax == 1:
+                missing = [item for item in ax_labels if item not in result.columns]
+                if missing and errors == "raise":
+                    raise KeyError(f"{missing} not found in the columns axis.")
                 result = result[
                     [item for item in result.columns if item not in ax_labels]
                 ]
@@ -761,7 +779,7 @@ class TrianglePandas(_TrianglePandasBase):
                 missing = [
                     label for label in drop_labels if label not in origin_labels
                 ]
-                if missing:
+                if missing and errors == "raise":
                     raise KeyError(f"{missing} not found in the origin axis.")
                 keep = ~np.isin(origin_labels, drop_labels)
                 kept_positions = np.flatnonzero(keep)
@@ -798,7 +816,7 @@ class TrianglePandas(_TrianglePandasBase):
                 missing = [
                     label for label in drop_labels if label not in dev_labels
                 ]
-                if missing:
+                if missing and errors == "raise":
                     raise KeyError(f"{missing} not found in the development axis.")
                 keep = ~np.isin(dev_labels, drop_labels)
                 kept_positions = np.flatnonzero(keep)
