@@ -424,8 +424,7 @@ class TriangleBase(
 
         Examples
         --------
-        The most recent origin is only observed at age 12, so later lags in
-        that row of ``nan_triangle`` are missing.
+        Observed cells are ``1`` and future valuations are missing.
 
         .. testsetup::
 
@@ -433,13 +432,20 @@ class TriangleBase(
 
         .. testcode::
 
-            import numpy as np
-            mask = np.isnan(cl.load_sample('raa').nan_triangle[-1])
-            print(mask.tolist())
+            print(cl.load_sample('raa').nan_triangle)
 
         .. testoutput::
 
-            [False, True, True, True, True, True, True, True, True, True]
+            [[ 1.  1.  1.  1.  1.  1.  1.  1.  1.  1.]
+             [ 1.  1.  1.  1.  1.  1.  1.  1.  1. nan]
+             [ 1.  1.  1.  1.  1.  1.  1.  1. nan nan]
+             [ 1.  1.  1.  1.  1.  1.  1. nan nan nan]
+             [ 1.  1.  1.  1.  1.  1. nan nan nan nan]
+             [ 1.  1.  1.  1.  1. nan nan nan nan nan]
+             [ 1.  1.  1.  1. nan nan nan nan nan nan]
+             [ 1.  1.  1. nan nan nan nan nan nan nan]
+             [ 1.  1. nan nan nan nan nan nan nan nan]
+             [ 1. nan nan nan nan nan nan nan nan nan]]
         """
         xp = self.get_array_module()
         if self.is_pattern or self.is_ultimate:
@@ -603,20 +609,26 @@ class TriangleBase(
 
         Examples
         --------
+        The returned module is the same object as ``numpy`` or ``sparse``,
+        matching the Triangle's ``array_backend``.
+
         .. testsetup::
 
             import chainladder as cl
 
         .. testcode::
 
+            import numpy as np
+            import sparse as sp
+
             raa = cl.load_sample('raa')
-            print(raa.get_array_module().__name__)
-            print(raa.set_backend('sparse').get_array_module().__name__)
+            print(raa.get_array_module() is np)
+            print(raa.set_backend('sparse').get_array_module() is sp)
 
         .. testoutput::
 
-            numpy
-            sparse
+            True
+            True
         """
 
         backend: str = (
@@ -759,23 +771,14 @@ class TriangleBase(
 
         Examples
         --------
-        Numpy-backed Triangles are already materialized, so ``compute``
-        returns the same object.
+        Numpy- and sparse-backed Triangles are already materialized.
+        ``compute`` exists to realize a lazy dask array. The dask backend is
+        deprecated and optional, so that path is shown as a code sample:
 
-        .. testsetup::
+        .. code-block:: python
 
-            import chainladder as cl
-
-        .. testcode::
-
-            raa = cl.load_sample('raa')
-            print(raa.compute() is raa)
-            print(raa.compute() == raa)
-
-        .. testoutput::
-
-            True
-            True
+            tri = cl.load_sample('raa').set_backend('dask')
+            tri = tri.compute()
         """
         if hasattr(self.values, "chunks"):
             obj = self.copy()
