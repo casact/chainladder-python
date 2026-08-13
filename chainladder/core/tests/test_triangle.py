@@ -1316,12 +1316,12 @@ def test_full_triangle_and_full_expectation(raa,atol):
     bf_fit_incr = cl.BornhuetterFerguson(apriori=1).fit(
         X=raa_incr, sample_weight=raa_incr.incr_to_cum().latest_diagonal * 0
     )
-    assert bf_fit_incr.X_.is_cumulative == False
+    assert not bf_fit_incr.X_.is_cumulative
 
     bf_fit_cum = cl.BornhuetterFerguson(apriori=1).fit(
         X=raa_cum, sample_weight=raa_cum.latest_diagonal * 0
     )
-    assert bf_fit_cum.X_.is_cumulative == True
+    assert bf_fit_cum.X_.is_cumulative
 
     assert bf_fit_incr.cdf_ == bf_fit_cum.cdf_
     assert bf_fit_incr.ultimate_ == bf_fit_cum.ultimate_
@@ -1372,35 +1372,31 @@ def test_halfyear_grain():
 
 def test_predict(raa):
     raa_cum = raa
-    assert cl.Chainladder().fit(raa_cum).X_.is_cumulative == True
+    assert cl.Chainladder().fit(raa_cum).X_.is_cumulative
     assert (
         cl.BornhuetterFerguson()
         .fit(raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000)
         .X_.is_cumulative
-        == True
     )
-    assert cl.Chainladder().fit_predict(raa_cum).is_cumulative == True
+    assert cl.Chainladder().fit_predict(raa_cum).is_cumulative
     assert (
         cl.BornhuetterFerguson()
         .fit_predict(raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000)
         .is_cumulative
-        == True
     )
 
     raa_incr = raa.cum_to_incr()
-    assert cl.Chainladder().fit(raa_incr).X_.is_cumulative == False
-    assert (
+    assert not cl.Chainladder().fit(raa_incr).X_.is_cumulative
+    assert not (
         cl.BornhuetterFerguson()
         .fit(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
         .X_.is_cumulative
-        == False
     )
-    assert cl.Chainladder().fit_predict(raa_incr).is_cumulative == False
-    assert (
+    assert not cl.Chainladder().fit_predict(raa_incr).is_cumulative
+    assert not (
         cl.BornhuetterFerguson()
         .fit_predict(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
         .is_cumulative
-        == False
     )
 
 
