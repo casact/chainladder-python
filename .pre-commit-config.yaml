@@ -7,7 +7,7 @@ repos:
         name: ruff
         entry: bash -c '
           base=$(git rev-parse --verify --quiet origin/main || git rev-parse --verify --quiet main) &&
-          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- "*.py") &&
+          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- "*.py" "*.ipynb") &&
           if [ -z "$files" ]; then
             echo "ruff - no changed files to check";
           else

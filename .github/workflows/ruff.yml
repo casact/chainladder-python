@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine changed Python files
+      - name: Determine changed Python/notebook files
         id: changed
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -47,9 +47,9 @@ jobs:
           fi
 
           if [ -z "$base" ]; then
-            files=$(git ls-files '*.py' | xargs)
+            files=$(git ls-files '*.py' '*.ipynb' | xargs)
           else
-            files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.py' | xargs)
+            files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.py' '*.ipynb' | xargs)
           fi
 
           echo "files=$files" >> "$GITHUB_OUTPUT"
