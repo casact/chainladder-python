@@ -60,6 +60,26 @@ class TriangleBase(
 
     @property
     def shape(self):
+        """The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
+
+        Examples
+        --------
+        A single-triangle sample such as RAA has one index and one column.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.load_sample('raa').shape)
+            print(cl.load_sample('clrd').shape)
+
+        .. testoutput::
+
+            (1, 1, 10, 10)
+            (775, 6, 10, 10)
+        """
         return self.values.shape
 
     @property
@@ -69,6 +89,24 @@ class TriangleBase(
         Returns ``'empty'`` for a Triangle instantiated without data
         (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
         single triangle, and ``'multi'`` for a multidimensional Triangle.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.Triangle().dimensionality)
+            print(cl.load_sample('raa').dimensionality)
+            print(cl.load_sample('clrd').dimensionality)
+
+        .. testoutput::
+
+            empty
+            single
+            multi
         """
         return self._dimensionality
 
@@ -79,6 +117,22 @@ class TriangleBase(
         Mirrors ``pandas.DataFrame.empty``. Returns ``True`` for a Triangle
         instantiated without data (e.g. ``cl.Triangle()``), whose ``values``
         have not been populated, and ``False`` otherwise.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.Triangle().empty)
+            print(cl.load_sample('raa').empty)
+
+        .. testoutput::
+
+            True
+            False
         """
         return self._dimensionality == "empty"
 
@@ -367,6 +421,25 @@ class TriangleBase(
         """Given the current triangle shape and valuation, it determines the
         appropriate placement of NANs in the triangle for future valuations.
         This becomes useful when managing array arithmetic.
+
+        Examples
+        --------
+        The most recent origin is only observed at age 12, so later lags in
+        that row of ``nan_triangle`` are missing.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import numpy as np
+            mask = np.isnan(cl.load_sample('raa').nan_triangle[-1])
+            print(mask.tolist())
+
+        .. testoutput::
+
+            [False, True, True, True, True, True, True, True, True, True]
         """
         xp = self.get_array_module()
         if self.is_pattern or self.is_ultimate:
@@ -527,6 +600,23 @@ class TriangleBase(
         -------
             The backend module. For example, if the backend is numpy, it will return the "np" that you
             would get if you ran the statement, "import numpy as np".
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.get_array_module().__name__)
+            print(raa.set_backend('sparse').get_array_module().__name__)
+
+        .. testoutput::
+
+            numpy
+            sparse
         """
 
         backend: str = (
@@ -666,6 +756,26 @@ class TriangleBase(
         Returns
         -------
         Triangle
+
+        Examples
+        --------
+        Numpy-backed Triangles are already materialized, so ``compute``
+        returns the same object.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.compute() is raa)
+            print(raa.compute() == raa)
+
+        .. testoutput::
+
+            True
+            True
         """
         if hasattr(self.values, "chunks"):
             obj = self.copy()
