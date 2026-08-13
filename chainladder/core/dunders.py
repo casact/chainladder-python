@@ -256,6 +256,9 @@ class TriangleDunders:
         .. testsetup::
 
             import chainladder as cl
+
+        .. testcode::
+
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
@@ -267,9 +270,6 @@ class TriangleDunders:
                 columns=['paid'],
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri + 10)
 
         .. testoutput::
@@ -300,6 +300,9 @@ class TriangleDunders:
         .. testsetup::
 
             import chainladder as cl
+
+        .. testcode::
+
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
@@ -311,9 +314,6 @@ class TriangleDunders:
                 columns=['paid'],
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri - 10)
 
         .. testoutput::
@@ -373,6 +373,9 @@ class TriangleDunders:
         .. testsetup::
 
             import chainladder as cl
+
+        .. testcode::
+
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
@@ -384,9 +387,6 @@ class TriangleDunders:
                 columns=['paid'],
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri * 2)
 
         .. testoutput::
@@ -445,6 +445,9 @@ class TriangleDunders:
         .. testsetup::
 
             import chainladder as cl
+
+        .. testcode::
+
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
@@ -457,9 +460,6 @@ class TriangleDunders:
                 columns=['paid', 'incurred'],
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri['paid'] / 2)
 
         .. testoutput::
