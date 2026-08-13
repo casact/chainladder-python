@@ -517,10 +517,18 @@ def test_drop_errors_ignore(raa):
     """errors='ignore' should suppress KeyError for missing labels."""
     res_col = raa.drop(columns="nonexistent_col", errors="ignore")
     assert res_col == raa
+    res_orig = raa.drop(origin="1800", errors="ignore")
+    assert res_orig == raa
     res_dev = raa.drop(development=999, errors="ignore")
     assert res_dev == raa
     with pytest.raises(ValueError, match="errors must be"):
         raa.drop(columns="CumPaidLoss", errors="invalid")
+
+
+def test_drop_level_non_index_raises(raa):
+    """level parameter on non-index axis should raise ValueError."""
+    with pytest.raises(ValueError, match="level is only supported"):
+        raa.drop(columns="CumPaidLoss", level=1)
 
 
 def test_fillna_none_raises(raa):
