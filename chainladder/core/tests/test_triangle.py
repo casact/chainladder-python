@@ -177,7 +177,6 @@ def test_valuation_shift(qtr):
 
 
 def test_quantile_vs_median(clrd):
-    xp = clrd.get_array_module()
     assert clrd.quantile(q=0.5)["CumPaidLoss"] == clrd.median()["CumPaidLoss"]
 
 
@@ -1087,8 +1086,8 @@ def test_pipe(raa):
 
 
 def test_repr_html(raa, clrd):
-    assert type(raa._repr_html_()) == str
-    assert type(clrd._repr_html_()) == str
+    assert isinstance(raa._repr_html_(), str)
+    assert isinstance(clrd._repr_html_(), str)
 
 
 def test_agg_sparse():
@@ -1273,20 +1272,20 @@ def test_origin_as_datetime_arg(clrd):
 
 def test_full_triangle_and_full_expectation(raa,atol):
     raa_cum = raa
-    assert raa_cum.is_cumulative == True
+    assert raa_cum.is_cumulative
 
     raa_incr = raa_cum.cum_to_incr()
-    assert raa_incr.is_cumulative == False
-    assert raa_incr.incr_to_cum().is_cumulative == True
+    assert not raa_incr.is_cumulative
+    assert raa_incr.incr_to_cum().is_cumulative
     assert raa_incr.incr_to_cum() == raa_cum
 
     cl_fit_incr = cl.Chainladder().fit(X=raa_incr)
     cl_predict_incr = cl.Chainladder().fit_predict(X=raa_incr)
-    assert cl_fit_incr.X_.is_cumulative == False
+    assert not cl_fit_incr.X_.is_cumulative
 
     cl_fit_cum = cl.Chainladder().fit(X=raa_cum)
     cl_predict_cum = cl.Chainladder().fit_predict(X=raa_cum)
-    assert cl_fit_cum.X_.is_cumulative == True
+    assert cl_fit_cum.X_.is_cumulative
 
     assert cl_fit_incr.cdf_ == cl_fit_cum.cdf_
     assert cl_fit_incr.ultimate_ == cl_fit_cum.ultimate_

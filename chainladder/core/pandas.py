@@ -243,7 +243,7 @@ class TrianglePandas(_TrianglePandasBase):
         Any
         """
         df = self.to_frame(origin_as_datetime=True)
-        if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
+        if isinstance(df.index, pd.PeriodIndex) and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
 
@@ -1155,7 +1155,6 @@ def add_groupby_agg_func(cls, k: str, v: str):
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
-        xp = self.obj.get_array_module()
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
         if db and obj.array_backend == "sparse":
