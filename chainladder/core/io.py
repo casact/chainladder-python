@@ -178,6 +178,8 @@ class EstimatorIO:
             3
         """
         params = self.get_params(deep=False)
-        j = lambda v: v.to_json() if isinstance(v, BaseEstimator) else v
-        params = {k: j(v) for k, v in params.items()}
+        params = {
+            k: v.to_json() if isinstance(v, BaseEstimator) else v
+            for k, v in params.items()
+        }
         return json.dumps({"params": params, "__class__": self.__class__.__name__})
