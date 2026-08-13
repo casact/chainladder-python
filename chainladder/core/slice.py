@@ -78,8 +78,6 @@ class _LocBase:
         obj.kdims = obj.kdims[i_idx]
         obj.vdims = obj.vdims[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
-        # Set indexers.
-        obj.iloc, obj.loc = Ilocation(obj), Location(obj)
         obj.valuation_date = cast(pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date))
         return obj
 
@@ -477,6 +475,225 @@ class TriangleSlicer:
     Mixin class to provide square bracket [] slicing functionality to the Triangle class.
     """
 
+    @property
+    def loc(self: TriangleProtocol) -> Location:
+        """Label-based indexer for ``Triangle``, analogous to ``pandas.DataFrame.loc``.
+
+        ``.loc[]`` selects on up to four axes, in order::
+
+            (index, columns, origin, development)
+
+        Omitted trailing axes and ``...`` mean every label on that axis.
+        Lists of labels are supported on ``index`` and ``columns``; ``origin``
+        and ``development`` accept scalars, slices, and boolean masks.
+
+        Examples
+        --------
+        Select one index label, then a column, to get a single 2-D triangle.
+
+        .. testsetup::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'company': ['A', 'A', 'A', 'B', 'B', 'B'],
+                    'origin': [1985, 1985, 1986, 1985, 1985, 1986],
+                    'development': [1985, 1986, 1986, 1985, 1986, 1986],
+                    'paid': [100, 150, 80, 200, 250, 90],
+                    'incurred': [120, 160, 100, 220, 270, 110],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                index='company',
+                cumulative=True,
+            )
+
+        .. testcode::
+
+            print(tri.loc['A', 'paid'])
+
+        .. testoutput::
+
+                 12     24
+            1985  100.0  150.0
+            1986   80.0    NaN
+
+        All four axes can be specified. Use ``...`` to skip leading axes, for
+        example to keep only development ages 24 and later.
+
+        .. testcode::
+
+            print(tri.loc['A', 'paid', :, 24:])
+
+        .. testoutput::
+
+                 24
+            1985  150.0
+            1986    NaN
+
+        Assignment writes through to the selected cells.
+
+        .. testcode::
+
+            out = tri.copy()
+            out.loc['A', 'paid', '1986', 12] = 99
+            print(out.loc['A', 'paid'])
+
+        .. testoutput::
+
+                 12     24
+            1985  100.0  150.0
+            1986   99.0    NaN
+        """
+        return Location(self)
+
+    @property
+    def iloc(self: TriangleProtocol) -> Ilocation:
+        """Integer-position indexer for ``Triangle``, analogous to ``pandas.DataFrame.iloc``.
+
+        ``.iloc[]`` selects on up to four axes, in order::
+
+            (index, columns, origin, development)
+
+        Positions are 0-based. Omitted trailing axes and ``...`` mean every
+        position on that axis.
+
+        Examples
+        --------
+        Integer positions map onto the same 4-D layout as ``.loc``.
+
+        .. testsetup::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'company': ['A', 'A', 'A', 'B', 'B', 'B'],
+                    'origin': [1985, 1985, 1986, 1985, 1985, 1986],
+                    'development': [1985, 1986, 1986, 1985, 1986, 1986],
+                    'paid': [100, 150, 80, 200, 250, 90],
+                    'incurred': [120, 160, 100, 220, 270, 110],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                index='company',
+                cumulative=True,
+            )
+
+        .. testcode::
+
+            print(tri.iloc[0, 0])
+
+        .. testoutput::
+
+                 12     24
+            1985  100.0  150.0
+            1986   80.0    NaN
+
+        A trailing integer slice keeps later development ages, matching
+        ``.loc[..., 24:]`` for this triangle.
+
+        .. testcode::
+
+            print(tri.iloc[0, 0, :, 1:])
+
+        .. testoutput::
+
+                 24
+            1985  150.0
+            1986    NaN
+
+        Assignment writes through by position.
+
+        .. testcode::
+
+            out = tri.copy()
+            out.iloc[0, 0, 1, 0] = 99
+            print(out.iloc[0, 0])
+
+        .. testoutput::
+
+                 12     24
+            1985  100.0  150.0
+            1986   99.0    NaN
+        """
+        return Ilocation(self)
+
+    @property
+    def at(self: TriangleProtocol) -> At:
+        """Label-based scalar indexer for ``Triangle``, analogous to ``pandas.DataFrame.at``.
+
+        ``.at[]`` requires an explicit label on all four axes
+        ``(index, columns, origin, development)`` and returns a single value.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'company': ['A', 'A', 'A', 'B', 'B', 'B'],
+                    'origin': [1985, 1985, 1986, 1985, 1985, 1986],
+                    'development': [1985, 1986, 1986, 1985, 1986, 1986],
+                    'paid': [100, 150, 80, 200, 250, 90],
+                    'incurred': [120, 160, 100, 220, 270, 110],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                index='company',
+                cumulative=True,
+            )
+
+        .. testcode::
+
+            print(tri.at['A', 'paid', '1985', 12])
+
+        .. testoutput::
+
+            100.0
+        """
+        return At(self)
+
+    @property
+    def iat(self: TriangleProtocol) -> Iat:
+        """Integer-position scalar indexer for ``Triangle``, analogous to ``pandas.DataFrame.iat``.
+
+        ``.iat[]`` requires an integer on all four axes
+        ``(index, columns, origin, development)`` and returns a single value.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'company': ['A', 'A', 'A', 'B', 'B', 'B'],
+                    'origin': [1985, 1985, 1986, 1985, 1985, 1986],
+                    'development': [1985, 1986, 1986, 1985, 1986, 1986],
+                    'paid': [100, 150, 80, 200, 250, 90],
+                    'incurred': [120, 160, 100, 220, 270, 110],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                index='company',
+                cumulative=True,
+            )
+
+        .. testcode::
+
+            print(tri.iat[0, 0, 0, 0])
+
+        .. testoutput::
+
+            100.0
+        """
+        return Iat(self)
+
     @overload
     def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
     @overload
@@ -496,6 +713,50 @@ class TriangleSlicer:
         -------
         Triangle | pd.Series
             The requested slice of the Triangle, or in the case of an index, a series of index labels.
+
+        Examples
+        --------
+        A string key selects a column. Follow it with ``.loc`` when you also
+        need a single index label so the result prints as a 2-D triangle.
+
+        .. testsetup::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'company': ['A', 'A', 'A', 'B', 'B', 'B'],
+                    'origin': [1985, 1985, 1986, 1985, 1985, 1986],
+                    'development': [1985, 1986, 1986, 1985, 1986, 1986],
+                    'paid': [100, 150, 80, 200, 250, 90],
+                    'incurred': [120, 160, 100, 220, 270, 110],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                index='company',
+                cumulative=True,
+            )
+
+        .. testcode::
+
+            print(tri['paid'].loc['A'])
+
+        .. testoutput::
+
+                 12     24
+            1985  100.0  150.0
+            1986   80.0    NaN
+
+        A boolean mask on ``origin`` (or ``development``) drops periods that
+        fail the condition.
+
+        .. testcode::
+
+            print(tri[tri.origin == '1985'].shape)
+
+        .. testoutput::
+
+            (2, 2, 1, 2)
         """
 
         # Determine the axis to which the key applies, and slice accordingly.
@@ -546,6 +807,39 @@ class TriangleSlicer:
         Returns
         -------
         None
+
+        Examples
+        --------
+        Assign a new column from arithmetic on existing columns.
+
+        .. testsetup::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'company': ['A', 'A', 'A', 'B', 'B', 'B'],
+                    'origin': [1985, 1985, 1986, 1985, 1985, 1986],
+                    'development': [1985, 1986, 1986, 1985, 1986, 1986],
+                    'paid': [100, 150, 80, 200, 250, 90],
+                    'incurred': [120, 160, 100, 220, 270, 110],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                index='company',
+                cumulative=True,
+            )
+
+        .. testcode::
+
+            tri['case'] = tri['incurred'] - tri['paid']
+            print(tri.loc['A', 'case'])
+
+        .. testoutput::
+
+                12    24
+            1985  20.0  10.0
+            1986  20.0   NaN
         """
         xp: ModuleType = self.get_array_module()
         # Case callable, create lazy-eval virtual columns, but do not compute.
@@ -671,17 +965,18 @@ class TriangleSlicer:
 
     def _set_slicers(self: TriangleProtocol) -> None:
         """
-        Set the indexers on the Triangle during initialization. Enables indexing functionality such as Triangle.iloc[],
-        Triangle.loc[], Triangle.iat[], and Triangle.at[].
+        Refresh lazy column accessors after the index or columns change.
 
-        Also, call at any time the shape of index or column changes.
+        ``loc``, ``iloc``, ``at``, and ``iat`` are properties that always wrap
+        the current Triangle. This method recreates ``virtual_columns`` so
+        callable columns stay attached to ``self``.
 
         Returns
         -------
         None
         """
-        self.iloc, self.loc = Ilocation(self), Location(self)
-        self.iat, self.at = Iat(self), At(self)
+        for name in ("loc", "iloc", "at", "iat"):
+            self.__dict__.pop(name, None)
         self.virtual_columns = VirtualColumns(cast("Triangle", self), self.virtual_columns.columns)
 
 

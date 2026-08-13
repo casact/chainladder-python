@@ -112,10 +112,6 @@ class Triangle(TriangleBase):
         Displays actual disposal rates by origin and development; must have ``ultimate_``
     valuation_date : date
         The latest valuation date of the data
-    loc: Triangle
-        pandas-style ``loc`` accessor
-    iloc: Triangle
-        pandas-style ``iloc`` accessor
     latest_diagonal: Triangle
         The latest diagonal of the triangle
     is_cumulative: bool
