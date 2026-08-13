@@ -1,0 +1,41 @@
+name: SPEC 0 Dependency Check
+
+# Nightly check of chainladder's minimum-supported dependency versions against
+# the Scientific Python SPEC 0 policy (Python is tracked against its official
+# EOL date instead). Opens a GitHub issue for anything within 3 months of, or
+# past, its recommended drop-support date, if one isn't already open.
+#
+# Auxiliary files:
+# - .github/scripts/check_spec0.py
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Daily “At 00:00” UTC
+  workflow_dispatch: # allows you to trigger the workflow run manually
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Check SPEC 0 support windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          python-version: "3.12" # needs tomllib (3.11+); independent of chainladder's own requires-python
+
+      - name: Run SPEC 0 check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          uv run python .github/scripts/check_spec0.py \
+            --summary-output summary.md \
+            --create-issues \
+            --repo "${{ github.repository }}"
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
