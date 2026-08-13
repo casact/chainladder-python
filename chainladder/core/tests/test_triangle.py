@@ -1414,19 +1414,17 @@ def test_halfyear_development():
         names=["origin", "development", "paid"],
         parse_dates=["origin", "development"],
     )
-    assert (
-        type(
-            cl.Triangle(
-                data=df_sub,
-                origin="origin",
-                origin_format="%Y-%m-%d",
-                development="development",
-                development_format="%Y-%m-%d",
-                columns="paid",
-                cumulative=True,
-            )
-        )
-        == cl.Triangle
+    assert isinstance(
+        cl.Triangle(
+            data=df_sub,
+            origin="origin",
+            origin_format="%Y-%m-%d",
+            development="development",
+            development_format="%Y-%m-%d",
+            columns="paid",
+            cumulative=True,
+        ),
+        cl.Triangle,
     )
 
     data = [
@@ -1443,18 +1441,17 @@ def test_halfyear_development():
         ["2012-01-01", "2013-12-31", "incurred", 200.0],
     ]
 
-    assert (
-        type(
-            cl.Triangle(
-                data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
-                index="idx",
-                columns="value",
-                origin="origin",
-                development="val_date",
-                cumulative=True,
-            )
-        )
-    ) == cl.Triangle
+    assert isinstance(
+        cl.Triangle(
+            data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
+            index="idx",
+            columns="value",
+            origin="origin",
+            development="val_date",
+            cumulative=True,
+        ),
+        cl.Triangle,
+    )
 
 
 def test_latest_diagonal_vs_full_tri_raa(raa):
