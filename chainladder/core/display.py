@@ -158,6 +158,11 @@ class TriangleDisplay:
         Color the background in a gradient according to the data in each
         column (optionally row). Requires matplotlib.
 
+        Styles a single 2-D triangle for notebook display and returns an
+        IPython HTML object. Multi-dimensional triangles raise
+        ``ValueError``. See the :ref:`User Guide <triangle:heatmap>` for a
+        rendered example.
+
         Parameters
         ----------
 
@@ -173,51 +178,6 @@ class TriangleDisplay:
         Returns
         -------
             Ipython.display.HTML
-
-        Examples
-        --------
-        ``heatmap`` styles a single 2-D triangle for notebook display. The
-        return value is an IPython HTML object with a background gradient.
-
-        .. testsetup::
-
-            import chainladder as cl
-
-        .. testcode::
-
-            html = cl.load_sample('raa').heatmap()
-            print(type(html).__name__)
-            print('background-color' in html.data)
-
-        .. testoutput::
-
-            HTML
-            True
-
-        A different matplotlib colormap can be passed to ``cmap``. The result
-        is still HTML; only the colors change.
-
-        .. testcode::
-
-            html = cl.load_sample('raa').heatmap(cmap='viridis')
-            print(type(html).__name__)
-
-        .. testoutput::
-
-            HTML
-
-        Multi-dimensional triangles are not supported.
-
-        .. testcode::
-
-            try:
-                cl.load_sample('clrd').heatmap()
-            except ValueError as err:
-                print(err)
-
-        .. testoutput::
-
-            heatmap() only works with a single triangle.
         """
         if self._dimensionality == 'single':
             data = self._repr_format()
