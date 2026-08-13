@@ -133,6 +133,11 @@ class Triangle(TriangleBase):
         Transpose index and columns of object.  Only available when Triangle is
         convertible to DataFrame.
 
+    See Also
+    --------
+    Development : Fitted development patterns, including ``ldf_`` and ``cdf_``.
+    Chainladder : Fitted chainladder results, including ``ultimate_`` and ``ibnr_``.
+
     Examples
     --------
 

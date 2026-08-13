@@ -102,6 +102,9 @@ class Development(DevelopmentBase):
         The estimated loss development patterns
     cdf_: Triangle
         The estimated cumulative development patterns
+    pct_reported_: Triangle
+        The estimated percent of ultimate reported (or paid) at each
+        development age
     sigma_: Triangle
         Sigma of the ldf regression
     std_err_: Triangle
