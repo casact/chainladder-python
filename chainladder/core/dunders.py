@@ -273,6 +273,7 @@ class TriangleDunders:
             print(tri + 10)
 
         .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  110.0  160.0
@@ -317,6 +318,7 @@ class TriangleDunders:
             print(tri - 10)
 
         .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
 
                 12     24
             1985  90.0  140.0
@@ -390,6 +392,7 @@ class TriangleDunders:
             print(tri * 2)
 
         .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  200.0  300.0
@@ -462,6 +465,7 @@ class TriangleDunders:
             print(tri['paid'] / 2)
 
         .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
 
                 12    24
             1985  50.0  75.0
@@ -472,6 +476,7 @@ class TriangleDunders:
             print(tri['paid'] / tri['incurred'])
 
         .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
 
                     12      24
             1985  0.833333  0.9375
