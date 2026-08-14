@@ -428,11 +428,18 @@ def _origin_periods(index, grain):
     """Bucket a DatetimeIndex into origin periods of the given Triangle grain.
 
     ``DatetimeIndex.to_period`` covers "Y", "Q" and "M" directly. It has no
-    semiannual frequency, and "2Q" does not stand in for one: pandas ignores the
-    multiple when converting to periods, so ``to_period("2Q")`` returns the same
-    four buckets a year that ``to_period("Q")`` does. "S" is therefore built by
-    collapsing each half year onto the quarter it starts in, which also matches
-    how Triangle labels a semiannual origin (``"%YQ%q"``).
+    semiannual frequency, and "2Q" does not stand in for one. The multiple is
+    honoured, so a "2Q" period is six months long, but each one is anchored to
+    the quarter of the observation rather than to a fixed half-year boundary,
+    so the windows overlap::
+
+        2016-01-01 -> 2016Q1 [2016-01-01 .. 2016-06-30]
+        2016-04-01 -> 2016Q2 [2016-04-01 .. 2016-09-30]
+
+    Grouping on that yields eight buckets over two years instead of four, which
+    would then be broadcast against a six-origin triangle. "S" is therefore
+    built by collapsing each half year onto the quarter it starts in, which also
+    matches how Triangle labels a semiannual origin (``"%YQ%q"``).
     """
     if grain == "S":
         quarters = index.to_period("Q")
