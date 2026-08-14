@@ -800,11 +800,9 @@ class TrianglePandas(_TrianglePandasBase):
                 # what makes origin dropping more useful than plain 4D slicing
                 # (gh-1055).
                 if result.shape[-1] > 1:
-                    xp = result.get_array_module()
                     agg = result.sum(axis=0).sum(axis=1)
-                    dev_has_data = list(
-                        (xp.nansum(agg.values[0, 0, :], -2) != 0).astype("int")
-                    )
+                    arr = np.nan_to_num(np.asarray(agg.values[0, 0, :]))
+                    dev_has_data = list((arr.sum(axis=-2) != 0).astype(int))
                     dev_labels = agg.development[
                         pd.Series(dev_has_data).astype(bool)
                     ]
