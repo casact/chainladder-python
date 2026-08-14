@@ -545,6 +545,14 @@ def test_drop_unsupported_axis_raises(raa):
         raa.drop(labels="CumPaidLoss", axis=4)
 
 
+def test_drop_ultimate_column_updates_is_ultimate(raa):
+    """Dropping the ultimate development column updates is_ultimate property to False."""
+    full_tri = cl.Chainladder().fit(raa).full_expectation_
+    assert full_tri.is_ultimate
+    dropped = full_tri.drop(development=full_tri.development.max())
+    assert not dropped.is_ultimate
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):

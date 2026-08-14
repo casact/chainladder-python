@@ -40,7 +40,7 @@ if TYPE_CHECKING:
         Series
     )
     from types import ModuleType
-    from pandas._typing import(
+    from pandas._typing import (
         IndexLabel
     )
     from typing import (
@@ -889,30 +889,29 @@ class TrianglePandas(_TrianglePandasBase):
         return concat((self, other), 0)
 
     def rename(
-            self,
-            axis: Literal['index', 'columns', 'origin', 'development'] | int,
-            value: list | str | dict
+        self,
+        axis: Literal["index", "columns", "origin", "development"] | int,
+        value: str | list | dict,
     ) -> Triangle:
-        """Alter axes labels.
+        """Alter Triangle axes labels.
 
         Parameters
         ----------
         axis: Literal['index', 'columns', 'origin', 'development'] | int
-            A value of 0 <= axis <= 4 corresponding to axes 'index',
-            'columns', 'origin', 'development' respectively.  Both the
-            int and str representation can be used.
-        value: list or str or dict
-            List of new labels to be assigned to the axis. List must be of
-            same length of the specified axis. Can also be a dictionary for renaming columns
+            Target axis to be relabeled.
+        value: str | list | dict
+            New label names for the target axis. String and list inputs replace
+            all labels on the axis. Dictionary inputs map existing labels to new names.
 
         Returns
         -------
+        Triangle
             Triangle with relabeled axis.
         """
         
         if isinstance(value, dict):
             if axis == "columns" or axis == 1:
-                full_dict = dict(zip(self.columns.values,self.columns.values))
+                full_dict = dict(zip(self.columns.values, self.columns.values))
                 full_dict.update(value)
                 self.columns = self.columns.map(full_dict)
             else:
@@ -922,7 +921,7 @@ class TrianglePandas(_TrianglePandasBase):
         else:
             value = [value] if type(value) is str else value
             if axis == "index" or axis == 0:
-                self.index = pd.DataFrame(value,columns = self.index.columns)
+                self.index = pd.DataFrame(value, columns=self.index.columns)
             elif axis == "columns" or axis == 1:
                 self.columns = value
             elif axis == "origin" or axis == 2:
