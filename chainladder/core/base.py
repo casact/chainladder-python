@@ -186,7 +186,7 @@ class TriangleBase(
                 date_format=development_format
             )
         else:
-            o_max: Timestamp  = pd.Period(
+            o_max: Timestamp = pd.Period(
                 value=origin_date.max(),
                 freq=TriangleBase._get_grain(origin_date)
             ).to_timestamp(how="e")
@@ -220,11 +220,15 @@ class TriangleBase(
             columns: list
     ):
         """Summarize dataframe to the level specified in axes"""
-        if not isinstance(data, pd.DataFrame):
-            # Non-pandas inputs (typically a Dask dataframe) take this path.
-            # Warn only when the object's module is dask. stacklevel=3 points
-            # the warning at the user's Triangle(...) call (warn -> this
-            # method -> Triangle.__init__ -> user).
+        if type(data) != pd.DataFrame:  # noqa: E721
+            # A non-pandas input that reaches this branch is a Dask dataframe
+            # or a pandas subclass. Only the Dask backend is deprecated, so
+            # gate the warning on the data's module rather than warning for
+            # every pandas subclass that also takes this path. stacklevel=3
+            # points the warning at the user's Triangle(...) call (warn ->
+            # this method -> Triangle.__init__ -> user).
+            # Exact-type check is required: isinstance() would send the
+            # DataFrame-subclass dask stand-in down the pandas path.
             if type(data).__module__.split(".")[0] == "dask":
                 warnings.warn(
                     _deprecated_backend_message("dask"),
@@ -538,11 +542,11 @@ class TriangleBase(
         """
         months: np.ndarray = (dates.dt.year * 12 + dates.dt.month).unique()
         diffs: np.ndarray = np.diff(np.sort(months))
-        if np.all(np.mod(diffs,12) == 0):
+        if np.all(np.mod(diffs, 12) == 0):
             grain = "Y"
-        elif np.all(np.mod(diffs,6) == 0):
+        elif np.all(np.mod(diffs, 6) == 0):
             grain = "2Q"
-        elif np.all(np.mod(diffs,3) == 0):
+        elif np.all(np.mod(diffs, 3) == 0):
             grain = "Q"
         else:
             grain = "M"
