@@ -531,6 +531,14 @@ def test_drop_level_non_index_raises(raa):
         raa.drop(columns="CumPaidLoss", level=1)
 
 
+def test_drop_development_updates_valuation_date(raa):
+    """Dropping the latest development period on a valuation triangle updates valuation_date."""
+    raa_val = raa.dev_to_val()
+    latest_dev = raa_val.development.max()
+    dropped = raa_val.drop(development=latest_dev)
+    assert dropped.valuation_date == pd.Timestamp("1989-12-31 23:59:59.999999")
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):

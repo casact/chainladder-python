@@ -829,6 +829,10 @@ class TrianglePandas(_TrianglePandasBase):
                         "dropping an interior development period would leave a gap."
                     )
                 result = result._slice(keep, "ddims")
+                if result.is_val_tri:
+                    result.valuation_date = min(
+                        result.valuation.max(), result.valuation_date
+                    )
             else:
                 raise NotImplementedError(
                     "Triangle.drop() only implemented for the column, "
