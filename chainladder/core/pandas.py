@@ -758,6 +758,7 @@ class TrianglePandas(_TrianglePandasBase):
                     "Need to specify at least one of 'labels', 'index', "
                     "'columns', 'origin', or 'development'."
                 )
+            to_drop = {self._get_axis(axis): labels}
         if level is not None and any(ax != 0 for ax in to_drop):
             raise ValueError("level is only supported for axis=0 ('index').")
         result = self
