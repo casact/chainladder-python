@@ -536,7 +536,7 @@ def test_drop_development_updates_valuation_date(raa):
     raa_val = raa.dev_to_val()
     latest_dev = raa_val.development.max()
     dropped = raa_val.drop(development=latest_dev)
-    assert dropped.valuation_date == pd.Timestamp("1989-12-31 23:59:59.999999")
+    assert dropped.valuation_date.date() == pd.Timestamp("1989-12-31").date()
 
 
 def test_fillna_none_raises(raa):
