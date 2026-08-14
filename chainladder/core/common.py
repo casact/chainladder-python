@@ -22,7 +22,6 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from numpy.typing import ArrayLike
     from chainladder.core.typing import TriangleLike
 
 
@@ -95,6 +94,27 @@ class Common:
 
     @property
     def cdf_(self):
+        """Cumulative development factors, ``ldf_`` converted with ``incr_to_cum``.
+
+        Examples
+        --------
+        After fitting a development estimator, ``cdf_`` is the cumulative
+        product of the selected LDFs, including the tail if one was applied.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import numpy as np
+            cdf = cl.Development().fit_transform(cl.load_sample('raa')).cdf_
+            print(np.round(cdf.values[0, 0, 0, :3], 4).tolist())
+
+        .. testoutput::
+
+            [8.9202, 2.974, 1.8318]
+        """
         if not self.has_ldf:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'cdf_'")
@@ -103,7 +123,27 @@ class Common:
     @property
     def pct_reported_(self):
         """Percentage of ultimate reported (or paid) at each development age,
-        equal to the inverse of the cumulative development factor."""
+        equal to the inverse of the cumulative development factor.
+
+        Examples
+        --------
+        At 12 months, RAA volume-weighted development implies about 11% of
+        ultimate is reported.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import numpy as np
+            pct = cl.Development().fit_transform(cl.load_sample('raa')).pct_reported_
+            print(np.round(pct.values[0, 0, 0, :3], 4).tolist())
+
+        .. testoutput::
+
+            [0.1121, 0.3362, 0.5459]
+        """
         if not self.has_ldf:
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'pct_reported_'")
@@ -127,6 +167,27 @@ class Common:
 
     @property
     def ibnr_(self):
+        """Outstanding development to ultimate: ``ultimate_`` minus the latest
+        diagonal (or the origin total, for incremental triangles).
+
+        Examples
+        --------
+        Chainladder IBNR is zero for the oldest origin once that year is fully
+        developed, and largest for the youngest origin.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            ibnr = cl.Chainladder().fit(cl.load_sample('raa')).ibnr_
+            print(ibnr.to_frame(origin_as_datetime=False).round(2).iloc[:, 0].tolist())
+
+        .. testoutput::
+
+            [nan, 153.95, 617.37, 1636.14, 2746.74, 3649.1, 5435.3, 10907.19, 10649.98, 16339.44]
+        """
         if not hasattr(self, "ultimate_"):
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'ibnr_'")
@@ -189,20 +250,29 @@ class Common:
         --------
         Keep development periods from 48 onward:
 
-        >>> import chainladder as cl
-        >>> raa = cl.load_sample('raa')
-        >>> raa.pipe(lambda tri: tri.loc[..., 48:])
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.pipe(lambda tri: tri.loc[..., 48:]))
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
                   48       60       72       84       96       108      120
-        1981  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
-        1982  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0      NaN
-        1983  16141.0  18735.0  22214.0  22863.0  23466.0      NaN      NaN
-        1984  21266.0  23425.0  26083.0  27067.0      NaN      NaN      NaN
-        1985  22169.0  25955.0  26180.0      NaN      NaN      NaN      NaN
-        1986  12935.0  15852.0      NaN      NaN      NaN      NaN      NaN
-        1987  12314.0      NaN      NaN      NaN      NaN      NaN      NaN
-        1988      NaN      NaN      NaN      NaN      NaN      NaN      NaN
-        1989      NaN      NaN      NaN      NaN      NaN      NaN      NaN
-        1990      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+            1981  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
+            1982  10666.0  13782.0  15599.0  15496.0  16169.0  16704.0      NaN
+            1983  16141.0  18735.0  22214.0  22863.0  23466.0      NaN      NaN
+            1984  21266.0  23425.0  26083.0  27067.0      NaN      NaN      NaN
+            1985  22169.0  25955.0  26180.0      NaN      NaN      NaN      NaN
+            1986  12935.0  15852.0      NaN      NaN      NaN      NaN      NaN
+            1987  12314.0      NaN      NaN      NaN      NaN      NaN      NaN
+            1988      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+            1989      NaN      NaN      NaN      NaN      NaN      NaN      NaN
+            1990      NaN      NaN      NaN      NaN      NaN      NaN      NaN
         """
         return func(self, *args, **kwargs)
 
@@ -230,6 +300,27 @@ class Common:
         Returns
         -------
             Triangle with updated array_backend
+
+        Examples
+        --------
+        ``set_backend`` returns a new Triangle unless ``inplace=True``.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.array_backend)
+            print(raa.set_backend('sparse').array_backend)
+            print(raa.array_backend)
+
+        .. testoutput::
+
+            numpy
+            sparse
+            numpy
         """
         # Warn once, at the public entry point, so stacklevel=2 points at the
         # user's call site rather than an internal recursive call. The _warn
