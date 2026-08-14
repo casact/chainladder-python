@@ -160,7 +160,7 @@ class _LocBase:
         if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
             cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
         else:
-            #the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
+            # the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
             cast(np.ndarray, cast(object, self.obj.values)).__setitem__(
                 np.ix_(norm_key[0], norm_key[1]) + (norm_key[2], norm_key[3]), 
                 values
@@ -189,7 +189,7 @@ class _LocBase:
         # None indicates "go-to-boundary" for the slice.
         for n, i in enumerate(key):
             if isinstance(i, slice):
-                start: int | None= i.start if i.start > 0 else None
+                start: int | None = i.start if i.start > 0 else None
                 stop: int | None = i.stop if i.stop > -1 else None
                 stop: int | None = None if stop == self.obj.shape[n] else stop
                 step: int | None = None if start is None and stop is None and (i.step == 1) else i.step
@@ -376,7 +376,7 @@ class Location(_LocBase):
                        .set_index(self.obj.key_labels).loc[key]).values.flatten()
         # Case scalar, locate position in first level of index.
         else:
-            idx = np.where(self.obj.kdims[:, 0]==key)[0]
+            idx = np.where(self.obj.kdims[:, 0] == key)[0]
         return idx
 
     def other_key(
@@ -491,9 +491,12 @@ class TriangleSlicer:
         --------
         Select one index label, then a column, to get a single 2-D triangle.
 
-        .. testsetup::
+        .. testsetup:: loc-examples
 
             import chainladder as cl
+
+        .. testcode:: loc-examples
+
             tri = cl.Triangle(
                 data={
                     'company': ['A', 'A', 'A', 'B', 'B', 'B'],
@@ -508,12 +511,10 @@ class TriangleSlicer:
                 index='company',
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri.loc['A', 'paid'])
 
-        .. testoutput::
+        .. testoutput:: loc-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  100.0  150.0
@@ -522,11 +523,12 @@ class TriangleSlicer:
         All four axes can be specified. Use ``...`` to skip leading axes, for
         example to keep only development ages 24 and later.
 
-        .. testcode::
+        .. testcode:: loc-examples
 
             print(tri.loc['A', 'paid', :, 24:])
 
-        .. testoutput::
+        .. testoutput:: loc-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  24
             1985  150.0
@@ -534,13 +536,14 @@ class TriangleSlicer:
 
         Assignment writes through to the selected cells.
 
-        .. testcode::
+        .. testcode:: loc-examples
 
             out = tri.copy()
             out.loc['A', 'paid', '1986', 12] = 99
             print(out.loc['A', 'paid'])
 
-        .. testoutput::
+        .. testoutput:: loc-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  100.0  150.0
@@ -563,9 +566,12 @@ class TriangleSlicer:
         --------
         Integer positions map onto the same 4-D layout as ``.loc``.
 
-        .. testsetup::
+        .. testsetup:: iloc-examples
 
             import chainladder as cl
+
+        .. testcode:: iloc-examples
+
             tri = cl.Triangle(
                 data={
                     'company': ['A', 'A', 'A', 'B', 'B', 'B'],
@@ -580,12 +586,10 @@ class TriangleSlicer:
                 index='company',
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri.iloc[0, 0])
 
-        .. testoutput::
+        .. testoutput:: iloc-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  100.0  150.0
@@ -594,11 +598,12 @@ class TriangleSlicer:
         A trailing integer slice keeps later development ages, matching
         ``.loc[..., 24:]`` for this triangle.
 
-        .. testcode::
+        .. testcode:: iloc-examples
 
             print(tri.iloc[0, 0, :, 1:])
 
-        .. testoutput::
+        .. testoutput:: iloc-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  24
             1985  150.0
@@ -606,13 +611,14 @@ class TriangleSlicer:
 
         Assignment writes through by position.
 
-        .. testcode::
+        .. testcode:: iloc-examples
 
             out = tri.copy()
             out.iloc[0, 0, 1, 0] = 99
             print(out.iloc[0, 0])
 
-        .. testoutput::
+        .. testoutput:: iloc-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  100.0  150.0
@@ -629,9 +635,12 @@ class TriangleSlicer:
 
         Examples
         --------
-        .. testsetup::
+        .. testsetup:: at-examples
 
             import chainladder as cl
+
+        .. testcode:: at-examples
+
             tri = cl.Triangle(
                 data={
                     'company': ['A', 'A', 'A', 'B', 'B', 'B'],
@@ -646,12 +655,9 @@ class TriangleSlicer:
                 index='company',
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri.at['A', 'paid', '1985', 12])
 
-        .. testoutput::
+        .. testoutput:: at-examples
 
             100.0
         """
@@ -666,9 +672,12 @@ class TriangleSlicer:
 
         Examples
         --------
-        .. testsetup::
+        .. testsetup:: iat-examples
 
             import chainladder as cl
+
+        .. testcode:: iat-examples
+
             tri = cl.Triangle(
                 data={
                     'company': ['A', 'A', 'A', 'B', 'B', 'B'],
@@ -683,12 +692,9 @@ class TriangleSlicer:
                 index='company',
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri.iat[0, 0, 0, 0])
 
-        .. testoutput::
+        .. testoutput:: iat-examples
 
             100.0
         """
@@ -719,9 +725,12 @@ class TriangleSlicer:
         A string key selects a column. Follow it with ``.loc`` when you also
         need a single index label so the result prints as a 2-D triangle.
 
-        .. testsetup::
+        .. testsetup:: getitem-examples
 
             import chainladder as cl
+
+        .. testcode:: getitem-examples
+
             tri = cl.Triangle(
                 data={
                     'company': ['A', 'A', 'A', 'B', 'B', 'B'],
@@ -736,12 +745,10 @@ class TriangleSlicer:
                 index='company',
                 cumulative=True,
             )
-
-        .. testcode::
-
             print(tri['paid'].loc['A'])
 
-        .. testoutput::
+        .. testoutput:: getitem-examples
+           :options: +NORMALIZE_WHITESPACE
 
                  12     24
             1985  100.0  150.0
@@ -750,11 +757,11 @@ class TriangleSlicer:
         A boolean mask on ``origin`` (or ``development``) drops periods that
         fail the condition.
 
-        .. testcode::
+        .. testcode:: getitem-examples
 
             print(tri[tri.origin == '1985'].shape)
 
-        .. testoutput::
+        .. testoutput:: getitem-examples
 
             (2, 2, 1, 2)
         """
@@ -812,9 +819,12 @@ class TriangleSlicer:
         --------
         Assign a new column from arithmetic on existing columns.
 
-        .. testsetup::
+        .. testsetup:: setitem-examples
 
             import chainladder as cl
+
+        .. testcode:: setitem-examples
+
             tri = cl.Triangle(
                 data={
                     'company': ['A', 'A', 'A', 'B', 'B', 'B'],
@@ -829,13 +839,11 @@ class TriangleSlicer:
                 index='company',
                 cumulative=True,
             )
-
-        .. testcode::
-
             tri['case'] = tri['incurred'] - tri['paid']
             print(tri.loc['A', 'case'])
 
-        .. testoutput::
+        .. testoutput:: setitem-examples
+           :options: +NORMALIZE_WHITESPACE
 
                 12    24
             1985  20.0  10.0
