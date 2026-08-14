@@ -539,6 +539,12 @@ def test_drop_development_updates_valuation_date(raa):
     assert dropped.valuation_date.date() == pd.Timestamp("1989-12-31").date()
 
 
+def test_drop_unsupported_axis_raises(raa):
+    """Passing an invalid axis (e.g., axis=4) should raise ValueError."""
+    with pytest.raises(ValueError, match="Invalid axis"):
+        raa.drop(labels="CumPaidLoss", axis=4)
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):
