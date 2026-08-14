@@ -220,13 +220,11 @@ class TriangleBase(
             columns: list
     ):
         """Summarize dataframe to the level specified in axes"""
-        if type(data) != pd.DataFrame:
-            # A non-pandas input that reaches this branch is a Dask dataframe.
-            # Only the Dask backend is deprecated, so gate the warning on the
-            # data's module rather than warning for every pandas subclass that
-            # also takes this path. stacklevel=3 points the warning at the
-            # user's Triangle(...) call (warn -> this method ->
-            # Triangle.__init__ -> user).
+        if not isinstance(data, pd.DataFrame):
+            # Non-pandas inputs (typically a Dask dataframe) take this path.
+            # Warn only when the object's module is dask. stacklevel=3 points
+            # the warning at the user's Triangle(...) call (warn -> this
+            # method -> Triangle.__init__ -> user).
             if type(data).__module__.split(".")[0] == "dask":
                 warnings.warn(
                     _deprecated_backend_message("dask"),
@@ -480,7 +478,7 @@ class TriangleBase(
             target: Series = target_field
             # If the target field is a period, convert to timestamp. period_end is a boolean that if true,
             # means that the timestamp should be the end of the period.
-            if type(target.iloc[0]) == pd.Period:
+            if isinstance(target.iloc[0], pd.Period):
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
             datetime_arg: np.ndarray = target_field.unique()
@@ -775,10 +773,12 @@ class TriangleBase(
         ``compute`` exists to realize a lazy dask array. The dask backend is
         deprecated and optional, so that path is shown as a code sample:
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            tri = cl.load_sample('raa').set_backend('dask')
-            tri = tri.compute()
+            >>> tri = cl.load_sample('raa').set_backend('dask')
+            >>> tri = tri.compute()
+            >>> tri.array_backend
+            'numpy'
         """
         if hasattr(self.values, "chunks"):
             obj = self.copy()
