@@ -23,24 +23,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine changed Python files
+      - name: Determine changed Python/notebook files
         id: changed
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             base="origin/${{ github.event.pull_request.base.ref }}"
-          else
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # origin/main already reflects this push after checkout, so diffing
+            # against it here would always be empty. Use the pre-push state instead.
             base="${{ github.event.before }}"
             # New branch or force-push: 'before' may not exist locally (or be all-zeros).
             if ! git cat-file -e "$base" 2>/dev/null; then
               base="HEAD^"
               git cat-file -e "$base" 2>/dev/null || base=""
             fi
+          else
+            base="origin/main"
+          fi
+
+          # Base ref not fetched/available for some reason: fall back to checking everything.
+          if [ -n "$base" ] && ! git cat-file -e "$base" 2>/dev/null; then
+            base=""
           fi
 
           if [ -z "$base" ]; then
-            files=$(git ls-files '*.py' | xargs)
+            files=$(git ls-files '*.py' '*.ipynb' | xargs)
           else
-            files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.py' | xargs)
+            files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.py' '*.ipynb' | xargs)
           fi
 
           echo "files=$files" >> "$GITHUB_OUTPUT"
@@ -54,4 +63,4 @@ jobs:
       - name: Run ruff
         if: steps.changed.outputs.files != ''
         run: |
-          uvx ruff@0.16.1 check --config lint.per-file-ignores={} --output-format=github ${{ steps.changed.outputs.files }}
+          uvx ruff@0.16.1 check --force-exclude --config lint.per-file-ignores={} --output-format=github ${{ steps.changed.outputs.files }}
