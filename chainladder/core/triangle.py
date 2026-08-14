@@ -514,11 +514,11 @@ class Triangle(TriangleBase):
 
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
-        origin_date: Series = to_period(origin_date,self.origin_grain).dt.to_timestamp(how="s")
+        origin_date: Series = to_period(origin_date, self.origin_grain).dt.to_timestamp(how="s")
         
         # Ensure that development_date values represent the end of the period.
         # i.e., 1990 means the end of 1990 assuming annual development periods.
-        development_date: Series = to_period(development_date,self.development_grain).dt.to_timestamp(how="e")
+        development_date: Series = to_period(development_date, self.development_grain).dt.to_timestamp(how="e")
         
         # Aggregate dates to the origin/development grains.
         data_agg: DataFrame = self._aggregate_data(
@@ -1037,7 +1037,7 @@ class Triangle(TriangleBase):
     def is_disposal_rate(self, is_dr: bool) -> None:
         self._is_disposal_rate = is_dr
 
-    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
+    def align_pattern(self, X: Triangle, sample_weight: Triangle | None = None) -> Triangle:
         """ 
         Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
 
@@ -1820,11 +1820,11 @@ class Triangle(TriangleBase):
             ).to_timestamp(how="s")
 
             if dgrain_old == "S":
-                d_start = d_start +  pd.DateOffset(months=-3)
+                d_start = d_start + pd.DateOffset(months=-3)
 
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S","2Q"))[
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S", "2Q"))[
                         :-1
                     ]
                     .to_timestamp()

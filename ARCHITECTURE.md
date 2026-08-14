@@ -6,17 +6,20 @@
 chainladder-python/
 ├── chainladder/                    # Main package
 │   ├── __init__.py                 # Public API, global options, sample data loader
+│   ├── py.typed                    # PEP 561 marker (ships inline type hints)
 │   │
 │   ├── core/                       # Triangle data structure
 │   │   ├── triangle.py             # Triangle (the public-facing class)
 │   │   ├── base.py                 # TriangleBase (assembles all mixins)
 │   │   ├── common.py               # Common (shared helpers used by Triangle and estimators)
+│   │   ├── correlation.py          # DevelopmentCorrelation (Mack correlation tests)
 │   │   ├── dunders.py              # TriangleDunders (arithmetic, comparison operators)
 │   │   ├── pandas.py               # TrianglePandas, TriangleGroupBy (pandas-style API)
 │   │   ├── slice.py                # TriangleSlicer, Location, Ilocation, At, Iat, VirtualColumns
 │   │   ├── display.py              # TriangleDisplay (__repr__, _repr_html_)
 │   │   ├── io.py                   # TriangleIO, EstimatorIO (pickle, JSON, spreadsheet I/O)
 │   │   ├── typing.py               # TriangleProtocol, type aliases (BackendArray, etc.)
+│   │   ├── README.md               # Per-file summary of this subpackage
 │   │   └── tests/
 │   │
 │   ├── development/                # Development pattern estimators
@@ -53,6 +56,7 @@ chainladder-python/
 │   ├── adjustments/                # Pre-processing transformers
 │   │   ├── berqsherm.py            # BerquistSherman
 │   │   ├── bootstrap.py            # BootstrapODPSample (extends DevelopmentBase)
+│   │   ├── disposal.py             # DisposalRate, DisposalMixin
 │   │   ├── parallelogram.py        # ParallelogramOLF
 │   │   ├── trend.py                # Trend, TrendConstant
 │   │   └── tests/
@@ -73,7 +77,8 @@ chainladder-python/
 │   │   └── tests/
 │   │
 │   └── tests/
-│       └── test_public_api.py      # Smoke-tests for the public API surface
+│       ├── test_public_api.py      # Smoke-tests for the public API surface
+│       └── test_architecture.py    # Checks this file's directory tree against the real package
 │
 ├── docs/                           # JupyterBook/Sphinx documentation source
 ├── conftest.py                     # pytest fixtures (raa, clrd, qtr, …)
@@ -214,6 +219,7 @@ sklearn.BaseEstimator
         ├── TweedieGLM         development/glm.py
         │     └── BarnettZehnwirth  development/barnzehn.py
         ├── BootstrapODPSample adjustments/bootstrap.py
+        ├── DisposalRate       adjustments/disposal.py   (also extends DisposalMixin)
         │
         └── TailBase           tails/base.py       — appends tail column, extends DevelopmentBase
               ├── TailConstant tails/constant.py

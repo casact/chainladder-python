@@ -260,6 +260,7 @@ class Common:
             print(raa.pipe(lambda tri: tri.loc[..., 48:]))
 
         .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
 
                   48       60       72       84       96       108      120
             1981  11805.0  13539.0  16181.0  18009.0  18608.0  18662.0  18834.0
