@@ -101,7 +101,7 @@ class TriangleDunders:
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
-                except:
+                except Exception:
                     x = x.groupby(list(common))
                     y = y.groupby(list(common))
             return x, y
@@ -206,7 +206,7 @@ class TriangleDunders:
                 other_arr.shape = (other.shape[0], other.shape[1], len(odims), len(ddims))
                 obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
-            if type(obj.ddims) == pd.DatetimeIndex:
+            if isinstance(obj.ddims, pd.DatetimeIndex):
                 obj.ddims = pd.DatetimeIndex(ddims.index)
             else:
                 obj.ddims = np.array(ddims.index)
@@ -402,7 +402,6 @@ class TriangleDunders:
                         self._slice_or_nan(other, obj, k))
             obj = self._arithmetic_mapper(obj, other, f)
         else:
-            xp = obj.get_array_module()
             obj.values = obj.values * other
         return obj
 
