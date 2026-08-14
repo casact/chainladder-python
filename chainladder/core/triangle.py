@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
-    from sparse import COO
 
 
 class Triangle(TriangleBase):
@@ -112,10 +111,6 @@ class Triangle(TriangleBase):
         Displays actual disposal rates by origin and development; must have ``ultimate_``
     valuation_date : date
         The latest valuation date of the data
-    loc: Triangle
-        pandas-style ``loc`` accessor
-    iloc: Triangle
-        pandas-style ``iloc`` accessor
     latest_diagonal: Triangle
         The latest diagonal of the triangle
     is_cumulative: bool
@@ -442,7 +437,7 @@ class Triangle(TriangleBase):
         # If data are present, validate the dimensions.
         if data is None:
             return
-        elif type(data) == dict:
+        elif isinstance(data, dict):
             data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
@@ -510,11 +505,11 @@ class Triangle(TriangleBase):
 
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
-        origin_date: Series = to_period(origin_date,self.origin_grain).dt.to_timestamp(how="s")
+        origin_date: Series = to_period(origin_date, self.origin_grain).dt.to_timestamp(how="s")
         
         # Ensure that development_date values represent the end of the period.
         # i.e., 1990 means the end of 1990 assuming annual development periods.
-        development_date: Series = to_period(development_date,self.development_grain).dt.to_timestamp(how="e")
+        development_date: Series = to_period(development_date, self.development_grain).dt.to_timestamp(how="e")
         
         # Aggregate dates to the origin/development grains.
         data_agg: DataFrame = self._aggregate_data(
@@ -924,7 +919,7 @@ class Triangle(TriangleBase):
 
             True
         """
-        return type(self.ddims) == pd.DatetimeIndex
+        return isinstance(self.ddims, pd.DatetimeIndex)
 
     @property
     def is_full(self) -> bool:
@@ -1033,7 +1028,7 @@ class Triangle(TriangleBase):
     def is_disposal_rate(self, is_dr: bool) -> None:
         self._is_disposal_rate = is_dr
 
-    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
+    def align_pattern(self, X: Triangle, sample_weight: Triangle | None = None) -> Triangle:
         """ 
         Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
 
@@ -1370,9 +1365,14 @@ class Triangle(TriangleBase):
                     else:
                         values = xp.nan_to_num(self.values)
                         nan_triangle = xp.nan_to_num(self.nan_triangle)
-                        l1 = lambda i: values[..., 0 : i + 1]
-                        l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
-                        l3 = lambda i: l2(i).sum(3, keepdims=True)
+                        def l1(i):
+                            return values[..., 0 : i + 1]
+
+                        def l2(i):
+                            return l1(i) * nan_triangle[..., i : i + 1]
+
+                        def l3(i):
+                            return l2(i).sum(3, keepdims=True)
                         if db:
                             _warn_dask_parallel_deprecated()
                             bag = db.from_sequence(range(self.shape[-1]))
@@ -1432,7 +1432,6 @@ class Triangle(TriangleBase):
                 if self.is_pattern & (not self.is_disposal_rate):
                     xp = self.get_array_module()
                     self.values = xp.nan_to_num(self.values)
-                    values = num_to_value(self.values, 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
                     self = concat(
                         (
@@ -1484,7 +1483,7 @@ class Triangle(TriangleBase):
                 )
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        if options.AUTO_SPARSE == False or backend == "cupy":
+        if not options.AUTO_SPARSE or backend == "cupy":
             obj = obj.set_backend(backend)
         else:
             obj = obj._auto_sparse()
@@ -1812,11 +1811,11 @@ class Triangle(TriangleBase):
             ).to_timestamp(how="s")
 
             if dgrain_old == "S":
-                d_start = d_start +  pd.DateOffset(months=-3)
+                d_start = d_start + pd.DateOffset(months=-3)
 
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S","2Q"))[
+                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S", "2Q"))[
                         :-1
                     ]
                     .to_timestamp()
