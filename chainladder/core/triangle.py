@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
-    from sparse import COO
 
 
 class Triangle(TriangleBase):
@@ -447,7 +446,7 @@ class Triangle(TriangleBase):
         # If data are present, validate the dimensions.
         if data is None:
             return
-        elif type(data) == dict:
+        elif isinstance(data, dict):
             data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
@@ -929,7 +928,7 @@ class Triangle(TriangleBase):
 
             True
         """
-        return type(self.ddims) == pd.DatetimeIndex
+        return isinstance(self.ddims, pd.DatetimeIndex)
 
     @property
     def is_full(self) -> bool:
@@ -1375,9 +1374,14 @@ class Triangle(TriangleBase):
                     else:
                         values = xp.nan_to_num(self.values)
                         nan_triangle = xp.nan_to_num(self.nan_triangle)
-                        l1 = lambda i: values[..., 0 : i + 1]
-                        l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
-                        l3 = lambda i: l2(i).sum(3, keepdims=True)
+                        def l1(i):
+                            return values[..., 0 : i + 1]
+
+                        def l2(i):
+                            return l1(i) * nan_triangle[..., i : i + 1]
+
+                        def l3(i):
+                            return l2(i).sum(3, keepdims=True)
                         if db:
                             _warn_dask_parallel_deprecated()
                             bag = db.from_sequence(range(self.shape[-1]))
@@ -1437,7 +1441,6 @@ class Triangle(TriangleBase):
                 if self.is_pattern & (not self.is_disposal_rate):
                     xp = self.get_array_module()
                     self.values = xp.nan_to_num(self.values)
-                    values = num_to_value(self.values, 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
                     self = concat(
                         (
@@ -1489,7 +1492,7 @@ class Triangle(TriangleBase):
                 )
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        if options.AUTO_SPARSE == False or backend == "cupy":
+        if not options.AUTO_SPARSE or backend == "cupy":
             obj = obj.set_backend(backend)
         else:
             obj = obj._auto_sparse()

@@ -22,7 +22,6 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from numpy.typing import ArrayLike
     from chainladder.core.typing import TriangleLike
 
 
