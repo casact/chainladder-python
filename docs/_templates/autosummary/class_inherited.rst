@@ -2,8 +2,12 @@
 
 .. currentmodule:: {{ module }}
 
+{% set documented_attrs = ['loc', 'iloc', 'at', 'iat', 'shape', 'empty', 'dimensionality', 'nan_triangle'] %}
+{% set hidden_attrs = attributes | reject('in', documented_attrs) | list %}
+
 .. autoclass:: {{ objname }}
    :members:
    :inherited-members:
    :undoc-members:
-   :exclude-members: set_fit_request, set_predict_request, set_score_request, set_transform_request, {{ attributes | join(', ') }}
+   :special-members: __add__, __sub__, __mul__, __truediv__
+   :exclude-members: set_fit_request, set_predict_request, set_score_request, set_transform_request{% if hidden_attrs %}, {{ hidden_attrs | join(', ') }}{% endif %}
