@@ -981,9 +981,9 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
 
 def model_diagnostics(
-        model:Triangle|MethodBase|Pipeline, 
-        name:str|None=None, 
-        groupby:str|list(str)|None=None) -> Triangle:
+        model: Triangle | MethodBase | Pipeline, 
+        name: str|None = None, 
+        groupby: str | list(str) | None = None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
