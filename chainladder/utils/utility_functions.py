@@ -1112,7 +1112,7 @@ def PTF_formula(
             formula_parts += [
                 "+".join(
                     [
-                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development)) / {dgrain})"
+                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind - 1]},development)) / {dgrain})"
                     ]
                 )
             ]
