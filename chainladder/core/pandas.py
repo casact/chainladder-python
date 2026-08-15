@@ -801,7 +801,9 @@ class TrianglePandas(_TrianglePandasBase):
                 # (gh-1055).
                 if result.shape[-1] > 1:
                     agg = result.sum(axis=0).sum(axis=1)
-                    arr = np.nan_to_num(np.asarray(agg.values[0, 0, :]))
+                    vals = agg.values[0, 0, :]
+                    vals_np = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
+                    arr = np.nan_to_num(vals_np)
                     dev_has_data = list((arr.sum(axis=-2) != 0).astype(int))
                     dev_labels = agg.development[
                         pd.Series(dev_has_data).astype(bool)
