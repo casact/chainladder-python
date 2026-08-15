@@ -553,6 +553,18 @@ def test_drop_ultimate_column_updates_is_ultimate(raa):
     assert not dropped.is_ultimate
 
 
+def test_drop_interior_origin_raises(raa):
+    """Dropping an interior origin period should raise ValueError."""
+    with pytest.raises(ValueError, match="Only the first or last origin periods"):
+        raa.drop(origin="1985")
+
+
+def test_drop_interior_development_raises(raa):
+    """Dropping an interior development period should raise ValueError."""
+    with pytest.raises(ValueError, match="Only the first or last development periods"):
+        raa.drop(development=36)
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):
