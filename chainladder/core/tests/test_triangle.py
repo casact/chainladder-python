@@ -565,6 +565,30 @@ def test_drop_interior_development_raises(raa):
         raa.drop(development=36)
 
 
+def test_drop_invalid_errors_raises(raa):
+    """Passing an invalid errors parameter (e.g. errors='foo') should raise ValueError."""
+    with pytest.raises(ValueError, match="errors must be 'raise' or 'ignore'"):
+        raa.drop(development=120, errors="foo")
+
+
+def test_drop_both_labels_and_axis_keyword_raises(raa):
+    """Specifying both labels and an axis keyword should raise ValueError."""
+    with pytest.raises(ValueError, match="Cannot specify both 'labels' and any of"):
+        raa.drop(labels="CumPaidLoss", development=120)
+
+
+def test_drop_no_arguments_raises(raa):
+    """Calling drop() with no arguments should raise ValueError."""
+    with pytest.raises(ValueError, match="Need to specify at least one of"):
+        raa.drop()
+
+
+def test_drop_index_axis_not_implemented_raises(clrd):
+    """Index axis dropping raises NotImplementedError (tracked by #1051)."""
+    with pytest.raises(NotImplementedError, match="Triangle.drop"):
+        clrd.drop(index="Agway Ins Co")
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):
