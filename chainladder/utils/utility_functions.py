@@ -981,9 +981,9 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
 
 def model_diagnostics(
-        model:Triangle|MethodBase|Pipeline, 
-        name:str|None=None, 
-        groupby:str|list(str)|None=None) -> Triangle:
+        model: Triangle | MethodBase | Pipeline, 
+        name: str | None = None, 
+        groupby: str | list(str) | None = None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
@@ -1018,7 +1018,7 @@ def model_diagnostics(
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
-    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+    if not (hasattr(obj, "ultimate_") & hasattr(obj, "ibnr_") & hasattr(obj, "ldf_")):
         raise ValueError("model does not have ultimate_/ibnr_/ldf_")
     if isinstance(model, Triangle):
         obj.X_ = obj
@@ -1070,8 +1070,8 @@ def model_diagnostics(
         else:
             out["Year Incremental"] = 0
         if groupby is None:
-            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
-            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(), sample_weight=obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(), sample_weight=obj.ultimate_[col])[col]
         out["Ultimate"] = obj.ultimate_[col]
         out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
@@ -1112,7 +1112,7 @@ def PTF_formula(
             formula_parts += [
                 "+".join(
                     [
-                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development))/{dgrain})"
+                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind - 1]},development)) / {dgrain})"
                     ]
                 )
             ]
@@ -1121,7 +1121,7 @@ def PTF_formula(
             formula_parts += [
                 "+".join(
                     [
-                        f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind-1]},valuation))"
+                        f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind - 1]},valuation))"
                     ]
                 )
             ]
