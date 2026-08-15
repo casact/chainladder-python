@@ -116,7 +116,19 @@ def test_loc_ellipsis(clrd):
 
 def test_missing_first_lag(raa):
     x = raa.copy()
-    x.values[:, :, :, 0] = 0
+
+    def set_missing(values) -> None:
+        """
+        Sets the missing values for the first lag.
+        """
+        values[:, :, :, 0] = 0
+
+    if x.array_backend == "sparse":
+        # Sparse COO arrays don't support in-place item assignment.
+        with pytest.raises(TypeError, match="sparse backend"):
+            set_missing(x.values)
+        return
+    set_missing(x.values)
     x = x.sum(0)
     assert x.link_ratio.shape == (1, 1, 9, 9)
 
@@ -273,7 +285,32 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
         tri.loc["Aegis Grp", "comauto"] = sub * 2
         assert tri.loc["Aegis Grp", "comauto"] == sub * 2
 
+def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
+    """
+    Use Triangle.loc to set a few origin or develop period via a TriangleSlicer.
 
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa2 = raa * 2
+    raa_new = raa.copy()
+    if raa_new.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        raa_new.loc[:,:,:,:60] = raa2.loc[:,:,:,:60]
+        raa_new.loc[:,:,:,72:] = raa2.loc[:,:,:,72:]
+        assert raa_new == raa2
+        raa_new = raa.copy()
+        raa_new.loc[:,:,:'1984',:] = raa2.loc[:,:,:'1984',:]
+        raa_new.loc[:,:,'1985':,:] = raa2.loc[:,:,'1985':,:]
+        assert raa_new == raa2
 
 def test_invalid_iloc_sparse_assignment(prism) -> None:
     """
@@ -328,6 +365,29 @@ def test_get_idx_fancy_origin_raises(raa: Triangle) -> None:
     with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
         _= raa.iloc[0, 0, [0, 1, 5], :]
 
+def test_set_fancy_origin_raises(raa: Triangle) -> None:
+    """
+    Attempt setting with fancy indexing on origin axis, raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa_copy = raa.copy()
+    if raa.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.iloc[0, 0, [0, 1, 5], :] = raa.iloc[0, 0, :3, :]
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.loc['Total', 'values', ['1983', '1984', '1986'], :] = raa.iloc[0, 0, :3, :]
+
 
 def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
     """
@@ -345,6 +405,29 @@ def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
     """
     with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
         _= raa.iloc[0, 0, :, [0, 1, 5]]
+
+def test_set_fancy_development_raises(raa: Triangle) -> None:
+    """
+    Attempt setting with fancy indexing on development axis, raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa_copy = raa.copy()
+    if raa.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.iloc[0, 0, :, [0, 1, 5]] = raa.iloc[0, 0, :, :3]
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.loc['Total', 'values', :, [12, 24, 48]] = raa.iloc[0, 0, :, :3]
 
 
 def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
@@ -371,6 +454,77 @@ def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     assert result.index.values.tolist() == expected_index
     assert result.columns.tolist() == ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
 
+def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+    """
+    Set lists of non-contiguous indexes and column through Triangle.loc. Check the values
+    of the assigned triangles.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    if clrd.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        dest_index = [
+            ['Adriatic Ins Co', 'othliab'],
+            ['Adriatic Ins Co', 'ppauto'],
+            ['Agency Ins Co Of MD Inc', 'ppauto'],
+        ]
+        val_index = [
+            ['Adriatic Ins Co', 'ppauto'],
+            ['Aegis Grp', 'comauto'],
+            ['Agency Ins Co Of MD Inc', 'ppauto'],
+        ]
+        dest_col = ['CumPaidLoss', 'BulkLoss', 'EarnedPremNet']
+        val_col = ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
+        clrd_copy = clrd.copy()
+        clrd_copy.loc[dest_index] = clrd.loc[val_index]
+        assert clrd_copy.loc[dest_index] == clrd.loc[val_index]
+        clrd_copy = clrd.copy()
+        clrd_copy.loc[:,dest_col] = clrd.loc[:,val_col]
+        assert clrd_copy.loc[:,dest_col] == clrd.loc[:,val_col]
+        clrd_copy = clrd.copy()
+        clrd_copy.loc[dest_index,dest_col] = clrd.loc[val_index,val_col]
+        assert clrd_copy.loc[dest_index,dest_col] == clrd.loc[val_index,val_col]
+
+def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+    """
+    Set lists of non-contiguous indexes and column through Triangle.iloc. Check the values
+    of the assigned triangles.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    if clrd.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        dest_index = [0,1,5]
+        val_index = [1,4,6]
+        dest_col = [2,3,5]
+        val_col = [1,2,4]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[dest_index] = clrd.iloc[val_index]
+        assert clrd_copy.iloc[dest_index] == clrd.iloc[val_index]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[:,dest_col] = clrd.iloc[:,val_col]
+        assert clrd_copy.iloc[:,dest_col] == clrd.iloc[:,val_col]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[dest_index,dest_col] = clrd.iloc[val_index,val_col]
+        assert clrd_copy.iloc[dest_index,dest_col] == clrd.iloc[val_index,val_col]
 
 def test_sparse_at_iat1(prism):
     t = prism.copy()
@@ -434,7 +588,8 @@ def test_setitem_virtual_column_numpy_backend(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    assert tri.array_backend == "numpy"
+    if tri.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
     tri["double"] = lambda x: x["values"] * 2
     assert "double" in tri.columns
     assert tri["double"] == tri["values"] * 2
@@ -454,7 +609,8 @@ def test_setitem_value_backend_conversion(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    value = (tri["values"] * 2).set_backend("sparse")
+    other_backend = "numpy" if tri.array_backend == "sparse" else "sparse"
+    value = (tri["values"] * 2).set_backend(other_backend)
     assert tri.array_backend != value.array_backend
     tri["values"] = value
     assert tri.array_backend == raa.array_backend
@@ -475,7 +631,6 @@ def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    assert tri.array_backend != "sparse"
     value = tri["values"] * 2
     tri["values"] = value
     assert tri["values"] == raa["values"] * 2
@@ -483,7 +638,7 @@ def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
 
 def test_setitem_existing_column_array_value(raa: Triangle) -> None:
     """
-    Reassign an existing column to a raw array value on a non-sparse backend.
+    Reassign an existing column to a raw array value.
 
     Parameters
     ----------
@@ -495,7 +650,6 @@ def test_setitem_existing_column_array_value(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    assert tri.array_backend != "sparse"
     value = (tri["values"] * 3).values
     assert not isinstance(value, type(tri))
     tri["values"] = value
@@ -534,7 +688,8 @@ def test_setitem_new_column_misaligned_triangle(raa: Triangle) -> None:
     tri["misaligned"] = misaligned
     # Check the shape, new column should be added.
     assert tri.shape == (1, 2, 10, 10)
-    new_col = tri["misaligned"]
+    new_col = tri["misaligned"].set_backend("numpy")
+    misaligned = misaligned.set_backend("numpy")
     # Origin periods 1985 and prior should be nan.
     assert np.isnan(new_col.values[0, 0, :5, :]).all()
     # Origin periods 1986 and beyond should match.

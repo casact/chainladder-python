@@ -27,6 +27,13 @@ class Chainladder(MethodBase):
         The ultimates back-filled to each development period in **X** retaining
         the known data
 
+    See Also
+    --------
+    ExpectedLoss : Uses only an apriori expected ultimate.
+    BornhuetterFerguson : Blends development with an apriori ultimate.
+    Benktander : Iterative Bornhuetter-Ferguson method.
+    CapeCod : Estimates apriori loss ratios from exposure.
+
     Examples
     --------
     Fit the chainladder method to a loss triangle and inspect the projected
@@ -124,12 +131,13 @@ class Chainladder(MethodBase):
         attribute access.
 
         .. testsetup::
+        
             import chainladder as cl
 
         .. testcode::
 
             tr = cl.load_sample('ukmotor')
-            cl.Chainladder().fit(tr)
+            print(cl.Chainladder().fit(tr))
 
         .. testoutput::
 

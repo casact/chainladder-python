@@ -67,7 +67,7 @@ class _LocBase:
         c_idx: slice | np.ndarray = _LocBase._contig_slice(idx[1])
         o_idx: slice | np.ndarray = _LocBase._contig_slice(idx[2])
         d_idx: slice | np.ndarray = _LocBase._contig_slice(idx[3])
-        if type(o_idx) != slice or type(d_idx) != slice:
+        if type(o_idx) is not slice or type(d_idx) is not slice:
             raise ValueError("Fancy indexing on origin/development is not supported.")
         if type(i_idx) is slice or type(c_idx) is slice:
             obj.values = obj.values[i_idx, c_idx, o_idx, d_idx]
@@ -150,11 +150,23 @@ class _LocBase:
             raise ValueError('Setting values with sparse backend requires .at or .iat')
         if isinstance(values, TriangleSlicer):
             values = values.values
+        # attempt to make keys contig
+        contig_key = tuple([_LocBase._contig_slice(x) for x in key])
         # Create a slice for any key elements that are integers, otherwise preserve the slice or array.
-        key = tuple(
-            [slice(item, item + 1) if isinstance(item, int) else item for item in key]
+        tuple_key = tuple(
+            [slice(item, item + 1) if isinstance(item, int) else item for item in contig_key]
         )
-        cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
+        norm_key = self._normalize_index(tuple_key)
+        if type(norm_key[2]) is not slice or type(norm_key[3]) is not slice:
+            raise ValueError("Setting while fancy indexing on origin/development is not supported.")
+        if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
+        else:
+            #the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(
+                np.ix_(norm_key[0], norm_key[1]) + (norm_key[2], norm_key[3]), 
+                values
+            )
 
     def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
@@ -174,7 +186,7 @@ class _LocBase:
         """
         # Apply sparse normalization, fills out the rest of the dimensions using the shape of the Triangle.
         key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey] = _slicing.normalize_index(key, self.obj.shape)
-        l = []
+        key_list = []
         # Preserve start/stop/step boundaries if the user has specified them, otherwise replace them with None.
         # None indicates "go-to-boundary" for the slice.
         for n, i in enumerate(key):
@@ -182,11 +194,11 @@ class _LocBase:
                 start: int | None= i.start if i.start > 0 else None
                 stop: int | None = i.stop if i.stop > -1 else None
                 stop: int | None = None if stop == self.obj.shape[n] else stop
-                step: int | None = None if start is None and stop is None else i.step
-                l.append(slice(start, stop, step))
+                step: int | None = None if start is None and stop is None and (i.step == 1) else i.step
+                key_list.append(slice(start, stop, step))
             else:
-                l.append(i)
-        key = tuple(l)
+                key_list.append(i)
+        key = tuple(key_list)
         return key
 
     def _sparse_setitem(
@@ -219,7 +231,7 @@ class _LocBase:
                 (arr.coords[3] == key[3]))
         # If it does, index the location and assign the value directly.
         if check.max():
-            data_index = np.where(check == True)[0][0]
+            data_index = np.where(check)[0][0]
             arr.data[data_index] = values
         # Otherwise, create a new sparse array with the updated coordinates and data.
         else:
@@ -431,6 +443,21 @@ class Location(_LocBase):
         return out
 
     def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
+        """
+        Supports the .loc[] for setting Triangle values. Only supported for numpy backend.
+
+        Parameters
+        ----------
+        key: _LabelKey
+            Indicates the location of the Triangle you want to set values for.
+        values: int | float | TriangleSlicer
+            The value(s) you want to assign to the slice of the Triangle.
+
+        Returns
+        -------
+        None
+
+        """
         super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
 
 class Ilocation(_LocBase):
@@ -454,7 +481,10 @@ class TriangleSlicer:
     def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
     @overload
     def __getitem__(self: TriangleProtocol, key: str | int) -> Triangle | pd.Series: ...
-    def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | str | list[str] | int) -> Triangle | pd.Series:
+    def __getitem__(
+            self: TriangleProtocol, 
+            key: pd.Series | np.ndarray | str | list[str] | int
+    ) -> Triangle | pd.Series:
         """
         Boolean Slicer functionality.
 
@@ -541,20 +571,25 @@ class TriangleSlicer:
             i = np.where(self.vdims == key)[0][0]
             # Case sparse backend.
             if self.array_backend == "sparse":
-                # Cast value to sparse backend.
-                value = cast("Triangle", value)
-                after = cast("COO", value.values)
+                # Unwrap a Triangle-valued assignment to its raw array. A raw
+                # COO array can also be passed directly, mirroring the numpy
+                # branch below.
+                if isinstance(value, TriangleSlicer):
+                    value = cast("Triangle", value)
+                    after = cast("COO", value.values)
+                else:
+                    after = cast("COO", value)
 
-                # Drop existing data where key matches, reassign coordinates.
-                before = self.drop(key).values
-                before = cast("COO", before)
-                bc = before.coords[1, :]
-                before.coords[1] = np.where(bc >= i, bc + 1, bc,)
+                # Filter out existing data at the target column directly from
+                # self.values' own coordinates.
+                before = cast("COO", self.values)
+                keep = before.coords[1, :] != i
 
                 # Append assigned data and new coordinates.
-                after.coords[1] = i
-                coords = np.concatenate((before.coords, after.coords), axis=1)
-                data = np.concatenate((before.data, after.data))
+                after_coords = after.coords.copy()
+                after_coords[1] = i
+                coords = np.concatenate((before.coords[:, keep], after_coords), axis=1)
+                data = np.concatenate((before.data[keep], after.data))
 
                 # Create new sparse matrix with updated coords and data, assign to backend array.
                 self.values = xp.COO(
@@ -577,7 +612,7 @@ class TriangleSlicer:
                 value = self.iloc[:, 0] * 0 + value
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, AssertionError):
                 # For misaligned triangle support.
                 conc = (self.values, (self.iloc[:, 0] * 0 + cast("Triangle", value)).values)
                 self.values = xp.concatenate(conc, axis=1)
@@ -751,7 +786,7 @@ class Iat(Ilocation):
         """
         idx = self._normalize_index(key)
         types = {type(i) for i in idx}
-        if len(types) > 1 or list(types)[0] != int:
+        if len(types) > 1 or list(types)[0] is not int:
             raise ValueError('iAt based indexing can only have integer indexers')
         return cast("tuple[int, int, int, int]", idx)
 

@@ -597,32 +597,194 @@ class TrianglePandas(_TrianglePandasBase):
             cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
             return new_obj
 
-    def drop(self, labels: str | int | list | None = None, axis: int = 1) -> Triangle:
+    def drop(
+        self,
+        labels: str | int | list | None = None,
+        axis: Literal["index", "columns", "origin", "development"] | int = 1,
+        index: str | int | list | None = None,
+        columns: str | int | list | None = None,
+        origin: str | int | list | None = None,
+        development: str | int | list | None = None,
+    ) -> Triangle:
         """Drop specified labels from rows or columns.
 
-        Remove rows or columns by specifying label names and corresponding axis,
-        or by specifying directly index or column names.
+        Remove labels by specifying label names and corresponding axis, or by
+        specifying directly ``index``, ``columns``, ``origin``, or
+        ``development`` names.
 
         Parameters
         -----------
 
         labels:  str | int | list | None
-            Index or column labels to drop.
+            Index or column labels to drop. A single label or list-like.
 
-        axis: {0 or ‘index’, 1 or ‘columns’}, default 1
-            Whether to drop labels from the index (0 or ‘index’)
-            or columns (1 or ‘columns’).
+        axis: {0 or ‘index’, 1 or ‘columns’, 2 or 'origin', 3 or 'development'}, default 1
+            The axis to drop ``labels`` from.
+
+        index: str | int | list | None
+            Alternative to ``axis=0``. Equivalent to ``labels, axis=0``.
+
+        columns: str | int | list | None
+            Alternative to ``axis=1``. Equivalent to ``labels, axis=1``.
+
+        origin: str | int | list | None
+            Alternative to ``axis=2``. Equivalent to ``labels, axis=2``.
+
+        development: str | int | list | None
+            Alternative to ``axis=3``. Equivalent to ``labels, axis=3``.
 
         Returns
         -------
         Triangle
 
+        Examples
+        --------
+
+        Drop a single column with the ``labels``/``axis`` form or the
+        ``columns`` alternative; the two are equivalent.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.load_sample('clrd')
+            print(tri.columns.tolist())
+            print(tri.drop(columns='CumPaidLoss').columns.tolist())
+
+        .. testoutput::
+
+            ['IncurLoss', 'CumPaidLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+            ['IncurLoss', 'BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+
+        A list of labels can be dropped from an axis as well.
+
+        .. testcode::
+
+            print(tri.drop(columns=['CumPaidLoss', 'IncurLoss']).columns.tolist())
+
+        .. testoutput::
+
+            ['BulkLoss', 'EarnedPremDIR', 'EarnedPremCeded', 'EarnedPremNet']
+
+        Origin periods can be dropped with ``origin`` (or ``axis=2``), but only
+        the first or last period may be removed so the triangle stays contiguous.
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.origin.astype(str).tolist()[-3:])
+            print(raa.drop(origin='1990').origin.astype(str).tolist()[-3:])
+
+        .. testoutput::
+
+            ['1988', '1989', '1990']
+            ['1987', '1988', '1989']
+
+        Dropping an origin period also trims any development periods that are
+        left entirely NaN, so the triangle is trimmed rather than left with
+        empty development columns.
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1986, 1986, 1987],
+                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'paid': [300, 400, 500, 500, 600, 500],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True
+            )
+            print(tri)
+
+        .. testoutput::
+
+                     12     24     36
+            1985  300.0  400.0  500.0
+            1986  500.0  600.0    NaN
+            1987  500.0    NaN    NaN
+
+        .. testcode::
+
+            print(tri.drop(origin='1985'))
+
+        .. testoutput::
+
+                     12     24
+            1986  500.0  600.0
+            1987  500.0    NaN
+
         """
-        labels = [labels] if type(labels) is str else list(labels)
-        if axis == 1:
-            return self[[item for item in self.columns if item not in labels]]
+        alternatives = {0: index, 1: columns, 2: origin, 3: development}
+        if any(value is not None for value in alternatives.values()):
+            if labels is not None:
+                raise ValueError(
+                    "Cannot specify both 'labels' and any of 'index', "
+                    "'columns', 'origin', or 'development'."
+                )
+            to_drop = {
+                ax: value for ax, value in alternatives.items() if value is not None
+            }
         else:
-            raise NotImplementedError("Triangle.drop() only implemented for column axis.")
+            to_drop = {self._get_axis(axis): labels}
+        result = self
+        for ax, ax_labels in to_drop.items():
+            ax_labels = (
+                list(ax_labels)
+                if ax_labels is None or pd.api.types.is_list_like(ax_labels)
+                else [ax_labels]
+            )
+            if ax == 1:
+                result = result[
+                    [item for item in result.columns if item not in ax_labels]
+                ]
+            elif ax == 2:
+                origin_labels = np.array(result.origin.astype(str))
+                drop_labels = [str(label) for label in ax_labels]
+                missing = [
+                    label for label in drop_labels if label not in origin_labels
+                ]
+                if missing:
+                    raise KeyError(f"{missing} not found in the origin axis.")
+                keep = ~np.isin(origin_labels, drop_labels)
+                kept_positions = np.flatnonzero(keep)
+                if len(kept_positions) and not np.array_equal(
+                    kept_positions,
+                    np.arange(kept_positions[0], kept_positions[-1] + 1),
+                ):
+                    raise ValueError(
+                        "Only the first or last origin periods may be dropped; "
+                        "dropping an interior origin period would leave a gap."
+                    )
+                result = result[keep]
+                # Trim any development periods that were left entirely NaN by
+                # the origin drop, so dropping origins trims the triangle
+                # rather than leaving empty development columns behind. This is
+                # what makes origin dropping more useful than plain 4D slicing
+                # (gh-1055).
+                if result.shape[-1] > 1:
+                    xp = result.get_array_module()
+                    agg = result.sum(axis=0).sum(axis=1)
+                    dev_has_data = list(
+                        (xp.nansum(agg.values[0, 0, :], -2) != 0).astype("int")
+                    )
+                    dev_labels = agg.development[
+                        pd.Series(dev_has_data).astype(bool)
+                    ]
+                    result = result[
+                        (result.development >= dev_labels.min())
+                        & (result.development <= dev_labels.max())
+                    ]
+            else:
+                raise NotImplementedError(
+                    "Triangle.drop() only implemented for the column and "
+                    "origin axes."
+                )
+        return result
 
     @property
     def T(self) -> DataFrame: # noqa: N802

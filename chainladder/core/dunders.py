@@ -101,7 +101,7 @@ class TriangleDunders:
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
-                except:
+                except Exception:
                     x = x.groupby(list(common))
                     y = y.groupby(list(common))
             return x, y
@@ -110,8 +110,6 @@ class TriangleDunders:
             raise ValueError('Index broadcasting is ambiguous between ' + str(x_labels) + ' and ' + str(y_labels))
 
     def _prep_columns(self, x, y):
-        x_backend, y_backend = x.array_backend, y.array_backend
-        
         if len(x.columns) == 1 and len(y.columns) > 1:
             x.vdims = y.vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
@@ -140,13 +138,7 @@ class TriangleDunders:
             # Ensure both triangles have the same column order
             x = x[new_x_cols]
             y = y[new_x_cols]
-        
-        # Reset backends only if they've changed
-        if x.array_backend != x_backend:
-            x = x.set_backend(x_backend, inplace=True)
-        if y.array_backend != y_backend:
-            y = y.set_backend(y_backend, inplace=True)
-        
+
         return x, y
 
     def _prep_origin_development(self, obj, other):
@@ -214,7 +206,7 @@ class TriangleDunders:
                 other_arr.shape = (other.shape[0], other.shape[1], len(odims), len(ddims))
                 obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
-            if type(obj.ddims) == pd.DatetimeIndex:
+            if isinstance(obj.ddims, pd.DatetimeIndex):
                 obj.ddims = pd.DatetimeIndex(ddims.index)
             else:
                 obj.ddims = np.array(ddims.index)
@@ -255,6 +247,38 @@ class TriangleDunders:
         return concat(c, 0).sort_index()
 
     def __add__(self, other):
+        """Element-wise addition.
+
+        Examples
+        --------
+        Adding a scalar shifts every observed cell.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri + 10)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                 12     24
+            1985  110.0  160.0
+            1986   90.0    NaN
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -270,6 +294,36 @@ class TriangleDunders:
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
+        """Element-wise subtraction.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri - 10)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                12     24
+            1985  90.0  140.0
+            1986  70.0    NaN
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -290,6 +344,16 @@ class TriangleDunders:
     def __len__(self):
         return self.shape[0]
 
+    # A Triangle is a 4-D container, not a 1-D sequence. Without this, Python
+    # falls back to the legacy iteration protocol (repeatedly calling
+    # __getitem__(0), __getitem__(1), ...), which treats the integer as a
+    # column label and raises. That also makes libraries such as pandas
+    # misclassify a Triangle as a sequence (see is_sequence) and attempt to
+    # iterate it when formatting a Triangle stored in a DataFrame cell,
+    # crashing the display. Declaring the type non-iterable makes pandas fall
+    # back to str(triangle) and render the summary instead (GH #142).
+    __iter__ = None
+
     def __neg__(self):
         obj = self.copy()
         obj.values = -obj.values
@@ -304,6 +368,36 @@ class TriangleDunders:
         return obj
 
     def __mul__(self, other):
+        """Element-wise multiplication.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri * 2)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                 12     24
+            1985  200.0  300.0
+            1986  160.0    NaN
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -311,7 +405,6 @@ class TriangleDunders:
                         self._slice_or_nan(other, obj, k))
             obj = self._arithmetic_mapper(obj, other, f)
         else:
-            xp = obj.get_array_module()
             obj.values = obj.values * other
         return obj
 
@@ -345,6 +438,49 @@ class TriangleDunders:
 
         other: Any
         The thing that divides the triangle.
+
+        Examples
+        --------
+        Dividing by a scalar scales the triangle. Dividing two columns is the
+        usual way to form a ratio triangle, such as paid-to-incurred.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                    'incurred': [120, 160, 100],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                cumulative=True,
+            )
+            print(tri['paid'] / 2)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                12    24
+            1985  50.0  75.0
+            1986  40.0   NaN
+
+        .. testcode::
+
+            print(tri['paid'] / tri['incurred'])
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                    12      24
+            1985  0.833333  0.9375
+            1986  0.800000     NaN
         """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):

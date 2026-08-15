@@ -4,9 +4,13 @@ name: Unit Tests
 on:
   push:
     branches:
-    - '*'
+      - '**'
 
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   linux:
@@ -54,7 +58,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test
       - name: Run tests
-        run: uv run --with "pandas>=3,<=3.0.3" pytest --nbmake --cov=chainladder --cov-report=xml
+        run: uv run --with "pandas>=3, !=3.0.4" pytest --nbmake --cov=chainladder --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -75,5 +79,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: uv sync --extra docs
+      - name: Generate autosummary stubs
+        run: uv run --directory docs sphinx-autogen -o library/generated library/api.md
       - name: Run doctests
         run: uv run --directory docs jb build . --builder=custom --custom-builder=doctest

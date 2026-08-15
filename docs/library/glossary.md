@@ -1,10 +1,10 @@
 # Glossary
 
 This glossary hopes to definitively represent the tacit and explicit
-conventions applied in `chanladder` and its API.
+conventions applied in `chainladder` and its API.
 
 ## General Terms
-
+```{glossary}
 backend
   -   The storage of the numerical representation of a
       [Triangle]{.title-ref}. It can be 'numpy' for a dense CPU bound
@@ -17,6 +17,11 @@ estimator
 hyperparameter
   -   An initial parameter of an estimator that can be set before the estimator is fit.
 
+n_jobs
+  -   The number of parallel jobs used by an estimator. A value of
+      `None` uses a single processor unless overridden by a joblib
+      parallel backend. A value of `-1` uses all available processors.
+
 predictor
   -   An estimator that has the
   `predict` method. All IBNR estimators of `chainladder` are predictors
@@ -25,9 +30,9 @@ transformer
   -   An estimator that has the `transform` method. The transform
       method returns instances of a Triangle. All estimators
       other than IBNR estimators are transformers.
-
+```
 ## Class API
-
+```{glossary}
 Triangle
   -   The core data structure of the `chainladder` package. It emulates
       `pandas`'s functionality.
@@ -50,9 +55,9 @@ Workflow
 Adjustments
   -   Estimators that allow for the adjustment of the values of a
       Triangle.
-
+```
 ## Triangle Concepts
-
+```{glossary}
 axis
   -   Represents one of the four dimensions of a [Triangle]{.title-ref}
       instance. The four axes are `index`, `columns`, `origin` and
@@ -76,3 +81,4 @@ development
 valuation
   -   An implicit axis representing the valuation period of each of the
       cells of a `Triangle`.
+```

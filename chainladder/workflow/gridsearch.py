@@ -43,10 +43,7 @@ class GridSearch(BaseEstimator):
         step, which will always raise the error. Default is 'raise' but from
         version 0.22 it will change to np.nan.
     n_jobs: int, default=None
-        The number of jobs to use for the computation. This will only provide
-        speedup for n_targets > 1 and sufficient large problems.
-        ``None`` means 1 unless in a :obj:`joblib.parallel_backend` context.
-        ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
+        The number of jobs to use for the computation. See :term:`Glossary <n_jobs>`
         for more details.
 
     Attributes
@@ -164,7 +161,7 @@ class Pipeline(PipelineSL, EstimatorIO):
     A step's estimator may be replaced entirely by setting the parameter
     with its name to another estimator, or a transformer removed by setting
     to None.
-    Read more in the :ref:`User Guide <pipeline_docs>`.
+    Read more in the :ref:`User Guide <workflow:pipeline>`.
 
     Parameters
     ----------

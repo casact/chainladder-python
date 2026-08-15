@@ -24,5 +24,5 @@ install directly from `Github`:
 ## Developer Installation
 
 
-If you're interested in contributing, please refer to [Contributing](contributing)
+If you're interested in contributing, please refer to [Contributing](../library/contributing)
 for information on the developer environment.

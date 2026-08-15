@@ -55,6 +55,13 @@ class CapeCod(Benktander):
     detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
 
+    See Also
+    --------
+    Chainladder : Projects ultimate losses entirely from development patterns.
+    ExpectedLoss : Uses only an apriori expected ultimate.
+    BornhuetterFerguson : Blends development with an apriori ultimate.
+    Benktander : Iterative Bornhuetter-Ferguson method.
+
     Examples
     --------
     Unlike Bornhuetter-Ferguson and Benktander, CapeCod derives the apriori
@@ -218,7 +225,7 @@ class CapeCod(Benktander):
             exposure = cl.Chainladder().fit(tr).ultimate_ * 0 + 20000
             print(cl.CapeCod(trend=0.05).fit(tr, sample_weight=exposure))
 
-        .. testoutput:
+        .. testoutput::
 
             CapeCod(trend=0.05)
         """
@@ -251,11 +258,11 @@ class CapeCod(Benktander):
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
-        weighted_exposure = xp.swapaxes(reported_exposure.values, -1, -2) * decay_matrix
+        weighted_exposure = reported_exposure.values.swapaxes(-1, -2) * decay_matrix
         trended_ultimate = (latest.values * trend_array * X_olf_array) / (
             reported_exposure.values * sw_olf_array
         )
-        trended_ultimate = xp.swapaxes(trended_ultimate, -1, -2)
+        trended_ultimate = trended_ultimate.swapaxes(-1, -2)
         apriori = xp.nansum(weighted_exposure * trended_ultimate, -1) / xp.nansum(
             weighted_exposure, -1
         )

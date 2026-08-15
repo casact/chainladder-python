@@ -35,7 +35,7 @@ def test_groupby(clrd):
 
 def test_capecod_zero_tri(raa):
     premium = raa.latest_diagonal * 0 + 50000
-    raa.loc[:,:,'1987',48] = 0
+    raa.at['Total','values','1987',48] = 0
     assert cl.CapeCod().fit(raa, sample_weight=premium).ultimate_.loc[:,:,'1987'].sum() > 0
 
 

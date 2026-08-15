@@ -60,6 +60,26 @@ class TriangleBase(
 
     @property
     def shape(self):
+        """The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
+
+        Examples
+        --------
+        A single-triangle sample such as RAA has one index and one column.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.load_sample('raa').shape)
+            print(cl.load_sample('clrd').shape)
+
+        .. testoutput::
+
+            (1, 1, 10, 10)
+            (775, 6, 10, 10)
+        """
         return self.values.shape
 
     @property
@@ -69,6 +89,24 @@ class TriangleBase(
         Returns ``'empty'`` for a Triangle instantiated without data
         (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
         single triangle, and ``'multi'`` for a multidimensional Triangle.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.Triangle().dimensionality)
+            print(cl.load_sample('raa').dimensionality)
+            print(cl.load_sample('clrd').dimensionality)
+
+        .. testoutput::
+
+            empty
+            single
+            multi
         """
         return self._dimensionality
 
@@ -79,6 +117,22 @@ class TriangleBase(
         Mirrors ``pandas.DataFrame.empty``. Returns ``True`` for a Triangle
         instantiated without data (e.g. ``cl.Triangle()``), whose ``values``
         have not been populated, and ``False`` otherwise.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.Triangle().empty)
+            print(cl.load_sample('raa').empty)
+
+        .. testoutput::
+
+            True
+            False
         """
         return self._dimensionality == "empty"
 
@@ -132,7 +186,7 @@ class TriangleBase(
                 date_format=development_format
             )
         else:
-            o_max: Timestamp  = pd.Period(
+            o_max: Timestamp = pd.Period(
                 value=origin_date.max(),
                 freq=TriangleBase._get_grain(origin_date)
             ).to_timestamp(how="e")
@@ -166,13 +220,15 @@ class TriangleBase(
             columns: list
     ):
         """Summarize dataframe to the level specified in axes"""
-        if type(data) != pd.DataFrame:
-            # A non-pandas input that reaches this branch is a Dask dataframe.
-            # Only the Dask backend is deprecated, so gate the warning on the
-            # data's module rather than warning for every pandas subclass that
-            # also takes this path. stacklevel=3 points the warning at the
-            # user's Triangle(...) call (warn -> this method ->
-            # Triangle.__init__ -> user).
+        if type(data) != pd.DataFrame:  # noqa: E721
+            # A non-pandas input that reaches this branch is a Dask dataframe
+            # or a pandas subclass. Only the Dask backend is deprecated, so
+            # gate the warning on the data's module rather than warning for
+            # every pandas subclass that also takes this path. stacklevel=3
+            # points the warning at the user's Triangle(...) call (warn ->
+            # this method -> Triangle.__init__ -> user).
+            # Exact-type check is required: isinstance() would send the
+            # DataFrame-subclass dask stand-in down the pandas path.
             if type(data).__module__.split(".")[0] == "dask":
                 warnings.warn(
                     _deprecated_backend_message("dask"),
@@ -367,6 +423,31 @@ class TriangleBase(
         """Given the current triangle shape and valuation, it determines the
         appropriate placement of NANs in the triangle for future valuations.
         This becomes useful when managing array arithmetic.
+
+        Examples
+        --------
+        Observed cells are ``1`` and future valuations are missing.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            print(cl.load_sample('raa').nan_triangle)
+
+        .. testoutput::
+
+            [[ 1.  1.  1.  1.  1.  1.  1.  1.  1.  1.]
+             [ 1.  1.  1.  1.  1.  1.  1.  1.  1. nan]
+             [ 1.  1.  1.  1.  1.  1.  1.  1. nan nan]
+             [ 1.  1.  1.  1.  1.  1.  1. nan nan nan]
+             [ 1.  1.  1.  1.  1.  1. nan nan nan nan]
+             [ 1.  1.  1.  1.  1. nan nan nan nan nan]
+             [ 1.  1.  1.  1. nan nan nan nan nan nan]
+             [ 1.  1.  1. nan nan nan nan nan nan nan]
+             [ 1.  1. nan nan nan nan nan nan nan nan]
+             [ 1. nan nan nan nan nan nan nan nan nan]]
         """
         xp = self.get_array_module()
         if self.is_pattern or self.is_ultimate:
@@ -401,7 +482,7 @@ class TriangleBase(
             target: Series = target_field
             # If the target field is a period, convert to timestamp. period_end is a boolean that if true,
             # means that the timestamp should be the end of the period.
-            if type(target.iloc[0]) == pd.Period:
+            if isinstance(target.iloc[0], pd.Period):
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
             datetime_arg: np.ndarray = target_field.unique()
@@ -427,7 +508,7 @@ class TriangleBase(
                     "Unable to infer datetime for field(s): " + str(fields) +
                     ". Please check the underlying data or any supplied format arguments."
                     )
-            target: Series = target_field.map(arg=datetime_mapping)
+            target: Series = target_field.map(datetime_mapping)
 
         return target
 
@@ -440,7 +521,7 @@ class TriangleBase(
         For tabular format, this will convert the origin/valuation
         difference to a development lag.
         """
-        return ((valuation - origin) / (365.25 / 12)).dt.round("1d").dt.days
+        return ((valuation - origin) / (365.25 / 12)).dt.round("1D").dt.days
 
     @staticmethod
     def _get_grain(
@@ -461,11 +542,11 @@ class TriangleBase(
         """
         months: np.ndarray = (dates.dt.year * 12 + dates.dt.month).unique()
         diffs: np.ndarray = np.diff(np.sort(months))
-        if np.all(np.mod(diffs,12) == 0):
+        if np.all(np.mod(diffs, 12) == 0):
             grain = "Y"
-        elif np.all(np.mod(diffs,6) == 0):
+        elif np.all(np.mod(diffs, 6) == 0):
             grain = "2Q"
-        elif np.all(np.mod(diffs,3) == 0):
+        elif np.all(np.mod(diffs, 3) == 0):
             grain = "Q"
         else:
             grain = "M"
@@ -527,6 +608,29 @@ class TriangleBase(
         -------
             The backend module. For example, if the backend is numpy, it will return the "np" that you
             would get if you ran the statement, "import numpy as np".
+
+        Examples
+        --------
+        The returned module is the same object as ``numpy`` or ``sparse``,
+        matching the Triangle's ``array_backend``.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            import numpy as np
+            import sparse as sp
+
+            raa = cl.load_sample('raa')
+            print(raa.get_array_module() is np)
+            print(raa.set_backend('sparse').get_array_module() is sp)
+
+        .. testoutput::
+
+            True
+            True
         """
 
         backend: str = (
@@ -608,6 +712,8 @@ class TriangleBase(
         return [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
 
     def __array__(self):
+        if self.array_backend == "sparse":
+            return self.values.todense()
         return self.values
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
@@ -664,6 +770,19 @@ class TriangleBase(
         Returns
         -------
         Triangle
+
+        Examples
+        --------
+        Numpy- and sparse-backed Triangles are already materialized.
+        ``compute`` exists to realize a lazy dask array. The dask backend is
+        deprecated and optional, so that path is shown as a code sample:
+
+        .. code-block:: pycon
+
+            >>> tri = cl.load_sample('raa').set_backend('dask')
+            >>> tri = tri.compute()
+            >>> tri.array_backend
+            'numpy'
         """
         if hasattr(self.values, "chunks"):
             obj = self.copy()

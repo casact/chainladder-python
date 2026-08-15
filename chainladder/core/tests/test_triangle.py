@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from chainladder.core.common import Common
 from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.sparse import COO
 
 from io import StringIO
 
@@ -235,8 +237,7 @@ def test_printer(raa):
 def test_value_order(clrd):
     a = clrd[["CumPaidLoss", "BulkLoss"]]
     b = clrd[["BulkLoss", "CumPaidLoss"]]
-    xp = a.get_array_module()
-    xp.testing.assert_array_equal(a.values[:, -1], b.values[:, 0])
+    assert a.iloc[:, -1] == b.iloc[:, 0]
 
 
 def test_trend(raa, atol):
@@ -265,17 +266,14 @@ def test_trend_invalid_axis_raises(raa: Triangle) -> None:
         raa.trend(0.05, axis="development")
 
 
-def test_shift(qtr):
+def test_valuation_shift(qtr):
     x = qtr.iloc[0, 0]
-    xp = x.get_array_module()
-    xp.testing.assert_array_equal(x[x.valuation <= x.valuation_date].values, x.values)
+    assert x[x.valuation <= x.valuation_date] == x
 
 
 def test_quantile_vs_median(clrd):
     xp = clrd.get_array_module()
-    xp.testing.assert_array_equal(
-        clrd.quantile(q=0.5)["CumPaidLoss"].values, clrd.median()["CumPaidLoss"].values
-    )
+    assert clrd.quantile(q=0.5)["CumPaidLoss"] == clrd.median()["CumPaidLoss"]
 
 
 def test_base_minimum_exposure_triangle(raa):
@@ -537,10 +535,191 @@ def test_dropna_latest_diagonal(raa: Triangle) -> None:
     None
     """
     t = raa.copy()
-    t.values[:, :, 0, :] = np.nan
+
+    def set_first_origin_nan(values) -> None:
+        """
+        Sets the values for the first origin period to nan.
+        """
+        values[:, :, 0, :] = np.nan
+
+    if t.array_backend == "sparse":
+        # Sparse COO arrays don't support in-place item assignment.
+        with pytest.raises(TypeError, match="sparse backend"):
+            set_first_origin_nan(t.values)
+        return
+    set_first_origin_nan(t.values)
     result = t.latest_diagonal.dropna()
     assert result.shape == (1, 1, 9, 1)
     assert result.origin.min().year == 1982
+
+
+def test_drop_column_string_axis(clrd):
+    """drop() should accept 'columns' as a string alias for axis 1."""
+    result = clrd.drop(labels="CumPaidLoss", axis="columns")
+    assert "CumPaidLoss" not in result.columns
+    assert clrd.drop(labels="CumPaidLoss", axis="columns") == clrd.drop(
+        labels="CumPaidLoss", axis=1
+    )
+
+
+def test_drop_column_integer_axis(clrd):
+    """drop() should continue to accept the integer axis 1."""
+    result = clrd.drop(labels="CumPaidLoss", axis=1)
+    assert "CumPaidLoss" not in result.columns
+
+
+def test_drop_non_column_axis_raises(clrd):
+    """drop() only supports the column axis for now."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(labels="commauto", axis="index")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(labels="commauto", axis=0)
+
+
+def test_drop_invalid_axis_raises(clrd):
+    """An unrecognized axis should raise a ValueError."""
+    with pytest.raises(ValueError):
+        clrd.drop(labels="CumPaidLoss", axis="bogus")
+
+
+def test_drop_columns_alternative(clrd):
+    """columns= should be equivalent to labels=..., axis=1."""
+    result = clrd.drop(columns="CumPaidLoss")
+    assert "CumPaidLoss" not in result.columns
+    assert result == clrd.drop(labels="CumPaidLoss", axis=1)
+
+
+def test_drop_columns_alternative_list(clrd):
+    """columns= should accept a list of labels."""
+    result = clrd.drop(columns=["CumPaidLoss", "IncurLoss"])
+    assert "CumPaidLoss" not in result.columns
+    assert "IncurLoss" not in result.columns
+    assert result == clrd.drop(labels=["CumPaidLoss", "IncurLoss"], axis=1)
+
+
+def test_drop_labels_and_alternative_raises(clrd):
+    """Specifying labels together with an alternative should raise ValueError."""
+    with pytest.raises(ValueError):
+        clrd.drop(labels="CumPaidLoss", columns="IncurLoss")
+
+
+def test_drop_index_origin_development_alternatives_raise(clrd):
+    """index/development alternatives route to unimplemented axes."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(index="commauto")
+    with pytest.raises(NotImplementedError):
+        clrd.drop(development="12")
+
+
+def test_drop_integer_label_routes_to_axis(clrd):
+    """A bare int label should route to its axis, not raise TypeError."""
+    with pytest.raises(NotImplementedError):
+        clrd.drop(development=12)
+
+
+def test_drop_columns_alternative_index_like(clrd):
+    """columns= should accept list-likes such as pd.Index and ndarray."""
+    labels = clrd.columns[:2]
+    result = clrd.drop(columns=labels)
+    assert all(label not in result.columns for label in labels)
+    assert result == clrd.drop(columns=list(labels))
+    assert result == clrd.drop(columns=labels.values)
+
+
+@pytest.fixture
+def origin_tri():
+    return cl.Triangle(
+        data={
+            "origin": [1985, 1985, 1985, 1986, 1986, 1987],
+            "development": [1985, 1986, 1987, 1986, 1987, 1987],
+            "paid": [300, 400, 500, 500, 600, 500],
+        },
+        origin="origin",
+        development="development",
+        columns=["paid"],
+        cumulative=True,
+    )
+
+
+def test_drop_origin_last(origin_tri):
+    """origin= should drop the last origin period."""
+    result = origin_tri.drop(origin="1987")
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+    # The oldest origin (1985) still populates the latest development period,
+    # so nothing should be trimmed off the development axis.
+    assert result.development.tolist() == origin_tri.development.tolist()
+
+
+def test_drop_origin_first(origin_tri):
+    """origin= should drop the first origin period."""
+    result = origin_tri.drop(origin="1985")
+    assert result.origin.astype(str).tolist() == ["1986", "1987"]
+
+
+def test_drop_origin_trims_empty_development(origin_tri):
+    """Dropping an origin should trim development periods left all NaN."""
+    # Dropping the oldest origin (1985) empties the latest development period,
+    # which should be trimmed automatically (gh-1055).
+    result = origin_tri.drop(origin="1985")
+    assert result.development.tolist() == origin_tri.development.tolist()[:-1]
+    assert result.shape[-1] == origin_tri.shape[-1] - 1
+
+
+def test_drop_origin_keeps_populated_development(origin_tri):
+    """Dropping an origin should keep development periods that still have data."""
+    # Dropping the newest origin (1987) leaves every development period
+    # populated, so the development axis should be unchanged.
+    result = origin_tri.drop(origin="1987")
+    assert result.development.tolist() == origin_tri.development.tolist()
+
+
+def test_drop_origin_axis_equivalents(origin_tri):
+    """labels + axis=2/'origin' should equal the origin= alternative."""
+    expected = origin_tri.drop(origin="1987")
+    assert expected == origin_tri.drop(labels="1987", axis=2)
+    assert expected == origin_tri.drop(labels="1987", axis="origin")
+
+
+def test_drop_origin_interior_raises(origin_tri):
+    """Dropping an interior origin period should raise ValueError."""
+    with pytest.raises(ValueError):
+        origin_tri.drop(origin="1986")
+
+
+def test_drop_origin_missing_raises(origin_tri):
+    """Dropping an origin label that does not exist should raise KeyError."""
+    with pytest.raises(KeyError):
+        origin_tri.drop(origin="1999")
+
+
+def test_drop_origin_period_label(origin_tri):
+    """origin= should accept a pd.Period, the origin axis's native label type."""
+    result = origin_tri.drop(origin=origin_tri.origin[-1])
+    assert result.origin.astype(str).tolist() == ["1985", "1986"]
+
+
+def test_drop_origin_single_dev_period(raa):
+    """Dropping an origin from a triangle with a single development period
+    should skip the dev-trimming logic (``if result.shape[-1] > 1``).
+    """
+    single_dev = raa[raa.development == 12]
+    assert single_dev.shape[-1] == 1
+    result = single_dev.drop(origin="1990")
+    assert result.origin.astype(str).tolist()[-1] == "1989"
+    assert result.shape[-1] == 1
+
+
+def test_fillna_none_raises(raa):
+    """fillna(None) should raise TypeError."""
+    with pytest.raises(TypeError, match="Must specify a fill value"):
+        raa.fillna(None)
+
+
+def test_transpose_property(raa):
+    """The .T property should return a transposed DataFrame."""
+    result = raa.T
+    expected = raa.to_frame(origin_as_datetime=False).T
+    pd.testing.assert_frame_equal(result, expected)
 
 
 def test_exposure_tri():
@@ -655,7 +834,8 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     -------
     None
     """
-    dense = prism.set_backend("numpy")
+    small_prism = prism.iloc[:66]
+    dense = small_prism.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
         result = dense._auto_sparse()
@@ -795,8 +975,12 @@ def test_array_dunder(raa: Triangle) -> None:
     """
     arr = np.asarray(raa)
 
-    assert arr is raa.values
-    np.testing.assert_array_equal(np.array(raa), raa.values)
+    if raa.array_backend == "numpy":
+        # No conversion needed, so __array__ returns the same object.
+        assert arr is raa.values
+    else:
+        np.testing.assert_array_equal(arr, raa.values.todense())
+    np.testing.assert_array_equal(np.array(raa), raa.set_backend("numpy").values)
 
 
 def test_triangle_from_dataframe_interchange_protocol() -> None:
@@ -1214,6 +1398,37 @@ def test_create_full_triangle(raa):
         columns="values",
     )
     assert a == b
+
+
+def test_create_triangle_with_ultimates(raa):
+    """Round-trip and direct import of triangles with ultimate values."""
+    ult = cl.Chainladder().fit(raa).ultimate_
+    round_tripped = cl.Triangle(
+        ult.to_frame(keepdims=True, origin_as_datetime=True),
+        origin="origin",
+        development="valuation",
+        columns="values",
+        cumulative=True,
+    )
+    assert round_tripped.is_ultimate
+    assert round_tripped == ult
+
+    direct = cl.Triangle(
+        pd.DataFrame(
+            {
+                "origin": pd.to_datetime(["1981-01-01", "1982-01-01"]),
+                "valuation": pd.to_datetime(
+                    [cl.options.ULT_VAL, cl.options.ULT_VAL]
+                ),
+                "ultimate": [10000.0, 12000.0],
+            }
+        ),
+        origin="origin",
+        development="valuation",
+        columns="ultimate",
+        cumulative=True,
+    )
+    assert direct.is_ultimate
 
 
 def test_groupby_getitem(clrd):
@@ -1766,6 +1981,75 @@ def test_single_valuation_date_preserves_exact_date():
     assert triangle.valuation_date == pd.Timestamp(val_date_exp)
     assert triangle.development_grain == 'M'
     assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
+
+
+def test_1d_annual_valuation_date() -> None:
+    year_data = [
+        [1998, 2008, 900000, 890000],
+        [1999, 2008, 1200000, 1170000],
+        [2000, 2008, 1300000, 1265000],
+        [2001, 2008, 1800000, 1600000],
+        [2002, 2008, 1450000, 1200000],
+    ]
+    year_df = pd.DataFrame(
+        data=year_data, columns=["origin", "dev", "revenue", "expense"]
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert tri.development_grain == "Y"
+
+def test_1d_monthly_valuation_date() -> None:
+    year_data = [
+        [1998, "2008-01", 900000, 890000],
+        [1999, "2008-01", 1200000, 1170000],
+        [2000, "2008-01", 1300000, 1265000],
+        [2001, "2008-01", 1800000, 1600000],
+        [2002, "2008-01", 1450000, 1200000],
+    ]
+    year_df = pd.DataFrame(
+        data=year_data, columns=["origin", "dev", "revenue", "expense"]
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y-%m",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
+    assert tri.development_grain == "M"
+
+def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
+    year_df = pd.DataFrame(
+        {
+            "origin": [1998, 1999, 2000, 2001, 2002],
+            "dev": [2008.0, 2008.0, 2008.0, 2008.0, 2008.0],
+            "expense": [890000, 1170000, 1265000, 1600000, 1200000],
+        }
+    )
+    tri = cl.Triangle(
+        data=year_df,
+        origin="origin",
+        development="dev",
+        columns="expense",
+        development_format="%Y",
+        cumulative=True,
+    )
+    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert tri.development_grain == "Y"
+
+def test_friedland_gl_self_insurer_grain() -> None:
+    data_valuation_date = cl.load_sample('friedland_gl_self_insurer').valuation_date
+    assert pd.to_datetime(data_valuation_date).date() == pd.Timestamp("2008-12-31").date()
+
 def test_OXDX_triangle():
     
     for x in [12,6,3,1]:
@@ -1873,6 +2157,126 @@ def test_validate_assumption(raa: Triangle) -> None:
             triangle=raa,
             value=raa, axis=3  # noqa - incorrect type provided on purpose.
         )
+
+
+@pytest.mark.parametrize("value", [1, 1.5, "volume"])
+def test_validate_assumption_scalar(raa: Triangle, value: int | float | str) -> None:
+    """
+    Scalar int, float, and str values are broadcast across the axis.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    value: int | float | str
+        A user-supplied assumption.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    assert (result.flat[0] == value)
+
+
+@pytest.mark.parametrize("value", [
+    [1] * 10,
+    (1,) * 10,
+    np.ones(10),
+])
+def test_validate_assumption_sequence(raa: Triangle, value: list | tuple | np.ndarray) -> None:
+    """
+    list, tuple, and ndarray values are wrapped in np.array and reshaped.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+    value: list | tuple | np.ndarray
+        A user-supplied assumption.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+
+
+def test_validate_assumption_set(raa: Triangle) -> None:
+    """
+    set values reach the sequence branch without raising.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    # np.array(set) produces a 0-d object array in NumPy 2.x, so we only
+    # assert the call succeeds, not the resulting shape.
+    raa._validate_assumption(raa, {1, 2, 3}, axis=3)
+
+
+def test_validate_assumption_dict(raa: Triangle) -> None:
+    """
+    Dict values are mapped by axis label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    dev_periods = raa._get_axis_value(3).tolist()
+    value = {p: float(i) for i, p in enumerate(dev_periods)}
+    result = raa._validate_assumption(raa, value, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    np.testing.assert_array_equal(result.flat[:], list(value.values()))
+
+
+def test_validate_assumption_callable(raa: Triangle) -> None:
+    """
+    Callable values are applied to each axis label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, lambda x: x * 2, axis=3)
+    assert result.shape == (1, 1, 1, raa.shape[3])
+    expected = np.array([p * 2 for p in raa._get_axis_value(3).tolist()])
+    np.testing.assert_array_equal(result.flatten(), expected)
+
+
+def test_validate_assumption_axis2(raa: Triangle) -> None:
+    """
+    axis=2 produces shape (1, 1, n_origin, 1).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set Triangle.
+
+    Returns
+    -------
+    None
+    """
+    result = raa._validate_assumption(raa, 1, axis=2)
+    assert result.shape == (1, 1, raa.shape[2], 1)
+
 
 def test_xs(clrd):
     # when slicing with .loc on the first term in the index, Triangle will drop the term 
@@ -2076,3 +2480,219 @@ def test_to_datetime_uninferrable_format_raises() -> None:
             columns='value',
             cumulative=True
         )
+
+
+def test_set_backend_via_ldf(raa: Triangle) -> None:
+    """
+    Call set_backend on a fitted estimator. The estimator has no array_backend attribute
+    of its own, so set_backend resolves the old backend through ldf_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit(raa)
+    dev.set_backend("sparse", inplace=True, deep=True)
+    assert dev.ldf_.array_backend == "sparse"
+
+
+def test_set_backend_no_array_backend_raises() -> None:
+    """
+    Call set_backend on an unfitted estimator. The estimator has neither array_backend
+    nor ldf_, so set_backend raises ValueError.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="Unable to determine array backend"):
+        cl.Development().set_backend("sparse", inplace=True)
+
+
+def test_set_backend_inplace_updates_array_backend_attr(raa: Triangle) -> None:
+    """
+    set_backend(inplace=True) updates self.array_backend when the attribute exists.
+    When called on an object without array_backend, the attribute is not added.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    # Triangle has array_backend, updated in-place.
+    tri = raa.set_backend("numpy")
+    tri.set_backend("sparse", inplace=True)
+    assert tri.array_backend == "sparse"
+
+    # Estimator has no array_backend, attribute is not added.
+    dev = cl.Development().fit(raa.set_backend("numpy"))
+    dev.set_backend("sparse", inplace=True)
+    assert not hasattr(dev, "array_backend")
+
+
+def test_set_backend_deep_propagates_to_nested_common(raa: Triangle) -> None:
+    """
+    set_backend with deep=True iterates vars(self) and recursively converts every
+    nested Common instance. Without deep=True, the nested
+    attributes keep their original backend; with deep=True all are converted.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit(raa.set_backend("numpy"))
+    common_attrs = [k for k, v in vars(dev).items() if isinstance(v, Common)]
+
+    # deep=False: nested Triangle attributes keep numpy
+    dev.set_backend("sparse", inplace=True, deep=False)
+    assert all(getattr(dev, k).array_backend == "numpy" for k in common_attrs)
+
+    # deep=True: every nested Common attribute is converted to sparse
+    dev.set_backend("sparse", inplace=True, deep=True)
+    assert all(getattr(dev, k).array_backend == "sparse" for k in common_attrs)
+
+
+def test_set_backend_inplace_mutates_values(raa: Triangle) -> None:
+    """
+    set_backend(inplace=True) reassigns self.values.
+    Verify the in-place mutation produces the correct array type: numpy to sparse yields a COO,
+    sparse to numpy yields an ndarray.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    numpy_tri = raa.set_backend("numpy")
+    numpy_tri.set_backend("sparse", inplace=True)
+    assert isinstance(numpy_tri.values, COO)
+
+    numpy_tri.set_backend("numpy", inplace=True)
+    assert isinstance(numpy_tri.values, np.ndarray)
+
+
+def test_set_backend_invalid_raises(raa: Triangle) -> None:
+    """
+    Pass an unsupported backend name to set_backend. Should raise AttributeError.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError):
+        raa.set_backend("invalid_backend", inplace=True)
+
+
+def test_set_backend_roundtrip(raa: Triangle) -> None:
+    """
+    Convert numpy to sparse and back to numpy, and verify values are preserved.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    sparse_raa = raa.set_backend("sparse")
+    assert sparse_raa.array_backend == "sparse"
+    restored = sparse_raa.set_backend("numpy")
+    assert restored.array_backend == "numpy"
+    assert restored == raa
+
+
+def test_has_zeta_true(raa: Triangle) -> None:
+    """
+    has_zeta returns True after fitting IncrementalAdditive, which sets zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    fitted = cl.IncrementalAdditive().fit(raa, sample_weight=raa.latest_diagonal)
+    assert fitted.has_zeta is True
+
+
+def test_has_zeta_false(raa: Triangle) -> None:
+    """
+    has_zeta returns False for an estimator that does not set zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert cl.Development().fit(raa).has_zeta is False
+
+
+def test_cum_zeta_raises_when_no_zeta(raa: Triangle) -> None:
+    """
+    cum_zeta_ raises AttributeError when the estimator has no zeta_.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError):
+        _ = cl.Development().fit(raa).cum_zeta_
+
+
+def test_cum_zeta_returns_incr_to_cum(atol) -> None:
+    """
+    cum_zeta_ returns zeta_.incr_to_cum() when zeta_ is present.
+
+    Parameters
+    ----------
+    atol : float
+        Absolute tolerance fixture.
+
+    Returns
+    -------
+    None
+    """
+    ia = cl.load_sample("ia_sample")
+    fitted = cl.IncrementalAdditive().fit(ia["loss"], sample_weight=ia["exposure"].latest_diagonal)
+    np.testing.assert_allclose(
+        fitted.cum_zeta_.values.flatten(),
+        [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
+        atol=atol,
+    )
