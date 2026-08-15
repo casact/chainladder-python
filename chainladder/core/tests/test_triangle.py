@@ -589,6 +589,12 @@ def test_drop_index_axis_not_implemented_raises(clrd):
         clrd.drop(index="Agway Ins Co")
 
 
+def test_hvplot_passthrough(genins, monkeypatch):
+    """TrianglePandas.hvplot() passthrough test for patch coverage."""
+    monkeypatch.setattr(pd.DataFrame, "hvplot", lambda self, *args, **kwargs: True, raising=False)
+    assert genins.hvplot() is True
+
+
 def test_fillna_none_raises(raa):
     """fillna(None) should raise TypeError."""
     with pytest.raises(TypeError, match="Must specify a fill value"):

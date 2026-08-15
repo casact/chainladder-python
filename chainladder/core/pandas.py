@@ -40,9 +40,7 @@ if TYPE_CHECKING:
         Series
     )
     from types import ModuleType
-    from pandas._typing import (
-        IndexLabel
-    )
+    from pandas._typing import IndexLabel
     from typing import (
         Any,
         Literal,
