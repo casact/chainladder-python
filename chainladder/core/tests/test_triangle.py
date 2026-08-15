@@ -112,11 +112,11 @@ def test_rename_columns(genins, clrd) -> None:
     # Test the cascading of rename to triangle.columns_label.
     assert genins.columns_label == ['foo']
 
-    genins.rename('columns',{'foo':'newfoo'})
+    genins.rename('columns', {'foo': 'newfoo'})
 
     assert genins.columns.to_list() == ['newfoo']
 
-    genins.rename('columns',{'foo':'newnewfoo'})
+    genins.rename('columns', {'foo': 'newnewfoo'})
 
     assert genins.columns.to_list() == ['newfoo']
 
@@ -125,14 +125,14 @@ def test_rename_index() -> None:
     Test the renaming of triangle columns.
     """
     auto = cl.load_sample('auto')
-    new_index = ['CommAuto','PersAuto']
-    auto.rename('index',new_index)
+    new_index = ['CommAuto', 'PersAuto']
+    auto.rename('index', new_index)
     assert np.all(auto.index.values.flatten() == new_index)
     
 def test_rename_exception(genins, clrd) -> None:
     # Test incorrect value argument - misspelling of string.
     with pytest.raises(ValueError):
-        genins.rename('origin', {'oldfoo':'foo'})
+        genins.rename('origin', {'oldfoo': 'foo'})
 
     # Test incorrect axis argument - misspelling of string.
     with pytest.raises(ValueError):
@@ -202,7 +202,7 @@ def test_development_before_origin_warns_and_drops() -> None:
     df = pd.DataFrame({
         "origin":      [2000, 2000, 2001, 2001],
         "development": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
-        "value":       [100,  200,  999,  300],
+        "value":       [100, 200, 999, 300],
     })
     with pytest.warns(UserWarning, match="development before"):
         tri = cl.Triangle(
@@ -668,7 +668,7 @@ def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
     -------
     None
     """
-    result_default   = prism.groupby("Line").sum()
+    result_default = prism.groupby("Line").sum()
     result_no_sparse = prism.groupby("Line").sum(auto_sparse=False)
 
     assert result_default.array_backend == "numpy"
@@ -977,10 +977,10 @@ def test_plot(raa: Triangle) -> None:
 
     try:
         ax_tri = raa.plot()
-        ax_df  = raa.to_frame(origin_as_datetime=False).plot()
+        ax_df = raa.to_frame(origin_as_datetime=False).plot()
 
         lines_tri = ax_tri.get_lines()
-        lines_df  = ax_df.get_lines()
+        lines_df = ax_df.get_lines()
 
         assert len(lines_tri) == len(lines_df)
         for lt, ld in zip(lines_tri, lines_df):
@@ -1334,7 +1334,7 @@ def test_origin_as_datetime_arg(clrd):
     )
 
 
-def test_full_triangle_and_full_expectation(raa,atol):
+def test_full_triangle_and_full_expectation(raa, atol):
     raa_cum = raa
     assert raa_cum.is_cumulative
 
@@ -1588,18 +1588,18 @@ def test_semi_annual_grain():
     assert Atri == Stri.grain('OYDY')
 
 def test_odd_quarter_end():
-    data= pd.DataFrame([
+    data = pd.DataFrame([
         ["5/1/2023", 12, '4/30/2024', 100],
         ["8/1/2023", 9, "4/30/2024", 130],
         ["11/1/2023", 6, "4/30/2024", 160],
         ["2/1/2024", 3, "4/30/2024", 140]], 
-        columns = ['origin', 'development', 'valuation', 'EarnedPremium'])
+        columns=['origin', 'development', 'valuation', 'EarnedPremium'])
     triangle = cl.Triangle(
         data, origin='origin', origin_format='%Y-%m-%d', development='valuation', columns='EarnedPremium', trailing=True, cumulative=True
     )
     data_from_tri = triangle.to_frame(origin_as_datetime=True)
-    assert np.all(data_from_tri['2024Q2'].values == [100.,130.,160.,140.])
-    assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023","8/1/2023","11/1/2023","2/1/2024"],freq = 'QS-NOV'))
+    assert np.all(data_from_tri['2024Q2'].values == [100., 130., 160., 140.])
+    assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023", "8/1/2023", "11/1/2023", "2/1/2024"], freq='QS-NOV'))
 
 
 def test_single_valuation_date_preserves_exact_date():
@@ -1697,21 +1697,21 @@ def test_friedland_gl_self_insurer_grain() -> None:
 
 def test_OXDX_triangle():
     
-    for x in [12,6,3,1]:
-        for y in [i for i in [12,6,3,1] if i <= x]:
+    for x in [12, 6, 3, 1]:
+        for y in [i for i in [12, 6, 3, 1] if i <= x]:
             first_orig = '2020-01-01'
             width = int(x / y) + 1
-            dev_series = (pd.date_range(start=first_orig,periods = width, freq = str(y) + 'ME') + pd.DateOffset(months=y-1)).to_series()
+            dev_series = (pd.date_range(start=first_orig, periods=width, freq=str(y) + 'ME') + pd.DateOffset(months=y - 1)).to_series()
             tri_df = pd.DataFrame({
                 'origin_date': pd.concat([pd.to_datetime([first_orig] * (width)).to_series(), (pd.to_datetime([first_orig]) + pd.DateOffset(months=x)).to_series()]).to_list(),
-                'development_date': pd.concat([dev_series,dev_series.iloc[[0]] + pd.DateOffset(months=x)]).to_list(),
-                'value': list(range(1,width + 2))
+                'development_date': pd.concat([dev_series, dev_series.iloc[[0]] + pd.DateOffset(months=x)]).to_list(),
+                'value': list(range(1, width + 2))
             })
             for i in range(12):
                 for j in range(y):
                     test_data = tri_df.copy()
                     test_data['origin_date'] += pd.DateOffset(months=i)        
-                    test_data['development_date'] += pd.DateOffset(months=i-j)
+                    test_data['development_date'] += pd.DateOffset(months=i - j)
                     tri = cl.Triangle(
                         test_data, 
                         origin='origin_date', 
@@ -1719,19 +1719,19 @@ def test_OXDX_triangle():
                         columns='value', 
                         cumulative=True
                     )
-                    assert tri.shape == (1,1,2,width)
+                    assert tri.shape == (1, 1, 2, width)
                     assert tri.sum().sum() == tri_df['value'].sum()
-                    assert np.all(tri.development == [y-j + x * y for x in range(width)])
-                    #there's a known bug with origin that displays incorrect year when origin doesn't start on 1/1
-                    #if x == 12:
-                        #assert np.all(tri.origin == ['2020','2021'])
-                    #elif x in [6,3]:
-                        #assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
-                        #assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
+                    assert np.all(tri.development == [y - j + x * y for x in range(width)])
+                    # there's a known bug with origin that displays incorrect year when origin doesn't start on 1/1
+                    # if x == 12:
+                        # assert np.all(tri.origin == ['2020','2021'])
+                    # elif x in [6,3]:
+                        # assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
+                        # assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
 
 def test_fillzero():
     raa = cl.load_sample('raa')
-    zero = raa - raa[raa.origin=='1982']
+    zero = raa - raa[raa.origin == '1982']
     filled = zero.fillzero()
     assert (filled[filled.origin == '1982'][filled.development == 24].values.flatten()[0]) == 0
     
@@ -1750,8 +1750,8 @@ def test_2x2_triangle():
         cumulative=True
     )
     tri_from_df
-    assert np.array_equal(tri_from_df.cum_to_incr().values,np.array([[[[ 78000., 144000.],
-    [ 78000., np.float64(np.nan)]]]]), equal_nan=True)
+    assert np.array_equal(tri_from_df.cum_to_incr().values, np.array([[[[78000., 144000.],
+    [78000., np.float64(np.nan)]]]]), equal_nan=True)
 
 
 def test_triangle_init_from_dict() -> None:
@@ -1928,16 +1928,16 @@ def test_xs(clrd):
     assert clrd.xs('Adriatic Ins Co') == clrd.loc['Adriatic Ins Co']
     assert clrd.xs('Adriatic Ins Co').index.equals(clrd.loc['Adriatic Ins Co'].index)
     # when slicing with .loc on the all term in the index, Triangle will not drop any term 
-    assert clrd.xs(('Agway Ins Co','comauto'), drop_level=False) == clrd.loc['Agway Ins Co','comauto']
-    assert clrd.xs(('Agway Ins Co','comauto'), drop_level=False).index.equals(clrd.loc['Agway Ins Co','comauto'].index)
+    assert clrd.xs(('Agway Ins Co', 'comauto'), drop_level=False) == clrd.loc['Agway Ins Co', 'comauto']
+    assert clrd.xs(('Agway Ins Co', 'comauto'), drop_level=False).index.equals(clrd.loc['Agway Ins Co', 'comauto'].index)
     # when all index terms are included in xs and drop_level is True, the default 'Total' index value is provided
-    assert clrd.xs(('Agway Ins Co','comauto'), drop_level=True).index.equals(cl.load_sample('genins').index)
+    assert clrd.xs(('Agway Ins Co', 'comauto'), drop_level=True).index.equals(cl.load_sample('genins').index)
     # when slicing with .loc on the second or subsequent terms in the index, Triangle will not drop the term 
-    assert clrd.xs('comauto',level=1, drop_level=False) == clrd.loc[clrd['LOB'] == 'comauto']
-    assert clrd.xs('comauto',level=1, drop_level=False).index.equals(clrd.loc[clrd['LOB'] == 'comauto'].index)
+    assert clrd.xs('comauto', level=1, drop_level=False) == clrd.loc[clrd['LOB'] == 'comauto']
+    assert clrd.xs('comauto', level=1, drop_level=False).index.equals(clrd.loc[clrd['LOB'] == 'comauto'].index)
     # level works with either integer index or name of the index column
-    assert clrd.xs('comauto',level=1) == clrd.xs('comauto',level='LOB')
-    assert clrd.xs('comauto',level=1).index.equals(clrd.xs('comauto',level='LOB').index)
+    assert clrd.xs('comauto', level=1) == clrd.xs('comauto', level='LOB')
+    assert clrd.xs('comauto', level=1).index.equals(clrd.xs('comauto', level='LOB').index)
 
 
 def test_get_array_module_with_explicit_arr(raa: Triangle) -> None:

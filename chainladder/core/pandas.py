@@ -841,7 +841,7 @@ class TrianglePandas(_TrianglePandasBase):
         return result
 
     @property
-    def T(self) -> DataFrame: # noqa: N802
+    def T(self) -> DataFrame:  # noqa: N802
         """
         Converts the Triangle to a Pandas DataFrame and then transposes it.
 
