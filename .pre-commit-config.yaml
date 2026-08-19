@@ -11,7 +11,8 @@ repos:
           if [ -z "$files" ]; then
             echo "ruff - no changed files to check";
           else
-            uv run ruff check --force-exclude --config lint.per-file-ignores={} $files;
+            uv run ruff check --force-exclude --config lint.per-file-ignores={} $files &&
+            uv run ruff format --check --diff --force-exclude $files;
           fi'
         language: system
         pass_filenames: false
