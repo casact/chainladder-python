@@ -132,6 +132,27 @@ def test_non_vertical_line():
     ).all()
 
 
+def test_daily_grain_after_leap_year():
+    rate_history = pd.DataFrame(
+        {"EffDate": [pd.Timestamp("2016-07-01")], "RateChange": [0.05]}
+    )
+    origin = pd.date_range("2017-01-01", "2019-12-31", freq="YS")
+    triangle = cl.Triangle(
+        pd.DataFrame({"origin": origin, "values": 1.0}),
+        origin="origin",
+        columns="values",
+        cumulative=True,
+    )
+    olf = cl.ParallelogramOLF(
+        rate_history,
+        change_col="RateChange",
+        date_col="EffDate",
+        approximation_grain="D",
+    ).fit(triangle)
+    assert len(olf.olf_.origin) == len(triangle.origin)
+    assert not olf.olf_.to_frame().isna().any().any()
+
+
 def test_vertical_line():
     olf = cl.parallelogram_olf(
         [0.20], ["7/1/2017"], approximation_grain="D", vertical_line=True
