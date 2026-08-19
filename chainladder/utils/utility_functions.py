@@ -17,7 +17,7 @@ from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from typing import Iterable, Union, Optional, TYPE_CHECKING
+from typing import Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle, MethodBase, Pipeline
@@ -424,6 +424,34 @@ def read_json(json_str, array_backend=None):
         return cl.__dict__[json_dict["__class__"]]().set_params(**json_dict["params"])
 
 
+def _origin_periods(index, grain):
+    """Bucket a DatetimeIndex into origin periods of the given Triangle grain.
+
+    ``DatetimeIndex.to_period`` covers "Y", "Q" and "M" directly. It has no
+    semiannual frequency, and "2Q" does not stand in for one. The multiple is
+    honoured, so a "2Q" period is six months long, but each one is anchored to
+    the quarter of the observation rather than to a fixed half-year boundary,
+    so the windows overlap::
+
+        2016-01-01 -> 2016Q1 [2016-01-01 .. 2016-06-30]
+        2016-04-01 -> 2016Q2 [2016-04-01 .. 2016-09-30]
+
+    Grouping on that yields eight buckets over two years instead of four, which
+    would then be broadcast against a six-origin triangle. "S" is therefore
+    built by collapsing each half year onto the quarter it starts in, which also
+    matches how Triangle labels a semiannual origin (``"%YQ%q"``).
+    """
+    if grain == "S":
+        quarters = index.to_period("Q")
+        return pd.PeriodIndex(
+            [
+                pd.Period(year=q.year, quarter=1 if q.quarter <= 2 else 3, freq="Q")
+                for q in quarters
+            ]
+        )
+    return index.to_period(grain)
+
+
 def parallelogram_olf(
     values,
     dates,
@@ -522,8 +550,13 @@ def parallelogram_olf(
 
         cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
 
-        fcrl = cum_avg.groupby(cum_avg.index.to_period(grain)).mean().reset_index()
+        periods = _origin_periods(cum_avg.index, grain)
+        fcrl = cum_avg.groupby(periods).mean().reset_index()
         fcrl.columns = ["Origin", "OLF"]
+        # Carry the leap flag off the periods while they are still periods. It
+        # used to be recovered by strptime-parsing the stringified label, which
+        # only ever worked for the "Y" and "M" label shapes.
+        fcrl["is_leap"] = pd.PeriodIndex(fcrl["Origin"]).is_leap_year
         fcrl["Origin"] = fcrl["Origin"].astype(str)
         fcrl["OLF"] = crl / fcrl["OLF"]
 
@@ -533,16 +566,23 @@ def parallelogram_olf(
     fcrl_leaps = fcrl_non_leaps if approximation_grain == "M" else _fcrl_for_leap(True)
 
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
-    combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y" + ("-%m" if grain == "M" else "")
-    ).dt.is_leap_year
 
     combined["final_OLF"] = np.where(
-        combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+        combined["is_leap_non_leaps"],
+        combined["OLF_leaps"],
+        combined["OLF_non_leaps"],
     )
 
     combined.drop(
-        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"], axis=1, inplace=True
+        [
+            "OLF_non_leaps",
+            "is_leap_non_leaps",
+            "Origin_leaps",
+            "OLF_leaps",
+            "is_leap_leaps",
+        ],
+        axis=1,
+        inplace=True,
     )
     combined.columns = ["Origin", "OLF"]
 
@@ -686,7 +726,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
@@ -941,9 +981,9 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
 
 def model_diagnostics(
-        model:Triangle|MethodBase|Pipeline, 
-        name:str|None=None, 
-        groupby:str|list(str)|None=None) -> Triangle:
+        model: Triangle | MethodBase | Pipeline, 
+        name: str | None = None, 
+        groupby: str | list(str) | None = None) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
@@ -978,7 +1018,7 @@ def model_diagnostics(
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
-    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+    if not (hasattr(obj, "ultimate_") & hasattr(obj, "ibnr_") & hasattr(obj, "ldf_")):
         raise ValueError("model does not have ultimate_/ibnr_/ldf_")
     if isinstance(model, Triangle):
         obj.X_ = obj
@@ -1030,8 +1070,8 @@ def model_diagnostics(
         else:
             out["Year Incremental"] = 0
         if groupby is None:
-            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
-            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(), sample_weight=obj.ultimate_[col])[col]
+            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(), sample_weight=obj.ultimate_[col])[col]
         out["Ultimate"] = obj.ultimate_[col]
         out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
@@ -1072,7 +1112,7 @@ def PTF_formula(
             formula_parts += [
                 "+".join(
                     [
-                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development))/{dgrain})"
+                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind - 1]},development)) / {dgrain})"
                     ]
                 )
             ]
@@ -1081,7 +1121,7 @@ def PTF_formula(
             formula_parts += [
                 "+".join(
                     [
-                        f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind-1]},valuation))"
+                        f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind - 1]},valuation))"
                     ]
                 )
             ]

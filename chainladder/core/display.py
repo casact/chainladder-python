@@ -158,6 +158,11 @@ class TriangleDisplay:
         Color the background in a gradient according to the data in each
         column (optionally row). Requires matplotlib.
 
+        Styles a single 2-D triangle for notebook display and returns an
+        IPython HTML object. Multi-dimensional triangles raise
+        ``ValueError``. See the :ref:`User Guide <triangle:heatmap>` for a
+        rendered example.
+
         Parameters
         ----------
 
@@ -173,7 +178,6 @@ class TriangleDisplay:
         Returns
         -------
             Ipython.display.HTML
-
         """
         if self._dimensionality == 'single':
             data = self._repr_format()
