@@ -1440,7 +1440,7 @@ class Triangle(TriangleBase):
             if self.is_cumulative or self.is_cumulative is None:
                 if self.is_pattern & (not self.is_disposal_rate):
                     xp = self.get_array_module()
-                    self.values = xp.nan_to_num(self.values)
+                    self.values = num_to_value(xp.nan_to_num(self.values), 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
                     self = concat(
                         (
