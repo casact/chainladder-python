@@ -139,6 +139,13 @@ SAMPLES: dict = {
         ],
         "cumulative": True,
     },
+    "friedland_dc_insurer": {
+        "origin": "Accident Year",
+        "development": "Calendar Year",
+        "index": None,
+        "columns": ["Reported Claims"],
+        "cumulative": True,
+    },
     "friedland_gl_insurer": {
         "origin": "Accident Year",
         "development": "Calendar Year",
