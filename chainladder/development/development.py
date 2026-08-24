@@ -80,11 +80,11 @@ class Development(DevelopmentBase):
         index will receive its own patterns.
 
         .. note ::
-    
+
             (Order of Drop Operations)
-            
+
             When multiple drop parameters are used together, the weights are built in this order:
-        
+
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
             3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
@@ -406,7 +406,7 @@ class Development(DevelopmentBase):
             drop_below=self.drop_below,
             drop_valuation=self.drop_valuation,
             preserve=self.preserve,
-            drop=self.drop
+            drop=self.drop,
         )
 
         if hasattr(X, "w_v2_"):

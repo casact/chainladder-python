@@ -15,15 +15,10 @@ from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 from chainladder.utils.utility_functions import concat
 
-from typing import (
-    Callable,
-    Literal,
-    TYPE_CHECKING
-)
+from typing import Callable, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleLike
-
 
 
 def _get_full_expectation(cdf_, ultimate_, is_cumulative=True):
@@ -155,7 +150,9 @@ class Common:
         development age, equal to ``1 - 1 / cdf_``."""
         if not self.has_ldf:
             x = self.__class__.__name__
-            raise AttributeError("'" + x + "' object has no attribute 'pct_unreported_'")
+            raise AttributeError(
+                "'" + x + "' object has no attribute 'pct_unreported_'"
+            )
         return 1 - 1 / self.cdf_
 
     @property
@@ -277,7 +274,12 @@ class Common:
         return func(self, *args, **kwargs)
 
     def set_backend(
-        self, backend: str, inplace: bool = False, deep: bool = False, _warn: bool = True, **kwargs
+        self,
+        backend: str,
+        inplace: bool = False,
+        deep: bool = False,
+        _warn: bool = True,
+        **kwargs,
     ):
         """
         Converts triangle array_backend.
@@ -380,13 +382,15 @@ class Common:
             return self
         else:
             obj = self.copy()
-            return obj.set_backend(backend=backend, inplace=True, deep=deep, _warn=False, **kwargs)
+            return obj.set_backend(
+                backend=backend, inplace=True, deep=deep, _warn=False, **kwargs
+            )
 
     @staticmethod
     def _validate_assumption(
-            triangle: TriangleLike,
-            value: str | int | float | list | tuple | set | np.ndarray | dict | Callable,
-            axis: Literal[0, 1, 2, 3]
+        triangle: TriangleLike,
+        value: str | int | float | list | tuple | set | np.ndarray | dict | Callable,
+        axis: Literal[0, 1, 2, 3],
     ) -> np.ndarray:
         """
         Used by development estimators to turn user-supplied assumptions into a uniform NumPy array
