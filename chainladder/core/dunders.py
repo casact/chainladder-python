@@ -111,11 +111,11 @@ class TriangleDunders:
 
     def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x.vdims = y.vdims
+            x._vdims = y._vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y.vdims = x.vdims
+            y._vdims = x._vdims
         elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
-            y.vdims = x.vdims
+            y._vdims = x._vdims
         elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
             return x, y
         else:            
