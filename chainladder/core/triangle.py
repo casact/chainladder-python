@@ -487,6 +487,7 @@ class Triangle(TriangleBase):
             development=development,
             development_format=development_format,
             origin_date=origin_date,
+            origin_grain=self.origin_grain,
         )
 
         if len(development_date.unique()) == 1:
