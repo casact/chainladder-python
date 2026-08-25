@@ -478,9 +478,11 @@ def parallelogram_olf(
     dates = pd.to_datetime(dates)
 
     if start_date:
-        start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+        true_start_date = pd.to_datetime(start_date)
+        start_date = true_start_date - pd.tseries.offsets.DateOffset(days=1)
     else:
-        start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
+        true_start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
+        start_date = true_start_date
 
     if not end_date:
         end_date = pd.to_datetime("{}-12-31".format(dates.max().year))
@@ -551,6 +553,16 @@ def parallelogram_olf(
         cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
 
         periods = _origin_periods(cum_avg.index, grain)
+        # The day-count drop above is an approximation and, depending on
+        # where leap days fall relative to start_date, can leave in a
+        # handful of days that belong to the origin period just before the
+        # triangle's actual first origin. Left uncorrected, that spurious
+        # period ends up as an extra row that misaligns everything against
+        # the triangle when broadcast (see GH #1219). Clip it here.
+        min_period = _origin_periods(pd.DatetimeIndex([true_start_date]), grain)[0]
+        keep = periods >= min_period
+        cum_avg = cum_avg[keep]
+        periods = periods[keep]
         fcrl = cum_avg.groupby(periods).mean().reset_index()
         fcrl.columns = ["Origin", "OLF"]
         # Carry the leap flag off the periods while they are still periods. It

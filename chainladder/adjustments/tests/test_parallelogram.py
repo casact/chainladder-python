@@ -509,6 +509,33 @@ def test_cumulative_duplicate_date_last_wins():
     )
 
 
+def test_daily_grain_after_leap_year():
+    """Daily approximation_grain must not misalign origins after a leap year.
+
+    A rate change effective in the leap year 2016, combined with a triangle
+    whose first origin is 2017-01-01, used to leak a spurious extra "2016"
+    origin bucket into the daily-grain calculation, causing a shape mismatch
+    when the OLF was broadcast against the triangle. See GH #1219.
+    """
+    rates = pd.DataFrame({"EffDate": [pd.Timestamp("2016-07-01")], "RateChange": [0.05]})
+    origin = pd.date_range("2017-01-01", "2019-12-31", freq="YS")
+    triangle = cl.Triangle(
+        pd.DataFrame({"origin": origin, "values": 1.0}),
+        origin="origin",
+        columns="values",
+    )
+
+    olf = cl.ParallelogramOLF(
+        rate_history=rates,
+        change_col="RateChange",
+        date_col="EffDate",
+        approximation_grain="D",
+    ).fit(triangle)
+
+    assert len(olf.olf_.origin) == 3
+    assert olf.olf_.to_frame().notna().all().all()
+
+
 def _olf_for_freq(freq, rates):
     """Fit ParallelogramOLF against a premium triangle of the given origin grain."""
     origin = pd.date_range("2016-01-01", "2018-12-31", freq=freq)
