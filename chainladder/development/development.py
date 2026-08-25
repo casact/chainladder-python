@@ -80,11 +80,11 @@ class Development(DevelopmentBase):
         index will receive its own patterns.
 
         .. note ::
-    
+
             (Order of Drop Operations)
-            
+
             When multiple drop parameters are used together, the weights are built in this order:
-        
+
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
             3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
@@ -102,6 +102,9 @@ class Development(DevelopmentBase):
         The estimated loss development patterns
     cdf_: Triangle
         The estimated cumulative development patterns
+    pct_reported_: Triangle
+        The estimated percent of ultimate reported (or paid) at each
+        development age
     sigma_: Triangle
         Sigma of the ldf regression
     std_err_: Triangle
@@ -396,14 +399,14 @@ class Development(DevelopmentBase):
         link_ratio: ArrayLike = y / x
 
         tw = TriangleWeight(
-            n_periods = self.n_periods,
-            drop_high = self.drop_high,
-            drop_low = self.drop_low,
-            drop_above = self.drop_above,
-            drop_below = self.drop_below,
-            drop_valuation = self.drop_valuation,
-            preserve = self.preserve,
-            drop = self.drop
+            n_periods=self.n_periods,
+            drop_high=self.drop_high,
+            drop_low=self.drop_low,
+            drop_above=self.drop_above,
+            drop_below=self.drop_below,
+            drop_valuation=self.drop_valuation,
+            preserve=self.preserve,
+            drop=self.drop,
         )
 
         if hasattr(X, "w_v2_"):
