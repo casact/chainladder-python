@@ -455,6 +455,7 @@ from chainladder.utils import (  # noqa (API import)
     concat,
     load_sample,
     list_samples,
+    random_triangle,
     minimum,
     maximum,
     PatsyFormula,

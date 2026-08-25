@@ -197,6 +197,128 @@ def list_samples(include_grain: bool = True) -> DataFrame:
     return pd.DataFrame.from_records(records).set_index("name")
 
 
+def random_triangle(
+    origin_grain: str = "Y",
+    development_grain: str = "Y",
+    n_origin_periods: int = 10,
+    index: int = 1,
+    columns: int = 1,
+    cumulative: bool = True,
+    random_state: Optional[int] = None,
+) -> Triangle:
+    """Generate a synthetic Triangle for testing and documentation examples.
+
+    Unlike the bundled sample datasets, this produces a triangle on demand
+    for any combination of origin/development grain, and with as many
+    index (e.g. line-of-business) or columns (e.g. paid/incurred) dimensions
+    as needed, rather than requiring a hand-built DataFrame every time.
+
+    Parameters
+    ----------
+    origin_grain: str {"Y", "Q", "M"} (default="Y")
+        The grain of the origin periods.
+    development_grain: str {"Y", "Q", "M"} (default="Y")
+        The grain of the development periods. Must be at least as fine as
+        ``origin_grain`` (e.g. a "Q" origin cannot pair with a "Y"
+        development).
+    n_origin_periods: int (default=10)
+        The number of origin periods to generate.
+    index: int (default=1)
+        The number of distinct index groups (e.g. lines of business) to
+        generate. Each gets its own independent set of random increments.
+    columns: int (default=1)
+        The number of value columns (e.g. paid/incurred/reported) to
+        generate. Each gets its own independent set of random increments.
+    cumulative: bool (default=True)
+        Whether the returned Triangle is cumulative or incremental.
+    random_state: int, optional
+        Seed for reproducibility. If None, results vary between calls.
+
+    Returns
+    -------
+        A randomly generated chainladder.Triangle, valued as of the start of
+        the most recent origin period. Like any real loss triangle, more
+        recent origins have fewer known development periods than older ones.
+
+    Examples
+    --------
+
+    ..  testsetup::
+
+        import chainladder as cl
+
+    ..  testcode::
+
+        tri = cl.random_triangle(
+            origin_grain="Y", development_grain="Q", n_origin_periods=5, random_state=42
+        )
+        print(tri.shape)
+
+    ..  testoutput::
+
+        (1, 1, 5, 20)
+    """
+    grain_order: dict = {"Y": 1, "Q": 4, "M": 12}
+    if origin_grain not in grain_order or development_grain not in grain_order:
+        raise ValueError('origin_grain and development_grain must be one of "Y", "Q", "M"')
+    if grain_order[development_grain] < grain_order[origin_grain]:
+        raise ValueError(
+            "development_grain must be at least as fine as origin_grain, e.g. "
+            'origin_grain="Y" pairs with development_grain in {"Y", "Q", "M"}, '
+            'but origin_grain="Q" cannot pair with development_grain="Y"'
+        )
+
+    periods_per_origin: int = grain_order[development_grain] // grain_order[origin_grain]
+    origin_freq: str = {"Y": "YS", "Q": "QS", "M": "MS"}[origin_grain]
+    origins = pd.date_range("2000-01-01", periods=n_origin_periods, freq=origin_freq)
+
+    dev_offset_months: int = {"Y": 12, "Q": 3, "M": 1}[development_grain]
+    column_names: list = [f"Column{col}" for col in range(columns)]
+
+    rng = np.random.default_rng(random_state)
+    records: list = []
+    for idx in range(index):
+        for origin_pos, origin in enumerate(origins):
+            # Real triangles are valued as of a single date, so more recent
+            # origins have fewer known development periods than older ones -
+            # the classic staircase shape, not a fully populated square.
+            n_dev_periods: int = (n_origin_periods - origin_pos) * periods_per_origin
+            # Each column gets its own independent random series, so build
+            # them together and merge column values onto shared origin/dev rows.
+            column_values: dict = {}
+            for col_name in column_names:
+                increments = rng.uniform(100, 1000, size=n_dev_periods)
+                column_values[col_name] = (
+                    np.cumsum(increments) if cumulative else increments
+                )
+            for lag in range(n_dev_periods):
+                development_date = (
+                    origin
+                    + pd.DateOffset(months=dev_offset_months * (lag + 1))
+                    - pd.Timedelta(days=1)
+                )
+                record: dict = {
+                    "origin": origin,
+                    "development": development_date,
+                    "Group": f"Index{idx}",
+                }
+                for col_name in column_names:
+                    record[col_name] = column_values[col_name][lag]
+                records.append(record)
+
+    from chainladder.core.triangle import Triangle
+
+    df = pd.DataFrame.from_records(records)
+    return Triangle(
+        df,
+        origin="origin",
+        development="development",
+        index="Group",
+        columns=column_names,
+        cumulative=cumulative,
+    )
+
+
 def read_pickle(path):
     """Load an object serialized with ``to_pickle`` (``dill`` format).
 
