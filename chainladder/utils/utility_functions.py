@@ -478,9 +478,11 @@ def parallelogram_olf(
     dates = pd.to_datetime(dates)
 
     if start_date:
-        start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+        first_date = pd.to_datetime(start_date)
+        start_date = first_date - pd.tseries.offsets.DateOffset(days=1)
     else:
         start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
+        first_date = start_date
 
     if not end_date:
         end_date = pd.to_datetime("{}-12-31".format(dates.max().year))
@@ -522,14 +524,9 @@ def parallelogram_olf(
         "M": policy_length,
         "D": int(365 * policy_length / 12),
     }[approximation_grain]
-    dropdates_base = {
-        "M": 12 * lookback_years,
-        "D": 366 * lookback_years,
-    }[approximation_grain]
-
     def _fcrl_for_leap(is_leap_year: bool):
         # In monthly mode every month is treated as an equal length period, so a
-        # leap day has no effect on the rolling window or the lookback drop.
+        # leap day has no effect on the rolling window.
         if approximation_grain == "M":
             is_leap_year = False
 
@@ -548,7 +545,10 @@ def parallelogram_olf(
             cum_avg = cum_rate_changes.rolling(average_period).mean()
             cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
 
-        cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
+        # Drop the lookback window by date rather than by row count. A leap day
+        # inside the lookback shifts the row count by one, which left a stray
+        # partial origin behind (or dropped the first day of the first origin).
+        cum_avg = cum_avg[cum_avg.index >= first_date]
 
         periods = _origin_periods(cum_avg.index, grain)
         fcrl = cum_avg.groupby(periods).mean().reset_index()
