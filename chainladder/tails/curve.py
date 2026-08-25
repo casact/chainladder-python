@@ -128,30 +128,27 @@ class TailCurve(TailBase):
     """
 
     def __init__(
-            self,
-            curve="exponential",
-            fit_period=(None, None),
-            extrap_periods=100,
-            errors="ignore",
-            attachment_age=None,
-            reg_threshold=(1.00001, None),
-            projection_period=12
+        self,
+        curve="exponential",
+        fit_period=(None, None),
+        extrap_periods=100,
+        errors="ignore",
+        attachment_age=None,
+        reg_threshold=(1.00001, None),
+        projection_period=12,
     ):
         # validate arguments
 
-        if curve not in [
-            'exponential',
-            'inverse_power',
-            'weibull'
-        ]:
-            raise ValueError("Invalid curve type specified. Accepted values are 'exponential', 'inverse_power' and 'weibull'.")
+        if curve not in ["exponential", "inverse_power", "weibull"]:
+            raise ValueError(
+                "Invalid curve type specified. Accepted values are 'exponential', 'inverse_power' and 'weibull'."
+            )
 
-        if errors not in [
-            'ignore',
-            'raise'
-        ]:
-            raise ValueError("Invalid value argument supplied to the errors parameter. Accepted values are 'raise' "
-                             "and 'ignore'.")
+        if errors not in ["ignore", "raise"]:
+            raise ValueError(
+                "Invalid value argument supplied to the errors parameter. Accepted values are 'raise' "
+                "and 'ignore'."
+            )
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
@@ -175,11 +172,9 @@ class TailCurve(TailBase):
         self : object
             Returns the instance itself.
         """
-        from chainladder.utils.utility_functions import num_to_nan
-
         X = X.copy()
         xp = X.get_array_module()
-        if type(self.fit_period) == slice:
+        if type(self.fit_period) is slice:
             warnings.warn(
                 "Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age)."
             )
@@ -210,19 +205,22 @@ class TailCurve(TailBase):
         if self.reg_threshold[0] is None:
             warnings.warn(
                 "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure"
-                "valid inputs for regression.")
+                "valid inputs for regression."
+            )
             lower_threshold = 1
         elif self.reg_threshold[0] < 1:
             warnings.warn(
                 "Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure "
-                "valid inputs for regression.")
+                "valid inputs for regression."
+            )
             lower_threshold = 1
         else:
             lower_threshold = self.reg_threshold[0]
         if self.reg_threshold[1] is not None:
             if self.reg_threshold[1] <= lower_threshold:
                 warnings.warn(
-                    "Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'.")
+                    "Can't set upper threshold for ldfs below lower threshold. Upper threshold will be set to 'None'."
+                )
                 upper_threshold = None
             else:
                 upper_threshold = self.reg_threshold[1]
@@ -276,15 +274,17 @@ class TailCurve(TailBase):
         if self.curve == "exponential":
             tail_ldf = xp.exp(self._slope_ * extrapolate + self._intercept_)
         if self.curve == "inverse_power":
-            tail_ldf = xp.exp(self._intercept_) * (extrapolate ** self._slope_)
+            tail_ldf = xp.exp(self._intercept_) * (extrapolate**self._slope_)
         if self.curve == "weibull":
-            tail_ldf = 1/(1-xp.exp(-xp.exp(self._intercept_)
-                          * extrapolate**self._slope_))-1
+            tail_ldf = (
+                1 / (1 - xp.exp(-xp.exp(self._intercept_) * extrapolate**self._slope_))
+                - 1
+            )
         return self._get_tail_prediction(tail_ldf)
 
     @property
     def slope_(self):
-        """ Does not work with munich """
+        """Does not work with munich"""
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
             self._slope_[..., 0, 0], index=rows, columns=self.ldf_.columns
@@ -292,7 +292,7 @@ class TailCurve(TailBase):
 
     @property
     def intercept_(self):
-        """ Does not work with munich """
+        """Does not work with munich"""
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
             self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.columns
