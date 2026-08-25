@@ -326,10 +326,10 @@ class ClarkLDF(DevelopmentBase):
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         rows = X.index.set_index(X.key_labels).index
-        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
-        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)
+        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.columns)
+        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.columns)
         if sample_weight:
-            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
+            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.columns)
         ultimate_ = (
             self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2) * ld.values
         )

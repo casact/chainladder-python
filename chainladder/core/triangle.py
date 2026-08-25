@@ -560,14 +560,14 @@ class Triangle(TriangleBase):
 
         self.kdims: np.ndarray
         key_idx: np.ndarray
-        self.vdims: np.ndarray
+        self._vdims: np.ndarray
         self.odims: np.ndarray
         orig_idx: np.ndarray
         self.ddims: ArrayLike
         dev_idx: np.ndarray
 
         self.kdims, key_idx = self._set_kdims(data_agg, index)
-        self.vdims = np.array(columns)
+        self._vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
 
@@ -652,7 +652,7 @@ class Triangle(TriangleBase):
                     sorted=True,
                     shape=(
                         len(self.kdims),
-                        len(self.vdims),
+                        len(self._vdims),
                         len(self.odims),
                         len(self.ddims),
                     ),
@@ -738,15 +738,40 @@ class Triangle(TriangleBase):
 
     @property
     def columns(self):
-        return pd.Index(self.vdims, name="columns")
+        return pd.Index(self._vdims, name="columns")
 
     @columns.setter
     def columns(self, value):
         self._len_check(self.columns, value)
-        self.vdims = [value] if type(value) is str else value
-        if type(self.vdims) is list:
-            self.vdims = np.array(self.vdims)
+        vdims = [value] if type(value) is str else value
+        if type(vdims) is list:
+            vdims = np.array(vdims)
+        self._vdims = vdims
         self._set_slicers()
+
+    @property
+    def vdims(self):
+        warnings.warn(
+            "The 'vdims' attribute is deprecated and will be removed in a future release. "
+            "Use 'Triangle.columns' or 'Triangle.columns_label' instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._vdims
+
+    @vdims.setter
+    def vdims(self, value):
+        warnings.warn(
+            "The 'vdims' attribute is deprecated and will be removed in a future release. "
+            "Use 'Triangle.columns' instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        if type(value) is str:
+            value = np.array([value])
+        elif type(value) is list:
+            value = np.array(value)
+        self._vdims = value
 
     @property
     def columns_label(self) -> list:
@@ -2301,10 +2326,10 @@ class Triangle(TriangleBase):
             return self.sort_index()
         obj = self.copy()
         if axis == 1:
-            sort = pd.Series(self.vdims).sort_values().index
-            if np.any(sort != pd.Series(self.vdims).index):
+            sort = pd.Series(self._vdims).sort_values().index
+            if np.any(sort != pd.Series(self._vdims).index):
                 obj.values = obj.values[:, list(sort), ...]
-                obj.vdims = obj.vdims[list(sort)]
+                obj._vdims = obj._vdims[list(sort)]
         if axis == 2:
             sort = pd.Series(self.odims).sort_values().index
             if np.any(sort != pd.Series(self.odims).index):

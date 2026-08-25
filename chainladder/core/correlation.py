@@ -173,7 +173,7 @@ class DevelopmentCorrelation:
 
         # final big T
         self.t_expectation = pd.DataFrame(
-            t_expectation[..., 0, 0], columns=triangle.vdims, index=idx
+            t_expectation[..., 0, 0], columns=triangle.columns, index=idx
         )
 
         # table of Spearman's rank coefficients Tk, can be used to verify consistency with paper
@@ -346,17 +346,17 @@ class ValuationCorrelation:
                     (self.range[0] > VarZ.sum(axis=-1))
                     | (VarZ.sum(axis=-1) > self.range[1])
                 )[..., 0],
-                columns=triangle.vdims,
+                columns=triangle.columns,
                 index=idx,
             )
             self.z = pd.DataFrame(
-                z.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx
+                z.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx
             )
             self.z_expectation = pd.DataFrame(
-                EZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx
+                EZ.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx
             )
             self.z_variance = pd.DataFrame(
-                VarZ.sum(axis=-1)[..., 0], columns=triangle.vdims, index=idx
+                VarZ.sum(axis=-1)[..., 0], columns=triangle.columns, index=idx
             )
 
 

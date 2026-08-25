@@ -169,7 +169,7 @@ class TrianglePandas(_TrianglePandasBase):
                 tri: ndarray = np.squeeze(self.set_backend("numpy").values)
                 axes_lookup: dict = {
                     0: self.kdims,
-                    1: self.vdims,
+                    1: self._vdims,
                     2: self.origin,
                     3: self.development,
                 }
@@ -1152,8 +1152,8 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         # adjust the dimensions of the original object to match that of the aggregation.
         if axis == 0 and obj.values.shape[axis] == 1 and len(obj.kdims) > 1:
             obj.kdims = np.array([["(All)"] * len(obj.key_labels)])
-        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.vdims) > 1:
-            obj.vdims = np.array([0])
+        if axis == 1 and obj.values.shape[axis] == 1 and len(obj._vdims) > 1:
+            obj._vdims = np.array([0])
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
         # If axis is development, set the ddims to be the valuation date.
@@ -1219,7 +1219,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
                 obj.key_labels = index.columns.tolist()
                 obj.kdims = index.values
         if self.axis == 1:
-            obj.vdims = pd.DataFrame(group_index).values[:, 0]
+            obj._vdims = pd.DataFrame(group_index).values[:, 0]
         if self.axis == 2:
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]
