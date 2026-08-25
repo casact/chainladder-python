@@ -507,3 +507,55 @@ def test_cumulative_duplicate_date_last_wins():
         np.round(olf.to_frame().values.flatten(), 6)
         == [0.67, 0.67, 0.67, 0.67, 0.67, 0.75, 1.0, 1.0, 1.0, 1.0, 1.0]
     )
+
+
+def _olf_for_freq(freq, rates):
+    """Fit ParallelogramOLF against a premium triangle of the given origin grain."""
+    origin = pd.date_range("2016-01-01", "2018-12-31", freq=freq)
+    triangle = cl.Triangle(
+        pd.DataFrame({"origin": origin, "values": 1.0}),
+        origin="origin",
+        columns="values",
+    )
+    olf = cl.ParallelogramOLF(
+        rate_history=rates,
+        change_col="RateChange",
+        date_col="EffDate",
+        vertical_line=False,
+    ).fit(triangle)
+    return triangle.origin_grain, np.asarray(olf.olf_.values).flatten()
+
+
+RATE_HISTORY = pd.DataFrame(
+    {
+        "EffDate": [pd.Timestamp("2016-07-01"), pd.Timestamp("2017-04-01")],
+        "RateChange": [0.08, 0.05],
+    }
+)
+
+
+@pytest.mark.parametrize(
+    "freq, grain, origins", [("YS", "Y", 3), ("2QS", "S", 6), ("QS", "Q", 12), ("MS", "M", 36)]
+)
+def test_olf_supports_every_origin_grain(freq, grain, origins):
+    # Quarterly and semiannual premium triangles used to raise ValueError, so
+    # only two of the four grains Triangle.origin_grain can return were usable.
+    # The row count is asserted because parallelogram_olf is broadcast against
+    # the triangle positionally: a semiannual result of length 12 would align
+    # against the wrong origins rather than fail.
+    observed_grain, olf = _olf_for_freq(freq, RATE_HISTORY)
+    assert observed_grain == grain
+    assert len(olf) == origins
+
+
+@pytest.mark.parametrize("grain, freq, months", [("Y", "YS", 12), ("S", "2QS", 6), ("Q", "QS", 3)])
+def test_olf_aggregates_consistently_with_monthly(grain, freq, months):
+    # An on-level factor is a ratio of rate levels, so a coarser grain is the
+    # reciprocal of the mean reciprocal of the months it spans. The "Y" case
+    # holds on unfixed code too and is kept as a control on the identity.
+    _, monthly = _olf_for_freq("MS", RATE_HISTORY)
+    _, coarse = _olf_for_freq(freq, RATE_HISTORY)
+    expected = np.array(
+        [1 / np.mean(1 / monthly[i : i + months]) for i in range(0, len(monthly), months)]
+    )
+    np.testing.assert_allclose(coarse, expected, rtol=1e-9)
