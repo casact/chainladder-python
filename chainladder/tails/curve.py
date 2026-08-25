@@ -172,7 +172,6 @@ class TailCurve(TailBase):
         self : object
             Returns the instance itself.
         """
-
         X = X.copy()
         xp = X.get_array_module()
         if type(self.fit_period) is slice:
