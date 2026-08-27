@@ -478,9 +478,11 @@ def parallelogram_olf(
     dates = pd.to_datetime(dates)
 
     if start_date:
-        start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+        window_start = pd.to_datetime(start_date)
+        start_date = window_start - pd.tseries.offsets.DateOffset(days=1)
     else:
-        start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
+        window_start = pd.to_datetime("{}-01-01".format(dates.min().year))
+        start_date = window_start
 
     if not end_date:
         end_date = pd.to_datetime("{}-12-31".format(dates.max().year))
@@ -522,33 +524,26 @@ def parallelogram_olf(
         "M": policy_length,
         "D": int(365 * policy_length / 12),
     }[approximation_grain]
-    dropdates_base = {
-        "M": 12 * lookback_years,
-        "D": 366 * lookback_years,
-    }[approximation_grain]
 
     def _fcrl_for_leap(is_leap_year: bool):
         # In monthly mode every month is treated as an equal length period, so a
-        # leap day has no effect on the rolling window or the lookback drop.
+        # leap day has no effect on the rolling window.
         if approximation_grain == "M":
             is_leap_year = False
 
-        if is_leap_year:
-            leap_day = 1
-        else:
-            leap_day = 0
+        leap_day = 1 if is_leap_year else 0
 
         if vertical_line:  # rectangle method, rate change impact is immediate
             cum_avg = cum_rate_changes
 
         else:  # parallelogram method, rate change impact is overtime
-            #
             average_period = max(rolling_num_base + leap_day, 1)
 
             cum_avg = cum_rate_changes.rolling(average_period).mean()
             cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
 
-        cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
+        # Trim the lookback window by date so both passes span the same origins.
+        cum_avg = cum_avg[cum_avg.index >= window_start]
 
         periods = _origin_periods(cum_avg.index, grain)
         fcrl = cum_avg.groupby(periods).mean().reset_index()
@@ -560,33 +555,17 @@ def parallelogram_olf(
         fcrl["Origin"] = fcrl["Origin"].astype(str)
         fcrl["OLF"] = crl / fcrl["OLF"]
 
-        return fcrl
+        return fcrl.set_index("Origin")
 
     fcrl_non_leaps = _fcrl_for_leap(False)
     fcrl_leaps = fcrl_non_leaps if approximation_grain == "M" else _fcrl_for_leap(True)
 
+    # Join on the origin period rather than row position.
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
+    is_leap = combined["is_leap_non_leaps"].fillna(combined["is_leap_leaps"])
+    combined["OLF"] = np.where(is_leap, combined["OLF_leaps"], combined["OLF_non_leaps"])
 
-    combined["final_OLF"] = np.where(
-        combined["is_leap_non_leaps"],
-        combined["OLF_leaps"],
-        combined["OLF_non_leaps"],
-    )
-
-    combined.drop(
-        [
-            "OLF_non_leaps",
-            "is_leap_non_leaps",
-            "Origin_leaps",
-            "OLF_leaps",
-            "is_leap_leaps",
-        ],
-        axis=1,
-        inplace=True,
-    )
-    combined.columns = ["Origin", "OLF"]
-
-    return combined.set_index("Origin")
+    return combined[["OLF"]]
 
 
 def set_common_backend(objs):

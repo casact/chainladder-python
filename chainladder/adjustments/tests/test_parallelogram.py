@@ -559,3 +559,30 @@ def test_olf_aggregates_consistently_with_monthly(grain, freq, months):
         [1 / np.mean(1 / monthly[i : i + months]) for i in range(0, len(monthly), months)]
     )
     np.testing.assert_allclose(coarse, expected, rtol=1e-9)
+
+
+def test_daily_grain_after_leap_year():
+    # A daily approximation on a triangle whose origins start right after a leap
+    # year used to trim the lookback window by row count, which dropped one more
+    # row in the leap pass than the non-leap pass. When that row was the only one
+    # of its origin period the two passes produced a different number of origins
+    # and .fit() failed with a broadcast error.
+    rates = pd.DataFrame({
+        "EffDate": [pd.Timestamp("2016-07-01")],
+        "RateChange": [0.05],
+    })
+    origin = pd.date_range("2017-01-01", "2019-12-31", freq="YS")
+    triangle = cl.Triangle(
+        pd.DataFrame({"origin": origin, "values": 1.0}),
+        origin="origin",
+        columns="values",
+        cumulative=True,
+    )
+    olf = cl.ParallelogramOLF(
+        rate_history=rates,
+        change_col="RateChange",
+        date_col="EffDate",
+        approximation_grain="D",
+    ).fit(triangle)
+    assert len(olf.olf_.origin) == len(triangle.origin)
+    assert not olf.olf_.to_frame(origin_as_datetime=False).isna().any().any()
