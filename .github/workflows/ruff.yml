@@ -64,3 +64,8 @@ jobs:
         if: steps.changed.outputs.files != ''
         run: |
           uvx ruff@0.16.1 check --force-exclude --config lint.per-file-ignores={} --output-format=github ${{ steps.changed.outputs.files }}
+
+      - name: Run ruff format
+        if: (success() || failure()) && steps.changed.outputs.files != ''
+        run: |
+          uvx ruff@0.16.1 format --check --diff --force-exclude ${{ steps.changed.outputs.files }}

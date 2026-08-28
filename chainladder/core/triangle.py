@@ -10,7 +10,12 @@ from chainladder.core.base import TriangleBase
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
-from chainladder.utils.utility_functions import concat, num_to_nan, num_to_value, to_period
+from chainladder.utils.utility_functions import (
+    concat,
+    num_to_nan,
+    num_to_value,
+    to_period,
+)
 from chainladder import options, _warn_dask_parallel_deprecated
 
 try:
@@ -18,11 +23,7 @@ try:
 except ImportError:
     db = None
 
-from typing import (
-    cast,
-    Optional,
-    TYPE_CHECKING
-)
+from typing import cast, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
-    from sparse import COO
 
 
 class Triangle(TriangleBase):
@@ -132,6 +132,11 @@ class Triangle(TriangleBase):
     T: Triangle
         Transpose index and columns of object.  Only available when Triangle is
         convertible to DataFrame.
+
+    See Also
+    --------
+    Development : Fitted development patterns, including ``ldf_`` and ``cdf_``.
+    Chainladder : Fitted chainladder results, including ``ultimate_`` and ``ibnr_``.
 
     Examples
     --------
@@ -442,7 +447,7 @@ class Triangle(TriangleBase):
         # If data are present, validate the dimensions.
         if data is None:
             return
-        elif type(data) == dict:
+        elif isinstance(data, dict):
             data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
@@ -456,7 +461,7 @@ class Triangle(TriangleBase):
 
         # Store dimension metadata.
         self.origin_label: list = origin
-        
+
         # Handle any ultimate vectors in triangles separately.
         data, ult = self._split_ult(
             data=data,
@@ -484,7 +489,8 @@ class Triangle(TriangleBase):
         if len(development_date.unique()) == 1:
             # checks if development is not empty, and if ithas any non-yearly values
             dev_has_no_month = not development or all(
-                pd.to_numeric(data[col], errors="coerce")
+                pd
+                .to_numeric(data[col], errors="coerce")
                 .astype("Int64")
                 .astype(str)
                 .str.fullmatch(r"\d{4}")
@@ -498,8 +504,13 @@ class Triangle(TriangleBase):
             else:
                 dev_date = pd.to_datetime(development_date.iloc[0])
                 dev_date_monthly_end = dev_date.to_period("M").to_timestamp(how="e")
-                period_converted = dev_date_monthly_end.to_period(self.origin_grain).to_timestamp(how="e")
-                if abs((period_converted - dev_date_monthly_end).total_seconds()) < 1e-6:
+                period_converted = dev_date_monthly_end.to_period(
+                    self.origin_grain
+                ).to_timestamp(how="e")
+                if (
+                    abs((period_converted - dev_date_monthly_end).total_seconds())
+                    < 1e-6
+                ):
                     self.development_grain = self.origin_grain
                 else:
                     self.development_grain = "M"
@@ -510,12 +521,16 @@ class Triangle(TriangleBase):
 
         # Ensure that origin_date values represent the beginning of the period.
         # i.e., 1990 means the start of 1990.
-        origin_date: Series = to_period(origin_date,self.origin_grain).dt.to_timestamp(how="s")
-        
+        origin_date: Series = to_period(origin_date, self.origin_grain).dt.to_timestamp(
+            how="s"
+        )
+
         # Ensure that development_date values represent the end of the period.
         # i.e., 1990 means the end of 1990 assuming annual development periods.
-        development_date: Series = to_period(development_date,self.development_grain).dt.to_timestamp(how="e")
-        
+        development_date: Series = to_period(
+            development_date, self.development_grain
+        ).dt.to_timestamp(how="e")
+
         # Aggregate dates to the origin/development grains.
         data_agg: DataFrame = self._aggregate_data(
             data=data,
@@ -524,7 +539,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
         )
-        
+
         # Fill in missing periods with zeros.
         date_axes: DataFrame = self._get_date_axes(
             data_agg["__origin__"],
@@ -591,10 +606,12 @@ class Triangle(TriangleBase):
 
         # Coerce malformed triangles to something more predictable.
         check_origin: np.ndarray = (
-            pd.period_range(
+            pd
+            .period_range(
                 start=self.odims.min(),
                 end=self.valuation_date,
-                freq=self.origin_grain.replace("S", "2Q") + ('' if self.origin_grain == "M" else '-' + self.origin_close),
+                freq=self.origin_grain.replace("S", "2Q")
+                + ("" if self.origin_grain == "M" else "-" + self.origin_close),
             )
             .to_timestamp()
             .values
@@ -620,30 +637,30 @@ class Triangle(TriangleBase):
         )
 
         # Construct Sparse multidimensional array.
-        self.values: BackendArray = cast("BackendArray", num_to_nan(
-            sp.COO(
-                coords,
-                amts,
-                prune=True,
-                has_duplicates=False,
-                sorted=True,
-                shape=(
-                    len(self.kdims),
-                    len(self.vdims),
-                    len(self.odims),
-                    len(self.ddims),
-                ),
-            )
-        ))
+        self.values: BackendArray = cast(
+            "BackendArray",
+            num_to_nan(
+                sp.COO(
+                    coords,
+                    amts,
+                    prune=True,
+                    has_duplicates=False,
+                    sorted=True,
+                    shape=(
+                        len(self.kdims),
+                        len(self.vdims),
+                        len(self.odims),
+                        len(self.ddims),
+                    ),
+                )
+            ),
+        )
         # Deal with array backend.
         self.array_backend = "sparse"
         if array_backend is None:
             array_backend: str = options.ARRAY_BACKEND
         if not options.AUTO_SPARSE or array_backend == "cupy":
-            self.set_backend(
-                backend=array_backend,
-                inplace=True
-            )
+            self.set_backend(backend=array_backend, inplace=True)
         else:
             self = self._auto_sparse()
         self._set_slicers()
@@ -663,11 +680,7 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(
-        data: DataFrame,
-        index: list,
-        columns: list,
-        origin: list,
-        development: list
+        data: DataFrame, index: list, columns: list, origin: list, development: list
     ) -> tuple[DataFrame, Triangle]:
         """Split ultimate valuation rows from long-format triangle data.
 
@@ -687,7 +700,7 @@ class Triangle(TriangleBase):
         if (
             development
             and len(development) == 1
-                and data[development[0]].dtype.kind == 'M'
+            and data[development[0]].dtype.kind == "M"
         ):
             u = data[data[development[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
@@ -853,9 +866,9 @@ class Triangle(TriangleBase):
         ddims = self.ddims.copy()
         if self.is_val_tri:
             formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(freq=self.development_grain.replace("S", "2Q")).strftime(
-                formats[self.development_grain]
-            )
+            ddims = ddims.to_period(
+                freq=self.development_grain.replace("S", "2Q")
+            ).strftime(formats[self.development_grain])
         elif self.is_pattern:
             offset = self._dstep()["M"][self.development_grain]
             if self.is_ultimate:
@@ -924,7 +937,7 @@ class Triangle(TriangleBase):
 
             True
         """
-        return type(self.ddims) == pd.DatetimeIndex
+        return isinstance(self.ddims, pd.DatetimeIndex)
 
     @property
     def is_full(self) -> bool:
@@ -969,7 +982,6 @@ class Triangle(TriangleBase):
 
         return self.nan_triangle.sum().sum() == np.prod(self.shape[-2:])
 
-        
     @property
     def is_pattern(self) -> bool:
         """
@@ -1033,15 +1045,17 @@ class Triangle(TriangleBase):
     def is_disposal_rate(self, is_dr: bool) -> None:
         self._is_disposal_rate = is_dr
 
-    def align_pattern(self, X:Triangle, sample_weight:Triangle|None=None) -> Triangle:
-        """ 
+    def align_pattern(
+        self, X: Triangle, sample_weight: Triangle | None = None
+    ) -> Triangle:
+        """
         Vertically align a selected pattern to origin period latest diagonal. Triangle must be a selected pattern.
 
         Parameters
         ----------
         X: Triangle
         The target triangle to align to
-        
+
         sample_weight:  Triangle, option (default=None)
         Exposure triangle
 
@@ -1052,7 +1066,9 @@ class Triangle(TriangleBase):
 
         """
         if not self._pattern:
-            raise ValueError("Triangle is not a selected pattern, such as .ldf_ or .cdf_")
+            raise ValueError(
+                "Triangle is not a selected pattern, such as .ldf_ or .cdf_"
+            )
         valuation = X.valuation_date
         pattern = self.iloc[..., : X.shape[-1]]
         a = X.iloc[0, 0] * 0
@@ -1066,9 +1082,9 @@ class Triangle(TriangleBase):
         pattern = X / X * pattern
         pattern.valuation_date = valuation
         return pattern.latest_diagonal
-    
+
     @property
-    def is_ultimate(self) ->  bool:
+    def is_ultimate(self) -> bool:
         """
         Indicates whether the Triangle includes an ultimate valuation column.
 
@@ -1370,9 +1386,16 @@ class Triangle(TriangleBase):
                     else:
                         values = xp.nan_to_num(self.values)
                         nan_triangle = xp.nan_to_num(self.nan_triangle)
-                        l1 = lambda i: values[..., 0 : i + 1]
-                        l2 = lambda i: l1(i) * nan_triangle[..., i : i + 1]
-                        l3 = lambda i: l2(i).sum(3, keepdims=True)
+
+                        def l1(i):
+                            return values[..., 0 : i + 1]
+
+                        def l2(i):
+                            return l1(i) * nan_triangle[..., i : i + 1]
+
+                        def l3(i):
+                            return l2(i).sum(3, keepdims=True)
+
                         if db:
                             _warn_dask_parallel_deprecated()
                             bag = db.from_sequence(range(self.shape[-1]))
@@ -1431,8 +1454,7 @@ class Triangle(TriangleBase):
             if self.is_cumulative or self.is_cumulative is None:
                 if self.is_pattern & (not self.is_disposal_rate):
                     xp = self.get_array_module()
-                    self.values = xp.nan_to_num(self.values)
-                    values = num_to_value(self.values, 1)
+                    self.values = num_to_value(xp.nan_to_num(self.values), 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
                     self = concat(
                         (
@@ -1484,7 +1506,7 @@ class Triangle(TriangleBase):
                 )
             ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
         obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
-        if options.AUTO_SPARSE == False or backend == "cupy":
+        if not options.AUTO_SPARSE or backend == "cupy":
             obj = obj.set_backend(backend)
         else:
             obj = obj._auto_sparse()
@@ -1794,7 +1816,8 @@ class Triangle(TriangleBase):
                 origin_period_end = "DEC"
 
             indices = (
-                pd.Series(range(len(self.origin)), index=self.origin)
+                pd
+                .Series(range(len(self.origin)), index=self.origin)
                 .resample("-".join([freq, origin_period_end]))
                 .indices
             )
@@ -1808,17 +1831,21 @@ class Triangle(TriangleBase):
 
             d_start = pd.Period(
                 obj.valuation[0],
-                freq=dgrain_old.replace("S", "2Q") + ('' if dgrain_old == "M" else obj.origin.freqstr[-4:]),
+                freq=dgrain_old.replace("S", "2Q")
+                + ("" if dgrain_old == "M" else obj.origin.freqstr[-4:]),
             ).to_timestamp(how="s")
 
             if dgrain_old == "S":
-                d_start = d_start +  pd.DateOffset(months=-3)
+                d_start = d_start + pd.DateOffset(months=-3)
 
             if len(obj.ddims) > 1 and obj.origin.to_timestamp(how="s")[0] != d_start:
                 addl_ts = (
-                    pd.period_range(obj.odims[0], obj.valuation[0], freq=dgrain_old.replace("S","2Q"))[
-                        :-1
-                    ]
+                    pd
+                    .period_range(
+                        obj.odims[0],
+                        obj.valuation[0],
+                        freq=dgrain_old.replace("S", "2Q"),
+                    )[:-1]
                     .to_timestamp()
                     .values
                 )
@@ -1826,7 +1853,7 @@ class Triangle(TriangleBase):
                 addl.ddims = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
-        
+
         if dgrain_old != dgrain_new and obj.shape[-1] > 1:
             step = self._dstep()[dgrain_old][dgrain_new]
             d = np.sort(
@@ -1842,7 +1869,7 @@ class Triangle(TriangleBase):
                 obj.ddims = ddims
 
             obj.development_grain = dgrain_new
-        
+
         obj = obj.dev_to_val() if self.is_val_tri else obj.val_to_dev()
 
         if inplace:

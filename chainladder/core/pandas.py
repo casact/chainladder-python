@@ -40,9 +40,7 @@ if TYPE_CHECKING:
         Series
     )
     from types import ModuleType
-    from pandas._typing import(
-        IndexLabel
-    )
+    from pandas._typing import IndexLabel
     from typing import (
         Any,
         Literal,
@@ -243,7 +241,7 @@ class TrianglePandas(_TrianglePandasBase):
         Any
         """
         df = self.to_frame(origin_as_datetime=True)
-        if type(df.index) == pd.PeriodIndex and len(df.columns) > 1:
+        if isinstance(df.index, pd.PeriodIndex) and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
 
@@ -605,6 +603,8 @@ class TrianglePandas(_TrianglePandasBase):
         columns: str | int | list | None = None,
         origin: str | int | list | None = None,
         development: str | int | list | None = None,
+        level: int | str | None = None,
+        errors: str = "raise",
     ) -> Triangle:
         """Drop specified labels from rows or columns.
 
@@ -632,6 +632,12 @@ class TrianglePandas(_TrianglePandasBase):
 
         development: str | int | list | None
             Alternative to ``axis=3``. Equivalent to ``labels, axis=3``.
+
+        level: int | str | None, default None
+            For MultiIndex, level from which the labels will be removed.
+
+        errors: {'ignore', 'raise'}, default 'raise'
+            If 'ignore', suppress error and only existing labels are dropped.
 
         Returns
         -------
@@ -718,7 +724,22 @@ class TrianglePandas(_TrianglePandasBase):
             1986  500.0  600.0
             1987  500.0    NaN
 
+        Development periods can also be dropped with ``development`` (or ``axis=3``).
+
+        .. testcode::
+
+            raa = cl.load_sample('raa')
+            print(raa.development.tolist())
+            print(raa.drop(development=120).development.tolist())
+
+        .. testoutput::
+
+            [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+            [12, 24, 36, 48, 60, 72, 84, 96, 108]
+
         """
+        if errors not in ("raise", "ignore"):
+            raise ValueError(f"errors must be 'raise' or 'ignore', got '{errors}'")
         alternatives = {0: index, 1: columns, 2: origin, 3: development}
         if any(value is not None for value in alternatives.values()):
             if labels is not None:
@@ -730,7 +751,14 @@ class TrianglePandas(_TrianglePandasBase):
                 ax: value for ax, value in alternatives.items() if value is not None
             }
         else:
+            if labels is None:
+                raise ValueError(
+                    "Need to specify at least one of 'labels', 'index', "
+                    "'columns', 'origin', or 'development'."
+                )
             to_drop = {self._get_axis(axis): labels}
+        if level is not None and any(ax != 0 for ax in to_drop):
+            raise ValueError("level is only supported for axis=0 ('index').")
         result = self
         for ax, ax_labels in to_drop.items():
             ax_labels = (
@@ -739,6 +767,9 @@ class TrianglePandas(_TrianglePandasBase):
                 else [ax_labels]
             )
             if ax == 1:
+                missing = [item for item in ax_labels if item not in result.columns]
+                if missing and errors == "raise":
+                    raise KeyError(f"{missing} not found in the columns axis.")
                 result = result[
                     [item for item in result.columns if item not in ax_labels]
                 ]
@@ -748,7 +779,7 @@ class TrianglePandas(_TrianglePandasBase):
                 missing = [
                     label for label in drop_labels if label not in origin_labels
                 ]
-                if missing:
+                if missing and errors == "raise":
                     raise KeyError(f"{missing} not found in the origin axis.")
                 keep = ~np.isin(origin_labels, drop_labels)
                 kept_positions = np.flatnonzero(keep)
@@ -767,11 +798,11 @@ class TrianglePandas(_TrianglePandasBase):
                 # what makes origin dropping more useful than plain 4D slicing
                 # (gh-1055).
                 if result.shape[-1] > 1:
-                    xp = result.get_array_module()
                     agg = result.sum(axis=0).sum(axis=1)
-                    dev_has_data = list(
-                        (xp.nansum(agg.values[0, 0, :], -2) != 0).astype("int")
-                    )
+                    vals = agg.values[0, 0, :]
+                    vals_np = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
+                    arr = np.nan_to_num(vals_np)
+                    dev_has_data = list((arr.sum(axis=-2) != 0).astype(int))
                     dev_labels = agg.development[
                         pd.Series(dev_has_data).astype(bool)
                     ]
@@ -779,15 +810,38 @@ class TrianglePandas(_TrianglePandasBase):
                         (result.development >= dev_labels.min())
                         & (result.development <= dev_labels.max())
                     ]
+            elif ax == 3:
+                dev_labels = np.array(result.development.astype(str))
+                drop_labels = [str(label) for label in ax_labels]
+                missing = [
+                    label for label in drop_labels if label not in dev_labels
+                ]
+                if missing and errors == "raise":
+                    raise KeyError(f"{missing} not found in the development axis.")
+                keep = ~np.isin(dev_labels, drop_labels)
+                kept_positions = np.flatnonzero(keep)
+                if len(kept_positions) and not np.array_equal(
+                    kept_positions,
+                    np.arange(kept_positions[0], kept_positions[-1] + 1),
+                ):
+                    raise ValueError(
+                        "Only the first or last development periods may be dropped; "
+                        "dropping an interior development period would leave a gap."
+                    )
+                result = result._slice(keep, "ddims")
+                if result.is_val_tri:
+                    result.valuation_date = min(
+                        result.valuation.max(), result.valuation_date
+                    )
             else:
                 raise NotImplementedError(
-                    "Triangle.drop() only implemented for the column and "
-                    "origin axes."
+                    "Triangle.drop() only implemented for the column, "
+                    "origin, and development axes."
                 )
         return result
 
     @property
-    def T(self) -> DataFrame: # noqa: N802
+    def T(self) -> DataFrame:  # noqa: N802
         """
         Converts the Triangle to a Pandas DataFrame and then transposes it.
 
@@ -835,30 +889,29 @@ class TrianglePandas(_TrianglePandasBase):
         return concat((self, other), 0)
 
     def rename(
-            self,
-            axis: Literal['index', 'columns', 'origin', 'development'] | int,
-            value: list | str | dict
+        self,
+        axis: Literal["index", "columns", "origin", "development"] | int,
+        value: str | list | dict,
     ) -> Triangle:
-        """Alter axes labels.
+        """Alter Triangle axes labels.
 
         Parameters
         ----------
         axis: Literal['index', 'columns', 'origin', 'development'] | int
-            A value of 0 <= axis <= 4 corresponding to axes 'index',
-            'columns', 'origin', 'development' respectively.  Both the
-            int and str representation can be used.
-        value: list or str or dict
-            List of new labels to be assigned to the axis. List must be of
-            same length of the specified axis. Can also be a dictionary for renaming columns
+            Target axis to be relabeled.
+        value: str | list | dict
+            New label names for the target axis. String and list inputs replace
+            all labels on the axis. Dictionary inputs map existing labels to new names.
 
         Returns
         -------
+        Triangle
             Triangle with relabeled axis.
         """
         
         if isinstance(value, dict):
             if axis == "columns" or axis == 1:
-                full_dict = dict(zip(self.columns.values,self.columns.values))
+                full_dict = dict(zip(self.columns.values, self.columns.values))
                 full_dict.update(value)
                 self.columns = self.columns.map(full_dict)
             else:
@@ -868,7 +921,7 @@ class TrianglePandas(_TrianglePandasBase):
         else:
             value = [value] if type(value) is str else value
             if axis == "index" or axis == 0:
-                self.index = pd.DataFrame(value,columns = self.index.columns)
+                self.index = pd.DataFrame(value, columns=self.index.columns)
             elif axis == "columns" or axis == 1:
                 self.columns = value
             elif axis == "origin" or axis == 2:
@@ -1123,7 +1176,6 @@ def add_groupby_agg_func(cls, k: str, v: str):
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
-        xp = self.obj.get_array_module()
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
         if db and obj.array_backend == "sparse":

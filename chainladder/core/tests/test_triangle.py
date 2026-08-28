@@ -604,18 +604,16 @@ def test_drop_labels_and_alternative_raises(clrd):
         clrd.drop(labels="CumPaidLoss", columns="IncurLoss")
 
 
-def test_drop_index_origin_development_alternatives_raise(clrd):
-    """index/development alternatives route to unimplemented axes."""
+def test_drop_index_alternative_raises(clrd):
+    """index alternative routes to unimplemented index axis."""
     with pytest.raises(NotImplementedError):
         clrd.drop(index="commauto")
-    with pytest.raises(NotImplementedError):
-        clrd.drop(development="12")
 
 
 def test_drop_integer_label_routes_to_axis(clrd):
-    """A bare int label should route to its axis, not raise TypeError."""
-    with pytest.raises(NotImplementedError):
-        clrd.drop(development=12)
+    """A bare int label should route to its axis, dropping the development label."""
+    result = clrd.drop(development=120)
+    assert 120 not in result.development.tolist()
 
 
 def test_drop_columns_alternative_index_like(clrd):
@@ -708,6 +706,131 @@ def test_drop_origin_single_dev_period(raa):
     result = single_dev.drop(origin="1990")
     assert result.origin.astype(str).tolist()[-1] == "1989"
     assert result.shape[-1] == 1
+
+
+def test_drop_development_last(raa):
+    """development= should drop the last development period."""
+    result = raa.drop(development=120)
+    assert result.development.tolist() == raa.development.tolist()[:-1]
+
+
+def test_drop_development_first(raa):
+    """development= should drop the first development period."""
+    result = raa.drop(development=12)
+    assert result.development.tolist() == raa.development.tolist()[1:]
+
+
+def test_drop_development_axis_equivalents(raa):
+    """labels + axis=3/'development' should equal the development= alternative."""
+    expected = raa.drop(development=120)
+    assert expected == raa.drop(labels=120, axis=3)
+    assert expected == raa.drop(labels=120, axis="development")
+
+
+def test_drop_development_interior_raises(raa):
+    """Dropping an interior development period should raise ValueError."""
+    with pytest.raises(ValueError):
+        raa.drop(development=24)
+
+
+def test_drop_development_missing_raises(raa):
+    """Dropping a development label that does not exist should raise KeyError."""
+    with pytest.raises(KeyError):
+        raa.drop(development=999)
+
+
+def test_drop_no_labels_raises(raa):
+    """Calling drop() without labels or axis keywords should raise ValueError."""
+    with pytest.raises(ValueError, match="Need to specify at least one of"):
+        raa.drop()
+
+
+def test_drop_both_labels_and_alternative_raises(raa):
+    """Specifying both labels and an axis keyword should raise ValueError."""
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        raa.drop(labels="CumPaidLoss", columns="CumPaidLoss")
+
+
+def test_drop_errors_ignore(raa):
+    """errors='ignore' should suppress KeyError for missing labels."""
+    res_col = raa.drop(columns="nonexistent_col", errors="ignore")
+    assert res_col == raa
+    res_orig = raa.drop(origin="1800", errors="ignore")
+    assert res_orig == raa
+    res_dev = raa.drop(development=999, errors="ignore")
+    assert res_dev == raa
+    with pytest.raises(ValueError, match="errors must be"):
+        raa.drop(columns="CumPaidLoss", errors="invalid")
+
+
+def test_drop_level_non_index_raises(raa):
+    """level parameter on non-index axis should raise ValueError."""
+    with pytest.raises(ValueError, match="level is only supported"):
+        raa.drop(columns="CumPaidLoss", level=1)
+
+
+def test_drop_development_updates_valuation_date(raa):
+    """Dropping the latest development period on a valuation triangle updates valuation_date."""
+    raa_val = raa.dev_to_val()
+    latest_dev = raa_val.development.max()
+    dropped = raa_val.drop(development=latest_dev)
+    assert dropped.valuation_date.date() == pd.Timestamp("1989-12-31").date()
+
+
+def test_drop_unsupported_axis_raises(raa):
+    """Passing an invalid axis (e.g., axis=4) should raise ValueError."""
+    with pytest.raises(ValueError, match="Invalid axis"):
+        raa.drop(labels="CumPaidLoss", axis=4)
+
+
+def test_drop_ultimate_column_updates_is_ultimate(raa):
+    """Dropping the ultimate development column updates is_ultimate property to False."""
+    full_tri = cl.Chainladder().fit(raa).full_expectation_
+    assert full_tri.is_ultimate
+    dropped = full_tri.drop(development=full_tri.development.max())
+    assert not dropped.is_ultimate
+
+
+def test_drop_interior_origin_raises(raa):
+    """Dropping an interior origin period should raise ValueError."""
+    with pytest.raises(ValueError, match="Only the first or last origin periods"):
+        raa.drop(origin="1985")
+
+
+def test_drop_interior_development_raises(raa):
+    """Dropping an interior development period should raise ValueError."""
+    with pytest.raises(ValueError, match="Only the first or last development periods"):
+        raa.drop(development=36)
+
+
+def test_drop_invalid_errors_raises(raa):
+    """Passing an invalid errors parameter (e.g. errors='foo') should raise ValueError."""
+    with pytest.raises(ValueError, match="errors must be 'raise' or 'ignore'"):
+        raa.drop(development=120, errors="foo")
+
+
+def test_drop_both_labels_and_axis_keyword_raises(raa):
+    """Specifying both labels and an axis keyword should raise ValueError."""
+    with pytest.raises(ValueError, match="Cannot specify both 'labels' and any of"):
+        raa.drop(labels="CumPaidLoss", development=120)
+
+
+def test_drop_no_arguments_raises(raa):
+    """Calling drop() with no arguments should raise ValueError."""
+    with pytest.raises(ValueError, match="Need to specify at least one of"):
+        raa.drop()
+
+
+def test_drop_index_axis_not_implemented_raises(clrd):
+    """Index axis dropping raises NotImplementedError (tracked by #1051)."""
+    with pytest.raises(NotImplementedError, match="Triangle.drop"):
+        clrd.drop(index="Agway Ins Co")
+
+
+def test_hvplot_passthrough(genins, monkeypatch):
+    """TrianglePandas.hvplot() passthrough test for patch coverage."""
+    monkeypatch.setattr(pd.DataFrame, "hvplot", lambda self, *args, **kwargs: True, raising=False)
+    assert genins.hvplot() is True
 
 
 def test_fillna_none_raises(raa):
@@ -1507,8 +1630,8 @@ def test_pipe(raa):
 
 
 def test_repr_html(raa, clrd):
-    assert type(raa._repr_html_()) is str
-    assert type(clrd._repr_html_()) is str
+    assert isinstance(raa._repr_html_(), str)
+    assert isinstance(clrd._repr_html_(), str)
 
 
 def test_agg_sparse():
@@ -1808,14 +1931,14 @@ def test_predict(raa):
 
     raa_incr = raa.cum_to_incr()
     assert not cl.Chainladder().fit(raa_incr).X_.is_cumulative
-    assert (
-        not cl.BornhuetterFerguson()
+    assert not (
+        cl.BornhuetterFerguson()
         .fit(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
         .X_.is_cumulative
     )
     assert not cl.Chainladder().fit_predict(raa_incr).is_cumulative
-    assert (
-        not cl.BornhuetterFerguson()
+    assert not (
+        cl.BornhuetterFerguson()
         .fit_predict(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
         .is_cumulative
     )
@@ -1835,19 +1958,17 @@ def test_halfyear_development():
         names=["origin", "development", "paid"],
         parse_dates=["origin", "development"],
     )
-    assert (
-        type(
-            cl.Triangle(
-                data=df_sub,
-                origin="origin",
-                origin_format="%Y-%m-%d",
-                development="development",
-                development_format="%Y-%m-%d",
-                columns="paid",
-                cumulative=True,
-            )
-        )
-        is cl.Triangle
+    assert isinstance(
+        cl.Triangle(
+            data=df_sub,
+            origin="origin",
+            origin_format="%Y-%m-%d",
+            development="development",
+            development_format="%Y-%m-%d",
+            columns="paid",
+            cumulative=True,
+        ),
+        cl.Triangle,
     )
 
     data = [
@@ -1864,18 +1985,17 @@ def test_halfyear_development():
         ["2012-01-01", "2013-12-31", "incurred", 200.0],
     ]
 
-    assert (
-        type(
-            cl.Triangle(
-                data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
-                index="idx",
-                columns="value",
-                origin="origin",
-                development="val_date",
-                cumulative=True,
-            )
-        )
-    ) is cl.Triangle
+    assert isinstance(
+        cl.Triangle(
+            data=pd.DataFrame(data, columns=["origin", "val_date", "idx", "value"]),
+            index="idx",
+            columns="value",
+            origin="origin",
+            development="val_date",
+            cumulative=True,
+        ),
+        cl.Triangle,
+    )
 
 
 def test_latest_diagonal_vs_full_tri_raa(raa):
