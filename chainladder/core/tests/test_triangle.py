@@ -272,7 +272,6 @@ def test_valuation_shift(qtr):
 
 
 def test_quantile_vs_median(clrd):
-    clrd.get_array_module()
     assert clrd.quantile(q=0.5)["CumPaidLoss"] == clrd.median()["CumPaidLoss"]
 
 
