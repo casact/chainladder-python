@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder import Triangle
 
+
 def test_repr(raa):
     np.testing.assert_array_equal(
         pd.read_html(StringIO(raa._repr_html_()))[0].set_index("Unnamed: 0").values,
@@ -28,13 +29,15 @@ def test_repr(raa):
 
 def test_to_frame_unusual(clrd):
     a = (
-        clrd.groupby(["LOB"])
+        clrd
+        .groupby(["LOB"])
         .sum()
         .latest_diagonal["CumPaidLoss"]
         .to_frame(origin_as_datetime=False)
     )
     b = (
-        clrd.latest_diagonal["CumPaidLoss"]
+        clrd
+        .latest_diagonal["CumPaidLoss"]
         .groupby(["LOB"])
         .sum()
         .to_frame(origin_as_datetime=False)
@@ -123,7 +126,8 @@ def test_link_ratio_on_pattern_returns_self(raa: Triangle) -> None:
 def test_align_pattern(raa, atol):
     with pytest.raises(ValueError):
         raa.align_pattern(raa)
-        
+
+
 def test_incr_to_cum(clrd):
     clrd.cum_to_incr().incr_to_cum() == clrd
 
@@ -173,51 +177,55 @@ def test_append(raa):
     raa.append(raa2).sum() == raa * 2
     assert raa.append(raa2).sum() == 2 * raa
 
+
 def test_rename_columns(genins, clrd) -> None:
     """
     Test the renaming of triangle columns.
     """
     # Scalar case - single column triangle.
-    genins.rename('columns', 'foo')
+    genins.rename("columns", "foo")
 
-    assert genins.columns.to_list() == ['foo']
+    assert genins.columns.to_list() == ["foo"]
 
     # Test the cascading of rename to triangle.columns_label.
-    assert genins.columns_label == ['foo']
+    assert genins.columns_label == ["foo"]
 
-    genins.rename('columns', {'foo': 'newfoo'})
+    genins.rename("columns", {"foo": "newfoo"})
 
-    assert genins.columns.to_list() == ['newfoo']
+    assert genins.columns.to_list() == ["newfoo"]
 
-    genins.rename('columns', {'foo': 'newnewfoo'})
+    genins.rename("columns", {"foo": "newnewfoo"})
 
-    assert genins.columns.to_list() == ['newfoo']
+    assert genins.columns.to_list() == ["newfoo"]
+
 
 def test_rename_index() -> None:
     """
     Test the renaming of triangle columns.
     """
-    auto = cl.load_sample('auto')
-    new_index = ['CommAuto', 'PersAuto']
-    auto.rename('index', new_index)
+    auto = cl.load_sample("auto")
+    new_index = ["CommAuto", "PersAuto"]
+    auto.rename("index", new_index)
     assert np.all(auto.index.values.flatten() == new_index)
-    
+
+
 def test_rename_exception(genins, clrd) -> None:
     # Test incorrect value argument - misspelling of string.
     with pytest.raises(ValueError):
-        genins.rename('origin', {'oldfoo': 'foo'})
+        genins.rename("origin", {"oldfoo": "foo"})
 
     # Test incorrect axis argument - misspelling of string.
     with pytest.raises(ValueError):
-        genins.rename('colunms', 'foo')
+        genins.rename("colunms", "foo")
 
     # Test incorrect axis integer.
     with pytest.raises(ValueError):
-        genins.rename(4, 'foo')
+        genins.rename(4, "foo")
 
     # Test incorrect number of columns.
     with pytest.raises(ValueError):
-        clrd.rename('columns', ['foo'])
+        clrd.rename("columns", ["foo"])
+
 
 def test_assign_existing_col(qtr):
     out = qtr.copy()
@@ -295,14 +303,17 @@ def test_development_before_origin_warns_and_drops() -> None:
     None
     """
     df = pd.DataFrame({
-        "origin":      [2000, 2000, 2001, 2001],
+        "origin": [2000, 2000, 2001, 2001],
         "development": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
-        "value":       [100, 200, 999, 300],
+        "value": [100, 200, 999, 300],
     })
     with pytest.warns(UserWarning, match="development before"):
         tri = cl.Triangle(
-            df, origin="origin", development="development",
-            columns="value", cumulative=True,
+            df,
+            origin="origin",
+            development="development",
+            columns="value",
+            cumulative=True,
         )
     # The invalid row (value=999) must not appear in the triangle.
     assert 999 not in tri.to_frame().values
@@ -312,14 +323,12 @@ def test_origin_and_value_setters(raa):
     raa2 = raa.copy()
     raa.columns = list(raa.columns)
     raa.origin = list(raa.origin)
-    assert np.all(
-        (
-            np.all(raa2.origin == raa.origin),
-            np.all(raa2.development == raa.development),
-            np.all(raa2.odims == raa.odims),
-            np.all(raa2.vdims == raa.vdims),
-        )
-    )
+    assert np.all((
+        np.all(raa2.origin == raa.origin),
+        np.all(raa2.development == raa.development),
+        np.all(raa2.odims == raa.odims),
+        np.all(raa2.vdims == raa.vdims),
+    ))
 
 
 def test_index_setter_with_dataframe(clrd: Triangle) -> None:
@@ -828,7 +837,9 @@ def test_drop_index_axis_not_implemented_raises(clrd):
 
 def test_hvplot_passthrough(genins, monkeypatch):
     """TrianglePandas.hvplot() passthrough test for patch coverage."""
-    monkeypatch.setattr(pd.DataFrame, "hvplot", lambda self, *args, **kwargs: True, raising=False)
+    monkeypatch.setattr(
+        pd.DataFrame, "hvplot", lambda self, *args, **kwargs: True, raising=False
+    )
     assert genins.hvplot() is True
 
 
@@ -896,9 +907,10 @@ def test_sumdiff_to_diffsum(clrd):
 
 def test_init_vector(raa):
     a = raa.latest_diagonal
-    b = pd.DataFrame(
-        {"AccYear": [item for item in range(1981, 1991)], "premium": [3000000] * 10}
-    )
+    b = pd.DataFrame({
+        "AccYear": [item for item in range(1981, 1991)],
+        "premium": [3000000] * 10,
+    })
     b = cl.Triangle(b, origin="AccYear", columns="premium")
     assert np.all(a.valuation == b.valuation)
     assert a.valuation_date == b.valuation_date
@@ -1029,6 +1041,70 @@ def test_init_calls_set_backend_when_auto_sparse_disabled() -> None:
         cl.options.reset_option("AUTO_SPARSE")
 
 
+def test_init_array_backend_overridden_by_auto_sparse_when_enabled() -> None:
+    """
+    When cl.options.AUTO_SPARSE is True (the default) and the requested
+    array_backend is not 'cupy', auto-sparsification will take precedence,
+    regardless of what value is passed to the parameter ``array_backend``.
+
+    Returns
+    -------
+    None
+    """
+    df = pd.DataFrame({
+        "origin": [2000, 2000, 2001, 2001],
+        "development": [2000, 2001, 2001, 2002],
+        "value": [100, 200, 300, 400],
+    })
+    cl.options.set_option("AUTO_SPARSE", True)
+    try:
+        tri = cl.Triangle(
+            df,
+            origin="origin",
+            development="development",
+            columns="value",
+            cumulative=True,
+            array_backend="sparse",
+        )
+        assert tri.array_backend == "numpy"
+    finally:
+        cl.options.reset_option("AUTO_SPARSE")
+
+
+def test_init_array_backend_option_overridden_by_auto_sparse_when_param_omitted() -> (
+    None
+):
+    """
+    When array_backend is left out of the constructor (i.e. it is None),
+    Triangle.__init__ falls back to cl.options.ARRAY_BACKEND before deciding
+    how to route. But if cl.options.AUTO_SPARSE is True, that fallback value
+    is itself discarded.
+
+    Returns
+    -------
+    None
+    """
+    df = pd.DataFrame({
+        "origin": [2000, 2000, 2001, 2001],
+        "development": [2000, 2001, 2001, 2002],
+        "value": [100, 200, 300, 400],
+    })
+    cl.options.set_option("AUTO_SPARSE", True)
+    cl.options.set_option("ARRAY_BACKEND", "sparse")
+    try:
+        tri = cl.Triangle(
+            df,
+            origin="origin",
+            development="development",
+            columns="value",
+            cumulative=True,
+        )
+        assert tri.array_backend == "numpy"
+    finally:
+        cl.options.reset_option("AUTO_SPARSE")
+        cl.options.reset_option("ARRAY_BACKEND")
+
+
 def test_auto_sparse_converts_numpy_to_sparse(prism: Triangle) -> None:
     """
     _auto_sparse() should convert a numpy-backed triangle to sparse when it is
@@ -1078,7 +1154,11 @@ def test_subtriangles(raa: Triangle) -> None:
     fit = cl.Development().fit_transform(raa)
 
     assert set(fit.subtriangles) == {
-        "std_err_", "ldf_", "sigma_", "std_residuals_", "w_v2_"
+        "std_err_",
+        "ldf_",
+        "sigma_",
+        "std_residuals_",
+        "w_v2_",
     }
 
 
@@ -1118,13 +1198,11 @@ def test_triangle_from_dataframe_interchange_protocol() -> None:
     """
     polars = pytest.importorskip("polars")
 
-    df = pd.DataFrame(
-        {
-            "origin": ["2020-01-01", "2020-01-01", "2021-01-01", "2021-01-01"],
-            "development": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
-            "values": [100, 150, 120, 180],
-        }
-    )
+    df = pd.DataFrame({
+        "origin": ["2020-01-01", "2020-01-01", "2021-01-01", "2021-01-01"],
+        "development": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
+        "values": [100, 150, 120, 180],
+    })
     pl_df = polars.from_pandas(df)
     assert hasattr(pl_df, "__dataframe__")
     assert not isinstance(pl_df, pd.DataFrame)
@@ -1240,7 +1318,7 @@ def test_head(clrd: Triangle) -> None:
     None
     """
     assert clrd.head(3).shape[0] == 3
-    assert list(clrd.head(3).index['LOB']) == ['othliab', 'ppauto', 'comauto']
+    assert list(clrd.head(3).index["LOB"]) == ["othliab", "ppauto", "comauto"]
 
 
 def test_tail(clrd: Triangle) -> None:
@@ -1257,7 +1335,7 @@ def test_tail(clrd: Triangle) -> None:
     None
     """
     assert clrd.tail(3).shape[0] == 3
-    assert list(clrd.tail(3).index['LOB']) == ['wkcomp', 'comauto', 'wkcomp']
+    assert list(clrd.tail(3).index["LOB"]) == ["wkcomp", "comauto", "wkcomp"]
 
 
 def test_add_df_passthru(raa: Triangle) -> None:
@@ -1302,7 +1380,6 @@ def test_plot(raa: Triangle) -> None:
     """
     matplotlib.use("Agg")
 
-
     try:
         ax_tri = raa.plot()
         ax_df = raa.to_frame(origin_as_datetime=False).plot()
@@ -1312,7 +1389,9 @@ def test_plot(raa: Triangle) -> None:
 
         assert len(lines_tri) == len(lines_df)
         for lt, ld in zip(lines_tri, lines_df):
-            np.testing.assert_array_equal(lt.get_ydata(orig=True), ld.get_ydata(orig=True))
+            np.testing.assert_array_equal(
+                lt.get_ydata(orig=True), ld.get_ydata(orig=True)
+            )
     finally:
         plt.close("all")
 
@@ -1419,7 +1498,8 @@ def test_sort_axis_origin_reorders_values(raa: Triangle) -> None:
     already_sorted = sorted_tr.sort_axis("origin")
     assert list(already_sorted.origin) == list(sorted_tr.origin)
     np.testing.assert_array_equal(
-        already_sorted.set_backend("numpy").values, sorted_tr.set_backend("numpy").values
+        already_sorted.set_backend("numpy").values,
+        sorted_tr.set_backend("numpy").values,
     )
 
 
@@ -1453,14 +1533,16 @@ def test_sort_axis_development_reorders_values(raa: Triangle) -> None:
     already_sorted = sorted_tr.sort_axis("development")
     assert list(already_sorted.development) == list(sorted_tr.development)
     np.testing.assert_array_equal(
-        already_sorted.set_backend("numpy").values, sorted_tr.set_backend("numpy").values
+        already_sorted.set_backend("numpy").values,
+        sorted_tr.set_backend("numpy").values,
     )
 
 
 def test_shift(raa):
     assert (
         raa.iloc[..., 1:-1, 1:-1]
-        - raa.shift(-1, axis=2)
+        - raa
+        .shift(-1, axis=2)
         .shift(-1, axis=3)
         .shift(2, axis=2)
         .shift(2, axis=3)
@@ -1545,15 +1627,11 @@ def test_create_triangle_with_ultimates(raa):
     assert round_tripped == ult
 
     direct = cl.Triangle(
-        pd.DataFrame(
-            {
-                "origin": pd.to_datetime(["1981-01-01", "1982-01-01"]),
-                "valuation": pd.to_datetime(
-                    [cl.options.ULT_VAL, cl.options.ULT_VAL]
-                ),
-                "ultimate": [10000.0, 12000.0],
-            }
-        ),
+        pd.DataFrame({
+            "origin": pd.to_datetime(["1981-01-01", "1982-01-01"]),
+            "valuation": pd.to_datetime([cl.options.ULT_VAL, cl.options.ULT_VAL]),
+            "ultimate": [10000.0, 12000.0],
+        }),
         origin="origin",
         development="valuation",
         columns="ultimate",
@@ -1649,29 +1727,27 @@ def test_inplace(raa):
 def test_malformed_init():
     assert (
         cl.Triangle(
-            data=pd.DataFrame(
-                {
-                    "Accident Date": [
-                        "2020-07-23",
-                        "2019-07-23",
-                        "2018-07-23",
-                        "2016-07-23",
-                        "2020-08-23",
-                        "2019-09-23",
-                        "2018-10-23",
-                    ],
-                    "Valuation Date": [
-                        "2021-01-01",
-                        "2021-01-01",
-                        "2021-01-01",
-                        "2021-01-01",
-                        "2021-01-01",
-                        "2021-01-01",
-                        "2021-01-01",
-                    ],
-                    "Loss": [10000, 10000, 10000, 10000, 0, 0, 0],
-                }
-            ),
+            data=pd.DataFrame({
+                "Accident Date": [
+                    "2020-07-23",
+                    "2019-07-23",
+                    "2018-07-23",
+                    "2016-07-23",
+                    "2020-08-23",
+                    "2019-09-23",
+                    "2018-10-23",
+                ],
+                "Valuation Date": [
+                    "2021-01-01",
+                    "2021-01-01",
+                    "2021-01-01",
+                    "2021-01-01",
+                    "2021-01-01",
+                    "2021-01-01",
+                    "2021-01-01",
+                ],
+                "Loss": [10000, 10000, 10000, 10000, 0, 0, 0],
+            }),
             origin="Accident Date",
             development="Valuation Date",
             columns="Loss",
@@ -1693,7 +1769,8 @@ def test_sparse_reassignment_no_mutate(prism):
 
 def test_trailing_origin():
     raa = (
-        cl.load_sample("raa")
+        cl
+        .load_sample("raa")
         .dev_to_val()
         .to_frame(keepdims=True, origin_as_datetime=True)
         .reset_index()
@@ -1719,7 +1796,8 @@ def test_trailing_origin():
 
 def test_trailing_valuation():
     data = (
-        cl.load_sample("raa")
+        cl
+        .load_sample("raa")
         .dev_to_val()
         .to_frame(keepdims=True, origin_as_datetime=True)
     )
@@ -1734,14 +1812,13 @@ def test_trailing_valuation():
 
 def test_edgecase_236():
     assert (
-        cl.Triangle(
-            pd.DataFrame(
-                {
-                    "origin": [201906, 201907],
-                    "development": [201911, 201911],
-                    "amount": [1, 0],
-                }
-            ),
+        cl
+        .Triangle(
+            pd.DataFrame({
+                "origin": [201906, 201907],
+                "development": [201911, 201911],
+                "amount": [1, 0],
+            }),
             origin="origin",
             development="development",
             columns=["amount"],
@@ -1759,13 +1836,11 @@ def test_to_frame_on_zero(clrd):
 
 
 def test_valuation_vector():
-    df = pd.DataFrame(
-        {
-            "Accident Date": [201508, 201608, 201708],
-            "Valuation Date": [202111, 202111, 202111],
-            "Loss": [110, 594, 696],
-        }
-    )
+    df = pd.DataFrame({
+        "Accident Date": [201508, 201608, 201708],
+        "Valuation Date": [202111, 202111, 202111],
+        "Loss": [110, 594, 696],
+    })
 
     tri = cl.Triangle(
         df,
@@ -1833,25 +1908,21 @@ def test_full_triangle_and_full_expectation(raa, atol):
     assert cl_fit_incr.cdf_ == cl_fit_cum.cdf_
     assert cl_fit_incr.ultimate_ == cl_fit_cum.ultimate_
 
-    assert (np.allclose(
+    assert np.allclose(
         cl_fit_cum.full_expectation_.values,
         cl_predict_cum.full_expectation_.values,
-        atol=atol
-        )
+        atol=atol,
     )
-    assert (np.allclose(
+    assert np.allclose(
         cl_fit_incr.full_expectation_.fillzero().values,
         cl_predict_incr.full_expectation_.fillzero().values,
-        atol=atol
-        )
+        atol=atol,
     )
     assert (
         cl_fit_cum.full_expectation_ - cl_fit_incr.full_expectation_.incr_to_cum()
         < atol
     )
-    assert (
-        cl_fit_cum.full_triangle_ - cl_fit_incr.full_triangle_.incr_to_cum() < atol
-    )
+    assert cl_fit_cum.full_triangle_ - cl_fit_incr.full_triangle_.incr_to_cum() < atol
     assert (cl_fit_cum.full_triangle_ - raa_cum) - (
         cl_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < atol
@@ -1873,9 +1944,7 @@ def test_full_triangle_and_full_expectation(raa, atol):
         bf_fit_cum.full_expectation_ - bf_fit_incr.full_expectation_.incr_to_cum()
         < atol
     )
-    assert (
-        bf_fit_cum.full_triangle_ - bf_fit_incr.full_triangle_.incr_to_cum() < atol
-    )
+    assert bf_fit_cum.full_triangle_ - bf_fit_incr.full_triangle_.incr_to_cum() < atol
     assert (bf_fit_cum.full_triangle_ - raa_cum) - (
         bf_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < atol
@@ -1896,18 +1965,18 @@ def test_full_triangle_and_full_expectation(raa, atol):
         bk_fit_cum.full_expectation_ - bk_fit_incr.full_expectation_.incr_to_cum()
         < atol
     )
-    assert (
-        bk_fit_cum.full_triangle_ - bk_fit_incr.full_triangle_.incr_to_cum() < atol
-    )
+    assert bk_fit_cum.full_triangle_ - bk_fit_incr.full_triangle_.incr_to_cum() < atol
     assert (bk_fit_cum.full_triangle_ - raa_cum) - (
         bk_fit_incr.full_triangle_.incr_to_cum() - raa_incr.incr_to_cum()
     ) < atol
 
 
 def test_halfyear_grain():
-    data = pd.DataFrame(
-        {"AccMo": [201409, 201503, 201603], "ValMo": [202203] * 3, "value": [100] * 3}
-    )
+    data = pd.DataFrame({
+        "AccMo": [201409, 201503, 201603],
+        "ValMo": [202203] * 3,
+        "value": [100] * 3,
+    })
     assert cl.Triangle(
         data=data, origin="AccMo", development="ValMo", columns="value", cumulative=True
     ).shape == (1, 1, 16, 1)
@@ -1917,13 +1986,15 @@ def test_predict(raa):
     raa_cum = raa
     assert cl.Chainladder().fit(raa_cum).X_.is_cumulative
     assert (
-        cl.BornhuetterFerguson()
+        cl
+        .BornhuetterFerguson()
         .fit(raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000)
         .X_.is_cumulative
     )
     assert cl.Chainladder().fit_predict(raa_cum).is_cumulative
     assert (
-        cl.BornhuetterFerguson()
+        cl
+        .BornhuetterFerguson()
         .fit_predict(raa_cum, sample_weight=raa_cum.latest_diagonal * 0 + 40000)
         .is_cumulative
     )
@@ -1931,13 +2002,15 @@ def test_predict(raa):
     raa_incr = raa.cum_to_incr()
     assert not cl.Chainladder().fit(raa_incr).X_.is_cumulative
     assert not (
-        cl.BornhuetterFerguson()
+        cl
+        .BornhuetterFerguson()
         .fit(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
         .X_.is_cumulative
     )
     assert not cl.Chainladder().fit_predict(raa_incr).is_cumulative
     assert not (
-        cl.BornhuetterFerguson()
+        cl
+        .BornhuetterFerguson()
         .fit_predict(raa_incr, sample_weight=raa_incr.latest_diagonal * 0 + 40000)
         .is_cumulative
     )
@@ -2009,102 +2082,200 @@ def test_latest_diagonal_vs_full_tri_clrd(clrd):
 
     assert np.round(full_tri.latest_diagonal, 0) == np.round(ult.latest_diagonal, 0)
 
+
 def test_semi_annual_grain():
     Sdata = {
-        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
-                "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01", "2007-07-01",
-                "2008-01-01", "2008-01-01", "2008-01-01", "2008-01-01", "2008-01-01",
-                "2008-07-01", "2008-07-01", "2008-07-01", "2008-07-01",
-                "2009-01-01", "2009-01-01", "2009-01-01",
-                "2009-07-01", "2009-07-01",
-                "2010-01-01"],
-        'development': ["2007-01-01", "2007-07-01", "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
-                        "2007-07-01", "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
-                        "2008-01-01", "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
-                        "2008-07-01", "2009-01-01", "2009-07-01", "2010-01-01",
-                        "2009-01-01", "2009-07-01", "2010-01-01",
-                        "2009-07-01", "2010-01-01",
-                        "2010-01-01"],
-        'loss': [100, 200, 300, 400, 500, 600, 700, 
-                150, 300, 450, 500, 550, 600, 
-                200, 250, 350, 400, 450, 
-                50, 100, 150, 200,
-                100, 200, 300,
-                50, 150, 
-                100]
+        "origin": [
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2007-07-01",
+            "2007-07-01",
+            "2007-07-01",
+            "2007-07-01",
+            "2007-07-01",
+            "2007-07-01",
+            "2008-01-01",
+            "2008-01-01",
+            "2008-01-01",
+            "2008-01-01",
+            "2008-01-01",
+            "2008-07-01",
+            "2008-07-01",
+            "2008-07-01",
+            "2008-07-01",
+            "2009-01-01",
+            "2009-01-01",
+            "2009-01-01",
+            "2009-07-01",
+            "2009-07-01",
+            "2010-01-01",
+        ],
+        "development": [
+            "2007-01-01",
+            "2007-07-01",
+            "2008-01-01",
+            "2008-07-01",
+            "2009-01-01",
+            "2009-07-01",
+            "2010-01-01",
+            "2007-07-01",
+            "2008-01-01",
+            "2008-07-01",
+            "2009-01-01",
+            "2009-07-01",
+            "2010-01-01",
+            "2008-01-01",
+            "2008-07-01",
+            "2009-01-01",
+            "2009-07-01",
+            "2010-01-01",
+            "2008-07-01",
+            "2009-01-01",
+            "2009-07-01",
+            "2010-01-01",
+            "2009-01-01",
+            "2009-07-01",
+            "2010-01-01",
+            "2009-07-01",
+            "2010-01-01",
+            "2010-01-01",
+        ],
+        "loss": [
+            100,
+            200,
+            300,
+            400,
+            500,
+            600,
+            700,
+            150,
+            300,
+            450,
+            500,
+            550,
+            600,
+            200,
+            250,
+            350,
+            400,
+            450,
+            50,
+            100,
+            150,
+            200,
+            100,
+            200,
+            300,
+            50,
+            150,
+            100,
+        ],
     }
 
     Stri = cl.Triangle(
-        pd.DataFrame(Sdata), 
-        origin='origin',
-        development='development',
-        columns='loss',
-        cumulative=True
+        pd.DataFrame(Sdata),
+        origin="origin",
+        development="development",
+        columns="loss",
+        cumulative=True,
     )
 
     Adata = {
-        'origin': ["2007-01-01", "2007-01-01", "2007-01-01", "2007-01-01",
-                "2008-01-01", "2008-01-01", "2008-01-01",
-                "2009-01-01", "2009-01-01",
-                "2010-01-01"],
-        'development': ["2007-01-01", "2008-01-01", "2009-01-01", "2010-01-01",
-                        "2008-01-01", "2009-01-01", "2010-01-01",
-                        "2009-01-01", "2010-01-01",
-                        "2010-01-01"],
-        'loss': [100, 600, 1000, 1300, 
-                200, 450, 650, 
-                100, 450,
-                100]
+        "origin": [
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2007-01-01",
+            "2008-01-01",
+            "2008-01-01",
+            "2008-01-01",
+            "2009-01-01",
+            "2009-01-01",
+            "2010-01-01",
+        ],
+        "development": [
+            "2007-01-01",
+            "2008-01-01",
+            "2009-01-01",
+            "2010-01-01",
+            "2008-01-01",
+            "2009-01-01",
+            "2010-01-01",
+            "2009-01-01",
+            "2010-01-01",
+            "2010-01-01",
+        ],
+        "loss": [100, 600, 1000, 1300, 200, 450, 650, 100, 450, 100],
     }
 
     Atri = cl.Triangle(
-        pd.DataFrame(Adata), 
-        origin='origin',
-        development='development',
-        columns='loss',
-        cumulative=True
+        pd.DataFrame(Adata),
+        origin="origin",
+        development="development",
+        columns="loss",
+        cumulative=True,
     )
-    assert Atri == Stri.grain('OYDY')
+    assert Atri == Stri.grain("OYDY")
+
 
 def test_odd_quarter_end():
-    data = pd.DataFrame([
-        ["5/1/2023", 12, '4/30/2024', 100],
-        ["8/1/2023", 9, "4/30/2024", 130],
-        ["11/1/2023", 6, "4/30/2024", 160],
-        ["2/1/2024", 3, "4/30/2024", 140]], 
-        columns=['origin', 'development', 'valuation', 'EarnedPremium'])
+    data = pd.DataFrame(
+        [
+            ["5/1/2023", 12, "4/30/2024", 100],
+            ["8/1/2023", 9, "4/30/2024", 130],
+            ["11/1/2023", 6, "4/30/2024", 160],
+            ["2/1/2024", 3, "4/30/2024", 140],
+        ],
+        columns=["origin", "development", "valuation", "EarnedPremium"],
+    )
     triangle = cl.Triangle(
-        data, origin='origin', origin_format='%Y-%m-%d', development='valuation', columns='EarnedPremium', trailing=True, cumulative=True
+        data,
+        origin="origin",
+        origin_format="%Y-%m-%d",
+        development="valuation",
+        columns="EarnedPremium",
+        trailing=True,
+        cumulative=True,
     )
     data_from_tri = triangle.to_frame(origin_as_datetime=True)
-    assert np.all(data_from_tri['2024Q2'].values == [100., 130., 160., 140.])
-    assert np.all(data_from_tri.index == pd.DatetimeIndex(data=["5/1/2023", "8/1/2023", "11/1/2023", "2/1/2024"], freq='QS-NOV'))
+    assert np.all(data_from_tri["2024Q2"].values == [100.0, 130.0, 160.0, 140.0])
+    assert np.all(
+        data_from_tri.index
+        == pd.DatetimeIndex(
+            data=["5/1/2023", "8/1/2023", "11/1/2023", "2/1/2024"], freq="QS-NOV"
+        )
+    )
 
 
 def test_single_valuation_date_preserves_exact_date():
     # Test that a single development date is preserved exactly and not converted to fiscal year
     # Regression test for issue where 202510 was incorrectly converted to 2026-09 instead of 2025-10
     data = pd.DataFrame({
-        'Accident Year Month': [202002, 202003, 202105, 202201, 202301, 202401, 202501],
-        'Calendar Year Month': [202510] * 7,  # Single valuation date
-        'Loss': [100, 200, 150, 300, 250, 400, 350]
+        "Accident Year Month": [202002, 202003, 202105, 202201, 202301, 202401, 202501],
+        "Calendar Year Month": [202510] * 7,  # Single valuation date
+        "Loss": [100, 200, 150, 300, 250, 400, 350],
     })
 
     triangle = cl.Triangle(
         data=data,
-        origin='Accident Year Month',
-        development='Calendar Year Month',
-        columns='Loss',
+        origin="Accident Year Month",
+        development="Calendar Year Month",
+        columns="Loss",
         cumulative=True,
-        development_format='%Y%m',
-        origin_format='%Y%m'
+        development_format="%Y%m",
+        origin_format="%Y%m",
     )
 
     # Valuation date should be end of October 2025, not converted to a fiscal year
     val_date_exp: str = date_delta_adjustment("2025-11-01")
     assert triangle.valuation_date == pd.Timestamp(val_date_exp)
-    assert triangle.development_grain == 'M'
-    assert int(triangle.valuation_date.strftime('%Y%m')) == 202510
+    assert triangle.development_grain == "M"
+    assert int(triangle.valuation_date.strftime("%Y%m")) == 202510
 
 
 def test_1d_annual_valuation_date() -> None:
@@ -2126,8 +2297,11 @@ def test_1d_annual_valuation_date() -> None:
         development_format="%Y",
         cumulative=True,
     )
-    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert (
+        pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    )
     assert tri.development_grain == "Y"
+
 
 def test_1d_monthly_valuation_date() -> None:
     year_data = [
@@ -2148,17 +2322,18 @@ def test_1d_monthly_valuation_date() -> None:
         development_format="%Y-%m",
         cumulative=True,
     )
-    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
+    assert (
+        pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-01-31").date()
+    )
     assert tri.development_grain == "M"
 
+
 def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
-    year_df = pd.DataFrame(
-        {
-            "origin": [1998, 1999, 2000, 2001, 2002],
-            "dev": [2008.0, 2008.0, 2008.0, 2008.0, 2008.0],
-            "expense": [890000, 1170000, 1265000, 1600000, 1200000],
-        }
-    )
+    year_df = pd.DataFrame({
+        "origin": [1998, 1999, 2000, 2001, 2002],
+        "dev": [2008.0, 2008.0, 2008.0, 2008.0, 2008.0],
+        "expense": [890000, 1170000, 1265000, 1600000, 1200000],
+    })
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
@@ -2167,70 +2342,99 @@ def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
         development_format="%Y",
         cumulative=True,
     )
-    assert pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    assert (
+        pd.to_datetime(tri.valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    )
     assert tri.development_grain == "Y"
 
+
 def test_friedland_gl_self_insurer_grain() -> None:
-    data_valuation_date = cl.load_sample('friedland_gl_self_insurer').valuation_date
-    assert pd.to_datetime(data_valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    data_valuation_date = cl.load_sample("friedland_gl_self_insurer").valuation_date
+    assert (
+        pd.to_datetime(data_valuation_date).date() == pd.Timestamp("2008-12-31").date()
+    )
+
 
 def test_OXDX_triangle():
-    
+
     for x in [12, 6, 3, 1]:
         for y in [i for i in [12, 6, 3, 1] if i <= x]:
-            first_orig = '2020-01-01'
+            first_orig = "2020-01-01"
             width = int(x / y) + 1
-            dev_series = (pd.date_range(start=first_orig, periods=width, freq=str(y) + 'ME') + pd.DateOffset(months=y - 1)).to_series()
+            dev_series = (
+                pd.date_range(start=first_orig, periods=width, freq=str(y) + "ME")
+                + pd.DateOffset(months=y - 1)
+            ).to_series()
             tri_df = pd.DataFrame({
-                'origin_date': pd.concat([pd.to_datetime([first_orig] * (width)).to_series(), (pd.to_datetime([first_orig]) + pd.DateOffset(months=x)).to_series()]).to_list(),
-                'development_date': pd.concat([dev_series, dev_series.iloc[[0]] + pd.DateOffset(months=x)]).to_list(),
-                'value': list(range(1, width + 2))
+                "origin_date": pd.concat([
+                    pd.to_datetime([first_orig] * (width)).to_series(),
+                    (
+                        pd.to_datetime([first_orig]) + pd.DateOffset(months=x)
+                    ).to_series(),
+                ]).to_list(),
+                "development_date": pd.concat([
+                    dev_series,
+                    dev_series.iloc[[0]] + pd.DateOffset(months=x),
+                ]).to_list(),
+                "value": list(range(1, width + 2)),
             })
             for i in range(12):
                 for j in range(y):
                     test_data = tri_df.copy()
-                    test_data['origin_date'] += pd.DateOffset(months=i)        
-                    test_data['development_date'] += pd.DateOffset(months=i - j)
+                    test_data["origin_date"] += pd.DateOffset(months=i)
+                    test_data["development_date"] += pd.DateOffset(months=i - j)
                     tri = cl.Triangle(
-                        test_data, 
-                        origin='origin_date', 
-                        development='development_date', 
-                        columns='value', 
-                        cumulative=True
+                        test_data,
+                        origin="origin_date",
+                        development="development_date",
+                        columns="value",
+                        cumulative=True,
                     )
                     assert tri.shape == (1, 1, 2, width)
-                    assert tri.sum().sum() == tri_df['value'].sum()
-                    assert np.all(tri.development == [y - j + x * y for x in range(width)])
+                    assert tri.sum().sum() == tri_df["value"].sum()
+                    assert np.all(
+                        tri.development == [y - j + x * y for x in range(width)]
+                    )
                     # there's a known bug with origin that displays incorrect year when origin doesn't start on 1/1
                     # if x == 12:
-                        # assert np.all(tri.origin == ['2020','2021'])
+                    # assert np.all(tri.origin == ['2020','2021'])
                     # elif x in [6,3]:
-                        # assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
-                        # assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
+                    # assert np.all(tri.origin.strftime('%Y') == pd.to_datetime(tri.odims).strftime('%Y'))
+                    # assert np.all(tri.origin.strftime('%q').values.astype(float) == np.ceil((pd.to_datetime(tri.odims).strftime('%m').values.astype(int) - 0.5) / 3))
+
 
 def test_fillzero():
-    raa = cl.load_sample('raa')
-    zero = raa - raa[raa.origin == '1982']
+    raa = cl.load_sample("raa")
+    zero = raa - raa[raa.origin == "1982"]
     filled = zero.fillzero()
-    assert (filled[filled.origin == '1982'][filled.development == 24].values.flatten()[0]) == 0
-    
+    assert (
+        (filled[filled.origin == "1982"][filled.development == 24].values.flatten()[0])
+        == 0
+    )
+
+
 def test_2x2_triangle():
-        
-    df = pd.DataFrame(data={
-        'origin': [2022, 2022, 2023],
-        'development': [2022, 2023, 2023],
-        'reported': [78000, 222000, 78000]}
+
+    df = pd.DataFrame(
+        data={
+            "origin": [2022, 2022, 2023],
+            "development": [2022, 2023, 2023],
+            "reported": [78000, 222000, 78000],
+        }
     )
     tri_from_df = cl.Triangle(
         data=df,
-        origin='origin',
-        development='development',
-        columns=['reported'],
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns=["reported"],
+        cumulative=True,
     )
     tri_from_df
-    assert np.array_equal(tri_from_df.cum_to_incr().values, np.array([[[[78000., 144000.],
-    [78000., np.float64(np.nan)]]]]), equal_nan=True)
+    assert np.array_equal(
+        tri_from_df.cum_to_incr().values,
+        np.array([[[[78000.0, 144000.0], [78000.0, np.float64(np.nan)]]]]),
+        equal_nan=True,
+    )
 
 
 def test_triangle_init_from_dict() -> None:
@@ -2241,30 +2445,28 @@ def test_triangle_init_from_dict() -> None:
 
     # Common data.
     data_dict = {
-            'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-            'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
-            'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655]
+        "origin": [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+        "development": [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+        "reported": [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
     }
 
     # Initialze via DataFrame.
-    df = pd.DataFrame(
-        data=data_dict
-    )
+    df = pd.DataFrame(data=data_dict)
     tri_from_df = cl.Triangle(
         data=df,
-        origin='origin',
-        development='development',
-        columns=['reported'],
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns=["reported"],
+        cumulative=True,
     )
 
     # Initialize via dict.
     tri_from_dict = cl.Triangle(
         data=data_dict,
-        origin='origin',
-        development='development',
-        columns=['reported'],
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns=["reported"],
+        cumulative=True,
     )
 
     assert tri_from_df == tri_from_dict
@@ -2279,7 +2481,8 @@ def test_validate_assumption(raa: Triangle) -> None:
     with pytest.raises(TypeError):
         raa._validate_assumption(
             triangle=raa,
-            value=raa, axis=3  # noqa - incorrect type provided on purpose.
+            value=raa,
+            axis=3,  # noqa - incorrect type provided on purpose.
         )
 
 
@@ -2301,15 +2504,20 @@ def test_validate_assumption_scalar(raa: Triangle, value: int | float | str) -> 
     """
     result = raa._validate_assumption(raa, value, axis=3)
     assert result.shape == (1, 1, 1, raa.shape[3])
-    assert (result.flat[0] == value)
+    assert result.flat[0] == value
 
 
-@pytest.mark.parametrize("value", [
-    [1] * 10,
-    (1,) * 10,
-    np.ones(10),
-])
-def test_validate_assumption_sequence(raa: Triangle, value: list | tuple | np.ndarray) -> None:
+@pytest.mark.parametrize(
+    "value",
+    [
+        [1] * 10,
+        (1,) * 10,
+        np.ones(10),
+    ],
+)
+def test_validate_assumption_sequence(
+    raa: Triangle, value: list | tuple | np.ndarray
+) -> None:
     """
     list, tuple, and ndarray values are wrapped in np.array and reshaped.
 
@@ -2403,20 +2611,34 @@ def test_validate_assumption_axis2(raa: Triangle) -> None:
 
 
 def test_xs(clrd):
-    # when slicing with .loc on the first term in the index, Triangle will drop the term 
-    assert clrd.xs('Adriatic Ins Co') == clrd.loc['Adriatic Ins Co']
-    assert clrd.xs('Adriatic Ins Co').index.equals(clrd.loc['Adriatic Ins Co'].index)
-    # when slicing with .loc on the all term in the index, Triangle will not drop any term 
-    assert clrd.xs(('Agway Ins Co', 'comauto'), drop_level=False) == clrd.loc['Agway Ins Co', 'comauto']
-    assert clrd.xs(('Agway Ins Co', 'comauto'), drop_level=False).index.equals(clrd.loc['Agway Ins Co', 'comauto'].index)
+    # when slicing with .loc on the first term in the index, Triangle will drop the term
+    assert clrd.xs("Adriatic Ins Co") == clrd.loc["Adriatic Ins Co"]
+    assert clrd.xs("Adriatic Ins Co").index.equals(clrd.loc["Adriatic Ins Co"].index)
+    # when slicing with .loc on the all term in the index, Triangle will not drop any term
+    assert (
+        clrd.xs(("Agway Ins Co", "comauto"), drop_level=False)
+        == clrd.loc["Agway Ins Co", "comauto"]
+    )
+    assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=False).index.equals(
+        clrd.loc["Agway Ins Co", "comauto"].index
+    )
     # when all index terms are included in xs and drop_level is True, the default 'Total' index value is provided
-    assert clrd.xs(('Agway Ins Co', 'comauto'), drop_level=True).index.equals(cl.load_sample('genins').index)
-    # when slicing with .loc on the second or subsequent terms in the index, Triangle will not drop the term 
-    assert clrd.xs('comauto', level=1, drop_level=False) == clrd.loc[clrd['LOB'] == 'comauto']
-    assert clrd.xs('comauto', level=1, drop_level=False).index.equals(clrd.loc[clrd['LOB'] == 'comauto'].index)
+    assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=True).index.equals(
+        cl.load_sample("genins").index
+    )
+    # when slicing with .loc on the second or subsequent terms in the index, Triangle will not drop the term
+    assert (
+        clrd.xs("comauto", level=1, drop_level=False)
+        == clrd.loc[clrd["LOB"] == "comauto"]
+    )
+    assert clrd.xs("comauto", level=1, drop_level=False).index.equals(
+        clrd.loc[clrd["LOB"] == "comauto"].index
+    )
     # level works with either integer index or name of the index column
-    assert clrd.xs('comauto', level=1) == clrd.xs('comauto', level='LOB')
-    assert clrd.xs('comauto', level=1).index.equals(clrd.xs('comauto', level='LOB').index)
+    assert clrd.xs("comauto", level=1) == clrd.xs("comauto", level="LOB")
+    assert clrd.xs("comauto", level=1).index.equals(
+        clrd.xs("comauto", level="LOB").index
+    )
 
 
 def test_get_array_module_with_explicit_arr(raa: Triangle) -> None:
@@ -2451,7 +2673,7 @@ def test_get_array_module_invalid_backend_raises(raa: Triangle) -> None:
 
     """
     tri = raa.copy()
-    tri.array_backend = 'mumpy'
+    tri.array_backend = "mumpy"
     with pytest.raises(Exception, match="Array backend is invalid or not properly set"):
         tri.get_array_module()
 
@@ -2466,18 +2688,8 @@ def test_set_development_no_development_column() -> None:
     None
 
     """
-    df = pd.DataFrame(
-        {
-            'origin': [1995, 1996, 1997],
-            'reported': [1.0, 2.0, 3.0]
-        }
-    )
-    tri = cl.Triangle(
-        data=df,
-        origin='origin',
-        columns='reported',
-        cumulative=True
-    )
+    df = pd.DataFrame({"origin": [1995, 1996, 1997], "reported": [1.0, 2.0, 3.0]})
+    tri = cl.Triangle(data=df, origin="origin", columns="reported", cumulative=True)
     assert tri.shape[-1] == 1
     assert tri.development[0] == str(tri.origin[-1])
 
@@ -2491,20 +2703,18 @@ def test_set_development_age_instead_of_date_raises() -> None:
     None
 
     """
-    df = pd.DataFrame(
-        {
-            'origin': [1995, 1996],
-            'development': [12, 24],
-            'reported': [1.0, 2.0]
-        }
-    )
+    df = pd.DataFrame({
+        "origin": [1995, 1996],
+        "development": [12, 24],
+        "reported": [1.0, 2.0],
+    })
     with pytest.raises(ValueError, match="Development lags could not be determined"):
         cl.Triangle(
             data=df,
-            origin='origin',
-            development='development',
-            columns='reported',
-            cumulative=True
+            origin="origin",
+            development="development",
+            columns="reported",
+            cumulative=True,
         )
 
 
@@ -2518,17 +2728,17 @@ def test_input_validation_non_numeric_columns_raises() -> None:
 
     """
     df = pd.DataFrame({
-        'origin': [1995, 1996],
-        'development': [1995, 1996],
-        'reported': ['1000', '2000'],
+        "origin": [1995, 1996],
+        "development": [1995, 1996],
+        "reported": ["1000", "2000"],
     })
     with pytest.raises(TypeError, match="column attribute must be numeric"):
         cl.Triangle(
             data=df,
-            origin='origin',
-            development='development',
-            columns='reported',
-            cumulative=True
+            origin="origin",
+            development="development",
+            columns="reported",
+            cumulative=True,
         )
 
 
@@ -2543,15 +2753,17 @@ def test_input_validation_duplicate_columns_raises() -> None:
     """
     df = pd.DataFrame(
         [[1995, 1995, 1.0, 2.0], [1996, 1996, 3.0, 4.0]],
-        columns=pd.Index(['origin', 'development', 'reported', 'reported'])
+        columns=pd.Index(["origin", "development", "reported", "reported"]),
     )
-    with pytest.raises(AttributeError, match="Columns are required to have unique names"):
+    with pytest.raises(
+        AttributeError, match="Columns are required to have unique names"
+    ):
         cl.Triangle(
             data=df,
-            origin='origin',
-            development='development',
-            columns='reported',
-            cumulative=True
+            origin="origin",
+            development="development",
+            columns="reported",
+            cumulative=True,
         )
 
 
@@ -2596,13 +2808,14 @@ def test_to_datetime_uninferrable_format_raises() -> None:
     with pytest.raises(ValueError, match="Unable to infer datetime"):
         cl.Triangle(
             data={
-                'origin': ['1995/Q1', '1996/Q1'],
-                'development': ['1995Q1', '1996Q1'],
-                'value': [1.0, 2.0]},
-            origin='origin',
-            development='development',
-            columns='value',
-            cumulative=True
+                "origin": ["1995/Q1", "1996/Q1"],
+                "development": ["1995Q1", "1996Q1"],
+                "value": [1.0, 2.0],
+            },
+            origin="origin",
+            development="development",
+            columns="value",
+            cumulative=True,
         )
 
 
@@ -2814,7 +3027,9 @@ def test_cum_zeta_returns_incr_to_cum(atol) -> None:
     None
     """
     ia = cl.load_sample("ia_sample")
-    fitted = cl.IncrementalAdditive().fit(ia["loss"], sample_weight=ia["exposure"].latest_diagonal)
+    fitted = cl.IncrementalAdditive().fit(
+        ia["loss"], sample_weight=ia["exposure"].latest_diagonal
+    )
     np.testing.assert_allclose(
         fitted.cum_zeta_.values.flatten(),
         [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
