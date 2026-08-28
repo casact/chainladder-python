@@ -355,14 +355,14 @@ SAMPLES: dict = {
         "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
         "cumulative": False,
     },
-    "prism_omdm": {
+    "prism_oqdq": {
         "origin": "origin",
         "development": "development",
         "index": None,
         "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
         "cumulative": False,
     },
-    "prism_oqdq": {
+    "prism_oqdm": {
         "origin": "origin",
         "development": "development",
         "index": None,
@@ -376,7 +376,42 @@ SAMPLES: dict = {
         "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
         "cumulative": False,
     },
+    "prism_osdq": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_osdm": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
     "prism_oydy": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oyds": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oydq": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oydm": {
         "origin": "origin",
         "development": "development",
         "index": None,

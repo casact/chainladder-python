@@ -11,10 +11,15 @@ def test_prism_dense_samples() -> None:
     """
     dense = cl.load_sample("prism").sum()
     for name, grain in [
-        ("prism_omdm", "OMDM"),
         ("prism_oqdq", "OQDQ"),
+        ("prism_oqdm", "OQDM"),
         ("prism_osds", "OSDS"),
+        ("prism_osdq", "OSDQ"),
+        ("prism_osdm", "OSDM"),
         ("prism_oydy", "OYDY"),
+        ("prism_oyds", "OYDS"),
+        ("prism_oydq", "OYDQ"),
+        ("prism_oydm", "OYDM"),
     ]:
         tri = cl.load_sample(name)
         expected = dense.grain(grain)
