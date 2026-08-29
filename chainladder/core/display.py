@@ -152,7 +152,7 @@ class TriangleDisplay:
             low: float = 0,
             high: float = 0,
             axis: int | str = 0,
-            subset: IndexSlice=None
+            subset: IndexSlice = None
     ) -> Any:
         """
         Color the background in a gradient according to the data in each
@@ -228,5 +228,5 @@ class TriangleDisplay:
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
             return 'single'
 
-        else :
+        else:
             return 'multi'
