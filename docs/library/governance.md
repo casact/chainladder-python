@@ -1,4 +1,4 @@
-# Project Governance
+# Governing Doc
 
 This document defines the governance structure, contribution process, code ownership policies, and release lifecycle for the chainladder-python project under the Casualty Actuarial Society (CAS) Open-Source Projects Working Group (OSPWG).
 
