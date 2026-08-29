@@ -290,7 +290,7 @@ class Benktander(MethodBase):
         cdf = (1 - 1 / num_to_nan(cdf.values))[None]
         exponents = xp.arange(self.n_iters + 1)
         exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))
-        cdf = cdf ** (((cdf + 1e-16) / (cdf + 1e-16) * exponents))
+        cdf = cdf ** ((cdf + 1e-16) / (cdf + 1e-16) * exponents)
         cdf = xp.nan_to_num(cdf)
         a = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(ld.set_backend(backend).values)
         b = cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(backend).values)
