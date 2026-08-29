@@ -1876,7 +1876,7 @@ def test_single_entry():
     cl_dev_constant_fit = cl_dev_constant.fit(cl_tri.val_to_dev())
 
     # aim
-    cl.Chainladder().fit(cl_dev_constant_fit.transform(cl_tri)).ultimate_
+    _ = cl.Chainladder().fit(cl_dev_constant_fit.transform(cl_tri)).ultimate_
 
 
 def test_origin_as_datetime_arg(clrd):
