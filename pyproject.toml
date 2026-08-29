@@ -105,7 +105,7 @@ preview = true
 extend-exclude = ["docs/getting_started/online_sandbox/sandbox_workbook_blank.ipynb"]
 
 [tool.ruff.lint]
-select = ["E2", "E4", "E7", "E9", "F"]
+select = ["E2", "E4", "E7", "E9", "F", "B018"]
 
 # Grandfathered violations that predate enabling this rule set. New and
 # newly-touched code is still held to the full ruleset above; these files
@@ -136,7 +136,7 @@ select = ["E2", "E4", "E7", "E9", "F"]
 "chainladder/development/tests/rtest_munich.py" = ["E266", "E722", "F401"]
 "chainladder/development/tests/test_barnzehn.py" = ["E225", "E226", "E231", "E251"]
 "chainladder/development/tests/test_constant.py" = ["F841"]
-"chainladder/development/tests/test_development.py" = ["E231", "E251", "E265", "E722"]
+"chainladder/development/tests/test_development.py" = ["B018", "E231", "E251", "E265", "E722"]
 "chainladder/development/tests/test_glm.py" = ["E225", "E226", "E231"]
 "chainladder/development/tests/test_incremental.py" = ["F841"]
 "chainladder/methods/base.py" = ["E231", "F401"]
@@ -172,6 +172,7 @@ select = ["E2", "E4", "E7", "E9", "F"]
 "docs/gallery/plot_bootstrap.ipynb" = ["E231", "F811"]
 "docs/gallery/plot_bootstrap_comparison.ipynb" = ["E226", "E266"]
 "docs/gallery/plot_capecod.ipynb" = ["E225", "E226", "E231"]
+"docs/gallery/plot_capecod_onlevel.ipynb" = ["B018"]
 "docs/gallery/plot_clarkldf_resid.ipynb" = ["E231"]
 "docs/gallery/plot_development_periods.ipynb" = ["E231"]
 "docs/gallery/plot_elrf_resid.ipynb" = ["E231", "E703"]
