@@ -135,7 +135,7 @@ The repository maintains three primary branches and other development branches.
 | `main` | Primary development branch. Must remain stable and pass all automated checks. Protected. |
 | `release` | Contains the latest stable release published to PyPI and conda-forge. Recommended for production use. Protected. |
 | `pre-release` | Houses code staged for an upcoming release. Unprotected. |
-| `dev branches` | House feature development to be merged into main. Unprotected. |
+| `dev-branches` | House feature development to be merged into main. Unprotected. |
 
 Branches shall begin with # and the issue number, following by a short description of what the branch is (e.g. #123-new_friedland_dataset). Once the branch is merged into main, the owner shall consider deleting the branch that is no longer useful.
 
