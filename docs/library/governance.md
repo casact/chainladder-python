@@ -295,7 +295,7 @@ The process for doing this is accomplished by:
     - Deprecation and removal updates for the upcoming release
     - Release notes update on the doc page (`docs/library/releases.md`)
 2. **Publish on GitHub:** When ready, package the GitHub release with a version tag (in the format of “v0.0.0”) targeting “prerelease”
-3. **PyPi upload:** Package will automatically be released to PyPI
+3. **PyPI upload:** Package will automatically be released to PyPI
 4. **Conda upload:** After the package appears on PyPI, conda-forge opens a version-bump PR on. Once that PR (auto) merges, conda-forge builds and publishes the conda package (this usually takes 6 - 12 hours after PyPI)
 5. **“main” merge:** Open a PR and merge `prerelease` into `main` so the default branch matches the released code
 
