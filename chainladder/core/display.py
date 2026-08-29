@@ -17,23 +17,19 @@ except ImportError:
     IPython = None
 
 if TYPE_CHECKING:
-    from pandas import (
-        DataFrame,
-        IndexSlice,
-        Series
-    )
+    from pandas import DataFrame, IndexSlice, Series
+
 
 class TriangleDisplay:
-
     def __repr__(self) -> str | DataFrame:
 
         # If values hasn't been defined yet, return an empty triangle.
-        if self._dimensionality == 'empty':
+        if self._dimensionality == "empty":
             return "Empty Triangle."
 
         # For triangles with a single segment, containing a single triangle, return the
         # DataFrame of the values.
-        elif self._dimensionality == 'single':
+        elif self._dimensionality == "single":
             data: DataFrame = self._repr_format()
             return data.to_string()
 
@@ -72,15 +68,16 @@ class TriangleDisplay:
         """
 
         # Case empty triangle.
-        if self._dimensionality == 'empty':
+        if self._dimensionality == "empty":
             return "Empty Triangle."
 
         # Case single-dimensional triangle.
-        elif self._dimensionality == 'single':
+        elif self._dimensionality == "single":
             data = self._repr_format()
             fmt_str = self._get_format_str(data=data)
             default = (
-                data.to_html(
+                data
+                .to_html(
                     max_rows=pd.options.display.max_rows,
                     max_cols=pd.options.display.max_columns,
                     float_format=fmt_str.format,
@@ -115,10 +112,7 @@ class TriangleDisplay:
         else:
             return "{:,.0f}"
 
-    def _repr_format(
-            self,
-            origin_as_datetime: bool = False
-    ) -> DataFrame:
+    def _repr_format(self, origin_as_datetime: bool = False) -> DataFrame:
         """
         Prepare triangle values for printing as a DataFrame. Mainly used with single-dimensional triangles.
 
@@ -137,7 +131,8 @@ class TriangleDisplay:
             origin_formatted = [""] * len(origin)
             for origin_index in range(len(origin)):
                 origin_formatted[origin_index] = (
-                    origin.astype("str")[origin_index]
+                    origin
+                    .astype("str")[origin_index]
                     .replace("Q1", "H1")
                     .replace("Q3", "H2")
                 )
@@ -147,12 +142,12 @@ class TriangleDisplay:
         return pd.DataFrame(out, index=origin, columns=development)
 
     def heatmap(
-            self,
-            cmap: str = "coolwarm",
-            low: float = 0,
-            high: float = 0,
-            axis: int | str = 0,
-            subset: IndexSlice = None
+        self,
+        cmap: str = "coolwarm",
+        low: float = 0,
+        high: float = 0,
+        axis: int | str = 0,
+        subset: IndexSlice = None,
     ) -> Any:
         """
         Color the background in a gradient according to the data in each
@@ -179,7 +174,7 @@ class TriangleDisplay:
         -------
             Ipython.display.HTML
         """
-        if self._dimensionality == 'single':
+        if self._dimensionality == "single":
             data = self._repr_format()
             fmt_str = self._get_format_str(data)
 
@@ -193,7 +188,8 @@ class TriangleDisplay:
             ) + 1
             gmap = gmap.replace(np.nan, (shape_size + 1) / 2)
             default_output = (
-                data.style.format(fmt_str)
+                data.style
+                .format(fmt_str)
                 .background_gradient(
                     cmap=cmap,
                     low=low,
@@ -222,11 +218,11 @@ class TriangleDisplay:
         -------
         str
         """
-        if not hasattr(self, 'values'):
-            return 'empty'
+        if not hasattr(self, "values"):
+            return "empty"
 
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
-            return 'single'
+            return "single"
 
         else:
-            return 'multi'
+            return "multi"
