@@ -215,9 +215,9 @@ class ClarkLDF(DevelopmentBase):
             A Triangle object with growth curve values
         """
         xp = self.incremental_act_.get_array_module()
-        if type(age) in [int, float, xp.int64, xp.float64]:
+        if isinstance(age, (int, float, xp.int64, xp.float64)):
             age = xp.array([age]).astype("float64")
-        if type(age) == list:
+        if isinstance(age, list):
             age = xp.array([age]).astype("float64")
         obj = self.incremental_act_.copy()
         obj.odims = obj.odims[0:1]
