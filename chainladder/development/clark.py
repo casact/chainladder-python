@@ -308,7 +308,7 @@ class ClarkLDF(DevelopmentBase):
                         increments[idx : idx + 1, col : col + 1] * xp.log(increment_fit)
                         - increment_fit
                     )
-                    return -xp.sum((xp.nan_to_num(mle.flatten())))
+                    return -xp.sum(xp.nan_to_num(mle.flatten()))
 
                 if sample_weight:
                     x0 = xp.array([[[[1.0, age_interval, 1.0]]]])
