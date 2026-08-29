@@ -287,7 +287,10 @@ class ClarkLDF(DevelopmentBase):
 
                 def solver(x: ndarray):
                     """ Solve Loglogistic MLE"""
-                    ldf = lambda age: self._G(age, theta=x[..., 1], omega=x[..., 0])
+
+                    def ldf(age):
+                        return self._G(age, theta=x[..., 1], omega=x[..., 0])
+
                     if sample_weight:
                         ult = (
                             sample_weight.values[idx : idx + 1, col : col + 1, ::-1, 0]
