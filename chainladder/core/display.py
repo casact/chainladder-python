@@ -222,9 +222,7 @@ class TriangleDisplay:
         -------
         str
         """
-        try:
-             self.values
-        except AttributeError:
+        if not hasattr(self, 'values'):
             return 'empty'
 
         if (self.values.shape[0], self.values.shape[1]) == (1, 1):
