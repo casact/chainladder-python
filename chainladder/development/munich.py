@@ -379,7 +379,7 @@ class MunichAdjustment(DevelopmentBase):
         obj.ddims = X.link_ratio.ddims
         obj.is_pattern = True
         obj.is_cumulative = False
-        obj._set_slicers
+        obj._set_slicers()
         return obj
 
     def _reshape(self, measure):
