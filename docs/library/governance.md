@@ -137,11 +137,11 @@ The repository maintains three primary branches and other development branches.
 | `pre-release` | Houses code staged for an upcoming release. Unprotected. |
 | `dev-branches` | House feature development to be merged into main. Unprotected. |
 
-Branches shall begin with # and the issue number, following by a short description of what the branch is (e.g. #123-new_friedland_dataset). Once the branch is merged into main, the owner shall consider deleting the branch that is no longer useful.
+Branches shall begin with # and the issue number, following by a short description of what the branch is (e.g. `#123-new_friedland_dataset`). Once the branch is merged into main, the owner shall consider deleting the branch that is no longer useful.
 
 ### Finding and Issue to Contribute to
 
-You may claim or request assignment for any open issue, including inactive ones with existing assignees. Look for the “Great First Contribution!” label for beginner-friendly tasks.
+You may claim or request assignment for any open issue, including inactive ones with existing assignees. Look for the "Great First Contribution! 🌱" label for beginner-friendly tasks.
 
 ### Creating a Development Environment
 
