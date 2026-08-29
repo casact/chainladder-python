@@ -20,4 +20,4 @@ def test_bs_multiple_cols():
 def test_multi_index(clrd):
     tri = clrd['CumPaidLoss'].sum()
     resampled_triangles = cl.BootstrapODPSample().fit(tri).resampled_triangles_
-    assert np.all(resampled_triangles.index == pd.DataFrame(np.concat((np.array([['(All)','(All)']] * 1000),np.arange(1000).reshape(-1,1)),axis=1),columns=['GRNAME','LOB','Simulation_#']))
+    assert np.all(resampled_triangles.index == pd.DataFrame(np.concat((np.array([['(All)', '(All)']] * 1000), np.arange(1000).reshape(-1, 1)), axis=1), columns=['GRNAME', 'LOB', 'Simulation_#']))
