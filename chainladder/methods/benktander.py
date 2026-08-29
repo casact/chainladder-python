@@ -221,7 +221,7 @@ class Benktander(MethodBase):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
-        
+
             import chainladder as cl
 
         .. testcode::
@@ -263,8 +263,8 @@ class Benktander(MethodBase):
             random_state = xp.random.RandomState(self.random_state)
             # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
             cov = self.apriori_sigma / self.apriori
-            sigma_log = np.sqrt(np.log1p(cov ** 2))
-            mu_log = np.log(self.apriori) - 0.5 * sigma_log ** 2
+            sigma_log = np.sqrt(np.log1p(cov**2))
+            mu_log = np.log(self.apriori) - 0.5 * sigma_log**2
             apriori = random_state.lognormal(mu_log, sigma_log, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
