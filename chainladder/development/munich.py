@@ -150,7 +150,7 @@ class MunichAdjustment(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -345,8 +345,8 @@ class MunichAdjustment(DevelopmentBase):
         return self._p_to_i_concate(full_paid, full_incurred, xp)
 
     def _get_mcl_cdf(self, X, munich_full_triangle_):
-        """ needs to be an attribute that gets assigned.  requires we overwrite
-            the cdf and ldf methods with
+        """needs to be an attribute that gets assigned.  requires we overwrite
+        the cdf and ldf methods with
         """
         xp = X.get_array_module()
         obj = X.cdf_.copy()
