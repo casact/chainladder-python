@@ -2429,7 +2429,6 @@ def test_2x2_triangle():
         columns=["reported"],
         cumulative=True,
     )
-    tri_from_df
     assert np.array_equal(
         tri_from_df.cum_to_incr().values,
         np.array([[[[78000.0, 144000.0], [78000.0, np.float64(np.nan)]]]]),
