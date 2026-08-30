@@ -1233,8 +1233,9 @@ class Triangle(TriangleBase):
 
         The report only evaluates observed cells, so expected future cells are
         not reported as missing.  Missing and non-finite observed values are
-        errors.  Decreases in cumulative data and negative incremental values
-        are warnings because they can be legitimate claim adjustments.
+        errors.  Negative cumulative values, zero cumulative bases, cumulative
+        decreases, and negative incremental values are warnings because they
+        can be legitimate claim adjustments.
 
         Returns
         -------
@@ -1260,6 +1261,8 @@ class Triangle(TriangleBase):
                      check severity
           missing_observed    error
        non_finite_observed    error
+        negative_cumulative  warning
+     zero_cumulative_base  warning
         cumulative_decrease  warning
         """
         obj = self.set_backend("numpy")
@@ -1288,6 +1291,24 @@ class Triangle(TriangleBase):
                 & observed[..., :-1]
                 & finite[..., 1:]
                 & finite[..., :-1]
+            )
+            checks.extend(
+                [
+                    {
+                        "check": "negative_cumulative",
+                        "severity": "warning",
+                        "count": int(np.sum(observed & finite & (values < 0))),
+                        "message": "Observed cumulative values below zero.",
+                    },
+                    {
+                        "check": "zero_cumulative_base",
+                        "severity": "warning",
+                        "count": int(
+                            np.sum(comparable & (values[..., :-1] == 0))
+                        ),
+                        "message": "Cumulative bases of zero that do not support link ratios.",
+                    },
+                ]
             )
             count = int(np.sum(comparable & (values[..., 1:] < values[..., :-1])))
             checks.append(

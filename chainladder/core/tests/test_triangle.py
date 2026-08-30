@@ -354,6 +354,28 @@ def test_quality_check_identifies_cumulative_and_incremental_warnings(
     )
 
 
+def test_quality_check_identifies_negative_and_zero_cumulative_values(
+    raa: Triangle,
+) -> None:
+    cumulative = raa.copy().set_backend("numpy")
+    cumulative.values[0, 0, 0, 0] = -1
+    cumulative.values[0, 0, 1, 0] = 0
+
+    report = cumulative.quality_check().set_index("check")
+
+    assert report.loc["negative_cumulative", "count"] == 1
+    assert report.loc["zero_cumulative_base", "count"] == 1
+    assert report.loc["zero_cumulative_base", "severity"] == "warning"
+
+
+def test_quality_check_does_not_mutate_triangle_backend(raa: Triangle) -> None:
+    backend = raa.array_backend
+
+    raa.quality_check()
+
+    assert raa.array_backend == backend
+
+
 def test_origin_and_value_setters(raa):
     raa2 = raa.copy()
     raa.columns = list(raa.columns)
