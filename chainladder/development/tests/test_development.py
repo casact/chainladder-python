@@ -125,6 +125,21 @@ def test_n_periods():
         == _FutureDevelopment(dev).fit(d).ldf_
     )
 
+
+def test_n_periods_uses_most_recent_non_dropped_link_ratio(raa):
+    dev = cl.Development(n_periods=1, drop=("1989", 12)).fit(raa)
+
+    assert dev.ldf_.values[0, 0, 0, 0] == pytest.approx(6947 / 1351)
+
+
+def test_n_periods_ignores_non_finite_link_ratios_after_drop(raa):
+    raa = raa.set_backend("numpy")
+    raa.values[0, 0, 7, 0] = 0
+    dev = cl.Development(n_periods=1, drop=("1989", 12)).fit(raa)
+
+    assert dev.ldf_.values[0, 0, 0, 0] == pytest.approx(4020 / 557)
+
+
 def test_drophighlow(raa):
     dev = cl.Development(drop_high=0)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
@@ -836,4 +851,3 @@ def test_pct_reported_requires_ldf(raa):
         raa.pct_reported_
     with pytest.raises(AttributeError):
         raa.pct_unreported_
-

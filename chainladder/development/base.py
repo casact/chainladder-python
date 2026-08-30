@@ -82,11 +82,31 @@ class DevelopmentBase(
             .to_frame()
         )
 
-    def _assign_n_periods_weight(self, X, n_periods):
-        """Used to apply the n_periods weight"""
+    def _assign_n_periods_weight(self, X, n_periods, candidate_weight=None):
+        """Used to apply the n_periods weight.
 
-        def _assign_n_periods_weight_int(X, n_periods):
+        When ``candidate_weight`` is supplied, it represents factors that have
+        already been excluded (for example through ``drop`` or
+        ``drop_valuation``).  ``n_periods`` is then applied to the most recent
+        remaining factors rather than to a fixed calendar window.
+        """
+
+        def _assign_n_periods_weight_int(X, n_periods, candidate_weight):
             xp = X.get_array_module()
+            if candidate_weight is not None:
+                candidate = (
+                    candidate_weight[None, None]
+                    if candidate_weight.ndim == 2
+                    else candidate_weight
+                )
+                valid = candidate > 0
+                if n_periods < 1 or n_periods >= X.shape[-2] - 1:
+                    return candidate
+                rank_from_latest = xp.cumsum(valid[..., ::-1, :], axis=2)[
+                    ..., ::-1, :
+                ]
+                return (valid & (rank_from_latest <= n_periods)).astype(float)
+
             val_offset = {
                 "Y": {"Y": 1},
                 "S": {"Y": 2, "S": 1},
@@ -106,7 +126,7 @@ class DevelopmentBase(
         xp = X.get_array_module()
 
         dict_map = {
-            item: _assign_n_periods_weight_int(X, item)
+            item: _assign_n_periods_weight_int(X, item, candidate_weight)
             for item in set(n_periods.flatten())
         }
 

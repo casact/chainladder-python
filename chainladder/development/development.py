@@ -414,9 +414,17 @@ class Development(DevelopmentBase):
         else:
             self.w_v2_ = tw.fit(obj.age_to_age).w_
 
+        drop_adjustment = self._drop_adjustment(obj, link_ratio)
+        candidate_weight = None
+        if (self.drop is not None) | (self.drop_valuation is not None):
+            candidate_weight = np.isfinite(link_ratio).astype(float)
+        if self.drop is not None:
+            candidate_weight = candidate_weight * self._drop(obj)
+        if self.drop_valuation is not None:
+            candidate_weight = candidate_weight * self._drop_valuation(obj)
         self.w_ = self._assign_n_periods_weight(
-            obj, n_periods_
-        ) * self._drop_adjustment(obj, link_ratio)
+            obj, n_periods_, candidate_weight
+        ) * drop_adjustment
 
         params = WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
             x, y, self.w_, average_
