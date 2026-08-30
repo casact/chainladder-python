@@ -368,6 +368,20 @@ def test_quality_check_identifies_negative_and_zero_cumulative_values(
     assert report.loc["zero_cumulative_base", "severity"] == "warning"
 
 
+def test_quality_check_detail_returns_flagged_cells(raa: Triangle) -> None:
+    tri = raa.copy().set_backend("numpy")
+    tri.values[0, 0, 0, 0] = np.nan
+    tri.values[0, 0, 1, 1] = tri.values[0, 0, 1, 0] - 1
+
+    detail = tri.quality_check(detail=True)
+
+    assert {"origin", "development", "valuation", "value"}.issubset(detail)
+    assert "missing_observed" in detail["check"].values
+    decrease = detail.loc[detail["check"] == "cumulative_decrease"].iloc[0]
+    assert decrease["prior_value"] > decrease["value"]
+    assert decrease["change"] < 0
+
+
 def test_quality_check_does_not_mutate_triangle_backend(raa: Triangle) -> None:
     backend = raa.array_backend
 

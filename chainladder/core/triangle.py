@@ -1228,7 +1228,7 @@ class Triangle(TriangleBase):
         else:
             return self
 
-    def quality_check(self) -> pd.DataFrame:
+    def quality_check(self, detail: bool = False) -> pd.DataFrame:
         """Summarize data-quality checks relevant to reserving triangles.
 
         The report only evaluates observed cells, so expected future cells are
@@ -1237,11 +1237,19 @@ class Triangle(TriangleBase):
         decreases, and negative incremental values are warnings because they
         can be legitimate claim adjustments.
 
+        Parameters
+        ----------
+        detail : bool, default=False
+            If ``True``, return one row for every flagged cell rather than the
+            aggregate summary. The detail report includes the key dimensions,
+            origin, development, valuation, and the observed value.
+
         Returns
         -------
         DataFrame
-            One row per applicable check with ``check``, ``severity``,
-            ``count``, ``passed``, and ``message`` columns.
+            By default, one row per applicable check with ``check``,
+            ``severity``, ``count``, ``passed``, and ``message`` columns. If
+            ``detail=True``, one row per flagged cell.
 
         Examples
         --------
@@ -1270,19 +1278,25 @@ class Triangle(TriangleBase):
         observed = ~np.isnan(obj.nan_triangle)[None, None, ...]
         finite = np.isfinite(values)
 
+        missing = observed & np.isnan(values)
+        non_finite = observed & ~finite & ~np.isnan(values)
         checks = [
             {
                 "check": "missing_observed",
                 "severity": "error",
-                "count": int(np.sum(observed & np.isnan(values))),
+                "count": int(np.sum(missing)),
                 "message": "Observed cells with missing values.",
             },
             {
                 "check": "non_finite_observed",
                 "severity": "error",
-                "count": int(np.sum(observed & ~finite & ~np.isnan(values))),
+                "count": int(np.sum(non_finite)),
                 "message": "Observed cells with infinite values.",
             },
+        ]
+        detail_checks = [
+            (missing, "missing_observed", "error", "Observed cells with missing values."),
+            (non_finite, "non_finite_observed", "error", "Observed cells with infinite values."),
         ]
 
         if obj.is_cumulative:
@@ -1292,42 +1306,83 @@ class Triangle(TriangleBase):
                 & finite[..., 1:]
                 & finite[..., :-1]
             )
+            negative = observed & finite & (values < 0)
+            zero_base = np.zeros_like(observed, dtype=bool)
+            zero_base[..., :-1] = comparable & (values[..., :-1] == 0)
+            decrease = np.zeros_like(observed, dtype=bool)
+            decrease[..., 1:] = comparable & (values[..., 1:] < values[..., :-1])
             checks.extend(
                 [
                     {
                         "check": "negative_cumulative",
                         "severity": "warning",
-                        "count": int(np.sum(observed & finite & (values < 0))),
+                        "count": int(np.sum(negative)),
                         "message": "Observed cumulative values below zero.",
                     },
                     {
                         "check": "zero_cumulative_base",
                         "severity": "warning",
-                        "count": int(
-                            np.sum(comparable & (values[..., :-1] == 0))
-                        ),
+                        "count": int(np.sum(zero_base)),
                         "message": "Cumulative bases of zero that do not support link ratios.",
                     },
                 ]
             )
-            count = int(np.sum(comparable & (values[..., 1:] < values[..., :-1])))
+            detail_checks.extend(
+                [
+                    (negative, "negative_cumulative", "warning", "Observed cumulative values below zero."),
+                    (zero_base, "zero_cumulative_base", "warning", "Cumulative bases of zero that do not support link ratios."),
+                    (decrease, "cumulative_decrease", "warning", "Observed cumulative values that decrease with development."),
+                ]
+            )
             checks.append(
                 {
                     "check": "cumulative_decrease",
                     "severity": "warning",
-                    "count": count,
+                    "count": int(np.sum(decrease)),
                     "message": "Observed cumulative values that decrease with development.",
                 }
             )
         elif obj.is_cumulative is False:
+            negative = observed & finite & (values < 0)
             checks.append(
                 {
                     "check": "negative_incremental",
                     "severity": "warning",
-                    "count": int(np.sum(observed & finite & (values < 0))),
+                    "count": int(np.sum(negative)),
                     "message": "Observed incremental values below zero.",
                 }
             )
+            detail_checks.append(
+                (negative, "negative_incremental", "warning", "Observed incremental values below zero.")
+            )
+
+        if detail:
+            rows = []
+            valuation = obj.valuation
+            for mask, check, severity, message in detail_checks:
+                for key, column, origin, development in np.argwhere(mask):
+                    row = obj.index.iloc[key].to_dict()
+                    row.update(
+                        {
+                            "check": check,
+                            "severity": severity,
+                            "column": obj.columns[column],
+                            "origin": obj.odims[origin],
+                            "development": obj.ddims[development],
+                            "valuation": valuation[origin * len(obj.ddims) + development],
+                            "value": values[key, column, origin, development],
+                            "message": message,
+                        }
+                    )
+                    if check == "cumulative_decrease":
+                        row["prior_value"] = values[key, column, origin, development - 1]
+                        row["change"] = row["value"] - row["prior_value"]
+                    rows.append(row)
+            columns = obj.key_labels + [
+                "check", "severity", "column", "origin", "development",
+                "valuation", "value", "prior_value", "change", "message",
+            ]
+            return pd.DataFrame(rows).reindex(columns=columns)
 
         report = pd.DataFrame(checks)
         report["passed"] = report["count"] == 0
