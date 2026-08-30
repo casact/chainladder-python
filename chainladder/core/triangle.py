@@ -1228,6 +1228,90 @@ class Triangle(TriangleBase):
         else:
             return self
 
+    def quality_check(self) -> pd.DataFrame:
+        """Summarize data-quality checks relevant to reserving triangles.
+
+        The report only evaluates observed cells, so expected future cells are
+        not reported as missing.  Missing and non-finite observed values are
+        errors.  Decreases in cumulative data and negative incremental values
+        are warnings because they can be legitimate claim adjustments.
+
+        Returns
+        -------
+        DataFrame
+            One row per applicable check with ``check``, ``severity``,
+            ``count``, ``passed``, and ``message`` columns.
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            report = cl.load_sample("raa").quality_check()
+            print(report.loc[:, ["check", "severity"]].to_string(index=False))
+
+        .. testoutput::
+            :options: +NORMALIZE_WHITESPACE
+
+                     check severity
+          missing_observed    error
+       non_finite_observed    error
+        cumulative_decrease  warning
+        """
+        obj = self.set_backend("numpy")
+        values = obj.values
+        observed = ~np.isnan(obj.nan_triangle)[None, None, ...]
+        finite = np.isfinite(values)
+
+        checks = [
+            {
+                "check": "missing_observed",
+                "severity": "error",
+                "count": int(np.sum(observed & np.isnan(values))),
+                "message": "Observed cells with missing values.",
+            },
+            {
+                "check": "non_finite_observed",
+                "severity": "error",
+                "count": int(np.sum(observed & ~finite & ~np.isnan(values))),
+                "message": "Observed cells with infinite values.",
+            },
+        ]
+
+        if obj.is_cumulative:
+            comparable = (
+                observed[..., 1:]
+                & observed[..., :-1]
+                & finite[..., 1:]
+                & finite[..., :-1]
+            )
+            count = int(np.sum(comparable & (values[..., 1:] < values[..., :-1])))
+            checks.append(
+                {
+                    "check": "cumulative_decrease",
+                    "severity": "warning",
+                    "count": count,
+                    "message": "Observed cumulative values that decrease with development.",
+                }
+            )
+        elif obj.is_cumulative is False:
+            checks.append(
+                {
+                    "check": "negative_incremental",
+                    "severity": "warning",
+                    "count": int(np.sum(observed & finite & (values < 0))),
+                    "message": "Observed incremental values below zero.",
+                }
+            )
+
+        report = pd.DataFrame(checks)
+        report["passed"] = report["count"] == 0
+        return report.loc[:, ["check", "severity", "count", "passed", "message"]]
+
     @property
     def age_to_age(self):
         """

@@ -319,6 +319,41 @@ def test_development_before_origin_warns_and_drops() -> None:
     assert 999 not in tri.to_frame().values
 
 
+def test_quality_check_identifies_missing_and_non_finite_values(raa: Triangle) -> None:
+    tri = raa.copy().set_backend("numpy")
+    tri.values[0, 0, 0, 0] = np.nan
+    tri.values[0, 0, 0, 1] = np.inf
+
+    report = tri.quality_check().set_index("check")
+
+    assert report.loc["missing_observed", "count"] == 1
+    assert report.loc["non_finite_observed", "count"] == 1
+    assert not report.loc["missing_observed", "passed"]
+
+
+def test_quality_check_identifies_cumulative_and_incremental_warnings(
+    raa: Triangle,
+) -> None:
+    cumulative = raa.copy().set_backend("numpy")
+    baseline_cumulative = cumulative.quality_check().set_index("check")
+    cumulative.values[0, 0, 0, 1] = cumulative.values[0, 0, 0, 0] - 1
+    report_cumulative = cumulative.quality_check().set_index("check")
+
+    assert report_cumulative.loc["cumulative_decrease", "count"] == (
+        baseline_cumulative.loc["cumulative_decrease", "count"] + 1
+    )
+    assert report_cumulative.loc["cumulative_decrease", "severity"] == "warning"
+
+    incremental = raa.cum_to_incr().set_backend("numpy")
+    baseline_incremental = incremental.quality_check().set_index("check")
+    incremental.values[0, 0, 0, 0] = -1
+    report_incremental = incremental.quality_check().set_index("check")
+
+    assert report_incremental.loc["negative_incremental", "count"] == (
+        baseline_incremental.loc["negative_incremental", "count"] + 1
+    )
+
+
 def test_origin_and_value_setters(raa):
     raa2 = raa.copy()
     raa.columns = list(raa.columns)
