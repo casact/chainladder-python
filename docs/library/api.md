@@ -145,6 +145,7 @@ Classes
   Pipeline
   VotingChainladder
   GridSearch
+  ReserveRollforward
 
 
 .. _utils_ref:
