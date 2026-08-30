@@ -137,13 +137,14 @@ class RiskAdjustment(BaseEstimator, EstimatorIO):
     """Add an explicit risk adjustment to a best-estimate reserve summary.
 
     This helper is intentionally transparent: ``method="margin"`` adds a
-    fixed percentage of the best estimate, while ``method="confidence_level"``
-    applies a normal-distribution percentile to a supplied standard error. It
-    does not, by itself, establish IFRS 17 compliance or select a risk appetite.
+    fixed percentage of the best estimate, ``method="confidence_level"``
+    applies a normal-distribution percentile to a supplied standard error, and
+    ``method="percentile"`` uses simulated reserve outcomes. It does not, by
+    itself, establish IFRS 17 compliance or select a risk appetite.
 
     Parameters
     ----------
-    method : {"margin", "confidence_level"}, default="margin"
+    method : {"margin", "confidence_level", "percentile"}, default="margin"
         Calculation approach for the adjustment.
     margin : float, default=0.0
         Proportion of best estimate to add when ``method="margin"``.
@@ -152,6 +153,10 @@ class RiskAdjustment(BaseEstimator, EstimatorIO):
     standard_error : float, Series, or str, optional
         Standard error for ``method="confidence_level"``. A string selects a
         column from ``X``; a scalar is applied to every row.
+    simulations : array-like, optional
+        Simulated reserve outcomes for ``method="percentile"``. A one-dimensional
+        array applies to a one-row summary; a two-dimensional array supplies one
+        simulated distribution per row.
     value_column : str, default="present_value"
         Column containing the best-estimate reserve.
     """
@@ -162,12 +167,14 @@ class RiskAdjustment(BaseEstimator, EstimatorIO):
         margin: float = 0.0,
         confidence_level: float = 0.75,
         standard_error=None,
+        simulations=None,
         value_column: str = "present_value",
     ):
         self.method = method
         self.margin = margin
         self.confidence_level = confidence_level
         self.standard_error = standard_error
+        self.simulations = simulations
         self.value_column = value_column
 
     def _standard_error(self, data: pd.DataFrame) -> pd.Series:
@@ -188,6 +195,20 @@ class RiskAdjustment(BaseEstimator, EstimatorIO):
             raise ValueError("standard_error must be finite and non-negative.")
         return result.astype(float)
 
+    def _percentile_adjustment(self, best_estimate: pd.Series) -> pd.Series:
+        """Calculate adjustment from simulated reserve outcomes."""
+        values = np.asarray(self.simulations, dtype=float)
+        if values.ndim == 1:
+            if len(best_estimate) != 1:
+                raise ValueError("One-dimensional simulations require a one-row summary.")
+            values = values.reshape(1, -1)
+        if values.ndim != 2 or values.shape[0] != len(best_estimate):
+            raise ValueError("simulations must provide one distribution for each summary row.")
+        if values.shape[1] == 0 or not np.isfinite(values).all():
+            raise ValueError("simulations must contain finite reserve outcomes.")
+        percentile = np.quantile(values, self.confidence_level, axis=1)
+        return pd.Series(percentile, index=best_estimate.index) - best_estimate
+
     def fit(self, X, y=None):
         """Calculate the risk adjustment for a reserve summary DataFrame."""
         if not isinstance(X, pd.DataFrame):
@@ -205,8 +226,14 @@ class RiskAdjustment(BaseEstimator, EstimatorIO):
                 raise ValueError("confidence_level must be greater than 0.5 and less than 1.")
             z_score = NormalDist().inv_cdf(self.confidence_level)
             adjustment = self._standard_error(data) * z_score
+        elif self.method == "percentile":
+            if not 0.5 < self.confidence_level < 1:
+                raise ValueError("confidence_level must be greater than 0.5 and less than 1.")
+            adjustment = self._percentile_adjustment(best_estimate)
         else:
-            raise ValueError("method must be 'margin' or 'confidence_level'.")
+            raise ValueError(
+                "method must be 'margin', 'confidence_level', or 'percentile'."
+            )
         self.summary_ = data.copy()
         self.summary_["best_estimate"] = best_estimate
         self.summary_["risk_adjustment"] = adjustment

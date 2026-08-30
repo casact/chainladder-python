@@ -44,6 +44,16 @@ def test_risk_adjustment_supports_margin_and_confidence_level():
     assert confidence.summary_.loc[0, "risk_adjustment"] > 0
 
 
+def test_risk_adjustment_supports_empirical_percentile():
+    reserve = pd.DataFrame({"present_value": [100.0]})
+
+    result = cl.RiskAdjustment(
+        method="percentile", confidence_level=0.75, simulations=[80.0, 100.0, 120.0]
+    ).fit(reserve)
+
+    assert result.summary_.loc[0, "risk_adjustment"] == 10.0
+
+
 def test_risk_adjustment_requires_standard_error():
     reserve = pd.DataFrame({"present_value": [100.0]})
 
