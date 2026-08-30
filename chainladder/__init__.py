@@ -506,6 +506,7 @@ from chainladder.methods import (  # noqa (API import)
 )
 from chainladder.workflow import (  # noqa (API import)
     GridSearch,
+    Backtest,
     Pipeline,
     VotingChainladder,
     TriangleSelector,

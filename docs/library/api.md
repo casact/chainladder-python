@@ -145,6 +145,7 @@ Classes
   Pipeline
   VotingChainladder
   GridSearch
+  Backtest
 
 
 .. _utils_ref:
