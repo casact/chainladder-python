@@ -12,13 +12,13 @@ from chainladder.methods import Chainladder
 
 
 class Backtest(BaseEstimator, EstimatorIO):
-    """One-period-ahead diagonal backtesting for reserving methods.
+    """Multi-period diagonal backtesting for reserving methods.
 
     Each backtest fits a fresh copy of ``estimator`` using data available at a
     historical valuation date. The projected cumulative values for origins
-    present at that date are compared with the next observed valuation
-    diagonal. This makes the class useful for short-tailed business where the
-    next reporting period is a practical validation horizon.
+    present at that date are compared with the observed valuation diagonal at
+    the selected horizon. This makes the class useful for short-tailed business
+    where one or a few reporting periods are practical validation horizons.
 
     Parameters
     ----------
@@ -33,6 +33,9 @@ class Backtest(BaseEstimator, EstimatorIO):
     n_periods : int, default=3
         Number of most recent eligible valuation periods to backtest when
         ``valuation_periods`` is not supplied.
+    horizon : int, default=1
+        Number of reporting periods between the training valuation and the
+        observed valuation used for comparison.
 
     Attributes
     ----------
@@ -68,10 +71,12 @@ class Backtest(BaseEstimator, EstimatorIO):
         estimator=None,
         valuation_periods: str | list[str] | None = None,
         n_periods: int = 3,
+        horizon: int = 1,
     ):
         self.estimator = estimator
         self.valuation_periods = valuation_periods
         self.n_periods = n_periods
+        self.horizon = horizon
 
     @staticmethod
     def _to_long(triangle, value_name: str) -> pd.DataFrame:
@@ -89,9 +94,14 @@ class Backtest(BaseEstimator, EstimatorIO):
     def _get_valuation_periods(self, X) -> pd.DatetimeIndex:
         available = X.valuation[X.valuation <= X.valuation_date]
         available = pd.DatetimeIndex(available.drop_duplicates().sort_values())
-        eligible = available[:-1]
+        if not isinstance(self.horizon, int) or self.horizon < 1:
+            raise ValueError("horizon must be a positive integer.")
+        eligible = available[:-self.horizon]
         if len(eligible) == 0:
-            raise ValueError("At least two observed valuation periods are required.")
+            raise ValueError(
+                "The triangle does not have enough observed valuation periods "
+                "for the selected horizon."
+            )
 
         if self.valuation_periods is None:
             if not isinstance(self.n_periods, int) or self.n_periods < 1:
@@ -108,7 +118,7 @@ class Backtest(BaseEstimator, EstimatorIO):
             values = ", ".join(missing.astype(str))
             raise ValueError(
                 "valuation_periods must be observed periods with a following "
-                f"valuation period. Invalid periods: {values}."
+                f"valuation period at the selected horizon. Invalid periods: {values}."
             )
         return pd.DatetimeIndex(
             [eligible[eligible_periods.get_loc(period)] for period in requested]
@@ -138,7 +148,7 @@ class Backtest(BaseEstimator, EstimatorIO):
         results = []
         self.models_ = {}
         for valuation in periods:
-            target_valuation = available[available.get_loc(valuation) + 1]
+            target_valuation = available[available.get_loc(valuation) + self.horizon]
             train = obj[obj.valuation <= valuation]
             fitted = clone(estimator)
             if sample_weight is None:
@@ -161,6 +171,7 @@ class Backtest(BaseEstimator, EstimatorIO):
                 )
             result["valuation"] = valuation
             result["target_valuation"] = target_valuation
+            result["horizon"] = self.horizon
             result["error"] = result["actual"] - result["predicted"]
             result["absolute_error"] = result["error"].abs()
             result["absolute_percentage_error"] = np.where(
@@ -174,7 +185,7 @@ class Backtest(BaseEstimator, EstimatorIO):
         self.results_ = pd.concat(results, ignore_index=True)
         self.summary_ = (
             self.results_
-            .groupby(["valuation", "target_valuation"], as_index=False)
+            .groupby(["valuation", "target_valuation", "horizon"], as_index=False)
             .agg(
                 observations=("actual", "size"),
                 actual=("actual", "sum"),

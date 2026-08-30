@@ -32,6 +32,14 @@ def test_backtest_uses_most_recent_periods(raa):
     assert result.summary_["observations"].gt(0).all()
 
 
+def test_backtest_supports_multi_period_horizons(raa):
+    result = cl.Backtest(valuation_periods="1987", horizon=2).fit(raa)
+
+    target = pd.Period(result.summary_.loc[0, "target_valuation"], freq="Y")
+    assert str(target) == "1989"
+    assert result.summary_.loc[0, "horizon"] == 2
+
+
 def test_backtest_compares_the_next_observed_diagonal(raa):
     result = cl.Backtest(n_periods=1).fit(raa)
     target = result.summary_.loc[0, "target_valuation"]
@@ -57,3 +65,8 @@ def test_backtest_accepts_a_pipeline_estimator(raa):
 def test_backtest_rejects_period_without_following_valuation(raa):
     with pytest.raises(ValueError, match="following valuation period"):
         cl.Backtest(valuation_periods="1990").fit(raa)
+
+
+def test_backtest_rejects_invalid_horizon(raa):
+    with pytest.raises(ValueError, match="horizon"):
+        cl.Backtest(horizon=0).fit(raa)
