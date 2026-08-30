@@ -1388,6 +1388,53 @@ class Triangle(TriangleBase):
         report["passed"] = report["count"] == 0
         return report.loc[:, ["check", "severity", "count", "passed", "message"]]
 
+    def development_outliers(self, threshold: float = 3.5) -> pd.DataFrame:
+        """Flag unusual age-to-age development ratios with a robust MAD score.
+
+        Ratios are compared only with other observed origins at the same
+        development age. A large robust score is a review signal, not an
+        automatic instruction to remove or adjust data.
+
+        Parameters
+        ----------
+        threshold : float, default=3.5
+            Absolute modified z-score needed to flag an observation.
+        """
+        if not isinstance(threshold, (int, float)) or threshold <= 0:
+            raise ValueError("threshold must be a positive number.")
+        obj = self.incr_to_cum().link_ratio.set_backend("numpy")
+        rows = []
+        for key in range(obj.shape[0]):
+            for column in range(obj.shape[1]):
+                for development in range(obj.shape[-1]):
+                    values = obj.values[key, column, :, development]
+                    finite = np.isfinite(values)
+                    if finite.sum() < 3:
+                        continue
+                    median = np.median(values[finite])
+                    mad = np.median(np.abs(values[finite] - median))
+                    if mad == 0:
+                        continue
+                    scores = 0.6745 * (values - median) / mad
+                    for origin in np.where(finite & (np.abs(scores) >= threshold))[0]:
+                        row = obj.index.iloc[key].to_dict()
+                        row.update(
+                            {
+                                "column": obj.columns[column],
+                                "origin": obj.odims[origin],
+                                "development": f"{obj.ddims[development]}-{obj.ddims[development + 1]}",
+                                "link_ratio": values[origin],
+                                "median": median,
+                                "modified_z_score": scores[origin],
+                            }
+                        )
+                        rows.append(row)
+        columns = obj.key_labels + [
+            "column", "origin", "development", "link_ratio", "median",
+            "modified_z_score",
+        ]
+        return pd.DataFrame(rows).reindex(columns=columns)
+
     @property
     def age_to_age(self):
         """

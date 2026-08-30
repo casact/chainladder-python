@@ -382,6 +382,16 @@ def test_quality_check_detail_returns_flagged_cells(raa: Triangle) -> None:
     assert decrease["change"] < 0
 
 
+def test_development_outliers_flags_unusual_link_ratio(raa: Triangle) -> None:
+    tri = raa.copy().set_backend("numpy")
+    tri.values[0, 0, 2, 1] = tri.values[0, 0, 2, 0] * 10
+
+    report = tri.development_outliers()
+
+    assert not report.empty
+    assert report["modified_z_score"].abs().ge(3.5).all()
+
+
 def test_quality_check_does_not_mutate_triangle_backend(raa: Triangle) -> None:
     backend = raa.array_backend
 
