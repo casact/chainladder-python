@@ -73,6 +73,7 @@ EXPECTED_PUBLIC_API = {
     "ExpectedLoss",
     # workflow
     "GridSearch",
+    "SensitivityAnalysis",
     "Pipeline",
     "VotingChainladder",
     "TriangleSelector",

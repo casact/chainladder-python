@@ -145,6 +145,7 @@ Classes
   Pipeline
   VotingChainladder
   GridSearch
+  SensitivityAnalysis
 
 
 .. _utils_ref:
