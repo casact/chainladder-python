@@ -8,7 +8,7 @@ The chainladder-python team consists a diverse group of actuaries, developers, s
 
 ## Maintainers
 
-- Kenneth Hsu, FCAS, MAAA, CSPA (@kennethshsu) - July 2021 - Present
+- Kenneth Hsu, FCAS, MAAA, CSPA, MAAA (@kennethshsu) - July 2021 - Present
 - Gene Dan, FCAS, MAAA, CSPA (@genedan) - March 2022 - Present
 - Henry Liu, FCAS (@henrydingliu) - October 2022 - Present
 - Priyam Alok (@priyam0k) - April 2026 - Present
