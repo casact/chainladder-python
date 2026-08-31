@@ -1,20 +1,21 @@
 ## Summary of Changes  
 
 
+
 ## Related GitHub Issue(s)  
 <!-- Use keywords like close/closes/closed or fix/fixes/fixed to close the issue automatically -->
 
+
 ## AI/LLM Usage
 <!-- Declare and briefly describe any AI/LLM assistance used and the extent of usage during development. -->
+
 
 
 ## Additional Context for Reviewers  
 
 
 
-
 <!-- Do not edit anything below until the ticket is open. Checklists below. -->
-
 ## Submitter's Checklist
 - [ ] I have reviewed and am adhering to the standards outlined in the project Governing Doc.
 - [ ] The PR subject title summarizes the changes, with a proper prefix:
@@ -25,7 +26,6 @@
     [CHORE] for chores and maintenance tasks
     [BRK] for breaking changes, deprecations, and removals
 - [ ] I am a human (not a bot), and this PR is not AI generated.
-
 
 ## Reviewer's Checklist
 - [ ] The implementation addresses the associated issue(s).
