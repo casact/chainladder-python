@@ -16,7 +16,6 @@ from chainladder.utils import WeightedRegression
 from chainladder.utils.utility_functions import num_to_nan
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
-from pandas.api.types import is_string_dtype
 
 from typing import TYPE_CHECKING
 
@@ -175,7 +174,7 @@ class DevelopmentBase(
                 # convert boolean to ints (1s)
                 for index in range(len(drop_type_array)):
                     if isinstance(drop_type_array[index], bool):
-                        drop_type_array[index] = int(drop_type_array[index] == True)
+                        drop_type_array[index] = int(drop_type_array[index])
                     else:
                         drop_type_array[index] = drop_type_array[index]
 
@@ -375,7 +374,6 @@ class DevelopmentBase(
         return tri_w[:, :-1]
 
     def _drop(self, X):
-        xp = X.get_array_module()
         drop = [self.drop] if type(self.drop) is not list else self.drop
         arr = X.nan_triangle.copy()
         for item in drop:
@@ -410,7 +408,6 @@ class DevelopmentBase(
         from chainladder import options
         
         obj: Triangle = X[X.origin == X.origin.min()]
-        xp = X.get_array_module()
         obj.values = params
         obj.valuation_date = pd.to_datetime(options.ULT_VAL)
         obj.is_pattern = True
