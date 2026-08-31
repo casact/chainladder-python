@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "chainladder"
 version = "0.10.0"
 authors = [
-    {name = "John Bogaardt", email = "jbogaardt@gmail.com"},
+    {name = "The chainladder-python Team", email = "jbogaardt@gmail.com"},
 ]
 maintainers = [
-    {name = "John Bogaardt", email = "jbogaardt@gmail.com"},
+    {name = "The chainladder-python Team", email = "jbogaardt@gmail.com"},
 ]
 description = "Chainladder Package - P&C Loss Reserving package"
 readme = "README.rst"
