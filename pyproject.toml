@@ -113,7 +113,6 @@ select = ["E2", "E4", "E7", "E9", "F"]
 # check can be required without blocking unrelated PRs. Remove entries as
 # files are cleaned up.
 [tool.ruff.lint.per-file-ignores]
-"chainladder/__init__.py" = ["E252"]
 "chainladder/adjustments/berqsherm.py" = ["E226", "E241", "E261"]
 "chainladder/adjustments/bootstrap.py" = ["E231", "E721", "E722", "F841"]
 "chainladder/adjustments/disposal.py" = ["E226", "E227", "E231", "E251", "E252", "E265", "F401"]
