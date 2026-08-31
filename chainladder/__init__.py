@@ -11,6 +11,7 @@ able to pick up this package with ease. You will be able to save your mental ene
 The __init__.py file governs package configuration, including datetime datatypes and precision, backend and ultimate
 valuation defaults, as well as package metadata such as version number.
 """
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -24,10 +25,7 @@ import pandas as pd
 import warnings
 
 from importlib.metadata import version
-from typing import (
-    overload,
-    TYPE_CHECKING
-)
+from typing import overload, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from re import Match
@@ -45,9 +43,7 @@ __dt64_unit__: str = np.datetime_data(__dt64_dtype__)[0]
 # Sentinel pattern used to mark a parameter as required and validate it.
 _UNSET: Any = object()
 
-_option_warning: str = (
-    "The parameter 'option' is deprecated and will be removed in a future release. Use 'pat' instead."
-)
+_option_warning: str = "The parameter 'option' is deprecated and will be removed in a future release. Use 'pat' instead."
 
 # Array backends slated for removal, mapped to the issue tracking each one.
 # Selecting one of these (via set_option, ARRAY_PRIORITY, or set_backend, or by
@@ -109,11 +105,21 @@ def _warn_dask_parallel_deprecated(stacklevel: int = 2) -> None:
 
 
 @overload
-def _resolve_pat(pat: str | None, option: str | None, required: Literal[True] = ...) -> str: ...
+def _resolve_pat(
+    pat: str | None, option: str | None, required: Literal[True] = ...
+) -> str: ...
 @overload
-def _resolve_pat(pat: str | None, option: str | None, required: Literal[False]) -> str | None: ...
+def _resolve_pat(
+    pat: str | None, option: str | None, required: Literal[False]
+) -> str | None: ...
+
+
 del overload
-def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> str | None:
+
+
+def _resolve_pat(
+    pat: str | None, option: str | None, required: bool = True
+) -> str | None:
     """
     Handles backward compatibility of 'options' parameter in options functions. Checks whether option or pat is
     assigned a value and returns it. This value is meant to be assigned to the 'pat' parameter of the calling function.
@@ -158,6 +164,7 @@ def _resolve_pat(pat: str | None, option: str | None, required: bool = True) -> 
         raise TypeError(f"{caller}() missing required argument: 'pat'.")
     return pat
 
+
 class Options:
     """
     Used to set defaults for array backend and datetime units.
@@ -177,22 +184,21 @@ class Options:
         The default ultimate valuation datetime, precision set to default of Pandas installation.
 
     """
+
     def __init__(self):
         self.ARRAY_BACKEND = "numpy"
         self.AUTO_SPARSE = True
         self.ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
         self.ULT_VAL = str(
-            pd.Timestamp("2262-01-01") - \
-            pd.Timedelta(1, unit=__dt64_unit__)
+            pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)
         )
         # Store initial values as defaults.
-        self._defaults = copy.deepcopy({k: v for k, v in vars(self).items() if not k.startswith('_')})
+        self._defaults = copy.deepcopy({
+            k: v for k, v in vars(self).items() if not k.startswith("_")
+        })
 
     def get_option(
-            self,
-            pat: str | None = None,
-            *,
-            option: str | None = None
+        self, pat: str | None = None, *, option: str | None = None
     ) -> str | bool | list:
         """
         Get the option value for the specified option.
@@ -217,11 +223,11 @@ class Options:
         return getattr(self, pat)
 
     def set_option(
-            self,
-            pat: str | None = None,
-            value: str | bool | list = _UNSET,
-            *,
-            option: str | None = None
+        self,
+        pat: str | None = None,
+        value: str | bool | list = _UNSET,
+        *,
+        option: str | None = None,
     ) -> None:
         """
         Set the option value for the specified option.
@@ -274,10 +280,7 @@ class Options:
         setattr(self, pat, value)
 
     def reset_option(
-            self,
-            pat: str | None = None,
-            *,
-            option: str | None = None
+        self, pat: str | None = None, *, option: str | None = None
     ) -> None:
         """
         Restores the default value for the specified option. Restores default values for
@@ -320,9 +323,11 @@ class Options:
 
         """
         if pat not in self._defaults:
-            raise ValueError(f"Invalid option(s): {pat}. Must be one of {list(self._defaults)}.")
+            raise ValueError(
+                f"Invalid option(s): {pat}. Must be one of {list(self._defaults)}."
+            )
 
-    def describe_option(self, pat: str = "", _print_desc: bool=True) -> None | str:
+    def describe_option(self, pat: str = "", _print_desc: bool = True) -> None | str:
         """
         Print the description for one or more options.
 
@@ -398,7 +403,9 @@ class Options:
             raise ValueError(f"'{pat}' is not a valid regular expression.")
 
         if pat and not keys:
-            raise ValueError(f"No option matching '{pat}'. Must be one of {list(self._defaults)}.")
+            raise ValueError(
+                f"No option matching '{pat}'. Must be one of {list(self._defaults)}."
+            )
 
         # Extract class docstring and clean up indentation.
         doc: str = inspect.cleandoc(self.__class__.__doc__)
@@ -413,13 +420,15 @@ class Options:
                 # split up into groups, specified by parentheses ().
                 pattern=rf"^{re.escape(key)}:\s*(\S+)\n((?:[ \t]+.+\n?)+)",
                 string=doc,
-                flags=re.MULTILINE  # Needed to specify '^' as starting line anchor for each line.
+                flags=re.MULTILINE,  # Needed to specify '^' as starting line anchor for each line.
             )
 
             # If there's a match, extract the attribute type and description.
             if match:
                 type_hint: str = match.group(1)  # Type annotation captured by (\S+)
-                description: str = inspect.cleandoc(match.group(2))  # Description block captured by ((?:[ \t]+.+\n?)+).
+                description: str = inspect.cleandoc(
+                    match.group(2)
+                )  # Description block captured by ((?:[ \t]+.+\n?)+).
             else:
                 type_hint: str = ""
                 description: str = "No description available."
@@ -433,7 +442,9 @@ class Options:
             # Write the option followed by a type hint.
             header: str = f"{key} : {type_hint}" if type_hint else key
             # Indent the description relative to the header.
-            lines.append(f"{header}\n    {indented}\n    [default: {default}] [currently: {current}]")
+            lines.append(
+                f"{header}\n    {indented}\n    [default: {default}] [currently: {current}]"
+            )
 
         output: str = "\n".join(lines)
         # Print output by default, otherwise return the string.
@@ -441,6 +452,7 @@ class Options:
             print(output)
             return None
         return output
+
 
 options = Options()
 
