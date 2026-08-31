@@ -7,10 +7,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from sklearn.base import (
-    BaseEstimator,
-    TransformerMixin
-)
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from chainladder.utils import WeightedRegression
 from chainladder.utils.utility_functions import num_to_nan
@@ -23,18 +20,13 @@ if TYPE_CHECKING:
     from chainladder.core import Triangle
 
 
-class DevelopmentBase(
-    BaseEstimator,
-    TransformerMixin,
-    EstimatorIO,
-    Common
-):
+class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
     def fit(self, X, y=None, sample_weight=None):
         average_ = self._validate_assumption(y, self.average, axis=3)
         self.average_ = average_.flatten()
-        exponent = self.xp.array(
-            [{"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]]
-        )
+        exponent = self.xp.array([
+            {"regression": 0, "volume": 1, "simple": 2}[x] for x in average_[0, 0, 0]
+        ])
         exponent = self.xp.nan_to_num(exponent * (y * 0 + 1))
         w = num_to_nan(sample_weight / (X ** (exponent)))
         self.params_ = WeightedRegression(axis=2, thru_orig=True, xp=self.xp).fit(
@@ -42,10 +34,7 @@ class DevelopmentBase(
         )
         return self
 
-    def _set_fit_groups(
-            self,
-            X: Triangle
-    ) -> Triangle:
+    def _set_fit_groups(self, X: Triangle) -> Triangle:
         """
         Used for assigning group_index in fit.
 
@@ -73,7 +62,8 @@ class DevelopmentBase(
         else:
             indices = X.groupby(self.groupby).groups.indices
         return (
-            pd.Series(
+            pd
+            .Series(
                 {vi: k for k, v in indices.items() for vi in v},
                 name=self.ldf_.key_labels[0],
             )
@@ -181,21 +171,29 @@ class DevelopmentBase(
                 return drop_type_array
 
         # explicitly setting up 3D arrays for drop parameters to avoid broadcasting bugs
-        drop_high_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        drop_high_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         drop_high_array[:, :, :] = drop_array_helper(drop_high)
-        drop_low_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        drop_low_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         drop_low_array[:, :, :] = drop_array_helper(drop_low)
-        n_period_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        n_period_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         n_period_array[:, :, :] = drop_array_helper(self.n_periods)
-        preserve_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        preserve_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         preserve_array[:, :, :] = drop_array_helper(preserve)
 
         # operationalizing the -1 option for n_period
@@ -295,17 +293,23 @@ class DevelopmentBase(
             return drop_type_array
 
         # explicitly setting up 3D arrays for drop parameters to avoid broadcasting bugs
-        drop_above_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        drop_above_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         drop_above_array[:, :, :] = drop_array_helper(drop_above, np.inf)
-        drop_below_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        drop_below_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         drop_below_array[:, :, :] = drop_array_helper(drop_below, 0.0)
-        preserve_array = np.zeros(
-            (link_ratio.shape[0], link_ratio.shape[1], link_ratios_len)
-        )
+        preserve_array = np.zeros((
+            link_ratio.shape[0],
+            link_ratio.shape[1],
+            link_ratios_len,
+        ))
         preserve_array[:, :, :] = drop_array_helper(preserve, preserve)
 
         # transposing
@@ -382,12 +386,9 @@ class DevelopmentBase(
                 np.where(X.development == item[1])[0][0],
             ] = 0
         return arr[:, :-1]
-    
+
     @staticmethod
-    def _param_property(
-            X: Triangle, 
-            params: np.ndarray
-    ) -> Triangle:
+    def _param_property(X: Triangle, params: np.ndarray) -> Triangle:
         """
         Wrap an array of estimated parameters in a Triangle
 
@@ -402,11 +403,11 @@ class DevelopmentBase(
         Returns
         -------
         Triangle
-            The wrapped parameters 
-        
+            The wrapped parameters
+
         """
         from chainladder import options
-        
+
         obj: Triangle = X[X.origin == X.origin.min()]
         obj.values = params
         obj.valuation_date = pd.to_datetime(options.ULT_VAL)
