@@ -48,6 +48,7 @@ parts:
   - chapters:
     - file: library/about.md
       sections:
+      - file: library/governance.md
       - file: library/usage.md
       - file: library/references.md
       - file: library/sample_data.ipynb
