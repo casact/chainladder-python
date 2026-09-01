@@ -203,7 +203,7 @@ class Development(DevelopmentBase):
         2006  1.728479  1.043199       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
         2007  1.629204       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
 
-    Then, let the LDFs.
+    Then, let's inspect the LDFs again.
 
     ..  testcode::
 
