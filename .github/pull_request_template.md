@@ -19,13 +19,7 @@
 
 ## Submitter's Checklist
 - [ ] I have reviewed and am adhering to the standards outlined in the project [Governing Doc](https://github.com/casact/chainladder-python/blob/main/docs/library/governance.md).
-- [ ] The PR subject title summarizes the changes, with a proper prefix:
-    [FIX] for bug fixes
-    [FEAT] for enhancements
-    [DOCS] for documentation
-    [TST] for unit testing
-    [CHORE] for chores and maintenance tasks
-    [BRK] for breaking changes, deprecations, and removals
+- [ ] The PR subject title summarizes the changes, with one proper prefix (`[FIX]`, `[FEAT]`, `[DOCS]`, `[TST]`, `[CHORE]`, or `[BRK]`).
 - [ ] I am a human (not a bot), and this PR is not AI generated.
 
 ## Reviewer's Checklist
