@@ -27,7 +27,7 @@
 - [ ] The implementation is appropriate, maintainable, and follows ARCHITECTURE.md.
 - [ ] PR subject title has the proper prefix and the subject is appropriate.
 - [ ] Relevant issue(s) are linked.
-- [ ] AI/LLM Usage is diclosed are proper and usage is appropriate.
+- [ ] AI/LLM usage is diclosed are proper and usage is appropriate.
 - [ ] Documentation and tests are appropriate.
 - [ ] Additional reviewer is requested or not needed.
 - [ ] CI tests passed or failure are acceptable.
