@@ -18,7 +18,7 @@
 <!-- Do not edit anything below until the ticket is open. Checklists below. -->
 
 ## Submitter's Checklist
-- [ ] I have reviewed and am adhering to the standards outlined in the project Governing Doc.
+- [ ] I have reviewed and am adhering to the standards outlined in the project [Governing Doc](https://github.com/casact/chainladder-python/blob/main/docs/library/governance.md).
 - [ ] The PR subject title summarizes the changes, with a proper prefix:
     [FIX] for bug fixes
     [FEAT] for enhancements
