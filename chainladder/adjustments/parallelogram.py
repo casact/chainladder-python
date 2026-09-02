@@ -42,6 +42,14 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         parallelogram OLFs. If True, Parallelograms become squares.  This is
         commonly seen in Workers Compensation with benefit on-leveling or if
         the premium origin is also stated on an effective date basis.
+    cumulative: bool (default=False)
+        By default, `change_col` holds incremental rate changes expressed as decimals
+        (0-centric, e.g. 0.05 for a +5% rate change). If True, `change_col` instead
+        holds cumulative rate level factors stated relative to one another (1-centric,
+        e.g. 0.67 for 67% rate level, 0.75 for 75% rate level, 1.00 for current level).
+        This avoids having to back into incremental changes.
+        Each factor is in force from its effective date until the next one,
+        and the earliest factor is extended backwards.
 
     Attributes
     ----------
@@ -202,6 +210,37 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         2013  1.000000
         2014  1.000000
 
+    Cumulative rate level factors (1-centric) can also be supplied directly with
+    ``cumulative=True``:
+
+    ..  testcode::
+
+        tort = pd.DataFrame(
+            {
+                "EffDate": ["1998-01-01", "2003-01-01", "2004-01-01"],
+                "Factor": [0.67, 0.75, 1.00],
+            }
+        )
+        prem_tri = cl.load_sample("friedland_gl_self_insurer")["Reported Claims"]
+        olf = (
+            cl.ParallelogramOLF(
+                rate_history=tort,
+                change_col="Factor",
+                date_col="EffDate",
+                policy_length=12,
+                approximation_grain="M",
+                vertical_line=True,
+                cumulative=True,
+            )
+            .fit_transform(prem_tri)
+            .olf_
+        )
+        print(np.round(olf.to_frame().values.flatten()[:5], 2))
+
+    ..  testoutput::
+
+        [0.67 0.67 0.67 0.67 0.67]
+
     """
 
     def __init__(
@@ -212,6 +251,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         approximation_grain="M",
         policy_length=12,
         vertical_line=False,
+        cumulative=False,
     ):
         self.rate_history = rate_history
         self.change_col = change_col
@@ -219,6 +259,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         self.approximation_grain = approximation_grain
         self.policy_length = policy_length
         self.vertical_line = vertical_line
+        self.cumulative = cumulative
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -256,14 +297,14 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
             policy_length=self.policy_length,
             vertical_line=self.vertical_line,
             approximation_grain=self.approximation_grain,
+            cumulative=self.cumulative,
         )
 
         if len(groups) > 0:
             tris = []
             for item in idx.index.set_index(groups).iterrows():
                 r = self.rate_history.set_index(groups).loc[item[0]].copy()
-                r[self.change_col] = r[self.change_col] + 1
-                r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
+                r = self._combine_duplicate_dates(r)
                 date = r[self.date_col]
                 values = r[self.change_col]
                 olf = parallelogram_olf(values=values, dates=date, **kw).values[
@@ -274,14 +315,21 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
                 tris.append((idx.loc[item[0]] * 0 + 1) * olf)
             self.olf_ = concat(tris, 0).latest_diagonal
         else:
-            r = self.rate_history.copy()
-            r[self.change_col] = r[self.change_col] + 1
-            r = (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
+            r = self._combine_duplicate_dates(self.rate_history.copy())
             date = r[self.date_col]
             values = r[self.change_col]
             olf = parallelogram_olf(values=values, dates=date, **kw)
             self.olf_ = ((idx * 0 + 1) * olf.values[None, None]).latest_diagonal
         return self
+
+    def _combine_duplicate_dates(self, r):
+        """Collapse multiple rate entries sharing an effective date."""
+        if self.cumulative:
+            # Cumulative factors are absolute rate levels, not compounding
+            # increments, so the last factor stated for a date wins.
+            return r.groupby(self.date_col)[self.change_col].last().reset_index()
+        r[self.change_col] = r[self.change_col] + 1
+        return (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
 
     def transform(self, X, y=None, sample_weight=None):
         """If X and self are of different shapes, align self to X, else

@@ -17,7 +17,7 @@ from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from typing import Iterable, Union, Optional, TYPE_CHECKING
+from typing import Union, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle, MethodBase, Pipeline
@@ -95,9 +95,7 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
             what data are available.
             
             You supplied: {}
-            """.format(
-                key
-            )
+            """.format(key)
         )
 
     dataset_path: str = os.path.join(utils_path, "data", key.lower() + ".csv")
@@ -170,8 +168,9 @@ def list_samples(include_grain: bool = True) -> DataFrame:
     .. code-block:: python
 
         import chainladder as cl
-        cl.list_samples()                    # full table, grain included
-        cl.list_samples(include_grain=False) # fast, metadata only
+
+        cl.list_samples()  # full table, grain included
+        cl.list_samples(include_grain=False)  # fast, metadata only
     """
     records: list = []
     for name in sorted(SAMPLES):
@@ -424,6 +423,32 @@ def read_json(json_str, array_backend=None):
         return cl.__dict__[json_dict["__class__"]]().set_params(**json_dict["params"])
 
 
+def _origin_periods(index, grain):
+    """Bucket a DatetimeIndex into origin periods of the given Triangle grain.
+
+    ``DatetimeIndex.to_period`` covers "Y", "Q" and "M" directly. It has no
+    semiannual frequency, and "2Q" does not stand in for one. The multiple is
+    honoured, so a "2Q" period is six months long, but each one is anchored to
+    the quarter of the observation rather than to a fixed half-year boundary,
+    so the windows overlap::
+
+        2016-01-01 -> 2016Q1 [2016-01-01 .. 2016-06-30]
+        2016-04-01 -> 2016Q2 [2016-04-01 .. 2016-09-30]
+
+    Grouping on that yields eight buckets over two years instead of four, which
+    would then be broadcast against a six-origin triangle. "S" is therefore
+    built by collapsing each half year onto the quarter it starts in, which also
+    matches how Triangle labels a semiannual origin (``"%YQ%q"``).
+    """
+    if grain == "S":
+        quarters = index.to_period("Q")
+        return pd.PeriodIndex([
+            pd.Period(year=q.year, quarter=1 if q.quarter <= 2 else 3, freq="Q")
+            for q in quarters
+        ])
+    return index.to_period(grain)
+
+
 def parallelogram_olf(
     values,
     dates,
@@ -433,17 +458,28 @@ def parallelogram_olf(
     policy_length=12,
     approximation_grain="M",
     vertical_line=False,
+    cumulative=False,
 ):
-    """Parallelogram approach to on-leveling."""
+    """Parallelogram approach to on-leveling.
+
+    When ``cumulative`` is False (default), ``values`` are incremental rate
+    changes expressed as decimals (0-centric, e.g. 0.05 for +5%). When True,
+    ``values`` are cumulative rate level factors stated relative to one another
+    (1-centric, e.g. 0.67 for 67% rate level, 1.00 for current level), and each value is
+    in force from its effective date until the next one. The earliest value is
+    extended backwards to cover the lookback window.
+    """
     if approximation_grain not in ["M", "D"]:
         raise ValueError("approximation_grain must be M or D")
 
     dates = pd.to_datetime(dates)
 
     if start_date:
-        start_date = pd.to_datetime(start_date) - pd.tseries.offsets.DateOffset(days=1)
+        window_start = pd.to_datetime(start_date)
+        start_date = window_start - pd.tseries.offsets.DateOffset(days=1)
     else:
-        start_date = pd.to_datetime("{}-01-01".format(dates.min().year))
+        window_start = pd.to_datetime("{}-01-01".format(dates.min().year))
+        start_date = window_start
 
     if not end_date:
         end_date = pd.to_datetime("{}-12-31".format(dates.max().year))
@@ -456,71 +492,79 @@ def parallelogram_olf(
         freq={"M": "MS", "D": "D"}[approximation_grain],
     )
 
-    rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
-        date_idx, fill_value=0
-    )
-    cum_rate_changes = pd.Series(
-        np.cumprod(1 + rate_changes.values), rate_changes.index
-    )
+    if cumulative:
+        factors = pd.Series(
+            np.array(values, dtype="float64"), pd.to_datetime(np.array(dates))
+        ).sort_index()
+        if (factors <= 0).any():
+            raise ValueError("cumulative on-level factors must be positive")
+        # An on-level factor is the current rate level divided by the rate level
+        # in force, so the implied rate level is its reciprocal. Each factor is
+        # in force from its effective date until the next (a backward/asof match,
+        # so off-grid or pre-window dates are honored); dates before the first
+        # factor take the earliest, extending it back over the lookback window.
+        level = 1 / factors
+        pos = np.searchsorted(level.index.values, date_idx.values, side="right") - 1
+        cum_rate_changes = pd.Series(
+            level.values[np.clip(pos, 0, None)], index=date_idx
+        )
+    else:
+        rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
+            date_idx, fill_value=0
+        )
+        cum_rate_changes = pd.Series(
+            np.cumprod(1 + rate_changes.values), rate_changes.index
+        )
     crl = cum_rate_changes.iloc[-1]
 
     rolling_num_base = {
         "M": policy_length,
         "D": int(365 * policy_length / 12),
     }[approximation_grain]
-    dropdates_base = {
-        "M": 12 * lookback_years,
-        "D": 366 * lookback_years,
-    }[approximation_grain]
 
     def _fcrl_for_leap(is_leap_year: bool):
         # In monthly mode every month is treated as an equal length period, so a
-        # leap day has no effect on the rolling window or the lookback drop.
+        # leap day has no effect on the rolling window.
         if approximation_grain == "M":
             is_leap_year = False
 
-        if is_leap_year:
-            leap_day = 1
-        else:
-            leap_day = 0
+        leap_day = 1 if is_leap_year else 0
 
         if vertical_line:  # rectangle method, rate change impact is immediate
             cum_avg = cum_rate_changes
 
         else:  # parallelogram method, rate change impact is overtime
-            #
             average_period = max(rolling_num_base + leap_day, 1)
 
             cum_avg = cum_rate_changes.rolling(average_period).mean()
             cum_avg = (cum_avg + cum_avg.shift(1).values) / 2
 
-        cum_avg = cum_avg.iloc[dropdates_base + leap_day :]
+        # Trim the lookback window by date so both passes span the same origins.
+        cum_avg = cum_avg[cum_avg.index >= window_start]
 
-        fcrl = cum_avg.groupby(cum_avg.index.to_period(grain)).mean().reset_index()
+        periods = _origin_periods(cum_avg.index, grain)
+        fcrl = cum_avg.groupby(periods).mean().reset_index()
         fcrl.columns = ["Origin", "OLF"]
+        # Carry the leap flag off the periods while they are still periods. It
+        # used to be recovered by strptime-parsing the stringified label, which
+        # only ever worked for the "Y" and "M" label shapes.
+        fcrl["is_leap"] = pd.PeriodIndex(fcrl["Origin"]).is_leap_year
         fcrl["Origin"] = fcrl["Origin"].astype(str)
         fcrl["OLF"] = crl / fcrl["OLF"]
 
-        return fcrl
+        return fcrl.set_index("Origin")
 
     fcrl_non_leaps = _fcrl_for_leap(False)
     fcrl_leaps = fcrl_non_leaps if approximation_grain == "M" else _fcrl_for_leap(True)
 
+    # Join on the origin period rather than row position.
     combined = fcrl_non_leaps.join(fcrl_leaps, lsuffix="_non_leaps", rsuffix="_leaps")
-    combined["is_leap"] = pd.to_datetime(
-        combined["Origin_non_leaps"], format="%Y" + ("-%m" if grain == "M" else "")
-    ).dt.is_leap_year
-
-    combined["final_OLF"] = np.where(
-        combined["is_leap"], combined["OLF_leaps"], combined["OLF_non_leaps"]
+    is_leap = combined["is_leap_non_leaps"].fillna(combined["is_leap_leaps"])
+    combined["OLF"] = np.where(
+        is_leap, combined["OLF_leaps"], combined["OLF_non_leaps"]
     )
 
-    combined.drop(
-        ["OLF_non_leaps", "Origin_leaps", "OLF_leaps", "is_leap"], axis=1, inplace=True
-    )
-    combined.columns = ["Origin", "OLF"]
-
-    return combined.set_index("Origin")
+    return combined[["OLF"]]
 
 
 def set_common_backend(objs):
@@ -660,7 +704,7 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) == np.ndarray:
+    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
         out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
@@ -915,9 +959,10 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 
 
 def model_diagnostics(
-        model:Triangle|MethodBase|Pipeline, 
-        name:str|None=None, 
-        groupby:str|list(str)|None=None) -> Triangle:
+    model: Triangle | MethodBase | Pipeline,
+    name: str | None = None,
+    groupby: str | list(str) | None = None,
+) -> Triangle:
     """A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
@@ -933,7 +978,7 @@ def model_diagnostics(
 
     Returns
     -------
-    Triangle with relevant figures as columns, including 
+    Triangle with relevant figures as columns, including
     - ``Latest``: Cumulative value at the latest valuation date, equivalent to ``latest_diagonal``
     - ``Month/Quarter/Year Incremental``: Actual emergence between the latest valuation and the one prior valuation date
     - ``LDF``: Age-to-age loss development factor to the next development/valuation period (from ``ldf_``); ignored if ``groupby`` is supplied
@@ -943,8 +988,8 @@ def model_diagnostics(
     - ``Run Off 1/2/3...``: Expected incremental emergence in successive future valuation periods (from ``full_expectation_``)
     - ``Apriori``: Expected ultimate for Benktander family of methods (from ``expectation_``)
 
-    Columns from the original Triangle are cross-joined into the index. 
-    ``Measure`` will contain all the columns from the original Triangle. 
+    Columns from the original Triangle are cross-joined into the index.
+    ``Measure`` will contain all the columns from the original Triangle.
     """
     from chainladder import Pipeline, Triangle
 
@@ -952,7 +997,7 @@ def model_diagnostics(
         obj = copy.deepcopy(model.steps[-1][-1])
     else:
         obj = copy.deepcopy(model)
-    if not (hasattr(obj,"ultimate_") & hasattr(obj,"ibnr_") & hasattr(obj,"ldf_")):
+    if not (hasattr(obj, "ultimate_") & hasattr(obj, "ibnr_") & hasattr(obj, "ldf_")):
         raise ValueError("model does not have ultimate_/ibnr_/ldf_")
     if isinstance(model, Triangle):
         obj.X_ = obj
@@ -990,7 +1035,8 @@ def model_diagnostics(
                 obj.X_
                 - obj.X_[
                     val
-                    < pd.Period(out.valuation_date, freq="Q")
+                    < pd
+                    .Period(out.valuation_date, freq="Q")
                     .to_timestamp(how="s")
                     .strftime("%Y-%m")
                 ]
@@ -1004,8 +1050,12 @@ def model_diagnostics(
         else:
             out["Year Incremental"] = 0
         if groupby is None:
-            out["LDF"] = obj.ldf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
-            out["CDF"] = obj.cdf_.align_pattern(obj.X_.incr_to_cum(),sample_weight = obj.ultimate_[col])[col]
+            out["LDF"] = obj.ldf_.align_pattern(
+                obj.X_.incr_to_cum(), sample_weight=obj.ultimate_[col]
+            )[col]
+            out["CDF"] = obj.cdf_.align_pattern(
+                obj.X_.incr_to_cum(), sample_weight=obj.ultimate_[col]
+            )[col]
         out["Ultimate"] = obj.ultimate_[col]
         out["IBNR"] = out["Ultimate"] - out["Latest"]
         for i in range(run_off.shape[-1]):
@@ -1044,20 +1094,16 @@ def PTF_formula(
         graingamma = [(i + 1) * dgrain for i in gamma]
         for ind in range(1, len(graingamma)):
             formula_parts += [
-                "+".join(
-                    [
-                        f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind-1]},development))/{dgrain})"
-                    ]
-                )
+                "+".join([
+                    f"I((np.minimum({graingamma[ind]},development) - np.minimum({graingamma[ind - 1]},development)) / {dgrain})"
+                ])
             ]
     if iota:
         for ind in range(1, len(iota)):
             formula_parts += [
-                "+".join(
-                    [
-                        f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind-1]},valuation))"
-                    ]
-                )
+                "+".join([
+                    f"I(np.minimum({iota[ind]},valuation) - np.minimum({iota[ind - 1]},valuation))"
+                ])
             ]
     if formula_parts:
         return "+".join(formula_parts)

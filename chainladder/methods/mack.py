@@ -40,6 +40,10 @@ class MackChainladder(Chainladder):
     total_mack_std_err_:
         The total prediction error across all origin periods
 
+    See Also
+    --------
+    BootstrapODPSample : Generates ODP bootstrap samples for reserve uncertainty.
+
     Examples
     --------
     Use ``MackChainladder`` when the IBNR point estimate alone is not

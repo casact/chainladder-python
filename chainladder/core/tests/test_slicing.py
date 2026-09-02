@@ -285,7 +285,32 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
         tri.loc["Aegis Grp", "comauto"] = sub * 2
         assert tri.loc["Aegis Grp", "comauto"] == sub * 2
 
+def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
+    """
+    Use Triangle.loc to set a few origin or develop period via a TriangleSlicer.
 
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa2 = raa * 2
+    raa_new = raa.copy()
+    if raa_new.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        raa_new.loc[:,:,:,:60] = raa2.loc[:,:,:,:60]
+        raa_new.loc[:,:,:,72:] = raa2.loc[:,:,:,72:]
+        assert raa_new == raa2
+        raa_new = raa.copy()
+        raa_new.loc[:,:,:'1984',:] = raa2.loc[:,:,:'1984',:]
+        raa_new.loc[:,:,'1985':,:] = raa2.loc[:,:,'1985':,:]
+        assert raa_new == raa2
 
 def test_invalid_iloc_sparse_assignment(prism) -> None:
     """
@@ -340,6 +365,29 @@ def test_get_idx_fancy_origin_raises(raa: Triangle) -> None:
     with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
         _= raa.iloc[0, 0, [0, 1, 5], :]
 
+def test_set_fancy_origin_raises(raa: Triangle) -> None:
+    """
+    Attempt setting with fancy indexing on origin axis, raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa_copy = raa.copy()
+    if raa.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.iloc[0, 0, [0, 1, 5], :] = raa.iloc[0, 0, :3, :]
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.loc['Total', 'values', ['1983', '1984', '1986'], :] = raa.iloc[0, 0, :3, :]
+
 
 def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
     """
@@ -357,6 +405,29 @@ def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
     """
     with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
         _= raa.iloc[0, 0, :, [0, 1, 5]]
+
+def test_set_fancy_development_raises(raa: Triangle) -> None:
+    """
+    Attempt setting with fancy indexing on development axis, raise an error.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    raa_copy = raa.copy()
+    if raa.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.iloc[0, 0, :, [0, 1, 5]] = raa.iloc[0, 0, :, :3]
+        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+            raa_copy.loc['Total', 'values', :, [12, 24, 48]] = raa.iloc[0, 0, :, :3]
 
 
 def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
@@ -383,6 +454,77 @@ def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     assert result.index.values.tolist() == expected_index
     assert result.columns.tolist() == ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
 
+def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+    """
+    Set lists of non-contiguous indexes and column through Triangle.loc. Check the values
+    of the assigned triangles.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    if clrd.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        dest_index = [
+            ['Adriatic Ins Co', 'othliab'],
+            ['Adriatic Ins Co', 'ppauto'],
+            ['Agency Ins Co Of MD Inc', 'ppauto'],
+        ]
+        val_index = [
+            ['Adriatic Ins Co', 'ppauto'],
+            ['Aegis Grp', 'comauto'],
+            ['Agency Ins Co Of MD Inc', 'ppauto'],
+        ]
+        dest_col = ['CumPaidLoss', 'BulkLoss', 'EarnedPremNet']
+        val_col = ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
+        clrd_copy = clrd.copy()
+        clrd_copy.loc[dest_index] = clrd.loc[val_index]
+        assert clrd_copy.loc[dest_index] == clrd.loc[val_index]
+        clrd_copy = clrd.copy()
+        clrd_copy.loc[:,dest_col] = clrd.loc[:,val_col]
+        assert clrd_copy.loc[:,dest_col] == clrd.loc[:,val_col]
+        clrd_copy = clrd.copy()
+        clrd_copy.loc[dest_index,dest_col] = clrd.loc[val_index,val_col]
+        assert clrd_copy.loc[dest_index,dest_col] == clrd.loc[val_index,val_col]
+
+def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
+    """
+    Set lists of non-contiguous indexes and column through Triangle.iloc. Check the values
+    of the assigned triangles.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+
+    """
+    if clrd.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    else:
+        dest_index = [0,1,5]
+        val_index = [1,4,6]
+        dest_col = [2,3,5]
+        val_col = [1,2,4]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[dest_index] = clrd.iloc[val_index]
+        assert clrd_copy.iloc[dest_index] == clrd.iloc[val_index]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[:,dest_col] = clrd.iloc[:,val_col]
+        assert clrd_copy.iloc[:,dest_col] == clrd.iloc[:,val_col]
+        clrd_copy = clrd.copy()
+        clrd_copy.iloc[dest_index,dest_col] = clrd.iloc[val_index,val_col]
+        assert clrd_copy.iloc[dest_index,dest_col] == clrd.iloc[val_index,val_col]
 
 def test_sparse_at_iat1(prism):
     t = prism.copy()
