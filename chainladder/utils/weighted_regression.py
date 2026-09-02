@@ -65,9 +65,9 @@ class WeightedRegression(BaseEstimator):
 
     def fit(
             self, 
-            X:BackendArray, 
-            y:BackendArray|None=None, 
-            sample_weight:BackendArray|None=None, 
+            X: BackendArray, 
+            y: BackendArray | None = None, 
+            sample_weight: BackendArray | None = None, 
             average: Literal["volume", "simple", "regression", "geometric"] | None = None
     ):
         """
