@@ -142,7 +142,7 @@ class ClarkLDF(DevelopmentBase):
 
         775
                   CumPaidLoss
-        LOB                  
+        LOB
         comauto         1.08
         medmal          1.89
         othliab         1.47
@@ -150,7 +150,7 @@ class ClarkLDF(DevelopmentBase):
         prodliab        1.44
         wkcomp          1.11
                   CumPaidLoss
-        LOB                  
+        LOB
         comauto        20.48
         medmal         35.13
         othliab        37.75
@@ -160,20 +160,11 @@ class ClarkLDF(DevelopmentBase):
 
     """
 
-    def __init__(
-            self,
-            growth: str = "loglogistic",
-            groupby=None
-    ):
+    def __init__(self, growth: str = "loglogistic", groupby=None):
         self.growth: str = growth
         self.groupby = groupby
 
-    def _G(
-            self,
-            age,
-            theta: float = None,
-            omega: float = None
-    ):
+    def _G(self, age, theta: float = None, omega: float = None):
         """Growth function.
 
         Parameters
@@ -192,12 +183,12 @@ class ClarkLDF(DevelopmentBase):
             omega = self.omega_.values[..., None, None]
         age[age == 0.0] = xp.nan
         if self.growth == "loglogistic":
-            out = 1 + (theta ** omega) * (age ** (-omega))
+            out = 1 + (theta**omega) * (age ** (-omega))
         elif self.growth == "weibull":
             out = 1 / (1 - xp.exp(-((age / theta) ** omega)))
         else:
             ValueError(str(self.growth) + "is an invalid growth curve.")
-        out[xp.isnan(out)] = xp.inf # noqa
+        out[xp.isnan(out)] = xp.inf  # noqa
         return out
 
     def G_(self, age):
@@ -215,9 +206,9 @@ class ClarkLDF(DevelopmentBase):
             A Triangle object with growth curve values
         """
         xp = self.incremental_act_.get_array_module()
-        if type(age) in [int, float, xp.int64, xp.float64]:
+        if isinstance(age, (int, float, xp.int64, xp.float64)):
             age = xp.array([age]).astype("float64")
-        if type(age) == list:
+        if isinstance(age, list):
             age = xp.array([age]).astype("float64")
         obj = self.incremental_act_.copy()
         obj.odims = obj.odims[0:1]
@@ -286,8 +277,11 @@ class ClarkLDF(DevelopmentBase):
             for col in range(len(X.columns)):
 
                 def solver(x: ndarray):
-                    """ Solve Loglogistic MLE"""
-                    ldf = lambda age: self._G(age, theta=x[..., 1], omega=x[..., 0])
+                    """Solve Loglogistic MLE"""
+
+                    def ldf(age):
+                        return self._G(age, theta=x[..., 1], omega=x[..., 0])
+
                     if sample_weight:
                         ult = (
                             sample_weight.values[idx : idx + 1, col : col + 1, ::-1, 0]
@@ -305,7 +299,7 @@ class ClarkLDF(DevelopmentBase):
                         increments[idx : idx + 1, col : col + 1] * xp.log(increment_fit)
                         - increment_fit
                     )
-                    return -xp.sum((xp.nan_to_num(mle.flatten())))
+                    return -xp.sum(xp.nan_to_num(mle.flatten()))
 
                 if sample_weight:
                     x0 = xp.array([[[[1.0, age_interval, 1.0]]]])
@@ -314,7 +308,9 @@ class ClarkLDF(DevelopmentBase):
                     x0 = xp.array([[[[1.0, age_interval]]]])
                     bounds = ((1e-6, None), (1e-6, None))
                 idx_params.append(
-                    minimize(fun=solver, x0=x0.flatten(), bounds=bounds).x.reshape(1, 1, 1, -1)
+                    minimize(fun=solver, x0=x0.flatten(), bounds=bounds).x.reshape(
+                        1, 1, 1, -1
+                    )
                 )
             params.append(xp.concatenate(idx_params, axis=1))
         params = xp.concatenate(params, axis=0)
@@ -335,8 +331,7 @@ class ClarkLDF(DevelopmentBase):
         if sample_weight:
             self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
         ultimate_ = (
-            self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2)
-            * ld.values
+            self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2) * ld.values
         )
         self.incremental_fits_ = X.copy()
         self.incremental_fits_.array_backend = "numpy"
@@ -354,7 +349,7 @@ class ClarkLDF(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

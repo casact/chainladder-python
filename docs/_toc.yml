@@ -35,6 +35,10 @@ parts:
       sections:
       - file: friedland/chapter_6.rst
       - file: friedland/chapter_7.rst
+        title: Chapter 7 - Part I
+      - file: friedland/chapter_7_part_2.ipynb
+        title: Chapter 7 - Part II
+      - file: friedland/chapter_8.ipynb
       - file: friedland/chapter_9.ipynb
       - file: friedland/chapter_10.ipynb
       - file: friedland/chapter_11.ipynb
@@ -45,6 +49,7 @@ parts:
   - chapters:
     - file: library/about.md
       sections:
+      - file: library/governance.md
       - file: library/usage.md
       - file: library/references.md
       - file: library/sample_data.ipynb
