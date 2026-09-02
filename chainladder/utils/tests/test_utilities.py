@@ -189,16 +189,16 @@ def test_model_diagnostics_groupby(prism, atol):
     est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
     lhs = cl.model_diagnostics(est, groupby=['Line'])
     rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
-    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol, equal_nan=True)
-    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol, equal_nan=True)
+    assert np.allclose(lhs['Ultimate'].values, rhs['Ultimate'].values,atol=atol, equal_nan=True)
+    assert np.allclose(np.nan_to_num(lhs['IBNR'].values), np.nan_to_num(rhs['IBNR'].values),atol=atol, equal_nan=True)
 
 
 def test_concat_immutability(raa):
     u = cl.Chainladder().fit(raa).ultimate_
-    l = raa.latest_diagonal
-    u.columns = l.columns
+    latest = raa.latest_diagonal
+    u.columns = latest.columns
     u_new = copy.deepcopy(u)
-    cl.concat((l, u), axis=3)
+    cl.concat((latest, u), axis=3)
     assert u == u_new
 
 
@@ -680,7 +680,7 @@ def test_options_defaults() -> None:
     """
     options = cl.Options()
     assert options.ARRAY_BACKEND == "numpy"
-    assert options.AUTO_SPARSE == True
+    assert options.AUTO_SPARSE
     assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
     assert isinstance(options.ULT_VAL, str)
 
@@ -1271,6 +1271,6 @@ def test_triangleweight_full_triangle(raa: Triangle) -> None:
     Testing new path that allows weights on full triangles
     '''
     ult = cl.Chainladder().fit(raa)
-    tw = cl.TriangleWeight(n_periods = 4).fit(raa)
-    tw_full = cl.TriangleWeight(n_periods = 4).fit(ult.full_triangle_)
-    assert tw.w_.iloc[:,:,:,0] == tw_full.w_.iloc[:,:,:,0]
+    tw = cl.TriangleWeight(n_periods=4).fit(raa)
+    tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
+    assert tw.w_.iloc[:, :, :, 0] == tw_full.w_.iloc[:, :, :, 0]

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from chainladder.utils.sparse import sp
 from sklearn.base import BaseEstimator, TransformerMixin
 import warnings
 
@@ -19,7 +18,7 @@ if TYPE_CHECKING:
     from chainladder.core.typing import TriangleProtocol
 
 
-class TriangleWeight(BaseEstimator,TransformerMixin):
+class TriangleWeight(BaseEstimator, TransformerMixin):
     """
     Helper class that produces a triangle of weights based on pattern selections
 
@@ -123,7 +122,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         # in practie, there is no realistic use case for a sparse triangle to need weights
         backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
         obj = X.set_backend(backend)
-        self.w_ = self._set_weight_func(X=obj,secondary_rank=sample_weight)
+        self.w_ = self._set_weight_func(X=obj, secondary_rank=sample_weight)
         return self
 
     def transform(self, X: TriangleProtocol) -> Triangle:
@@ -146,8 +145,8 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
 
     def _cascade_param(
             self, 
-            size:int, 
-            param: bool | int | float | str | None | list[bool|int|float|str|None], 
+            size: int, 
+            param: bool | int | float | str | None | list[bool | int | float | str | None], 
             default_param: bool | int | float | str | None
     ) -> np.ndarray:
         """
@@ -237,7 +236,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         dev_len = X.shape[3]
         n_periods_param = self._cascade_param(dev_len, self.n_periods, -1)
 
-        #helper function that generates the weights for individual n_periods
+        # helper function that generates the weights for individual n_periods
         def _assign_n_periods_weight_int(X, n_periods):
             xp = X.get_array_module()
             val_offset = {
@@ -250,10 +249,10 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
                 return X.values * 0 + 1
             else:
                 z = -n_periods * val_offset[X.development_grain][X.origin_grain]
-                #adding new path to handle full triangle (e.g. full_triangle_, ultimate_, et.c)
+                # adding new path to handle full triangle (e.g. full_triangle_, ultimate_, et.c)
                 if X.is_full: 
                     w = X.copy()
-                    w.values[:,:,:-n_periods,:] = np.nan
+                    w.values[:, :, :-n_periods, :] = np.nan
                 else:
                     val_date_min = X.valuation[X.valuation <= X.valuation_date]
                     val_date_min = val_date_min.drop_duplicates().sort_values()
@@ -346,8 +345,8 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
 
         # getting weights that are within the max and min ranks
         w = (
-            X_ranks < max_rank[:,:,None,:]
-        ) & (X_ranks > min_rank[:,:,None,:] - 1)
+            X_ranks < max_rank[:, :, None, :]
+        ) & (X_ranks > min_rank[:, :, None, :] - 1)
 
         # NOTE: The "Some exclusions have been ignored..." UserWarning below is
         # asserted by the test suite (see chainladder/development/tests/
@@ -484,8 +483,8 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         w = ~np.isnan(X_val)
 
         # weights without considering preserve
-        index_array_weights = (X_val < drop_above_array[:,:,None,:]) & (
-            X_val > drop_below_array[:,:,None,:]
+        index_array_weights = (X_val < drop_above_array[:, :, None, :]) & (
+            X_val > drop_below_array[:, :, None, :]
         )
 
         # counting remaining factors
@@ -494,7 +493,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         # applying preserve
         warning_flag = np.any(valid_count < preserve_array)
         w = np.where(
-            valid_count[:,:,None,:] < preserve_array[:,:,None,:], w, index_array_weights
+            valid_count[:, :, None, :] < preserve_array[:, :, None, :], w, index_array_weights
         )
 
         # NOTE: The "Some exclusions have been ignored..." UserWarning below is
