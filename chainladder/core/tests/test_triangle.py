@@ -1876,7 +1876,7 @@ def test_single_entry():
     cl_dev_constant_fit = cl_dev_constant.fit(cl_tri.val_to_dev())
 
     # aim
-    cl.Chainladder().fit(cl_dev_constant_fit.transform(cl_tri)).ultimate_
+    _ = cl.Chainladder().fit(cl_dev_constant_fit.transform(cl_tri)).ultimate_
 
 
 def test_origin_as_datetime_arg(clrd):
@@ -2429,7 +2429,6 @@ def test_2x2_triangle():
         columns=["reported"],
         cumulative=True,
     )
-    tri_from_df
     assert np.array_equal(
         tri_from_df.cum_to_incr().values,
         np.array([[[[78000.0, 144000.0], [78000.0, np.float64(np.nan)]]]]),
