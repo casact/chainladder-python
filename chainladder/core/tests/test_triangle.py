@@ -2355,7 +2355,7 @@ def test_friedland_gl_self_insurer_grain() -> None:
     )
 
 
-def test_OXDX_triangle():
+def test_oxdx_triangle():
 
     for x in [12, 6, 3, 1]:
         for y in [i for i in [12, 6, 3, 1] if i <= x]:
