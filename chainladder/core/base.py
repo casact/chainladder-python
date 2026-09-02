@@ -705,7 +705,7 @@ class TriangleBase(
             del self.sigma_
         if "std_err_" in sub_tris:
             del self.std_err_
-        #w_ is currently stored as an ndarray
+        # w_ is currently stored as an ndarray
         if hasattr(self, "w_"):
             del self.w_
 

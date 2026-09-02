@@ -12,7 +12,6 @@ import pandas as pd
 from chainladder import (
     __dt64_unit__
 )
-from chainladder.utils.utility_functions import date_delta_adjustment
 from chainladder.utils.data._manifest import SAMPLES
 from chainladder.utils.utility_functions import (
     date_delta_adjustment,
@@ -59,7 +58,6 @@ class _FakeDaskBag:
 
 
 def test_triangle_json_io(clrd):
-    xp = clrd.get_array_module()
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
     assert clrd == clrd2
     assert np.all(clrd.kdims == clrd2.kdims)
@@ -153,7 +151,7 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics_erorr(raa,atol):
+def test_model_diagnostics_erorr(raa, atol):
     with pytest.raises(ValueError):
         cl.model_diagnostics(raa)
     dev = cl.Development().fit_transform(raa)
@@ -162,7 +160,7 @@ def test_model_diagnostics_erorr(raa,atol):
     md = cl.model_diagnostics(est)
     assert np.allclose(
         md['Run Off 1'].values,
-        emerg[emerg.valuation.year==1991].latest_diagonal.values,
+        emerg[emerg.valuation.year == 1991].latest_diagonal.values,
         atol=atol,
         equal_nan=True
     )
@@ -186,13 +184,13 @@ def test_model_diagnostics_erorr(raa,atol):
     )
 
 
-def test_model_diagnostics_groupby(prism,atol):
+def test_model_diagnostics_groupby(prism, atol):
     dev = cl.Development().fit(prism["Incurred"].sum())
     est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
-    lhs = cl.model_diagnostics(est,groupby=['Line'])
+    lhs = cl.model_diagnostics(est, groupby=['Line'])
     rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
-    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol,equal_nan=True)
-    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol,equal_nan=True)
+    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol, equal_nan=True)
+    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol, equal_nan=True)
 
 
 def test_concat_immutability(raa):
