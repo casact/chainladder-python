@@ -16,9 +16,6 @@ import warnings
 
 from typing import TYPE_CHECKING
 
-# Imported from the sibling module directly (not via chainladder._config's own
-# __init__.py) so this doesn't depend on that package's import ordering: this
-# module is itself imported BY chainladder/_config/__init__.py.
 from chainladder._config.deprecation import (
     _DEPRECATED_BACKENDS,
     _deprecated_backend_message,
@@ -66,7 +63,7 @@ class Options:
         self.AUTO_SPARSE = True
         self.ARRAY_PRIORITY = ["dask", "sparse", "cupy", "numpy"]
         self.ULT_VAL = str(
-            pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)
+            pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)  # noqa
         )
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({
@@ -129,7 +126,7 @@ class Options:
         self._validate_option(pat)
         if value is _UNSET:
             raise TypeError("set_option() missing required argument: 'value'.")
-        if pat == "ARRAY_BACKEND" and value in _DEPRECATED_BACKENDS:
+        if pat == "ARRAY_BACKEND" and isinstance(value, str) and value in _DEPRECATED_BACKENDS:
             warnings.warn(
                 _deprecated_backend_message(value),
                 DeprecationWarning,
