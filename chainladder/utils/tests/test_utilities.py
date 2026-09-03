@@ -46,7 +46,7 @@ class _FakeBag:
         self._args = args
         return self
 
-    def compute(self):
+    def compute(self, scheduler=None):
         return [self._func(item, *self._args) for item in self._seq]
 
 
