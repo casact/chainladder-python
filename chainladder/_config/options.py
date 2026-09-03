@@ -126,7 +126,11 @@ class Options:
         self._validate_option(pat)
         if value is _UNSET:
             raise TypeError("set_option() missing required argument: 'value'.")
-        if pat == "ARRAY_BACKEND" and isinstance(value, str) and value in _DEPRECATED_BACKENDS:
+        if (
+            pat == "ARRAY_BACKEND"
+            and isinstance(value, str)
+            and value in _DEPRECATED_BACKENDS
+        ):
             warnings.warn(
                 _deprecated_backend_message(value),
                 DeprecationWarning,

@@ -1,6 +1,7 @@
 """
 Governs configuration, options, and deprecations.
 """
+
 from chainladder._config.deprecation import (
     _DEPRECATED_BACKENDS,
     _deprecated_backend_message,
@@ -11,7 +12,7 @@ from chainladder._config.options import (
     __dt64_dtype__,
     __dt64_unit__,
     Options,
-    options
+    options,
 )
 
 __all__: list[str] = [

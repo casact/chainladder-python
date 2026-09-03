@@ -8,6 +8,7 @@ This package strives to be minimalistic in needing its own API. The syntax mimic
 data manipulation and scikit-learn for model construction. An actuary that is already familiar with these tools will be
 able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
 """
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -24,6 +25,7 @@ from chainladder._config import (  # noqa (API import)
     Options,
     options,
 )
+
 # noinspection PyProtectedMember
 from chainladder._config import (  # noqa (API import)
     _DEPRECATED_BACKENDS,
