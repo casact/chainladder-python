@@ -12,7 +12,7 @@ import pandas as pd
 from chainladder import (
     __dt64_unit__
 )
-from chainladder.utils.utility_functions import date_delta_adjustment
+
 from chainladder.utils.data._manifest import SAMPLES
 from chainladder.utils.utility_functions import (
     date_delta_adjustment,
@@ -978,7 +978,7 @@ def test_dask_parallel_deprecated_warns_once() -> None:
     -------
     None
     """
-    cl._dask_parallel_warned = False
+    cl._dask_parallel_state.warned = False
     try:
         with warnings.catch_warnings(record=True) as record:
             warnings.simplefilter("always")
@@ -990,7 +990,7 @@ def test_dask_parallel_deprecated_warns_once() -> None:
         ]
         assert len(dask_warnings) == 1
     finally:
-        cl._dask_parallel_warned = False
+        cl._dask_parallel_state.warned = False
 
 
 def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
@@ -1004,7 +1004,7 @@ def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
     -------
     None
     """
-    cl._dask_parallel_warned = False
+    cl._dask_parallel_state.warned = False
     monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
     sparse_clrd = cl.load_sample("clrd").set_backend("sparse")
     try:
@@ -1016,7 +1016,7 @@ def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
         ]
         assert len(dask_warnings) == 1
     finally:
-        cl._dask_parallel_warned = False
+        cl._dask_parallel_state.warned = False
 
 
 def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
@@ -1030,7 +1030,7 @@ def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
     -------
     None
     """
-    cl._dask_parallel_warned = False
+    cl._dask_parallel_state.warned = False
     monkeypatch.setattr("chainladder.core.triangle.db", _FakeDaskBag)
     incremental_sparse = cl.load_sample("raa").cum_to_incr().set_backend("sparse")
     try:
@@ -1042,7 +1042,7 @@ def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
         ]
         assert len(dask_warnings) == 1
     finally:
-        cl._dask_parallel_warned = False
+        cl._dask_parallel_state.warned = False
 
 
 def test_dask_parallel_numpy_groupby_no_warning(
@@ -1058,7 +1058,7 @@ def test_dask_parallel_numpy_groupby_no_warning(
     -------
     None
     """
-    cl._dask_parallel_warned = False
+    cl._dask_parallel_state.warned = False
     monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
     numpy_clrd = cl.load_sample("clrd").set_backend("numpy")
     try:
@@ -1069,7 +1069,7 @@ def test_dask_parallel_numpy_groupby_no_warning(
         ]
         assert dask_warnings == []
     finally:
-        cl._dask_parallel_warned = False
+        cl._dask_parallel_state.warned = False
 
 
 def test_describe_option(capsys: CaptureFixture[str]) -> None:
