@@ -2760,6 +2760,26 @@ def test_set_development_age_semiannual_origin() -> None:
     assert frame.loc['2017H2', 6] == 3.0
 
 
+def test_set_development_age_non_calendar_semiannual_raises() -> None:
+    """A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
+    native pandas period, so an age can't be placed - raise clearly."""
+    df = pd.DataFrame(
+        {
+            'origin': ['2017-02-01', '2017-02-01', '2017-08-01'],
+            'development': [6, 12, 6],
+            'reported': [1.0, 2.0, 3.0]
+        }
+    )
+    with pytest.raises(ValueError, match='non-calendar semiannual'):
+        cl.Triangle(
+            data=df,
+            origin='origin',
+            development='development',
+            columns='reported',
+            cumulative=True
+        )
+
+
 def test_set_development_bare_years_unaffected_by_age_support() -> None:
     """A development column that is genuinely a bare calendar year (e.g. the
     literal year 1970) must still parse as a date, not get reinterpreted as
