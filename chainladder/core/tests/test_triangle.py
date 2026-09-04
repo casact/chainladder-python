@@ -173,8 +173,7 @@ def test_sum_of_diff_eq_diff_of_sum(clrd):
 
 def test_append(raa):
     raa2 = raa.copy()
-    raa2.kdims = np.array([["P2"]])
-    raa.append(raa2).sum() == raa * 2
+    raa2.index = pd.DataFrame([["P2"]], columns=raa.key_labels)
     assert raa.append(raa2).sum() == 2 * raa
 
 
@@ -463,6 +462,18 @@ def test_vdims_deprecation_warning(raa):
     with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
         raa2.vdims = ["NewColumn"]
     assert list(raa2.columns) == ["NewColumn"]
+
+
+def test_kdims_deprecation_warning(raa):
+    """Accessing or setting kdims should emit a FutureWarning."""
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        k = raa.kdims
+    assert np.all(k == raa.index.values)
+
+    raa2 = raa.copy()
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa2.kdims = np.array([["P2"]])
+    assert list(raa2.index.values) == [["P2"]]
 
 
 def test_valdev1(qtr):

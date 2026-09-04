@@ -56,7 +56,7 @@ class _FakeDaskBag:
 def test_triangle_json_io(clrd):
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
     assert clrd == clrd2
-    assert np.all(clrd.kdims == clrd2.kdims)
+    assert clrd.index.equals(clrd2.index)
     assert np.all(clrd.columns == clrd2.columns)
     assert np.all(clrd.odims == clrd2.odims)
     assert np.all(clrd.ddims == clrd2.ddims)

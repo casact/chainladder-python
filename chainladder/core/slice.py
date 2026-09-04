@@ -63,7 +63,7 @@ class _LocBase:
         else:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
         # Set the new dimension values.
-        obj.kdims = obj.kdims[i_idx]
+        obj._kdims = obj._kdims[i_idx]
         obj._vdims = obj._vdims[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         # Set indexers.
@@ -385,7 +385,7 @@ class Location(_LocBase):
             ).values.flatten()
         # Case scalar, locate position in first level of index.
         else:
-            idx = np.where(self.obj.kdims[:, 0] == key)[0]
+            idx = np.where(self.obj._kdims[:, 0] == key)[0]
         return idx
 
     def other_key(
