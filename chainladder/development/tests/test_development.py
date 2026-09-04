@@ -2,11 +2,13 @@ import numpy as np
 import chainladder as cl
 import pytest
 
+
 class _FutureDevelopment(cl.TriangleWeight):
-    '''
+    """
     An internal class to assist with the testing of the TriangleWeight utility class
-    '''
-    def __init__(self,dev):
+    """
+
+    def __init__(self, dev):
         super().__init__(
             n_periods=dev.n_periods,
             drop=dev.drop,
@@ -15,14 +17,14 @@ class _FutureDevelopment(cl.TriangleWeight):
             preserve=dev.preserve,
             drop_valuation=dev.drop_valuation,
             drop_above=dev.drop_above,
-            drop_below=dev.drop_below
-        )    
+            drop_below=dev.drop_below,
+        )
         self.average = dev.average
         self.dev = dev
-    
+
     def fit(self, X, y: None = None, sample_weight: None = None):
-        if hasattr(X,'age_to_age'):
-            #following precedent set by _set_fit_groups() from DevelopmentBase to force triangle to be dense
+        if hasattr(X, "age_to_age"):
+            # following precedent set by _set_fit_groups() from DevelopmentBase to force triangle to be dense
             backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
             obj = X.set_backend(backend)
             super().fit(obj.incr_to_cum().age_to_age)
@@ -30,55 +32,45 @@ class _FutureDevelopment(cl.TriangleWeight):
             indices = obj.values.shape[0]
             columns = obj.values.shape[1]
             origins = obj.age_to_age.values.shape[2]
-            reg_x = obj.incr_to_cum().values[...,:origins,:-1]
-            reg_y = obj.incr_to_cum().values[...,:origins,1:]
+            reg_x = obj.incr_to_cum().values[..., :origins, :-1]
+            reg_y = obj.incr_to_cum().values[..., :origins, 1:]
             dev_len = reg_x.shape[3]
             average_param = self._cascade_param(dev_len, self.average, "volume")
-            average_param = np.tile(average_param,(indices,columns,1,1))
+            average_param = np.tile(average_param, (indices, columns, 1, 1))
             params = cl.WeightedRegression(axis=2, thru_orig=True, xp=xp).fit(
                 reg_x, reg_y, self.w_.values, average_param
             )
             self.ldf_ = self.dev._param_property(obj, params.slope_.swapaxes(2, 3), 0)
         return self
-    
+
+
 def test_full_slice(genins):
     dev1 = cl.Development()
     dev2 = cl.Development(n_periods=1000)
-    assert (
-        dev1.fit_transform(genins).ldf_
-        == dev2.fit_transform(genins).ldf_
-    )
-    assert (
-        dev1.fit_transform(genins).ldf_
-        == _FutureDevelopment(dev1).fit(genins).ldf_
-    )
+    assert dev1.fit_transform(genins).ldf_ == dev2.fit_transform(genins).ldf_
+    assert dev1.fit_transform(genins).ldf_ == _FutureDevelopment(dev1).fit(genins).ldf_
     assert (
         _FutureDevelopment(dev1).fit(genins).ldf_
         == _FutureDevelopment(dev2).fit(genins).ldf_
     )
 
+
 def test_full_slice2(genins):
     dev1 = cl.Development()
     dev2 = cl.Development(n_periods=[1000] * (genins.shape[3] - 1))
-    assert (
-        dev1.fit_transform(genins).ldf_
-        == dev2.fit_transform(genins).ldf_
-    )
-    assert (
-        dev1.fit_transform(genins).ldf_
-        == _FutureDevelopment(dev1).fit(genins).ldf_
-    )
+    assert dev1.fit_transform(genins).ldf_ == dev2.fit_transform(genins).ldf_
+    assert dev1.fit_transform(genins).ldf_ == _FutureDevelopment(dev1).fit(genins).ldf_
     assert (
         _FutureDevelopment(dev1).fit(genins).ldf_
         == _FutureDevelopment(dev2).fit(genins).ldf_
     )
+
 
 def test_drop1(raa):
     dev1 = cl.Development(drop=("1982", 12))
     dev2 = cl.Development(drop_high=[True] + [False] * 8)
     assert (
-        dev1.fit(raa).ldf_.values[0, 0, 0, 0]
-        == dev2.fit(raa).ldf_.values[0, 0, 0, 0]
+        dev1.fit(raa).ldf_.values[0, 0, 0, 0] == dev2.fit(raa).ldf_.values[0, 0, 0, 0]
     )
     assert (
         dev1.fit_transform(raa).ldf_.values[0, 0, 0, 0]
@@ -89,12 +81,12 @@ def test_drop1(raa):
         == _FutureDevelopment(dev2).fit(raa).ldf_.values[0, 0, 0, 0]
     )
 
+
 def test_drop2(raa):
     dev1 = cl.Development(drop_valuation="1981")
     dev2 = cl.Development(drop_low=[True] + [False] * 8)
     assert (
-        dev1.fit(raa).ldf_.values[0, 0, 0, 0]
-        == dev2.fit(raa).ldf_.values[0, 0, 0, 0]
+        dev1.fit(raa).ldf_.values[0, 0, 0, 0] == dev2.fit(raa).ldf_.values[0, 0, 0, 0]
     )
     assert (
         dev1.fit_transform(raa).ldf_.values[0, 0, 0, 0]
@@ -120,54 +112,58 @@ def test_n_periods():
         ).flatten()
         == xp.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0])
     )
-    assert (
-        dev.fit_transform(d).ldf_
-        == _FutureDevelopment(dev).fit(d).ldf_
-    )
+    assert dev.fit_transform(d).ldf_ == _FutureDevelopment(dev).fit(d).ldf_
+
 
 def test_drophighlow(raa):
     dev = cl.Development(drop_high=0)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array(
-        [8.9202, 2.974, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        8.9202,
+        2.974,
+        1.8318,
+        1.4414,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
-    assert (
-        dev.fit_transform(raa).ldf_
-        == _FutureDevelopment(dev).fit(raa).ldf_
-    )
+    assert dev.fit_transform(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_high=[True, False, True, False])
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array(
-        [8.0595, 2.8613, 1.7624, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        8.0595,
+        2.8613,
+        1.7624,
+        1.4414,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
-    assert (
-        dev.fit_transform(raa).ldf_
-        == _FutureDevelopment(dev).fit(raa).ldf_
-    )
+    assert dev.fit_transform(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
-    dev = cl.Development(
-            drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2
-        )
+    dev = cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2)
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         tr = dev.fit_transform(raa)
         tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
-    rhs = np.array(
-        [
-            5.7403,
-            2.2941,
-            1.5617,
-            1.3924,
-            1.2302,
-            1.1049,
-            1.0604,
-            1.0263,
-            1.0092,
-        ]
-    )
+    rhs = np.array([
+        5.7403,
+        2.2941,
+        1.5617,
+        1.3924,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert tr.ldf_ == tw.ldf_
 
@@ -176,9 +172,17 @@ def test_drophighlow(raa):
         tr = dev.fit_transform(raa)
         tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
-    rhs = np.array(
-        [7.2190, 2.5629, 1.6592, 1.3570, 1.1734, 1.0669, 1.0419, 1.0121, 1.0092]
-    )
+    rhs = np.array([
+        7.2190,
+        2.5629,
+        1.6592,
+        1.3570,
+        1.1734,
+        1.0669,
+        1.0419,
+        1.0121,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert tr.ldf_ == tw.ldf_
 
@@ -187,9 +191,17 @@ def test_drophighlow(raa):
         tr = dev.fit_transform(raa)
         tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
-    rhs = np.array(
-        [9.0982, 2.8731, 1.8320, 1.4713, 1.2522, 1.0963, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        9.0982,
+        2.8731,
+        1.8320,
+        1.4713,
+        1.2522,
+        1.0963,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert tr.ldf_ == tw.ldf_
 
@@ -198,9 +210,17 @@ def test_drophighlow(raa):
         tr = dev.fit_transform(raa)
         tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
-    rhs = np.array(
-        [8.4905, 3.0589, 1.9504, 1.5664, 1.3142, 1.1403, 1.0822, 1.0426, 1.0092]
-    )
+    rhs = np.array([
+        8.4905,
+        3.0589,
+        1.9504,
+        1.5664,
+        1.3142,
+        1.1403,
+        1.0822,
+        1.0426,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert tr.ldf_ == tw.ldf_
 
@@ -209,14 +229,22 @@ def test_drophighlow(raa):
         tr = dev.fit_transform(raa)
         tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
-    rhs = np.array(
-        [16.3338, 3.2092, 1.8124, 1.4793, 1.2522, 1.0963, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        16.3338,
+        3.2092,
+        1.8124,
+        1.4793,
+        1.2522,
+        1.0963,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert tr.ldf_ == tw.ldf_
 
 
-def test_drophighlow_inequal(prism,atol):
+def test_drophighlow_inequal(prism, atol):
     tri = prism["Paid"].sum().grain("OYDQ")
     dev0 = cl.Development()
     dev1 = cl.Development(drop_high=True)
@@ -226,48 +254,100 @@ def test_drophighlow_inequal(prism,atol):
     drop_low = dev2.fit_transform(tri).cdf_.to_frame().values
     assert (drop_low >= no_drop).all()
     assert (no_drop >= drop_high).all()
-    assert (_FutureDevelopment(dev2).fit(tri).ldf_.values >= _FutureDevelopment(dev0).fit(tri).ldf_.values).all()
-    assert (_FutureDevelopment(dev0).fit(tri).ldf_.values >= _FutureDevelopment(dev1).fit(tri).ldf_.values).all()
+    assert (
+        _FutureDevelopment(dev2).fit(tri).ldf_.values
+        >= _FutureDevelopment(dev0).fit(tri).ldf_.values
+    ).all()
+    assert (
+        _FutureDevelopment(dev0).fit(tri).ldf_.values
+        >= _FutureDevelopment(dev1).fit(tri).ldf_.values
+    ).all()
 
 
 def test_dropabovebelow(raa):
     dev = cl.Development(drop_above=40.0)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array(
-        [8.3771, 2.9740, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        8.3771,
+        2.9740,
+        1.8318,
+        1.4414,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_above=1.2)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array(
-        [7.6859, 2.5625, 1.5784, 1.4072, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        7.6859,
+        2.5625,
+        1.5784,
+        1.4072,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_above=1.2, drop_below=1.05)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array(
-        [8.4983, 2.8334, 1.7452, 1.5560, 1.3602, 1.1802, 1.0604, 1.0263, 1.0092]
-    )
+    rhs = np.array([
+        8.4983,
+        2.8334,
+        1.7452,
+        1.5560,
+        1.3602,
+        1.1802,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
-    lhs = np.round(dev.fit(raa).cdf_.values,4,).flatten()
-    rhs = np.array(
-        [8.3771, 2.9740, 1.8318, 1.4414, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
-    )
+    lhs = np.round(
+        dev.fit(raa).cdf_.values,
+        4,
+    ).flatten()
+    rhs = np.array([
+        8.3771,
+        2.9740,
+        1.8318,
+        1.4414,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
-    lhs = np.round(dev.fit(raa).cdf_.values,4,).flatten()
-    rhs = np.array(
-        [8.9773, 3.1871, 1.9631, 1.5447, 1.2302, 1.1049, 1.0604, 1.0263, 1.0092]
-    )
+    lhs = np.round(
+        dev.fit(raa).cdf_.values,
+        4,
+    ).flatten()
+    rhs = np.array([
+        8.9773,
+        3.1871,
+        1.9631,
+        1.5447,
+        1.2302,
+        1.1049,
+        1.0604,
+        1.0263,
+        1.0092,
+    ])
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
@@ -276,29 +356,17 @@ def test_drop_valuation_1(raa):
     dev1 = cl.Development(drop_valuation="1981-12-31")
     dev2 = cl.Development(drop_valuation="1982-12-31")
     dev3 = cl.Development(drop_valuation="1983-12-31")
+    assert dev1.fit_transform(raa).cdf_ != dev2.fit_transform(raa).cdf_
+    assert dev2.fit_transform(raa).cdf_ != dev3.fit_transform(raa).cdf_
+    assert dev1.fit_transform(raa).cdf_ != dev3.fit_transform(raa).cdf_
     assert (
-        dev1.fit_transform(raa).cdf_
-        != dev2.fit_transform(raa).cdf_
+        _FutureDevelopment(dev1).fit(raa).ldf_ != _FutureDevelopment(dev2).fit(raa).ldf_
     )
     assert (
-        dev2.fit_transform(raa).cdf_
-        != dev3.fit_transform(raa).cdf_
+        _FutureDevelopment(dev2).fit(raa).ldf_ != _FutureDevelopment(dev3).fit(raa).ldf_
     )
     assert (
-        dev1.fit_transform(raa).cdf_
-        != dev3.fit_transform(raa).cdf_
-    )
-    assert (
-        _FutureDevelopment(dev1).fit(raa).ldf_
-        != _FutureDevelopment(dev2).fit(raa).ldf_
-    )
-    assert (
-        _FutureDevelopment(dev2).fit(raa).ldf_
-        != _FutureDevelopment(dev3).fit(raa).ldf_
-    )
-    assert (
-        _FutureDevelopment(dev1).fit(raa).ldf_
-        != _FutureDevelopment(dev3).fit(raa).ldf_
+        _FutureDevelopment(dev1).fit(raa).ldf_ != _FutureDevelopment(dev3).fit(raa).ldf_
     )
 
 
@@ -341,21 +409,20 @@ def test_drop_valuation_2(qtr):
     )
 
 
-def test_assymetric_development(qtr,atol):
+def test_assymetric_development(qtr, atol):
     quarterly = qtr["paid"]
     xp = np if quarterly.array_backend == "sparse" else quarterly.get_array_module()
     dev1 = cl.Development(n_periods=1, average="simple")
     dev2 = cl.Development(n_periods=1, average="regression")
     assert xp.allclose(
-        dev1.fit(quarterly).ldf_.values, 
-        dev2.fit(quarterly).ldf_.values, 
-        atol=atol
+        dev1.fit(quarterly).ldf_.values, dev2.fit(quarterly).ldf_.values, atol=atol
     )
     assert xp.allclose(
         _FutureDevelopment(dev1).fit(quarterly).ldf_.values,
         _FutureDevelopment(dev2).fit(quarterly).ldf_.values,
-        atol=atol
+        atol=atol,
     )
+
 
 def test_hilo_multiple_indices(clrd):
     tri = clrd.groupby("LOB")["CumPaidLoss"].sum()
@@ -413,18 +480,20 @@ def test_new_drop_5a(clrd):
     # drop_hi/low without preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         lhs = (
-            cl.TriangleWeight(drop_high=1, drop_low=1, preserve=3)
-            .fit(X=clrd.age_to_age, sample_weight = clrd.age_to_age)
+            cl
+            .TriangleWeight(drop_high=1, drop_low=1, preserve=3)
+            .fit(X=clrd.age_to_age, sample_weight=clrd.age_to_age)
             .w_.values
         )
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         rhs = (
-            cl.TriangleWeight(
+            cl
+            .TriangleWeight(
                 drop_high=True,
                 drop_low=[True, True, True, True, True, True, True, True, True],
                 preserve=3,
             )
-            .fit(X=clrd.age_to_age, sample_weight = clrd.age_to_age)
+            .fit(X=clrd.age_to_age, sample_weight=clrd.age_to_age)
             .w_.values
         )
     assert np.array_equal(lhs, rhs, True)
@@ -448,7 +517,7 @@ def test_new_drop_8(prism):
     tri = prism["Paid"].sum().grain("OYDQ")
     try:
         cl.Development(drop_high=False).fit_transform(tri)
-    except:
+    except Exception:
         assert False
 
 
@@ -523,7 +592,8 @@ def test_geometric_avg():
     df = tri.link_ratio.to_frame()
 
     lhs = np.round(
-        cl.Development(n_periods=4, average="geometric")
+        cl
+        .Development(n_periods=4, average="geometric")
         .fit_transform(tri)
         .ldf_.to_frame()
         .values.flatten(),
@@ -545,7 +615,8 @@ def test_simple_avg():
     df = tri.link_ratio.to_frame()
 
     lhs = np.round(
-        cl.Development(n_periods=4, average="simple")
+        cl
+        .Development(n_periods=4, average="simple")
         .fit_transform(tri)
         .ldf_.to_frame()
         .values.flatten(),
@@ -567,7 +638,8 @@ def test_simple_geometric_avg():
     df = tri.link_ratio.to_frame()
 
     lhs = np.round(
-        cl.Development(
+        cl
+        .Development(
             n_periods=4,
             average=[
                 "geometric",
@@ -600,19 +672,17 @@ def test_simple_geometric_avg():
         lambda s: s.dropna().tail(4).prod() ** (1 / len(s.dropna().tail(4)))
     )
 
-    methods = np.array(
-        [
-            "geometric",
-            "simple",
-            "geometric",
-            "simple",
-            "geometric",
-            "simple",
-            "geometric",
-            "simple",
-            "geometric",
-        ]
-    )
+    methods = np.array([
+        "geometric",
+        "simple",
+        "geometric",
+        "simple",
+        "geometric",
+        "simple",
+        "geometric",
+        "simple",
+        "geometric",
+    ])
 
     rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
 
@@ -624,7 +694,8 @@ def test_simple_geometric_avg2():
     df = tri.link_ratio.to_frame()
 
     lhs = np.round(
-        cl.Development(
+        cl
+        .Development(
             n_periods=4,
             average=[
                 "simple",
@@ -657,19 +728,17 @@ def test_simple_geometric_avg2():
         lambda s: s.dropna().tail(4).prod() ** (1 / len(s.dropna().tail(4)))
     )
 
-    methods = np.array(
-        [
-            "simple",
-            "geometric",
-            "simple",
-            "geometric",
-            "simple",
-            "geometric",
-            "simple",
-            "geometric",
-            "simple",
-        ]
-    )
+    methods = np.array([
+        "simple",
+        "geometric",
+        "simple",
+        "geometric",
+        "simple",
+        "geometric",
+        "simple",
+        "geometric",
+        "simple",
+    ])
 
     rhs = np.round(np.where(methods == "geometric", geo_avg.values, sim_avg.values), 6)
 
@@ -679,7 +748,8 @@ def test_simple_geometric_avg2():
 def test_sigma():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     sigma = np.round(
-        cl.Development(
+        cl
+        .Development(
             n_periods=4,
             average="simple",
         )
@@ -706,7 +776,8 @@ def test_sigma():
 def test_stderror():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     std_error = np.round(
-        cl.Development(
+        cl
+        .Development(
             n_periods=4,
             average="simple",
         )
@@ -732,7 +803,8 @@ def test_stderror():
 def test_std_residuals():
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     std_residuals = np.round(
-        cl.Development(
+        cl
+        .Development(
             n_periods=4,
             average="simple",
         )
@@ -833,7 +905,6 @@ def test_pct_reported_requires_ldf(raa):
     # An unfitted triangle has no ldf_, so both properties raise AttributeError.
     assert not raa.has_ldf
     with pytest.raises(AttributeError):
-        raa.pct_reported_
+        _ = raa.pct_reported_
     with pytest.raises(AttributeError):
-        raa.pct_unreported_
-
+        _ = raa.pct_unreported_
