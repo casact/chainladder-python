@@ -55,6 +55,37 @@ class Options:
         when comparing or concatenating them.
     ULT_VAL: str
         The default ultimate valuation datetime, precision set to default of Pandas installation.
+    display.value_format: str, callable, or None
+        Controls how triangle values are formatted for display. Accepts a
+        Python format string (e.g. ``"{:,.0f}"``) applied to each value, or a
+        callable that takes a single value and returns its formatted string.
+        When ``None`` (the default), console output uses Pandas' own default
+        formatting, while Jupyter/HTML output and ``heatmap()`` continue to
+        auto-select a precision based on the magnitude of the values. Setting
+        this option overrides both.
+    display.pattern_format: str, callable, or None
+        Same as ``display.value_format``, but applies to pattern triangles
+        (e.g., link ratios, LDFs, CDFs) instead of value triangles.
+    display.html.auto_format_small: str
+        The format string used for Jupyter/HTML output and ``heatmap()``
+        when ``display.value_format``/``display.pattern_format`` is ``None``
+        and the mean absolute value being displayed is less than
+        ``display.html.auto_format_small_threshold``. Default: ``"{0:,.4f}"``.
+    display.html.auto_format_medium: str
+        Same as ``display.html.auto_format_small``, but for a mean absolute value
+        between ``display.html.auto_format_small_threshold`` and
+        ``display.html.auto_format_medium_threshold``. Default: ``"{0:,.2f}"``.
+    display.html.auto_format_large: str
+        Same as ``display.html.auto_format_small``, but for a mean absolute value
+        of ``display.html.auto_format_medium_threshold`` or more. Default: ``"{:,.0f}"``.
+    display.html.auto_format_small_threshold: int or float
+        The mean-absolute-value cutoff below which
+        ``display.html.auto_format_small`` is used instead of
+        ``display.html.auto_format_medium``. Default: ``10``.
+    display.html.auto_format_medium_threshold: int or float
+        The mean-absolute-value cutoff below which
+        ``display.html.auto_format_medium`` is used instead of
+        ``display.html.auto_format_large``. Default: ``1000``.
 
     """
 
@@ -65,6 +96,15 @@ class Options:
         self.ULT_VAL = str(
             pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)  # noqa
         )
+        # Dotted names are supported transparently: setattr/getattr/vars()
+        # all work with arbitrary string keys, not just valid identifiers.
+        setattr(self, "display.value_format", None)
+        setattr(self, "display.pattern_format", None)
+        setattr(self, "display.html.auto_format_small", "{0:,.4f}")
+        setattr(self, "display.html.auto_format_medium", "{0:,.2f}")
+        setattr(self, "display.html.auto_format_large", "{:,.0f}")
+        setattr(self, "display.html.auto_format_small_threshold", 10)
+        setattr(self, "display.html.auto_format_medium_threshold", 1000)
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({
             k: v for k, v in vars(self).items() if not k.startswith("_")
@@ -295,7 +335,7 @@ class Options:
                 # Look for pattern matching structure of an attribute. e.g., the attribute name, followed by
                 # the type name, then the attribute description indented on the next line. Search will be
                 # split up into groups, specified by parentheses ().
-                pattern=rf"^{re.escape(key)}:\s*(\S+)\n((?:[ \t]+.+\n?)+)",
+                pattern=rf"^{re.escape(key)}:\s*([^\n]+)\n((?:[ \t]+.+\n?)+)",
                 string=doc,
                 flags=re.MULTILINE,  # Needed to specify '^' as starting line anchor for each line.
             )

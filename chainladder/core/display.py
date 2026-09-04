@@ -1,3 +1,6 @@
+"""
+Handle Triangle printing behavior.
+"""
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,6 +12,8 @@ import re
 
 from typing import TYPE_CHECKING, Any
 
+from chainladder import options
+
 try:
     from IPython.core.display import HTML
     import IPython.display
@@ -17,6 +22,7 @@ except ImportError:
     IPython = None
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pandas import DataFrame, IndexSlice, Series
 
 
@@ -31,7 +37,11 @@ class TriangleDisplay:
         # DataFrame of the values.
         elif self._dimensionality == "single":
             data: DataFrame = self._repr_format()
-            return data.to_string()
+            value_format = self._display_option(is_pattern=self.is_pattern)
+            # Apply user-specified formatting, otherwise default to Pandas.
+            if value_format is None:
+                return data.to_string()
+            return data.to_string(float_format=self._normalize_format(value_format))
 
         # For multidimensional triangles, return a summary.
         else:
@@ -74,13 +84,18 @@ class TriangleDisplay:
         # Case single-dimensional triangle.
         elif self._dimensionality == "single":
             data = self._repr_format()
-            fmt_str = self._get_format_str(data=data)
+            value_format = self._display_option(is_pattern=self.is_pattern)
+            # Jupyter/HTML output auto-selects a precision based on the
+            # magnitude of the values unless the user has explicitly
+            # overridden it via display.value_format or display.pattern_format.
+            if value_format is None:
+                value_format = self._get_format_str(data=data)
             default = (
                 data
                 .to_html(
                     max_rows=pd.options.display.max_rows,
                     max_cols=pd.options.display.max_columns,
-                    float_format=fmt_str.format,
+                    float_format=self._normalize_format(value_format),
                 )
                 .replace("nan", "")
                 .replace("NaN", "")
@@ -105,12 +120,45 @@ class TriangleDisplay:
         """
         if np.all(np.isnan(data)):
             return ""
-        elif np.nanmean(abs(data)) < 10:
-            return "{0:,.4f}"
-        elif np.nanmean(abs(data)) < 1000:
-            return "{0:,.2f}"
+        elif np.nanmean(abs(data)) < options.get_option(
+            "display.html.auto_format_small_threshold"
+        ):
+            return options.get_option("display.html.auto_format_small")
+        elif np.nanmean(abs(data)) < options.get_option(
+            "display.html.auto_format_medium_threshold"
+        ):
+            return options.get_option("display.html.auto_format_medium")
         else:
-            return "{:,.0f}"
+            return options.get_option("display.html.auto_format_large")
+
+    @staticmethod
+    def _display_option(is_pattern: bool) -> str | Callable[[Any], str] | None:
+        """
+        Look up the user-configured ``display.pattern_format`` or
+        ``display.value_format`` option. Returns ``None`` when the user
+        hasn't overridden the default value.
+
+        Returns
+        -------
+        str, callable, or None
+        """
+        pat = "display.pattern_format" if is_pattern else "display.value_format"
+        return options.get_option(pat)
+
+    @staticmethod
+    def _normalize_format(
+        value_format: str | Callable[[Any], str],
+    ) -> Callable[[Any], str]:
+        """
+        Normalize a ``display.value_format``/``display.pattern_format`` value
+        (a format string or a callable) into a callable suitable for Pandas'
+        ``float_format`` argument.
+
+        Returns
+        -------
+        callable
+        """
+        return value_format if callable(value_format) else value_format.format
 
     def _repr_format(self, origin_as_datetime: bool = False) -> DataFrame:
         """
@@ -176,7 +224,10 @@ class TriangleDisplay:
         """
         if self._dimensionality == "single":
             data = self._repr_format()
-            fmt_str = self._get_format_str(data)
+            value_format = self._display_option(is_pattern=self.is_pattern)
+            # heatmap() follows Jupyter/HTML behavior.
+            if value_format is None:
+                value_format = self._get_format_str(data)
 
             axis = self._get_axis(axis)
 
@@ -189,7 +240,7 @@ class TriangleDisplay:
             gmap = gmap.replace(np.nan, (shape_size + 1) / 2)
             default_output = (
                 data.style
-                .format(fmt_str)
+                .format(value_format)
                 .background_gradient(
                     cmap=cmap,
                     low=low,
