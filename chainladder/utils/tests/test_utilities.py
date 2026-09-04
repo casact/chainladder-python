@@ -12,7 +12,6 @@ import pandas as pd
 from chainladder import (
     __dt64_unit__
 )
-from chainladder.utils.utility_functions import date_delta_adjustment
 from chainladder.utils.data._manifest import SAMPLES
 from chainladder.utils.utility_functions import (
     date_delta_adjustment,
@@ -59,7 +58,6 @@ class _FakeDaskBag:
 
 
 def test_triangle_json_io(clrd):
-    xp = clrd.get_array_module()
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
     assert clrd == clrd2
     assert np.all(clrd.kdims == clrd2.kdims)
@@ -153,7 +151,7 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics_erorr(raa,atol):
+def test_model_diagnostics_erorr(raa, atol):
     with pytest.raises(ValueError):
         cl.model_diagnostics(raa)
     dev = cl.Development().fit_transform(raa)
@@ -162,7 +160,7 @@ def test_model_diagnostics_erorr(raa,atol):
     md = cl.model_diagnostics(est)
     assert np.allclose(
         md['Run Off 1'].values,
-        emerg[emerg.valuation.year==1991].latest_diagonal.values,
+        emerg[emerg.valuation.year == 1991].latest_diagonal.values,
         atol=atol,
         equal_nan=True
     )
@@ -186,21 +184,21 @@ def test_model_diagnostics_erorr(raa,atol):
     )
 
 
-def test_model_diagnostics_groupby(prism,atol):
+def test_model_diagnostics_groupby(prism, atol):
     dev = cl.Development().fit(prism["Incurred"].sum())
     est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
-    lhs = cl.model_diagnostics(est,groupby=['Line'])
+    lhs = cl.model_diagnostics(est, groupby=['Line'])
     rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
-    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol,equal_nan=True)
-    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol,equal_nan=True)
+    assert np.allclose(lhs['Ultimate'].values, rhs['Ultimate'].values, atol=atol, equal_nan=True)
+    assert np.allclose(np.nan_to_num(lhs['IBNR'].values), np.nan_to_num(rhs['IBNR'].values), atol=atol, equal_nan=True)
 
 
 def test_concat_immutability(raa):
     u = cl.Chainladder().fit(raa).ultimate_
-    l = raa.latest_diagonal
-    u.columns = l.columns
+    latest = raa.latest_diagonal
+    u.columns = latest.columns
     u_new = copy.deepcopy(u)
-    cl.concat((l, u), axis=3)
+    cl.concat((latest, u), axis=3)
     assert u == u_new
 
 
@@ -682,7 +680,7 @@ def test_options_defaults() -> None:
     """
     options = cl.Options()
     assert options.ARRAY_BACKEND == "numpy"
-    assert options.AUTO_SPARSE == True
+    assert options.AUTO_SPARSE
     assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
     assert isinstance(options.ULT_VAL, str)
 
@@ -1246,3 +1244,33 @@ def test_describe_option_invalid_regex() -> None:
     """
     with pytest.raises(ValueError, match="not a valid regular expression"):
         cl.options.describe_option('[')
+
+
+def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
+    '''
+    Testing error raising from dropping too many valuations
+    '''
+    with pytest.raises(Exception):
+        _ = cl.TriangleWeight(
+            drop_valuation=[
+                '1981',
+                '1982',
+                '1983',
+                '1984',
+                '1985',
+                '1986',
+                '1987',
+                '1988',
+                '1989',
+                '1990',
+            ]
+        ).fit(raa)
+
+def test_triangleweight_full_triangle(raa: Triangle) -> None:
+    '''
+    Testing new path that allows weights on full triangles
+    '''
+    ult = cl.Chainladder().fit(raa)
+    tw = cl.TriangleWeight(n_periods=4).fit(raa)
+    tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
+    assert tw.w_.iloc[:, :, :, 0] == tw_full.w_.iloc[:, :, :, 0]

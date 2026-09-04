@@ -65,9 +65,9 @@ class WeightedRegression(BaseEstimator):
 
     def fit(
             self, 
-            X:BackendArray, 
-            y:BackendArray|None=None, 
-            sample_weight:BackendArray|None=None, 
+            X: BackendArray, 
+            y: BackendArray | None = None, 
+            sample_weight: BackendArray | None = None, 
             average: Literal["volume", "simple", "regression", "geometric"] | None = None
     ):
         """
@@ -204,17 +204,29 @@ class WeightedRegression(BaseEstimator):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
+            x_mean = xp.nansum(w * x, axis) / xp.nansum(w, axis)
+            y_mean = xp.nansum(y * w, axis) / xp.nansum(w, axis)
             slope = num_to_nan(
-                xp.nansum(w * x * y, axis)
-                - xp.nansum(x * w, axis) * xp.nanmean(y, axis)
+                xp.nansum(w * x * y, axis) - xp.nansum(x * w, axis) * y_mean
             ) / num_to_nan(
-                xp.nansum(w * x * x, axis)
-                - xp.nanmean(x, axis) * xp.nansum(w * x, axis)
+                xp.nansum(w * x * x, axis) - xp.nansum(x * w, axis) * x_mean
             )
-            intercept = xp.nanmean(y, axis) - slope * xp.nanmean(x, axis)
+            intercept = y_mean - slope * x_mean
+
+        fitted_value = xp.repeat(xp.expand_dims(slope, axis), x.shape[axis], axis)
+        fitted_value = fitted_value * x * (y * 0 + 1) + xp.repeat(xp.expand_dims(intercept, axis), x.shape[axis], axis)
+
+        residual = (y - fitted_value)
+
+        wss_residual = xp.nansum(residual ** 2 * w, axis)
+
+        r2 = 1 - wss_residual / num_to_nan(
+            xp.nansum(w * y * y, axis) - xp.nansum(y * w, axis) * y_mean
+        )
 
         self.slope_ = slope[..., None]
         self.intercept_ = intercept[..., None]
+        self.rsq_ = r2[..., None]
 
         return self
 
