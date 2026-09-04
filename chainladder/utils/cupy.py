@@ -10,7 +10,10 @@ try:
 
     cp.array([1])
     module = "cupy"
-except ImportError:
+except (ImportError, RuntimeError):
+    # RuntimeError covers e.g. cupy.cuda.runtime.CUDARuntimeError, raised
+    # by cp.array([1]) when CuPy is installed but the GPU/CUDA runtime
+    # is unusable.
     if options.ARRAY_BACKEND == "cupy":
         import warnings
 

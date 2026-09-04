@@ -9,7 +9,9 @@ try:
 
     dp.array([1])
     module = "dask"
-except ImportError:
+except (ImportError, RuntimeError):
+    # RuntimeError covers the equivalent case of Dask being installed but
+    # its runtime being unusable when the dp.array([1]) probe runs.
     if options.ARRAY_BACKEND == "dask":
         import warnings
 
