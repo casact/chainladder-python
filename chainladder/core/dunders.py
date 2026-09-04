@@ -70,20 +70,20 @@ class TriangleDunders:
         return x, y
 
     def _prep_index(self, x, y):
-        if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
-            x.kdims = y.kdims
+        if x._kdims.shape[0] == 1 and y._kdims.shape[0] > 1:
+            x._kdims = y._kdims
             x.key_labels = y.key_labels
             return x, y
-        if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
-            y.kdims = x.kdims
+        if x._kdims.shape[0] > 1 and y._kdims.shape[0] == 1:
+            y._kdims = x._kdims
             y.key_labels = x.key_labels
             return x, y
-        if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
-            kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
+        if x._kdims.shape[0] == y._kdims.shape[0] == 1 and x.key_labels != y.key_labels:
+            kdims = x._kdims if len(x.key_labels) > len(y.key_labels) else y._kdims
             key_labels = (
                 x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
             )
-            x.kdims = y.kdims = kdims
+            x._kdims = y._kdims = kdims
             x.key_labels = y.key_labels = key_labels
             return x, y
 
@@ -93,12 +93,12 @@ class TriangleDunders:
         common = x_labels.intersection(y_labels)
 
         if common == x_labels or common == y_labels:
-            if x_labels != y_labels or x.kdims.shape[0] != y.kdims.shape[0]:
+            if x_labels != y_labels or x._kdims.shape[0] != y._kdims.shape[0]:
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
             elif (
-                x.kdims.shape[0] > 1
-                and not np.array_equal(x.kdims, y.kdims)
+                x._kdims.shape[0] > 1
+                and not np.array_equal(x._kdims, y._kdims)
                 and not x.index.equals(y.index)
             ):
                 x = x.sort_index()
@@ -254,8 +254,7 @@ class TriangleDunders:
                 .reset_index()
             )
             new_idx = new_idx[new_obj.key_labels].iloc[-1:]
-            new_obj.kdims = new_idx.values
-            new_obj.key_labels = list(new_idx.columns)
+            new_obj.index = new_idx
             return new_obj
 
     @staticmethod

@@ -558,7 +558,7 @@ class Triangle(TriangleBase):
             self.index_label: list = index
             data_agg[index[0]] = "Total"
 
-        self.kdims: np.ndarray
+        self._kdims: np.ndarray
         key_idx: np.ndarray
         self._vdims: np.ndarray
         self.odims: np.ndarray
@@ -566,7 +566,7 @@ class Triangle(TriangleBase):
         self.ddims: ArrayLike
         dev_idx: np.ndarray
 
-        self.kdims, key_idx = self._set_kdims(data_agg, index)
+        self._kdims, key_idx = self._set_kdims(data_agg, index)
         self._vdims = np.array(columns)
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
@@ -651,7 +651,7 @@ class Triangle(TriangleBase):
                     has_duplicates=False,
                     sorted=True,
                     shape=(
-                        len(self.kdims),
+                        len(self._kdims),
                         len(self._vdims),
                         len(self.odims),
                         len(self.ddims),
@@ -724,17 +724,41 @@ class Triangle(TriangleBase):
         """
         Returns a DataFrame of the unique values of the index.
         """
-        return pd.DataFrame(list(self.kdims), columns=self.key_labels)
+        return pd.DataFrame(list(self._kdims), columns=self.key_labels)
 
     @index.setter
     def index(self, value) -> None:
         self._len_check(self.index, value)
         if type(value) is pd.DataFrame:
-            self.kdims = value.values
+            self._kdims = value.values
             self.key_labels = list(value.columns)
             self._set_slicers()
         else:
             raise TypeError("index must be a pandas DataFrame")
+
+    @property
+    def kdims(self):
+        warnings.warn(
+            "The 'kdims' attribute is deprecated and will be removed in a future release. "
+            "Use 'Triangle.index' or 'Triangle.key_labels' instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._kdims
+
+    @kdims.setter
+    def kdims(self, value):
+        warnings.warn(
+            "The 'kdims' attribute is deprecated and will be removed in a future release. "
+            "Use 'Triangle.index' or 'Triangle.key_labels' instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        if type(value) is str:
+            value = np.array([[value]])
+        elif type(value) is list:
+            value = np.array(value)
+        self._kdims = value
 
     @property
     def columns(self):

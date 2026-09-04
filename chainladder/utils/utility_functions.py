@@ -681,7 +681,7 @@ def concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
-    mapper = {0: "kdims", 1: "_vdims", 2: "odims", 3: "ddims"}
+    mapper = {0: "_kdims", 1: "_vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
         if k != axis and k != 1:  # All non-concat axes must be identical
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
