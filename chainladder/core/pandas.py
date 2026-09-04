@@ -595,6 +595,48 @@ class TrianglePandas(_TrianglePandasBase):
             cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
             return new_obj
 
+    @staticmethod
+    def _validate_contiguous_drop(
+        axis_series: pd.Series,
+        drop_labels: list[Any],
+        axis_name: str,
+        errors: str,
+    ) -> np.ndarray:
+        """Validate and return boolean keep mask for dropping contiguous edge periods.
+
+        Parameters
+        ----------
+        axis_series : pd.Series
+            The existing labels along the axis.
+        drop_labels : list
+            Labels requested to be dropped.
+        axis_name : str
+            Name of the axis ('origin' or 'development') for error messages.
+        errors : {'raise', 'ignore'}
+            Whether to raise or ignore missing labels.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean mask of labels to keep.
+        """
+        axis_labels = np.array(axis_series.astype(str))
+        str_drop_labels = [str(label) for label in drop_labels]
+        missing = [label for label in str_drop_labels if label not in axis_labels]
+        if missing and errors == "raise":
+            raise KeyError(f"{missing} not found in the {axis_name} axis.")
+        keep = ~np.isin(axis_labels, str_drop_labels)
+        kept_positions = np.flatnonzero(keep)
+        if len(kept_positions) and not np.array_equal(
+            kept_positions,
+            np.arange(kept_positions[0], kept_positions[-1] + 1),
+        ):
+            raise ValueError(
+                f"Only the first or last {axis_name} periods may be dropped; "
+                f"dropping an interior {axis_name} period would leave a gap."
+            )
+        return keep
+
     def drop(
         self,
         labels: str | int | list | None = None,
@@ -774,23 +816,9 @@ class TrianglePandas(_TrianglePandasBase):
                     [item for item in result.columns if item not in ax_labels]
                 ]
             elif ax == 2:
-                origin_labels = np.array(result.origin.astype(str))
-                drop_labels = [str(label) for label in ax_labels]
-                missing = [
-                    label for label in drop_labels if label not in origin_labels
-                ]
-                if missing and errors == "raise":
-                    raise KeyError(f"{missing} not found in the origin axis.")
-                keep = ~np.isin(origin_labels, drop_labels)
-                kept_positions = np.flatnonzero(keep)
-                if len(kept_positions) and not np.array_equal(
-                    kept_positions,
-                    np.arange(kept_positions[0], kept_positions[-1] + 1),
-                ):
-                    raise ValueError(
-                        "Only the first or last origin periods may be dropped; "
-                        "dropping an interior origin period would leave a gap."
-                    )
+                keep = self._validate_contiguous_drop(
+                    result.origin, ax_labels, "origin", errors
+                )
                 result = result[keep]
                 # Trim any development periods that were left entirely NaN by
                 # the origin drop, so dropping origins trims the triangle
@@ -811,23 +839,9 @@ class TrianglePandas(_TrianglePandasBase):
                         & (result.development <= dev_labels.max())
                     ]
             elif ax == 3:
-                dev_labels = np.array(result.development.astype(str))
-                drop_labels = [str(label) for label in ax_labels]
-                missing = [
-                    label for label in drop_labels if label not in dev_labels
-                ]
-                if missing and errors == "raise":
-                    raise KeyError(f"{missing} not found in the development axis.")
-                keep = ~np.isin(dev_labels, drop_labels)
-                kept_positions = np.flatnonzero(keep)
-                if len(kept_positions) and not np.array_equal(
-                    kept_positions,
-                    np.arange(kept_positions[0], kept_positions[-1] + 1),
-                ):
-                    raise ValueError(
-                        "Only the first or last development periods may be dropped; "
-                        "dropping an interior development period would leave a gap."
-                    )
+                keep = self._validate_contiguous_drop(
+                    result.development, ax_labels, "development", errors
+                )
                 result = result._slice(keep, "ddims")
                 if result.is_val_tri:
                     result.valuation_date = min(

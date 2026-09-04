@@ -835,6 +835,43 @@ def test_drop_index_axis_not_implemented_raises(clrd):
         clrd.drop(index="Agway Ins Co")
 
 
+def test_validate_contiguous_drop_helper(raa):
+    """Direct test for TrianglePandas._validate_contiguous_drop."""
+    from chainladder.core.pandas import TrianglePandas
+
+    # Valid drop of last development period
+    keep = TrianglePandas._validate_contiguous_drop(
+        raa.development, [120], "development", errors="raise"
+    )
+    assert np.array_equal(keep, np.array([True] * 9 + [False]))
+
+    # Valid drop of first origin period
+    keep_orig = TrianglePandas._validate_contiguous_drop(
+        raa.origin, [raa.origin[0]], "origin", errors="raise"
+    )
+    assert np.array_equal(keep_orig, np.array([False] + [True] * 9))
+
+    # Missing label with errors="raise"
+    with pytest.raises(KeyError, match=r"\['999'\] not found in the development axis"):
+        TrianglePandas._validate_contiguous_drop(
+            raa.development, [999], "development", errors="raise"
+        )
+
+    # Missing label with errors="ignore"
+    keep_ignore = TrianglePandas._validate_contiguous_drop(
+        raa.development, [999], "development", errors="ignore"
+    )
+    assert np.all(keep_ignore)
+
+    # Interior label drop raises ValueError
+    with pytest.raises(
+        ValueError, match="Only the first or last development periods may be dropped"
+    ):
+        TrianglePandas._validate_contiguous_drop(
+            raa.development, [36], "development", errors="raise"
+        )
+
+
 def test_hvplot_passthrough(genins, monkeypatch):
     """TrianglePandas.hvplot() passthrough test for patch coverage."""
     monkeypatch.setattr(
