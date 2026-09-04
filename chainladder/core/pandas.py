@@ -1,6 +1,7 @@
 """
 Mirror pandas API onto the Triangle class.
 """
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,15 +14,9 @@ from chainladder import (
     __dt64_dtype__,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.utils.utility_functions import (
-    concat,
-    num_to_nan
-)
+from chainladder.utils.utility_functions import concat, num_to_nan
 
-from typing import (
-    cast,
-    TYPE_CHECKING
-)
+from typing import cast, TYPE_CHECKING
 
 
 try:
@@ -35,21 +30,14 @@ if TYPE_CHECKING:
     from chainladder.core.typing import BackendArray, TriangleProtocol
     from collections.abc import Callable
     from numpy import ndarray
-    from pandas import (
-        DataFrame,
-        Series
-    )
+    from pandas import DataFrame, Series
     from types import ModuleType
     from pandas._typing import IndexLabel
-    from typing import (
-        Any,
-        Literal,
-        Type
-    )
+    from typing import Any, Literal, Type
+
     _TrianglePandasBase = TriangleProtocol
 else:
     _TrianglePandasBase = object
-
 
 
 class TriangleGroupBy:
@@ -76,23 +64,22 @@ class TriangleGroupBy:
 
 
 class TrianglePandas(_TrianglePandasBase):
-
     def to_frame(
-            self,
-            origin_as_datetime: bool = True,
-            keepdims: bool = False,
-            implicit_axis: bool = False,
+        self,
+        origin_as_datetime: bool = True,
+        keepdims: bool = False,
+        implicit_axis: bool = False,
     ) -> DataFrame | Series:
-        """ Converts a triangle to a pandas.DataFrame.
+        """Converts a triangle to a pandas.DataFrame.
 
         Parameters
         ----------
         origin_as_datetime : bool (default = True)
-            When all dimensions are returned, whether the origin vector 
-            should be converted from PeriodIndex into a datetime dtype. 
+            When all dimensions are returned, whether the origin vector
+            should be converted from PeriodIndex into a datetime dtype.
         keepdims : bool (default = False)
             Converted DataFrame will keep all dimensions intact and maintain a consistent
-            format regardless of whether any dimensions are of length 1. 
+            format regardless of whether any dimensions are of length 1.
 
             Ignored when 3 or more dimensions (index, column, origin, and development)
             have lengths greater than 1
@@ -115,7 +102,7 @@ class TrianglePandas(_TrianglePandasBase):
             values: COO = cast("COO", obj.values)
             out: DataFrame = pd.DataFrame(obj.index.iloc[values.coords[0]])
             out["columns"] = obj.columns[values.coords[1]]
-            missing_cols: list = list(set(self.columns) - set(out['columns']))
+            missing_cols: list = list(set(self.columns) - set(out["columns"]))
             if origin_as_datetime:
                 out["origin"] = obj.odims[values.coords[2]]
             else:
@@ -131,36 +118,40 @@ class TrianglePandas(_TrianglePandasBase):
             )
 
             valuation_series = pd.DataFrame(
-                obj.valuation.values.reshape(obj.shape[-2:], order='F'),
-                index=obj.odims if origin_as_datetime else obj.origin, 
-                columns=obj.ddims
+                obj.valuation.values.reshape(obj.shape[-2:], order="F"),
+                index=obj.odims if origin_as_datetime else obj.origin,
+                columns=obj.ddims,
             ).unstack()
-            valuation_series.name = 'valuation'
+            valuation_series.name = "valuation"
             valuation: DataFrame = valuation_series.reset_index().rename(
-                columns={
-                    'level_0': 'development',
-                    'level_1': 'origin'}
+                columns={"level_0": "development", "level_1": "origin"}
             )
-            val_dict: dict = dict(zip(list(zip(
-                valuation['origin'], valuation['development'])),
-                valuation['valuation']))
+            val_dict: dict = dict(
+                zip(
+                    list(zip(valuation["origin"], valuation["development"])),
+                    valuation["valuation"],
+                )
+            )
             if len(out) > 0:
-                out['valuation'] = out.apply(
-                    lambda x: val_dict[(x['origin'], x['development'])], axis=1)
+                out["valuation"] = out.apply(
+                    lambda x: val_dict[(x["origin"], x["development"])], axis=1
+                )
             else:
-                out['valuation'] = self.valuation_date
+                out["valuation"] = self.valuation_date
             col_order: list = list(self.columns)
             if implicit_axis:
-                col_order: list = ['origin', 'development', 'valuation'] + col_order
+                col_order: list = ["origin", "development", "valuation"] + col_order
             else:
                 if is_val_tri:
-                    col_order: list = ['origin', 'valuation'] + col_order
+                    col_order: list = ["origin", "valuation"] + col_order
                 else:
-                    col_order: list = ['origin', 'development'] + col_order
+                    col_order: list = ["origin", "development"] + col_order
             for col in set(missing_cols) - self.virtual_columns.columns.keys():
                 out[col] = np.nan
             # Create physical columns out of virtual ones.
-            for col in set(missing_cols).intersection(self.virtual_columns.columns.keys()):
+            for col in set(missing_cols).intersection(
+                self.virtual_columns.columns.keys()
+            ):
                 # Fill na to enable floating-point computation.
                 out[col] = out.fillna(0).apply(self.virtual_columns.columns[col], 1)
                 # Coerce 0 to np.nan.
@@ -202,7 +193,7 @@ class TrianglePandas(_TrianglePandasBase):
                 return self.to_frame(
                     origin_as_datetime=origin_as_datetime,
                     keepdims=True,
-                    implicit_axis=implicit_axis
+                    implicit_axis=implicit_axis,
                 )
 
     def plot(self, *args: Any, **kwargs: Any) -> None:
@@ -246,7 +237,9 @@ class TrianglePandas(_TrianglePandasBase):
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(axis: Literal['index', 'columns', 'origin', 'development'] | int | None) -> int:
+    def _get_axis(
+        axis: Literal["index", "columns", "origin", "development"] | int | None,
+    ) -> int:
         """
         Returns the integer representation of the requested axis.
 
@@ -524,13 +517,11 @@ class TrianglePandas(_TrianglePandasBase):
         # Case when triangle has multiple development periods, e.g., not latest diagonal or ultimate.
         if obj.shape[-1] != 1:
             # Flag the development periods that have data.
-            ddim = list(
-                (xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
+            ddim = list((xp.nansum(obj.values[0, 0, :], -2) != 0).astype("int"))
             ddim = obj.development[pd.Series(ddim).astype(bool)]
             # Slice the Triangle by the development periods that have data.
             obj = self[
-                (self.development >= ddim.min()) & (
-                    self.development <= ddim.max())
+                (self.development >= ddim.min()) & (self.development <= ddim.max())
             ]
             obj = cast("TriangleProtocol", cast(object, obj))
             # Slice the triangle by the origin periods that have data.
@@ -566,7 +557,9 @@ class TrianglePandas(_TrianglePandasBase):
             return cast("Triangle", cast(object, self))
         else:
             new_obj = self.copy()
-            cast("TriangleProtocol", cast(object, new_obj)).fillna(value=value, inplace=True)
+            cast("TriangleProtocol", cast(object, new_obj)).fillna(
+                value=value, inplace=True
+            )
             return new_obj
 
     def fillzero(self, inplace: bool = False) -> Triangle:
@@ -587,7 +580,8 @@ class TrianglePandas(_TrianglePandasBase):
             # Fill the NaNs by locating their positions within the triangle.
             self.values = np.where(
                 (xp.nan_to_num(self.values) == 0) * (self.nan_triangle == 1),
-                self.nan_triangle * 0, self.values
+                self.nan_triangle * 0,
+                self.values,
             )
             return cast("Triangle", cast(object, self))
         else:
@@ -828,12 +822,12 @@ class TrianglePandas(_TrianglePandasBase):
                 if result.shape[-1] > 1:
                     agg = result.sum(axis=0).sum(axis=1)
                     vals = agg.values[0, 0, :]
-                    vals_np = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
+                    vals_np = (
+                        vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
+                    )
                     arr = np.nan_to_num(vals_np)
                     dev_has_data = list((arr.sum(axis=-2) != 0).astype(int))
-                    dev_labels = agg.development[
-                        pd.Series(dev_has_data).astype(bool)
-                    ]
+                    dev_labels = agg.development[pd.Series(dev_has_data).astype(bool)]
                     result = result[
                         (result.development >= dev_labels.min())
                         & (result.development <= dev_labels.max())
@@ -922,7 +916,7 @@ class TrianglePandas(_TrianglePandasBase):
         Triangle
             Triangle with relabeled axis.
         """
-        
+
         if isinstance(value, dict):
             if axis == "columns" or axis == 1:
                 full_dict = dict(zip(self.columns.values, self.columns.values))
@@ -930,7 +924,7 @@ class TrianglePandas(_TrianglePandasBase):
                 self.columns = self.columns.map(full_dict)
             else:
                 raise ValueError(
-                    "Invalid value provided to the 'value' parameter. Accepted values for index, origin, and development axes are a str or a list"    
+                    "Invalid value provided to the 'value' parameter. Accepted values for index, origin, and development axes are a str or a list"
                 )
         else:
             value = [value] if type(value) is str else value
@@ -1004,8 +998,7 @@ class TrianglePandas(_TrianglePandasBase):
         Triangle
         """
         sorted_index: DataFrame = cast(
-            "DataFrame",
-            self.index.sort_values(self.key_labels, *args, **kwargs)
+            "DataFrame", self.index.sort_values(self.key_labels, *args, **kwargs)
         )
         return self.iloc[sorted_index.index]
 
@@ -1073,12 +1066,13 @@ class TrianglePandas(_TrianglePandasBase):
         self,
         index_key: IndexLabel,
         level: IndexLabel | None = None,
-        drop_level: bool = True) -> Triangle:
+        drop_level: bool = True,
+    ) -> Triangle:
         """
-        Mimics xs from pandas. key difference is that  this function only slices 
+        Mimics xs from pandas. key difference is that  this function only slices
         the index, therefore axis is always 0 and not an argument in the function
-        
-        Main use case for this function is when slicing beyond the first field in 
+
+        Main use case for this function is when slicing beyond the first field in
         the index (such as LOB in the clrd dataset)
 
         Parameters
@@ -1109,23 +1103,17 @@ class TrianglePandas(_TrianglePandasBase):
             new_ax_df = new_ax.to_frame(index=None)[new_ax.names]
             result.index = new_ax_df
         else:
-            result.index = pd.DataFrame(data=['Total'], columns=pd.Index(['Total']))
+            result.index = pd.DataFrame(data=["Total"], columns=pd.Index(["Total"]))
         return result
 
-def add_triangle_agg_func(
-        cls: Type[TrianglePandas],
-        k: str,
-        v: str
-):
+
+def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
     """
     Aggregate Overrides in Triangle
     """
 
     def agg_func(
-            self: Triangle,
-            axis: str | int | None = None,
-            *args,
-            **kwargs
+        self: Triangle, axis: str | int | None = None, *args, **kwargs
     ) -> Triangle | ndarray:
         """
         Applies the aggregation function specified by k from the outer function.
@@ -1190,6 +1178,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
 
     def agg_func(self, *args, **kwargs):
         from chainladder.utils import concat
+
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
         if db and obj.array_backend == "sparse":
@@ -1206,8 +1195,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
         else:
             values = [
                 getattr(
-                    obj.iloc.__getitem__(
-                        tuple([slice(None)] * self.axis + [i])), v
+                    obj.iloc.__getitem__(tuple([slice(None)] * self.axis + [i])), v
                 )(self.axis, auto_sparse=False, keepdims=True)
                 for i in self.groups.indices.values()
             ]
@@ -1216,7 +1204,8 @@ def add_groupby_agg_func(cls, k: str, v: str):
         if self.axis == 0:
             if isinstance(group_index, pd.MultiIndex):
                 index = (
-                    pd.DataFrame(
+                    pd
+                    .DataFrame(
                         np.zeros(len(group_index)),
                         index=group_index,
                         columns=["_"],
@@ -1244,11 +1233,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
             obj = obj._auto_sparse()
         return obj
 
-    set_method(
-        cls=cls,
-        func=agg_func,
-        k=k
-    )
+    set_method(cls=cls, func=agg_func, k=k)
 
 
 def add_df_passthru(cls, k):
@@ -1261,9 +1246,7 @@ def add_df_passthru(cls, k):
 
 
 def set_method(
-        cls: Type[TrianglePandas | TriangleGroupBy],
-        func: Callable,
-        k: str
+    cls: Type[TrianglePandas | TriangleGroupBy], func: Callable, k: str
 ) -> None:
     """
     Assigns methods to a class.

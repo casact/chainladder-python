@@ -2733,19 +2733,17 @@ def test_set_development_no_development_column() -> None:
 def test_set_development_age_in_months() -> None:
     """Development given as an age in months (not a date) resolves to the
     valuation date that many months after the origin's period start."""
-    df = pd.DataFrame(
-        {
-            'origin': [1995, 1996],
-            'development': [12, 24],
-            'reported': [1.0, 2.0]
-        }
-    )
+    df = pd.DataFrame({
+        "origin": [1995, 1996],
+        "development": [12, 24],
+        "reported": [1.0, 2.0],
+    })
     tri = cl.Triangle(
         data=df,
-        origin='origin',
-        development='development',
-        columns='reported',
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
     )
     assert list(tri.development) == [12, 24, 36]
     frame = tri.to_frame(origin_as_datetime=False)
@@ -2756,19 +2754,17 @@ def test_set_development_age_in_months() -> None:
 def test_set_development_age_respects_mid_period_origin() -> None:
     """Age is relative to the start of the origin's own period, not the
     literal recorded origin date."""
-    df = pd.DataFrame(
-        {
-            'origin': ['2018-06-15', '2018-06-15'],
-            'development': [12, 24],
-            'reported': [100.0, 150.0]
-        }
-    )
+    df = pd.DataFrame({
+        "origin": ["2018-06-15", "2018-06-15"],
+        "development": [12, 24],
+        "reported": [100.0, 150.0],
+    })
     tri = cl.Triangle(
         data=df,
-        origin='origin',
-        development='development',
-        columns='reported',
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
     )
     assert list(tri.development) == [12, 24]
 
@@ -2776,44 +2772,40 @@ def test_set_development_age_respects_mid_period_origin() -> None:
 def test_set_development_age_semiannual_origin() -> None:
     """Age works when the origin grain is semiannual, using the calendar
     (Jan/Jul) anchor to place the valuation date."""
-    df = pd.DataFrame(
-        {
-            'origin': ['2017-01-01', '2017-01-01', '2017-07-01', '2018-01-01'],
-            'development': [6, 12, 6, 6],
-            'reported': [1.0, 2.0, 3.0, 5.0]
-        }
-    )
+    df = pd.DataFrame({
+        "origin": ["2017-01-01", "2017-01-01", "2017-07-01", "2018-01-01"],
+        "development": [6, 12, 6, 6],
+        "reported": [1.0, 2.0, 3.0, 5.0],
+    })
     tri = cl.Triangle(
         data=df,
-        origin='origin',
-        development='development',
-        columns='reported',
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
     )
-    assert tri.origin_grain == 'S'
+    assert tri.origin_grain == "S"
     assert list(tri.development) == [6, 12, 18]
     frame = tri.to_frame(origin_as_datetime=False)
-    assert frame.loc['2017H1', 6] == 1.0
-    assert frame.loc['2017H2', 6] == 3.0
+    assert frame.loc["2017H1", 6] == 1.0
+    assert frame.loc["2017H2", 6] == 3.0
 
 
 def test_set_development_age_non_calendar_semiannual_raises() -> None:
     """A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
     native pandas period, so an age can't be placed - raise clearly."""
-    df = pd.DataFrame(
-        {
-            'origin': ['2017-02-01', '2017-02-01', '2017-08-01'],
-            'development': [6, 12, 6],
-            'reported': [1.0, 2.0, 3.0]
-        }
-    )
-    with pytest.raises(ValueError, match='non-calendar semiannual'):
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "development": [6, 12, 6],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="non-calendar semiannual"):
         cl.Triangle(
             data=df,
-            origin='origin',
-            development='development',
-            columns='reported',
-            cumulative=True
+            origin="origin",
+            development="development",
+            columns="reported",
+            cumulative=True,
         )
 
 
@@ -2821,19 +2813,17 @@ def test_set_development_bare_years_unaffected_by_age_support() -> None:
     """A development column that is genuinely a bare calendar year (e.g. the
     literal year 1970) must still parse as a date, not get reinterpreted as
     an age."""
-    df = pd.DataFrame(
-        {
-            'origin': [1969, 1970],
-            'development': [1970, 1970],
-            'reported': [1.0, 2.0]
-        }
-    )
+    df = pd.DataFrame({
+        "origin": [1969, 1970],
+        "development": [1970, 1970],
+        "reported": [1.0, 2.0],
+    })
     tri = cl.Triangle(
         data=df,
-        origin='origin',
-        development='development',
-        columns='reported',
-        cumulative=True
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
     )
     assert list(tri.development) == ["1970"]
 
