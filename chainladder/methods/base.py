@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder.core import Triangle
 
-class MethodBase(BaseEstimator, EstimatorIO, Common):
 
+class MethodBase(BaseEstimator, EstimatorIO, Common):
     _estimator_type = "chainladder"
 
     def validate_X(self, X):  # noqa: N802
@@ -29,11 +29,11 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return obj.val_to_dev()
 
     def _align_cdf(self, X, sample_weight=None):
-        """ Vertically align CDF to origin period latest diagonal. """
+        """Vertically align CDF to origin period latest diagonal."""
         return X.cdf_.align_pattern(X, sample_weight)
 
     def _set_ult_attr(self, ultimate):
-        """ Ultimate scaffolding """
+        """Ultimate scaffolding"""
         from chainladder import options
 
         xp = ultimate.get_array_module()
@@ -56,7 +56,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         if self.X_.is_cumulative:
             return self.X_.latest_diagonal
         else:
-            return self.X_.sum('development')
+            return self.X_.sum("development")
 
     def fit(self, X, y=None, sample_weight=None):
         """Applies the chainladder technique to triangle **X**
@@ -109,10 +109,10 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new.ldf_ = self.ldf_
         X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
         return X_new
-        
+
     def intersection(self, a, b):
-        """ Given two Triangles with mismatched indices, this method aligns
-            their indices """
+        """Given two Triangles with mismatched indices, this method aligns
+        their indices"""
         if len(a) == 1 and len(b) == 1:
             return a, b
         intersection = list(set(a.key_labels).intersection(set(b.key_labels)))
@@ -121,12 +121,24 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         a_idx = a.index[intersection]
         b_idx = b.index[intersection]
         idx_intersection = list(
-            set(a_idx.set_index(intersection).index.intersection(
-                b_idx.set_index(intersection).index)))
+            set(
+                a_idx.set_index(intersection).index.intersection(
+                    b_idx.set_index(intersection).index
+                )
+            )
+        )
         if (len(a) == 1 or len(b) == 1) and idx_intersection == []:
             return a, b
-        b = b.iloc[b_idx[b_idx[intersection].set_index(intersection).index.isin(idx_intersection)].index]
-        a = a.iloc[a_idx[a_idx[intersection].set_index(intersection).index.isin(idx_intersection)].index]
+        b = b.iloc[
+            b_idx[
+                b_idx[intersection].set_index(intersection).index.isin(idx_intersection)
+            ].index
+        ]
+        a = a.iloc[
+            a_idx[
+                a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
+            ].index
+        ]
         return a, b
 
     def fit_predict(self, X, y=None, sample_weight=None):
@@ -145,12 +157,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     @staticmethod
     def validate_weight(
-            X: Triangle,
-            sample_weight: Triangle
+        X: Triangle,
+        sample_weight: Triangle,
     ) -> None:
-        '''
+        """
         Checks that the a aprior has valid dimensions
-        '''
+        """
         if (
             sample_weight
             and X.shape[:-1] != sample_weight.shape[:-1]
@@ -158,4 +170,5 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             and sample_weight.shape[0] > 1
         ):
             warnings.warn(
-                "X and sample_weight are not aligned. Broadcasting may occur.\n")
+                "X and sample_weight are not aligned. Broadcasting may occur.\n"
+            )
