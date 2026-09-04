@@ -152,11 +152,12 @@ def test_constant_callable_axis1(clrd, atol):
         return patterns.loc[x.loc["columns"]].to_dict()
 
     with pytest.raises(ValueError):
-        xerror = cl.DevelopmentConstant(
-            patterns=paid_cdfs, callable_axis=2, style="cdf"
-        ).fit(agway)
+        cl.DevelopmentConstant(patterns=paid_cdfs, callable_axis=2, style="cdf").fit(
+            agway
+        )
     lhs = (
-        cl.DevelopmentConstant(patterns=paid_cdfs, callable_axis=1, style="cdf")
+        cl
+        .DevelopmentConstant(patterns=paid_cdfs, callable_axis=1, style="cdf")
         .fit(agway)
         .cdf_
     )
@@ -187,18 +188,16 @@ def test_constant_pattern_no_tail():
     assert np.all(
         np.round(reported_BI_claim.ldf_.to_frame().values.flatten(), 6)
         == np.round(
-            np.array(
-                [
-                    4.0 / 2.9,
-                    2.9 / 1.8,
-                    1.8 / 1.4,
-                    1.4 / 1.2,
-                    1.2 / 1.1,
-                    1.1 / 1.03,
-                    1.03 / 1.02,
-                    1.02,
-                ]
-            ),
+            np.array([
+                4.0 / 2.9,
+                2.9 / 1.8,
+                1.8 / 1.4,
+                1.4 / 1.2,
+                1.2 / 1.1,
+                1.1 / 1.03,
+                1.03 / 1.02,
+                1.02,
+            ]),
             6,
         )
     )
@@ -228,19 +227,17 @@ def test_constant_pattern_has_tail():
     assert np.all(
         np.round(reported_BI_claim.ldf_.to_frame().values.flatten(), 6)
         == np.round(
-            np.array(
-                [
-                    4.0 / 2.9,
-                    2.9 / 1.8,
-                    1.8 / 1.4,
-                    1.4 / 1.2,
-                    1.2 / 1.1,
-                    1.1 / 1.03,
-                    1.03 / 1.02,
-                    1.02 / 1.005,
-                    1.005,
-                ]
-            ),
+            np.array([
+                4.0 / 2.9,
+                2.9 / 1.8,
+                1.8 / 1.4,
+                1.4 / 1.2,
+                1.2 / 1.1,
+                1.1 / 1.03,
+                1.03 / 1.02,
+                1.02 / 1.005,
+                1.005,
+            ]),
             6,
         )
     )
@@ -295,39 +292,35 @@ def test_constant_pattern_exact_ldf(raa):
     assert np.all(
         np.round(result.cdf_.to_frame().values.flatten(), 6)
         == np.round(
-            np.array(
-                [
-                    1.1**10,
-                    1.1**9,
-                    1.1**8,
-                    1.1**7,
-                    1.1**6,
-                    1.1**5,
-                    1.1**4,
-                    1.1**3,
-                    1.1**2,
-                    1.1,
-                ]
-            ),
+            np.array([
+                1.1**10,
+                1.1**9,
+                1.1**8,
+                1.1**7,
+                1.1**6,
+                1.1**5,
+                1.1**4,
+                1.1**3,
+                1.1**2,
+                1.1,
+            ]),
             6,
         )
     )
     assert np.all(
         result.ldf_.to_frame().values.flatten()
-        == np.array(
-            [
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-                1.1,
-            ]
-        )
+        == np.array([
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+            1.1,
+        ])
     )
 
 
@@ -439,21 +432,19 @@ def test_constant_pattern_long_ldf(raa):
     assert np.all(
         np.round(result.cdf_.to_frame().values.flatten(), 6)
         == np.round(
-            np.array(
-                [
-                    1.1**11,
-                    1.1**10,
-                    1.1**9,
-                    1.1**8,
-                    1.1**7,
-                    1.1**6,
-                    1.1**5,
-                    1.1**4,
-                    1.1**3,
-                    1.1**2,
-                    1.1,
-                ]
-            ),
+            np.array([
+                1.1**11,
+                1.1**10,
+                1.1**9,
+                1.1**8,
+                1.1**7,
+                1.1**6,
+                1.1**5,
+                1.1**4,
+                1.1**3,
+                1.1**2,
+                1.1,
+            ]),
             6,
         )
     )

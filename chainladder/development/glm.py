@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import pandas as pd
-import numpy as np
 from chainladder.development.base import DevelopmentBase
 from chainladder.development.learning import DevelopmentML
 from sklearn.linear_model import TweedieRegressor
@@ -11,7 +10,7 @@ from chainladder.utils.utility_functions import PatsyFormula
 
 
 class TweedieGLM(DevelopmentBase):
-    """ GLM reserving with scikit-learn's Tweedie distribution.
+    """GLM reserving with scikit-learn's Tweedie distribution.
 
     Implements the GLM reserving structure of Taylor and McGuire. The Tweedie
     family covers normal, ODP Poisson, gamma, and related targets via ``power``
@@ -46,7 +45,7 @@ class TweedieGLM(DevelopmentBase):
 
         .. list-table::
            :header-rows: 1
-        
+
            * - Power
              - Distribution
            * - 0
@@ -59,7 +58,7 @@ class TweedieGLM(DevelopmentBase):
              - Gamma
            * - 3
              - Inverse Gaussian
-            
+
         For ``0 < power < 1``, no distribution exists.
     alpha: float, default=1
         Constant that multiplies the penalty term and thus determines the
@@ -186,35 +185,61 @@ class TweedieGLM(DevelopmentBase):
 
     """
 
-    def __init__(self, design_matrix='C(development) + C(origin)',
-                 response=None, power=1.0, alpha=1.0, link='log',
-                 max_iter=100, tol=0.0001, warm_start=False, verbose=0, drop=None,drop_valuation=None):
+    def __init__(
+        self,
+        design_matrix="C(development) + C(origin)",
+        response=None,
+        power=1.0,
+        alpha=1.0,
+        link="log",
+        max_iter=100,
+        tol=0.0001,
+        warm_start=False,
+        verbose=0,
+        drop=None,
+        drop_valuation=None,
+    ):
         self.drop = drop
         self.drop_valuation = drop_valuation
-        self.response=response
+        self.response = response
         self.design_matrix = design_matrix
-        self.power=power
-        self.alpha=alpha
-        self.link=link
-        self.max_iter=max_iter
-        self.tol=tol
-        self.warm_start=warm_start
-        self.verbose=verbose
+        self.power = power
+        self.alpha = alpha
+        self.link = link
+        self.max_iter = max_iter
+        self.tol = tol
+        self.warm_start = warm_start
+        self.verbose = verbose
 
     def fit(self, X, y=None, sample_weight=None):
         response = X.columns[0] if not self.response else self.response
         if sample_weight is None:
             weight = None
         else:
-            weight = 'model'
-        self.model_ = DevelopmentML(Pipeline(steps=[
-            ('design_matrix', PatsyFormula(self.design_matrix)),
-            ('model', TweedieRegressor(
-                    link=self.link, power=self.power, max_iter=self.max_iter,
-                    tol=self.tol, warm_start=self.warm_start,
-                    verbose=self.verbose, fit_intercept=False))]),
-                    y_ml=response, weighted_step = weight,
-                    drop=self.drop, drop_valuation=self.drop_valuation).fit(X = X, sample_weight = sample_weight)
+            weight = "model"
+        self.model_ = DevelopmentML(
+            Pipeline(
+                steps=[
+                    ("design_matrix", PatsyFormula(self.design_matrix)),
+                    (
+                        "model",
+                        TweedieRegressor(
+                            link=self.link,
+                            power=self.power,
+                            max_iter=self.max_iter,
+                            tol=self.tol,
+                            warm_start=self.warm_start,
+                            verbose=self.verbose,
+                            fit_intercept=False,
+                        ),
+                    ),
+                ]
+            ),
+            y_ml=response,
+            weighted_step=weight,
+            drop=self.drop,
+            drop_valuation=self.drop_valuation,
+        ).fit(X=X, sample_weight=sample_weight)
         return self
 
     @property
@@ -228,9 +253,11 @@ class TweedieGLM(DevelopmentBase):
     @property
     def coef_(self):
         return pd.Series(
-            self.model_.estimator_ml.named_steps.model.coef_, name='coef_',
-            index=list(self.model_.estimator_ml.named_steps.design_matrix.
-                            design_info_.column_name_indexes.keys())
+            self.model_.estimator_ml.named_steps.model.coef_,
+            name="coef_",
+            index=list(
+                self.model_.estimator_ml.named_steps.design_matrix.design_info_.column_name_indexes.keys()
+            ),
         ).to_frame()
 
     def transform(self, X):

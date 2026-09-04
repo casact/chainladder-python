@@ -11,8 +11,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 from chainladder.utils.utility_functions import PatsyFormula, PTF_formula
 
+
 class BarnettZehnwirth(TweedieGLM):
-    """ This estimator enables modeling from the Probabilistic Trend Family as
+    """This estimator enables modeling from the Probabilistic Trend Family as
     described by Barnett and Zehnwirth.
 
     The model is fit on log-incremental losses and produces multiplicative
@@ -35,7 +36,7 @@ class BarnettZehnwirth(TweedieGLM):
         Column name for the reponse variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
     alpha: list of int
-        List of origin periods denoting the first indices of each group 
+        List of origin periods denoting the first indices of each group
     gamma: list of int
     iota: list of int
 
@@ -102,47 +103,80 @@ class BarnettZehnwirth(TweedieGLM):
 
     """
 
-    def __init__(self, drop=None,drop_valuation=None,formula=None, response=None, alpha=None, gamma=None, iota=None):
+    def __init__(
+        self,
+        drop=None,
+        drop_valuation=None,
+        formula=None,
+        response=None,
+        alpha=None,
+        gamma=None,
+        iota=None,
+    ):
         self.drop = drop
         self.drop_valuation = drop_valuation
 
         self.response = response
         if formula and (alpha or gamma or iota):
-            raise ValueError("Model can only be specified by either a formula or some combination of alpha, gamma and iota.")
+            raise ValueError(
+                "Model can only be specified by either a formula or some combination of alpha, gamma and iota."
+            )
         if not (formula or alpha or gamma or iota):
-            raise ValueError("Model must be specified, either a formula or some combination of alpha, gamma and iota.")
-        for Greek in [alpha,gamma,iota]:
+            raise ValueError(
+                "Model must be specified, either a formula or some combination of alpha, gamma and iota."
+            )
+        for Greek in [alpha, gamma, iota]:
             if Greek:
-                if not ( (type(Greek) is list) and all(type(bound) is int for bound in Greek) ):
-                    raise ValueError("Alpha, gamma and iota must be given as lists of integers, specifying periods.")
+                if not (
+                    (type(Greek) is list) and all(type(bound) is int for bound in Greek)
+                ):
+                    raise ValueError(
+                        "Alpha, gamma and iota must be given as lists of integers, specifying periods."
+                    )
         self.formula = formula
         self.alpha = alpha
         self.gamma = gamma
         self.iota = iota
-        
+
     def fit(self, X, y=None, sample_weight=None):
         if max(X.shape[:2]) > 1:
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr().log()
         response = X.columns[0] if not self.response else self.response
-        if(not self.formula):
-            self.formula = PTF_formula(self.alpha,self.gamma,self.iota,dgrain=min(tri.development))
-        self.model_ = DevelopmentML(Pipeline(steps=[
-            ('design_matrix', PatsyFormula(self.formula)),
-            ('model', LinearRegression(fit_intercept=False))]),
-                    y_ml=response, fit_incrementals=True, drop=self.drop, drop_valuation = self.drop_valuation, weighted_step = 'model').fit(X = tri, sample_weight = sample_weight)
-        resid = tri - self.model_.triangle_ml_[
-            self.model_.triangle_ml_.valuation <= tri.valuation_date]
+        if not self.formula:
+            self.formula = PTF_formula(
+                self.alpha, self.gamma, self.iota, dgrain=min(tri.development)
+            )
+        self.model_ = DevelopmentML(
+            Pipeline(
+                steps=[
+                    ("design_matrix", PatsyFormula(self.formula)),
+                    ("model", LinearRegression(fit_intercept=False)),
+                ]
+            ),
+            y_ml=response,
+            fit_incrementals=True,
+            drop=self.drop,
+            drop_valuation=self.drop_valuation,
+            weighted_step="model",
+        ).fit(X=tri, sample_weight=sample_weight)
+        resid = (
+            tri
+            - self.model_.triangle_ml_[
+                self.model_.triangle_ml_.valuation <= tri.valuation_date
+            ]
+        )
         self.mse_resid_ = (resid**2).sum(0).sum(1).sum(2).sum() / (
-            np.nansum(tri.nan_triangle) -
-            len(self.model_.estimator_ml.named_steps.model.coef_))
+            np.nansum(tri.nan_triangle)
+            - len(self.model_.estimator_ml.named_steps.model.coef_)
+        )
         self.std_residuals_ = (resid / np.sqrt(self.mse_resid_)).fillzero()
         self.model_.triangle_ml_ = self.model_.triangle_ml_.exp()
         self.model_.triangle_ml_.is_cumulative = False
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

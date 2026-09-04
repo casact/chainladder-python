@@ -114,22 +114,22 @@ class DevelopmentConstant(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
-        
+
         Parameters
         ----------
         X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
+            Set of LDFs to which the munich adjustment will be applied.
         y : Ignored
         sample_weight : Ignored
-        
+
         Returns
         -------
         self : object
-            Returns the instance itself.
+            Returns the instance itself.
         """
         from chainladder import options
 
-        if X.is_cumulative == False:
+        if not X.is_cumulative:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
@@ -141,7 +141,8 @@ class DevelopmentConstant(DevelopmentBase):
                 sample_pattern = obj.index.apply(self.patterns, axis=1).iloc[0]
             elif self.callable_axis == 1:
                 sample_pattern = (
-                    obj.columns.to_frame(index=False)
+                    obj.columns
+                    .to_frame(index=False)
                     .apply(self.patterns, axis=1)
                     .iloc[0]
                 )
@@ -177,7 +178,8 @@ class DevelopmentConstant(DevelopmentBase):
             if self.callable_axis == 0:
                 ldf = obj.index.apply(self.patterns, axis=1)
                 ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    pd
+                    .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                     .fillna(1)[obj.ddims]
                     .values
                 )
@@ -185,7 +187,8 @@ class DevelopmentConstant(DevelopmentBase):
             elif self.callable_axis == 1:
                 ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
                 ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    pd
+                    .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
                     .fillna(1)[obj.ddims]
                     .values
                 )
@@ -215,11 +218,11 @@ class DevelopmentConstant(DevelopmentBase):
         Parameters
         ----------
         X : Triangle
-            The triangle to be transformed
+            The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+            X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
         X_new.group_index = self._set_transform_groups(X_new)
