@@ -39,6 +39,7 @@ def check_html(html: str) -> None:
     # Raise assertion error if one is detected. If so, print the error log as a list.
     assert len(parser.error_log) == 0, list(parser.error_log)
 
+
 def test_check_html() -> None:
     """
     Make sure check_html does its job on a malformed string.
@@ -182,6 +183,7 @@ def test_repr_html_single(raa):
     assert "<table" in html_str
     check_html(html=html_str)
 
+
 def test_repr_html_multi(clrd: Triangle) -> None:
     """
     Inspect the HTML representation of a multidimensional triangle.
@@ -200,6 +202,7 @@ def test_repr_html_multi(clrd: Triangle) -> None:
     assert "Triangle Summary" in html_str
     assert "<table" in html_str
     check_html(html=html_str)
+
 
 def test_get_format_str_all_nan() -> None:
     """
@@ -238,6 +241,187 @@ def test_get_format_str_medium() -> None:
     """
     data = pd.DataFrame([[100.0, 200.0]])
     assert TriangleDisplay._get_format_str(data) == "{0:,.2f}"
+
+
+def test_get_format_str_reads_from_options() -> None:
+    """
+    Options for displaying small/medium/large triangles in Jupyter should
+    be passed TriangleDisplay.
+
+    Returns
+    -------
+    None
+
+    """
+    small = pd.DataFrame([[1.0, 2.0]])
+    medium = pd.DataFrame([[100.0, 200.0]])
+    large = pd.DataFrame([[10000.0, 20000.0]])
+    try:
+        cl.options.set_option("display.html.auto_format_small", "{0:.1f}")
+        cl.options.set_option("display.html.auto_format_medium", "{0:.2f}")
+        cl.options.set_option("display.html.auto_format_large", "{0:.3f}")
+        assert TriangleDisplay._get_format_str(small) == "{0:.1f}"
+        assert TriangleDisplay._get_format_str(medium) == "{0:.2f}"
+        assert TriangleDisplay._get_format_str(large) == "{0:.3f}"
+    finally:
+        cl.options.reset_option("display.html.auto_format_small")
+        cl.options.reset_option("display.html.auto_format_medium")
+        cl.options.reset_option("display.html.auto_format_large")
+
+
+def test_get_format_str_reads_thresholds_from_options() -> None:
+    """
+    Changing the threshold at which a triangle is considered small/medium/large
+    should update the corresponding format string if the size classification of the
+    Triangle changes.
+
+    Returns
+    -------
+    None
+
+    """
+    data = pd.DataFrame([[500.0, 600.0]])
+    assert TriangleDisplay._get_format_str(data) == "{0:,.2f}"
+    try:
+        # Triangle moves from medium to small.
+        cl.options.set_option("display.html.auto_format_small_threshold", 1000)
+        assert TriangleDisplay._get_format_str(data) == "{0:,.4f}"
+    finally:
+        cl.options.reset_option("display.html.auto_format_small_threshold")
+    assert TriangleDisplay._get_format_str(data) == "{0:,.2f}"
+
+    try:
+        # Triangle moves from medium to large.
+        cl.options.set_option("display.html.auto_format_medium_threshold", 100)
+        assert TriangleDisplay._get_format_str(data) == "{:,.0f}"
+    finally:
+        cl.options.reset_option("display.html.auto_format_medium_threshold")
+    assert TriangleDisplay._get_format_str(data) == "{0:,.2f}"
+
+
+def test_display_option_default_is_none() -> None:
+    """
+    Without a user override, both display.value_format and
+    display.pattern_format should resolve to None, signaling that each
+    display pathway should fall back to its own default behavior.
+
+    Returns
+    -------
+    None
+
+    """
+    assert TriangleDisplay._display_option(is_pattern=False) is None
+    assert TriangleDisplay._display_option(is_pattern=True) is None
+
+
+def test_normalize_format_wraps_format_string() -> None:
+    """
+    A format-string value_format should be normalized into a callable
+    that correctly formats a provided value.
+
+    Returns
+    -------
+    None
+
+    """
+    formatter = TriangleDisplay._normalize_format("{:,.0f}")
+    assert formatter(1234.5) == "1,234"
+
+
+def test_normalize_format_passes_through_callable() -> None:
+    """
+    A callable value_format should be returned unchanged.
+
+    Returns
+    -------
+    None
+
+    """
+
+    def swiss_format(x):
+        return f"{x:,.0f}".replace(",", "'")
+
+    formatter = TriangleDisplay._normalize_format(swiss_format)
+    assert formatter is swiss_format
+    assert formatter(1234.5) == "1'234"
+
+
+def test_value_format_override_affects_repr_and_html(raa: Triangle) -> None:
+    """
+    Setting display.value_format should override both the console and
+    HTML/Jupyter default formatting for value triangles.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    try:
+        cl.options.set_option("display.value_format", "{:,.0f}")
+        assert "5,012" in repr(raa)
+        assert "5,012" in raa._repr_html_()
+    finally:
+        cl.options.reset_option("display.value_format")
+    # Back to the (unchanged) per-pathway defaults.
+    assert "5012.0" in repr(raa)
+    assert "5,012" not in repr(raa)
+
+
+def test_value_format_override_affects_heatmap(raa: Triangle) -> None:
+    """
+    Setting display.value_format with a callable should apply to
+    heatmap() as well.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+
+    def swiss_format(x):
+        return f"{x:,.0f}".replace(",", "'")
+
+    try:
+        cl.options.set_option("display.value_format", swiss_format)
+        html_str = raa.heatmap().data
+        assert "5'012" in html_str
+    finally:
+        cl.options.reset_option("display.value_format")
+
+
+def test_pattern_format_independent_of_value_format(raa: Triangle) -> None:
+    """
+    display.pattern_format should only affect pattern triangles (e.g.
+    link_ratio), leaving value-triangle formatting untouched, and vice
+    versa.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    try:
+        cl.options.set_option("display.pattern_format", "{:.4f}".format)
+        assert "1.6498" in repr(raa.link_ratio)
+        # Value triangle repr is unaffected by the pattern-only override.
+        assert "5012.0" in repr(raa)
+    finally:
+        cl.options.reset_option("display.pattern_format")
 
 
 def test_repr_format_semi_annual(prism: Triangle) -> None:
@@ -337,11 +521,7 @@ def test_heatmap_no_ipython(raa: Triangle) -> None:
     """
     import chainladder.core.display as display_mod
 
-    blocked = {
-        "IPython": None,
-        "IPython.core": None,
-        "IPython.core.display": None
-    }
+    blocked = {"IPython": None, "IPython.core": None, "IPython.core.display": None}
     with mock.patch.dict(sys.modules, blocked):
         importlib.reload(display_mod)
         with pytest.raises(ImportError, match=r"heatmap\(\) requires IPython\."):
@@ -361,11 +541,7 @@ def test_display_import_fallback_when_ipython_missing() -> None:
     """
     import chainladder.core.display as display_mod
 
-    blocked = {
-        "IPython": None,
-        "IPython.core": None,
-        "IPython.core.display": None
-    }
+    blocked = {"IPython": None, "IPython.core": None, "IPython.core.display": None}
     with mock.patch.dict(sys.modules, blocked):
         importlib.reload(display_mod)
         assert display_mod.HTML is None
