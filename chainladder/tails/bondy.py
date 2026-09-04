@@ -190,9 +190,9 @@ class TailBondy(TailBase):
         )
         fitted = xp.repeat(fitted, self.ldf_.shape[2], axis=2)
         rows = X.index.set_index(X.key_labels).index
-        self.b_ = pd.DataFrame(self.b_[..., 0, 0], index=rows, columns=X.columns)
+        self.b_ = pd.DataFrame(self.b_[..., 0, 0], index=rows, columns=X.columns_label)
         self.earliest_ldf_ = pd.DataFrame(
-            self.earliest_ldf_[..., 0, 0], index=rows, columns=X.columns
+            self.earliest_ldf_[..., 0, 0], index=rows, columns=X.columns_label
         )
         self.ldf_.values = xp.concatenate(
             (
