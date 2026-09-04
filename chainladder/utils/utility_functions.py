@@ -942,7 +942,8 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     def __init__(self, formula=None):
         self.formula = formula
 
-    def _check_X(self, X):
+    @staticmethod
+    def _check_X(X):  # noqa: N802
         from chainladder.core import Triangle
 
         if isinstance(X, Triangle):
@@ -1071,7 +1072,7 @@ def model_diagnostics(
     return concat(triangles, 0)
 
 
-def PTF_formula(
+def PTF_formula(  # noqa: N802
     alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
 ):
     """Helper formula that builds a patsy formula string for the BarnettZehnwirth

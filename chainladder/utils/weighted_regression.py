@@ -15,6 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from typing import Literal
     from chainladder.core.typing import BackendArray
 
+
 class WeightedRegression(BaseEstimator):
     """
     Helper class that fits a system of regression equations
@@ -24,8 +25,8 @@ class WeightedRegression(BaseEstimator):
     Parameters
     ----------
     axis: integer (default = 2)
-        the axis along with the perform the regression; 
-        axis of 2 is along the origin periods; 
+        the axis along with the perform the regression;
+        axis of 2 is along the origin periods;
         axis of 3 is along the development periods;
     thru_orig: bool (default = False)
         whether the regression is forced to go through the origin
@@ -43,10 +44,10 @@ class WeightedRegression(BaseEstimator):
     """
 
     def __init__(
-            self, 
-            axis: int = 2, 
-            thru_orig: bool = False, 
-            xp: ModuleType = np, 
+        self,
+        axis: int = 2,
+        thru_orig: bool = False,
+        xp: ModuleType = np,
     ):
         self.axis = axis
         self.thru_orig = thru_orig
@@ -64,11 +65,11 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def fit(
-            self, 
-            X:BackendArray, 
-            y:BackendArray|None=None, 
-            sample_weight:BackendArray|None=None, 
-            average: Literal["volume", "simple", "regression", "geometric"] | None = None
+        self,
+        X: BackendArray,
+        y: BackendArray | None = None,
+        sample_weight: BackendArray | None = None,
+        average: Literal["volume", "simple", "regression", "geometric"] | None = None,
     ):
         """
         Fit the model with X.
@@ -98,13 +99,13 @@ class WeightedRegression(BaseEstimator):
             self.infer_x_w()
 
         if self.thru_orig:
-            self._fit_OLS_thru_orig()
+            self._fit_ols_thru_orig()
         else:
-            self._fit_OLS()
+            self._fit_ols()
 
         return self
 
-    def _fit_OLS_thru_orig(self):
+    def _fit_ols_thru_orig(self):
         """
         Given a set of w, x, y, and an axis, this Function returns OLS slope
         and other statistics, while forcing an intercept of 0
@@ -138,7 +139,6 @@ class WeightedRegression(BaseEstimator):
             # but using the log link function and taking the differences
             is_geo = xp.array([a == "geometric" for a in average_[0, 0, 0]])
             if is_geo.any():
-
                 if xp.any((y == 0) & (x == 0)):
                     warnings.warn(
                         "Zero values present in triangle data used for geometric "
@@ -165,7 +165,7 @@ class WeightedRegression(BaseEstimator):
         fitted_value = xp.repeat(xp.expand_dims(coef, axis), x.shape[axis], axis)
         fitted_value = fitted_value * x * (y * 0 + 1)
 
-        residual = (y - fitted_value)
+        residual = y - fitted_value
 
         wss_residual = xp.nansum(residual**2 * w, axis)
         mse_denom = xp.nansum((y * 0 + 1) * (xp.nan_to_num(w) != 0), axis) - 1
@@ -173,7 +173,7 @@ class WeightedRegression(BaseEstimator):
         mse = wss_residual / mse_denom
         sigma = xp.sqrt(mse)
         std_err = xp.sqrt(mse / denominator)
-        
+
         self._w_reg = w
 
         self.slope_ = coef[..., None]
@@ -182,7 +182,7 @@ class WeightedRegression(BaseEstimator):
 
         return self
 
-    def _fit_OLS(self):
+    def _fit_ols(self):
         """Given a set of w, x, y, and an axis, this Function
         returns OLS slope and intercept.
         TODO:

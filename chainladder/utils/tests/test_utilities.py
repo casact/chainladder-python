@@ -9,15 +9,12 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from chainladder import (
-    __dt64_unit__
-)
-from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder import __dt64_unit__
 from chainladder.utils.data._manifest import SAMPLES
 from chainladder.utils.utility_functions import (
     date_delta_adjustment,
     maximum,
-    minimum
+    minimum,
 )
 
 from pathlib import Path
@@ -27,6 +24,7 @@ if TYPE_CHECKING:
     from pytest import CaptureFixture
     from pytest import MonkeyPatch
     from chainladder import Triangle
+
 
 class _FakeBag:
     """
@@ -59,7 +57,6 @@ class _FakeDaskBag:
 
 
 def test_triangle_json_io(clrd):
-    xp = clrd.get_array_module()
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
     assert clrd == clrd2
     assert np.all(clrd.kdims == clrd2.kdims)
@@ -153,7 +150,7 @@ def test_concat(clrd):
     )
 
 
-def test_model_diagnostics_erorr(raa,atol):
+def test_model_diagnostics_erorr(raa, atol):
     with pytest.raises(ValueError):
         cl.model_diagnostics(raa)
     dev = cl.Development().fit_transform(raa)
@@ -161,52 +158,62 @@ def test_model_diagnostics_erorr(raa,atol):
     emerg = est.full_expectation_.cum_to_incr()
     md = cl.model_diagnostics(est)
     assert np.allclose(
-        md['Run Off 1'].values,
-        emerg[emerg.valuation.year==1991].latest_diagonal.values,
+        md["Run Off 1"].values,
+        emerg[emerg.valuation.year == 1991].latest_diagonal.values,
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
     assert np.allclose(
-        md['Year Incremental'].values,
+        md["Year Incremental"].values,
         raa.cum_to_incr().latest_diagonal.values,
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
     assert np.allclose(
-        md['LDF'].values.flatten()[:0:-1],
+        md["LDF"].values.flatten()[:0:-1],
         dev.ldf_.values.flatten(),
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
     assert np.allclose(
-        md['CDF'].values.flatten()[:0:-1],
+        md["CDF"].values.flatten()[:0:-1],
         dev.cdf_.values.flatten(),
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
 
 
-def test_model_diagnostics_groupby(prism,atol):
+def test_model_diagnostics_groupby(prism, atol):
     dev = cl.Development().fit(prism["Incurred"].sum())
     est = cl.Chainladder().fit(dev.transform(prism["Incurred"]))
-    lhs = cl.model_diagnostics(est,groupby=['Line'])
-    rhs = cl.model_diagnostics(cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby('Line').sum())))
-    assert np.allclose(lhs['Ultimate'].values,rhs['Ultimate'].values,atol=atol,equal_nan=True)
-    assert np.allclose(np.nan_to_num(lhs['IBNR'].values),np.nan_to_num(rhs['IBNR'].values),atol=atol,equal_nan=True)
+    lhs = cl.model_diagnostics(est, groupby=["Line"])
+    rhs = cl.model_diagnostics(
+        cl.Chainladder().fit(dev.transform(prism["Incurred"].groupby("Line").sum()))
+    )
+    assert np.allclose(
+        lhs["Ultimate"].values, rhs["Ultimate"].values, atol=atol, equal_nan=True
+    )
+    assert np.allclose(
+        np.nan_to_num(lhs["IBNR"].values),
+        np.nan_to_num(rhs["IBNR"].values),
+        atol=atol,
+        equal_nan=True,
+    )
 
 
 def test_concat_immutability(raa):
     u = cl.Chainladder().fit(raa).ultimate_
-    l = raa.latest_diagonal
-    u.columns = l.columns
+    latest = raa.latest_diagonal
+    u.columns = latest.columns
     u_new = copy.deepcopy(u)
-    cl.concat((l, u), axis=3)
+    cl.concat((latest, u), axis=3)
     assert u == u_new
 
 
 def test_to_pickle_read_pickle(raa):
     import tempfile
     import os
+
     dev = cl.Development(average="simple", n_periods=4).fit(raa)
     fd, path = tempfile.mkstemp(suffix=".pkl")
     os.close(fd)
@@ -215,20 +222,24 @@ def test_to_pickle_read_pickle(raa):
         restored = cl.read_pickle(path)
         assert restored.average == dev.average
         assert restored.n_periods == dev.n_periods
-        np.testing.assert_array_almost_equal(
-            restored.ldf_.values, dev.ldf_.values
-        )
+        np.testing.assert_array_almost_equal(restored.ldf_.values, dev.ldf_.values)
     finally:
         os.remove(path)
 
 
 def test_maximum_minimum_1(raa):
-    ult_vol = cl.Chainladder().fit(
-        cl.Development(average="volume").fit_transform(raa)
-    ).ultimate_
-    ult_sim = cl.Chainladder().fit(
-        cl.Development(average="simple").fit_transform(raa)
-    ).ultimate_
+    ult_vol = (
+        cl
+        .Chainladder()
+        .fit(cl.Development(average="volume").fit_transform(raa))
+        .ultimate_
+    )
+    ult_sim = (
+        cl
+        .Chainladder()
+        .fit(cl.Development(average="simple").fit_transform(raa))
+        .ultimate_
+    )
     high_side = maximum(ult_vol, ult_sim)
     low_side = minimum(ult_vol, ult_sim)
     np.testing.assert_array_almost_equal(
@@ -245,6 +256,7 @@ def test_invalid_sample() -> None:
     """
     with pytest.raises(ValueError):
         cl.load_sample(key="not_a_real_sample_38473743")
+
 
 def test_load_sample() -> None:
     """
@@ -282,7 +294,13 @@ def test_list_samples() -> None:
     # One row per manifest entry, indexed by sample name.
     assert df.index.name == "name"
     assert set(df.index) == set(SAMPLES)
-    assert {"index", "columns", "cumulative", "origin_grain", "development_grain"} <= set(df.columns)
+    assert {
+        "index",
+        "columns",
+        "cumulative",
+        "origin_grain",
+        "development_grain",
+    } <= set(df.columns)
 
     # The fast path skips loading data and therefore omits the grain columns.
     fast = cl.list_samples(include_grain=False)
@@ -372,21 +390,24 @@ def test_load_sample_clrd2025() -> None:
     tri = cl.load_sample("clrd2025")
 
     # Six LOBs in the CAS Schedule P refresh.
-    expected_lobs = {
-        "comauto", "medmal", "othliab", "ppauto", "prodliab", "wkcomp"
-    }
+    expected_lobs = {"comauto", "medmal", "othliab", "ppauto", "prodliab", "wkcomp"}
     assert set(tri.index["LOB"].unique()) == expected_lobs
 
     # Modern column names (IncurredLosses rather than IncurLoss).
     expected_columns = {
-        "IncurredLosses", "CumPaidLoss", "BulkLoss",
-        "EarnedPremDIR", "EarnedPremCeded", "EarnedPremNet",
+        "IncurredLosses",
+        "CumPaidLoss",
+        "BulkLoss",
+        "EarnedPremDIR",
+        "EarnedPremCeded",
+        "EarnedPremNet",
     }
     assert set(str(c) for c in tri.vdims) == expected_columns
 
     # Accident years span 1998-2007.
     assert str(tri.origin.min()) == "1998"
     assert "2007" in [str(o) for o in tri.origin]
+
 
 def test_date_delta_adjustment() -> None:
     """
@@ -400,6 +421,7 @@ def test_date_delta_adjustment() -> None:
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
+
 
 def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
     """
@@ -424,11 +446,7 @@ def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
     assert cl.read_pickle(str(pkl_path)) == raa
 
 
-def test_triangle_to_pickle(
-        raa: Triangle,
-        clrd: Triangle,
-        tmp_path: Path
-) -> None:
+def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> None:
     """
     Dump a pickle of a triangle and read it back in. The read-in triangle should
     equal the one that was dumped.
@@ -653,10 +671,9 @@ def test_reset_option() -> None:
     original_array_priority = cl.options.ARRAY_PRIORITY
 
     try:
-
-        cl.options.set_option('ARRAY_BACKEND', 'sparse')
-        cl.options.set_option('AUTO_SPARSE', False)
-        cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'dask', 'numpy', 'cupy'])
+        cl.options.set_option("ARRAY_BACKEND", "sparse")
+        cl.options.set_option("AUTO_SPARSE", False)
+        cl.options.set_option("ARRAY_PRIORITY", ["sparse", "dask", "numpy", "cupy"])
 
         cl.options.reset_option()
 
@@ -665,10 +682,10 @@ def test_reset_option() -> None:
         assert cl.options.ARRAY_PRIORITY == original_array_priority
 
     finally:
-    # Manual reset in case of test failure.
-        cl.options.set_option('ARRAY_BACKEND', original_backend)
-        cl.options.set_option('AUTO_SPARSE', original_auto_sparse)
-        cl.options.set_option('ARRAY_PRIORITY', original_array_priority)
+        # Manual reset in case of test failure.
+        cl.options.set_option("ARRAY_BACKEND", original_backend)
+        cl.options.set_option("AUTO_SPARSE", original_auto_sparse)
+        cl.options.set_option("ARRAY_PRIORITY", original_array_priority)
 
 
 def test_options_defaults() -> None:
@@ -682,7 +699,7 @@ def test_options_defaults() -> None:
     """
     options = cl.Options()
     assert options.ARRAY_BACKEND == "numpy"
-    assert options.AUTO_SPARSE == True
+    assert options.AUTO_SPARSE
     assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
     assert isinstance(options.ULT_VAL, str)
 
@@ -696,10 +713,10 @@ def test_get_option() -> None:
     None
 
     """
-    assert cl.options.get_option('ARRAY_BACKEND') == cl.options.ARRAY_BACKEND
-    assert cl.options.get_option('AUTO_SPARSE') == cl.options.AUTO_SPARSE
-    assert cl.options.get_option('ARRAY_PRIORITY') == cl.options.ARRAY_PRIORITY
-    assert cl.options.get_option('ULT_VAL') == cl.options.ULT_VAL
+    assert cl.options.get_option("ARRAY_BACKEND") == cl.options.ARRAY_BACKEND
+    assert cl.options.get_option("AUTO_SPARSE") == cl.options.AUTO_SPARSE
+    assert cl.options.get_option("ARRAY_PRIORITY") == cl.options.ARRAY_PRIORITY
+    assert cl.options.get_option("ULT_VAL") == cl.options.ULT_VAL
 
 
 def test_set_option_consistency() -> None:
@@ -712,12 +729,13 @@ def test_set_option_consistency() -> None:
 
     """
     try:
-        cl.options.set_option('ARRAY_BACKEND', 'sparse')
-        assert cl.options.ARRAY_BACKEND == 'sparse'
-        assert cl.options.get_option('ARRAY_BACKEND') == 'sparse'
+        cl.options.set_option("ARRAY_BACKEND", "sparse")
+        assert cl.options.ARRAY_BACKEND == "sparse"
+        assert cl.options.get_option("ARRAY_BACKEND") == "sparse"
     finally:
         # Reset the options to default if the test fails.
-        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option("ARRAY_BACKEND")
+
 
 def test_reset_single_option() -> None:
     """
@@ -728,11 +746,11 @@ def test_reset_single_option() -> None:
     None
 
     """
-    cl.options.set_option('ARRAY_BACKEND', 'sparse')
-    assert cl.options.ARRAY_BACKEND == 'sparse'
+    cl.options.set_option("ARRAY_BACKEND", "sparse")
+    assert cl.options.ARRAY_BACKEND == "sparse"
     # Return backend to original state.
-    cl.options.reset_option('ARRAY_BACKEND')
-    assert cl.options.ARRAY_BACKEND == 'numpy'
+    cl.options.reset_option("ARRAY_BACKEND")
+    assert cl.options.ARRAY_BACKEND == "numpy"
 
 
 def test_reset_option_invalid() -> None:
@@ -744,7 +762,7 @@ def test_reset_option_invalid() -> None:
     None
     """
     with pytest.raises(ValueError):
-        cl.options.reset_option('NOT_A_REAL_OPTION')
+        cl.options.reset_option("NOT_A_REAL_OPTION")
 
 
 def test_set_option_cupy_backend_deprecated() -> None:
@@ -757,9 +775,9 @@ def test_set_option_cupy_backend_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="cupy"):
-            cl.options.set_option('ARRAY_BACKEND', 'cupy')
+            cl.options.set_option("ARRAY_BACKEND", "cupy")
     finally:
-        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option("ARRAY_BACKEND")
 
 
 def test_set_option_dask_backend_deprecated() -> None:
@@ -772,9 +790,9 @@ def test_set_option_dask_backend_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="dask"):
-            cl.options.set_option('ARRAY_BACKEND', 'dask')
+            cl.options.set_option("ARRAY_BACKEND", "dask")
     finally:
-        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option("ARRAY_BACKEND")
 
 
 def test_set_option_cupy_priority_deprecated() -> None:
@@ -788,9 +806,9 @@ def test_set_option_cupy_priority_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="cupy"):
-            cl.options.set_option('ARRAY_PRIORITY', ['cupy', 'numpy', 'sparse', 'dask'])
+            cl.options.set_option("ARRAY_PRIORITY", ["cupy", "numpy", "sparse", "dask"])
     finally:
-        cl.options.reset_option('ARRAY_PRIORITY')
+        cl.options.reset_option("ARRAY_PRIORITY")
 
 
 def test_set_option_dask_priority_deprecated() -> None:
@@ -804,9 +822,9 @@ def test_set_option_dask_priority_deprecated() -> None:
     """
     try:
         with pytest.warns(DeprecationWarning, match="dask"):
-            cl.options.set_option('ARRAY_PRIORITY', ['dask', 'numpy', 'sparse', 'cupy'])
+            cl.options.set_option("ARRAY_PRIORITY", ["dask", "numpy", "sparse", "cupy"])
     finally:
-        cl.options.reset_option('ARRAY_PRIORITY')
+        cl.options.reset_option("ARRAY_PRIORITY")
 
 
 def test_set_option_deprecated_priority_last_no_warning(recwarn) -> None:
@@ -820,10 +838,10 @@ def test_set_option_deprecated_priority_last_no_warning(recwarn) -> None:
     None
     """
     try:
-        cl.options.set_option('ARRAY_PRIORITY', ['numpy', 'sparse', 'dask', 'cupy'])
+        cl.options.set_option("ARRAY_PRIORITY", ["numpy", "sparse", "dask", "cupy"])
         assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
-        cl.options.reset_option('ARRAY_PRIORITY')
+        cl.options.reset_option("ARRAY_PRIORITY")
 
 
 def test_set_option_supported_backend_no_warning(recwarn) -> None:
@@ -837,12 +855,12 @@ def test_set_option_supported_backend_no_warning(recwarn) -> None:
     None
     """
     try:
-        cl.options.set_option('ARRAY_BACKEND', 'sparse')
-        cl.options.set_option('ARRAY_PRIORITY', ['sparse', 'numpy'])
+        cl.options.set_option("ARRAY_BACKEND", "sparse")
+        cl.options.set_option("ARRAY_PRIORITY", ["sparse", "numpy"])
         assert not [w for w in recwarn if issubclass(w.category, DeprecationWarning)]
     finally:
-        cl.options.reset_option('ARRAY_BACKEND')
-        cl.options.reset_option('ARRAY_PRIORITY')
+        cl.options.reset_option("ARRAY_BACKEND")
+        cl.options.reset_option("ARRAY_PRIORITY")
 
 
 def test_set_backend_cupy_deprecated(clrd) -> None:
@@ -855,9 +873,10 @@ def test_set_backend_cupy_deprecated(clrd) -> None:
     None
     """
     with pytest.warns(DeprecationWarning, match="cupy") as record:
-        clrd.set_backend('cupy', deep=True)
+        clrd.set_backend("cupy", deep=True)
     cupy_warnings = [
-        w for w in record
+        w
+        for w in record
         if issubclass(w.category, DeprecationWarning) and "cupy" in str(w.message)
     ]
     # A single warning should fire at the user's call site, not once per
@@ -877,14 +896,15 @@ def test_set_backend_dask_deprecated(clrd) -> None:
     """
     with pytest.warns(DeprecationWarning, match="dask") as record:
         try:
-            clrd.set_backend('dask', deep=True)
+            clrd.set_backend("dask", deep=True)
         except Exception:
             # The actual conversion can fail when the optional 'dask'
             # dependency is not installed; we only care that the deprecation
             # warning fired at the public entry point.
             pass
     dask_warnings = [
-        w for w in record
+        w
+        for w in record
         if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
     ]
     assert len(dask_warnings) == 1
@@ -904,6 +924,7 @@ def test_triangle_dask_input_deprecated() -> None:
     -------
     None
     """
+
     class _FakeDaskFrame(pd.DataFrame):
         @property
         def _constructor(self):
@@ -926,7 +947,8 @@ def test_triangle_dask_input_deprecated() -> None:
             columns="values",
         )
     dask_warnings = [
-        w for w in record
+        w
+        for w in record
         if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
     ]
     assert len(dask_warnings) == 1
@@ -944,6 +966,7 @@ def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
     -------
     None
     """
+
     class _PandasSubclass(pd.DataFrame):
         @property
         def _constructor(self):
@@ -961,7 +984,8 @@ def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
         columns="values",
     )
     dask_warnings = [
-        w for w in recwarn
+        w
+        for w in recwarn
         if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
     ]
     assert dask_warnings == []
@@ -985,7 +1009,8 @@ def test_dask_parallel_deprecated_warns_once() -> None:
             cl._warn_dask_parallel_deprecated()
             cl._warn_dask_parallel_deprecated()
         dask_warnings = [
-            w for w in record
+            w
+            for w in record
             if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
         ]
         assert len(dask_warnings) == 1
@@ -1011,7 +1036,8 @@ def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
         with pytest.warns(DeprecationWarning, match="dask") as record:
             sparse_clrd.groupby("LOB").sum()
         dask_warnings = [
-            w for w in record
+            w
+            for w in record
             if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
         ]
         assert len(dask_warnings) == 1
@@ -1037,7 +1063,8 @@ def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
         with pytest.warns(DeprecationWarning, match="dask") as record:
             incremental_sparse.incr_to_cum()
         dask_warnings = [
-            w for w in record
+            w
+            for w in record
             if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
         ]
         assert len(dask_warnings) == 1
@@ -1046,8 +1073,8 @@ def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_dask_parallel_numpy_groupby_no_warning(
-        monkeypatch: MonkeyPatch,
-        recwarn,
+    monkeypatch: MonkeyPatch,
+    recwarn,
 ) -> None:
     """
     The dask 'bag' parallel-compute path is gated on the sparse backend, so a
@@ -1064,7 +1091,8 @@ def test_dask_parallel_numpy_groupby_no_warning(
     try:
         numpy_clrd.groupby("LOB").sum()
         dask_warnings = [
-            w for w in recwarn
+            w
+            for w in recwarn
             if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
         ]
         assert dask_warnings == []
@@ -1087,11 +1115,12 @@ def test_describe_option(capsys: CaptureFixture[str]) -> None:
     None
 
     """
-    cl.options.describe_option('ARRAY_BACKEND')
+    cl.options.describe_option("ARRAY_BACKEND")
     captured = capsys.readouterr()
-    assert 'ARRAY_BACKEND : str' in captured.out
-    assert '[default: numpy]' in captured.out
-    assert '[currently: numpy]' in captured.out
+    assert "ARRAY_BACKEND : str" in captured.out
+    assert "[default: numpy]" in captured.out
+    assert "[currently: numpy]" in captured.out
+
 
 def test_describe_option_multi(capsys) -> None:
     """
@@ -1108,15 +1137,15 @@ def test_describe_option_multi(capsys) -> None:
     None
 
     """
-    cl.options.describe_option('ARRAY_BACKEND|AUTO_SPARSE')
+    cl.options.describe_option("ARRAY_BACKEND|AUTO_SPARSE")
     captured = capsys.readouterr()
-    assert 'ARRAY_BACKEND : str' in captured.out
-    assert '[default: numpy]' in captured.out
-    assert '[currently: numpy]' in captured.out
-    assert 'AUTO_SPARSE : bool' in captured.out
-    assert '[default: True]' in captured.out
-    assert '[currently: True]' in captured.out
-    assert 'ARRAY_PRIORITY' not in captured.out
+    assert "ARRAY_BACKEND : str" in captured.out
+    assert "[default: numpy]" in captured.out
+    assert "[currently: numpy]" in captured.out
+    assert "AUTO_SPARSE : bool" in captured.out
+    assert "[default: True]" in captured.out
+    assert "[currently: True]" in captured.out
+    assert "ARRAY_PRIORITY" not in captured.out
 
 
 def test_describe_option_all(capsys) -> None:
@@ -1150,11 +1179,11 @@ def test_describe_option_return_string() -> None:
     None
 
     """
-    result = cl.options.describe_option('ARRAY_BACKEND', _print_desc=False)
+    result = cl.options.describe_option("ARRAY_BACKEND", _print_desc=False)
     assert isinstance(result, str)
-    assert 'ARRAY_BACKEND : str' in result
-    assert '[default: numpy]' in result
-    assert '[currently: numpy]' in result
+    assert "ARRAY_BACKEND : str" in result
+    assert "[default: numpy]" in result
+    assert "[currently: numpy]" in result
 
 
 def test_deprecated_option_kwarg_warns() -> None:
@@ -1162,13 +1191,13 @@ def test_deprecated_option_kwarg_warns() -> None:
     Passing option= to get_option or set_option should emit a FutureWarning.
     """
     with pytest.warns(FutureWarning, match="'option'"):
-        cl.options.get_option(option='ARRAY_BACKEND')
+        cl.options.get_option(option="ARRAY_BACKEND")
 
     try:
         with pytest.warns(FutureWarning, match="'option'"):
-            cl.options.set_option(option='ARRAY_BACKEND', value='numpy')
+            cl.options.set_option(option="ARRAY_BACKEND", value="numpy")
     finally:
-        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option("ARRAY_BACKEND")
 
 
 def test_deprecated_option_kwarg_reset_option_warns() -> None:
@@ -1176,12 +1205,12 @@ def test_deprecated_option_kwarg_reset_option_warns() -> None:
     Passing option= to reset_option should emit a FutureWarning.
     """
     try:
-        cl.options.set_option('ARRAY_BACKEND', 'sparse')
+        cl.options.set_option("ARRAY_BACKEND", "sparse")
         with pytest.warns(FutureWarning, match="'option'"):
-            cl.options.reset_option(option='ARRAY_BACKEND')
-        assert cl.options.ARRAY_BACKEND == 'numpy'
+            cl.options.reset_option(option="ARRAY_BACKEND")
+        assert cl.options.ARRAY_BACKEND == "numpy"
     finally:
-        cl.options.reset_option('ARRAY_BACKEND')
+        cl.options.reset_option("ARRAY_BACKEND")
 
 
 def test_get_option_missing_pat_raises() -> None:
@@ -1206,9 +1235,9 @@ def test_describe_option_no_docstring_match(monkeypatch: MonkeyPatch) -> None:
     -------
     None
     """
-    monkeypatch.setattr(cl.Options, '__doc__', '')
-    result = cl.options.describe_option('ARRAY_BACKEND', _print_desc=False)
-    assert 'No description available.' in result
+    monkeypatch.setattr(cl.Options, "__doc__", "")
+    result = cl.options.describe_option("ARRAY_BACKEND", _print_desc=False)
+    assert "No description available." in result
 
 
 def test_describe_option_invalid() -> None:
@@ -1221,7 +1250,7 @@ def test_describe_option_invalid() -> None:
 
     """
     with pytest.raises(ValueError):
-        cl.options.describe_option('NOT_A_REAL_OPTION')
+        cl.options.describe_option("NOT_A_REAL_OPTION")
 
 
 def test_both_pat_and_option_raises() -> None:
@@ -1229,7 +1258,7 @@ def test_both_pat_and_option_raises() -> None:
     Passing both pat and option to get_option, set_option, or reset_option should raise TypeError.
     """
     with pytest.raises(TypeError, match="Cannot specify both"):
-        cl.options.get_option(pat='ARRAY_BACKEND', option='ARRAY_BACKEND')
+        cl.options.get_option(pat="ARRAY_BACKEND", option="ARRAY_BACKEND")
 
 
 def test_set_option_missing_value_raises() -> None:
@@ -1237,7 +1266,7 @@ def test_set_option_missing_value_raises() -> None:
     Calling set_option with pat but no value should raise TypeError.
     """
     with pytest.raises(TypeError, match="missing required argument"):
-        cl.options.set_option('ARRAY_BACKEND')
+        cl.options.set_option("ARRAY_BACKEND")
 
 
 def test_describe_option_invalid_regex() -> None:
@@ -1245,4 +1274,4 @@ def test_describe_option_invalid_regex() -> None:
     Passing a malformed regular expression to describe_option should raise ValueError.
     """
     with pytest.raises(ValueError, match="not a valid regular expression"):
-        cl.options.describe_option('[')
+        cl.options.describe_option("[")

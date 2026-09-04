@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from chainladder.utils.sparse import sp
 from sklearn.base import BaseEstimator, TransformerMixin
 import warnings
 
@@ -17,7 +16,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleLike
 
-class TriangleWeight(BaseEstimator,TransformerMixin):
+
+class TriangleWeight(BaseEstimator, TransformerMixin):
     """
     Helper class that produces a triangle of weights based on pattern selections
 
@@ -55,11 +55,11 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         See order of operations below when combined with multiple drop parameters.
 
         .. note ::
-    
+
             (Order of Drop Operations)
-            
+
             When multiple drop parameters are used together, the weights are built in this order (steps 4 and 5 are reversed from `Development`):
-        
+
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
             3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
@@ -116,7 +116,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
             Returns the instance itself.
         """
 
-        self.w_ = self._set_weight_func(X=X,secondary_rank=sample_weight)
+        self.w_ = self._set_weight_func(X=X, secondary_rank=sample_weight)
         return self
 
     def transform(self, X: TriangleLike):
@@ -138,10 +138,10 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         return X_new
 
     def _cascade_param(
-            self, 
-            size:int, 
-            param: bool | int | float | str | None | list[bool|int|float|str|None], 
-            default_param: bool | int | float | str | None
+        self,
+        size: int,
+        param: bool | int | float | str | None | list[bool | int | float | str | None],
+        default_param: bool | int | float | str | None,
     ) -> np.ndarray:
         """
         Internal helper function to explicitly cascade a parameter to a given triangle size
@@ -151,7 +151,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         size: integer
             the width of the triangle
         param: bool or int or float or str or None or list
-            the selected parameter, such as n_periods or drop_low, etc. 
+            the selected parameter, such as n_periods or drop_low, etc.
         default_param: bool or int or float or str or None
             the default param to fill where unspecificied
 
@@ -174,9 +174,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         return out.astype(type(default_param)).to_numpy()
 
     def _set_weight_func(
-            self,
-            X: TriangleLike,
-            secondary_rank: TriangleLike | None = None
+        self, X: TriangleLike, secondary_rank: TriangleLike | None = None
     ) -> TriangleLike:
         """
         Combines weights from all parameters
@@ -230,7 +228,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         dev_len = X.shape[3]
         n_periods_param = self._cascade_param(dev_len, self.n_periods, -1)
 
-        #helper function that generates the weights for individual n_periods
+        # helper function that generates the weights for individual n_periods
         def _assign_n_periods_weight_int(X, n_periods):
             xp = X.get_array_module()
             val_offset = {
@@ -253,8 +251,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
 
         # a dict of weights (val) by n_periods (key)
         dict_map = {
-            item: _assign_n_periods_weight_int(X, item)
-            for item in set(n_periods_param)
+            item: _assign_n_periods_weight_int(X, item) for item in set(n_periods_param)
         }
         # collection of development columns based on n_periods specified for that column
         conc = [
@@ -264,9 +261,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         return xp.concatenate(tuple(conc), -1).astype(float)
 
     def _drop_n_func(
-            self,
-            X: TriangleLike,
-            secondary_rank: TriangleLike | None = None
+        self, X: TriangleLike, secondary_rank: TriangleLike | None = None
     ) -> TriangleLike:
         """
         Generates weights for the `drop_high` and `drop_low` parameter
@@ -282,7 +277,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         -------
         A Triangle of weights
 
-        """        
+        """
         # Preparing to set up 3D array for drop_n parameters
         X_val = X.values.copy()
         dev_len = X_val.shape[3]
@@ -301,13 +296,13 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
 
         # explicitly setting up 3D arrays for drop_n parameters to avoid broadcasting bugs
         drop_high_array = np.zeros((indices, columns, dev_len))
-        drop_high_array[:, :, :] = self._cascade_param(
-            dev_len, self.drop_high, 0
-        )[None, None]
+        drop_high_array[:, :, :] = self._cascade_param(dev_len, self.drop_high, 0)[
+            None, None
+        ]
         drop_low_array = np.zeros((indices, columns, dev_len))
-        drop_low_array[:, :, :] = self._cascade_param(
-            dev_len, self.drop_low, 0
-        )[None, None]
+        drop_low_array[:, :, :] = self._cascade_param(dev_len, self.drop_low, 0)[
+            None, None
+        ]
         preserve_array = np.zeros((indices, columns, dev_len))
         preserve_array[:, :, :] = self._cascade_param(
             dev_len, self.preserve, self.preserve
@@ -324,7 +319,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
 
         # applying preserve
         preserve_trigger = (max_rank_unpreserve - drop_low_array) < preserve_array
-        
+
         # setting up flag to produce warning
         warning_flag = np.any(preserve_trigger)
 
@@ -333,9 +328,9 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         min_rank = np.where(preserve_trigger, 0, drop_low_array)
 
         # getting weights that are within the max and min ranks
-        w = (
-            X_ranks < max_rank[:,:,None,:]
-        ) & (X_ranks > min_rank[:,:,None,:] - 1)
+        w = (X_ranks < max_rank[:, :, None, :]) & (
+            X_ranks > min_rank[:, :, None, :] - 1
+        )
 
         # NOTE: The "Some exclusions have been ignored..." UserWarning below is
         # asserted by the test suite (see chainladder/development/tests/
@@ -361,7 +356,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
             warnings.warn(warning)
 
         return w.astype(float)
-    
+
     def _drop_func(self, X: TriangleLike) -> TriangleLike:
         """
         Generates weights for the `drop` parameter
@@ -375,7 +370,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         -------
         A Triangle of weights
 
-        """        
+        """
         # get the appropriate backend for nan_to_num
         xp = X.get_array_module()
         # turn single drop_valuation parameter to list if necessary
@@ -391,9 +386,9 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         # create ndarray of drop_list for further operation in numpy
         drop_np = np.asarray(drop_list)
         # find indices of drop_np
-        origin_ind = np.where(
-            np.array([X.origin.astype("string")]) == drop_np[:, [0]]
-        )[1]
+        origin_ind = np.where(np.array([X.origin.astype("string")]) == drop_np[:, [0]])[
+            1
+        ]
         dev_ind = np.where(np.array([dev_list]) == drop_np[:, [1]])[1]
         # set weight of dropped factors to 0
         w[(origin_ind, dev_ind)] = 0
@@ -412,7 +407,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         -------
         A Triangle of weights
 
-        """        
+        """
         # get the appropriate backend for nan_to_num
         xp = X.get_array_module()
         # turn single drop_valuation parameter to list if necessary
@@ -421,9 +416,9 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         else:
             drop_valuation_list = [self.drop_valuation]
         # turn drop_valuation to same valuation freq as X
-        v = pd.PeriodIndex(
-            drop_valuation_list, freq=X.development_grain
-        ).to_timestamp(how="e")
+        v = pd.PeriodIndex(drop_valuation_list, freq=X.development_grain).to_timestamp(
+            how="e"
+        )
         # warn that some drop_valuation are outside of X
         if np.any(~v.isin(X.valuation)):
             warnings.warn("Some valuations could not be dropped.")
@@ -433,7 +428,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         if w.sum() == 0:
             raise Exception("The entire triangle has been dropped via drop_valuation.")
         return w
-    
+
     def _drop_x_func(self, X: TriangleLike) -> TriangleLike:
         """
         Generates weights for the `drop_above` and `drop_below` parameters
@@ -447,7 +442,7 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         -------
         A Triangle of weights
 
-        """        
+        """
         # Preparing to set up 3D array for drop_x parameters
         X_val = X.values.copy()
         dev_len = X_val.shape[3]
@@ -460,9 +455,9 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
             dev_len, self.drop_above, np.inf
         )[None, None]
         drop_below_array = np.zeros((indices, columns, dev_len))
-        drop_below_array[:, :, :] = self._cascade_param(
-            dev_len, self.drop_below, 0.0
-        )[None, None]
+        drop_below_array[:, :, :] = self._cascade_param(dev_len, self.drop_below, 0.0)[
+            None, None
+        ]
         preserve_array = np.zeros((indices, columns, dev_len))
         preserve_array[:, :, :] = self._cascade_param(
             dev_len, self.preserve, self.preserve
@@ -472,8 +467,8 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         w = ~np.isnan(X_val)
 
         # weights without considering preserve
-        index_array_weights = (X_val < drop_above_array[:,:,None,:]) & (
-            X_val > drop_below_array[:,:,None,:]
+        index_array_weights = (X_val < drop_above_array[:, :, None, :]) & (
+            X_val > drop_below_array[:, :, None, :]
         )
 
         # counting remaining factors
@@ -482,7 +477,9 @@ class TriangleWeight(BaseEstimator,TransformerMixin):
         # applying preserve
         warning_flag = np.any(valid_count < preserve_array)
         w = np.where(
-            valid_count[:,:,None,:] < preserve_array[:,:,None,:], w, index_array_weights
+            valid_count[:, :, None, :] < preserve_array[:, :, None, :],
+            w,
+            index_array_weights,
         )
 
         # NOTE: The "Some exclusions have been ignored..." UserWarning below is
