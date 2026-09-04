@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import warnings
 from sklearn.base import BaseEstimator
@@ -21,7 +20,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     _estimator_type = "chainladder"
 
-    def validate_X(self, X):
+    def validate_X(self, X):  # noqa: N802
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
@@ -31,7 +30,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
     def _align_cdf(self, X, sample_weight=None):
         """ Vertically align CDF to origin period latest diagonal. """
-        return X.cdf_.align_pattern(X,sample_weight)
+        return X.cdf_.align_pattern(X, sample_weight)
 
     def _set_ult_attr(self, ultimate):
         """ Ultimate scaffolding """
@@ -103,7 +102,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new = X.val_to_dev()
         if sum(X_new.ddims > self.ldf_.ddims.max()) > 0:
             raise ValueError("X has ages that exceed those available in model.")
-        X_new = X_new + (self.X_.val_to_dev().iloc[0,0].sum(2) * 0)
+        X_new = X_new + (self.X_.val_to_dev().iloc[0, 0].sum(2) * 0)
         self.validate_weight(X_new, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(X_new.array_backend)

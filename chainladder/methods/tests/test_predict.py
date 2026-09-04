@@ -1,13 +1,14 @@
 import chainladder as cl
 import numpy as np
 import pandas as pd
-import pytest 
+import pytest
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]
 cl_ult = cl.Chainladder().fit(raa).ultimate_  # Chainladder Ultimate
 apriori = cl_ult * 0 + (float(cl_ult.sum()) / 10)  # Mean Chainladder Ultimate
 apriori_1989 = apriori[apriori.origin < "1990"]
+
 
 @pytest.mark.parametrize(
     "estimators",
@@ -16,59 +17,66 @@ apriori_1989 = apriori[apriori.origin < "1990"]
         cl.BornhuetterFerguson,
         cl.ExpectedLoss,
         cl.Benktander,
-        cl.Chainladder
+        cl.Chainladder,
     ],
 )
-def test_predict_and_weights(estimators,atol):
+def test_predict_and_weights(estimators, atol):
     est = estimators().fit(raa_1989, sample_weight=apriori_1989)
     pred = est.predict(raa, sample_weight=apriori)
     assert pred
     assert np.allclose(
-        raa_1989.latest_diagonal.values.swapaxes(0,1),
-        cl.model_diagnostics(est)['Latest'].values,
+        raa_1989.latest_diagonal.values.swapaxes(0, 1),
+        cl.model_diagnostics(est)["Latest"].values,
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
     assert np.allclose(
-        raa.latest_diagonal.values.swapaxes(0,1),
-        cl.model_diagnostics(pred)['Latest'].values,
+        raa.latest_diagonal.values.swapaxes(0, 1),
+        cl.model_diagnostics(pred)["Latest"].values,
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
     assert np.allclose(
-        est.ultimate_.values.swapaxes(0,1),
-        cl.model_diagnostics(est)['Ultimate'].values,
+        est.ultimate_.values.swapaxes(0, 1),
+        cl.model_diagnostics(est)["Ultimate"].values,
         atol=atol,
-        equal_nan=True
+        equal_nan=True,
     )
     assert np.allclose(
-        pred.ultimate_.values.swapaxes(0,1),
-        cl.model_diagnostics(pred)['Ultimate'].values,
+        pred.ultimate_.values.swapaxes(0, 1),
+        cl.model_diagnostics(pred)["Ultimate"].values,
         atol=atol,
-        equal_nan=True
-    )   
-    #Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
-    if estimators in [cl.CapeCod,cl.BornhuetterFerguson,cl.ExpectedLoss,cl.Benktander]:
+        equal_nan=True,
+    )
+    # Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
+    if estimators in [
+        cl.CapeCod,
+        cl.BornhuetterFerguson,
+        cl.ExpectedLoss,
+        cl.Benktander,
+    ]:
         assert np.allclose(
-            est.expectation_.values.swapaxes(0,1),
-            cl.model_diagnostics(est)['Apriori'].values,
+            est.expectation_.values.swapaxes(0, 1),
+            cl.model_diagnostics(est)["Apriori"].values,
             atol=atol,
-            equal_nan=True
+            equal_nan=True,
         )
         assert np.allclose(
-            pred.expectation_.values.swapaxes(0,1),
-            cl.model_diagnostics(pred)['Apriori'].values,
+            pred.expectation_.values.swapaxes(0, 1),
+            cl.model_diagnostics(pred)["Apriori"].values,
             atol=atol,
-            equal_nan=True
-        )   
+            equal_nan=True,
+        )
         with pytest.raises(ValueError):
             estimators().fit(raa_1989)
         with pytest.raises(ValueError):
             estimators().fit(raa_1989, sample_weight=apriori_1989).predict(raa)
 
+
 def test_mack_predict():
     mack = cl.MackChainladder().fit(raa_1989)
     assert mack.predict(raa_1989)
+
 
 def test_bs_random_state_predict(clrd):
     tri = clrd.groupby("LOB").sum().loc["wkcomp", ["CumPaidLoss", "EarnedPremNet"]]
@@ -78,7 +86,8 @@ def test_bs_random_state_predict(clrd):
     )
     assert (
         abs(
-            bf.predict(X, sample_weight=tri["EarnedPremNet"].latest_diagonal)
+            bf
+            .predict(X, sample_weight=tri["EarnedPremNet"].latest_diagonal)
             .ibnr_.sum()
             .sum()
             / bf.ibnr_.sum().sum()
@@ -135,14 +144,16 @@ def test_misaligned_index2(clrd):
     assert abs(a - b) < 1e-5
     a = bbk.ultimate_.iloc[150:153].sum().sum()
     b = (
-        bbk.predict(clrd.iloc[150:153], sample_weight=w.iloc[150:153])
+        bbk
+        .predict(clrd.iloc[150:153], sample_weight=w.iloc[150:153])
         .ultimate_.sum()
         .sum()
     )
     assert abs(a - b) < 1e-5
     a = bcc.ultimate_.iloc[150:153].sum().sum()
     b = (
-        bcc.predict(clrd.iloc[150:153], sample_weight=w.iloc[150:153])
+        bcc
+        .predict(clrd.iloc[150:153], sample_weight=w.iloc[150:153])
         .ultimate_.sum()
         .sum()
     )
@@ -153,14 +164,16 @@ def test_misaligned_index2(clrd):
     assert abs(a - b) < 1e-5
     a = bbk.ultimate_.iloc[150:152].sum().sum()
     b = (
-        bbk.predict(clrd.iloc[150:152], sample_weight=w.iloc[150:152])
+        bbk
+        .predict(clrd.iloc[150:152], sample_weight=w.iloc[150:152])
         .ultimate_.sum()
         .sum()
     )
     assert abs(a - b) < 1e-5
     a = bcc.ultimate_.iloc[150:152].sum().sum()
     b = (
-        bcc.predict(clrd.iloc[150:152], sample_weight=w.iloc[150:152])
+        bcc
+        .predict(clrd.iloc[150:152], sample_weight=w.iloc[150:152])
         .ultimate_.sum()
         .sum()
     )
@@ -199,6 +212,7 @@ def test_check_val_tri_cl(raa):
     model = cl.Chainladder().fit(raa.dev_to_val())
     assert model.predict(raa.latest_diagonal).ultimate_ == model.ultimate_
 
+
 def test_odd_shaped_triangle():
     df = pd.DataFrame({
         "claim_year": 2000 + pd.Series([0] * 8 + [1] * 4),
@@ -214,6 +228,17 @@ def test_odd_shaped_triangle():
         columns="payment",
         cumulative=False,
     )
-    ult1 = cl.Chainladder().fit(cl.Development(average="volume").fit_transform(tr.grain("OYDQ"))).ultimate_.sum()
-    ult2 = cl.Chainladder().fit(cl.Development(average="volume").fit_transform(tr)).ultimate_.grain("OYDQ").sum()
+    ult1 = (
+        cl
+        .Chainladder()
+        .fit(cl.Development(average="volume").fit_transform(tr.grain("OYDQ")))
+        .ultimate_.sum()
+    )
+    ult2 = (
+        cl
+        .Chainladder()
+        .fit(cl.Development(average="volume").fit_transform(tr))
+        .ultimate_.grain("OYDQ")
+        .sum()
+    )
     assert abs(ult1 - ult2) < 1e-5
