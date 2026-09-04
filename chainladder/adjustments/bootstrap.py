@@ -219,11 +219,6 @@ class BootstrapODPSample(DevelopmentBase):
             self.resampled_triangles_, self.scale_ = self._get_simulation(
                 X, exp_incr_triangle
             )
-            # n_obs = xp.nansum(self.w_)
-            # n_origin_params = X.shape[2]
-            # n_dev_params = X.shape[3] - 1
-            # deg_free = n_obs - n_origin_params - n_dev_params
-            # deg_free_adj_fctr = xp.sqrt(n_obs / deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
@@ -272,12 +267,12 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_triangles = resampled_triangles[None, ...].swapaxes(0, 1)
         obj = X.copy()
         if X.key_labels == ["Total"]:
-            obj.kdims = np.arange(self.n_sims)
+            obj._kdims = np.arange(self.n_sims)
             obj.key_labels = ["Simulation_#"]
         else:
-            obj.kdims = np.concat(
+            obj._kdims = np.concat(
                 [
-                    np.tile(X.kdims, (self.n_sims, 1)),
+                    np.tile(X._kdims, (self.n_sims, 1)),
                     np.arange(self.n_sims).reshape(-1, 1),
                 ],
                 axis=1,
