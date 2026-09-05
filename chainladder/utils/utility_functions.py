@@ -681,7 +681,7 @@ def concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
-    mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
+    mapper = {0: "_kdims", 1: "_vdims", 2: "odims", 3: "ddims"}
     for k in mapper.keys():
         if k != axis and k != 1:  # All non-concat axes must be identical
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
@@ -942,7 +942,7 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
     def __init__(self, formula=None):
         self.formula = formula
 
-    def _check_X(self, X):
+    def _check_X(self, X):  # noqa: N802
         from chainladder.core import Triangle
 
         if isinstance(X, Triangle):
@@ -1071,7 +1071,7 @@ def model_diagnostics(
     return concat(triangles, 0)
 
 
-def PTF_formula(
+def PTF_formula(  # noqa: N802
     alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
 ):
     """Helper formula that builds a patsy formula string for the BarnettZehnwirth

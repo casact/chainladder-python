@@ -6,10 +6,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from chainladder.utils.utility_functions import (
-    num_to_nan,
-    concat
-)
+from chainladder.utils.utility_functions import num_to_nan, concat
 
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
@@ -25,13 +22,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any
 
+
 class TriangleDunders:
-    """ Class that implements the dunder (double underscore) methods for the
-        Triangle class
+    """Class that implements the dunder (double underscore) methods for the
+    Triangle class
     """
 
     def _validate_arithmetic(self, other: Any) -> tuple:
-        """ Common functionality BEFORE arithmetic operations """
+        """Common functionality BEFORE arithmetic operations"""
         if isinstance(other, TriangleDunders):
             obj, other = self._compatibility_check(self, other)
             if obj.is_pattern != other.is_pattern:
@@ -43,17 +41,17 @@ class TriangleDunders:
             if isinstance(other, TriangleDunders):
                 other = other.values
         else:
-            if isinstance(other, np.ndarray) and self.array_backend != 'numpy':
+            if isinstance(other, np.ndarray) and self.array_backend != "numpy":
                 obj = self.copy()
                 other = obj.get_array_module().array(other)
-            elif isinstance(other, sp.COO) and self.array_backend != 'sparse':
-                obj = self.set_backend('sparse')
+            elif isinstance(other, sp.COO) and self.array_backend != "sparse":
+                obj = self.set_backend("sparse")
             else:
                 obj = self.copy()
         return obj, other
 
     def _arithmetic_cleanup(self, obj):
-        """ Common functionality AFTER arithmetic operations """
+        """Common functionality AFTER arithmetic operations"""
         obj.values = obj.values * obj.get_array_module().nan_to_num(obj.nan_triangle)
         obj.values = num_to_nan(obj.values)
         return obj
@@ -62,10 +60,9 @@ class TriangleDunders:
         from chainladder.utils.utility_functions import set_common_backend
 
         x, y = set_common_backend([x, y])
-        if (
-            x.origin_grain != y.origin_grain
-            or (x.development_grain != y.development_grain and 
-                min(x.shape[-1], y.shape[-1]) > 1)
+        if x.origin_grain != y.origin_grain or (
+            x.development_grain != y.development_grain
+            and min(x.shape[-1], y.shape[-1]) > 1
         ):
             raise ValueError(
                 "Triangle arithmetic requires both triangles to be the same grain."
@@ -73,18 +70,20 @@ class TriangleDunders:
         return x, y
 
     def _prep_index(self, x, y):
-        if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
-            x.kdims = y.kdims
+        if x._kdims.shape[0] == 1 and y._kdims.shape[0] > 1:
+            x._kdims = y._kdims
             x.key_labels = y.key_labels
             return x, y
-        if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
-            y.kdims = x.kdims
+        if x._kdims.shape[0] > 1 and y._kdims.shape[0] == 1:
+            y._kdims = x._kdims
             y.key_labels = x.key_labels
             return x, y
-        if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
-            kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
-            key_labels = x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
-            x.kdims = y.kdims = kdims
+        if x._kdims.shape[0] == y._kdims.shape[0] == 1 and x.key_labels != y.key_labels:
+            kdims = x._kdims if len(x.key_labels) > len(y.key_labels) else y._kdims
+            key_labels = (
+                x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
+            )
+            x._kdims = y._kdims = kdims
             x.key_labels = y.key_labels = key_labels
             return x, y
 
@@ -94,10 +93,14 @@ class TriangleDunders:
         common = x_labels.intersection(y_labels)
 
         if common == x_labels or common == y_labels:
-            if x_labels != y_labels or x.kdims.shape[0] != y.kdims.shape[0]:
+            if x_labels != y_labels or x._kdims.shape[0] != y._kdims.shape[0]:
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
-            elif x.kdims.shape[0] > 1 and not np.array_equal(x.kdims, y.kdims) and not x.index.equals(y.index):
+            elif (
+                x._kdims.shape[0] > 1
+                and not np.array_equal(x._kdims, y._kdims)
+                and not x.index.equals(y.index)
+            ):
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
@@ -107,20 +110,25 @@ class TriangleDunders:
             return x, y
 
         else:
-            raise ValueError('Index broadcasting is ambiguous between ' + str(x_labels) + ' and ' + str(y_labels))
+            raise ValueError(
+                "Index broadcasting is ambiguous between "
+                + str(x_labels)
+                + " and "
+                + str(y_labels)
+            )
 
     def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x.vdims = y.vdims
+            x._vdims = y._vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y.vdims = x.vdims
+            y._vdims = x._vdims
         elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
-            y.vdims = x.vdims
+            y._vdims = x._vdims
         elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
             return x, y
-        else:            
+        else:
             # Find columns to add to each triangle
-            cols_to_add_to_x = [col for col in y.columns if col not in x.columns] 
+            cols_to_add_to_x = [col for col in y.columns if col not in x.columns]
             cols_to_add_to_y = [col for col in x.columns if col not in y.columns]
 
             # Start with case with no new columns, y simply has a different order
@@ -145,7 +153,8 @@ class TriangleDunders:
         xp = obj.get_array_module()
         is_broadcastable = all(
             (m == n) or (m == 1) or (n == 1)
-            for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1]))
+            for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1])
+        )
         if (len(obj.odims), len(obj.ddims)) == (len(other.odims), len(other.ddims)):
             if np.all(obj.ddims != other.ddims) and len(obj.ddims) > 1:
                 is_broadcastable = False
@@ -191,10 +200,20 @@ class TriangleDunders:
             ldl = int(np.where(~d_arr0 == 1)[0].min())
             ldh = int(np.where(~d_arr0 == 1)[0].max() + 1)
             if obj.array_backend != "sparse":
-                other_arr = xp.zeros((other.shape[0], other.shape[1], len(odims), len(ddims)))
+                other_arr = xp.zeros((
+                    other.shape[0],
+                    other.shape[1],
+                    len(odims),
+                    len(ddims),
+                ))
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
-                obj_arr = xp.zeros((self.shape[0], self.shape[1], len(odims), len(ddims)))
+                obj_arr = xp.zeros((
+                    self.shape[0],
+                    self.shape[1],
+                    len(odims),
+                    len(ddims),
+                ))
                 obj_arr[:] = xp.nan
                 obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
             else:
@@ -203,7 +222,12 @@ class TriangleDunders:
                 other_arr.coords[3] = other_arr.coords[3] + rdl
                 obj_arr.coords[2] = obj_arr.coords[2] + lol
                 obj_arr.coords[3] = obj_arr.coords[3] + ldl
-                other_arr.shape = (other.shape[0], other.shape[1], len(odims), len(ddims))
+                other_arr.shape = (
+                    other.shape[0],
+                    other.shape[1],
+                    len(odims),
+                    len(ddims),
+                )
                 obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
             if isinstance(obj.ddims, pd.DatetimeIndex):
@@ -216,32 +240,34 @@ class TriangleDunders:
 
     @staticmethod
     def _slice_or_nan(obj, other, k):
-        """ Return a broadcastable slice or NaNs for missing slices """
+        """Return a broadcastable slice or NaNs for missing slices"""
         if k in obj.groups.indices.keys():
             return obj.obj.iloc[obj.groups.indices[k]]
         else:
             other = other.obj.iloc[other.groups.indices[k]]
             new_obj = obj.obj.iloc[:1] * 0
             labels = list(set(other.key_labels).intersection(set(new_obj.key_labels)))
-            new_idx = other.index.set_index(labels).join(
-                new_obj.index.set_index(labels)).reset_index()
+            new_idx = (
+                other.index
+                .set_index(labels)
+                .join(new_obj.index.set_index(labels))
+                .reset_index()
+            )
             new_idx = new_idx[new_obj.key_labels].iloc[-1:]
-            new_obj.kdims = new_idx.values
-            new_obj.key_labels = list(new_idx.columns)
+            new_obj.index = new_idx
             return new_obj
 
     @staticmethod
     def _get_key_union(obj, other):
-        return set(list(obj.groups.indices.keys()) +
-                   list(other.groups.indices.keys()))
+        return set(list(obj.groups.indices.keys()) + list(other.groups.indices.keys()))
 
     def _arithmetic_mapper(self, obj, other, f):
-        """ Use Dask if available, otherwise basic list comprehension """
-        if db and obj.obj.array_backend == 'sparse':
+        """Use Dask if available, otherwise basic list comprehension"""
+        if db and obj.obj.array_backend == "sparse":
             _warn_dask_parallel_deprecated()
             bag = db.from_sequence(self._get_key_union(obj, other))
             bag = bag.map(f, self, obj, other)
-            c = bag.compute(scheduler='threads')
+            c = bag.compute(scheduler="threads")
         else:
             c = [f(k, self, obj, other) for k in self._get_key_union(obj, other)]
         return concat(c, 0).sort_index()
@@ -281,9 +307,12 @@ class TriangleDunders:
         """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
+
             def f(k, self, obj, other):
-                return (self._slice_or_nan(obj, other, k) +
-                        self._slice_or_nan(other, obj, k))
+                return self._slice_or_nan(obj, other, k) + self._slice_or_nan(
+                    other, obj, k
+                )
+
             obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
@@ -326,9 +355,12 @@ class TriangleDunders:
         """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
+
             def f(k, self, obj, other):
-                return (self._slice_or_nan(obj, other, k) -
-                        self._slice_or_nan(other, obj, k))
+                return self._slice_or_nan(obj, other, k) - self._slice_or_nan(
+                    other, obj, k
+                )
+
             obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
@@ -400,9 +432,12 @@ class TriangleDunders:
         """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
+
             def f(k, self, obj, other):
-                return (self._slice_or_nan(obj, other, k) *
-                        self._slice_or_nan(other, obj, k))
+                return self._slice_or_nan(obj, other, k) * self._slice_or_nan(
+                    other, obj, k
+                )
+
             obj = self._arithmetic_mapper(obj, other, f)
         else:
             obj.values = obj.values * other
@@ -414,9 +449,12 @@ class TriangleDunders:
     def __pow__(self, other):
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
+
             def f(k, self, obj, other):
-                return (self._slice_or_nan(obj, other, k) **
-                        self._slice_or_nan(other, obj, k))
+                return self._slice_or_nan(obj, other, k) ** self._slice_or_nan(
+                    other, obj, k
+                )
+
             obj = self._arithmetic_mapper(obj, other, f)
         else:
             xp = obj.get_array_module()
@@ -484,9 +522,12 @@ class TriangleDunders:
         """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
+
             def f(k, self, obj, other):
-                return (self._slice_or_nan(obj, other, k) /
-                        self._slice_or_nan(other, obj, k))
+                return self._slice_or_nan(obj, other, k) / self._slice_or_nan(
+                    other, obj, k
+                )
+
             obj = self._arithmetic_mapper(obj, other, f)
         else:
             obj.values = obj.values / other
@@ -504,12 +545,10 @@ class TriangleDunders:
         from chainladder import options
 
         backend = options.ARRAY_PRIORITY[
-            min(
-                [
-                    options.ARRAY_PRIORITY.index(x)
-                    for x in [self.array_backend, other.array_backend]
-                ]
-            )
+            min([
+                options.ARRAY_PRIORITY.index(x)
+                for x in [self.array_backend, other.array_backend]
+            ])
         ]
         x, y = self.set_backend(backend), other.set_backend(backend)
         xp = x.get_array_module()

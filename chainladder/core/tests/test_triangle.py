@@ -173,8 +173,7 @@ def test_sum_of_diff_eq_diff_of_sum(clrd):
 
 def test_append(raa):
     raa2 = raa.copy()
-    raa2.kdims = np.array([["P2"]])
-    raa.append(raa2).sum() == raa * 2
+    raa2.index = pd.DataFrame([["P2"]], columns=raa.key_labels)
     assert raa.append(raa2).sum() == 2 * raa
 
 
@@ -327,7 +326,7 @@ def test_origin_and_value_setters(raa):
         np.all(raa2.origin == raa.origin),
         np.all(raa2.development == raa.development),
         np.all(raa2.odims == raa.odims),
-        np.all(raa2.vdims == raa.vdims),
+        np.all(raa2.columns == raa.columns),
     ))
 
 
@@ -449,6 +448,52 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
     np.testing.assert_array_equal(result.kdims, new_index.values)
     assert tri.key_labels == original_key_labels
     np.testing.assert_array_equal(tri.kdims, original_kdims)
+
+
+def test_vdims_deprecation_warning(raa):
+    """Accessing or setting vdims should emit a FutureWarning."""
+    with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
+        v = raa.vdims
+    assert np.all(v == raa.columns.values)
+
+    raa2 = raa.copy()
+    with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
+        raa2.vdims = ["NewColumn"]
+    assert list(raa2.columns) == ["NewColumn"]
+
+
+def test_kdims_deprecation_warning(raa):
+    """Accessing or setting kdims should emit a FutureWarning."""
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        k = raa.kdims
+    assert np.all(k == raa.index.values)
+
+    raa2 = raa.copy()
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa2.kdims = np.array([["P2"]])
+    assert list(raa2.index.values) == [["P2"]]
+
+
+def test_legacy_pickle_compatibility(raa):
+    """Pickles saved prior to kdims/vdims rename should unpickle cleanly."""
+    import pickle
+
+    state = raa.__dict__.copy()
+    # Simulate a legacy serialized Triangle containing kdims and vdims
+    state["kdims"] = state.pop("_kdims")
+    state["vdims"] = state.pop("_vdims")
+
+    restored = cl.Triangle.__new__(cl.Triangle)
+    restored.__setstate__(state)
+
+    assert restored.index.equals(raa.index)
+    assert list(restored.columns) == list(raa.columns)
+    assert restored.loc["Total"].shape == raa.loc["Total"].shape
+    assert restored == raa
+
+    # Verify re-pickling the migrated instance works
+    roundtripped = pickle.loads(pickle.dumps(restored))
+    assert roundtripped == raa
 
 
 def test_valdev1(qtr):

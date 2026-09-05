@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import least_squares
 from chainladder.tails import TailBase
-from chainladder.development import DevelopmentBase, Development
+from chainladder.development import Development
 
 
 class TailBondy(TailBase):
@@ -150,7 +150,8 @@ class TailBondy(TailBase):
         else:
             earliest_age = X.ddims[
                 int(
-                    self.earliest_age / ({"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain])
+                    self.earliest_age
+                    / ({"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain])
                 )
                 - 1
             ]
@@ -158,7 +159,7 @@ class TailBondy(TailBase):
         obj = Development().fit_transform(X) if "ldf_" not in X else X
         b_optimized = []
         initial = xp.where(obj.ddims == earliest_age)[0][0] if earliest_age else 0
-        for num in range(len(obj.vdims)):
+        for num in range(len(obj.columns)):
             b0 = (xp.ones(obj.shape[0]) * 0.5)[:, None]
             data = xp.log(obj.ldf_.values[:, num, 0, initial:])
             b0 = xp.concatenate((b0, data[..., 0:1]), axis=1)
@@ -189,9 +190,9 @@ class TailBondy(TailBase):
         )
         fitted = xp.repeat(fitted, self.ldf_.shape[2], axis=2)
         rows = X.index.set_index(X.key_labels).index
-        self.b_ = pd.DataFrame(self.b_[..., 0, 0], index=rows, columns=X.vdims)
+        self.b_ = pd.DataFrame(self.b_[..., 0, 0], index=rows, columns=X.columns_label)
         self.earliest_ldf_ = pd.DataFrame(
-            self.earliest_ldf_[..., 0, 0], index=rows, columns=X.vdims
+            self.earliest_ldf_[..., 0, 0], index=rows, columns=X.columns_label
         )
         self.ldf_.values = xp.concatenate(
             (

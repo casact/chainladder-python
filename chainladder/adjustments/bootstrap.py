@@ -166,12 +166,19 @@ class BootstrapODPSample(DevelopmentBase):
     def fit(self, X, y=None, sample_weight=None):
         if X.shape[1] > 1:
             from chainladder.utils.utility_functions import concat
-            out = [BootstrapODPSample(**self.get_params()).fit(X.iloc[:, i])
-                   for i in range(X.shape[1])]
+
+            out = [
+                BootstrapODPSample(**self.get_params()).fit(X.iloc[:, i])
+                for i in range(X.shape[1])
+            ]
             xp = X.get_array_module(out[0].design_matrix_)
-            self.design_matrix_ = xp.concatenate([i.design_matrix_[None] for i in out], axis=0)
+            self.design_matrix_ = xp.concatenate(
+                [i.design_matrix_[None] for i in out], axis=0
+            )
             self.hat_ = xp.concatenate([i.hat_[None] for i in out], axis=0)
-            self.resampled_triangles_ = concat([i.resampled_triangles_ for i in out], axis=1)
+            self.resampled_triangles_ = concat(
+                [i.resampled_triangles_ for i in out], axis=1
+            )
             self.scale_ = xp.array([i.scale_ for i in out])
             self.w_ = out[0].w_
         else:
@@ -183,7 +190,7 @@ class BootstrapODPSample(DevelopmentBase):
             xp = X.get_array_module()
             if len(X) != 1:
                 raise ValueError("Only single index triangles are supported")
-            if type(X.ddims) != np.ndarray:
+            if type(X.ddims) is not np.ndarray:
                 raise ValueError("Triangle must be expressed with development lags")
             obj = Development(
                 n_periods=self.n_periods,
@@ -203,7 +210,7 @@ class BootstrapODPSample(DevelopmentBase):
             if self.hat_adj:
                 try:
                     self.hat_ = self._get_hat(X, exp_incr_triangle)
-                except:
+                except Exception:
                     warn("Could not compute hat matrix.  Setting hat_adj to False")
                     self.had_adj = False
                     self.hat_ = None
@@ -212,11 +219,6 @@ class BootstrapODPSample(DevelopmentBase):
             self.resampled_triangles_, self.scale_ = self._get_simulation(
                 X, exp_incr_triangle
             )
-            n_obs = xp.nansum(self.w_)
-            n_origin_params = X.shape[2]
-            n_dev_params = X.shape[3] - 1
-            deg_free = n_obs - n_origin_params - n_dev_params
-            deg_free_adj_fctr = xp.sqrt(n_obs / deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
@@ -224,7 +226,7 @@ class BootstrapODPSample(DevelopmentBase):
         k_value = 1  # for ODP Poisson
         unscaled_residuals = (
             (X.cum_to_incr().values - exp_incr_triangle)
-            / xp.sqrt(xp.abs(exp_incr_triangle ** k_value))
+            / xp.sqrt(xp.abs(exp_incr_triangle**k_value))
         )[0, 0, ...]
         w_ = self.w_[0, 0]
         w_[:, 1:] * w_[:, 1:]
@@ -264,19 +266,24 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_triangles = (resampled_residual * xp.sqrt(abs(b)) + b).cumsum(2)
         resampled_triangles = resampled_triangles[None, ...].swapaxes(0, 1)
         obj = X.copy()
-        if X.key_labels == ['Total']:
-            obj.kdims = np.arange(self.n_sims)
-            obj.key_labels = ['Simulation_#']
+        if X.key_labels == ["Total"]:
+            obj._kdims = np.arange(self.n_sims)
+            obj.key_labels = ["Simulation_#"]
         else:
-            obj.kdims = np.concat([np.tile(X.kdims,(self.n_sims,1)),np.arange(self.n_sims).reshape(-1,1)],axis=1)
-            obj.key_labels = X.key_labels + ['Simulation_#']
+            obj._kdims = np.concat(
+                [
+                    np.tile(X._kdims, (self.n_sims, 1)),
+                    np.arange(self.n_sims).reshape(-1, 1),
+                ],
+                axis=1,
+            )
+            obj.key_labels = X.key_labels + ["Simulation_#"]
         obj.values = resampled_triangles
         obj._set_slicers()
         return obj, scale_phi
 
     def _get_design_matrix(self, X):
-        """ The design matrix used in hat matrix adjustment (Shapland eq3.12)
-        """
+        """The design matrix used in hat matrix adjustment (Shapland eq3.12)"""
         xp = X.get_array_module()
         w = X.nan_triangle
         arr = xp.diag(w[:, 0])
@@ -292,7 +299,7 @@ class BootstrapODPSample(DevelopmentBase):
         return arr
 
     def _get_hat(self, X, exp_incr_triangle):
-        """ The hat matrix adjustment (Shapland eq3.23)"""
+        """The hat matrix adjustment (Shapland eq3.23)"""
         xp = X.get_array_module()
         weight_matrix = xp.diag(
             pd.DataFrame(exp_incr_triangle).unstack().dropna().values
@@ -332,7 +339,7 @@ class BootstrapODPSample(DevelopmentBase):
         pass
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -353,7 +360,7 @@ class BootstrapODPSample(DevelopmentBase):
 
 
 def _get_process_variance(self, full_triangle):
-    """ Inserts random noise into the full triangles and full expectations """
+    """Inserts random noise into the full triangles and full expectations"""
     # if self.process_dist == 'od poisson':
     #    process_triangle = np.nan_to_num(np.array([random_state.poisson(lam=abs(item))*np.sign(np.nan_to_num(item))for item in sim_exp_incr_triangle]))
     xp = full_triangle.get_array_module()

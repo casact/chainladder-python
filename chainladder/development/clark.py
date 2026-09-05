@@ -164,7 +164,7 @@ class ClarkLDF(DevelopmentBase):
         self.growth: str = growth
         self.groupby = groupby
 
-    def _G(self, age, theta: float = None, omega: float = None):
+    def _G(self, age, theta: float = None, omega: float = None):  # noqa: N802
         """Growth function.
 
         Parameters
@@ -191,7 +191,7 @@ class ClarkLDF(DevelopmentBase):
         out[xp.isnan(out)] = xp.inf  # noqa
         return out
 
-    def G_(self, age):
+    def G_(self, age):  # noqa: N802
         """
         Growth function of the estimator.
 
@@ -326,10 +326,16 @@ class ClarkLDF(DevelopmentBase):
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         rows = X.index.set_index(X.key_labels).index
-        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
-        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)
+        self.omega_ = pd.DataFrame(
+            params[..., 0, 0], index=rows, columns=X.columns_label
+        )
+        self.theta_ = pd.DataFrame(
+            params[..., 0, 1], index=rows, columns=X.columns_label
+        )
         if sample_weight:
-            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
+            self.elr_ = pd.DataFrame(
+                params[..., 0, 2], index=rows, columns=X.columns_label
+            )
         ultimate_ = (
             self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2) * ld.values
         )
