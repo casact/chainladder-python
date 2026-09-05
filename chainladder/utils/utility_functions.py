@@ -681,7 +681,7 @@ def concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
-    mapper = {0: "_kdims", 1: "_vdims", 2: "odims", 3: "ddims"}
+    mapper = {0: "_kdims", 1: "_vdims", 2: "_odims", 3: "_ddims"}
     for k in mapper.keys():
         if k != axis and k != 1:  # All non-concat axes must be identical
             a = np.array([getattr(obj, mapper[k]) for obj in objs])
@@ -704,8 +704,8 @@ def concat(
     if ignore_index and axis == 0:
         out.key_labels = ["Index"]
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
-        out.ddims = pd.DatetimeIndex(out.ddims)
+    if out._ddims.dtype == __dt64_dtype__ and type(out._ddims) is np.ndarray:
+        out._ddims = pd.DatetimeIndex(out._ddims)
     out._set_slicers()
     if sort:
         return out.sort_axis(axis)

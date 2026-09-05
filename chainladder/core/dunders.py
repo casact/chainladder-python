@@ -155,36 +155,36 @@ class TriangleDunders:
             (m == n) or (m == 1) or (n == 1)
             for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1])
         )
-        if (len(obj.odims), len(obj.ddims)) == (len(other.odims), len(other.ddims)):
-            if np.all(obj.ddims != other.ddims) and len(obj.ddims) > 1:
+        if (len(obj._odims), len(obj._ddims)) == (len(other._odims), len(other._ddims)):
+            if np.all(obj._ddims != other._ddims) and len(obj._ddims) > 1:
                 is_broadcastable = False
-            if np.all(obj.odims != other.odims) and len(obj.odims) > 1:
+            if np.all(obj._odims != other._odims) and len(obj._odims) > 1:
                 is_broadcastable = False
-        if len(other.odims) == 1 and len(obj.odims) > 1:
-            other.odims = obj.odims
+        if len(other._odims) == 1 and len(obj._odims) > 1:
+            other._odims = obj._odims
             other.origin_grain = obj.origin_grain
-        elif len(obj.odims) == 1 and len(other.odims) > 1:
-            obj.odims = other.odims
+        elif len(obj._odims) == 1 and len(other._odims) > 1:
+            obj._odims = other._odims
             obj.origin_grain = other.origin_grain
-        if len(other.ddims) == 1 and len(obj.ddims) > 1:
-            other.ddims = obj.ddims
+        if len(other._ddims) == 1 and len(obj._ddims) > 1:
+            other._ddims = obj._ddims
             other.development_grain = obj.development_grain
-        elif len(obj.ddims) == 1 and len(other.ddims) > 1:
-            obj.ddims = other.ddims
+        elif len(obj._ddims) == 1 and len(other._ddims) > 1:
+            obj._ddims = other._ddims
             obj.development_grain = other.development_grain
         if not is_broadcastable:
             # If broadcasting doesn't work, union axes similar to pandas
             ddims = pd.concat(
                 (
-                    pd.Series(obj.ddims, index=obj.ddims),
-                    pd.Series(other.ddims, index=other.ddims),
+                    pd.Series(obj._ddims, index=obj._ddims),
+                    pd.Series(other._ddims, index=other._ddims),
                 ),
                 axis=1,
             ).sort_index()
             odims = pd.concat(
                 (
-                    pd.Series(obj.odims, index=obj.odims),
-                    pd.Series(other.odims, index=other.odims),
+                    pd.Series(obj._odims, index=obj._odims),
+                    pd.Series(other._odims, index=other._odims),
                 ),
                 axis=1,
             ).sort_index()
@@ -229,11 +229,11 @@ class TriangleDunders:
                     len(ddims),
                 )
                 obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
-            obj.odims = np.array(odims.index)
-            if isinstance(obj.ddims, pd.DatetimeIndex):
-                obj.ddims = pd.DatetimeIndex(ddims.index)
+            obj._odims = np.array(odims.index)
+            if isinstance(obj._ddims, pd.DatetimeIndex):
+                obj._ddims = pd.DatetimeIndex(ddims.index)
             else:
-                obj.ddims = np.array(ddims.index)
+                obj._ddims = np.array(ddims.index)
             obj.values = obj_arr
             other.values = other_arr
         return obj, other

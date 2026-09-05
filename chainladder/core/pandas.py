@@ -104,10 +104,10 @@ class TrianglePandas(_TrianglePandasBase):
             out["columns"] = obj.columns[values.coords[1]]
             missing_cols: list = list(set(self.columns) - set(out["columns"]))
             if origin_as_datetime:
-                out["origin"] = obj.odims[values.coords[2]]
+                out["origin"] = obj._odims[values.coords[2]]
             else:
                 out["origin"] = obj.origin[values.coords[2]]
-            out["development"] = obj.ddims[values.coords[3]]
+            out["development"] = obj._ddims[values.coords[3]]
             out["values"] = values.data
             out: DataFrame = pd.pivot_table(
                 out, index=obj.key_labels + ["origin", "development"], columns="columns"
@@ -119,8 +119,8 @@ class TrianglePandas(_TrianglePandasBase):
 
             valuation_series = pd.DataFrame(
                 obj.valuation.values.reshape(obj.shape[-2:], order="F"),
-                index=obj.odims if origin_as_datetime else obj.origin,
-                columns=obj.ddims,
+                index=obj._odims if origin_as_datetime else obj.origin,
+                columns=obj._ddims,
             ).unstack()
             valuation_series.name = "valuation"
             valuation: DataFrame = valuation_series.reset_index().rename(
@@ -836,7 +836,7 @@ class TrianglePandas(_TrianglePandasBase):
                 keep = self._validate_contiguous_drop(
                     result.development, ax_labels, "development", errors
                 )
-                result = result._slice(keep, "ddims")
+                result = result._slice(keep, "_ddims")
                 if result.is_val_tri:
                     result.valuation_date = min(
                         result.valuation.max(), result.valuation_date
@@ -1154,11 +1154,11 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
             obj._kdims = np.array([["(All)"] * len(obj.key_labels)])
         if axis == 1 and obj.values.shape[axis] == 1 and len(obj._vdims) > 1:
             obj._vdims = np.array([0])
-        if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
-            obj.odims = obj.odims[0:1]
+        if axis == 2 and obj.values.shape[axis] == 1 and len(obj._odims) > 1:
+            obj._odims = obj._odims[0:1]
         # If axis is development, set the ddims to be the valuation date.
-        if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
-            obj.ddims = pd.DatetimeIndex(
+        if axis == 3 and obj.values.shape[axis] == 1 and len(obj._ddims) > 1:
+            obj._ddims = pd.DatetimeIndex(
                 [self.valuation_date], dtype=__dt64_dtype__, freq=None
             )
         obj._set_slicers()
@@ -1227,7 +1227,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
             obj.origin_grain = self.obj._get_grain(odims)
             split = obj.origin_grain.split("-")
             obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
-            obj.odims = odims.values
+            obj._odims = odims.values
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()

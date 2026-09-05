@@ -138,7 +138,7 @@ class DevelopmentCorrelation:
 
         # remove last column because it was not part of the comparison with m2
         numerator.values = numerator.values[..., :-1]
-        numerator.ddims = numerator.ddims[:-1]
+        numerator._ddims = numerator._ddims[:-1]
 
         # n_dev_periods is the number of development periods in the triangle ("I" in the Mack 97).
         n_dev_periods = len(triangle.development)
@@ -329,7 +329,7 @@ class ValuationCorrelation:
             #     "origin") * 0
             z_critical = z_critical.dev_to_val().dropna().sum("origin") * 0
             z_critical.values = np.array(self.probs) < p_critical
-            z_critical.odims = triangle.odims[0:1]
+            z_critical._odims = triangle._odims[0:1]
             self.z_critical = z_critical
             self.z = self.z_critical.copy()
             self.z.values = z

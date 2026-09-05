@@ -112,8 +112,13 @@ class TailClark(TailBase):
 
     """
 
-    def __init__(self, growth="loglogistic", truncation_age=None,
-                 attachment_age=None, projection_period=12):
+    def __init__(
+        self,
+        growth="loglogistic",
+        truncation_age=None,
+        attachment_age=None,
+        projection_period=12,
+    ):
         self.growth = growth
         self.truncation_age = truncation_age
         self.attachment_age = attachment_age
@@ -145,7 +150,7 @@ class TailClark(TailBase):
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
         age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
-        fitted = 1 / model.G_(self.ldf_.ddims - age_offset)
+        fitted = 1 / model.G_(self.ldf_._ddims - age_offset)
         fitted = xp.concatenate(
             (
                 fitted.values[..., :-1] / fitted.values[..., 1:],
@@ -154,11 +159,14 @@ class TailClark(TailBase):
             -1,
         )
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
-        attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
-        self.ldf_.values = xp.concatenate((
-            self.ldf_.values[..., : sum(self.ldf_.ddims < attachment_age)],
-            fitted[..., -sum(self.ldf_.ddims >= attachment_age) :],),
-            axis=-1,)
+        attachment_age = self.attachment_age if self.attachment_age else X._ddims[-2]
+        self.ldf_.values = xp.concatenate(
+            (
+                self.ldf_.values[..., : sum(self.ldf_._ddims < attachment_age)],
+                fitted[..., -sum(self.ldf_._ddims >= attachment_age) :],
+            ),
+            axis=-1,
+        )
         self.omega_ = model.omega_
         self.theta_ = model.theta_
         self.G_ = model.G_
@@ -169,7 +177,9 @@ class TailClark(TailBase):
             self.elr_ = model.elr_
         self.norm_resid_ = model.norm_resid_
         if self.truncation_age:
-            self.ldf_.values[..., -1:] = self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
+            self.ldf_.values[..., -1:] = (
+                self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
+            )
         # self._get_tail_stats(self)
         if backend == "cupy":
             self = self.set_backend("cupy", inplace=True)
