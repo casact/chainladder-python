@@ -684,12 +684,12 @@ class TriangleBase(
 
     @property
     def valuation(self):
-        ddims = self.ddims
+        ddims = self._ddims
         if self.is_val_tri:
-            out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
+            out = pd.DataFrame(np.repeat(self._ddims.values[None], len(self._odims), 0))
             return pd.DatetimeIndex(out.unstack().values)
         ddim_arr = ddims - ddims[0]
-        origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
+        origin = np.minimum(self._odims, np.datetime64(self.valuation_date))
         val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
         val_array = val_array.astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         val_array = val_array[:, None]

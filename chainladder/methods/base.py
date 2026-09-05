@@ -24,7 +24,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
-        if len(obj.ddims) - len(obj.ldf_.ddims) == 1:
+        if len(obj._ddims) - len(obj.ldf_._ddims) == 1:
             obj = TailConstant().fit_transform(obj)
         return obj.val_to_dev()
 
@@ -39,7 +39,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         xp = ultimate.get_array_module()
         if ultimate.array_backend != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
-        ultimate.ddims = pd.DatetimeIndex([options.ULT_VAL])
+        ultimate._ddims = pd.DatetimeIndex([options.ULT_VAL])
         ultimate.virtual_columns.columns = {}
         ultimate.is_cumulative = True
         ultimate._set_slicers()
@@ -100,7 +100,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         X_new = X.val_to_dev()
-        if sum(X_new.ddims > self.ldf_.ddims.max()) > 0:
+        if sum(X_new._ddims > self.ldf_._ddims.max()) > 0:
             raise ValueError("X has ages that exceed those available in model.")
         X_new = X_new + (self.X_.val_to_dev().iloc[0, 0].sum(2) * 0)
         self.validate_weight(X_new, sample_weight)

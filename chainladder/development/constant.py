@@ -155,23 +155,23 @@ class DevelopmentConstant(DevelopmentBase):
             pattern_ddims = sorted(self.patterns.keys())
 
         # pattern supplied is much shorter than the triangle
-        if pattern_length < len(obj.ddims) - 1:
+        if pattern_length < len(obj._ddims) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
         # pattern supplied is exactly one short of the triangle
-        elif pattern_length == len(obj.ddims) - 1:
+        elif pattern_length == len(obj._ddims) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
         # pattern supplied is exactly the same length as the triangle
-        elif pattern_length == len(obj.ddims):
+        elif pattern_length == len(obj._ddims):
             obj = obj.iloc[..., 0, :] * 0 + 1
         # pattern supplied is longer than the triangle
         else:
             obj = obj.iloc[..., 0, :] * 0 + 1
-            extra = len(pattern_ddims) - len(obj.ddims)
+            extra = len(pattern_ddims) - len(obj._ddims)
             if extra > 0:
                 tail = xp.ones(obj.shape)[..., -1:]
                 tail = xp.repeat(tail, extra, -1)
                 obj.values = xp.concatenate((obj.values, tail), -1)
-                obj.ddims = np.array(pattern_ddims)
+                obj._ddims = np.array(pattern_ddims)
                 obj._set_slicers()
 
         if callable(self.patterns):
@@ -180,7 +180,7 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = (
                     pd
                     .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
+                    .fillna(1)[obj._ddims]
                     .values
                 )
                 ldf = xp.array(ldf[:, None, None, :])
@@ -189,14 +189,14 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = (
                     pd
                     .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
+                    .fillna(1)[obj._ddims]
                     .values
                 )
                 ldf = xp.array(ldf[None, :, None, :])
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:
-            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj.ddims])
+            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj._ddims])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":

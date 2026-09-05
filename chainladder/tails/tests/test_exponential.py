@@ -7,7 +7,8 @@ def test_fit_period():
     dev = cl.Development(average="simple").fit_transform(tri)
     assert (
         round(
-            cl.TailCurve(fit_period=(tri.ddims[-7], None), extrap_periods=10)
+            cl
+            .TailCurve(fit_period=(tri.development.iloc[-7], None), extrap_periods=10)
             .fit(dev)
             .cdf_["paid"]
             .set_backend("numpy", inplace=True)
@@ -24,10 +25,8 @@ def test_curve_validation():
     """
 
     with pytest.raises(ValueError):
-        tri = cl.load_sample('tail_sample')
-        cl.TailCurve(
-            curve='Exponential'
-        ).fit_transform(tri)
+        tri = cl.load_sample("tail_sample")
+        cl.TailCurve(curve="Exponential").fit_transform(tri)
 
 
 def test_errors_validation():
@@ -35,7 +34,5 @@ def test_errors_validation():
     Test validation of the errors parameter. Should raise a value error if an incorrect argument is supplied.
     """
     with pytest.raises(ValueError):
-        tri = cl.load_sample('tail_sample')
-        cl.TailCurve(
-            errors='Ignore'
-        ).fit_transform(tri)
+        tri = cl.load_sample("tail_sample")
+        cl.TailCurve(errors="Ignore").fit_transform(tri)

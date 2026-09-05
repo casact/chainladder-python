@@ -11,7 +11,7 @@ from typing import (
     Protocol,
     # Self,  # Make use of this once Python 3.10 is deprecated.
     TYPE_CHECKING,
-    TypeAlias
+    TypeAlias,
 )
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
         Ilocation,
         Location,
         TriangleSlicer,
-        VirtualColumns
+        VirtualColumns,
     )
     from numpy.typing import ArrayLike
     from pandas import DataFrame, Series
@@ -49,10 +49,12 @@ _AxisKey: TypeAlias = slice | int | np.int64 | np.int32 | np.ndarray
 # before index_key/other_key resolve it to a positional _AxisKey.
 _LabelKey: TypeAlias = IndexExpression | str | pd.Series | pd.DataFrame
 
+
 class TriangleProtocol(Protocol):
     """
     Common interface expected for Triangle mixins.
     """
+
     @property
     def shape(self) -> tuple[int, int, int, int]: ...
 
@@ -96,7 +98,9 @@ class TriangleProtocol(Protocol):
     def __len__(self) -> int: ...
     def get_array_module(self, arr: ArrayLike | None = None) -> ModuleType: ...
     def copy(self) -> Triangle: ...
-    def set_backend(self, backend: str, inplace: bool = False, **kwargs) -> Triangle: ...
+    def set_backend(
+        self, backend: str, inplace: bool = False, **kwargs
+    ) -> Triangle: ...
     def drop(
         self,
         labels: str | int | list | None = None,
@@ -108,7 +112,11 @@ class TriangleProtocol(Protocol):
     ) -> Triangle: ...
     def val_to_dev(self) -> Triangle: ...
     def _repr_format(self, origin_as_datetime: bool = False) -> pd.DataFrame: ...
-    def _slice(self, key: pd.Series | np.ndarray, axis: Literal['ddims', 'odims']) -> Triangle: ...
+    def _slice(
+        self,
+        key: pd.Series | np.ndarray,
+        axis: Literal["ddims", "odims", "_ddims", "_odims"],
+    ) -> Triangle: ...
     def _slice_valuation(self, key: np.ndarray) -> Triangle: ...
     def to_frame(
         self,
@@ -116,16 +124,36 @@ class TriangleProtocol(Protocol):
         keepdims: bool = False,
         implicit_axis: bool = False,
     ) -> DataFrame | Series: ...
-    def sum(self, axis: str | int | None = None, *args, **kwargs) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def fillna(self, value: int | float | ndarray, inplace: bool = False) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def fillzero(self, inplace: bool = False) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def __round__(self, ndigits: int = 0) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def __add__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def __radd__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def __mul__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
-    def __rmul__(self, other: Any) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def sum(
+        self, axis: str | int | None = None, *args, **kwargs
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def fillna(
+        self, value: int | float | ndarray, inplace: bool = False
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def fillzero(
+        self, inplace: bool = False
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def __round__(
+        self, ndigits: int = 0
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def __add__(
+        self, other: Any
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def __radd__(
+        self, other: Any
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def __mul__(
+        self, other: Any
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
+    def __rmul__(
+        self, other: Any
+    ) -> TriangleProtocol: ...  # -> Self once Python 3.10 is deprecated.
     @overload
     def __getitem__(self, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
     @overload
     def __getitem__(self, key: str | int) -> Triangle | Series: ...
-    def __setitem__(self, key: str | int, value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]) -> None: ...
+    def __setitem__(
+        self,
+        key: str | int,
+        value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer],
+    ) -> None: ...
