@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 from sklearn.base import (
     BaseEstimator,
     clone,
-    TransformerMixin
+    TransformerMixin,
 )
 from sklearn.ensemble._base import _fit_single_estimator, _BaseHeterogeneousEnsemble
 from sklearn.ensemble._voting import _BaseVoting
@@ -417,8 +417,10 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
                     f" and {X.shape[1]} for X."
                 )
             weights = self.weights_
-        
-        ultimates = [est.predict(X, sample_weight).ultimate_ for est in self.estimators_]
+
+        ultimates = [
+            est.predict(X, sample_weight).ultimate_ for est in self.estimators_
+        ]
 
         shape_check = list(set([ult.shape for ult in ultimates]))
         if len(shape_check) > 1:
@@ -426,15 +428,14 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
                 "Estimators returning ultimate_ of different shapes,"
                 "likely due to a mis-specified TriangleSelector transformer in the pipeline"
             )
-        #weights are broadcasted to the shape of X. However ultimate_ does not always take the shape of X
-        #use shape_check to redim weights 
-        ultimate = sum(
-            [
-                ultimates[i] * weights[...,:shape_check[0][1], :, i, :]
-                for i, _ in enumerate(ultimates)
-            ]
-        ) / weights[...,:shape_check[0][1], :, :, :].sum(axis=-2)
+        # weights are broadcasted to the shape of X. However ultimate_ does not always take the shape of X
+        # use shape_check to redim weights
+        ultimate = sum([
+            ultimates[i] * weights[..., : shape_check[0][1], :, i, :]
+            for i, _ in enumerate(ultimates)
+        ]) / weights[..., : shape_check[0][1], :, :, :].sum(axis=-2)
         return ultimate
+
 
 class TriangleSelector(
     BaseEstimator,
@@ -454,7 +455,7 @@ class TriangleSelector(
     Examples
     --------
     Actuaries commonly uses both incurred and paid losses, or both reported and closed counts for estimating ultimate loss or ultimate count. We can use this helper class to create a singular VotingChainladder pipeline that weighs between incurred/paid methods, or reported/closed methods.
-    
+
     .. testsetup::
 
         import chainladder as cl
@@ -497,11 +498,12 @@ class TriangleSelector(
         1996  672721.951809
         1997  664061.404455
     """
-    def __init__(self, col:str):
+
+    def __init__(self, col: str):
         self.col = col
 
-    def fit(self, X:Triangle, y:None=None):
+    def fit(self, X: Triangle, y: None = None):
         return self
 
-    def transform(self, X:Triangle):
+    def transform(self, X: Triangle):
         return X[[self.col]]
