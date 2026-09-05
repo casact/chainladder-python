@@ -214,7 +214,7 @@ class MunichAdjustment(DevelopmentBase):
     def _p_to_i_concate(self, obj_p, obj_i, xp):
         return xp.concatenate((obj_p[None], obj_i[None]), 0)
 
-    def _get_MCL_model(self, X):
+    def _get_MCL_model(self, X):  # noqa: N802
         xp = X.get_array_module()
         p, i = self.p_to_i_X_[0], self.p_to_i_X_[1]
         modelsP = WeightedRegression(axis=2, thru_orig=True, xp=xp)
@@ -225,7 +225,7 @@ class MunichAdjustment(DevelopmentBase):
         rho_sigma = self._p_to_i_concate(modelsP.sigma_, modelsI.sigma_, xp)
         return q_f.swapaxes(-1, -2), rho_sigma.swapaxes(-1, -2)
 
-    def _get_MCL_resids(self, X):
+    def _get_MCL_resids(self, X):  # noqa: N802
         xp = X.get_array_module()
         p_to_i_ata = self._get_p_to_i_object(X.link_ratio)
         p_to_i_ldf = self.p_to_i_ldf_
@@ -260,7 +260,7 @@ class MunichAdjustment(DevelopmentBase):
         q_resid = self._p_to_i_concate(q_inv_resid, q_resid, xp)
         return resid, q_resid
 
-    def _get_MCL_lambda(self, obj):
+    def _get_MCL_lambda(self, obj):  # noqa: N802
         xp = obj.get_array_module()
         k, v, o, d = self.residual_[1].shape
         w = xp.reshape(self.residual_[1], (k, v, o * d))

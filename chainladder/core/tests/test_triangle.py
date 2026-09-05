@@ -322,14 +322,12 @@ def test_origin_and_value_setters(raa):
     raa2 = raa.copy()
     raa.columns = list(raa.columns)
     raa.origin = list(raa.origin)
-    assert np.all(
-        (
-            np.all(raa2.origin == raa.origin),
-            np.all(raa2.development == raa.development),
-            np.all(raa2.odims == raa.odims),
-            np.all(raa2.columns == raa.columns),
-        )
-    )
+    assert np.all((
+        np.all(raa2.origin == raa.origin),
+        np.all(raa2.development == raa.development),
+        np.all(raa2.odims == raa.odims),
+        np.all(raa2.columns == raa.columns),
+    ))
 
 
 def test_index_setter_with_dataframe(clrd: Triangle) -> None:
