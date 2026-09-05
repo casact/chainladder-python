@@ -1,15 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-from chainladder.development import Development, DevelopmentBase
-from chainladder.utils import WeightedRegression, TriangleWeight
+from chainladder.development import DevelopmentBase
+from chainladder.utils import TriangleWeight
 import numpy as np
-import pandas as pd
 import warnings
 
 
 class IncrementalAdditive(DevelopmentBase):
-    """ The Incremental Additive Method.
+    """The Incremental Additive Method.
 
     This estimator implements the additive method of Schmidt (2006), Section 4.7:
     expected incremental losses satisfy ``E[Z_{i,k}] = eta_i * gamma_k``, where
@@ -68,7 +67,7 @@ class IncrementalAdditive(DevelopmentBase):
         Fitted incremental loss ratios ``gamma_k`` (common across accident years)
         as a percent of exposure, trended to the valuation date of the Triangle.
     cum_zeta_: Triangle
-        The fitted cumulative percent of exposure trended to the valuation date of 
+        The fitted cumulative percent of exposure trended to the valuation date of
         the Triangle
     w_ : ndarray
         The weight used in the zeta fitting
@@ -165,8 +164,19 @@ class IncrementalAdditive(DevelopmentBase):
     """
 
     def __init__(
-        self, trend=0.0, n_periods=-1, average="volume", future_trend=0,
-        drop=None, drop_high=None, drop_low=None, drop_above=np.inf, drop_below=-np.inf, drop_valuation=None, preserve = 1):
+        self,
+        trend=0.0,
+        n_periods=-1,
+        average="volume",
+        future_trend=0,
+        drop=None,
+        drop_high=None,
+        drop_low=None,
+        drop_above=np.inf,
+        drop_below=-np.inf,
+        drop_valuation=None,
+        preserve=1,
+    ):
         self.trend = trend
         self.n_periods = n_periods
         self.average = average
@@ -198,10 +208,10 @@ class IncrementalAdditive(DevelopmentBase):
         self : object
             Returns the instance itself.
         """
-        #check dev lag
-        if type(X.ddims) != np.ndarray:
+        # check dev lag
+        if type(X._ddims) is not np.ndarray:
             raise ValueError("Triangle must be expressed with development lags")
-        #convert to numpy
+        # convert to numpy
         if X.array_backend == "sparse":
             X = X.set_backend("numpy")
         else:
@@ -210,12 +220,12 @@ class IncrementalAdditive(DevelopmentBase):
             sample_weight = sample_weight.set_backend("numpy")
         else:
             sample_weight = sample_weight.copy()
-        #get backend
+        # get backend
         xp = X.get_array_module()
         self.xp = xp
-        #short cut to use sample_weight as is
+        # short cut to use sample_weight as is
         sample_weight.is_cumulative = False
-        #get incremental factor
+        # get incremental factor
         X_incr = X.cum_to_incr()
         if hasattr(X, "trend_"):
             if self.trend != 0:
@@ -224,34 +234,34 @@ class IncrementalAdditive(DevelopmentBase):
                 )
             X_trended = X_incr * X_incr.trend_.values
         else:
-            X_trended = X_incr.trend(self.trend, axis='valuation')
+            X_trended = X_incr.trend(self.trend, axis="valuation")
         x = X_trended / sample_weight.values
-        #assign weights according to n_periods and drops
+        # assign weights according to n_periods and drops
         tw = TriangleWeight(
-            n_periods = self.n_periods,
-            drop_high = self.drop_high,
-            drop_low = self.drop_low,
-            drop_above = self.drop_above,
-            drop_below = self.drop_below,
-            drop_valuation = self.drop_valuation,
-            preserve = self.preserve,
-            drop = self.drop
+            n_periods=self.n_periods,
+            drop_high=self.drop_high,
+            drop_low=self.drop_low,
+            drop_above=self.drop_above,
+            drop_below=self.drop_below,
+            drop_valuation=self.drop_valuation,
+            preserve=self.preserve,
+            drop=self.drop,
         )
         if hasattr(X, "w_"):
-            self.w_tri_ = tw.fit(X=x * X.w_,sample_weight=X_trended).w_
+            self.w_tri_ = tw.fit(X=x * X.w_, sample_weight=X_trended).w_
         else:
-            self.w_tri_ = tw.fit(X=x,sample_weight=X_trended).w_
+            self.w_tri_ = tw.fit(X=x, sample_weight=X_trended).w_
         self.w_ = self.w_tri_.values
-        #calculate factors
-        super().fit(sample_weight.values,X_trended.values,self.w_)
-        #keep attributes
+        # calculate factors
+        super().fit(sample_weight.values, X_trended.values, self.w_)
+        # keep attributes
         self.tri_zeta = x.copy()
         self.sample_weight = sample_weight
         self.fit_zeta_ = self.tri_zeta * self.w_
-        self.zeta_ = self._param_property(x,self.params_.slope_[...,0][..., None, :])
-        
-        #to consolidate under full_triangle_
-        y_ = xp.repeat(self.zeta_.values, len(x.odims), -2)
+        self.zeta_ = self._param_property(x, self.params_.slope_[..., 0][..., None, :])
+
+        # to consolidate under full_triangle_
+        y_ = xp.repeat(self.zeta_.values, len(x._odims), -2)
         obj = x.copy()
         keeps = (
             1
@@ -263,7 +273,7 @@ class IncrementalAdditive(DevelopmentBase):
         obj.values = y_ * keeps
         obj.valuation_date = obj.valuation.max()
         obj.values = obj.values * (1 - xp.nan_to_num(x.nan_triangle)) + xp.nan_to_num(
-            (X.cum_to_incr().values / sample_weight.values)
+            X.cum_to_incr().values / sample_weight.values
         )
         obj.values[obj.values == 0] = xp.nan
         obj._set_slicers()
@@ -271,15 +281,18 @@ class IncrementalAdditive(DevelopmentBase):
         future_trend = self.trend if not self.future_trend else self.future_trend
         self.incremental_ = obj * sample_weight.values
         self.incremental_ = self.incremental_.trend(
-            1/(1+future_trend)-1, axis='valuation', start=X.valuation_date,
-            end=self.incremental_.valuation_date)
-        
-        #to migrate under _zeta_to_ldf method under common, so ldf_ can be correct after tail
+            1 / (1 + future_trend) - 1,
+            axis="valuation",
+            start=X.valuation_date,
+            end=self.incremental_.valuation_date,
+        )
+
+        # to migrate under _zeta_to_ldf method under common, so ldf_ can be correct after tail
         self.ldf_ = obj.incr_to_cum().link_ratio
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -292,6 +305,14 @@ class IncrementalAdditive(DevelopmentBase):
             X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
-        for item in ["ldf_", "w_", "zeta_", "incremental_", "tri_zeta", "fit_zeta_", "sample_weight"]:
+        for item in [
+            "ldf_",
+            "w_",
+            "zeta_",
+            "incremental_",
+            "tri_zeta",
+            "fit_zeta_",
+            "sample_weight",
+        ]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new

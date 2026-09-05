@@ -58,8 +58,8 @@ def test_triangle_json_io(clrd):
     assert clrd == clrd2
     assert clrd.index.equals(clrd2.index)
     assert np.all(clrd.columns == clrd2.columns)
-    assert np.all(clrd.odims == clrd2.odims)
-    assert np.all(clrd.ddims == clrd2.ddims)
+    assert np.all(clrd.origin == clrd2.origin)
+    assert np.all(clrd.development == clrd2.development)
     assert np.all(clrd.valuation == clrd2.valuation)
 
 

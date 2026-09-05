@@ -7,8 +7,8 @@ from chainladder.development import DevelopmentBase, Development
 
 
 class TailBase(DevelopmentBase):
-    """ Base class for all tail methods.  Tail objects are equivalent
-        to development objects with an additional set of tail statistics"""
+    """Base class for all tail methods.  Tail objects are equivalent
+    to development objects with an additional set of tail statistics"""
 
     def fit(self, X, y=None, sample_weight=None):
         obj = X.copy()
@@ -16,26 +16,32 @@ class TailBase(DevelopmentBase):
             obj = Development().fit_transform(obj)
         xp = obj.ldf_.get_array_module()
         m = int(self.projection_period / 12)
-        self._ave_period = {"Y": (1 * m, 12), "Q": (4 * m, 3), "M": (12 * m, 1), "S": (2 * m, 6)}[
-            obj.development_grain
-        ]
+        self._ave_period = {
+            "Y": (1 * m, 12),
+            "Q": (4 * m, 3),
+            "M": (12 * m, 1),
+            "S": (2 * m, 6),
+        }[obj.development_grain]
         t_ddims = [
-            (item + 1) * self._ave_period[1] + obj.ldf_.ddims[-1]
-            for item in range(self._ave_period[0]+1)
+            (item + 1) * self._ave_period[1] + obj.ldf_._ddims[-1]
+            for item in range(self._ave_period[0] + 1)
         ]
-        ddims = np.concatenate((obj.ldf_.ddims, t_ddims), 0,)
+        ddims = np.concatenate(
+            (obj.ldf_._ddims, t_ddims),
+            0,
+        )
         self.ldf_ = obj.ldf_.copy()
         tail = xp.ones(self.ldf_.shape)[..., -1:]
         tail = xp.repeat(tail, self._ave_period[0] + 1, -1)
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
-        self.ldf_.ddims = ddims
+        self.ldf_._ddims = ddims
         if hasattr(obj, "sigma_"):
             zeros = (obj.sigma_.iloc[..., -1:] * 0).values
             self.sigma_ = getattr(obj, "sigma_").copy()
             self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()
             self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-            self.sigma_.ddims = self.std_err_.ddims = self.ldf_.ddims[:obj.shape[2]]
+            self.sigma_._ddims = self.std_err_._ddims = self.ldf_._ddims[: obj.shape[2]]
             self.sigma_._set_slicers()
             self.std_err_._set_slicers()
         if hasattr(obj, "average_"):
@@ -46,7 +52,7 @@ class TailBase(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -75,15 +81,15 @@ class TailBase(DevelopmentBase):
         return tail
 
     def _get_initial_ldf(self, xp, tail):
-        """ Quadratic series expansion solution to return seed LDF for tail"""
+        """Quadratic series expansion solution to return seed LDF for tail"""
         arr = self.decay ** xp.arange(1000)
-        a = xp.sum(arr ** 2)
+        a = xp.sum(arr**2)
         b = xp.sum(arr)
         c = -xp.log(tail)
-        return (-b + xp.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+        return (-b + xp.sqrt(b**2 - 4 * a * c)) / (2 * a)
 
     def _apply_decay(self, X, tail, attach_idx=None):
-        """ Created Tail vector with decay over time. """
+        """Created Tail vector with decay over time."""
         xp = self.ldf_.get_array_module()
         if attach_idx:
             decay_range = self.ldf_.shape[-1] - attach_idx
@@ -106,17 +112,20 @@ class TailBase(DevelopmentBase):
         return self
 
     def _get_tail_stats(self, X):
-        """ Method to approximate the tail sigma using
+        """Method to approximate the tail sigma using
         log-linear extrapolation applied to tail average period
         """
         from chainladder.utils.utility_functions import num_to_nan
-        if not hasattr(X, 'sigma_'):
+
+        if not hasattr(X, "sigma_"):
             self.sigma_ = None
             self.std_err_ = None
         else:
             time_pd = self._get_tail_weighted_time_period(X)
             xp = X.sigma_.get_array_module()
-            reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(X.sigma_.values), None)
+            reg = WeightedRegression(axis=3, xp=xp).fit(
+                None, xp.log(X.sigma_.values), None
+            )
             sigma_ = xp.exp(time_pd * reg.slope_ + reg.intercept_)
             y = X.std_err_.values
             y = num_to_nan(y)
@@ -125,7 +134,7 @@ class TailBase(DevelopmentBase):
             if self.tail_.values.flatten().sum() / xp.prod(self.tail_.shape) == 1.0:
                 # If no tail, assume no variation
                 sigma_ = sigma_ * 0
-                std_err_ = std_err_* 0
+                std_err_ = std_err_ * 0
             self.sigma_.values = xp.concatenate(
                 (self.sigma_.values[..., :-1], sigma_[..., -1:]), axis=-1
             )
@@ -134,7 +143,7 @@ class TailBase(DevelopmentBase):
             )
 
     def _get_tail_weighted_time_period(self, X):
-        """ Method to approximate the weighted-average development age of tail
+        """Method to approximate the weighted-average development age of tail
         using log-linear extrapolation
 
         Returns: float32
@@ -158,7 +167,7 @@ class TailBase(DevelopmentBase):
             == self.cdf_.development.iloc[-1 - self._ave_period[0]]
         ]
         if np.all(df.values.min(axis=2) == df.values.max(axis=2)):
-            df = df.iloc[..., 0, :].to_frame(origin_as_datetime = False)
+            df = df.iloc[..., 0, :].to_frame(origin_as_datetime=False)
         return df
 
     @property

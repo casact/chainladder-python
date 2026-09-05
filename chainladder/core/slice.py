@@ -65,7 +65,7 @@ class _LocBase:
         # Set the new dimension values.
         obj._kdims = obj._kdims[i_idx]
         obj._vdims = obj._vdims[c_idx]
-        obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
+        obj._odims, obj._ddims = obj._odims[o_idx], obj._ddims[d_idx]
         # Set indexers.
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
         obj.valuation_date = cast(
@@ -515,14 +515,14 @@ class TriangleSlicer:
 
         # Case development axis.
         if isinstance(key, pd.Series) and key.name == "development":
-            return self._slice(key, "ddims")
+            return self._slice(key, "_ddims")
         # Case ndarray, could be valuation or origin.
         if isinstance(key, np.ndarray):
             # Case valuation, inferred by size of ndarray obtained by filtering on valuation date.
             if len(key) == np.prod(self.shape[-2:]) and self.shape[-1] > 1:
                 return self._slice_valuation(key)
             # Otherwise, assume case origin.
-            return self._slice(key, "odims")
+            return self._slice(key, "_odims")
         # Case index.
         if isinstance(key, pd.Series):
             return self.iloc[self.index[key].index]
@@ -670,7 +670,7 @@ class TriangleSlicer:
     def _slice(
         self: TriangleProtocol,
         key: pd.Series | np.ndarray,
-        axis: Literal["ddims", "odims"],
+        axis: Literal["ddims", "odims", "_ddims", "_odims"],
     ) -> Triangle:
         """
         Private method for handling of origin/development slicing.
@@ -679,16 +679,17 @@ class TriangleSlicer:
         ----------
         key: pd.Series | np.ndarray
             Array specifying the slice to extract.
-        axis: Literal['ddims', 'odims']
+        axis: Literal['ddims', 'odims', '_ddims', '_odims']
             The axis to which the slice would apply, `ddims` for development, `odims` for origin.
         """
 
         # Update the axis, then the values.
         obj = self.copy()
-        setattr(obj, axis, getattr(obj, axis)[key])
+        attr = f"_{axis}" if not axis.startswith("_") else axis
+        setattr(obj, attr, getattr(obj, attr)[key])
         # noinspection PyProtectedMember
         slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
-        if axis == "odims":
+        if axis in ("odims", "_odims"):
             slicer = tuple(list(slicer) + [slice(None)])
         obj.values = obj.values[slicer]
         return obj

@@ -114,22 +114,22 @@ class DevelopmentConstant(DevelopmentBase):
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
-        
+
         Parameters
         ----------
         X : Triangle-like
-            Set of LDFs to which the munich adjustment will be applied.
+        Set of LDFs to which the munich adjustment will be applied.
         y : Ignored
         sample_weight : Ignored
-        
+
         Returns
         -------
         self : object
-            Returns the instance itself.
+        Returns the instance itself.
         """
         from chainladder import options
 
-        if X.is_cumulative == False:
+        if not X.is_cumulative:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
@@ -141,7 +141,8 @@ class DevelopmentConstant(DevelopmentBase):
                 sample_pattern = obj.index.apply(self.patterns, axis=1).iloc[0]
             elif self.callable_axis == 1:
                 sample_pattern = (
-                    obj.columns.to_frame(index=False)
+                    obj.columns
+                    .to_frame(index=False)
                     .apply(self.patterns, axis=1)
                     .iloc[0]
                 )
@@ -154,46 +155,48 @@ class DevelopmentConstant(DevelopmentBase):
             pattern_ddims = sorted(self.patterns.keys())
 
         # pattern supplied is much shorter than the triangle
-        if pattern_length < len(obj.ddims) - 1:
+        if pattern_length < len(obj._ddims) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
         # pattern supplied is exactly one short of the triangle
-        elif pattern_length == len(obj.ddims) - 1:
+        elif pattern_length == len(obj._ddims) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
         # pattern supplied is exactly the same length as the triangle
-        elif pattern_length == len(obj.ddims):
+        elif pattern_length == len(obj._ddims):
             obj = obj.iloc[..., 0, :] * 0 + 1
         # pattern supplied is longer than the triangle
         else:
             obj = obj.iloc[..., 0, :] * 0 + 1
-            extra = len(pattern_ddims) - len(obj.ddims)
+            extra = len(pattern_ddims) - len(obj._ddims)
             if extra > 0:
                 tail = xp.ones(obj.shape)[..., -1:]
                 tail = xp.repeat(tail, extra, -1)
                 obj.values = xp.concatenate((obj.values, tail), -1)
-                obj.ddims = np.array(pattern_ddims)
+                obj._ddims = np.array(pattern_ddims)
                 obj._set_slicers()
 
         if callable(self.patterns):
             if self.callable_axis == 0:
                 ldf = obj.index.apply(self.patterns, axis=1)
                 ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
+                    pd
+                    .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    .fillna(1)[obj._ddims]
                     .values
                 )
                 ldf = xp.array(ldf[:, None, None, :])
             elif self.callable_axis == 1:
                 ldf = obj.columns.to_frame(index=False).apply(self.patterns, axis=1)
                 ldf = (
-                    pd.concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
+                    pd
+                    .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
+                    .fillna(1)[obj._ddims]
                     .values
                 )
                 ldf = xp.array(ldf[None, :, None, :])
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:
-            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj.ddims])
+            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj._ddims])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":
@@ -215,11 +218,11 @@ class DevelopmentConstant(DevelopmentBase):
         Parameters
         ----------
         X : Triangle
-            The triangle to be transformed
+        The triangle to be transformed
 
         Returns
         -------
-            X_new : New triangle with transformed attributes.
+        X_new : New triangle with transformed attributes.
         """
         X_new = X.copy()
         X_new.group_index = self._set_transform_groups(X_new)
