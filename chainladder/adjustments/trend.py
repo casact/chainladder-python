@@ -4,7 +4,6 @@
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
-import pandas as pd
 
 
 class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
@@ -271,7 +270,8 @@ class TrendConstant(BaseEstimator, TransformerMixin, EstimatorIO):
         print("base_trend", self.base_trend)
 
         self.trendedvalues_ = X.copy().trend(
-            self.base_trend, self.axis  # , start=dates[i][0], end=dates[i][1]
+            self.base_trend,
+            self.axis,  # , start=dates[i][0], end=dates[i][1]
         )
         print("self.trendedvalues_\n", self.trendedvalues_)
 

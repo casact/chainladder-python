@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-from chainladder.methods import Chainladder, MethodBase
+from chainladder.methods import MethodBase
 from chainladder.development import DevelopmentBase
 import numpy as np
 import copy
@@ -14,26 +14,27 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder.core import Triangle
 
+
 class DisposalMixin:
-    '''
-    This class provides attributes for the DisposalRate adjustment method and transformed `Triangle`    
-    '''
+    """
+    This class provides attributes for the DisposalRate adjustment method and transformed `Triangle`
+    """
 
     @property
     def disposal_rate_(self) -> Triangle:
-        '''
+        """
         Gets the estimated disposal rate
-        '''
+        """
         if not hasattr(self, "_disposal_rate_"):
             x = self.__class__.__name__
             raise AttributeError("'" + x + "' object has no attribute 'disposal_rate_'")
         return self._disposal_rate_
-    
+
     @disposal_rate_.setter
-    def disposal_rate_(self,value) -> None:
-        '''
+    def disposal_rate_(self, value) -> None:
+        """
         Sets disposal_rate_
-        '''
+        """
         obj = copy.deepcopy(value)
         obj.is_pattern = True
         obj.is_disposal_rate = True
@@ -42,21 +43,22 @@ class DisposalMixin:
 
     @property
     def incr_disposal_rate_(self) -> Triangle:
-        '''
+        """
         Gets the incremental of the estimated disposal rate
-        '''
+        """
         return self.disposal_rate_.cum_to_incr()
 
     @incr_disposal_rate_.setter
-    def incr_disposal_rate_(self,value) -> None:
-        '''
+    def incr_disposal_rate_(self, value) -> None:
+        """
         Sets incr_disposal_rate_
-        '''
+        """
         obj = copy.deepcopy(value)
         obj.is_pattern = True
         obj.is_disposal_rate = True
         obj.is_cumulative = False
         self._disposal_rate_ = obj.incr_to_cum()
+
 
 class DisposalRate(DevelopmentBase, DisposalMixin):
     """
@@ -97,11 +99,11 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         See order of operations below when combined with multiple drop parameters.
 
         .. note ::
-    
+
             (Order of Drop Operations)
-            
+
             When multiple drop parameters are used together, the weights are built in this order (steps 4 and 5 are reversed from `Development`):
-        
+
             1. ``n_periods`` — limit to the most recent origin periods.
             2. ``drop`` — remove specific origin/development cells.
             3. ``drop_valuation`` — remove entire valuation diagonal in the triangle.
@@ -123,9 +125,9 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
 
     Examples
     --------
-    This adjustment method re-apportions future loss emergence based on a '% of ultimate' emergence pattern. 
+    This adjustment method re-apportions future loss emergence based on a '% of ultimate' emergence pattern.
     The ultimate can come from another triangle. A common use case is to forecast payment pattern based on incurred ultimate.
-    
+
     .. testsetup::
 
         import chainladder as cl
@@ -137,14 +139,14 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         ult = cl.Chainladder().fit(clrd['IncurLoss']).ultimate_
         dr = cl.DisposalRate().fit_transform(clrd['CumPaidLoss'],sample_weight = ult)
 
-    Once we apply this adjustment method via a `fit_transform`, we can examine the emergence pattern via `disposal_rate_tri`. 
+    Once we apply this adjustment method via a `fit_transform`, we can examine the emergence pattern via `disposal_rate_tri`.
 
     .. testcode::
-    
+
         dr.disposal_rate_tri
 
     .. testoutput::
-        
+
                 12        24        36        48        60        72        84        96        108       120
         1988  0.313923  0.619459  0.774429  0.865377  0.919077  0.948898  0.964643  0.973184  0.980224  0.983063
         1989  0.321526  0.626023  0.781086  0.872345  0.924842  0.952533  0.967690  0.977373  0.981938       NaN
@@ -157,23 +159,23 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         1996  0.395603  0.688621       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
         1997  0.393820       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
 
-    The estimated pattern is stored in `disposal_rate_`. 
+    The estimated pattern is stored in `disposal_rate_`.
 
     .. testcode::
 
         dr.disposal_rate_
-        
+
     .. testoutput::
 
                 12-Ult    24-Ult    36-Ult    48-Ult    60-Ult    72-Ult    84-Ult    96-Ult   108-Ult  120-Ult  132-Ult
         (All)  0.112105  0.336242  0.545897  0.693774  0.812877  0.905045  0.942998  0.974365  0.990868      1.0      1.0
 
-    `full_triangle_` now reflects the disposal-rate-based forecast. 
+    `full_triangle_` now reflects the disposal-rate-based forecast.
 
     .. testcode::
 
         dr.full_triangle_
-        
+
     .. testoutput::
 
                 12            24            36            48            60            72            84            96            108           120           9999
@@ -193,7 +195,7 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
     def __init__(
         self,
         n_periods: int = -1,
-        average: str | list[str] = 'volume',
+        average: str | list[str] = "volume",
         drop: tuple | list[tuple] | None = None,
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
@@ -212,12 +214,7 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         self.drop_below = drop_below
         self.drop = drop
 
-    def fit(
-            self, 
-            X:Triangle, 
-            y:None=None, 
-            sample_weight:Triangle|None=None
-    ):
+    def fit(self, X: Triangle, y: None = None, sample_weight: Triangle | None = None):
         """
         Estimate disposal rate for a given Triangle and ultimate
 
@@ -238,9 +235,9 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         """
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
-        #validate dimensions of sample weight
+        # validate dimensions of sample weight
         MethodBase().validate_weight(X, sample_weight)
-        #set backeneds to numpy
+        # set backeneds to numpy
         if X.array_backend == "sparse":
             X = X.set_backend("numpy")
         else:
@@ -249,38 +246,46 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
             ult = sample_weight.set_backend("numpy")
         else:
             ult = sample_weight.copy()
-        #calculate disposal rate triangle
+        # calculate disposal rate triangle
         self.xp = X.get_array_module()
         self.X_ = X.incr_to_cum().sort_index()
         self.X_.ultimate_ = ult
-        #get weights for estimation
+        # get weights for estimation
         tw = TriangleWeight(
-            n_periods = self.n_periods,
-            drop_high = self.drop_high,
-            drop_low = self.drop_low,
-            drop_above = self.drop_above,
-            drop_below = self.drop_below,
-            drop_valuation = self.drop_valuation,
-            preserve = self.preserve,
-            drop = self.drop
+            n_periods=self.n_periods,
+            drop_high=self.drop_high,
+            drop_low=self.drop_low,
+            drop_above=self.drop_above,
+            drop_below=self.drop_below,
+            drop_valuation=self.drop_valuation,
+            preserve=self.preserve,
+            drop=self.drop,
         )
         if hasattr(self.X_, "disposal_w_"):
-            self.disposal_w_ = tw.fit(X=self.X_.disposal_rate_tri * self.X_.disposal_w_).w_.values
+            self.disposal_w_ = tw.fit(
+                X=self.X_.disposal_rate_tri * self.X_.disposal_w_
+            ).w_.values
         else:
             self.disposal_w_ = tw.fit(X=self.X_.disposal_rate_tri).w_.values
-        #calculate factors
-        super().fit(ult.values,self.X_.values,self.disposal_w_)
-        #keep attributes
-        disposal = self._param_property(self.X_.disposal_rate_tri,self.params_.slope_[...,0][..., None, :])
-        self.disposal_rate_ = concat((disposal,(self.X_.latest_diagonal*0 + 1).iloc[:,:,0,:].rename("development", [9999])),axis=3)
+        # calculate factors
+        super().fit(ult.values, self.X_.values, self.disposal_w_)
+        # keep attributes
+        disposal = self._param_property(
+            self.X_.disposal_rate_tri, self.params_.slope_[..., 0][..., None, :]
+        )
+        self.disposal_rate_ = concat(
+            (
+                disposal,
+                (self.X_.latest_diagonal * 0 + 1)
+                .iloc[:, :, 0, :]
+                .rename("development", [9999]),
+            ),
+            axis=3,
+        )
         return self
 
-    def transform(
-            self, 
-            X: Triangle, 
-            sample_weight: Triangle | None = None
-    ) -> Triangle:
-        """ If X and self are of different shapes, align self to X, else
+    def transform(self, X: Triangle, sample_weight: Triangle | None = None) -> Triangle:
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -298,18 +303,20 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = copy.deepcopy(X)
-        #validate dimensions of sample weight
+        # validate dimensions of sample weight
         MethodBase().validate_weight(X, sample_weight)
-        #align backeneds
+        # align backeneds
         X_new.disposal_w_ = self.disposal_w_
-        X_new.ultimate_ = sample_weight.set_backend(self.X_.array_backend).latest_diagonal
+        X_new.ultimate_ = sample_weight.set_backend(
+            self.X_.array_backend
+        ).latest_diagonal
         X_new.disposal_rate_ = self.disposal_rate_
         ibnr_pct = 1 - X_new.disposal_rate_.align_pattern(X_new.disposal_rate_tri)
         run_off = X_new.incr_disposal_rate_ / ibnr_pct * X_new.ibnr_
         run_off = run_off[run_off.valuation > X_new.valuation_date]
         X_new.ldf_ = (X_new.cum_to_incr() + run_off).incr_to_cum().age_to_age
         return X_new
-    
+
     def fit_transform(self, X, y=None, sample_weight=None):
         """Fit and return transformed full_triangle_ based on the Disposal Rate
 
