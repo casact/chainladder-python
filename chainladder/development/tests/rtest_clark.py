@@ -1,7 +1,7 @@
-### Building out a dev environment with a working copy
-### of R ChainLadder is difficult.  These tests are 
-### Currently inactive, but available should the compatibility
-### of the installs improve at a later date.
+# Building out a dev environment with a working copy
+# of R ChainLadder is difficult.  These tests are
+# Currently inactive, but available should the compatibility
+# of the installs improve at a later date.
 
 import numpy as np
 import chainladder as cl
@@ -10,9 +10,11 @@ import pytest
 try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
+
     CL = importr("ChainLadder")
-except:
+except ImportError:
     pass
+
 
 @pytest.mark.r
 def test_clarkldf(genins):
@@ -23,6 +25,7 @@ def test_clarkldf(genins):
     assert abs(model.omega_.iloc[0, 0] - r_omega) < 1e-2
     assert abs(model.theta_.iloc[0, 0] / 12 - r_theta) < 1e-2
 
+
 @pytest.mark.r
 def test_clarkldf_weibull(genins):
     model = cl.ClarkLDF(growth="weibull").fit(genins)
@@ -31,6 +34,7 @@ def test_clarkldf_weibull(genins):
     r_theta = df[0][1]
     assert abs(model.omega_.iloc[0, 0] - r_omega) < 1e-2
     assert abs(model.theta_.iloc[0, 0] / 12 - r_theta) < 1e-2
+
 
 @pytest.mark.r
 def test_clarkcapecod(genins):
@@ -44,6 +48,7 @@ def test_clarkcapecod(genins):
     assert abs(model.omega_.iloc[0, 0] - r_omega) < 1e-2
     assert abs(model.theta_.iloc[0, 0] / 12 - r_theta) < 1e-2
     assert abs(model.elr_.iloc[0, 0] - r_elr) < 1e-2
+
 
 @pytest.mark.r
 def test_clarkcapcod_weibull(genins):
