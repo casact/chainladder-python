@@ -4,14 +4,16 @@
 import numpy as np
 
 from chainladder import options
-from chainladder.utils.sparse import sp
 
 try:
     import cupy as cp
 
     cp.array([1])
     module = "cupy"
-except:
+except (ImportError, RuntimeError):
+    # RuntimeError covers e.g. cupy.cuda.runtime.CUDARuntimeError, raised
+    # by cp.array([1]) when CuPy is installed but the GPU/CUDA runtime
+    # is unusable.
     if options.ARRAY_BACKEND == "cupy":
         import warnings
 
@@ -22,29 +24,29 @@ except:
 
 
 def nansum(a, *args, **kwargs):
-    """ For cupy v0.6.0 compatibility """
+    """For cupy v0.6.0 compatibility"""
     return cp.sum(cp.nan_to_num(a), *args, **kwargs)
 
 
 def nanmean(a, *args, **kwargs):
-    """ For cupy v0.6.0 compatibility """
+    """For cupy v0.6.0 compatibility"""
     return cp.sum(cp.nan_to_num(a), *args, **kwargs) / cp.sum(
         ~cp.isnan(a), *args, **kwargs
     )
 
 
 def nanmedian(a, *args, **kwargs):
-    """ For cupy v0.6.0 compatibility """
+    """For cupy v0.6.0 compatibility"""
     return cp.array(np.nanmedian(cp.asnumpy(a), *args, **kwargs))
 
 
 def nanquantile(a, *args, **kwargs):
-    """ For cupy v0.6.0 compatibility """
+    """For cupy v0.6.0 compatibility"""
     return cp.array(np.nanquantile(cp.asnumpy(a), *args, **kwargs))
 
 
 def unique(ar, axis=None, *args, **kwargs):
-    """ For cupy v0.6.0 compatibility """
+    """For cupy v0.6.0 compatibility"""
     return cp.array(np.unique(cp.asnumpy(ar), axis=axis, *args, **kwargs))
 
 

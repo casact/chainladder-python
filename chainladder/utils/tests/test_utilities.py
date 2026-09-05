@@ -10,9 +10,12 @@ import numpy as np
 import pandas as pd
 
 from chainladder import __dt64_unit__
-
 from chainladder.utils.data._manifest import SAMPLES
-from chainladder.utils.utility_functions import date_delta_adjustment, maximum, minimum
+from chainladder.utils.utility_functions import (
+    date_delta_adjustment,
+    maximum,
+    minimum,
+)
 
 from pathlib import Path
 from typing import TYPE_CHECKING
