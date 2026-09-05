@@ -1,6 +1,7 @@
 import chainladder as cl
 import pytest
 
+
 def test_grid(clrd):
     # Load Data
     medmal_paid = clrd.groupby("LOB").sum().loc["medmal"]["CumPaidLoss"]
@@ -25,7 +26,8 @@ def test_grid(clrd):
     grid.fit(medmal_paid, benk__sample_weight=medmal_prem)
     assert (
         grid.results_["IBNR"][0]
-        == cl.Benktander(n_iters=250, apriori=1)
+        == cl
+        .Benktander(n_iters=250, apriori=1)
         .fit(
             cl.TailCurve().fit_transform(cl.Development().fit_transform(medmal_paid)),
             sample_weight=medmal_prem,
@@ -36,23 +38,34 @@ def test_grid(clrd):
 
 @pytest.fixture
 def tri(clrd):
-    tri = clrd.groupby('LOB').sum()[['CumPaidLoss', 'IncurLoss', 'EarnedPremDIR']]
-    tri['CaseIncurredLoss'] = tri['IncurLoss'] - tri['CumPaidLoss']
+    tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss", "EarnedPremDIR"]]
+    tri["CaseIncurredLoss"] = tri["IncurLoss"] - tri["CumPaidLoss"]
     return tri
 
-dev = [cl.Development, cl.ClarkLDF, cl.Trend, cl.IncrementalAdditive,
-       lambda : cl.MunichAdjustment(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss')),
-       lambda :cl.CaseOutstanding(paid_to_incurred=('CumPaidLoss', 'CaseIncurredLoss'))]
-tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
-ibnr = [cl.Chainladder,  cl.BornhuetterFerguson,
-        lambda : cl.Benktander(n_iters=2), cl.CapeCod]
 
-@pytest.mark.parametrize('dev', dev)
-@pytest.mark.parametrize('tail', tail)
-@pytest.mark.parametrize('ibnr', ibnr)
+dev = [
+    cl.Development,
+    cl.ClarkLDF,
+    cl.Trend,
+    cl.IncrementalAdditive,
+    lambda: cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
+    lambda: cl.CaseOutstanding(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
+]
+tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
+ibnr = [
+    cl.Chainladder,
+    cl.BornhuetterFerguson,
+    lambda: cl.Benktander(n_iters=2),
+    cl.CapeCod,
+]
+
+
+@pytest.mark.parametrize("dev", dev)
+@pytest.mark.parametrize("tail", tail)
+@pytest.mark.parametrize("ibnr", ibnr)
 def test_pipeline(tri, dev, tail, ibnr):
-    X = tri[['CumPaidLoss', 'CaseIncurredLoss']]
-    sample_weight = tri['EarnedPremDIR'].latest_diagonal
-    cl.Pipeline(
-        steps=[('dev', dev()), ('tail', tail()), ('ibnr', ibnr())]
-    ).fit_predict(X, sample_weight=sample_weight).ibnr_.sum('origin').sum('columns').sum()
+    X = tri[["CumPaidLoss", "CaseIncurredLoss"]]
+    sample_weight = tri["EarnedPremDIR"].latest_diagonal
+    cl.Pipeline(steps=[("dev", dev()), ("tail", tail()), ("ibnr", ibnr())]).fit_predict(
+        X, sample_weight=sample_weight
+    ).ibnr_.sum("origin").sum("columns").sum()

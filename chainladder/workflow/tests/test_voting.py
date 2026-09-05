@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder import Triangle
 
+
 @pytest.fixture
 def triangle_data():
     clrd = cl.load_sample("clrd")[["CumPaidLoss", "EarnedPremDIR"]]
@@ -31,11 +32,14 @@ array_weight = np.array([[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
 
 list_weight = [[[1, 2, 3]] * 4 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3]
 
-callable_weight = lambda origin: np.where(
-    origin.year < 1992,
-    (1, 2, 3),
-    np.where(origin.year > 1994, (0, 0, 1), (0, 0.5, 0.5)),
-)
+
+def callable_weight(origin):
+    return np.where(
+        origin.year < 1992,
+        (1, 2, 3),
+        np.where(origin.year > 1994, (0, 0, 1), (0, 0.5, 0.5)),
+    )
+
 
 dict_weight = {
     "1992": (0, 0.5, 0.5),
@@ -54,14 +58,16 @@ def weights(request):
 
 def test_voting_ultimate(triangle_data, estimators, weights):
     bcl_ult = (
-        cl.Chainladder()
+        cl
+        .Chainladder()
         .fit(
             triangle_data["CumPaidLoss"].sum(),
         )
         .ultimate_
     )
     bf_ult = (
-        cl.BornhuetterFerguson()
+        cl
+        .BornhuetterFerguson()
         .fit(
             triangle_data["CumPaidLoss"].sum(),
             sample_weight=triangle_data["EarnedPremDIR"].sum().latest_diagonal,
@@ -69,7 +75,8 @@ def test_voting_ultimate(triangle_data, estimators, weights):
         .ultimate_
     )
     cc_ult = (
-        cl.CapeCod()
+        cl
+        .CapeCod()
         .fit(
             triangle_data["CumPaidLoss"].sum(),
             sample_weight=triangle_data["EarnedPremDIR"].sum().latest_diagonal,
@@ -78,7 +85,8 @@ def test_voting_ultimate(triangle_data, estimators, weights):
     )
 
     vot_ult = (
-        cl.VotingChainladder(
+        cl
+        .VotingChainladder(
             estimators=estimators, weights=weights, default_weighting=(1, 2, 3)
         )
         .fit(
@@ -118,15 +126,13 @@ def test_different_backends(triangle_data, estimators, weights):
     )
     assert (
         abs(
-            (
-                model.predict(
-                    triangle_data["CumPaidLoss"].sum().set_backend("sparse"),
-                    sample_weight=triangle_data["EarnedPremDIR"]
-                    .sum()
-                    .latest_diagonal.set_backend("sparse"),
-                ).ultimate_.sum()
-                - model.ultimate_.sum()
-            )
+            model.predict(
+                triangle_data["CumPaidLoss"].sum().set_backend("sparse"),
+                sample_weight=triangle_data["EarnedPremDIR"]
+                .sum()
+                .latest_diagonal.set_backend("sparse"),
+            ).ultimate_.sum()
+            - model.ultimate_.sum()
         )
         < 1
     )
@@ -139,7 +145,8 @@ def test_weight_broadcasting(triangle_data, estimators, weights):
     max_dim_weights = np.array(mid_dim_weights * 132)
 
     min_dim_ult = (
-        cl.VotingChainladder(estimators=estimators, weights=weights)
+        cl
+        .VotingChainladder(estimators=estimators, weights=weights)
         .fit(
             triangle_data["CumPaidLoss"],
             sample_weight=triangle_data["EarnedPremDIR"].latest_diagonal,
@@ -147,7 +154,8 @@ def test_weight_broadcasting(triangle_data, estimators, weights):
         .ultimate_.sum()
     )
     mid_dim_ult = (
-        cl.VotingChainladder(estimators=estimators, weights=mid_dim_weights)
+        cl
+        .VotingChainladder(estimators=estimators, weights=mid_dim_weights)
         .fit(
             triangle_data["CumPaidLoss"],
             sample_weight=triangle_data["EarnedPremDIR"].latest_diagonal,
@@ -155,7 +163,8 @@ def test_weight_broadcasting(triangle_data, estimators, weights):
         .ultimate_.sum()
     )
     max_dim_ult = (
-        cl.VotingChainladder(estimators=estimators, weights=max_dim_weights)
+        cl
+        .VotingChainladder(estimators=estimators, weights=max_dim_weights)
         .fit(
             triangle_data["CumPaidLoss"],
             sample_weight=triangle_data["EarnedPremDIR"].latest_diagonal,
@@ -191,33 +200,30 @@ def test_voting(raa):
         ]
     ).all()
 
-def test_tri_sel(clrd:Triangle) -> None:
-    '''
-    starter test for the TriangleSelector class
-    '''
-    tri = clrd.sum()
-    assert tri['CumPaidLoss'] == cl.TriangleSelector('CumPaidLoss').fit_transform(tri)
 
-def test_mismatching_tri_sel(clrd:Triangle) -> None:
-    '''
+def test_tri_sel(clrd: Triangle) -> None:
+    """
+    starter test for the TriangleSelector class
+    """
+    tri = clrd.sum()
+    assert tri["CumPaidLoss"] == cl.TriangleSelector("CumPaidLoss").fit_transform(tri)
+
+
+def test_mismatching_tri_sel(clrd: Triangle) -> None:
+    """
     checking that an error is raised when different number of columns are specified by estimators in a VotingChainladder
-    '''
-    tri = clrd.groupby('LOB').sum().loc['othliab']
+    """
+    tri = clrd.groupby("LOB").sum().loc["othliab"]
     pipe_p = cl.Pipeline(
         steps=[
-            ('tri_sel', cl.TriangleSelector('CumPaidLoss')),
-            ('dev', cl.Development()),
-            ('model', cl.Chainladder())
+            ("tri_sel", cl.TriangleSelector("CumPaidLoss")),
+            ("dev", cl.Development()),
+            ("model", cl.Chainladder()),
         ]
     )
-    pipe_i = cl.Pipeline(
-        steps=[
-            ('dev', cl.Development()),
-            ('model', cl.Chainladder())
-        ]
-    )
+    pipe_i = cl.Pipeline(steps=[("dev", cl.Development()), ("model", cl.Chainladder())])
 
-    estimators = [('incurred', pipe_i), ('paid', pipe_p)]
+    estimators = [("incurred", pipe_i), ("paid", pipe_p)]
     weights = np.array([[0.5, 0.5]] * 4 + [[0.75, 0.25]] * 3 + [[1, 0]] * 3)
     vot = cl.VotingChainladder(estimators=estimators, weights=weights)
     with pytest.raises(ValueError):
