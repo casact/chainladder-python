@@ -1,6 +1,7 @@
 """
 Support pandas-style slicing to the Triangle class.
 """
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,35 +10,22 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from chainladder.core.typing import (
-    _AxisKey,
-    _LabelKey,
-    TriangleProtocol
-)
+from chainladder.core.typing import _AxisKey, _LabelKey, TriangleProtocol
 
 from chainladder.utils.utility_functions import num_to_nan
 
-from typing import (
-    cast,
-    overload,
-    TYPE_CHECKING
-)
+from typing import cast, overload, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-    from collections.abc import (
-        Callable,
-        Sequence
-    )
-    from chainladder.core.typing import (
-        BackendArray,
-        IndexExpression
-    )
+    from collections.abc import Callable, Sequence
+    from chainladder.core.typing import BackendArray, IndexExpression
     from sparse import COO
     from types import ModuleType
     from typing import Literal
 
 from sparse import _slicing  # noqa
+
 
 class _LocBase:
     """
@@ -80,7 +68,9 @@ class _LocBase:
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         # Set indexers.
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
-        obj.valuation_date = cast(pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date))
+        obj.valuation_date = cast(
+            pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date)
+        )
         return obj
 
     @staticmethod
@@ -127,9 +117,9 @@ class _LocBase:
         return slice(min_arr, max_arr, step)
 
     def __setitem__(
-            self,
-            key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey],
-            values: int | float | TriangleSlicer
+        self,
+        key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey],
+        values: int | float | TriangleSlicer,
     ) -> None:
         """
         Supports the square bracket syntax [] for setting Triangle values. Only supported for numpy backend.
@@ -147,28 +137,34 @@ class _LocBase:
 
         """
         if self.obj.array_backend == "sparse":
-            raise ValueError('Setting values with sparse backend requires .at or .iat')
+            raise ValueError("Setting values with sparse backend requires .at or .iat")
         if isinstance(values, TriangleSlicer):
             values = values.values
         # attempt to make keys contig
         contig_key = tuple([_LocBase._contig_slice(x) for x in key])
         # Create a slice for any key elements that are integers, otherwise preserve the slice or array.
-        tuple_key = tuple(
-            [slice(item, item + 1) if isinstance(item, int) else item for item in contig_key]
-        )
+        tuple_key = tuple([
+            slice(item, item + 1) if isinstance(item, int) else item
+            for item in contig_key
+        ])
         norm_key = self._normalize_index(tuple_key)
         if type(norm_key[2]) is not slice or type(norm_key[3]) is not slice:
-            raise ValueError("Setting while fancy indexing on origin/development is not supported.")
+            raise ValueError(
+                "Setting while fancy indexing on origin/development is not supported."
+            )
         if type(norm_key[0]) is slice or type(norm_key[1]) is slice:
-            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(norm_key, values)    
-        else:
-            #the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
             cast(np.ndarray, cast(object, self.obj.values)).__setitem__(
-                np.ix_(norm_key[0], norm_key[1]) + (norm_key[2], norm_key[3]), 
-                values
+                norm_key, values
+            )
+        else:
+            # the getter uses arr[idx,:][:,idx] to get the Cartesian product, using np.ix_ on the setter to match
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(
+                np.ix_(norm_key[0], norm_key[1]) + (norm_key[2], norm_key[3]), values
             )
 
-    def _normalize_index(self, key: IndexExpression) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
+    def _normalize_index(
+        self, key: IndexExpression
+    ) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
         Converts an indexing expression into a standard 4-D format. When the indexing has fewer dimensions than 4,
         slices for the remaining dimensions are added.
@@ -185,16 +181,20 @@ class _LocBase:
 
         """
         # Apply sparse normalization, fills out the rest of the dimensions using the shape of the Triangle.
-        key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey] = _slicing.normalize_index(key, self.obj.shape)
+        key: tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey] = _slicing.normalize_index(
+            key, self.obj.shape
+        )
         key_list = []
         # Preserve start/stop/step boundaries if the user has specified them, otherwise replace them with None.
         # None indicates "go-to-boundary" for the slice.
         for n, i in enumerate(key):
             if isinstance(i, slice):
-                start: int | None= i.start if i.start > 0 else None
+                start: int | None = i.start if i.start > 0 else None
                 stop: int | None = i.stop if i.stop > -1 else None
                 stop: int | None = None if stop == self.obj.shape[n] else stop
-                step: int | None = None if start is None and stop is None and (i.step == 1) else i.step
+                step: int | None = (
+                    None if start is None and stop is None and (i.step == 1) else i.step
+                )
                 key_list.append(slice(start, stop, step))
             else:
                 key_list.append(i)
@@ -202,9 +202,9 @@ class _LocBase:
         return key
 
     def _sparse_setitem(
-            self,
-            key: tuple[int, int, int, int],
-            values: int | float,
+        self,
+        key: tuple[int, int, int, int],
+        values: int | float,
     ) -> None:
         """
         Set slice of Triangle when backend is sparse.
@@ -225,10 +225,11 @@ class _LocBase:
         arr: COO = cast("COO", cast(object, self.obj.values))
         # Check if a stored value exists at the coordinate point.
         check = (
-                (arr.coords[0] == key[0]) *
-                (arr.coords[1] == key[1]) *
-                (arr.coords[2] == key[2]) *
-                (arr.coords[3] == key[3]))
+            (arr.coords[0] == key[0])
+            * (arr.coords[1] == key[1])
+            * (arr.coords[2] == key[2])
+            * (arr.coords[3] == key[3])
+        )
         # If it does, index the location and assign the value directly.
         if check.max():
             data_index = np.where(check)[0][0]
@@ -236,11 +237,9 @@ class _LocBase:
         # Otherwise, create a new sparse array with the updated coordinates and data.
         else:
             # Append the new coordinate.
-            arr.coords = np.concatenate(
-                (arr.coords, np.array(key)[:, None]), axis=1)
+            arr.coords = np.concatenate((arr.coords, np.array(key)[:, None]), axis=1)
             # Append the new data element.
-            arr.data = np.concatenate(
-                (arr.data, np.array([values])), axis=0)
+            arr.data = np.concatenate((arr.data, np.array([values])), axis=0)
             # Construct the new sparse array and assign to Triangle.
             self.obj.values = self.obj.get_array_module().COO(
                 coords=arr.coords,
@@ -248,7 +247,7 @@ class _LocBase:
                 prune=True,
                 has_duplicates=False,
                 shape=self.obj.shape,
-                fill_value=arr.fill_value
+                fill_value=arr.fill_value,
             )
 
     @staticmethod
@@ -274,12 +273,9 @@ class _LocBase:
 
 
 class Location(_LocBase):
-    """ class to generate .loc[] functionality """
+    """class to generate .loc[] functionality"""
 
-    def __getitem__(
-            self,
-            key: _LabelKey
-    ) -> Triangle:
+    def __getitem__(self, key: _LabelKey) -> Triangle:
         """
         Support square bracket indexing of Triangle.loc[] to extract data.
 
@@ -301,7 +297,9 @@ class Location(_LocBase):
             obj.set_index(obj.index.iloc[:, 1:], inplace=True)
         return obj
 
-    def format_key(self, key: _LabelKey) -> tuple[_LabelKey, _LabelKey, _LabelKey, _LabelKey]:
+    def format_key(
+        self, key: _LabelKey
+    ) -> tuple[_LabelKey, _LabelKey, _LabelKey, _LabelKey]:
         """
         Aligns a user-supplied label-based key to the Triangle's 4 axes, leaving each
         element as a label-based selector for index_key/other_key to resolve later.
@@ -320,9 +318,13 @@ class Location(_LocBase):
         # Preprocess into a common tuple-format prior to standardizing the dimensions.
 
         # Case when key is a tuple representing an index row.
-        if (isinstance(key, tuple) and len(key) > 1
-            and len(self.obj.key_labels) > 1 and type(key[1]) is str
-            and key[1] in self.obj.index[self.obj.key_labels[1]].unique()):
+        if (
+            isinstance(key, tuple)
+            and len(key) > 1
+            and len(self.obj.key_labels) > 1
+            and type(key[1]) is str
+            and key[1] in self.obj.index[self.obj.key_labels[1]].unique()
+        ):
             key = (key,)
         # Case when tuple elements represent separate dimensions, keep as-is.
         elif isinstance(key, tuple):
@@ -364,27 +366,30 @@ class Location(_LocBase):
         """
         # Case when key is a single index row and not a boolean mask, preprocess into a DataFrame of labels.
         if isinstance(key, pd.Series) and len(key) != len(self.obj):
-                key = key.to_frame().T
+            key = key.to_frame().T
         # Case boolean mask. Extract the positions where True.
         if isinstance(key, pd.Series):
             idx = np.where(key)[0]
         # Case DataFrame of labels, find positions in index.
         elif isinstance(key, pd.DataFrame):
-            idx = (self.obj.index.reset_index().set_index(self.obj.key_labels)
-                       .loc[key.set_index(list(key.columns)).index]).values.flatten()
+            idx = (
+                self.obj.index
+                .reset_index()
+                .set_index(self.obj.key_labels)
+                .loc[key.set_index(list(key.columns)).index]
+            ).values.flatten()
         # Case Pandas-style label selectors, extract positions from index.
         elif type(key) in [slice, list, tuple]:
-            idx = (self.obj.index.reset_index()
-                       .set_index(self.obj.key_labels).loc[key]).values.flatten()
+            idx = (
+                self.obj.index.reset_index().set_index(self.obj.key_labels).loc[key]
+            ).values.flatten()
         # Case scalar, locate position in first level of index.
         else:
-            idx = np.where(self.obj.kdims[:, 0]==key)[0]
+            idx = np.where(self.obj.kdims[:, 0] == key)[0]
         return idx
 
     def other_key(
-            self,
-            key: _LabelKey,
-            idx: Literal['columns', 'origin', 'development']
+        self, key: _LabelKey, idx: Literal["columns", "origin", "development"]
     ) -> np.ndarray | slice:
         """
         Converts a label-based key into an integer-based one. Intended to be used for axes other than the index.
@@ -413,13 +418,14 @@ class Location(_LocBase):
         obj_idx = pd.Series(range(len(s)), index=s)
         if type(key) in [slice, list]:
             return obj_idx.loc[key].values
-        if not hasattr(key, '__iter__') or type(key) is str:
+        if not hasattr(key, "__iter__") or type(key) is str:
             return np.array([obj_idx.loc[key]])
         else:
             raise AttributeError("Unable to slice.")
 
-
-    def key_to_slice(self, key: _LabelKey) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
+    def key_to_slice(
+        self, key: _LabelKey
+    ) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
         Converts keys to integer slices.
 
@@ -436,10 +442,12 @@ class Location(_LocBase):
         # Preprocess key into a normalized 4-D key.
         key = self.format_key(key)
         # Transform into integer-based slices.
-        out = (self.index_key(key[0]),
-                self.other_key(key[1], 'columns'),
-                self.other_key(key[2], 'origin'),
-                self.other_key(key[3], 'development'))
+        out = (
+            self.index_key(key[0]),
+            self.other_key(key[1], "columns"),
+            self.other_key(key[2], "origin"),
+            self.other_key(key[3], "development"),
+        )
         return out
 
     def __setitem__(self, key: _LabelKey, values: int | float | TriangleSlicer) -> None:
@@ -458,7 +466,11 @@ class Location(_LocBase):
         None
 
         """
-        super().__setitem__(cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)), values)
+        super().__setitem__(
+            cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)),
+            values,
+        )
+
 
 class Ilocation(_LocBase):
     """
@@ -478,12 +490,13 @@ class TriangleSlicer:
     """
 
     @overload
-    def __getitem__(self: TriangleProtocol, key: pd.Series | np.ndarray | list[str]) -> Triangle: ...
+    def __getitem__(
+        self: TriangleProtocol, key: pd.Series | np.ndarray | list[str]
+    ) -> Triangle: ...
     @overload
     def __getitem__(self: TriangleProtocol, key: str | int) -> Triangle | pd.Series: ...
     def __getitem__(
-            self: TriangleProtocol, 
-            key: pd.Series | np.ndarray | str | list[str] | int
+        self: TriangleProtocol, key: pd.Series | np.ndarray | str | list[str] | int
     ) -> Triangle | pd.Series:
         """
         Boolean Slicer functionality.
@@ -522,15 +535,17 @@ class TriangleSlicer:
                 out: Triangle = self.virtual_columns[key].copy()
                 out.virtual_columns.columns = {}
                 return out
-            keys: Sequence[str | int] = [key] if isinstance(key, (str, int, float, np.generic)) else key
+            keys: Sequence[str | int] = (
+                [key] if isinstance(key, (str, int, float, np.generic)) else key
+            )
             # Identify the position of each requested element within the valuation dimension.
             idx = [list(self.vdims).index(item) for item in keys]
             return self.iloc[:, idx]
 
     def __setitem__(
-            self: TriangleProtocol,
-            key: str | int,
-            value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]
+        self: TriangleProtocol,
+        key: str | int,
+        value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer],
     ) -> None:
         """
         Function for pandas-style column setting, i.e., Triangle[...] = value.
@@ -597,7 +612,7 @@ class TriangleSlicer:
                     data=data,
                     shape=self.shape,
                     prune=True,
-                    fill_value=xp.COO.nan
+                    fill_value=xp.COO.nan,
                 )
             # Case numpy backend.
             else:
@@ -614,7 +629,10 @@ class TriangleSlicer:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
             except (ValueError, AttributeError, AssertionError):
                 # For misaligned triangle support.
-                conc = (self.values, (self.iloc[:, 0] * 0 + cast("Triangle", value)).values)
+                conc = (
+                    self.values,
+                    (self.iloc[:, 0] * 0 + cast("Triangle", value)).values,
+                )
                 self.values = xp.concatenate(conc, axis=1)
 
     def _slice_valuation(self: TriangleProtocol, key: np.ndarray) -> Triangle:
@@ -638,16 +656,22 @@ class TriangleSlicer:
         obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
         # Filter out values by converting them to nan.
         key = key.reshape(self.shape[-2:], order="F")
-        obj.values = cast("BackendArray", num_to_nan(obj.values * obj.get_array_module().array(key)))
+        obj.values = cast(
+            "BackendArray", num_to_nan(obj.values * obj.get_array_module().array(key))
+        )
         # Recalculate size of the origin and development axes and return the slice.
         return _LocBase(obj).get_idx((
             slice(None),
             slice(None),
             np.arange(obj.shape[2])[np.sum(~key, 1) != obj.shape[3]],
-            np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]]
-         ))
+            np.arange(obj.shape[3])[np.sum(~key, 0) != obj.shape[2]],
+        ))
 
-    def _slice(self: TriangleProtocol, key: pd.Series | np.ndarray, axis: Literal['ddims', 'odims']) -> Triangle:
+    def _slice(
+        self: TriangleProtocol,
+        key: pd.Series | np.ndarray,
+        axis: Literal["ddims", "odims"],
+    ) -> Triangle:
         """
         Private method for handling of origin/development slicing.
 
@@ -682,14 +706,19 @@ class TriangleSlicer:
         """
         self.iloc, self.loc = Ilocation(self), Location(self)
         self.iat, self.at = Iat(self), At(self)
-        self.virtual_columns = VirtualColumns(cast("Triangle", self), self.virtual_columns.columns)
+        self.virtual_columns = VirtualColumns(
+            cast("Triangle", self), self.virtual_columns.columns
+        )
 
 
 class At(Location):
     """
     Single-element accessor. Mirrors pandas.DataFrame.at[].
     """
-    def _check_index(self, key: _LabelKey) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
+
+    def _check_index(
+        self, key: _LabelKey
+    ) -> tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey]:
         """
         Makes sure that the requested key explicitly specifies all 4 axes
         (index, columns, origin, development) and that it will grab a single
@@ -705,12 +734,14 @@ class At(Location):
             If the key passes validation, it's returned as a tuple of  integer slices, otherwise an error is raised.
 
         """
-        err_msg: str = 'Invalid Index in At slicer.'
+        err_msg: str = "Invalid Index in At slicer."
         # Unlike loc/iloc, at requires every axis to be specified explicitly.
         if not isinstance(key, tuple) or len(key) != 4 or Ellipsis in key:
             raise ValueError(err_msg)
         # Convert to integer slices.
-        idx = cast(tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key))
+        idx = cast(
+            tuple[_AxisKey, _AxisKey, _AxisKey, _AxisKey], self.key_to_slice(key)
+        )
         for n, item in enumerate(idx):
             if type(item) is slice:
                 # A slice here is always the full axis (slice(None, None, None)),
@@ -759,17 +790,23 @@ class At(Location):
         """
         key = self._check_index(key)
         values = self._to_scalar(values)
-        if self.obj.array_backend == 'sparse':
-            key = tuple(0 if type(item) is slice else int(cast(np.ndarray, item)[0]) for item in key)
+        if self.obj.array_backend == "sparse":
+            key = tuple(
+                0 if type(item) is slice else int(cast(np.ndarray, item)[0])
+                for item in key
+            )
             self._sparse_setitem(key, values)
         else:
-            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(self._normalize_index(key), values)
+            cast(np.ndarray, cast(object, self.obj.values)).__setitem__(
+                self._normalize_index(key), values
+            )
 
 
 class Iat(Ilocation):
     """
     Single-element integer-based accessor. Mirrors pandas.DataFrame.iat[].
     """
+
     def _check_index(self, key: IndexExpression) -> tuple[int, int, int, int]:
         """
         Make sure the requested key accesses a single element.
@@ -787,7 +824,7 @@ class Iat(Ilocation):
         idx = self._normalize_index(key)
         types = {type(i) for i in idx}
         if len(types) > 1 or list(types)[0] is not int:
-            raise ValueError('iAt based indexing can only have integer indexers')
+            raise ValueError("iAt based indexing can only have integer indexers")
         return cast("tuple[int, int, int, int]", idx)
 
     def __getitem__(self, key: IndexExpression) -> float:
@@ -807,7 +844,9 @@ class Iat(Ilocation):
         """
         return self.get_idx(self._check_index(key)).values[0, 0, 0, 0]
 
-    def __setitem__(self, key: IndexExpression, values: int | float | TriangleSlicer) -> None:
+    def __setitem__(
+        self, key: IndexExpression, values: int | float | TriangleSlicer
+    ) -> None:
         """
         Sets a single-element of a Triangle to a scalar value.
 
@@ -823,7 +862,7 @@ class Iat(Ilocation):
 
         """
         idx = self._check_index(key)
-        if self.obj.array_backend == 'sparse':
+        if self.obj.array_backend == "sparse":
             self._sparse_setitem(idx, self._to_scalar(values))
         else:
             super().__setitem__(idx, values)
@@ -834,6 +873,7 @@ class VirtualColumns:
     A virtual column is a non-computed column that enables lazy evaluation. For example, a column created
     by assigning a lambda expression.
     """
+
     def __init__(self, triangle: Triangle, columns=None):
         self.triangle = triangle
         self.columns = {} if not columns else columns
@@ -854,7 +894,9 @@ class VirtualColumns:
         """
         return self.columns[value](self.triangle).rename("columns", [value])
 
-    def __setitem__(self, name: str | int, value: Callable[[Triangle], TriangleSlicer]) -> None:
+    def __setitem__(
+        self, name: str | int, value: Callable[[Triangle], TriangleSlicer]
+    ) -> None:
         """
         Set a new Callable for the requested virtual column.
 

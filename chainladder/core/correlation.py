@@ -140,20 +140,20 @@ class DevelopmentCorrelation:
         numerator.values = numerator.values[..., :-1]
         numerator.ddims = numerator.ddims[:-1]
 
-        # I is the number of development periods in the triangle
-        I = len(triangle.development)
+        # n_dev_periods is the number of development periods in the triangle ("I" in the Mack 97).
+        n_dev_periods = len(triangle.development)
 
         # k values are the column indexes for which we are calculating T_k
         k = xp.array(range(2, 2 + numerator.shape[3]))
 
         # denominator is the one in formula G4 of the Mack 97 paper
-        denominator = ((I - k) ** 3 - I + k)[None, None, None]
+        denominator = ((n_dev_periods - k) ** 3 - n_dev_periods + k)[None, None, None]
 
         # complete formula G4, results in array of each T_k value
         self.t = 1 - 6 * xp.nan_to_num(numerator.values) / denominator
 
         # per Mack, weight is one less than the number of pairs for each T_k
-        weight = (I - k - 1)[None, None, None]
+        weight = (n_dev_periods - k - 1)[None, None, None]
 
         # Calculate big T, the weighted average of the T_k values
         t_expectation = (
@@ -163,7 +163,7 @@ class DevelopmentCorrelation:
         idx = triangle.index.set_index(triangle.key_labels).index
 
         # variance is result of formula G6
-        self.t_variance = 2 / ((I - 2) * (I - 3))
+        self.t_variance = 2 / ((n_dev_periods - 2) * (n_dev_periods - 3))
 
         # array of t values
         self.t = pd.DataFrame(self.t[0, 0, ...], columns=k, index=["T_k"])
@@ -280,7 +280,7 @@ class ValuationCorrelation:
 
     def __init__(self, triangle: Triangle, p_critical: float = 0.1, total: bool = True):
 
-        def pZlower(z: int, n: int, p: float = 0.5) -> float:
+        def p_z_lower(z: int, n: int, p: float = 0.5) -> float:
             return min(1, 2 * binom.cdf(z, n, p))
 
         self.p_critical = p_critical
@@ -317,12 +317,10 @@ class ValuationCorrelation:
         if not self.total:
             T = []
             for i in range(0, xp.max(m1large.shape[2:]) + 1):
-                T.append(
-                    [
-                        pZlower(i, j, 0.5)
-                        for j in range(0, xp.max(m1large.shape[2:]) + 1)
-                    ]
-                )
+                T.append([
+                    p_z_lower(i, j, 0.5)
+                    for j in range(0, xp.max(m1large.shape[2:]) + 1)
+                ])
             T = np.array(T)
             z_idx, n_idx = z.astype(int), n.astype(int)
             self.probs = T[z_idx, n_idx]
