@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import warnings
 from sklearn.base import BaseEstimator
@@ -21,7 +20,7 @@ if TYPE_CHECKING:
 class MethodBase(BaseEstimator, EstimatorIO, Common):
     _estimator_type = "chainladder"
 
-    def validate_X(self, X):
+    def validate_X(self, X):  # noqa: N802
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)

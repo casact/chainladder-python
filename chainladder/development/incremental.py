@@ -1,10 +1,9 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-from chainladder.development import Development, DevelopmentBase
-from chainladder.utils import WeightedRegression, TriangleWeight
+from chainladder.development import DevelopmentBase
+from chainladder.utils import TriangleWeight
 import numpy as np
-import pandas as pd
 import warnings
 
 
@@ -210,7 +209,7 @@ class IncrementalAdditive(DevelopmentBase):
             Returns the instance itself.
         """
         # check dev lag
-        if type(X._ddims) != np.ndarray:
+        if type(X._ddims) is not np.ndarray:
             raise ValueError("Triangle must be expressed with development lags")
         # convert to numpy
         if X.array_backend == "sparse":
@@ -274,7 +273,7 @@ class IncrementalAdditive(DevelopmentBase):
         obj.values = y_ * keeps
         obj.valuation_date = obj.valuation.max()
         obj.values = obj.values * (1 - xp.nan_to_num(x.nan_triangle)) + xp.nan_to_num(
-            (X.cum_to_incr().values / sample_weight.values)
+            X.cum_to_incr().values / sample_weight.values
         )
         obj.values[obj.values == 0] = xp.nan
         obj._set_slicers()
