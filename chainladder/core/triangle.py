@@ -2078,6 +2078,14 @@ class Triangle(TriangleBase):
         X.values = X.values.copy()
         return X
 
+    def __setstate__(self, state: dict) -> None:
+        """Migrate legacy pickled instances with 'kdims'/'vdims' to '_kdims'/'_vdims'."""
+        if "kdims" in state and "_kdims" not in state:
+            state["_kdims"] = state.pop("kdims")
+        if "vdims" in state and "_vdims" not in state:
+            state["_vdims"] = state.pop("vdims")
+        self.__dict__.update(state)
+
     def development_correlation(self, p_critical=0.5):
         """
         Mack (1997) test for correlations between subsequent development

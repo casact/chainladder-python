@@ -474,6 +474,28 @@ def test_kdims_deprecation_warning(raa):
     assert list(raa2.index.values) == [["P2"]]
 
 
+def test_legacy_pickle_compatibility(raa):
+    """Pickles saved prior to kdims/vdims rename should unpickle cleanly."""
+    import pickle
+
+    state = raa.__dict__.copy()
+    # Simulate a legacy serialized Triangle containing kdims and vdims
+    state["kdims"] = state.pop("_kdims")
+    state["vdims"] = state.pop("_vdims")
+
+    restored = cl.Triangle.__new__(cl.Triangle)
+    restored.__setstate__(state)
+
+    assert restored.index.equals(raa.index)
+    assert list(restored.columns) == list(raa.columns)
+    assert restored.loc["Total"].shape == raa.loc["Total"].shape
+    assert restored == raa
+
+    # Verify re-pickling the migrated instance works
+    roundtripped = pickle.loads(pickle.dumps(restored))
+    assert roundtripped == raa
+
+
 def test_valdev1(qtr):
     assert qtr.dev_to_val().val_to_dev() == qtr
 
