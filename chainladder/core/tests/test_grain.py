@@ -98,12 +98,12 @@ def test_annual_trailing(prism):
     # (limit data to November)
     tri = tri[tri.valuation < tri.valuation_date].incr_to_cum()
     tri = tri.grain("OQDQ", trailing=True).grain("OYDY")
-    assert np.all(tri.ddims[:4] == np.array([12, 24, 36, 48]))
+    assert np.all(tri.development[:4] == np.array([12, 24, 36, 48]))
 
 
 def test_development_age(raa: Triangle) -> None:
-    assert (raa.ddims == list(range(12, 121, 12))).all()
+    assert (raa.development == list(range(12, 121, 12))).all()
 
 
 def test_development_age_quarterly(qtr: Triangle) -> None:
-    assert (qtr.ddims == list(range(3, 136, 3))).all()
+    assert (qtr.development == list(range(3, 136, 3))).all()
