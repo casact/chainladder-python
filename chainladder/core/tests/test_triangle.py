@@ -337,7 +337,7 @@ def test_origin_and_value_setters(raa):
     assert np.all((
         np.all(raa2.origin == raa.origin),
         np.all(raa2.development == raa.development),
-        np.all(raa2.odims == raa.odims),
+        np.all(raa2._odims == raa._odims),
         np.all(raa2.columns == raa.columns),
     ))
 
@@ -671,15 +671,41 @@ def test_series_indexing(raa):
     assert sliced.index.iloc[0]["Company"] == "A"
 
 
+def test_odims_deprecation_warning(raa):
+    """Accessing or setting odims should emit a FutureWarning."""
+    with pytest.warns(FutureWarning, match="'odims' attribute is deprecated"):
+        o = raa.odims
+    assert np.all(o == raa._odims)
+
+    raa2 = raa.copy()
+    with pytest.warns(FutureWarning, match="'odims' attribute is deprecated"):
+        raa2.odims = raa._odims
+    assert np.all(raa2._odims == raa._odims)
+
+
+def test_ddims_deprecation_warning(raa):
+    """Accessing or setting ddims should emit a FutureWarning."""
+    with pytest.warns(FutureWarning, match="'ddims' attribute is deprecated"):
+        d = raa.ddims
+    assert np.all(d == raa._ddims)
+
+    raa2 = raa.copy()
+    with pytest.warns(FutureWarning, match="'ddims' attribute is deprecated"):
+        raa2.ddims = raa._ddims
+    assert np.all(raa2._ddims == raa._ddims)
+
+
 class TestLegacyPickleCompatibility:
     """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
 
     def test_legacy_kdims_vdims_migration(self, raa):
-        # 1. Simulate legacy serialized Triangle containing kdims and vdims
+        # 1. Simulate legacy serialized Triangle containing kdims, vdims, odims, and ddims
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values
         state["vdims"] = raa.columns.values
+        state["odims"] = state.pop("_odims")
+        state["ddims"] = state.pop("_ddims")
 
         restored = cl.Triangle.__new__(cl.Triangle)
         with pytest.warns(
@@ -691,6 +717,8 @@ class TestLegacyPickleCompatibility:
         assert isinstance(restored.index, pd.DataFrame)
         assert restored.index.equals(raa.index)
         assert list(restored.columns) == list(raa.columns)
+        assert restored.origin.equals(raa.origin)
+        assert (restored.development == raa.development).all()
         assert restored.loc["Total"].shape == raa.loc["Total"].shape
         assert restored == raa
         assert 0 in restored._axes
