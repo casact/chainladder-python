@@ -5,7 +5,6 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, PolynomialFeatures
 from sklearn.compose import ColumnTransformer
 from chainladder.development.base import DevelopmentBase
 from chainladder import options
@@ -13,7 +12,7 @@ from chainladder import TriangleWeight
 
 
 class DevelopmentML(DevelopmentBase):
-    """ Interface to scikit-learn estimators for loss development patterns.
+    """Interface to scikit-learn estimators for loss development patterns.
 
     ``DevelopmentML`` lets reserving workflows use any sklearn-compatible
     regressor (often inside a :class:`~sklearn.pipeline.Pipeline`). It converts
@@ -147,10 +146,18 @@ class DevelopmentML(DevelopmentBase):
 
     """
 
-    def __init__(self, estimator_ml=None, y_ml=None, autoregressive=False,
-                 weighted_step=None,drop=None,drop_valuation=None,fit_incrementals=True):
-        self.estimator_ml=estimator_ml
-        self.y_ml=y_ml
+    def __init__(
+        self,
+        estimator_ml=None,
+        y_ml=None,
+        autoregressive=False,
+        weighted_step=None,
+        drop=None,
+        drop_valuation=None,
+        fit_incrementals=True,
+    ):
+        self.estimator_ml = estimator_ml
+        self.y_ml = y_ml
         self.weighted_step = weighted_step
         self.autoregressive = autoregressive
         self.drop = drop
@@ -158,10 +165,10 @@ class DevelopmentML(DevelopmentBase):
         self.fit_incrementals = fit_incrementals
 
     def _get_y_names(self):
-        """ private function to get the response column name"""
+        """private function to get the response column name"""
         if not self.y_ml:
             y_names = self._columns
-        if hasattr(self.y_ml, '_columns'):
+        if hasattr(self.y_ml, "_columns"):
             y_names = self.y_ml._columns
         elif isinstance(self.y_ml, ColumnTransformer):
             y_names = self.y_ml.transformers[0][-1]
@@ -171,46 +178,51 @@ class DevelopmentML(DevelopmentBase):
             y_names = [self.y_ml]
         return y_names
 
-
     @property
     def y_ml_(self):
         defaults = self._get_y_names()
         transformer = self.y_ml
         if not transformer:
             return ColumnTransformer(
-                transformers=[('passthrough', 'passthrough', defaults)])
+                transformers=[("passthrough", "passthrough", defaults)]
+            )
         elif type(transformer) is list:
             return ColumnTransformer(
-                transformers=[('passthrough', 'passthrough', transformer)])
+                transformers=[("passthrough", "passthrough", transformer)]
+            )
         elif type(transformer) is str:
             return ColumnTransformer(
-                transformers=[('passthrough', 'passthrough', [transformer])])
+                transformers=[("passthrough", "passthrough", [transformer])]
+            )
         else:
             return transformer
 
     def _get_triangle_ml(self, df, preds=None):
-        """ Create fitted Triangle """
+        """Create fitted Triangle"""
         from chainladder.core import Triangle
+
         if preds is None:
             preds = self.estimator_ml.predict(df)
         X_r = [df]
         y_r = [preds]
-        dgrain = {'Y':12, 'S': 6, 'Q':3, 'M': 1}[self.development_grain_]
-        ograin = {'Y':1, 'S': 2, 'Q':4, 'M': 12}[self.origin_grain_]
-        latest_filter = (df['origin']+1)*ograin+(df['development']-dgrain)/dgrain
+        dgrain = {"Y": 12, "S": 6, "Q": 3, "M": 1}[self.development_grain_]
+        ograin = {"Y": 1, "S": 2, "Q": 4, "M": 12}[self.origin_grain_]
+        latest_filter = (df["origin"] + 1) * ograin + (
+            df["development"] - dgrain
+        ) / dgrain
         latest_filter = latest_filter == latest_filter.max()
-        preds=pd.DataFrame(preds.copy())[latest_filter].values
+        preds = pd.DataFrame(preds.copy())[latest_filter].values
         out = df.loc[latest_filter].copy()
-        dev_lags = df['development'].drop_duplicates().sort_values()
+        dev_lags = df["development"].drop_duplicates().sort_values()
         for d in dev_lags[1:]:
-            out['development'] = out['development'] + dgrain
-            out['valuation'] = out['valuation'] + dgrain / 12
+            out["development"] = out["development"] + dgrain
+            out["valuation"] = out["valuation"] + dgrain / 12
             if len(preds.shape) == 1:
                 preds = preds[:, None]
             if self.autoregressive:
                 for num, col in enumerate(self.autoregressive):
-                    out[col[0]]=preds[:, num]
-            out = out[out['development']<=dev_lags.max()]
+                    out[col[0]] = preds[:, num]
+            out = out[out["development"] <= dev_lags.max()]
             if len(out) == 0:
                 continue
             X_r.append(out.copy())
@@ -219,17 +231,27 @@ class DevelopmentML(DevelopmentBase):
         X_r = pd.concat(X_r, axis=0).reset_index(drop=True)
         if True:
             X_r = X_r.drop(self._get_y_names(), axis=1)
-        out = pd.concat((X_r,
-                         pd.DataFrame(np.concatenate(y_r, 0), columns=self._get_y_names())), axis=1)
-        out['origin'] = out['origin'].map({v: k for k, v in self.origin_encoder_.items()})
-        out['valuation'] = out['valuation'].map({v: k for k, v in self.valuation_encoder_.items()})
+        out = pd.concat(
+            (X_r, pd.DataFrame(np.concatenate(y_r, 0), columns=self._get_y_names())),
+            axis=1,
+        )
+        out["origin"] = out["origin"].map({
+            v: k for k, v in self.origin_encoder_.items()
+        })
+        out["valuation"] = out["valuation"].map({
+            v: k for k, v in self.valuation_encoder_.items()
+        })
         return Triangle(
-            out, origin='origin', development='valuation',
-            index=self._key_labels, columns=self._get_y_names(),
-            cumulative=not self.fit_incrementals).dropna(), out
+            out,
+            origin="origin",
+            development="valuation",
+            index=self._key_labels,
+            columns=self._get_y_names(),
+            cumulative=not self.fit_incrementals,
+        ).dropna(), out
 
-    def _prep_X_ml(self, X):
-        """ Preps Triangle data ahead of the pipeline """
+    def _prep_X_ml(self, X):  # noqa: N802
+        """Preps Triangle data ahead of the pipeline"""
         if self.fit_incrementals:
             X_ = X.cum_to_incr()
         else:
@@ -237,28 +259,41 @@ class DevelopmentML(DevelopmentBase):
         if self.autoregressive:
             for i in self.autoregressive:
                 lag = X[i[2]].shift(i[1])
-                X_[i[0]] = lag[lag.valuation<=X.valuation_date]
-        df_base = X.incr_to_cum().to_frame(
-            keepdims=True, implicit_axis=True, origin_as_datetime=True
-            ).reset_index().iloc[:, :-1]
-        df = df_base.merge(X_.to_frame(
+                X_[i[0]] = lag[lag.valuation <= X.valuation_date]
+        df_base = (
+            X
+            .incr_to_cum()
+            .to_frame(keepdims=True, implicit_axis=True, origin_as_datetime=True)
+            .reset_index()
+            .iloc[:, :-1]
+        )
+        df = df_base.merge(
+            X_.to_frame(
                 keepdims=True, implicit_axis=True, origin_as_datetime=True
-            ).reset_index(), how='left',
-            on=list(df_base.columns)).fillna(0)
-        df['origin'] = df['origin'].map(self.origin_encoder_)
-        df['valuation'] = df['valuation'].map(self.valuation_encoder_)
+            ).reset_index(),
+            how="left",
+            on=list(df_base.columns),
+        ).fillna(0)
+        df["origin"] = df["origin"].map(self.origin_encoder_)
+        df["valuation"] = df["valuation"].map(self.valuation_encoder_)
         return df
 
-    def _prep_w_ml(self,X,sample_weight=None):
-        #scikit-learn requires a dense sample_weight
+    def _prep_w_ml(self, X, sample_weight=None):
+        # scikit-learn requires a dense sample_weight
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
         obj = X.set_backend(backend)
         weight_base = (~np.isnan(obj.values)).astype(float)
         weight = weight_base.copy()
-        weight = weight * TriangleWeight(drop=self.drop,drop_valuation=self.drop_valuation).fit(obj).w_.fillzero().values
+        weight = (
+            weight
+            * TriangleWeight(drop=self.drop, drop_valuation=self.drop_valuation)
+            .fit(obj)
+            .w_.fillzero()
+            .values
+        )
         if sample_weight is not None:
-            weight = weight * sample_weight.set_backend(backend).values 
-        return weight.flatten()[weight_base.flatten()>0]
+            weight = weight * sample_weight.set_backend(backend).values
+        return weight.flatten()[weight_base.flatten() > 0]
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit the model with X.
@@ -282,26 +317,36 @@ class DevelopmentML(DevelopmentBase):
         self._key_labels = X.key_labels
         self.origin_grain_ = X.origin_grain
         self.development_grain_ = X.development_grain
-        self.origin_encoder_ = dict(zip(
-            X.origin.to_timestamp(how='s'),
-            (pd.Series(X.origin).rank()-1)/{'Y':1, 'S': 2, 'Q':4, 'M': 12}[X.origin_grain]))
+        self.origin_encoder_ = dict(
+            zip(
+                X.origin.to_timestamp(how="s"),
+                (pd.Series(X.origin).rank() - 1)
+                / {"Y": 1, "S": 2, "Q": 4, "M": 12}[X.origin_grain],
+            )
+        )
         val = X.valuation.sort_values().unique()
-        self.valuation_encoder_ = dict(zip(
-            val,
-            (pd.Series(val).rank()-1)/{'Y':1, 'S': 2, 'Q':4, 'M': 12}[X.development_grain]))
+        self.valuation_encoder_ = dict(
+            zip(
+                val,
+                (pd.Series(val).rank() - 1)
+                / {"Y": 1, "S": 2, "Q": 4, "M": 12}[X.development_grain],
+            )
+        )
         df = self._prep_X_ml(X)
         self.df_ = df
-        weight = self._prep_w_ml(X,sample_weight)
+        weight = self._prep_w_ml(X, sample_weight)
         self.weight_ = weight
-        if self.weighted_step == None:
+        if self.weighted_step is None:
             sample_weights = {}
         elif isinstance(self.weighted_step, list):
-            sample_weights = {x + '__sample_weight':weight for x in self.weighted_step}
+            sample_weights = {x + "__sample_weight": weight for x in self.weighted_step}
         else:
-            sample_weights = {self.weighted_step + '__sample_weight':weight}
+            sample_weights = {self.weighted_step + "__sample_weight": weight}
         # Fit model
-        self.estimator_ml.fit(df, self.y_ml_.fit_transform(df).squeeze(),**sample_weights)
-        #return selffit_incrementals 
+        self.estimator_ml.fit(
+            df, self.y_ml_.fit_transform(df).squeeze(), **sample_weights
+        )
+        # return selffit_incrementals
         self.triangle_ml_, self.predicted_data_ = self._get_triangle_ml(df)
         return self
 
@@ -312,7 +357,7 @@ class DevelopmentML(DevelopmentBase):
         return ldf
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -326,7 +371,7 @@ class DevelopmentML(DevelopmentBase):
         """
         X_new = X.copy()
         X_ml = self._prep_X_ml(X)
-        y_ml=self.estimator_ml.predict(X_ml)
+        y_ml = self.estimator_ml.predict(X_ml)
         triangle_ml, predicted_data = self._get_triangle_ml(X_ml, y_ml)
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
         X_new.ldf_ = triangle_ml.incr_to_cum().link_ratio.set_backend(backend)
