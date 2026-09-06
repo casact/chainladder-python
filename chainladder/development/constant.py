@@ -129,7 +129,7 @@ class DevelopmentConstant(DevelopmentBase):
         """
         from chainladder import options
 
-        if not X.is_cumulative:
+        if X.is_cumulative is False:
             obj = self._set_fit_groups(X).incr_to_cum().val_to_dev().copy()
         else:
             obj = self._set_fit_groups(X).val_to_dev().copy()
