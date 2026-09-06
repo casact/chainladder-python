@@ -320,8 +320,20 @@ class CapeCod(Benktander):
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
         _, X_new.ldf_ = self.intersection(X_new, self.ldf_)
+        inferred_levels = set(sample_weight.key_labels) - set(self.apriori_.key_labels)
         # If model was fit at a higher grain, then need to aggregate predicted aprioris too
-        if len(set(sample_weight.key_labels) - set(self.apriori_.key_labels)) > 0:
+        if inferred_levels:
+            if self.groupby is None:
+                # The grain was worked out from the data rather than asked for, and the
+                # apriori comes back at it, so say so instead of regrouping silently.
+                warnings.warn(
+                    "sample_weight has index levels the fitted apriori does not ("
+                    + ", ".join(sorted(inferred_levels))
+                    + "), so the apriori is re-estimated at the fitted grain "
+                    + str(self.apriori_.key_labels)
+                    + ". apriori_ is returned at that grain, not the one passed in. "
+                    "Pass groupby to CapeCod to state this explicitly."
+                )
             apriori_, detrended_apriori_ = self._get_capecod_aprioris(
                 X_new.groupby(self.apriori_.key_labels).sum(), 
                 sample_weight.groupby(self.apriori_.key_labels).sum())

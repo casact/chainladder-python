@@ -1,5 +1,8 @@
+import warnings
+
 import chainladder as cl
 import numpy as np
+import pytest
 
 def test_struhuss():
     X = cl.load_sample("cc_sample")["loss"]
@@ -105,3 +108,67 @@ def test_capecod_predict_one_extra_index_level(clrd):
     assert set(sample_weight.key_labels) - set(model.apriori_.key_labels) == {"GRNAME"}
     assert np.allclose(pred.apriori_.values, model.apriori_.values)
     assert abs(pred.ultimate_.sum().sum() - model.ultimate_.sum().sum()) < 1e-6
+
+
+def _capecod_grain_warnings(fn):
+    """Only the grain warning, so numpy's RuntimeWarnings do not count."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        fn()
+    return [
+        w
+        for w in caught
+        if "the apriori is re-estimated at the fitted grain" in str(w.message)
+    ]
+
+
+def test_capecod_predict_warns_when_the_grain_is_inferred(clrd):
+    """github issue #1274
+
+    Fitting on pre-aggregated data and predicting on the granular triangle makes
+    predict() work the grain out from key_labels. apriori_ then comes back at the
+    fitted grain rather than the caller's, which used to happen silently.
+    """
+    tri = clrd["CumPaidLoss"]
+    sample_weight = clrd["EarnedPremDIR"].latest_diagonal
+
+    model = cl.CapeCod().fit(
+        tri.groupby("LOB").sum(), sample_weight=sample_weight.groupby("LOB").sum()
+    )
+    with pytest.warns(
+        UserWarning, match="the apriori is re-estimated at the fitted grain"
+    ):
+        pred = model.predict(tri, sample_weight=sample_weight)
+
+    assert pred.apriori_.shape[0] == model.apriori_.shape[0]
+    assert pred.apriori_.shape[0] != tri.shape[0]
+
+
+def test_capecod_predict_does_not_warn_when_groupby_is_explicit(clrd):
+    """github issue #1274
+
+    groupby reaches the same branch, but the grain was asked for rather than
+    inferred, so there is nothing to point out.
+    """
+    tri = clrd["CumPaidLoss"]
+    sample_weight = clrd["EarnedPremDIR"].latest_diagonal
+
+    model = cl.CapeCod(groupby="LOB").fit(tri, sample_weight=sample_weight)
+    assert set(sample_weight.key_labels) - set(model.apriori_.key_labels)
+
+    assert (
+        _capecod_grain_warnings(lambda: model.predict(tri, sample_weight=sample_weight))
+        == []
+    )
+
+
+def test_capecod_predict_does_not_warn_at_a_matching_grain(clrd):
+    """github issue #1274"""
+    tri = clrd["CumPaidLoss"]
+    sample_weight = clrd["EarnedPremDIR"].latest_diagonal
+
+    model = cl.CapeCod().fit(tri, sample_weight=sample_weight)
+    assert (
+        _capecod_grain_warnings(lambda: model.predict(tri, sample_weight=sample_weight))
+        == []
+    )
