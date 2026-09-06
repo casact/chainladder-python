@@ -1685,6 +1685,27 @@ def test_ffill_does_not_mutate_original() -> None:
     )
 
 
+def test_ffill_zero_input_is_missing_and_fills() -> None:
+    """A 0 in the input becomes NaN on construction (the package treats 0 as
+    missing everywhere), so ffill carries it forward like any other gap."""
+    df = pd.DataFrame({
+        "origin": [1985, 1985, 1985, 1986, 1986],
+        "development": [1985, 1986, 1987, 1986, 1987],
+        "paid": [500.0, 0.0, 700.0, 300.0, 400.0],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="paid",
+        cumulative=True,
+    )
+    assert pd.isna(tri.to_frame(origin_as_datetime=False).loc["1985", 24])
+    frame = tri.ffill().to_frame(origin_as_datetime=False)
+    assert frame.loc["1985", 24] == 500.0
+    assert frame.loc["1985", 36] == 700.0
+
+
 def test_ffill_invalid_axis_raises(raa: Triangle) -> None:
     """ffill() only supports the origin and development axes."""
     with pytest.raises(

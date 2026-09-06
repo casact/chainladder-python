@@ -687,14 +687,13 @@ class TrianglePandas(_TrianglePandasBase):
         filled = [columns[0]]
         for current in columns[1:]:
             previous = filled[-1]
-            is_missing = xp.nan_to_num(current.values) == 0
+            is_missing = xp.isnan(current.values)
             current = current.copy()
             current.values = xp.where(is_missing, previous.values, current.values)
             filled.append(current)
         out = concat(filled, axis=axis)
         # a value can never be carried into a cell that hasn't been valued yet
-        out.values = out.values * xp.nan_to_num(out.nan_triangle)
-        out.values = num_to_nan(out.values)
+        out.values = xp.where(xp.isnan(out.nan_triangle), out.nan_triangle, out.values)
         return cast("Triangle", cast(object, out))
 
     @staticmethod
