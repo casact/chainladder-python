@@ -179,7 +179,7 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         y0 = xp.log(y.values[..., :-1])
         y1 = xp.log(y.values[..., 1:])
         b = ((x0 * y0 + x1 * y1) / 2 - (x0 + x1) / 2 * (y0 + y1) / 2) / (
-            (x0 ** 2 + x1 ** 2) / 2 - ((x0 + x1) / 2) ** 2
+            (x0**2 + x1**2) / 2 - ((x0 + x1) / 2) ** 2
         )
         a = np.exp((y0 + y1) / 2 - b * (x0 + x1) / 2)
 
@@ -206,27 +206,39 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         # Don't allow lookup values beyond the final value.
         n = min(lookup.shape[-1], lookup.shape[-2])
         for j in range(n - 1):
-            lookup[:, :, j, :] = np.clip(lookup[:, :, j, :], 0,  n - j - 2)
+            lookup[:, :, j, :] = np.clip(lookup[:, :, j, :], 0, n - j - 2)
 
         a = (
-            xp.concatenate([
-                xp.concatenate(
-                    [a[j:j+1, ..., i, lookup[j, 0, i:i+1, :]] for i in range(lookup.shape[-2])],
-                    axis=-2
-                )
-                for j in range(a.shape[0]) # Process each batch independently
-            ], axis=0)
-        * adj_closed_clm.nan_triangle[None, None, ...]
+            xp.concatenate(
+                [
+                    xp.concatenate(
+                        [
+                            a[j : j + 1, ..., i, lookup[j, 0, i : i + 1, :]]
+                            for i in range(lookup.shape[-2])
+                        ],
+                        axis=-2,
+                    )
+                    for j in range(a.shape[0])  # Process each batch independently
+                ],
+                axis=0,
+            )
+            * adj_closed_clm.nan_triangle[None, None, ...]
         )
         b = (
-            xp.concatenate([
-                xp.concatenate(
-                    [b[j:j+1, ..., i, lookup[j, 0, i:i+1, :]] for i in range(lookup.shape[-2])],
-                    axis=-2
-                )
-                for j in range(b.shape[0]) # Process each batch independently
-            ], axis=0)
-        * adj_closed_clm.nan_triangle[None, None, ...]
+            xp.concatenate(
+                [
+                    xp.concatenate(
+                        [
+                            b[j : j + 1, ..., i, lookup[j, 0, i : i + 1, :]]
+                            for i in range(lookup.shape[-2])
+                        ],
+                        axis=-2,
+                    )
+                    for j in range(b.shape[0])  # Process each batch independently
+                ],
+                axis=0,
+            )
+            * adj_closed_clm.nan_triangle[None, None, ...]
         )
         # Adjust paids
         adj_paid_claims = adj_closed_clm * 0 + xp.exp(adj_closed_clm.values * b) * a
@@ -251,7 +263,8 @@ class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):
         return self
 
     def transform(self, X):
-        """ If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

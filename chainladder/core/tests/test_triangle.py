@@ -835,6 +835,43 @@ def test_drop_index_axis_not_implemented_raises(clrd):
         clrd.drop(index="Agway Ins Co")
 
 
+def test_validate_contiguous_drop_helper(raa):
+    """Direct test for TrianglePandas._validate_contiguous_drop."""
+    from chainladder.core.pandas import TrianglePandas
+
+    # Valid drop of last development period
+    keep = TrianglePandas._validate_contiguous_drop(
+        raa.development, [120], "development", errors="raise"
+    )
+    assert np.array_equal(keep, np.array([True] * 9 + [False]))
+
+    # Valid drop of first origin period
+    keep_orig = TrianglePandas._validate_contiguous_drop(
+        raa.origin, [raa.origin[0]], "origin", errors="raise"
+    )
+    assert np.array_equal(keep_orig, np.array([False] + [True] * 9))
+
+    # Missing label with errors="raise"
+    with pytest.raises(KeyError, match=r"\['999'\] not found in the development axis"):
+        TrianglePandas._validate_contiguous_drop(
+            raa.development, [999], "development", errors="raise"
+        )
+
+    # Missing label with errors="ignore"
+    keep_ignore = TrianglePandas._validate_contiguous_drop(
+        raa.development, [999], "development", errors="ignore"
+    )
+    assert np.all(keep_ignore)
+
+    # Interior label drop raises ValueError
+    with pytest.raises(
+        ValueError, match="Only the first or last development periods may be dropped"
+    ):
+        TrianglePandas._validate_contiguous_drop(
+            raa.development, [36], "development", errors="raise"
+        )
+
+
 def test_hvplot_passthrough(genins, monkeypatch):
     """TrianglePandas.hvplot() passthrough test for patch coverage."""
     monkeypatch.setattr(
@@ -1596,6 +1633,94 @@ def test_shift_invalid_axis_raises(raa: Triangle) -> None:
         raa.shift(axis=0)
 
 
+def _ffill_source_triangle():
+    """Triangle from #1030 - a mix of leading, interior, and not-yet-valued NaNs."""
+    df = pd.DataFrame({
+        "origin": [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
+        "development": [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+        "paid": [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
+    })
+    return cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="paid",
+        cumulative=True,
+    )
+
+
+def test_ffill_development_axis() -> None:
+    """Interior NaNs fill forward from the last valid value; a leading NaN
+    (1986 at age 12) and not-yet-valued cells (1986 at 48, 1987 at 36/48)
+    stay NaN - ffill never writes into a cell that hasn't been valued yet."""
+    tri = _ffill_source_triangle()
+    frame = tri.ffill().to_frame(origin_as_datetime=False)
+    assert frame.loc["1985", 24] == 500.0
+    assert frame.loc["1985", 48] == 700.0
+    assert pd.isna(frame.loc["1986", 12])
+    assert pd.isna(frame.loc["1986", 48])
+    assert pd.isna(frame.loc["1987", 36])
+    assert pd.isna(frame.loc["1987", 48])
+
+
+def test_ffill_origin_axis() -> None:
+    """Same triangle, filled down the origin axis instead."""
+    tri = _ffill_source_triangle()
+    frame = tri.ffill(axis="origin").to_frame(origin_as_datetime=False)
+    assert frame.loc["1986", 12] == 500.0
+    assert frame.loc["1987", 24] == 1300.0
+    assert frame.loc["1988", 12] == 1200.0
+    assert pd.isna(frame.loc["1985", 24])
+    assert pd.isna(frame.loc["1988", 24])
+    assert pd.isna(frame.loc["1988", 36])
+
+
+def test_ffill_does_not_mutate_original() -> None:
+    """ffill returns a new Triangle; the source is untouched."""
+    tri = _ffill_source_triangle()
+    before = tri.to_frame(origin_as_datetime=False).copy()
+    tri.ffill()
+    pd.testing.assert_frame_equal(
+        before, tri.to_frame(origin_as_datetime=False), check_dtype=False
+    )
+
+
+def test_ffill_zero_input_is_missing_and_fills() -> None:
+    """A 0 in the input becomes NaN on construction (the package treats 0 as
+    missing everywhere), so ffill carries it forward like any other gap."""
+    df = pd.DataFrame({
+        "origin": [1985, 1985, 1985, 1986, 1986],
+        "development": [1985, 1986, 1987, 1986, 1987],
+        "paid": [500.0, 0.0, 700.0, 300.0, 400.0],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="paid",
+        cumulative=True,
+    )
+    assert pd.isna(tri.to_frame(origin_as_datetime=False).loc["1985", 24])
+    frame = tri.ffill().to_frame(origin_as_datetime=False)
+    assert frame.loc["1985", 24] == 500.0
+    assert frame.loc["1985", 36] == 700.0
+
+
+def test_ffill_invalid_axis_raises(raa: Triangle) -> None:
+    """ffill() only supports the origin and development axes."""
+    with pytest.raises(
+        AttributeError,
+        match="ffill is only supported for the origin and development axes",
+    ):
+        raa.ffill(axis="columns")
+
+    with pytest.raises(
+        AttributeError,
+        match="ffill is only supported for the origin and development axes",
+    ):
+        raa.ffill(axis=0)
+
+
 def test_array_protocol2(raa):
     import numpy as np
 
@@ -2355,7 +2480,7 @@ def test_friedland_gl_self_insurer_grain() -> None:
     )
 
 
-def test_OXDX_triangle():
+def test_oxdx_triangle():
 
     for x in [12, 6, 3, 1]:
         for y in [i for i in [12, 6, 3, 1] if i <= x]:
@@ -2693,21 +2818,76 @@ def test_set_development_no_development_column() -> None:
     assert tri.development[0] == str(tri.origin[-1])
 
 
-def test_set_development_age_instead_of_date_raises() -> None:
-    """
-    Initialize a triangle with incorrect development periods specified. Should raise a ValueError.
-
-    Returns
-    -------
-    None
-
-    """
+def test_set_development_age_in_months() -> None:
+    """Development given as an age in months (not a date) resolves to the
+    valuation date that many months after the origin's period start."""
     df = pd.DataFrame({
         "origin": [1995, 1996],
         "development": [12, 24],
         "reported": [1.0, 2.0],
     })
-    with pytest.raises(ValueError, match="Development lags could not be determined"):
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
+    )
+    assert list(tri.development) == [12, 24, 36]
+    frame = tri.to_frame(origin_as_datetime=False)
+    assert frame.loc["1995", 12] == 1.0
+    assert frame.loc["1996", 24] == 2.0
+
+
+def test_set_development_age_respects_mid_period_origin() -> None:
+    """Age is relative to the start of the origin's own period, not the
+    literal recorded origin date."""
+    df = pd.DataFrame({
+        "origin": ["2018-06-15", "2018-06-15"],
+        "development": [12, 24],
+        "reported": [100.0, 150.0],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
+    )
+    assert list(tri.development) == [12, 24]
+
+
+def test_set_development_age_semiannual_origin() -> None:
+    """Age works when the origin grain is semiannual, using the calendar
+    (Jan/Jul) anchor to place the valuation date."""
+    df = pd.DataFrame({
+        "origin": ["2017-01-01", "2017-01-01", "2017-07-01", "2018-01-01"],
+        "development": [6, 12, 6, 6],
+        "reported": [1.0, 2.0, 3.0, 5.0],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
+    )
+    assert tri.origin_grain == "S"
+    assert list(tri.development) == [6, 12, 18]
+    frame = tri.to_frame(origin_as_datetime=False)
+    assert frame.loc["2017H1", 6] == 1.0
+    assert frame.loc["2017H2", 6] == 3.0
+
+
+def test_set_development_age_non_calendar_semiannual_raises() -> None:
+    """A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
+    native pandas period, so an age can't be placed - raise clearly."""
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "development": [6, 12, 6],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="non-calendar semiannual"):
         cl.Triangle(
             data=df,
             origin="origin",
@@ -2715,6 +2895,25 @@ def test_set_development_age_instead_of_date_raises() -> None:
             columns="reported",
             cumulative=True,
         )
+
+
+def test_set_development_bare_years_unaffected_by_age_support() -> None:
+    """A development column that is genuinely a bare calendar year (e.g. the
+    literal year 1970) must still parse as a date, not get reinterpreted as
+    an age."""
+    df = pd.DataFrame({
+        "origin": [1969, 1970],
+        "development": [1970, 1970],
+        "reported": [1.0, 2.0],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="reported",
+        cumulative=True,
+    )
+    assert list(tri.development) == ["1970"]
 
 
 def test_input_validation_non_numeric_columns_raises() -> None:

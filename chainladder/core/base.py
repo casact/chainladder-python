@@ -175,16 +175,38 @@ class TriangleBase(
             data: DataFrame,
             development: list,
             development_format: None | str,
-            origin_date: Series
+            origin_date: Series,
+            origin_grain: str
     ) -> Series:
         """Initialize development and its grain"""
         if development:
-            development_date: Series = TriangleBase._to_datetime(
+            development_date: Series | None = TriangleBase._to_datetime(
                 data=data,
                 fields=development,
                 period_end=True,
-                date_format=development_format
+                date_format=development_format,
+                allow_age=True,
             )
+            if development_date is None:
+                # age in months relative to origin's period start, using the
+                # constructor's own origin_grain so fiscal-year anchors match
+                age: Series = pd.to_numeric(data[development[0]]).round().astype(int)
+                grain_base = origin_grain.split("-")[0]
+                if grain_base == "2Q":
+                    # no native pandas semiannual period; only calendar Jan/Jul anchors supported
+                    if origin_grain not in ("2Q", "2Q-DEC"):
+                        raise ValueError(
+                            "Development expressed as an age is not yet supported for a "
+                            f"non-calendar semiannual origin grain ({origin_grain})."
+                        )
+                    origin_period_start: Series = origin_date.apply(
+                        lambda d: d.replace(month=((d.month - 1) // 6) * 6 + 1, day=1)
+                    )
+                else:
+                    origin_period_start = origin_date.dt.to_period(origin_grain).dt.to_timestamp(how="s")
+                development_date = (
+                    origin_period_start.dt.to_period("M") + (age - 1)
+                ).dt.to_timestamp(how="e")
         else:
             o_max: Timestamp = pd.Period(
                 value=origin_date.max(),
@@ -193,15 +215,6 @@ class TriangleBase(
             development_date: Series = pd.Series([o_max] * len(origin_date))
 
         development_date.name = "__development__"
-        if (
-            pd.Series(development_date).dt.year.min()
-            == pd.Series(development_date).dt.year.max()
-            == 1970
-        ):
-            raise ValueError(
-                "Development lags could not be determined. This may be because development"
-                "is expressed as an age where a date-like vector is required"
-            )
         return development_date
 
     @staticmethod
@@ -462,8 +475,9 @@ class TriangleBase(
             data: DataFrame,
             fields: list,
             period_end: bool = False,
-            date_format: Optional[str] = None
-    ) -> Series:
+            date_format: Optional[str] = None,
+            allow_age: bool = False
+    ) -> Series | None:
         """
         For tabular form, this will take a set of data
         column(s) and return a single date array.  This function heavily
@@ -496,9 +510,11 @@ class TriangleBase(
             ]
 
             datetime_mapping: None | dict = None
+            matched_a_format: bool = False
             for date_inference in date_inference_list:
                 try:
                     datetime_mapping = dict(zip(datetime_arg, pd.to_datetime(**date_inference)))
+                    matched_a_format = "format" in date_inference
                     break
                 except ValueError:
                     pass
@@ -508,6 +524,15 @@ class TriangleBase(
                     "Unable to infer datetime for field(s): " + str(fields) +
                     ". Please check the underlying data or any supplied format arguments."
                     )
+            if not matched_a_format and pd.api.types.is_numeric_dtype(datetime_arg):
+                # unformatted numeric input falls through to pandas treating it
+                # as nanoseconds since epoch, not an actual date
+                if allow_age:
+                    return None
+                raise ValueError(
+                    "Development lags could not be determined. This may be because development "
+                    "is expressed as an age where a date-like vector is required"
+                )
             target: Series = target_field.map(datetime_mapping)
 
         return target
