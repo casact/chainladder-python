@@ -28,7 +28,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
-          python-version: "3.12" # needs tomllib (3.11+); independent of chainladder's own requires-python
+          python-version: "3.12"
 
       - name: Run SPEC 0 check
         env:

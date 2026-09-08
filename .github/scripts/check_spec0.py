@@ -6,10 +6,6 @@ which ones are within 3 months of (or past) their recommended drop-support date.
 Python itself is checked against its official end-of-life date rather than SPEC 0's
 generic "3 years after release" rule, per this project's stated policy of supporting
 Python through EOL.
-
-This script targets Python 3.11+ for `tomllib`. That is a constraint on this
-dev-tooling script only, independent of the `requires-python` floor chainladder
-itself declares for its users.
 """
 from __future__ import annotations
 
@@ -25,14 +21,9 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
 
-# The subset of chainladder's dependencies that also appear on SPEC 0's own
-# endorsed/example table. SPEC 0 leaves "core package" project-defined, so
-# non-ecosystem-core dependencies (sparse, dill, patsy) are intentionally excluded
-# here rather than extrapolating the 2-year rule to them.
 CORE_PACKAGES = ["numpy", "pandas", "scikit-learn", "matplotlib"]
 
-# Community-maintained release-cycle API; used for Python's official EOL dates so
-# this script doesn't need a hand-maintained table updated for every new release.
+# Community-maintained release-cycle API.
 PYTHON_EOL_API_URL = "https://endoflife.date/api/python.json"
 
 WARN_DAYS = 90
@@ -62,6 +53,28 @@ class CheckResult:
         check.
     status: Status
         "ok", "within_window" (inside the WARN_DAYS alert window), or "past_due".
+
+    Examples
+    --------
+
+    .. testcode::
+
+        from datetime import date
+        from check_spec0 import CheckResult
+
+        result = CheckResult(
+            name="numpy",
+            floor="1.24",
+            anchor_date=date(2022, 12, 26),
+            drop_date=date(2024, 12, 26),
+            status="past_due",
+        )
+        print(result.status)
+
+    .. testoutput::
+
+        past_due
+
     """
 
     name: str
@@ -73,7 +86,7 @@ class CheckResult:
 
 def add_months(d: date, months: int) -> date:
     """
-    Adds a number of months to a date, clamping the day to the last valid day of
+    Adds a number of months to a date, rounding to the last valid day of
     the resulting month (e.g. Jan 31 + 1 month -> Feb 28/29).
 
     Parameters
@@ -165,6 +178,29 @@ def parse_core_dependency_floors(pyproject: dict) -> dict[str, str | None]:
         Mapping of package name to its declared minimum version string, or None if
         the dependency has no version floor (or isn't declared at all).
 
+    Examples
+    --------
+
+    .. testcode::
+
+        from check_spec0 import parse_core_dependency_floors
+
+        pyproject = {
+            "project": {
+                "dependencies": [
+                    "numpy>=1.24",
+                    "pandas>=2.0.3",
+                    "matplotlib",
+                    "sparse>=0.9",
+                ]
+            }
+        }
+        print(parse_core_dependency_floors(pyproject))
+
+    .. testoutput::
+
+        {'numpy': '1.24', 'pandas': '2.0.3', 'scikit-learn': None, 'matplotlib': None}
+
     """
     floors: dict[str, str | None] = {name: None for name in CORE_PACKAGES}
     for entry in pyproject["project"]["dependencies"]:
@@ -231,18 +267,16 @@ def fetch_python_eol_dates() -> dict[tuple[int, int], date]:
     Examples
     --------
 
-    .. testsetup::
+    .. testcode::
+        :options: +SKIP
 
         from check_spec0 import fetch_python_eol_dates
 
-    .. testcode::
-
-        eol_dates = fetch_python_eol_dates()
-        print(eol_dates[(3, 9)])
+        print(fetch_python_eol_dates())
 
     .. testoutput::
 
-        2025-10-05
+        {(3, 14): datetime.date(2030, 10, 31), (3, 13): datetime.date(2029, 10, 31), ...}
 
     """
     with urllib.request.urlopen(PYTHON_EOL_API_URL, timeout=30) as response:
@@ -279,6 +313,25 @@ def check_python(
     CheckResult
         The outcome of the check.
 
+    Examples
+    --------
+
+    .. testcode::
+
+        from datetime import date
+        from check_spec0 import check_python
+
+        result = check_python(
+            requires_python_floor=(3, 9),
+            eol_dates={(3, 9): date(2025, 10, 31)},
+            today=date(2026, 1, 1),
+        )
+        print(result)
+
+    .. testoutput::
+
+        CheckResult(name='python', floor='3.9', anchor_date=None, drop_date=datetime.date(2025, 10, 31), status='past_due')
+
     """
     eol = eol_dates.get(requires_python_floor)
     if eol is None:
@@ -302,6 +355,9 @@ def check_package(name: str, floor: str | None, today: date) -> CheckResult:
     """
     Checks a single core package's declared minimum version against SPEC 0's
     2-years-after-release rule.
+
+    If the declared floor is already the newest minor series the package has ever
+    released, the check always reports "ok" regardless of how old that release is.
 
     Parameters
     ----------
@@ -330,6 +386,14 @@ def check_package(name: str, floor: str | None, today: date) -> CheckResult:
     anchor_date = release_dates.get(minor_series)
     if anchor_date is None:
         return CheckResult(name=name, floor=floor, anchor_date=None, drop_date=None, status="ok")
+
+    # If the declared floor is already the newest minor series the package has
+    # released, there's nothing more recent to bump to -- an old anchor_date here
+    # reflects the package's own release cadence, not a stale floor in chainladder.
+    if minor_series == max(release_dates):
+        return CheckResult(
+            name=name, floor=floor, anchor_date=anchor_date, drop_date=None, status="ok"
+        )
 
     drop_date = add_months(anchor_date, 24)
     return CheckResult(
@@ -420,7 +484,7 @@ def issue_body(violation: dict) -> str:
         "matplotlib) are tracked against SPEC 0's 2-years-after-release rule. "
         "See https://scientific-python.org/specs/spec-0000/ for the policy.\n\n"
         "This issue was opened automatically by the nightly SPEC 0 check "
-        "(`.github/workflows/spec0_check.yml`). If this version should still be supported "
+        "(`.github/workflows/spec0_check_nightly.yml`). If this version should still be supported "
         "for a specific reason, close this issue with an explanation; otherwise it tracks "
         "bumping the minimum version."
     )
@@ -514,15 +578,30 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
+    # Extract pyproject.toml.
     with args.pyproject.open("rb") as f:
         pyproject = tomllib.load(f)
 
+    # Check expiration of minimum Python version.
     today = date.today()
     eol_dates = fetch_python_eol_dates()
-    results = [check_python(parse_requires_python(pyproject), eol_dates, today)]
+    results = [
+        check_python(
+            requires_python_floor=parse_requires_python(pyproject),
+            eol_dates=eol_dates,
+            today=today,
+        )
+    ]
+    # Check expiration of core dependencies.
     floors = parse_core_dependency_floors(pyproject)
     for name in CORE_PACKAGES:
-        results.append(check_package(name, floors[name], today))
+        results.append(
+            check_package(
+                name=name,
+                floor=floors[name],
+                today=today
+            )
+        )
 
     summary = render_markdown(results, today)
     print(summary)
@@ -539,10 +618,12 @@ def main() -> None:
         for r in results
         if r.status != "ok"
     ]
+
     if args.violations_output:
         args.violations_output.write_text(json.dumps(violations))
     print(f"\n{len(violations)} violation(s) found.")
 
+    # Create GitHub issue of violations found.
     if args.create_issues and violations:
         repo = args.repo or os.environ.get("GITHUB_REPOSITORY")
         if not repo:
