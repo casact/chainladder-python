@@ -7,6 +7,7 @@ Python itself is checked against its official end-of-life date rather than SPEC 
 generic "3 years after release" rule, per this project's stated policy of supporting
 Python through EOL.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -158,7 +159,9 @@ def parse_requires_python(pyproject: dict) -> tuple[int, int]:
     spec = pyproject["project"]["requires-python"]
     match = re.search(r">=\s*(\d+)\.(\d+)", spec)
     if not match:
-        raise ValueError(f"Could not parse a minimum version from requires-python: {spec!r}")
+        raise ValueError(
+            f"Could not parse a minimum version from requires-python: {spec!r}"
+        )
     return int(match.group(1)), int(match.group(2))
 
 
@@ -293,7 +296,9 @@ def fetch_python_eol_dates() -> dict[tuple[int, int], date]:
 
 
 def check_python(
-    requires_python_floor: tuple[int, int], eol_dates: dict[tuple[int, int], date], today: date
+    requires_python_floor: tuple[int, int],
+    eol_dates: dict[tuple[int, int], date],
+    today: date,
 ) -> CheckResult:
     """
     Checks the declared minimum Python version against its official EOL date.
@@ -375,17 +380,23 @@ def check_package(name: str, floor: str | None, today: date) -> CheckResult:
 
     """
     if floor is None:
-        return CheckResult(name=name, floor="(none)", anchor_date=None, drop_date=None, status="ok")
+        return CheckResult(
+            name=name, floor="(none)", anchor_date=None, drop_date=None, status="ok"
+        )
 
     match = re.match(r"^(\d+)\.(\d+)", floor)
     if not match:
-        raise ValueError(f"Could not parse a minor version from {name} floor: {floor!r}")
+        raise ValueError(
+            f"Could not parse a minor version from {name} floor: {floor!r}"
+        )
     minor_series = (int(match.group(1)), int(match.group(2)))
 
     release_dates = fetch_minor_release_dates(name)
     anchor_date = release_dates.get(minor_series)
     if anchor_date is None:
-        return CheckResult(name=name, floor=floor, anchor_date=None, drop_date=None, status="ok")
+        return CheckResult(
+            name=name, floor=floor, anchor_date=None, drop_date=None, status="ok"
+        )
 
     # If the declared floor is already the newest minor series the package has
     # released, there's nothing more recent to bump to -- an old anchor_date here
@@ -422,7 +433,11 @@ def render_markdown(results: list[CheckResult], today: date) -> str:
         The rendered Markdown report.
 
     """
-    status_label = {"ok": "OK", "within_window": "Within 3 months", "past_due": "Past due"}
+    status_label = {
+        "ok": "OK",
+        "within_window": "Within 3 months",
+        "past_due": "Past due",
+    }
     lines = [
         "## SPEC 0 dependency support check",
         "",
@@ -456,7 +471,11 @@ def issue_title(violation: dict) -> str:
         The issue title.
 
     """
-    verb = "is past its" if violation["status"] == "past_due" else "is within 3 months of its"
+    verb = (
+        "is past its"
+        if violation["status"] == "past_due"
+        else "is within 3 months of its"
+    )
     return f"SPEC 0: {violation['name']} {verb} support drop date ({violation['drop_date']})"
 
 
@@ -490,7 +509,9 @@ def issue_body(violation: dict) -> str:
     )
 
 
-def create_github_issues(violations: list[dict], repo: str, dry_run: bool = False) -> None:
+def create_github_issues(
+    violations: list[dict], repo: str, dry_run: bool = False
+) -> None:
     """
     Opens a GitHub issue for each violation that doesn't already have an open
     tracking issue, via the `gh` CLI.
@@ -517,23 +538,42 @@ def create_github_issues(violations: list[dict], repo: str, dry_run: bool = Fals
 
         existing = subprocess.run(
             [
-                "gh", "issue", "list",
-                "--repo", repo,
-                "--search", f"{title} in:title",
-                "--state", "open",
-                "--json", "number",
-                "--jq", ".[0].number",
+                "gh",
+                "issue",
+                "list",
+                "--repo",
+                repo,
+                "--search",
+                f"{title} in:title",
+                "--state",
+                "open",
+                "--json",
+                "number",
+                "--jq",
+                ".[0].number",
             ],
             capture_output=True,
             text=True,
             check=True,
         ).stdout.strip()
         if existing:
-            print(f"Issue already open for {violation['name']} (#{existing}), skipping.")
+            print(
+                f"Issue already open for {violation['name']} (#{existing}), skipping."
+            )
             continue
 
         subprocess.run(
-            ["gh", "issue", "create", "--repo", repo, "--title", title, "--body", issue_body(violation)],
+            [
+                "gh",
+                "issue",
+                "create",
+                "--repo",
+                repo,
+                "--title",
+                title,
+                "--body",
+                issue_body(violation),
+            ],
             check=True,
         )
         print(f"Opened issue: {title}")
@@ -595,13 +635,7 @@ def main() -> None:
     # Check expiration of core dependencies.
     floors = parse_core_dependency_floors(pyproject)
     for name in CORE_PACKAGES:
-        results.append(
-            check_package(
-                name=name,
-                floor=floors[name],
-                today=today
-            )
-        )
+        results.append(check_package(name=name, floor=floors[name], today=today))
 
     summary = render_markdown(results, today)
     print(summary)
@@ -627,7 +661,9 @@ def main() -> None:
     if args.create_issues and violations:
         repo = args.repo or os.environ.get("GITHUB_REPOSITORY")
         if not repo:
-            raise SystemExit("--create-issues requires --repo or GITHUB_REPOSITORY to be set.")
+            raise SystemExit(
+                "--create-issues requires --repo or GITHUB_REPOSITORY to be set."
+            )
         create_github_issues(violations, repo, dry_run=args.dry_run)
 
 
