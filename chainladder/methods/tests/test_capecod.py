@@ -14,7 +14,7 @@ def test_struhuss():
 
 
 def test_groupby(clrd):
-    clrd = clrd[clrd['LOB']=='comauto']
+    clrd = clrd[clrd['LOB'] == 'comauto']
     # But only the top 10 get their own CapeCod aprioris. Smaller companies get grouped together
     top_10 = clrd['EarnedPremDIR'].groupby('GRNAME').sum().latest_diagonal
     top_10 = top_10.loc[..., '1997', :].to_frame(origin_as_datetime=True).nlargest(10)
@@ -25,7 +25,7 @@ def test_groupby(clrd):
 
     # All companies share the same development factors regardless of size
     X = cl.Development().fit(clrd['CumPaidLoss'].sum()).transform(clrd['CumPaidLoss'])
-    sample_weight=clrd['EarnedPremDIR'].latest_diagonal
+    sample_weight = clrd['EarnedPremDIR'].latest_diagonal
     a = cl.CapeCod(groupby='Top 10', decay=0.98, trend=0.02).fit(X, sample_weight=sample_weight).ibnr_.groupby('Top 10').sum().sort_index()
     b = cl.CapeCod(decay=0.98, trend=0.02).fit(X.groupby('Top 10').sum(), sample_weight=sample_weight.groupby('Top 10').sum()).ibnr_.sort_index()
     xp = a.get_array_module()
@@ -35,8 +35,8 @@ def test_groupby(clrd):
 
 def test_capecod_zero_tri(raa):
     premium = raa.latest_diagonal * 0 + 50000
-    raa.at['Total','values','1987',48] = 0
-    assert cl.CapeCod().fit(raa, sample_weight=premium).ultimate_.loc[:,:,'1987'].sum() > 0
+    raa.at['Total', 'values', '1987', 48] = 0
+    assert cl.CapeCod().fit(raa, sample_weight=premium).ultimate_.loc[:, :, '1987'].sum() > 0
 
 
 def test_capecod_predict1(prism):
@@ -84,3 +84,24 @@ def test_capecod_predict2(prism):
     pred2 = pipe2.predict(prism['Paid'], sample_weight=prism['reportedCount'].sum('development')).ultimate_.sum()
 
     assert np.nan_to_num(abs(pred1 - pred2).values).sum() <= 1e-6
+
+
+def test_capecod_predict_one_extra_index_level(clrd):
+    """github issue #1265
+
+    predict() aggregates the prediction data up to the grain the model was fit
+    at. test_capecod_predict2 covers that path with prism, whose triangle has
+    five index levels more than the fitted model. This covers the case of a
+    single extra level, which clrd gives.
+    """
+    tri = clrd["CumPaidLoss"]
+    sample_weight = clrd["EarnedPremDIR"].latest_diagonal
+
+    model = cl.CapeCod().fit(
+        tri.groupby("LOB").sum(), sample_weight=sample_weight.groupby("LOB").sum()
+    )
+    pred = model.predict(tri, sample_weight=sample_weight)
+
+    assert set(sample_weight.key_labels) - set(model.apriori_.key_labels) == {"GRNAME"}
+    assert np.allclose(pred.apriori_.values, model.apriori_.values)
+    assert abs(pred.ultimate_.sum().sum() - model.ultimate_.sum().sum()) < 1e-6

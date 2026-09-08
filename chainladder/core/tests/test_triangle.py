@@ -1633,6 +1633,94 @@ def test_shift_invalid_axis_raises(raa: Triangle) -> None:
         raa.shift(axis=0)
 
 
+def _ffill_source_triangle():
+    """Triangle from #1030 - a mix of leading, interior, and not-yet-valued NaNs."""
+    df = pd.DataFrame({
+        "origin": [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
+        "development": [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+        "paid": [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
+    })
+    return cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="paid",
+        cumulative=True,
+    )
+
+
+def test_ffill_development_axis() -> None:
+    """Interior NaNs fill forward from the last valid value; a leading NaN
+    (1986 at age 12) and not-yet-valued cells (1986 at 48, 1987 at 36/48)
+    stay NaN - ffill never writes into a cell that hasn't been valued yet."""
+    tri = _ffill_source_triangle()
+    frame = tri.ffill().to_frame(origin_as_datetime=False)
+    assert frame.loc["1985", 24] == 500.0
+    assert frame.loc["1985", 48] == 700.0
+    assert pd.isna(frame.loc["1986", 12])
+    assert pd.isna(frame.loc["1986", 48])
+    assert pd.isna(frame.loc["1987", 36])
+    assert pd.isna(frame.loc["1987", 48])
+
+
+def test_ffill_origin_axis() -> None:
+    """Same triangle, filled down the origin axis instead."""
+    tri = _ffill_source_triangle()
+    frame = tri.ffill(axis="origin").to_frame(origin_as_datetime=False)
+    assert frame.loc["1986", 12] == 500.0
+    assert frame.loc["1987", 24] == 1300.0
+    assert frame.loc["1988", 12] == 1200.0
+    assert pd.isna(frame.loc["1985", 24])
+    assert pd.isna(frame.loc["1988", 24])
+    assert pd.isna(frame.loc["1988", 36])
+
+
+def test_ffill_does_not_mutate_original() -> None:
+    """ffill returns a new Triangle; the source is untouched."""
+    tri = _ffill_source_triangle()
+    before = tri.to_frame(origin_as_datetime=False).copy()
+    tri.ffill()
+    pd.testing.assert_frame_equal(
+        before, tri.to_frame(origin_as_datetime=False), check_dtype=False
+    )
+
+
+def test_ffill_zero_input_is_missing_and_fills() -> None:
+    """A 0 in the input becomes NaN on construction (the package treats 0 as
+    missing everywhere), so ffill carries it forward like any other gap."""
+    df = pd.DataFrame({
+        "origin": [1985, 1985, 1985, 1986, 1986],
+        "development": [1985, 1986, 1987, 1986, 1987],
+        "paid": [500.0, 0.0, 700.0, 300.0, 400.0],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="development",
+        columns="paid",
+        cumulative=True,
+    )
+    assert pd.isna(tri.to_frame(origin_as_datetime=False).loc["1985", 24])
+    frame = tri.ffill().to_frame(origin_as_datetime=False)
+    assert frame.loc["1985", 24] == 500.0
+    assert frame.loc["1985", 36] == 700.0
+
+
+def test_ffill_invalid_axis_raises(raa: Triangle) -> None:
+    """ffill() only supports the origin and development axes."""
+    with pytest.raises(
+        AttributeError,
+        match="ffill is only supported for the origin and development axes",
+    ):
+        raa.ffill(axis="columns")
+
+    with pytest.raises(
+        AttributeError,
+        match="ffill is only supported for the origin and development axes",
+    ):
+        raa.ffill(axis=0)
+
+
 def test_array_protocol2(raa):
     import numpy as np
 
