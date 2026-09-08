@@ -164,7 +164,7 @@ class ClarkLDF(DevelopmentBase):
         self.growth: str = growth
         self.groupby = groupby
 
-    def _G(self, age, theta: float = None, omega: float = None):
+    def _G(self, age, theta: float = None, omega: float = None):  # noqa: N802
         """Growth function.
 
         Parameters
@@ -191,7 +191,7 @@ class ClarkLDF(DevelopmentBase):
         out[xp.isnan(out)] = xp.inf  # noqa
         return out
 
-    def G_(self, age):
+    def G_(self, age):  # noqa: N802
         """
         Growth function of the estimator.
 
