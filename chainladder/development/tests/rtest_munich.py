@@ -3,6 +3,7 @@
 # Currently inactive, but available should the compatibility
 # of the installs improve at a later date.
 
+import numpy as np
 import chainladder as cl
 import pytest
 
@@ -30,8 +31,9 @@ def test_mcl_paid():
 def test_mcl_incurred():
     df = r("MunichChainLadder(MCLpaid, MCLincurred)").rx("MCLIncurred")
     p = cl.MunichAdjustment(paid_to_incurred=[("paid", "incurred")]).fit(
-        cl.Development(sigma_interpolation="mack").fit_transform(cl.load_sample("mcl"))
+        cl.Development(sigma_interpolation="mack").fit_transform(
+            cl.load_sample("mcl").set_backend("numpy")
+        )
     )
-    xp = p.ldf_.get_array_module()
-    arr = xp.array(df[0])
-    assert xp.allclose(arr, p.munich_full_triangle_[1, 0, 0, :, :], atol=1e-5)
+    arr = np.array(df[0])
+    assert np.allclose(arr, p.munich_full_triangle_[1, 0, 0, :, :], atol=1e-5)
