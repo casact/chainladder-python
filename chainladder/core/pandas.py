@@ -589,6 +589,113 @@ class TrianglePandas(_TrianglePandasBase):
             cast("TriangleProtocol", cast(object, new_obj)).fillzero(inplace=True)
             return new_obj
 
+    def ffill(self, axis: int | str = 3) -> Triangle:
+        """Forward-fill missing values along an axis.
+
+        Only cells within the observed triangle (see ``nan_triangle``) are
+        filled; a cell that has not yet been valued is left as-is regardless
+        of what precedes it along the axis.
+
+        Parameters
+        ----------
+        axis : {2 or 'origin', 3 or 'development'}, default 3
+            Fill direction.
+
+        Returns
+        -------
+        Triangle
+
+        Examples
+        --------
+
+        .. testsetup::
+
+            import numpy as np
+
+        .. testcode::
+
+            import chainladder as cl
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
+                    'development': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+                    'paid': [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri)
+
+        .. testoutput::
+            :options: +NORMALIZE_WHITESPACE
+
+                     12      24      36  48
+            1985  500.0     NaN   700.0 NaN
+            1986     NaN  1000.0  1100.0 NaN
+            1987  1200.0  1300.0     NaN NaN
+            1988     NaN     NaN     NaN NaN
+
+        Fill along the development axis (the default). ``1986`` at age 12
+        stays missing because nothing precedes it, and ``1986`` at age 48 /
+        ``1987`` at ages 36-48 stay missing because they have not yet been
+        valued.
+
+        .. testcode::
+
+            print(tri.ffill())
+
+        .. testoutput::
+            :options: +NORMALIZE_WHITESPACE
+
+                     12      24      36     48
+            1985  500.0   500.0   700.0  700.0
+            1986     NaN  1000.0  1100.0    NaN
+            1987  1200.0  1300.0     NaN    NaN
+            1988     NaN     NaN     NaN    NaN
+
+        Fill along the origin axis. ``1985`` at age 24 stays missing because
+        nothing precedes it there, and ``1988`` at ages 24-48 stay missing
+        because they have not yet been valued.
+
+        .. testcode::
+
+            print(tri.ffill(axis='origin'))
+
+        .. testoutput::
+            :options: +NORMALIZE_WHITESPACE
+
+                     12      24      36  48
+            1985  500.0     NaN   700.0 NaN
+            1986  500.0  1000.0  1100.0 NaN
+            1987  1200.0  1300.0     NaN NaN
+            1988  1200.0     NaN     NaN NaN
+        """
+        axis = self._get_axis(axis)
+        if axis < 2:
+            raise AttributeError(
+                "ffill is only supported for the origin and development axes"
+            )
+        xp = self.get_array_module()
+        n = self.shape[axis]
+        columns = (
+            [self.iloc[..., i : i + 1] for i in range(n)]
+            if axis == 3
+            else [self.iloc[..., i : i + 1, :] for i in range(n)]
+        )
+        filled = [columns[0]]
+        for current in columns[1:]:
+            previous = filled[-1]
+            is_missing = xp.isnan(current.values)
+            current = current.copy()
+            current.values = xp.where(is_missing, previous.values, current.values)
+            filled.append(current)
+        out = concat(filled, axis=axis)
+        # a value can never be carried into a cell that hasn't been valued yet
+        out.values = xp.where(xp.isnan(out.nan_triangle), out.nan_triangle, out.values)
+        return cast("Triangle", cast(object, out))
+
     @staticmethod
     def _validate_contiguous_drop(
         axis_series: pd.Series,
