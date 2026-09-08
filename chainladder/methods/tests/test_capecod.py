@@ -62,7 +62,8 @@ def test_capecod_zero_tri(raa):
 
 
 def test_capecod_predict1(prism):
-    """github issue #400
+    """
+    github issue #400
     Test whether we can make predictions at a more granular level than is fitted
     """
     prism = prism[["reportedCount", "Paid"]]
