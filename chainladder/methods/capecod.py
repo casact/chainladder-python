@@ -15,12 +15,12 @@ class CapeCod(Benktander):
         The cape cod trend assumption. Any Trend transformer on X will
         override this argument.
     decay: float, optional (default=1.0)
-        The cape cod decay assumption. This parameter is required by the 
+        The cape cod decay assumption. This parameter is required by the
         Generalized Cape Cod Method, as discussed in [Using Best Practices to
-        Determine a Best Reserve Estimate](https://www.casact.org/sites/default/files/database/forum_98fforum_struhuss.pdf) 
-        by Struzzieri and Hussian. As the `decay` factor approaches 1 
-        (the default value), the result approaches the traditional Cape Cod 
-        method. As the `decay` factor approaches 0, the result approaches 
+        Determine a Best Reserve Estimate](https://www.casact.org/sites/default/files/database/forum_98fforum_struhuss.pdf)
+        by Struzzieri and Hussian. As the `decay` factor approaches 1
+        (the default value), the result approaches the traditional Cape Cod
+        method. As the `decay` factor approaches 0, the result approaches
         the `Chainladder` method.
     n_iters: int, optional (default=1)
         Number of iterations to use in the Benktander model.
@@ -79,9 +79,9 @@ class CapeCod(Benktander):
             cl.CapeCod().fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal).ibnr_
         )
         print(ibnr)
-    
+
     .. testoutput::
-    
+
                       2261
         1998           NaN
         1999     88.211299
@@ -323,10 +323,13 @@ class CapeCod(Benktander):
         # If model was fit at a higher grain, then need to aggregate predicted aprioris too
         if len(set(sample_weight.key_labels) - set(self.apriori_.key_labels)) > 0:
             apriori_, detrended_apriori_ = self._get_capecod_aprioris(
-                X_new.groupby(self.apriori_.key_labels).sum(), 
-                sample_weight.groupby(self.apriori_.key_labels).sum())
+                X_new.groupby(self.apriori_.key_labels).sum(),
+                sample_weight.groupby(self.apriori_.key_labels).sum(),
+            )
         else:
-            apriori_, detrended_apriori_ = self._get_capecod_aprioris(X_new, sample_weight)
+            apriori_, detrended_apriori_ = self._get_capecod_aprioris(
+                X_new, sample_weight
+            )
         X_new.expectation_ = sample_weight * detrended_apriori_
         X_new = super().predict(X_new, X_new.expectation_)
         X_new.apriori_ = apriori_
