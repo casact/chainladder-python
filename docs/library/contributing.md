@@ -129,4 +129,11 @@ For documentation changes, rebuild the docs locally with:
 uv run jb build docs --builder=custom --custom-builder=doctest
 ```
 
+Any `.py`/`.ipynb` files touched by a PR must pass lint and formatting checks:
+```bash
+uv run ruff check <changed files>
+uv run ruff format --check <changed files>
+```
+Run `uv run ruff format <changed files>` to fix formatting automatically.
+
 Large or unfocused PRs may delay merging. Each PR should address a single issue or feature to maintain clarity and quality.

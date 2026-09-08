@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import least_squares
 from chainladder.tails import TailBase
-from chainladder.development import DevelopmentBase, Development
+from chainladder.development import Development
 
 
 class TailBondy(TailBase):
@@ -150,7 +150,8 @@ class TailBondy(TailBase):
         else:
             earliest_age = X.ddims[
                 int(
-                    self.earliest_age / ({"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain])
+                    self.earliest_age
+                    / ({"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain])
                 )
                 - 1
             ]

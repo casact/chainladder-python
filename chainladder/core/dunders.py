@@ -101,7 +101,7 @@ class TriangleDunders:
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
-                except:
+                except Exception:
                     x = x.groupby(list(common))
                     y = y.groupby(list(common))
             return x, y
@@ -206,7 +206,7 @@ class TriangleDunders:
                 other_arr.shape = (other.shape[0], other.shape[1], len(odims), len(ddims))
                 obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
-            if type(obj.ddims) == pd.DatetimeIndex:
+            if isinstance(obj.ddims, pd.DatetimeIndex):
                 obj.ddims = pd.DatetimeIndex(ddims.index)
             else:
                 obj.ddims = np.array(ddims.index)
@@ -247,6 +247,38 @@ class TriangleDunders:
         return concat(c, 0).sort_index()
 
     def __add__(self, other):
+        """Element-wise addition.
+
+        Examples
+        --------
+        Adding a scalar shifts every observed cell.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri + 10)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                 12     24
+            1985  110.0  160.0
+            1986   90.0    NaN
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -262,6 +294,36 @@ class TriangleDunders:
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
+        """Element-wise subtraction.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri - 10)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                12     24
+            1985  90.0  140.0
+            1986  70.0    NaN
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -306,6 +368,36 @@ class TriangleDunders:
         return obj
 
     def __mul__(self, other):
+        """Element-wise multiplication.
+
+        Examples
+        --------
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid'],
+                cumulative=True,
+            )
+            print(tri * 2)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                 12     24
+            1985  200.0  300.0
+            1986  160.0    NaN
+        """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
             def f(k, self, obj, other):
@@ -313,7 +405,6 @@ class TriangleDunders:
                         self._slice_or_nan(other, obj, k))
             obj = self._arithmetic_mapper(obj, other, f)
         else:
-            xp = obj.get_array_module()
             obj.values = obj.values * other
         return obj
 
@@ -347,6 +438,49 @@ class TriangleDunders:
 
         other: Any
         The thing that divides the triangle.
+
+        Examples
+        --------
+        Dividing by a scalar scales the triangle. Dividing two columns is the
+        usual way to form a ratio triangle, such as paid-to-incurred.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tri = cl.Triangle(
+                data={
+                    'origin': [1985, 1985, 1986],
+                    'development': [1985, 1986, 1986],
+                    'paid': [100, 150, 80],
+                    'incurred': [120, 160, 100],
+                },
+                origin='origin',
+                development='development',
+                columns=['paid', 'incurred'],
+                cumulative=True,
+            )
+            print(tri['paid'] / 2)
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                12    24
+            1985  50.0  75.0
+            1986  40.0   NaN
+
+        .. testcode::
+
+            print(tri['paid'] / tri['incurred'])
+
+        .. testoutput::
+           :options: +NORMALIZE_WHITESPACE
+
+                    12      24
+            1985  0.833333  0.9375
+            1986  0.800000     NaN
         """
         obj, other = self._validate_arithmetic(other)
         if isinstance(obj, TriangleGroupBy):
