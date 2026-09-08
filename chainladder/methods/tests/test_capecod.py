@@ -62,7 +62,8 @@ def test_capecod_zero_tri(raa):
 
 
 def test_capecod_predict1(prism):
-    """github issue #400
+    """
+    github issue #400
     Test whether we can make predictions at a more granular level than is fitted
     """
     prism = prism[["reportedCount", "Paid"]]
@@ -85,7 +86,8 @@ def test_capecod_predict1(prism):
 
 
 def test_capecod_predict2(prism):
-    """github issue #400
+    """
+    github issue #400
     Test whether predictions between groupby with estimator and
     groupby outside estimator match
     """
@@ -109,3 +111,25 @@ def test_capecod_predict2(prism):
     ).ultimate_.sum()
 
     assert np.nan_to_num(abs(pred1 - pred2).values).sum() <= 1e-6
+
+
+def test_capecod_predict_one_extra_index_level(clrd):
+    """
+    github issue #1265
+
+    predict() aggregates the prediction data up to the grain the model was fit
+    at. test_capecod_predict2 covers that path with prism, whose triangle has
+    five index levels more than the fitted model. This covers the case of a
+    single extra level, which clrd gives.
+    """
+    tri = clrd["CumPaidLoss"]
+    sample_weight = clrd["EarnedPremDIR"].latest_diagonal
+
+    model = cl.CapeCod().fit(
+        tri.groupby("LOB").sum(), sample_weight=sample_weight.groupby("LOB").sum()
+    )
+    pred = model.predict(tri, sample_weight=sample_weight)
+
+    assert set(sample_weight.key_labels) - set(model.apriori_.key_labels) == {"GRNAME"}
+    assert np.allclose(pred.apriori_.values, model.apriori_.values)
+    assert abs(pred.ultimate_.sum().sum() - model.ultimate_.sum().sum()) < 1e-6
