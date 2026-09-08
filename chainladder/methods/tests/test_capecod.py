@@ -86,7 +86,8 @@ def test_capecod_predict1(prism):
 
 
 def test_capecod_predict2(prism):
-    """github issue #400
+    """
+    github issue #400
     Test whether predictions between groupby with estimator and
     groupby outside estimator match
     """
@@ -113,7 +114,8 @@ def test_capecod_predict2(prism):
 
 
 def test_capecod_predict_one_extra_index_level(clrd):
-    """github issue #1265
+    """
+    github issue #1265
 
     predict() aggregates the prediction data up to the grain the model was fit
     at. test_capecod_predict2 covers that path with prism, whose triangle has
