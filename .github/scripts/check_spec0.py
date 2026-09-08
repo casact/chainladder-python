@@ -228,6 +228,22 @@ def fetch_python_eol_dates() -> dict[tuple[int, int], date]:
         without a known EOL date yet (endoflife.date reports these as `false`)
         are omitted.
 
+    Examples
+    --------
+
+    .. testsetup::
+
+        from check_spec0 import fetch_python_eol_dates
+
+    .. testcode::
+
+        eol_dates = fetch_python_eol_dates()
+        print(eol_dates[(3, 9)])
+
+    .. testoutput::
+
+        2025-10-05
+
     """
     with urllib.request.urlopen(PYTHON_EOL_API_URL, timeout=30) as response:
         data = json.load(response)
