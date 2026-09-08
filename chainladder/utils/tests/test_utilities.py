@@ -1243,7 +1243,7 @@ def test_describe_option_invalid_regex() -> None:
     Passing a malformed regular expression to describe_option should raise ValueError.
     """
     with pytest.raises(ValueError, match="not a valid regular expression"):
-        cl.options.describe_option('[')
+        cl.options.describe_option("[")
 
 
 def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
