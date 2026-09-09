@@ -1275,3 +1275,15 @@ def test_describe_option_invalid_regex() -> None:
     """
     with pytest.raises(ValueError, match="not a valid regular expression"):
         cl.options.describe_option("[")
+
+
+def test_ptf_formula_deprecated_alias() -> None:
+    """
+    PTF_formula should warn and return the same string as ptf_formula.
+    """
+    from chainladder.utils.utility_functions import PTF_formula, ptf_formula
+
+    args = dict(alpha=[0, 2], gamma=[0, 1, 2], iota=[0, 1], dgrain=12)
+    with pytest.warns(DeprecationWarning, match="ptf_formula"):
+        old = PTF_formula(**args)
+    assert old == ptf_formula(**args)
