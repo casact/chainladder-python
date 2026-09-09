@@ -247,7 +247,7 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             else:
                 z = -n_periods * val_offset[X.development_grain][X.origin_grain]
                 # adding new path to handle full triangle (e.g. full_triangle_, ultimate_, et.c)
-                if X.is_full: 
+                if X.is_full:
                     w = X.copy()
                     w.values[:, :, :-n_periods, :] = np.nan
                 else:
