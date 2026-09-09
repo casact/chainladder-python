@@ -63,8 +63,8 @@ class _LocBase:
         else:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
         # Set the new dimension values.
-        obj._kdims = obj._kdims[i_idx]
-        obj._vdims = obj._vdims[c_idx]
+        obj._index = obj._index.iloc[i_idx].reset_index(drop=True)
+        obj._columns = obj._columns[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         # Set indexers.
         obj.iloc, obj.loc = Ilocation(obj), Location(obj)
@@ -385,7 +385,7 @@ class Location(_LocBase):
             ).values.flatten()
         # Case scalar, locate position in first level of index.
         else:
-            idx = np.where(self.obj._kdims[:, 0] == key)[0]
+            idx = np.where(self.obj.index.iloc[:, 0].values == key)[0]
         return idx
 
     def other_key(
@@ -539,7 +539,7 @@ class TriangleSlicer:
                 [key] if isinstance(key, (str, int, float, np.generic)) else key
             )
             # Identify the position of each requested element within the valuation dimension.
-            idx = [list(self._vdims).index(item) for item in keys]
+            idx = [list(self.columns).index(item) for item in keys]
             return self.iloc[:, idx]
 
     def __setitem__(
@@ -567,10 +567,10 @@ class TriangleSlicer:
         if callable(value):
             self.virtual_columns[key] = value
             if self.array_backend == "sparse":
-                if key not in self._vdims:
+                if key not in self.columns:
                     k, v, o, d = self.values.shape
                     self.values.shape = k, v + 1, o, d
-                    self._vdims = np.append(self._vdims, key)
+                    self._columns = self.columns.append(pd.Index([key]))
                 return
             # Create a placeholder column.
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
@@ -582,8 +582,8 @@ class TriangleSlicer:
             if value.array_backend != self.array_backend:
                 value = value.set_backend(self.array_backend)
         # Key exists in columns, replace data.
-        if key in self._vdims:
-            i = np.where(self._vdims == key)[0][0]
+        if key in self.columns:
+            i = self.columns.get_loc(key)
             # Case sparse backend.
             if self.array_backend == "sparse":
                 # Unwrap a Triangle-valued assignment to its raw array. A raw
@@ -621,7 +621,7 @@ class TriangleSlicer:
                 cast(np.ndarray, self.values)[:, i : i + 1] = value
         # Key is new, create a column and update data.
         else:
-            self._vdims = np.append(self._vdims, key)
+            self._columns = self.columns.append(pd.Index([key]))
             if isinstance(value, (int, float, np.number)):
                 # Broadcast scalar across the Triangle's shape.
                 value = self.iloc[:, 0] * 0 + value

@@ -351,9 +351,9 @@ def test_index_setter_with_dataframe(clrd: Triangle) -> None:
     tri.index = new_index
 
     assert tri.key_labels == ["Company"]
-    np.testing.assert_array_equal(tri.kdims, new_index.values)
+    assert tri.index.equals(new_index)
     # _set_slicers() must have rebuilt .loc against the new key label.
-    assert tri.loc["A"].kdims.tolist() == [["A"]]
+    assert tri.loc["A"].index.values.tolist() == [["A"]]
     assert tri.loc["A"] == clrd.iloc[:1]
 
 
@@ -399,8 +399,8 @@ def test_index_setter_non_dataframe_raises(clrd: Triangle) -> None:
 
 def test_set_index_inplace(clrd: Triangle) -> None:
     """
-    Triangle.set_index(value, inplace=True) should mutate the calling
-    Triangle's index via the index setter and return that same object.
+    Triangle.set_index(value, inplace=True) should mutate the Triangle and
+    return self.
 
     Parameters
     ----------
@@ -418,14 +418,14 @@ def test_set_index_inplace(clrd: Triangle) -> None:
 
     assert result is tri
     assert tri.key_labels == ["Company"]
-    np.testing.assert_array_equal(tri.kdims, new_index.values)
+    assert tri.index.equals(new_index)
 
 
 def test_set_index_not_inplace(clrd: Triangle) -> None:
     """
     Triangle.set_index(value) with the default inplace=False should operate
     on a copy: it returns a distinct Triangle with the new index applied,
-    leaving the original Triangle's kdims/key_labels untouched.
+    leaving the original Triangle's index/key_labels untouched.
 
     Parameters
     ----------
@@ -437,7 +437,7 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
     None
     """
     tri = clrd.iloc[:3]
-    original_kdims = tri.kdims.copy()
+    original_index = tri.index.copy()
     original_key_labels = list(tri.key_labels)
     new_index = pd.DataFrame({"Company": ["A", "B", "C"]})
 
@@ -445,9 +445,9 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
 
     assert result is not tri
     assert result.key_labels == ["Company"]
-    np.testing.assert_array_equal(result.kdims, new_index.values)
+    assert result.index.equals(new_index)
     assert tri.key_labels == original_key_labels
-    np.testing.assert_array_equal(tri.kdims, original_kdims)
+    assert tri.index.equals(original_index)
 
 
 def test_vdims_deprecation_warning(raa):
@@ -475,23 +475,43 @@ def test_kdims_deprecation_warning(raa):
 
 
 def test_legacy_pickle_compatibility(raa):
-    """Pickles saved prior to kdims/vdims rename should unpickle cleanly."""
+    """Pickles saved prior to kdims/vdims migration should unpickle cleanly."""
     import pickle
 
+    # 1. Simulate oldest serialized Triangle containing kdims and vdims
     state = raa.__dict__.copy()
-    # Simulate a legacy serialized Triangle containing kdims and vdims
-    state["kdims"] = state.pop("_kdims")
-    state["vdims"] = state.pop("_vdims")
+    state.pop("_index", None)
+    state.pop("_columns", None)
+    state["kdims"] = raa.index.values
+    state["vdims"] = raa.columns.values
 
     restored = cl.Triangle.__new__(cl.Triangle)
     restored.__setstate__(state)
 
+    assert isinstance(restored.columns, pd.Index)
+    assert isinstance(restored.index, pd.DataFrame)
     assert restored.index.equals(raa.index)
     assert list(restored.columns) == list(raa.columns)
     assert restored.loc["Total"].shape == raa.loc["Total"].shape
     assert restored == raa
 
-    # Verify re-pickling the migrated instance works
+    # 2. Simulate intermediate serialized Triangle containing _kdims and _vdims
+    state_mid = raa.__dict__.copy()
+    state_mid.pop("_index", None)
+    state_mid.pop("_columns", None)
+    state_mid["_kdims"] = raa.index.values
+    state_mid["_vdims"] = raa.columns.values
+
+    restored_mid = cl.Triangle.__new__(cl.Triangle)
+    restored_mid.__setstate__(state_mid)
+
+    assert isinstance(restored_mid.columns, pd.Index)
+    assert isinstance(restored_mid.index, pd.DataFrame)
+    assert restored_mid.index.equals(raa.index)
+    assert list(restored_mid.columns) == list(raa.columns)
+    assert restored_mid == raa
+
+    # 3. Verify re-pickling the migrated instance works
     roundtripped = pickle.loads(pickle.dumps(restored))
     assert roundtripped == raa
 

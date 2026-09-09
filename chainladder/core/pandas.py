@@ -168,8 +168,8 @@ class TrianglePandas(_TrianglePandasBase):
             elif len(axes) in [1, 2]:
                 tri: ndarray = np.squeeze(self.set_backend("numpy").values)
                 axes_lookup: dict = {
-                    0: self._kdims,
-                    1: self._vdims,
+                    0: self.index.values,
+                    1: self.columns.values,
                     2: self.origin,
                     3: self.development,
                 }
@@ -1257,10 +1257,10 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
 
         # Aggregation function will collapse a dimension, so
         # adjust the dimensions of the original object to match that of the aggregation.
-        if axis == 0 and obj.values.shape[axis] == 1 and len(obj._kdims) > 1:
-            obj._kdims = np.array([["(All)"] * len(obj.key_labels)])
-        if axis == 1 and obj.values.shape[axis] == 1 and len(obj._vdims) > 1:
-            obj._vdims = np.array([0])
+        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.index) > 1:
+            obj._index = pd.DataFrame([["(All)"] * len(obj.key_labels)], columns=obj.key_labels)
+        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
+            obj._columns = pd.Index([0], name="columns")
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
         # If axis is development, set the ddims to be the valuation date.
@@ -1323,10 +1323,9 @@ def add_groupby_agg_func(cls, k: str, v: str):
                 obj.index = index
             else:
                 index = pd.DataFrame(group_index)
-                obj.key_labels = index.columns.tolist()
-                obj._kdims = index.values
+                obj.index = index
         if self.axis == 1:
-            obj._vdims = pd.DataFrame(group_index).values[:, 0]
+            obj.columns = group_index
         if self.axis == 2:
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]

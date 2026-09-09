@@ -681,31 +681,58 @@ def concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
-    mapper = {0: "_kdims", 1: "_vdims", 2: "odims", 3: "ddims"}
-    for k in mapper.keys():
-        if k != axis and k != 1:  # All non-concat axes must be identical
-            a = np.array([getattr(obj, mapper[k]) for obj in objs])
-            assert np.all(a == a[0])
-        else:  # All elements of concat axis must be unique
-            if ignore_index:
-                new_axis = np.arange(
-                    np.sum([len(getattr(obj, mapper[axis])) for obj in objs])
-                )
-                new_axis = new_axis[:, None] if axis == 0 else new_axis
-            else:
-                new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
-            if axis == 0:
-                assert len(pd.DataFrame(new_axis).drop_duplicates()) == len(new_axis)
-            else:
-                assert len(new_axis) == len(set(new_axis))
+    if axis != 0:
+        for obj in objs[1:]:
+            assert obj.index.equals(objs[0].index)
+    if axis != 2:
+        a = np.array([obj.odims for obj in objs])
+        assert np.all(a == a[0])
+    if axis != 3:
+        a = np.array([obj.ddims for obj in objs])
+        assert np.all(a == a[0])
+
     out = copy.deepcopy(objs[0])
     out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
-    setattr(out, mapper[axis], new_axis)
-    if ignore_index and axis == 0:
-        out.key_labels = ["Index"]
+
+    if axis == 0:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.index) for obj in objs]))[:, None]
+            out._index = pd.DataFrame(new_axis, columns=["Index"])
+            out.key_labels = ["Index"]
+        else:
+            new_axis = pd.concat([obj.index for obj in objs], ignore_index=True)
+            assert len(new_axis.drop_duplicates()) == len(new_axis)
+            out._index = new_axis
+            out.key_labels = list(new_axis.columns)
+    elif axis == 1:
+        if ignore_index:
+            new_axis = pd.Index(
+                np.arange(sum([len(obj.columns) for obj in objs])), name="columns"
+            )
+        else:
+            new_axis = pd.Index(
+                np.concatenate([obj.columns for obj in objs]), name="columns"
+            )
+            assert len(new_axis) == len(set(new_axis))
+        out._columns = new_axis
+    elif axis == 2:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.odims) for obj in objs]))
+        else:
+            new_axis = np.concatenate([obj.odims for obj in objs])
+            assert len(new_axis) == len(set(new_axis))
+        out.odims = new_axis
+    elif axis == 3:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.ddims) for obj in objs]))
+        else:
+            new_axis = np.concatenate([obj.ddims for obj in objs])
+            assert len(new_axis) == len(set(new_axis))
+        out.ddims = new_axis
+        if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
+            out.ddims = pd.DatetimeIndex(out.ddims)
+
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
-        out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
         return out.sort_axis(axis)

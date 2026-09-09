@@ -70,21 +70,24 @@ class TriangleDunders:
         return x, y
 
     def _prep_index(self, x, y):
-        if x._kdims.shape[0] == 1 and y._kdims.shape[0] > 1:
-            x._kdims = y._kdims
-            x.key_labels = y.key_labels
+        if len(x.index) == 1 and len(y.index) > 1:
+            x._index = y.index.copy()
+            x.key_labels = list(y.key_labels)
+            x._set_slicers()
             return x, y
-        if x._kdims.shape[0] > 1 and y._kdims.shape[0] == 1:
-            y._kdims = x._kdims
-            y.key_labels = x.key_labels
+        if len(x.index) > 1 and len(y.index) == 1:
+            y._index = x.index.copy()
+            y.key_labels = list(x.key_labels)
+            y._set_slicers()
             return x, y
-        if x._kdims.shape[0] == y._kdims.shape[0] == 1 and x.key_labels != y.key_labels:
-            kdims = x._kdims if len(x.key_labels) > len(y.key_labels) else y._kdims
-            key_labels = (
-                x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
-            )
-            x._kdims = y._kdims = kdims
-            x.key_labels = y.key_labels = key_labels
+        if len(x.index) == len(y.index) == 1 and x.key_labels != y.key_labels:
+            index = x.index.copy() if len(x.key_labels) > len(y.key_labels) else y.index.copy()
+            x._index = index.copy()
+            x.key_labels = list(index.columns)
+            x._set_slicers()
+            y._index = index.copy()
+            y.key_labels = list(index.columns)
+            y._set_slicers()
             return x, y
 
         # Use sets for faster operations
@@ -93,12 +96,11 @@ class TriangleDunders:
         common = x_labels.intersection(y_labels)
 
         if common == x_labels or common == y_labels:
-            if x_labels != y_labels or x._kdims.shape[0] != y._kdims.shape[0]:
+            if x_labels != y_labels or len(x.index) != len(y.index):
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
             elif (
-                x._kdims.shape[0] > 1
-                and not np.array_equal(x._kdims, y._kdims)
+                len(x.index) > 1
                 and not x.index.equals(y.index)
             ):
                 x = x.sort_index()
@@ -119,12 +121,15 @@ class TriangleDunders:
 
     def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x._vdims = y._vdims
+            x._columns = y.columns
+            x._set_slicers()
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y._vdims = x._vdims
-        elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
-            y._vdims = x._vdims
-        elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
+            y._columns = x.columns
+            y._set_slicers()
+        elif len(y.columns) == len(x.columns) == 1 and not x.columns.equals(y.columns):
+            y._columns = x.columns
+            y._set_slicers()
+        elif x.shape[1] == y.shape[1] and x.columns.equals(y.columns):
             return x, y
         else:
             # Find columns to add to each triangle

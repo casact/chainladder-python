@@ -558,23 +558,24 @@ class Triangle(TriangleBase):
             self.index_label: list = index
             data_agg[index[0]] = "Total"
 
-        self._kdims: np.ndarray
+        self._index: DataFrame
         key_idx: np.ndarray
-        self._vdims: np.ndarray
+        self._columns: pd.Index
         self.odims: np.ndarray
         orig_idx: np.ndarray
         self.ddims: ArrayLike
         dev_idx: np.ndarray
 
-        self._kdims, key_idx = self._set_kdims(data_agg, index)
-        self._vdims = np.array(columns)
+        self.key_labels: list = index
+        kdims_arr, key_idx = self._set_kdims(data_agg, index)
+        self._index = pd.DataFrame(list(kdims_arr), columns=self.key_labels)
+        self._columns = pd.Index(columns, name="columns")
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
 
         # Set remaining triangle properties.
         val_date: Timestamp = data_agg["__development__"].max()
         val_date = val_date.compute() if hasattr(val_date, "compute") else val_date
-        self.key_labels: list = index
         self.valuation_date: Timestamp = val_date
 
         if cumulative is None:
@@ -651,8 +652,8 @@ class Triangle(TriangleBase):
                     has_duplicates=False,
                     sorted=True,
                     shape=(
-                        len(self._kdims),
-                        len(self._vdims),
+                        len(self._index),
+                        len(self._columns),
                         len(self.odims),
                         len(self.ddims),
                     ),
@@ -724,13 +725,13 @@ class Triangle(TriangleBase):
         """
         Returns a DataFrame of the unique values of the index.
         """
-        return pd.DataFrame(list(self._kdims), columns=self.key_labels)
+        return self._index
 
     @index.setter
     def index(self, value) -> None:
         self._len_check(self.index, value)
-        if type(value) is pd.DataFrame:
-            self._kdims = value.values
+        if isinstance(value, pd.DataFrame):
+            self._index = value
             self.key_labels = list(value.columns)
             self._set_slicers()
         else:
@@ -744,7 +745,7 @@ class Triangle(TriangleBase):
             FutureWarning,
             stacklevel=2,
         )
-        return self._kdims
+        return self.index.values
 
     @kdims.setter
     def kdims(self, value):
@@ -754,23 +755,25 @@ class Triangle(TriangleBase):
             FutureWarning,
             stacklevel=2,
         )
-        if type(value) is str:
+        if isinstance(value, str):
             value = np.array([[value]])
-        elif type(value) is list:
+        elif isinstance(value, list):
             value = np.array(value)
-        self._kdims = value
+        elif not isinstance(value, np.ndarray):
+            value = np.array(value)
+        self._index = pd.DataFrame(value, columns=self.key_labels)
+        self._set_slicers()
 
     @property
-    def columns(self):
-        return pd.Index(self._vdims, name="columns")
+    def columns(self) -> pd.Index:
+        return self._columns
 
     @columns.setter
     def columns(self, value):
         self._len_check(self.columns, value)
-        vdims = [value] if type(value) is str else value
-        if type(vdims) is list:
-            vdims = np.array(vdims)
-        self._vdims = vdims
+        if isinstance(value, str):
+            value = [value]
+        self._columns = pd.Index(value, name="columns")
         self._set_slicers()
 
     @property
@@ -781,7 +784,7 @@ class Triangle(TriangleBase):
             FutureWarning,
             stacklevel=2,
         )
-        return self._vdims
+        return self.columns.values
 
     @vdims.setter
     def vdims(self, value):
@@ -791,11 +794,9 @@ class Triangle(TriangleBase):
             FutureWarning,
             stacklevel=2,
         )
-        if type(value) is str:
-            value = np.array([value])
-        elif type(value) is list:
-            value = np.array(value)
-        self._vdims = value
+        if isinstance(value, str):
+            value = [value]
+        self.columns = value
 
     @property
     def columns_label(self) -> list:
@@ -2079,11 +2080,20 @@ class Triangle(TriangleBase):
         return X
 
     def __setstate__(self, state: dict) -> None:
-        """Migrate legacy pickled instances with 'kdims'/'vdims' to '_kdims'/'_vdims'."""
-        if "kdims" in state and "_kdims" not in state:
-            state["_kdims"] = state.pop("kdims")
-        if "vdims" in state and "_vdims" not in state:
-            state["_vdims"] = state.pop("vdims")
+        """Migrate legacy pickled instances with 'kdims'/'_kdims' to '_index' and 'vdims'/'_vdims' to '_columns'."""
+        key_labels = state.get("key_labels", ["Total"])
+        if "_index" not in state:
+            raw_kdims = state.pop("_kdims", None)
+            if raw_kdims is None:
+                raw_kdims = state.pop("kdims", None)
+            if raw_kdims is not None:
+                state["_index"] = pd.DataFrame(list(raw_kdims), columns=key_labels)
+        if "_columns" not in state:
+            raw_vdims = state.pop("_vdims", None)
+            if raw_vdims is None:
+                raw_vdims = state.pop("vdims", None)
+            if raw_vdims is not None:
+                state["_columns"] = pd.Index(raw_vdims, name="columns")
         self.__dict__.update(state)
 
     def development_correlation(self, p_critical=0.5):
@@ -2358,10 +2368,10 @@ class Triangle(TriangleBase):
             return self.sort_index()
         obj = self.copy()
         if axis == 1:
-            sort = pd.Series(self._vdims).sort_values().index
-            if np.any(sort != pd.Series(self._vdims).index):
+            sort = pd.Series(self.columns).sort_values().index
+            if np.any(sort != pd.Series(self.columns).index):
                 obj.values = obj.values[:, list(sort), ...]
-                obj._vdims = obj._vdims[list(sort)]
+                obj.columns = self.columns[list(sort)]
         if axis == 2:
             sort = pd.Series(self.odims).sort_values().index
             if np.any(sort != pd.Series(self.odims).index):
