@@ -9,7 +9,7 @@ from chainladder.development.learning import DevelopmentML
 from chainladder.development.glm import TweedieGLM
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
-from chainladder.utils.utility_functions import PatsyFormula, PTF_formula
+from chainladder.utils.utility_functions import PatsyFormula, ptf_formula
 
 
 class BarnettZehnwirth(TweedieGLM):
@@ -144,7 +144,7 @@ class BarnettZehnwirth(TweedieGLM):
         tri = X.cum_to_incr().log()
         response = X.columns[0] if not self.response else self.response
         if not self.formula:
-            self.formula = PTF_formula(
+            self.formula = ptf_formula(
                 self.alpha, self.gamma, self.iota, dgrain=min(tri.development)
             )
         self.model_ = DevelopmentML(
