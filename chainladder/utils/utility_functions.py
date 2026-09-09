@@ -7,11 +7,12 @@ import copy
 import dill
 import json
 import os
-import numpy as np
 import warnings
+import numpy as np
 import pandas as pd
 
 from chainladder import __dt64_unit__, __dt64_dtype__
+from chainladder._config.deprecation import _deprecated_rename
 from chainladder.utils.sparse import sp
 from chainladder.utils.data._manifest import SAMPLES
 from io import StringIO
@@ -1084,7 +1085,7 @@ def model_diagnostics(
     return concat(triangles, 0)
 
 
-def PTF_formula(  # noqa: N802
+def ptf_formula(
     alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
 ):
     """
@@ -1122,6 +1123,16 @@ def PTF_formula(  # noqa: N802
     if formula_parts:
         return "+".join(formula_parts)
     return ""
+
+
+@_deprecated_rename("ptf_formula", version="0.11.0")
+def PTF_formula(  # noqa: N802
+    alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
+):
+    """
+    Deprecated alias for :func:`ptf_formula`.
+    """
+    return ptf_formula(alpha=alpha, gamma=gamma, iota=iota, dgrain=dgrain)
 
 
 def date_delta_adjustment(date: str) -> str:
