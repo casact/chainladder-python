@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from pandas._libs.tslibs.timestamps import Timestamp
     from types import ModuleType
 
+
 class TriangleBase(
     TriangleIO,
     TriangleDisplay,
@@ -136,9 +137,8 @@ class TriangleBase(
         index: str | list | None,
         columns: str | list,
         origin: str | list,
-        development: str | list
+        development: str | list,
     ) -> tuple[None | list, None | list, None | list, None | list]:
-
         """Validate/sanitize inputs"""
 
         def str_to_list(arg: str | list) -> None | list:
@@ -165,7 +165,7 @@ class TriangleBase(
         development: list,
         development_format: None | str,
         origin_date: Series,
-        origin_grain: str
+        origin_grain: str,
     ) -> Series:
         """Initialize development and its grain"""
         if development:
@@ -217,7 +217,7 @@ class TriangleBase(
         origin_date: Series,
         development_date: Series,
         index: list | None,
-        columns: list
+        columns: list,
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:  # noqa: E721
@@ -351,7 +351,7 @@ class TriangleBase(
         key_idx: np.ndarray,
         columns: list,
         orig_idx: np.ndarray,
-        dev_idx: np.ndarray
+        dev_idx: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
 
         val_idx: np.ndarray = (
@@ -468,7 +468,7 @@ class TriangleBase(
         fields: list,
         period_end: bool = False,
         date_format: Optional[str] = None,
-        allow_age: bool = False
+        allow_age: bool = False,
     ) -> Series | None:
         """
         For tabular form, this will take a set of data
@@ -522,7 +522,7 @@ class TriangleBase(
                     "Unable to infer datetime for field(s): "
                     + str(fields)
                     + ". Please check the underlying data or any supplied format arguments."
-                    )
+                )
             if not matched_a_format and pd.api.types.is_numeric_dtype(datetime_arg):
                 # unformatted numeric input falls through to pandas treating it
                 # as nanoseconds since epoch, not an actual date
@@ -608,7 +608,9 @@ class TriangleBase(
         arr = arr.reshape(-1, len(arrays))
         return arr
 
-    def get_array_module(self: TriangleBase | None, arr: ArrayLike = None) -> ModuleType:
+    def get_array_module(
+        self: TriangleBase | None, arr: ArrayLike = None
+    ) -> ModuleType:
         """
         Returns the module pertaining to the backend underlying the supplied array.
         If no array is supplied, this method will return the array_backend of the TriangleBase.
@@ -658,7 +660,7 @@ class TriangleBase(
         except KeyError as e:
             raise Exception(
                 "Array backend is invalid or not properly set. Supported backends are: "
-                + ', '.join([*modules])
+                + ", ".join([*modules])
             ) from e
 
     def _auto_sparse(self) -> Triangle:
@@ -791,7 +793,7 @@ class TriangleBase(
 
         .. code-block:: pycon
 
-            >>> tri = cl.load_sample('raa').set_backend("dask")
+            >>> tri = cl.load_sample("raa").set_backend("dask")
             >>> tri = tri.compute()
             >>> tri.array_backend
             'numpy'
