@@ -270,15 +270,10 @@ class BootstrapODPSample(DevelopmentBase):
             obj._index = pd.DataFrame({"Simulation_#": np.arange(self.n_sims)})
             obj.key_labels = ["Simulation_#"]
         else:
-            kdims = np.concat(
-                [
-                    np.tile(X.index.to_numpy(dtype=str), (self.n_sims, 1)),
-                    np.arange(self.n_sims).reshape(-1, 1),
-                ],
-                axis=1,
-            )
-            obj._index = pd.DataFrame(kdims, columns=X.key_labels + ["Simulation_#"])
-            obj.key_labels = X.key_labels + ["Simulation_#"]
+            obj_idx = pd.concat([X.index] * self.n_sims, ignore_index=True)
+            obj_idx["Simulation_#"] = np.arange(self.n_sims)
+            obj._index = obj_idx
+            obj.key_labels = list(obj_idx.columns)
         obj.values = resampled_triangles
         obj._set_slicers()
         return obj, scale_phi
