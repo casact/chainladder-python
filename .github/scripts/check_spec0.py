@@ -471,12 +471,7 @@ def issue_title(violation: dict) -> str:
         The issue title.
 
     """
-    verb = (
-        "is past its"
-        if violation["status"] == "past_due"
-        else "is within 3 months of its"
-    )
-    return f"SPEC 0: {violation['name']} {verb} support drop date ({violation['drop_date']})"
+    return f"SPEC 0: {violation['name']} support drop date ({violation['drop_date']})"
 
 
 def issue_body(violation: dict) -> str:
@@ -513,7 +508,7 @@ def create_github_issues(
     violations: list[dict], repo: str, dry_run: bool = False
 ) -> None:
     """
-    Opens a GitHub issue for each violation that doesn't already have an open
+    Opens a GitHub issue for each violation that doesn't already have a
     tracking issue, via the `gh` CLI.
 
     Parameters
@@ -546,11 +541,11 @@ def create_github_issues(
                 "--search",
                 f"{title} in:title",
                 "--state",
-                "open",
+                "all",
                 "--json",
                 "number",
                 "--jq",
-                ".[0].number",
+                ".[0].number // empty",
             ],
             capture_output=True,
             text=True,
@@ -558,7 +553,8 @@ def create_github_issues(
         ).stdout.strip()
         if existing:
             print(
-                f"Issue already open for {violation['name']} (#{existing}), skipping."
+                f"Tracking issue already exists for {violation['name']} "
+                f"(#{existing}), skipping."
             )
             continue
 
