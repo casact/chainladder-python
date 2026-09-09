@@ -276,7 +276,7 @@ SAMPLES: dict = {
             "Case Outstanding",
             "Reported Severities",
             "Earned Premium",
-            "Incremental Paid Severity"
+            "Incremental Paid Severity",
         ],
         "cumulative": True,
     },
