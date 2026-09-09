@@ -267,16 +267,17 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_triangles = resampled_triangles[None, ...].swapaxes(0, 1)
         obj = X.copy()
         if X.key_labels == ["Total"]:
-            obj._kdims = np.arange(self.n_sims)
+            obj._index = pd.DataFrame({"Simulation_#": np.arange(self.n_sims)})
             obj.key_labels = ["Simulation_#"]
         else:
-            obj._kdims = np.concat(
+            kdims = np.concat(
                 [
-                    np.tile(X._kdims, (self.n_sims, 1)),
+                    np.tile(X.index.to_numpy(dtype=str), (self.n_sims, 1)),
                     np.arange(self.n_sims).reshape(-1, 1),
                 ],
                 axis=1,
             )
+            obj._index = pd.DataFrame(kdims, columns=X.key_labels + ["Simulation_#"])
             obj.key_labels = X.key_labels + ["Simulation_#"]
         obj.values = resampled_triangles
         obj._set_slicers()
