@@ -1,7 +1,7 @@
-### Building out a dev environment with a working copy
-### of R ChainLadder is difficult.  These tests are 
-### Currently inactive, but available should the compatibility
-### of the installs improve at a later date.
+# Building out a dev environment with a working copy
+# of R ChainLadder is difficult.  These tests are
+# Currently inactive, but available should the compatibility
+# of the installs improve at a later date.
 
 import numpy as np
 import pytest
@@ -10,12 +10,18 @@ import chainladder as cl
 try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
+
     CL = importr("ChainLadder")
-except:
+except ImportError:
     pass
+
 
 def dev_corr_r(data, ci):
     return r("out<-dfCorTest({},ci={})".format(data, ci))
+
+
+def dev_corr_p(data, ci):
+    return cl.load_sample(data).development_correlation(p_critical=ci)
 
 
 @pytest.mark.r
