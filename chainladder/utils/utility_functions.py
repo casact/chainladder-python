@@ -7,6 +7,7 @@ import copy
 import dill
 import json
 import os
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -1072,7 +1073,7 @@ def model_diagnostics(
     return concat(triangles, 0)
 
 
-def PTF_formula(  # noqa: N802
+def ptf_formula(
     alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
 ):
     """Helper formula that builds a patsy formula string for the BarnettZehnwirth
@@ -1109,6 +1110,18 @@ def PTF_formula(  # noqa: N802
     if formula_parts:
         return "+".join(formula_parts)
     return ""
+
+
+def PTF_formula(  # noqa: N802
+    alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
+):
+    """Deprecated alias for :func:`ptf_formula`, kept until the 0.11.0 rename lands."""
+    warnings.warn(
+        "PTF_formula has been renamed to ptf_formula and will be removed in a future release.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return ptf_formula(alpha=alpha, gamma=gamma, iota=iota, dgrain=dgrain)
 
 
 def date_delta_adjustment(date: str) -> str:
