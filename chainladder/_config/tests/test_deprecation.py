@@ -1,6 +1,7 @@
 """
 Test the deprecation tools.
 """
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -11,9 +12,9 @@ import warnings
 import pytest
 
 from chainladder._config.deprecation import (
-    deprecated_drop_argument,
-    deprecated_rename,
-    deprecated_rename_argument,
+    _deprecated_drop_argument,
+    _deprecated_rename,
+    _deprecated_rename_argument,
 )
 
 
@@ -29,12 +30,12 @@ def _warn_once(func, *args, **kwargs) -> tuple[object, warnings.WarningMessage]:
 
 
 class TestDeprecatedRename:
-    """Test the deprecated_rename decorator."""
+    """Test the _deprecated_rename decorator."""
 
     def test_warns_default_category(self) -> None:
         """Check that the default warning category is FutureWarning."""
 
-        @deprecated_rename("new_func")
+        @_deprecated_rename("new_func")
         def old_func(x):
             return x + 1
 
@@ -45,7 +46,7 @@ class TestDeprecatedRename:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @deprecated_rename("new_func", version="0.11.0")
+        @_deprecated_rename("new_func", version="0.11.0")
         def old_func():
             pass
 
@@ -58,7 +59,7 @@ class TestDeprecatedRename:
     def test_message_without_version(self) -> None:
         """Check the warning message when no version is given."""
 
-        @deprecated_rename("new_func")
+        @_deprecated_rename("new_func")
         def old_func():
             pass
 
@@ -71,7 +72,7 @@ class TestDeprecatedRename:
     def test_custom_category(self) -> None:
         """Check that a custom warning category is honored."""
 
-        @deprecated_rename("new_func", category=DeprecationWarning)
+        @_deprecated_rename("new_func", category=DeprecationWarning)
         def old_func():
             pass
 
@@ -81,7 +82,7 @@ class TestDeprecatedRename:
     def test_forwards_args_and_kwargs(self) -> None:
         """Check that positional and keyword arguments reach the wrapped function unchanged."""
 
-        @deprecated_rename("new_func")
+        @_deprecated_rename("new_func")
         def old_func(a, b, *, c):
             return a, b, c
 
@@ -92,7 +93,7 @@ class TestDeprecatedRename:
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
 
-        @deprecated_rename("new_func")
+        @_deprecated_rename("new_func")
         def old_func():
             """Original docstring."""
 
@@ -102,7 +103,7 @@ class TestDeprecatedRename:
     def test_warns_every_call(self) -> None:
         """Check that the warning fires on every call, not just the first."""
 
-        @deprecated_rename("new_func")
+        @_deprecated_rename("new_func")
         def old_func():
             pass
 
@@ -115,12 +116,12 @@ class TestDeprecatedRename:
 
 
 class TestDeprecatedRenameArgument:
-    """Tests for the deprecated_rename_argument decorator."""
+    """Tests for the _deprecated_rename_argument decorator."""
 
     def test_old_name_translates_and_warns(self) -> None:
         """Check that the old argument name is translated to the new one and warns."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg):
             return new_arg
 
@@ -131,7 +132,7 @@ class TestDeprecatedRenameArgument:
     def test_new_name_no_warning(self) -> None:
         """Check that calling with the new argument name alone doesn't warn."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg):
             return new_arg
 
@@ -145,7 +146,7 @@ class TestDeprecatedRenameArgument:
     def test_neither_name_uses_default_no_warning(self) -> None:
         """Check that omitting both names falls back to the default without warning."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg="default"):
             return new_arg
 
@@ -159,7 +160,7 @@ class TestDeprecatedRenameArgument:
     def test_both_names_raises_type_error(self) -> None:
         """Check that passing both the old and new names raises a TypeError."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg=None):
             return new_arg
 
@@ -172,7 +173,7 @@ class TestDeprecatedRenameArgument:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
         def func(new_arg=None):
             return new_arg
 
@@ -185,7 +186,7 @@ class TestDeprecatedRenameArgument:
     def test_message_without_version(self) -> None:
         """Check the warning message when no version is given."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg=None):
             return new_arg
 
@@ -198,7 +199,7 @@ class TestDeprecatedRenameArgument:
     def test_custom_category(self) -> None:
         """Check that a custom warning category is honored."""
 
-        @deprecated_rename_argument("old_arg", "new_arg", category=DeprecationWarning)
+        @_deprecated_rename_argument("old_arg", "new_arg", category=DeprecationWarning)
         def func(new_arg=None):
             return new_arg
 
@@ -209,7 +210,7 @@ class TestDeprecatedRenameArgument:
     def test_positional_args_unaffected(self) -> None:
         """Check that positional arguments pass through unaffected."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(a, b, new_arg=None):
             return a, b, new_arg
 
@@ -224,7 +225,7 @@ class TestDeprecatedRenameArgument:
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg=None):  # noqa
             """Original docstring."""
 
@@ -234,7 +235,7 @@ class TestDeprecatedRenameArgument:
     def test_warns_every_call(self) -> None:
         """Check that the warning fires on every call, not just the first."""
 
-        @deprecated_rename_argument("old_arg", "new_arg")
+        @_deprecated_rename_argument("old_arg", "new_arg")
         def func(new_arg=None):
             return new_arg
 
@@ -249,12 +250,12 @@ class TestDeprecatedRenameArgument:
 
 
 class TestDeprecatedDropArgument:
-    """Tests for the deprecated_drop_argument decorator."""
+    """Tests for the _deprecated_drop_argument decorator."""
 
     def test_warns_and_forwards_value_unchanged(self) -> None:
         """Check that the deprecated argument still reaches the function unchanged."""
 
-        @deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose")
         def func(x, verbose: bool = False):
             return x, verbose
 
@@ -265,7 +266,7 @@ class TestDeprecatedDropArgument:
     def test_not_passed_no_warning(self) -> None:
         """Check that omitting the deprecated argument doesn't warn."""
 
-        @deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose")
         def func(x, verbose: bool = False):
             return x, verbose
 
@@ -279,7 +280,7 @@ class TestDeprecatedDropArgument:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @deprecated_drop_argument("verbose", version="0.11.0")
+        @_deprecated_drop_argument("verbose", version="0.11.0")
         def func(verbose: bool = False):  # noqa
             pass
 
@@ -291,8 +292,8 @@ class TestDeprecatedDropArgument:
     def test_message_without_version(self) -> None:
         """Check the warning message when no version is given."""
 
-        @deprecated_drop_argument("verbose")
-        def func(verbose: bool = False): # noqa
+        @_deprecated_drop_argument("verbose")
+        def func(verbose: bool = False):  # noqa
             pass
 
         _, warning = _warn_once(func, verbose=True)
@@ -303,8 +304,8 @@ class TestDeprecatedDropArgument:
     def test_custom_category(self) -> None:
         """Check that a custom warning category is honored."""
 
-        @deprecated_drop_argument("verbose", category=DeprecationWarning)
-        def func(verbose: bool = False): # noqa
+        @_deprecated_drop_argument("verbose", category=DeprecationWarning)
+        def func(verbose: bool = False):  # noqa
             pass
 
         with pytest.warns(DeprecationWarning):
@@ -313,7 +314,7 @@ class TestDeprecatedDropArgument:
     def test_positional_args_unaffected(self) -> None:
         """Check that positional arguments pass through unaffected."""
 
-        @deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose")
         def func(a, b, verbose: bool = False):
             return a, b, verbose
 
@@ -327,7 +328,7 @@ class TestDeprecatedDropArgument:
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
 
-        @deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose")
         def func(verbose: bool = False):  # noqa
             """Original docstring."""
 
@@ -337,7 +338,7 @@ class TestDeprecatedDropArgument:
     def test_warns_every_call(self) -> None:
         """Check that the warning fires on every call, not just the first."""
 
-        @deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose")
         def func(verbose: bool = False):  # noqa
             pass
 

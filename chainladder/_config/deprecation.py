@@ -154,7 +154,7 @@ def _resolve_pat(
 _F = TypeVar("_F", bound="Callable[..., object]")
 
 
-def deprecated_rename(
+def _deprecated_rename(
     new_name: str,
     *,
     version: str | None = None,
@@ -187,9 +187,9 @@ def deprecated_rename(
     .. testcode::
         :options: +SKIP
 
-        from chainladder._config.deprecation import deprecated_rename
+        from chainladder._config.deprecation import _deprecated_rename
 
-        @deprecated_rename("new_func", version="0.11.0")
+        @_deprecated_rename("new_func", version="0.11.0")
         def old_func(x):
             return x + 1
 
@@ -219,7 +219,7 @@ def deprecated_rename(
     return decorator
 
 
-def deprecated_rename_argument(
+def _deprecated_rename_argument(
     old_name: str,
     new_name: str,
     *,
@@ -261,9 +261,9 @@ def deprecated_rename_argument(
     .. testcode::
         :options: +SKIP
 
-        from chainladder._config.deprecation import deprecated_rename_argument
+        from chainladder._config.deprecation import _deprecated_rename_argument
 
-        @deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
         def func(new_arg):
             return new_arg + 1
 
@@ -298,7 +298,7 @@ def deprecated_rename_argument(
     return decorator
 
 
-def deprecated_drop_argument(
+def _deprecated_drop_argument(
     name: str,
     *,
     version: str | None = None,
@@ -330,9 +330,9 @@ def deprecated_drop_argument(
     .. testcode::
         :options: +SKIP
 
-        from chainladder._config.deprecation import deprecated_drop_argument
+        from chainladder._config.deprecation import _deprecated_drop_argument
 
-        @deprecated_drop_argument("verbose", version="0.11.0")
+        @_deprecated_drop_argument("verbose", version="0.11.0")
         def func(x, verbose=False):
             return x + 1
 
