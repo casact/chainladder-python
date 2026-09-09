@@ -32,6 +32,9 @@ from chainladder._config import (  # noqa (API import)
     _deprecated_backend_message,
     _dask_parallel_state,
     _warn_dask_parallel_deprecated,
+    deprecated_rename,
+    deprecated_rename_argument,
+    deprecated_drop_argument,
 )
 from chainladder.utils import (  # noqa (API import)
     WeightedRegression,
