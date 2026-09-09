@@ -206,10 +206,13 @@ class WeightedRegression(BaseEstimator):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             x_mean = xp.nansum(w * x, axis) / xp.nansum(w, axis)
             y_mean = xp.nansum(y * w, axis) / xp.nansum(w, axis)
+            # fmt: off
             slope = (
                 num_to_nan(xp.nansum(w * x * y, axis) - xp.nansum(x * w, axis) * y_mean)
-                / num_to_nan(xp.nansum(w * x * x, axis) - xp.nansum(x * w, axis) * x_mean)
+                /
+                num_to_nan(xp.nansum(w * x * x, axis) - xp.nansum(x * w, axis) * x_mean)
             )
+            # fmt: on
             intercept = y_mean - slope * x_mean
 
         fitted_value = xp.repeat(xp.expand_dims(slope, axis), x.shape[axis], axis)
