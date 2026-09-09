@@ -731,7 +731,7 @@ class Triangle(TriangleBase):
     def index(self, value) -> None:
         self._len_check(self.index, value)
         if isinstance(value, pd.DataFrame):
-            self._index = value
+            self._index = value.copy().reset_index(drop=True)
             self.key_labels = list(value.columns)
             self._set_slicers()
         else:
@@ -761,7 +761,9 @@ class Triangle(TriangleBase):
             value = np.array(value)
         elif not isinstance(value, np.ndarray):
             value = np.array(value)
-        self._index = pd.DataFrame(value, columns=self.key_labels)
+        self._index = pd.DataFrame(value, columns=self.key_labels).reset_index(
+            drop=True
+        )
         self._set_slicers()
 
     @property
@@ -2077,6 +2079,8 @@ class Triangle(TriangleBase):
         X.__dict__.update(vars(self))
         X._set_slicers()
         X.values = X.values.copy()
+        X._index = self._index.copy()
+        X._columns = self._columns.copy()
         return X
 
     def __setstate__(self, state: dict) -> None:

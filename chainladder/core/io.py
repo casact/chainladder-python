@@ -96,7 +96,11 @@ class TriangleIO:
         json_dict["sub_tris"] = {
             sub_tri: getattr(self, sub_tri).to_json() for sub_tri in sub_tris
         }
-        dfs = [k for k, v in vars(self).items() if isinstance(v, pd.DataFrame)]
+        dfs = [
+            k
+            for k, v in vars(self).items()
+            if isinstance(v, pd.DataFrame) and k != "_index"
+        ]
         json_dict["dfs"] = {df: getattr(self, df).to_json() for df in dfs}
         dfs = [k for k, v in vars(self).items() if isinstance(v, pd.Series)]
         json_dict["dfs"].update(

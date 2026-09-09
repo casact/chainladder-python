@@ -525,6 +525,8 @@ class TriangleSlicer:
             return self._slice(key, "odims")
         # Case index.
         if isinstance(key, pd.Series):
+            if pd.api.types.is_bool_dtype(key):
+                return self.iloc[np.where(key.to_numpy())[0]]
             return self.iloc[self.index[key].index]
         elif key in self.key_labels:
             return self.index[key]

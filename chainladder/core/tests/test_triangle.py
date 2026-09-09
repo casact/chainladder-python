@@ -3298,3 +3298,39 @@ def test_cum_zeta_returns_incr_to_cum(atol) -> None:
         [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
         atol=atol,
     )
+
+
+def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:
+    """JSON serialization roundtrip must preserve Triangle._index as a pd.DataFrame."""
+    r_single = cl.read_json(raa.to_json())
+    assert isinstance(r_single.index, pd.DataFrame)
+    assert isinstance(r_single._index, pd.DataFrame)
+    assert r_single.index.iloc[:, 0].tolist() == ["Total"]
+    assert r_single == raa
+
+    r_multi = cl.read_json(clrd.to_json())
+    assert isinstance(r_multi.index, pd.DataFrame)
+    assert isinstance(r_multi._index, pd.DataFrame)
+    pd.testing.assert_frame_equal(r_multi.index, clrd.index)
+    assert r_multi == clrd
+
+
+def test_triangle_copy_isolated_index(raa) -> None:
+    """Triangle.copy() must not share the mutable _index DataFrame."""
+    copied = raa.copy()
+    assert copied.index is not raa.index
+    copied.index.iloc[0, 0] = "Modified"
+    assert raa.index.iloc[0, 0] == "Total"
+
+
+def test_triangle_index_setter_resets_row_index(raa) -> None:
+    """Assigning a DataFrame with non-default index to Triangle.index resets row index."""
+    custom_df = pd.DataFrame({"Total": ["Total"]}, index=[42])
+    raa1 = raa.copy()
+    raa1.index = custom_df
+    assert list(raa1.index.index) == [0]
+    # Boolean Series slicing should work cleanly
+    mask = raa1.index["Total"] == "Total"
+    sliced = raa1[mask]
+    assert sliced == raa1
+
