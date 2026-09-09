@@ -1278,9 +1278,9 @@ def test_describe_option_invalid_regex() -> None:
 
 
 def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
-    '''
+    """
     Testing error raising from dropping too many valuations
-    '''
+    """
     with pytest.raises(Exception):
         _ = cl.TriangleWeight(
             drop_valuation=[
@@ -1296,6 +1296,7 @@ def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
                 "1990",
             ]
         ).fit(raa)
+
 
 def test_triangleweight_full_triangle(raa: Triangle) -> None:
     """
