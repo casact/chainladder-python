@@ -81,7 +81,11 @@ class TriangleDunders:
             y._set_slicers()
             return x, y
         if len(x.index) == len(y.index) == 1 and x.key_labels != y.key_labels:
-            index = x.index.copy() if len(x.key_labels) > len(y.key_labels) else y.index.copy()
+            index = (
+                x.index.copy()
+                if len(x.key_labels) > len(y.key_labels)
+                else y.index.copy()
+            )
             x._index = index.copy()
             x.key_labels = list(index.columns)
             x._set_slicers()
@@ -99,10 +103,7 @@ class TriangleDunders:
             if x_labels != y_labels or len(x.index) != len(y.index):
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
-            elif (
-                len(x.index) > 1
-                and not x.index.equals(y.index)
-            ):
+            elif len(x.index) > 1 and not x.index.equals(y.index):
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]

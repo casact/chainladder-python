@@ -3333,4 +3333,3 @@ def test_triangle_index_setter_resets_row_index(raa) -> None:
     mask = raa1.index["Total"] == "Total"
     sliced = raa1[mask]
     assert sliced == raa1
-

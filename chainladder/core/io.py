@@ -1,6 +1,7 @@
 """
 Support Triangle I/O capabilities.
 """
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,7 +14,7 @@ from sklearn.base import BaseEstimator
 
 class TriangleIO:
     def to_pickle(self, path, protocol=None):
-        """ Serializes triangle object to pickle.
+        """Serializes triangle object to pickle.
 
         Parameters
         ----------
@@ -53,7 +54,7 @@ class TriangleIO:
             dill.dump(self, pkl)
 
     def to_json(self):
-        """ Serializes triangle object to json format
+        """Serializes triangle object to json format
 
         Returns
         -------
@@ -88,8 +89,13 @@ class TriangleIO:
             "is_pattern": self.is_pattern,
             "columns": list(self.columns),
         }
-        out = self.cum_to_incr().dev_to_val().to_frame(
-            keepdims=True, origin_as_datetime=True).fillna(0)
+        out = (
+            self
+            .cum_to_incr()
+            .dev_to_val()
+            .to_frame(keepdims=True, origin_as_datetime=True)
+            .fillna(0)
+        )
         x = out.reset_index().to_json(orient="split", date_unit="ns")
         json_dict = {"metadata": json.dumps(metadata), "data": x}
         sub_tris = [k for k, v in vars(self).items() if isinstance(v, TriangleIO)]
@@ -103,17 +109,17 @@ class TriangleIO:
         ]
         json_dict["dfs"] = {df: getattr(self, df).to_json() for df in dfs}
         dfs = [k for k, v in vars(self).items() if isinstance(v, pd.Series)]
-        json_dict["dfs"].update(
-            {df: getattr(self, df).to_frame().to_json() for df in dfs}
-        )
+        json_dict["dfs"].update({
+            df: getattr(self, df).to_frame().to_json() for df in dfs
+        })
         return json.dumps(json_dict)
 
 
 class EstimatorIO:
-    """ Class intended to allow persistence of estimator objects """
+    """Class intended to allow persistence of estimator objects"""
 
     def to_pickle(self, path, protocol=None):
-        """ Serializes triangle object to pickle.
+        """Serializes triangle object to pickle.
 
         Parameters
         ----------
@@ -153,7 +159,7 @@ class EstimatorIO:
             dill.dump(self, pkl)
 
     def to_json(self):
-        """ Serializes triangle object to json format
+        """Serializes triangle object to json format
 
         Returns
         -------

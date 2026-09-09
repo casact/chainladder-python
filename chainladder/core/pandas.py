@@ -1258,7 +1258,9 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         # Aggregation function will collapse a dimension, so
         # adjust the dimensions of the original object to match that of the aggregation.
         if axis == 0 and obj.values.shape[axis] == 1 and len(obj.index) > 1:
-            obj._index = pd.DataFrame([["(All)"] * len(obj.key_labels)], columns=obj.key_labels)
+            obj._index = pd.DataFrame(
+                [["(All)"] * len(obj.key_labels)], columns=obj.key_labels
+            )
         if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
             obj._columns = pd.Index([0], name="columns")
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
