@@ -1284,23 +1284,23 @@ def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
     with pytest.raises(Exception):
         _ = cl.TriangleWeight(
             drop_valuation=[
-                '1981',
-                '1982',
-                '1983',
-                '1984',
-                '1985',
-                '1986',
-                '1987',
-                '1988',
-                '1989',
-                '1990',
+                "1981",
+                "1982",
+                "1983",
+                "1984",
+                "1985",
+                "1986",
+                "1987",
+                "1988",
+                "1989",
+                "1990",
             ]
         ).fit(raa)
 
 def test_triangleweight_full_triangle(raa: Triangle) -> None:
-    '''
+    """
     Testing new path that allows weights on full triangles
-    '''
+    """
     ult = cl.Chainladder().fit(raa)
     tw = cl.TriangleWeight(n_periods=4).fit(raa)
     tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
