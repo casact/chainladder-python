@@ -14,7 +14,8 @@ from pandas.api.types import is_string_dtype
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder.core.typing import TriangleLike
+    from chainladder import Triangle
+    from chainladder.core.typing import TriangleProtocol
 
 
 class TriangleWeight(BaseEstimator, TransformerMixin):
@@ -84,7 +85,7 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         drop_high: bool | int | list[bool] | list[int] | None = None,
         drop_low: bool | int | list[bool] | list[int] | None = None,
         preserve: int = 1,
-        drop_valuation: str | list[str] = None,
+        drop_valuation: str | list[str] | None = None,
         drop_above: float = np.inf,
         drop_below: float = 0.00,
     ):
@@ -97,13 +98,13 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         self.drop_below = drop_below
         self.drop = drop
 
-    def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
+    def fit(self, X: TriangleProtocol, y: None = None, sample_weight: None = None):
         """
         Fit the model with X.
 
         Parameters
         ----------
-        X : TriangleLike
+        X : TriangleProtocol
             Set of LDFs to which the Munich adjustment will be applied.
         y : None
             Ignored
@@ -115,17 +116,22 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         self : object
             Returns the instance itself.
         """
-
-        self.w_ = self._set_weight_func(X=X, secondary_rank=sample_weight)
+        # bulk of the logic was refactored from `DevelopmentBase`, which only had numpy support
+        # using _set_fit_group to explicitly guard against fitting sparse triangles
+        # forcing numpy here to avoid major refactoring
+        # in practice, there is no realistic use case for a sparse triangle to need weights
+        backend = "numpy" if X.array_backend in ["sparse", "numpy"] else "cupy"
+        obj = X.set_backend(backend)
+        self.w_ = self._set_weight_func(X=obj, secondary_rank=sample_weight)
         return self
 
-    def transform(self, X: TriangleLike):
+    def transform(self, X: TriangleProtocol) -> Triangle:
         """If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
         ----------
-        X : Triangle
+        X : TriangleProtocol
             The triangle to be transformed
 
         Returns
@@ -174,16 +180,16 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         return out.astype(type(default_param)).to_numpy()
 
     def _set_weight_func(
-        self, X: TriangleLike, secondary_rank: TriangleLike | None = None
-    ) -> TriangleLike:
+        self, X: TriangleProtocol, secondary_rank: TriangleProtocol | None = None
+    ) -> Triangle:
         """
         Combines weights from all parameters
 
         Parameters
         ----------
-        X: TriangleLike
+        X: TriangleProtocol
             Triangle of values to be weighted
-        secondary_rank: TriangleLike
+        secondary_rank: TriangleProtocol
             Triangle of values to break ties for drop_high and drop_low
 
         Returns
@@ -210,18 +216,18 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
 
         return w_tri
 
-    def _assign_n_periods_weight_func(self, X: TriangleLike) -> TriangleLike:
+    def _assign_n_periods_weight_func(self, X: TriangleProtocol) -> np.ndarray:
         """
         Generates weights for the `n_periods` parameter
 
         Parameters
         ----------
-        X: TriangleLike
+        X: TriangleProtocol
             Triangle of values to be weighted
 
         Returns
         -------
-        A Triangle of weights
+        numpy array of weights
 
         """
         # cascading n_periods across all columns
@@ -230,7 +236,6 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
 
         # helper function that generates the weights for individual n_periods
         def _assign_n_periods_weight_int(X, n_periods):
-            xp = X.get_array_module()
             val_offset = {
                 "Y": {"Y": 1},
                 "S": {"Y": 2, "S": 1},
@@ -240,14 +245,17 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             if n_periods < 1 or n_periods >= X.shape[-2]:
                 return X.values * 0 + 1
             else:
-                val_date_min = X.valuation[X.valuation <= X.valuation_date]
-                val_date_min = val_date_min.drop_duplicates().sort_values()
                 z = -n_periods * val_offset[X.development_grain][X.origin_grain]
-                val_date_min = val_date_min[z]
-                w = X[X.valuation >= val_date_min]
-                return xp.nan_to_num((w / w).values) * X.nan_triangle
-
-        xp = X.get_array_module()
+                # adding new path to handle full triangle (e.g. full_triangle_, ultimate_, et.c)
+                if X.is_full:
+                    w = X.copy()
+                    w.values[:, :, :-n_periods, :] = np.nan
+                else:
+                    val_date_min = X.valuation[X.valuation <= X.valuation_date]
+                    val_date_min = val_date_min.drop_duplicates().sort_values()
+                    val_date_min = val_date_min[z]
+                    w = X[X.valuation >= val_date_min]
+                return np.nan_to_num((w / w).values) * X.nan_triangle
 
         # a dict of weights (val) by n_periods (key)
         dict_map = {
@@ -258,24 +266,24 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             dict_map[item][..., num : num + 1]
             for num, item in enumerate(n_periods_param)
         ]
-        return xp.concatenate(tuple(conc), -1).astype(float)
+        return np.concatenate(tuple(conc), -1).astype(float)
 
     def _drop_n_func(
-        self, X: TriangleLike, secondary_rank: TriangleLike | None = None
-    ) -> TriangleLike:
+        self, X: TriangleProtocol, secondary_rank: TriangleProtocol | None = None
+    ) -> np.ndarray:
         """
         Generates weights for the `drop_high` and `drop_low` parameter
 
         Parameters
         ----------
-        X: TriangleLike
+        X: TriangleProtocol
             Triangle of values to be weighted
-        secondary_rank: TriangleLike
+        secondary_rank: TriangleProtocol
             Triangle of values to break ties
 
         Returns
         -------
-        A Triangle of weights
+        numpy array of weights
 
         """
         # Preparing to set up 3D array for drop_n parameters
@@ -357,22 +365,20 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
 
         return w.astype(float)
 
-    def _drop_func(self, X: TriangleLike) -> TriangleLike:
+    def _drop_func(self, X: TriangleProtocol) -> np.ndarray:
         """
         Generates weights for the `drop` parameter
 
         Parameters
         ----------
-        X: TriangleLike
+        X: TriangleProtocol
             Triangle of values to be weighted
 
         Returns
         -------
-        A Triangle of weights
+        numpy array of weights
 
         """
-        # get the appropriate backend for nan_to_num
-        xp = X.get_array_module()
         # turn single drop_valuation parameter to list if necessary
         drop_list = self.drop if isinstance(self.drop, list) else [self.drop]
         # get an starting array of weights
@@ -392,24 +398,22 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         dev_ind = np.where(np.array([dev_list]) == drop_np[:, [1]])[1]
         # set weight of dropped factors to 0
         w[(origin_ind, dev_ind)] = 0
-        return xp.nan_to_num(w)[None, None]
+        return np.nan_to_num(w)[None, None]
 
-    def _drop_valuation_func(self, X: TriangleLike) -> TriangleLike:
+    def _drop_valuation_func(self, X: TriangleProtocol) -> np.ndarray:
         """
         Generates weights for the `drop` parameter
 
         Parameters
         ----------
-        X: TriangleLike
+        X: TriangleProtocol
             Triangle of values to be weighted
 
         Returns
         -------
-        A Triangle of weights
+        numpy array of weights
 
         """
-        # get the appropriate backend for nan_to_num
-        xp = X.get_array_module()
         # turn single drop_valuation parameter to list if necessary
         if isinstance(self.drop_valuation, list):
             drop_valuation_list = self.drop_valuation
@@ -423,24 +427,24 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         if np.any(~v.isin(X.valuation)):
             warnings.warn("Some valuations could not be dropped.")
         # return triangle of weight where dropped factors have 0
-        w = xp.nan_to_num(X.iloc[0, 0][~X.valuation.isin(v)].values * 0 + 1)
+        w = np.nan_to_num(X.iloc[0, 0][~X.valuation.isin(v)].values * 0 + 1)
         # check to make sure some factors are still left
         if w.sum() == 0:
             raise Exception("The entire triangle has been dropped via drop_valuation.")
         return w
 
-    def _drop_x_func(self, X: TriangleLike) -> TriangleLike:
+    def _drop_x_func(self, X: TriangleProtocol) -> np.ndarray:
         """
         Generates weights for the `drop_above` and `drop_below` parameters
 
         Parameters
         ----------
-        X: TriangleLike
+        X: TriangleProtocol
             Triangle of values to be weighted
 
         Returns
         -------
-        A Triangle of weights
+        numpy array of weights
 
         """
         # Preparing to set up 3D array for drop_x parameters
