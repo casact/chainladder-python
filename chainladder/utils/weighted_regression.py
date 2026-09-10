@@ -191,6 +191,8 @@ class WeightedRegression(BaseEstimator):
         from chainladder.utils.utility_functions import num_to_nan
 
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
+        w[np.isnan(x)] = 0
+        w[np.isnan(y)] = 0
         xp = self.xp
         if xp != sp:
             x[w == 0] = xp.nan
