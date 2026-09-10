@@ -34,7 +34,7 @@ def test_misc(genins):
     assert abs(model.triangle_ml_.loc[:, :, "2010", :] - genins.mean()).max() < 1e2
 
 
-def test_grain():   
+def test_grain():
     grains = {"Y": 2, "2Q": 4, "Q": 8, "M": 24}
     for period in grains.keys():
         tframe = pd.DataFrame()
@@ -53,7 +53,7 @@ def test_grain():
                         inclusive="left",
                     ),
                     "loss": [100] * (len(devdates) - ind),
-                })
+                }),
             ])
         tri = cl.Triangle(
             tframe,
