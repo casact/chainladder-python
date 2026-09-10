@@ -39,6 +39,7 @@ def check_html(html: str) -> None:
     # Raise assertion error if one is detected. If so, print the error log as a list.
     assert len(parser.error_log) == 0, list(parser.error_log)
 
+
 def test_check_html() -> None:
     """
     Make sure check_html does its job on a malformed string.
@@ -182,6 +183,7 @@ def test_repr_html_single(raa):
     assert "<table" in html_str
     check_html(html=html_str)
 
+
 def test_repr_html_multi(clrd: Triangle) -> None:
     """
     Inspect the HTML representation of a multidimensional triangle.
@@ -200,6 +202,7 @@ def test_repr_html_multi(clrd: Triangle) -> None:
     assert "Triangle Summary" in html_str
     assert "<table" in html_str
     check_html(html=html_str)
+
 
 def test_get_format_str_all_nan() -> None:
     """
@@ -337,11 +340,7 @@ def test_heatmap_no_ipython(raa: Triangle) -> None:
     """
     import chainladder.core.display as display_mod
 
-    blocked = {
-        "IPython": None,
-        "IPython.core": None,
-        "IPython.core.display": None
-    }
+    blocked = {"IPython": None, "IPython.core": None, "IPython.core.display": None}
     with mock.patch.dict(sys.modules, blocked):
         importlib.reload(display_mod)
         with pytest.raises(ImportError, match=r"heatmap\(\) requires IPython\."):
@@ -361,11 +360,7 @@ def test_display_import_fallback_when_ipython_missing() -> None:
     """
     import chainladder.core.display as display_mod
 
-    blocked = {
-        "IPython": None,
-        "IPython.core": None,
-        "IPython.core.display": None
-    }
+    blocked = {"IPython": None, "IPython.core": None, "IPython.core.display": None}
     with mock.patch.dict(sys.modules, blocked):
         importlib.reload(display_mod)
         assert display_mod.HTML is None
