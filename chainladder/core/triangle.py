@@ -82,7 +82,10 @@ class Triangle(TriangleBase):
     array_backend: str, optional (default = None)
         Backend used to store the underlying values array. One of
         ``'numpy'``, ``'sparse'``, or ``'cupy'`` (if installed). If
-        ``None``, falls back to ``cl.options.ARRAY_BACKEND``.
+        ``None``, falls back to ``cl.options.ARRAY_BACKEND``. If
+        ``cl.options.AUTO_SPARSE`` is ``True``, the backend is instead
+        chosen automatically based on array size and density, regardless
+        of this argument's value.
 
     Attributes
     ----------
@@ -484,6 +487,7 @@ class Triangle(TriangleBase):
             development=development,
             development_format=development_format,
             origin_date=origin_date,
+            origin_grain=self.origin_grain,
         )
 
         if len(development_date.unique()) == 1:

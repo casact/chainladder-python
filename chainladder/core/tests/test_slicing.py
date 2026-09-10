@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from chainladder import Triangle
 
-def test_slice_by_boolean(clrd : Triangle) -> None:
+
+def test_slice_by_boolean(clrd: Triangle) -> None:
     assert (
         clrd[clrd["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
         == clrd.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"]
@@ -158,9 +159,9 @@ def test_at_iat(raa):
 
 def test_at_iat_exceptions(raa):
     with pytest.raises(ValueError):
-        _= raa.iat[0, 0, 4, :]
+        _ = raa.iat[0, 0, 4, :]
     with pytest.raises(ValueError):
-        _= raa.at["Total", "values", "1985", 0:2]
+        _ = raa.at["Total", "values", "1985", 0:2]
 
 
 def test_at_check_index_full_axis_slice_raises(raa: Triangle) -> None:
@@ -177,7 +178,7 @@ def test_at_check_index_full_axis_slice_raises(raa: Triangle) -> None:
     None
     """
     with pytest.raises(ValueError, match="Invalid Index in At slicer"):
-        _= raa.at["Total", "values"]
+        _ = raa.at["Total", "values"]
 
 
 def test_at_check_index_full_axis_slice_on_non_unit_axis_raises(raa: Triangle) -> None:
@@ -195,7 +196,7 @@ def test_at_check_index_full_axis_slice_on_non_unit_axis_raises(raa: Triangle) -
     None
     """
     with pytest.raises(ValueError, match="Invalid Index in At slicer"):
-        _= raa.at["Total", "values", slice(None, None, None), 12]
+        _ = raa.at["Total", "values", slice(None, None, None), 12]
 
 
 def test_at_check_index_full_axis_slice_on_unit_axis(raa: Triangle) -> None:
@@ -212,7 +213,10 @@ def test_at_check_index_full_axis_slice_on_unit_axis(raa: Triangle) -> None:
     -------
     None
     """
-    assert raa.at["Total", slice(None, None, None), "1985", 12] == raa.at["Total", "values", "1985", 12]
+    assert (
+        raa.at["Total", slice(None, None, None), "1985", 12]
+        == raa.at["Total", "values", "1985", 12]
+    )
 
 
 def test_at_requires_all_axes(raa: Triangle) -> None:
@@ -222,7 +226,7 @@ def test_at_requires_all_axes(raa: Triangle) -> None:
     both axes be given as scalar labels. Ellipsis is not allowed.
     """
     with pytest.raises(ValueError, match="Invalid Index in At slicer"):
-        _= raa.at[..., "1985", 12]
+        _ = raa.at[..., "1985", 12]
 
 
 def test_other_key_unsupported_iterable_raises(raa: Triangle) -> None:
@@ -240,7 +244,7 @@ def test_other_key_unsupported_iterable_raises(raa: Triangle) -> None:
 
     """
     with pytest.raises(AttributeError, match="Unable to slice"):
-        _= raa.loc[:, (0, 1)]
+        _ = raa.loc[:, (0, 1)]
 
 
 def test_at_setitem_triangle_value(raa: Triangle) -> None:
@@ -279,11 +283,14 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
     tri = clrd.copy()
     sub = tri.loc["Aegis Grp", "comauto"].copy()
     if tri.array_backend == "sparse":
-        with pytest.raises(ValueError, match="Setting values with sparse backend requires .at or .iat"):
+        with pytest.raises(
+            ValueError, match="Setting values with sparse backend requires .at or .iat"
+        ):
             tri.loc["Aegis Grp", "comauto"] = sub * 2
     else:
         tri.loc["Aegis Grp", "comauto"] = sub * 2
         assert tri.loc["Aegis Grp", "comauto"] == sub * 2
+
 
 def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
     """
@@ -304,13 +311,14 @@ def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
     if raa_new.array_backend == "sparse":
         pytest.skip("Test is specific to the numpy backend.")
     else:
-        raa_new.loc[:,:,:,:60] = raa2.loc[:,:,:,:60]
-        raa_new.loc[:,:,:,72:] = raa2.loc[:,:,:,72:]
+        raa_new.loc[:, :, :, :60] = raa2.loc[:, :, :, :60]
+        raa_new.loc[:, :, :, 72:] = raa2.loc[:, :, :, 72:]
         assert raa_new == raa2
         raa_new = raa.copy()
-        raa_new.loc[:,:,:'1984',:] = raa2.loc[:,:,:'1984',:]
-        raa_new.loc[:,:,'1985':,:] = raa2.loc[:,:,'1985':,:]
+        raa_new.loc[:, :, :"1984", :] = raa2.loc[:, :, :"1984", :]
+        raa_new.loc[:, :, "1985":, :] = raa2.loc[:, :, "1985":, :]
         assert raa_new == raa2
+
 
 def test_invalid_iloc_sparse_assignment(prism) -> None:
     """
@@ -326,7 +334,9 @@ def test_invalid_iloc_sparse_assignment(prism) -> None:
     None
 
     """
-    with pytest.raises(ValueError, match="Setting values with sparse backend requires .at or .iat"):
+    with pytest.raises(
+        ValueError, match="Setting values with sparse backend requires .at or .iat"
+    ):
         prism.iloc[0, 0, 0, 0] = 1.0
 
 
@@ -345,7 +355,7 @@ def test_empty_index_raises(raa: Triangle) -> None:
 
     """
     with pytest.raises(ValueError, match="Slice returns empty Triangle"):
-        _= raa.iloc[[], :]
+        _ = raa.iloc[[], :]
 
 
 def test_get_idx_fancy_origin_raises(raa: Triangle) -> None:
@@ -362,8 +372,11 @@ def test_get_idx_fancy_origin_raises(raa: Triangle) -> None:
     None
 
     """
-    with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
-        _= raa.iloc[0, 0, [0, 1, 5], :]
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa.iloc[0, 0, [0, 1, 5], :]
+
 
 def test_set_fancy_origin_raises(raa: Triangle) -> None:
     """
@@ -383,10 +396,18 @@ def test_set_fancy_origin_raises(raa: Triangle) -> None:
     if raa.array_backend == "sparse":
         pytest.skip("Test is specific to the numpy backend.")
     else:
-        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+        with pytest.raises(
+            ValueError,
+            match="Setting while fancy indexing on origin/development is not supported.",
+        ):
             raa_copy.iloc[0, 0, [0, 1, 5], :] = raa.iloc[0, 0, :3, :]
-        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
-            raa_copy.loc['Total', 'values', ['1983', '1984', '1986'], :] = raa.iloc[0, 0, :3, :]
+        with pytest.raises(
+            ValueError,
+            match="Setting while fancy indexing on origin/development is not supported.",
+        ):
+            raa_copy.loc["Total", "values", ["1983", "1984", "1986"], :] = raa.iloc[
+                0, 0, :3, :
+            ]
 
 
 def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
@@ -403,8 +424,11 @@ def test_get_idx_fancy_development_raises(raa: Triangle) -> None:
     None
 
     """
-    with pytest.raises(ValueError, match="Fancy indexing on origin/development is not supported"):
-        _= raa.iloc[0, 0, :, [0, 1, 5]]
+    with pytest.raises(
+        ValueError, match="Fancy indexing on origin/development is not supported"
+    ):
+        _ = raa.iloc[0, 0, :, [0, 1, 5]]
+
 
 def test_set_fancy_development_raises(raa: Triangle) -> None:
     """
@@ -424,10 +448,16 @@ def test_set_fancy_development_raises(raa: Triangle) -> None:
     if raa.array_backend == "sparse":
         pytest.skip("Test is specific to the numpy backend.")
     else:
-        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
+        with pytest.raises(
+            ValueError,
+            match="Setting while fancy indexing on origin/development is not supported.",
+        ):
             raa_copy.iloc[0, 0, :, [0, 1, 5]] = raa.iloc[0, 0, :, :3]
-        with pytest.raises(ValueError, match="Setting while fancy indexing on origin/development is not supported."):
-            raa_copy.loc['Total', 'values', :, [12, 24, 48]] = raa.iloc[0, 0, :, :3]
+        with pytest.raises(
+            ValueError,
+            match="Setting while fancy indexing on origin/development is not supported.",
+        ):
+            raa_copy.loc["Total", "values", :, [12, 24, 48]] = raa.iloc[0, 0, :, :3]
 
 
 def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
@@ -447,12 +477,13 @@ def test_get_idx_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     """
     result = clrd.iloc[[0, 1, 5], [0, 1, 5], :, :]
     expected_index = [
-        ['Adriatic Ins Co', 'othliab'],
-        ['Adriatic Ins Co', 'ppauto'],
-        ['Agency Ins Co Of MD Inc', 'ppauto'],
+        ["Adriatic Ins Co", "othliab"],
+        ["Adriatic Ins Co", "ppauto"],
+        ["Agency Ins Co Of MD Inc", "ppauto"],
     ]
     assert result.index.values.tolist() == expected_index
-    assert result.columns.tolist() == ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
+    assert result.columns.tolist() == ["IncurLoss", "CumPaidLoss", "EarnedPremNet"]
+
 
 def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     """
@@ -473,26 +504,27 @@ def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
         pytest.skip("Test is specific to the numpy backend.")
     else:
         dest_index = [
-            ['Adriatic Ins Co', 'othliab'],
-            ['Adriatic Ins Co', 'ppauto'],
-            ['Agency Ins Co Of MD Inc', 'ppauto'],
+            ["Adriatic Ins Co", "othliab"],
+            ["Adriatic Ins Co", "ppauto"],
+            ["Agency Ins Co Of MD Inc", "ppauto"],
         ]
         val_index = [
-            ['Adriatic Ins Co', 'ppauto'],
-            ['Aegis Grp', 'comauto'],
-            ['Agency Ins Co Of MD Inc', 'ppauto'],
+            ["Adriatic Ins Co", "ppauto"],
+            ["Aegis Grp", "comauto"],
+            ["Agency Ins Co Of MD Inc", "ppauto"],
         ]
-        dest_col = ['CumPaidLoss', 'BulkLoss', 'EarnedPremNet']
-        val_col = ['IncurLoss', 'CumPaidLoss', 'EarnedPremNet']
+        dest_col = ["CumPaidLoss", "BulkLoss", "EarnedPremNet"]
+        val_col = ["IncurLoss", "CumPaidLoss", "EarnedPremNet"]
         clrd_copy = clrd.copy()
         clrd_copy.loc[dest_index] = clrd.loc[val_index]
         assert clrd_copy.loc[dest_index] == clrd.loc[val_index]
         clrd_copy = clrd.copy()
-        clrd_copy.loc[:,dest_col] = clrd.loc[:,val_col]
-        assert clrd_copy.loc[:,dest_col] == clrd.loc[:,val_col]
+        clrd_copy.loc[:, dest_col] = clrd.loc[:, val_col]
+        assert clrd_copy.loc[:, dest_col] == clrd.loc[:, val_col]
         clrd_copy = clrd.copy()
-        clrd_copy.loc[dest_index,dest_col] = clrd.loc[val_index,val_col]
-        assert clrd_copy.loc[dest_index,dest_col] == clrd.loc[val_index,val_col]
+        clrd_copy.loc[dest_index, dest_col] = clrd.loc[val_index, val_col]
+        assert clrd_copy.loc[dest_index, dest_col] == clrd.loc[val_index, val_col]
+
 
 def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     """
@@ -512,19 +544,20 @@ def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     if clrd.array_backend == "sparse":
         pytest.skip("Test is specific to the numpy backend.")
     else:
-        dest_index = [0,1,5]
-        val_index = [1,4,6]
-        dest_col = [2,3,5]
-        val_col = [1,2,4]
+        dest_index = [0, 1, 5]
+        val_index = [1, 4, 6]
+        dest_col = [2, 3, 5]
+        val_col = [1, 2, 4]
         clrd_copy = clrd.copy()
         clrd_copy.iloc[dest_index] = clrd.iloc[val_index]
         assert clrd_copy.iloc[dest_index] == clrd.iloc[val_index]
         clrd_copy = clrd.copy()
-        clrd_copy.iloc[:,dest_col] = clrd.iloc[:,val_col]
-        assert clrd_copy.iloc[:,dest_col] == clrd.iloc[:,val_col]
+        clrd_copy.iloc[:, dest_col] = clrd.iloc[:, val_col]
+        assert clrd_copy.iloc[:, dest_col] == clrd.iloc[:, val_col]
         clrd_copy = clrd.copy()
-        clrd_copy.iloc[dest_index,dest_col] = clrd.iloc[val_index,val_col]
-        assert clrd_copy.iloc[dest_index,dest_col] == clrd.iloc[val_index,val_col]
+        clrd_copy.iloc[dest_index, dest_col] = clrd.iloc[val_index, val_col]
+        assert clrd_copy.iloc[dest_index, dest_col] == clrd.iloc[val_index, val_col]
+
 
 def test_sparse_at_iat1(prism):
     t = prism.copy()

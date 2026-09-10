@@ -5,10 +5,11 @@ from chainladder.utils.sparse import (
     floor,
     COO,
     where,
-    nanquantile
+    nanquantile,
 )
 
 from sparse import all as sparse_all
+
 
 def test_array_from_list_default_fill_value() -> None:
     """
@@ -114,7 +115,8 @@ def test_floor_returns_copy() -> None:
     np.testing.assert_array_equal(result.todense(), [1.0, 2.0, -1.0])
     np.testing.assert_array_equal(a.todense(), [1.2, 2.7, -0.3])
 
-def test_1D_nanquantile() -> None:
+
+def test_1d_nanquantile() -> None:
     """
     Checks that nanquantile performs in 1D special case.
 
@@ -122,9 +124,10 @@ def test_1D_nanquantile() -> None:
     -------
     None
     """
-    a = COO(np.array([1,2,3,4]))
-    assert nanquantile(a,0.5) == 2.5
-    assert sparse_all(nanquantile(a,0.5,keepdims = True) == COO(np.array([2.5])))
+    a = COO(np.array([1, 2, 3, 4]))
+    assert nanquantile(a, 0.5) == 2.5
+    assert sparse_all(nanquantile(a, 0.5, keepdims=True) == COO(np.array([2.5])))
+
 
 def test_keepdims_nanquantile() -> None:
     """
@@ -134,5 +137,7 @@ def test_keepdims_nanquantile() -> None:
     -------
     None
     """
-    a = COO(np.array([[1,2,3,4],[3,4,5,6]]))
-    assert sparse_all(nanquantile(a,0.5,keepdims = True) == COO(np.array([[2,3,4,5]])))
+    a = COO(np.array([[1, 2, 3, 4], [3, 4, 5, 6]]))
+    assert sparse_all(
+        nanquantile(a, 0.5, keepdims=True) == COO(np.array([[2, 3, 4, 5]]))
+    )

@@ -5,8 +5,12 @@
 ```
 chainladder-python/
 ├── chainladder/                    # Main package
-│   ├── __init__.py                 # Public API, global options, sample data loader
+│   ├── __init__.py                 # Public API, package metadata
 │   ├── py.typed                    # PEP 561 marker (ships inline type hints)
+│   │
+│   ├── _config/                    # Package-wide configuration
+│   │   ├── options.py              # Datetime constants, package options
+│   │   └── deprecation.py          # Deprecation utilities
 │   │
 │   ├── core/                       # Triangle data structure
 │   │   ├── triangle.py             # Triangle (the public-facing class)

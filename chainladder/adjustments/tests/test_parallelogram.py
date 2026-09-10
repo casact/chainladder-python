@@ -47,7 +47,8 @@ def test_non_vertical_line():
     )
 
     result = (
-        cl.parallelogram_olf([0.20], ["7/1/2017"], approximation_grain="D")
+        cl
+        .parallelogram_olf([0.20], ["7/1/2017"], approximation_grain="D")
         .loc["2017"]
         .iloc[0]
         - 1
@@ -56,16 +57,15 @@ def test_non_vertical_line():
     assert true_olf == result
 
     # Monthly approximation
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"],
-            "RateChange": [0.035, 0.05, 0.10, -0.01],
-        }
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"],
+        "RateChange": [0.035, 0.05, 0.10, -0.01],
+    })
 
-    data = pd.DataFrame(
-        {"Year": list(range(2006, 2016)), "EarnedPremium": [10_000] * 10}
-    )
+    data = pd.DataFrame({
+        "Year": list(range(2006, 2016)),
+        "EarnedPremium": [10_000] * 10,
+    })
 
     prem_tri = cl.Triangle(
         data, origin="Year", columns="EarnedPremium", cumulative=True
@@ -94,16 +94,15 @@ def test_non_vertical_line():
     ).all()
 
     # Daily approximation
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"],
-            "RateChange": [0.035, 0.05, 0.10, -0.01],
-        }
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-07-01", "2011-01-01", "2012-07-01", "2013-04-01"],
+        "RateChange": [0.035, 0.05, 0.10, -0.01],
+    })
 
-    data = pd.DataFrame(
-        {"Year": list(range(2006, 2016)), "EarnedPremium": [10_000] * 10}
-    )
+    data = pd.DataFrame({
+        "Year": list(range(2006, 2016)),
+        "EarnedPremium": [10_000] * 10,
+    })
 
     prem_tri = cl.Triangle(
         data, origin="Year", columns="EarnedPremium", cumulative=True
@@ -141,15 +140,14 @@ def test_vertical_line():
 
 
 def test_policy_length():
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-07-01", "2011-01-01", "2012-04-01"],
-            "RateChange": [0.05, 0.1, -0.01],
-        }
-    )
-    data = pd.DataFrame(
-        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-07-01", "2011-01-01", "2012-04-01"],
+        "RateChange": [0.05, 0.1, -0.01],
+    })
+    data = pd.DataFrame({
+        "Year": [2010, 2011, 2012, 2013, 2014],
+        "EarnedPremium": [10_000] * 5,
+    })
     prem_tri = cl.Triangle(
         data, origin="Year", columns="EarnedPremium", cumulative=True
     )
@@ -170,15 +168,14 @@ def test_policy_length():
         == [1.129333, 1.013023, 0.994975, 1, 1]
     ).all()
 
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-07-01", "2011-10-01", "2012-04-01"],
-            "RateChange": [0.35, 0.149, -0.095],
-        }
-    )
-    data = pd.DataFrame(
-        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-07-01", "2011-10-01", "2012-04-01"],
+        "RateChange": [0.35, 0.149, -0.095],
+    })
+    data = pd.DataFrame({
+        "Year": [2010, 2011, 2012, 2013, 2014],
+        "EarnedPremium": [10_000] * 5,
+    })
     prem_tri = cl.Triangle(
         data, origin="Year", columns="EarnedPremium", cumulative=True
     )
@@ -207,15 +204,14 @@ def test_policy_length():
         == [1.290842, 1.030251, 0.958285, 1, 1]
     ).all()
 
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-07-01"],
-            "RateChange": [0.20],
-        }
-    )
-    data = pd.DataFrame(
-        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-07-01"],
+        "RateChange": [0.20],
+    })
+    data = pd.DataFrame({
+        "Year": [2010, 2011, 2012, 2013, 2014],
+        "EarnedPremium": [10_000] * 5,
+    })
     prem_tri = cl.Triangle(
         data,
         origin="Year",
@@ -224,7 +220,8 @@ def test_policy_length():
     )
 
     lhs = np.round(
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history,
             change_col="RateChange",
             date_col="EffDate",
@@ -255,25 +252,29 @@ def test_policy_length():
     )
 
     assert (
-        cl.parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"])
+        cl
+        .parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"])
         .reset_index()["OLF"]
         .notna()
         .all()
     )
     assert (
-        cl.parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"], policy_length=12)
+        cl
+        .parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"], policy_length=12)
         .reset_index()["OLF"]
         .notna()
         .all()
     )
     assert (
-        cl.parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"], policy_length=6)
+        cl
+        .parallelogram_olf(df_prem["Rate Changes"], df_prem["Date"], policy_length=6)
         .reset_index()["OLF"]
         .notna()
         .all()
     )
     assert (
-        cl.parallelogram_olf(
+        cl
+        .parallelogram_olf(
             df_prem["Rate Changes"],
             df_prem["Date"],
             policy_length=6,
@@ -286,15 +287,14 @@ def test_policy_length():
 
 
 def test_rate_impact_middle_of_year():
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-01-01"],
-            "RateChange": [0.20],
-        }
-    )
-    data = pd.DataFrame(
-        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-01-01"],
+        "RateChange": [0.20],
+    })
+    data = pd.DataFrame({
+        "Year": [2010, 2011, 2012, 2013, 2014],
+        "EarnedPremium": [10_000] * 5,
+    })
     prem_tri = cl.Triangle(
         data,
         origin="Year",
@@ -303,7 +303,8 @@ def test_rate_impact_middle_of_year():
     )
 
     monthly = np.round(
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history,
             change_col="RateChange",
             date_col="EffDate",
@@ -317,7 +318,8 @@ def test_rate_impact_middle_of_year():
     )
     # print(monthly)
     daily = np.round(
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history,
             change_col="RateChange",
             date_col="EffDate",
@@ -335,15 +337,14 @@ def test_rate_impact_middle_of_year():
 
 
 def test_rate_impact_beginning_of_year():
-    rate_history = pd.DataFrame(
-        {
-            "EffDate": ["2010-07-01"],
-            "RateChange": [0.20],
-        }
-    )
-    data = pd.DataFrame(
-        {"Year": [2010, 2011, 2012, 2013, 2014], "EarnedPremium": [10_000] * 5}
-    )
+    rate_history = pd.DataFrame({
+        "EffDate": ["2010-07-01"],
+        "RateChange": [0.20],
+    })
+    data = pd.DataFrame({
+        "Year": [2010, 2011, 2012, 2013, 2014],
+        "EarnedPremium": [10_000] * 5,
+    })
     prem_tri = cl.Triangle(
         data,
         origin="Year",
@@ -352,7 +353,8 @@ def test_rate_impact_beginning_of_year():
     )
 
     monthly = np.round(
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history,
             change_col="RateChange",
             date_col="EffDate",
@@ -366,7 +368,8 @@ def test_rate_impact_beginning_of_year():
     )
     # print(monthly)
     daily = np.round(
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history,
             change_col="RateChange",
             date_col="EffDate",
@@ -386,14 +389,13 @@ def test_rate_impact_beginning_of_year():
 
 def test_cumulative_tort_reform():
     """Cumulative on-level factors can be supplied directly. See GH #922."""
-    tort = pd.DataFrame(
-        {
-            "EffDate": ["1998-01-01", "2003-01-01", "2004-01-01"],
-            "Factor": [0.67, 0.75, 1.00],
-        }
-    )
+    tort = pd.DataFrame({
+        "EffDate": ["1998-01-01", "2003-01-01", "2004-01-01"],
+        "Factor": [0.67, 0.75, 1.00],
+    })
     olf = (
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history=tort,
             change_col="Factor",
             date_col="EffDate",
@@ -413,9 +415,10 @@ def test_cumulative_tort_reform():
 
 def test_cumulative_matches_incremental():
     """Cumulative factors and their incremental equivalent agree."""
-    data = pd.DataFrame(
-        {"Year": list(range(2006, 2016)), "EarnedPremium": [10_000] * 10}
-    )
+    data = pd.DataFrame({
+        "Year": list(range(2006, 2016)),
+        "EarnedPremium": [10_000] * 10,
+    })
     prem_tri = cl.Triangle(
         data, origin="Year", columns="EarnedPremium", cumulative=True
     )
@@ -442,9 +445,10 @@ def test_cumulative_matches_incremental():
                 cumulative=True,
                 **kw,
             ).fit_transform(prem_tri)
-            assert np.allclose(
-                incremental.olf_.values, cumulative.olf_.values
-            ), (grain, vertical_line)
+            assert np.allclose(incremental.olf_.values, cumulative.olf_.values), (
+                grain,
+                vertical_line,
+            )
 
 
 def test_cumulative_rejects_non_positive():
@@ -463,11 +467,13 @@ def test_cumulative_factor_predates_window():
     prem_tri = cl.Triangle(
         data, origin="Year", columns="EarnedPremium", cumulative=True
     )
-    factors = pd.DataFrame(
-        {"EffDate": ["2000-01-01", "2005-01-01"], "Factor": [0.5, 1.0]}
-    )
+    factors = pd.DataFrame({
+        "EffDate": ["2000-01-01", "2005-01-01"],
+        "Factor": [0.5, 1.0],
+    })
     olf = (
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history=factors,
             change_col="Factor",
             date_col="EffDate",
@@ -485,14 +491,13 @@ def test_cumulative_factor_predates_window():
 
 def test_cumulative_duplicate_date_last_wins():
     """Duplicate effective dates keep the last cumulative factor, not a product."""
-    dup = pd.DataFrame(
-        {
-            "EffDate": ["1998-01-01", "2003-01-01", "2003-01-01", "2004-01-01"],
-            "Factor": [0.67, 0.67, 0.75, 1.00],
-        }
-    )
+    dup = pd.DataFrame({
+        "EffDate": ["1998-01-01", "2003-01-01", "2003-01-01", "2004-01-01"],
+        "Factor": [0.67, 0.67, 0.75, 1.00],
+    })
     olf = (
-        cl.ParallelogramOLF(
+        cl
+        .ParallelogramOLF(
             rate_history=dup,
             change_col="Factor",
             date_col="EffDate",
@@ -526,16 +531,15 @@ def _olf_for_freq(freq, rates):
     return triangle.origin_grain, np.asarray(olf.olf_.values).flatten()
 
 
-RATE_HISTORY = pd.DataFrame(
-    {
-        "EffDate": [pd.Timestamp("2016-07-01"), pd.Timestamp("2017-04-01")],
-        "RateChange": [0.08, 0.05],
-    }
-)
+RATE_HISTORY = pd.DataFrame({
+    "EffDate": [pd.Timestamp("2016-07-01"), pd.Timestamp("2017-04-01")],
+    "RateChange": [0.08, 0.05],
+})
 
 
 @pytest.mark.parametrize(
-    "freq, grain, origins", [("YS", "Y", 3), ("2QS", "S", 6), ("QS", "Q", 12), ("MS", "M", 36)]
+    "freq, grain, origins",
+    [("YS", "Y", 3), ("2QS", "S", 6), ("QS", "Q", 12), ("MS", "M", 36)],
 )
 def test_olf_supports_every_origin_grain(freq, grain, origins):
     # Quarterly and semiannual premium triangles used to raise ValueError, so
@@ -548,14 +552,43 @@ def test_olf_supports_every_origin_grain(freq, grain, origins):
     assert len(olf) == origins
 
 
-@pytest.mark.parametrize("grain, freq, months", [("Y", "YS", 12), ("S", "2QS", 6), ("Q", "QS", 3)])
+@pytest.mark.parametrize(
+    "grain, freq, months", [("Y", "YS", 12), ("S", "2QS", 6), ("Q", "QS", 3)]
+)
 def test_olf_aggregates_consistently_with_monthly(grain, freq, months):
     # An on-level factor is a ratio of rate levels, so a coarser grain is the
     # reciprocal of the mean reciprocal of the months it spans. The "Y" case
     # holds on unfixed code too and is kept as a control on the identity.
     _, monthly = _olf_for_freq("MS", RATE_HISTORY)
     _, coarse = _olf_for_freq(freq, RATE_HISTORY)
-    expected = np.array(
-        [1 / np.mean(1 / monthly[i : i + months]) for i in range(0, len(monthly), months)]
-    )
+    expected = np.array([
+        1 / np.mean(1 / monthly[i : i + months]) for i in range(0, len(monthly), months)
+    ])
     np.testing.assert_allclose(coarse, expected, rtol=1e-9)
+
+
+def test_daily_grain_after_leap_year():
+    # A daily approximation on a triangle whose origins start right after a leap
+    # year used to trim the lookback window by row count, which dropped one more
+    # row in the leap pass than the non-leap pass. When that row was the only one
+    # of its origin period the two passes produced a different number of origins
+    # and .fit() failed with a broadcast error.
+    rates = pd.DataFrame({
+        "EffDate": [pd.Timestamp("2016-07-01")],
+        "RateChange": [0.05],
+    })
+    origin = pd.date_range("2017-01-01", "2019-12-31", freq="YS")
+    triangle = cl.Triangle(
+        pd.DataFrame({"origin": origin, "values": 1.0}),
+        origin="origin",
+        columns="values",
+        cumulative=True,
+    )
+    olf = cl.ParallelogramOLF(
+        rate_history=rates,
+        change_col="RateChange",
+        date_col="EffDate",
+        approximation_grain="D",
+    ).fit(triangle)
+    assert len(olf.olf_.origin) == len(triangle.origin)
+    assert not olf.olf_.to_frame(origin_as_datetime=False).isna().any().any()
