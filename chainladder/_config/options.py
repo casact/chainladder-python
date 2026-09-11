@@ -55,6 +55,10 @@ class Options:
         when comparing or concatenating them.
     ULT_VAL: str
         The default ultimate valuation datetime, precision set to default of Pandas installation.
+    display.html_auto_pretty: bool
+        Controls whether a Triangle's Jupyter/IPython HTML representation automatically applies
+        thousands-separator and decimal-place formatting, and blanks NaN cells. Defaults to True
+        for now; the default may change in a future release.
 
     """
 
@@ -65,6 +69,7 @@ class Options:
         self.ULT_VAL = str(
             pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)  # noqa
         )
+        setattr(self, "display.html_auto_pretty", True)
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({
             k: v for k, v in vars(self).items() if not k.startswith("_")

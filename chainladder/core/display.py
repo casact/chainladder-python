@@ -9,6 +9,8 @@ import re
 
 from typing import TYPE_CHECKING, Any
 
+from chainladder import options
+
 try:
     from IPython.core.display import HTML
     import IPython.display
@@ -74,17 +76,23 @@ class TriangleDisplay:
         # Case single-dimensional triangle.
         elif self._dimensionality == "single":
             data = self._repr_format()
-            fmt_str = self._get_format_str(data=data)
-            default = (
-                data
-                .to_html(
+            if options.get_option("display.html_auto_pretty"):
+                fmt_str = self._get_format_str(data=data)
+                default = (
+                    data
+                    .to_html(
+                        max_rows=pd.options.display.max_rows,
+                        max_cols=pd.options.display.max_columns,
+                        float_format=fmt_str.format,
+                    )
+                    .replace("nan", "")
+                    .replace("NaN", "")
+                )
+            else:
+                default = data.to_html(
                     max_rows=pd.options.display.max_rows,
                     max_cols=pd.options.display.max_columns,
-                    float_format=fmt_str.format,
                 )
-                .replace("nan", "")
-                .replace("NaN", "")
-            )
             return default
         # Case multidimensional triangle.
         else:

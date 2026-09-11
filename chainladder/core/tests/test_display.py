@@ -184,6 +184,68 @@ def test_repr_html_single(raa):
     check_html(html=html_str)
 
 
+def test_html_auto_pretty_default_enabled() -> None:
+    """
+    The display.html_auto_pretty option should default to True.
+
+    Returns
+    -------
+    None
+
+    """
+    assert cl.options.get_option("display.html_auto_pretty") is True
+
+
+def test_repr_html_single_auto_pretty_enabled(raa: Triangle) -> None:
+    """
+    When display.html_auto_pretty is True (the default), the HTML
+    representation applies thousands-separator/decimal formatting and
+    blanks NaN cells.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    html_str: str = raa._repr_html_()
+    assert "<table" in html_str
+    check_html(html=html_str)
+    assert "5,012" in html_str
+    assert "NaN" not in html_str
+
+
+def test_repr_html_single_auto_pretty_disabled(raa: Triangle) -> None:
+    """
+    When display.html_auto_pretty is False, the HTML representation skips
+    thousands-separator/decimal formatting and NaN blanking.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    cl.options.set_option("display.html_auto_pretty", False)
+    try:
+        html_str: str = raa._repr_html_()
+    finally:
+        cl.options.reset_option("display.html_auto_pretty")
+    assert "<table" in html_str
+    check_html(html=html_str)
+    assert "5,012" not in html_str
+    assert "5012.0" in html_str
+    assert "NaN" in html_str
+
+
 def test_repr_html_multi(clrd: Triangle) -> None:
     """
     Inspect the HTML representation of a multidimensional triangle.
