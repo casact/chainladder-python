@@ -29,8 +29,6 @@
 - [ ] Relevant issue(s) are linked.
 - [ ] AI/LLM usage is disclosed and appropriate.
 - [ ] Documentation and tests are appropriate.
-- [ ] Additional reviewer is requested or not needed.
-- [ ] CI tests passed or failure are acceptable.
-
-
+- [ ] CI tests passed, or any failures are acceptable.
+- [ ] Leave a comment with the final recommendation (e.g. approve as is, request a secondary review, or flag an area for more review).
 
