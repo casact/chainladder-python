@@ -26,11 +26,11 @@ class TestOLS:
             }
         ]
         data.append({
-                "module": sp,
-                "X": [sp.COO.from_numpy(i, fill_value=np.nan) for i in data[0]["X"]],
-                "y": [sp.COO.from_numpy(i, fill_value=np.nan) for i in data[0]["y"]],
-                "w": sp.COO.from_numpy(data[0]["w"]),
-                "slope": sp.COO.from_numpy(data[0]["slope"]),
+            "module": sp,
+            "X": [sp.COO.from_numpy(i, fill_value=np.nan) for i in data[0]["X"]],
+            "y": [sp.COO.from_numpy(i, fill_value=np.nan) for i in data[0]["y"]],
+            "w": sp.COO.from_numpy(data[0]["w"]),
+            "slope": sp.COO.from_numpy(data[0]["slope"]),
         })
         for i in data:
             for x in i["X"]:
