@@ -133,5 +133,5 @@ def test_highlight_lower_triangle_requires_matching_shape(clrd) -> None:
     grid (multiple index labels and columns, here) raises a clear error rather
     than silently misaligning the mask.
     """
-    with pytest.raises(ValueError, match="single origin-by-development grid"):
+    with pytest.raises(ValueError, match="only supports a single \\(2-D\\) Triangle"):
         clrd.style.highlight_lower_triangle()
