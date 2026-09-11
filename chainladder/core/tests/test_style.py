@@ -35,13 +35,8 @@ def test_wraps_a_dataframe(df: pd.DataFrame) -> None:
 
 def test_chained_methods_preserve_subclass(df: pd.DataFrame) -> None:
     """Check that chaining a pandas Styler method still returns a chainladder Styler,
-    not a plain pandas Styler -- the methods mutate self and return self, so
-    subclassing doesn't get lost partway through a chain.
+    not a plain pandas Styler.
     """
-    # pandas types .format()/.hide() as returning StylerRenderer (their defining
-    # base class) rather than Self, so a type checker loses the subclass after
-    # chaining even though the runtime object is still a Styler -- see the
-    # isinstance assertion below.
     result = (
         Styler(df)
         .format(precision=1)
@@ -53,13 +48,10 @@ def test_chained_methods_preserve_subclass(df: pd.DataFrame) -> None:
 
 
 def test_renders_identically_to_pandas_styler(df: pd.DataFrame) -> None:
-    """Check that Styler produces the same HTML as pandas' own Styler, uuid aside --
-    confirms the subclass doesn't alter behavior, matching the goal of starting as
-    a pure adapter before adding Triangle-specific behavior.
+    """Check that Styler produces the same HTML as pandas' own Styler.
     """
-    # Same StylerRenderer-vs-Self typing gap as above, on pandas' own side too.
-    cl_html = Styler(df, uuid="fixed").format(precision=2).to_html()  # pyright: ignore[reportAttributeAccessIssue]
-    pd_html = PandasStyler(df, uuid="fixed").format(precision=2).to_html()  # pyright: ignore[reportAttributeAccessIssue]
+    cl_html = Styler(df, uuid="fixed").format(precision=2).to_html()
+    pd_html = PandasStyler(df, uuid="fixed").format(precision=2).to_html()
     assert cl_html == pd_html
 
 
