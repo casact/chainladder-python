@@ -27,6 +27,8 @@ CORE_PACKAGES = ["numpy", "pandas", "scikit-learn", "matplotlib"]
 # Community-maintained release-cycle API.
 PYTHON_EOL_API_URL = "https://endoflife.date/api/python.json"
 
+SPEC0_LOGO_URL = "https://scientific-python.org/images/logo.svg"
+
 WARN_DAYS = 90
 
 Status = Literal["ok", "within_window", "past_due"]
@@ -497,6 +499,7 @@ def issue_body(violation: dict) -> str:
         The issue body, in Markdown.
 
     """
+    logo = f'<img src="{SPEC0_LOGO_URL}" width="40" align="left">'
     footer = (
         "This issue was opened automatically by the nightly SPEC 0 check "
         "(`.github/workflows/spec0_check_nightly.yml`). If there's a specific reason to keep "
@@ -505,16 +508,16 @@ def issue_body(violation: dict) -> str:
     )
     if violation["name"] == "python":
         return (
-            f"Python {violation['floor']} is due to reach end-of-life on "
+            f"{logo} Python {violation['floor']} is due to reach end-of-life on "
             f"**{violation['drop_date']}** ({violation['status'].replace('_', ' ')}). "
-            "Update `pyproject.toml` and related workflow files to to drop this version, and "
+            "Update `pyproject.toml` and related workflow files to drop this version, and "
             "consider raising the maximum supported version if a newer Python release is "
             "available.\n\n" + footer
         )
     return (
-        f"According to [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum "
-        f"supported version for `{violation['name']}` (`>= {violation['floor']}`) has a "
-        f"recommended drop date of **{violation['drop_date']}** "
+        f"{logo} According to [SPEC 0](https://scientific-python.org/specs/spec-0000/), the "
+        f"minimum supported version for `{violation['name']}` (`>= {violation['floor']}`) has "
+        f"a recommended drop date of **{violation['drop_date']}** "
         f"({violation['status'].replace('_', ' ')}). Update `pyproject.toml` to bump the "
         "minimum version before this date.\n\n" + footer
     )
