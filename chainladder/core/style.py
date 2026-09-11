@@ -81,7 +81,7 @@ class Styler(_PandasStyler):
         ----------
         color: str
             Background color applied to lower-triangle cells. Ignored if
-            ``props`` is given. Defaults to "yellow".
+            ``props`` is given. Defaults to "blue".
         props: str | None
             A full CSS properties string to apply instead of ``color``, e.g.
             ``"background-color: blue; opacity: 60%;"``. Optional.
