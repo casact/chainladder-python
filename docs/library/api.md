@@ -26,6 +26,12 @@ Classes
   DevelopmentCorrelation
   ValuationCorrelation
 
+.. autosummary::
+  :toctree: generated/
+  :template: class
+
+  Styler
+
 
 .. _development_ref:
 
