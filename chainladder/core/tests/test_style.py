@@ -103,7 +103,9 @@ def test_highlight_lower_triangle_styles_exactly_the_lower_triangle(raa) -> None
         if is_lower
     }
     assert styled == expected
-    assert all(v == [("background-color", "lightgray")] for v in styler.ctx.values() if v)
+    assert all(
+        v == [("background-color", "lightgray")] for v in styler.ctx.values() if v
+    )
 
 
 def test_highlight_lower_triangle_props_overrides_color(raa) -> None:
@@ -124,7 +126,9 @@ def test_highlight_lower_triangle_requires_a_triangle(df: pd.DataFrame) -> None:
     """Check that calling it on a Styler not built from Triangle.style raises a
     clear error, since there's no way to know which cells are the lower triangle.
     """
-    with pytest.raises(ValueError, match="requires a Styler created from Triangle.style"):
+    with pytest.raises(
+        ValueError, match="requires a Styler created from Triangle.style"
+    ):
         Styler(df).highlight_lower_triangle()
 
 
