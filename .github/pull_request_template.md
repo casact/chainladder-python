@@ -6,6 +6,7 @@
 <!-- Use keywords like close/closes/closed or fix/fixes/fixed to close the issue automatically -->
 
 
+
 ## AI/LLM Usage
 <!-- Declare and briefly describe any AI/LLM assistance used and the extent of usage during development of this PR. -->
 
@@ -15,7 +16,7 @@
 
 
 
-<!-- Checklists should be completed, but do not edit any words below. -->
+<!-- Checklists below should be completed, but do not edit any words below. -->
 
 ## Submitter's Checklist
 - [ ] I have reviewed and am adhering to the standards outlined in the project [Governing Doc](https://github.com/casact/chainladder-python/blob/main/docs/library/governance.md).
