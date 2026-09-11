@@ -471,12 +471,20 @@ def issue_title(violation: dict) -> str:
         The issue title.
 
     """
-    return f"SPEC 0: {violation['name']} support drop date ({violation['drop_date']})"
+    return (
+        f"SPEC 0: drop support for {violation['name']} {violation['floor']} "
+        f"by {violation['drop_date']}"
+    )
 
 
 def issue_body(violation: dict) -> str:
     """
     Builds the body text for a new tracking issue for a single violation.
+
+    Python and core-package violations get different bodies, since Python is
+    tracked against its own end-of-life date rather than SPEC 0's generic
+    rule, and the fix looks different (bump `requires-python` vs. bump a
+    dependency floor).
 
     Parameters
     ----------
@@ -489,18 +497,26 @@ def issue_body(violation: dict) -> str:
         The issue body, in Markdown.
 
     """
-    return (
-        f"The currently-declared minimum for `{violation['name']}` "
-        f"(`>= {violation['floor']}`) has a SPEC 0 recommended drop-support date of "
-        f"**{violation['drop_date']}** ({violation['status'].replace('_', ' ')}).\n\n"
-        "Python is tracked against its official end-of-life date rather than SPEC 0's "
-        "generic 3-years-after-release rule; core packages (numpy, pandas, scikit-learn, "
-        "matplotlib) are tracked against SPEC 0's 2-years-after-release rule. "
-        "See https://scientific-python.org/specs/spec-0000/ for the policy.\n\n"
+    footer = (
         "This issue was opened automatically by the nightly SPEC 0 check "
-        "(`.github/workflows/spec0_check_nightly.yml`). If this version should still be supported "
-        "for a specific reason, close this issue with an explanation; otherwise it tracks "
-        "bumping the minimum version."
+        "(`.github/workflows/spec0_check_nightly.yml`). If there's a specific reason to keep "
+        "supporting this version, close this issue with an explanation. Otherwise, leave it "
+        "open until the minimum version is bumped."
+    )
+    if violation["name"] == "python":
+        return (
+            f"Python {violation['floor']} is due to reach end-of-life on "
+            f"**{violation['drop_date']}** ({violation['status'].replace('_', ' ')}). "
+            "Update `pyproject.toml` and related workflow files to to drop this version, and "
+            "consider raising the maximum supported version if a newer Python release is "
+            "available.\n\n" + footer
+        )
+    return (
+        f"According to [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum "
+        f"supported version for `{violation['name']}` (`>= {violation['floor']}`) has a "
+        f"recommended drop date of **{violation['drop_date']}** "
+        f"({violation['status'].replace('_', ' ')}). Update `pyproject.toml` to bump the "
+        "minimum version before this date.\n\n" + footer
     )
 
 
