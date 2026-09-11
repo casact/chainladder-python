@@ -10,21 +10,19 @@ class TestOLS:
 
     def test_missing_data(self) -> None:
         """Check that having nan in X and/or y still results in the right OLS coefficients."""
-        data = [
-            {
-                "module": np,
-                "X": [
-                    np.array([[[[1.0], [2.0], [3.0], [4.0], [5.0]]]]),
-                    np.array([[[[1.0], [np.nan], [3.0], [4.0], [5.0]]]]),
-                ],
-                "y": [
-                    np.array([[[[1.0], [2.0], [3.0], [4.0], [5.0]]]]),
-                    np.array([[[[1.0], [2.0], [np.nan], [4.0], [5.0]]]]),
-                ],
-                "w": np.array([[[[1.0], [1.0], [1.0], [1.0], [1.0]]]]),
-                "slope": np.array([[[[1.0]]]]),
-            },
-        ]
+        data = [{
+            "module": np,
+            "X": [
+                np.array([[[[1.0], [2.0], [3.0], [4.0], [5.0]]]]),
+                np.array([[[[1.0], [np.nan], [3.0], [4.0], [5.0]]]]),
+            ],
+            "y": [
+                np.array([[[[1.0], [2.0], [3.0], [4.0], [5.0]]]]),
+                np.array([[[[1.0], [2.0], [np.nan], [4.0], [5.0]]]]),
+            ],
+            "w": np.array([[[[1.0], [1.0], [1.0], [1.0], [1.0]]]]),
+            "slope": np.array([[[[1.0]]]]),
+        }]
         data.append(
             {
                 "module": sp,
@@ -38,6 +36,8 @@ class TestOLS:
             for x in i["X"]:
                 for y in i["y"]:
                     assert i["module"].all(
-                        WeightedRegression(xp=i["module"]).fit(x, y, i["w"], "regression").slope_
+                        WeightedRegression(xp=i["module"])
+                        .fit(x, y, i["w"], "regression")
+                        .slope_
                         == i["slope"]
                     )
