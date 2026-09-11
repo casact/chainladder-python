@@ -20,7 +20,6 @@ class TestFullTri:
         tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
         assert tw.w_.iloc[:, :, :, 0] == tw_full.w_.iloc[:, :, :, 0]
 
-
     def test_triangleweight_full_irregular_triangle(self) -> None:
         """
         Testing unequal grains
