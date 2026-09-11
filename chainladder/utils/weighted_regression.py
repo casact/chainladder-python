@@ -191,18 +191,25 @@ class WeightedRegression(BaseEstimator):
         from chainladder.utils.utility_functions import num_to_nan
 
         w, x, y, axis = self.w.copy(), self.x.copy(), self.y.copy(), self.axis
-        w[np.isnan(x)] = 0
-        w[np.isnan(y)] = 0
         xp = self.xp
         if xp != sp:
             x[w == 0] = xp.nan
             y[w == 0] = xp.nan
+            w[np.isnan(x)] = 0
+            w[np.isnan(y)] = 0
         else:
-            w2 = w.copy()
+            x2, y2, w2 = x.copy(), y.copy(), w.copy()
             w2 = sp.COO(
                 data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape
             )
             x, y = x * w2, y * w2
+            x2 = sp.COO(
+                data=1.0, coords=x2.coords, fill_value=sp.nan, shape=x2.shape
+            )
+            y2 = sp.COO(
+                data=1.0, coords=y2.coords, fill_value=sp.nan, shape=y2.shape
+            )
+            w = w * x2 * y2
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
