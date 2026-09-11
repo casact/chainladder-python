@@ -11,10 +11,14 @@ import numpy as np
 import pandas as pd
 from pandas.io.formats.style import Styler as _PandasStyler
 
-from typing import Any, TYPE_CHECKING
+from datetime import date, datetime
+from typing import Any, TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleProtocol
+
+# A value accepted by pandas.Timestamp's constructor.
+ValuationDateLike: TypeAlias = int | float | str | date | datetime | pd.Timestamp
 
 del TYPE_CHECKING
 del annotations
@@ -26,7 +30,7 @@ class Styler(_PandasStyler):
 
     This class provides methods for styling and formatting a Triangle. The
     styled output can be rendered as HTML or LaTeX, and it supports CSS-based styling, allowing
-    users to control colors, font styles, and other visual aspects of tabular data. It is particularly
+    users to control colors, font styles, and other visual aspects of triangular data. It is particularly
     useful for presenting Triangle objects in a Jupyter Notebook environment or when exporting
     styled triangles for reports.
 
@@ -36,11 +40,6 @@ class Styler(_PandasStyler):
         The data to style, as for :class:`pandas.io.formats.style.Styler`.
     triangle: TriangleProtocol | None
         The Triangle ``data`` was produced from, e.g. via ``Triangle.to_frame()``.
-        Required by builtins that need to know the Triangle's actuarial
-        structure, such as :meth:`highlight_lower_triangle`. Optional, since a
-        Styler can still be built directly from an arbitrary DataFrame the same
-        way a pandas ``Styler`` can; those Triangle-specific builtins simply
-        aren't available in that case.
     *args: Any
         Additional positional arguments passed to
         :class:`pandas.io.formats.style.Styler`.
@@ -75,7 +74,8 @@ class Styler(_PandasStyler):
         self,
         color: str = "blue",
         props: str | None = None,
-        valuation_date: Any = None,
+        valuation_date: ValuationDateLike | None = None,
+        text_color: str | None = None,
     ) -> Styler:
         """
         Highlight the lower triangle -- the cells beyond the Triangle's
@@ -87,12 +87,16 @@ class Styler(_PandasStyler):
             Background color applied to lower-triangle cells. Ignored if
             ``props`` is given. Defaults to "blue".
         props: str | None
-            A full CSS properties string to apply instead of ``color``, e.g.
-            ``"background-color: blue; opacity: 60%;"``. Optional.
-        valuation_date: Any
+            A full CSS properties string to apply instead of ``color`` and
+            ``text_color``, e.g. ``"background-color: blue; opacity: 60%;"``.
+            Optional.
+        valuation_date: ValuationDateLike | None
             The "as of" date used to determine which cells fall beyond the
             latest diagonal, i.e. the lower triangle. If ``None``, defaults to the
             wrapped Triangle's own ``valuation_date``.
+        text_color: str | None
+            Text color applied to lower-triangle cells. Ignored if ``props``
+            is given. Left unstyled (i.e. inherited) if not given.
 
         Returns
         -------
@@ -108,7 +112,16 @@ class Styler(_PandasStyler):
 
             cl.load_sample("raa").style.highlight_lower_triangle(color="lightgray")
 
-        Highlighting a fully-predicted Triangle requires the original
+        A softer, higher-contrast pairing than the default:
+
+        .. testcode::
+            :options: +SKIP
+
+            cl.load_sample("raa").style.highlight_lower_triangle(
+                color="#BDD7EE", text_color="#1F4E78"
+            )
+
+        Highlighting a fully-predicted Triangle requires a
         valuation date, since its cells are no longer ``NaN``.
 
         .. testcode::
@@ -127,19 +140,24 @@ class Styler(_PandasStyler):
                 "Triangle.style, so it knows which cells are the lower triangle."
             )
         if valuation_date is None:
-            valuation_date = self._triangle.valuation_date
+            cutoff = self._triangle.valuation_date
+        else:
+            cutoff = pd.Timestamp(valuation_date)
         val_array = np.array(self._triangle.valuation).reshape(
-            self._triangle.shape[-2:], order="f"
+            self._triangle.shape[-2:], order="F"
         )
-        nan_triangle = np.where(val_array > pd.Timestamp(valuation_date), np.nan, 1)
+        nan_triangle = np.where(val_array > cutoff, np.nan, 1)
         if nan_triangle.shape != self.data.shape:
             raise ValueError(
                 "highlight_lower_triangle only supports a single (2-D) Triangle."
             )
 
-        def f(_data: pd.DataFrame, props: str) -> np.ndarray:
-            return np.where(pd.isna(nan_triangle), props, "")
-
         if props is None:
             props = f"background-color: {color};"
-        return self.apply(f, axis=None, props=props)  # pyright: ignore[reportReturnType]
+            if text_color is not None:
+                props += f" color: {text_color};"
+
+        def f(_data: pd.DataFrame) -> np.ndarray:
+            return np.where(pd.isna(nan_triangle), props, "")
+
+        return self.apply(f, axis=None)  # pyright: ignore[reportReturnType]

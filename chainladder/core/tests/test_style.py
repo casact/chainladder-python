@@ -123,6 +123,29 @@ def test_highlight_lower_triangle_props_overrides_color(raa) -> None:
     assert "lightgray" not in styler.to_html()
 
 
+def test_highlight_lower_triangle_text_color(raa) -> None:
+    """Check that text_color sets the text color alongside the background."""
+    styler = raa.style.highlight_lower_triangle(color="#DDEBF7", text_color="#1F4E78")
+    styler._compute()
+    styled = [v for v in styler.ctx.values() if v]
+    assert len(styled) > 0
+    assert all(
+        v == [("background-color", "#DDEBF7"), ("color", "#1F4E78")] for v in styled
+    )
+
+
+def test_highlight_lower_triangle_text_color_ignored_without_default_props(
+    raa,
+) -> None:
+    """Check that text_color is ignored when props overrides color, matching
+    color's own documented behavior.
+    """
+    styler = raa.style.highlight_lower_triangle(
+        text_color="#1F4E78", props="background-color: blue;"
+    )
+    assert "1F4E78" not in styler.to_html()
+
+
 def test_highlight_lower_triangle_returns_styler(raa) -> None:
     """Check that the subclass is preserved through the chained call."""
     assert isinstance(raa.style.highlight_lower_triangle(), Styler)
@@ -166,7 +189,7 @@ def test_highlight_lower_triangle_with_valuation_date_highlights_predicted_cells
     styler._compute()
     styled = {k for k, v in styler.ctx.items() if v}
 
-    val_array = np.array(full.valuation).reshape(full.shape[-2:], order="f")
+    val_array = np.array(full.valuation).reshape(full.shape[-2:], order="F")
     expected = {
         (r, c)
         for r, row in enumerate(val_array > raa.valuation_date)
