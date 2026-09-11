@@ -203,12 +203,8 @@ class WeightedRegression(BaseEstimator):
                 data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape
             )
             x, y = x * w2, y * w2
-            x2 = sp.COO(
-                data=1.0, coords=x2.coords, fill_value=sp.nan, shape=x2.shape
-            )
-            y2 = sp.COO(
-                data=1.0, coords=y2.coords, fill_value=sp.nan, shape=y2.shape
-            )
+            x2 = sp.COO(data=1.0, coords=x2.coords, fill_value=sp.nan, shape=x2.shape)
+            y2 = sp.COO(data=1.0, coords=y2.coords, fill_value=sp.nan, shape=y2.shape)
             w = w * x2 * y2
 
         with warnings.catch_warnings():
