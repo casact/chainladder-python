@@ -247,7 +247,7 @@ class TrianglePandas(_TrianglePandasBase):
         Styler
             A Styler wrapping this Triangle's ``to_frame()`` representation.
         """
-        return Styler(self.to_frame(), triangle=self)
+        return Styler(self.to_frame(origin_as_datetime=False), triangle=self)
 
     @staticmethod
     def _get_axis(
