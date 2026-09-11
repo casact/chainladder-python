@@ -72,10 +72,14 @@ class Styler(_PandasStyler):
         self._triangle = triangle
 
     def highlight_lower_triangle(
-        self, color: str = "blue", props: str | None = None
+        self,
+        color: str = "blue",
+        props: str | None = None,
+        valuation_date: Any = None,
     ) -> Styler:
         """
-        Highlight the lower (future, unobserved) triangle with a style.
+        Highlight the lower triangle -- the cells beyond the Triangle's
+        latest diagonal -- with a style.
 
         Parameters
         ----------
@@ -85,6 +89,10 @@ class Styler(_PandasStyler):
         props: str | None
             A full CSS properties string to apply instead of ``color``, e.g.
             ``"background-color: blue; opacity: 60%;"``. Optional.
+        valuation_date: Any
+            The "as of" date used to determine which cells fall beyond the
+            latest diagonal, i.e. the lower triangle. If ``None``, defaults to the
+            wrapped Triangle's own ``valuation_date``.
 
         Returns
         -------
@@ -100,19 +108,30 @@ class Styler(_PandasStyler):
 
             cl.load_sample("raa").style.highlight_lower_triangle(color="lightgray")
 
+        Highlighting a fully-predicted Triangle requires the original
+        valuation date, since its cells are no longer ``NaN``.
+
+        .. testcode::
+            :options: +SKIP
+
+            raa = cl.load_sample("raa")
+            full = cl.Chainladder().fit(raa).full_triangle_
+            full.style.highlight_lower_triangle(
+                color="lightgray", valuation_date=raa.valuation_date
+            )
+
         """
         if self._triangle is None:
             raise ValueError(
                 "highlight_lower_triangle requires a Styler created from "
                 "Triangle.style, so it knows which cells are the lower triangle."
             )
-        nan_triangle = self._triangle.nan_triangle
-        # Densify backends (sparse, cupy, ...) that don't support pd.isna() directly.
-        nan_triangle = (
-            nan_triangle.todense()  # pyright: ignore[reportAttributeAccessIssue]
-            if hasattr(nan_triangle, "todense")
-            else np.asarray(nan_triangle)
+        if valuation_date is None:
+            valuation_date = self._triangle.valuation_date
+        val_array = np.array(self._triangle.valuation).reshape(
+            self._triangle.shape[-2:], order="f"
         )
+        nan_triangle = np.where(val_array > pd.Timestamp(valuation_date), np.nan, 1)
         if nan_triangle.shape != self.data.shape:
             raise ValueError(
                 "highlight_lower_triangle only supports a single (2-D) Triangle."

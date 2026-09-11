@@ -76,8 +76,14 @@ def test_triangle_style_returns_styler(raa) -> None:
 
 
 def test_triangle_style_wraps_to_frame(raa) -> None:
-    """Check that Triangle.style wraps the same data as Triangle.to_frame()."""
-    pd.testing.assert_frame_equal(raa.style.data, raa.to_frame())
+    """Check that Triangle.style wraps the same data as
+    Triangle.to_frame(origin_as_datetime=False) -- the origin stays a
+    PeriodIndex rather than converting to datetime, so it renders compactly
+    (e.g. "1981") instead of "1981-01-01 00:00:00".
+    """
+    pd.testing.assert_frame_equal(
+        raa.style.data, raa.to_frame(origin_as_datetime=False)
+    )
 
 
 def test_triangle_style_is_fresh_each_access(raa) -> None:
@@ -130,6 +136,48 @@ def test_highlight_lower_triangle_requires_a_triangle(df: pd.DataFrame) -> None:
         ValueError, match="requires a Styler created from Triangle.style"
     ):
         Styler(df).highlight_lower_triangle()
+
+
+def test_highlight_lower_triangle_predicted_cells_not_highlighted_by_default(
+    raa,
+) -> None:
+    """A fully-predicted Triangle (e.g. full_triangle_) has no NaN cells left,
+    and once it carries an ultimate column its own nan_triangle collapses to
+    all-observed -- so without an explicit valuation_date, nothing gets
+    highlighted.
+    """
+    full = cl.Chainladder().fit(raa).full_triangle_
+    styler = full.style.highlight_lower_triangle(color="lightgray")
+    styler._compute()
+    assert not any(styler.ctx.values())
+
+
+def test_highlight_lower_triangle_with_valuation_date_highlights_predicted_cells(
+    raa,
+) -> None:
+    """Passing the original valuation_date recovers which cells were originally
+    the lower (unobserved) triangle, even though they've since been filled in
+    with predicted values.
+    """
+    full = cl.Chainladder().fit(raa).full_triangle_
+    styler = full.style.highlight_lower_triangle(
+        color="lightgray", valuation_date=raa.valuation_date
+    )
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+
+    val_array = np.array(full.valuation).reshape(full.shape[-2:], order="f")
+    expected = {
+        (r, c)
+        for r, row in enumerate(val_array > raa.valuation_date)
+        for c, is_lower in enumerate(row)
+        if is_lower
+    }
+    assert styled == expected
+    assert len(styled) > 0
+    assert all(
+        v == [("background-color", "lightgray")] for v in styler.ctx.values() if v
+    )
 
 
 def test_highlight_lower_triangle_requires_matching_shape(clrd) -> None:
