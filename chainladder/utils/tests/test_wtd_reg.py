@@ -16,9 +16,7 @@ class TestOLS:
         y_missing = np.array([[[[1.0], [2.0], [np.nan], [4.0], [5.0]]]])
         w = np.array([[[[1.0], [1.0], [1.0], [1.0], [1.0]]]])
         assert np.all(
-            WeightedRegression()
-            .fit(X_full, y_full, w, "regression")
-            .slope_.flatten()
+            WeightedRegression().fit(X_full, y_full, w, "regression").slope_.flatten()
             == [1.0]
         )
         assert np.all(
