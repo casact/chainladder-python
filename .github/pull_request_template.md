@@ -15,7 +15,7 @@
 
 
 
-<!-- Do not edit anything below until the ticket is open. Checklists below. -->
+<!-- Checklists should be completed, but do not edit any words below. -->
 
 ## Submitter's Checklist
 - [ ] I have reviewed and am adhering to the standards outlined in the project [Governing Doc](https://github.com/casact/chainladder-python/blob/main/docs/library/governance.md).
