@@ -169,22 +169,24 @@ def test_capecod_onlevel_friedland_exhibit_ii():
         "rate_change": [0.02, 0.02, 0.02, 0.02, 0.05, 0.075, 0.15, 0.10, -0.20, -0.20],
     })
     tort_history = pd.DataFrame({
-        "date": ["1/1/2006", "1/1/2007"],
-        "rate_change": [-0.1067, -0.25],
+        "date": ["1/1/1998", "1/1/2006", "1/1/2007"],
+        "level": [0.67, 0.75, 1.00],
     })
 
     onlevel = cl.ParallelogramOLF(
         rate_history, change_col="rate_change", date_col="date", vertical_line=True
     )
     tort = cl.ParallelogramOLF(
-        tort_history, change_col="rate_change", date_col="date", vertical_line=True
+        tort_history,
+        change_col="level",
+        date_col="date",
+        vertical_line=True,
+        cumulative=True,
     )
 
+    floored_cdf = xyz_reported_dev.cdf_.maximum(1.0)
     floored_patterns = dict(
-        zip(
-            [int(age) for age in xyz_reported_dev.cdf_.ddims],
-            np.maximum(xyz_reported_dev.cdf_.values.flatten(), 1.0),
-        )
+        zip([int(age) for age in floored_cdf.ddims], floored_cdf.values.flatten())
     )
 
     sample_weight = onlevel.fit_transform(xyz_premium)
@@ -193,7 +195,7 @@ def test_capecod_onlevel_friedland_exhibit_ii():
         .Pipeline([
             ("tort", tort),
             ("dev", cl.DevelopmentConstant(patterns=floored_patterns, style="cdf")),
-            ("capecod", cl.CapeCod(trend=0.0342)),
+            ("capecod", cl.CapeCod(trend=0.03425)),
         ])
         .fit(xyz_reported, sample_weight=sample_weight)
         .named_steps["capecod"]
