@@ -473,6 +473,26 @@ def test_kdims_deprecation_warning(raa):
         raa2.kdims = np.array([["P2"]])
     assert list(raa2.index.values) == [["P2"]]
 
+    # Setting wider kdims array and follow-up key_labels assignment
+    raa3 = raa.copy()
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa3.kdims = np.array([["P2", "CA"]])
+    raa3.key_labels = ["Company", "State"]
+    assert raa3.key_labels == ["Company", "State"]
+    assert list(raa3.index.columns) == ["Company", "State"]
+    indexed = raa3.index.set_index(raa3.key_labels)
+    assert list(indexed.index.names) == ["Company", "State"]
+
+
+def test_key_labels_setter(raa):
+    """Setting key_labels should update Triangle.index columns and slicers."""
+    tri = raa.copy()
+    tri.key_labels = ["NewCompany"]
+    assert tri.key_labels == ["NewCompany"]
+    assert list(tri.index.columns) == ["NewCompany"]
+    indexed = tri.index.set_index(tri.key_labels)
+    assert list(indexed.index.names) == ["NewCompany"]
+
 
 def test_legacy_pickle_compatibility(raa):
     """Pickles saved prior to kdims/vdims migration should unpickle cleanly."""

@@ -566,9 +566,8 @@ class Triangle(TriangleBase):
         self.ddims: ArrayLike
         dev_idx: np.ndarray
 
-        self.key_labels: list = index
         kdims_arr, key_idx = self._set_kdims(data_agg, index)
-        self._index = pd.DataFrame(list(kdims_arr), columns=self.key_labels)
+        self._index = pd.DataFrame(list(kdims_arr), columns=index)
         self._columns = pd.Index(columns, name="columns")
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
@@ -732,10 +731,25 @@ class Triangle(TriangleBase):
         self._len_check(self.index, value)
         if isinstance(value, pd.DataFrame):
             self._index = value.copy().reset_index(drop=True)
-            self.key_labels = list(value.columns)
             self._set_slicers()
         else:
             raise TypeError("index must be a pandas DataFrame")
+
+    @property
+    def key_labels(self) -> list:
+        """
+        Returns a list of the labels corresponding to the levels of the index.
+        """
+        return list(self._index.columns)
+
+    @key_labels.setter
+    def key_labels(self, value) -> None:
+        if isinstance(value, str):
+            value = [value]
+        else:
+            value = list(value)
+        self._index.columns = value
+        self._set_slicers()
 
     @property
     def kdims(self):
@@ -761,9 +775,17 @@ class Triangle(TriangleBase):
             value = np.array(value)
         elif not isinstance(value, np.ndarray):
             value = np.array(value)
-        self._index = pd.DataFrame(value, columns=self.key_labels).reset_index(
-            drop=True
-        )
+        if value.ndim == 1:
+            value = value.reshape(-1, 1)
+
+        n_cols = value.shape[1] if value.ndim > 1 else 1
+        if len(self._index.columns) == n_cols:
+            cols = list(self._index.columns)
+        elif n_cols == 1:
+            cols = ["Total"]
+        else:
+            cols = [f"key_{i}" for i in range(n_cols)]
+        self._index = pd.DataFrame(value, columns=cols).reset_index(drop=True)
         self._set_slicers()
 
     @property
@@ -2085,7 +2107,7 @@ class Triangle(TriangleBase):
 
     def __setstate__(self, state: dict) -> None:
         """Migrate legacy pickled instances with 'kdims'/'_kdims' to '_index' and 'vdims'/'_vdims' to '_columns'."""
-        key_labels = state.get("key_labels", ["Total"])
+        key_labels = state.pop("key_labels", ["Total"])
         if "_index" not in state:
             raw_kdims = state.pop("_kdims", None)
             if raw_kdims is None:
