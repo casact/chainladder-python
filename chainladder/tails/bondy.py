@@ -146,19 +146,19 @@ class TailBondy(TailBase):
         super().fit(X, y, sample_weight)
 
         if self.earliest_age is None:
-            earliest_age = X.ddims[-2]
+            earliest_age = X._ddims[-2]
         else:
-            earliest_age = X.ddims[
+            earliest_age = X._ddims[
                 int(
                     self.earliest_age
                     / ({"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain])
                 )
                 - 1
             ]
-        attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
+        attachment_age = self.attachment_age if self.attachment_age else X._ddims[-2]
         obj = Development().fit_transform(X) if "ldf_" not in X else X
         b_optimized = []
-        initial = xp.where(obj.ddims == earliest_age)[0][0] if earliest_age else 0
+        initial = xp.where(obj._ddims == earliest_age)[0][0] if earliest_age else 0
         for num in range(len(obj.columns)):
             b0 = (xp.ones(obj.shape[0]) * 0.5)[:, None]
             data = xp.log(obj.ldf_.values[:, num, 0, initial:])
@@ -176,14 +176,14 @@ class TailBondy(TailBase):
                 [item.reshape(-1, 2)[:, 1:2] for item in b_optimized], axis=1
             )[..., None, None]
         )
-        if sum(X.ddims > earliest_age) > 1:
-            tail = xp.exp(self.earliest_ldf_ * self.b_ ** (len(obj.ldf_.ddims) - 1))
+        if sum(X._ddims > earliest_age) > 1:
+            tail = xp.exp(self.earliest_ldf_ * self.b_ ** (len(obj.ldf_._ddims) - 1))
         else:
             tail = self.ldf_.values[..., 0, initial]
         tail = tail ** (self.b_ / (1 - self.b_))
         f0 = self.ldf_.values[..., 0:1, initial : initial + 1]
         fitted = f0 ** (
-            self.b_ ** (np.arange(sum(X.ddims >= earliest_age))[None, None, None, :])
+            self.b_ ** (np.arange(sum(X._ddims >= earliest_age))[None, None, None, :])
         )
         fitted = xp.concatenate(
             (fitted, fitted[..., -1:] ** (self.b_ / (1 - self.b_))), axis=-1
@@ -196,8 +196,8 @@ class TailBondy(TailBase):
         )
         self.ldf_.values = xp.concatenate(
             (
-                self.ldf_.values[..., : sum(X.ddims <= attachment_age)],
-                fitted[..., -sum(X.ddims >= attachment_age) :],
+                self.ldf_.values[..., : sum(X._ddims <= attachment_age)],
+                fitted[..., -sum(X._ddims >= attachment_age) :],
             ),
             axis=-1,
         )

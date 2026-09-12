@@ -250,9 +250,9 @@ class TailCurve(TailBase):
         )
         tail = self._predict_tail(extrapolate)
         if self.attachment_age:
-            attach_idx = xp.min(xp.where(X.ddims >= self.attachment_age))
+            attach_idx = xp.min(xp.where(X._ddims >= self.attachment_age))
         else:
-            attach_idx = len(X.ddims) - 1
+            attach_idx = len(X._ddims) - 1
         self.ldf_.values = xp.concatenate(
             (self.ldf_.values[..., :attach_idx], tail[..., attach_idx:]), -1
         )
