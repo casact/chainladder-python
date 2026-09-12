@@ -172,7 +172,6 @@ class TailCurve(TailBase):
         self : object
             Returns the instance itself.
         """
-
         X = X.copy()
         xp = X.get_array_module()
         if type(self.fit_period) is slice:
@@ -288,7 +287,7 @@ class TailCurve(TailBase):
         """Does not work with munich"""
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.vdims
+            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.columns_label
         )
 
     @property
@@ -296,5 +295,5 @@ class TailCurve(TailBase):
         """Does not work with munich"""
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.vdims
+            self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.columns_label
         )
