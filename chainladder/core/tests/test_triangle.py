@@ -461,6 +461,13 @@ def test_vdims_deprecation_warning(raa):
         raa2.vdims = ["NewColumn"]
     assert list(raa2.columns) == ["NewColumn"]
 
+    with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
+        raa2.vdims = "SingleColumn"
+    assert list(raa2.columns) == ["SingleColumn"]
+
+    raa2.columns = "DirectColumn"
+    assert list(raa2.columns) == ["DirectColumn"]
+
 
 def test_kdims_deprecation_warning(raa):
     """Accessing or setting kdims should emit a FutureWarning."""
@@ -473,6 +480,18 @@ def test_kdims_deprecation_warning(raa):
         raa2.kdims = np.array([["P2"]])
     assert list(raa2.index.values) == [["P2"]]
 
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa2.kdims = "P_str"
+    assert list(raa2.index.values) == [["P_str"]]
+
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa2.kdims = ["P_1d"]
+    assert list(raa2.index.values) == [["P_1d"]]
+
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa2.kdims = (["P_tuple"],)
+    assert list(raa2.index.values) == [["P_tuple"]]
+
     # Setting wider kdims array and follow-up key_labels assignment
     raa3 = raa.copy()
     with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
@@ -483,6 +502,11 @@ def test_kdims_deprecation_warning(raa):
     indexed = raa3.index.set_index(raa3.key_labels)
     assert list(indexed.index.names) == ["Company", "State"]
 
+    # Assigning single-col kdims to multi-col triangle resets cols to ['Total']
+    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
+        raa3.kdims = np.array([["P_single"]])
+    assert list(raa3.index.columns) == ["Total"]
+
 
 def test_key_labels_setter(raa):
     """Setting key_labels should update Triangle.index columns and slicers."""
@@ -492,6 +516,19 @@ def test_key_labels_setter(raa):
     assert list(tri.index.columns) == ["NewCompany"]
     indexed = tri.index.set_index(tri.key_labels)
     assert list(indexed.index.names) == ["NewCompany"]
+
+    tri.key_labels = "SingleCompany"
+    assert tri.key_labels == ["SingleCompany"]
+    assert list(tri.index.columns) == ["SingleCompany"]
+
+
+def test_series_indexing(raa):
+    """Indexing Triangle by boolean Series or label Series should work."""
+    s_bool = pd.Series([True], index=raa.index.index)
+    assert raa[s_bool].shape == raa.shape
+
+    s_label = pd.Series(["Total"])
+    assert raa[s_label].shape == raa.shape
 
 
 def test_legacy_pickle_compatibility(raa):
@@ -531,7 +568,21 @@ def test_legacy_pickle_compatibility(raa):
     assert list(restored_mid.columns) == list(raa.columns)
     assert restored_mid == raa
 
-    # 3. Verify re-pickling the migrated instance works
+    # 3. Simulate fallback when no kdims/vdims keys are found
+    state_empty = raa.__dict__.copy()
+    state_empty.pop("_index", None)
+    state_empty.pop("_columns", None)
+    state_empty.pop("kdims", None)
+    state_empty.pop("_kdims", None)
+    state_empty.pop("vdims", None)
+    state_empty.pop("_vdims", None)
+
+    restored_empty = cl.Triangle.__new__(cl.Triangle)
+    restored_empty.__setstate__(state_empty)
+    assert list(restored_empty.columns) == ["values"]
+    assert list(restored_empty.index.columns) == ["Total"]
+
+    # 4. Verify re-pickling the migrated instance works
     roundtripped = pickle.loads(pickle.dumps(restored))
     assert roundtripped == raa
 

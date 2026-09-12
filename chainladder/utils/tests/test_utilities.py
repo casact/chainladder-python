@@ -618,6 +618,24 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
         cl.concat([raa, raa], axis=1)
 
 
+def test_concat_ignore_index_axes(raa: Triangle) -> None:
+    """Test concat with ignore_index=True along axes 1, 2, and 3."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
+    assert list(res1.columns) == [0, 1]
+
+    o1 = raa.iloc[:, :, :5, :]
+    o2 = raa.iloc[:, :, 5:, :]
+    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
+    assert len(res2.odims) == len(raa.odims)
+
+    d1 = raa.iloc[:, :, :, :5]
+    d2 = raa.iloc[:, :, :, 5:]
+    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
+    assert len(res3.ddims) == len(raa.ddims)
+
+
 def test_maximum_2(raa: Triangle) -> None:
     """
     Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.

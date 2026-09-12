@@ -794,9 +794,9 @@ class Triangle(TriangleBase):
 
     @columns.setter
     def columns(self, value):
-        self._len_check(self.columns, value)
         if isinstance(value, str):
             value = [value]
+        self._len_check(self.columns, value)
         self._columns = pd.Index(value, name="columns")
         self._set_slicers()
 
@@ -2114,12 +2114,16 @@ class Triangle(TriangleBase):
                 raw_kdims = state.pop("kdims", None)
             if raw_kdims is not None:
                 state["_index"] = pd.DataFrame(list(raw_kdims), columns=key_labels)
+            else:
+                state["_index"] = pd.DataFrame([["Total"]], columns=["Total"])
         if "_columns" not in state:
             raw_vdims = state.pop("_vdims", None)
             if raw_vdims is None:
                 raw_vdims = state.pop("vdims", None)
             if raw_vdims is not None:
                 state["_columns"] = pd.Index(raw_vdims, name="columns")
+            else:
+                state["_columns"] = pd.Index(["values"], name="columns")
         self.__dict__.update(state)
 
     def development_correlation(self, p_critical=0.5):
