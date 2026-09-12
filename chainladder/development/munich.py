@@ -360,11 +360,11 @@ class MunichAdjustment(DevelopmentBase):
         cdf_triangle = cdf_triangle[..., -1:] / cdf_triangle[..., :-1]
         paid = [item[0] for item in p_to_i]
         for n, item in enumerate(paid):
-            idx = np.where(X.cdf_.vdims == item)[0][0]
+            idx = np.where(X.cdf_.columns == item)[0][0]
             obj.values[:, idx : idx + 1, ...] = cdf_triangle[0, :, n : n + 1, ...]
         incurred = [item[1] for item in p_to_i]
         for n, item in enumerate(incurred):
-            idx = np.where(X.cdf_.vdims == item)[0][0]
+            idx = np.where(X.cdf_.columns == item)[0][0]
             obj.values[:, idx : idx + 1, ...] = cdf_triangle[1, :, n : n + 1, ...]
         obj._set_slicers()
         return obj

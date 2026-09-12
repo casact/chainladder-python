@@ -193,7 +193,7 @@ class Common:
         else:
             ld = self.latest_diagonal if self.is_cumulative else self.sum(axis=3)
         ibnr = self.ultimate_ - ld
-        ibnr.vdims = self.ultimate_.vdims
+        ibnr.columns = self.ultimate_.columns
         return ibnr
 
     @property
