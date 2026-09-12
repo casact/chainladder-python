@@ -8,11 +8,12 @@ so standalone Sphinx (e.g. Read the Docs) cannot import them. Run after generati
 from pathlib import Path
 
 CONF = Path(__file__).resolve().parent / "conf.py"
-MARKER = "_DOCS_EXT_DIR = Path(__file__).resolve().parent / '_ext'"
+MARKER = "_DOCS_EXT_DIR"
 
 BLOCK = """import sys
 from pathlib import Path
-_DOCS_EXT_DIR = Path(__file__).resolve().parent / '_ext'
+
+_DOCS_EXT_DIR = Path(__file__).resolve().parent / "_ext"
 _p = str(_DOCS_EXT_DIR)
 if _p not in sys.path:
     sys.path.insert(0, _p)
