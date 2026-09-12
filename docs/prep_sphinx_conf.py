@@ -4,6 +4,7 @@ Prepend docs/_ext to sys.path in conf.py.
 `jupyter-book config sphinx` lists local extensions but does not emit this path,
 so standalone Sphinx (e.g. Read the Docs) cannot import them. Run after generating conf.py.
 """
+
 from pathlib import Path
 
 CONF = Path(__file__).resolve().parent / "conf.py"
@@ -20,6 +21,14 @@ if _p not in sys.path:
 
 
 def main() -> None:
+    # Pre-warm matplotlib font cache so notebook executions do not timeout on fresh runners
+    try:
+        import matplotlib.font_manager
+
+        matplotlib.font_manager._load_fontmanager()
+    except Exception:
+        pass
+
     text = CONF.read_text(encoding="utf8")
     if MARKER in text:
         return
