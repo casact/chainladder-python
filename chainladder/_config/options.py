@@ -55,6 +55,9 @@ class Options:
         when comparing or concatenating them.
     ULT_VAL: str
         The default ultimate valuation datetime, precision set to default of Pandas installation.
+    ULT_LABEL: str | None
+        Label displayed in place of the ultimate development period. ``None`` shows the
+        underlying ``ULT_VAL``/9999 sentinel. Overridden per-Triangle by ``Triangle.ult_label``.
 
     """
 
@@ -65,6 +68,7 @@ class Options:
         self.ULT_VAL = str(
             pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)  # noqa
         )
+        self.ULT_LABEL = None
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({
             k: v for k, v in vars(self).items() if not k.startswith("_")

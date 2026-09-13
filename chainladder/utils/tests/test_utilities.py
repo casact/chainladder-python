@@ -703,6 +703,7 @@ def test_options_defaults() -> None:
     assert options.AUTO_SPARSE
     assert options.ARRAY_PRIORITY == ["dask", "sparse", "cupy", "numpy"]
     assert isinstance(options.ULT_VAL, str)
+    assert options.ULT_LABEL is None
 
 
 def test_get_option() -> None:
@@ -718,6 +719,7 @@ def test_get_option() -> None:
     assert cl.options.get_option("AUTO_SPARSE") == cl.options.AUTO_SPARSE
     assert cl.options.get_option("ARRAY_PRIORITY") == cl.options.ARRAY_PRIORITY
     assert cl.options.get_option("ULT_VAL") == cl.options.ULT_VAL
+    assert cl.options.get_option("ULT_LABEL") == cl.options.ULT_LABEL
 
 
 def test_set_option_consistency() -> None:
@@ -1309,3 +1311,45 @@ def test_ptf_formula_deprecated_alias() -> None:
     with pytest.warns(FutureWarning, match="ptf_formula"):
         old = PTF_formula(**args)
     assert old == ptf_formula(**args)
+
+
+def test_ult_label() -> None:
+    """
+    ULT_LABEL should relabel the ultimate period for display only, with a
+    Triangle-level setting taking precedence over the global option.
+
+    Returns
+    -------
+    None
+
+    """
+    triangle = cl.load_sample("raa")
+    model = cl.Chainladder().fit(triangle)
+    ultimate = model.ultimate_
+    full_expectation = model.full_expectation_
+
+    assert ultimate.development.tolist() == ["2261"]
+    assert full_expectation.development.tolist()[-1] == 9999
+
+    try:
+        cl.options.set_option("ULT_LABEL", "Ultimate")
+        assert list(ultimate.to_frame(origin_as_datetime=False).columns) == ["Ultimate"]
+        assert (
+            list(full_expectation.to_frame(origin_as_datetime=False).columns)[-1]
+            == "Ultimate"
+        )
+
+        # a Triangle-level label wins, and doesn't leak to other Triangles
+        override = ultimate.copy()
+        override.ult_label = "ULT"
+        assert list(override.to_frame(origin_as_datetime=False).columns) == ["ULT"]
+        assert list(ultimate.to_frame(origin_as_datetime=False).columns) == ["Ultimate"]
+        assert override.copy().ult_label == "ULT"
+
+        # the sentinel itself is untouched, so calculations are unaffected
+        assert ultimate.development.tolist() == ["2261"]
+
+        # a Triangle without an ultimate period keeps its labels
+        assert list(triangle.to_frame(origin_as_datetime=False).columns)[-1] == 120
+    finally:
+        cl.options.set_option("ULT_LABEL", None)
