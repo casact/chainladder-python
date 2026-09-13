@@ -137,7 +137,7 @@ class TriangleDisplay:
                     .replace("Q3", "H2")
                 )
             origin = origin_formatted
-        development = self.development.copy()
+        development = self._display_development().copy()
         development.name = None
         return pd.DataFrame(out, index=origin, columns=development)
 
