@@ -886,6 +886,32 @@ class Triangle(TriangleBase):
                 ]
         return pd.Series(list(ddims), name="development")
 
+    @property
+    def ult_label(self):
+        """Label shown in place of the ultimate development period.
+
+        Overrides ``chainladder.options.ULT_LABEL`` for this Triangle only.
+        ``None`` falls back to the global option.
+        """
+        return getattr(self, "_ult_label", None)
+
+    @ult_label.setter
+    def ult_label(self, value):
+        self._ult_label = value
+
+    def _display_development(self):
+        """``development`` with the ultimate period relabelled for display."""
+        development = self.development
+        label = self.ult_label
+        if label is None:
+            label = options.ULT_LABEL
+        if label is None or not self.is_ultimate:
+            return development
+        # the sentinel is always the last development period
+        return pd.Series(
+            list(development[:-1]) + [label], name=development.name
+        )
+
     @development.setter
     def development(self, value):
         self._len_check(self.development, value)
