@@ -908,9 +908,7 @@ class Triangle(TriangleBase):
         if label is None or not self.is_ultimate:
             return development
         # the sentinel is always the last development period
-        return pd.Series(
-            list(development[:-1]) + [label], name=development.name
-        )
+        return pd.Series(list(development[:-1]) + [label], name=development.name)
 
     @development.setter
     def development(self, value):
