@@ -171,7 +171,7 @@ class TrianglePandas(_TrianglePandasBase):
                     0: self.kdims,
                     1: self.vdims,
                     2: self.origin,
-                    3: self.development,
+                    3: self._display_development(),
                 }
 
                 # Set the index to be key dimension if the key dimension is greater than length 1.
