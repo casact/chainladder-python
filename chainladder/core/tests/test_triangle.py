@@ -3233,3 +3233,49 @@ def test_cum_zeta_returns_incr_to_cum(atol) -> None:
         [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
         atol=atol,
     )
+
+
+def test_latest_diagonal_single_origin_returns_triangle(raa: Triangle) -> None:
+    """
+    latest_diagonal returns a Triangle when the Triangle has one origin period.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    one = raa[raa.origin == raa.origin[0]]
+
+    assert isinstance(one.latest_diagonal, cl.Triangle)
+    assert one.latest_diagonal.shape == (1, 1, 1, 1)
+
+
+def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
+    """
+    Chainladder fits and predicts on a Triangle with one origin period.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+    atol : float
+        Absolute tolerance fixture.
+
+    Returns
+    -------
+    None
+    """
+    one = raa[raa.origin == raa.origin[0]]
+    expected = cl.Chainladder().fit(raa).ultimate_.values[0, 0, 0, 0]
+
+    fitted = cl.Chainladder().fit(cl.Development().fit_transform(one))
+    np.testing.assert_allclose(fitted.ultimate_.values.flatten(), [expected], atol=atol)
+
+    predicted = cl.Chainladder().fit(raa).predict(one)
+    np.testing.assert_allclose(
+        predicted.ultimate_.values.flatten(), [expected], atol=atol
+    )

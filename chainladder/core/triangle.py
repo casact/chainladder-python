@@ -1172,7 +1172,9 @@ class Triangle(TriangleBase):
             2012   9650.0
             2013   6283.0
         """
-        return self[self.valuation == self.valuation_date].sum(axis="development")
+        return self[self.valuation == self.valuation_date].sum(
+            axis="development", keepdims=True
+        )
 
     @property
     def link_ratio(self) -> Triangle:
