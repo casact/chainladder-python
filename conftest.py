@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 import chainladder as cl
+import functools
+import pytest
 
 from typing import TYPE_CHECKING
 
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from chainladder import Triangle
     from typing import (
         Any,
-        Callable
+        Callable,
     )
 
 
@@ -33,11 +34,32 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("xyz", ["normal_run", "sparse_only_run"], indirect=True)
 
 
+@functools.lru_cache(maxsize=None)
+def _cached_load_sample(sample: str) -> Triangle:
+    """
+    Create a cache of the requested sample Triangle when called initially,
+    then load the cache when called again.
+
+    The cache is preserved throughout the test session.
+
+    Parameters
+    ----------
+    sample: str
+        The requested triangle, e.g., "clrd", "raa", etc.
+
+    Returns
+    -------
+    Triangle
+        The cached triangle.
+    """
+    return cl.load_sample(sample)
+
+
 def _sample_fixture(
-        request: Any,
-        sample: str,
-        transform: Callable[[Triangle], Triangle] | None = None
-    ) -> Iterator[Triangle]:
+    request: Any,
+    sample: str,
+    transform: Callable[[Triangle], Triangle] | None = None,
+) -> Iterator[Triangle]:
     """
     Common template fixture for using sample data in unit tests.
 
@@ -56,8 +78,8 @@ def _sample_fixture(
 
     """
 
-    # Load the sample data.
-    tri = cl.load_sample(sample)
+    # Load a copy of cached sample data.
+    tri = _cached_load_sample(sample).copy()
     # Apply a transformation if supplied
     tri = transform(tri) if transform else tri
     # Set the backend to sparse for a sparse-only-run, then yield the triangle to the test.
@@ -88,6 +110,7 @@ def genins(request):
 def prism(request):
     yield from _sample_fixture(request, "prism")
 
+
 @pytest.fixture
 def monthly(request):
     yield from _sample_fixture(request, "prism", transform=lambda t: t.sum())
@@ -101,6 +124,7 @@ def xyz(request):
 @pytest.fixture
 def atol():
     return 1e-4
+
 
 @pytest.fixture
 def empty_triangle():
