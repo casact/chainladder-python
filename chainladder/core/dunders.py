@@ -101,7 +101,10 @@ class TriangleDunders:
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
-                except Exception:
+                except KeyError:
+                    # y does not carry every key in x, so the two cannot be
+                    # aligned by label; fall back to grouping both down to the
+                    # labels they share.
                     x = x.groupby(list(common))
                     y = y.groupby(list(common))
             return x, y

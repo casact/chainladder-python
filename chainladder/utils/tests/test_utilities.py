@@ -897,10 +897,10 @@ def test_set_backend_dask_deprecated(clrd) -> None:
     with pytest.warns(DeprecationWarning, match="dask") as record:
         try:
             clrd.set_backend("dask", deep=True)
-        except Exception:
-            # The actual conversion can fail when the optional 'dask'
-            # dependency is not installed; we only care that the deprecation
-            # warning fired at the public entry point.
+        except AttributeError:
+            # With dask absent, chainladder.utils.dask falls back to numpy, so
+            # the conversion raises AttributeError on numpy.from_array. We only
+            # care that the deprecation warning fired at the public entry point.
             pass
     dask_warnings = [
         w
