@@ -257,7 +257,9 @@ class CapeCod(Benktander):
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
-        weighted_exposure = reported_exposure.values.swapaxes(-1, -2) * decay_matrix
+        weighted_exposure = (reported_exposure.values * sw_olf_array).swapaxes(
+            -1, -2
+        ) * decay_matrix
         trended_ultimate = (latest.values * trend_array * X_olf_array) / (
             reported_exposure.values * sw_olf_array
         )
