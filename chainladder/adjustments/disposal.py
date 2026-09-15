@@ -285,7 +285,8 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         return self
 
     def transform(self, X: Triangle, sample_weight: Triangle | None = None) -> Triangle:
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -318,7 +319,8 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         return X_new
 
     def fit_transform(self, X, y=None, sample_weight=None):
-        """Fit and return transformed full_triangle_ based on the Disposal Rate
+        """
+        Fit and return transformed full_triangle_ based on the Disposal Rate
 
         Parameters
         ----------

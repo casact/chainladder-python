@@ -282,7 +282,8 @@ class TriangleDunders:
         return concat(c, 0).sort_index()
 
     def __add__(self, other):
-        """Element-wise addition.
+        """
+        Element-wise addition.
 
         Examples
         --------
@@ -333,7 +334,8 @@ class TriangleDunders:
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
-        """Element-wise subtraction.
+        """
+        Element-wise subtraction.
 
         Examples
         --------
@@ -411,7 +413,8 @@ class TriangleDunders:
         return obj
 
     def __mul__(self, other):
-        """Element-wise multiplication.
+        """
+        Element-wise multiplication.
 
         Examples
         --------

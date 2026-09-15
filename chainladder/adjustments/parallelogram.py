@@ -262,7 +262,8 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         self.cumulative = cumulative
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -332,7 +333,8 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         return (r.groupby(self.date_col)[self.change_col].prod() - 1).reset_index()
 
     def transform(self, X, y=None, sample_weight=None):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
