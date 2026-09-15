@@ -515,10 +515,8 @@ def test_new_drop_7(clrd):
 
 def test_new_drop_8(prism):
     tri = prism["Paid"].sum().grain("OYDQ")
-    try:
-        cl.Development(drop_high=False).fit_transform(tri)
-    except Exception:
-        assert False
+    # Should not raise; pytest reports the real error if it does.
+    cl.Development(drop_high=False).fit_transform(tri)
 
 
 def test_new_drop_9(prism):
