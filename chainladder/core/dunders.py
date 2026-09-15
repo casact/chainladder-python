@@ -113,7 +113,7 @@ class TriangleDunders:
             raise ValueError(
                 "Index broadcasting is ambiguous between "
                 + str(x_labels)
-                + "" and ""
+                + " and "
                 + str(y_labels)
             )
 
