@@ -111,9 +111,9 @@ class TriangleDunders:
 
         else:
             raise ValueError(
-                'Index broadcasting is ambiguous between '
+                "Index broadcasting is ambiguous between "
                 + str(x_labels)
-                + ' and '
+                + "" and ""
                 + str(y_labels)
             )
 
@@ -204,7 +204,7 @@ class TriangleDunders:
                     other.shape[0],
                     other.shape[1],
                     len(odims),
-                    len(ddims)
+                    len(ddims),
                 ))
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
@@ -212,7 +212,7 @@ class TriangleDunders:
                     self.shape[0],
                     self.shape[1],
                     len(odims),
-                    len(ddims)
+                    len(ddims),
                 ))
                 obj_arr[:] = xp.nan
                 obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
@@ -226,14 +226,9 @@ class TriangleDunders:
                     other.shape[0],
                     other.shape[1],
                     len(odims),
-                    len(ddims)
+                    len(ddims),
                 )
-                obj_arr.shape = (
-                    self.shape[0],
-                    self.shape[1],
-                    len(odims),
-                    len(ddims)
-                )
+                obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
             if isinstance(obj.ddims, pd.DatetimeIndex):
                 obj.ddims = pd.DatetimeIndex(ddims.index)
@@ -253,8 +248,7 @@ class TriangleDunders:
             new_obj = obj.obj.iloc[:1] * 0
             labels = list(set(other.key_labels).intersection(set(new_obj.key_labels)))
             new_idx = (
-                other
-                .index
+                other.index
                 .set_index(labels)
                 .join(new_obj.index.set_index(labels))
                 .reset_index()
