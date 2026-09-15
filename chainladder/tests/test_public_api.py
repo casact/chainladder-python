@@ -22,6 +22,7 @@ EXPECTED_PUBLIC_API = {
     "Triangle",
     "DevelopmentCorrelation",
     "ValuationCorrelation",
+    "Styler",
     # utils
     "WeightedRegression",
     "TriangleWeight",
