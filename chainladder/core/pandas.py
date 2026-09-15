@@ -1264,7 +1264,9 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
         # If axis is development, set the ddims to be the valuation date.
-        if axis == 3 and obj.values.shape[axis] == 1 and len(obj.ddims) > 1:
+        if axis == 3 and obj.values.shape[axis] == 1 and (
+            len(obj.ddims) > 1 or not self.is_val_tri
+        ):
             obj.ddims = pd.DatetimeIndex(
                 [self.valuation_date], dtype=__dt64_dtype__, freq=None
             )
