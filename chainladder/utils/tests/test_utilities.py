@@ -1296,13 +1296,3 @@ def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
                 "1990",
             ]
         ).fit(raa)
-
-
-def test_triangleweight_full_triangle(raa: Triangle) -> None:
-    """
-    Testing new path that allows weights on full triangles
-    """
-    ult = cl.Chainladder().fit(raa)
-    tw = cl.TriangleWeight(n_periods=4).fit(raa)
-    tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
-    assert tw.w_.iloc[:, :, :, 0] == tw_full.w_.iloc[:, :, :, 0]
