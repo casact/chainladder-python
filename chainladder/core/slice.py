@@ -562,6 +562,16 @@ class TriangleSlicer:
         -------
         None
         """
+        # Case full slice, e.g. tri[:] = value: mirror pandas' df[:] = value by
+        # broadcasting across every cell rather than treating ":" as a column label.
+        if isinstance(key, slice):
+            if key == slice(None, None, None):
+                self.iloc[:] = value
+                return
+            raise TypeError(
+                "Partial slicing is not supported for Triangle column assignment. "
+                "Use tri.iloc[...] or tri.loc[...] to set values by position or label."
+            )
         xp: ModuleType = self.get_array_module()
         # Case callable, create lazy-eval virtual columns, but do not compute.
         if callable(value):

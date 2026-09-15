@@ -11,7 +11,7 @@ import pandas as pd
 
 
 class CaseOutstanding(DevelopmentBase):
-    """ Deterministic development from prior-lag case reserves.
+    """Deterministic development from prior-lag case reserves.
 
     Estimates incremental paid amounts and case-reserve runoff as fractions of
     the prior lag's carried case reserve. Like

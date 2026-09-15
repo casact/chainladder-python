@@ -112,8 +112,13 @@ class TailClark(TailBase):
 
     """
 
-    def __init__(self, growth="loglogistic", truncation_age=None,
-                 attachment_age=None, projection_period=12):
+    def __init__(
+        self,
+        growth="loglogistic",
+        truncation_age=None,
+        attachment_age=None,
+        projection_period=12,
+    ):
         self.growth = growth
         self.truncation_age = truncation_age
         self.attachment_age = attachment_age
@@ -155,10 +160,13 @@ class TailClark(TailBase):
         )
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
         attachment_age = self.attachment_age if self.attachment_age else X.ddims[-2]
-        self.ldf_.values = xp.concatenate((
-            self.ldf_.values[..., : sum(self.ldf_.ddims < attachment_age)],
-            fitted[..., -sum(self.ldf_.ddims >= attachment_age) :],),
-            axis=-1,)
+        self.ldf_.values = xp.concatenate(
+            (
+                self.ldf_.values[..., : sum(self.ldf_.ddims < attachment_age)],
+                fitted[..., -sum(self.ldf_.ddims >= attachment_age) :],
+            ),
+            axis=-1,
+        )
         self.omega_ = model.omega_
         self.theta_ = model.theta_
         self.G_ = model.G_
@@ -169,7 +177,9 @@ class TailClark(TailBase):
             self.elr_ = model.elr_
         self.norm_resid_ = model.norm_resid_
         if self.truncation_age:
-            self.ldf_.values[..., -1:] = self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
+            self.ldf_.values[..., -1:] = (
+                self.ldf_.values[..., -1:] * self.G_(self.truncation_age).values
+            )
         # self._get_tail_stats(self)
         if backend == "cupy":
             self = self.set_backend("cupy", inplace=True)

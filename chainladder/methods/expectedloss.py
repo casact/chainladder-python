@@ -5,8 +5,8 @@ from chainladder.methods import Benktander
 
 
 class ExpectedLoss(Benktander):
-    """The deterministic Expected Loss IBNR model, it ignores all data in the 
-    triangle, and only uses the sample_weight modified by the apriori to 
+    """The deterministic Expected Loss IBNR model, it ignores all data in the
+    triangle, and only uses the sample_weight modified by the apriori to
     calculate the ultimate losses.
 
     Parameters
@@ -51,7 +51,7 @@ class ExpectedLoss(Benktander):
     .. testcode::
 
         xyz = cl.load_sample("xyz")
-        
+
         ibnr = (
             cl.ExpectedLoss()
             .fit(X=xyz["Paid"], sample_weight=xyz["Premium"].latest_diagonal)
@@ -60,7 +60,7 @@ class ExpectedLoss(Benktander):
         print(ibnr)
 
     .. testoutput::
-        
+
                  2261
         1998   4178.0
         1999   6683.0
@@ -88,7 +88,7 @@ class ExpectedLoss(Benktander):
         print(ibnr)
 
     .. testoutput::
-        
+
                  2261
         1998   2178.0
         1999   3533.0
@@ -145,4 +145,3 @@ class ExpectedLoss(Benktander):
             Loss data with Bornhuetter-Ferguson ultimate applied
         """
         return super().predict(X, sample_weight)
-

@@ -99,8 +99,15 @@ class GridSearch(BaseEstimator):
 
     """
 
-    def __init__(self, estimator, param_grid, scoring, verbose=0,
-                 error_score="raise", n_jobs=None):
+    def __init__(
+        self,
+        estimator,
+        param_grid,
+        scoring,
+        verbose=0,
+        error_score="raise",
+        n_jobs=None,
+    ):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
@@ -136,14 +143,15 @@ class GridSearch(BaseEstimator):
             for score in scoring.keys():
                 item[score] = scoring[score](model)
             return item
-            
-        results_ = Parallel(n_jobs=self.n_jobs)(delayed(_fit_single_estimator)(
-            self.estimator, fit_params, X, y, scoring, item)
-            for item in grid)
+
+        results_ = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_single_estimator)(
+                self.estimator, fit_params, X, y, scoring, item
+            )
+            for item in grid
+        )
         self.results_ = pd.DataFrame(results_)
         return self
-
-
 
 
 class Pipeline(PipelineSL, EstimatorIO):
@@ -258,13 +266,11 @@ class Pipeline(PipelineSL, EstimatorIO):
         return self.predict(X, sample_weight, **fit_params)
 
     def to_json(self):
-        return json.dumps(
-            [
-                {
-                    "name": item[0],
-                    "params": item[1].get_params(),
-                    "__class__": item[1].__class__.__name__,
-                }
-                for item in self.steps
-            ]
-        )
+        return json.dumps([
+            {
+                "name": item[0],
+                "params": item[1].get_params(),
+                "__class__": item[1].__class__.__name__,
+            }
+            for item in self.steps
+        ])

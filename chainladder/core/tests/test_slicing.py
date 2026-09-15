@@ -689,6 +689,48 @@ def test_setitem_existing_column_array_value(raa: Triangle) -> None:
     assert tri["values"] == raa["values"] * 3
 
 
+def test_setitem_full_slice_broadcasts_value(raa: Triangle) -> None:
+    """
+    Assigning through a bare full slice, e.g. tri[:] = 0, should broadcast the
+    value across every cell like pandas' df[:] = value, rather than being
+    misread as a column label.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.copy()
+    if tri.array_backend == "sparse":
+        pytest.skip("Test is specific to the numpy backend.")
+    tri[:] = 0
+    assert list(tri.columns) == list(raa.columns)
+    assert np.nansum(tri.values) == 0
+
+
+def test_setitem_partial_slice_raises(raa: Triangle) -> None:
+    """
+    Assigning through a partial slice key is ambiguous for column assignment
+    and should raise rather than silently creating a bogus column.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    tri = raa.copy()
+    with pytest.raises(TypeError):
+        tri[1:3] = 0
+
+
 def test_sparse_column_assignment(prism):
     t = prism.copy()
     out = t["Paid"]
