@@ -6,14 +6,8 @@ repos:
       - id: ruff
         name: ruff
         entry: bash -c '
-          base=$(git rev-parse --verify --quiet origin/main || git rev-parse --verify --quiet main) &&
-          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- "*.py" "*.ipynb") &&
-          if [ -z "$files" ]; then
-            echo "ruff - no changed files to check";
-          else
-            uv run ruff check --force-exclude --config lint.per-file-ignores={} $files &&
-            uv run ruff format --check --diff --force-exclude $files;
-          fi'
+          uv run ruff check --force-exclude . &&
+          uv run ruff format --check --diff --force-exclude .'
         language: system
         pass_filenames: false
         always_run: true
