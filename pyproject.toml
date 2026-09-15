@@ -108,6 +108,7 @@ extend-exclude = ["docs/getting_started/online_sandbox/sandbox_workbook_blank.ip
 select = [
     "B018",
     "BLE001",
+    "D213",
     "E2",
     "E4",
     "E7",
