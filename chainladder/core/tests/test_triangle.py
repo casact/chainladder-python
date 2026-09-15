@@ -2195,6 +2195,17 @@ def test_halfyear_development():
     )
 
 
+def test_latest_diagonal_single_origin_ddim_label(raa):
+    # GH#1358: latest_diagonal labels its development column with the latest
+    # valuation date, except with one origin period, where the selection
+    # already has a single ddim so nothing collapses and the development age
+    # survives instead.
+    one = raa[raa.origin == raa.origin[0]]
+    assert list(one.latest_diagonal.development) == list(
+        raa.latest_diagonal.development
+    )
+
+
 def test_latest_diagonal_vs_full_tri_raa(raa):
     model = cl.Chainladder().fit(raa)
     assert model.ultimate_.latest_diagonal == model.full_triangle_.latest_diagonal

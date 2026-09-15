@@ -16,7 +16,7 @@ from chainladder.utils.utility_functions import (
     num_to_value,
     to_period,
 )
-from chainladder import options, _warn_dask_parallel_deprecated
+from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
 
 try:
     import dask.bag as db
@@ -1172,9 +1172,18 @@ class Triangle(TriangleBase):
             2012   9650.0
             2013   6283.0
         """
-        return self[self.valuation == self.valuation_date].sum(
+        obj = self[self.valuation == self.valuation_date].sum(
             axis="development", keepdims=True
         )
+        # The aggregation only relabels when it actually collapsed several
+        # development columns. With a single origin period the selection is
+        # already one column wide, so the development age would survive; the
+        # column is the latest valuation either way, so say so here rather
+        # than widening the shared rule for every development aggregation.
+        obj.ddims = pd.DatetimeIndex(
+            [self.valuation_date], dtype=__dt64_dtype__, freq=None
+        )
+        return obj
 
     @property
     def link_ratio(self) -> Triangle:
