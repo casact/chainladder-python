@@ -70,7 +70,8 @@ class TrianglePandas(_TrianglePandasBase):
         keepdims: bool = False,
         implicit_axis: bool = False,
     ) -> DataFrame | Series:
-        """Converts a triangle to a pandas.DataFrame.
+        """
+        Converts a triangle to a pandas.DataFrame.
 
         Parameters
         ----------
@@ -531,7 +532,8 @@ class TrianglePandas(_TrianglePandasBase):
         return obj
 
     def fillna(self, value: int | float | ndarray, inplace: bool = False) -> Triangle:
-        """Fill nan with 'value' by axis.
+        """
+        Fill nan with 'value' by axis.
 
         Parameters
         ----------
@@ -563,7 +565,8 @@ class TrianglePandas(_TrianglePandasBase):
             return new_obj
 
     def fillzero(self, inplace: bool = False) -> Triangle:
-        """Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working.
+        """
+        Fill nan with 0 by axis. separate function from fillna() because fillna(0) isn't working.
 
         Parameters
         ----------
@@ -590,7 +593,8 @@ class TrianglePandas(_TrianglePandasBase):
             return new_obj
 
     def ffill(self, axis: int | str = 3) -> Triangle:
-        """Forward-fill missing values along an axis.
+        """
+        Forward-fill missing values along an axis.
 
         Only cells within the observed triangle (see ``nan_triangle``) are
         filled; a cell that has not yet been valued is left as-is regardless
@@ -703,7 +707,8 @@ class TrianglePandas(_TrianglePandasBase):
         axis_name: str,
         errors: str,
     ) -> np.ndarray:
-        """Validate and return boolean keep mask for dropping contiguous edge periods.
+        """
+        Validate and return boolean keep mask for dropping contiguous edge periods.
 
         Parameters
         ----------
@@ -749,7 +754,8 @@ class TrianglePandas(_TrianglePandasBase):
         level: int | str | None = None,
         errors: str = "raise",
     ) -> Triangle:
-        """Drop specified labels from rows or columns.
+        """
+        Drop specified labels from rows or columns.
 
         Remove labels by specifying label names and corresponding axis, or by
         specifying directly ``index``, ``columns``, ``origin``, or
@@ -1008,7 +1014,8 @@ class TrianglePandas(_TrianglePandasBase):
         axis: Literal["index", "columns", "origin", "development"] | int,
         value: str | list | dict,
     ) -> Triangle:
-        """Alter Triangle axes labels.
+        """
+        Alter Triangle axes labels.
 
         Parameters
         ----------
@@ -1052,7 +1059,8 @@ class TrianglePandas(_TrianglePandasBase):
         return cast("Triangle", cast(object, self))
 
     def astype(self, dtype, inplace=True) -> Triangle:
-        """Copy of the array, cast to a specified type.
+        """
+        Copy of the array, cast to a specified type.
 
         Parameters
         ----------
@@ -1070,7 +1078,8 @@ class TrianglePandas(_TrianglePandasBase):
         return cast("Triangle", obj)
 
     def head(self, n: int = 5) -> Triangle:
-        """Return the first ``n`` triangles along the index axis.
+        """
+        Return the first ``n`` triangles along the index axis.
 
         Parameters
         ----------
@@ -1084,7 +1093,8 @@ class TrianglePandas(_TrianglePandasBase):
         return self.iloc[:n]
 
     def tail(self, n: int = 5) -> Triangle:
-        """Return the last ``n`` triangles along the index axis.
+        """
+        Return the last ``n`` triangles along the index axis.
 
         Parameters
         ----------
@@ -1098,7 +1108,8 @@ class TrianglePandas(_TrianglePandasBase):
         return self.iloc[-n:]
 
     def sort_index(self, *args, **kwargs) -> Triangle:
-        """Sort Triangle rows by index labels.
+        """
+        Sort Triangle rows by index labels.
 
         Returns
         -------
@@ -1110,7 +1121,8 @@ class TrianglePandas(_TrianglePandasBase):
         return self.iloc[sorted_index.index]
 
     def exp(self) -> Triangle:
-        """Return the exponential of each element.
+        """
+        Return the exponential of each element.
 
         Returns
         -------
@@ -1119,7 +1131,8 @@ class TrianglePandas(_TrianglePandasBase):
         return self.get_array_module().exp(self)
 
     def log(self) -> Triangle:
-        """Return the natural logarithm of each element.
+        """
+        Return the natural logarithm of each element.
 
         Returns
         -------
@@ -1128,7 +1141,8 @@ class TrianglePandas(_TrianglePandasBase):
         return self.get_array_module().log(self)
 
     def minimum(self, other: Triangle | int | float) -> Triangle:
-        """Element-wise minimum of this Triangle and another operand.
+        """
+        Element-wise minimum of this Triangle and another operand.
 
 
         See :func:`chainladder.minimum` for parameters, usage, and examples.
@@ -1136,14 +1150,16 @@ class TrianglePandas(_TrianglePandasBase):
         return self.get_array_module().minimum(self, other)
 
     def maximum(self, other: Triangle | int | float) -> Triangle:
-        """Element-wise maximum of this Triangle and another operand.
+        """
+        Element-wise maximum of this Triangle and another operand.
 
         See :func:`chainladder.maximum` for parameters, usage, and examples.
         """
         return self.get_array_module().maximum(self, other)
 
     def sqrt(self) -> Triangle:
-        """Return the non-negative square root of each element.
+        """
+        Return the non-negative square root of each element.
 
         Returns
         -------
@@ -1152,7 +1168,8 @@ class TrianglePandas(_TrianglePandasBase):
         return self.get_array_module().sqrt(self)
 
     def round(self, decimals: int = 0) -> Triangle:
-        """Round each element to the given number of decimal places.
+        """
+        Round each element to the given number of decimal places.
 
         Uses banker's rounding (round half to even). For example,
         ``(8.5).round(0)`` returns 8, not 9. For conventional rounding,
