@@ -2,6 +2,73 @@
 
 ## Version 0.10
 
+### Version 0.10.1
+
+Release Date: September 15, 2026
+
+**What's Changed**
+
+*Changes are grouped into the standard categories below. See the Full Changelog link for the complete, unedited list of merged pull requests.*
+
+**Enhancements**
+* Add `TriangleSelector` to build incurred/paid (or reported/closed) `VotingChainladder` pipelines by @henrydingliu in [#1114](https://github.com/casact/chainladder-python/pull/1114)
+* Expand `Triangle.drop()` with `index`/`columns`/`origin`/`development` alternatives, origin-level dropping, development dropping, label validation, and `errors` by @priyam0k in [#1131](https://github.com/casact/chainladder-python/pull/1131), [#1163](https://github.com/casact/chainladder-python/pull/1163), [#1207](https://github.com/casact/chainladder-python/pull/1207)
+* Allow assigning a partial triangle through `loc`/`iloc` by @henrydingliu in [#1103](https://github.com/casact/chainladder-python/pull/1103) and @priyam0k in [#1112](https://github.com/casact/chainladder-python/pull/1112)
+* Support cumulative on-level factors in `ParallelogramOLF` by @priyam0k in [#1181](https://github.com/casact/chainladder-python/pull/1181)
+* Allow `development` to accept an age in months relative to origin by @Abhayindia in [#1229](https://github.com/casact/chainladder-python/pull/1229)
+* Add `Triangle.ffill()` to forward-fill along the origin and development axes by @Abhayindia in [#1302](https://github.com/casact/chainladder-python/pull/1302)
+* Add a `"mack"` option for Mack `sigma_interpolation` by @henrydingliu in [#1177](https://github.com/casact/chainladder-python/pull/1177)
+* Add dense `prism_omdm`/`oqdq`/`osds`/`oydy` sample triangles by @Abhayindia in [#1233](https://github.com/casact/chainladder-python/pull/1233)
+* Add tests for `triangle.py`, sparse triangles, and `pandas.py` (`drop`, `fillna`, `T`) by @genedan in [#1088](https://github.com/casact/chainladder-python/pull/1088), @henrydingliu in [#1157](https://github.com/casact/chainladder-python/pull/1157), and @priyam0k in [#1195](https://github.com/casact/chainladder-python/pull/1195)
+* Cache pytest fixtures across the test session by @genedan in [#1357](https://github.com/casact/chainladder-python/pull/1357)
+
+**Bug Fixes**
+* Draw bootstrap aprioris from a lognormal distribution by @friman-howard in [#1149](https://github.com/casact/chainladder-python/pull/1149)
+* Fix `CapeCod.predict` dropping the fitted apriori when the prediction data has exactly one extra index level by @ppcvote in [#1275](https://github.com/casact/chainladder-python/pull/1275)
+* Keep `latest_diagonal` a `Triangle` when there is one origin period by @Abhayindia in [#1356](https://github.com/casact/chainladder-python/pull/1356)
+* Support quarterly and semiannual origin grains in `ParallelogramOLF` by @ppcvote in [#1205](https://github.com/casact/chainladder-python/pull/1205)
+* Fix `ParallelogramOLF` daily-grain `ValueError` on triangles that start after a leap year by @Abhayindia in [#1230](https://github.com/casact/chainladder-python/pull/1230)
+* Fix valuation grain handling by @kennethshsu in [#1194](https://github.com/casact/chainladder-python/pull/1194)
+* Fix `Triangle` display crash when stored in a DataFrame cell by @priyam0k in [#1152](https://github.com/casact/chainladder-python/pull/1152)
+* Sparse array fixes by @genedan in [#1164](https://github.com/casact/chainladder-python/pull/1164)
+* Fix the docs table of contents and double search bars by @kennethshsu in [#1150](https://github.com/casact/chainladder-python/pull/1150)
+
+**Deprecations & Removals**
+* None
+
+**Maintenance**
+* Add Friedland Chapter 7 documentation and notebook by @henrydingliu in [#753](https://github.com/casact/chainladder-python/pull/753), [#754](https://github.com/casact/chainladder-python/pull/754), [#755](https://github.com/casact/chainladder-python/pull/755), [#756](https://github.com/casact/chainladder-python/pull/756), [#1223](https://github.com/casact/chainladder-python/pull/1223) and @salexanian in [#1189](https://github.com/casact/chainladder-python/pull/1189)
+* Add Friedland Chapter 8 recreation by @kennethshsu in [#1117](https://github.com/casact/chainladder-python/pull/1117), [#1121](https://github.com/casact/chainladder-python/pull/1121)
+* Add Friedland Chapter 9 (Bornhuetter-Ferguson) documentation and exhibits by @priyam0k in [#1109](https://github.com/casact/chainladder-python/pull/1109), [#1112](https://github.com/casact/chainladder-python/pull/1112), [#1197](https://github.com/casact/chainladder-python/pull/1197)
+* Add Friedland Chapter 10 (Cape Cod) documentation by @priyam0k in [#1180](https://github.com/casact/chainladder-python/pull/1180)
+* Add Friedland Chapter 11 documentation by @henrydingliu in [#1078](https://github.com/casact/chainladder-python/pull/1078), [#1176](https://github.com/casact/chainladder-python/pull/1176), [#1184](https://github.com/casact/chainladder-python/pull/1184), [#1185](https://github.com/casact/chainladder-python/pull/1185), [#1186](https://github.com/casact/chainladder-python/pull/1186), [#1188](https://github.com/casact/chainladder-python/pull/1188), [#1271](https://github.com/casact/chainladder-python/pull/1271), [#1272](https://github.com/casact/chainladder-python/pull/1272), [#1325](https://github.com/casact/chainladder-python/pull/1325), [#1347](https://github.com/casact/chainladder-python/pull/1347)
+* Add Triangle and estimator doctest examples (heatmap, I/O, shape/empty/compute, arithmetic, `cdf_`/`ibnr_`/`pipe`/`set_backend`) by @EKtheSage in [#1210](https://github.com/casact/chainladder-python/pull/1210), [#1209](https://github.com/casact/chainladder-python/pull/1209), [#1211](https://github.com/casact/chainladder-python/pull/1211), [#1213](https://github.com/casact/chainladder-python/pull/1213), [#1212](https://github.com/casact/chainladder-python/pull/1212)
+* Add Triangle method docstrings (`broadcast_axis`, `copy`, `reindex`, `exp`, `log`, `sqrt`, `round`, `head`, `tail`, `sort_index`, `compute`, `pipe`) and show inherited methods on the API page by @EKtheSage in [#978](https://github.com/casact/chainladder-python/pull/978), [#983](https://github.com/casact/chainladder-python/pull/983), [#984](https://github.com/casact/chainladder-python/pull/984), [#985](https://github.com/casact/chainladder-python/pull/985), [#986](https://github.com/casact/chainladder-python/pull/986)
+* Add See Also links to core reserving methods by @aminemanai2003 in [#1196](https://github.com/casact/chainladder-python/pull/1196)
+* Live `list_samples` table and `model_diagnostics` demo by @SaguaroDev in [#960](https://github.com/casact/chainladder-python/pull/960)
+* Fix option names, methods-notebook state, user-guide links, and the `Development` docstring by @SaguaroDev in [#895](https://github.com/casact/chainladder-python/pull/895), [#972](https://github.com/casact/chainladder-python/pull/972), @henrydingliu in [#1175](https://github.com/casact/chainladder-python/pull/1175), and @kennethshsu in [#1259](https://github.com/casact/chainladder-python/pull/1259)
+* Deploy the Governing Doc, refresh the PR template, and modernize the installation page by @kennethshsu in [#1242](https://github.com/casact/chainladder-python/pull/1242), [#1260](https://github.com/casact/chainladder-python/pull/1260), @henrydingliu in [#770](https://github.com/casact/chainladder-python/pull/770)
+* Build docs with uv, auto-generate docs on PRs, and fix Sphinx config by @kennethshsu in [#1171](https://github.com/casact/chainladder-python/pull/1171) and @henrydingliu in [#752](https://github.com/casact/chainladder-python/pull/752)
+* Add Ruff, pre-commit, format, E2, N802, B018, UP034, and BLE001 checks by @genedan in [#1198](https://github.com/casact/chainladder-python/pull/1198), [#1204](https://github.com/casact/chainladder-python/pull/1204), [#1225](https://github.com/casact/chainladder-python/pull/1225) and @Abhayindia in [#1243](https://github.com/casact/chainladder-python/pull/1243), [#1263](https://github.com/casact/chainladder-python/pull/1263), [#1359](https://github.com/casact/chainladder-python/pull/1359)
+* Apply Ruff fixes across the library, docs, and tests by @genedan in [#1278](https://github.com/casact/chainladder-python/pull/1278), [#1287](https://github.com/casact/chainladder-python/pull/1287), [#1290](https://github.com/casact/chainladder-python/pull/1290), [#1292](https://github.com/casact/chainladder-python/pull/1292), [#1294](https://github.com/casact/chainladder-python/pull/1294), [#1295](https://github.com/casact/chainladder-python/pull/1295), [#1296](https://github.com/casact/chainladder-python/pull/1296), [#1297](https://github.com/casact/chainladder-python/pull/1297), [#1299](https://github.com/casact/chainladder-python/pull/1299), [#1300](https://github.com/casact/chainladder-python/pull/1300), [#1301](https://github.com/casact/chainladder-python/pull/1301) and @henrydingliu in [#1214](https://github.com/casact/chainladder-python/pull/1214), [#1217](https://github.com/casact/chainladder-python/pull/1217), [#1269](https://github.com/casact/chainladder-python/pull/1269), [#1273](https://github.com/casact/chainladder-python/pull/1273), [#1279](https://github.com/casact/chainladder-python/pull/1279), [#1329](https://github.com/casact/chainladder-python/pull/1329), [#1330](https://github.com/casact/chainladder-python/pull/1330)
+* Move options and deprecations into `chainladder._config` by @genedan in [#1276](https://github.com/casact/chainladder-python/pull/1276)
+* Extract shared `drop` validation and remove dead backend-reset code in `_prep_columns` by @priyam0k in [#1286](https://github.com/casact/chainladder-python/pull/1286), [#1160](https://github.com/casact/chainladder-python/pull/1160)
+* Add a spec-0 dependency workflow, fix a workflow warning, standardize 1D naming, rename a duplicate `test_shift`, remove `jupyter_black` from tutorials by @genedan in [#1315](https://github.com/casact/chainladder-python/pull/1315), @salexanian in [#1120](https://github.com/casact/chainladder-python/pull/1120), @henrydingliu in [#1183](https://github.com/casact/chainladder-python/pull/1183), @priyam0k in [#1200](https://github.com/casact/chainladder-python/pull/1200), and @Abhayindia in [#1317](https://github.com/casact/chainladder-python/pull/1317)
+
+**Dependencies**
+* Floor `patsy>=1.0.2` and `statsmodels>=0.14.6` for pandas 3 by @SaguaroDev in [#974](https://github.com/casact/chainladder-python/pull/974)
+* Bump setuptools to address a dependency vulnerability by @genedan in [#1144](https://github.com/casact/chainladder-python/pull/1144)
+* Remove the pandas upper bound by @genedan in [#1172](https://github.com/casact/chainladder-python/pull/1172)
+* Bump tornado and mistune by @dependabot[bot] in [#1261](https://github.com/casact/chainladder-python/pull/1261), [#1264](https://github.com/casact/chainladder-python/pull/1264)
+
+**Contributors**
+
+Welcome Howard Friman (@friman-howard), Amine Manai (@aminemanai2003), MinYi Xie (@ppcvote), and Abhay Chaudhary (@Abhayindia) for making their first contributions! 🎉
+
+Incorporated 721 commits from 11 collaborators, including returning contributors Gene Dan (@genedan), Kenneth Hsu (@kennethshsu), Henry Liu (@henrydingliu), Ethan Kang (@EKtheSage), Priyam Alok (@priyam0k), Nick Kinney (@SaguaroDev), and Shahen Alexanian (@salexanian).
+
+**Full Changelog**: https://github.com/casact/chainladder-python/compare/v0.10.0...v0.10.1
+
 ### Version 0.10.0
 
 Release Date: July 29, 2026
