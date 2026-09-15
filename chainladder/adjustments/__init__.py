@@ -11,5 +11,5 @@ __all__ = [
     "ParallelogramOLF",
     "Trend",
     "TrendConstant",
-    "DisposalRate"
+    "DisposalRate",
 ]

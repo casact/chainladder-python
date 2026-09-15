@@ -166,9 +166,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleProtocol
+
     _MixinBase = TriangleProtocol
 else:
     _MixinBase = object
+
 
 class TriangleMixin(_MixinBase):
     # Pyright sees TriangleProtocol as the base — self has .shape, .values, .sum, etc.
@@ -191,8 +193,8 @@ if TYPE_CHECKING:
     from chainladder import Triangle
     from chainladder.core.typing import TriangleProtocol
 
-def transform(X: TriangleProtocol) -> Triangle:
-    ...
+
+def transform(X: TriangleProtocol) -> Triangle: ...
 ```
 
 - **Input typed as `TriangleProtocol`**: accepts any object that structurally satisfies the protocol (a real `Triangle`, a mock in tests, a future subclass) without requiring a concrete import.

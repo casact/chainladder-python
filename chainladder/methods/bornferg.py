@@ -12,11 +12,11 @@ class BornhuetterFerguson(Benktander):
     apriori: float, optional (default=1.0)
         Multiplier for the `sample_weight` used in the Bornhuetter Ferguson
         method. If `sample_weight` is already an apriori measure of ultimate,
-        then use 1.0. 
-        The recommended pratice is to seperate the model parameter assumption 
+        then use 1.0.
+        The recommended pratice is to seperate the model parameter assumption
         and data apart.
-        For example, if the apriori s 80% of premium, it is recommended to set 
-        the aprior as 0.8 and leave the premium data in `sample_weight` argument 
+        For example, if the apriori s 80% of premium, it is recommended to set
+        the aprior as 0.8 and leave the premium data in `sample_weight` argument
         unmodified.
     apriori_sigma: float, optional (default=0.0)
         Standard deviation of the apriori.  When used in conjunction with the
@@ -128,7 +128,7 @@ class BornhuetterFerguson(Benktander):
         Fit returns the estimator itself, with ``ultimate_`` populated.
 
         .. testsetup::
-        
+
             import chainladder as cl
 
         .. testcode::
@@ -167,7 +167,7 @@ class BornhuetterFerguson(Benktander):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
-        
+
             import chainladder as cl
 
         .. testcode::
