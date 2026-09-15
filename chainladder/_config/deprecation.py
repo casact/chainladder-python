@@ -7,14 +7,15 @@ Utilities for deprecating chainladder features.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import functools
 import inspect
 import warnings
 
-from typing import overload, TYPE_CHECKING
+from typing import overload, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from types import FrameType
-    from typing import Literal
+    from typing import Callable, Literal
 del TYPE_CHECKING
 del annotations
 
@@ -147,3 +148,213 @@ def _resolve_pat(
             caller: str = f_back.f_code.co_name
         raise TypeError(f"{caller}() missing required argument: 'pat'.")
     return pat
+
+
+# Type variable ensures that decorated functions maintain their signatures.
+_F = TypeVar("_F", bound="Callable[..., object]")
+
+
+def _deprecated_rename(
+    new_name: str,
+    *,
+    version: str | None = None,
+    category: type[Warning] = FutureWarning,
+) -> Callable[[_F], _F]:
+    """
+    Decorator factory that marks a function as scheduled to be renamed.
+
+    Calling the decorated function will emit a warning that the function will be renamed in a future release.
+
+    Parameters
+    ----------
+    new_name: str
+        The name this function will be renamed to.
+    version: str | None
+        The release the rename is expected to land in, e.g. "0.11.0".
+        Included in the warning message when given. Optional.
+    category: type[Warning]
+        The warning category to emit. Defaults to FutureWarning.
+
+    Returns
+    -------
+    Callable
+        A decorator that wraps a function, preserving its name, docstring,
+        and signature.
+
+    Examples
+    --------
+
+    .. testcode::
+        :options: +SKIP
+
+        from chainladder._config.deprecation import _deprecated_rename
+
+        @_deprecated_rename("new_func", version="0.11.0")
+        def old_func(x):
+            return x + 1
+
+        old_func(1)
+
+    .. testoutput::
+
+        example.py:8: FutureWarning: 'old_func' is deprecated and will be renamed to 'new_func' in 0.11.0. Update your code to use 'new_func' instead.
+          old_func(1)
+
+    """
+
+    def decorator(func: _F) -> _F:
+        old_name = func.__name__
+        message = f"'{old_name}' is deprecated and will be renamed to '{new_name}'"
+        if version:
+            message += f" in {version}"
+        message += f". Update your code to use '{new_name}' instead."
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.warn(message, category, stacklevel=2)  # noqa
+            return func(*args, **kwargs)
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator
+
+
+def _deprecated_rename_argument(
+    old_name: str,
+    new_name: str,
+    *,
+    version: str | None = None,
+    category: type[Warning] = FutureWarning,
+) -> Callable[[_F], _F]:
+    """
+    Decorator factory that marks a keyword argument as scheduled to be
+    renamed.
+
+    Apply this to a function while it still accepts the argument under its
+    *current* name, to warn callers ahead of the actual rename.
+
+    This decorator allows you to replace the old argument with the new argument
+    in the function signature. Once you are ready to deprecate, simply remove the
+    decorator.
+
+    Parameters
+    ----------
+    old_name: str
+        The keyword argument name the function currently accepts.
+    new_name: str
+        The keyword argument name it will be renamed to.
+    version: str | None
+        The release the rename is expected to land in, e.g. "0.11.0".
+        Included in the warning message when given. Optional.
+    category: type[Warning]
+        The warning category to emit. Defaults to FutureWarning.
+
+    Returns
+    -------
+    Callable
+        A decorator that wraps a function, preserving its name, docstring,
+        and signature via functools.wraps.
+
+    Examples
+    --------
+
+    .. testcode::
+        :options: +SKIP
+
+        from chainladder._config.deprecation import _deprecated_rename_argument
+
+        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        def func(new_arg):
+            return new_arg + 1
+
+        print(func(old_arg=1))
+
+    .. testoutput::
+
+        example.py:8: FutureWarning: 'old_arg' is deprecated and will be renamed to 'new_arg' in 0.11.0. Use 'new_arg' instead.
+          func(old_arg=1)
+
+    """
+
+    def decorator(func: _F) -> _F:
+        message = f"'{old_name}' is deprecated and will be renamed to '{new_name}'"
+        if version:
+            message += f" in {version}"
+        message += f". Use '{new_name}' instead."
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if old_name in kwargs:
+                if new_name in kwargs:
+                    raise TypeError(
+                        f"Cannot specify both '{old_name}' and '{new_name}'."
+                    )
+                warnings.warn(message, category, stacklevel=2)  # noqa
+                kwargs[new_name] = kwargs.pop(old_name)
+            return func(*args, **kwargs)
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator
+
+
+def _deprecated_drop_argument(
+    name: str,
+    *,
+    version: str | None = None,
+    category: type[Warning] = FutureWarning,
+) -> Callable[[_F], _F]:
+    """
+    Decorator factory that marks a keyword argument as scheduled for removal,
+    with no replacement.
+
+    Parameters
+    ----------
+    name: str
+        The keyword argument scheduled for removal.
+    version: str | None
+        The release the removal is expected to land in, e.g. "0.11.0".
+        Included in the warning message when given. Optional.
+    category: type[Warning]
+        The warning category to emit. Defaults to FutureWarning.
+
+    Returns
+    -------
+    Callable
+        A decorator that wraps a function, preserving its name, docstring,
+        and signature via functools.wraps.
+
+    Examples
+    --------
+
+    .. testcode::
+        :options: +SKIP
+
+        from chainladder._config.deprecation import _deprecated_drop_argument
+
+        @_deprecated_drop_argument("verbose", version="0.11.0")
+        def func(x, verbose=False):
+            return x + 1
+
+        print(func(1, verbose=True))
+
+    .. testoutput::
+
+        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 0.11.0.
+          func(1, verbose=True)
+
+    """
+
+    def decorator(func: _F) -> _F:
+        message = f"'{name}' is deprecated and will be removed"
+        message += f" in {version}." if version else " in a future release."
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if name in kwargs:
+                warnings.warn(message, category, stacklevel=2)  # noqa
+            return func(*args, **kwargs)
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator
