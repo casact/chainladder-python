@@ -6,7 +6,8 @@ import numpy as np
 
 
 class Benktander(MethodBase):
-    """The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
+    """
+    The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
 
     Parameters
     ----------
@@ -141,7 +142,8 @@ class Benktander(MethodBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        """Applies the Benktander technique to triangle **X**
+        """
+        Applies the Benktander technique to triangle **X**
 
         Parameters
         ----------
@@ -201,7 +203,8 @@ class Benktander(MethodBase):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the Benktander ultimate on a new triangle **X**
+        """
+        Predicts the Benktander ultimate on a new triangle **X**
 
         Parameters
         ----------
@@ -221,7 +224,7 @@ class Benktander(MethodBase):
         current Triangle and a refreshed apriori.
 
         .. testsetup::
-        
+
             import chainladder as cl
 
         .. testcode::
@@ -263,8 +266,8 @@ class Benktander(MethodBase):
             random_state = xp.random.RandomState(self.random_state)
             # Draw from lognormal with E[apriori] = self.apriori and SD = self.apriori_sigma.
             cov = self.apriori_sigma / self.apriori
-            sigma_log = np.sqrt(np.log1p(cov ** 2))
-            mu_log = np.log(self.apriori) - 0.5 * sigma_log ** 2
+            sigma_log = np.sqrt(np.log1p(cov**2))
+            mu_log = np.log(self.apriori) - 0.5 * sigma_log**2
             apriori = random_state.lognormal(mu_log, sigma_log, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
@@ -290,7 +293,7 @@ class Benktander(MethodBase):
         cdf = (1 - 1 / num_to_nan(cdf.values))[None]
         exponents = xp.arange(self.n_iters + 1)
         exponents = xp.reshape(exponents, tuple([len(exponents)] + [1] * 4))
-        cdf = cdf ** (((cdf + 1e-16) / (cdf + 1e-16) * exponents))
+        cdf = cdf ** ((cdf + 1e-16) / (cdf + 1e-16) * exponents)
         cdf = xp.nan_to_num(cdf)
         a = xp.sum(cdf[:-1, ...], 0) * xp.nan_to_num(ld.set_backend(backend).values)
         b = cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(backend).values)

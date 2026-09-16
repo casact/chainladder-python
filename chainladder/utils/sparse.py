@@ -6,7 +6,8 @@ import sparse as sp
 from sparse import COO as COO
 from sparse import elemwise
 
-def _setitem_not_supported(self, key, value) -> None: # noqa
+
+def _setitem_not_supported(self, key, value) -> None:  # noqa
     raise TypeError(
         """
         In-place item assignment (e.g. `triangle.values[...] = value`) is not 
@@ -18,20 +19,20 @@ def _setitem_not_supported(self, key, value) -> None: # noqa
 sp.isnan = np.isnan
 COO.nan = np.array([1.0, np.nan])[-1]
 COO.__setitem__ = _setitem_not_supported
-setattr(sp, 'testing', np.testing)
+setattr(sp, "testing", np.testing)
 sp.sqrt = np.sqrt
 sp.log = np.log
 sp.exp = np.exp
 sp.abs = np.abs
 
 
-def nan_to_num(a, nan = 0.0):
+def nan_to_num(a, nan=0.0):
     if type(a) in [int, float, np.int64, np.float64]:
         return np.nan_to_num(a)
     if hasattr(a, "fill_value"):
         a = a.copy()
         a.data[np.isnan(a.data)] = nan
-    return COO(coords=a.coords, data=a.data, fill_value = nan, shape = a.shape)
+    return COO(coords=a.coords, data=a.data, fill_value=nan, shape=a.shape)
 
 
 def ones(*args, **kwargs):
@@ -42,6 +43,7 @@ def nansum(a, axis=None, keepdims=None, *args, **kwargs):
     return COO(data=a.data, coords=a.coords, fill_value=0.0, shape=a.shape).sum(
         axis=axis, keepdims=keepdims, *args, **kwargs
     )
+
 
 def nanquantile(a: COO, q: float, axis: int = 0, keepdims: bool = False):
     """
@@ -71,15 +73,13 @@ def nanquantile(a: COO, q: float, axis: int = 0, keepdims: bool = False):
     if not keep_axes:
         out = np.nanquantile(a.data, q)
         if keepdims:
-            out = np.asarray(out).reshape(
-                tuple(1 for _ in range(a.ndim))
-            )
+            out = np.asarray(out).reshape(tuple(1 for _ in range(a.ndim)))
         return COO(out)
 
     # map every stored value to an output location
     keep_coords = a.coords[list(keep_axes)]
     group_ids = np.ravel_multi_index(keep_coords, keep_shape)
-    
+
     # sort by group
     order = np.argsort(group_ids)
     group_ids = group_ids[order]
@@ -97,9 +97,10 @@ def nanquantile(a: COO, q: float, axis: int = 0, keepdims: bool = False):
     out = out.reshape(keep_shape)
 
     if keepdims:
-        out = np.expand_dims(out,axis)
+        out = np.expand_dims(out, axis)
 
     return COO(out)
+
 
 def nanmedian(a: COO, axis: int = 0, keepdims: bool = False):
     """
@@ -121,6 +122,7 @@ def nanmedian(a: COO, axis: int = 0, keepdims: bool = False):
     """
     return nanquantile(a, 0.5, axis, keepdims)
 
+
 def nanmean(a, axis=None, keepdims=None):
     n = nansum(a, axis=axis, keepdims=keepdims)
     d = nansum(nan_to_num(a) != 0, axis=axis, keepdims=keepdims).astype(n.dtype)
@@ -129,12 +131,13 @@ def nanmean(a, axis=None, keepdims=None):
     out = n / d
     return COO(data=out.data, coords=out.coords, fill_value=0, shape=out.shape)
 
+
 def array(a, *args, **kwargs):
     if kwargs.get("fill_value", None) is not None:
         fill_value = kwargs.pop("fill_value")
     else:
         fill_value = COO.nan
-    if type(a) == sp.COO:
+    if isinstance(a, sp.COO):
         return COO(a, *args, **kwargs, fill_value=fill_value)
     else:
         return COO(np.array(a, *args, **kwargs), fill_value=fill_value)
