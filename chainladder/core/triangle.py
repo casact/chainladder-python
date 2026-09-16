@@ -686,7 +686,8 @@ class Triangle(TriangleBase):
     def _split_ult(
         data: DataFrame, index: list, columns: list, origin: list, development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Split ultimate valuation rows from long-format triangle data.
+        """
+        Split ultimate valuation rows from long-format triangle data.
 
         Ultimate rows are those where the development column equals
         ``options.ULT_VAL``. This supports round-tripping triangles exported
@@ -1299,7 +1300,8 @@ class Triangle(TriangleBase):
         return obj
 
     def incr_to_cum(self, inplace=False):
-        """Method to convert an incremental triangle into a cumulative triangle.
+        """
+        Method to convert an incremental triangle into a cumulative triangle.
 
         Parameters
         ----------
@@ -1427,7 +1429,8 @@ class Triangle(TriangleBase):
             return new_obj.incr_to_cum(inplace=True)
 
     def cum_to_incr(self, inplace=False):
-        """Method to convert an cumlative triangle into a incremental triangle.
+        """
+        Method to convert an cumlative triangle into a incremental triangle.
 
         Parameters
         ----------
@@ -1528,7 +1531,8 @@ class Triangle(TriangleBase):
         return obj
 
     def dev_to_val(self, inplace=False):
-        """Converts triangle from a development lag triangle to a valuation
+        """
+        Converts triangle from a development lag triangle to a valuation
         triangle.
 
         Parameters
@@ -1613,7 +1617,8 @@ class Triangle(TriangleBase):
         return obj
 
     def val_to_dev(self, inplace=False):
-        """Converts triangle from a valuation triangle to a development lag
+        """
+        Converts triangle from a valuation triangle to a development lag
         triangle.
 
         Parameters
@@ -1678,7 +1683,8 @@ class Triangle(TriangleBase):
         return obj
 
     def grain(self, grain="", trailing=False, inplace=False):
-        """Changes the grain of a cumulative triangle.
+        """
+        Changes the grain of a cumulative triangle.
 
         Parameters
         ----------
@@ -1902,7 +1908,8 @@ class Triangle(TriangleBase):
         ultimate_lag=None,
         **kwargs,
     ):
-        """Allows for the trending of a Triangle object along either a valuation
+        """
+        Allows for the trending of a Triangle object along either a valuation
         or origin axis.  This method trends using days and assumes a years is
         365.25 days long.
 
@@ -2027,7 +2034,8 @@ class Triangle(TriangleBase):
         return obj
 
     def copy(self):
-        """Return a shallow copy of the Triangle.
+        """
+        Return a shallow copy of the Triangle.
 
         Returns
         -------
@@ -2125,7 +2133,8 @@ class Triangle(TriangleBase):
         return ValuationCorrelation(self, p_critical, total)
 
     def shift(self, periods=-1, axis=3):
-        """Shift elements along an axis by desired number of periods.
+        """
+        Shift elements along an axis by desired number of periods.
 
         Data that falls beyond the existing shape of the Triangle is eliminated
         and new cells default to zero.
@@ -2250,7 +2259,8 @@ class Triangle(TriangleBase):
             return out.shift(periods - 1 if periods > 0 else periods + 1, axis)
 
     def sort_axis(self, axis):
-        """Method to sort a Triangle along a given axis
+        """
+        Method to sort a Triangle along a given axis
 
         Parameters
         ----------
@@ -2329,7 +2339,8 @@ class Triangle(TriangleBase):
         return obj
 
     def reindex(self, columns=None, fill_value=np.nan):
-        """Conform Triangle columns to a new set of labels.
+        """
+        Conform Triangle columns to a new set of labels.
 
         Any column in ``columns`` that is not already present is added and
         filled with ``fill_value``.

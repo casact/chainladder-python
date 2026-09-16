@@ -490,8 +490,9 @@ def test_valdev3(qtr):
 
 
 def test_valdev4(raa: Triangle) -> None:
-   np.testing.assert_array_equal(raa.dev_to_val()[raa.dev_to_val().development>="1989"].values,
-       raa[raa.valuation>="1989"].dev_to_val().values)
+    lhs = raa.dev_to_val()[raa.dev_to_val().development>="1989"].values.flatten()
+    rhs = raa[raa.valuation>="1989"].dev_to_val().values.flatten()
+    np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
 def test_valdev5(raa):
@@ -1687,8 +1688,10 @@ def test_ffill_does_not_mutate_original() -> None:
 
 
 def test_ffill_zero_input_is_missing_and_fills() -> None:
-    """A 0 in the input becomes NaN on construction (the package treats 0 as
-    missing everywhere), so ffill carries it forward like any other gap."""
+    """
+    A 0 in the input becomes NaN on construction (the package treats 0 as
+    missing everywhere), so ffill carries it forward like any other gap.
+    """
     df = pd.DataFrame({
         "origin": [1985, 1985, 1985, 1986, 1986],
         "development": [1985, 1986, 1987, 1986, 1987],

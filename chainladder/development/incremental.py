@@ -8,7 +8,8 @@ import warnings
 
 
 class IncrementalAdditive(DevelopmentBase):
-    """The Incremental Additive Method.
+    """
+    The Incremental Additive Method.
 
     This estimator implements the additive method of Schmidt (2006), Section 4.7:
     expected incremental losses satisfy ``E[Z_{i,k}] = eta_i * gamma_k``, where
@@ -191,7 +192,8 @@ class IncrementalAdditive(DevelopmentBase):
         self.is_additive = True
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -292,7 +294,8 @@ class IncrementalAdditive(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
