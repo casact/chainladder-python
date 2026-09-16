@@ -7,9 +7,10 @@ import pandas as pd
 
 
 class DevelopmentConstant(DevelopmentBase):
-    """An Estimator that allows for including of external patterns into a
-        Development style model. When this estimator is fit against a triangle,
-        only the grain of the existing triangle is retained.
+    """
+    An Estimator that allows for including of external patterns into a
+    Development style model. When this estimator is fit against a triangle,
+    only the grain of the existing triangle is retained.
 
     Parameters
     ----------
@@ -113,7 +114,8 @@ class DevelopmentConstant(DevelopmentBase):
         self.groupby = groupby
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -212,7 +214,8 @@ class DevelopmentConstant(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

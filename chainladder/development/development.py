@@ -356,7 +356,8 @@ class Development(DevelopmentBase):
         self.average_: np.ndarray
 
     def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -448,7 +449,8 @@ class Development(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
