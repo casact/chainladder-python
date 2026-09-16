@@ -102,10 +102,8 @@ def test_annual_trailing(prism):
 
 
 def test_development_age(raa: Triangle) -> None:
-    assert (
-        raa.ddims == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
-    ).all()
+    assert (raa.ddims == list(range(12, 121, 12))).all()
 
 
 def test_development_age_quarterly(qtr: Triangle) -> None:
-    assert (qtr.ddims == list(range(3, 135, 3))).all()
+    assert (qtr.ddims == list(range(3, 136, 3))).all()
