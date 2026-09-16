@@ -490,8 +490,8 @@ def test_valdev3(qtr):
 
 
 def test_valdev4(raa: Triangle) -> None:
-    lhs = raa.dev_to_val()[raa.dev_to_val().development>="1989"].values.flatten()
-    rhs = raa[raa.valuation>="1989"].dev_to_val().values.flatten()
+    lhs = raa.dev_to_val()[raa.dev_to_val().development >= "1989"].values.flatten()
+    rhs = raa[raa.valuation >= "1989"].dev_to_val().values.flatten()
     np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
