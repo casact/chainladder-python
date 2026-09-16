@@ -141,7 +141,7 @@ SAMPLES: dict = {
     },
     "friedland_dc_insurer": {
         "origin": "Accident Year",
-        "development": "Calendar Year",
+        "development": "Valuation",
         "index": None,
         "columns": ["Reported Claims"],
         "cumulative": True,
@@ -274,7 +274,15 @@ SAMPLES: dict = {
         "origin": "Accident Year",
         "development": "Calendar Year",
         "index": None,
-        "columns": ["Paid Claims", "Reported Claims", "Closed Claim Counts", "Reported Claim Counts", "Case Outstanding", "Reported Severities", "Earned Premium"],
+        "columns": [
+            "Paid Claims",
+            "Reported Claims",
+            "Closed Claim Counts",
+            "Reported Claim Counts",
+            "Case Outstanding",
+            "Reported Severities",
+            "Earned Premium",
+        ],
         "cumulative": True,
     },
     "friedland_xyz_disp": {
