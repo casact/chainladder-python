@@ -19,7 +19,5 @@ def test_truncation_age(genins: Triangle, atol: float) -> None:
     )
     no_truncation = cl.TailClark().fit(cl.ClarkLDF().fit_transform(genins)).cdf_
     assert np.allclose(
-        long_truncation.values[..., -1],
-        no_truncation.values[..., -1],
-        atol=atol
+        long_truncation.values[..., -1], no_truncation.values[..., -1], atol=atol
     )
