@@ -118,7 +118,7 @@ class TailClark(TailBase):
         growth="loglogistic",
         truncation_age=None,
         attachment_age=None,
-        projection_period=12
+        projection_period=12,
     ):
         self.growth = growth
         self.truncation_age = truncation_age

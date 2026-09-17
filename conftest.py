@@ -31,7 +31,9 @@ def pytest_generate_tests(metafunc):
     if "prism" in metafunc.fixturenames:
         metafunc.parametrize("prism", ["sparse_only_run"], indirect=True)
     if "tail_sample" in metafunc.fixturenames:
-        metafunc.parametrize("tail_sample", ["normal_run", "sparse_only_run"], indirect=True)
+        metafunc.parametrize(
+            "tail_sample", ["normal_run", "sparse_only_run"], indirect=True
+        )
     if "xyz" in metafunc.fixturenames:
         metafunc.parametrize("xyz", ["normal_run", "sparse_only_run"], indirect=True)
 
