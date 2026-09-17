@@ -2357,3 +2357,28 @@ class Triangle(TriangleBase):
             if column not in obj.columns:
                 obj[column] = fill_value
         return obj
+    
+    def fill(self, value: float=1.0, inplace: bool=False) -> Triangle:
+        """
+        Fill the Triangle with a scalar value
+
+        Parameters
+        ----------
+        value : float, default 1.0
+            All valid elements will be assigned this value
+        inplace : bool, default False
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+        Triangle
+        """
+        if inplace:
+            xp = self.get_array_module()
+            new_value = self.nan_triangle[None, None, ...].astype(np.float64)
+            self.values = xp.broadcast_to(new_value * value, self.shape, True)
+            return self
+        else:
+            obj = self.copy()
+            return obj.fill(value, True)
