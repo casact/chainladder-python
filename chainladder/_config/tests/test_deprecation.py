@@ -29,15 +29,29 @@ def _warn_once(func, *args, **kwargs) -> tuple[object, warnings.WarningMessage]:
     return result, caught[0]
 
 
+def _warn_never(func, *args, **kwargs) -> object:
+    """Calls func and returns its result, checking that nothing was warned."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = func(*args, **kwargs)
+    assert caught is not None
+    # Check that no warning was triggered.
+    assert len(caught) == 0
+    return result
+
+
 class TestDeprecatedRename:
     """Test the _deprecated_rename decorator."""
 
     def test_warns_default_category(self) -> None:
         """Check that the default warning category is FutureWarning."""
 
+        def new_func(x):
+            return x + 1
+
         @_deprecated_rename("new_func")
         def old_func(x):
-            return x + 1
+            return new_func(x)
 
         result, warning = _warn_once(old_func, 1)
         assert result == 2
@@ -46,9 +60,12 @@ class TestDeprecatedRename:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
+        def new_func():
+            return 0
+
         @_deprecated_rename("new_func", version="0.11.0")
         def old_func():
-            pass
+            return new_func()
 
         _, warning = _warn_once(old_func)
         assert str(warning.message) == (
@@ -59,9 +76,12 @@ class TestDeprecatedRename:
     def test_message_without_version(self) -> None:
         """Check the warning message when no version is given."""
 
+        def new_func():
+            return 0
+
         @_deprecated_rename("new_func")
         def old_func():
-            pass
+            return new_func()
 
         _, warning = _warn_once(old_func)
         assert str(warning.message) == (
@@ -72,9 +92,12 @@ class TestDeprecatedRename:
     def test_custom_category(self) -> None:
         """Check that a custom warning category is honored."""
 
+        def new_func():
+            return 0
+
         @_deprecated_rename("new_func", category=DeprecationWarning)
         def old_func():
-            pass
+            return new_func()
 
         with pytest.warns(DeprecationWarning):
             old_func()
@@ -82,9 +105,12 @@ class TestDeprecatedRename:
     def test_forwards_args_and_kwargs(self) -> None:
         """Check that positional and keyword arguments reach the wrapped function unchanged."""
 
+        def new_func(a, b, *, c):
+            return a, b, c
+
         @_deprecated_rename("new_func")
         def old_func(a, b, *, c):
-            return a, b, c
+            return new_func(a, b, c=c)
 
         with warnings.catch_warnings():  # noqa
             warnings.simplefilter("ignore")
@@ -93,9 +119,13 @@ class TestDeprecatedRename:
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
 
+        def new_func():
+            return 0
+
         @_deprecated_rename("new_func")
         def old_func():
             """Original docstring."""
+            return new_func()
 
         assert old_func.__name__ == "old_func"
         assert old_func.__doc__ == "Original docstring."
@@ -103,9 +133,12 @@ class TestDeprecatedRename:
     def test_warns_every_call(self) -> None:
         """Check that the warning fires on every call, not just the first."""
 
+        def new_func():
+            return 0
+
         @_deprecated_rename("new_func")
         def old_func():
-            pass
+            return new_func()
 
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
@@ -136,12 +169,7 @@ class TestDeprecatedRenameArgument:
         def func(new_arg):
             return new_arg
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = func(new_arg=1)
-        assert result == 1
-        assert caught is not None
-        assert len(caught) == 0
+        assert _warn_never(func, new_arg=1) == 1
 
     def test_neither_name_uses_default_no_warning(self) -> None:
         """Check that omitting both names falls back to the default without warning."""
@@ -150,12 +178,7 @@ class TestDeprecatedRenameArgument:
         def func(new_arg="default"):
             return new_arg
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = func()
-        assert result == "default"
-        assert caught is not None
-        assert len(caught) == 0
+        assert _warn_never(func) == "default"
 
     def test_both_names_raises_type_error(self) -> None:
         """Check that passing both the old and new names raises a TypeError."""
@@ -214,13 +237,8 @@ class TestDeprecatedRenameArgument:
         def func(a, b, new_arg=None):
             return a, b, new_arg
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            # noinspection PyArgumentList
-            result = func(1, 2, old_arg=3)  # pyright: ignore[reportCallIssue]
+        result, _ = _warn_once(func, 1, 2, old_arg=3)
         assert result == (1, 2, 3)
-        assert caught is not None
-        assert len(caught) == 1
 
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
@@ -270,12 +288,7 @@ class TestDeprecatedDropArgument:
         def func(x, verbose: bool = False):
             return x, verbose
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = func(1)
-        assert result == (1, False)
-        assert caught is not None
-        assert len(caught) == 0
+        assert _warn_never(func, 1) == (1, False)
 
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
@@ -318,12 +331,8 @@ class TestDeprecatedDropArgument:
         def func(a, b, verbose: bool = False):
             return a, b, verbose
 
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = func(1, 2, verbose=True)
+        result, _ = _warn_once(func, 1, 2, verbose=True)
         assert result == (1, 2, True)
-        assert caught is not None
-        assert len(caught) == 1
 
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""

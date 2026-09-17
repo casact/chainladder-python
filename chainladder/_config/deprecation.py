@@ -165,6 +165,15 @@ def _deprecated_rename(
 
     Calling the decorated function will emit a warning that the function will be renamed in a future release.
 
+    Deprecation steps:
+
+    1. Define a function with the new name.
+    2. Move the body of the deprecated function to the new function.
+    3. Have the old function serve as a wrapper to the new function.
+    4. Apply the decorator to the old function.
+    5. Once you are ready to deprecate, delete the old function and its
+       decorator.
+
     Parameters
     ----------
     new_name: str
@@ -189,16 +198,19 @@ def _deprecated_rename(
 
         from chainladder._config.deprecation import _deprecated_rename
 
-        @_deprecated_rename("new_func", version="0.11.0")
-        def old_func(x):
+        def new_func(x):
             return x + 1
 
-        old_func(1)
+        @_deprecated_rename("new_func", version="0.11.0")
+        def old_func(x):
+            return new_func(x)
+
+        print(old_func(1))
 
     .. testoutput::
 
-        example.py:8: FutureWarning: 'old_func' is deprecated and will be renamed to 'new_func' in 0.11.0. Update your code to use 'new_func' instead.
-          old_func(1)
+        example.py:11: FutureWarning: 'old_func' is deprecated and will be renamed to 'new_func' in 0.11.0. Update your code to use 'new_func' instead.
+          print(old_func(1))
 
     """
 
