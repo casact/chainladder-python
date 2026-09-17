@@ -3316,10 +3316,10 @@ def test_fill(clrd: Triangle) -> None:
     assert np.nanmin(fill_tri.values) == 100
 
 
-def test_fill(raa: Triangle) -> None:
+def test_full_fill(raa: Triangle) -> None:
     """
     ``Fill`` method works as intended on full triangle
     """
     full_tri = cl.Chainladder().fit(raa).full_triangle_
     fill_full_tri = full_tri.fill(200)
-    assert np.all(fill_full_tri.values == np.broadcast_to([200],(1,1,10,12)))
+    assert np.all(fill_full_tri.values == np.broadcast_to([200],(1, 1, 10, 12)))
