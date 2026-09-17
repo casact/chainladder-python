@@ -81,7 +81,7 @@ myst_enable_extensions = [
     "dollarmath",
     "html_admonition",
     "linkify",
-    "substitution"
+    "substitution",
 ]
 myst_url_schemes = ["mailto", "http", "https"]
 nb_execution_allow_errors = False
