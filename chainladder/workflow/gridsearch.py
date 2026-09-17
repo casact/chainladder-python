@@ -107,7 +107,7 @@ class GridSearch(BaseEstimator):
         scoring,
         verbose=0,
         error_score="raise",
-        n_jobs=None
+        n_jobs=None,
     ):
         self.estimator = estimator
         self.param_grid = param_grid
@@ -148,7 +148,8 @@ class GridSearch(BaseEstimator):
 
         results_ = Parallel(n_jobs=self.n_jobs)(
             delayed(_fit_single_estimator)(
-                self.estimator, fit_params, X, y, scoring, item)
+                self.estimator, fit_params, X, y, scoring, item
+            )
             for item in grid
         )
         self.results_ = pd.DataFrame(results_)

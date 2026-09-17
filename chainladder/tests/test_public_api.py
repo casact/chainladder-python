@@ -7,6 +7,7 @@ tests pin that public surface so the refactor away from wildcard imports
 cannot silently add or drop a public name, and so submodule names no longer
 leak into the package namespace.
 """
+
 from __future__ import annotations
 
 import types
