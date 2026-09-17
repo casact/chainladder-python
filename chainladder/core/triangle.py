@@ -1046,6 +1046,19 @@ class Triangle(TriangleBase):
     def is_disposal_rate(self, is_dr: bool) -> None:
         self._is_disposal_rate = is_dr
 
+    @property
+    def is_additive(self) -> bool:
+        """
+        Indicates whether the Triangle holds a normal additive ratio (which goes from tail to head)
+        """
+        if hasattr(self, "_is_additive"):
+            return self._is_additive
+        return False
+
+    @is_additive.setter
+    def is_additive(self, is_add: bool) -> None:
+        self._is_additive = is_add
+
     def align_pattern(
         self, X: Triangle, sample_weight: Triangle | None = None
     ) -> Triangle:

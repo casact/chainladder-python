@@ -482,16 +482,10 @@ class Development(DevelopmentBase):
         return X_new
 
     def _param_property(self, X, params, idx):
-        from chainladder import options
-
-        obj = X[X.origin == X.origin.min()]
+        obj = super._param_property(X, params)
         xp = X.get_array_module()
         obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
         obj.ddims = X.link_ratio.ddims
-        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
-        obj.is_pattern = True
         obj.is_cumulative = False
-        obj.virtual_columns.columns = {}
-        obj._set_slicers()
 
         return obj

@@ -409,11 +409,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         from chainladder import options
 
         obj: Triangle = X[X.origin == X.origin.min()]
-        obj.values = params
         obj.valuation_date = pd.to_datetime(options.ULT_VAL)
         obj.is_pattern = True
-        obj.is_additive = True
-        obj.is_cumulative = False
         obj.virtual_columns.columns = {}
         obj._set_slicers()
         return obj

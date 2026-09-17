@@ -339,3 +339,10 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
             Triangle with new full_triangle_
         """
         return self.fit(X, y, sample_weight).transform(X, sample_weight=sample_weight)
+
+    def _param_property(self, X, params, idx):
+        obj = super._param_property(X, params)
+        obj.values = params
+        obj.is_disposal_rate = True
+
+        return obj

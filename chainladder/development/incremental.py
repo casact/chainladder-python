@@ -1,10 +1,64 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 from chainladder.development import DevelopmentBase
 from chainladder.utils import TriangleWeight
 import numpy as np
+import copy
 import warnings
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
+
+
+class IncrementalMixin:
+    """
+    This class provides attributes for the IncrementalAdditive development method
+    and transformed `Triangle`
+    """
+
+    @property
+    def zeta_(self) -> Triangle:
+        """
+        Gets the estimated zeta
+        """
+        if not hasattr(self, "_zeta_"):
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'zeta_'")
+        return self._zeta_
+
+    @zeta_.setter
+    def zeta_(self, value: Triangle) -> None:
+        """
+        Sets zeta_
+        """
+        obj = copy.deepcopy(value)
+        obj.is_pattern = True
+        obj.is_additive = True
+        obj.is_cumulative = False
+        self._zeta_ = obj
+
+    @property
+    def cum_zeta_(self) -> Triangle:
+        """
+        Gets the cumulative of the estimated zeta
+        """
+        return self.zeta_.incr_to_cum()
+
+    @cum_zeta_.setter
+    def cum_zeta_(self, value: Triangle) -> None:
+        """
+        Sets cum_zeta_
+        """
+        obj = copy.deepcopy(value)
+        obj.is_pattern = True
+        obj.is_additive = True
+        obj.is_cumulative = True
+        self._zeta_ = obj.cum_to_incr()
 
 
 class IncrementalAdditive(DevelopmentBase):
@@ -319,3 +373,10 @@ class IncrementalAdditive(DevelopmentBase):
         ]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
+
+    def _param_property(self, X, params, idx):
+        obj = super._param_property(X, params)
+        obj.values = params
+        obj.is_additive = True
+
+        return obj
