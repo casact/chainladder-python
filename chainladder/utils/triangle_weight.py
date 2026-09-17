@@ -126,7 +126,8 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: TriangleProtocol) -> Triangle:
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
