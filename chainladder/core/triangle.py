@@ -2360,7 +2360,12 @@ class Triangle(TriangleBase):
 
     def fill(self, value: float = 1.0, inplace: bool = False) -> Triangle:
         """
-        Fill the Triangle with a scalar value
+        Fill a ``Triangle`` with a scalar value.
+
+        For an incomplete Triangle, only the upper half will be filled, including
+        any NaN in the upper half.
+
+        For a full Triangle, the entire frame will be filled, including any NaN
 
         Parameters
         ----------
@@ -2373,6 +2378,25 @@ class Triangle(TriangleBase):
         Returns
         -------
         Triangle
+
+        Examples
+        --------
+        Build a Triangle with two columns supplied in non-alphabetical order.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            print(raa.fill(200))
+            full_raa = cl.Chainladder.fit("raa").full_triangle_
+            print(full_raa.fill(200))
+
+        .. testoutput::
+
+            ['reported', 'paid']
         """
         if inplace:
             xp = self.get_array_module()
