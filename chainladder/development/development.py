@@ -410,10 +410,17 @@ class Development(DevelopmentBase):
             drop=self.drop,
         )
 
-        if hasattr(X, "w_v2_"):
-            self.w_v2_ = tw.fit(obj.age_to_age * X.w_v2_).w_
-        else:
-            self.w_v2_ = tw.fit(obj.age_to_age).w_
+        # w_v2_ is the in-progress migration path and computes the same drops as
+        # the w_ path below, so letting it warn would emit the same message twice
+        # for one fit. The w_ path keeps the warning.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="Some exclusions have been ignored"
+            )
+            if hasattr(X, "w_v2_"):
+                self.w_v2_ = tw.fit(obj.age_to_age * X.w_v2_).w_
+            else:
+                self.w_v2_ = tw.fit(obj.age_to_age).w_
 
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
