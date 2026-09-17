@@ -8,6 +8,7 @@ import dill
 import json
 import os
 import numpy as np
+import warnings
 import pandas as pd
 
 from chainladder import __dt64_unit__, __dt64_dtype__
@@ -1151,3 +1152,27 @@ def date_delta_adjustment(date: str) -> str:
     res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=__dt64_unit__))
 
     return res
+
+
+def warn_exclusions_ignored(preserve):
+    """
+    Warn that an exclusion was not applied because ``preserve`` blocked it.
+
+    The four drop routines in ``DevelopmentBase`` and ``TriangleWeight`` all
+    reach the same dead end and said so in four copies of this text. The
+    wording is asserted by the test suite, so it is kept as it was.
+    """
+    if preserve == 1:
+        warning = (
+            "Some exclusions have been ignored. At least "
+            + str(preserve)
+            + " (use preserve = ...)"
+            + " link ratio(s) is required for development estimation."
+        )
+    else:
+        warning = (
+            "Some exclusions have been ignored. At least "
+            + str(preserve)
+            + " link ratio(s) is required for development estimation."
+        )
+    warnings.warn(warning)
