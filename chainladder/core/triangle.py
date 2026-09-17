@@ -2357,7 +2357,7 @@ class Triangle(TriangleBase):
             if column not in obj.columns:
                 obj[column] = fill_value
         return obj
-    
+
     def fill(self, value: float = 1.0, inplace: bool = False) -> Triangle:
         """
         Fill the Triangle with a scalar value
