@@ -1,5 +1,6 @@
-""" utils should store all utility functions and classes, i.e. things that
-    are used by various modules in the package.
+"""
+utils should store all utility functions and classes, i.e. things that
+are used by various modules in the package.
 """
 from chainladder.utils.weighted_regression import (
     WeightedRegression,
@@ -20,7 +21,7 @@ from chainladder.utils.utility_functions import (  # noqa (API import)
     minimum,
     maximum,
     PatsyFormula,
-    model_diagnostics
+    model_diagnostics,
 )
 from chainladder.utils.cupy import cp
 from chainladder.utils.sparse import sp

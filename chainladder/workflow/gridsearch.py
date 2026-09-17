@@ -12,7 +12,8 @@ import json
 
 
 class GridSearch(BaseEstimator):
-    """Exhaustive search over specified parameter values for an estimator.
+    """
+    Exhaustive search over specified parameter values for an estimator.
     Important members are fit, predict.
     GridSearchCV implements a "fit" and a "score" method.
     It also implements "predict", "predict_proba", "decision_function",
@@ -99,8 +100,15 @@ class GridSearch(BaseEstimator):
 
     """
 
-    def __init__(self, estimator, param_grid, scoring, verbose=0,
-                 error_score="raise", n_jobs=None):
+    def __init__(
+        self,
+        estimator,
+        param_grid,
+        scoring,
+        verbose=0,
+        error_score="raise",
+        n_jobs=None
+    ):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
@@ -109,7 +117,8 @@ class GridSearch(BaseEstimator):
         self.n_jobs = n_jobs
 
     def fit(self, X, y=None, **fit_params):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -136,18 +145,19 @@ class GridSearch(BaseEstimator):
             for score in scoring.keys():
                 item[score] = scoring[score](model)
             return item
-            
-        results_ = Parallel(n_jobs=self.n_jobs)(delayed(_fit_single_estimator)(
-            self.estimator, fit_params, X, y, scoring, item)
-            for item in grid)
+
+        results_ = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_single_estimator)(
+                self.estimator, fit_params, X, y, scoring, item)
+            for item in grid
+        )
         self.results_ = pd.DataFrame(results_)
         return self
 
 
-
-
 class Pipeline(PipelineSL, EstimatorIO):
-    """This is a near direct of copy the scikit-learn Pipeline class.
+    """
+    This is a near direct of copy the scikit-learn Pipeline class.
 
     Sequentially apply a list of transforms and a final estimator.
     Intermediate steps of the pipeline must be 'transforms', that is, they
@@ -258,13 +268,11 @@ class Pipeline(PipelineSL, EstimatorIO):
         return self.predict(X, sample_weight, **fit_params)
 
     def to_json(self):
-        return json.dumps(
-            [
-                {
-                    "name": item[0],
-                    "params": item[1].get_params(),
-                    "__class__": item[1].__class__.__name__,
-                }
-                for item in self.steps
-            ]
-        )
+        return json.dumps([
+            {
+                "name": item[0],
+                "params": item[1].get_params(),
+                "__class__": item[1].__class__.__name__,
+            }
+            for item in self.steps
+        ])
