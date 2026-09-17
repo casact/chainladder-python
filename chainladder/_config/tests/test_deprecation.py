@@ -103,18 +103,19 @@ class TestDeprecatedRename:
             old_func()
 
     def test_forwards_args_and_kwargs(self) -> None:
-        """Check that positional and keyword arguments reach the wrapped function unchanged."""
+        """Check that positional and keyword arguments reach the new function unchanged."""
 
         def new_func(a, b, *, c):
-            return a, b, c
+            return a * 100 + b * 10 + c
 
         @_deprecated_rename("new_func")
-        def old_func(a, b, *, c):
-            return new_func(a, b, c=c)
+        def old_func(*args, **kwargs):
+            return new_func(*args, **kwargs)
 
-        with warnings.catch_warnings():  # noqa
-            warnings.simplefilter("ignore")
-            assert old_func(1, 2, c=3) == (1, 2, 3)
+        # Weighting by position makes the result spell out the argument order,
+        # so 1, 2, 3 can only arrive intact as 123.
+        result, _ = _warn_once(old_func, 1, 2, c=3)
+        assert result == 123
 
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
