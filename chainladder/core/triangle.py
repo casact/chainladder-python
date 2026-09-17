@@ -2360,7 +2360,12 @@ class Triangle(TriangleBase):
 
     def fill(self, value: float = 1.0, inplace: bool = False) -> Triangle:
         """
-        Fill the Triangle with a scalar value
+        Fill a ``Triangle`` with a scalar value.
+
+        For an incomplete Triangle, only the upper half will be filled, including
+        any NaN in the upper half.
+
+        For a full Triangle, the entire frame will be filled, including any NaN
 
         Parameters
         ----------
@@ -2373,6 +2378,46 @@ class Triangle(TriangleBase):
         Returns
         -------
         Triangle
+
+        Examples
+        --------
+        Build a Triangle with two columns supplied in non-alphabetical order.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            print(raa.fill(200))
+            full_raa = cl.Chainladder().fit(raa).full_triangle_
+            print(full_raa.fill(200))
+
+        .. testoutput::
+
+                    12     24     36     48     60     72     84     96     108    120
+            1981  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1982  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0    NaN
+            1983  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0    NaN    NaN
+            1984  200.0  200.0  200.0  200.0  200.0  200.0  200.0    NaN    NaN    NaN
+            1985  200.0  200.0  200.0  200.0  200.0  200.0    NaN    NaN    NaN    NaN
+            1986  200.0  200.0  200.0  200.0  200.0    NaN    NaN    NaN    NaN    NaN
+            1987  200.0  200.0  200.0  200.0    NaN    NaN    NaN    NaN    NaN    NaN
+            1988  200.0  200.0  200.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1989  200.0  200.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1990  200.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+                   12     24     36     48     60     72     84     96     108    120    132    9999
+            1981  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1982  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1983  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1984  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1985  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1986  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1987  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1988  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1989  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1990  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
         """
         if inplace:
             xp = self.get_array_module()
