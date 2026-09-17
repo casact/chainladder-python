@@ -1,9 +1,19 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 
+import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
+
+from typing import Literal, TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    from chainladder import Triangle
+    from collections.abc import Sequence
+    from pandas import Period, Timestamp
 
 
 class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
@@ -22,6 +32,22 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         A list-like of (start, end) dates to correspond to the `trend` list.
     axis: str (options: [‘origin’, ‘valuation’])
         The axis on which to apply the trend
+    base_period: int or str, optional
+        The period whose factor is set to 1.0, so that ``trend_`` states every
+        other period relative to it. Defaults to the latest period of ``axis``.
+        A ``base_period`` coarser than the Triangle's grain -- a bare year against
+        a quarterly axis, say -- resolves to the earliest period it spans. Note
+        that ``trend_`` remains a multiplier *to* the base period's cost level; a
+        cost level index rising with time is its reciprocal.
+    full_triangle: bool (default=False)
+        By default ``trend_`` is shaped like the Triangle it was fit on, so cells
+        past the valuation date, and any the Triangle is missing internally, come
+        back as NaN. When True, ``trend_`` is instead the factor surface over the
+        whole origin x development rectangle, which methods needing an n x n trend
+        matrix require. Because factors then run past the valuation date rather
+        than being clipped at it, a Triangle whose valuation date falls part-way
+        through an origin period will not reproduce the default exactly on the
+        cells the two share.
 
     Attributes
     ----------
@@ -155,20 +181,213 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         29278236
         26370689
 
+    By default, trend factors are set relative the most recent origin or valuation period.
+    This can be changed via ``base_period``, which sets the trend factors to be relative
+    to that period.
+
+    .. testcode::
+
+        tri = cl.load_sample("raa")
+        rebased = cl.Trend(0.05, axis="origin", base_period=1981).fit(tri)
+        print(np.round(rebased.trend_, 4))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                 12      24      36      48      60      72      84      96      108  120
+        1981  1.0000  1.0000  1.0000  1.0000  1.0000  1.0000  1.0000  1.0000  1.0000  1.0
+        1982  0.9524  0.9524  0.9524  0.9524  0.9524  0.9524  0.9524  0.9524  0.9524  NaN
+        1983  0.9070  0.9070  0.9070  0.9070  0.9070  0.9070  0.9070  0.9070     NaN  NaN
+        1984  0.8638  0.8638  0.8638  0.8638  0.8638  0.8638  0.8638     NaN     NaN  NaN
+        1985  0.8227  0.8227  0.8227  0.8227  0.8227  0.8227     NaN     NaN     NaN  NaN
+        1986  0.7835  0.7835  0.7835  0.7835  0.7835     NaN     NaN     NaN     NaN  NaN
+        1987  0.7462  0.7462  0.7462  0.7462     NaN     NaN     NaN     NaN     NaN  NaN
+        1988  0.7107  0.7107  0.7107     NaN     NaN     NaN     NaN     NaN     NaN  NaN
+        1989  0.6768  0.6768     NaN     NaN     NaN     NaN     NaN     NaN     NaN  NaN
+        1990  0.6446     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN  NaN
+
+    Toggle ``full_triangle=True`` to retrun a full triangle of trend factors.
+
+    .. testcode::
+
+        print(np.round(cl.Trend(0.05, axis="valuation", full_triangle=True).fit(tri).trend_, 4))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                 12      24      36      48      60      72      84      96      108     120
+        1981  1.5513  1.4775  1.4071  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000
+        1982  1.4775  1.4071  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000  0.9524
+        1983  1.4071  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000  0.9524  0.9070
+        1984  1.3401  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000  0.9524  0.9070  0.8638
+        1985  1.2763  1.2155  1.1576  1.1025  1.0500  1.0000  0.9524  0.9070  0.8638  0.8227
+        1986  1.2155  1.1576  1.1025  1.0500  1.0000  0.9524  0.9070  0.8638  0.8227  0.7835
+        1987  1.1576  1.1025  1.0500  1.0000  0.9524  0.9070  0.8638  0.8227  0.7835  0.7462
+        1988  1.1025  1.0500  1.0000  0.9524  0.9070  0.8638  0.8227  0.7835  0.7462  0.7107
+        1989  1.0500  1.0000  0.9524  0.9070  0.8638  0.8227  0.7835  0.7462  0.7107  0.6768
+        1990  1.0000  0.9524  0.9070  0.8638  0.8227  0.7835  0.7462  0.7107  0.6768  0.6446
+
     """
 
-    def __init__(self, trends=0.0, dates=None, axis="origin"):
+    def __init__(
+        self,
+        trends: float | int | list[float | int] = 0.0,
+        dates: tuple | list[tuple] | None = None,
+        axis: Literal["origin", "valuation", 2, -2] = "origin",
+        base_period: int | str | None = None,
+        full_triangle: bool = False,
+    ):
         self.trends = trends
         self.dates = dates
         self.axis = axis
+        self.base_period = base_period
+        self.full_triangle = full_triangle
 
-    def fit(self, X, y=None, sample_weight=None):
+    def _accumulate(
+        self,
+        obj: Triangle,
+        trends: Sequence[float | int],
+        dates: Sequence[tuple],
+        default_start: Timestamp,
+    ) -> Triangle:
+        """
+        Apply each trend segment to ``obj`` in turn, compounding the segments.
+
+        Parameters
+        ----------
+        obj: Triangle
+            The Triangle the segments are applied to. Passing a Triangle of 1s
+            yields the factors themselves; passing data yields trended data.
+        trends: sequence of float
+            The annual trend of each segment, expressed as a decimal.
+        dates: sequence of tuple
+            The ``(start, end)`` bounds of each segment, positionally paired with
+            ``trends``. Either bound may be None.
+        default_start: Timestamp
+            The default starting date of a segment, if the segment has no starting date.
+
+        Returns
+        -------
+        Triangle
+            ``obj`` multiplied by the compounded factors of every segment.
+        """
+        for i, trend in enumerate(trends):
+            start = default_start if dates[i][0] is None else dates[i][0]
+            obj = obj.trend(trend=trend, axis=self.axis, start=start, end=dates[i][1])
+        return obj
+
+    @staticmethod
+    def _grid(X: Triangle) -> Triangle:
+        """
+        Fill X with 1s, including lower triangle NaNs, creating a full triangle of 1s.
+
+        Parameters
+        ----------
+        X : Triangle,
+            The triangle to fill.
+
+        Returns
+        -------
+        Triangle
+            A full triangle of 1s, on the numpy backend.
+
+        Notes
+        -----
+        The grid is densified because it is a full rectangle: every cell is
+        occupied, so a COO array would store a coordinate per cell and gain
+        nothing. Trending it on the sparse backend measures several times slower
+        than trending it dense.
+        """
+        grid = X.copy().set_backend("numpy")
+        grid.valuation_date = grid.valuation.max()
+        return (grid * 0 + 1).fillna(1)
+
+    def _latest_period(self, X: Triangle) -> Period:
+        """
+        The latest period of the trended axis, which the estimator normalizes on
+        when no ``base_period`` is given.
+
+        Parameters
+        ----------
+        X: Triangle
+            The Triangle being fit.
+
+        Returns
+        -------
+        Period
+            The last origin when trending on origin, otherwise the period of X's
+            valuation date.
+        """
+        if self.axis in ["origin", 2, -2]:
+            return X.origin[-1]
+        return pd.Timestamp(X.valuation_date).to_period("M")
+
+    def _get_rebasing_factor(
+        self,
+        factors: Triangle,
+        base_period: int | str | Period,
+    ) -> float | int:
+        """
+        Calculate a scalar used to adjust a triangle of trend factors to the period
+        specified by base_period.
+
+        Parameters
+        ----------
+        factors: Triangle
+            A set of trend factors, prior to base period adjustment. Must be a full triangle.
+        base_period: int, str or Period
+            The period which the trend factors are relative to.
+
+        Returns
+        -------
+        float | int
+            The factor at ``base_period``.
+
+        Raises
+        ------
+        ValueError
+            If ``base_period`` matches no period on the axis being trended.
+        """
+        period = pd.Period(str(base_period))
+        lo, hi = period.to_timestamp(how="s"), period.to_timestamp(how="e")
+        values = np.asarray(factors.values)[0, 0]
+        if self.axis in ["origin", 2, -2]:
+            starts = factors.origin.to_timestamp(how="s")
+            matches = np.where((starts >= lo) & (starts <= hi))[0]
+            position = (int(matches[0]), 0) if len(matches) else None
+            axis_label = "origin"
+            first, last = factors.origin[0], factors.origin[-1]
+        # Case valuation.
+        else:
+            valuation = pd.DatetimeIndex(np.array(factors.valuation))
+            matches = np.argwhere(
+                ((valuation >= lo) & (valuation <= hi)).reshape(
+                    factors.shape[-2:], order="f"
+                )
+            )
+            position = tuple(matches[0]) if len(matches) else None
+            axis_label = "valuation"
+            first, last = f"{valuation.min():%Y-%m}", f"{valuation.max():%Y-%m}"
+
+        if position is None:
+            raise ValueError(
+                f"base_period {base_period!r} does not match any {axis_label} period. "
+                f"{axis_label.capitalize()}s run {first} through {last}."
+            )
+        return float(values[position])
+
+    def fit(
+        self,
+        X: Triangle,
+        y: None = None,  # noqa, needed for Pipeline
+        sample_weight: Triangle | None = None,  # noqa
+    ) -> Trend:
         """
         Fit the model with X.
 
         Parameters
         ----------
-        X: Triangle-like
+        X: Triangle
             Data to which the model will be applied.
         y: Ignored
         sample_weight: Ignored
@@ -178,19 +397,34 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         self: object
             Returns the instance itself.
         """
-        trends = self.trends if type(self.trends) is list else [self.trends]
+        trends = self.trends if isinstance(self.trends, list) else [self.trends]
         dates = [(None, None)] if self.dates is None else self.dates
-        dates = [dates] if type(dates) is not list else dates
+        dates = dates if isinstance(dates, list) else [dates]
         if type(dates[0]) is not tuple:
             raise AttributeError(
                 "Dates must be specified as a tuple of start and end dates"
             )
-        self.trend_ = X.copy()
-        for i, trend in enumerate(trends):
-            self.trend_ = self.trend_.trend(
-                trend, self.axis, start=dates[i][0], end=dates[i][1]
-            )
-        self.trend_ = self.trend_ / X
+        grid = self._grid(X)
+        factors = self._accumulate(
+            obj=grid,
+            trends=trends,
+            dates=dates,
+            default_start=(
+                grid.valuation_date if self.full_triangle else X.valuation_date
+            ),
+        )
+        anchor = (
+            self._latest_period(X) if self.base_period is None else self.base_period
+        )
+        self.trend_ = factors / self._get_rebasing_factor(factors, anchor)
+        if not self.full_triangle:
+            self.trend_ = self.trend_ * (X / X)
+            self.trend_.valuation_date = X.valuation_date
+        if X.array_backend != self.trend_.array_backend:
+            # _grid densifies, so hand back whatever backend came in. Only
+            # full_triangle reaches here: masking by `X / X` above already
+            # carries the default path back to X's backend.
+            self.trend_ = self.trend_.set_backend(X.array_backend)
         return self
 
     def transform(self, X, y=None, sample_weight=None):
