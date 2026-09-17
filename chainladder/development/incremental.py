@@ -374,7 +374,7 @@ class IncrementalAdditive(DevelopmentBase):
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
 
-    def _param_property(self, X, params, idx):
+    def _param_property(self, X, params):
         obj = super()._param_property(X, params)
         obj.values = params
         obj.is_additive = True

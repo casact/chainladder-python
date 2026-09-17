@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 import warnings
 
 from chainladder.development.base import DevelopmentBase
