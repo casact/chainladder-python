@@ -1,5 +1,6 @@
 from linkcode import linkcode_resolve
 
+
 def test_linkcode_resolve_url_lines() -> None:
     """
     Tests the linkcode_resolve function. Ideally we want:
