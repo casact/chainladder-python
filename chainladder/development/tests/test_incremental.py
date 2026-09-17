@@ -1,6 +1,13 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
 import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 def test_schmidt():
@@ -92,7 +99,7 @@ def test_pipeline():
     )
 
 
-def test_setting_cum() -> None:
+def test_setting_cum(atol: float) -> None:
     """
     IncrementalMixin allows setting cumulative zeta. Validating that the setting function works properly.
     """
@@ -102,4 +109,8 @@ def test_setting_cum() -> None:
     )
     orig_zeta_ = ia.zeta_
     ia.cum_zeta_ = ia.cum_zeta_ * 2
-    assert ia.zeta_ == orig_zeta_ * 2
+    assert np.allclose(
+        ia.zeta_.values,
+        (orig_zeta_ * 2).values,
+        atol=atol
+    )

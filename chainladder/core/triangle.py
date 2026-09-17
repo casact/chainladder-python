@@ -1390,20 +1390,28 @@ class Triangle(TriangleBase):
         if inplace:
             xp = self.get_array_module()
             if not self.is_cumulative:
-                if self.is_pattern & (not self.is_disposal_rate):
-                    if hasattr(self, "is_additive") and self.is_additive:
-                        values = xp.nan_to_num(self.values[..., ::-1])
-                        values = num_to_value(values, 0)
-                        self.values = (
-                            xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
-                        )
-                    else:
-                        values = xp.nan_to_num(self.values[..., ::-1])
-                        values = num_to_value(values, 1)
-                        values = xp.cumprod(values, -1)[..., ::-1]
-                        self.values = values * self.nan_triangle
-                        values = num_to_value(values, self.get_array_module(values).nan)
-                else:
+                if (
+                    self.is_pattern
+                    and (not self.is_additive)
+                    and (not self.is_disposal_rate)
+                ):  # for multiplicative ldf triangles (mult from tail to head)
+                    values = xp.nan_to_num(self.values[..., ::-1])
+                    values = num_to_value(values, 1)
+                    values = xp.cumprod(values, -1)[..., ::-1]
+                    self.values = values * self.nan_triangle
+                    values = num_to_value(values, self.get_array_module(values).nan)
+                elif (
+                    self.is_pattern
+                    and self.is_additive
+                    and (not self.is_disposal_rate)
+                ):  # for additive factor triangles (sum from tail to head)
+                    values = xp.nan_to_num(self.values[..., ::-1])
+                    values = num_to_value(values, 0)
+                    self.values = (
+                        xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
+                    )
+                else:  # for normal value triangles 
+                # also for disposal rate triangles (sum from head to tail)
                     if self.array_backend not in ["sparse", "dask"]:
                         self.values = (
                             xp.cumsum(xp.nan_to_num(self.values), 3)
@@ -1479,7 +1487,11 @@ class Triangle(TriangleBase):
         if inplace:
             v = self.valuation_date
             if self.is_cumulative or self.is_cumulative is None:
-                if self.is_pattern & (not self.is_disposal_rate):
+                if (
+                    self.is_pattern
+                    and (not self.is_additive)
+                    and (not self.is_disposal_rate)
+                ):  # for multiplicative ldf triangles (div from head to tail)
                     xp = self.get_array_module()
                     self.values = num_to_value(xp.nan_to_num(self.values), 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
@@ -1491,7 +1503,24 @@ class Triangle(TriangleBase):
                         axis=3,
                     )
                     self.values = self.values * self.nan_triangle
-                else:
+                elif (
+                    self.is_pattern
+                    and self.is_additive
+                    and (not self.is_disposal_rate)
+                ):  # for additive factor triangles (diff from head to tail)
+                    xp = self.get_array_module()
+                    self.values = num_to_value(xp.nan_to_num(self.values), 1)
+                    diff = self.iloc[..., :-1] - self.iloc[..., 1:].values
+                    self = concat(
+                        (
+                            diff,
+                            self.iloc[..., -1],
+                        ),
+                        axis=3,
+                    )
+                    self.values = self.values * self.nan_triangle
+                else:  # for normal value triangles 
+                # also for disposal rate triangles (sum from head to tail)
                     diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
                     self = concat((self.iloc[..., 0], diff), axis=3)
                 self.is_cumulative = False

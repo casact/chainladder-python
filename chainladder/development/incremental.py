@@ -61,7 +61,7 @@ class IncrementalMixin:
         self._zeta_ = obj.cum_to_incr()
 
 
-class IncrementalAdditive(DevelopmentBase):
+class IncrementalAdditive(DevelopmentBase, IncrementalMixin):
     """
     The Incremental Additive Method.
 
@@ -365,7 +365,7 @@ class IncrementalAdditive(DevelopmentBase):
         for item in [
             "ldf_",
             "w_",
-            "zeta_",
+            "_zeta_",
             "incremental_",
             "tri_zeta",
             "fit_zeta_",
