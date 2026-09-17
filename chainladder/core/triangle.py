@@ -2377,7 +2377,7 @@ class Triangle(TriangleBase):
         if inplace:
             xp = self.get_array_module()
             new_value = self.nan_triangle[None, None, ...].astype(np.float64)
-            self.values = xp.broadcast_to(new_value * value, self.shape, True)
+            self.values = xp.broadcast_to(new_value * value, self.shape).copy()
             return self
         else:
             obj = self.copy()
