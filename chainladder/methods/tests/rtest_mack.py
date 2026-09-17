@@ -1,17 +1,17 @@
-### Building out a dev environment with a working copy
-### of R ChainLadder is difficult.  These tests are 
-### Currently inactive, but available should the compatibility
-### of the installs improve at a later date.
+# Building out a dev environment with a working copy
+# of R ChainLadder is difficult.  These tests are
+# Currently inactive, but available should the compatibility
+# of the installs improve at a later date.
 
-import numpy as np
 import pytest
 import chainladder as cl
 
 try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
+
     CL = importr("ChainLadder")
-except:
+except ImportError:
     pass
 
 
@@ -66,6 +66,7 @@ def test_mack_full_std_err(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
+
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
@@ -78,6 +79,7 @@ def test_mack_process_risk(data, averages, est_sigma, tail, atol):
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
+
 
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
@@ -92,6 +94,7 @@ def test_mack_parameter_risk(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, p, atol=atol)
 
+
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
@@ -104,6 +107,7 @@ def test_mack_total_process_risk(data, averages, est_sigma, tail, atol):
     p = p.values[0, 0, :, :][:, :-1] if not tail else p.values[0, 0, :, :]
     r = xp.array(df[0])[None, ...]
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
+
 
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
@@ -118,6 +122,7 @@ def test_mack_total_parameter_risk(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])[None]
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
+
 @pytest.mark.r
 @pytest.mark.parametrize("data", data)
 @pytest.mark.parametrize("averages", averages)
@@ -131,6 +136,7 @@ def test_mack_mack_std_err_(data, averages, est_sigma, tail, atol):
     r = xp.array(df[0])
     assert xp.allclose(r, xp.nan_to_num(p), atol=atol)
 
+
 @pytest.mark.r
 def test_mack_asymmetric():
     r("Paid <- matrix(NA, 45, 45)")
@@ -139,5 +145,12 @@ def test_mack_asymmetric():
     tri = cl.load_sample("quarterly")["paid"]
     xp = tri.get_array_module()
     assert round(float(xp.array(out.rx("Mack.S.E")[0])[-1, -1]), 2) == round(
-        float(cl.MackChainladder().fit(tri).summary_.to_frame(origin_as_datetime=False).iloc[-1, -1]), 2
+        float(
+            cl
+            .MackChainladder()
+            .fit(tri)
+            .summary_.to_frame(origin_as_datetime=False)
+            .iloc[-1, -1]
+        ),
+        2,
     )

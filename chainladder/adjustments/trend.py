@@ -4,7 +4,6 @@
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
-import pandas as pd
 
 
 class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
@@ -164,7 +163,8 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         self.axis = axis
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -194,7 +194,8 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         return self
 
     def transform(self, X, y=None, sample_weight=None):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -271,7 +272,8 @@ class TrendConstant(BaseEstimator, TransformerMixin, EstimatorIO):
         print("base_trend", self.base_trend)
 
         self.trendedvalues_ = X.copy().trend(
-            self.base_trend, self.axis  # , start=dates[i][0], end=dates[i][1]
+            self.base_trend,
+            self.axis,  # , start=dates[i][0], end=dates[i][1]
         )
         print("self.trendedvalues_\n", self.trendedvalues_)
 

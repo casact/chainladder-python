@@ -13,7 +13,7 @@ from chainladder import (
     __dt64_unit__,
     __dt64_dtype__,
     options,
-    _deprecated_backend_message
+    _deprecated_backend_message,
 )
 
 from chainladder.core.common import Common
@@ -29,22 +29,17 @@ from chainladder.utils.sparse import sp
 
 from chainladder.adjustments.disposal import DisposalMixin
 
-from typing import (
-    Optional,
-    TYPE_CHECKING
-)
+from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-    from pandas import (
-        DataFrame,
-        Series
-    )
+    from pandas import DataFrame, Series
     from numpy.typing import ArrayLike
     from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
     from pandas._libs.tslibs.timestamps import Timestamp
     from types import ModuleType
+
 
 class TriangleBase(
     TriangleIO,
@@ -54,13 +49,14 @@ class TriangleBase(
     TrianglePandas,
     Common,
     ABC,
-    DisposalMixin
+    DisposalMixin,
 ):
     """This class handles the initialization of a triangle"""
 
     @property
     def shape(self):
-        """The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
+        """
+        The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
 
         Examples
         --------
@@ -84,7 +80,8 @@ class TriangleBase(
 
     @property
     def dimensionality(self):
-        """The dimensionality of the Triangle.
+        """
+        The dimensionality of the Triangle.
 
         Returns ``'empty'`` for a Triangle instantiated without data
         (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
@@ -112,7 +109,8 @@ class TriangleBase(
 
     @property
     def empty(self):
-        """Whether the Triangle contains any data.
+        """
+        Whether the Triangle contains any data.
 
         Mirrors ``pandas.DataFrame.empty``. Returns ``True`` for a Triangle
         instantiated without data (e.g. ``cl.Triangle()``), whose ``values``
@@ -138,18 +136,12 @@ class TriangleBase(
 
     @staticmethod
     def _input_validation(
-            data: DataFrame,
-            index: str | list | None,
-            columns: str | list,
-            origin: str | list,
-            development: str | list
-    ) -> tuple[
-        None | list,
-        None | list,
-        None | list,
-        None | list
-    ]:
-
+        data: DataFrame,
+        index: str | list | None,
+        columns: str | list,
+        origin: str | list,
+        development: str | list,
+    ) -> tuple[None | list, None | list, None | list, None | list]:
         """Validate/sanitize inputs"""
 
         def str_to_list(arg: str | list) -> None | list:
@@ -172,52 +164,63 @@ class TriangleBase(
 
     @staticmethod
     def _set_development(
-            data: DataFrame,
-            development: list,
-            development_format: None | str,
-            origin_date: Series
+        data: DataFrame,
+        development: list,
+        development_format: None | str,
+        origin_date: Series,
+        origin_grain: str,
     ) -> Series:
         """Initialize development and its grain"""
         if development:
-            development_date: Series = TriangleBase._to_datetime(
+            development_date: Series | None = TriangleBase._to_datetime(
                 data=data,
                 fields=development,
                 period_end=True,
-                date_format=development_format
+                date_format=development_format,
+                allow_age=True,
             )
+            if development_date is None:
+                # age in months relative to origin's period start, using the
+                # constructor's own origin_grain so fiscal-year anchors match
+                age: Series = pd.to_numeric(data[development[0]]).round().astype(int)
+                grain_base = origin_grain.split("-")[0]
+                if grain_base == "2Q":
+                    # no native pandas semiannual period; only calendar Jan/Jul anchors supported
+                    if origin_grain not in ("2Q", "2Q-DEC"):
+                        raise ValueError(
+                            "Development expressed as an age is not yet supported for a "
+                            f"non-calendar semiannual origin grain ({origin_grain})."
+                        )
+                    origin_period_start: Series = origin_date.apply(
+                        lambda d: d.replace(month=((d.month - 1) // 6) * 6 + 1, day=1)
+                    )
+                else:
+                    origin_period_start = origin_date.dt.to_period(
+                        origin_grain
+                    ).dt.to_timestamp(how="s")
+                development_date = (
+                    origin_period_start.dt.to_period("M") + (age - 1)
+                ).dt.to_timestamp(how="e")
         else:
             o_max: Timestamp = pd.Period(
-                value=origin_date.max(),
-                freq=TriangleBase._get_grain(origin_date)
+                value=origin_date.max(), freq=TriangleBase._get_grain(origin_date)
             ).to_timestamp(how="e")
             development_date: Series = pd.Series([o_max] * len(origin_date))
 
         development_date.name = "__development__"
-        if (
-            pd.Series(development_date).dt.year.min()
-            == pd.Series(development_date).dt.year.max()
-            == 1970
-        ):
-            raise ValueError(
-                "Development lags could not be determined. This may be because development"
-                "is expressed as an age where a date-like vector is required"
-            )
         return development_date
 
     @staticmethod
-    def _set_index(
-            col: Series,
-            unique: np.ndarray
-    ) -> np.ndarray:
+    def _set_index(col: Series, unique: np.ndarray) -> np.ndarray:
         return col.map(dict(zip(unique, range(len(unique))))).values[None].T
 
     @staticmethod
     def _aggregate_data(
-            data,
-            origin_date: Series,
-            development_date: Series,
-            index: list | None,
-            columns: list
+        data,
+        origin_date: Series,
+        development_date: Series,
+        index: list | None,
+        columns: list,
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:  # noqa: E721
@@ -241,14 +244,26 @@ class TriangleBase(
             key_gr = ["__origin__", "__development__"] + [
                 data[item] for item in ([] if not index else index)
             ]
-            data_agg = data.groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
+            data_agg = (
+                data
+                .groupby(key_gr)[columns]
+                .sum(numeric_only=False)
+                .reset_index()
+                .fillna(0)
+            )
             data = data.drop(["__origin__", "__development__"], axis=1)
         else:
             # Summarize dataframe to the level specified in axes.
             key_gr: list = [origin_date, development_date] + [
                 data[item] for item in ([] if not index else index)
             ]
-            data_agg: DataFrame = data[columns].groupby(key_gr)[columns].sum(numeric_only=False).reset_index().fillna(0)
+            data_agg: DataFrame = (
+                data[columns]
+                .groupby(key_gr)[columns]
+                .sum(numeric_only=False)
+                .reset_index()
+                .fillna(0)
+            )
             data_agg["__origin__"] = data_agg[origin_date.name]
             data_agg["__development__"] = data_agg[development_date.name]
         # origin <= development is required - truncate bad records if not true
@@ -265,10 +280,7 @@ class TriangleBase(
         return data_agg
 
     @staticmethod
-    def _set_kdims(
-            data_agg: DataFrame,
-            index: list
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def _set_kdims(data_agg: DataFrame, index: list) -> tuple[np.ndarray, np.ndarray]:
         """
         Sets the key dimension of the triangle.
 
@@ -288,33 +300,31 @@ class TriangleBase(
         """
 
         # Get unique values of index and assign an integer value to each one.
-        kdims: DataFrame = data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
+        kdims: DataFrame = (
+            data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
+        )
 
         # Map these integers back to the agg data to generate a key index.
         key_idx: np.ndarray = (
-            data_agg[index].merge(
-                kdims,
-                how="left",
-                on=index
-            )["index"].values[None].T
+            data_agg[index].merge(kdims, how="left", on=index)["index"].values[None].T
         )
         return kdims.drop(labels="index", axis=1).values, key_idx
 
     @staticmethod
     def _set_odims(
-            data_agg: DataFrame,
-            date_axes: DataFrame
+        data_agg: DataFrame, date_axes: DataFrame
     ) -> tuple[np.ndarray, np.ndarray]:
 
         odims: np.ndarray = np.sort(date_axes["__origin__"].unique())
-        orig_idx: np.ndarray = TriangleBase._set_index(col=data_agg["__origin__"], unique=odims)
+        orig_idx: np.ndarray = TriangleBase._set_index(
+            col=data_agg["__origin__"], unique=odims
+        )
 
         return odims, orig_idx
 
     @staticmethod
     def _set_ddims(
-            data_agg: DataFrame,
-            date_axes: DataFrame
+        data_agg: DataFrame, date_axes: DataFrame
     ) -> tuple[ArrayLike, np.ndarray]:
 
         if date_axes["__development__"].nunique() > 1:
@@ -340,11 +350,11 @@ class TriangleBase(
 
     @staticmethod
     def _set_values(
-            data_agg: DataFrame,
-            key_idx: np.ndarray,
-            columns: list,
-            orig_idx: np.ndarray,
-            dev_idx: np.ndarray
+        data_agg: DataFrame,
+        key_idx: np.ndarray,
+        columns: list,
+        orig_idx: np.ndarray,
+        dev_idx: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
 
         val_idx: np.ndarray = (
@@ -358,9 +368,9 @@ class TriangleBase(
         coords: np.ndarray = np.concatenate(
             (np.concatenate(tuple([key_idx] * len(columns)), 0), val_idx, coords), 1
         )
-        amts: np.ndarray = np.concatenate(
-            [data_agg[col].fillna(0).values for col in data_agg[columns]]
-        ).astype("float64")
+        amts: np.ndarray = np.concatenate([
+            data_agg[col].fillna(0).values for col in data_agg[columns]
+        ]).astype("float64")
 
         return coords.T.astype("int32"), amts
 
@@ -377,42 +387,40 @@ class TriangleBase(
         origin_date: Series,
         development_date: Series,
         origin_grain: str,
-        development_grain: str
+        development_grain: str,
     ) -> DataFrame:
         """
         Function to find any missing origin dates or development dates that
         would otherwise mess up the origin/development dimensions.
         """
         origin_range: DatetimeIndex = pd.period_range(
-            start=origin_date.min(),
-            end=origin_date.max(),
-            freq=origin_grain
+            start=origin_date.min(), end=origin_date.max(), freq=origin_grain
         ).to_timestamp(how="s")
-        
+
         development_range: DatetimeIndex = pd.period_range(
             start=development_date.min(),
             end=development_date.max(),
             freq=development_grain,
         ).to_timestamp(how="e")
-        
+
         # If the development is semi-annual, we need to adjust further because of "2Q-DEC".
         if development_grain[:2] == "2Q":
             from pandas.tseries.offsets import DateOffset
 
             development_range += DateOffset(months=-3)
-        
+
         c = pd.DataFrame(
             TriangleBase._cartesian_product(origin_range, development_range),
             columns=["__origin__", "__development__"],
         )
-        
+
         return c[c["__development__"] > c["__origin__"]]
-    
+
     @property
     @abstractmethod
     def is_pattern(self) -> bool:
         raise NotImplementedError
-        
+
     @property
     @abstractmethod
     def is_ultimate(self) -> bool:
@@ -420,7 +428,8 @@ class TriangleBase(
 
     @property
     def nan_triangle(self):
-        """Given the current triangle shape and valuation, it determines the
+        """
+        Given the current triangle shape and valuation, it determines the
         appropriate placement of NANs in the triangle for future valuations.
         This becomes useful when managing array arithmetic.
 
@@ -450,7 +459,7 @@ class TriangleBase(
              [ 1. nan nan nan nan nan nan nan nan nan]]
         """
         xp = self.get_array_module()
-        if self.is_pattern or self.is_ultimate:
+        if self.is_ultimate:
             return xp.ones(self.values.shape[2:], dtype="float16")
         val_array = np.array(self.valuation).reshape(self.shape[-2:], order="f")
         nan_triangle = np.array(pd.DataFrame(val_array) > self.valuation_date)
@@ -459,11 +468,12 @@ class TriangleBase(
 
     @staticmethod
     def _to_datetime(
-            data: DataFrame,
-            fields: list,
-            period_end: bool = False,
-            date_format: Optional[str] = None
-    ) -> Series:
+        data: DataFrame,
+        fields: list,
+        period_end: bool = False,
+        date_format: Optional[str] = None,
+        allow_age: bool = False,
+    ) -> Series | None:
         """
         For tabular form, this will take a set of data
         column(s) and return a single date array.  This function heavily
@@ -473,7 +483,9 @@ class TriangleBase(
         """
         # Concat everything into one field
         if len(fields) > 1:
-            target_field: Series = data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
+            target_field: Series = (
+                data[fields].astype(str).apply(lambda x: "-".join(x), axis=1)
+            )
         else:
             target_field: Series = data[fields].iloc[:, 0]
 
@@ -486,7 +498,9 @@ class TriangleBase(
                 return target.dt.to_timestamp(how={1: "e", 0: "s"}[period_end])
         else:
             datetime_arg: np.ndarray = target_field.unique()
-            date_format = [{"arg": datetime_arg, "format": date_format}] if date_format else []
+            date_format = (
+                [{"arg": datetime_arg, "format": date_format}] if date_format else []
+            )
 
             date_inference_list = date_format + [
                 {"arg": datetime_arg, "format": "%Y%m"},
@@ -496,27 +510,38 @@ class TriangleBase(
             ]
 
             datetime_mapping: None | dict = None
+            matched_a_format: bool = False
             for date_inference in date_inference_list:
                 try:
-                    datetime_mapping = dict(zip(datetime_arg, pd.to_datetime(**date_inference)))
+                    datetime_mapping = dict(
+                        zip(datetime_arg, pd.to_datetime(**date_inference))
+                    )
+                    matched_a_format = "format" in date_inference
                     break
                 except ValueError:
                     pass
 
             if datetime_mapping is None:
                 raise ValueError(
-                    "Unable to infer datetime for field(s): " + str(fields) +
-                    ". Please check the underlying data or any supplied format arguments."
-                    )
+                    "Unable to infer datetime for field(s): "
+                    + str(fields)
+                    + ". Please check the underlying data or any supplied format arguments."
+                )
+            if not matched_a_format and pd.api.types.is_numeric_dtype(datetime_arg):
+                # unformatted numeric input falls through to pandas treating it
+                # as nanoseconds since epoch, not an actual date
+                if allow_age:
+                    return None
+                raise ValueError(
+                    "Development lags could not be determined. This may be because development "
+                    "is expressed as an age where a date-like vector is required"
+                )
             target: Series = target_field.map(datetime_mapping)
 
         return target
 
     @staticmethod
-    def _development_lag(
-            origin: Series,
-            valuation: Series
-    ) -> Series:
+    def _development_lag(origin: Series, valuation: Series) -> Series:
         """
         For tabular format, this will convert the origin/valuation
         difference to a development lag.
@@ -524,11 +549,7 @@ class TriangleBase(
         return ((valuation - origin) / (365.25 / 12)).dt.round("1D").dt.days
 
     @staticmethod
-    def _get_grain(
-            dates: Series,
-            trailing: bool = False,
-            kind: str = "origin"
-    ) -> str:
+    def _get_grain(dates: Series, trailing: bool = False, kind: str = "origin") -> str:
         """
         Determines Grain of origin or valuation vector.
 
@@ -562,7 +583,8 @@ class TriangleBase(
             else:
                 # If inferred to beginning of calendar period, 1/1 from YYYY, 4/1 from YYYYQQ
                 if (
-                    dates.dt.strftime("%m%d")
+                    dates.dt
+                    .strftime("%m%d")
                     .isin(["0101", "0401", "0701", "1001"])
                     .any()
                 ):
@@ -591,10 +613,8 @@ class TriangleBase(
         return arr
 
     def get_array_module(
-            self: TriangleBase | None,
-            arr: ArrayLike = None
+        self: TriangleBase | None, arr: ArrayLike = None
     ) -> ModuleType:
-
         """
         Returns the module pertaining to the backend underlying the supplied array.
         If no array is supplied, this method will return the array_backend of the TriangleBase.
@@ -638,17 +658,13 @@ class TriangleBase(
             if arr is None
             else arr.__class__.__module__.split(".")[0]
         )
-        modules: dict = {
-            "cupy": cp,
-            "sparse": sp,
-            "numpy": np,
-            "dask": dp
-        }
+        modules: dict = {"cupy": cp, "sparse": sp, "numpy": np, "dask": dp}
         try:
             return modules[backend]
         except KeyError as e:
             raise Exception(
-                "Array backend is invalid or not properly set. Supported backends are: " + ', '.join([*modules])
+                "Array backend is invalid or not properly set. Supported backends are: "
+                + ", ".join([*modules])
             ) from e
 
     def _auto_sparse(self) -> Triangle:
@@ -705,6 +721,9 @@ class TriangleBase(
             del self.sigma_
         if "std_err_" in sub_tris:
             del self.std_err_
+        # w_ is currently stored as an ndarray
+        if hasattr(self, "w_"):
+            del self.w_
 
     @property
     def subtriangles(self):
@@ -742,7 +761,6 @@ class TriangleBase(
 
         return pd.api.interchange.from_dataframe(data)
 
-
     def __array_function__(self, func, types, args, kwargs):
         from chainladder.utils.utility_functions import concat
 
@@ -761,7 +779,8 @@ class TriangleBase(
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
-        """Materialize a lazy dask-backed Triangle.
+        """
+        Materialize a lazy dask-backed Triangle.
 
         When ``values`` is a dask array, compute it and update
         ``array_backend`` to match the resulting array type. Returns ``self``
@@ -779,7 +798,7 @@ class TriangleBase(
 
         .. code-block:: pycon
 
-            >>> tri = cl.load_sample('raa').set_backend('dask')
+            >>> tri = cl.load_sample("raa").set_backend("dask")
             >>> tri = tri.compute()
             >>> tri.array_backend
             'numpy'
@@ -805,7 +824,8 @@ class TriangleBase(
 
 
 def is_chainladder(estimator):
-    """Return True if the given estimator is a chainladder based method.
+    """
+    Return True if the given estimator is a chainladder based method.
     Parameters
     ----------
     estimator : object

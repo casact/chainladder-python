@@ -1,4 +1,5 @@
-"""Central registry of bundled sample datasets.
+"""
+Central registry of bundled sample datasets.
 
 Single source of truth for the metadata of every CSV in
 ``chainladder/utils/data/``. Consumed by:
@@ -155,6 +156,7 @@ SAMPLES: dict = {
             "Reported Claim Counts",
             "Disposal Rate",
             "Paid Claims",
+            "Reported Claims",
         ],
         "cumulative": True,
     },
@@ -282,14 +284,8 @@ SAMPLES: dict = {
             "Case Outstanding",
             "Reported Severities",
             "Earned Premium",
+            "Incremental Paid Severity",
         ],
-        "cumulative": True,
-    },
-    "friedland_xyz_disp": {
-        "origin": "Accident Year",
-        "development": "Calendar Year",
-        "index": None,
-        "columns": ["Disposal Rate", "Closed Claim Counts", "Paid Claims"],
         "cumulative": True,
     },
     "genins": {
@@ -359,6 +355,69 @@ SAMPLES: dict = {
         "origin": "AccidentDate",
         "development": "PaymentDate",
         "index": ["ClaimNo", "Line", "Type", "ClaimLiability", "Limit", "Deductible"],
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oqdq": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oqdm": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_osds": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_osdq": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_osdm": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oydy": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oyds": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oydq": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
+        "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
+        "cumulative": False,
+    },
+    "prism_oydm": {
+        "origin": "origin",
+        "development": "development",
+        "index": None,
         "columns": ["reportedCount", "closedPaidCount", "Paid", "Incurred"],
         "cumulative": False,
     },

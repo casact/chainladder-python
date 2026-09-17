@@ -5,8 +5,9 @@ import chainladder as cl
 try:
     from rpy2.robjects.packages import importr
     from rpy2.robjects import r
+
     CL = importr("ChainLadder")
-except:
+except ImportError:
     pass
 
 
@@ -110,7 +111,12 @@ def test_tail_doesnt_mutate_ldf_(data, averages, est_sigma):
 @pytest.mark.parametrize("averages", averages[0:1])
 @pytest.mark.parametrize("est_sigma", est_sigma[0:1])
 def test_tail_doesnt_mutate_sigma_(data, averages, est_sigma):
-    p = mack_p(data, averages[0], est_sigma[0]).sigma_
-    xp = p.get_array_module()
-    p_no_tail = mack_p_no_tail(data, averages[0], est_sigma[0]).sigma_.values
-    xp.testing.assert_array_equal(p_no_tail, p.values[:, :, :, :-1])
+    p = mack_p(data, averages[0], est_sigma[0]).sigma_.set_backend(
+        "numpy", inplace=True
+    )
+    p_no_tail = (
+        mack_p_no_tail(data, averages[0], est_sigma[0])
+        .sigma_.set_backend("numpy", inplace=True)
+        .values
+    )
+    np.testing.assert_array_equal(p_no_tail, p.values[:, :, :, :-1])

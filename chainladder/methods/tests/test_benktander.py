@@ -1,7 +1,15 @@
+from __future__ import annotations
+
 import pytest
 import numpy as np
 import chainladder as cl
 import pandas as pd
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
 
 @pytest.fixture
 def atol():
@@ -11,13 +19,13 @@ def atol():
 data = ["RAA", "ABC", "GenIns", "MW2008", "MW2014"]
 
 
-def test_bk_fit_weight():
+def test_bk_fit_weight(raa: Triangle) -> None:
     """
     Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
     """
-    raa = cl.load_sample("RAA")
     with pytest.raises(ValueError):
         cl.Benktander().fit(raa)
+
 
 @pytest.mark.parametrize("data", data)
 def test_benktander_to_chainladder(data, atol):
@@ -57,6 +65,7 @@ def test_different_backends(clrd):
         < 1
     )
 
+
 def test_odd_shaped_triangle():
     df = pd.DataFrame({
         "claim_year": 2000 + pd.Series([0] * 8 + [1] * 4),
@@ -73,39 +82,56 @@ def test_odd_shaped_triangle():
         cumulative=False,
     )
     atr = tr.grain("OYDQ")
-    ult1 = cl.Benktander(apriori = 1,n_iters=10000).fit(cl.Development(average="volume").fit_transform(atr),sample_weight = atr.latest_diagonal).ultimate_.sum()
-    ult2 = cl.Benktander(apriori = 1,n_iters=10000).fit(cl.Development(average="volume").fit_transform(tr),sample_weight = tr.latest_diagonal).ultimate_.grain("OYDQ").sum()
+    ult1 = (
+        cl
+        .Benktander(apriori=1, n_iters=10000)
+        .fit(
+            cl.Development(average="volume").fit_transform(atr),
+            sample_weight=atr.latest_diagonal,
+        )
+        .ultimate_.sum()
+    )
+    ult2 = (
+        cl
+        .Benktander(apriori=1, n_iters=10000)
+        .fit(
+            cl.Development(average="volume").fit_transform(tr),
+            sample_weight=tr.latest_diagonal,
+        )
+        .ultimate_.grain("OYDQ")
+        .sum()
+    )
     assert abs(ult1 - ult2) < 1e-5
 
 
-def test_bf_apriori_sigma_is_lognormal():
+def test_bf_apriori_sigma_is_lognormal(genins: Triangle) -> None:
     """apriori_sigma must draw a strictly-positive lognormal apriori (issue #1143)."""
-    tri = cl.load_sample("genins")
-    boot = cl.BootstrapODPSample(n_sims=50000, random_state=42).fit_transform(tri)
+    boot = cl.BootstrapODPSample(n_sims=50000, random_state=42).fit_transform(genins)
     w = boot.latest_diagonal.copy()
-    w.values = np.ones_like(w.values)   # sample_weight=1 -> expectation_ == raw multiplier
+    w.values = np.ones_like(
+        w.values
+    )  # sample_weight=1 -> expectation_ == raw multiplier
 
     sigma = 0.8
-    bf = cl.BornhuetterFerguson(
-        apriori=1.0, apriori_sigma=sigma, random_state=7
-    ).fit(boot, sample_weight=w)
+    bf = cl.BornhuetterFerguson(apriori=1.0, apriori_sigma=sigma, random_state=7).fit(
+        boot, sample_weight=w
+    )
 
     mult = np.nanmean(bf.expectation_.values[:, 0, :, 0], axis=1)
     mult = mult[np.isfinite(mult)]
 
-    assert (mult > 0).all()                 # strictly positive -> lognormal, not normal
-    assert abs(mult.mean() - 1.0) < 0.02    # mean preserved (E = apriori)
-    assert abs(mult.std() - sigma) < 0.03   # SD preserved (== apriori_sigma)
+    assert (mult > 0).all()  # strictly positive -> lognormal, not normal
+    assert abs(mult.mean() - 1.0) < 0.02  # mean preserved (E = apriori)
+    assert abs(mult.std() - sigma) < 0.03  # SD preserved (== apriori_sigma)
 
 
-def test_capecod_apriori_sigma_is_positive():
+def test_capecod_apriori_sigma_is_positive(genins: Triangle) -> None:
     """CapeCod scatters aprioris through the same sampler; must stay positive (#1143)."""
-    tri = cl.load_sample("genins")
-    boot = cl.BootstrapODPSample(n_sims=10000, random_state=42).fit_transform(tri)
+    boot = cl.BootstrapODPSample(n_sims=10000, random_state=42).fit_transform(genins)
     premium = boot.latest_diagonal * 0 + 8e6
 
     cc = cl.CapeCod(apriori_sigma=0.8, random_state=7).fit(boot, sample_weight=premium)
 
     vals = cc.expectation_.values
     vals = vals[np.isfinite(vals)]
-    assert (vals > 0).all()                 # ~10% would be negative under the old normal
+    assert (vals > 0).all()  # ~10% would be negative under the old normal
