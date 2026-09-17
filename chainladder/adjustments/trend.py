@@ -34,20 +34,9 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         The axis on which to apply the trend
     base_period: int or str, optional
         The period whose factor is set to 1.0, so that ``trend_`` states every
-        other period relative to it. Defaults to the latest period of ``axis``.
-        A ``base_period`` coarser than the Triangle's grain -- a bare year against
-        a quarterly axis, say -- resolves to the earliest period it spans. Note
-        that ``trend_`` remains a multiplier *to* the base period's cost level; a
-        cost level index rising with time is its reciprocal.
+        other period relative to it.
     full_triangle: bool (default=False)
-        By default ``trend_`` is shaped like the Triangle it was fit on, so cells
-        past the valuation date, and any the Triangle is missing internally, come
-        back as NaN. When True, ``trend_`` is instead the factor surface over the
-        whole origin x development rectangle, which methods needing an n x n trend
-        matrix require. Because factors then run past the valuation date rather
-        than being clipped at it, a Triangle whose valuation date falls part-way
-        through an origin period will not reproduce the default exactly on the
-        cells the two share.
+        When set to ``True``, returns a full triangle of trend factors.
 
     Attributes
     ----------
