@@ -945,6 +945,7 @@ def test_triangle_dask_input_deprecated() -> None:
             origin="origin",
             development="development",
             columns="values",
+            cumulative=True,
         )
     dask_warnings = [
         w
