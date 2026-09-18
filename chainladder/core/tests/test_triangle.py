@@ -3308,8 +3308,7 @@ def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
 
 def test_declare_w_both_valuation_age_raises() -> None:
     """
-    A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
-    native pandas period, so an age can't be placed - raise clearly.
+    Specifying both valuation and age will error out
     """
     df = pd.DataFrame({
         "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
@@ -3323,6 +3322,25 @@ def test_declare_w_both_valuation_age_raises() -> None:
             origin="origin",
             valuation="valuation",
             age="age",
+            columns="reported",
+            cumulative=True,
+        )
+
+
+def test_feed_age_into_valuation_raises() -> None:
+    """
+    With age added, valuation no longer takes age-like values
+    """
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "age": [6, 12, 6],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="Development lags could not be determined"):
+        cl.Triangle(
+            data=df,
+            origin="origin",
+            valuation="age",
             columns="reported",
             cumulative=True,
         )

@@ -713,11 +713,7 @@ class Triangle(TriangleBase):
         is constructed.
         """
         ult = None
-        if (
-            valuation
-            and len(valuation) == 1
-            and data[valuation[0]].dtype.kind == "M"
-        ):
+        if valuation and len(valuation) == 1 and data[valuation[0]].dtype.kind == "M":
             u = data[data[valuation[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(

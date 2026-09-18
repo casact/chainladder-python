@@ -180,7 +180,6 @@ class TriangleBase(
                 fields=development,
                 period_end=True,
                 date_format=valuation_format,
-                allow_age=False,
             )
         elif age:
             # age in months relative to origin's period start, using the
@@ -475,7 +474,6 @@ class TriangleBase(
         fields: list,
         period_end: bool = False,
         date_format: Optional[str] = None,
-        allow_age: bool = False,
     ) -> Series | None:
         """
         For tabular form, this will take a set of data
@@ -533,10 +531,8 @@ class TriangleBase(
             if not matched_a_format and pd.api.types.is_numeric_dtype(datetime_arg):
                 # unformatted numeric input falls through to pandas treating it
                 # as nanoseconds since epoch, not an actual date
-                if allow_age:
-                    return None
                 raise ValueError(
-                    "Development lags could not be determined. This may be because development "
+                    "Development lags could not be determined. This may be because `valuation` "
                     "is expressed as an age where a date-like vector is required"
                 )
             target: Series = target_field.map(datetime_mapping)
