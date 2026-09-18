@@ -89,6 +89,12 @@ class TriangleProtocol(Protocol):
     @property
     def valuation(self) -> pd.DatetimeIndex: ...
 
+    @property
+    def _dimensionality(self) -> str: ...
+
+    @staticmethod
+    def _get_format_str(data: DataFrame) -> str: ...
+
     key_labels: list[str]
     values: BackendArray
     array_backend: str

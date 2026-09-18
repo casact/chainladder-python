@@ -245,16 +245,9 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Styler
-            A Styler wrapping this Triangle's ``to_frame()`` representation.
+            A Styler wrapping this Triangle's frame representation.
         """
-        data = self.to_frame(origin_as_datetime=False)
-        styler = Styler(data, triangle=self)
-        if self._dimensionality == "single":
-            fmt_str = self._get_format_str(data=data)
-            styler = styler.format(  # pyright: ignore[reportReturnType]
-                fmt_str, na_rep=""
-            )
-        return styler
+        return Styler(self)
 
     @staticmethod
     def _get_axis(

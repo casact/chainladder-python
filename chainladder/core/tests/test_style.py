@@ -41,9 +41,32 @@ def test_is_pandas_styler_subclass() -> None:
     assert issubclass(Styler, PandasStyler)
 
 
-def test_wraps_a_dataframe(df: pd.DataFrame) -> None:
+@pytest.mark.parametrize(
+    "obj", [np.array([1]), [1], None, "raa", 3, pd.Series([1])], ids=type
+)
+def test_rejects_anything_that_is_not_a_triangle(obj) -> None:
     """
-    Check that Styler wraps a DataFrame the same way pandas' Styler does.
+    Check that the constructor rejects every non-Triangle, not just frames, so a
+    Styler always has the Triangle its methods rely on.
+
+    Parameters
+    ----------
+    obj: object
+        A value that is not a Triangle.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(TypeError, match="must be created from a Triangle"):
+        Styler(obj)
+
+
+def test_rejection_names_the_type_it_received(df: pd.DataFrame) -> None:
+    """
+    Check that the error names the offending type, and points DataFrame users at
+    pandas' own styler.
 
     Parameters
     ----------
@@ -55,19 +78,41 @@ def test_wraps_a_dataframe(df: pd.DataFrame) -> None:
     None
 
     """
-    styler = Styler(df)
-    assert styler.data is df
+    with pytest.raises(TypeError, match="not a DataFrame. Use DataFrame.style"):
+        Styler(df)
+    with pytest.raises(TypeError, match="not a list.$"):
+        Styler([1])
 
 
-def test_chained_methods_preserve_subclass(df: pd.DataFrame) -> None:
+def test_wraps_a_triangles_frame(raa) -> None:
+    """
+    Check that Styler wraps the Triangle's frame representation, the way pandas'
+    Styler wraps the DataFrame it is given.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    pd.testing.assert_frame_equal(
+        Styler(raa).data, raa.to_frame(origin_as_datetime=False)
+    )
+
+
+def test_chained_methods_preserve_subclass(raa) -> None:
     """
     Check that chaining a pandas Styler method still returns a chainladder Styler,
     not a plain pandas Styler.
 
     Parameters
     ----------
-    df: pd.DataFrame
-        A simple two-column DataFrame fixture.
+    raa: Triangle
+        The raa sample data set.
 
     Returns
     -------
@@ -75,31 +120,38 @@ def test_chained_methods_preserve_subclass(df: pd.DataFrame) -> None:
 
     """
     result = (
-        Styler(df)
+        Styler(raa)
         .format(precision=1)
         .hide(  # pyright: ignore[reportAttributeAccessIssue]
-            axis="columns", subset=["a"]
+            axis="columns", subset=[raa.development[0]]
         )
     )
     assert isinstance(result, Styler)
 
 
-def test_renders_identically_to_pandas_styler(df: pd.DataFrame) -> None:
+def test_renders_identically_to_pandas_styler(raa) -> None:
     """
-    Check that Styler produces the same HTML as pandas' own Styler.
+    Check that Styler produces the same HTML as pandas' own Styler wrapping the
+    same frame, once pandas is given the default numeric format that Styler
+    applies to a Triangle on construction.
 
     Parameters
     ----------
-    df: pd.DataFrame
-        A simple two-column DataFrame fixture.
+    raa: Triangle
+        The raa sample data set.
 
     Returns
     -------
     None
 
     """
-    cl_html = Styler(df, uuid="fixed").format(precision=2).to_html()
-    pd_html = PandasStyler(df, uuid="fixed").format(precision=2).to_html()
+    frame = raa.to_frame(origin_as_datetime=False)
+    cl_html = Styler(raa, uuid="fixed").to_html()
+    pd_html = (
+        PandasStyler(frame, uuid="fixed")
+        .format(raa._get_format_str(data=frame), na_rep="")
+        .to_html()
+    )
     assert cl_html == pd_html
 
 
@@ -292,27 +344,6 @@ def test_highlight_lower_triangle_returns_styler(raa) -> None:
     assert isinstance(raa.style.highlight_lower_triangle(), Styler)
 
 
-def test_highlight_lower_triangle_requires_a_triangle(df: pd.DataFrame) -> None:
-    """
-    Check that calling it on a Styler not built from Triangle.style raises a
-    clear error, since there's no way to know which cells are the lower triangle.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        A simple two-column DataFrame fixture.
-
-    Returns
-    -------
-    None
-
-    """
-    with pytest.raises(
-        ValueError, match="requires a Styler created from Triangle.style"
-    ):
-        Styler(df).highlight_lower_triangle()
-
-
 def test_highlight_lower_triangle_predicted_cells_not_highlighted_by_default(
     raa,
 ) -> None:
@@ -377,11 +408,11 @@ def test_highlight_lower_triangle_with_valuation_date_highlights_predicted_cells
     )
 
 
-def test_highlight_lower_triangle_requires_matching_shape(clrd) -> None:
+def test_style_rejects_multidimensional_triangle(clrd) -> None:
     """
-    Check that a Triangle whose to_frame() isn't a single origin-by-development
-    grid (multiple index labels and columns, here) raises a clear error rather
-    than silently misaligning the mask.
+    Check that a Triangle holding more than a single index and column raises a
+    clear error at construction, rather than silently styling the long frame
+    that to_frame() flattens it into.
 
     Parameters
     ----------
@@ -393,5 +424,26 @@ def test_highlight_lower_triangle_requires_matching_shape(clrd) -> None:
     None
 
     """
-    with pytest.raises(ValueError, match="only supports a single \\(2-D\\) Triangle"):
-        clrd.style.highlight_lower_triangle()
+    assert clrd._dimensionality == "multi"
+    with pytest.raises(ValueError, match="only supports a single"):
+        _ = clrd.style
+
+
+def test_style_accepts_single_triangle_selected_from_multidimensional(clrd) -> None:
+    """
+    Check that the error the multidimensional case raises is escapable by
+    selecting a single index and column, as its message advises.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    single = clrd.iloc[0, 0]
+    assert single._dimensionality == "single"
+    assert isinstance(single.style, Styler)
