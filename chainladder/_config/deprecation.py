@@ -239,11 +239,11 @@ def _deprecated_rename_argument(
     category: type[Warning] = FutureWarning,
 ) -> Callable[[_F], _F]:
     """
-    Decorator factory that marks a keyword argument as scheduled to be
-    renamed.
+    Decorator factory that marks a keyword argument that has been rename
+    and scheduled to be removed.
 
     Apply this to a function while it still accepts the argument under its
-    *current* name, to warn callers ahead of the actual rename.
+    *current* name, to warn callers ahead of the actual deprecation.
 
     This decorator allows you to replace the old argument with the new argument
     in the function signature. Once you are ready to deprecate, simply remove the
@@ -256,7 +256,7 @@ def _deprecated_rename_argument(
     new_name: str
         The keyword argument name it will be renamed to.
     version: str | None
-        The release the rename is expected to land in, e.g. "0.11.0".
+        The release the deprecation is expected to land in, e.g. "0.11.0".
         Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
@@ -283,15 +283,17 @@ def _deprecated_rename_argument(
 
     .. testoutput::
 
-        example.py:8: FutureWarning: 'old_arg' is deprecated and will be renamed to 'new_arg' in 0.11.0. Use 'new_arg' instead.
+        example.py:8: FutureWarning: 'old_arg' has been deprecated in favor of 'new_arg' and will be removed in 0.11.0. Use 'new_arg' instead.
           func(old_arg=1)
 
     """
 
     def decorator(func: _F) -> _F:
-        message = f"'{old_name}' is deprecated and will be renamed to '{new_name}'"
+        message = f"'{old_name}' has been deprecated in favor of '{new_name}' and will be removed"
         if version:
             message += f" in {version}"
+        else:
+            message += " soon"
         message += f". Use '{new_name}' instead."
 
         @functools.wraps(func)
