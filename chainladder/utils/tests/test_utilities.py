@@ -1307,3 +1307,15 @@ def test_triangleweight_full_triangle(raa: Triangle) -> None:
     tw = cl.TriangleWeight(n_periods=4).fit(raa)
     tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
     assert tw.w_.iloc[:, :, :, 0] == tw_full.w_.iloc[:, :, :, 0]
+
+
+def test_ptf_formula_deprecated_alias() -> None:
+    """
+    PTF_formula should warn and return the same string as ptf_formula.
+    """
+    from chainladder.utils.utility_functions import PTF_formula, ptf_formula
+
+    args = dict(alpha=[0, 2], gamma=[0, 1, 2], iota=[0, 1], dgrain=12)
+    with pytest.warns(DeprecationWarning, match="ptf_formula"):
+        old = PTF_formula(**args)
+    assert old == ptf_formula(**args)
