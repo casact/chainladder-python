@@ -3321,7 +3321,7 @@ def test_declare_w_both_valuation_age_raises() -> None:
         cl.Triangle(
             data=df,
             origin="origin",
-            valuation="valuation"
+            valuation="valuation",
             age="age",
             columns="reported",
             cumulative=True,

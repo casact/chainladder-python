@@ -714,11 +714,11 @@ class Triangle(TriangleBase):
         """
         ult = None
         if (
-            development
-            and len(development) == 1
-            and data[development[0]].dtype.kind == "M"
+            valuation
+            and len(valuation) == 1
+            and data[valuation[0]].dtype.kind == "M"
         ):
-            u = data[data[development[0]] == options.ULT_VAL].copy()
+            u = data[data[valuation[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
                     u,
@@ -728,7 +728,7 @@ class Triangle(TriangleBase):
                     index=index,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
-                data = data[data[development[0]] != options.ULT_VAL]
+                data = data[data[valuation[0]] != options.ULT_VAL]
         return data, ult
 
     @property
