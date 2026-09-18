@@ -52,12 +52,12 @@ class Triangle(TriangleBase):
          Name of the column in ``data`` representing the accident, reporting,
          or more generally the origin period. Maps to the Origin dimension.
     valuation: str
-        Name of the column in ``data`` representing the 
+        Name of the column in ``data`` representing the
         valuation date. Maps to the Development dimension. If omitted, the
         Triangle is treated as having a single development period (e.g. a
         latest-diagonal-only view). Cannot be used in conjunction with ``age``
     age: str
-        Name of the column in ``data`` representing the 
+        Name of the column in ``data`` representing the
         development age. Maps to the Development dimension. If omitted, the
         Triangle is treated as having a single development period (e.g. a
         latest-diagonal-only view). Cannot be used in conjunction with ''valuation``
@@ -434,16 +434,13 @@ class Triangle(TriangleBase):
 
     @_deprecated_rename_argument("development", "valuation", version="v1.5")
     @_deprecated_rename_argument(
-        "development_format",
-        "valuation_format",
-        version="v1.5"
+        "development_format", "valuation_format", version="v1.5"
     )
     def __init__(
         self,
         data: Optional[DataFrame | DataFrameXchg | dict] = None,
         origin: Optional[str | list] = None,
         valuation: Optional[str | list] = None,
-        age: Optional[str | list] = None,
         columns: Optional[str | list] = None,
         index: Optional[str | list] = None,
         origin_format: Optional[str] = None,
@@ -452,6 +449,7 @@ class Triangle(TriangleBase):
         array_backend: str = None,
         pattern=False,
         trailing: bool = True,
+        age: Optional[str | list] = None,
         *args,
         **kwargs,
     ):
@@ -463,6 +461,8 @@ class Triangle(TriangleBase):
             data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
+        if valuation is not None and age is not None:
+            raise ValueError("Only one of `valuation` or `age` may be specified.")
         index, columns, origin, development, age = self._input_validation(
             data=data,
             index=index,
@@ -481,7 +481,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
             origin=origin,
-            development=development,
+            valuation=development,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
         origin_date: Series = self._to_datetime(
@@ -695,7 +695,7 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(
-        data: DataFrame, index: list, columns: list, origin: list, development: list
+        data: DataFrame, index: list, columns: list, origin: list, valuation: list
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
@@ -703,7 +703,7 @@ class Triangle(TriangleBase):
         Ultimate rows are those where the development column equals
         ``options.ULT_VAL``. This supports round-tripping triangles exported
         via :meth:`~chainladder.Triangle.to_frame` with ``keepdims=True`` and
-        ``development='valuation'``. It also allows importing pre-existing
+        ``valuation='valuation'``. It also allows importing pre-existing
         ultimate estimates by marking the valuation column with
         ``options.ULT_VAL``.
 
@@ -723,7 +723,7 @@ class Triangle(TriangleBase):
                 ult = Triangle(
                     u,
                     origin=origin,
-                    development=development,
+                    valuation=valuation,
                     columns=columns,
                     index=index,
                 )

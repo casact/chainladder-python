@@ -1,4 +1,5 @@
-"""Central registry of bundled sample datasets.
+"""
+Central registry of bundled sample datasets.
 
 Single source of truth for the metadata of every CSV in
 ``chainladder/utils/data/``. Consumed by:

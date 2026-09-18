@@ -252,17 +252,15 @@ def read_pickle(path):
     with open(path, "rb") as pkl:
         return dill.load(pkl)
 
+
 @_deprecated_rename_argument("development", "valuation", version="v1.5")
 @_deprecated_rename_argument(
-    "development_format",
-    "valuation_format",
-    version="v1.5"
+    "development_format", "valuation_format", version="v1.5"
 )
 def read_csv(
     filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
     origin: Optional[str | list] = None,
     valuation: Optional[str | list] = None,
-    age: Optional[str] = None,
     columns: Optional[str | list] = None,
     index: Optional[str | list] = None,
     origin_format: Optional[str] = None,
@@ -271,6 +269,7 @@ def read_csv(
     array_backend: Optional[str] = None,
     pattern=False,
     trailing: bool = True,
+    age: Optional[str] = None,
     *args,
     **kwargs,
 ) -> Triangle:
@@ -333,6 +332,7 @@ def read_csv(
         data=local_dataframe,
         origin=origin,
         valuation=valuation,
+        age=age,
         columns=columns,
         index=index,
         origin_format=origin_format,

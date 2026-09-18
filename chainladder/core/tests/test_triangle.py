@@ -2418,7 +2418,7 @@ def test_single_valuation_date_preserves_exact_date():
     assert int(triangle.valuation_date.strftime("%Y%m")) == 202510
 
 
-def test_1d_annual_valuation_date() -> None:
+def test_1d_annual_valuation_date1() -> None:
     year_data = [
         [1998, 2008, 900000, 890000],
         [1999, 2008, 1200000, 1170000],
@@ -2434,7 +2434,7 @@ def test_1d_annual_valuation_date() -> None:
         origin="origin",
         valuation="dev",
         columns="expense",
-        development_format="%Y",
+        valuation_format="%Y",
         cumulative=True,
     )
     assert (
@@ -2443,7 +2443,7 @@ def test_1d_annual_valuation_date() -> None:
     assert tri.development_grain == "Y"
 
 
-def test_1d_monthly_valuation_date() -> None:
+def test_1d_monthly_valuation_date2() -> None:
     year_data = [
         [1998, "2008-01", 900000, 890000],
         [1999, "2008-01", 1200000, 1170000],
@@ -2459,7 +2459,7 @@ def test_1d_monthly_valuation_date() -> None:
         origin="origin",
         valuation="dev",
         columns="expense",
-        development_format="%Y-%m",
+        valuation_format="%Y-%m",
         cumulative=True,
     )
     assert (
@@ -2479,7 +2479,7 @@ def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
         origin="origin",
         valuation="dev",
         columns="expense",
-        development_format="%Y",
+        valuation_format="%Y",
         cumulative=True,
     )
     assert (
@@ -3304,3 +3304,25 @@ def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
     np.testing.assert_allclose(
         predicted.ultimate_.values.flatten(), [expected], atol=atol
     )
+
+
+def test_declare_w_both_valuation_age_raises() -> None:
+    """
+    A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
+    native pandas period, so an age can't be placed - raise clearly.
+    """
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "age": [6, 12, 6],
+        "valuation": [2018, 2018, 2018],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="Only one"):
+        cl.Triangle(
+            data=df,
+            origin="origin",
+            valuation="valuation"
+            age="age",
+            columns="reported",
+            cumulative=True,
+        )

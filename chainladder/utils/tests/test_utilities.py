@@ -361,7 +361,8 @@ def test_sdist_ships_all_samples(tmp_path) -> None:
 
 
 def test_load_sample_uspp() -> None:
-    """Pin the manifest column schema for the uspp Friedland family.
+    """
+    Pin the manifest column schema for the uspp Friedland family.
 
     Loadability of every sample is already covered by ``test_load_sample``,
     but no other test asserts the columns a sample is configured with. This
