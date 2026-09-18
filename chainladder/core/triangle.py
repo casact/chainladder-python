@@ -57,8 +57,8 @@ class Triangle(TriangleBase):
         Triangle is treated as having a single development period (e.g. a
         latest-diagonal-only view). Cannot be used in conjunction with ``age``
     age: str
-        Name of the column in ``data`` representing the
-        development age. Maps to the Development dimension. If omitted, the
+        Name of the column in ``data`` representing the development age
+        in months. Maps to the Development dimension. If omitted, the
         Triangle is treated as having a single development period (e.g. a
         latest-diagonal-only view). Cannot be used in conjunction with ''valuation``
     columns: str or list
