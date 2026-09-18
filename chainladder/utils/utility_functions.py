@@ -291,7 +291,7 @@ def read_csv(
         A representation of the valuation dates of the triangle
         that will map to the Development dimension
     age: str
-        A representation of the development ages of the triangle
+        A representation of the development ages (in months) of the triangle
         that will map to the Development dimension
     columns: str or list
         A representation of the numeric data of the triangle that will map to
