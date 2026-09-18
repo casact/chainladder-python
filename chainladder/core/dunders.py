@@ -298,11 +298,11 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -348,11 +348,11 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -427,11 +427,11 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -507,12 +507,12 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                     'incurred': [120, 160, 100],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid', 'incurred'],
                 cumulative=True,
             )

@@ -368,7 +368,7 @@ class Triangle(TriangleBase):
     Triangles produced by reserving methods carry ultimate projections at the
     sentinel valuation date ``options.ULT_VAL`` (default December 31, 2261).
     Export with ``to_frame(keepdims=True)`` and reconstruct by passing
-    ``development='valuation'``. Rows whose valuation equals
+    ``valuation='valuation'``. Rows whose valuation equals
     ``options.ULT_VAL`` are recognized as ultimates and stored in the ultimate
     development column (see also :attr:`is_ultimate`).
 
@@ -463,12 +463,13 @@ class Triangle(TriangleBase):
             data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
-        index, columns, origin, development = self._input_validation(
+        index, columns, origin, development, age = self._input_validation(
             data=data,
             index=index,
             columns=columns,
             origin=origin,
-            development=valuation,
+            valuation=valuation,
+            age=age,
         )
 
         # Store dimension metadata.
@@ -493,8 +494,9 @@ class Triangle(TriangleBase):
 
         development_date = self._set_development(
             data=data,
-            development=development,
-            development_format=valuation_format,
+            valuation=development,
+            valuation_format=valuation_format,
+            age=age,
             origin_date=origin_date,
             origin_grain=self.origin_grain,
         )
@@ -1334,14 +1336,14 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                    'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                    'valuation': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
                     'reported': [5012, 3257, 2638, 898, 106, 4179, 1111, 3410, 5582, 5655],
                 }
             )
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=False,
             )
@@ -1737,7 +1739,7 @@ class Triangle(TriangleBase):
                         '2023Q3', '2023Q3',
                         '2023Q4',
                     ],
-                    'development': [
+                    'valuation': [
                         '2022Q1', '2022Q2', '2022Q3', '2022Q4', '2023Q1', '2023Q2', '2023Q3', '2023Q4',
                         '2022Q2', '2022Q3', '2022Q4', '2023Q1', '2023Q2', '2023Q3', '2023Q4',
                         '2022Q3', '2022Q4', '2023Q1', '2023Q2', '2023Q3', '2023Q4',
@@ -1762,7 +1764,7 @@ class Triangle(TriangleBase):
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=True,
             )
@@ -1958,14 +1960,14 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [2020, 2020, 2020, 2021, 2021, 2022],
-                    'development': [2020, 2021, 2022, 2021, 2022, 2022],
+                    'valuation': [2020, 2021, 2022, 2021, 2022, 2022],
                     'reported': [100, 200, 300, 110, 220, 120],
                 }
             )
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=True,
             )
@@ -2173,14 +2175,14 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [2020, 2020, 2020, 2021, 2021, 2022],
-                    'development': [2020, 2021, 2022, 2021, 2022, 2022],
+                    'valuation': [2020, 2021, 2022, 2021, 2022, 2022],
                     'reported': [100, 200, 300, 110, 220, 120],
                 }
             )
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=True,
             )
@@ -2296,7 +2298,7 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [2020, 2020, 2021, 2021],
-                    'development': [2020, 2021, 2021, 2021],
+                    'valuation': [2020, 2021, 2021, 2021],
                     'reported': [100, 200, 110, 110],
                     'paid': [50, 100, 60, 60],
                 }
@@ -2304,7 +2306,7 @@ class Triangle(TriangleBase):
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported', 'paid'],
                 cumulative=True,
             )
