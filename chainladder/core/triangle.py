@@ -494,7 +494,7 @@ class Triangle(TriangleBase):
 
         development_date = self._set_development(
             data=data,
-            valuation=development,
+            development=development,
             valuation_format=valuation_format,
             age=age,
             origin_date=origin_date,

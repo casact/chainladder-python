@@ -167,17 +167,17 @@ class TriangleBase(
     @staticmethod
     def _set_development(
         data: DataFrame,
-        valuation: None | list,
+        development: None | list,
         valuation_format: None | str,
         age: None | list,
         origin_date: Series,
         origin_grain: str,
     ) -> Series:
         """Initialize development and its grain"""
-        if valuation:
+        if development:
             development_date: Series | None = TriangleBase._to_datetime(
                 data=data,
-                fields=valuation,
+                fields=development,
                 period_end=True,
                 date_format=valuation_format,
                 allow_age=False,

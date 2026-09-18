@@ -2407,7 +2407,7 @@ def test_single_valuation_date_preserves_exact_date():
         valuation="Calendar Year Month",
         columns="Loss",
         cumulative=True,
-        development_format="%Y%m",
+        valuation_format="%Y%m",
         origin_format="%Y%m",
     )
 

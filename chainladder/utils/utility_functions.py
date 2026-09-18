@@ -262,6 +262,7 @@ def read_csv(
     filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
     origin: Optional[str | list] = None,
     valuation: Optional[str | list] = None,
+    age: Optional[str] = None,
     columns: Optional[str | list] = None,
     index: Optional[str | list] = None,
     origin_format: Optional[str] = None,
@@ -289,8 +290,11 @@ def read_csv(
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
-    development: str or list
-        A representation of the development/valuation periods of the triangle
+    valuation: str or list
+        A representation of the valuation dates of the triangle
+        that will map to the Development dimension
+    age: str
+        A representation of the development ages of the triangle
         that will map to the Development dimension
     columns: str or list
         A representation of the numeric data of the triangle that will map to
@@ -302,7 +306,7 @@ def read_csv(
     origin_format: optional str
         A string representation of the date format of the origin arg. If
         omitted then date format will be inferred by pandas.
-    development_format: optional str
+    valuation_format: optional str
         A string representation of the date format of the development arg. If
         omitted then date format will be inferred by pandas.
     cumulative: bool
@@ -328,11 +332,11 @@ def read_csv(
     local_triangle = Triangle(
         data=local_dataframe,
         origin=origin,
-        valuation=development,
+        valuation=valuation,
         columns=columns,
         index=index,
         origin_format=origin_format,
-        valuation_format=development_format,
+        valuation_format=valuation_format,
         cumulative=cumulative,
         array_backend=array_backend,
         pattern=pattern,
