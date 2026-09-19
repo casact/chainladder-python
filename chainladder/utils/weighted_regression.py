@@ -183,7 +183,8 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def _fit_ols(self):
-        """Given a set of w, x, y, and an axis, this Function
+        """
+        Given a set of w, x, y, and an axis, this Function
         returns OLS slope and intercept.
         TODO:
             Make this work with n_periods = 1 without numpy warning.
@@ -235,7 +236,8 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def sigma_fill(self, interpolation):
-        """This Function is designed to take an array of sigmas and does log-
+        """
+        This Function is designed to take an array of sigmas and does log-
         linear extrapolation where n_obs=1 and sigma cannot be calculated.
         """
         if interpolation == "log-linear":
@@ -269,7 +271,8 @@ class WeightedRegression(BaseEstimator):
         return num_to_nan(out)
 
     def mack_interpolation(self, y):
-        """Use Mack's approximation to fill last element of sigma_ which is the
+        """
+        Use Mack's approximation to fill last element of sigma_ which is the
         same as loglinear extrapolation using the preceding two element to
         the missing value. This function needs a recursive definition...
         """

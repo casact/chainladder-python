@@ -762,7 +762,7 @@ class TrianglePandas(_TrianglePandasBase):
         ``development`` names.
 
         Parameters
-        -----------
+        ----------
 
         labels:  str | int | list | None
             Index or column labels to drop. A single label or list-like.
