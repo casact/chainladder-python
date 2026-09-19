@@ -84,10 +84,6 @@ class Styler(_PandasStyler):
         1987 7.2 2.7 1.1 nan nan nan nan nan nan
         1988 5.1 1.9 nan nan nan nan nan nan nan
         1989 1.7 nan nan nan nan nan nan nan nan
-
-    Please see: :doc:`Triangle Visualization </user_guide/style>` for more
-    examples.
-
     """
 
     def __init__(
