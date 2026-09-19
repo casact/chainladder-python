@@ -59,6 +59,7 @@ dev = [
     "pre-commit",
 ]
 docs = [
+    "babel", # For localization examples.
     "sphinx",
     "sphinx-rtd-theme",
     "nbsphinx",
