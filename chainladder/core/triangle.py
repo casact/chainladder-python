@@ -1,3 +1,7 @@
+"""
+Define the Triangle class, the core data structure representing actuarial triangles.
+"""
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -27,6 +31,7 @@ from typing import cast, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
+    from chainladder.core.style import Styler
     from chainladder.core.typing import BackendArray
     from numpy.typing import ArrayLike
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
@@ -890,6 +895,20 @@ class Triangle(TriangleBase):
     def development(self, value):
         self._len_check(self.development, value)
         self.ddims = np.array([value] if type(value) is str else value)
+
+    @property
+    def style(self) -> Styler:
+        """
+        Returns a Styler for the Triangle.
+
+        Returns
+        -------
+        Styler
+            A Styler wrapping this Triangle's frame representation.
+        """
+        from chainladder.core.style import Styler
+
+        return Styler(self)
 
     def set_index(self, value, inplace=False):
         """Sets the index of the Triangle"""

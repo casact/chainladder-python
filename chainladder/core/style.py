@@ -15,16 +15,20 @@ import numpy as np
 import pandas as pd
 from pandas.io.formats.style import Styler as _PandasStyler
 
-from datetime import date, datetime
-from typing import Any, TYPE_CHECKING, TypeAlias
+from chainladder.core.triangle import Triangle
 
-if TYPE_CHECKING:
-    from chainladder import Triangle
+from datetime import (
+    date,
+    datetime,
+)
+from typing import (
+    Any,
+    TypeAlias,
+)
 
 # A value accepted by pandas.Timestamp's constructor.
 ValuationDateLike: TypeAlias = int | float | str | date | datetime | pd.Timestamp
 
-del TYPE_CHECKING
 del annotations
 
 

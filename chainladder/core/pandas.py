@@ -14,7 +14,6 @@ from chainladder import (
     __dt64_dtype__,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.core.style import Styler
 from chainladder.utils.utility_functions import concat, num_to_nan
 
 from typing import cast, TYPE_CHECKING
@@ -236,18 +235,6 @@ class TrianglePandas(_TrianglePandasBase):
         if isinstance(df.index, pd.PeriodIndex) and len(df.columns) > 1:
             df.index = df.index.to_timestamp(how="s")
         return df.hvplot(*args, **kwargs)
-
-    @property
-    def style(self) -> Styler:
-        """
-        Returns a Styler for the Triangle.
-
-        Returns
-        -------
-        Styler
-            A Styler wrapping this Triangle's frame representation.
-        """
-        return Styler(self)
 
     @staticmethod
     def _get_axis(
