@@ -30,6 +30,8 @@ def test_val_corr_incomplete_triangle(xyz: Triangle) -> None:
     # "Shape of passed values is (1, 10), indices imply (1, 9)" on repr,
     # because z_critical dropped all-NaN diagonals while its values kept
     # one entry per link-ratio diagonal.
-    z_critical = xyz["Paid"].valuation_correlation(p_critical=0.1, total=False).z_critical
+    z_critical = (
+        xyz["Paid"].valuation_correlation(p_critical=0.1, total=False).z_critical
+    )
     assert z_critical.values.shape[-1] == len(z_critical.ddims)
     assert repr(z_critical)
