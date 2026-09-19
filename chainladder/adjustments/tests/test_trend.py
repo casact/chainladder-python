@@ -279,6 +279,40 @@ def test_trend_base_period_ignores_the_development_grain(qtr):
     assert trend_[0, 0, position, 0] == pytest.approx(1.0)
 
 
+def _fiscal_year_origin_triangle():
+    """
+    The smallest Triangle with a fiscal (July-June) annual origin axis: three
+    fiscal years, each valued through fiscal year-end.
+    """
+    years = pd.period_range("2018", "2020", freq="Y-JUN")
+    rows = [
+        (origin.to_timestamp(how="s"), valuation.to_timestamp(how="e"), 1.0)
+        for i, origin in enumerate(years)
+        for valuation in years[i:]
+    ]
+    return cl.Triangle(
+        pd.DataFrame(rows, columns=["origin", "valuation", "paid"]),
+        origin="origin",
+        development="valuation",
+        columns=["paid"],
+        cumulative=True,
+        trailing=True,
+    )
+
+
+def test_trend_default_anchor_preserves_fiscal_origin_frequency():
+    """
+    Trend should work on a fiscal year.
+    """
+    tri = _fiscal_year_origin_triangle()
+    trend_ = cl.Trend(0.10, axis="origin").fit(tri).trend_
+
+    origins = list(tri.origin.astype(str))
+    assert trend_.values[0, 0, origins.index("2020"), 0] == pytest.approx(1.0)
+    assert trend_.values[0, 0, origins.index("2019"), 0] == pytest.approx(1.10)
+    assert trend_.values[0, 0, origins.index("2018"), 0] == pytest.approx(1.21)
+
+
 def _quarterly_origin_triangle():
     """
     The smallest Triangle with a quarterly origin axis: the four quarters of 2017,
