@@ -2362,10 +2362,11 @@ class Triangle(TriangleBase):
         """
         Fill a ``Triangle`` with a scalar value.
 
-        For an incomplete Triangle, only the upper half will be filled, including
-        any NaN in the upper half.
+        For an undeveloped ``Triangle``, only the upper half will be filled,
+        including any NaN in the upper half.
 
-        For a full Triangle, the entire frame will be filled, including any NaN
+        For a developed Triangle, the entire frame will be filled, including
+        any NaNs.
 
         Parameters
         ----------
@@ -2390,23 +2391,23 @@ class Triangle(TriangleBase):
         .. testcode::
 
             raa = cl.load_sample("raa")
-            print(raa.fill(200))
+            print(raa.fill(100))
             full_raa = cl.Chainladder().fit(raa).full_triangle_
             print(full_raa.fill(200))
 
         .. testoutput::
 
                     12     24     36     48     60     72     84     96     108    120
-            1981  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
-            1982  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0    NaN
-            1983  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0    NaN    NaN
-            1984  200.0  200.0  200.0  200.0  200.0  200.0  200.0    NaN    NaN    NaN
-            1985  200.0  200.0  200.0  200.0  200.0  200.0    NaN    NaN    NaN    NaN
-            1986  200.0  200.0  200.0  200.0  200.0    NaN    NaN    NaN    NaN    NaN
-            1987  200.0  200.0  200.0  200.0    NaN    NaN    NaN    NaN    NaN    NaN
-            1988  200.0  200.0  200.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN
-            1989  200.0  200.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
-            1990  200.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1981  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0
+            1982  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN
+            1983  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN
+            1984  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN
+            1985  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN
+            1986  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN
+            1987  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN
+            1988  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1989  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1990  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
                    12     24     36     48     60     72     84     96     108    120    132    9999
             1981  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
             1982  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
@@ -2421,8 +2422,8 @@ class Triangle(TriangleBase):
         """
         if inplace:
             xp = self.get_array_module()
-            new_value = self.nan_triangle[None, None, ...].astype(np.float64)
-            self.values = xp.broadcast_to(new_value * value, self.shape).copy()
+            fill_flag = self.nan_triangle[None, None, ...].astype(np.float64)
+            self.values = xp.broadcast_to(fill_flag * value, self.shape).copy()
             return self
         else:
             obj = self.copy()
