@@ -245,7 +245,7 @@ class DevelopmentML(DevelopmentBase):
         return Triangle(
             out,
             origin="origin",
-            development="valuation",
+            valuation="valuation",
             index=self._key_labels,
             columns=self._get_y_names(),
             cumulative=not self.fit_incrementals,

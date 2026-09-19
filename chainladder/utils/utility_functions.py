@@ -14,6 +14,8 @@ import pandas as pd
 from chainladder import __dt64_unit__, __dt64_dtype__
 from chainladder.utils.sparse import sp
 from chainladder.utils.data._manifest import SAMPLES
+from chainladder._config.deprecation import _deprecated_rename_argument
+
 from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -109,23 +111,23 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     # column names already present in the tests and the sample-data docs.
     config: dict = SAMPLES[key.lower()]
     origin = config["origin"]
-    development = config["development"]
+    valuation = config["valuation"]
     index = config["index"]
     columns = config["columns"]
     cumulative = config["cumulative"]
 
-    development_format = config.get("development_format", None)
+    valuation_format = config.get("valuation_format", None)
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
     return Triangle(
         data=df,
         origin=origin,
-        development=development,
+        valuation=valuation,
         index=index,
         columns=columns,
         cumulative=cumulative,
-        development_format=development_format,
+        valuation_format=valuation_format,
         *args,
         **kwargs,
     )
@@ -251,18 +253,21 @@ def read_pickle(path):
         return dill.load(pkl)
 
 
+@_deprecated_rename_argument("development", "valuation", version="v1.5")
+@_deprecated_rename_argument("development_format", "valuation_format", version="v1.5")
 def read_csv(
     filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
     origin: Optional[str | list] = None,
-    development: Optional[str | list] = None,
+    valuation: Optional[str | list] = None,
     columns: Optional[str | list] = None,
     index: Optional[str | list] = None,
     origin_format: Optional[str] = None,
-    development_format: Optional[str] = None,
+    valuation_format: Optional[str] = None,
     cumulative: Optional[bool] = None,
-    array_backend: str = None,
+    array_backend: Optional[str] = None,
     pattern=False,
     trailing: bool = True,
+    age: Optional[str] = None,
     *args,
     **kwargs,
 ) -> Triangle:
@@ -282,8 +287,11 @@ def read_csv(
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
-    development: str or list
-        A representation of the development/valuation periods of the triangle
+    valuation: str or list
+        A representation of the valuation dates of the triangle
+        that will map to the Development dimension
+    age: str
+        A representation of the development ages (in months) of the triangle
         that will map to the Development dimension
     columns: str or list
         A representation of the numeric data of the triangle that will map to
@@ -295,7 +303,7 @@ def read_csv(
     origin_format: optional str
         A string representation of the date format of the origin arg. If
         omitted then date format will be inferred by pandas.
-    development_format: optional str
+    valuation_format: optional str
         A string representation of the date format of the development arg. If
         omitted then date format will be inferred by pandas.
     cumulative: bool
@@ -321,11 +329,12 @@ def read_csv(
     local_triangle = Triangle(
         data=local_dataframe,
         origin=origin,
-        development=development,
+        valuation=valuation,
+        age=age,
         columns=columns,
         index=index,
         origin_format=origin_format,
-        development_format=development_format,
+        valuation_format=valuation_format,
         cumulative=cumulative,
         array_backend=array_backend,
         pattern=pattern,
@@ -396,7 +405,7 @@ def read_json(json_str, array_backend=None):
         tri = Triangle(
             y,
             origin="origin",
-            development="development",
+            valuation="development",
             index=index,
             columns=columns,
             pattern=json.loads(j["metadata"])["is_pattern"],
