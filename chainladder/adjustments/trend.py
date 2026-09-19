@@ -1,3 +1,7 @@
+"""
+Support trending of model inputs.
+"""
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -8,12 +12,14 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
 
-from typing import Literal, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING, TypeAlias
 
 if TYPE_CHECKING:  # pragma: no cover
     from chainladder import Triangle
     from collections.abc import Sequence
     from pandas import Period, Timestamp
+
+DateBound: TypeAlias = str | pd.Period | pd.Timestamp | None
 
 
 class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
@@ -30,7 +36,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         5% decrease should be stated as -0.05
     dates: list of date-likes
         A list-like of (start, end) dates to correspond to the `trend` list.
-    axis: str (options: [‘origin’, ‘valuation’])
+    axis : {'origin', 'valuation', 2, -2}
         The axis on which to apply the trend
     base_period: int or str, optional
         The period whose factor is set to 1.0, so that ``trend_`` states every
@@ -195,7 +201,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         1989  0.6768  0.6768     NaN     NaN     NaN     NaN     NaN     NaN     NaN  NaN
         1990  0.6446     NaN     NaN     NaN     NaN     NaN     NaN     NaN     NaN  NaN
 
-    Toggle ``full_triangle=True`` to retrun a full triangle of trend factors.
+    Toggle ``full_triangle=True`` to return a full triangle of trend factors.
 
     .. testcode::
 
@@ -218,17 +224,22 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
 
     """
 
+    # Fitted attributes.
+    trend_: Triangle
+
     def __init__(
         self,
         trends: float | int | list[float | int] = 0.0,
-        dates: tuple | list[tuple] | None = None,
+        dates: tuple[DateBound, DateBound]
+        | list[tuple[DateBound, DateBound]]
+        | None = None,
         axis: Literal["origin", "valuation", 2, -2] = "origin",
         base_period: int | str | None = None,
         full_triangle: bool = False,
     ):
         self.trends = trends
         self.dates = dates
-        self.axis = axis
+        self.axis: Literal["origin", "valuation", 2, -2] = axis
         self.base_period = base_period
         self.full_triangle = full_triangle
 
@@ -236,7 +247,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         self,
         obj: Triangle,
         trends: Sequence[float | int],
-        dates: Sequence[tuple],
+        dates: Sequence[tuple[DateBound, DateBound]],
         default_start: Timestamp,
     ) -> Triangle:
         """
@@ -249,7 +260,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
             yields the factors themselves; passing data yields trended data.
         trends: sequence of float
             The annual trend of each segment, expressed as a decimal.
-        dates: sequence of tuple
+        dates: Sequence[tuple[DateBound, DateBound]]
             The ``(start, end)`` bounds of each segment, positionally paired with
             ``trends``. Either bound may be None.
         default_start: Timestamp
@@ -262,11 +273,16 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         for i, trend in enumerate(trends):
             start = default_start if dates[i][0] is None else dates[i][0]
-            obj = obj.trend(trend=trend, axis=self.axis, start=start, end=dates[i][1])
+            obj = obj.trend(
+                trend=trend,
+                axis=self.axis,
+                start=start,
+                end=dates[i][1],
+            )
         return obj
 
     @staticmethod
-    def _grid(X: Triangle) -> Triangle:
+    def _grid(X: Triangle) -> Triangle:  # noqa sklearn convention
         """
         Fill X with 1s, including lower triangle NaNs, creating a full triangle of 1s.
 
@@ -291,7 +307,10 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         grid.valuation_date = grid.valuation.max()
         return (grid * 0 + 1).fillna(1)
 
-    def _latest_period(self, X: Triangle) -> Period:
+    def _latest_period(
+        self,
+        X: Triangle,  # noqa sklearn convention
+    ) -> Period:
         """
         The latest period of the trended axis, which the estimator normalizes on
         when no ``base_period`` is given.
@@ -309,7 +328,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         if self.axis in ["origin", 2, -2]:
             return X.origin[-1]
-        return pd.Timestamp(X.valuation_date).to_period("M")
+        return X.valuation_date.to_period("M")
 
     def _get_rebasing_factor(
         self,
@@ -337,7 +356,18 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         ValueError
             If ``base_period`` matches no period on the axis being trended.
         """
-        period = pd.Period(str(base_period))
+        # A Period's str() drops its frequency (a fiscal Y-JUN period and a
+        # calendar Y-DEC period both stringify to e.g. "2020"), so an
+        # already-built Period -- notably the default anchor from
+        # _latest_period, which carries the triangle's real origin freq --
+        # must be used as-is rather than round-tripped through str().
+        period = (
+            base_period
+            if isinstance(base_period, pd.Period)
+            else pd.Period(str(base_period))
+        )
+        if not isinstance(period, pd.Period):
+            raise ValueError(f"base_period {base_period!r} could not be parsed.")  # noqa pandas-stubs
         lo, hi = period.to_timestamp(how="s"), period.to_timestamp(how="e")
         values = np.asarray(factors.values)[0, 0]
         if self.axis in ["origin", 2, -2]:
@@ -360,15 +390,15 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
 
         if position is None:
             raise ValueError(
-                f"base_period {base_period!r} does not match any {axis_label} period. "
+                f"base_period {base_period!r} does not match any {axis_label} period. "  # noqa pandas-stubs
                 f"{axis_label.capitalize()}s run {first} through {last}."
             )
         return float(values[position])
 
     def fit(
         self,
-        X: Triangle,
-        y: None = None,  # noqa, needed for Pipeline
+        X: Triangle,  # noqa sklearn convention
+        y: None = None,  # noqa (needed for Pipeline)
         sample_weight: Triangle | None = None,  # noqa
     ) -> Trend:
         """
@@ -410,9 +440,6 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
             self.trend_ = self.trend_ * (X / X)
             self.trend_.valuation_date = X.valuation_date
         if X.array_backend != self.trend_.array_backend:
-            # _grid densifies, so hand back whatever backend came in. Only
-            # full_triangle reaches here: masking by `X / X` above already
-            # carries the default path back to X's backend.
             self.trend_ = self.trend_.set_backend(X.array_backend)
         return self
 
