@@ -679,7 +679,12 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(
-        data: DataFrame, index: list, columns: list, origin: list, development: list
+        data: DataFrame,
+        index: list,
+        columns: list,
+        origin: list,
+        development: list,
+        cumulative: bool,
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
@@ -710,6 +715,7 @@ class Triangle(TriangleBase):
                     development=development,
                     columns=columns,
                     index=index,
+                    cumulative=cumulative,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[development[0]] != options.ULT_VAL]
