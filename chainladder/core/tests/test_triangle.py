@@ -3344,6 +3344,8 @@ def test_feed_age_into_valuation_raises() -> None:
             columns="reported",
             cumulative=True,
         )
+
+
 def test_fill(clrd: Triangle) -> None:
     """
     ``Fill`` method works as intended
