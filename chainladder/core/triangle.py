@@ -2357,3 +2357,74 @@ class Triangle(TriangleBase):
             if column not in obj.columns:
                 obj[column] = fill_value
         return obj
+
+    def fill(self, value: float = 1.0, inplace: bool = False) -> Triangle:
+        """
+        Fill a ``Triangle`` with a scalar value.
+
+        For an undeveloped ``Triangle``, only the upper half will be filled,
+        including any NaN in the upper half.
+
+        For a developed Triangle, the entire frame will be filled, including
+        any NaNs.
+
+        Parameters
+        ----------
+        value : float, default 1.0
+            All valid elements will be assigned this value
+        inplace : bool, default False
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+        Triangle
+
+        Examples
+        --------
+        Build a Triangle with two columns supplied in non-alphabetical order.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            print(raa.fill(100))
+            full_raa = cl.Chainladder().fit(raa).full_triangle_
+            print(full_raa.fill(200))
+
+        .. testoutput::
+
+                    12     24     36     48     60     72     84     96     108    120
+            1981  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0
+            1982  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN
+            1983  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN
+            1984  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN
+            1985  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN
+            1986  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN
+            1987  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN
+            1988  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1989  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1990  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+                   12     24     36     48     60     72     84     96     108    120    132    9999
+            1981  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1982  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1983  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1984  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1985  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1986  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1987  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1988  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1989  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1990  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+        """
+        if inplace:
+            xp = self.get_array_module()
+            fill_flag = self.nan_triangle[None, None, ...].astype(np.float64)
+            self.values = xp.broadcast_to(fill_flag * value, self.shape).copy()
+            return self
+        else:
+            obj = self.copy()
+            return obj.fill(value, True)

@@ -3304,3 +3304,24 @@ def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
     np.testing.assert_allclose(
         predicted.ultimate_.values.flatten(), [expected], atol=atol
     )
+
+
+def test_fill(clrd: Triangle) -> None:
+    """
+    ``Fill`` method works as intended
+    """
+    fill_tri = clrd.iloc[2:4, 4:6].fill(100)
+    # (10 + 1) * 10 / 2 is the number of valid values in one single triangle
+    # multiplied by 2 index values and 2 column values
+    assert np.nansum(fill_tri.values) == 100 * (10 + 1) * 10 / 2 * 2 * 2
+    assert np.nanmax(fill_tri.values) == 100
+    assert np.nanmin(fill_tri.values) == 100
+
+
+def test_full_fill(raa: Triangle) -> None:
+    """
+    ``Fill`` method works as intended on full triangle
+    """
+    full_tri = cl.Chainladder().fit(raa).full_triangle_
+    fill_full_tri = full_tri.fill(200)
+    assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
