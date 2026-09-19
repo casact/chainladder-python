@@ -58,6 +58,7 @@ from chainladder.core import (  # noqa (API import)
     Triangle,
     DevelopmentCorrelation,
     ValuationCorrelation,
+    Styler,
 )
 from chainladder.development import (  # noqa (API import)
     DevelopmentBase,
