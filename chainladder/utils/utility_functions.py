@@ -8,6 +8,7 @@ import dill
 import json
 import os
 import numpy as np
+import warnings
 import pandas as pd
 
 from chainladder import __dt64_unit__, __dt64_dtype__
@@ -30,7 +31,8 @@ if TYPE_CHECKING:
 
 
 def load_sample(key: str, *args, **kwargs) -> Triangle:
-    """Function to load a dataset already included in the chainladder package. These consist of CSV
+    """
+    Function to load a dataset already included in the chainladder package. These consist of CSV
     files located in the repository directory chainladder/utils/data.
 
     Parameters
@@ -140,7 +142,8 @@ _GRAIN_LABELS: dict = {
 
 
 def list_samples(include_grain: bool = True) -> DataFrame:
-    """List the sample datasets bundled with the chainladder package.
+    """
+    List the sample datasets bundled with the chainladder package.
 
     The returned table is driven by the sample-dataset manifest
     (``chainladder/utils/data/_manifest.py``), the same source
@@ -197,7 +200,8 @@ def list_samples(include_grain: bool = True) -> DataFrame:
 
 
 def read_pickle(path):
-    """Load an object serialized with ``to_pickle`` (``dill`` format).
+    """
+    Load an object serialized with ``to_pickle`` (``dill`` format).
 
     Parameters
     ----------
@@ -332,7 +336,8 @@ def read_csv(
 
 
 def read_json(json_str, array_backend=None):
-    """Deserialize JSON produced by ``to_json`` (triangle, estimator, or pipeline).
+    """
+    Deserialize JSON produced by ``to_json`` (triangle, estimator, or pipeline).
 
     Examples
     --------
@@ -424,7 +429,8 @@ def read_json(json_str, array_backend=None):
 
 
 def _origin_periods(index, grain):
-    """Bucket a DatetimeIndex into origin periods of the given Triangle grain.
+    """
+    Bucket a DatetimeIndex into origin periods of the given Triangle grain.
 
     ``DatetimeIndex.to_period`` covers "Y", "Q" and "M" directly. It has no
     semiannual frequency, and "2Q" does not stand in for one. The multiple is
@@ -460,7 +466,8 @@ def parallelogram_olf(
     vertical_line=False,
     cumulative=False,
 ):
-    """Parallelogram approach to on-leveling.
+    """
+    Parallelogram approach to on-leveling.
 
     When ``cumulative`` is False (default), ``values`` are incremental rate
     changes expressed as decimals (0-centric, e.g. 0.05 for +5%). When True,
@@ -581,7 +588,8 @@ def concat(
     ignore_index: bool = False,
     sort: bool = False,
 ):
-    """Concatenate Triangle objects along a particular axis.
+    """
+    Concatenate Triangle objects along a particular axis.
 
     Parameters
     ----------
@@ -762,7 +770,8 @@ def num_to_nan(arr: ArrayLike) -> ArrayLike:
 
 
 def minimum(x1, x2):
-    """Element-wise minimum of two triangles or a triangle and a scalar
+    """
+    Element-wise minimum of two triangles or a triangle and a scalar
     (delegates to ``Triangle.minimum``).
 
     Parameters
@@ -808,7 +817,8 @@ def minimum(x1, x2):
 
 
 def maximum(x1, x2):
-    """Element-wise maximum of two triangles or a triangle and a scalar
+    """
+    Element-wise maximum of two triangles or a triangle and a scalar
     (delegates to ``Triangle.maximum``).
 
     Parameters
@@ -860,7 +870,8 @@ def to_period(dateseries: pd.Series, freq: str):
 
 
 class PatsyFormula(BaseEstimator, TransformerMixin):
-    """A sklearn-style Transformer for patsy formulas.
+    """
+    A sklearn-style Transformer for patsy formulas.
 
     PatsyFormula allows for R-style formula preprocessing of the ``design_matrix``
     of a machine learning algorithm. It's particularly useful with the `DevelopmentML`
@@ -964,7 +975,8 @@ def model_diagnostics(
     name: str | None = None,
     groupby: str | list(str) | None = None,
 ) -> Triangle:
-    """A helper function that summarizes various vectors of an
+    """
+    A helper function that summarizes various vectors of an
     IBNR model as columns of a Triangle
 
     Parameters
@@ -1075,7 +1087,8 @@ def model_diagnostics(
 def PTF_formula(  # noqa: N802
     alpha: list = None, gamma: list = None, iota: list = None, dgrain: int = 12
 ):
-    """Helper formula that builds a patsy formula string for the BarnettZehnwirth
+    """
+    Helper formula that builds a patsy formula string for the BarnettZehnwirth
     estimator.  Each axis's parameters can be grouped together. Groups of origin
     parameters (alpha) are set equal, and are specified by the first period in each bin.
     Groups of development (gamma) and valuation (iota) parameters are fit to
@@ -1151,3 +1164,27 @@ def date_delta_adjustment(date: str) -> str:
     res: str = str(pd.Timestamp(date) - pd.Timedelta(1, unit=__dt64_unit__))
 
     return res
+
+
+def warn_exclusions_ignored(preserve):
+    """
+    Warn that an exclusion was not applied because ``preserve`` blocked it.
+
+    The four drop routines in ``DevelopmentBase`` and ``TriangleWeight`` all
+    reach the same dead end and said so in four copies of this text. The
+    wording is asserted by the test suite, so it is kept as it was.
+    """
+    if preserve == 1:
+        warning = (
+            "Some exclusions have been ignored. At least "
+            + str(preserve)
+            + " (use preserve = ...)"
+            + " link ratio(s) is required for development estimation."
+        )
+    else:
+        warning = (
+            "Some exclusions have been ignored. At least "
+            + str(preserve)
+            + " link ratio(s) is required for development estimation."
+        )
+    warnings.warn(warning)

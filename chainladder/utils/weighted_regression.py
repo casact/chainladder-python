@@ -183,7 +183,8 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def _fit_ols(self):
-        """Given a set of w, x, y, and an axis, this Function
+        """
+        Given a set of w, x, y, and an axis, this Function
         returns OLS slope and intercept.
         TODO:
             Make this work with n_periods = 1 without numpy warning.
@@ -195,12 +196,17 @@ class WeightedRegression(BaseEstimator):
         if xp != sp:
             x[w == 0] = xp.nan
             y[w == 0] = xp.nan
+            w[np.isnan(x)] = 0
+            w[np.isnan(y)] = 0
         else:
-            w2 = w.copy()
+            x2, y2, w2 = x.copy(), y.copy(), w.copy()
             w2 = sp.COO(
                 data=w2.data, coords=w2.coords, fill_value=sp.nan, shape=w2.shape
             )
             x, y = x * w2, y * w2
+            x2 = sp.COO(data=1.0, coords=x2.coords, fill_value=sp.nan, shape=x2.shape)
+            y2 = sp.COO(data=1.0, coords=y2.coords, fill_value=sp.nan, shape=y2.shape)
+            w = w * x2 * y2
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -235,7 +241,8 @@ class WeightedRegression(BaseEstimator):
         return self
 
     def sigma_fill(self, interpolation):
-        """This Function is designed to take an array of sigmas and does log-
+        """
+        This Function is designed to take an array of sigmas and does log-
         linear extrapolation where n_obs=1 and sigma cannot be calculated.
         """
         if interpolation == "log-linear":
@@ -269,7 +276,8 @@ class WeightedRegression(BaseEstimator):
         return num_to_nan(out)
 
     def mack_interpolation(self, y):
-        """Use Mack's approximation to fill last element of sigma_ which is the
+        """
+        Use Mack's approximation to fill last element of sigma_ which is the
         same as loglinear extrapolation using the preceding two element to
         the missing value. This function needs a recursive definition...
         """

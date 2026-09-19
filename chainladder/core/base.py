@@ -55,7 +55,8 @@ class TriangleBase(
 
     @property
     def shape(self):
-        """The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
+        """
+        The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
 
         Examples
         --------
@@ -79,7 +80,8 @@ class TriangleBase(
 
     @property
     def dimensionality(self):
-        """The dimensionality of the Triangle.
+        """
+        The dimensionality of the Triangle.
 
         Returns ``'empty'`` for a Triangle instantiated without data
         (e.g. ``cl.Triangle()``), ``'single'`` for a Triangle holding a
@@ -107,7 +109,8 @@ class TriangleBase(
 
     @property
     def empty(self):
-        """Whether the Triangle contains any data.
+        """
+        Whether the Triangle contains any data.
 
         Mirrors ``pandas.DataFrame.empty``. Returns ``True`` for a Triangle
         instantiated without data (e.g. ``cl.Triangle()``), whose ``values``
@@ -425,7 +428,8 @@ class TriangleBase(
 
     @property
     def nan_triangle(self):
-        """Given the current triangle shape and valuation, it determines the
+        """
+        Given the current triangle shape and valuation, it determines the
         appropriate placement of NANs in the triangle for future valuations.
         This becomes useful when managing array arithmetic.
 
@@ -775,7 +779,8 @@ class TriangleBase(
         return HANDLED_FUNCTIONS[func](*args, **kwargs)
 
     def compute(self, *args, **kwargs):
-        """Materialize a lazy dask-backed Triangle.
+        """
+        Materialize a lazy dask-backed Triangle.
 
         When ``values`` is a dask array, compute it and update
         ``array_backend`` to match the resulting array type. Returns ``self``
@@ -819,7 +824,8 @@ class TriangleBase(
 
 
 def is_chainladder(estimator):
-    """Return True if the given estimator is a chainladder based method.
+    """
+    Return True if the given estimator is a chainladder based method.
     Parameters
     ----------
     estimator : object

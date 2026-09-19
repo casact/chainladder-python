@@ -344,7 +344,8 @@ class BootstrapODPSample(DevelopmentBase):
         pass
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
