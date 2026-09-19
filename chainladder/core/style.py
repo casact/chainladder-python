@@ -92,9 +92,6 @@ class Styler(_PandasStyler):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        # Imported here rather than at module scope: Triangle's own mixins import
-        # this module, so a top-level import would be circular.
-        from chainladder.core.triangle import Triangle
 
         if not isinstance(triangle, Triangle):
             # The frame case is the likely mistake, so point it somewhere useful.
