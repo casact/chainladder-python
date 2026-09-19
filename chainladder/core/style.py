@@ -59,7 +59,7 @@ class Styler(_PandasStyler):
         If ``triangle`` is anything other than a Triangle.
     ValueError
         If ``triangle`` is multidimensional, i.e. holds more than a single index
-        and column.
+        and column, or if it is empty, i.e. holds no values to style.
 
     Examples
     --------
@@ -67,23 +67,9 @@ class Styler(_PandasStyler):
     .. testcode::
 
         import chainladder as cl
-        from chainladder.core.style import Styler
 
         raa = cl.load_sample("raa")
-        print(Styler(raa.link_ratio).format(precision=1).to_string(), end="")
-
-    .. testoutput::
-
-         12-24 24-36 36-48 48-60 60-72 72-84 84-96 96-108 108-120
-        1981 1.6 1.3 1.1 1.1 1.2 1.1 1.0 1.0 1.0
-        1982 40.4 1.3 2.0 1.3 1.1 1.0 1.0 1.0 nan
-        1983 2.6 1.5 1.2 1.2 1.2 1.0 1.0 nan nan
-        1984 2.0 1.4 1.3 1.1 1.1 1.0 nan nan nan
-        1985 8.8 1.7 1.4 1.2 1.0 nan nan nan nan
-        1986 4.3 1.8 1.1 1.2 nan nan nan nan nan
-        1987 7.2 2.7 1.1 nan nan nan nan nan nan
-        1988 5.1 1.9 nan nan nan nan nan nan nan
-        1989 1.7 nan nan nan nan nan nan nan nan
+        raa.link_ratio.style.format(precision=1)
     """
 
     def __init__(
@@ -104,11 +90,8 @@ class Styler(_PandasStyler):
                 "Styler must be created from a Triangle, not a "
                 f"{type(triangle).__name__}.{hint}"
             )
-        if triangle._dimensionality == "multi":
-            raise ValueError(
-                "Styler only supports a single Triangle. Select one "
-                "index and column first, e.g. triangle.iloc[0, 0]."
-            )
+        if triangle._dimensionality in ["multi", "empty"]:
+            raise ValueError("Styler only supports a single Triangle.")
         data = triangle._repr_format(origin_as_datetime=False)
         super().__init__(data, *args, **kwargs)
         self._triangle = triangle

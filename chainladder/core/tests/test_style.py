@@ -429,6 +429,21 @@ def test_style_rejects_multidimensional_triangle(clrd) -> None:
         _ = clrd.style
 
 
+def test_style_rejects_empty_triangle() -> None:
+    """
+    Check that styling an empty Triangle raises an error.
+
+    Returns
+    -------
+    None
+
+    """
+    empty = cl.Triangle()
+    assert empty._dimensionality == "empty"
+    with pytest.raises(ValueError, match="only supports a single"):
+        _ = empty.style
+
+
 def test_style_accepts_single_triangle_selected_from_multidimensional(clrd) -> None:
     """
     Check that the error the multidimensional case raises is escapable by
