@@ -78,6 +78,8 @@ from chainladder.adjustments import (  # noqa (API import)
     Trend,
     TrendConstant,
     DisposalRate,
+    LEV,
+    Sahasrabuddhe,
 )
 from chainladder.tails import (  # noqa (API import)
     TailBase,

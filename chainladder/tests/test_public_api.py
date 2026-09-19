@@ -58,6 +58,8 @@ EXPECTED_PUBLIC_API = {
     "Trend",
     "TrendConstant",
     "DisposalRate",
+    "LEV",
+    "Sahasrabuddhe",
     # tails
     "TailBase",
     "TailConstant",
