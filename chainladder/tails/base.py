@@ -164,10 +164,16 @@ class TailBase(DevelopmentBase):
         if X.ldf_.array_backend == "sparse":
             tail_data = tail.data
             valid_tail = tail_data[tail_data > 1]
-            smallest_valid_tail = np.nanmin(valid_tail)
+            if valid_tail.size > 0:
+                smallest_valid_tail = np.nanmin(valid_tail)
+            else:
+                smallest_valid_tail = 1.001
         else:
             valid_tail = tail[tail > 1]
-            smallest_valid_tail = xp.nanmin(valid_tail)
+            if valid_tail.size > 0:
+                smallest_valid_tail = xp.nanmin(valid_tail)
+            else:
+                smallest_valid_tail = 1.001
         tail = xp.maximum(tail, [[[[smallest_valid_tail]]]])
         time_pd = (xp.log(tail - 1) - reg.intercept_) / reg.slope_
         return time_pd
