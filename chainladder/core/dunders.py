@@ -70,21 +70,28 @@ class TriangleDunders:
         return x, y
 
     def _prep_index(self, x, y):
-        if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
-            x.kdims = y.kdims
-            x.key_labels = y.key_labels
+        if len(x.index) == 1 and len(y.index) > 1:
+            x._index = y.index.copy()
+            x.key_labels = list(y.key_labels)
+            x._set_slicers()
             return x, y
-        if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
-            y.kdims = x.kdims
-            y.key_labels = x.key_labels
+        if len(x.index) > 1 and len(y.index) == 1:
+            y._index = x.index.copy()
+            y.key_labels = list(x.key_labels)
+            y._set_slicers()
             return x, y
-        if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
-            kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
-            key_labels = (
-                x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
+        if len(x.index) == len(y.index) == 1 and x.key_labels != y.key_labels:
+            index = (
+                x.index.copy()
+                if len(x.key_labels) > len(y.key_labels)
+                else y.index.copy()
             )
-            x.kdims = y.kdims = kdims
-            x.key_labels = y.key_labels = key_labels
+            x._index = index.copy()
+            x.key_labels = list(index.columns)
+            x._set_slicers()
+            y._index = index.copy()
+            y.key_labels = list(index.columns)
+            y._set_slicers()
             return x, y
 
         # Use sets for faster operations
@@ -93,14 +100,10 @@ class TriangleDunders:
         common = x_labels.intersection(y_labels)
 
         if common == x_labels or common == y_labels:
-            if x_labels != y_labels or x.kdims.shape[0] != y.kdims.shape[0]:
+            if x_labels != y_labels or len(x.index) != len(y.index):
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
-            elif (
-                x.kdims.shape[0] > 1
-                and not np.array_equal(x.kdims, y.kdims)
-                and not x.index.equals(y.index)
-            ):
+            elif len(x.index) > 1 and not x.index.equals(y.index):
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
@@ -122,12 +125,15 @@ class TriangleDunders:
 
     def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x.vdims = y.vdims
+            x._columns = y.columns
+            x._set_slicers()
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y.vdims = x.vdims
-        elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
-            y.vdims = x.vdims
-        elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
+            y._columns = x.columns
+            y._set_slicers()
+        elif len(y.columns) == len(x.columns) == 1 and not x.columns.equals(y.columns):
+            y._columns = x.columns
+            y._set_slicers()
+        elif x.shape[1] == y.shape[1] and x.columns.equals(y.columns):
             return x, y
         else:
             # Find columns to add to each triangle
@@ -257,18 +263,12 @@ class TriangleDunders:
                 .reset_index()
             )
             new_idx = new_idx[new_obj.key_labels].iloc[-1:]
-            new_obj.kdims = new_idx.values
-            new_obj.key_labels = list(new_idx.columns)
+            new_obj.index = new_idx
             return new_obj
 
     @staticmethod
     def _get_key_union(obj, other):
-        # fmt: off
-        return set(
-            list(obj.groups.indices.keys())
-            + list(other.groups.indices.keys())
-        )
-        # fmt: on
+        return set(list(obj.groups.indices.keys()) + list(other.groups.indices.keys()))
 
     def _arithmetic_mapper(self, obj, other, f):
         """Use Dask if available, otherwise basic list comprehension"""
@@ -319,10 +319,9 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                # fmt: off
-                return (self._slice_or_nan(obj, other, k) +
-                        self._slice_or_nan(other, obj, k))
-                # fmt: on
+                return self._slice_or_nan(obj, other, k) + self._slice_or_nan(
+                    other, obj, k
+                )
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -369,10 +368,9 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                # fmt: off
-                return (self._slice_or_nan(obj, other, k) -
-                        self._slice_or_nan(other, obj, k))
-                # fmt: on
+                return self._slice_or_nan(obj, other, k) - self._slice_or_nan(
+                    other, obj, k
+                )
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -448,10 +446,9 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                # fmt: off
-                return (self._slice_or_nan(obj, other, k) *
-                        self._slice_or_nan(other, obj, k))
-                # fmt: on
+                return self._slice_or_nan(obj, other, k) * self._slice_or_nan(
+                    other, obj, k
+                )
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -466,10 +463,9 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                # fmt: off
-                return (self._slice_or_nan(obj, other, k) **
-                        self._slice_or_nan(other, obj, k))
-                # fmt: on
+                return self._slice_or_nan(obj, other, k) ** self._slice_or_nan(
+                    other, obj, k
+                )
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -540,10 +536,9 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                # fmt: off
-                return (self._slice_or_nan(obj, other, k) /
-                        self._slice_or_nan(other, obj, k))
-                # fmt: on
+                return self._slice_or_nan(obj, other, k) / self._slice_or_nan(
+                    other, obj, k
+                )
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
