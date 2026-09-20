@@ -161,7 +161,7 @@ class TailBase(DevelopmentBase):
             self.ldf_.values[..., -self._ave_period[0] - 1 :], -1, keepdims=True
         )
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
-        tail = tail if tail.max() > 1 else 1.001
+        tail = xp.maximum(tail, [[[[1.001]]]])
         time_pd = (xp.log(tail - 1) - reg.intercept_) / reg.slope_
         return time_pd
 
