@@ -112,7 +112,7 @@ def test_arithmetic_union_val_tri(raa: Triangle) -> None:
     a = val_raa[val_raa.valuation < "1987"]
     b = val_raa[val_raa.valuation >= "1987"]
     result = a + b
-    assert isinstance(result.ddims, pd.DatetimeIndex)
+    assert isinstance(result._ddims, pd.DatetimeIndex)
     assert result.shape == val_raa.shape
     assert result == val_raa
 
