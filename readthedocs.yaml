@@ -17,6 +17,11 @@ build:
       - "SWITCHER_DEMO=1 python docs/generate_switcher.py"
       - "jupyter-book config sphinx docs/"
       - "python docs/prep_sphinx_conf.py"
+    post_build:
+      # Proof of concept only: builds the releases the switcher links to into
+      # this build's output, so they resolve without activating those versions
+      # in the live project. Drop it in the branch that does this for real.
+      - "python docs/build_demo_versions.py"
 
 python:
   install:

@@ -36,33 +36,45 @@ PREFERRED = "stable"
 # --- proof of concept only --------------------------------------------------
 # Read the Docs has every release registered as a version, but none of them are
 # activated, so the API reports only stable and main and the menu renders nearly
-# empty. Listing the releases anyway is what lets a reviewer see the finished
-# shape of the feature; their links 404 until the versions are activated, which
-# is a production concern and not this branch's.
+# empty. build_demo_versions.py builds these releases into this build's own
+# output instead, and the links below point at them there -- so a reviewer can
+# open them without anything being activated in the live project.
 #
-# SWITCHER_DEMO turns this on, set in readthedocs.yaml. The branch that makes
-# this work for real should delete the flag, this list, and demo_entries().
+# The two lists have to agree: a release named here without a build beside it is
+# a link to a 404. SWITCHER_DEMO turns this on, set in readthedocs.yaml. The
+# branch that makes this work for real should delete the flag, this list and
+# demo_entries(), and activate the versions on Read the Docs instead.
 #
 # Hardcoded rather than read from git tags: Read the Docs clones with
 # --depth 1, so tags are not reliably present in the build checkout.
-DEMO_RELEASES = (
-    "v0.10.1",
-    "v0.9.2",
-    "v0.8.26",
-    "v0.7.12",
-    "v0.6.3",
-    "v0.5.5",
-    "v0.4.10",
-    "v0.3.0",
-    "v0.2.9",
-    "v0.1.7",
-)
-DOCS_URL = "https://chainladder-python.readthedocs.io/{slug}/"
+DEMO_RELEASES = ("v0.10.1", "v0.9.2", "v0.8.26")
+
+
+def pull_entry() -> list[dict]:
+    """
+    A menu entry for the pull request build itself.
+
+    Without one, the menu is a one way trip: a reviewer who opens a release has
+    no way back to the build they came from. The label matches the version_match
+    prep_sphinx_conf.py sets, so the theme marks this entry as the current one
+    and leaves the button's text alone.
+
+    Returns
+    -------
+    list of dict
+        The single entry, or nothing when this is not a pull request build.
+    """
+    version = os.environ.get("READTHEDOCS_VERSION", "")
+    if not version or os.environ.get("READTHEDOCS_VERSION_TYPE") != "external":
+        return []
+
+    label = f"{version} (pull)"
+    return [{"name": label, "version": label, "url": f"/{version}/"}]
 
 
 def demo_entries(existing: list[dict]) -> list[dict]:
     """
-    Menu entries for releases Read the Docs is not yet hosting.
+    Menu entries for the releases built into this build's output.
 
     Parameters
     ----------
@@ -74,13 +86,21 @@ def demo_entries(existing: list[dict]) -> list[dict]:
     -------
     list of dict
         One entry per release, newest first, in the order of DEMO_RELEASES.
+        Empty when the version being built is unknown, since the links are
+        relative to it.
     """
+    version = os.environ.get("READTHEDOCS_VERSION", "")
+    if not version:
+        return []
+
     seen = {entry["version"] for entry in existing}
     return [
         {
             "name": slug.lstrip("v"),
             "version": slug,
-            "url": DOCS_URL.format(slug=slug),
+            # Served from inside this build, so the link resolves on the pull
+            # request preview's domain as readily as on readthedocs.io.
+            "url": f"/{version}/{slug}/",
         }
         for slug in DEMO_RELEASES
         if slug not in seen
@@ -151,11 +171,14 @@ def main() -> None:
     try:
         entries = fetch(slug)
     except (urllib.error.URLError, OSError, ValueError, KeyError) as error:
-        print(f"switcher.json left as committed: {type(error).__name__}: {error}")
-        return
+        # The demo entries below are built from this branch, not the API, so
+        # they still stand. Losing stable and main is better than losing the
+        # menu in front of the reviewers it was written for.
+        print(f"read the docs API unavailable: {type(error).__name__}: {error}")
+        entries = []
 
     if os.environ.get("SWITCHER_DEMO"):
-        entries += demo_entries(entries)
+        entries = pull_entry() + entries + demo_entries(entries)
 
     if not entries:
         print("switcher.json left as committed: no built versions reported")

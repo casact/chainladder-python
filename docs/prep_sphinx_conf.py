@@ -47,14 +47,20 @@ SWITCHER_BLOCK = """
 
 # --- appended by docs/prep_sphinx_conf.py ---
 import os as _os
-_version_match = _os.environ.get("READTHEDOCS_VERSION", "")
-if _version_match:
+_version = _os.environ.get("READTHEDOCS_VERSION", "")
+# A pull request build is named after the pull request, which reads as a stray
+# number on its own. READTHEDOCS_VERSION_TYPE is "external" for exactly those
+# builds. The label is display only -- the slug is what the path below needs.
+_label = _version
+if _os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
+    _label = f"{_version} (pull)"
+if _version:
     html_theme_options = {
         **globals().get("html_theme_options", {}),
         "switcher": {
             **globals().get("html_theme_options", {}).get("switcher", {}),
-            "version_match": _version_match,
-            "json_url": f"/{_version_match}/_static/switcher.json",
+            "version_match": _label,
+            "json_url": f"/{_version}/_static/switcher.json",
         },
     }
 """
