@@ -266,16 +266,13 @@ class BootstrapODPSample(DevelopmentBase):
         resampled_triangles = (resampled_residual * xp.sqrt(abs(b)) + b).cumsum(2)
         resampled_triangles = resampled_triangles[None, ...].swapaxes(0, 1)
         obj = X.copy()
+        obj.values = resampled_triangles
         if X.key_labels == ["Total"]:
-            obj._index = pd.DataFrame({"Simulation_#": np.arange(self.n_sims)})
-            obj.key_labels = ["Simulation_#"]
+            obj.index = pd.DataFrame({"Simulation_#": np.arange(self.n_sims)})
         else:
             obj_idx = pd.concat([X.index] * self.n_sims, ignore_index=True)
             obj_idx["Simulation_#"] = np.arange(self.n_sims)
-            obj._index = obj_idx
-            obj.key_labels = list(obj_idx.columns)
-        obj.values = resampled_triangles
-        obj._set_slicers()
+            obj.index = obj_idx
         return obj, scale_phi
 
     def _get_design_matrix(self, X):
