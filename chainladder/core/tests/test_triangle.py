@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+import warnings
 
 from chainladder.core.common import Common
 from chainladder.utils.utility_functions import date_delta_adjustment
@@ -1339,6 +1340,36 @@ def test_astype(raa: Triangle) -> None:
     None
     """
     assert raa.astype("float32").values.dtype == np.float32
+
+
+def test_astype_inplace_deprecated(raa: Triangle) -> None:
+    """
+    The inplace parameter of astype is deprecated and warns when supplied.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    # inplace=False casts a copy and leaves the original untouched
+    with pytest.warns(FutureWarning, match="inplace"):
+        cast = raa.astype("float32", inplace=False)
+    assert cast.values.dtype == np.float32
+    assert raa.values.dtype == np.float64
+
+    # inplace=True is the current default, and mutates the triangle in place
+    with pytest.warns(FutureWarning, match="inplace"):
+        assert raa.astype("float32", inplace=True).values.dtype == np.float32
+    assert raa.values.dtype == np.float32
+
+    # omitting the parameter is the supported spelling and must stay quiet
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        assert raa.astype("float64").values.dtype == np.float64
 
 
 def test_head(clrd: Triangle) -> None:

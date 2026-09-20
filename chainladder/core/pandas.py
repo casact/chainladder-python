@@ -12,6 +12,7 @@ import pandas as pd
 
 from chainladder import (
     __dt64_dtype__,
+    _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
 from chainladder.utils.utility_functions import concat, num_to_nan
@@ -1058,6 +1059,7 @@ class TrianglePandas(_TrianglePandasBase):
                 )
         return cast("Triangle", cast(object, self))
 
+    @_deprecated_drop_argument("inplace")
     def astype(self, dtype, inplace=True) -> Triangle:
         """
         Copy of the array, cast to a specified type.
@@ -1066,8 +1068,11 @@ class TrianglePandas(_TrianglePandasBase):
         ----------
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
-        copy : bool, optional
-            By default, astype always returns a newly allocated array.
+        inplace : bool, default True
+            Deprecated and scheduled for removal. When False, the cast is
+            applied to a copy and the original Triangle is left untouched.
+            ``DataFrame.astype`` has no ``inplace`` parameter, so this one
+            has no pandas analogue.
 
         Returns
         -------
