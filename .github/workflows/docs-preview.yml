@@ -42,7 +42,7 @@ jobs:
 
       - name: Build every version
         run: |
-          uv run python .github/scripts/build_versioned_docs.py \
+          uv run --extra docs python .github/scripts/build_versioned_docs.py \
             --output docs/_build/versions \
             --version HEAD:dev \
             --all-tags \
