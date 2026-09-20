@@ -44,12 +44,12 @@ def tri(clrd):
 
 
 dev = [
-    cl.Development,
-    cl.ClarkLDF,
-    cl.Trend,
-    cl.IncrementalAdditive,
-    lambda: cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
-    lambda: cl.CaseOutstanding(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
+    [("tri_sel", cl.TriangleSelector("CumPaidLoss")), ("dev", cl.Development())],
+    [("tri_sel", cl.TriangleSelector("CumPaidLoss")), ("dev", cl.ClarkLDF())],
+    [("tri_sel", cl.TriangleSelector("CumPaidLoss")), ("dev", cl.Trend())],
+    [("tri_sel", cl.TriangleSelector("CumPaidLoss")), ("dev", cl.IncrementalAdditive())],
+    [("dev", cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")))],
+    [("dev", cl.CaseOutstanding(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")))],
 ]
 tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
 ibnr = [
@@ -66,6 +66,6 @@ ibnr = [
 def test_pipeline(tri, dev, tail, ibnr):
     X = tri[["CumPaidLoss", "CaseIncurredLoss"]]
     sample_weight = tri["EarnedPremDIR"].latest_diagonal
-    cl.Pipeline(steps=[("dev", dev()), ("tail", tail()), ("ibnr", ibnr())]).fit_predict(
+    cl.Pipeline(steps=[*dev, ("tail", tail()), ("ibnr", ibnr())]).fit_predict(
         X, sample_weight=sample_weight
     ).ibnr_.sum("origin").sum("columns").sum()

@@ -98,7 +98,7 @@ class TriangleIO:
             .to_frame(keepdims=True, origin_as_datetime=True)
             .fillna(0)
         )
-        x = out.reset_index().to_json(orient="split", date_unit="ns")
+        x = out.reset_index().to_json(orient="split", date_unit="ns", date_format="iso")
         json_dict = {"metadata": json.dumps(metadata), "data": x}
         sub_tris = [k for k, v in vars(self).items() if isinstance(v, TriangleIO)]
         json_dict["sub_tris"] = {

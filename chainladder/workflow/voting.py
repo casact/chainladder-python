@@ -508,8 +508,37 @@ class TriangleSelector(
     def __init__(self, col: str):
         self.col = col
 
-    def fit(self, X: Triangle, y: None = None):
+    def fit(self, X: Triangle, y: None = None, sample_weight: None = None):
+        """
+        Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle
+            Set of LDFs to which the Munich adjustment will be applied.
+        y : None
+            Ignored
+        sample_weight : None
+            Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         return self
 
     def transform(self, X: Triangle):
+        """
+        Return a specific column in X
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X[col]
+        """
         return X[[self.col]]
