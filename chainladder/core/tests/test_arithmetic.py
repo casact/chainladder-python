@@ -1,4 +1,6 @@
 from __future__ import annotations
+import operator
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -315,3 +317,76 @@ def test_prep_columns_reindexes_superset(clrd: Triangle) -> None:
             == clrd[["CumPaidLoss", "IncurLoss"]] * 2
         )
         assert result["EarnedPremNet"] == clrd["EarnedPremNet"]
+
+
+def test_comparison_dunders_against_scalar(raa: Triangle) -> None:
+    """
+    All four ordering comparisons against a scalar return a Triangle and agree
+    with the equivalent numpy operation.
+
+    ``__gt__`` and ``__ge__`` were previously undefined, so Python fell back to
+    the reflected integer operators and raised TypeError. See #1391.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    values = np.nan_to_num(raa.set_backend("numpy").values)
+    for op, expected in [
+        (operator.lt, np.less),
+        (operator.le, np.less_equal),
+        (operator.gt, np.greater),
+        (operator.ge, np.greater_equal),
+    ]:
+        result = op(raa, 10000).set_backend("numpy")
+        assert np.array_equal(result.values, expected(values, 10000))
+
+
+def test_le_and_ge_include_the_boundary(raa: Triangle) -> None:
+    """
+    ``__le__`` and ``__ge__`` are inclusive at an exactly equal value.
+
+    ``__le__`` used to be a copy of ``__lt__`` and so excluded the boundary.
+    See #1392.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    boundary = raa.values[0, 0, 0, 0]
+    assert not (raa < boundary).values[0, 0, 0, 0]
+    assert (raa <= boundary).values[0, 0, 0, 0]
+    assert not (raa > boundary).values[0, 0, 0, 0]
+    assert (raa >= boundary).values[0, 0, 0, 0]
+
+
+def test_comparison_dunders_against_triangle(raa: Triangle) -> None:
+    """
+    A Triangle can be compared elementwise against another Triangle.
+
+    The right-hand Triangle used to be handed straight to ``nan_to_num``,
+    which raised TypeError. See #1394.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    assert not (raa < raa).values.any()
+    assert not (raa > raa).values.any()
+    assert (raa <= raa).values.all()
+    assert (raa >= raa).values.all()
