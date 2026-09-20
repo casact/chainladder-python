@@ -37,6 +37,12 @@ SWITCHER_MARKER = "# --- appended by docs/prep_sphinx_conf.py ---"
 # "stable") or, on a pull request build, the pull request number. Anywhere else
 # it is unset and the literal from _config.yml stands, leaving local builds
 # alone.
+#
+# json_url is derived from the same slug so that each build reads the
+# switcher.json it generated itself. The path is root-relative, which resolves
+# both on readthedocs.io and on the org.readthedocs.build domain a pull request
+# preview is served from -- so a preview shows its own menu rather than reading
+# a list published somewhere it cannot see.
 SWITCHER_BLOCK = """
 
 # --- appended by docs/prep_sphinx_conf.py ---
@@ -48,6 +54,7 @@ if _version_match:
         "switcher": {
             **globals().get("html_theme_options", {}).get("switcher", {}),
             "version_match": _version_match,
+            "json_url": f"/{_version_match}/_static/switcher.json",
         },
     }
 """
