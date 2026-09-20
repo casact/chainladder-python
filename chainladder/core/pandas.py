@@ -7,6 +7,7 @@ Mirror pandas API onto the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -1270,7 +1271,18 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         func: Callable = getattr(xp, v)
         kwargs.update({"keepdims": True})
         # Apply the function on the requested axis.
-        obj.values = func(obj.values, axis=axis, *args, **kwargs)
+        if axis in [0, 1] and not obj.is_full:
+            with warnings.catch_warnings():
+                # the lower right half of an undeveloped triangle will always emit an
+                # empty slice warning when aggregating by index or column
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message=".*empty slice.*",
+                )
+                obj.values = func(obj.values, axis=axis, *args, **kwargs)
+        else:
+            obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
         # Aggregation function will collapse a dimension, so
         # adjust the dimensions of the original object to match that of the aggregation.

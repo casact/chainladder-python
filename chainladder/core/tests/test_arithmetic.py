@@ -174,7 +174,7 @@ def test_eq_non_triangle(raa: Triangle) -> None:
 def test_pow_groupby(clrd: Triangle) -> None:
     """__pow__ via TriangleGroupBy path when index keys differ between operands."""
     a = clrd["CumPaidLoss"]
-    result = a ** a.groupby("LOB").sum()
+    result = a ** a.groupby("LOB").sum().fill(2)
     assert result.shape == a.shape
     # x^0 == 1 for every computed cell: predictable value check without overflow
     zeros_gb = (a * 0).groupby("LOB").sum()

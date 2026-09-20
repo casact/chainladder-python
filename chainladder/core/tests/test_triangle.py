@@ -2216,7 +2216,7 @@ def test_latest_diagonal_vs_full_tri_raa(raa):
 
 
 def test_latest_diagonal_vs_full_tri_clrd(clrd):
-    model = cl.Chainladder().fit(clrd)
+    model = cl.Chainladder().fit(clrd.groupby("LOB").sum())
     ult = model.ultimate_
     full_tri = model.full_triangle_
 
