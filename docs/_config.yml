@@ -59,8 +59,9 @@ sphinx:
         - version-switcher.html
         - article-header-buttons.html
       switcher:
-        # Served from the stable build so every version reads one list.
-        json_url: https://chainladder-python.readthedocs.io/stable/_static/switcher.json
+        # One list for every version, served from the main build: it is
+        # rebuilt on every merge, so it always knows the newest release.
+        json_url: https://chainladder-python.readthedocs.io/main/_static/switcher.json
         # version_match cannot be set here, since it comes from the
         # READTHEDOCS_VERSION environment variable. conf.py sets it.
         version_match: dev

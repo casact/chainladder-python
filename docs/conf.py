@@ -66,9 +66,10 @@ html_theme_options = {
         "article-header-buttons.html",
     ],
     "switcher": {
-        # Served from the stable build so every version reads one list.
+        # One list for every version, served from the main build: it is
+        # rebuilt on every merge, so it always knows the newest release.
         "json_url": (
-            "https://chainladder-python.readthedocs.io/stable/_static/switcher.json"
+            "https://chainladder-python.readthedocs.io/main/_static/switcher.json"
         ),
         # Read the Docs names the version being built; "dev" for local builds.
         "version_match": os.environ.get("READTHEDOCS_VERSION", "dev"),

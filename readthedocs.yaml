@@ -9,6 +9,9 @@ build:
     python: "3.11"
   jobs:
     pre_build:
+      # Before conf.py is generated: the menu is a static asset, and only the
+      # main build's copy is read.
+      - "python docs/generate_switcher.py"
       - "jupyter-book config sphinx docs/"
       - "python docs/prep_sphinx_conf.py"
 
