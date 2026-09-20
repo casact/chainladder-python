@@ -64,7 +64,7 @@ class _LocBase:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
         # Set the new dimension values.
         obj._index = obj._index.iloc[i_idx].reset_index(drop=True)
-        obj._columns = obj._columns[c_idx]
+        obj.columns = obj.columns[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         obj.valuation_date = cast(
             pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date)
@@ -878,7 +878,7 @@ class TriangleSlicer:
                 if key not in self.columns:
                     k, v, o, d = self.values.shape
                     self.values.shape = k, v + 1, o, d
-                    self._columns = self.columns.append(pd.Index([key]))
+                    self.columns = self.columns.append(pd.Index([key]))
                 return
             # Create a placeholder column.
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
@@ -929,7 +929,6 @@ class TriangleSlicer:
                 cast(np.ndarray, self.values)[:, i : i + 1] = value
         # Key is new, create a column and update data.
         else:
-            self._columns = self.columns.append(pd.Index([key]))
             if isinstance(value, (int, float, np.number)):
                 # Broadcast scalar across the Triangle's shape.
                 value = self.iloc[:, 0] * 0 + value
@@ -942,6 +941,7 @@ class TriangleSlicer:
                     (self.iloc[:, 0] * 0 + cast("Triangle", value)).values,
                 )
                 self.values = xp.concatenate(conc, axis=1)
+            self.columns = self.columns.append(pd.Index([key]))
 
     def _slice_valuation(self: TriangleProtocol, key: np.ndarray) -> Triangle:
         """

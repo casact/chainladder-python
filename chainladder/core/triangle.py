@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import warnings
 from chainladder.core.base import TriangleBase
+from chainladder.core.axis import TriangleAxis, _set_columns
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
@@ -23,7 +24,7 @@ try:
 except ImportError:
     db = None
 
-from typing import cast, Optional, TYPE_CHECKING
+from typing import Any, cast, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -426,6 +427,12 @@ class Triangle(TriangleBase):
         1982  12000.0
     """
 
+    columns = TriangleAxis(
+        "columns",
+        fset=_set_columns,
+        doc="Represents the value dimension of the triangle.",
+    )
+
     def __init__(
         self,
         data: Optional[DataFrame | DataFrameXchg | dict] = None,
@@ -442,6 +449,7 @@ class Triangle(TriangleBase):
         *args,
         **kwargs,
     ):
+        self._axes: dict[str, Any] = {}
 
         # If data are present, validate the dimensions.
         if data is None:
@@ -556,7 +564,6 @@ class Triangle(TriangleBase):
 
         self._index: DataFrame
         key_idx: np.ndarray
-        self._columns: pd.Index
         self.odims: np.ndarray
         orig_idx: np.ndarray
         self.ddims: ArrayLike
@@ -564,7 +571,7 @@ class Triangle(TriangleBase):
 
         kdims_arr, key_idx = self._set_kdims(data_agg, index)
         self._index = pd.DataFrame(list(kdims_arr), columns=index)
-        self._columns = pd.Index(columns, name="columns")
+        self.columns = columns
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
 
@@ -648,7 +655,7 @@ class Triangle(TriangleBase):
                     sorted=True,
                     shape=(
                         len(self._index),
-                        len(self._columns),
+                        len(self.columns),
                         len(self.odims),
                         len(self.ddims),
                     ),
@@ -725,7 +732,10 @@ class Triangle(TriangleBase):
 
     @index.setter
     def index(self, value) -> None:
-        self._len_check(self.index, value)
+        if hasattr(self, "values") and self.values is not None:
+            self._len_check(range(self.values.shape[0]), value)
+        else:
+            self._len_check(self.index, value)
         if isinstance(value, pd.DataFrame):
             self._index = value.copy().reset_index(drop=True)
             self._set_slicers()
@@ -749,75 +759,18 @@ class Triangle(TriangleBase):
         self._set_slicers()
 
     @property
-    def kdims(self):
-        warnings.warn(
-            "The 'kdims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.index' or 'Triangle.key_labels' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.index.values
+    def _columns(self) -> pd.Index:
+        return self.columns
 
-    @kdims.setter
-    def kdims(self, value):
-        warnings.warn(
-            "The 'kdims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.index' or 'Triangle.key_labels' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        if isinstance(value, str):
-            value = np.array([[value]])
-        elif isinstance(value, list):
-            value = np.array(value)
-        elif not isinstance(value, np.ndarray):
-            value = np.array(value)
-        if value.ndim == 1:
-            value = value.reshape(-1, 1)
-
-        n_cols = value.shape[1] if value.ndim > 1 else 1
-        if len(self._index.columns) == n_cols:
-            cols = list(self._index.columns)
-        elif n_cols == 1:
-            cols = ["Total"]
-        else:
-            cols = [f"key_{i}" for i in range(n_cols)]
-        self._index = pd.DataFrame(value, columns=cols).reset_index(drop=True)
-        self._set_slicers()
-
-    @property
-    def columns(self) -> pd.Index:
-        return self._columns
-
-    @columns.setter
-    def columns(self, value):
+    @_columns.setter
+    def _columns(self, value: Any) -> None:
         if isinstance(value, str):
             value = [value]
-        self._len_check(self.columns, value)
-        self._columns = pd.Index(value, name="columns")
-        self._set_slicers()
-
-    @property
-    def vdims(self):
-        warnings.warn(
-            "The 'vdims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.columns' or 'Triangle.columns_label' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.columns.values
-
-    @vdims.setter
-    def vdims(self, value):
-        warnings.warn(
-            "The 'vdims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.columns' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        if isinstance(value, str):
-            value = [value]
-        self.columns = value
+        if not hasattr(self, "_axes"):
+            self._axes = {}
+        self._axes["columns"] = pd.Index(value, name="columns")
+        if hasattr(self, "virtual_columns"):
+            self._set_slicers()
 
     @property
     def columns_label(self) -> list:
@@ -2114,14 +2067,15 @@ class Triangle(TriangleBase):
         """
         X = object.__new__(self.__class__)
         X.__dict__.update(vars(self))
+        if hasattr(self, "_axes"):
+            X._axes = {k: v.copy() for k, v in self._axes.items()}
         X._set_slicers()
         X.values = X.values.copy()
         X._index = self._index.copy()
-        X._columns = self._columns.copy()
         return X
 
     def __setstate__(self, state: dict) -> None:
-        """Migrate legacy pickled instances with 'kdims'/'_kdims' to '_index' and 'vdims'/'_vdims' to '_columns'."""
+        """Migrate legacy pickled instances with 'kdims'/'_kdims' to '_index' and 'vdims'/'_vdims'/'_columns' to '_axes'."""
         key_labels = state.pop("key_labels", ["Total"])
         if "_index" not in state:
             raw_kdims = state.pop("_kdims", None)
@@ -2131,14 +2085,18 @@ class Triangle(TriangleBase):
                 state["_index"] = pd.DataFrame(list(raw_kdims), columns=key_labels)
             else:
                 state["_index"] = pd.DataFrame([["Total"]], columns=["Total"])
-        if "_columns" not in state:
-            raw_vdims = state.pop("_vdims", None)
-            if raw_vdims is None:
-                raw_vdims = state.pop("vdims", None)
-            if raw_vdims is not None:
-                state["_columns"] = pd.Index(raw_vdims, name="columns")
+        if "_axes" not in state:
+            state["_axes"] = {}
+        if "columns" not in state["_axes"]:
+            raw_cols = state.pop("_columns", None)
+            if raw_cols is None:
+                raw_cols = state.pop("_vdims", None)
+            if raw_cols is None:
+                raw_cols = state.pop("vdims", None)
+            if raw_cols is not None:
+                state["_axes"]["columns"] = pd.Index(raw_cols, name="columns")
             else:
-                state["_columns"] = pd.Index(["values"], name="columns")
+                state["_axes"]["columns"] = pd.Index(["values"], name="columns")
         self.__dict__.update(state)
 
     def development_correlation(self, p_critical=0.5):

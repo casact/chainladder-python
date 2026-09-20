@@ -728,7 +728,7 @@ def concat(
                 np.concatenate([obj.columns for obj in objs]), name="columns"
             )
             assert len(new_axis) == len(set(new_axis))
-        out._columns = new_axis
+        out.columns = new_axis
     elif axis == 2:
         if ignore_index:
             new_axis = np.arange(sum([len(obj.odims) for obj in objs]))

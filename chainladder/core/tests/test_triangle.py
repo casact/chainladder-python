@@ -450,62 +450,19 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
     assert tri.index.equals(original_index)
 
 
-def test_vdims_deprecation_warning(raa):
-    """Accessing or setting vdims should emit a FutureWarning."""
-    with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
-        v = raa.vdims
-    assert np.all(v == raa.columns.values)
+def test_triangle_columns_setter(raa):
+    """Setting Triangle.columns should update columns and slicers, and validate lengths."""
+    tri = raa.copy()
+    tri.columns = ["NewColumn"]
+    assert list(tri.columns) == ["NewColumn"]
+    assert tri["NewColumn"].shape == tri.shape
 
-    raa2 = raa.copy()
-    with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
-        raa2.vdims = ["NewColumn"]
-    assert list(raa2.columns) == ["NewColumn"]
+    tri.columns = "SingleColumn"
+    assert list(tri.columns) == ["SingleColumn"]
+    assert tri["SingleColumn"].shape == tri.shape
 
-    with pytest.warns(FutureWarning, match="'vdims' attribute is deprecated"):
-        raa2.vdims = "SingleColumn"
-    assert list(raa2.columns) == ["SingleColumn"]
-
-    raa2.columns = "DirectColumn"
-    assert list(raa2.columns) == ["DirectColumn"]
-
-
-def test_kdims_deprecation_warning(raa):
-    """Accessing or setting kdims should emit a FutureWarning."""
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        k = raa.kdims
-    assert np.all(k == raa.index.values)
-
-    raa2 = raa.copy()
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        raa2.kdims = np.array([["P2"]])
-    assert list(raa2.index.values) == [["P2"]]
-
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        raa2.kdims = "P_str"
-    assert list(raa2.index.values) == [["P_str"]]
-
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        raa2.kdims = ["P_1d"]
-    assert list(raa2.index.values) == [["P_1d"]]
-
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        raa2.kdims = (["P_tuple"],)
-    assert list(raa2.index.values) == [["P_tuple"]]
-
-    # Setting wider kdims array and follow-up key_labels assignment
-    raa3 = raa.copy()
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        raa3.kdims = np.array([["P2", "CA"]])
-    raa3.key_labels = ["Company", "State"]
-    assert raa3.key_labels == ["Company", "State"]
-    assert list(raa3.index.columns) == ["Company", "State"]
-    indexed = raa3.index.set_index(raa3.key_labels)
-    assert list(indexed.index.names) == ["Company", "State"]
-
-    # Assigning single-col kdims to multi-col triangle resets cols to ['Total']
-    with pytest.warns(FutureWarning, match="'kdims' attribute is deprecated"):
-        raa3.kdims = np.array([["P_single"]])
-    assert list(raa3.index.columns) == ["Total"]
+    with pytest.raises(ValueError, match="Length mismatch"):
+        tri.columns = ["Col1", "Col2"]
 
 
 def test_key_labels_setter(raa):
@@ -537,6 +494,7 @@ def test_legacy_pickle_compatibility(raa):
 
     # 1. Simulate oldest serialized Triangle containing kdims and vdims
     state = raa.__dict__.copy()
+    state.pop("_axes", None)
     state.pop("_index", None)
     state.pop("_columns", None)
     state["kdims"] = raa.index.values
@@ -554,6 +512,7 @@ def test_legacy_pickle_compatibility(raa):
 
     # 2. Simulate intermediate serialized Triangle containing _kdims and _vdims
     state_mid = raa.__dict__.copy()
+    state_mid.pop("_axes", None)
     state_mid.pop("_index", None)
     state_mid.pop("_columns", None)
     state_mid["_kdims"] = raa.index.values
@@ -570,6 +529,7 @@ def test_legacy_pickle_compatibility(raa):
 
     # 3. Simulate fallback when no kdims/vdims keys are found
     state_empty = raa.__dict__.copy()
+    state_empty.pop("_axes", None)
     state_empty.pop("_index", None)
     state_empty.pop("_columns", None)
     state_empty.pop("kdims", None)

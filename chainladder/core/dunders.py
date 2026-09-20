@@ -125,14 +125,13 @@ class TriangleDunders:
 
     def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x._columns = y.columns
+            x._axes["columns"] = y.columns
             x._set_slicers()
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y._columns = x.columns
+            y._axes["columns"] = x.columns
             y._set_slicers()
         elif len(y.columns) == len(x.columns) == 1 and not x.columns.equals(y.columns):
-            y._columns = x.columns
-            y._set_slicers()
+            y.columns = x.columns
         elif x.shape[1] == y.shape[1] and x.columns.equals(y.columns):
             return x, y
         else:
