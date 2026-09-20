@@ -145,6 +145,8 @@ def list_samples(include_grain: bool = True) -> DataFrame:
     """
     List the sample datasets bundled with the chainladder package.
 
+    See :ref:`here <sample_data:sample_data>` for the full list.
+
     The returned table is driven by the sample-dataset manifest
     (``chainladder/utils/data/_manifest.py``), the same source
     :func:`load_sample` reads, so it always reflects exactly what is loadable.
@@ -973,7 +975,7 @@ class PatsyFormula(BaseEstimator, TransformerMixin):
 def model_diagnostics(
     model: Triangle | MethodBase | Pipeline,
     name: str | None = None,
-    groupby: str | list(str) | None = None,
+    groupby: str | list[str] | None = None,
 ) -> Triangle:
     """
     A helper function that summarizes various vectors of an
