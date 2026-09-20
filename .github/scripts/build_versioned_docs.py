@@ -298,6 +298,9 @@ def main() -> int:
         for ref, _, name in (v.partition(":") for v in args.versions)
         for name in [name or ref]
     ]
+    # A version named with --version was asked for by name; a tag was swept up
+    # by --all-tags. The two are worth different exit codes, see below.
+    requested = {name for _, name in versions}
     if args.all_tags:
         tags = deployable_tags()
         versions += (
@@ -347,6 +350,17 @@ def main() -> int:
     print(f"\nBuilt {len(built)}/{len(versions)} versions into {output}")
     if failed:
         print(f"Failed: {', '.join(sorted(failed))}")
+
+    # An old tag that will not rebuild is tolerated: its docs predate the
+    # switcher, and leaving it out of the menu is the documented behaviour.
+    # Failing a version that was named explicitly, or building nothing at all,
+    # is not: it would otherwise publish an empty site under a green check.
+    if not built:
+        print("Nothing was built.")
+        return 1
+    if missing := sorted(requested.intersection(failed)):
+        print(f"Requested version(s) failed: {', '.join(missing)}")
+        return 1
     return 0
 
 

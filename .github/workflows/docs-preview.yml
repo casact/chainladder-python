@@ -3,13 +3,18 @@ name: docs-preview
 # Builds the documentation for several versions into one site, so the version
 # switcher can be reviewed with links that actually resolve.
 #
-# On a pull request the site is uploaded as an artifact: download it, unzip it,
-# and serve the folder (`python -m http.server`) to click through it. Serving
-# over HTTP is required, since the switcher fetches switcher.json, which
-# browsers block from file:// URLs.
+# Every run publishes the site to GitHub Pages, pull requests included, so the
+# newest run is what https://casact.github.io/chainladder-python/ serves. Only
+# one site exists, so each run overwrites the one before it.
 #
-# The `pages` job publishes the same site to GitHub Pages. It is gated behind a
-# manual run so that opening a pull request never publishes anything.
+# The site is also uploaded as an artifact. To read it locally, unzip it into a
+# folder named chainladder-python/ and serve that folder's parent
+# (`python -m http.server`): the switcher's links are prefixed with the project
+# path Pages serves the site under. Serving over HTTP is required either way,
+# since the switcher fetches switcher.json, which browsers block from file://.
+#
+# Note that a pull request from a fork cannot publish: GitHub issues fork runs a
+# read-only token, so the deploy step fails however this workflow is written.
 
 on:
   pull_request:
@@ -18,11 +23,6 @@ on:
       - ".github/scripts/build_versioned_docs.py"
       - ".github/workflows/docs-preview.yml"
   workflow_dispatch:
-    inputs:
-      publish:
-        description: "Publish the built site to GitHub Pages"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -42,13 +42,13 @@ jobs:
 
       - name: Build every version
         run: |
-          uv run python .github/scripts/build_versioned_docs.py \
+          uv run --extra docs python .github/scripts/build_versioned_docs.py \
             --output docs/_build/versions \
             --version HEAD:dev \
             --all-tags \
             --minor-only \
             --jobs 4 \
-            --base-url "${{ inputs.publish && format('/{0}', github.event.repository.name) || '' }}"
+            --base-url "/${{ github.event.repository.name }}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -57,14 +57,17 @@ jobs:
           retention-days: 14
 
       - uses: actions/upload-pages-artifact@v3
-        if: inputs.publish
         with:
           path: docs/_build/versions
 
   pages:
     needs: build
-    if: inputs.publish
     runs-on: ubuntu-latest
+    # One site, many pull requests: let a deploy finish rather than cancelling
+    # it, or a half-written site is what readers get.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
