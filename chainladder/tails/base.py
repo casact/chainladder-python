@@ -165,7 +165,7 @@ class TailBase(DevelopmentBase):
             tail_data = tail.data
             valid_tail = tail_data[tail_data > 1]
             smallest_valid_tail = np.nanmin(valid_tail)
-        elif:
+        else:
             valid_tail = tail[tail > 1]
             smallest_valid_tail = xp.nanmin(valid_tail)
         tail = xp.maximum(tail, [[[[smallest_valid_tail]]]])
