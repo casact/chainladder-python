@@ -32,6 +32,10 @@ html:
   use_repository_button: true
 
 sphinx:
+  # Merge the config below into jupyter-book's generated settings rather than
+  # replacing them, so html_theme_options keeps the repository and launch
+  # buttons jupyter-book derives from the sections above.
+  recursive_update: true
   extra_extensions:
     - sphinx.ext.autodoc
     - sphinx.ext.autosummary
@@ -45,6 +49,21 @@ sphinx:
   config:
     autosummary_generate: True
     templates_path: ['_templates']
+    html_static_path: ['_static']
+    html_css_files: ['custom.css']
+    html_theme_options:
+      # Put the version picker in the top article header, beside the download
+      # and fullscreen buttons, instead of leaving it to Read the Docs' own
+      # flyout in the lower right corner.
+      article_header_end:
+        - version-switcher.html
+        - article-header-buttons.html
+      switcher:
+        # Served from the stable build so every version reads one list.
+        json_url: https://chainladder-python.readthedocs.io/stable/_static/switcher.json
+        # version_match cannot be set here, since it comes from the
+        # READTHEDOCS_VERSION environment variable. conf.py sets it.
+        version_match: dev
     numpydoc_show_class_members: False
     bibtex_reference_style: author_year
     intersphinx_mapping:
