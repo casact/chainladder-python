@@ -161,19 +161,13 @@ class TailBase(DevelopmentBase):
             self.ldf_.values[..., -self._ave_period[0] - 1 :], -1, keepdims=True
         )
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
-        if X.ldf_.array_backend == "sparse":
-            tail_data = tail.data
-            valid_tail = tail_data[tail_data > 1]
-            if valid_tail.size > 0:
-                smallest_valid_tail = np.nanmin(valid_tail)
-            else:
-                smallest_valid_tail = 1.001
+        # theoretically, this slicing doesn't work on sparse. however, no sparse
+        # tail ever reaches here because ldf_ is always numpy
+        valid_tail = tail[tail > 1]
+        if valid_tail.size > 0:
+            smallest_valid_tail = xp.nanmin(valid_tail)
         else:
-            valid_tail = tail[tail > 1]
-            if valid_tail.size > 0:
-                smallest_valid_tail = xp.nanmin(valid_tail)
-            else:
-                smallest_valid_tail = 1.001
+            smallest_valid_tail = 1.001
         tail = xp.maximum(tail, [[[[smallest_valid_tail]]]])
         time_pd = (xp.log(tail - 1) - reg.intercept_) / reg.slope_
         return time_pd
