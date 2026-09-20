@@ -1115,10 +1115,17 @@ class TrianglePandas(_TrianglePandasBase):
         -------
         Triangle
         """
+        inplace = kwargs.pop("inplace", False)
         sorted_index: DataFrame = cast(
-            "DataFrame", self.index.sort_values(self.key_labels, *args, **kwargs)
+            "DataFrame",
+            self.index.copy().sort_values(self.key_labels, *args, **kwargs),
         )
-        return self.iloc[sorted_index.index]
+        result = self.iloc[sorted_index.index]
+        if inplace:
+            self.values = result.values
+            self.index = result.index
+            return self
+        return result
 
     def exp(self) -> Triangle:
         """

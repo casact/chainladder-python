@@ -3456,3 +3456,12 @@ def test_triangle_index_setter_resets_row_index(raa) -> None:
     mask = raa1.index["Total"] == "Total"
     sliced = raa1[mask]
     assert sliced == raa1
+
+
+def test_sort_index_inplace(clrd: Triangle) -> None:
+    """sort_index with inplace=True updates values and index in sync without crashing."""
+    shuffled = clrd.iloc[::-1].copy()
+    result = shuffled.sort_index(inplace=True)
+    assert result is shuffled
+    pd.testing.assert_frame_equal(shuffled.index, clrd.index)
+    assert shuffled == clrd
