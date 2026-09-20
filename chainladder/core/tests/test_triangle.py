@@ -1342,9 +1342,13 @@ def test_astype(raa: Triangle) -> None:
     assert raa.astype("float32").values.dtype == np.float32
 
 
-def test_astype_inplace_deprecated(raa: Triangle) -> None:
+def test_astype_documented_migration_is_drop_safe(raa: Triangle) -> None:
     """
-    The inplace parameter of astype is deprecated and warns when supplied.
+    The migration shown in the astype deprecation note gives the same result
+    before and after ``inplace`` is removed.
+
+    Copying first and using the return value leaves the original untouched
+    either way, which is what makes the advice safe to follow now. See #1063.
 
     Parameters
     ----------
@@ -1355,21 +1359,26 @@ def test_astype_inplace_deprecated(raa: Triangle) -> None:
     -------
     None
     """
-    # inplace=False casts a copy and leaves the original untouched
-    with pytest.warns(FutureWarning, match="inplace"):
-        cast = raa.astype("float32", inplace=False)
-    assert cast.values.dtype == np.float32
-    assert raa.values.dtype == np.float64
 
-    # inplace=True is the current default, and mutates the triangle in place
-    with pytest.warns(FutureWarning, match="inplace"):
-        assert raa.astype("float32", inplace=True).values.dtype == np.float32
-    assert raa.values.dtype == np.float32
+    def migrate(triangle, **kwargs):
+        out = triangle.copy()
+        return out.astype("float32", **kwargs)
 
-    # omitting the parameter is the supported spelling and must stay quiet
+    # today, with inplace defaulting to True and no warning raised
+    today_src = raa.copy()
     with warnings.catch_warnings():
         warnings.simplefilter("error", FutureWarning)
-        assert raa.astype("float64").values.dtype == np.float64
+        today = migrate(today_src)
+
+    # post-removal semantics, where astype always returns a new Triangle
+    future_src = raa.copy()
+    with pytest.warns(FutureWarning, match="inplace"):
+        future = migrate(future_src, inplace=False)
+
+    assert today.values.dtype == np.float32
+    assert future.values.dtype == np.float32
+    assert today_src.values.dtype == np.float64
+    assert future_src.values.dtype == np.float64
 
 
 def test_head(clrd: Triangle) -> None:
