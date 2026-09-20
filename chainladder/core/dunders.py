@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import operator
+
 import numpy as np
 import pandas as pd
 
@@ -575,14 +577,50 @@ class TriangleDunders:
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None
 
-    def __lt__(self, value):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
+    def _compare(self, value, op):
+        """
+        Compare the Triangle elementwise against a scalar, array or Triangle.
+
+        Missing values are treated as zero on both sides, which is the
+        behaviour ``__lt__`` has always had.
+
+        Parameters
+        ----------
+        value:
+            The right-hand operand. A Triangle is reduced to its values,
+            after moving both operands onto a common array backend.
+        op: Callable
+            A binary operator from the ``operator`` module.
+
+        Returns
+        -------
+        Triangle of bool
+        """
+        left = self
+        if isinstance(value, TriangleDunders):
+            from chainladder import options
+
+            backend = options.ARRAY_PRIORITY[
+                min([
+                    options.ARRAY_PRIORITY.index(x)
+                    for x in [self.array_backend, value.array_backend]
+                ])
+            ]
+            left = self.set_backend(backend)
+            value = value.set_backend(backend).values
+        obj = left.copy()
+        xp = obj.get_array_module()
+        obj.values = op(xp.nan_to_num(obj.values), xp.nan_to_num(value))
         return obj
 
+    def __lt__(self, value):
+        return self._compare(value, operator.lt)
+
     def __le__(self, value):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
-        return obj
+        return self._compare(value, operator.le)
+
+    def __gt__(self, value):
+        return self._compare(value, operator.gt)
+
+    def __ge__(self, value):
+        return self._compare(value, operator.ge)
