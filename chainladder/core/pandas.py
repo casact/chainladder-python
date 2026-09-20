@@ -1077,7 +1077,9 @@ class TrianglePandas(_TrianglePandasBase):
             ``inplace`` parameter. Because ``inplace`` currently defaults to
             ``True``, that is a change of behaviour for callers who rely on the
             default. Copy first and use the return value, which behaves the
-            same before and after the removal::
+            same before and after the removal:
+
+            .. code-block:: python
 
                 tri = tri.copy()
                 tri = tri.astype(new_dtype)
