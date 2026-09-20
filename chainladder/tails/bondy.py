@@ -9,7 +9,8 @@ from chainladder.development import Development
 
 
 class TailBondy(TailBase):
-    """Estimator for the Generalized Bondy tail factor.
+    """
+    Estimator for the Generalized Bondy tail factor.
 
     .. versionadded:: 0.6.0
 
@@ -121,7 +122,8 @@ class TailBondy(TailBase):
         self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -207,7 +209,8 @@ class TailBondy(TailBase):
         return self
 
     def transform(self, X):
-        """Transform X.
+        """
+        Transform X.
 
         Parameters
         ----------

@@ -15,7 +15,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class ClarkLDF(DevelopmentBase):
-    """An Estimator that allows for curve fitting development patterns according
+    """
+    An Estimator that allows for curve fitting development patterns according
     to Clark 2003.
 
     The method fits incremental triangle amounts to one of
@@ -165,7 +166,8 @@ class ClarkLDF(DevelopmentBase):
         self.groupby = groupby
 
     def _G(self, age, theta: float = None, omega: float = None):  # noqa: N802
-        """Growth function.
+        """
+        Growth function.
 
         Parameters
         ----------
@@ -217,7 +219,8 @@ class ClarkLDF(DevelopmentBase):
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -355,7 +358,8 @@ class ClarkLDF(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

@@ -7,7 +7,8 @@ from chainladder.methods import Benktander
 
 
 class CapeCod(Benktander):
-    """Applies the CapeCod technique to triangle **X**
+    """
+    Applies the CapeCod technique to triangle **X**
 
     Parameters
     ----------
@@ -194,7 +195,8 @@ class CapeCod(Benktander):
         self.groupby = groupby
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -271,7 +273,8 @@ class CapeCod(Benktander):
         return self._set_ult_attr(apriori_), self._set_ult_attr(detrended_apriori_)
 
     def predict(self, X, sample_weight=None):
-        """Predicts the CapeCod ultimate on a new triangle **X**
+        """
+        Predicts the CapeCod ultimate on a new triangle **X**
 
         Parameters
         ----------

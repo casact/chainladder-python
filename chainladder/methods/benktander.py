@@ -6,7 +6,8 @@ import numpy as np
 
 
 class Benktander(MethodBase):
-    """The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
+    """
+    The Benktander (or iterated Bornhuetter-Ferguson) IBNR model
 
     Parameters
     ----------
@@ -141,7 +142,8 @@ class Benktander(MethodBase):
         self.random_state = random_state
 
     def fit(self, X, y=None, sample_weight=None):
-        """Applies the Benktander technique to triangle **X**
+        """
+        Applies the Benktander technique to triangle **X**
 
         Parameters
         ----------
@@ -201,7 +203,8 @@ class Benktander(MethodBase):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the Benktander ultimate on a new triangle **X**
+        """
+        Predicts the Benktander ultimate on a new triangle **X**
 
         Parameters
         ----------

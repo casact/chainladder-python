@@ -1,6 +1,13 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
 import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 def test_grain(qtr):
@@ -94,60 +101,9 @@ def test_annual_trailing(prism):
     assert np.all(tri.development[:4] == np.array([12, 24, 36, 48]))
 
 
-def test_development_age():
-    assert (
-        cl.load_sample("raa").development == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
-    ).all()
+def test_development_age(raa: Triangle) -> None:
+    assert (raa.development == list(range(12, 121, 12))).all()
 
 
-def test_development_age_quarterly():
-    assert (
-        cl.load_sample("quarterly").development
-        == [
-            3,
-            6,
-            9,
-            12,
-            15,
-            18,
-            21,
-            24,
-            27,
-            30,
-            33,
-            36,
-            39,
-            42,
-            45,
-            48,
-            51,
-            54,
-            57,
-            60,
-            63,
-            66,
-            69,
-            72,
-            75,
-            78,
-            81,
-            84,
-            87,
-            90,
-            93,
-            96,
-            99,
-            102,
-            105,
-            108,
-            111,
-            114,
-            117,
-            120,
-            123,
-            126,
-            129,
-            132,
-            135,
-        ]
-    ).all()
+def test_development_age_quarterly(qtr: Triangle) -> None:
+    assert (qtr.development == list(range(3, 136, 3))).all()

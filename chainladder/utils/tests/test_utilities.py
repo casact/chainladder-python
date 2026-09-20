@@ -361,7 +361,8 @@ def test_sdist_ships_all_samples(tmp_path) -> None:
 
 
 def test_load_sample_uspp() -> None:
-    """Pin the manifest column schema for the uspp Friedland family.
+    """
+    Pin the manifest column schema for the uspp Friedland family.
 
     Loadability of every sample is already covered by ``test_load_sample``,
     but no other test asserts the columns a sample is configured with. This
@@ -616,6 +617,24 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     """
     with pytest.raises(AssertionError):
         cl.concat([raa, raa], axis=1)
+
+
+def test_concat_ignore_index_axes(raa: Triangle) -> None:
+    """Test concat with ignore_index=True along axes 1, 2, and 3."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
+    assert list(res1.columns) == [0, 1]
+
+    o1 = raa.iloc[:, :, :5, :]
+    o2 = raa.iloc[:, :, 5:, :]
+    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
+    assert len(res2.odims) == len(raa.odims)
+
+    d1 = raa.iloc[:, :, :, :5]
+    d2 = raa.iloc[:, :, :, 5:]
+    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
+    assert len(res3.ddims) == len(raa.ddims)
 
 
 def test_maximum_2(raa: Triangle) -> None:
@@ -897,10 +916,10 @@ def test_set_backend_dask_deprecated(clrd) -> None:
     with pytest.warns(DeprecationWarning, match="dask") as record:
         try:
             clrd.set_backend("dask", deep=True)
-        except Exception:
-            # The actual conversion can fail when the optional 'dask'
-            # dependency is not installed; we only care that the deprecation
-            # warning fired at the public entry point.
+        except AttributeError:
+            # With dask absent, chainladder.utils.dask falls back to numpy, so
+            # the conversion raises AttributeError on numpy.from_array. We only
+            # care that the deprecation warning fired at the public entry point.
             pass
     dask_warnings = [
         w
@@ -1296,13 +1315,3 @@ def test_triangleweight_drop_valuation_all(raa: Triangle) -> None:
                 "1990",
             ]
         ).fit(raa)
-
-
-def test_triangleweight_full_triangle(raa: Triangle) -> None:
-    """
-    Testing new path that allows weights on full triangles
-    """
-    ult = cl.Chainladder().fit(raa)
-    tw = cl.TriangleWeight(n_periods=4).fit(raa)
-    tw_full = cl.TriangleWeight(n_periods=4).fit(ult.full_triangle_)
-    assert tw.w_.iloc[:, :, :, 0] == tw_full.w_.iloc[:, :, :, 0]

@@ -6,7 +6,8 @@ from chainladder.development.clark import ClarkLDF
 
 
 class TailClark(TailBase):
-    """Allows for extraploation of LDFs to form a tail factor.
+    """
+    Allows for extraploation of LDFs to form a tail factor.
 
     .. versionadded:: 0.6.4
 
@@ -125,7 +126,8 @@ class TailClark(TailBase):
         self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -156,7 +158,7 @@ class TailClark(TailBase):
                 fitted.values[..., :-1] / fitted.values[..., 1:],
                 fitted.values[..., -1:],
             ),
-            -1,
+            axis=-1,
         )
         fitted = xp.repeat(fitted, self.ldf_.values.shape[2], 2)
         attachment_age = self.attachment_age if self.attachment_age else X._ddims[-2]
@@ -186,7 +188,8 @@ class TailClark(TailBase):
         return self
 
     def transform(self, X):
-        """Transform X.
+        """
+        Transform X.
 
         Parameters
         ----------

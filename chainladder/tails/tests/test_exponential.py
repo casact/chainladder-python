@@ -1,14 +1,22 @@
+from __future__ import annotations
+
 import chainladder as cl
 import pytest
 
+from typing import TYPE_CHECKING
 
-def test_fit_period():
-    tri = cl.load_sample("tail_sample")
-    dev = cl.Development(average="simple").fit_transform(tri)
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
+
+def test_fit_period(tail_sample: Triangle) -> None:
+    dev = cl.Development(average="simple").fit_transform(tail_sample)
     assert (
         round(
             cl
-            .TailCurve(fit_period=(tri.development.iloc[-7], None), extrap_periods=10)
+            .TailCurve(
+                fit_period=(tail_sample.development.iloc[-7], None), extrap_periods=10
+            )
             .fit(dev)
             .cdf_["paid"]
             .set_backend("numpy", inplace=True)
@@ -19,20 +27,18 @@ def test_fit_period():
     )
 
 
-def test_curve_validation():
+def test_curve_validation(tail_sample: Triangle) -> None:
     """
     Test validation of the curve parameter. Should raise a value error if an incorrect argument is supplied.
     """
 
     with pytest.raises(ValueError):
-        tri = cl.load_sample("tail_sample")
-        cl.TailCurve(curve="Exponential").fit_transform(tri)
+        cl.TailCurve(curve="Exponential").fit_transform(tail_sample)
 
 
-def test_errors_validation():
+def test_errors_validation(tail_sample: Triangle) -> None:
     """
     Test validation of the errors parameter. Should raise a value error if an incorrect argument is supplied.
     """
     with pytest.raises(ValueError):
-        tri = cl.load_sample("tail_sample")
-        cl.TailCurve(errors="Ignore").fit_transform(tri)
+        cl.TailCurve(errors="Ignore").fit_transform(tail_sample)
