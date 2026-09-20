@@ -271,9 +271,7 @@ class Benktander(MethodBase):
             apriori = random_state.lognormal(mu_log, sigma_log, X.shape[0])
             apriori = apriori.reshape(X.shape[0], -1)[..., None, None]
             apriori = sample_weight * apriori
-            apriori._index = X.index.copy()
-            apriori.key_labels = list(X.key_labels)
-            apriori._set_slicers()
+            apriori.index = X.index.copy()
         else:
             apriori = sample_weight * self.apriori
         apriori.columns = sample_weight.columns
