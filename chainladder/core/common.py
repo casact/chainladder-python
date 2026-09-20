@@ -89,7 +89,8 @@ class Common:
 
     @property
     def cdf_(self):
-        """Cumulative development factors, ``ldf_`` converted with ``incr_to_cum``.
+        """
+        Cumulative development factors, ``ldf_`` converted with ``incr_to_cum``.
 
         Examples
         --------
@@ -117,7 +118,8 @@ class Common:
 
     @property
     def pct_reported_(self):
-        """Percentage of ultimate reported (or paid) at each development age,
+        """
+        Percentage of ultimate reported (or paid) at each development age,
         equal to the inverse of the cumulative development factor.
 
         Examples
@@ -146,8 +148,10 @@ class Common:
 
     @property
     def pct_unreported_(self):
-        """Percentage of ultimate still unreported (or unpaid) at each
-        development age, equal to ``1 - 1 / cdf_``."""
+        """
+        Percentage of ultimate still unreported (or unpaid) at each
+        development age, equal to ``1 - 1 / cdf_``.
+        """
         if not self.has_ldf:
             x = self.__class__.__name__
             raise AttributeError(
@@ -164,7 +168,8 @@ class Common:
 
     @property
     def ibnr_(self):
-        """Outstanding development to ultimate: ``ultimate_`` minus the latest
+        """
+        Outstanding development to ultimate: ``ultimate_`` minus the latest
         diagonal (or the origin total, for incremental triangles).
 
         Examples
@@ -227,7 +232,8 @@ class Common:
         return _get_full_triangle(X, self.ultimate_, X.is_cumulative)
 
     def pipe(self, func, *args, **kwargs):
-        """Apply ``func(self, *args, **kwargs)``.
+        """
+        Apply ``func(self, *args, **kwargs)``.
 
         Parameters
         ----------

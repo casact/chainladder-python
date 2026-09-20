@@ -625,11 +625,10 @@ def test_valdev3(qtr):
     assert a == b
 
 
-# def test_valdev4():
-#    # Does not work with pandas 0.23, consider requiring only pandas>=0.24
-#    raa = raa
-#    np.testing.assert_array_equal(raa.dev_to_val()[raa.dev_to_val().development>='1989'].values,
-#        raa[raa.valuation>='1989'].dev_to_val().values)
+def test_valdev4(raa: Triangle) -> None:
+    lhs = raa.dev_to_val()[raa.dev_to_val().development >= "1989"].values.flatten()
+    rhs = raa[raa.valuation >= "1989"].dev_to_val().values.flatten()
+    np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
 def test_valdev5(raa):
@@ -842,7 +841,8 @@ def test_drop_origin_period_label(origin_tri):
 
 
 def test_drop_origin_single_dev_period(raa):
-    """Dropping an origin from a triangle with a single development period
+    """
+    Dropping an origin from a triangle with a single development period
     should skip the dev-trimming logic (``if result.shape[-1] > 1``).
     """
     single_dev = raa[raa.development == 12]
@@ -1786,9 +1786,11 @@ def _ffill_source_triangle():
 
 
 def test_ffill_development_axis() -> None:
-    """Interior NaNs fill forward from the last valid value; a leading NaN
+    """
+    Interior NaNs fill forward from the last valid value; a leading NaN
     (1986 at age 12) and not-yet-valued cells (1986 at 48, 1987 at 36/48)
-    stay NaN - ffill never writes into a cell that hasn't been valued yet."""
+    stay NaN - ffill never writes into a cell that hasn't been valued yet.
+    """
     tri = _ffill_source_triangle()
     frame = tri.ffill().to_frame(origin_as_datetime=False)
     assert frame.loc["1985", 24] == 500.0
@@ -1822,8 +1824,10 @@ def test_ffill_does_not_mutate_original() -> None:
 
 
 def test_ffill_zero_input_is_missing_and_fills() -> None:
-    """A 0 in the input becomes NaN on construction (the package treats 0 as
-    missing everywhere), so ffill carries it forward like any other gap."""
+    """
+    A 0 in the input becomes NaN on construction (the package treats 0 as
+    missing everywhere), so ffill carries it forward like any other gap.
+    """
     df = pd.DataFrame({
         "origin": [1985, 1985, 1985, 1986, 1986],
         "development": [1985, 1986, 1987, 1986, 1987],
@@ -2328,6 +2332,17 @@ def test_halfyear_development():
             cumulative=True,
         ),
         cl.Triangle,
+    )
+
+
+def test_latest_diagonal_single_origin_ddim_label(raa):
+    # GH#1358: latest_diagonal labels its development column with the latest
+    # valuation date, except with one origin period, where the selection
+    # already has a single ddim so nothing collapses and the development age
+    # survives instead.
+    one = raa[raa.origin == raa.origin[0]]
+    assert list(one.latest_diagonal.development) == list(
+        raa.latest_diagonal.development
     )
 
 
@@ -2955,8 +2970,10 @@ def test_set_development_no_development_column() -> None:
 
 
 def test_set_development_age_in_months() -> None:
-    """Development given as an age in months (not a date) resolves to the
-    valuation date that many months after the origin's period start."""
+    """
+    Development given as an age in months (not a date) resolves to the
+    valuation date that many months after the origin's period start.
+    """
     df = pd.DataFrame({
         "origin": [1995, 1996],
         "development": [12, 24],
@@ -2976,8 +2993,10 @@ def test_set_development_age_in_months() -> None:
 
 
 def test_set_development_age_respects_mid_period_origin() -> None:
-    """Age is relative to the start of the origin's own period, not the
-    literal recorded origin date."""
+    """
+    Age is relative to the start of the origin's own period, not the
+    literal recorded origin date.
+    """
     df = pd.DataFrame({
         "origin": ["2018-06-15", "2018-06-15"],
         "development": [12, 24],
@@ -2994,8 +3013,10 @@ def test_set_development_age_respects_mid_period_origin() -> None:
 
 
 def test_set_development_age_semiannual_origin() -> None:
-    """Age works when the origin grain is semiannual, using the calendar
-    (Jan/Jul) anchor to place the valuation date."""
+    """
+    Age works when the origin grain is semiannual, using the calendar
+    (Jan/Jul) anchor to place the valuation date.
+    """
     df = pd.DataFrame({
         "origin": ["2017-01-01", "2017-01-01", "2017-07-01", "2018-01-01"],
         "development": [6, 12, 6, 6],
@@ -3016,8 +3037,10 @@ def test_set_development_age_semiannual_origin() -> None:
 
 
 def test_set_development_age_non_calendar_semiannual_raises() -> None:
-    """A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
-    native pandas period, so an age can't be placed - raise clearly."""
+    """
+    A semiannual origin grain that isn't calendar-anchored (Jan/Jul) has no
+    native pandas period, so an age can't be placed - raise clearly.
+    """
     df = pd.DataFrame({
         "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
         "development": [6, 12, 6],
@@ -3034,9 +3057,11 @@ def test_set_development_age_non_calendar_semiannual_raises() -> None:
 
 
 def test_set_development_bare_years_unaffected_by_age_support() -> None:
-    """A development column that is genuinely a bare calendar year (e.g. the
+    """
+    A development column that is genuinely a bare calendar year (e.g. the
     literal year 1970) must still parse as a date, not get reinterpreted as
-    an age."""
+    an age.
+    """
     df = pd.DataFrame({
         "origin": [1969, 1970],
         "development": [1970, 1970],
@@ -3369,6 +3394,73 @@ def test_cum_zeta_returns_incr_to_cum(atol) -> None:
         [0.888447, 0.645235, 0.423275, 0.269296, 0.127443, 0.036770],
         atol=atol,
     )
+
+
+def test_latest_diagonal_single_origin_returns_triangle(raa: Triangle) -> None:
+    """
+    latest_diagonal returns a Triangle when the Triangle has one origin period.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    one = raa[raa.origin == raa.origin[0]]
+
+    assert isinstance(one.latest_diagonal, cl.Triangle)
+    assert one.latest_diagonal.shape == (1, 1, 1, 1)
+
+
+def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
+    """
+    Chainladder fits and predicts on a Triangle with one origin period.
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+    atol : float
+        Absolute tolerance fixture.
+
+    Returns
+    -------
+    None
+    """
+    one = raa[raa.origin == raa.origin[0]]
+    expected = cl.Chainladder().fit(raa).ultimate_.values[0, 0, 0, 0]
+
+    fitted = cl.Chainladder().fit(cl.Development().fit_transform(one))
+    np.testing.assert_allclose(fitted.ultimate_.values.flatten(), [expected], atol=atol)
+
+    predicted = cl.Chainladder().fit(raa).predict(one)
+    np.testing.assert_allclose(
+        predicted.ultimate_.values.flatten(), [expected], atol=atol
+    )
+
+
+def test_fill(clrd: Triangle) -> None:
+    """
+    ``Fill`` method works as intended
+    """
+    fill_tri = clrd.iloc[2:4, 4:6].fill(100)
+    # (10 + 1) * 10 / 2 is the number of valid values in one single triangle
+    # multiplied by 2 index values and 2 column values
+    assert np.nansum(fill_tri.values) == 100 * (10 + 1) * 10 / 2 * 2 * 2
+    assert np.nanmax(fill_tri.values) == 100
+    assert np.nanmin(fill_tri.values) == 100
+
+
+def test_full_fill(raa: Triangle) -> None:
+    """
+    ``Fill`` method works as intended on full triangle
+    """
+    full_tri = cl.Chainladder().fit(raa).full_triangle_
+    fill_full_tri = full_tri.fill(200)
+    assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
 
 
 def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:

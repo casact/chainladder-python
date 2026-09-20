@@ -16,7 +16,7 @@ from chainladder.utils.utility_functions import (
     num_to_value,
     to_period,
 )
-from chainladder import options, _warn_dask_parallel_deprecated
+from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
 
 try:
     import dask.bag as db
@@ -115,10 +115,6 @@ class Triangle(TriangleBase):
         Displays actual disposal rates by origin and development; must have ``ultimate_``
     valuation_date : date
         The latest valuation date of the data
-    loc: Triangle
-        pandas-style ``loc`` accessor
-    iloc: Triangle
-        pandas-style ``iloc`` accessor
     latest_diagonal: Triangle
         The latest diagonal of the triangle
     is_cumulative: bool
@@ -686,7 +682,8 @@ class Triangle(TriangleBase):
     def _split_ult(
         data: DataFrame, index: list, columns: list, origin: list, development: list
     ) -> tuple[DataFrame, Triangle]:
-        """Split ultimate valuation rows from long-format triangle data.
+        """
+        Split ultimate valuation rows from long-format triangle data.
 
         Ultimate rows are those where the development column equals
         ``options.ULT_VAL``. This supports round-tripping triangles exported
@@ -1246,7 +1243,18 @@ class Triangle(TriangleBase):
             2012   9650.0
             2013   6283.0
         """
-        return self[self.valuation == self.valuation_date].sum(axis="development")
+        obj = self[self.valuation == self.valuation_date].sum(
+            axis="development", keepdims=True
+        )
+        # The aggregation only relabels when it actually collapsed several
+        # development columns. With a single origin period the selection is
+        # already one column wide, so the development age would survive; the
+        # column is the latest valuation either way, so say so here rather
+        # than widening the shared rule for every development aggregation.
+        obj.ddims = pd.DatetimeIndex(
+            [self.valuation_date], dtype=__dt64_dtype__, freq=None
+        )
+        return obj
 
     @property
     def link_ratio(self) -> Triangle:
@@ -1362,7 +1370,8 @@ class Triangle(TriangleBase):
         return obj
 
     def incr_to_cum(self, inplace=False):
-        """Method to convert an incremental triangle into a cumulative triangle.
+        """
+        Method to convert an incremental triangle into a cumulative triangle.
 
         Parameters
         ----------
@@ -1490,7 +1499,8 @@ class Triangle(TriangleBase):
             return new_obj.incr_to_cum(inplace=True)
 
     def cum_to_incr(self, inplace=False):
-        """Method to convert an cumlative triangle into a incremental triangle.
+        """
+        Method to convert an cumlative triangle into a incremental triangle.
 
         Parameters
         ----------
@@ -1591,7 +1601,8 @@ class Triangle(TriangleBase):
         return obj
 
     def dev_to_val(self, inplace=False):
-        """Converts triangle from a development lag triangle to a valuation
+        """
+        Converts triangle from a development lag triangle to a valuation
         triangle.
 
         Parameters
@@ -1676,7 +1687,8 @@ class Triangle(TriangleBase):
         return obj
 
     def val_to_dev(self, inplace=False):
-        """Converts triangle from a valuation triangle to a development lag
+        """
+        Converts triangle from a valuation triangle to a development lag
         triangle.
 
         Parameters
@@ -1741,7 +1753,8 @@ class Triangle(TriangleBase):
         return obj
 
     def grain(self, grain="", trailing=False, inplace=False):
-        """Changes the grain of a cumulative triangle.
+        """
+        Changes the grain of a cumulative triangle.
 
         Parameters
         ----------
@@ -1965,7 +1978,8 @@ class Triangle(TriangleBase):
         ultimate_lag=None,
         **kwargs,
     ):
-        """Allows for the trending of a Triangle object along either a valuation
+        """
+        Allows for the trending of a Triangle object along either a valuation
         or origin axis.  This method trends using days and assumes a years is
         365.25 days long.
 
@@ -2090,7 +2104,8 @@ class Triangle(TriangleBase):
         return obj
 
     def copy(self):
-        """Return a shallow copy of the Triangle.
+        """
+        Return a shallow copy of the Triangle.
 
         Returns
         -------
@@ -2211,7 +2226,8 @@ class Triangle(TriangleBase):
         return ValuationCorrelation(self, p_critical, total)
 
     def shift(self, periods=-1, axis=3):
-        """Shift elements along an axis by desired number of periods.
+        """
+        Shift elements along an axis by desired number of periods.
 
         Data that falls beyond the existing shape of the Triangle is eliminated
         and new cells default to zero.
@@ -2336,7 +2352,8 @@ class Triangle(TriangleBase):
             return out.shift(periods - 1 if periods > 0 else periods + 1, axis)
 
     def sort_axis(self, axis):
-        """Method to sort a Triangle along a given axis
+        """
+        Method to sort a Triangle along a given axis
 
         Parameters
         ----------
@@ -2415,7 +2432,8 @@ class Triangle(TriangleBase):
         return obj
 
     def reindex(self, columns=None, fill_value=np.nan):
-        """Conform Triangle columns to a new set of labels.
+        """
+        Conform Triangle columns to a new set of labels.
 
         Any column in ``columns`` that is not already present is added and
         filled with ``fill_value``.
@@ -2436,3 +2454,74 @@ class Triangle(TriangleBase):
             if column not in obj.columns:
                 obj[column] = fill_value
         return obj
+
+    def fill(self, value: float = 1.0, inplace: bool = False) -> Triangle:
+        """
+        Fill a ``Triangle`` with a scalar value.
+
+        For an undeveloped ``Triangle``, only the upper half will be filled,
+        including any NaN in the upper half.
+
+        For a developed Triangle, the entire frame will be filled, including
+        any NaNs.
+
+        Parameters
+        ----------
+        value : float, default 1.0
+            All valid elements will be assigned this value
+        inplace : bool, default False
+            Whether to mutate the existing Triangle instance or return a new
+            one.
+
+        Returns
+        -------
+        Triangle
+
+        Examples
+        --------
+        Build a Triangle with two columns supplied in non-alphabetical order.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            raa = cl.load_sample("raa")
+            print(raa.fill(100))
+            full_raa = cl.Chainladder().fit(raa).full_triangle_
+            print(full_raa.fill(200))
+
+        .. testoutput::
+
+                    12     24     36     48     60     72     84     96     108    120
+            1981  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0
+            1982  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN
+            1983  100.0  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN
+            1984  100.0  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN
+            1985  100.0  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN
+            1986  100.0  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN
+            1987  100.0  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN
+            1988  100.0  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1989  100.0  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+            1990  100.0    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN    NaN
+                   12     24     36     48     60     72     84     96     108    120    132    9999
+            1981  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1982  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1983  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1984  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1985  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1986  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1987  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1988  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1989  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+            1990  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0  200.0
+        """
+        if inplace:
+            xp = self.get_array_module()
+            fill_flag = self.nan_triangle[None, None, ...].astype(np.float64)
+            self.values = xp.broadcast_to(fill_flag * value, self.shape).copy()
+            return self
+        else:
+            obj = self.copy()
+            return obj.fill(value, True)

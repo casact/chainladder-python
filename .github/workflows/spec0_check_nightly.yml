@@ -7,6 +7,10 @@ name: SPEC 0 Dependency Check
 #
 # Auxiliary files:
 # - .github/scripts/check_spec0.py
+#
+# Disabled by default on forks; a fork owner can opt in by setting a
+# repository variable named ENABLE_SPEC0_CHECK  to "true" (Settings > Secrets
+# and variables > Actions > Variables).
 
 on:
   schedule:
@@ -21,6 +25,7 @@ jobs:
   check:
     name: Check SPEC 0 support windows
     runs-on: ubuntu-latest
+    if: github.repository == 'casact/chainladder-python' || vars.ENABLE_SPEC0_CHECK == 'true'
     steps:
       - uses: actions/checkout@v6
 

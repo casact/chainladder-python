@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 
 
 class TriangleDunders:
-    """Class that implements the dunder (double underscore) methods for the
-    Triangle class
+    """
+    Class that implements the dunder (double underscore) methods for the Triangle class
     """
 
     def _validate_arithmetic(self, other: Any) -> tuple:
@@ -107,7 +107,10 @@ class TriangleDunders:
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
-                except Exception:
+                except KeyError:
+                    # y does not carry every key in x, so the two cannot be
+                    # aligned by label; fall back to grouping both down to the
+                    # labels they share.
                     x = x.groupby(list(common))
                     y = y.groupby(list(common))
             return x, y
@@ -279,7 +282,8 @@ class TriangleDunders:
         return concat(c, 0).sort_index()
 
     def __add__(self, other):
-        """Element-wise addition.
+        """
+        Element-wise addition.
 
         Examples
         --------
@@ -329,7 +333,8 @@ class TriangleDunders:
         return self if other == 0 else self.__add__(other)
 
     def __sub__(self, other):
-        """Element-wise subtraction.
+        """
+        Element-wise subtraction.
 
         Examples
         --------
@@ -406,7 +411,8 @@ class TriangleDunders:
         return obj
 
     def __mul__(self, other):
-        """Element-wise multiplication.
+        """
+        Element-wise multiplication.
 
         Examples
         --------

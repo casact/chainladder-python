@@ -59,7 +59,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             return self.X_.sum("development")
 
     def fit(self, X, y=None, sample_weight=None):
-        """Applies the chainladder technique to triangle **X**
+        """
+        Applies the chainladder technique to triangle **X**
 
         Parameters
         ----------
@@ -84,7 +85,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the chainladder ultimate on a new triangle **X**
+        """
+        Predicts the chainladder ultimate on a new triangle **X**
 
         Parameters
         ----------
@@ -111,7 +113,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return X_new
 
     def intersection(self, a, b):
-        """Given two Triangles with mismatched indices, this method aligns
+        """
+        Given two Triangles with mismatched indices, this method aligns
         their indices"""
         if len(a) == 1 and len(b) == 1:
             return a, b

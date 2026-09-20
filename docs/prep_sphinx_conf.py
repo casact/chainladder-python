@@ -4,6 +4,7 @@ Prepend docs/_ext to sys.path in conf.py.
 `jupyter-book config sphinx` lists local extensions but does not emit this path,
 so standalone Sphinx (e.g. Read the Docs) cannot import them. Run after generating conf.py.
 """
+
 from pathlib import Path
 
 CONF = Path(__file__).resolve().parent / "conf.py"

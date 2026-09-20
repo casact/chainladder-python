@@ -324,10 +324,14 @@ class ValuationCorrelation:
             T = np.array(T)
             z_idx, n_idx = z.astype(int), n.astype(int)
             self.probs = T[z_idx, n_idx]
-            z_critical = triangle[triangle.valuation > triangle.valuation.min()]
-            # z_critical = z_critical[z_critical.development > z_critical.development.min()].dev_to_val().sum(
-            #     "origin") * 0
-            z_critical = z_critical.dev_to_val().dropna().sum("origin") * 0
+            # One column per link-ratio diagonal, labeled by ending valuation.
+            # Slicing by valuation (rather than dropna) keeps diagonals that are
+            # entirely NaN, which a triangle missing its earliest diagonals has:
+            # dropna() removed them while self.probs still carried one entry per
+            # diagonal, so the two disagreed and the DataFrame below raised
+            # "Shape of passed values is (1, 10), indices imply (1, 9)" (#320).
+            z_critical = triangle.dev_to_val().sum("origin")
+            z_critical = z_critical[z_critical.valuation > triangle.valuation.min()] * 0
             z_critical.values = np.array(self.probs) < p_critical
             z_critical.odims = triangle.odims[0:1]
             self.z_critical = z_critical

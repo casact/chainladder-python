@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 import warnings
 
-from chainladder.utils.utility_functions import num_to_nan
+from chainladder.utils.utility_functions import num_to_nan, warn_exclusions_ignored
 from pandas.api.types import is_string_dtype
 
 from typing import TYPE_CHECKING
@@ -126,7 +126,8 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: TriangleProtocol) -> Triangle:
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters
@@ -325,11 +326,21 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         # getting max index after drop high
         max_rank_unpreserve = valid_count - drop_high_array
 
+        # The most factors a development period could hold: the shape of the
+        # triangle, then whatever n_periods narrows it to.
+        n_periods_param = self._cascade_param(dev_len, self.n_periods, -1)
+        n_periods_param = np.where(n_periods_param == -1, dev_len, n_periods_param)
+        max_available = np.minimum(
+            (~np.isnan(X.nan_triangle)).sum(axis=0), n_periods_param
+        )
+
         # applying preserve
         preserve_trigger = (max_rank_unpreserve - drop_low_array) < preserve_array
 
-        # setting up flag to produce warning
-        warning_flag = np.any(preserve_trigger)
+        # setting up flag to produce warning. A period that cannot satisfy
+        # preserve even when fully populated is expected to lose its exclusion.
+        expected = max_available - drop_high_array - drop_low_array < preserve_array
+        warning_flag = np.any(preserve_trigger & ~expected)
 
         # getting ranks of values that correspond to the max and min after preserve
         max_rank = np.where(preserve_trigger, valid_count, max_rank_unpreserve)
@@ -340,28 +351,8 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             X_ranks > min_rank[:, :, None, :] - 1
         )
 
-        # NOTE: The "Some exclusions have been ignored..." UserWarning below is
-        # asserted by the test suite (see chainladder/development/tests/
-        # test_development.py and test_incremental.py, which use
-        # pytest.warns(..., match="exclusions have been ignored")).
-        # Do not modify the warning message or remove the warnings.warn(...)
-        # call without updating the corresponding pytest.warns matchers,
-        # otherwise those tests will fail.
         if warning_flag:
-            if self.preserve == 1:
-                warning = (
-                    "Some exclusions have been ignored. At least "
-                    + str(self.preserve)
-                    + " (use preserve = ...)"
-                    + " link ratio(s) is required for development estimation."
-                )
-            else:
-                warning = (
-                    "Some exclusions have been ignored. At least "
-                    + str(self.preserve)
-                    + " link ratio(s) is required for development estimation."
-                )
-            warnings.warn(warning)
+            warn_exclusions_ignored(self.preserve)
 
         return w.astype(float)
 
@@ -478,35 +469,17 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         # counting remaining factors
         valid_count = index_array_weights.sum(axis=2)
 
-        # applying preserve
-        warning_flag = np.any(valid_count < preserve_array)
+        # applying preserve. Only a threshold that actually removed something is
+        # worth a warning.
+        dropped = w.sum(axis=2) - valid_count
+        warning_flag = np.any((valid_count < preserve_array) & (dropped > 0))
         w = np.where(
             valid_count[:, :, None, :] < preserve_array[:, :, None, :],
             w,
             index_array_weights,
         )
 
-        # NOTE: The "Some exclusions have been ignored..." UserWarning below is
-        # asserted by the test suite (see chainladder/development/tests/
-        # test_development.py and test_incremental.py, which use
-        # pytest.warns(..., match="exclusions have been ignored")).
-        # Do not modify the warning message or remove the warnings.warn(...)
-        # call without updating the corresponding pytest.warns matchers,
-        # otherwise those tests will fail.
         if warning_flag:
-            if self.preserve == 1:
-                warning = (
-                    "Some exclusions have been ignored. At least "
-                    + str(self.preserve)
-                    + " (use preserve = ...)"
-                    + " link ratio(s) is required for development estimation."
-                )
-            else:
-                warning = (
-                    "Some exclusions have been ignored. At least "
-                    + str(self.preserve)
-                    + " link ratio(s) is required for development estimation."
-                )
-            warnings.warn(warning)
+            warn_exclusions_ignored(self.preserve)
 
         return w.astype(float)

@@ -14,7 +14,8 @@ from sklearn.base import BaseEstimator
 
 class TriangleIO:
     def to_pickle(self, path, protocol=None):
-        """Serializes triangle object to pickle.
+        """
+        Serializes triangle object to pickle.
 
         Parameters
         ----------
@@ -54,7 +55,8 @@ class TriangleIO:
             dill.dump(self, pkl)
 
     def to_json(self):
-        """Serializes triangle object to json format
+        """
+        Serializes triangle object to json format
 
         Returns
         -------
@@ -119,7 +121,8 @@ class EstimatorIO:
     """Class intended to allow persistence of estimator objects"""
 
     def to_pickle(self, path, protocol=None):
-        """Serializes triangle object to pickle.
+        """
+        Serializes triangle object to pickle.
 
         Parameters
         ----------
@@ -159,7 +162,8 @@ class EstimatorIO:
             dill.dump(self, pkl)
 
     def to_json(self):
-        """Serializes triangle object to json format
+        """
+        Serializes triangle object to json format
 
         Returns
         -------
