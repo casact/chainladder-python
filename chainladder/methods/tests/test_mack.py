@@ -27,7 +27,7 @@ def test_mack_malformed(raa):
 
 
 def test_multi_triangle_mack(clrd, atol):
-    tri = clrd.loc["Agway Ins Co"]["IncurLoss", "CumPaidLoss"]
+    tri = clrd.groupby("LOB").sum()["IncurLoss", "CumPaidLoss"]
     mack = cl.MackChainladder().fit(tri)
     for i in range(len(tri.index)):
         for j in range(len(tri.columns)):
