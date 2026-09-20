@@ -3,18 +3,14 @@ name: docs-preview
 # Builds the documentation for several versions into one site, so the version
 # switcher can be reviewed with links that actually resolve.
 #
-# Every run publishes the site to GitHub Pages, pull requests included, so the
-# newest run is what https://casact.github.io/chainladder-python/ serves. Only
-# one site exists, so each run overwrites the one before it.
+# This builds a preview only. Read the Docs hosts the published versions and
+# generates their switcher.json from the versions it has built, so nothing here
+# deploys anywhere: the site is uploaded as an artifact, which is what makes the
+# switcher reviewable before a change reaches Read the Docs.
 #
-# The site is also uploaded as an artifact. To read it locally, unzip it into a
-# folder named chainladder-python/ and serve that folder's parent
-# (`python -m http.server`): the switcher's links are prefixed with the project
-# path Pages serves the site under. Serving over HTTP is required either way,
-# since the switcher fetches switcher.json, which browsers block from file://.
-#
-# Note that a pull request from a fork cannot publish: GitHub issues fork runs a
-# read-only token, so the deploy step fails however this workflow is written.
+# Download the artifact, unzip it, and serve the folder (`python -m
+# http.server`). Serving over HTTP is required, since the switcher fetches
+# switcher.json, which browsers block from file:// URLs.
 
 on:
   pull_request:
@@ -47,33 +43,10 @@ jobs:
             --version HEAD:dev \
             --all-tags \
             --minor-only \
-            --jobs 4 \
-            --base-url "/${{ github.event.repository.name }}"
+            --jobs 4
 
       - uses: actions/upload-artifact@v4
         with:
           name: docs-preview
           path: docs/_build/versions
           retention-days: 14
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/_build/versions
-
-  pages:
-    needs: build
-    runs-on: ubuntu-latest
-    # One site, many pull requests: let a deploy finish rather than cancelling
-    # it, or a half-written site is what readers get.
-    concurrency:
-      group: pages
-      cancel-in-progress: false
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4
