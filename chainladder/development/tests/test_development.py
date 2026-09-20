@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import chainladder as cl
 import pytest
@@ -149,9 +151,8 @@ def test_drophighlow(raa):
     assert dev.fit_transform(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2)
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        tr = dev.fit_transform(raa)
-        tw = _FutureDevelopment(dev).fit(raa)
+    tr = dev.fit_transform(raa)
+    tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
     rhs = np.array([
         5.7403,
@@ -168,9 +169,8 @@ def test_drophighlow(raa):
     assert tr.ldf_ == tw.ldf_
 
     dev = cl.Development(drop_high=1)
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        tr = dev.fit_transform(raa)
-        tw = _FutureDevelopment(dev).fit(raa)
+    tr = dev.fit_transform(raa)
+    tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
     rhs = np.array([
         7.2190,
@@ -187,9 +187,8 @@ def test_drophighlow(raa):
     assert tr.ldf_ == tw.ldf_
 
     dev = cl.Development(drop_high=1, drop_low=1)
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        tr = dev.fit_transform(raa)
-        tw = _FutureDevelopment(dev).fit(raa)
+    tr = dev.fit_transform(raa)
+    tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
     rhs = np.array([
         9.0982,
@@ -206,9 +205,8 @@ def test_drophighlow(raa):
     assert tr.ldf_ == tw.ldf_
 
     dev = cl.Development(drop_high=[2, 1, 1], drop_low=1)
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        tr = dev.fit_transform(raa)
-        tw = _FutureDevelopment(dev).fit(raa)
+    tr = dev.fit_transform(raa)
+    tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
     rhs = np.array([
         8.4905,
@@ -225,9 +223,8 @@ def test_drophighlow(raa):
     assert tr.ldf_ == tw.ldf_
 
     dev = cl.Development(drop_high=1, drop_low=1, n_periods=5)
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        tr = dev.fit_transform(raa)
-        tw = _FutureDevelopment(dev).fit(raa)
+    tr = dev.fit_transform(raa)
+    tw = _FutureDevelopment(dev).fit(raa)
     lhs = np.round(tr.cdf_.values, 4).flatten()
     rhs = np.array([
         16.3338,
@@ -470,33 +467,97 @@ def test_new_drop_4(clrd):
 def test_new_drop_5(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        dev = cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd)
+    dev = cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd)
     compare_new_drop(dev, clrd)
 
 
 def test_new_drop_5a(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        lhs = (
-            cl
-            .TriangleWeight(drop_high=1, drop_low=1, preserve=3)
-            .fit(X=clrd.age_to_age, sample_weight=clrd.age_to_age)
-            .w_.values
+    lhs = (
+        cl
+        .TriangleWeight(drop_high=1, drop_low=1, preserve=3)
+        .fit(X=clrd.age_to_age, sample_weight=clrd.age_to_age)
+        .w_.values
+    )
+    rhs = (
+        cl
+        .TriangleWeight(
+            drop_high=True,
+            drop_low=[True, True, True, True, True, True, True, True, True],
+            preserve=3,
         )
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        rhs = (
-            cl
-            .TriangleWeight(
-                drop_high=True,
-                drop_low=[True, True, True, True, True, True, True, True, True],
-                preserve=3,
-            )
-            .fit(X=clrd.age_to_age, sample_weight=clrd.age_to_age)
-            .w_.values
-        )
+        .fit(X=clrd.age_to_age, sample_weight=clrd.age_to_age)
+        .w_.values
+    )
     assert np.array_equal(lhs, rhs, True)
+
+
+def _holed(raa, n_origins):
+    """
+    raa with the first development period blanked for n_origins origins, so
+    the first age-to-age period is short by that many factors."""
+    backend = raa.array_backend
+    holed = raa.set_backend("numpy").copy()
+    values = holed.values.copy()
+    values[0, 0, :n_origins, 0] = np.nan
+    holed.values = values
+    return holed.set_backend(backend)
+
+
+def test_drop_warning_is_silent_on_a_full_triangle(raa):
+    """
+    A triangle with no holes cannot satisfy preserve in its last periods no
+    matter what the caller does, so dropping there is expected, not a surprise.
+    """
+    for preserve in (1, 2, 3):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            cl.Development(drop_high=True, drop_low=True, preserve=preserve).fit(raa)
+
+
+def test_drop_warning_fires_when_the_triangle_has_holes(raa):
+    """
+    Blank enough origins that the first age-to-age period holds two factors.
+    The shape says nine were possible, so dropping one high and one low is a
+    request the data cannot meet, which is what the warning is for.
+    """
+    holed = _holed(raa, 7)
+    assert (~np.isnan(holed.link_ratio.values))[0, 0, :, 0].sum() == 2
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        cl.Development(drop_high=True, drop_low=True).fit(holed)
+
+
+def test_drop_warning_fires_once_per_fit(raa):
+    """
+    Development computes the same drops twice, for w_ and for w_v2_. Only
+    one of them should reach the caller."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        cl.Development(drop_high=True, drop_low=True).fit(_holed(raa, 7))
+    hits = [w for w in caught if "exclusions have been ignored" in str(w.message)]
+    assert len(hits) == 1, f"expected one warning, got {len(hits)}"
+
+
+def test_drop_x_warning_needs_something_dropped(raa):
+    """
+    Thresholds that exclude nothing are not exclusions being ignored."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        cl.Development(drop_above=10.0, drop_below=0.0, preserve=3).fit(raa)
+
+
+def test_drop_warning_silent_on_the_triangle_weight_path(raa):
+    """
+    TriangleWeight is built directly by Disposal, IncrementalAdditive and
+    Learning, none of which go through Development, so it needs the same gate.
+    n_periods narrows what a period could hold just as the shape does.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        cl.TriangleWeight(n_periods=2, drop_high=1, drop_low=1, preserve=1).fit(
+            raa.age_to_age
+        )
 
 
 def test_new_drop_6(clrd):
@@ -515,10 +576,8 @@ def test_new_drop_7(clrd):
 
 def test_new_drop_8(prism):
     tri = prism["Paid"].sum().grain("OYDQ")
-    try:
-        cl.Development(drop_high=False).fit_transform(tri)
-    except Exception:
-        assert False
+    # Should not raise; pytest reports the real error if it does.
+    cl.Development(drop_high=False).fit_transform(tri)
 
 
 def test_new_drop_9(prism):

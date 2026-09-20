@@ -1,15 +1,21 @@
-import numpy as np
+from __future__ import annotations
 
+import numpy as np
 import chainladder as cl
 
+from typing import TYPE_CHECKING
 
-def test_prism_dense_samples() -> None:
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
+
+def test_prism_dense_samples(prism: Triangle) -> None:
     """
     The bundled ``prism_o?d?`` samples are ``prism`` summed across every claim
     and aggregated to a single grain, so each one must equal that aggregation
     computed on the fly.
     """
-    dense = cl.load_sample("prism").sum()
+    dense = prism.sum()
     for name, grain in [
         ("prism_oqdq", "OQDQ"),
         ("prism_oqdm", "OQDM"),

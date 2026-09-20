@@ -13,7 +13,8 @@ from chainladder.utils.utility_functions import PatsyFormula, PTF_formula
 
 
 class BarnettZehnwirth(TweedieGLM):
-    """This estimator enables modeling from the Probabilistic Trend Family as
+    """
+    This estimator enables modeling from the Probabilistic Trend Family as
     described by Barnett and Zehnwirth.
 
     The model is fit on log-incremental losses and produces multiplicative
@@ -139,6 +140,23 @@ class BarnettZehnwirth(TweedieGLM):
         self.iota = iota
 
     def fit(self, X, y=None, sample_weight=None):
+        """
+        Fit the model with X.
+
+        Parameters
+        ----------
+        X : TriangleLike
+            Set of LDFs to which the Munich adjustment will be applied.
+        y : None
+            Ignored
+        sample_weight : None
+            Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         if max(X.shape[:2]) > 1:
             raise ValueError("Only single index/column triangles are supported")
         tri = X.cum_to_incr().log()
@@ -176,7 +194,8 @@ class BarnettZehnwirth(TweedieGLM):
         return self
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

@@ -27,7 +27,7 @@ def main() -> None:
         import matplotlib.font_manager
 
         matplotlib.font_manager._load_fontmanager()
-    except Exception:
+    except (ImportError, AttributeError, OSError):
         pass
 
     text = CONF.read_text(encoding="utf8")
