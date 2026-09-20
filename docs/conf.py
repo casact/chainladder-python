@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -48,6 +49,8 @@ html_favicon = ""
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ""
 html_theme = "sphinx_book_theme"
+html_css_files = ["custom.css"]
+html_static_path = ["_static"]
 html_theme_options = {
     "analytics": {
         "google_analytics_id": "",
@@ -55,6 +58,21 @@ html_theme_options = {
         "plausible_analytics_url": "https://plausible.io/js/script.js",
     },
     "announcement": "",
+    # Put the version picker in the top article header, beside the download and
+    # fullscreen buttons, instead of leaving it to Read the Docs' own flyout in
+    # the lower right corner.
+    "article_header_end": [
+        "version-switcher.html",
+        "article-header-buttons.html",
+    ],
+    "switcher": {
+        # Served from the stable build so every version reads one list.
+        "json_url": (
+            "https://chainladder-python.readthedocs.io/stable/_static/switcher.json"
+        ),
+        # Read the Docs names the version being built; "dev" for local builds.
+        "version_match": os.environ.get("READTHEDOCS_VERSION", "dev"),
+    },
     "extra_footer": "",
     "home_page_in_toc": True,
     "launch_buttons": {

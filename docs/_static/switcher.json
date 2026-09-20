@@ -1,0 +1,13 @@
+[
+  {
+    "name": "stable",
+    "version": "stable",
+    "url": "https://chainladder-python.readthedocs.io/stable/",
+    "preferred": true
+  },
+  {
+    "name": "main (dev)",
+    "version": "main",
+    "url": "https://chainladder-python.readthedocs.io/main/"
+  }
+]
