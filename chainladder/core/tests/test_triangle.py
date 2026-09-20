@@ -1947,7 +1947,12 @@ def test_trailing_valuation():
     )
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(
-        data, origin="origin", development="valuation", columns="values", trailing=True
+        data,
+        origin="origin",
+        development="valuation",
+        columns="values",
+        trailing=True,
+        cumulative=True,
     )
     assert tri == tri2
 
