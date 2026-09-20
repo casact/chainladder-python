@@ -161,7 +161,7 @@ class TailBase(DevelopmentBase):
             self.ldf_.values[..., -self._ave_period[0] - 1 :], -1, keepdims=True
         )
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
-        if xp == "sparse":
+        if tail.array_backend == "sparse":
             tail_data = tail.data
             valid_tail = tail_data[tail_data > 1]
             smallest_valid_tail = np.nanmin(valid_tail)
