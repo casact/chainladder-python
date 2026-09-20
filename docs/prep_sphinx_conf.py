@@ -15,12 +15,14 @@ generating conf.py to put both back:
 from pathlib import Path
 
 CONF = Path(__file__).resolve().parent / "conf.py"
+MARKER = "_DOCS_EXT_DIR"
 
 EXT_MARKER = "_DOCS_EXT_DIR = Path(__file__).resolve().parent / '_ext'"
 
 EXT_BLOCK = """import sys
 from pathlib import Path
-_DOCS_EXT_DIR = Path(__file__).resolve().parent / '_ext'
+
+_DOCS_EXT_DIR = Path(__file__).resolve().parent / "_ext"
 _p = str(_DOCS_EXT_DIR)
 if _p not in sys.path:
     sys.path.insert(0, _p)
@@ -52,6 +54,14 @@ if _version_match:
 
 
 def main() -> None:
+    # Pre-warm matplotlib font cache so notebook executions do not timeout on fresh runners
+    try:
+        import matplotlib.font_manager
+
+        matplotlib.font_manager._load_fontmanager()
+    except (ImportError, AttributeError, OSError):
+        pass
+
     text = CONF.read_text(encoding="utf8")
 
     if EXT_MARKER not in text:
