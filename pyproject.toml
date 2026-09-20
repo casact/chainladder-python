@@ -124,7 +124,6 @@ select = [
 # files are cleaned up.
 [tool.ruff.lint.per-file-ignores]
 "docs/friedland/chapter_10.ipynb" = ["E731", "F841"]
-"docs/friedland/chapter_7_part_2.ipynb" = ["N802"]
 
 [tool.ruff.format]
 docstring-code-format = true

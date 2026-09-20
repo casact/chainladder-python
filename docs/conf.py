@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-
 _DOCS_EXT_DIR = Path(__file__).resolve().parent / "_ext"
 _p = str(_DOCS_EXT_DIR)
 if _p not in sys.path:
@@ -89,7 +88,7 @@ nb_execution_cache_path = ""
 nb_execution_excludepatterns = []
 nb_execution_in_temp = False
 nb_execution_mode = "force"
-nb_execution_timeout = 30
+nb_execution_timeout = 180
 nb_output_stderr = "show"
 numfig = True
 numpydoc_show_class_members = False
