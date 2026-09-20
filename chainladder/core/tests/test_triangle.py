@@ -899,9 +899,7 @@ def test_exposure_tri():
     x = x["paid"].to_frame(origin_as_datetime=False).T.unstack().reset_index()
     x.columns = ["LOB", "origin", "paid"]
     x.origin = x.origin.astype(str)
-    y = cl.Triangle(
-        x, origin="origin", index="LOB", columns="paid", cumulative=True
-    )
+    y = cl.Triangle(x, origin="origin", index="LOB", columns="paid", cumulative=True)
     x = cl.load_sample("auto")["paid"]
     x = x[x.development == 12]
     assert x == y
@@ -924,12 +922,7 @@ def test_jagged_2_add(raa):
 def test_df_period_input(raa):
     d = raa.latest_diagonal
     df = d.to_frame(origin_as_datetime=False).reset_index()
-    assert (
-        cl.Triangle(
-            df, origin="index", columns=df.columns[-1], cumulative=True
-        )
-        == d
-    )
+    assert cl.Triangle(df, origin="index", columns=df.columns[-1], cumulative=True) == d
 
 
 def test_trend_on_vector(raa):
@@ -1943,7 +1936,11 @@ def test_trailing_valuation():
     )
     data.valuation = (data.valuation.dt.year + 1) * 100 + 3
     tri = cl.Triangle(
-        data, origin="origin", development="valuation", columns="values", cumulative=True
+        data,
+        origin="origin",
+        development="valuation",
+        columns="values",
+        cumulative=True,
     )
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(
