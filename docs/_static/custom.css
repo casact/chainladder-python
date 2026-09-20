@@ -72,3 +72,19 @@
   height: 0;
   width: 0;
 }
+
+/* Read the Docs Addons injects its own version flyout into the lower right
+   corner at page load. The switcher in the article header replaces it, and two
+   version menus on one page is one too many, so hide it.
+
+   It is a custom element rather than anything Sphinx emits, which is why no
+   conf.py setting reaches it. Hiding the host is enough: the element uses a
+   shadow root, but `display: none` on the host takes its subtree with it.
+
+   The project-wide alternative is Admin -> Addons -> Flyout Menu on Read the
+   Docs. That is the better switch in production, but it applies to every
+   version at once, so it is the wrong one for a branch that is only a
+   proof of concept. */
+readthedocs-flyout {
+  display: none;
+}
