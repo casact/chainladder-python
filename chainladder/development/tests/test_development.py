@@ -570,7 +570,9 @@ def test_new_drop_6(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below without preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        compare_new_drop(cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd)
+        compare_new_drop(
+            cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd
+        )
 
 
 def test_new_drop_7(clrd):
@@ -648,7 +650,12 @@ def test_new_drop_10():
 
         assert (
             np.round(
-                cl.Development(drop_high=2).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+                cl
+                .Development(drop_high=2)
+                .fit(tri)
+                .cdf_.to_frame()
+                .values.flatten()[0],
+                4,
             )
             == 1.0000
         )
