@@ -30,6 +30,7 @@ parts:
       - file: user_guide/adjustments.ipynb
       - file: user_guide/workflow.ipynb
       - file: user_guide/utilities.ipynb
+      - file: user_guide/style.ipynb
   - chapters:
     - file: friedland/index.rst
       sections:
