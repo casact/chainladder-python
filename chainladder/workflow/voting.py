@@ -517,7 +517,7 @@ class TriangleSelector(
         self,
         X: Triangle | None = None,
         y: None = None,
-        sample_weight: Triangle | None = None
+        sample_weight: Triangle | None = None,
     ) -> Self:
         """
         Fit the model with X.

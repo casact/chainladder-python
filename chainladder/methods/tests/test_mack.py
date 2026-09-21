@@ -1,5 +1,12 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 def test_mack_to_triangle():
@@ -26,7 +33,11 @@ def test_mack_malformed(raa):
     assert x.process_risk_.iloc[:, :, :-1] == y.process_risk_
 
 
-def test_multi_triangle_mack(clrd, atol):
+def test_multi_triangle_mack(clrd: Triangle, atol: float) -> None:
+    """
+    Tests that applying MackChainladder on a multi-triangle returns the same
+    results as applying MackChainladder on each single-triangle individually
+    """
     tri = clrd.groupby("LOB").sum()["IncurLoss", "CumPaidLoss"]
     mack = cl.MackChainladder().fit(tri)
     for i in range(len(tri.index)):
