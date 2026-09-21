@@ -4,3 +4,18 @@ coverage:
       default:
         target: auto
         threshold: 0.1%
+    patch:
+      default:
+        target: auto
+        threshold: 0.1%
+        # Merge commits compare against the wrong parent, so a patch status
+        # posted outside a pull request scores an unrelated diff.
+        only_pulls: true
+
+# Nothing outside the library is covered by the test suite, so scoring a diff
+# that only touches these paths fails the patch status for no useful reason.
+ignore:
+  - ".github/**"
+  - "docs/**"
+  - "conftest.py"
+  - "**/tests/**"
