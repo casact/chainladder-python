@@ -82,8 +82,16 @@ dev = [
     [tri_sel, cl.ClarkLDF],
     [tri_sel, cl.Trend],
     [tri_sel, cl.IncrementalAdditive],
-    [partial(cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss"))],
-    [partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss"))],
+    [
+        partial(
+            cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
+        )
+    ],
+    [
+        partial(
+            cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
+        )
+    ],
 ]
 tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
 ibnr = [
@@ -131,9 +139,7 @@ def test_pipeline(
                 ("ibnr", ibnr()),
             ]
         )
-        .fit_predict(
-            X, sample_weight=sample_weight
-        )
+        .fit_predict(X, sample_weight=sample_weight)
         .ibnr_
         .sum("origin")
         .sum("columns")
