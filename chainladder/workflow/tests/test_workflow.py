@@ -87,11 +87,7 @@ dev = [
             cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
         )
     ],
-    [
-        partial(
-            cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
-        )
-    ],
+    [partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss"))],
 ]
 tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
 ibnr = [
@@ -140,8 +136,7 @@ def test_pipeline(
             ]
         )
         .fit_predict(X, sample_weight=sample_weight)
-        .ibnr_
-        .sum("origin")
+        .ibnr_.sum("origin")
         .sum("columns")
         .sum()
     )
