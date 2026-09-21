@@ -190,6 +190,7 @@ class TriangleDunders:
                     pd.Series(other.odims, index=other.odims),
                 ),
                 axis=1,
+                sort=False,
             ).sort_index()
             o_arr0, o_arr1 = odims[0].isna().values, odims[1].isna().values
             d_arr0, d_arr1 = ddims[0].isna().values, ddims[1].isna().values
