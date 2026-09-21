@@ -9,8 +9,19 @@ build:
     python: "3.11"
   jobs:
     pre_build:
+      # Before conf.py is generated: the menu is a static asset, and each
+      # build serves the copy it writes here.
+      # SWITCHER_DEMO pads the menu with releases Read the Docs is not hosting
+      # yet, so this branch's preview shows the finished shape of the feature.
+      # Drop it in the branch that makes this work for real.
+      - "SWITCHER_DEMO=1 python docs/generate_switcher.py"
       - "jupyter-book config sphinx docs/"
       - "python docs/prep_sphinx_conf.py"
+    post_build:
+      # Proof of concept only: builds the releases the switcher links to into
+      # this build's output, so they resolve without activating those versions
+      # in the live project. Drop it in the branch that does this for real.
+      - "python docs/build_demo_versions.py"
 
 python:
   install:

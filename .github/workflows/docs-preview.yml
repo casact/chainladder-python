@@ -1,0 +1,52 @@
+name: docs-preview
+
+# Builds the documentation for several versions into one site, so the version
+# switcher can be reviewed with links that actually resolve.
+#
+# This builds a preview only. Read the Docs hosts the published versions and
+# generates their switcher.json from the versions it has built, so nothing here
+# deploys anywhere: the site is uploaded as an artifact, which is what makes the
+# switcher reviewable before a change reaches Read the Docs.
+#
+# Download the artifact, unzip it, and serve the folder (`python -m
+# http.server`). Serving over HTTP is required, since the switcher fetches
+# switcher.json, which browsers block from file:// URLs.
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/scripts/build_versioned_docs.py"
+      - ".github/workflows/docs-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Version builds check out tags, so the full history is needed.
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Build every version
+        run: |
+          uv run --extra docs python .github/scripts/build_versioned_docs.py \
+            --output docs/_build/versions \
+            --version HEAD:dev \
+            --all-tags \
+            --minor-only \
+            --jobs 4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-preview
+          path: docs/_build/versions
+          retention-days: 14

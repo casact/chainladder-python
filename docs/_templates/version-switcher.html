@@ -1,0 +1,32 @@
+{# Overrides pydata-sphinx-theme's components/version-switcher.html, which
+   labels the button "Choose version" until JavaScript loads switcher.json.
+   Naming the version being viewed is more useful, and it is what the button
+   settles on anyway once the fetch completes. #}
+{%- set button_id = unique_html_id("pst-version-switcher-button") -%}
+{%- set dropdown_id = unique_html_id("pst-version-switcher-list") -%}
+{# As the version switcher will only work when JavaScript is enabled, we hide it with pst-js-only #}
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="{{ button_id }}"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="{{ dropdown_id }}"
+    aria-label="Version switcher list"
+  >
+    {# The theme's JavaScript overwrites this button's text with innerText once
+       switcher.json loads, which would delete any child element here. The
+       dropdown arrow is therefore drawn by custom.css as a ::after
+       pseudo-element, which innerText cannot touch. #}
+    {{ theme_switcher.get("version_match", "Choose version") }}  <!-- this text may get changed later by javascript -->
+  </button>
+  {# The theme's JavaScript appends the versions from switcher.json to this
+     menu without clearing it, so the Read the Docs link below survives. It is
+     ordered last by custom.css, since the versions arrive after it. #}
+  <div id="{{ dropdown_id }}"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="{{ button_id }}"><a
+      class="dropdown-item list-group-item list-group-item-action py-1 version-switcher__docs-link"
+      href="https://app.readthedocs.org/projects/chainladder-python/builds/?utm_source=chainladder-python&amp;utm_content=flyout"
+      role="option"><span>Builds</span></a></div>
+</div>

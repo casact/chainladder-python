@@ -1,0 +1,90 @@
+/* The article header's start and end slots are plain blocks in the theme, so
+   two items in either one stack vertically. The version switcher shares the
+   end slot with the download and fullscreen buttons, so lay them out in a row,
+   switcher first. */
+.header-article-items__start,
+.header-article-items__end {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* sphinx-book-theme styles every button in the article header as a bare icon
+   (`border: none`, icon-sized font) and hides Bootstrap's dropdown caret
+   there. That leaves the version switcher looking like plain text, so give it
+   back the outline and text size of a real dropdown control. */
+.bd-header-article .btn.version-switcher__button {
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0.25rem;
+  color: var(--pst-color-text-base);
+  font-size: 0.9rem;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.bd-header-article .btn.version-switcher__button:hover,
+.bd-header-article .btn.version-switcher__button.show {
+  border: 1px solid var(--pst-color-border);
+}
+
+/* sphinx-book-theme opens article-header dropdowns on hover, which suits its
+   own icon-only download menu but not a version picker. Keep the menu closed
+   on hover; the rule below reopens it when Bootstrap marks it open on click.
+   These two blocks must stay in this order: they have equal specificity, so
+   the later one wins. */
+.bd-header-article .version-switcher__button:hover + .version-switcher__menu,
+.bd-header-article .version-switcher__menu:hover {
+  display: none;
+}
+
+/* A column, so the Read the Docs link can be ordered after the versions that
+   JavaScript appends below it. */
+.bd-header-article .version-switcher__button.show + .version-switcher__menu,
+.bd-header-article .version-switcher__menu.show {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The versions are added after this link in document order, so pull it back to
+   the bottom. It is not a version, so it is set apart: a heavier rule than the
+   theme's hairline borders, and breathing room either side of it. */
+.version-switcher__menu .version-switcher__docs-link {
+  border-top: 2px solid var(--pst-color-text-muted);
+  /* This link is the menu's first child in the markup, so Bootstrap rounds
+     its top corners and bows the rule above it. The versions are what sit at
+     the top on screen, so square it off. */
+  border-radius: 0;
+  margin-top: 0.25rem;
+  order: 1;
+  padding-top: 0.4rem;
+}
+
+/* The dropdown arrow. It has to be a pseudo-element: the theme's JavaScript
+   sets the button's innerText when it marks the active version, which deletes
+   any child element. sphinx-book-theme hides this ::after for every button in
+   the article header, so it is redeclared here. */
+.bd-header-article .btn.version-switcher__button.dropdown-toggle::after {
+  border-left: 0.3em solid transparent;
+  border-right: 0.3em solid transparent;
+  border-top: 0.35em solid currentColor;
+  content: "";
+  display: inline-block;
+  height: 0;
+  width: 0;
+}
+
+/* Read the Docs Addons injects its own version flyout into the lower right
+   corner at page load. The switcher in the article header replaces it, and two
+   version menus on one page is one too many, so hide it.
+
+   It is a custom element rather than anything Sphinx emits, which is why no
+   conf.py setting reaches it. Hiding the host is enough: the element uses a
+   shadow root, but `display: none` on the host takes its subtree with it.
+
+   The project-wide alternative is Admin -> Addons -> Flyout Menu on Read the
+   Docs. That is the better switch in production, but it applies to every
+   version at once, so it is the wrong one for a branch that is only a
+   proof of concept. */
+readthedocs-flyout {
+  display: none;
+}
