@@ -344,14 +344,15 @@ def test_highlight_lower_triangle_returns_styler(raa) -> None:
     assert isinstance(raa.style.highlight_lower_triangle(), Styler)
 
 
-def test_highlight_lower_triangle_predicted_cells_not_highlighted_by_default(
+def test_highlight_lower_triangle_predicted_cells_highlighted_by_default(
     raa,
 ) -> None:
     """
-    A fully-predicted Triangle (e.g. full_triangle_) has no NaN cells left,
-    and once it carries an ultimate column its own nan_triangle collapses to
-    all-observed -- so without an explicit valuation_date, nothing gets
-    highlighted.
+    A fully-predicted Triangle (e.g. full_triangle_) has no NaN cells left and
+    carries the ultimate sentinel as its valuation_date, which would select no
+    cells. Its latest diagonal is taken from the last origin period instead, so
+    the predicted cells are highlighted without an explicit valuation_date, and
+    identically to passing the source Triangle's own valuation date.
 
     Parameters
     ----------
@@ -364,9 +365,17 @@ def test_highlight_lower_triangle_predicted_cells_not_highlighted_by_default(
 
     """
     full = cl.Chainladder().fit(raa).full_triangle_
-    styler = full.style.highlight_lower_triangle(color="lightgray")
-    styler._compute()
-    assert not any(styler.ctx.values())
+
+    inferred = full.style.highlight_lower_triangle(color="lightgray")
+    inferred._compute()
+    assert any(inferred.ctx.values())
+
+    explicit = full.style.highlight_lower_triangle(
+        color="lightgray",
+        valuation_date=raa.valuation_date,
+    )
+    explicit._compute()
+    assert inferred.ctx == explicit.ctx
 
 
 def test_highlight_lower_triangle_with_valuation_date_highlights_predicted_cells(
@@ -462,3 +471,48 @@ def test_style_accepts_single_triangle_selected_from_multidimensional(clrd) -> N
     single = clrd.iloc[0, 0]
     assert single._dimensionality == "single"
     assert isinstance(single.style, Styler)
+
+
+def test_highlight_lower_triangle_rejects_valuation_triangle(raa) -> None:
+    """
+    Check that a valuation Triangle is refused outright. It is indexed by
+    calendar date, so it holds nothing beyond its own valuation date and has no
+    lower triangle to highlight -- its empty corner is the lower left, the
+    origin periods that had not begun yet.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        raa.dev_to_val().style.highlight_lower_triangle()
+
+
+def test_highlight_lower_triangle_rejects_fully_developed_valuation_triangle(
+    raa,
+) -> None:
+    """
+    Check that a fully developed Triangle in valuation mode is refused too. It
+    carries the ultimate sentinel as its valuation_date, so it reaches the
+    branch that infers a cutoff from the last origin period -- an inference that
+    does not hold once the axes are calendar dates.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+
+    """
+    full = cl.Chainladder().fit(raa).full_triangle_
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        full.dev_to_val().style.highlight_lower_triangle()

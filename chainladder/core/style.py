@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from pandas.io.formats.style import Styler as _PandasStyler
 
+from chainladder import options
 from chainladder.core.triangle import Triangle
 
 from datetime import (
@@ -61,6 +62,10 @@ class Styler(_PandasStyler):
         If ``triangle`` is multidimensional, i.e. holds more than a single index
         and column, or if it is empty, i.e. holds no values to style.
 
+    See Also
+    --------
+    Triangle.style : Returns a Styler for the Triangle.
+
     Examples
     --------
 
@@ -70,6 +75,9 @@ class Styler(_PandasStyler):
 
         raa = cl.load_sample("raa")
         raa.link_ratio.style.format(precision=1)
+
+    Please see: :doc:`Triangle Visualization </user_guide/style>` for more
+    examples.
     """
 
     def __init__(
@@ -172,9 +180,9 @@ class Styler(_PandasStyler):
     def highlight_lower_triangle(
         self,
         color: str = "blue",
+        text_color: str | None = None,
         props: str | None = None,
         valuation_date: ValuationDateLike | None = None,
-        text_color: str | None = None,
     ) -> Styler:
         """
         Highlight the lower triangle -- the cells beyond the Triangle's
@@ -190,9 +198,9 @@ class Styler(_PandasStyler):
             ``text_color``, e.g. ``"background-color: blue; opacity: 60%;"``.
             Optional.
         valuation_date: ValuationDateLike | None
-            The "as of" date used to determine which cells fall beyond the
-            latest diagonal, i.e. the lower triangle. If ``None``, defaults to the
-            wrapped Triangle's own ``valuation_date``.
+            The "as of" date used to determine the diagonal beyond which the
+            cells are highlighted. If ``None``, defaults to the
+            lastest diagonal.
         text_color: str | None
             Text color applied to lower-triangle cells. Ignored if ``props``
             is given. Left unstyled (i.e. inherited) if not given.
@@ -200,6 +208,11 @@ class Styler(_PandasStyler):
         Returns
         -------
         Styler
+
+        Raises
+        ------
+        ValueError
+            If the wrapped Triangle is a valuation Triangle.
 
         Examples
         --------
@@ -218,32 +231,33 @@ class Styler(_PandasStyler):
                 color="#BDD7EE", text_color="#1F4E78"
             )
 
-        Highlighting a fully-predicted Triangle requires a
-        valuation date, since its cells are no longer ``NaN``.
+        A fully-predicted Triangle needs no valuation date, even though its
+        cells are no longer ``NaN``.
 
         .. code-block:: python
 
             raa = cl.load_sample("raa")
             full = cl.Chainladder().fit(raa).full_triangle_
-            full.style.highlight_lower_triangle(
-                color="lightgray",
-                valuation_date=raa.valuation_date,
+            full.style.highlight_lower_triangle(color="lightgray")
+        """
+        if self._triangle.is_val_tri:
+            raise ValueError(
+                "highlight_lower_triangle does not support a valuation Triangle."
             )
 
-        Please see: :doc:`Triangle Visualization </user_guide/style>` for more
-        examples.
-        """
         # Find which cells are beyond the valuation date. Does this by filling
         # a triangle's cells with their valuation dates and then comparing them to
         # the triangle's overall valuation date.
-        if valuation_date is None:
-            cutoff = self._triangle.valuation_date
-        else:
-            cutoff = pd.Timestamp(valuation_date)
         val_array = np.array(self._triangle.valuation).reshape(
             self._triangle.shape[-2:],
             order="F",
         )
+        if valuation_date is not None:
+            cutoff = pd.Timestamp(valuation_date)
+        elif self._triangle.valuation_date >= pd.Timestamp(options.ULT_VAL):
+            cutoff = pd.Timestamp(val_array[-1, 0])
+        else:
+            cutoff = self._triangle.valuation_date
         mask = val_array > cutoff
         if mask.shape != self.data.shape:
             raise ValueError(
