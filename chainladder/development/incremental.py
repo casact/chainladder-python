@@ -24,7 +24,7 @@ class IncrementalMixin:
     @property
     def zeta_(self) -> Triangle:
         """
-        Gets the estimated zeta
+        Gets the estimated incremental additive factors
         """
         if not hasattr(self, "_zeta_"):
             x = self.__class__.__name__
@@ -45,7 +45,7 @@ class IncrementalMixin:
     @property
     def cum_zeta_(self) -> Triangle:
         """
-        Gets the cumulative of the estimated zeta
+        Gets the estimated cumulative additive factors
         """
         return self.zeta_.incr_to_cum()
 
@@ -375,6 +375,24 @@ class IncrementalAdditive(DevelopmentBase, IncrementalMixin):
         return X_new
 
     def _param_property(self, X, params):
+        """
+        Private method to wrap a numpy array into a Triangle
+
+        Uses and overrides DevelopmentBase._param_property.
+
+        Parameters
+        ----------
+        X : Triangle
+            The Triangle object that we want to place the parameter into
+
+        params : np.ndarray
+            The parammeter we want to turn into a Triangle
+
+        Returns
+        -------
+        Triangle
+            A Triangle that mimics X but has params values
+        """
         obj = super()._param_property(X, params)
         obj.values = params
         obj.is_additive = True

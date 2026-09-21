@@ -481,6 +481,24 @@ class Development(DevelopmentBase):
         return X_new
 
     def _param_property(self, X, params, idx):
+        """
+        Private method to wrap a numpy array into a Triangle
+
+        Uses and overrides DevelopmentBase._param_property.
+
+        Parameters
+        ----------
+        X : Triangle
+            The Triangle object that we want to place the parameter into
+
+        params : np.ndarray
+            The parammeter we want to turn into a Triangle
+
+        Returns
+        -------
+        Triangle
+            A Triangle that mimics X but has params values
+        """
         obj = super()._param_property(X, params)
         xp = X.get_array_module()
         obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]

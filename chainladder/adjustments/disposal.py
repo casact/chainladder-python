@@ -340,7 +340,25 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
         """
         return self.fit(X, y, sample_weight).transform(X, sample_weight=sample_weight)
 
-    def _param_property(self, X, params):
+    def _param_property(self, X: Triangle, params: np.ndarray) -> Triangle:
+        """
+        Private method to wrap a numpy array into a Triangle
+
+        Uses and overrides DevelopmentBase._param_property.
+
+        Parameters
+        ----------
+        X : Triangle
+            The Triangle object that we want to place the parameter into
+
+        params : np.ndarray
+            The parammeter we want to turn into a Triangle
+
+        Returns
+        -------
+        Triangle
+            A Triangle that mimics X but has params values
+        """
         obj = super()._param_property(X, params)
         obj.values = params
         obj.is_disposal_rate = True
