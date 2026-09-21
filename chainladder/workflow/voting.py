@@ -512,7 +512,6 @@ class TriangleSelector(
 
     def __init__(self, col: str | list[str]):
         self.col = col
-        self.cols = [col] if isinstance(col, str) else col
 
     def fit(
         self,
@@ -552,4 +551,5 @@ class TriangleSelector(
         -------
             X[col]
         """
-        return X[self.cols]
+        cols = [self.col] if isinstance(self.col, str) else self.col
+        return X[cols]
