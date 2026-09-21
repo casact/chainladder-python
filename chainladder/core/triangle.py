@@ -1514,8 +1514,7 @@ class Triangle(TriangleBase):
                     and (not self.is_disposal_rate)
                 ):  # for additive factor triangles (diff from left to right)
                     # fmt: on
-                    diff = self.iloc[..., :-1].values - self.iloc[..., 1:]
-                    diff.development = self.iloc[..., :-1].development
+                    diff = self.iloc[..., :-1] - self.iloc[..., 1:].values
                     self = concat((diff, self.iloc[..., -1]), axis=3)
                 else:  # for normal value triangles 
                     # also for disposal rate triangles (diff from right to left)
