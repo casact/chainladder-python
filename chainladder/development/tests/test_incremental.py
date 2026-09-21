@@ -4,11 +4,6 @@ import chainladder as cl
 import numpy as np
 import pytest
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from chainladder import Triangle
-
 
 def test_schmidt():
     tri = cl.load_sample("ia_sample")
@@ -109,8 +104,4 @@ def test_setting_cum(atol: float) -> None:
     )
     orig_zeta_ = ia.zeta_
     ia.cum_zeta_ = ia.cum_zeta_ * 2
-    assert np.allclose(
-        ia.zeta_.values,
-        (orig_zeta_ * 2).values,
-        atol=atol
-    )
+    assert np.allclose(ia.zeta_.values, (orig_zeta_ * 2).values, atol=atol)
