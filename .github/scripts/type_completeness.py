@@ -2,21 +2,19 @@
 Builds a Markdown summary comparing pyright `--verifytypes` reports for a
 PR's base and head commits, for posting as a PR comment.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
-from typing import (
-    Any,
-    Literal
-)
+from typing import Any, Literal
 
 # Decorates the patch coverage table.
 STATUS_ICON = {"known": "✅", "ambiguous": "⚠️", "unknown": "❌"}
 
 
-def status_of(symbol: dict[str, Any]) -> Literal['known', 'ambiguous', 'unknown']:
+def status_of(symbol: dict[str, Any]) -> Literal["known", "ambiguous", "unknown"]:
     """
     Maps the --verifytypes JSON boolean flags, isTypeKnown and isTypeAmbiguous, to internal
     representation in script: known, ambiguous, and unknown.
@@ -306,7 +304,8 @@ def build_summary(base_path: Path, head_path: Path, run_url: str | None = None) 
         if removed_names:
             parts.append(f"{len(removed_names)} no longer exported")
         sections += [
-            "**Patch (exported symbols added or changed by this PR):** " + "; ".join(parts),
+            "**Patch (exported symbols added or changed by this PR):** "
+            + "; ".join(parts),
             "",
             render_counts_table([("Patch", patch_counts)]),
             "",
