@@ -267,7 +267,12 @@ class TriangleDunders:
 
     @staticmethod
     def _get_key_union(obj, other):
-        return set(list(obj.groups.indices.keys()) + list(other.groups.indices.keys()))
+        # fmt: off
+        return set(
+            list(obj.groups.indices.keys())
+            + list(other.groups.indices.keys())
+        )
+        # fmt: on
 
     def _arithmetic_mapper(self, obj, other, f):
         """Use Dask if available, otherwise basic list comprehension"""
@@ -318,9 +323,10 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                return self._slice_or_nan(obj, other, k) + self._slice_or_nan(
-                    other, obj, k
-                )
+                # fmt: off
+                return (self._slice_or_nan(obj, other, k) +
+                        self._slice_or_nan(other, obj, k))
+                # fmt: on
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -367,9 +373,10 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                return self._slice_or_nan(obj, other, k) - self._slice_or_nan(
-                    other, obj, k
-                )
+                # fmt: off
+                return (self._slice_or_nan(obj, other, k) -
+                        self._slice_or_nan(other, obj, k))
+                # fmt: on
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -445,9 +452,10 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                return self._slice_or_nan(obj, other, k) * self._slice_or_nan(
-                    other, obj, k
-                )
+                # fmt: off
+                return (self._slice_or_nan(obj, other, k) *
+                        self._slice_or_nan(other, obj, k))
+                # fmt: on
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -462,9 +470,10 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                return self._slice_or_nan(obj, other, k) ** self._slice_or_nan(
-                    other, obj, k
-                )
+                # fmt: off
+                return (self._slice_or_nan(obj, other, k) **
+                        self._slice_or_nan(other, obj, k))
+                # fmt: on
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:
@@ -535,9 +544,10 @@ class TriangleDunders:
         if isinstance(obj, TriangleGroupBy):
 
             def f(k, self, obj, other):
-                return self._slice_or_nan(obj, other, k) / self._slice_or_nan(
-                    other, obj, k
-                )
+                # fmt: off
+                return (self._slice_or_nan(obj, other, k) /
+                        self._slice_or_nan(other, obj, k))
+                # fmt: on
 
             obj = self._arithmetic_mapper(obj, other, f)
         else:

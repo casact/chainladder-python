@@ -465,6 +465,17 @@ def test_triangle_columns_setter(raa):
         tri.columns = ["Col1", "Col2"]
 
 
+def test_triangle_axes(raa):
+    """Triangle.axes should return a list of [index, columns, origin, development]."""
+    axes = raa.axes
+    assert isinstance(axes, list)
+    assert len(axes) == 4
+    assert axes[0].equals(raa.index)
+    assert axes[1].equals(raa.columns)
+    assert axes[2].equals(raa.origin)
+    assert axes[3].equals(raa.development)
+
+
 def test_key_labels_setter(raa):
     """Setting key_labels should update Triangle.index columns and slicers."""
     tri = raa.copy()

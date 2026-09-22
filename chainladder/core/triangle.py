@@ -24,7 +24,12 @@ try:
 except ImportError:
     db = None
 
-from typing import Any, cast, Optional, TYPE_CHECKING
+from typing import (
+    Any,
+    cast,
+    Optional,
+    TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -759,18 +764,11 @@ class Triangle(TriangleBase):
         self._set_slicers()
 
     @property
-    def _columns(self) -> pd.Index:
-        return self.columns
-
-    @_columns.setter
-    def _columns(self, value: Any) -> None:
-        if isinstance(value, str):
-            value = [value]
-        if not hasattr(self, "_axes"):
-            self._axes = {}
-        self._axes["columns"] = pd.Index(value, name="columns")
-        if hasattr(self, "virtual_columns"):
-            self._set_slicers()
+    def axes(self) -> list:
+        """
+        Return a list representing the axes of the Triangle.
+        """
+        return [self.index, self.columns, self.origin, self.development]
 
     @property
     def columns_label(self) -> list:

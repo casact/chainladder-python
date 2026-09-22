@@ -289,7 +289,7 @@ class TailCurve(TailBase):
         """Does not work with munich"""
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.columns_label
+            self._slope_[..., 0, 0], index=rows, columns=self.ldf_.columns.to_list()
         )
 
     @property
@@ -297,5 +297,7 @@ class TailCurve(TailBase):
         """Does not work with munich"""
         rows = self.ldf_.index.set_index(self.ldf_.key_labels).index
         return pd.DataFrame(
-            self._intercept_[..., 0, 0], index=rows, columns=self.ldf_.columns_label
+            self._intercept_[..., 0, 0],
+            index=rows,
+            columns=self.ldf_.columns.to_list(),
         )
