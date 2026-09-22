@@ -24,6 +24,7 @@ from datetime import (
 )
 from typing import (
     Any,
+    Literal,
     TypeAlias,
 )
 
@@ -263,6 +264,136 @@ class Styler(_PandasStyler):
             raise ValueError(
                 "highlight_lower_triangle only supports a single (2-D) Triangle."
             )
+
+        if props is None:
+            props = f"background-color: {color};"
+            if text_color is not None:
+                props += f" color: {text_color};"
+
+        return self.apply(  # pyright: ignore[reportReturnType]
+            partial(
+                self._mask_style,
+                mask=mask,
+                props=props,
+            ),
+            axis=None,
+        )
+
+    def highlight_diagonal(
+        self,
+        color: str = "blue",
+        text_color: str | None = None,
+        props: str | None = None,
+        valuation: ValuationDateLike | Literal["latest"] = "latest",
+        **kwargs: Any,
+    ) -> Styler:
+        """
+        Highlight a diagonal -- the cells corresponding to a specific
+        valuation date -- with a style.
+
+        Parameters
+        ----------
+        color: str
+            Background color applied to diagonal cells. Ignored if
+            ``props`` is given. Defaults to "blue".
+        text_color: str | None
+            Text color applied to diagonal cells. Ignored if ``props``
+            is given. Left unstyled (i.e. inherited) if not given.
+        props: str | None
+            A full CSS properties string to apply instead of ``color`` and
+            ``text_color``, e.g. ``"background-color: blue; opacity: 60%;"``.
+            Optional.
+        valuation: ValuationDateLike | Literal["latest"]
+            The valuation date of the diagonal to highlight. Can be ``"latest"``
+            to highlight the most recent observed diagonal, or a specific date
+            (such as a year, date string, or datetime). Defaults to ``"latest"``.
+        **kwargs: Any
+            Additional keyword arguments. Supports ``valuation_date`` as an alias
+            for ``valuation``.
+
+        Returns
+        -------
+        Styler
+
+        Raises
+        ------
+        ValueError
+            If the wrapped Triangle is a valuation Triangle, or if the specified
+            valuation date is not present in the Triangle.
+
+        Examples
+        --------
+
+        .. code-block:: python
+
+            import chainladder as cl
+
+            cl.load_sample("raa").style.highlight_diagonal(color="lightyellow")
+
+        Highlight a specific historical valuation diagonal:
+
+        .. code-block:: python
+
+            cl.load_sample("raa").style.highlight_diagonal(
+                valuation="1988", color="#FFE599"
+            )
+
+        Chaining diagonal and lower triangle highlighting:
+
+        .. code-block:: python
+
+            (
+                cl
+                .load_sample("raa")
+                .style.highlight_diagonal(color="#FFF2CC")
+                .highlight_lower_triangle(color="#DDEBF7")
+            )
+        """
+        if "valuation_date" in kwargs:
+            valuation = kwargs.pop("valuation_date")
+        if kwargs:
+            unexpected = next(iter(kwargs))
+            raise TypeError(
+                f"highlight_diagonal() got an unexpected keyword argument '{unexpected}'"
+            )
+
+        if self._triangle.is_val_tri:
+            raise ValueError(
+                "highlight_diagonal does not support a valuation Triangle."
+            )
+
+        val_array = np.array(self._triangle.valuation).reshape(
+            self._triangle.shape[-2:],
+            order="F",
+        )
+        if val_array.shape != self.data.shape:
+            raise ValueError(
+                "highlight_diagonal only supports a single (2-D) Triangle."
+            )
+
+        if valuation == "latest" or valuation is None:
+            if self._triangle.valuation_date >= pd.Timestamp(options.ULT_VAL):
+                cutoff = pd.Timestamp(val_array[-1, 0])
+            else:
+                cutoff = self._triangle.valuation_date
+            mask = val_array == cutoff
+        else:
+            try:
+                target_period = pd.Period(valuation, freq=self._triangle.origin.freq)
+            except (ValueError, TypeError):
+                try:
+                    target_period = pd.Period(
+                        pd.Timestamp(valuation), freq=self._triangle.origin.freq
+                    )
+                except (ValueError, TypeError) as e:
+                    raise ValueError(f"Invalid valuation date: '{valuation}'") from e
+            val_periods = self._triangle.valuation.to_period(
+                freq=self._triangle.origin.freq
+            ).values.reshape(self._triangle.shape[-2:], order="F")
+            mask = val_periods == target_period
+
+        if not mask.any():
+            raise ValueError(f"Valuation '{valuation}' not found in Triangle.")
 
         if props is None:
             props = f"background-color: {color};"
