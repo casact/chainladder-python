@@ -1,7 +1,13 @@
+"""
+Implement the Sahasrabuddhe layer adjustment.
+"""
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
+
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -9,13 +15,83 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
 from chainladder.development import DevelopmentConstant
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from chainladder import Triangle
 
 
-class LEV(BaseEstimator, EstimatorIO):
+def _base_index(X: Triangle, base_period: int | str | None) -> int:
+    """
+    The position of ``base_period`` on X's origin axis.
+
+    Parameters
+    ----------
+    X: Triangle
+        The Triangle being fit.
+    base_period: int or str, optional
+        The origin period to anchor on. None takes the latest origin.
+
+    Returns
+    -------
+    int
+        The origin index to anchor on.
+
+    Raises
+    ------
+    ValueError
+        If ``base_period`` matches no origin period of X.
+    """
+    if base_period is None:
+        return X.shape[-2] - 1
+    period = pd.Period(str(base_period))
+    lo, hi = period.to_timestamp(how="s"), period.to_timestamp(how="e")
+    starts = X.origin.to_timestamp(how="s")
+    matches = np.where((starts >= lo) & (starts <= hi))[0]
+    if not len(matches):
+        raise ValueError(
+            f"base_period {base_period!r} does not match any origin "
+            f"period. Origins run {X.origin[0]} through {X.origin[-1]}."
+        )
+    return int(matches[0])
+
+
+def _limited_expected_value(means: Triangle, limit: float) -> Triangle:
+    """
+    The limited expected value of an exponential model at a single limit.
+
+    Parameters
+    ----------
+    means: Triangle
+        The claim size model's parameters, which for an exponential are also
+        its means.
+    limit: float
+        The limit at which claims are capped. ``np.inf`` gives the unlimited
+        mean, which for this model is the parameter itself.
+
+    Returns
+    -------
+    Triangle
+        ``means * (1 - exp(-limit / means))``, shaped like ``means``.
+
+    Raises
+    ------
+    ValueError
+        If ``limit`` is negative.
+    """
+    if limit < 0:
+        raise ValueError(f"limit must be non-negative, got {limit}.")
+    if np.isinf(limit):
+        return means.copy()
+    if limit == 0:
+        # Not just an optimisation. `0 / means` is NaN rather than 0 in
+        # Triangle arithmetic, and `1 - NaN` is then 1 rather than NaN, so the
+        # general expression below would hand back the means untouched.
+        return means * 0.0
+    return means * (1 - np.exp(-limit / means))
+
+
+class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
     """
     Limited expected values of an exponential claim size model.
 
@@ -27,7 +103,8 @@ class LEV(BaseEstimator, EstimatorIO):
 
     Sahasrabuddhe (2010) uses these to convert claims development patterns
     between layers: the limit adjustment factor between two layers is a ratio
-    of limited expected values, which is what :meth:`layer` returns.
+    of limited expected values. A layer is named by ``attachment`` and
+    ``limit``, and its expected loss comes back as ``lev_``.
 
     Parameters
     ----------
@@ -37,17 +114,46 @@ class LEV(BaseEstimator, EstimatorIO):
         whose development axis matches the Triangle being fit, or a mapping of
         development age to mean, e.g. ``{12: 28138, 24: 84242, ...}``.
 
-        A mapping is expanded onto the latest origin period of ``X``, giving a
+        A mapping is expanded onto the base origin period of ``X``, giving a
         one-origin-row Triangle. A Triangle is taken as given, which is what
         lets a caller pass means that have already been restated to a cost
         level that varies by origin as well as by development age.
+    trend: Triangle, optional
+        A cost level index over the origin x development rectangle, stating
+        each cell's cost level relative to a common base. Build it with
+        :class:`Trend` -- ``full_triangle=True`` is required, since the index
+        has to cover cells the Triangle itself does not reach.
+
+        ``means`` describes ``base_period``. Given a trend, ``fit`` restates it
+        onto every cell, which is equation 3.1 of the paper::
+
+            means_(i,j) = means(j) * trend(i,j) / trend(base,j)
+
+        Only ratios of the index are used, so its own base period is
+        immaterial: rescaling it by any constant leaves the result unchanged.
+        Left as None, ``means`` is used as given and no restatement happens.
+    base_period: int or str, optional
+        The origin period ``means`` is stated at, and the row of ``trend``
+        every other cell is restated against. Defaults to the latest origin.
+    attachment: float (default=0.0)
+        The limit at which the layer attaches.
+    limit: float (default=np.inf)
+        The limit at which the layer exhausts, i.e. where claims are capped.
+        The default leaves the layer unlimited, so ``lev_`` is the unlimited
+        mean -- ``M(Phi)`` in the paper's notation.
 
     Attributes
     ----------
     means_: Triangle
-        ``means`` resolved against the Triangle that was fit. For an
-        exponential model this doubles as the unlimited mean, since the mean of
-        an exponential distribution is its only parameter.
+        ``means`` resolved against the Triangle that was fit, restated onto
+        every cell's own cost level when a ``trend`` was given. These are the
+        claim size model's parameters, ``Phi`` in the paper's notation.
+    lev_: Triangle
+        The expected loss in the layer, ``LEV(limit) - LEV(attachment)`` --
+        equation 2.4. With the default layer this is the unlimited mean, which
+        for an exponential equals ``means_``: the parameter of an exponential
+        is its mean. The paper prints the two as separate exhibits (C2 and C3)
+        because a model with more than one parameter would distinguish them.
 
     Examples
     --------
@@ -63,8 +169,8 @@ class LEV(BaseEstimator, EstimatorIO):
             12: 28138, 24: 84242, 36: 133998, 48: 182460, 60: 204649,
             72: 228245, 84: 252830, 96: 265063, 108: 275707, 120: 280000,
         }
-        lev = cl.LEV(means=thetas).fit(genins)
-        print(lev.at(2000000).round(0))
+        lev = cl.LEV(means=thetas, limit=2000000).fit(genins)
+        print(lev.lev_.round(0))
 
     .. testoutput::
         :options: +NORMALIZE_WHITESPACE
@@ -72,12 +178,13 @@ class LEV(BaseEstimator, EstimatorIO):
                   12       24        36        48        60        72        84        96        108       120
         2010  28138.0  84242.0  133998.0  182457.0  204637.0  228209.0  252737.0  264923.0  275512.0  279779.0
 
-    Capping at the policy limit and at the narrower limit of the data triangle
-    gives the layer between them:
+    Attaching at the narrower limit of the data triangle gives the layer
+    between the two:
 
     .. testcode::
 
-        print(lev.layer(1000000, 2000000).round(0))
+        layer = cl.LEV(means=thetas, attachment=1000000, limit=2000000)
+        print(layer.fit(genins).lev_.round(0))
 
     .. testoutput::
         :options: +NORMALIZE_WHITESPACE
@@ -87,8 +194,19 @@ class LEV(BaseEstimator, EstimatorIO):
 
     """
 
-    def __init__(self, means: Triangle | dict[int, float] | None = None):
+    def __init__(
+        self,
+        means: Triangle | dict[int, float] | None = None,
+        trend: Triangle | None = None,
+        base_period: int | str | None = None,
+        attachment: float = 0.0,
+        limit: float = np.inf,
+    ):
         self.means = means
+        self.trend = trend
+        self.base_period = base_period
+        self.attachment = attachment
+        self.limit = limit
 
     def _resolve_means(self, X: Triangle) -> Triangle:
         """
@@ -127,10 +245,11 @@ class LEV(BaseEstimator, EstimatorIO):
                 f"means is missing development age(s) {missing}. It must cover "
                 f"every development age of the Triangle: {ages}."
             )
-        # The latest origin is a single cell of data, so its row is mostly NaN.
-        # Push the valuation date out to unmask it before laying the means on
-        # top -- otherwise every age past the first would come back NaN.
-        row = X.iloc[0, 0, -1:, :].copy().set_backend("numpy")
+        # The base origin is typically a single cell of data, so its row is
+        # mostly NaN. Push the valuation date out to unmask it before laying the
+        # means on top -- otherwise every age past the first would come back NaN.
+        base = _base_index(X, self.base_period)
+        row = X.iloc[0, 0, base : base + 1, :].copy().set_backend("numpy")
         row.valuation_date = row.valuation.max()
         row = (row * 0 + 1).fillna(1)
         return row * np.array([self.means[age] for age in ages], dtype="float64")
@@ -150,88 +269,135 @@ class LEV(BaseEstimator, EstimatorIO):
         -------
         self: object
             Returns the instance itself.
-        """
-        self.means_ = self._resolve_means(X)
-        return self
-
-    def at(self, limit: float) -> Triangle:
-        """
-        The limited expected value at a single limit.
-
-        Parameters
-        ----------
-        limit: float
-            The limit at which claims are capped. ``np.inf`` returns the
-            unlimited mean.
-
-        Returns
-        -------
-        Triangle
-            ``means_ * (1 - exp(-limit / means_))``, shaped like ``means_``.
-        """
-        if limit < 0:
-            raise ValueError(f"limit must be non-negative, got {limit}.")
-        if np.isinf(limit):
-            return self.means_.copy()
-        if limit == 0:
-            # Not just an optimisation. `0 / means_` is NaN rather than 0 in
-            # Triangle arithmetic, and `1 - NaN` is then 1 rather than NaN, so
-            # the general expression below would hand back the means untouched.
-            return self.means_ * 0.0
-        return self.means_ * (1 - np.exp(-limit / self.means_))
-
-    def layer(self, attachment: float, exhaustion: float) -> Triangle:
-        """
-        The expected loss in the layer between two limits.
-
-        This is ``LEV(p) - LEV(d)`` for the layer attaching at ``d`` and
-        exhausting at ``p`` -- equation 2.4 of the paper.
-
-        Parameters
-        ----------
-        attachment: float
-            The limit at which the layer attaches.
-        exhaustion: float
-            The limit at which the layer exhausts. Use ``np.inf`` for an
-            unlimited top layer.
-
-        Returns
-        -------
-        Triangle
-            The limited expected value of the layer.
 
         Raises
         ------
         ValueError
-            If the layer exhausts at or below its attachment point.
+            If the layer exhausts at or below its attachment point, if
+            ``trend`` does not share X's origin and development axes, or if it
+            is not defined across the whole base period.
         """
-        if exhaustion <= attachment:
+        if self.limit <= self.attachment:
             raise ValueError(
-                f"exhaustion ({exhaustion}) must exceed attachment ({attachment})."
+                f"limit ({self.limit}) must exceed attachment ({self.attachment})."
             )
-        return self.at(exhaustion) - self.at(attachment)
+
+        means_at_base = self._resolve_means(X)
+        if self.trend is None:
+            self.means_ = means_at_base
+        else:
+            base = _base_index(X, self.base_period)
+            base_row = slice(base, base + 1)
+            self._validate_trend(X, base_row)
+            # `means` describes the base period. Spreading it over the
+            # rectangle is a ratio of the index, so the index's own base period
+            # cancels.
+            self.means_ = means_at_base * self.trend / self.trend.iloc[..., base_row, :]
+
+        self.lev_ = _limited_expected_value(
+            self.means_, self.limit
+        ) - _limited_expected_value(self.means_, self.attachment)
+        return self
+
+    def _validate_trend(self, X: Triangle, base_row: slice) -> None:
+        """
+        Check that ``trend`` can restate ``means`` across the whole rectangle.
+
+        Parameters
+        ----------
+        X: Triangle
+            The Triangle being fit.
+        base_row: slice
+            The base period's row of the origin axis.
+
+        Raises
+        ------
+        ValueError
+            If the axes do not match, or the base period's row has a gap.
+        """
+        # Compare labels rather than shapes: a trend built against a different
+        # Triangle of the same dimensions would otherwise pass silently and
+        # restate every cell by the wrong factor.
+        for axis in ("origin", "development"):
+            mine = list(getattr(self.trend, axis))
+            theirs = list(getattr(X, axis))
+            if mine != theirs:
+                raise ValueError(
+                    f"trend does not share X's {axis} axis: trend runs "
+                    f"{mine[0]} through {mine[-1]}, X runs {theirs[0]} through "
+                    f"{theirs[-1]}. Build the trend against X, with "
+                    "full_triangle=True so it covers the whole rectangle."
+                )
+
+        # Everything is divided by the base period's row of the index, so a gap
+        # anywhere in it propagates NaN across the whole result. A trend fitted
+        # without full_triangle=True is shaped like the Triangle, which leaves
+        # that row almost entirely empty -- and the failure is silent, so it is
+        # worth catching here rather than letting it surface as missing data.
+        base_factors = np.asarray(
+            self.trend.iloc[..., base_row, :].set_backend("numpy").values
+        )
+        if np.isnan(base_factors).any():
+            raise ValueError(
+                f"trend is not defined across the whole {X.origin[base_row][0]} "
+                "origin period, which every cell is restated against. Refit the "
+                "trend with full_triangle=True so it covers cells past the "
+                "valuation date."
+            )
+
+    def transform(self, X: Triangle, y=None, sample_weight=None) -> Triangle:
+        """
+        If X and self are of different shapes, align self to X, else
+        return self.
+
+        Parameters
+        ----------
+        X: Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X_new: New triangle with transformed attributes.
+        """
+        X_new = X.copy()
+        triangles = ["means_", "lev_"]
+        for item in triangles:
+            setattr(X_new, item, getattr(self, item))
+        X_new._set_slicers()
+        return X_new
 
 
 class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
     """
-    Restate a Triangle to a common cost level and claim size limit.
+    Restate claims data, or a development pattern, onto another claim size
+    layer and a common cost level.
 
-    Claims development patterns are specific to the limit the data is reported
-    at and to the cost level of each cell. Sahasrabuddhe (2010) shows that a
-    Triangle can be moved onto a single basis before any development is fitted,
-    using a claim size model and a cost level index::
+    Claims development is specific to the limit the data is reported at and to
+    the cost level of each cell. Sahasrabuddhe (2010) relates the two, so one
+    basis can be converted into another without refitting. What ``fit``
+    receives decides which conversion it does.
 
-        adjusted(i,j) = X(i,j) * LEV(target_limit; Phi(base,j))
-                               / LEV(data_limit;   Phi(i,j))
+    **Given a Triangle of claims**, every observation is restated to the basic
+    limit at ``base_period``'s cost level -- equation 3.2::
 
-    where ``Phi(i,j)`` is the claim size model restated to cell (i, j)'s cost
-    level. The numerator is one row -- the basis everything is moved to -- and
-    the denominator varies cell by cell, which is what makes the ratio a
-    combined trend and limit adjustment.
+        triangle_(i,j) = X(i,j) * LEV(basic_limit; Phi(base,j))
+                                / LEV(data_limit;  Phi(i,j))
 
-    The transformed Triangle carries adjusted values, so ordinary development
-    follows in a Pipeline: there is nothing left in the data for the factors to
-    be contaminated by.
+    The numerator is one row, the basis everything moves to; the denominator
+    varies cell by cell, which is what makes the ratio a combined trend and
+    limit adjustment. Ordinary development then follows in a Pipeline, with
+    nothing left in the data for the factors to be contaminated by.
+
+    **Given a development pattern** fitted at ``basic_limit``, the pattern for
+    the target layer follows from a ratio of layer expectations -- equations
+    3.8 and 3.9 -- with no refitting and no second triangle::
+
+        factor(i,j) = cdf(j) * [ L(i,last) / A(last) ] / [ L(i,j) / A(j) ]
+
+    where ``L`` is the target layer's expected loss and ``A`` is
+    ``basic_limit``'s. ``L(i,last) / L(i,j)`` is how much of exposure period
+    i's ultimate loss in the new layer has emerged by age j, and the ``A``
+    terms restate that onto the pattern's own basis.
 
     Parameters
     ----------
@@ -247,10 +413,26 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Only ratios of this index are used, so its own base period is
         immaterial: rescaling it by any constant leaves the result unchanged.
+
+        When a pattern is fitted rather than a Triangle, this is also what
+        supplies the origin axis: a pattern has only one row, so the rectangle
+        has nowhere else to come from.
     data_limit: float
-        The claim size limit the observed data is reported at.
-    target_limit: float
-        The claim size limit to restate to. ``np.inf`` restates to unlimited.
+        The claim size limit the observed data is reported at. Used only when
+        fitting a Triangle, since a pattern carries no data to restate.
+    basic_limit: float
+        The claim size limit that forms the common basis -- ``B`` in the
+        paper. A Triangle is restated onto it, and a pattern is assumed to
+        have been fitted on it.
+    target_layer: tuple of float
+        The layer to restate to, as ``(attachment, exhaustion)``. Use
+        ``np.inf`` for the exhaustion of an unlimited top layer, e.g.
+        ``(2_000_000, np.inf)``. A ground-up layer attaches at zero:
+        ``(0, 500_000)``.
+
+        When fitting a Triangle this must be ``(0, basic_limit)``: restating
+        claims is a move onto the basis, and any other layer would be a
+        silently different calculation.
     base_period: int or str, optional
         The origin period whose cost level everything is restated to, and the
         period ``means`` is stated at. Defaults to the latest origin.
@@ -260,11 +442,39 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
     means_: Triangle
         The claim size model parameters restated to every cell's own cost
         level -- ``means`` spread over the rectangle by ``trend``.
-    lev_: LEV
-        The limited expected value model fitted on ``means_``. Its ``at`` and
-        ``layer`` methods give the expectations behind the adjustment.
-    adjusted_: Triangle
-        The restated Triangle, shaped like the Triangle that was fit.
+    triangle_: Triangle
+        Set when a Triangle was fitted: the restated claims, shaped like the
+        Triangle that was fit.
+    cdf_: Triangle
+        Set when a pattern was fitted: cumulative development factors for the
+        target layer, taken along the latest diagonal so that each exposure
+        period develops from its own age at its own cost level.
+    ldf_: Triangle
+        Set when a pattern was fitted: ``cdf_`` as age-to-age factors.
+    full_cdf_: Triangle
+        Set when a pattern was fitted: cumulative factors over the whole origin
+        x development rectangle, before collapsing to a diagonal. Each row is
+        one exposure period's complete pattern at its own cost level, so a
+        column shows how the same factor varies with cost level. The cells past
+        the latest diagonal are the factors a future valuation would use.
+
+        The development axis keeps the Triangle's own ages rather than pattern
+        labels, so that valuation arithmetic still works on the rectangle.
+        Column ``j`` holds the factor from age ``j`` to ultimate.
+    full_ldf_: Triangle
+        Set when a pattern was fitted: ``full_cdf_`` as age-to-age factors,
+        ``full_cdf_(i,j) / full_cdf_(i,j+1)``. Column ``j`` holds the factor
+        from age ``j`` to the next age, and the last column is 1.0. A layer
+        with no expected loss at an age gives a non-finite cumulative factor
+        there, and the ratio of two such factors is NaN.
+
+        Note that its diagonal is **not** ``ldf_``, and the two answer
+        different questions. Each row here divides within itself, so it is one
+        exposure period's own pattern, entirely at that period's cost level.
+        ``ldf_`` divides along the diagonal of ``full_cdf_``, which steps up a
+        row with every age, so consecutive factors come from different
+        exposure periods -- which is what makes it the pattern to apply to a
+        Triangle, where each period sits at a different age.
 
     """
 
@@ -273,47 +483,16 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         means: Triangle | dict[int, float] | None = None,
         trend: Triangle | None = None,
         data_limit: float | None = None,
-        target_limit: float | None = None,
+        basic_limit: float | None = None,
+        target_layer: tuple[float, float] | None = None,
         base_period: int | str | None = None,
     ):
         self.means = means
         self.trend = trend
         self.data_limit = data_limit
-        self.target_limit = target_limit
+        self.basic_limit = basic_limit
+        self.target_layer = target_layer
         self.base_period = base_period
-
-    def _base_index(self, X: Triangle) -> int:
-        """
-        The position of ``base_period`` on X's origin axis.
-
-        Parameters
-        ----------
-        X: Triangle
-            The Triangle being fit.
-
-        Returns
-        -------
-        int
-            The origin index to anchor on; the latest origin when
-            ``base_period`` is None.
-
-        Raises
-        ------
-        ValueError
-            If ``base_period`` matches no origin period of X.
-        """
-        if self.base_period is None:
-            return X.shape[-2] - 1
-        period = pd.Period(str(self.base_period))
-        lo, hi = period.to_timestamp(how="s"), period.to_timestamp(how="e")
-        starts = X.origin.to_timestamp(how="s")
-        matches = np.where((starts >= lo) & (starts <= hi))[0]
-        if not len(matches):
-            raise ValueError(
-                f"base_period {self.base_period!r} does not match any origin "
-                f"period. Origins run {X.origin[0]} through {X.origin[-1]}."
-            )
-        return int(matches[0])
 
     def fit(
         self,
@@ -338,56 +517,175 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         if self.trend is None:
             raise ValueError("trend is required. Build one with cl.Trend(...).")
-        for name in ("data_limit", "target_limit"):
+        for name in ("basic_limit", "target_layer"):
             if getattr(self, name) is None:
                 raise ValueError(f"{name} is required.")
-        # Compare labels rather than shapes: a trend built against a different
-        # Triangle of the same dimensions would otherwise pass silently and
-        # restate every cell by the wrong factor.
-        for axis in ("origin", "development"):
-            mine = list(getattr(self.trend, axis))
-            theirs = list(getattr(X, axis))
-            if mine != theirs:
-                raise ValueError(
-                    f"trend does not share X's {axis} axis: trend runs "
-                    f"{mine[0]} through {mine[-1]}, X runs {theirs[0]} through "
-                    f"{theirs[-1]}. Build the trend against X, with "
-                    "full_triangle=True so it covers the whole rectangle."
-                )
-        base = self._base_index(X)
+        # A JSON round trip turns the tuple into a list, so normalise rather
+        # than compare against whatever shape it came back as.
+        try:
+            attachment, exhaustion = (float(x) for x in self.target_layer)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "target_layer must be a pair of limits, (attachment, "
+                f"exhaustion), e.g. (0, {self.basic_limit}). Got "
+                f"{self.target_layer!r}."
+            ) from None
+        if exhaustion <= attachment:
+            raise ValueError(
+                f"target_layer exhausts at {exhaustion} and attaches at "
+                f"{attachment}; the exhaustion must be the larger of the two."
+            )
+        self._target = (attachment, exhaustion)
+
+        pattern = self._as_cdf(X)
+        # A pattern has a single origin row, so it cannot supply the rectangle
+        # the claim size model is spread over. The trend can, and has to cover
+        # it anyway.
+        grid = self.trend if pattern is not None else X
+
+        base = _base_index(grid, self.base_period)
         base_row = self._base_slice = slice(base, base + 1)
 
-        # Everything is divided by the base period's row of the index, so a gap
-        # anywhere in it propagates NaN across the whole result. A trend fitted
-        # without full_triangle=True is shaped like the Triangle, which leaves
-        # that row almost entirely empty -- and the failure is silent, so it is
-        # worth catching here rather than letting it surface as missing data.
-        base_factors = np.asarray(
-            self.trend.iloc[..., base_row, :].set_backend("numpy").values
-        )
-        if np.isnan(base_factors).any():
+        # LEV owns the claim size model: given the trend it restates `means`
+        # from the base period onto every cell's own cost level, and validates
+        # that the trend can do so.
+        self.lev_ = LEV(
+            means=self.means,
+            trend=self.trend,
+            base_period=self.base_period,
+        ).fit(grid)
+        self.means_ = self.lev_.means_
+
+        if pattern is None:
+            self._fit_triangle(X, base_row)
+        else:
+            self._fit_pattern(pattern, base_row)
+        return self
+
+    @staticmethod
+    def _as_cdf(X) -> Triangle | None:
+        """
+        The cumulative factors ``X`` carries, or None if it carries claims.
+
+        Parameters
+        ----------
+        X: Triangle or estimator
+            A Triangle of claims, a Triangle of cumulative factors, or a
+            fitted development estimator.
+
+        Returns
+        -------
+        Triangle or None
+            The pattern, or None when ``X`` is claims data to be restated.
+        """
+        # Order matters. A Triangle that has been through a development step
+        # carries a cdf_ of its own, so asking for cdf_ first would read claims
+        # data as a pattern. is_pattern is what actually distinguishes them,
+        # and only a Triangle has it.
+        if hasattr(X, "is_pattern"):
+            return X if X.is_pattern else None
+        # A fitted development estimator. Anything without cdf_ is neither a
+        # pattern nor a Triangle, and fails on use rather than being guessed at.
+        return getattr(X, "cdf_", None)
+
+    def _fit_triangle(self, X: Triangle, base_row: slice) -> None:
+        """
+        Restate claims onto ``basic_limit`` -- equation 3.2.
+
+        Parameters
+        ----------
+        X: Triangle
+            The claims to restate.
+        base_row: slice
+            The base period's row of the origin axis.
+
+        Raises
+        ------
+        ValueError
+            If ``data_limit`` is missing, or ``target_layer`` is a layer
+            other than ``(0, basic_limit)``.
+        """
+        if self.data_limit is None:
+            raise ValueError("data_limit is required to restate a Triangle.")
+        if self._target != (0.0, float(self.basic_limit)):
             raise ValueError(
-                f"trend is not defined across the whole {X.origin[base]} origin "
-                "period, which every cell is restated against. Refit the trend "
-                "with full_triangle=True so it covers cells past the valuation "
-                "date."
+                "restating a Triangle moves it onto basic_limit, so the target "
+                f"layer must be (0, {self.basic_limit}). Got "
+                f"{self._target}. Fit a development pattern instead to restate "
+                "onto another layer."
             )
-
-        # `means` describes the base period. Spreading it over the rectangle is
-        # a ratio of the index, so the index's own base period cancels.
-        means_at_base = LEV(means=self.means).fit(X).means_
-        self.means_ = means_at_base * self.trend / self.trend.iloc[..., base_row, :]
-        self.lev_ = LEV(means=self.means_).fit(X)
-
-        target = self.lev_.at(self.target_limit).iloc[..., base_row, :]
-        self.adjusted_ = X * target / self.lev_.at(self.data_limit)
+        target = _limited_expected_value(self.means_, self.basic_limit).iloc[
+            ..., base_row, :
+        ]
+        self.triangle_ = (
+            X * target / _limited_expected_value(self.means_, self.data_limit)
+        )
         # The limited expected values cover the whole rectangle, so the product
         # inherits their valuation date rather than X's. The values are already
         # masked correctly -- it is the metadata that is wrong -- but leaving it
         # would give the result a nan_triangle and a latest diagonal belonging
         # to a Triangle that runs years past the data.
-        self.adjusted_.valuation_date = X.valuation_date
-        return self
+        self.triangle_.valuation_date = X.valuation_date
+
+    def _fit_pattern(self, cdf: Triangle, base_row: slice) -> None:
+        """
+        Restate a pattern onto the target layer -- equations 3.8 and 3.9.
+
+        Parameters
+        ----------
+        cdf: Triangle
+            Cumulative development factors fitted at ``basic_limit``.
+        base_row: slice
+            The base period's row of the origin axis.
+        """
+        shape = self.trend.set_backend("numpy").copy()
+        ages = list(shape.development)
+
+        aligned = self._cdf_by_age(cdf, ages)
+        layer = _limited_expected_value(
+            self.means_, self._target[1]
+        ) - _limited_expected_value(self.means_, self._target[0])
+        anchor = _limited_expected_value(self.means_, self.basic_limit).iloc[
+            ..., base_row, :
+        ]
+
+        layer_values = np.asarray(layer.set_backend("numpy").values)
+        anchor_values = np.asarray(anchor.set_backend("numpy").values)
+        emerged = layer_values / anchor_values
+        factors = aligned * (layer_values[..., -1:] / anchor_values[..., -1:]) / emerged
+
+        surface = shape.copy()
+        surface.valuation_date = surface.valuation.max()
+        surface.values = factors
+        self.full_cdf_ = surface
+
+        # Age-to-age is the ratio of neighbouring cumulative factors, which is
+        # the same rule the diagonal pattern follows. The last column has no
+        # next age to divide by and is the identity, matching how `ldf_` ends.
+        ratios = np.ones_like(factors)
+        ratios[..., :-1] = factors[..., :-1] / factors[..., 1:]
+        full_ldf = surface.copy()
+        full_ldf.values = ratios
+        self.full_ldf_ = full_ldf
+
+        # `cdf_` is the diagonal of that surface -- each exposure period at its
+        # own age and its own cost level. A pattern carries no valuation date to
+        # take the diagonal at, and the trend's own runs to the end of the
+        # rectangle, so the diagonal is anchored on the newest origin period's
+        # first development age. That is the latest diagonal whenever the trend
+        # was built against the data, which is what `trend` is for.
+        valuation = np.array(shape.valuation).reshape(shape.shape[-2:], order="F")
+        shape.valuation_date = pd.Timestamp(valuation[-1, 0])
+
+        try:
+            fitted = self._as_pattern(shape, factors, ages)
+        except ValueError as error:
+            # An incomplete diagonal makes no usable pattern, but it takes
+            # nothing away from the rectangle -- defined for every cell.
+            # Warning rather than raising keeps full_cdf_/full_ldf_ reachable.
+            warnings.warn(f"{error} cdf_ and ldf_ are not set.", UserWarning)
+            return
+        self.cdf_, self.ldf_ = fitted.cdf_, fitted.ldf_
 
     def transform(self, X: Triangle, y=None, sample_weight=None) -> Triangle:
         """
@@ -402,9 +700,21 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         -------
             X_new: New triangle with adjusted values.
         """
-        X_new = self.adjusted_.copy()
+        if hasattr(self, "cdf_"):
+            X_new = X.copy()
+            for item in ("means_", "cdf_", "ldf_", "full_cdf_", "full_ldf_"):
+                setattr(X_new, item, getattr(self, item))
+            X_new._set_slicers()
+            return X_new
+
+        # Restate the Triangle that was handed in, not the one fit() happened
+        # to see -- the claim size model is the fitted state, the data is not.
+        target = _limited_expected_value(self.means_, self.basic_limit).iloc[
+            ..., self._base_slice, :
+        ]
+        X_new = X * target / _limited_expected_value(self.means_, self.data_limit)
+        X_new.valuation_date = X.valuation_date
         X_new.means_ = self.means_
-        X_new.lev_ = self.lev_
         X_new._set_slicers()
         return X_new
 
@@ -445,110 +755,8 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                 out[..., position] = values[..., ddims.index(age)]
         return out
 
-    def by_layer(
-        self,
-        development,
-        attachment: float = 0.0,
-        exhaustion: float | None = None,
-        full_triangle: bool = False,
-        style: Literal["ldf", "cdf"] | None = None,
-    ) -> Triangle:
-        """
-        Restate a development pattern onto a different layer.
-
-        A pattern fitted on one layer implies a pattern for any other, through
-        the ratio of the two layers' expected losses -- no refitting and no
-        second triangle. For a layer whose expected loss is ``L(i,j)``::
-
-            factor(i,j) = cdf(j) * [ L(i,last) / A(last) ] / [ L(i,j) / A(j) ]
-
-        where ``A`` is the expected loss of the layer the pattern was fitted
-        on, taken at ``base_period``. ``L(i,last) / L(i,j)`` is how much of
-        exposure period i's ultimate loss in the new layer has emerged by age
-        j, and the ``A`` terms restate that onto the pattern's own basis.
-
-        Parameters
-        ----------
-        development: estimator or Triangle
-            The pattern to restate, fitted on the Triangle this estimator
-            transformed. A fitted development estimator, a Triangle it has
-            transformed, or a Triangle of cumulative factors.
-        attachment: float (default=0.0)
-            The limit at which the target layer attaches.
-        exhaustion: float, optional
-            The limit at which the target layer exhausts. Defaults to
-            ``target_limit``, which reproduces the pattern's own layer.
-            ``np.inf`` gives an unlimited top layer.
-        full_triangle: bool (default=False)
-            By default the factors are shaped like the Triangle that was fit.
-            When True they cover the whole origin x development rectangle
-            instead -- nothing in the calculation needs the data, so the cells
-            past the latest diagonal are the factors a future valuation uses.
-            Cannot be combined with ``style``.
-        style: {'ldf', 'cdf'}, optional
-            By default the full origin x development surface is returned. Set
-            this to collapse it to the **latest diagonal** -- one factor per
-            development age, taken from the exposure period that has actually
-            reached that age -- shaped as an ordinary development pattern.
-
-            These are the factors you would apply: each exposure period
-            develops from its own current age at its own cost level, which is
-            one cell per row along the last diagonal. Reading a single row of
-            the surface instead would apply one period's cost level to them
-            all.
-
-            ``'cdf'`` labels them ``12-Ult``, ``24-Ult``, ...; ``'ldf'``
-            converts to age-to-age, labelled ``12-24``, ``24-36``, ...
-
-        Returns
-        -------
-        Triangle
-            Cumulative development factors for the layer, over the origin x
-            development surface -- or, when ``style`` is given, the latest
-            diagonal as a development pattern.
-
-        Notes
-        -----
-        Layers that have almost no expected loss at early ages produce very
-        large or non-finite factors. That is the arithmetic being honest: the
-        factor required to develop nothing to ultimate is undefined, and a high
-        excess layer genuinely has nothing to develop at age one.
-        """
-        if style is not None:
-            if style not in ("ldf", "cdf"):
-                raise ValueError(f"style must be 'ldf', 'cdf' or None, got {style!r}.")
-            if full_triangle:
-                raise ValueError(
-                    "style and full_triangle cannot be combined. The latest "
-                    "diagonal is a property of the observed Triangle, so there "
-                    "is no diagonal to take on the full rectangle."
-                )
-        exhaustion = self.target_limit if exhaustion is None else exhaustion
-        shape = self.adjusted_
-        ages = list(shape.development)
-
-        cdf = self._cdf_by_age(development, ages)
-        layer = self.lev_.layer(attachment, exhaustion)
-        anchor = self.lev_.at(self.target_limit).iloc[..., self._base_slice, :]
-
-        layer_values = np.asarray(layer.set_backend("numpy").values)
-        anchor_values = np.asarray(anchor.set_backend("numpy").values)
-        emerged = layer_values / anchor_values
-        factors = cdf * (layer_values[..., -1:] / anchor_values[..., -1:]) / emerged
-
-        out = shape.set_backend("numpy").copy()
-        if style is not None:
-            return self._as_pattern(out, factors, ages, style)
-        if full_triangle:
-            # Push the valuation date past the data so nan_triangle stops masking.
-            out.valuation_date = out.valuation.max()
-        else:
-            factors = factors * out.nan_triangle
-        out.values = factors
-        return out.set_backend(shape.array_backend)
-
     @staticmethod
-    def _as_pattern(shape: Triangle, factors, ages: list, style: str) -> Triangle:
+    def _as_pattern(shape: Triangle, factors, ages: list) -> DevelopmentConstant:
         """
         Collapse a factor surface to its latest diagonal, as a pattern.
 
@@ -594,12 +802,11 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                 "happens when the development grain is finer than the origin "
                 "grain -- quarterly development on annual origins reaches only "
                 "every fourth age. Re-grain the Triangle so the two align, or "
-                "omit `style` and take the factor surface instead."
+                "read `full_cdf_` instead."
             )
         rows = np.argmax(on_diagonal, axis=0)
         pattern = {
             age: float(factors[..., rows[position], position].flat[0])
             for position, age in enumerate(ages)
         }
-        fitted = DevelopmentConstant(patterns=pattern, style="cdf").fit(shape)
-        return fitted.cdf_ if style == "cdf" else fitted.ldf_
+        return DevelopmentConstant(patterns=pattern, style="cdf").fit(shape)
