@@ -746,3 +746,29 @@ def test_highlight_diagonal_rejects_valuation_triangle(raa) -> None:
     """
     with pytest.raises(ValueError, match="does not support a valuation Triangle"):
         raa.dev_to_val().style.highlight_diagonal()
+
+
+def test_highlight_diagonal_finer_development_grain() -> None:
+    """
+    Check that highlight_diagonal highlights exactly a single diagonal when
+    development grain is finer than origin grain (e.g. annual origin,
+    quarterly development).
+
+    Returns
+    -------
+    None
+    """
+    tri = cl.load_sample("quarterly")["paid"]
+    styler = tri.style.highlight_diagonal(valuation="1995-03-31", color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert len(styled) == 1
+    assert styled == {(0, 0)}
+
+    # Check a valuation date spanning multiple origins
+    styler2 = tri.style.highlight_diagonal(valuation="1998-03-31", color="yellow")
+    styler2._compute()
+    styled2 = {k for k, v in styler2.ctx.items() if v}
+    assert len(styled2) == 4
+    rows = [r for r, c in styled2]
+    assert len(rows) == len(set(rows))

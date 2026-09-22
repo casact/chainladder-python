@@ -378,17 +378,16 @@ class Styler(_PandasStyler):
                 cutoff = self._triangle.valuation_date
             mask = val_array == cutoff
         else:
+            dev_freq = self._triangle.development_grain.replace("S", "2Q")
             try:
-                target_period = pd.Period(valuation, freq=self._triangle.origin.freq)
+                target_period = pd.Period(valuation, freq=dev_freq)
             except (ValueError, TypeError):
                 try:
-                    target_period = pd.Period(
-                        pd.Timestamp(valuation), freq=self._triangle.origin.freq
-                    )
+                    target_period = pd.Period(pd.Timestamp(valuation), freq=dev_freq)
                 except (ValueError, TypeError) as e:
                     raise ValueError(f"Invalid valuation date: '{valuation}'") from e
             val_periods = self._triangle.valuation.to_period(
-                freq=self._triangle.origin.freq
+                freq=dev_freq
             ).values.reshape(self._triangle.shape[-2:], order="F")
             mask = val_periods == target_period
 
