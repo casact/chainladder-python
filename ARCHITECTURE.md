@@ -166,11 +166,14 @@ Each mixin that needs `TriangleProtocol` for type-checking purposes declares its
 ```python
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleProtocol
+
     _MixinBase = TriangleProtocol
 else:
     _MixinBase = object
+
 
 class TriangleMixin(_MixinBase):
     # Pyright sees TriangleProtocol as the base — self has .shape, .values, .sum, etc.
@@ -193,7 +196,9 @@ if TYPE_CHECKING:
     from chainladder import Triangle
     from chainladder.core.typing import TriangleProtocol
 
+
 def transform(X: TriangleProtocol) -> Triangle:
+    # transformer that conforms to scikit-learn requirements
     ...
 ```
 
