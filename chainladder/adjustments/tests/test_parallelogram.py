@@ -457,7 +457,8 @@ def test_cumulative_rejects_non_positive():
 
 
 def test_cumulative_factor_predates_window():
-    """A factor in force before the triangle window is honored, not dropped.
+    """
+    A factor in force before the triangle window is honored, not dropped.
 
     The earliest factor's effective date (2000) predates the triangle's
     lookback window (origins start 2003), so it must still apply to the first

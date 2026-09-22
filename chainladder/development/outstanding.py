@@ -11,7 +11,8 @@ import pandas as pd
 
 
 class CaseOutstanding(DevelopmentBase):
-    """ Deterministic development from prior-lag case reserves.
+    """
+    Deterministic development from prior-lag case reserves.
 
     Estimates incremental paid amounts and case-reserve runoff as fractions of
     the prior lag's carried case reserve. Like
@@ -125,7 +126,8 @@ class CaseOutstanding(DevelopmentBase):
         self.groupby = groupby
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -281,7 +283,8 @@ class CaseOutstanding(DevelopmentBase):
         return out
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

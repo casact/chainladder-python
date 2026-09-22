@@ -106,11 +106,12 @@ class MackChainladder(Chainladder):
     """
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
-        X: Triangle-like
+        X: Triangle
             Data to which the model will be applied.
         y: Ignored
         sample_weight: Ignored
@@ -171,7 +172,8 @@ class MackChainladder(Chainladder):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the Mack chainladder ultimate on a new triangle **X**.
+        """
+        Predicts the Mack chainladder ultimate on a new triangle **X**.
 
         The fitted age-to-age factors and sigma estimates from ``self.X_`` are
         applied to ``X`` to compute ``ultimate_`` and the Mack standard errors

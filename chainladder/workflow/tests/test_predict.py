@@ -16,14 +16,11 @@ def test_voting_predict():
     bf = cl.BornhuetterFerguson()
     cc = cl.CapeCod()
 
-    estimators = [('bcl', bcl), ('bf', bf), ('cc', cc)]
+    estimators = [("bcl", bcl), ("bf", bf), ("cc", cc)]
     weights = np.array([[1, 2, 3]] * 3 + [[0, 0.5, 0.5]] * 3 + [[0, 0, 1]] * 3)
 
-    vot = cl.VotingChainladder(
-            estimators=estimators,
-            weights=weights
-        ).fit(
-            raa_1989,
-            sample_weight=apriori_1989,
-        )
+    vot = cl.VotingChainladder(estimators=estimators, weights=weights).fit(
+        raa_1989,
+        sample_weight=apriori_1989,
+    )
     vot.predict(raa_1990, sample_weight=apriori_1990)

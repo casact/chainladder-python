@@ -1,4 +1,5 @@
-"""Tests that guard the explicit public API of ``chainladder``.
+"""
+Tests that guard the explicit public API of ``chainladder``.
 
 The top-level package exposes a curated set of names via explicit imports
 (see ``chainladder/__init__.py`` and each submodule's ``__all__``). These
@@ -22,6 +23,7 @@ EXPECTED_PUBLIC_API = {
     "Triangle",
     "DevelopmentCorrelation",
     "ValuationCorrelation",
+    "Styler",
     # utils
     "WeightedRegression",
     "TriangleWeight",
@@ -90,7 +92,8 @@ def test_public_api_present() -> None:
 
 
 def test_no_submodule_leakage() -> None:
-    """Implementation submodules no longer leak into the public namespace.
+    """
+    Implementation submodules no longer leak into the public namespace.
 
     Wildcard imports previously exposed leaf module names (e.g. ``clark``,
     ``bondy``, ``mack``, ``glm``) on the top-level package. After switching to
@@ -141,7 +144,8 @@ def test_no_submodule_leakage() -> None:
 
 
 def test_estimators_match_expected() -> None:
-    """The public estimator/util names exactly match the expected set.
+    """
+    The public estimator/util names exactly match the expected set.
 
     Allows the package to also expose a few standard helper imports
     (``numpy``, ``pandas``, ``copy``) without failing, while ensuring the
