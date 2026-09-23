@@ -191,7 +191,8 @@ def test_misaligned_index2(clrd):
 
 
 def test_predict_rejects_index_values_the_model_never_saw(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     intersection() narrows both operands to their shared index, so a group the
     model was never fit on used to be dropped from the result instead of
@@ -217,7 +218,8 @@ def test_predict_rejects_index_values_the_model_never_saw(clrd):
 
 
 def test_predict_rejects_a_different_single_group(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     Both sides being one row is the case intersection() short circuits on, so
     the pattern from one group used to be applied to another silently, with the
@@ -245,7 +247,8 @@ def test_predict_rejects_a_different_single_group(clrd):
 
 
 def test_predict_rejects_a_pattern_finer_than_the_triangle(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     The reverse direction: a pattern fit per company cannot be applied to a
     triangle that has aggregated companies away. intersection() leaves the ldf_
@@ -271,7 +274,8 @@ def test_predict_rejects_a_pattern_finer_than_the_triangle(clrd):
 
 
 def test_predict_columns_follow_the_width_of_the_fit(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     A pattern fit on one column carries no column identity to enforce, the way
     an unindexed triangle carries none on the index, so it applies to whatever
@@ -303,7 +307,8 @@ def test_predict_columns_follow_the_width_of_the_fit(clrd):
 
 
 def test_predict_still_allows_an_aggregate_pattern(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     A pattern fit on a fully aggregated triangle carries the "(All)" sentinel
     rather than any group identity, so it may be broadcast to any grain. Both
@@ -323,7 +328,8 @@ def test_predict_still_allows_an_aggregate_pattern(clrd):
 
 
 def test_predict_checks_before_the_index_is_borrowed(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     MethodBase.predict adds a zeroed slice of self.X_ to X, and for single row
     operands whose key_labels differ that addition takes the model's index. The
@@ -343,7 +349,8 @@ def test_predict_checks_before_the_index_is_borrowed(clrd):
 
 
 def test_predict_still_allows_a_pattern_coarser_than_the_triangle(clrd):
-    """github issue #1288
+    """
+    github issue #1288
 
     The #400 flow must keep working: a pattern fit at a coarser grain broadcasts
     down to the triangle, so validate_ldf has to stay quiet here.
