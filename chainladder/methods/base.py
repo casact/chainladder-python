@@ -165,9 +165,11 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
     def validate_ldf(X: Triangle, ldf: Triangle) -> None:
         """
         Checks that a fitted pattern can be applied to X as it was passed in.
-        The index and the columns of the two have to line up: values or columns
-        X carries that the pattern does not cannot be predicted, and index
-        levels the pattern carries that X does not cannot be applied.
+        Index values X carries that the pattern does not cannot be predicted,
+        and index levels the pattern carries that X does not cannot be applied.
+        On the columns axis a pattern fit on a single column carries no column
+        identity to enforce, so it applies to whatever it is handed; once the
+        fit has more than one, a column outside it cannot be predicted.
         """
         # A pattern whose index is entirely the "(All)" sentinel that Triangle.sum
         # sets carries no group identity, so nothing about it constrains what it
@@ -189,9 +191,17 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
                     + str(missing[:5])
                     + (", and others" if len(missing) > 5 else "")
                 )
-        columns = sorted(set(X.columns) - set(ldf.columns))
-        if columns:
-            raise ValueError("X has columns the model was not fit on: " + str(columns))
+        # A single column fit is the column analogue of an unindexed triangle,
+        # whose construction default puts every triangle in the same "Total"
+        # group: there is one column, so nothing distinguishes the one it was
+        # fit on from the one it is handed, and broadcasting it across several
+        # is the same permission taken more than once.
+        if len(ldf.columns) > 1:
+            columns = sorted(set(X.columns) - set(ldf.columns))
+            if columns:
+                raise ValueError(
+                    "X has columns the model was not fit on: " + str(columns)
+                )
         finer = sorted(set(ldf.key_labels) - set(X.key_labels))
         if finer:
             raise ValueError(
