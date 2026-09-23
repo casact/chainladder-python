@@ -245,7 +245,15 @@ class Styler(_PandasStyler):
                 "matching the shape of the styled Triangle."
             )
 
-        mask_vals = np.asarray(mask.values).reshape(mask.shape[-2:])
+        vals = mask.values
+        if hasattr(vals, "compute"):
+            vals = vals.compute()
+        if hasattr(vals, "todense"):
+            vals = vals.todense()
+        elif hasattr(vals, "get"):
+            vals = vals.get()
+
+        mask_vals = np.asarray(vals).reshape(mask.shape[-2:])
         if np.issubdtype(mask_vals.dtype, np.bool_):
             bool_mask = mask_vals
         else:

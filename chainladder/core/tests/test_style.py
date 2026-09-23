@@ -827,3 +827,33 @@ def test_apply_from_triangle_validation(raa) -> None:
     mismatched = raa.iloc[:, :, :5, :5]
     with pytest.raises(ValueError, match="only supports a single"):
         raa.style.apply_from_triangle(mismatched)
+
+
+def test_apply_from_triangle_sparse_mask(raa) -> None:
+    """
+    Check that apply_from_triangle works when mask has a sparse backend.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    sparse_mask = raa[raa.valuation == raa.valuation_date].set_backend("sparse")
+    styler = raa.style.apply_from_triangle(sparse_mask, color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert len(styled) == 10
+
+    bool_mask_tri = raa.copy()
+    b = np.zeros(raa.shape, dtype=bool)
+    b[0, 0, 0, 0] = True
+    bool_mask_tri.values = b
+    sparse_bool = bool_mask_tri.set_backend("sparse")
+    styler_bool = raa.style.apply_from_triangle(sparse_bool, color="yellow")
+    styler_bool._compute()
+    styled_bool = {k for k, v in styler_bool.ctx.items() if v}
+    assert styled_bool == {(0, 0)}
