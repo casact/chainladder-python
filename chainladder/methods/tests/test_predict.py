@@ -270,25 +270,36 @@ def test_predict_rejects_a_pattern_finer_than_the_triangle(clrd):
                 model.predict(coarse, sample_weight=coarse_weight)
 
 
-def test_predict_rejects_columns_the_model_was_not_fit_on(clrd):
+def test_predict_columns_follow_the_width_of_the_fit(clrd):
     """github issue #1288
 
-    The same mismatch on the columns axis. A paid pattern applied to an incurred
-    triangle used to come back labelled incurred, overstating the ultimate by
-    about half on clrd.
+    A pattern fit on one column carries no column identity to enforce, the way
+    an unindexed triangle carries none on the index, so it applies to whatever
+    it is handed and broadcasts across several. Once the fit has more than one
+    column, a column outside it cannot be predicted.
     """
     paid = clrd["CumPaidLoss"].groupby("LOB").sum()
     incurred = clrd["IncurLoss"].groupby("LOB").sum()
     both = clrd[["CumPaidLoss", "IncurLoss"]].groupby("LOB").sum()
+    paid_and_bulk = clrd[["CumPaidLoss", "BulkLoss"]].groupby("LOB").sum()
 
-    model = cl.Chainladder().fit(cl.Development().fit_transform(paid))
-    with pytest.raises(ValueError, match="columns the model was not fit on"):
-        model.predict(incurred)
-    with pytest.raises(ValueError, match="columns the model was not fit on"):
-        model.predict(both)
+    single = cl.Chainladder().fit(cl.Development().fit_transform(paid))
+    assert single.predict(paid).ultimate_.shape[0] == paid.shape[0]
+    assert single.predict(incurred).ultimate_.columns.tolist() == ["IncurLoss"]
+    assert single.predict(both).ultimate_.columns.tolist() == [
+        "CumPaidLoss",
+        "IncurLoss",
+    ]
 
-    # the column it was fit on is still fine
-    assert model.predict(paid).ultimate_.shape[0] == paid.shape[0]
+    multi = cl.Chainladder().fit(cl.Development().fit_transform(both))
+    with pytest.raises(ValueError, match="columns the model was not fit on"):
+        multi.predict(clrd["BulkLoss"].groupby("LOB").sum())
+    with pytest.raises(ValueError, match="columns the model was not fit on"):
+        multi.predict(paid_and_bulk)
+
+    # A subset of the fitted columns is allowed. It does not narrow yet, which
+    # is its own change rather than part of this one.
+    assert multi.predict(paid).ultimate_.shape[0] == paid.shape[0]
 
 
 def test_predict_still_allows_an_aggregate_pattern(clrd):
