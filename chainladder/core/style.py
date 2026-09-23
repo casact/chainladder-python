@@ -178,6 +178,93 @@ class Styler(_PandasStyler):
         """
         return np.where(mask, props, "")
 
+    def apply_from_triangle(
+        self,
+        mask: Triangle,
+        color: str = "blue",
+        text_color: str | None = None,
+        props: str | None = None,
+    ) -> Styler:
+        """
+        Apply CSS styles to cells where the supplied mask Triangle has
+        non-missing (or truthy) values.
+
+        Parameters
+        ----------
+        mask: Triangle
+            A single (2-D) Triangle matching the shape of the styled Triangle.
+            Cells where ``mask`` is not NaN (or True if boolean) will be styled.
+        color: str
+            Background color applied to selected cells. Ignored if ``props``
+            is given. Defaults to "blue".
+        text_color: str | None
+            Text color applied to selected cells. Ignored if ``props``
+            is given. Left unstyled (inherited) if not given.
+        props: str | None
+            A full CSS properties string to apply instead of ``color`` and
+            ``text_color``. Optional.
+
+        Returns
+        -------
+        Styler
+
+        Raises
+        ------
+        TypeError
+            If ``mask`` is not a Triangle instance.
+        ValueError
+            If the wrapped Triangle or ``mask`` is a valuation Triangle, or
+            if ``mask`` does not match the 2-D shape of the styled Triangle.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            import chainladder as cl
+
+            raa = cl.load_sample("raa")
+            # Highlight latest diagonal via valuation slicing
+            raa.style.apply_from_triangle(
+                raa[raa.valuation == raa.valuation_date], color="#FFE599"
+            )
+        """
+        if not isinstance(mask, Triangle):
+            raise TypeError("mask must be a Triangle instance.")
+
+        if self._triangle.is_val_tri or mask.is_val_tri:
+            raise ValueError(
+                "apply_from_triangle does not support a valuation Triangle."
+            )
+
+        if (
+            mask._dimensionality in ["multi", "empty"]
+            or mask.shape[-2:] != self.data.shape
+        ):
+            raise ValueError(
+                "apply_from_triangle only supports a single (2-D) Triangle "
+                "matching the shape of the styled Triangle."
+            )
+
+        mask_vals = np.asarray(mask.values).reshape(mask.shape[-2:])
+        if np.issubdtype(mask_vals.dtype, np.bool_):
+            bool_mask = mask_vals
+        else:
+            bool_mask = ~np.isnan(mask_vals)
+
+        if props is None:
+            props = f"background-color: {color};"
+            if text_color is not None:
+                props += f" color: {text_color};"
+
+        return self.apply(  # pyright: ignore[reportReturnType]
+            partial(
+                self._mask_style,
+                mask=bool_mask,
+                props=props,
+            ),
+            axis=None,
+        )
+
     def highlight_lower_triangle(
         self,
         color: str = "blue",
@@ -260,28 +347,19 @@ class Styler(_PandasStyler):
         else:
             cutoff = self._triangle.valuation_date
         mask = val_array > cutoff
-        if mask.shape != self.data.shape:
-            raise ValueError(
-                "highlight_lower_triangle only supports a single (2-D) Triangle."
-            )
 
-        if props is None:
-            props = f"background-color: {color};"
-            if text_color is not None:
-                props += f" color: {text_color};"
-
-        return self.apply(  # pyright: ignore[reportReturnType]
-            partial(
-                self._mask_style,
-                mask=mask,
-                props=props,
-            ),
-            axis=None,
+        mask_tri = self._triangle.copy()
+        mask_tri.values = np.where(mask, 1.0, np.nan)[None, None, :, :]
+        return self.apply_from_triangle(
+            mask_tri,
+            color=color,
+            text_color=text_color,
+            props=props,
         )
 
     def highlight_diagonal(
         self,
-        color: str = "blue",
+        color: str = "#FFE599",
         text_color: str | None = None,
         props: str | None = None,
         valuation: ValuationDateLike | Literal["latest"] = "latest",
@@ -295,7 +373,7 @@ class Styler(_PandasStyler):
         ----------
         color: str
             Background color applied to diagonal cells. Ignored if
-            ``props`` is given. Defaults to "blue".
+            ``props`` is given. Defaults to "#FFE599".
         text_color: str | None
             Text color applied to diagonal cells. Ignored if ``props``
             is given. Left unstyled (i.e. inherited) if not given.
@@ -366,11 +444,6 @@ class Styler(_PandasStyler):
             self._triangle.shape[-2:],
             order="F",
         )
-        if val_array.shape != self.data.shape:
-            raise ValueError(
-                "highlight_diagonal only supports a single (2-D) Triangle."
-            )
-
         if valuation == "latest" or valuation is None:
             if self._triangle.valuation_date >= pd.Timestamp(options.ULT_VAL):
                 cutoff = pd.Timestamp(val_array[-1, 0])
@@ -394,16 +467,11 @@ class Styler(_PandasStyler):
         if not mask.any():
             raise ValueError(f"Valuation '{valuation}' not found in Triangle.")
 
-        if props is None:
-            props = f"background-color: {color};"
-            if text_color is not None:
-                props += f" color: {text_color};"
-
-        return self.apply(  # pyright: ignore[reportReturnType]
-            partial(
-                self._mask_style,
-                mask=mask,
-                props=props,
-            ),
-            axis=None,
+        mask_tri = self._triangle.copy()
+        mask_tri.values = np.where(mask, 1.0, np.nan)[None, None, :, :]
+        return self.apply_from_triangle(
+            mask_tri,
+            color=color,
+            text_color=text_color,
+            props=props,
         )

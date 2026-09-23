@@ -772,3 +772,58 @@ def test_highlight_diagonal_finer_development_grain() -> None:
     assert len(styled2) == 4
     rows = [r for r, c in styled2]
     assert len(rows) == len(set(rows))
+
+
+def test_apply_from_triangle_styles_selected_cells(raa) -> None:
+    """
+    Check that apply_from_triangle highlights cells that are not NaN.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    mask_tri = raa.copy()
+    mask = np.zeros(raa.shape[-2:], dtype=bool)
+    mask[0, 0] = True
+    mask[1, 1] = True
+    mask_tri.values = np.where(mask, 1.0, np.nan)[None, None, :, :]
+
+    styler = raa.style.apply_from_triangle(mask_tri, color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert styled == {(0, 0), (1, 1)}
+
+
+def test_apply_from_triangle_validation(raa) -> None:
+    """
+    Check input validation on apply_from_triangle.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(TypeError, match="mask must be a Triangle instance"):
+        raa.style.apply_from_triangle(pd.DataFrame())  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        raa.dev_to_val().style.apply_from_triangle(raa)
+
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        raa.style.apply_from_triangle(raa.dev_to_val())
+
+    with pytest.raises(ValueError, match="only supports a single"):
+        raa.style.apply_from_triangle(cl.load_sample("clrd"))
+
+    mismatched = raa.iloc[:, :, :5, :5]
+    with pytest.raises(ValueError, match="only supports a single"):
+        raa.style.apply_from_triangle(mismatched)
