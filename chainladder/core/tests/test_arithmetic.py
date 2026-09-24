@@ -336,7 +336,7 @@ def test_comparison_dunders_against_scalar(raa: Triangle) -> None:
     -------
     None
     """
-    values = np.nan_to_num(raa.set_backend("numpy").values)
+    values = raa.set_backend("numpy").values
     for op, expected in [
         (operator.lt, np.less),
         (operator.le, np.less_equal),
@@ -386,7 +386,32 @@ def test_comparison_dunders_against_triangle(raa: Triangle) -> None:
     -------
     None
     """
-    assert not (raa < raa).values.any()
-    assert not (raa > raa).values.any()
-    assert (raa <= raa).values.all()
-    assert (raa >= raa).values.all()
+    observed = ~np.isnan(raa.set_backend("numpy").values)
+    assert not (raa < raa).set_backend("numpy").values.any()
+    assert not (raa > raa).set_backend("numpy").values.any()
+    assert (raa <= raa).set_backend("numpy").values[observed].all()
+    assert (raa >= raa).set_backend("numpy").values[observed].all()
+
+
+def test_comparison_dunders_are_false_at_missing_values(raa: Triangle) -> None:
+    """
+    Every ordering comparison involving a missing value is ``False``.
+
+    IEEE 754 makes NaN unordered, so numpy and pandas answer ``False`` for all
+    four operators. The Triangle used to read a missing value as zero, which
+    made ``<`` and ``<=`` answer ``True`` below the cut. See #1394.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    missing = np.isnan(raa.set_backend("numpy").values)
+    assert missing.any()
+    for op in [operator.lt, operator.le, operator.gt, operator.ge]:
+        result = op(raa, 10000).set_backend("numpy").values
+        assert not result[missing].any()

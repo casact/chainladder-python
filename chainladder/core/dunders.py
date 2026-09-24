@@ -581,8 +581,8 @@ class TriangleDunders:
         """
         Compare the Triangle elementwise against a scalar, array or Triangle.
 
-        Missing values are treated as zero on both sides, which is the
-        behaviour ``__lt__`` has always had.
+        Missing values propagate, so any comparison involving one is
+        ``False``. That follows IEEE 754, and matches numpy and pandas.
 
         Parameters
         ----------
@@ -609,8 +609,7 @@ class TriangleDunders:
             left = self.set_backend(backend)
             value = value.set_backend(backend).values
         obj = left.copy()
-        xp = obj.get_array_module()
-        obj.values = op(xp.nan_to_num(obj.values), xp.nan_to_num(value))
+        obj.values = op(obj.values, value)
         return obj
 
     def __lt__(self, value):
