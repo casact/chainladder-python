@@ -156,12 +156,15 @@ class TailBase(DevelopmentBase):
         y = X.ldf_.values.copy()
         xp = X.ldf_.get_array_module()
         y[y <= 1] = xp.nan
-        reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
         tail = xp.prod(
             self.ldf_.values[..., -self._ave_period[0] - 1 :], -1, keepdims=True
         )
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
-        tail = tail if tail.max() > 1 else 1.001
+        # A tail of 1.0 or less has no development left to extrapolate from,
+        # and log(tail - 1) is undefined there. The nominal 1.001 has to be
+        # substituted per element: testing tail.max() only skips the
+        # substitution entirely as soon as any one element exceeds 1.
+        tail = xp.where(tail > 1, tail, 1.001)
         time_pd = (xp.log(tail - 1) - reg.intercept_) / reg.slope_
         return time_pd
 
