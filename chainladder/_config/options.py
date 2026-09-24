@@ -55,6 +55,10 @@ class Options:
         when comparing or concatenating them.
     ULT_VAL: str
         The default ultimate valuation datetime, precision set to default of Pandas installation.
+    NOMINAL_TAIL: float
+        The tail substituted when a fitted tail is at or below 1.0. ``log(tail - 1)`` is
+        undefined there, so the tail-weighted development age falls back to this value.
+        Must be greater than 1.
 
     """
 
@@ -65,6 +69,7 @@ class Options:
         self.ULT_VAL = str(
             pd.Timestamp("2262-01-01") - pd.Timedelta(1, unit=__dt64_unit__)  # noqa
         )
+        self.NOMINAL_TAIL = 1.001
         # Store initial values as defaults.
         self._defaults = copy.deepcopy({
             k: v for k, v in vars(self).items() if not k.startswith("_")

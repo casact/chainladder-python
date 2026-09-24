@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import warnings
 
+import numpy as np
+
 import chainladder as cl
 import pytest
 
@@ -77,3 +79,30 @@ def test_no_log_warning_when_only_some_tails_exceed_one() -> None:
         and "tails/base.py" in str(w.filename).replace("\\", "/")
     ]
     assert not offending, [str(w.message) for w in offending]
+
+
+def test_nominal_tail_option_is_honoured() -> None:
+    """
+    ``NOMINAL_TAIL`` sets the tail substituted for a tail at or below 1.0.
+
+    The full ``clrd`` sample has one index entry whose tail is exactly 1.0 while
+    its regression coefficients are finite, so the substituted value reaches
+    ``sigma_``. See #1414.
+
+    Returns
+    -------
+    None
+    """
+    development = cl.Development().fit_transform(cl.load_sample("clrd")["CumPaidLoss"])
+
+    assert cl.options.NOMINAL_TAIL == 1.001
+    baseline = cl.TailCurve().fit(development).sigma_.values.copy()
+
+    try:
+        cl.options.set_option("NOMINAL_TAIL", 1.5)
+        widened = cl.TailCurve().fit(development).sigma_.values
+    finally:
+        cl.options.set_option("NOMINAL_TAIL", 1.001)
+
+    assert not np.allclose(np.nan_to_num(baseline), np.nan_to_num(widened))
+    assert cl.options.NOMINAL_TAIL == 1.001

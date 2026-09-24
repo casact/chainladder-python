@@ -161,10 +161,12 @@ class TailBase(DevelopmentBase):
         )
         reg = WeightedRegression(axis=3, xp=xp).fit(None, xp.log(y - 1), None)
         # A tail of 1.0 or less has no development left to extrapolate from,
-        # and log(tail - 1) is undefined there. The nominal 1.001 has to be
+        # and log(tail - 1) is undefined there. The nominal tail has to be
         # substituted per element: testing tail.max() only skips the
         # substitution entirely as soon as any one element exceeds 1.
-        tail = xp.where(tail > 1, tail, 1.001)
+        from chainladder import options
+
+        tail = xp.where(tail > 1, tail, options.NOMINAL_TAIL)
         time_pd = (xp.log(tail - 1) - reg.intercept_) / reg.slope_
         return time_pd
 
