@@ -12,10 +12,7 @@ coverage:
         # posted outside a pull request scores an unrelated diff.
         only_pulls: true
 
-# Nothing outside the library is covered by the test suite, so scoring a diff
-# that only touches these paths fails the patch status for no useful reason.
+# The rtest_ modules are not collected by pytest, so they report no coverage
+# at all and drag both statuses down without saying anything useful.
 ignore:
-  - ".github/**"
-  - "docs/**"
-  - "conftest.py"
-  - "**/tests/**"
+  - "**/rtest_*.py"
