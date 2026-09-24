@@ -890,7 +890,8 @@ class Triangle(TriangleBase):
 
     @property
     def ult_label(self):
-        """Label shown in place of the ultimate development period.
+        """
+        Label shown in place of the ultimate development period.
 
         Overrides ``chainladder.options.ULT_LABEL`` for this Triangle only.
         ``None`` falls back to the global option.
