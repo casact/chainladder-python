@@ -330,6 +330,59 @@ def test_lev_at_zero_is_zero(genins):
     )
 
 
+def _means_row(genins, year, unmask=True):
+    """THETA_10 as a one-origin Triangle labelled ``year``."""
+    base = list(genins.origin.year).index(year)
+    row = genins.iloc[0, 0, base : base + 1, :].copy()
+    if unmask:
+        row.valuation_date = row.valuation.max()
+    return (row * 0 + 1).fillna(1) * np.array(THETA_10, dtype="float64")
+
+
+@pytest.mark.parametrize("base_period", [None, 2005])
+def test_one_origin_triangle_matches_a_mapping(genins, paper_trend, base_period):
+    year = 2010 if base_period is None else base_period
+    from_triangle = cl.LEV(
+        means=_means_row(genins, year), trend=paper_trend, base_period=base_period
+    ).fit(genins)
+    from_mapping = cl.LEV(
+        means=dict(zip(genins.development, THETA_10)),
+        trend=paper_trend,
+        base_period=base_period,
+    ).fit(genins)
+    assert np.allclose(
+        from_triangle.means_.set_backend("numpy").values,
+        from_mapping.means_.set_backend("numpy").values,
+    )
+
+
+def test_rejects_a_one_origin_triangle_off_the_base_period(genins, paper_trend):
+    """
+    A single row broadcasts over every origin whatever it is labelled, so means
+    stated at 2005 would be restated as though they were at 2010.
+    """
+    with pytest.raises(ValueError, match="Pass base_period=2005"):
+        cl.LEV(means=_means_row(genins, 2005), trend=paper_trend).fit(genins)
+
+
+def test_one_origin_triangle_label_is_immaterial_without_a_trend(genins):
+    lev = cl.LEV(means=_means_row(genins, 2005)).fit(genins)
+    assert lev.means_.shape == (1, 1, 1, 10)
+
+
+@pytest.mark.parametrize("with_trend", [True, False])
+def test_rejects_a_masked_one_origin_triangle(genins, paper_trend, with_trend):
+    """
+    A row sliced straight from the Triangle is masked past its first age, which
+    would quietly turn every later age to NaN.
+    """
+    trend = paper_trend if with_trend else None
+    with pytest.raises(ValueError, match="gaps in its single origin row"):
+        cl.LEV(
+            means=_means_row(genins, 2010, unmask=False), trend=trend
+        ).fit(genins)
+
+
 def test_triangle_keeps_the_triangles_valuation_date(genins, paper_model):
     """
     The limited expected values span the whole rectangle, so the product that

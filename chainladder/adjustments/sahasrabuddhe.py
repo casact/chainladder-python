@@ -21,76 +21,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from chainladder import Triangle
 
 
-def _base_index(X: Triangle, base_period: int | str | None) -> int:
-    """
-    The position of ``base_period`` on X's origin axis.
-
-    Parameters
-    ----------
-    X: Triangle
-        The Triangle being fit.
-    base_period: int or str, optional
-        The origin period to anchor on. None takes the latest origin.
-
-    Returns
-    -------
-    int
-        The origin index to anchor on.
-
-    Raises
-    ------
-    ValueError
-        If ``base_period`` matches no origin period of X.
-    """
-    if base_period is None:
-        return X.shape[-2] - 1
-    period = pd.Period(str(base_period))
-    lo, hi = period.to_timestamp(how="s"), period.to_timestamp(how="e")
-    starts = X.origin.to_timestamp(how="s")
-    matches = np.where((starts >= lo) & (starts <= hi))[0]
-    if not len(matches):
-        raise ValueError(
-            f"base_period {base_period!r} does not match any origin "
-            f"period. Origins run {X.origin[0]} through {X.origin[-1]}."
-        )
-    return int(matches[0])
-
-
-def _limited_expected_value(means: Triangle, limit: float) -> Triangle:
-    """
-    The limited expected value of an exponential model at a single limit.
-
-    Parameters
-    ----------
-    means: Triangle
-        The claim size model's parameters, which for an exponential are also
-        its means.
-    limit: float
-        The limit at which claims are capped. ``np.inf`` gives the unlimited
-        mean, which for this model is the parameter itself.
-
-    Returns
-    -------
-    Triangle
-        ``means * (1 - exp(-limit / means))``, shaped like ``means``.
-
-    Raises
-    ------
-    ValueError
-        If ``limit`` is negative.
-    """
-    if limit < 0:
-        raise ValueError(f"limit must be non-negative, got {limit}.")
-    if np.isinf(limit):
-        return means.copy()
-    if limit == 0:
-        # Not just an optimisation. `0 / means` is NaN rather than 0 in
-        # Triangle arithmetic, and `1 - NaN` is then 1 rather than NaN, so the
-        # general expression below would hand back the means untouched.
-        return means * 0.0
-    return means * (1 - np.exp(-limit / means))
-
-
 class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
     """
     Limited expected values of an exponential claim size model.
@@ -194,13 +124,17 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
     """
 
+    # Fitted attributes.
+    means_: Triangle
+    lev_: Triangle
+
     def __init__(
         self,
-        means: Triangle | dict[int, float] | None = None,
+        means: Triangle | dict[int, float | int] | None = None,
         trend: Triangle | None = None,
         base_period: int | str | None = None,
-        attachment: float = 0.0,
-        limit: float = np.inf,
+        attachment: float | int = 0.0,
+        limit: float | int = np.inf,
     ):
         self.means = means
         self.trend = trend
@@ -208,7 +142,86 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         self.attachment = attachment
         self.limit = limit
 
-    def _resolve_means(self, X: Triangle) -> Triangle:
+    @staticmethod
+    def _base_index(
+            X: Triangle,  # noqa - sklearn convention
+            base_period: int | str | None,
+    ) -> int:
+        """
+        The position of ``base_period`` on X's origin axis.
+
+        Parameters
+        ----------
+        X: Triangle
+            The Triangle being fit.
+        base_period: int or str, optional
+            The origin period to anchor on. None takes the latest origin.
+
+        Returns
+        -------
+        int
+            The origin index to anchor on.
+
+        Raises
+        ------
+        ValueError
+            If ``base_period`` is not a valid period, or matches no origin period
+            of X.
+        """
+        if base_period is None:
+            return X.shape[-2] - 1
+        period = pd.Period(str(base_period))
+        if not isinstance(period, pd.Period):  # NaT, e.g. from "NaT" or ""
+            raise ValueError(f"base_period {base_period!r} is not a valid period.")
+        lo, hi = period.to_timestamp(how="s"), period.to_timestamp(how="e")
+        starts = X.origin.to_timestamp(how="s")
+        matches = np.where((starts >= lo) & (starts <= hi))[0]
+        if not len(matches):
+            raise ValueError(
+                f"base_period {base_period!r} does not match any origin "
+                f"period. Origins run {X.origin[0]} through {X.origin[-1]}."
+            )
+        return int(matches[0])
+
+    @staticmethod
+    def _limited_expected_value(
+            means: Triangle,
+            limit: float | int,
+    ) -> Triangle:
+        """
+        The limited expected value of an exponential model at a single limit.
+
+        Parameters
+        ----------
+        means: Triangle
+            The claim size model's parameters, which for an exponential are also
+            its means.
+        limit: float
+            The limit at which claims are capped. ``np.inf`` gives the unlimited
+            mean, which for this model is the parameter itself.
+
+        Returns
+        -------
+        Triangle
+            A triangle of limited expected values.
+
+        Raises
+        ------
+        ValueError
+            If ``limit`` is negative.
+        """
+        if limit < 0:
+            raise ValueError(f"limit must be non-negative, got {limit}.")
+        if np.isinf(limit):
+            return means.copy()
+        if limit == 0:
+            return means * 0.0
+        return means * (1 - (-limit / means).exp())
+
+    def _resolve_means(
+            self,
+            X: Triangle,  # noqa - sklearn convention
+    ) -> Triangle:
         """
         Resolve ``means`` against ``X`` into a Triangle of mean claim sizes.
 
@@ -233,7 +246,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         if self.means is None:
             raise ValueError(
                 "means is required. Supply the mean claim size by development "
-                "age, either as a Triangle or as a mapping such as "
+                "age, either as a Triangle or as a dictionary mapping such as "
                 "{12: 28138, 24: 84242, ...}."
             )
         if not isinstance(self.means, dict):
@@ -245,16 +258,18 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                 f"means is missing development age(s) {missing}. It must cover "
                 f"every development age of the Triangle: {ages}."
             )
-        # The base origin is typically a single cell of data, so its row is
-        # mostly NaN. Push the valuation date out to unmask it before laying the
-        # means on top -- otherwise every age past the first would come back NaN.
-        base = _base_index(X, self.base_period)
+        base = self._base_index(X, self.base_period)
         row = X.iloc[0, 0, base : base + 1, :].copy().set_backend("numpy")
         row.valuation_date = row.valuation.max()
         row = (row * 0 + 1).fillna(1)
         return row * np.array([self.means[age] for age in ages], dtype="float64")
 
-    def fit(self, X: Triangle, y=None, sample_weight=None) -> LEV:
+    def fit(
+            self,
+            X: Triangle,  # noqa - sklearn convention
+            y=None,  # noqa - expected by sklearn API
+            sample_weight=None,  # noqa - expected by sklearn API
+    ) -> LEV:
         """
         Fit the model with X.
 
@@ -268,14 +283,16 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         Returns
         -------
         self: object
-            Returns the instance itself.
+            Returns the instance itself, with fitted limited expected value parameters.
 
         Raises
         ------
         ValueError
             If the layer exhausts at or below its attachment point, if
             ``trend`` does not share X's origin and development axes, or if it
-            is not defined across the whole base period.
+            is not defined across the whole base period. Also if ``means`` is a
+            one-origin Triangle with gaps, or, given a ``trend``, one labelled
+            with an origin other than ``base_period``.
         """
         if self.limit <= self.attachment:
             raise ValueError(
@@ -284,22 +301,72 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
         means_at_base = self._resolve_means(X)
         if self.trend is None:
+            self._validate_means(X, None)
             self.means_ = means_at_base
         else:
-            base = _base_index(X, self.base_period)
+            base = self._base_index(X, self.base_period)
             base_row = slice(base, base + 1)
+            self._validate_means(X, base_row)
             self._validate_trend(X, base_row)
             # `means` describes the base period. Spreading it over the
             # rectangle is a ratio of the index, so the index's own base period
             # cancels.
             self.means_ = means_at_base * self.trend / self.trend.iloc[..., base_row, :]
 
-        self.lev_ = _limited_expected_value(
+        self.lev_ = self._limited_expected_value(
             self.means_, self.limit
-        ) - _limited_expected_value(self.means_, self.attachment)
+        ) - self._limited_expected_value(self.means_, self.attachment)
         return self
 
-    def _validate_trend(self, X: Triangle, base_row: slice) -> None:
+    def _validate_means(
+            self,
+            X: Triangle,  # noqa - sklearn convention
+            base_row: slice | None,
+    ) -> None:
+        """
+        Check that a one-origin Triangle of ``means`` describes the base period.
+
+        Parameters
+        ----------
+        X: Triangle
+            The Triangle being fit.
+        base_row: slice, optional
+            The base period's row of the origin axis. None when there is no
+            ``trend``, in which case the base period plays no part.
+
+        Raises
+        ------
+        ValueError
+            If the row has gaps, or its origin is not the base period.
+        """
+        if (
+            self.means is None
+            or isinstance(self.means, dict)
+            or self.means.shape[-2] != 1
+        ):
+            return
+
+        values = np.asarray(self.means.set_backend("numpy").values)
+        if np.isnan(values).any():
+            raise ValueError(
+                "The provided means must not have NaNs for the origin period."
+            )
+
+        # The cost level year of the means must match
+        if base_row is not None:
+            mine, base = self.means.origin[0], X.origin[base_row][0]
+            if mine != base:
+                raise ValueError(
+                    f"means is stated at origin {mine}, but it is restated "
+                    f"from the base period, {base}. Pass base_period={mine} "
+                    "if that is the cost level the means are stated at."
+                )
+
+    def _validate_trend(
+            self,
+            X: Triangle,  # noqa - sklearn convention
+            base_row: slice
+    ) -> None:
         """
         Check that ``trend`` can restate ``means`` across the whole rectangle.
 
@@ -543,7 +610,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         # it anyway.
         grid = self.trend if pattern is not None else X
 
-        base = _base_index(grid, self.base_period)
+        base = LEV._base_index(grid, self.base_period)
         base_row = self._base_slice = slice(base, base + 1)
 
         # LEV owns the claim size model: given the trend it restates `means`
@@ -614,11 +681,11 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                 f"{self._target}. Fit a development pattern instead to restate "
                 "onto another layer."
             )
-        target = _limited_expected_value(self.means_, self.basic_limit).iloc[
+        target = LEV._limited_expected_value(self.means_, self.basic_limit).iloc[
             ..., base_row, :
         ]
         self.triangle_ = (
-            X * target / _limited_expected_value(self.means_, self.data_limit)
+            X * target / LEV._limited_expected_value(self.means_, self.data_limit)
         )
         # The limited expected values cover the whole rectangle, so the product
         # inherits their valuation date rather than X's. The values are already
@@ -642,10 +709,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         ages = list(shape.development)
 
         aligned = self._cdf_by_age(cdf, ages)
-        layer = _limited_expected_value(
+        layer = LEV._limited_expected_value(
             self.means_, self._target[1]
-        ) - _limited_expected_value(self.means_, self._target[0])
-        anchor = _limited_expected_value(self.means_, self.basic_limit).iloc[
+        ) - LEV._limited_expected_value(self.means_, self._target[0])
+        anchor = LEV._limited_expected_value(self.means_, self.basic_limit).iloc[
             ..., base_row, :
         ]
 
@@ -709,10 +776,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         # Restate the Triangle that was handed in, not the one fit() happened
         # to see -- the claim size model is the fitted state, the data is not.
-        target = _limited_expected_value(self.means_, self.basic_limit).iloc[
+        target = LEV._limited_expected_value(self.means_, self.basic_limit).iloc[
             ..., self._base_slice, :
         ]
-        X_new = X * target / _limited_expected_value(self.means_, self.data_limit)
+        X_new = X * target / LEV._limited_expected_value(self.means_, self.data_limit)
         X_new.valuation_date = X.valuation_date
         X_new.means_ = self.means_
         X_new._set_slicers()
