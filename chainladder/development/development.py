@@ -450,8 +450,8 @@ class Development(DevelopmentBase):
 
         self.ldf_ = self._param_property(obj, params, 0)
         
-        if self.min_dev >= self.max_dev:
-            raise ValueError("min_dev must be strictly less than max_dev.")
+        if self.min_dev > self.max_dev:
+            raise ValueError("min_dev must be <= than max_dev.")
         self.ldf_.values = xp.clip(self.ldf_.values, min = self.min_dev, max = self.max_dev)
 
         self.sigma_ = self._param_property(obj, params, 1)
