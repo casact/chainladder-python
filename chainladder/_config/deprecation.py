@@ -312,6 +312,7 @@ def _deprecated_rename_argument(
 
 def _deprecated_drop_argument(
     name: str,
+    guidance: str,
     *,
     version: str | None = None,
     category: type[Warning] = FutureWarning,
@@ -324,8 +325,12 @@ def _deprecated_drop_argument(
     ----------
     name: str
         The keyword argument scheduled for removal.
+    guidance: str
+        What the caller should do instead, appended to the warning. Required,
+        because dropping an argument is only safe for a caller who can rewrite
+        the call so it behaves the same before and after the removal. Say how.
     version: str | None
-        The release the removal is expected to land in, e.g. "0.11.0".
+        The release the removal is expected to land in, e.g. "2.0".
         Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
@@ -344,7 +349,9 @@ def _deprecated_drop_argument(
 
         from chainladder._config.deprecation import _deprecated_drop_argument
 
-        @_deprecated_drop_argument("verbose", version="0.11.0")
+        @_deprecated_drop_argument(
+            "verbose", "Drop the argument; output is unchanged.", version="2.0"
+        )
         def func(x, verbose=False):
             return x + 1
 
@@ -352,7 +359,7 @@ def _deprecated_drop_argument(
 
     .. testoutput::
 
-        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 0.11.0.
+        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 2.0. Drop the argument; output is unchanged.
           func(1, verbose=True)
 
     """
@@ -360,6 +367,7 @@ def _deprecated_drop_argument(
     def decorator(func: _F) -> _F:
         message = f"'{name}' is deprecated and will be removed"
         message += f" in {version}." if version else " in a future release."
+        message += f" {guidance}"
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):

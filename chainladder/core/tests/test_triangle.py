@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+import warnings
 
 from chainladder.core.common import Common
 from chainladder.utils.utility_functions import date_delta_adjustment
@@ -1339,6 +1340,45 @@ def test_astype(raa: Triangle) -> None:
     None
     """
     assert raa.astype("float32").values.dtype == np.float32
+
+
+def test_astype_documented_migration_is_drop_safe(raa: Triangle) -> None:
+    """
+    The migration shown in the astype deprecation note gives the same result
+    before and after ``inplace`` is removed.
+
+    Copying first and using the return value leaves the original untouched
+    either way, which is what makes the advice safe to follow now. See #1063.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+
+    def migrate(triangle, **kwargs):
+        out = triangle.copy()
+        return out.astype("float32", **kwargs)
+
+    # today, with inplace defaulting to True and no warning raised
+    today_src = raa.copy()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        today = migrate(today_src)
+
+    # post-removal semantics, where astype always returns a new Triangle
+    future_src = raa.copy()
+    with pytest.warns(FutureWarning, match="inplace"):
+        future = migrate(future_src, inplace=False)
+
+    assert today.values.dtype == np.float32
+    assert future.values.dtype == np.float32
+    assert today_src.values.dtype == np.float64
+    assert future_src.values.dtype == np.float64
 
 
 def test_head(clrd: Triangle) -> None:
