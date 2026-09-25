@@ -43,9 +43,11 @@ extensions = [
 external_toc_exclude_missing = False
 external_toc_path = "_toc.yml"
 html_baseurl = ""
+html_css_files = ["sidebar-toggle.css"]
 html_favicon = ""
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ""
+html_static_path = ["_static"]
 html_theme = "sphinx_book_theme"
 html_theme_options = {
     "analytics": {
