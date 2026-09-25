@@ -1,8 +1,29 @@
+from __future__ import annotations
+
 import chainladder as cl
 import pytest
+from functools import partial
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+    from typing import Callable, Any
 
 
-def test_grid(clrd):
+def test_grid(clrd: Triangle) -> None:
+    """
+    Test that GridSearch mirrors chaining chainladder estimators
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture
+
+    Returns
+    -------
+    None
+    """
     # Load Data
     medmal_paid = clrd.groupby("LOB").sum().loc["medmal"]["CumPaidLoss"]
     medmal_prem = (
@@ -37,25 +58,42 @@ def test_grid(clrd):
 
 
 @pytest.fixture
-def tri(clrd):
+def tri(clrd: Triangle) -> Triangle:
+    """
+    Fixture for getting the desired aggregated slice of clrd
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture
+
+    Returns
+    -------
+    Triangle
+    """
     tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss", "EarnedPremDIR"]]
     tri["CaseIncurredLoss"] = tri["IncurLoss"] - tri["CumPaidLoss"]
     return tri
 
 
+tri_sel = partial(cl.TriangleSelector, col="CumPaidLoss")
 dev = [
-    cl.Development,
-    cl.ClarkLDF,
-    cl.Trend,
-    cl.IncrementalAdditive,
-    lambda: cl.MunichAdjustment(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
-    lambda: cl.CaseOutstanding(paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
+    [tri_sel, cl.Development],
+    [tri_sel, cl.ClarkLDF],
+    [tri_sel, cl.Trend],
+    [tri_sel, cl.IncrementalAdditive],
+    [
+        partial(
+            cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
+        )
+    ],
+    [partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss"))],
 ]
 tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
 ibnr = [
     cl.Chainladder,
     cl.BornhuetterFerguson,
-    lambda: cl.Benktander(n_iters=2),
+    partial(cl.Benktander, n_iters=2),
     cl.CapeCod,
 ]
 
@@ -63,9 +101,42 @@ ibnr = [
 @pytest.mark.parametrize("dev", dev)
 @pytest.mark.parametrize("tail", tail)
 @pytest.mark.parametrize("ibnr", ibnr)
-def test_pipeline(tri, dev, tail, ibnr):
+def test_pipeline(
+    tri: Triangle,
+    dev: list[Callable[[], Any]],
+    tail: Callable[[], Any],
+    ibnr: Callable[[], Any],
+) -> None:
+    """
+    Test that Pipeline works across a wide combination of estimators
+
+    Parameters
+    ----------
+    tri: Triangle
+        Bespoke fixture for this test
+    dev: list[Triangle Transformers]
+        Develoopment Transformer, may be accompanied by other helper Transformers
+    tail: Triangle Transformer
+        Tail Curve Transformer
+    ibnr: Triangle Predictor
+        IBNR Predictor
+    Returns
+    -------
+    None
+    """
     X = tri[["CumPaidLoss", "CaseIncurredLoss"]]
     sample_weight = tri["EarnedPremDIR"].latest_diagonal
-    cl.Pipeline(steps=[("dev", dev()), ("tail", tail()), ("ibnr", ibnr())]).fit_predict(
-        X, sample_weight=sample_weight
-    ).ibnr_.sum("origin").sum("columns").sum()
+    (
+        cl
+        .Pipeline(
+            steps=[
+                *[(f"dev_{i}", x()) for i, x in enumerate(dev)],
+                ("tail", tail()),
+                ("ibnr", ibnr()),
+            ]
+        )
+        .fit_predict(X, sample_weight=sample_weight)
+        .ibnr_.sum("origin")
+        .sum("columns")
+        .sum()
+    )
