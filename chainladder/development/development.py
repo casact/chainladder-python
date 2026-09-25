@@ -336,6 +336,8 @@ class Development(DevelopmentBase):
         drop_valuation: str | list[str] = None,
         drop_above: float = np.inf,
         drop_below: float = 0.00,
+        max_dev: float = np.inf,
+        min_dev: float = 0.00,
         fillna: float | None = None,
         groupby: Callable | list | str | Series = None,
     ):
@@ -348,6 +350,8 @@ class Development(DevelopmentBase):
         self.drop_valuation = drop_valuation
         self.drop_above = drop_above
         self.drop_below = drop_below
+        self.max_dev = max_dev
+        self.min_dev = min_dev
         self.drop = drop
         self.fillna = fillna
         self.groupby = groupby
