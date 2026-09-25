@@ -40,7 +40,7 @@ SAMPLES: dict = {
         "columns": ["values"],
         "cumulative": True,
     },
-    "actsim_sample": {
+    "actsim": {
         "origin": "origin",
         "development": "development",
         "index": ["Region", "LOB"],
