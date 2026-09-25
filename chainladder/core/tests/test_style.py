@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -516,3 +518,342 @@ def test_highlight_lower_triangle_rejects_fully_developed_valuation_triangle(
     full = cl.Chainladder().fit(raa).full_triangle_
     with pytest.raises(ValueError, match="does not support a valuation Triangle"):
         full.dev_to_val().style.highlight_lower_triangle()
+
+
+def test_highlight_diagonal_styles_latest_diagonal_by_default(raa) -> None:
+    """
+    Check that highlight_diagonal styles the latest diagonal by default.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.highlight_diagonal(color="lightyellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+
+    val_array = np.array(raa.valuation).reshape(raa.shape[-2:], order="F")
+    expected = {
+        (r, c)
+        for r, row in enumerate(val_array == raa.valuation_date)
+        for c, is_diag in enumerate(row)
+        if is_diag
+    }
+    assert styled == expected
+    assert len(styled) == len(raa.origin)
+    assert all(
+        v == [("background-color", "lightyellow")] for v in styler.ctx.values() if v
+    )
+
+
+@pytest.mark.parametrize(
+    "val_arg",
+    [
+        "1988",
+        "1988-12-31",
+        1988,
+        datetime(1988, 12, 31),
+        pd.Timestamp("1988-12-31"),
+    ],
+)
+def test_highlight_diagonal_explicit_dates(raa, val_arg) -> None:
+    """
+    Check that highlight_diagonal accepts different date representations for
+    historical diagonals.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+    val_arg: object
+        Valuation date argument in different formats.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.highlight_diagonal(valuation=val_arg, color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+
+    target_period = pd.Period("1988", freq=raa.origin.freq)
+    val_periods = raa.valuation.to_period(raa.origin.freq).values.reshape(
+        raa.shape[-2:], order="F"
+    )
+    expected = {
+        (r, c)
+        for r, row in enumerate(val_periods == target_period)
+        for c, is_diag in enumerate(row)
+        if is_diag
+    }
+    assert styled == expected
+    assert len(styled) == 8
+
+
+def test_highlight_diagonal_valuation_date_alias(raa) -> None:
+    """
+    Check that valuation_date keyword argument works as an alias for valuation.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.highlight_diagonal(valuation_date="1988")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert len(styled) == 8
+
+
+def test_highlight_diagonal_predicted_cells_full_triangle(raa) -> None:
+    """
+    Check that a fully-predicted Triangle defaults to highlighting the latest
+    observed diagonal, and can highlight future diagonals when explicitly requested.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    full = cl.Chainladder().fit(raa).full_triangle_
+    inferred = full.style.highlight_diagonal(color="yellow")
+    inferred._compute()
+
+    explicit = full.style.highlight_diagonal(
+        color="yellow", valuation=raa.valuation_date
+    )
+    explicit._compute()
+    assert inferred.ctx == explicit.ctx
+
+    future = full.style.highlight_diagonal(valuation="1995")
+    future._compute()
+    styled_future = {k for k, v in future.ctx.items() if v}
+    assert len(styled_future) > 0
+
+
+def test_highlight_diagonal_props_overrides_color(raa) -> None:
+    """
+    Check that props overrides color.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.highlight_diagonal(
+        color="lightgray", props="background-color: green; font-weight: bold;"
+    )
+    assert "font-weight: bold" in styler.to_html()
+    assert "lightgray" not in styler.to_html()
+
+
+def test_highlight_diagonal_text_color(raa) -> None:
+    """
+    Check that text_color sets the text color alongside the background.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.highlight_diagonal(color="#FFF2CC", text_color="#7F6000")
+    styler._compute()
+    styled = [v for v in styler.ctx.values() if v]
+    assert len(styled) > 0
+    assert all(
+        v == [("background-color", "#FFF2CC"), ("color", "#7F6000")] for v in styled
+    )
+
+
+def test_highlight_diagonal_chaining_with_lower_triangle(raa) -> None:
+    """
+    Check that highlight_diagonal can be chained with highlight_lower_triangle.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    styler = raa.style.highlight_diagonal(color="yellow").highlight_lower_triangle(
+        color="gray"
+    )
+    assert isinstance(styler, Styler)
+    styler._compute()
+    assert any(v == [("background-color", "yellow")] for v in styler.ctx.values())
+    assert any(v == [("background-color", "gray")] for v in styler.ctx.values())
+
+
+def test_highlight_diagonal_invalid_valuation_raises(raa) -> None:
+    """
+    Check that an invalid or missing valuation date raises ValueError.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="not found in Triangle"):
+        raa.style.highlight_diagonal(valuation="1970")
+
+    with pytest.raises(ValueError, match="Invalid valuation date"):
+        raa.style.highlight_diagonal(valuation="invalid-valuation-string")
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        raa.style.highlight_diagonal(invalid_arg=123)
+
+
+def test_highlight_diagonal_rejects_valuation_triangle(raa) -> None:
+    """
+    Check that a valuation Triangle raises ValueError when highlighting diagonal.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        raa.dev_to_val().style.highlight_diagonal()
+
+
+def test_highlight_diagonal_finer_development_grain() -> None:
+    """
+    Check that highlight_diagonal highlights exactly a single diagonal when
+    development grain is finer than origin grain (e.g. annual origin,
+    quarterly development).
+
+    Returns
+    -------
+    None
+    """
+    tri = cl.load_sample("quarterly")["paid"]
+    styler = tri.style.highlight_diagonal(valuation="1995-03-31", color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert len(styled) == 1
+    assert styled == {(0, 0)}
+
+    # Check a valuation date spanning multiple origins
+    styler2 = tri.style.highlight_diagonal(valuation="1998-03-31", color="yellow")
+    styler2._compute()
+    styled2 = {k for k, v in styler2.ctx.items() if v}
+    assert len(styled2) == 4
+    rows = [r for r, c in styled2]
+    assert len(rows) == len(set(rows))
+
+
+def test_apply_from_triangle_styles_selected_cells(raa) -> None:
+    """
+    Check that apply_from_triangle highlights cells that are not NaN.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    mask_tri = raa.copy()
+    mask = np.zeros(raa.shape[-2:], dtype=bool)
+    mask[0, 0] = True
+    mask[1, 1] = True
+    mask_tri.values = np.where(mask, 1.0, np.nan)[None, None, :, :]
+
+    styler = raa.style.apply_from_triangle(mask_tri, color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert styled == {(0, 0), (1, 1)}
+
+
+def test_apply_from_triangle_validation(raa) -> None:
+    """
+    Check input validation on apply_from_triangle.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(TypeError, match="mask must be a Triangle instance"):
+        raa.style.apply_from_triangle(pd.DataFrame())  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        raa.dev_to_val().style.apply_from_triangle(raa)
+
+    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
+        raa.style.apply_from_triangle(raa.dev_to_val())
+
+    with pytest.raises(ValueError, match="only supports a single"):
+        raa.style.apply_from_triangle(cl.load_sample("clrd"))
+
+    mismatched = raa.iloc[:, :, :5, :5]
+    with pytest.raises(ValueError, match="only supports a single"):
+        raa.style.apply_from_triangle(mismatched)
+
+
+def test_apply_from_triangle_sparse_mask(raa) -> None:
+    """
+    Check that apply_from_triangle works when mask has a sparse backend.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    sparse_mask = raa[raa.valuation == raa.valuation_date].set_backend("sparse")
+    styler = raa.style.apply_from_triangle(sparse_mask, color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert len(styled) == 10
+
+    bool_mask_tri = raa.copy()
+    b = np.zeros(raa.shape, dtype=bool)
+    b[0, 0, 0, 0] = True
+    bool_mask_tri.values = b
+    sparse_bool = bool_mask_tri.set_backend("sparse")
+    styler_bool = raa.style.apply_from_triangle(sparse_bool, color="yellow")
+    styler_bool._compute()
+    styled_bool = {k for k, v in styler_bool.ctx.items() if v}
+    assert styled_bool == {(0, 0)}
