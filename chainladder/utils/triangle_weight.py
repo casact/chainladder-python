@@ -340,6 +340,7 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         # setting up flag to produce warning. A period that cannot satisfy
         # preserve even when fully populated is expected to lose its exclusion.
         expected = max_available - drop_high_array - drop_low_array < preserve_array
+        dev_warning_flags = preserve_trigger & ~expected
         warning_flag = np.any(preserve_trigger & ~expected)
 
         # getting ranks of values that correspond to the max and min after preserve
@@ -352,7 +353,10 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         )
 
         if warning_flag:
-            warn_exclusions_ignored(self.preserve)
+            warn_exclusions_ignored(
+                self.preserve,
+                X.development[list(set(np.where(dev_warning_flags)[2]))].to_list(),
+            )
 
         return w.astype(float)
 
@@ -472,6 +476,7 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         # applying preserve. Only a threshold that actually removed something is
         # worth a warning.
         dropped = w.sum(axis=2) - valid_count
+        dev_warning_flags = (valid_count < preserve_array) & (dropped > 0)
         warning_flag = np.any((valid_count < preserve_array) & (dropped > 0))
         w = np.where(
             valid_count[:, :, None, :] < preserve_array[:, :, None, :],
@@ -480,6 +485,9 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         )
 
         if warning_flag:
-            warn_exclusions_ignored(self.preserve)
+            warn_exclusions_ignored(
+                self.preserve,
+                X.development[list(set(np.where(dev_warning_flags)[2]))].to_list(),
+            )
 
         return w.astype(float)

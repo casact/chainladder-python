@@ -1179,7 +1179,7 @@ def date_delta_adjustment(date: str) -> str:
     return res
 
 
-def warn_exclusions_ignored(preserve):
+def warn_exclusions_ignored(preserve: int, ages: list[int | str]) -> None:
     """
     Warn that an exclusion was not applied because ``preserve`` blocked it.
 
@@ -1187,17 +1187,12 @@ def warn_exclusions_ignored(preserve):
     reach the same dead end and said so in four copies of this text. The
     wording is asserted by the test suite, so it is kept as it was.
     """
-    if preserve == 1:
-        warning = (
-            "Some exclusions have been ignored. At least "
-            + str(preserve)
-            + " (use preserve = ...)"
-            + " link ratio(s) is required for development estimation."
-        )
-    else:
-        warning = (
-            "Some exclusions have been ignored. At least "
-            + str(preserve)
-            + " link ratio(s) is required for development estimation."
-        )
-    warnings.warn(warning)
+    preserve_default = "(use preserve=...) " if preserve == 1 else ""
+    warnings.warn(
+        (
+            f"Some exclusions have been ignored at {str(ages)}. "
+            f"At least {preserve} {preserve_default}link ratio(s) "
+            "is required for development estimation."
+        ),
+        stacklevel=2,
+    )

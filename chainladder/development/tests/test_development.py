@@ -262,8 +262,10 @@ def test_drophighlow_inequal(prism, atol):
 
 
 def test_dropabovebelow(raa):
+
     dev = cl.Development(drop_above=40.0)
-    lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
+    model = dev.fit(raa)
+    lhs = np.round(dev.cdf_.values, 4).flatten()
     rhs = np.array([
         8.3771,
         2.9740,
@@ -276,10 +278,13 @@ def test_dropabovebelow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_above=1.2)
-    lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        model = dev.fit(raa)
+        future_model = _FutureDevelopment(dev).fit(raa)
+    lhs = np.round(model.cdf_.values, 4).flatten()
     rhs = np.array([
         7.6859,
         2.5625,
@@ -292,10 +297,13 @@ def test_dropabovebelow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert model.ldf_ == future_model.ldf_
 
     dev = cl.Development(drop_above=1.2, drop_below=1.05)
-    lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        model = dev.fit(raa)
+        future_model = _FutureDevelopment(dev).fit(raa)
+    lhs = np.round(model.cdf_.values, 4).flatten()
     rhs = np.array([
         8.4983,
         2.8334,
@@ -308,13 +316,13 @@ def test_dropabovebelow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert model.ldf_ == future_model.ldf_
 
     dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
-    lhs = np.round(
-        dev.fit(raa).cdf_.values,
-        4,
-    ).flatten()
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        model = dev.fit(raa)
+        future_model = _FutureDevelopment(dev).fit(raa)
+    lhs = np.round(model.cdf_.values, 4).flatten()
     rhs = np.array([
         8.3771,
         2.9740,
@@ -327,13 +335,11 @@ def test_dropabovebelow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert model.ldf_ == future_model.ldf_
 
     dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
-    lhs = np.round(
-        dev.fit(raa).cdf_.values,
-        4,
-    ).flatten()
+    model = dev.fit(raa)
+    lhs = np.round(model.cdf_.values, 4).flatten()
     rhs = np.array([
         8.9773,
         3.1871,
@@ -346,7 +352,7 @@ def test_dropabovebelow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
 
 def test_drop_valuation_1(raa):
@@ -563,7 +569,10 @@ def test_drop_warning_silent_on_the_triangle_weight_path(raa):
 def test_new_drop_6(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below without preserve
-    compare_new_drop(cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd)
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        compare_new_drop(
+            cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd
+        )
 
 
 def test_new_drop_7(clrd):
@@ -571,7 +580,7 @@ def test_new_drop_7(clrd):
     # drop_above/below with preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         dev = cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd)
-    compare_new_drop(dev, clrd)
+        compare_new_drop(dev, clrd)
 
 
 def test_new_drop_8(prism):
@@ -634,16 +643,22 @@ def test_new_drop_10():
         cumulative=True,
     )
 
-    assert np.round(
-        cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
-    ) == np.round((200 + 200 + 300) / (100 + 200 + 300), 4)
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        assert np.round(
+            cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+        ) == np.round((200 + 200 + 300) / (100 + 200 + 300), 4)
 
-    assert (
-        np.round(
-            cl.Development(drop_high=2).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+        assert (
+            np.round(
+                cl
+                .Development(drop_high=2)
+                .fit(tri)
+                .cdf_.to_frame()
+                .values.flatten()[0],
+                4,
+            )
+            == 1.0000
         )
-        == 1.0000
-    )
 
 
 def test_geometric_avg():

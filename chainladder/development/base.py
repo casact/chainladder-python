@@ -232,7 +232,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # applying preserve
         blocked = max_rank_unpreserve - min_rank_unpreserve < preserve
         expected = max_available - drop_high_array - drop_low_array < preserve
-        warning_flag = np.any(blocked & ~expected)
+        dev_warning_flags = blocked & ~expected
+        warning_flag = np.any(dev_warning_flags)
         max_rank = np.where(
             max_rank_unpreserve - min_rank_unpreserve < preserve,
             ldf_count_n_period,
@@ -258,7 +259,12 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         weights = index_array_weights
 
         if warning_flag:
-            warn_exclusions_ignored(preserve)
+            warn_exclusions_ignored(
+                preserve,
+                X.age_to_age.development[
+                    list(set(np.where(dev_warning_flags)[2]))
+                ].to_list(),
+            )
 
         return weights.transpose((0, 1, 3, 2))
 
@@ -322,6 +328,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # factors is not having an exclusion ignored, it simply has that few, so
         # only a threshold that actually removed something is worth a warning.
         dropped = weights.sum(axis=3) - ldf_count
+        dev_warning_flags = (ldf_count < preserve_array) & (dropped > 0)
         warning_flag = np.any((ldf_count < preserve_array) & (dropped > 0))
         weights = np.where(
             ldf_count[..., None] < preserve_array[..., None],
@@ -330,7 +337,12 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         )
 
         if warning_flag:
-            warn_exclusions_ignored(preserve)
+            warn_exclusions_ignored(
+                preserve,
+                X.age_to_age.development[
+                    list(set(np.where(dev_warning_flags)[2]))
+                ].to_list(),
+            )
 
         return weights.transpose((0, 1, 3, 2))
 
