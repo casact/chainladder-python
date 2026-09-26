@@ -3200,7 +3200,7 @@ def test_has_zeta_true(raa: Triangle) -> None:
     None
     """
     fitted = cl.IncrementalAdditive().fit(raa, sample_weight=raa.latest_diagonal)
-    assert fitted.has_zeta is True
+    assert fitted.has_zeta
 
 
 def test_has_zeta_false(raa: Triangle) -> None:
@@ -3216,7 +3216,7 @@ def test_has_zeta_false(raa: Triangle) -> None:
     -------
     None
     """
-    assert cl.Development().fit(raa).has_zeta is False
+    assert not cl.Development().fit(raa).has_zeta
 
 
 def test_cum_zeta_raises_when_no_zeta(raa: Triangle) -> None:

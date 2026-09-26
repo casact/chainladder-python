@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
 import warnings
 
 from chainladder.development.base import DevelopmentBase
@@ -489,16 +488,28 @@ class Development(DevelopmentBase):
         return X_new
 
     def _param_property(self, X, params, idx):
-        from chainladder import options
+        """
+        Private method to wrap a numpy array into a Triangle
 
-        obj = X[X.origin == X.origin.min()]
+        Uses and overrides DevelopmentBase._param_property.
+
+        Parameters
+        ----------
+        X : Triangle
+            The Triangle object that we want to place the parameter into
+
+        params : np.ndarray
+            The parammeter we want to turn into a Triangle
+
+        Returns
+        -------
+        Triangle
+            A Triangle that mimics X but has params values
+        """
+        obj = super()._param_property(X, params)
         xp = X.get_array_module()
         obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
         obj.ddims = X.link_ratio.ddims
-        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
-        obj.is_pattern = True
         obj.is_cumulative = False
-        obj.virtual_columns.columns = {}
-        obj._set_slicers()
 
         return obj

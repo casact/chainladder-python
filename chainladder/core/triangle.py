@@ -1065,6 +1065,19 @@ class Triangle(TriangleBase):
     def is_disposal_rate(self, is_dr: bool) -> None:
         self._is_disposal_rate = is_dr
 
+    @property
+    def is_additive(self) -> bool:
+        """
+        Indicates whether the Triangle holds a normal additive ratio (which goes from tail to head)
+        """
+        if hasattr(self, "_is_additive"):
+            return self._is_additive
+        return False
+
+    @is_additive.setter
+    def is_additive(self, is_add: bool) -> None:
+        self._is_additive = is_add
+
     def align_pattern(
         self, X: Triangle, sample_weight: Triangle | None = None
     ) -> Triangle:
@@ -1396,20 +1409,30 @@ class Triangle(TriangleBase):
         if inplace:
             xp = self.get_array_module()
             if not self.is_cumulative:
-                if self.is_pattern & (not self.is_disposal_rate):
-                    if hasattr(self, "is_additive") and self.is_additive:
-                        values = xp.nan_to_num(self.values[..., ::-1])
-                        values = num_to_value(values, 0)
-                        self.values = (
-                            xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle
-                        )
-                    else:
-                        values = xp.nan_to_num(self.values[..., ::-1])
-                        values = num_to_value(values, 1)
-                        values = xp.cumprod(values, -1)[..., ::-1]
-                        self.values = values * self.nan_triangle
-                        values = num_to_value(values, self.get_array_module(values).nan)
-                else:
+                # fmt: off
+                if (
+                    self.is_pattern
+                    and (not self.is_additive)
+                    and (not self.is_disposal_rate)
+                ):  # for multiplicative ldf triangles (mult from left to right)
+                    # fmt: on
+                    values = xp.nan_to_num(self.values[..., ::-1])
+                    values = num_to_value(values, 1)
+                    values = xp.cumprod(values, -1)[..., ::-1]
+                    self.values = values * self.nan_triangle
+                    values = num_to_value(values, self.get_array_module(values).nan)
+                    # fmt: off
+                elif (
+                    self.is_pattern
+                    and self.is_additive
+                    and (not self.is_disposal_rate)
+                ):  # for additive factor triangles (sum from left to right)
+                    # fmt: on
+                    values = xp.nan_to_num(self.values[..., ::-1])
+                    values = num_to_value(values, 0)
+                    self.values = (xp.cumsum(values, -1)[..., ::-1] * self.nan_triangle)
+                else:  # for normal value triangles 
+                    # also for disposal rate triangles (sum from right to left)
                     if self.array_backend not in ["sparse", "dask"]:
                         self.values = (
                             xp.cumsum(xp.nan_to_num(self.values), 3)
@@ -1485,7 +1508,13 @@ class Triangle(TriangleBase):
         if inplace:
             v = self.valuation_date
             if self.is_cumulative or self.is_cumulative is None:
-                if self.is_pattern & (not self.is_disposal_rate):
+                # fmt: off
+                if (
+                    self.is_pattern
+                    and (not self.is_additive)
+                    and (not self.is_disposal_rate)
+                ):  # for multiplicative ldf triangles (div from left to right)
+                    # fmt: on
                     xp = self.get_array_module()
                     self.values = num_to_value(xp.nan_to_num(self.values), 1)
                     diff = self.iloc[..., :-1] / self.iloc[..., 1:].values
@@ -1497,7 +1526,17 @@ class Triangle(TriangleBase):
                         axis=3,
                     )
                     self.values = self.values * self.nan_triangle
-                else:
+                    # fmt: fn
+                elif (
+                    self.is_pattern
+                    and self.is_additive
+                    and (not self.is_disposal_rate)
+                ):  # for additive factor triangles (diff from left to right)
+                    # fmt: on
+                    diff = self.iloc[..., :-1] - self.iloc[..., 1:].values
+                    self = concat((diff, self.iloc[..., -1]), axis=3)
+                else:  # for normal value triangles 
+                    # also for disposal rate triangles (diff from right to left)
                     diff = self.iloc[..., 1:] - self.iloc[..., :-1].values
                     self = concat((self.iloc[..., 0], diff), axis=3)
                 self.is_cumulative = False
