@@ -1,0 +1,26 @@
+.sidebar-toggle-icon--collapse,
+.sidebar-toggle-icon--expand {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .primary-toggle .sidebar-toggle-icon--menu {
+    display: none;
+  }
+
+  #pst-primary-sidebar + .bd-main .sidebar-toggle-icon--collapse {
+    display: inline-block;
+  }
+
+  #pst-primary-sidebar.pst-sidebar-hidden
+    + .bd-main
+    .sidebar-toggle-icon--collapse {
+    display: none;
+  }
+
+  #pst-primary-sidebar.pst-sidebar-hidden
+    + .bd-main
+    .sidebar-toggle-icon--expand {
+    display: inline-block;
+  }
+}

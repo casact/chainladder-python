@@ -40,6 +40,13 @@ SAMPLES: dict = {
         "columns": ["values"],
         "cumulative": True,
     },
+    "actsim": {
+        "origin": "origin",
+        "development": "development",
+        "index": ["Region", "LOB"],
+        "columns": ["reportedCount", "Incurred"],
+        "cumulative": False,
+    },
     "auto": {
         "origin": "origin",
         "valuation": "development",
@@ -138,6 +145,13 @@ SAMPLES: dict = {
             "Reported Claim Counts",
             "Disposal Rate",
         ],
+        "cumulative": True,
+    },
+    "friedland_dc_insurer": {
+        "origin": "Accident Year",
+        "development": "Valuation",
+        "index": None,
+        "columns": ["Reported Claims"],
         "cumulative": True,
     },
     "friedland_gl_insurer": {
