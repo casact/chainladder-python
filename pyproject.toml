@@ -118,13 +118,6 @@ select = [
     "UP034",
 ]
 
-# Grandfathered violations that predate enabling this rule set. New and
-# newly-touched code is still held to the full ruleset above; these files
-# are exempted only from the specific codes they already violated so the
-# check can be required without blocking unrelated PRs. Remove entries as
-# files are cleaned up.
-[tool.ruff.lint.per-file-ignores]
-
 [tool.ruff.format]
 docstring-code-format = true
 
