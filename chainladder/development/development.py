@@ -33,7 +33,10 @@ class Development(DevelopmentBase):
     ----------
     n_periods: integer, optional (default = -1)
         number of origin periods to be used in the ldf average calculation. For
-        all origin periods, set n_periods = -1
+        all origin periods, set n_periods = -1.
+
+        Setting n_periods to 1 does not allow enough degrees of freedom to support
+        calculation of all regression statistics; only LDFs would be calculated.
     average: literal (or list of literals), or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.
         Options include 'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
@@ -434,11 +437,6 @@ class Development(DevelopmentBase):
             params.sigma_fill(self.sigma_interpolation).std_err_fill()
             w_reg = params._w_reg
         else:
-            warnings.warn(
-                "Setting n_periods=1 does not allow enough degrees "
-                "of freedom to support calculation of all regression "
-                "statistics. Only LDFs have been calculated."
-            )
             w_reg = params._w_reg
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)

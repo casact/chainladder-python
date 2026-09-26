@@ -522,6 +522,7 @@ def _olf_for_freq(freq, rates):
         pd.DataFrame({"origin": origin, "values": 1.0}),
         origin="origin",
         columns="values",
+        cumulative=True,
     )
     olf = cl.ParallelogramOLF(
         rate_history=rates,
