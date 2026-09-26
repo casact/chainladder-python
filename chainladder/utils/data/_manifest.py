@@ -42,7 +42,7 @@ SAMPLES: dict = {
     },
     "actsim": {
         "origin": "origin",
-        "development": "development",
+        "valuation": "development",
         "index": ["Region", "LOB"],
         "columns": ["reportedCount", "Incurred"],
         "cumulative": False,

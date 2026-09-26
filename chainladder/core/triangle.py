@@ -184,7 +184,7 @@ class Triangle(TriangleBase):
         1983  3410.0  8992.0      NaN      NaN
         1984  5655.0     NaN      NaN      NaN
 
-    A Triangle can also specified by development age. 
+    A Triangle can also specified by development age.
 
     .. testcode::
 
