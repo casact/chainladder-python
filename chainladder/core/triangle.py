@@ -27,7 +27,7 @@ try:
 except ImportError:
     db = None
 
-from typing import cast, Optional, TYPE_CHECKING
+from typing import cast, Literal, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -1917,7 +1917,7 @@ class Triangle(TriangleBase):
     def trend(
         self,
         trend=0.0,
-        axis="origin",
+        axis: Literal["origin", "valuation", 2, -2] = "origin",
         start=None,
         end=None,
         ultimate_lag=None,
@@ -1932,7 +1932,7 @@ class Triangle(TriangleBase):
         ----------
         trend : float
             The annual amount of the trend. Use 1/(1+trend)-1 to detrend.
-        axis : str (options: ['origin', 'valuation'])
+        axis : {'origin', 'valuation', 2, -2}
             The axis on which to apply the trend
         start: date
             The start date from which trend should be calculated. If none is
