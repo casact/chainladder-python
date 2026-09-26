@@ -46,7 +46,7 @@ def test_errors_validation(tail_sample: Triangle) -> None:
         cl.TailCurve(errors="Ignore").fit_transform(tail_sample)
 
 
-def test_no_log_warning_when_only_some_tails_exceed_one() -> None:
+def test_no_log_warning_when_only_some_tails_exceed_one(clrd: Triangle) -> None:
     """
     A tail at or below 1.0 must not reach ``log(tail - 1)``.
 
@@ -56,11 +56,15 @@ def test_no_log_warning_when_only_some_tails_exceed_one() -> None:
     ``TailBondy`` on the grouped ``clrd`` sample gives 6 tails below 1 out of
     12, with a maximum of 1.018. See #1414.
 
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
     Returns
     -------
     None
     """
-    clrd = cl.load_sample("clrd")
     triangle = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
     triangle["CaseIncurredLoss"] = triangle["IncurLoss"] - triangle["CumPaidLoss"]
     development = cl.Development().fit_transform(
@@ -81,7 +85,7 @@ def test_no_log_warning_when_only_some_tails_exceed_one() -> None:
     assert not offending, [str(w.message) for w in offending]
 
 
-def test_nominal_tail_option_is_honoured() -> None:
+def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
     """
     ``NOMINAL_TAIL`` sets the tail substituted for a tail at or below 1.0.
 
@@ -89,11 +93,16 @@ def test_nominal_tail_option_is_honoured() -> None:
     its regression coefficients are finite, so the substituted value reaches
     ``sigma_``. See #1414.
 
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
     Returns
     -------
     None
     """
-    development = cl.Development().fit_transform(cl.load_sample("clrd")["CumPaidLoss"])
+    development = cl.Development().fit_transform(clrd["CumPaidLoss"])
 
     assert cl.options.NOMINAL_TAIL == 1.001
     baseline = cl.TailCurve().fit(development).sigma_.values.copy()
