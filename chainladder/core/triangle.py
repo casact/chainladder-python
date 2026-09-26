@@ -179,6 +179,34 @@ class Triangle(TriangleBase):
         1983  3410.0  8992.0      NaN      NaN
         1984  5655.0     NaN      NaN      NaN
 
+    A Triangle can also specified by development age. 
+
+    .. testcode::
+
+        df = pd.DataFrame(
+            data={
+                'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+                'age': [12, 24, 36, 48, 12, 24, 36, 12, 24, 12],
+                'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
+            }
+        )
+        tr = cl.Triangle(
+            data=df,
+            origin='origin',
+            age='age',
+            columns=['reported'],
+            cumulative=True,
+        )
+        print(tr)
+
+    .. testoutput::
+
+                  12      24       36       48
+        1981  5012.0  8269.0  10907.0  11805.0
+        1982   106.0  4285.0   5396.0      NaN
+        1983  3410.0  8992.0      NaN      NaN
+        1984  5655.0     NaN      NaN      NaN
+
     When another dimension is added, such as an additional column, the Triangle
     becomes multidimensional. In this case, printing displays the Triangle's
     metadata rather than its contents.
@@ -432,9 +460,9 @@ class Triangle(TriangleBase):
         1982  12000.0
     """
 
-    @_deprecated_rename_argument("development", "valuation", version="v1.5")
+    @_deprecated_rename_argument("development", "valuation", version="v2.0")
     @_deprecated_rename_argument(
-        "development_format", "valuation_format", version="v1.5"
+        "development_format", "valuation_format", version="v2.0"
     )
     def __init__(
         self,

@@ -253,8 +253,8 @@ def read_pickle(path):
         return dill.load(pkl)
 
 
-@_deprecated_rename_argument("development", "valuation", version="v1.5")
-@_deprecated_rename_argument("development_format", "valuation_format", version="v1.5")
+@_deprecated_rename_argument("development", "valuation", version="v2.0")
+@_deprecated_rename_argument("development_format", "valuation_format", version="v2.0")
 def read_csv(
     filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
     origin: Optional[str | list] = None,

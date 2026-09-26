@@ -239,7 +239,7 @@ def _deprecated_rename_argument(
     category: type[Warning] = FutureWarning,
 ) -> Callable[[_F], _F]:
     """
-    Decorator factory that marks a keyword argument that has been rename
+    Decorator factory that marks a keyword argument that has been renamed
     and scheduled to be removed.
 
     Apply this to a function while it still accepts the argument under its
