@@ -304,14 +304,14 @@ def test_development_before_origin_warns_and_drops() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
+        "valuation": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
         "value": [100, 200, 999, 300],
     })
     with pytest.warns(UserWarning, match="development before"):
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -637,11 +637,11 @@ def origin_tri():
     return cl.Triangle(
         data={
             "origin": [1985, 1985, 1985, 1986, 1986, 1987],
-            "development": [1985, 1986, 1987, 1986, 1987, 1987],
+            "valuation": [1985, 1986, 1987, 1986, 1987, 1987],
             "paid": [300, 400, 500, 500, 600, 500],
         },
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["paid"],
         cumulative=True,
     )
@@ -1029,7 +1029,7 @@ def test_init_defaults_array_backend_to_option() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", False)
@@ -1038,7 +1038,7 @@ def test_init_defaults_array_backend_to_option() -> None:
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -1060,7 +1060,7 @@ def test_init_calls_set_backend_when_auto_sparse_disabled() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", False)
@@ -1068,7 +1068,7 @@ def test_init_calls_set_backend_when_auto_sparse_disabled() -> None:
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
             array_backend="numpy",
@@ -1090,7 +1090,7 @@ def test_init_array_backend_overridden_by_auto_sparse_when_enabled() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", True)
@@ -1098,7 +1098,7 @@ def test_init_array_backend_overridden_by_auto_sparse_when_enabled() -> None:
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
             array_backend="sparse",
@@ -1123,7 +1123,7 @@ def test_init_array_backend_option_overridden_by_auto_sparse_when_param_omitted(
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", True)
@@ -1132,7 +1132,7 @@ def test_init_array_backend_option_overridden_by_auto_sparse_when_param_omitted(
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -1237,7 +1237,7 @@ def test_triangle_from_dataframe_interchange_protocol() -> None:
 
     df = pd.DataFrame({
         "origin": ["2020-01-01", "2020-01-01", "2021-01-01", "2021-01-01"],
-        "development": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
+        "valuation": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
         "values": [100, 150, 120, 180],
     })
     pl_df = polars.from_pandas(df)
@@ -1247,14 +1247,14 @@ def test_triangle_from_dataframe_interchange_protocol() -> None:
     tri = cl.Triangle(
         pl_df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
     expected = cl.Triangle(
         df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
@@ -1440,7 +1440,7 @@ def test_partial_year(prism):
     after = cl.Triangle(
         before.to_frame(keepdims=True, origin_as_datetime=True).reset_index(),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="Paid",
         index=before.key_labels,
     )
@@ -1480,7 +1480,7 @@ def test_sort_axis_columns_reorders_values() -> None:
     df = pd.DataFrame(
         data={
             "origin": [2020, 2020, 2021, 2021],
-            "development": [2020, 2021, 2021, 2021],
+            "valuation": [2020, 2021, 2021, 2021],
             "reported": [100, 200, 110, 110],
             "paid": [50, 100, 60, 60],
         }
@@ -1488,7 +1488,7 @@ def test_sort_axis_columns_reorders_values() -> None:
     tr = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported", "paid"],
         cumulative=True,
     )
@@ -1637,13 +1637,13 @@ def _ffill_source_triangle():
     """Triangle from #1030 - a mix of leading, interior, and not-yet-valued NaNs."""
     df = pd.DataFrame({
         "origin": [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
-        "development": [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+        "valuation": [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
         "paid": [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
     })
     return cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="paid",
         cumulative=True,
     )
@@ -1694,13 +1694,13 @@ def test_ffill_zero_input_is_missing_and_fills() -> None:
     """
     df = pd.DataFrame({
         "origin": [1985, 1985, 1985, 1986, 1986],
-        "development": [1985, 1986, 1987, 1986, 1987],
+        "valuation": [1985, 1986, 1987, 1986, 1987],
         "paid": [500.0, 0.0, 700.0, 300.0, 400.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="paid",
         cumulative=True,
     )
@@ -1736,7 +1736,7 @@ def test_create_full_triangle(raa):
     b = cl.Triangle(
         a.to_frame(keepdims=True, implicit_axis=True, origin_as_datetime=True),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
     )
     assert a == b
@@ -1748,7 +1748,7 @@ def test_create_triangle_with_ultimates(raa):
     round_tripped = cl.Triangle(
         ult.to_frame(keepdims=True, origin_as_datetime=True),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
@@ -1762,7 +1762,7 @@ def test_create_triangle_with_ultimates(raa):
             "ultimate": [10000.0, 12000.0],
         }),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="ultimate",
         cumulative=True,
     )
@@ -1814,7 +1814,7 @@ def test_correct_valutaion(raa):
             keepdims=True, implicit_axis=True, origin_as_datetime=True
         ),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
     )
     assert new.valuation_date == raa.valuation_date
@@ -1878,7 +1878,7 @@ def test_malformed_init():
                 "Loss": [10000, 10000, 10000, 10000, 0, 0, 0],
             }),
             origin="Accident Date",
-            development="Valuation Date",
+            valuation="Valuation Date",
             columns="Loss",
         ).origin_grain
         == "M"
@@ -1907,7 +1907,7 @@ def test_trailing_origin():
     # adjust valuations to mid-year
     raa["valuation"] = raa["valuation"] - pd.DateOffset(months=6)
     tri = cl.Triangle(
-        raa, origin="origin", development="valuation", columns="values", cumulative=True
+        raa, origin="origin", valuation="valuation", columns="values", cumulative=True
     )
     assert tri.development.to_list() == [6, 18, 30, 42, 54, 66, 78, 90, 102, 114]
     assert tri.origin_close == "DEC"
@@ -1915,7 +1915,7 @@ def test_trailing_origin():
     tri = cl.Triangle(
         raa,
         origin="origin2",
-        development="valuation",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
@@ -1931,10 +1931,10 @@ def test_trailing_valuation():
         .to_frame(keepdims=True, origin_as_datetime=True)
     )
     data.valuation = (data.valuation.dt.year + 1) * 100 + 3
-    tri = cl.Triangle(data, origin="origin", development="valuation", columns="values")
+    tri = cl.Triangle(data, origin="origin", valuation="valuation", columns="values")
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(
-        data, origin="origin", development="valuation", columns="values", trailing=True
+        data, origin="origin", valuation="valuation", columns="values", trailing=True
     )
     assert tri == tri2
 
@@ -1945,11 +1945,11 @@ def test_edgecase_236():
         .Triangle(
             pd.DataFrame({
                 "origin": [201906, 201907],
-                "development": [201911, 201911],
+                "valuation": [201911, 201911],
                 "amount": [1, 0],
             }),
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns=["amount"],
             cumulative=True,
         )
@@ -1974,7 +1974,7 @@ def test_valuation_vector():
     tri = cl.Triangle(
         df,
         origin="Accident Date",
-        development="Valuation Date",
+        valuation="Valuation Date",
         columns="Loss",
         cumulative=True,
         trailing=True,
@@ -1991,7 +1991,7 @@ def test_single_entry():
     cl_tri = cl.Triangle(
         data,
         origin="origin",
-        development="valuation_date",
+        valuation="valuation_date",
         columns="amount",
         cumulative=True,
     )
@@ -2107,7 +2107,7 @@ def test_halfyear_grain():
         "value": [100] * 3,
     })
     assert cl.Triangle(
-        data=data, origin="AccMo", development="ValMo", columns="value", cumulative=True
+        data=data, origin="AccMo", valuation="ValMo", columns="value", cumulative=True
     ).shape == (1, 1, 16, 1)
 
 
@@ -2156,16 +2156,16 @@ def test_halfyear_development():
         2011-01-01, 2013-01-01, 908.77
         """
         ),
-        names=["origin", "development", "paid"],
-        parse_dates=["origin", "development"],
+        names=["origin", "valuation", "paid"],
+        parse_dates=["origin", "valuation"],
     )
     assert isinstance(
         cl.Triangle(
             data=df_sub,
             origin="origin",
             origin_format="%Y-%m-%d",
-            development="development",
-            development_format="%Y-%m-%d",
+            valuation="valuation",
+            valuation_format="%Y-%m-%d",
             columns="paid",
             cumulative=True,
         ),
@@ -2192,7 +2192,7 @@ def test_halfyear_development():
             index="idx",
             columns="value",
             origin="origin",
-            development="val_date",
+            valuation="val_date",
             cumulative=True,
         ),
         cl.Triangle,
@@ -2255,7 +2255,7 @@ def test_semi_annual_grain():
             "2009-07-01",
             "2010-01-01",
         ],
-        "development": [
+        "valuation": [
             "2007-01-01",
             "2007-07-01",
             "2008-01-01",
@@ -2320,7 +2320,7 @@ def test_semi_annual_grain():
     Stri = cl.Triangle(
         pd.DataFrame(Sdata),
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="loss",
         cumulative=True,
     )
@@ -2338,7 +2338,7 @@ def test_semi_annual_grain():
             "2009-01-01",
             "2010-01-01",
         ],
-        "development": [
+        "valuation": [
             "2007-01-01",
             "2008-01-01",
             "2009-01-01",
@@ -2356,7 +2356,7 @@ def test_semi_annual_grain():
     Atri = cl.Triangle(
         pd.DataFrame(Adata),
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="loss",
         cumulative=True,
     )
@@ -2377,7 +2377,7 @@ def test_odd_quarter_end():
         data,
         origin="origin",
         origin_format="%Y-%m-%d",
-        development="valuation",
+        valuation="valuation",
         columns="EarnedPremium",
         trailing=True,
         cumulative=True,
@@ -2404,10 +2404,10 @@ def test_single_valuation_date_preserves_exact_date():
     triangle = cl.Triangle(
         data=data,
         origin="Accident Year Month",
-        development="Calendar Year Month",
+        valuation="Calendar Year Month",
         columns="Loss",
         cumulative=True,
-        development_format="%Y%m",
+        valuation_format="%Y%m",
         origin_format="%Y%m",
     )
 
@@ -2418,7 +2418,7 @@ def test_single_valuation_date_preserves_exact_date():
     assert int(triangle.valuation_date.strftime("%Y%m")) == 202510
 
 
-def test_1d_annual_valuation_date() -> None:
+def test_1d_annual_valuation_date1() -> None:
     year_data = [
         [1998, 2008, 900000, 890000],
         [1999, 2008, 1200000, 1170000],
@@ -2432,9 +2432,9 @@ def test_1d_annual_valuation_date() -> None:
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
-        development="dev",
+        valuation="dev",
         columns="expense",
-        development_format="%Y",
+        valuation_format="%Y",
         cumulative=True,
     )
     assert (
@@ -2443,7 +2443,7 @@ def test_1d_annual_valuation_date() -> None:
     assert tri.development_grain == "Y"
 
 
-def test_1d_monthly_valuation_date() -> None:
+def test_1d_monthly_valuation_date2() -> None:
     year_data = [
         [1998, "2008-01", 900000, 890000],
         [1999, "2008-01", 1200000, 1170000],
@@ -2457,9 +2457,9 @@ def test_1d_monthly_valuation_date() -> None:
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
-        development="dev",
+        valuation="dev",
         columns="expense",
-        development_format="%Y-%m",
+        valuation_format="%Y-%m",
         cumulative=True,
     )
     assert (
@@ -2477,9 +2477,9 @@ def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
-        development="dev",
+        valuation="dev",
         columns="expense",
-        development_format="%Y",
+        valuation_format="%Y",
         cumulative=True,
     )
     assert (
@@ -2526,7 +2526,7 @@ def test_oxdx_triangle():
                     tri = cl.Triangle(
                         test_data,
                         origin="origin_date",
-                        development="development_date",
+                        valuation="development_date",
                         columns="value",
                         cumulative=True,
                     )
@@ -2558,14 +2558,14 @@ def test_2x2_triangle():
     df = pd.DataFrame(
         data={
             "origin": [2022, 2022, 2023],
-            "development": [2022, 2023, 2023],
+            "valuation": [2022, 2023, 2023],
             "reported": [78000, 222000, 78000],
         }
     )
     tri_from_df = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported"],
         cumulative=True,
     )
@@ -2585,7 +2585,7 @@ def test_triangle_init_from_dict() -> None:
     # Common data.
     data_dict = {
         "origin": [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-        "development": [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+        "valuation": [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
         "reported": [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
     }
 
@@ -2594,7 +2594,7 @@ def test_triangle_init_from_dict() -> None:
     tri_from_df = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported"],
         cumulative=True,
     )
@@ -2603,7 +2603,7 @@ def test_triangle_init_from_dict() -> None:
     tri_from_dict = cl.Triangle(
         data=data_dict,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported"],
         cumulative=True,
     )
@@ -2840,13 +2840,13 @@ def test_set_development_age_in_months() -> None:
     """
     df = pd.DataFrame({
         "origin": [1995, 1996],
-        "development": [12, 24],
+        "age": [12, 24],
         "reported": [1.0, 2.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        age="age",
         columns="reported",
         cumulative=True,
     )
@@ -2863,13 +2863,13 @@ def test_set_development_age_respects_mid_period_origin() -> None:
     """
     df = pd.DataFrame({
         "origin": ["2018-06-15", "2018-06-15"],
-        "development": [12, 24],
+        "age": [12, 24],
         "reported": [100.0, 150.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        age="age",
         columns="reported",
         cumulative=True,
     )
@@ -2883,13 +2883,13 @@ def test_set_development_age_semiannual_origin() -> None:
     """
     df = pd.DataFrame({
         "origin": ["2017-01-01", "2017-01-01", "2017-07-01", "2018-01-01"],
-        "development": [6, 12, 6, 6],
+        "age": [6, 12, 6, 6],
         "reported": [1.0, 2.0, 3.0, 5.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        age="age",
         columns="reported",
         cumulative=True,
     )
@@ -2907,14 +2907,14 @@ def test_set_development_age_non_calendar_semiannual_raises() -> None:
     """
     df = pd.DataFrame({
         "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
-        "development": [6, 12, 6],
+        "age": [6, 12, 6],
         "reported": [1.0, 2.0, 3.0],
     })
     with pytest.raises(ValueError, match="non-calendar semiannual"):
         cl.Triangle(
             data=df,
             origin="origin",
-            development="development",
+            age="age",
             columns="reported",
             cumulative=True,
         )
@@ -2928,13 +2928,13 @@ def test_set_development_bare_years_unaffected_by_age_support() -> None:
     """
     df = pd.DataFrame({
         "origin": [1969, 1970],
-        "development": [1970, 1970],
+        "valuation": [1970, 1970],
         "reported": [1.0, 2.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="reported",
         cumulative=True,
     )
@@ -2952,14 +2952,14 @@ def test_input_validation_non_numeric_columns_raises() -> None:
     """
     df = pd.DataFrame({
         "origin": [1995, 1996],
-        "development": [1995, 1996],
+        "valuation": [1995, 1996],
         "reported": ["1000", "2000"],
     })
     with pytest.raises(TypeError, match="column attribute must be numeric"):
         cl.Triangle(
             data=df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="reported",
             cumulative=True,
         )
@@ -2976,7 +2976,7 @@ def test_input_validation_duplicate_columns_raises() -> None:
     """
     df = pd.DataFrame(
         [[1995, 1995, 1.0, 2.0], [1996, 1996, 3.0, 4.0]],
-        columns=pd.Index(["origin", "development", "reported", "reported"]),
+        columns=pd.Index(["origin", "valuation", "reported", "reported"]),
     )
     with pytest.raises(
         AttributeError, match="Columns are required to have unique names"
@@ -2984,7 +2984,7 @@ def test_input_validation_duplicate_columns_raises() -> None:
         cl.Triangle(
             data=df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="reported",
             cumulative=True,
         )
@@ -3032,11 +3032,11 @@ def test_to_datetime_uninferrable_format_raises() -> None:
         cl.Triangle(
             data={
                 "origin": ["1995/Q1", "1996/Q1"],
-                "development": ["1995Q1", "1996Q1"],
+                "valuation": ["1995Q1", "1996Q1"],
                 "value": [1.0, 2.0],
             },
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -3304,6 +3304,46 @@ def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
     np.testing.assert_allclose(
         predicted.ultimate_.values.flatten(), [expected], atol=atol
     )
+
+
+def test_declare_w_both_valuation_age_raises() -> None:
+    """
+    Specifying both valuation and age will error out
+    """
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "age": [6, 12, 6],
+        "valuation": [2018, 2018, 2018],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="Only one"):
+        cl.Triangle(
+            data=df,
+            origin="origin",
+            valuation="valuation",
+            age="age",
+            columns="reported",
+            cumulative=True,
+        )
+
+
+def test_feed_age_into_valuation_raises() -> None:
+    """
+    With age added, valuation no longer takes age-like values
+    """
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "age": [6, 12, 6],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="Development lags could not be determined"):
+        cl.Triangle(
+            data=df,
+            origin="origin",
+            valuation="age",
+            columns="reported",
+            cumulative=True,
+        )
 
 
 def test_fill(clrd: Triangle) -> None:

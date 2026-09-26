@@ -111,7 +111,7 @@ def test_read_csv_single(raa):
     assert raa == cl.read_csv(
         filepath_or_buffer=raa_csv_path,
         origin="origin",
-        development="development",
+        valuation="development",
         columns=["values"],
         index=None,
         cumulative=True,
@@ -128,7 +128,7 @@ def test_read_csv_multi(clrd):
     assert clrd == cl.read_csv(
         filepath_or_buffer=clrd_csv_path,
         origin="AccidentYear",
-        development="DevelopmentYear",
+        valuation="DevelopmentYear",
         columns=[
             "IncurLoss",
             "CumPaidLoss",
@@ -937,14 +937,14 @@ def test_triangle_dask_input_deprecated() -> None:
 
     data = _FakeDaskFrame({
         "origin": [2020, 2020, 2021],
-        "development": [2020, 2021, 2021],
+        "valuation": [2020, 2021, 2021],
         "values": [100.0, 150.0, 200.0],
     })
     with pytest.warns(DeprecationWarning, match="dask") as record:
         cl.Triangle(
             data,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="values",
         )
     dask_warnings = [
@@ -975,13 +975,13 @@ def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
 
     data = _PandasSubclass({
         "origin": [2020, 2020, 2021],
-        "development": [2020, 2021, 2021],
+        "valuation": [2020, 2021, 2021],
         "values": [100.0, 150.0, 200.0],
     })
     cl.Triangle(
         data,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="values",
     )
     dask_warnings = [
