@@ -149,7 +149,7 @@ SAMPLES: dict = {
     },
     "friedland_dc_insurer": {
         "origin": "Accident Year",
-        "development": "Valuation",
+        "valuation": "Valuation",
         "index": None,
         "columns": ["Reported Claims"],
         "cumulative": True,
