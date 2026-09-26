@@ -3,6 +3,8 @@ from chainladder.adjustments.berqsherm import BerquistSherman  # noqa (API impor
 from chainladder.adjustments.parallelogram import ParallelogramOLF  # noqa (API import)
 from chainladder.adjustments.trend import Trend  # noqa (API import)
 from chainladder.adjustments.disposal import DisposalRate  # noqa (API import)
+from chainladder.adjustments.sahasrabuddhe import LEV  # noqa (API import)
+from chainladder.adjustments.sahasrabuddhe import Sahasrabuddhe  # noqa (API import)
 
 __all__ = [
     "BootstrapODPSample",
@@ -10,4 +12,6 @@ __all__ = [
     "ParallelogramOLF",
     "Trend",
     "DisposalRate",
+    "LEV",
+    "Sahasrabuddhe",
 ]
