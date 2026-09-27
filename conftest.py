@@ -19,22 +19,18 @@ FIXTURES = {
     "raa": {
         "data": "raa",
         "runs": ["normal_run", "sparse_only_run"],
-        "transform": None,
     },
     "qtr": {
         "data": "quarterly",
         "runs": ["normal_run", "sparse_only_run"],
-        "transform": None,
     },
     "clrd": {
         "data": "clrd",
         "runs": ["normal_run", "sparse_only_run"],
-        "transform": None,
     },
     "genins": {
         "data": "genins",
         "runs": ["normal_run", "sparse_only_run"],
-        "transform": None,
     },
     "monthly": {
         "data": "prism",
@@ -44,17 +40,14 @@ FIXTURES = {
     "prism": {
         "data": "prism",
         "runs": ["sparse_only_run"],
-        "transform": None,
     },
     "tail_sample": {
         "data": "tail_sample",
         "runs": ["normal_run", "sparse_only_run"],
-        "transform": None,
     },
     "xyz": {
         "data": "xyz",
         "runs": ["normal_run", "sparse_only_run"],
-        "transform": None,
     },
 }
 
@@ -118,7 +111,7 @@ def make_fixture(
 
 
 for x, v in FIXTURES.items():
-    globals()[x] = make_fixture(v["data"], v["transform"])
+    globals()[x] = make_fixture(v["data"], v.get("transform"))
 
 
 @pytest.fixture
