@@ -1033,7 +1033,8 @@ def test_dask_parallel_groupby_deprecated(clrd, monkeypatch: MonkeyPatch) -> Non
             dask_warnings = [
                 w
                 for w in record
-                if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
+                if issubclass(w.category, DeprecationWarning)
+                and "dask" in str(w.message)
             ]
             assert len(dask_warnings) == 1
         finally:
