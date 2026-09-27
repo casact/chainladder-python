@@ -98,6 +98,7 @@ def make_fixture(
     A Triangle, with backend set according to request.param.
 
     """
+
     @pytest.fixture
     def _sample_fixture(request: Any) -> Iterator[Triangle]:
         # Load a copy of cached sample data.
@@ -105,7 +106,9 @@ def make_fixture(
         # Apply a transformation if supplied
         tri = transform(tri) if transform else tri
         # Set the backend to sparse for a sparse-only-run, then yield the triangle to the test.
-        yield tri.set_backend("sparse" if request.param == "sparse_only_run" else "numpy")
+        yield tri.set_backend(
+            "sparse" if request.param == "sparse_only_run" else "numpy"
+        )
 
     return _sample_fixture
 
