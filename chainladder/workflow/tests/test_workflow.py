@@ -85,9 +85,13 @@ dev = [
     [
         partial(
             cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
-        )
+        ),
+        tri_sel,
     ],
-    [partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss"))],
+    [
+        partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
+        tri_sel,
+    ],
 ]
 tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
 ibnr = [
