@@ -472,7 +472,7 @@ class Triangle(TriangleBase):
     """
 
     columns = TriangleAxis(
-        "columns",
+        1,
         fset=_set_columns,
         doc="Represents the value dimension of the triangle.",
     )
@@ -501,7 +501,7 @@ class Triangle(TriangleBase):
         *args,
         **kwargs,
     ):
-        self._axes: dict[str, Any] = {}
+        self._axes: dict[int, Any] = {}
 
         # If data are present, validate the dimensions.
         if data is None:
@@ -2150,6 +2150,17 @@ class Triangle(TriangleBase):
 
     def __setstate__(self, state: dict) -> None:
         """Migrate legacy pickled instances with 'kdims'/'_kdims' to '_index' and 'vdims'/'_vdims'/'_columns' to '_axes'."""
+        has_legacy_keys = any(
+            k in state for k in ("kdims", "_kdims", "vdims", "_vdims", "_columns")
+        )
+        if has_legacy_keys:
+            warnings.warn(
+                "A legacy pickled Triangle instance was detected. Please re-save your "
+                "triangle with chainladder 0.11.0+ as legacy pickle support will be "
+                "removed in a future release.",
+                UserWarning,
+                stacklevel=2,
+            )
         key_labels = state.pop("key_labels", ["Total"])
         if "_index" not in state:
             raw_kdims = state.pop("_kdims", None)
@@ -2161,16 +2172,19 @@ class Triangle(TriangleBase):
                 state["_index"] = pd.DataFrame([["Total"]], columns=["Total"])
         if "_axes" not in state:
             state["_axes"] = {}
-        if "columns" not in state["_axes"]:
-            raw_cols = state.pop("_columns", None)
-            if raw_cols is None:
-                raw_cols = state.pop("_vdims", None)
-            if raw_cols is None:
-                raw_cols = state.pop("vdims", None)
-            if raw_cols is not None:
-                state["_axes"]["columns"] = pd.Index(raw_cols, name="columns")
+        if 1 not in state["_axes"]:
+            if "columns" in state["_axes"]:
+                state["_axes"][1] = state["_axes"].pop("columns")
             else:
-                state["_axes"]["columns"] = pd.Index(["values"], name="columns")
+                raw_cols = state.pop("_columns", None)
+                if raw_cols is None:
+                    raw_cols = state.pop("_vdims", None)
+                if raw_cols is None:
+                    raw_cols = state.pop("vdims", None)
+                if raw_cols is not None:
+                    state["_axes"][1] = pd.Index(raw_cols, name="columns")
+                else:
+                    state["_axes"][1] = pd.Index(["values"], name="columns")
         self.__dict__.update(state)
 
     def development_correlation(self, p_critical=0.5):
