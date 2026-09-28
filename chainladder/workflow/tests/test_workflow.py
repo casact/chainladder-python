@@ -89,7 +89,9 @@ dev = [
         tri_sel,
     ],
     [
-        partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")),
+        partial(
+            cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
+        ),
         tri_sel,
     ],
 ]
