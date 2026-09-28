@@ -144,8 +144,8 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _base_index(
-            X: Triangle,  # noqa - sklearn convention
-            base_period: int | str | None,
+        X: Triangle,  # noqa - sklearn convention
+        base_period: int | str | None,
     ) -> int:
         """
         The position of ``base_period`` on X's origin axis.
@@ -185,8 +185,8 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _limited_expected_value(
-            means: Triangle,
-            limit: float | int,
+        means: Triangle,
+        limit: float | int,
     ) -> Triangle:
         """
         The limited expected value of an exponential model at a single limit.
@@ -219,8 +219,8 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         return means * (1 - (-limit / means).exp())
 
     def _resolve_means(
-            self,
-            X: Triangle,  # noqa - sklearn convention
+        self,
+        X: Triangle,  # noqa - sklearn convention
     ) -> Triangle:
         """
         Resolve ``means`` against ``X`` into a Triangle of mean claim sizes.
@@ -265,10 +265,10 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         return row * np.array([self.means[age] for age in ages], dtype="float64")
 
     def fit(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            y=None,  # noqa - expected by sklearn API
-            sample_weight=None,  # noqa - expected by sklearn API
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        y=None,  # noqa - expected by sklearn API
+        sample_weight=None,  # noqa - expected by sklearn API
     ) -> LEV:
         """
         Fit the model with X.
@@ -319,9 +319,9 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         return self
 
     def _validate_means(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            base_row: slice | None,
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        base_row: slice | None,
     ) -> None:
         """
         Check that a one-origin Triangle of ``means`` describes the base period.
@@ -349,7 +349,9 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         values = np.asarray(self.means.set_backend("numpy").values)
         if np.isnan(values).any():
             raise ValueError(
-                "The provided means must not have NaNs for the origin period."
+                "means has gaps in its single origin row. Every development "
+                "age must be populated; a row sliced from a Triangle is "
+                "masked past its latest age."
             )
 
         # The cost level year of the means must match
@@ -363,9 +365,9 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                 )
 
     def _validate_trend(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            base_row: slice
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        base_row: slice,
     ) -> None:
         """
         Check that ``trend`` can restate ``means`` across the whole rectangle.
