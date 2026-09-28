@@ -1274,11 +1274,18 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         if axis in [0, 1] and not obj.is_full:
             with warnings.catch_warnings():
                 # the lower right half of an undeveloped triangle will always emit an
-                # empty slice warning when aggregating by index or column
+                # empty or All-NaN slice warning when aggregating by index or column
+                # (depending on `func`; e.g. nanmean warns "empty slice",
+                # nanmax warns All-NaN slice
                 warnings.filterwarnings(
                     "ignore",
                     category=RuntimeWarning,
                     message=".*empty slice.*",
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message=".*All-NaN slice.*",
                 )
                 obj.values = func(obj.values, axis=axis, *args, **kwargs)
         else:
