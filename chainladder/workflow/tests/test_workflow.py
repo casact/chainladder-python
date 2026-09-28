@@ -57,43 +57,13 @@ def test_grid(clrd: Triangle) -> None:
     )
 
 
-@pytest.fixture
-def tri(clrd: Triangle) -> Triangle:
-    """
-    Fixture for getting the desired aggregated slice of clrd
-
-    Parameters
-    ----------
-    clrd: Triangle
-        The clrd sample data set fixture
-
-    Returns
-    -------
-    Triangle
-    """
-    tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss", "EarnedPremDIR"]]
-    tri["CaseIncurredLoss"] = tri["IncurLoss"] - tri["CumPaidLoss"]
-    return tri
-
-
-tri_sel = partial(cl.TriangleSelector, col="CumPaidLoss")
 dev = [
-    [tri_sel, cl.Development],
-    [tri_sel, cl.ClarkLDF],
-    [tri_sel, cl.Trend],
-    [tri_sel, cl.IncrementalAdditive],
-    [
-        partial(
-            cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
-        ),
-        tri_sel,
-    ],
-    [
-        partial(
-            cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "CaseIncurredLoss")
-        ),
-        tri_sel,
-    ],
+    cl.Development,
+    cl.ClarkLDF,
+    cl.Trend,
+    cl.IncrementalAdditive,
+    partial(cl.MunichAdjustment, paid_to_incurred=("CumPaidLoss", "IncurLoss")),
+    partial(cl.CaseOutstanding, paid_to_incurred=("CumPaidLoss", "IncurLoss")),
 ]
 tail = [cl.TailCurve, cl.TailConstant, cl.TailBondy, cl.TailClark]
 ibnr = [
@@ -108,7 +78,7 @@ ibnr = [
 @pytest.mark.parametrize("tail", tail)
 @pytest.mark.parametrize("ibnr", ibnr)
 def test_pipeline(
-    tri: Triangle,
+    clrd: Triangle,
     dev: list[Callable[[], Any]],
     tail: Callable[[], Any],
     ibnr: Callable[[], Any],
@@ -118,8 +88,8 @@ def test_pipeline(
 
     Parameters
     ----------
-    tri: Triangle
-        Bespoke fixture for this test
+    clrd: Triangle
+        test fixture
     dev: list[Triangle Transformers]
         Develoopment Transformer, may be accompanied by other helper Transformers
     tail: Triangle Transformer
@@ -130,13 +100,14 @@ def test_pipeline(
     -------
     None
     """
+    tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss", "EarnedPremDIR"]]
     X = tri[["CumPaidLoss", "CaseIncurredLoss"]]
     sample_weight = tri["EarnedPremDIR"].latest_diagonal
     (
         cl
         .Pipeline(
             steps=[
-                *[(f"dev_{i}", x()) for i, x in enumerate(dev)],
+                ("dev", dev()),
                 ("tail", tail()),
                 ("ibnr", ibnr()),
             ]

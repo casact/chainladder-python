@@ -166,12 +166,9 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         """
         Checks that the a aprior has valid dimensions
         """
-        if (
-            sample_weight
-            and X.shape[:-1] != sample_weight.shape[:-1]
-            and sample_weight.shape[2] != 1
-            and sample_weight.shape[0] > 1
-        ):
-            warnings.warn(
-                "X and sample_weight are not aligned. Broadcasting may occur.\n"
-            )
+        if sample_weight:
+            if X.shape[:-1] != sample_weight.shape[:-1]:
+                try:
+                    _ = xp.broadcast_shapes(X.shape[:-1], sample_weight.shape[:-1])
+                except ValueError:
+                    raise ValueError("X and sample_weight are not aligned.")
