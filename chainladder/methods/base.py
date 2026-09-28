@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import warnings
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development

@@ -79,7 +79,7 @@ ibnr = [
 @pytest.mark.parametrize("ibnr", ibnr)
 def test_pipeline(
     clrd: Triangle,
-    dev: list[Callable[[], Any]],
+    dev: Callable[[], Any],
     tail: Callable[[], Any],
     ibnr: Callable[[], Any],
 ) -> None:
@@ -90,10 +90,10 @@ def test_pipeline(
     ----------
     clrd: Triangle
         test fixture
-    dev: list[Triangle Transformers]
-        Develoopment Transformer, may be accompanied by other helper Transformers
+    dev: Triangle Transformers
+        Development Transformer
     tail: Triangle Transformer
-        Tail Curve Transformer
+        Tail Transformer
     ibnr: Triangle Predictor
         IBNR Predictor
     Returns
