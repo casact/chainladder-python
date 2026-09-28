@@ -1243,3 +1243,54 @@ def warn_exclusions_ignored(preserve):
             + " link ratio(s) is required for development estimation."
         )
     warnings.warn(warning)
+
+
+# Canonical ordering of Triangle dimensions.
+_axis_orders: tuple[str, ...] = ("index", "columns", "origin", "development")
+
+# Lookup mapping supporting integers (positive and negative) and string names.
+_axis_to_axis_number: dict[int | str, int] = {
+    **{i: i for i in range(4)},
+    **{i - 4: i for i in range(4)},
+    **{name: i for i, name in enumerate(_axis_orders)},
+}
+
+
+def _get_axis_number(axis: int | str) -> int:
+    """
+    Convert an axis name or integer (-4..3) to its canonical integer 0..3.
+
+    Parameters
+    ----------
+    axis : int or str
+        Axis name or integer representation.
+
+    Returns
+    -------
+    int
+        Canonical integer axis in 0..3.
+    """
+    if axis not in _axis_to_axis_number:
+        raise ValueError(
+            f"No axis named {axis} for object type Triangle. "
+            f"Valid axes are {_axis_orders} or integers 0..3."
+        )
+    return _axis_to_axis_number[axis]
+
+
+def _get_axis_name(axis: int | str) -> str:
+    """
+    Convert an axis name or integer to its canonical name.
+
+    Parameters
+    ----------
+    axis : int or str
+        Axis name or integer representation.
+
+    Returns
+    -------
+    str
+        Canonical axis name ('index', 'columns', 'origin', 'development').
+    """
+    return _axis_orders[_get_axis_number(axis)]
+
