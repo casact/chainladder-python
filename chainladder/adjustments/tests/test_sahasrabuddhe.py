@@ -2,6 +2,8 @@ import chainladder as cl
 import numpy as np
 import pytest
 
+from types import SimpleNamespace
+
 from sklearn.base import clone
 
 
@@ -688,3 +690,89 @@ def test_full_cdf_keeps_ages_so_valuation_still_works(paper_layer, paper_develop
     model = paper_layer(target_layer=(0, 500_000)).fit(paper_development)
     assert list(model.full_cdf_.development) == list(model.full_ldf_.development)
     assert model.full_cdf_.valuation is not None
+
+
+@pytest.mark.parametrize("base_period", ["NaT", ""])
+def test_rejects_an_invalid_base_period(genins, base_period):
+    """pandas parses these to NaT rather than raising, so it is checked for."""
+    with pytest.raises(ValueError, match="is not a valid period"):
+        cl.LEV(
+            means=dict(zip(genins.development, THETA_10)), base_period=base_period
+        ).fit(genins)
+
+
+def test_means_are_required(genins):
+    with pytest.raises(ValueError, match="means is required"):
+        cl.LEV().fit(genins)
+
+
+def test_rejects_a_mapping_missing_an_age(genins):
+    means = dict(zip(genins.development, THETA_10))
+    del means[60]
+    with pytest.raises(ValueError, match=r"missing development age\(s\) \[60\]"):
+        cl.LEV(means=means).fit(genins)
+
+
+def test_rejects_a_negative_limit(genins, paper_trend):
+    with pytest.raises(ValueError, match="limit must be non-negative"):
+        cl.Sahasrabuddhe(
+            means=dict(zip(genins.development, THETA_10)),
+            trend=paper_trend,
+            data_limit=-1,
+            basic_limit=500_000,
+            target_layer=(0, 500_000),
+        ).fit(genins)
+
+
+def test_lev_transform_carries_the_fitted_state(genins):
+    lev = cl.LEV(means=dict(zip(genins.development, THETA_10)), limit=500_000).fit(
+        genins
+    )
+    transformed = lev.transform(genins)
+    assert transformed.means_ is lev.means_
+    assert transformed.lev_ is lev.lev_
+    assert np.array_equal(
+        np.nan_to_num(transformed.set_backend("numpy").values),
+        np.nan_to_num(genins.set_backend("numpy").values),
+    )
+
+
+@pytest.mark.parametrize("target_layer", [500_000, ("a", "b"), (0, 1, 2)])
+def test_rejects_a_malformed_target_layer(genins, paper_trend, target_layer):
+    with pytest.raises(ValueError, match="target_layer must be a pair of limits"):
+        cl.Sahasrabuddhe(
+            means=dict(zip(genins.development, THETA_10)),
+            trend=paper_trend,
+            data_limit=1_000_000,
+            basic_limit=500_000,
+            target_layer=target_layer,
+        ).fit(genins)
+
+
+def test_transform_after_a_pattern_fit_carries_the_pattern(
+    genins, paper_layer, paper_development
+):
+    """
+    Fitted to a pattern there is nothing to restate, so transform passes X
+    through and hands the restated pattern downstream instead.
+    """
+    model = paper_layer(target_layer=(0, 500_000)).fit(paper_development)
+    transformed = model.transform(genins)
+    for item in ("means_", "ldf_", "full_cdf_", "full_ldf_"):
+        assert getattr(transformed, item) is getattr(model, item)
+    assert np.allclose(
+        transformed.cdf_.set_backend("numpy").values,
+        model.cdf_.set_backend("numpy").values,
+        rtol=1e-12,
+    )
+    assert np.array_equal(
+        np.nan_to_num(transformed.set_backend("numpy").values),
+        np.nan_to_num(genins.set_backend("numpy").values),
+    )
+
+
+def test_rejects_something_that_is_not_a_pattern(paper_layer):
+    """An object whose cdf_ is not a Triangle of factors fails on use."""
+    impostor = SimpleNamespace(cdf_=np.ones(10))
+    with pytest.raises(ValueError, match="must be a fitted development estimator"):
+        paper_layer(target_layer=(0, 500_000)).fit(impostor)

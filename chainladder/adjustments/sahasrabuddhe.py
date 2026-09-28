@@ -771,7 +771,8 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         if hasattr(self, "cdf_"):
             X_new = X.copy()
-            for item in ("means_", "cdf_", "ldf_", "full_cdf_", "full_ldf_"):
+            # cdf_ is a read-only property of a Triangle, derived from ldf_.
+            for item in ("means_", "ldf_", "full_cdf_", "full_ldf_"):
                 setattr(X_new, item, getattr(self, item))
             X_new._set_slicers()
             return X_new
