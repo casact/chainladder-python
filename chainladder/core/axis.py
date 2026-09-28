@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable
 import pandas as pd
 
+from chainladder.core.typing import _get_axis_name, _get_axis_number
+
 if TYPE_CHECKING:
     from chainladder.core.triangle import Triangle
 
@@ -16,8 +18,9 @@ class TriangleAxis:
 
     Parameters
     ----------
-    key : str
-        Key used to store and access the raw axis data in ``obj._axes``.
+    axis : int or str
+        Axis number (0..3) or canonical name ('index', 'columns', 'origin',
+        'development') used to store and access raw axis data in ``obj._axes``.
     fget : callable, optional
         Transformation function taking ``(obj, raw)`` and returning the
         public axis representation. If None, the raw value is returned.
@@ -31,7 +34,7 @@ class TriangleAxis:
 
     def __init__(
         self,
-        key: str,
+        axis: int | str,
         *,
         fget: Callable[[Triangle, Any], Any] | None = None,
         fset: Callable[[Triangle, Any], Any] | None = None,
@@ -42,8 +45,8 @@ class TriangleAxis:
 
         Parameters
         ----------
-        key : str
-            Internal storage key in ``obj._axes``.
+        axis : int or str
+            Axis number or name mapped to an integer in ``obj._axes``.
         fget : callable, optional
             Getter callable mapping ``(obj, raw)`` to public representation.
         fset : callable, optional
@@ -51,7 +54,8 @@ class TriangleAxis:
         doc : str, optional
             Docstring for the attribute.
         """
-        self.key = key
+        self.axis: int = _get_axis_number(axis)
+        self.key: int = self.axis
         self.fget = fget  # raw -> public; identity if None
         self.fset = fset  # (obj, public) -> raw; identity if None
         self.__doc__ = doc
@@ -80,11 +84,12 @@ class TriangleAxis:
         """
         if obj is None:
             return self
-        if not hasattr(obj, "_axes") or self.key not in obj._axes:
+        if not hasattr(obj, "_axes") or self.axis not in obj._axes:
+            axis_name = _get_axis_name(self.axis)
             raise AttributeError(
-                f"'{type(obj).__name__}' object has no attribute '{self.key}'"
+                f"'{type(obj).__name__}' object has no attribute '{axis_name}'"
             )
-        raw = obj._axes[self.key]
+        raw = obj._axes[self.axis]
         return self.fget(obj, raw) if self.fget else raw
 
     def __set__(self, obj: Triangle, value: Any) -> None:
@@ -92,7 +97,7 @@ class TriangleAxis:
         Set the axis value on a Triangle instance.
 
         Transforms ``value`` using ``fset`` if defined, stores the raw value
-        in ``obj._axes[self.key]``, and updates slicers if necessary.
+        in ``obj._axes[self.axis]``, and updates slicers if necessary.
 
         Parameters
         ----------
@@ -104,7 +109,7 @@ class TriangleAxis:
         raw = self.fset(obj, value) if self.fset else value
         if not hasattr(obj, "_axes"):
             obj._axes = {}
-        obj._axes[self.key] = raw
+        obj._axes[self.axis] = raw
         if hasattr(obj, "virtual_columns"):
             obj._set_slicers()
 
@@ -129,6 +134,6 @@ def _set_columns(obj: Triangle, value: Any) -> pd.Index:
         value = [value]
     if hasattr(obj, "values") and obj.values is not None:
         obj._len_check(range(obj.values.shape[1]), value)
-    elif hasattr(obj, "_axes") and "columns" in obj._axes:
+    elif hasattr(obj, "_axes") and (1 in obj._axes or "columns" in obj._axes):
         obj._len_check(obj.columns, value)
     return pd.Index(value, name="columns")
