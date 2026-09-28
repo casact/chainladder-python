@@ -10,6 +10,7 @@ import pytest
 import warnings
 
 from chainladder.core.common import Common
+from chainladder.core.typing import _axis_orders, _get_axis_name, _get_axis_number
 from chainladder.utils.utility_functions import date_delta_adjustment
 from chainladder.utils.sparse import COO
 
@@ -477,6 +478,44 @@ def test_triangle_axes(raa):
     assert axes[3].equals(raa.development)
 
 
+def test_axis_mappings():
+    """Verify axis number and name resolutions in chainladder.core.typing."""
+    for idx, name in enumerate(_axis_orders):
+        assert _get_axis_number(idx) == idx
+        assert _get_axis_number(idx - 4) == idx
+        assert _get_axis_number(name) == idx
+        assert _get_axis_name(idx) == name
+        assert _get_axis_name(idx - 4) == name
+        assert _get_axis_name(name) == name
+
+    with pytest.raises(
+        ValueError, match="No axis named invalid for object type Triangle"
+    ):
+        _get_axis_number("invalid")
+
+    with pytest.raises(ValueError, match=r"No axis named 5 for object type Triangle"):
+        _get_axis_number(5)
+
+
+def test_triangle_axis_descriptor():
+    """Verify TriangleAxis descriptor correctly uses integer axis key."""
+    from chainladder.core.axis import TriangleAxis
+
+    class MockTriangle:
+        col = TriangleAxis(1)
+
+    obj = MockTriangle()
+    with pytest.raises(
+        AttributeError, match="'MockTriangle' object has no attribute 'columns'"
+    ):
+        _ = obj.col
+
+    obj.col = pd.Index(["a", "b"], name="columns")
+    assert 1 in obj._axes
+    assert list(obj.col) == ["a", "b"]
+    assert obj.col.name == "columns"
+
+
 def test_key_labels_setter(raa):
     """Setting key_labels should update Triangle.index columns and slicers."""
     tri = raa.copy()
@@ -501,7 +540,7 @@ def test_series_indexing(raa):
 
 
 def test_legacy_pickle_compatibility(raa):
-    """Pickles saved prior to kdims/vdims migration should unpickle cleanly."""
+    """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
     import pickle
 
     # 1. Simulate oldest serialized Triangle containing kdims and vdims
@@ -513,7 +552,10 @@ def test_legacy_pickle_compatibility(raa):
     state["vdims"] = raa.columns.values
 
     restored = cl.Triangle.__new__(cl.Triangle)
-    restored.__setstate__(state)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored.__setstate__(state)
 
     assert isinstance(restored.columns, pd.Index)
     assert isinstance(restored.index, pd.DataFrame)
@@ -521,6 +563,8 @@ def test_legacy_pickle_compatibility(raa):
     assert list(restored.columns) == list(raa.columns)
     assert restored.loc["Total"].shape == raa.loc["Total"].shape
     assert restored == raa
+    assert 1 in restored._axes
+    assert restored._axes[1].equals(raa.columns)
 
     # 2. Simulate intermediate serialized Triangle containing _kdims and _vdims
     state_mid = raa.__dict__.copy()
@@ -531,15 +575,20 @@ def test_legacy_pickle_compatibility(raa):
     state_mid["_vdims"] = raa.columns.values
 
     restored_mid = cl.Triangle.__new__(cl.Triangle)
-    restored_mid.__setstate__(state_mid)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored_mid.__setstate__(state_mid)
 
     assert isinstance(restored_mid.columns, pd.Index)
     assert isinstance(restored_mid.index, pd.DataFrame)
     assert restored_mid.index.equals(raa.index)
     assert list(restored_mid.columns) == list(raa.columns)
     assert restored_mid == raa
+    assert 1 in restored_mid._axes
+    assert restored_mid._axes[1].equals(raa.columns)
 
-    # 3. Simulate fallback when no kdims/vdims keys are found
+    # 3. Simulate fallback when no kdims/vdims keys are found (no warning)
     state_empty = raa.__dict__.copy()
     state_empty.pop("_axes", None)
     state_empty.pop("_index", None)
@@ -550,13 +599,19 @@ def test_legacy_pickle_compatibility(raa):
     state_empty.pop("_vdims", None)
 
     restored_empty = cl.Triangle.__new__(cl.Triangle)
-    restored_empty.__setstate__(state_empty)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        restored_empty.__setstate__(state_empty)
     assert list(restored_empty.columns) == ["values"]
     assert list(restored_empty.index.columns) == ["Total"]
+    assert 1 in restored_empty._axes
 
-    # 4. Verify re-pickling the migrated instance works
-    roundtripped = pickle.loads(pickle.dumps(restored))
+    # 4. Verify re-pickling the migrated instance works without warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        roundtripped = pickle.loads(pickle.dumps(restored))
     assert roundtripped == raa
+    assert 1 in roundtripped._axes
 
 
 def test_valdev1(qtr):
