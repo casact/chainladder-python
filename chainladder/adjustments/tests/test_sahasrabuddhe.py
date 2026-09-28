@@ -378,9 +378,7 @@ def test_rejects_a_masked_one_origin_triangle(genins, paper_trend, with_trend):
     """
     trend = paper_trend if with_trend else None
     with pytest.raises(ValueError, match="gaps in its single origin row"):
-        cl.LEV(
-            means=_means_row(genins, 2010, unmask=False), trend=trend
-        ).fit(genins)
+        cl.LEV(means=_means_row(genins, 2010, unmask=False), trend=trend).fit(genins)
 
 
 def test_triangle_keeps_the_triangles_valuation_date(genins, paper_model):
