@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable
 import pandas as pd
 
-from chainladder.core.typing import _get_axis_name, _get_axis_number
+from chainladder.utils.utility_functions import _get_axis_name, _get_axis_number
 
 if TYPE_CHECKING:
     from chainladder.core.triangle import Triangle
