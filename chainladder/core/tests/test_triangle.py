@@ -10,8 +10,12 @@ import pytest
 import warnings
 
 from chainladder.core.common import Common
-from chainladder.core.typing import _axis_orders, _get_axis_name, _get_axis_number
-from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.utility_functions import (
+    _axis_orders,
+    _get_axis_name,
+    _get_axis_number,
+    date_delta_adjustment,
+)
 from chainladder.utils.sparse import COO
 
 from io import StringIO
