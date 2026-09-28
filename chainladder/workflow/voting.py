@@ -55,7 +55,8 @@ class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
 
 
 class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
-    """Base class for voting between chainladder methods.
+    """
+    Base class for voting between chainladder methods.
 
     Warning: This class should not be used directly. Use derived classes
     instead.
@@ -168,7 +169,8 @@ class _BaseChainladderVoting(_BaseVoting, _BaseTriangleEnsemble):
 
 
 class VotingChainladder(_BaseChainladderVoting, MethodBase):
-    """Prediction voting chainladder method for unfitted estimators.
+    """
+    Prediction voting chainladder method for unfitted estimators.
 
     A voting chainladder is an ensemble meta-estimator that fits several base
     chainladder methods, each on the whole triangle. Then it combines the
@@ -305,7 +307,8 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         self.verbose = verbose
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the estimators.
+        """
+        Fit the estimators.
 
         Parameters
         ----------
@@ -330,7 +333,8 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the voting chainladder ultimate on a new triangle **X**
+        """
+        Predicts the voting chainladder ultimate on a new triangle **X**
 
         Predicts the ultimate for each of the estimators and combines them
         into a single ultimate based on the weights given.
@@ -358,7 +362,8 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         return obj
 
     def transform(self, X, sample_weight=None):
-        """Return predictions for VotingChainladder
+        """
+        Return predictions for VotingChainladder
 
         Parameters
         ----------
@@ -377,7 +382,8 @@ class VotingChainladder(_BaseChainladderVoting, MethodBase):
         return self.predict(X, sample_weight=sample_weight)
 
     def fit_transform(self, X, y=None, sample_weight=None):
-        """Fit and return predictions for VotingChainladder
+        """
+        Fit and return predictions for VotingChainladder
 
         Parameters
         ----------

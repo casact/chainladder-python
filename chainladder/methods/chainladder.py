@@ -111,7 +111,8 @@ class Chainladder(MethodBase):
     """
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -131,7 +132,7 @@ class Chainladder(MethodBase):
         attribute access.
 
         .. testsetup::
-        
+
             import chainladder as cl
 
         .. testcode::
@@ -142,7 +143,7 @@ class Chainladder(MethodBase):
         .. testoutput::
 
             Chainladder()
-            
+
         """
         super().fit(X, y, sample_weight)
         self.ultimate_ = self._get_ultimate(self.X_)
@@ -150,7 +151,8 @@ class Chainladder(MethodBase):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the chainladder ultimate on a new triangle **X**
+        """
+        Predicts the chainladder ultimate on a new triangle **X**
 
         Parameters
         ----------
@@ -199,9 +201,9 @@ class Chainladder(MethodBase):
         return X_new
 
     def _get_ultimate(self, X, sample_weight=None):
-        """ Private method that uses CDFs to obtain an ultimate vector """
+        """Private method that uses CDFs to obtain an ultimate vector"""
         ld = X.incr_to_cum().latest_diagonal
         ultimate = X.incr_to_cum().copy()
-        cdf = self._align_cdf(ultimate, sample_weight) 
-        ultimate = ld * cdf 
+        cdf = self._align_cdf(ultimate, sample_weight)
+        ultimate = ld * cdf
         return self._set_ult_attr(ultimate)

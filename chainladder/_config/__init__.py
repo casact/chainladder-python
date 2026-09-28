@@ -6,7 +6,10 @@ from chainladder._config.deprecation import (
     _DEPRECATED_BACKENDS,
     _deprecated_backend_message,
     _dask_parallel_state,
-    _warn_dask_parallel_deprecated,  # noqa (API import)
+    _warn_dask_parallel_deprecated,
+    _deprecated_rename,
+    _deprecated_rename_argument,
+    _deprecated_drop_argument,  # noqa (API import)
 )
 from chainladder._config.options import (
     __dt64_dtype__,
@@ -24,4 +27,7 @@ __all__: list[str] = [
     "_deprecated_backend_message",
     "_dask_parallel_state",
     "_warn_dask_parallel_deprecated",
+    "_deprecated_rename",
+    "_deprecated_rename_argument",
+    "_deprecated_drop_argument",
 ]

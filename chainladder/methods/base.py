@@ -59,7 +59,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
             return self.X_.sum("development")
 
     def fit(self, X, y=None, sample_weight=None):
-        """Applies the chainladder technique to triangle **X**
+        """
+        Applies the chainladder technique to triangle **X**
 
         Parameters
         ----------
@@ -84,7 +85,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return self
 
     def predict(self, X, sample_weight=None):
-        """Predicts the chainladder ultimate on a new triangle **X**
+        """
+        Predicts the chainladder ultimate on a new triangle **X**
 
         Parameters
         ----------
@@ -102,6 +104,9 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         X_new = X.val_to_dev()
         if sum(X_new.ddims > self.ldf_.ddims.max()) > 0:
             raise ValueError("X has ages that exceed those available in model.")
+        # Before the line below, which borrows self.X_'s index when both sides
+        # are a single row and so would erase what the caller actually passed.
+        self.validate_ldf(X_new, self.ldf_)
         X_new = X_new + (self.X_.val_to_dev().iloc[0, 0].sum(2) * 0)
         self.validate_weight(X_new, sample_weight)
         if sample_weight:
@@ -111,7 +116,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         return X_new
 
     def intersection(self, a, b):
-        """Given two Triangles with mismatched indices, this method aligns
+        """
+        Given two Triangles with mismatched indices, this method aligns
         their indices"""
         if len(a) == 1 and len(b) == 1:
             return a, b
@@ -154,6 +160,55 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         else:
             process_var = None
         return process_var
+
+    @staticmethod
+    def validate_ldf(X: Triangle, ldf: Triangle) -> None:
+        """
+        Checks that a fitted pattern can be applied to X as it was passed in.
+        Index values X carries that the pattern does not cannot be predicted,
+        and index levels the pattern carries that X does not cannot be applied.
+        On the columns axis a pattern fit on a single column carries no column
+        identity to enforce, so it applies to whatever it is handed; once the
+        fit has more than one, a column outside it cannot be predicted.
+        """
+        # A pattern whose index is entirely the "(All)" sentinel that Triangle.sum
+        # sets carries no group identity, so nothing about it constrains what it
+        # may be applied to. Note the limit of that: sum() stamps "(All)" on
+        # whatever subset it was called on, so a pattern summed from one line of
+        # business is exempt here just as a pattern summed from everything is.
+        # Telling those apart needs aggregation provenance on the Triangle.
+        if len(ldf) == 1 and set(ldf.index.values.flatten()) == {"(All)"}:
+            return
+        shared = sorted(set(X.key_labels) & set(ldf.key_labels))
+        if shared:
+            missing = sorted(
+                set(X.index.set_index(shared).index)
+                - set(ldf.index.set_index(shared).index)
+            )
+            if missing:
+                raise ValueError(
+                    "X has index values the model was not fit on: "
+                    + str(missing[:5])
+                    + (", and others" if len(missing) > 5 else "")
+                )
+        # A single column fit is the column analogue of an unindexed triangle,
+        # whose construction default puts every triangle in the same "Total"
+        # group: there is one column, so nothing distinguishes the one it was
+        # fit on from the one it is handed, and broadcasting it across several
+        # is the same permission taken more than once.
+        if len(ldf.columns) > 1:
+            columns = sorted(set(X.columns) - set(ldf.columns))
+            if columns:
+                raise ValueError(
+                    "X has columns the model was not fit on: " + str(columns)
+                )
+        finer = sorted(set(ldf.key_labels) - set(X.key_labels))
+        if finer:
+            raise ValueError(
+                "The fitted pattern has index levels that X does not: "
+                + str(finer)
+                + ". It cannot be applied to a triangle that does not carry them."
+            )
 
     @staticmethod
     def validate_weight(

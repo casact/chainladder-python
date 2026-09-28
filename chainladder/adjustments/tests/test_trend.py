@@ -5,12 +5,14 @@ import numpy as np
 def test_trend1(clrd):
     tri = clrd[["CumPaidLoss", "EarnedPremDIR"]].sum()
     lhs = (
-        cl.CapeCod(0.05)
+        cl
+        .CapeCod(0.05)
         .fit(tri["CumPaidLoss"], sample_weight=tri["EarnedPremDIR"].latest_diagonal)
         .ibnr_
     )
     rhs = (
-        cl.CapeCod()
+        cl
+        .CapeCod()
         .fit(
             cl.Trend(0.05).fit_transform(tri["CumPaidLoss"]),
             sample_weight=tri["EarnedPremDIR"].latest_diagonal,
@@ -24,7 +26,8 @@ def test_trend2(raa):
     tri = raa
     assert (
         abs(
-            cl.Trend(
+            cl
+            .Trend(
                 trends=[0.05, 0.05],
                 dates=[(None, "1985"), ("1985", None)],
                 axis="origin",

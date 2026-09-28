@@ -356,7 +356,8 @@ class Development(DevelopmentBase):
         self.average_: np.ndarray
 
     def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -409,10 +410,17 @@ class Development(DevelopmentBase):
             drop=self.drop,
         )
 
-        if hasattr(X, "w_v2_"):
-            self.w_v2_ = tw.fit(obj.age_to_age * X.w_v2_).w_
-        else:
-            self.w_v2_ = tw.fit(obj.age_to_age).w_
+        # w_v2_ is the in-progress migration path and computes the same drops as
+        # the w_ path below, so letting it warn would emit the same message twice
+        # for one fit. The w_ path keeps the warning.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="Some exclusions have been ignored"
+            )
+            if hasattr(X, "w_v2_"):
+                self.w_v2_ = tw.fit(obj.age_to_age * X.w_v2_).w_
+            else:
+                self.w_v2_ = tw.fit(obj.age_to_age).w_
 
         self.w_ = self._assign_n_periods_weight(
             obj, n_periods_
@@ -448,7 +456,8 @@ class Development(DevelopmentBase):
         return self
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

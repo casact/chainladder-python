@@ -1,20 +1,37 @@
-import chainladder as cl
+from __future__ import annotations
+
 import pytest
 
-raa = cl.load_sample("RAA")
+from typing import TYPE_CHECKING
 
-def test_val_corr_total_true():
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
+
+def test_val_corr_total_true(raa: Triangle) -> None:
     assert raa.valuation_correlation(p_critical=0.5, total=True)
 
-def test_val_corr_total_false():
+
+def test_val_corr_total_false(raa: Triangle) -> None:
     assert raa.valuation_correlation(p_critical=0.5, total=False)
 
-def test_dev_corr():
+
+def test_dev_corr(raa: Triangle) -> None:
     assert raa.development_correlation(p_critical=0.5)
 
-def test_dev_corr_sparse():
-    assert raa.set_backend('sparse').development_correlation(p_critical=0.5)
 
-def test_validate_critical():
+def test_validate_critical(raa: Triangle) -> None:
     with pytest.raises(ValueError):
         raa.valuation_correlation(p_critical=1.5, total=True)
+
+
+def test_val_corr_incomplete_triangle(xyz: Triangle) -> None:
+    # GH #320: a triangle missing its earliest diagonals raised
+    # "Shape of passed values is (1, 10), indices imply (1, 9)" on repr,
+    # because z_critical dropped all-NaN diagonals while its values kept
+    # one entry per link-ratio diagonal.
+    z_critical = (
+        xyz["Paid"].valuation_correlation(p_critical=0.1, total=False).z_critical
+    )
+    assert z_critical.values.shape[-1] == len(z_critical.ddims)
+    assert repr(z_critical)

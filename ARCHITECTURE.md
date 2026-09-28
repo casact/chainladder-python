@@ -10,7 +10,8 @@ chainladder-python/
 │   │
 │   ├── _config/                    # Package-wide configuration
 │   │   ├── options.py              # Datetime constants, package options
-│   │   └── deprecation.py          # Deprecation utilities
+│   │   ├── deprecation.py          # Deprecation utilities
+│   │   └── tests/
 │   │
 │   ├── core/                       # Triangle data structure
 │   │   ├── triangle.py             # Triangle (the public-facing class)
@@ -22,6 +23,7 @@ chainladder-python/
 │   │   ├── slice.py                # TriangleSlicer, Location, Ilocation, At, Iat, VirtualColumns
 │   │   ├── display.py              # TriangleDisplay (__repr__, _repr_html_)
 │   │   ├── io.py                   # TriangleIO, EstimatorIO (pickle, JSON, spreadsheet I/O)
+│   │   ├── style.py                # Styler (adapts pandas.io.formats.style.Styler)
 │   │   ├── typing.py               # TriangleProtocol, type aliases (BackendArray, etc.)
 │   │   ├── README.md               # Per-file summary of this subpackage
 │   │   └── tests/
@@ -62,7 +64,7 @@ chainladder-python/
 │   │   ├── bootstrap.py            # BootstrapODPSample (extends DevelopmentBase)
 │   │   ├── disposal.py             # DisposalRate, DisposalMixin
 │   │   ├── parallelogram.py        # ParallelogramOLF
-│   │   ├── trend.py                # Trend, TrendConstant
+│   │   ├── trend.py                # Trend
 │   │   └── tests/
 │   │
 │   ├── workflow/                   # Pipeline and ensemble utilities
@@ -249,8 +251,7 @@ sklearn.BaseEstimator
 sklearn.BaseEstimator + TransformerMixin + EstimatorIO   (standalone transformers)
   ├── BerquistSherman     adjustments/berqsherm.py
   ├── ParallelogramOLF    adjustments/parallelogram.py
-  ├── Trend               adjustments/trend.py
-  └── TrendConstant       adjustments/trend.py
+  └── Trend               adjustments/trend.py
 
 
 sklearn.BaseEstimator

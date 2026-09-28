@@ -1,4 +1,5 @@
-"""Central registry of bundled sample datasets.
+"""
+Central registry of bundled sample datasets.
 
 Single source of truth for the metadata of every CSV in
 ``chainladder/utils/data/``. Consumed by:
@@ -38,6 +39,13 @@ SAMPLES: dict = {
         "index": None,
         "columns": ["values"],
         "cumulative": True,
+    },
+    "actsim": {
+        "origin": "origin",
+        "development": "development",
+        "index": ["Region", "LOB"],
+        "columns": ["reportedCount", "Incurred"],
+        "cumulative": False,
     },
     "auto": {
         "origin": "origin",
@@ -137,6 +145,13 @@ SAMPLES: dict = {
             "Reported Claim Counts",
             "Disposal Rate",
         ],
+        "cumulative": True,
+    },
+    "friedland_dc_insurer": {
+        "origin": "Accident Year",
+        "development": "Valuation",
+        "index": None,
+        "columns": ["Reported Claims"],
         "cumulative": True,
     },
     "friedland_gl_insurer": {

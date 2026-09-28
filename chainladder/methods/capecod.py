@@ -7,7 +7,8 @@ from chainladder.methods import Benktander
 
 
 class CapeCod(Benktander):
-    """Applies the CapeCod technique to triangle **X**
+    """
+    Applies the CapeCod technique to triangle **X**
 
     Parameters
     ----------
@@ -194,7 +195,8 @@ class CapeCod(Benktander):
         self.groupby = groupby
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -257,7 +259,9 @@ class CapeCod(Benktander):
         decay_matrix = self.decay ** xp.abs(
             xp.arange(len_orig)[None].T - xp.arange(len_orig)[None]
         )
-        weighted_exposure = reported_exposure.values.swapaxes(-1, -2) * decay_matrix
+        weighted_exposure = (reported_exposure.values * sw_olf_array).swapaxes(
+            -1, -2
+        ) * decay_matrix
         trended_ultimate = (latest.values * trend_array * X_olf_array) / (
             reported_exposure.values * sw_olf_array
         )
@@ -271,7 +275,8 @@ class CapeCod(Benktander):
         return self._set_ult_attr(apriori_), self._set_ult_attr(detrended_apriori_)
 
     def predict(self, X, sample_weight=None):
-        """Predicts the CapeCod ultimate on a new triangle **X**
+        """
+        Predicts the CapeCod ultimate on a new triangle **X**
 
         Parameters
         ----------
@@ -319,6 +324,7 @@ class CapeCod(Benktander):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
+        self.validate_ldf(X_new, self.ldf_)
         _, X_new.ldf_ = self.intersection(X_new, self.ldf_)
         # If model was fit at a higher grain, then need to aggregate predicted aprioris too
         if len(set(sample_weight.key_labels) - set(self.apriori_.key_labels)) > 0:

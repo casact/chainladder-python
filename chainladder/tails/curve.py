@@ -9,7 +9,8 @@ import warnings
 
 
 class TailCurve(TailBase):
-    """Allows for extraploation of LDFs to form a tail factor.
+    """
+    Allows for extraploation of LDFs to form a tail factor.
 
     Parameters
     ----------
@@ -158,7 +159,8 @@ class TailCurve(TailBase):
         self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------

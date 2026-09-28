@@ -12,7 +12,8 @@ from chainladder import TriangleWeight
 
 
 class DevelopmentML(DevelopmentBase):
-    """Interface to scikit-learn estimators for loss development patterns.
+    """
+    Interface to scikit-learn estimators for loss development patterns.
 
     ``DevelopmentML`` lets reserving workflows use any sklearn-compatible
     regressor (often inside a :class:`~sklearn.pipeline.Pipeline`). It converts
@@ -296,7 +297,8 @@ class DevelopmentML(DevelopmentBase):
         return weight.flatten()[weight_base.flatten() > 0]
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------
@@ -357,7 +359,8 @@ class DevelopmentML(DevelopmentBase):
         return ldf
 
     def transform(self, X):
-        """If X and self are of different shapes, align self to X, else
+        """
+        If X and self are of different shapes, align self to X, else
         return self.
 
         Parameters

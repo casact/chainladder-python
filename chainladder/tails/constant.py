@@ -6,7 +6,8 @@ from chainladder.development import Development
 
 
 class TailConstant(TailBase):
-    """Allows for the entry of a constant tail factor to LDFs.
+    """
+    Allows for the entry of a constant tail factor to LDFs.
 
     Parameters
     ----------
@@ -129,7 +130,8 @@ class TailConstant(TailBase):
         self.projection_period = projection_period
 
     def fit(self, X, y=None, sample_weight=None):
-        """Fit the model with X.
+        """
+        Fit the model with X.
 
         Parameters
         ----------

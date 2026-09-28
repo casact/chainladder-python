@@ -1,7 +1,14 @@
+from __future__ import annotations
+
 import pytest
 import numpy as np
 import chainladder as cl
 import pandas as pd
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 @pytest.fixture
@@ -12,11 +19,10 @@ def atol():
 data = ["RAA", "ABC", "GenIns", "MW2008", "MW2014"]
 
 
-def test_bk_fit_weight():
+def test_bk_fit_weight(raa: Triangle) -> None:
     """
     Test validation of sample_weight requirement. Should raise a value error if no weight is supplied.
     """
-    raa = cl.load_sample("RAA")
     with pytest.raises(ValueError):
         cl.Benktander().fit(raa)
 
@@ -98,10 +104,9 @@ def test_odd_shaped_triangle():
     assert abs(ult1 - ult2) < 1e-5
 
 
-def test_bf_apriori_sigma_is_lognormal():
+def test_bf_apriori_sigma_is_lognormal(genins: Triangle) -> None:
     """apriori_sigma must draw a strictly-positive lognormal apriori (issue #1143)."""
-    tri = cl.load_sample("genins")
-    boot = cl.BootstrapODPSample(n_sims=50000, random_state=42).fit_transform(tri)
+    boot = cl.BootstrapODPSample(n_sims=50000, random_state=42).fit_transform(genins)
     w = boot.latest_diagonal.copy()
     w.values = np.ones_like(
         w.values
@@ -120,10 +125,9 @@ def test_bf_apriori_sigma_is_lognormal():
     assert abs(mult.std() - sigma) < 0.03  # SD preserved (== apriori_sigma)
 
 
-def test_capecod_apriori_sigma_is_positive():
+def test_capecod_apriori_sigma_is_positive(genins: Triangle) -> None:
     """CapeCod scatters aprioris through the same sampler; must stay positive (#1143)."""
-    tri = cl.load_sample("genins")
-    boot = cl.BootstrapODPSample(n_sims=10000, random_state=42).fit_transform(tri)
+    boot = cl.BootstrapODPSample(n_sims=10000, random_state=42).fit_transform(genins)
     premium = boot.latest_diagonal * 0 + 8e6
 
     cc = cl.CapeCod(apriori_sigma=0.8, random_state=7).fit(boot, sample_weight=premium)

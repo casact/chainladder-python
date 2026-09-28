@@ -19,41 +19,37 @@ def test_outstanding_friedland_example():
         paid_to_incurred=("paid", "incurred"), paid_n_periods=3, case_n_periods=3
     ).fit(usauto)
 
-    expected_paid_ldf = np.array(
+    expected_paid_ldf = np.array([
         [
-            [
-                0.833,
-                0.701,
-                0.714,
-                0.714,
-                0.653,
-                0.631,
-                0.553,
-                0.437,
-                0.524,
-            ]
+            0.833,
+            0.701,
+            0.714,
+            0.714,
+            0.653,
+            0.631,
+            0.553,
+            0.437,
+            0.524,
         ]
-    )
+    ])
     assert (
         model.paid_ldf_.to_frame(origin_as_datetime=False).values - expected_paid_ldf
         < 0.001
     ).all()
 
-    expected_case_ldf = np.array(
+    expected_case_ldf = np.array([
         [
-            [
-                0.526,
-                0.566,
-                0.528,
-                0.486,
-                0.511,
-                0.555,
-                0.652,
-                0.674,
-                0.580,
-            ]
+            0.526,
+            0.566,
+            0.528,
+            0.486,
+            0.511,
+            0.555,
+            0.652,
+            0.674,
+            0.580,
         ]
-    )
+    ])
     assert (
         model.case_ldf_.to_frame(origin_as_datetime=False).values - expected_case_ldf
         < 0.001

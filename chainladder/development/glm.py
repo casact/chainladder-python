@@ -10,7 +10,8 @@ from chainladder.utils.utility_functions import PatsyFormula
 
 
 class TweedieGLM(DevelopmentBase):
-    """GLM reserving with scikit-learn's Tweedie distribution.
+    """
+    GLM reserving with scikit-learn's Tweedie distribution.
 
     Implements the GLM reserving structure of Taylor and McGuire. The Tweedie
     family covers normal, ODP Poisson, gamma, and related targets via ``power``
