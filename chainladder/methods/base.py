@@ -168,6 +168,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         if sample_weight:
             if X.shape[:-1] != sample_weight.shape[:-1]:
                 try:
+                    xp = X.get_array_module()
                     _ = xp.broadcast_shapes(X.shape[:-1], sample_weight.shape[:-1])
                 except ValueError:
                     raise ValueError("X and sample_weight are not aligned.")
