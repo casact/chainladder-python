@@ -608,10 +608,12 @@ def test_highlight_diagonal_valuation_date_alias(raa) -> None:
     -------
     None
     """
-    styler = raa.style.highlight_diagonal(valuation_date="1988")
-    styler._compute()
-    styled = {k for k, v in styler.ctx.items() if v}
-    assert len(styled) == 8
+    styler_alias = raa.style.highlight_diagonal(valuation_date="1988")
+    styler_direct = raa.style.highlight_diagonal(valuation="1988")
+    styler_alias._compute()
+    styler_direct._compute()
+    assert styler_alias.ctx == styler_direct.ctx
+    assert len([v for v in styler_alias.ctx.values() if v]) == 8
 
 
 def test_highlight_diagonal_predicted_cells_full_triangle(raa) -> None:
@@ -815,18 +817,36 @@ def test_apply_from_triangle_validation(raa) -> None:
     with pytest.raises(TypeError, match="mask must be a Triangle instance"):
         raa.style.apply_from_triangle(pd.DataFrame())  # type: ignore[arg-type]
 
-    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
-        raa.dev_to_val().style.apply_from_triangle(raa)
-
-    with pytest.raises(ValueError, match="does not support a valuation Triangle"):
-        raa.style.apply_from_triangle(raa.dev_to_val())
-
     with pytest.raises(ValueError, match="only supports a single"):
         raa.style.apply_from_triangle(cl.load_sample("clrd"))
 
     mismatched = raa.iloc[:, :, :5, :5]
     with pytest.raises(ValueError, match="only supports a single"):
         raa.style.apply_from_triangle(mismatched)
+
+
+def test_apply_from_triangle_valuation_triangle(raa) -> None:
+    """
+    Check that apply_from_triangle works on a valuation Triangle.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    val = raa.dev_to_val()
+    mask = val.copy()
+    mask_arr = np.zeros(val.shape[-2:], dtype=bool)
+    mask_arr[0, :] = True
+    mask.values = np.where(mask_arr, 1.0, np.nan)[None, None, :, :]
+    styler = val.style.apply_from_triangle(mask, color="yellow")
+    styler._compute()
+    styled = {k for k, v in styler.ctx.items() if v}
+    assert styled == {(0, c) for c in range(val.shape[-1])}
 
 
 def test_apply_from_triangle_sparse_mask(raa) -> None:

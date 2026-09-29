@@ -213,8 +213,8 @@ class Styler(_PandasStyler):
         TypeError
             If ``mask`` is not a Triangle instance.
         ValueError
-            If the wrapped Triangle or ``mask`` is a valuation Triangle, or
-            if ``mask`` does not match the 2-D shape of the styled Triangle.
+            If ``mask`` is multidimensional, empty, or does not match the 2-D
+            shape of the styled Triangle.
 
         Examples
         --------
@@ -230,11 +230,6 @@ class Styler(_PandasStyler):
         """
         if not isinstance(mask, Triangle):
             raise TypeError("mask must be a Triangle instance.")
-
-        if self._triangle.is_val_tri or mask.is_val_tri:
-            raise ValueError(
-                "apply_from_triangle does not support a valuation Triangle."
-            )
 
         if (
             mask._dimensionality in ["multi", "empty"]
