@@ -1273,7 +1273,8 @@ class TrianglePandas(_TrianglePandasBase):
                 a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
             ].index
         ]
-        a.valuation_date = pd.to_datetime(options.ULT_VAL)
+        if obj.valuation_date == pd.to_datetime(options.ULT_VAL):
+            a.valuation_date = pd.to_datetime(options.ULT_VAL)
         return a
 
 
