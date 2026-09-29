@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import numpy as np
 from sklearn.base import BaseEstimator
 from chainladder.tails import TailConstant
 from chainladder.development import Development
@@ -168,7 +169,6 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         if sample_weight:
             if X.shape[:-1] != sample_weight.shape[:-1]:
                 try:
-                    xp = X.get_array_module()
-                    _ = xp.broadcast_shapes(X.shape[:-1], sample_weight.shape[:-1])
+                    _ = np.broadcast_shapes(X.shape[:-1], sample_weight.shape[:-1])
                 except ValueError:
                     raise ValueError("X and sample_weight are not aligned.")

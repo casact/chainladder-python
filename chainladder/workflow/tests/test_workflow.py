@@ -101,8 +101,6 @@ def test_pipeline(
     None
     """
     tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss", "EarnedPremDIR"]]
-    X = tri[["CumPaidLoss", "CaseIncurredLoss"]]
-    sample_weight = tri["EarnedPremDIR"].latest_diagonal
     (
         cl
         .Pipeline(
@@ -112,7 +110,10 @@ def test_pipeline(
                 ("ibnr", ibnr()),
             ]
         )
-        .fit_predict(X, sample_weight=sample_weight)
+        .fit_predict(
+            tri[["CumPaidLoss", "IncurLoss"]],
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal
+        )
         .ibnr_.sum("origin")
         .sum("columns")
         .sum()
