@@ -137,3 +137,28 @@ def _set_columns(obj: Triangle, value: Any) -> pd.Index:
     elif hasattr(obj, "_axes") and (1 in obj._axes or "columns" in obj._axes):
         obj._len_check(obj.columns, value)
     return pd.Index(value, name="columns")
+
+
+def _set_index(obj: Triangle, value: Any) -> pd.DataFrame:
+    """
+    Validate and transform assigned index into a pandas DataFrame.
+
+    Parameters
+    ----------
+    obj : Triangle
+        The Triangle instance being updated.
+    value : Any
+        The new index labels. Must be a pandas DataFrame.
+
+    Returns
+    -------
+    pd.DataFrame
+        A reset-index pandas DataFrame.
+    """
+    if not isinstance(value, pd.DataFrame):
+        raise TypeError("index must be a pandas DataFrame")
+    if hasattr(obj, "values") and obj.values is not None:
+        obj._len_check(range(obj.values.shape[0]), value)
+    elif hasattr(obj, "_axes") and (0 in obj._axes or "index" in obj._axes):
+        obj._len_check(obj.index, value)
+    return value.copy().reset_index(drop=True)

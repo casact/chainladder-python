@@ -64,7 +64,7 @@ class _LocBase:
         else:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
         # Set the new dimension values.
-        obj._index = obj._index.iloc[i_idx].reset_index(drop=True)
+        obj.index = obj.index.iloc[i_idx].reset_index(drop=True)
         obj.columns = obj.columns[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         obj.valuation_date = cast(

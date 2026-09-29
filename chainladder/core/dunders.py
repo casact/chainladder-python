@@ -73,12 +73,12 @@ class TriangleDunders:
 
     def _prep_index(self, x, y):
         if len(x.index) == 1 and len(y.index) > 1:
-            x._index = y.index.copy()
+            x._axes[0] = y.index.copy()
             x.key_labels = list(y.key_labels)
             x._set_slicers()
             return x, y
         if len(x.index) > 1 and len(y.index) == 1:
-            y._index = x.index.copy()
+            y._axes[0] = x.index.copy()
             y.key_labels = list(x.key_labels)
             y._set_slicers()
             return x, y
@@ -88,10 +88,10 @@ class TriangleDunders:
                 if len(x.key_labels) > len(y.key_labels)
                 else y.index.copy()
             )
-            x._index = index.copy()
+            x._axes[0] = index.copy()
             x.key_labels = list(index.columns)
             x._set_slicers()
-            y._index = index.copy()
+            y._axes[0] = index.copy()
             y.key_labels = list(index.columns)
             y._set_slicers()
             return x, y
