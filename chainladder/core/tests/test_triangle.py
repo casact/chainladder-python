@@ -1364,13 +1364,11 @@ def test_astype_documented_migration_is_drop_safe(raa: Triangle) -> None:
         out = triangle.copy()
         return out.astype("float32", **kwargs)
 
-    # today, with inplace defaulting to True and no warning raised
     today_src = raa.copy()
     with warnings.catch_warnings():
         warnings.simplefilter("error", FutureWarning)
         today = migrate(today_src)
 
-    # post-removal semantics, where astype always returns a new Triangle
     future_src = raa.copy()
     with pytest.warns(FutureWarning, match="inplace"):
         future = migrate(future_src, inplace=False)
