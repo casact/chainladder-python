@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import warnings
 from chainladder.core.base import TriangleBase
-from chainladder.core.axis import TriangleAxis, _set_columns
+from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
@@ -471,6 +471,11 @@ class Triangle(TriangleBase):
         1982  12000.0
     """
 
+    index = TriangleAxis(
+        0,
+        fset=_set_index,
+        doc="Represents the index dimension of the triangle.",
+    )
     columns = TriangleAxis(
         1,
         fset=_set_columns,
@@ -629,7 +634,6 @@ class Triangle(TriangleBase):
             self.index_label: list = index
             data_agg[index[0]] = "Total"
 
-        self._index: DataFrame
         key_idx: np.ndarray
         self.odims: np.ndarray
         orig_idx: np.ndarray
@@ -637,7 +641,7 @@ class Triangle(TriangleBase):
         dev_idx: np.ndarray
 
         kdims_arr, key_idx = self._set_kdims(data_agg, index)
-        self._index = pd.DataFrame(list(kdims_arr), columns=index)
+        self.index = pd.DataFrame(list(kdims_arr), columns=index)
         self.columns = columns
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
@@ -719,7 +723,7 @@ class Triangle(TriangleBase):
                     has_duplicates=False,
                     sorted=True,
                     shape=(
-                        len(self._index),
+                        len(self.index),
                         len(self.columns),
                         len(self.odims),
                         len(self.ddims),
@@ -791,30 +795,22 @@ class Triangle(TriangleBase):
         return data, ult
 
     @property
-    def index(self) -> DataFrame:
+    def _index(self) -> DataFrame:
         """
-        Returns a DataFrame of the unique values of the index.
+        Backward-compatibility alias for Triangle.index.
         """
-        return self._index
+        return self.index
 
-    @index.setter
-    def index(self, value) -> None:
-        if hasattr(self, "values") and self.values is not None:
-            self._len_check(range(self.values.shape[0]), value)
-        else:
-            self._len_check(self.index, value)
-        if isinstance(value, pd.DataFrame):
-            self._index = value.copy().reset_index(drop=True)
-            self._set_slicers()
-        else:
-            raise TypeError("index must be a pandas DataFrame")
+    @_index.setter
+    def _index(self, value: Any) -> None:
+        self.index = value
 
     @property
     def key_labels(self) -> list:
         """
         Returns a list of the labels corresponding to the levels of the index.
         """
-        return list(self._index.columns)
+        return list(self.index.columns)
 
     @key_labels.setter
     def key_labels(self, value) -> None:
@@ -822,7 +818,7 @@ class Triangle(TriangleBase):
             value = [value]
         else:
             value = list(value)
-        self._index.columns = value
+        self.index.columns = value
         self._set_slicers()
 
     @property
@@ -2145,7 +2141,6 @@ class Triangle(TriangleBase):
             X._axes = {k: v.copy() for k, v in self._axes.items()}
         X._set_slicers()
         X.values = X.values.copy()
-        X._index = self._index.copy()
         return X
 
     def __setstate__(self, state: dict) -> None:
@@ -2162,16 +2157,25 @@ class Triangle(TriangleBase):
                 stacklevel=2,
             )
         key_labels = state.pop("key_labels", ["Total"])
-        if "_index" not in state:
-            raw_kdims = state.pop("_kdims", None)
-            if raw_kdims is None:
-                raw_kdims = state.pop("kdims", None)
-            if raw_kdims is not None:
-                state["_index"] = pd.DataFrame(list(raw_kdims), columns=key_labels)
-            else:
-                state["_index"] = pd.DataFrame([["Total"]], columns=["Total"])
         if "_axes" not in state:
             state["_axes"] = {}
+        if 0 not in state["_axes"]:
+            if "_index" in state:
+                state["_axes"][0] = state.pop("_index")
+            elif "index" in state["_axes"]:
+                state["_axes"][0] = state["_axes"].pop("index")
+            else:
+                raw_kdims = state.pop("_kdims", None)
+                if raw_kdims is None:
+                    raw_kdims = state.pop("kdims", None)
+                if raw_kdims is not None:
+                    state["_axes"][0] = pd.DataFrame(
+                        list(raw_kdims), columns=key_labels
+                    )
+                else:
+                    state["_axes"][0] = pd.DataFrame([["Total"]], columns=["Total"])
+        else:
+            state.pop("_index", None)
         if 1 not in state["_axes"]:
             if "columns" in state["_axes"]:
                 state["_axes"][1] = state["_axes"].pop("columns")

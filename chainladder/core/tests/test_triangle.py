@@ -502,28 +502,53 @@ def test_axis_mappings():
 
 
 def test_triangle_axis_descriptor():
-    """Verify TriangleAxis descriptor correctly uses integer axis key and handles edge cases."""
-    from chainladder.core.axis import TriangleAxis, _set_columns
+    """Verify TriangleAxis descriptor correctly uses integer axis keys for index and columns."""
+    from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
 
+    assert isinstance(cl.Triangle.index, TriangleAxis)
+    assert cl.Triangle.index.__doc__ is not None
     assert isinstance(cl.Triangle.columns, TriangleAxis)
     assert cl.Triangle.columns.__doc__ is not None
 
     class MockTriangle:
-        col = TriangleAxis(1)
+        def __init__(self):
+            self.values = None
+            self._axes = {}
+
+        def _len_check(self, target, obj):
+            if len(target) != len(obj):
+                raise ValueError("length mismatch")
+
+        index = TriangleAxis(0, fset=_set_index)
+        columns = TriangleAxis(1, fset=_set_columns)
 
     obj = MockTriangle()
-    with pytest.raises(
-        AttributeError, match="'MockTriangle' object has no attribute 'columns'"
-    ):
-        _ = obj.col
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        obj.index = "not_a_df"
 
-    # Setting when _axes is not yet present on instance initializes _axes
-    assert not hasattr(obj, "_axes")
-    obj.col = pd.Index(["a", "b"], name="columns")
-    assert hasattr(obj, "_axes")
+    df = pd.DataFrame({"Company": ["A", "B"]})
+    obj.index = df
+    assert 0 in obj._axes
+    pd.testing.assert_frame_equal(obj.index, df)
+
+    # When self.values is None and 0 in _axes, _set_index checks against obj.index
+    df_same_len = pd.DataFrame({"Company": ["C", "D"]})
+    obj.index = df_same_len
+    pd.testing.assert_frame_equal(obj.index, df_same_len)
+
+    with pytest.raises(ValueError, match="length mismatch"):
+        obj.index = pd.DataFrame({"Company": ["A", "B", "C"]})
+
+    # When self.values is not None, _set_index checks against range(self.values.shape[0])
+    obj.values = np.zeros((2, 3))
+    obj.index = df
+    with pytest.raises(ValueError, match="length mismatch"):
+        obj.index = pd.DataFrame({"Company": ["A"]})
+
+    obj.columns = ["a", "b", "c"]
     assert 1 in obj._axes
-    assert list(obj.col) == ["a", "b"]
-    assert obj.col.name == "columns"
+    assert list(obj.columns) == ["a", "b", "c"]
+    assert obj.columns.name == "columns"
 
     # Custom fget mapping
     class CustomAxisTriangle:
@@ -552,6 +577,52 @@ def test_triangle_axis_descriptor():
     m.columns = ["a"]
     with pytest.raises(ValueError, match="length mismatch"):
         m.columns = ["a", "b"]
+
+
+def test_triangle_index_property_and_alias(raa):
+    """Verify Triangle.index descriptor, _index backward-compat alias, and slicer reset."""
+    assert raa._index.equals(raa.index)
+    tri = raa.copy()
+    tri._index = tri.index.copy()
+    assert tri._index.equals(raa.index)
+    assert tri.index.equals(raa.index)
+
+    tri.index = pd.DataFrame({"Total": ["A"]})
+    assert list(tri.index["Total"]) == ["A"]
+    assert list(tri._index["Total"]) == ["A"]
+
+
+def test_prep_index_single_element_different_key_labels(raa):
+    """Verify arithmetic index broadcasting when both triangles have 1 row but differing key_labels."""
+    x = raa.copy()
+    x.key_labels = ["LabelA"]
+    y = raa.copy()
+    y.index = pd.DataFrame([["B", "C"]], columns=["LabelB", "LabelC"])
+
+    z1 = x + y
+    assert z1.key_labels == ["LabelB", "LabelC"]
+    assert 0 in z1._axes
+
+    z2 = y + x
+    assert z2.key_labels == ["LabelB", "LabelC"]
+    assert 0 in z2._axes
+
+
+def test_concat_axis0_index(raa):
+    """Verify cl.concat along axis 0 updates index and key_labels."""
+    out_ignore = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(out_ignore.index) == 2
+    assert out_ignore.key_labels == ["Index"]
+    assert 0 in out_ignore._axes
+
+    r1 = raa.copy()
+    r1.index = pd.DataFrame({"Item": ["A"]})
+    r2 = raa.copy()
+    r2.index = pd.DataFrame({"Item": ["B"]})
+    out_keep = cl.concat([r1, r2], axis=0, ignore_index=False)
+    assert len(out_keep.index) == 2
+    assert list(out_keep.index["Item"]) == ["A", "B"]
+    assert 0 in out_keep._axes
 
 
 def test_key_labels_setter(raa):
@@ -623,6 +694,8 @@ def test_legacy_pickle_compatibility(raa):
     assert list(restored.columns) == list(raa.columns)
     assert restored.loc["Total"].shape == raa.loc["Total"].shape
     assert restored == raa
+    assert 0 in restored._axes
+    assert restored._axes[0].equals(raa.index)
     assert 1 in restored._axes
     assert restored._axes[1].equals(raa.columns)
 
@@ -645,10 +718,30 @@ def test_legacy_pickle_compatibility(raa):
     assert restored_mid.index.equals(raa.index)
     assert list(restored_mid.columns) == list(raa.columns)
     assert restored_mid == raa
+    assert 0 in restored_mid._axes
+    assert restored_mid._axes[0].equals(raa.index)
     assert 1 in restored_mid._axes
     assert restored_mid._axes[1].equals(raa.columns)
 
-    # 3. Simulate serialized Triangle containing _columns
+    # 3. Simulate unprefixed kdims/vdims legacy pickle
+    state_unprefixed = raa.__dict__.copy()
+    state_unprefixed.pop("_axes", None)
+    state_unprefixed.pop("_index", None)
+    state_unprefixed.pop("_columns", None)
+    state_unprefixed.pop("_kdims", None)
+    state_unprefixed.pop("_vdims", None)
+    state_unprefixed["kdims"] = raa.index.values
+    state_unprefixed["vdims"] = raa.columns.values
+
+    restored_unprefixed = cl.Triangle.__new__(cl.Triangle)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored_unprefixed.__setstate__(state_unprefixed)
+    assert 0 in restored_unprefixed._axes
+    assert restored_unprefixed.index.equals(raa.index)
+
+    # 4. Simulate serialized Triangle containing _columns
     state_col = raa.__dict__.copy()
     state_col.pop("_axes", None)
     state_col.pop("_index", None)
@@ -664,15 +757,30 @@ def test_legacy_pickle_compatibility(raa):
     assert list(restored_col.columns) == list(raa.columns)
     assert 1 in restored_col._axes
 
-    # 4. Simulate string-keyed "columns" in _axes
-    state_str = raa.__dict__.copy()
-    state_str["_axes"] = {"columns": pd.Index(list(raa.columns), name="columns")}
+    # 5. Simulate string-keyed _axes
+    state_str_axes = raa.__dict__.copy()
+    state_str_axes.pop("_index", None)
+    state_str_axes.pop("_columns", None)
+    state_str_axes["_axes"] = {
+        "index": raa.index.copy(),
+        "columns": raa.columns.copy(),
+    }
     restored_str = cl.Triangle.__new__(cl.Triangle)
-    restored_str.__setstate__(state_str)
-    assert list(restored_str.columns) == list(raa.columns)
+    restored_str.__setstate__(state_str_axes)
+    assert 0 in restored_str._axes
     assert 1 in restored_str._axes
+    assert restored_str.index.equals(raa.index)
 
-    # 5. Simulate fallback when no kdims/vdims keys are found (no warning)
+    # 6. Simulate redundant _index when 0 already in _axes
+    state_redundant = raa.__dict__.copy()
+    state_redundant["_axes"] = {0: raa.index.copy(), 1: raa.columns.copy()}
+    state_redundant["_index"] = raa.index.copy()
+    restored_red = cl.Triangle.__new__(cl.Triangle)
+    restored_red.__setstate__(state_redundant)
+    assert 0 in restored_red._axes
+    assert "_index" not in restored_red.__dict__
+
+    # 7. Simulate fallback when no kdims/vdims keys are found (no warning)
     state_empty = raa.__dict__.copy()
     state_empty.pop("_axes", None)
     state_empty.pop("_index", None)
@@ -688,13 +796,15 @@ def test_legacy_pickle_compatibility(raa):
         restored_empty.__setstate__(state_empty)
     assert list(restored_empty.columns) == ["values"]
     assert list(restored_empty.index.columns) == ["Total"]
+    assert 0 in restored_empty._axes
     assert 1 in restored_empty._axes
 
-    # 6. Verify re-pickling the migrated instance works without warnings
+    # 8. Verify re-pickling the migrated instance works without warnings
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         roundtripped = pickle.loads(pickle.dumps(restored))
     assert roundtripped == raa
+    assert 0 in roundtripped._axes
     assert 1 in roundtripped._axes
 
 
