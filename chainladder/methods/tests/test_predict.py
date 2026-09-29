@@ -1,7 +1,15 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
 import pandas as pd
 import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]
@@ -422,3 +430,26 @@ def test_odd_shaped_triangle():
         .sum()
     )
     assert abs(ult1 - ult2) < 1e-5
+
+
+def test_intersection_deprecation(raa: Triangle) -> None:
+    """
+    Using `MethodBase` warns
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(
+        FutureWarning,
+        match="`MethodBase.intersection` is deprecated",
+    ):
+        _ = cl.Chainladder().intersection(
+            raa,
+            cl.Development().fit(raa).ldf_,
+        )
