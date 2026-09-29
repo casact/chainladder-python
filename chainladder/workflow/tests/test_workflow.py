@@ -112,7 +112,7 @@ def test_pipeline(
         )
         .fit_predict(
             tri[["CumPaidLoss", "IncurLoss"]],
-            sample_weight=tri["EarnedPremDIR"].latest_diagonal
+            sample_weight=tri["EarnedPremDIR"].latest_diagonal,
         )
         .ibnr_.sum("origin")
         .sum("columns")
