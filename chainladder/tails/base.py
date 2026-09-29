@@ -2,10 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
-import pandas as pd
 from chainladder.utils import WeightedRegression
 from chainladder.development import DevelopmentBase, Development
-from chainladder import options
 
 
 class TailBase(DevelopmentBase):
@@ -19,7 +17,6 @@ class TailBase(DevelopmentBase):
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
         obj.ldf_ = obj.ldf_.intersection(X)
-        obj.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         xp = obj.ldf_.get_array_module()
         m = int(self.projection_period / 12)
         self._ave_period = {

@@ -15,6 +15,7 @@ from chainladder import (
     _warn_dask_parallel_deprecated,
 )
 from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder import options
 
 from typing import cast, TYPE_CHECKING
 
@@ -1267,16 +1268,12 @@ class TrianglePandas(_TrianglePandasBase):
         )
         if (len(obj) == 1 or len(other) == 1) and idx_intersection == []:
             return obj
-        print(a_idx[intersection].set_index(intersection).index.isin(idx_intersection))
-        print(a_idx[
-                a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
-            ].index
-        )
         a = obj.iloc[
             a_idx[
                 a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
             ].index
         ]
+        a.valuation_date = pd.to_datetime(options.ULT_VAL)
         return a
 
 
