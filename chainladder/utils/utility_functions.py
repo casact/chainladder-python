@@ -723,12 +723,12 @@ def concat(
     if axis == 0:
         if ignore_index:
             new_axis = np.arange(sum([len(obj.index) for obj in objs]))[:, None]
-            out._index = pd.DataFrame(new_axis, columns=["Index"])
+            out.index = pd.DataFrame(new_axis, columns=["Index"])
             out.key_labels = ["Index"]
         else:
             new_axis = pd.concat([obj.index for obj in objs], ignore_index=True)
             assert len(new_axis.drop_duplicates()) == len(new_axis)
-            out._index = new_axis
+            out.index = new_axis
             out.key_labels = list(new_axis.columns)
     elif axis == 1:
         if ignore_index:
