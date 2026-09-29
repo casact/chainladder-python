@@ -1230,6 +1230,48 @@ class TrianglePandas(_TrianglePandasBase):
             result.index = pd.DataFrame(data=["Total"], columns=pd.Index(["Total"]))
         return result
 
+    def intersection(self, other: Triangle) -> Triangle:
+        """
+        Form the intersection of two Triangles based on elements common to their indices
+
+        Always returns self if both are single Triangles
+
+        Always returns self if either is single Triangles and both share some index label
+
+        Parameters
+        ----------
+        other : Triangle
+            Another Triangle
+
+        Returns
+        -------
+        Triangle
+
+        """
+        obj = cast("Triangle", cast(object, self.copy()))
+        if len(obj) == 1 and len(other) == 1:
+            return obj
+        intersection = list(set(obj.key_labels).intersection(set(other.key_labels)))
+        if intersection == []:
+            return Triangle()
+        a_idx = obj.index[intersection]
+        b_idx = other.index[intersection]
+        idx_intersection = list(
+            set(
+                a_idx.set_index(intersection).index.intersection(
+                    b_idx.set_index(intersection).index
+                )
+            )
+        )
+        if (len(obj) == 1 or len(other) == 1) and idx_intersection == []:
+            return obj
+        a = obj.iloc[
+            a_idx[
+                a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
+            ].index
+        ]
+        return a
+
 
 def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
     """

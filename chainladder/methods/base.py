@@ -111,41 +111,21 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         self.validate_weight(X_new, sample_weight)
         if sample_weight:
             sample_weight = sample_weight.set_backend(X_new.array_backend)
-        X_new.ldf_ = self.ldf_
-        X_new, X_new.ldf_ = self.intersection(X_new, X_new.ldf_)
+        X_new.ldf_ = self.ldf_.intersection(X_new)
+        X_new = X_new.intersection(X_new.ldf_)
         return X_new
 
     def intersection(self, a, b):
         """
         Given two Triangles with mismatched indices, this method aligns
-        their indices"""
-        if len(a) == 1 and len(b) == 1:
-            return a, b
-        intersection = list(set(a.key_labels).intersection(set(b.key_labels)))
-        if intersection == []:
-            return a, b
-        a_idx = a.index[intersection]
-        b_idx = b.index[intersection]
-        idx_intersection = list(
-            set(
-                a_idx.set_index(intersection).index.intersection(
-                    b_idx.set_index(intersection).index
-                )
-            )
+        their indices
+        """
+        warnings.warn(
+            "`MethodBase.intersection` is deprecated and will be removed in 1.0.0."
+            "Please use `Triangle.intersection` instead.",
+            FutureWarning,
         )
-        if (len(a) == 1 or len(b) == 1) and idx_intersection == []:
-            return a, b
-        b = b.iloc[
-            b_idx[
-                b_idx[intersection].set_index(intersection).index.isin(idx_intersection)
-            ].index
-        ]
-        a = a.iloc[
-            a_idx[
-                a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
-            ].index
-        ]
-        return a, b
+        return a.intersection(b), b.intersection(a)
 
     def fit_predict(self, X, y=None, sample_weight=None):
         self.fit(X, y, sample_weight)

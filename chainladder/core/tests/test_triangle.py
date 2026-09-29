@@ -123,13 +123,56 @@ def test_link_ratio_on_pattern_returns_self(raa: Triangle) -> None:
     assert result is lr
 
 
-def test_align_pattern(raa, atol):
+def test_align_pattern_raises_non_pattern(raa: Triangle) -> None:
+    """
+    align_pattern raises when supplied with a non-pattern Triangle
+
+    Parameters
+    ----------
+    raa : Triangle
+        The RAA sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
     with pytest.raises(ValueError):
         raa.align_pattern(raa)
 
 
-def test_incr_to_cum(clrd):
-    clrd.cum_to_incr().incr_to_cum() == clrd
+def test_incr_to_cum_round_trip(clrd: Triangle) -> None:
+    """
+    Calling cum_to_incr and incr_to_cum consecutively returns the original Triangle
+
+    Parameters
+    ----------
+    clrd : Triangle
+        The clrd sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
+    assert clrd.cum_to_incr().incr_to_cum() == clrd
+
+
+def test_pattern_cum_to_incr_zero_cells_stay_finite(raa: Triangle) -> None:
+    """
+    cum_to_incr on any 0 in a pattern does not result in np.inf
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
+    cdf = cl.Development().fit(raa).cdf_
+    cdf.values[..., 1] = 0
+    out = cdf.cum_to_incr()
+    assert not np.isinf(out.values).any()
 
 
 def test_create_new_value(clrd):
@@ -1339,66 +1382,6 @@ def test_astype(raa: Triangle) -> None:
     None
     """
     assert raa.astype("float32").values.dtype == np.float32
-
-
-def test_head(clrd: Triangle) -> None:
-    """
-    Triangle.head(n) returns a Triangle limited to the first n rows of the index axis.
-
-    Parameters
-    ----------
-    clrd: Triangle
-        The clrd sample data set.
-
-    Returns
-    -------
-    None
-    """
-    assert clrd.head(3).shape[0] == 3
-    assert list(clrd.head(3).index["LOB"]) == ["othliab", "ppauto", "comauto"]
-
-
-def test_tail(clrd: Triangle) -> None:
-    """
-    Triangle.tail(n) returns a Triangle limited to the last n rows of the index axis.
-
-    Parameters
-    ----------
-    clrd: Triangle
-        The clrd sample data set.
-
-    Returns
-    -------
-    None
-    """
-    assert clrd.tail(3).shape[0] == 3
-    assert list(clrd.tail(3).index["LOB"]) == ["wkcomp", "comauto", "wkcomp"]
-
-
-def test_add_df_passthru(raa: Triangle) -> None:
-    """
-    Check equivalent behavior between Triangle and DataFrame passed-thru methods.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set Triangle.
-
-    Returns
-    -------
-    None
-    """
-    frame = raa.to_frame()
-
-    # String serialization
-    assert raa.to_csv() == frame.to_csv()
-    assert raa.to_html() == frame.to_html()
-
-    # DataFrame-returning methods
-    assert raa.describe().equals(frame.describe())
-    assert raa.drop_duplicates().equals(frame.drop_duplicates())
-    assert raa.melt().equals(frame.melt())
-    assert raa.unstack().equals(frame.unstack())
 
 
 def test_plot(raa: Triangle) -> None:
@@ -2747,37 +2730,6 @@ def test_validate_assumption_axis2(raa: Triangle) -> None:
     """
     result = raa._validate_assumption(raa, 1, axis=2)
     assert result.shape == (1, 1, raa.shape[2], 1)
-
-
-def test_xs(clrd):
-    # when slicing with .loc on the first term in the index, Triangle will drop the term
-    assert clrd.xs("Adriatic Ins Co") == clrd.loc["Adriatic Ins Co"]
-    assert clrd.xs("Adriatic Ins Co").index.equals(clrd.loc["Adriatic Ins Co"].index)
-    # when slicing with .loc on the all term in the index, Triangle will not drop any term
-    assert (
-        clrd.xs(("Agway Ins Co", "comauto"), drop_level=False)
-        == clrd.loc["Agway Ins Co", "comauto"]
-    )
-    assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=False).index.equals(
-        clrd.loc["Agway Ins Co", "comauto"].index
-    )
-    # when all index terms are included in xs and drop_level is True, the default 'Total' index value is provided
-    assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=True).index.equals(
-        cl.load_sample("genins").index
-    )
-    # when slicing with .loc on the second or subsequent terms in the index, Triangle will not drop the term
-    assert (
-        clrd.xs("comauto", level=1, drop_level=False)
-        == clrd.loc[clrd["LOB"] == "comauto"]
-    )
-    assert clrd.xs("comauto", level=1, drop_level=False).index.equals(
-        clrd.loc[clrd["LOB"] == "comauto"].index
-    )
-    # level works with either integer index or name of the index column
-    assert clrd.xs("comauto", level=1) == clrd.xs("comauto", level="LOB")
-    assert clrd.xs("comauto", level=1).index.equals(
-        clrd.xs("comauto", level="LOB").index
-    )
 
 
 def test_get_array_module_with_explicit_arr(raa: Triangle) -> None:

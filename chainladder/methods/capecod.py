@@ -325,7 +325,7 @@ class CapeCod(Benktander):
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
         self.validate_ldf(X_new, self.ldf_)
-        _, X_new.ldf_ = self.intersection(X_new, self.ldf_)
+        X_new.ldf_ = self.ldf_.intersection(X_new)
         # If model was fit at a higher grain, then need to aggregate predicted aprioris too
         if len(set(sample_weight.key_labels) - set(self.apriori_.key_labels)) > 0:
             apriori_, detrended_apriori_ = self._get_capecod_aprioris(
