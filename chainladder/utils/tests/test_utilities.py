@@ -1340,17 +1340,14 @@ def test_ult_label() -> None:
             == "Ultimate"
         )
 
-        # a Triangle-level label wins, and doesn't leak to other Triangles
         override = ultimate.copy()
         override.ult_label = "ULT"
         assert list(override.to_frame(origin_as_datetime=False).columns) == ["ULT"]
         assert list(ultimate.to_frame(origin_as_datetime=False).columns) == ["Ultimate"]
         assert override.copy().ult_label == "ULT"
 
-        # the sentinel itself is untouched, so calculations are unaffected
         assert ultimate.development.tolist() == ["2261"]
 
-        # a Triangle without an ultimate period keeps its labels
         assert list(triangle.to_frame(origin_as_datetime=False).columns)[-1] == 120
     finally:
         cl.options.set_option("ULT_LABEL", None)
