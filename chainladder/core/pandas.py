@@ -1248,6 +1248,8 @@ class TrianglePandas(_TrianglePandasBase):
         Triangle
 
         """
+        from chainladder.core.triangle import Triangle
+
         obj = cast("Triangle", cast(object, self.copy()))
         if len(obj) == 1 and len(other) == 1:
             return obj
@@ -1265,6 +1267,11 @@ class TrianglePandas(_TrianglePandasBase):
         )
         if (len(obj) == 1 or len(other) == 1) and idx_intersection == []:
             return obj
+        print(a_idx[intersection].set_index(intersection).index.isin(idx_intersection))
+        print(a_idx[
+                a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
+            ].index
+        )
         a = obj.iloc[
             a_idx[
                 a_idx[intersection].set_index(intersection).index.isin(idx_intersection)
