@@ -73,7 +73,7 @@ class Development(DevelopmentBase):
         See order of operations below when combined with multiple drop parameters.
     max_dev: float or list of float (default = np.inf)
         Caps the LDFs at max_dev.
-    min_dev: float or list of float (default = 0.0)
+    min_dev: float or list of float (default = -np.inf)
         Caps the LDFs at min_dev.
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
@@ -345,7 +345,7 @@ class Development(DevelopmentBase):
         drop_above: float = np.inf,
         drop_below: float = 0.0,
         max_dev: float | list[float] = np.inf,
-        min_dev: float | list[float] = 0.0,
+        min_dev: float | list[float] = -np.inf,
         fillna: float | None = None,
         groupby: Callable | list | str | Series = None,
     ):
