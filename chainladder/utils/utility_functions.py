@@ -1180,11 +1180,11 @@ def warn_exclusions_ignored(
     reach the same dead end and said so in four copies of this text. The
     wording is asserted by the test suite, so it is kept as it was.
     """
-    preserve_default = "(use preserve=...)" if preserve == 1 else ""
+    preserve_default = "(use preserve=...) " if preserve == 1 else ""
     warnings.warn(
         (
             f"Some exclusions have been ignored at {str(ages)}. "
-            f"At least {preserve} {preserve_default} link ratio(s) "
+            f"At least {preserve} {preserve_default}link ratio(s) "
             "is required for development estimation."
         ),
         stacklevel=stacklevel,
