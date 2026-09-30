@@ -71,6 +71,10 @@ class Development(DevelopmentBase):
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
         See order of operations below when combined with multiple drop parameters.
+    max_dev: float or list of float (default = np.inf)
+        Caps the LDFs at the max_dev.
+    min_dev: float or list of float (default = 0.0)
+        Caps the LDFs at the min_dev. 
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
@@ -338,9 +342,9 @@ class Development(DevelopmentBase):
         preserve: int = 1,
         drop_valuation: str | list[str] = None,
         drop_above: float = np.inf,
-        drop_below: float = 0.00,
+        drop_below: float = 0.0,
         max_dev: float | list[float] = np.inf,
-        min_dev: float | list[float] = 0.00,
+        min_dev: float | list[float] = 0.0,
         fillna: float | None = None,
         groupby: Callable | list | str | Series = None,
     ):
