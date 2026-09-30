@@ -1169,9 +1169,7 @@ def date_delta_adjustment(date: str) -> str:
 
 
 def warn_exclusions_ignored(
-    preserve: int,
-    ages: list[int | str],
-    stacklevel: int = 2
+    preserve: int, ages: list[int | str], stacklevel: int = 2
 ) -> None:
     """
     Warn that an exclusion was not applied because ``preserve`` blocked it.
