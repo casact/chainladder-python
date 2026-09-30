@@ -61,7 +61,7 @@ class Development(DevelopmentBase):
         Drops all link ratio(s) above the given parameter from the LDF calculation.
         Protected by ``preserve``.
         See order of operations below when combined with multiple drop parameters.
-    drop_below: float or list of floats (default = 0.00)
+    drop_below: float or list of floats (default = 0.0)
         Drops all link ratio(s) below the given parameter from the LDF calculation.
         Protected by ``preserve``.
         See order of operations below when combined with multiple drop parameters.
@@ -102,6 +102,7 @@ class Development(DevelopmentBase):
                (Protected by``preserve``, which may relax exclusions from this step if too few ratios would remain
                then this step is skipped).
             6. Calculate the loss development factors using ``average`` method.
+            7. ``min_dev`` / ``max_dev`` — cap each individual LDFs at the min_dev / max_dev.
 
     Attributes
     ----------
