@@ -237,7 +237,7 @@ In the event of a critical production bug, security issue, or broken release req
 
 Code reviews prioritize improving the project over achieving perfection. If a PR is a clear net improvement, maintainers should merge it and track remaining tasks in follow-up issues.
 
-If a PR is too large, reviewers may ask the submitter to reduce its scope or break it into smaller PRs. For large or complex features, contributors are encouraged to submit and merge unit tests prior to implementing functional code whenever practical. See [Contributing](contributing.md#pull-requests-prs) for how to run the test suite locally.
+If a PR is too large, reviewers may ask the submitter to reduce its scope or break it into smaller PRs. For large or complex features, contributors are encouraged to submit and merge unit tests prior to implementing functional code whenever practical. See {ref}`Contributing <pull-requests-prs>` for how to run the test suite locally.
 
 All code changes require manual review prior to merging. Reviewers must understand the purpose and implementation of all substantive code changes before approval. Documentation must be written in clear, concise English.
 
