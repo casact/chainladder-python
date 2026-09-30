@@ -513,9 +513,19 @@ class TriangleBase(
             matched_a_format: bool = False
             for date_inference in date_inference_list:
                 try:
-                    datetime_mapping = dict(
-                        zip(datetime_arg, pd.to_datetime(**date_inference))
-                    )
+                    with warnings.catch_warnings():
+                        # the last date_inference does not specify a date format and uses the default
+                        # parsing path in Pandas. However, when a date format is not specified,
+                        # Pandas simultaneously emits a warning and an error on parsing failure.
+                        # (try `pd.to_datetime(["1995/Q1", "1996/Q1"])`)
+                        # The warning is misleading and redundant given the error.
+                        warnings.simplefilter(
+                            "ignore",
+                            category=RuntimeWarning,
+                            match="Could not infer format")
+                        datetime_mapping = dict(
+                            zip(datetime_arg, pd.to_datetime(**date_inference))
+                        )
                     matched_a_format = "format" in date_inference
                     break
                 except ValueError:
@@ -730,10 +740,14 @@ class TriangleBase(
         """Lists subtriangles from a Triangle instance"""
         return [k for k, v in vars(self).items() if isinstance(v, TriangleBase)]
 
-    def __array__(self):
+    def __array__(
+        self,
+        dtype: np.dtype | None = None,
+        copy: bool | None = None,
+    ) -> np.ndarray:
         if self.array_backend == "sparse":
-            return self.values.todense()
-        return self.values
+            return self.values.todense().__array__(dtype=dtype, copy=copy)
+        return self.values.__array__(dtype=dtype, copy=copy)
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         obj = self.copy()
