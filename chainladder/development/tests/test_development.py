@@ -554,7 +554,7 @@ def test_new_drop_5a(clrd) -> None:
     assert np.array_equal(lhs, rhs, True)
 
 
-def _holed(raa, n_origins) -> Triangle:
+def _holed(raa, n_origins):
     """
     raa with the first development period blanked for n_origins origins, so
     the first age-to-age period is short by that many factors."""
