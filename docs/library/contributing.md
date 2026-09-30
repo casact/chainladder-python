@@ -100,7 +100,6 @@ Contributions to documentation are especially helpful for new users.
 
 ---
 
-(pull-requests-prs)=
 ## Pull Requests (PRs)
 
 **Guidelines for PRs:**  
