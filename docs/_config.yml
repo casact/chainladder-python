@@ -60,3 +60,7 @@ parse:
     - dollarmath
     - linkify
     - substitution
+
+exclude_patterns:
+    - "**/README.md"
+    - "**/sandbox_workbook_filled.ipynb"
