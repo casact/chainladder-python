@@ -12,12 +12,9 @@ build:
       - "jupyter-book config sphinx docs/"
       - "python docs/prep_sphinx_conf.py"
 
-environment:
-  UV_LINK_MODE: copy
-
 python:
   install:
     - method: uv
-      command: sync
+      command: sync --link-mode=copy
       extras:
         - docs
