@@ -51,7 +51,9 @@ class CapeCod(Benktander):
     ibnr_:
         The IBNR per the method
     apriori_:
-        The trended apriori vector developed by the Cape Cod Method
+        The trended apriori vector developed by the Cape Cod Method from the
+        data passed to ``fit``. ``predict`` re-estimates it from the data it is
+        given; see ``predict``.
     detrended_apriori_:
         The detrended apriori vector developed by the Cape Cod Method
 
@@ -278,6 +280,16 @@ class CapeCod(Benktander):
         """
         Predicts the CapeCod ultimate on a new triangle **X**
 
+        The apriori is re-estimated from **X** and ``sample_weight`` rather than
+        taken from the fit. ``predict`` applies the fitted development pattern
+        and the model's parameters, such as ``trend`` and ``decay``, to the new
+        data, and the ``apriori_`` and ``detrended_apriori_`` on the returned
+        triangle are that new estimate, so they differ from the fitted ones
+        whenever the data or the exposure does. If ``sample_weight`` carries
+        index levels the fitted ``apriori_`` does not, **X** and
+        ``sample_weight`` are first summed to the fitted grain, and the
+        returned ``apriori_`` is at that grain.
+
         Parameters
         ----------
         X: Triangle
@@ -324,6 +336,7 @@ class CapeCod(Benktander):
         if sample_weight is None:
             raise ValueError("sample_weight is required.")
         X_new = X.copy()
+        self.validate_ldf(X_new, self.ldf_)
         _, X_new.ldf_ = self.intersection(X_new, self.ldf_)
         # If model was fit at a higher grain, then need to aggregate predicted aprioris too
         if len(set(sample_weight.key_labels) - set(self.apriori_.key_labels)) > 0:
