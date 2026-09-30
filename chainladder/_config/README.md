@@ -1,0 +1,6 @@
+- Dask and Cupy
+    - deprecated in 0.9.0
+    - remove in 1.0.0
+- PTF_Formula
+    - deprecated in 0.11.0
+    - remove in 1.0.0
