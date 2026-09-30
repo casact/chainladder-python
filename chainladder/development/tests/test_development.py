@@ -348,41 +348,58 @@ def test_dropabovebelow(raa):
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
+
 def test_ldf_max_min(raa):
     lhs = np.round(cl.Development(min_dev=1.1).fit(raa).ldf_.values, 4).flatten()
     rhs = np.array([
-        2.9994, 1.6235, 1.2709, 1.1717, 1.1134, 1.1, 1.1, 1.1, 1.1,
+        2.9994,
+        1.6235,
+        1.2709,
+        1.1717,
+        1.1134,
+        1.1,
+        1.1,
+        1.1,
+        1.1,
     ])
     assert np.all(lhs == rhs)
 
     lhs = np.round(cl.Development(max_dev=1.3).fit(raa).ldf_.values, 4).flatten()
-    rhs = np.array([
-        1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.0419, 1.0333, 1.0169, 1.0092
-    ])
+    rhs = np.array([1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.0419, 1.0333, 1.0169, 1.0092])
     assert np.all(lhs == rhs)
 
-    lhs = np.round(cl.Development(min_dev=1.1, max_dev=1.3).fit(raa).ldf_.values, 4).flatten()
-    rhs = np.array([
-        1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.1, 1.1, 1.1, 1.1
-    ])
+    lhs = np.round(
+        cl.Development(min_dev=1.1, max_dev=1.3).fit(raa).ldf_.values, 4
+    ).flatten()
+    rhs = np.array([1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.1, 1.1, 1.1, 1.1])
     assert np.all(lhs == rhs)
 
     with pytest.raises(ValueError, match="min_dev must be <= max_dev."):
         cl.Development(min_dev=1.3, max_dev=1.1).fit(raa)
 
-def test_ldf_max_min_multilength(raa):
-    lhs = np.round(cl.Development(min_dev=[2, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(raa).ldf_.values, 4).flatten()
-    rhs = np.array([
-        2.0000, 1.3394, 1.1934, 1.0959, 1.0770, 1.0336, 1.0190, 1.0000, 1.0000, 1.0000
 
+def test_ldf_max_min_multilength(raa):
+    lhs = np.round(
+        cl.Development(min_dev=[2, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(raa).ldf_.values, 4
+    ).flatten()
+    rhs = np.array([
+        2.0000,
+        1.3394,
+        1.1934,
+        1.0959,
+        1.0770,
+        1.0336,
+        1.0190,
+        1.0000,
+        1.0000,
+        1.0000,
     ])
     assert np.all(lhs == rhs)
 
-    lhs = np.round(cl.Development(max_dev=[1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(raa).ldf_.values, 4).flatten()
-    rhs = np.array([
-        1.5, 1, 1, 1, 1, 1, 1, 0.9976, 0.9929, 0.9992
-
-    ]) 
+    lhs = np.round(
+        cl.Development(max_dev=[1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(raa).ldf_.values, 4
+    ).flatten()
+    rhs = np.array([1.5, 1, 1, 1, 1, 1, 1, 0.9976, 0.9929, 0.9992])
     assert np.all(lhs == rhs)
 
 
