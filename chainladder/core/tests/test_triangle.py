@@ -1938,7 +1938,7 @@ def test_trailing_valuation():
     tri = cl.Triangle(
         data,
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
@@ -1946,7 +1946,7 @@ def test_trailing_valuation():
     tri2 = cl.Triangle(
         data,
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
         trailing=True,
         cumulative=True,

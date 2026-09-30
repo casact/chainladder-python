@@ -514,7 +514,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
             origin=origin,
-            development=development,
+            valuation=development,
             cumulative=cumulative,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
@@ -731,7 +731,7 @@ class Triangle(TriangleBase):
         index: list,
         columns: list,
         origin: list,
-        development: list,
+        valuation: list,
         cumulative: bool,
     ) -> tuple[DataFrame, Triangle]:
         """
