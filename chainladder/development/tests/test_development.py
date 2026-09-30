@@ -370,8 +370,22 @@ def test_LDF_max_min(raa):
     with pytest.raises(ValueError, match="min_dev must be <= max_dev."):
         cl.Development(min_dev=1.3, max_dev=1.1).fit(raa)
 
+def test_LDF_max_min_multilength(raa):
+    lhs = np.round(cl.Development(min_dev=[2, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(xyz["Incurred"]).ldf_.values,4).flatten()
+    rhs = np.array([
+        2.0000, 1.3394, 1.1934, 1.0959, 1.0770, 1.0336, 1.0190, 1.0000, 1.0000, 1.0000
 
+    ])
+    assert np.all(lhs == rhs)
 
+    lhs = np.round(cl.Development(max_dev=[1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(xyz["Incurred"]).ldf_.values,4).flatten()
+    rhs = np.array([
+        1.5, 1,	1,	1,	1,	1,	1,	0.9976, 0.9929,0.9992
+
+    ]) 
+    assert np.all(lhs == rhs)
+
+    
 def test_drop_valuation_1(raa):
     dev1 = cl.Development(drop_valuation="1981-12-31")
     dev2 = cl.Development(drop_valuation="1982-12-31")
