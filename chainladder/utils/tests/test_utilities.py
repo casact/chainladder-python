@@ -88,10 +88,29 @@ def test_pipeline_json_io():
     }
 
 
-def test_json_subtri(raa):
+def test_json_subtri(raa: Triangle, atol: float) -> None:
+    """
+    Tests that properties are preserved in JSON
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    atol: float
+        The absolute tolerance of the test
+
+    Returns
+    -------
+    None
+    """
     a = cl.read_json(cl.Chainladder().fit_predict(raa).to_json()).full_triangle_
     b = cl.Chainladder().fit_predict(raa).full_triangle_
-    assert abs(a - b).max().max() < 1e-4
+    # since a and b are meant to be identical, (a - b) should be 0 everywhere
+    # 0's are turned to NaN's in Triangle arithmetic, resulting in an All-NaN
+    # warning when aggregating
+    with pytest.warns(RuntimeWarning, match="All-NaN"):
+        assert abs(a - b).max().max() < atol
 
 
 def test_json_df():
