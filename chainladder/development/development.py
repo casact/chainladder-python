@@ -339,8 +339,8 @@ class Development(DevelopmentBase):
         drop_valuation: str | list[str] = None,
         drop_above: float = np.inf,
         drop_below: float = 0.00,
-        max_dev: float = np.inf,
-        min_dev: float = 0.00,
+        max_dev: float | list[float] = np.inf,
+        min_dev: float | list[float] = 0.00,
         fillna: float | None = None,
         groupby: Callable | list | str | Series = None,
     ):
@@ -447,16 +447,19 @@ class Development(DevelopmentBase):
         params = params.swapaxes(2, 3)
 
         self.ldf_ = self._param_property(obj, params, 0)
-        
-        if self.min_dev > self.max_dev:
-            raise ValueError("min_dev must be <= than max_dev.")
 
-        print("ldf_.values", self.ldf_.values)
-        print("ldf_.shape", self.ldf_.shape)
+        # checking the min_dev and max_dev bounds, if set
+        n_dev = self.ldf_.shape[3]
 
-        self.ldf_.values = xp.maximum(self.ldf_.values, self.min_dev)
-        self.ldf_.values = xp.minimum(self.ldf_.values, self.max_dev)
+        # converts to arrays
+        min_dev = xp.asarray(self.min_dev, dtype=float).reshape(-1)
+        max_dev = xp.asarray(self.max_dev, dtype=float).reshape(-1)
 
+        if xp.any(min_dev > max_dev):
+            raise ValueError("min_dev must be <= max_dev.")
+
+        self.ldf_.values = xp.maximum(self.ldf_.values, min_dev)
+        self.ldf_.values = xp.minimum(self.ldf_.values, max_dev)
 
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
