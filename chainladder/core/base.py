@@ -521,7 +521,7 @@ class TriangleBase(
                         # The warning is misleading and redundant given the error.
                         warnings.filterwarnings(
                             "ignore",
-                            category=RuntimeWarning,
+                            category=UserWarning,
                             message="Could not infer format",
                         )
                         datetime_mapping = dict(

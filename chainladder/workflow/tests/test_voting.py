@@ -21,6 +21,7 @@ def estimators():
 
     return estimators
 
+
 # fmt: off
 array_weight = np.array(
     [[1, 2, 3]] * 4 +
@@ -68,7 +69,7 @@ def test_voting_ultimate(
     clrd: Triangle,
     estimators: list[tuple[str, Callable[[], Any]]],
     weights: list | Callable[[], Any] | np.ndarray | dict,
-    atol: float
+    atol: float,
 ) -> None:
     """
     Test a variety of weights to be accepted by VotingChainladder
@@ -146,7 +147,7 @@ def test_voting_ultimate(
             ).sum()
             - vot_ult.sum()
         )
-        < 1
+        < atol
     )
 
 
@@ -154,6 +155,7 @@ def test_different_backends(
     clrd: Triangle,
     estimators: list[tuple[str, Callable[[], Any]]],
     weights: list | Callable[[], Any] | np.ndarray | dict,
+    atol: float,
 ) -> None:
     """
     Tests parity between backeneds within VotingChainladder
@@ -168,6 +170,9 @@ def test_different_backends(
 
     weights: list | Callable[[], Any] | np.ndarray | dict
         various types of weights
+
+    atol: float
+        absolute tolerance of the test
 
     Returns
     -------
@@ -190,7 +195,7 @@ def test_different_backends(
                 ).ultimate_.sum()
                 - model.ultimate_.sum()
             )
-            < 1
+            < atol
         )
 
 
@@ -198,6 +203,7 @@ def test_weight_broadcasting(
     clrd: Triangle,
     estimators: list[tuple[str, Callable[[], Any]]],
     weights: list | Callable[[], Any] | np.ndarray | dict,
+    atol: float,
 ) -> None:
     """
     Test parity between backeneds within VotingChainladder
@@ -212,6 +218,9 @@ def test_weight_broadcasting(
 
     weights: list | Callable[[], Any] | np.ndarray | dict
         various types of weights
+
+    atol: float
+        absolute tolerance of the test
 
     Returns
     -------
@@ -249,8 +258,8 @@ def test_weight_broadcasting(
         )
         .ultimate_.sum()
     )
-    assert abs(min_dim_ult.sum() - mid_dim_ult.sum()) < 1
-    assert abs(mid_dim_ult.sum() - max_dim_ult.sum()) < 1
+    assert abs(min_dim_ult.sum() - mid_dim_ult.sum()) < atol
+    assert abs(mid_dim_ult.sum() - max_dim_ult.sum()) < atol
 
 
 def test_voting(raa):
