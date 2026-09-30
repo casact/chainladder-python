@@ -77,7 +77,11 @@ def test_capecod_zero_tri(raa: Triangle) -> None:
     raa_copy = raa.copy()
     raa_copy.at["Total", "values", "1987", 48] = 0
     assert (
-        cl.CapeCod().fit(raa_copy, sample_weight=premium).ultimate_.loc[:, :, "1987"].sum()
+        cl
+        .CapeCod()
+        .fit(raa_copy, sample_weight=premium)
+        .ultimate_.loc[:, :, "1987"]
+        .sum()
         > 0
     )
 
