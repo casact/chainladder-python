@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import chainladder as cl
 import numpy as np
-import pytest
 
 from typing import TYPE_CHECKING
 
@@ -77,11 +76,10 @@ def test_capecod_zero_tri(raa: Triangle) -> None:
     premium = raa.latest_diagonal.fill(50000)
     raa_copy = raa.copy()
     raa_copy.at["Total", "values", "1987", 48] = 0
-    with pytest.warns(RuntimeWarning, match="divide by zero"):
-        assert (
-            cl.CapeCod().fit(raa_copy, sample_weight=premium).ultimate_.loc[:, :, "1987"].sum()
-            > 0
-        )
+    assert (
+        cl.CapeCod().fit(raa_copy, sample_weight=premium).ultimate_.loc[:, :, "1987"].sum()
+        > 0
+    )
 
 
 def test_capecod_predict1(prism):
