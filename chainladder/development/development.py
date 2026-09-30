@@ -452,9 +452,6 @@ class Development(DevelopmentBase):
 
         self.ldf_ = self._param_property(obj, params, 0)
 
-        # checking the min_dev and max_dev bounds, if set
-        n_dev = self.ldf_.shape[3]
-
         # converts to arrays
         min_dev = xp.asarray(self.min_dev, dtype=float).reshape(-1)
         max_dev = xp.asarray(self.max_dev, dtype=float).reshape(-1)
