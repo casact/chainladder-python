@@ -473,6 +473,7 @@ class Triangle(TriangleBase):
             columns=columns,
             origin=origin,
             development=development,
+            cumulative=cumulative,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
         origin_date: Series = self._to_datetime(
@@ -580,10 +581,8 @@ class Triangle(TriangleBase):
 
         if cumulative is None:
             warnings.warn(
-                """
-                The cumulative property of your triangle is not set. This may result in
-                undesirable behavior. In a future release this will result in an error.
-                """
+                "The cumulative property of your triangle is not set. This may result in "
+                "undesirable behavior. In a future release this will result in an error."
             )
 
         self.is_cumulative: bool = cumulative
@@ -685,7 +684,12 @@ class Triangle(TriangleBase):
 
     @staticmethod
     def _split_ult(
-        data: DataFrame, index: list, columns: list, origin: list, development: list
+        data: DataFrame,
+        index: list,
+        columns: list,
+        origin: list,
+        development: list,
+        cumulative: bool,
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
@@ -716,6 +720,7 @@ class Triangle(TriangleBase):
                     development=development,
                     columns=columns,
                     index=index,
+                    cumulative=cumulative,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[development[0]] != options.ULT_VAL]
