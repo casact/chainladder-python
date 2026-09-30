@@ -380,12 +380,12 @@ def test_LDF_max_min_multilength(raa):
 
     lhs = np.round(cl.Development(max_dev=[1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1]).fit(xyz["Incurred"]).ldf_.values,4).flatten()
     rhs = np.array([
-        1.5, 1,	1,	1,	1,	1,	1,	0.9976, 0.9929,0.9992
+        1.5, 1, 1, 1, 1, 1, 1, 0.9976, 0.9929,0.9992
 
     ]) 
     assert np.all(lhs == rhs)
 
-    
+
 def test_drop_valuation_1(raa):
     dev1 = cl.Development(drop_valuation="1981-12-31")
     dev2 = cl.Development(drop_valuation="1982-12-31")
