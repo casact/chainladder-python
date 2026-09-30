@@ -380,19 +380,33 @@ def test_ldf_max_min(raa):
 
 def test_ldf_max_min_multilength(raa):
     lhs = np.round(
-        cl.Development(min_dev=[2, 1.5, 1.5, 1.5, 1.1, 1.1, 1.1, 1.1, 1.1]).fit(raa).ldf_.values, 4
+        cl
+        .Development(min_dev=[2, 1.5, 1.5, 1.5, 1.1, 1.1, 1.1, 1.1, 1.1])
+        .fit(raa)
+        .ldf_.values,
+        4,
     ).flatten()
     rhs = np.array([
-        2.9994, 1.6235, 1.5000, 1.5000, 1.1134, 1.1000, 1.1000, 1.1000, 1.1000
+        2.9994,
+        1.6235,
+        1.5000,
+        1.5000,
+        1.1134,
+        1.1000,
+        1.1000,
+        1.1000,
+        1.1000,
     ])
     assert np.all(lhs == rhs)
 
     lhs = np.round(
-        cl.Development(max_dev=[1.5, 1.2, 1.2, 1.2, 1.2, 1, 1, 1, 1]).fit(raa).ldf_.values, 4
+        cl
+        .Development(max_dev=[1.5, 1.2, 1.2, 1.2, 1.2, 1, 1, 1, 1])
+        .fit(raa)
+        .ldf_.values,
+        4,
     ).flatten()
-    rhs = np.array([
-        1.5, 1.2, 1.2, 1.1717, 1.1134, 1, 1, 1, 1
-    ])
+    rhs = np.array([1.5, 1.2, 1.2, 1.1717, 1.1134, 1, 1, 1, 1])
     assert np.all(lhs == rhs)
 
 
