@@ -356,6 +356,7 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             warn_exclusions_ignored(
                 self.preserve,
                 X.development[list(set(np.where(dev_warning_flags)[2]))].to_list(),
+                stacklevel=3,
             )
 
         return w.astype(float)
@@ -488,6 +489,7 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             warn_exclusions_ignored(
                 self.preserve,
                 X.development[list(set(np.where(dev_warning_flags)[2]))].to_list(),
+                stacklevel=3,
             )
 
         return w.astype(float)
