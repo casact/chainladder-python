@@ -62,5 +62,6 @@ parse:
     - substitution
 
 exclude_patterns:
+    - "README.md"
     - "**/README.md"
     - "**/sandbox_workbook_filled.ipynb"
