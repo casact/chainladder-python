@@ -348,6 +348,29 @@ def test_dropabovebelow(raa):
     assert np.all(lhs == rhs)
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
+def test_LDF_max_min(raa):
+    lhs = np.round(cl.Development(min_dev=1.1).fit(raa).ldf_.values,4).flatten()
+    rhs = np.array([
+        2.9994, 1.6235, 1.2709, 1.1717, 1.1134, 1.1, 1.1, 1.1, 1.1,
+    ])
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(cl.Development(max_dev=1.3).fit(raa).ldf_.values,4).flatten()
+    rhs = np.array([
+        1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.0419, 1.0333, 1.0169, 1.0092
+    ])
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(cl.Development(min_dev=1.1, max_dev=1.3).fit(raa).ldf_.values,4).flatten()
+    rhs = np.array([
+        1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.1, 1.1, 1.1, 1.1
+    ])
+    assert np.all(lhs == rhs)
+
+    with pytest.raises(ValueError, match="min_dev must be <= max_dev."):
+        cl.Development(min_dev=1.3, max_dev=1.1).fit(raa)
+
+
 
 def test_drop_valuation_1(raa):
     dev1 = cl.Development(drop_valuation="1981-12-31")
