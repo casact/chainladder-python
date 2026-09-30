@@ -41,7 +41,22 @@ def test_grain_increm_arg(qtr):
     assert a == qtr["incurred"].grain("OYDY")
 
 
-def test_commutative(qtr, atol):
+def test_commutative(qtr: Triangle, atol: float) -> None:
+    """
+    val_to_dev, cum_to_incr, incr_to_cum shoud each be commutative with grain.
+
+    Parameters
+    ----------
+    qtr: Triangle
+        The quarterly sample data set fixture
+
+    atol: float
+        The absolute tolerance for the test
+
+    Returns
+    -------
+    None
+    """
     full = cl.Chainladder().fit(qtr).full_expectation_
     assert qtr.grain("OYDY").val_to_dev() == qtr.val_to_dev().grain("OYDY")
     assert qtr.cum_to_incr().grain(
@@ -56,7 +71,11 @@ def test_commutative(qtr, atol):
     ).val_to_dev() == full.val_to_dev().cum_to_incr().grain("OYDY")
     a = full.grain("OYDY").cum_to_incr().val_to_dev().incr_to_cum()
     b = full.val_to_dev().grain("OYDY")
-    assert abs(a - b).max().max().max() < atol
+    # since a and b are meant to be identical, (a - b) should be 0 everywhere
+    # 0's are turned to NaN's in Triangle arithmetic, resulting in an All-NaN
+    # warning when aggregating
+    with pytest.warns(RuntimeWarning, match="All-NaN"):
+        assert abs(a - b).max().max().max() < atol
 
 
 @pytest.mark.parametrize(
