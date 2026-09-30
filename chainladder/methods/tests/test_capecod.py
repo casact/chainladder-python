@@ -1,5 +1,13 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
+import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 def test_struhuss():
@@ -52,13 +60,28 @@ def test_groupby(clrd):
     xp.allclose(xp.nan_to_num(a.values), xp.nan_to_num(b.values), atol=1e-5)
 
 
-def test_capecod_zero_tri(raa):
-    premium = raa.latest_diagonal * 0 + 50000
-    raa.at["Total", "values", "1987", 48] = 0
-    assert (
-        cl.CapeCod().fit(raa, sample_weight=premium).ultimate_.loc[:, :, "1987"].sum()
-        > 0
-    )
+def test_capecod_zero_tri(raa: Triangle) -> None:
+    """
+    CapeCod should still return a positive ultimate when one of the values on the
+    latest diagonal is 0
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture
+
+    Returns
+    -------
+    None
+    """
+    premium = raa.latest_diagonal.fill(50000)
+    raa_copy = raa.copy()
+    raa_copy.at["Total", "values", "1987", 48] = 0
+    with pytest.warns(RuntimeWarning, match="divide by zero"):
+        assert (
+            cl.CapeCod().fit(raa_copy, sample_weight=premium).ultimate_.loc[:, :, "1987"].sum()
+            > 0
+        )
 
 
 def test_capecod_predict1(prism):

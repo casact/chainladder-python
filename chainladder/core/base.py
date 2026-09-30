@@ -519,10 +519,11 @@ class TriangleBase(
                         # Pandas simultaneously emits a warning and an error on parsing failure.
                         # (try `pd.to_datetime(["1995/Q1", "1996/Q1"])`)
                         # The warning is misleading and redundant given the error.
-                        warnings.simplefilter(
+                        warnings.filterwarnings(
                             "ignore",
                             category=RuntimeWarning,
-                            match="Could not infer format")
+                            message="Could not infer format",
+                        )
                         datetime_mapping = dict(
                             zip(datetime_arg, pd.to_datetime(**date_inference))
                         )
