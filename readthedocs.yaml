@@ -15,6 +15,6 @@ build:
 python:
   install:
     - method: uv
-      command: sync --link-mode=copy
+      command: sync
       extras:
         - docs
