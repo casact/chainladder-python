@@ -197,7 +197,7 @@ class TestDeprecatedRenameArgument:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", remove_in_version="0.11.0")
         def func(new_arg=None):
             return new_arg
 

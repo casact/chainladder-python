@@ -235,7 +235,7 @@ def _deprecated_rename_argument(
     old_name: str,
     new_name: str,
     *,
-    version: str | None = None,
+    remove_in_version: str | None = None,
     category: type[Warning] = FutureWarning,
     stacklevel: int = 2,
 ) -> Callable[[_F], _F]:
@@ -256,9 +256,9 @@ def _deprecated_rename_argument(
         The keyword argument name the function currently accepts.
     new_name: str
         The keyword argument name it will be renamed to.
-    version: str | None
-        The release (e.g. "0.11.0".) in which the old argument name will be
-        fully removed. Included in the warning message when given. Optional.
+    remove_in_version: str | None
+        The future release version (e.g. "0.11.0") in which the old argument name 
+        will be removed. Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
     stacklevel: int
@@ -278,7 +278,7 @@ def _deprecated_rename_argument(
 
         from chainladder._config.deprecation import _deprecated_rename_argument
 
-        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", remove_in_version="0.11.0")
         def func(new_arg):
             return new_arg + 1
 
@@ -293,8 +293,8 @@ def _deprecated_rename_argument(
 
     def decorator(func: _F) -> _F:
         message = f"'{old_name}' has been deprecated in favor of '{new_name}' and will be removed"
-        if version:
-            message += f" in {version}"
+        if remove_in_version:
+            message += f" in {remove_in_version}"
         else:
             message += " soon"
         message += f". Use '{new_name}' instead."
