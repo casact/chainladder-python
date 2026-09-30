@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 _ValidCurves = Literal["exponential", "inverse_power", "weibull"]
 _ValidErrors = Literal["raise", "ignore"]
-_ValidInvalids = Literal["raise", "ignore", "cap"]
 
 class TailCurve(TailBase):
     """Allows for extraploation of LDFs to form a tail factor.
@@ -53,7 +52,6 @@ class TailCurve(TailBase):
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
 
-
     Attributes
     ----------
     ldf_ : Triangle
@@ -64,7 +62,7 @@ class TailCurve(TailBase):
         Point estimate of tail at latest maturity available in the Triangle.
     slope_ : DataFrame
         Slope parameter of the curve fit.
-    intercept : DataFrame
+    intercept_ : DataFrame
         Intercept parameter of the curve fit.
 
     Examples
@@ -147,7 +145,6 @@ class TailCurve(TailBase):
         attachment_age: int | None = None,
         reg_threshold: tuple[float | None, float | None] = (1.00001, None),
         projection_period: int = 12,
-        invalid_ldf: _ValidInvalids | None = None,
     ):
         self.curve = curve
         self.fit_period = fit_period
@@ -156,7 +153,6 @@ class TailCurve(TailBase):
         self.attachment_age = attachment_age
         self.reg_threshold = reg_threshold
         self.projection_period = projection_period
-        self.invalid_ldf = invalid_ldf
 
     def fit(self, X, y=None, sample_weight=None):
         """
@@ -187,33 +183,9 @@ class TailCurve(TailBase):
                 f"Invalid curve type specified. Accepted values are {get_args(_ValidCurves)}."
             )
 
-        if self.invalid_ldf:  # `invalid_ldf` is supplied. only error if `errors` is also supplied
-            if self.errors:  # does not raise on a default `TailCurve()`
-                raise ValueError("Both 'errors' and `invalid_ldf` are supplied.")
-            invalid_ldf = self.invalid_ldf  # assigning local `invalid_ldf` to not violate skl
-        else:
-            if self.errors is None:  # current behavior of a default `TailCurve()`
-                invalid_ldf = "cap"
-            elif self.errors == "raise":
-                invalid_ldf = "raise"
-            elif self.errors == "ignore":
-                invalid_ldf = "cap"
-            else:
-                raise ValueError(
-                    "Invalid errors handling specified. "
-                    f"Accepted values are {get_args(_ValidErrors)}."
-                )
-
-        if self.errors:
-            warnings.warn(
-                "`errors` is deprecated. Please use `invalid_ldf` instead.",
-                FutureWarning,
-            )
-
-        if invalid_ldf not in get_args(_ValidInvalids):
+        if self.errors not in get_args(_ValidErrors):
             raise ValueError(
-                "Invalid ldf handling specified. "
-                f"Accepted values are {get_args(_ValidInvalids)}."
+                f"Invalid error handling specified. Accepted values are {get_args(_ValidErrors)}."
             )
 
         if isinstance(self.fit_period, list):
@@ -242,7 +214,6 @@ class TailCurve(TailBase):
             raise ValueError(
                 f"Invalid fit_period specified. Accepted values are tuple or list."
             )
-
         if self.reg_threshold[0] is None:
             warnings.warn(
                 "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure"
@@ -267,14 +238,14 @@ class TailCurve(TailBase):
                 upper_threshold = self.reg_threshold[1]
         else:
             upper_threshold = self.reg_threshold[1]
-        if invalid_ldf == "cap":
+        if self.errors == "ignore":
             if upper_threshold is None:
                 _w[_y <= lower_threshold] = 0
                 _y[_y <= lower_threshold] = 1.01
             else:
                 _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
                 _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
-        elif invalid_ldf == "raise" and xp.any(_y < 1.0):
+        elif self.errors == "raise" and xp.any(_y < 1.0):
             raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
         if self.curve == "weibull":
             _y = xp.log(xp.log(_y / (_y - 1)))
