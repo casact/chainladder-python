@@ -467,7 +467,7 @@ class Triangle(TriangleBase):
 
     @_deprecated_rename_argument("development", "valuation", version="v2.0")
     @_deprecated_rename_argument(
-        "development_format", "valuation_format", version="v2.0"
+        "development_format", "valuation_format", version="v2.0", stacklevel=3
     )
     def __init__(
         self,
@@ -536,16 +536,26 @@ class Triangle(TriangleBase):
         )
 
         if len(development_date.unique()) == 1:
-            # checks if development is not empty, and if ithas any non-yearly values
-            dev_has_no_month = not development or all(
-                pd
-                .to_numeric(data[col], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-                .str.fullmatch(r"\d{4}")
-                .all()
-                for col in development
+            # checks that age is empty, in which case development month is implied
+            # and
+            # either development is empty or all development columns have years as value
+            # fmt: off
+            dev_has_no_month = (
+                not age
+                and (
+                    not development
+                    or all(
+                        pd
+                        .to_numeric(data[col], errors="coerce")
+                        .astype("Int64")
+                        .astype(str)
+                        .str.fullmatch(r"\d{4}")
+                        .all()
+                        for col in development
+                    )
+                )
             )
+            # fmt: on
 
             if len(data) == 1 or dev_has_no_month:
                 # if development has no monthly values, match origin

@@ -2935,6 +2935,38 @@ def test_set_development_age_non_calendar_semiannual_raises() -> None:
         )
 
 
+def test_set_age_respects_non_yearend_valuation() -> None:
+    """
+    Development given as an age in months (not a date) resolves to the
+    valuation date that many months after the origin's period start.
+    """
+    val_df = pd.DataFrame({
+        "origin": ["2018-01-01", "2019-01-01"],
+        "development": ["2019-08-31", "2019-08-31"],
+        "reported": [100.0, 150.0],
+    })
+    val_tri = cl.Triangle(
+        data=val_df,
+        origin="origin",
+        valuation="development",
+        columns="reported",
+        cumulative=True,
+    )
+    age_df = pd.DataFrame({
+        "origin": ["2018-01-01", "2019-01-01"],
+        "age": [20, 8],
+        "reported": [100.0, 150.0],
+    })
+    age_tri = cl.Triangle(
+        data=age_df,
+        origin="origin",
+        age="age",
+        columns="reported",
+        cumulative=True,
+    )
+    assert np.all(age_tri.valuation == val_tri.valuation)
+
+
 def test_set_development_bare_years_unaffected_by_age_support() -> None:
     """
     A development column that is genuinely a bare calendar year (e.g. the

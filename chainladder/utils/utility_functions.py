@@ -257,7 +257,9 @@ def read_pickle(path):
 
 
 @_deprecated_rename_argument("development", "valuation", version="v2.0")
-@_deprecated_rename_argument("development_format", "valuation_format", version="v2.0")
+@_deprecated_rename_argument(
+    "development_format", "valuation_format", version="v2.0", stacklevel=3
+)
 def read_csv(
     filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
     origin: Optional[str | list] = None,

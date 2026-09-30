@@ -237,6 +237,7 @@ def _deprecated_rename_argument(
     *,
     version: str | None = None,
     category: type[Warning] = FutureWarning,
+    stacklevel: int = 2,
 ) -> Callable[[_F], _F]:
     """
     Decorator factory that marks a keyword argument that has been renamed
@@ -260,6 +261,8 @@ def _deprecated_rename_argument(
         fully removed. Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
+    stacklevel: int
+        The stack level at which to emit the warning. Defaults to 2.
 
     Returns
     -------
@@ -303,7 +306,7 @@ def _deprecated_rename_argument(
                     raise TypeError(
                         f"Cannot specify both '{old_name}' and '{new_name}'."
                     )
-                warnings.warn(message, category, stacklevel=2)  # noqa
+                warnings.warn(message, category, stacklevel=stacklevel)  # noqa
                 kwargs[new_name] = kwargs.pop(old_name)
             return func(*args, **kwargs)
 
