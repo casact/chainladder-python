@@ -1,0 +1,45 @@
+name: Deprecation
+description: Propose deprecating a function, method, argument, or behavior.
+title: "[DEPR] "
+labels:
+  - deprecation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue tracks the deprecation as a whole and stays open until the
+        deprecated API is removed. A sub-issue for adding the warning is
+        created automatically; close it by linking it from the PR that adds
+        the warning. The removal release is set later with a milestone.
+  - type: dropdown
+    attributes:
+      label: What kind of deprecation is this?
+      options:
+        - Rename a function, method, or class (`_deprecated_rename`)
+        - Rename an argument (`_deprecated_rename_argument`)
+        - Remove an argument (`_deprecated_drop_argument`)
+        - Remove a function, method, or class
+        - Change in behavior
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What is being deprecated?
+      description: The current API, with a short example of the call that will warn.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Replacement
+      description: What users should use instead, or "None" if it is being removed outright.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reason
+      description: Why the deprecation is needed, with links to any discussion.
+    validations:
+      required: true

@@ -1,0 +1,64 @@
+name: Deprecation Sub-issue
+
+# When an issue is opened from the Deprecation template (or labeled
+# `deprecation` later), open a sub-issue for adding the warning and attach it
+# to the parent. The sub-issue closes when the PR adding the warning merges
+# with "Closes #<sub-issue>"; the parent stays open for a removal milestone.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+
+concurrency:
+  group: deprecation-subissue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  create-warning-subissue:
+    name: Create warning sub-issue
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event.action == 'opened'
+        && contains(github.event.issue.labels.*.name, 'deprecation'))
+      || (github.event.action == 'labeled'
+        && github.event.label.name == 'deprecation')
+    steps:
+      - name: Create and attach the sub-issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PARENT: ${{ github.event.issue.number }}
+          PARENT_TITLE: ${{ github.event.issue.title }}
+        run: |
+          # `opened` and `labeled` both fire for a new issue from the form, so
+          # skip a parent that already has a sub-issue.
+          existing=$(gh api "repos/$REPO/issues/$PARENT/sub_issues" --jq length)
+          if [ "$existing" -gt 0 ]; then
+            echo "#$PARENT already has $existing sub-issue(s); nothing to do."
+            exit 0
+          fi
+
+          subject="${PARENT_TITLE#\[DEPR\] }"
+          body=$(cat <<EOF
+          Add the deprecation warning for #$PARENT.
+
+          - [ ] Add the new, alternative feature (unless doing a pure deprecation)
+          - [ ] Emit the warning, through one of the decorators in \`chainladder/_config/deprecation.py\` where one fits
+          - [ ] Test that it warns (\`pytest.warns\`)
+
+          EOF
+          )
+
+          child_url=$(gh issue create --repo "$REPO" \
+            --title "[DEPR] Add warning: $subject" \
+            --label deprecation \
+            --body "$body")
+
+          # The sub-issues API takes the issue's database id, not its number.
+          child_id=$(gh api "repos/$REPO/issues/${child_url##*/}" --jq .id)
+          gh api --method POST "repos/$REPO/issues/$PARENT/sub_issues" \
+            -F sub_issue_id="$child_id"
+          echo "Attached $child_url to #$PARENT."
