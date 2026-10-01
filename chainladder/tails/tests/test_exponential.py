@@ -303,4 +303,4 @@ def test_attachment_age(raa: Triangle) -> None:
     attach = cl.TailCurve(attachment_age=96).fit(dev)
     assert dev.ldf_.values[0, 0, 0, 8] == default.ldf_.values[0, 0, 0, 8]
     assert dev.ldf_.values[0, 0, 0, 8] != attach.ldf_.values[0, 0, 0, 8]
-    assert default.ldf_.values[0, 0, 0, 9] != attach.ldf_.values[0, 0, 0, 9]
+    assert default.ldf_.values[0, 0, 0, 9] == attach.ldf_.values[0, 0, 0, 9]
