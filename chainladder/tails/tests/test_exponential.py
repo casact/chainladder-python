@@ -168,8 +168,7 @@ def test_fit_period_list_wrong_length_raises(raa: Triangle) -> None:
     with pytest.raises(
         ValueError,
         match=(
-            "Invalid fit_period specified. "
-            "Accepted values are list of length"
+            "Invalid fit_period specified. Accepted values are list of length"
         ),
     ):
         _ = cl.TailCurve(fit_period=[True,True]).fit(raa)
@@ -189,14 +188,31 @@ def test_fit_period_list(raa: Triangle) -> None:
     None
     """
     dev = cl.Development().fit_transform(raa)
-    lhs = cl.TailCurve(
-        fit_period=[True,True,True,True,True,True,True,True,True]
-    ).fit(dev)
+    lhs = cl.TailCurve(fit_period=[True] * 9).fit(dev)
     rhs = cl.TailCurve().fit(dev)
-    assert lhs.ldf_.values[0,0,0,-1] == rhs.ldf_.values[0,0,0,-1]
-    lhs = cl.TailCurve(
-        fit_period=[False,False,True,True,True,True,True,True,True]
-    ).fit(dev)
-    assert lhs.ldf_.values[0,0,0,-1] != rhs.ldf_.values[0,0,0,-1]
-    rhs = cl.TailCurve(fit_period=(36,None)).fit(dev)
-    assert lhs.ldf_.values[0,0,0,-1] == rhs.ldf_.values[0,0,0,-1]
+    assert lhs.ldf_.values[0, 0, 0, -1] == rhs.ldf_.values[0, 0, 0, -1]
+    lhs = cl.TailCurve(fit_period=[False] * 2 + [True] * 7).fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] != rhs.ldf_.values[0, 0, 0, -1]
+    rhs = cl.TailCurve(fit_period=(36, None)).fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] == rhs.ldf_.values[0, 0, 0, -1]
+
+
+def test_reg_threshold_warnings(raa: Triangle) -> None:
+    """
+    feeding various irregular values to reg_threshold will emit warnings
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(match="Lower threshold for ldfs not set"):
+        _ = cl.TailCurve(reg_threshold=[None, None]).fit(raa)
+    with pytest.warns(match="Lower threshold for ldfs set too low"):
+        _ = cl.TailCurve(reg_threshold=[0.5, None]).fit(raa)
+    with pytest.warns(match="Can't set upper threshold for ldfs below"):
+        _ = cl.TailCurve(reg_threshold=[2, 1]).fit(raa)
