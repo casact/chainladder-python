@@ -6,10 +6,11 @@ from __future__ import annotations
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
 from chainladder.development import Development
+from chainladder import options
 import pandas as pd
 import warnings
 
-from typing import get_args, Literal, TYPE_CHECKING
+from typing import get_args, Literal, Self, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -18,8 +19,10 @@ if TYPE_CHECKING:
 _ValidCurves = Literal["exponential", "inverse_power", "weibull"]
 _ValidErrors = Literal["raise", "ignore"]
 
+
 class TailCurve(TailBase):
-    """Allows for extraploation of LDFs to form a tail factor.
+    """
+    Allows for extraploation of LDFs to form a tail factor.
 
     Parameters
     ----------
@@ -33,7 +36,8 @@ class TailCurve(TailBase):
         allow for excluding (False) any development patterns from fitting.
     extrap_periods : int (default=100)
         Then number of development periods from attachment point to extrapolate
-        the fit.
+        the fit. A fallback value of 1 period will be used if regression coeffs
+        do not result in converging tail factors
     errors : Literal['raise', 'ignore']
         Whether to raise an error or ignore observations that violate the
         distribution being fit.  The most common are
@@ -50,9 +54,9 @@ class TailCurve(TailBase):
     reg_threshold : tuple (lower, upper)
         A tuple representing the lower and upper thresholds for the ldfs to be
         considered in the log regression of the tail fitting. Default lower
-        threshold set to 1.00001 to avoid distortion caused by ldfs close to 1.
-        Upper threshold can be used as an alternative to the fit_period start,
-        to make the selection value based rather then period based.
+        threshold set to the default NOMINAL_TAIL to avoid distortion caused
+        by ldfs close to 1. Upper threshold can be used as an alternative to the
+        fit_period start, to make the selection value based rather then period based.
     projection_period : int (default=12)
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
@@ -148,7 +152,7 @@ class TailCurve(TailBase):
         extrap_periods: int = 100,
         errors: _ValidErrors = "ignore",
         attachment_age: int | None = None,
-        reg_threshold: tuple[float | None, float | None] = (1.00001, None),
+        reg_threshold: tuple[float | None, float | None] = (options.NOMINAL_TAIL, None),
         projection_period: int = 12,
     ):
         self.curve = curve
@@ -159,20 +163,20 @@ class TailCurve(TailBase):
         self.reg_threshold = reg_threshold
         self.projection_period = projection_period
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X: Triangle, y=None, sample_weight=None) -> Self:
         """
         Fit the model with X.
 
         Parameters
         ----------
-        X : Triangle-like
+        X : Triangle
             Set of LDFs to which the tail will be applied.
         y : Ignored
         sample_weight : Ignored
 
         Returns
         -------
-        self : object
+        self
             Returns the instance itself.
         """
 
@@ -217,20 +221,20 @@ class TailCurve(TailBase):
             _w[..., fit_period] = 1.0
         else:
             raise ValueError(
-                f"Invalid fit_period specified. Accepted values are tuple or list."
+                "Invalid fit_period specified. Accepted values are tuple or list."
             )
         if self.reg_threshold[0] is None:
             warnings.warn(
-                "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure"
-                "valid inputs for regression."
+                "Lower threshold for ldfs not set. Lower threshold will be set to the"
+                "default NOMINAL_TAIL to ensure valid inputs for regression."
             )
-            lower_threshold = 1
+            lower_threshold = options.NOMINAL_TAIL
         elif self.reg_threshold[0] < 1:
             warnings.warn(
-                "Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure "
-                "valid inputs for regression."
+                "Lower threshold for ldfs set too low (<1). Lower threshold will be set to the"
+                "default NOMINAL_TAIL to ensure valid inputs for regression."
             )
-            lower_threshold = 1
+            lower_threshold = options.NOMINAL_TAIL
         else:
             lower_threshold = self.reg_threshold[0]
         if self.reg_threshold[1] is not None:
@@ -246,10 +250,10 @@ class TailCurve(TailBase):
         if self.errors == "ignore":
             if upper_threshold is None:
                 _w[_y <= lower_threshold] = 0
-                _y[_y <= lower_threshold] = 1.01
+                _y[_y <= lower_threshold] = options.NOMINAL_TAIL
             else:
                 _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
-                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
+                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = options.NOMINAL_TAIL
         elif self.errors == "raise" and xp.any(_y < 1.0):
             raise ValueError("Tail fit requires all LDFs to be greater than 1.0")
         if self.curve == "weibull":
