@@ -43,7 +43,7 @@ class TailCurve(TailBase):
         distribution being fit.  The most common are
 
         - ldfs < 1.0 will not work in either the ``exponential`` or
-        ``inverse_power`` fits. 
+        ``inverse_power`` fits.
 
         - ldfs that result in an increasing tail (ignore will set
         ``extrap_periods`` to 1)
@@ -253,7 +253,9 @@ class TailCurve(TailBase):
                 _y[_y <= lower_threshold] = options.NOMINAL_TAIL
             else:
                 _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
-                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = options.NOMINAL_TAIL
+                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = (
+                    options.NOMINAL_TAIL
+                )
         elif self.errors == "raise" and xp.any(_y < 1.0):
             raise ValueError("Tail fit requires all LDFs to be greater than 1.0")
         if self.curve == "weibull":
@@ -267,13 +269,14 @@ class TailCurve(TailBase):
         coefs = WeightedRegression(axis=3, xp=xp).fit(_x, _y, _w)
         self._slope_, self._intercept_ = coefs.slope_, coefs.intercept_
         extrap = self.extrap_periods
+        # for exponential and inverse_power curves, only a negative slope results in a
+        # decreasing tail
+        # for weibull, only a positive slope results in decreasing tail
         if (
-            self.curve in ["exponential", "inverse_power"] and xp.any(self._slope_ > 0)
-        ) or (
-            self.curve == "weibull" and xp.any(self._slope_ < 0)
-        ):
+            self.curve in ["exponential", "inverse_power"] and xp.any(self._slope_ >= 0)
+        ) or (self.curve == "weibull" and xp.any(self._slope_ <= 0)):
             if self.errors == "raise":
-                raise ValueError("Tail fit resulted in increasing tail")
+                raise ValueError("Tail fit resulted in non-decreasing tail")
             else:
                 extrap = 1
         extrapolate = xp.cumsum(
