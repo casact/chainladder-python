@@ -257,7 +257,7 @@ def _deprecated_rename_argument(
     new_name: str
         The keyword argument name it will be renamed to.
     remove_in_version: str | None
-        The future release version (e.g. "0.11.0") in which the old argument name 
+        The future release version (e.g. "0.11.0") in which the old argument name
         will be removed. Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
