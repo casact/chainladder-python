@@ -465,9 +465,7 @@ class Triangle(TriangleBase):
         1982  12000.0
     """
 
-    @_deprecated_rename_argument(
-        "development", "valuation", remove_in_version="v2.0"
-    )
+    @_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
     @_deprecated_rename_argument(
         "development_format",
         "valuation_format",
