@@ -15,9 +15,9 @@ body:
     attributes:
       label: What kind of deprecation is this?
       options:
-        - Rename a function, method, or class (`_deprecated_rename`)
-        - Rename an argument (`_deprecated_rename_argument`)
-        - Remove an argument (`_deprecated_drop_argument`)
+        - Rename a function, method, or class
+        - Rename an argument
+        - Remove an argument
         - Remove a function, method, or class
         - Change in behavior
         - Other
