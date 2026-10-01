@@ -305,8 +305,8 @@ class Development(DevelopmentBase):
 
     ..  testoutput::
 
-                  12-24    24-36    36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
-        (All)  1.659537  1.35064  1.22277  1.119155  1.079301  1.039863  1.031011  0.997274  0.990571  0.999179
+                12-24    24-36    36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
+    (All)  1.659537  1.35064  1.22277  1.119155  1.079301  1.039863  1.031011  0.997274  0.990571  0.999179
 
     Finally, the ``groupby`` parameter pools index levels together when
     estimating patterns. Suppose an actuary developing every company in the
