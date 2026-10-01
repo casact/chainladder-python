@@ -130,3 +130,73 @@ def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
         atol=1,
     )
     assert cl.options.NOMINAL_TAIL == 1.001
+
+
+def test_fit_period_slice_raises(raa: Triangle) -> None:
+    """
+    fit_period no longer accepts slice
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(
+        ValueError,
+        match="Invalid fit_period specified. Accepted values are tuple or list.",
+    ):
+        _ = cl.TailCurve(fit_period=slice(None, None)).fit(raa)
+
+
+def test_fit_period_list_wrong_length_raises(raa: Triangle) -> None:
+    """
+    fit_period as a list needs to be the right length
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Invalid fit_period specified. "
+            "Accepted values are list of length"
+        ),
+    ):
+        _ = cl.TailCurve(fit_period=[True,True]).fit(raa)
+
+
+def test_fit_period_list(raa: Triangle) -> None:
+    """
+    fit_period as a list returns the correct result
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit_transform(raa)
+    lhs = cl.TailCurve(
+        fit_period=[True,True,True,True,True,True,True,True,True]
+    ).fit(dev)
+    rhs = cl.TailCurve().fit(dev)
+    assert lhs.ldf_.values[0,0,0,-1] == rhs.ldf_.values[0,0,0,-1]
+    lhs = cl.TailCurve(
+        fit_period=[False,False,True,True,True,True,True,True,True]
+    ).fit(dev)
+    assert lhs.ldf_.values[0,0,0,-1] != rhs.ldf_.values[0,0,0,-1]
+    rhs = cl.TailCurve(fit_period=(36,None)).fit(dev)
+    assert lhs.ldf_.values[0,0,0,-1] == rhs.ldf_.values[0,0,0,-1]

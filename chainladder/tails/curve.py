@@ -199,7 +199,7 @@ class TailCurve(TailBase):
 
         if isinstance(self.fit_period, list):
             fit_period = xp.array(self.fit_period)[None, None, None, :]
-            if _w.shape.shape[-1] != fit_period.shape[-1]:
+            if _w.shape[-1] != fit_period.shape[-1]:
                 raise ValueError(
                     "Invalid fit_period specified. "
                     f"Accepted values are list of length {_w.shape[-1]}."
@@ -277,18 +277,16 @@ class TailCurve(TailBase):
         # decreasing tail
         # for weibull, only a positive slope results in decreasing tail
         if self.curve in ["exponential", "inverse_power"]:
-            overflow = (self._slope_ >= 0)
+            overflow = self._slope_ >= 0
         else:
-            overflow = (self._slope_ <= 0)
+            overflow = self._slope_ <= 0
         # for any overflowing regression, set tail to 1
         # (tail_ldf is 0-based; _get_tail_prediction turns it into 1-based)
         if xp.any(overflow):
             if self.errors == "raise":
                 raise ValueError("Tail fit resulted in non-decreasing tail")
             else:
-                ldf_ind = xp.ones(
-                    tuple(list(_y.shape)[:-1] + [n_obs + 1])
-                )
+                ldf_ind = xp.ones(tuple(list(_y.shape)[:-1] + [n_obs + 1]))
                 tail_ind = xp.zeros(
                     tuple(list(_y.shape)[:-1] + [self.extrap_periods - 1])
                 )
