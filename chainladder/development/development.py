@@ -454,14 +454,16 @@ class Development(DevelopmentBase):
         self.ldf_ = self._param_property(obj, params, 0)
 
         # converts to arrays
+        import chainladder as cl
+
         min_dev = xp.asarray(self.min_dev, dtype=float).reshape(-1)
         max_dev = xp.asarray(self.max_dev, dtype=float).reshape(-1)
 
         if xp.any(min_dev > max_dev):
             raise ValueError("min_dev must be <= max_dev.")
 
-        self.ldf_.values = xp.maximum(self.ldf_.values, min_dev)
-        self.ldf_.values = xp.minimum(self.ldf_.values, max_dev)
+        self.ldf_ = cl.maximum(self.ldf_, min_dev)
+        self.ldf_ = cl.minimum(self.ldf_, max_dev)
 
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
