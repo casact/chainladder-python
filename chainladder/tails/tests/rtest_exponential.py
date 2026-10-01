@@ -7,7 +7,7 @@ try:
     from rpy2.robjects import r
 
     CL = importr("ChainLadder")
-except Exception:
+except Exception:  # noqa: BLE001
     pass
 
 
