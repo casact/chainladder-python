@@ -102,7 +102,7 @@ class Development(DevelopmentBase):
                (Protected by``preserve``, which may relax exclusions from this step if too few ratios would remain
                then this step is skipped).
             6. Calculate the loss development factors using ``average`` method.
-            7. ``min_dev`` / ``max_dev`` — cap each individual LDFs at the min_dev / max_dev.
+            7. ``min_dev`` / ``max_dev`` — restrict the final individual LDFs at the min_dev / max_dev.
 
     Attributes
     ----------
