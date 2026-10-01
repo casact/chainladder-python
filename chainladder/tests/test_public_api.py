@@ -57,7 +57,6 @@ EXPECTED_PUBLIC_API = {
     "BerquistSherman",
     "ParallelogramOLF",
     "Trend",
-    "TrendConstant",
     "DisposalRate",
     # tails
     "TailBase",

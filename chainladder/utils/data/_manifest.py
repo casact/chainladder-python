@@ -40,6 +40,13 @@ SAMPLES: dict = {
         "columns": ["values"],
         "cumulative": True,
     },
+    "actsim": {
+        "origin": "origin",
+        "development": "development",
+        "index": ["Region", "LOB"],
+        "columns": ["reportedCount", "Incurred"],
+        "cumulative": False,
+    },
     "auto": {
         "origin": "origin",
         "development": "development",

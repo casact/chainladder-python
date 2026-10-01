@@ -64,7 +64,7 @@ chainladder-python/
 │   │   ├── bootstrap.py            # BootstrapODPSample (extends DevelopmentBase)
 │   │   ├── disposal.py             # DisposalRate, DisposalMixin
 │   │   ├── parallelogram.py        # ParallelogramOLF
-│   │   ├── trend.py                # Trend, TrendConstant
+│   │   ├── trend.py                # Trend
 │   │   └── tests/
 │   │
 │   ├── workflow/                   # Pipeline and ensemble utilities
@@ -251,8 +251,7 @@ sklearn.BaseEstimator
 sklearn.BaseEstimator + TransformerMixin + EstimatorIO   (standalone transformers)
   ├── BerquistSherman     adjustments/berqsherm.py
   ├── ParallelogramOLF    adjustments/parallelogram.py
-  ├── Trend               adjustments/trend.py
-  └── TrendConstant       adjustments/trend.py
+  └── Trend               adjustments/trend.py
 
 
 sklearn.BaseEstimator

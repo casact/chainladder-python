@@ -77,7 +77,6 @@ from chainladder.adjustments import (  # noqa (API import)
     BerquistSherman,
     ParallelogramOLF,
     Trend,
-    TrendConstant,
     DisposalRate,
 )
 from chainladder.tails import (  # noqa (API import)

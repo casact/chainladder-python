@@ -290,7 +290,7 @@ def test_base_minimum_exposure_triangle(raa):
         .reset_index()
     )
     d["index"] = d["index"].astype(str)
-    cl.Triangle(d, origin="index", columns=d.columns[-1])
+    cl.Triangle(d, origin="index", columns=d.columns[-1], cumulative=True)
 
 
 def test_development_before_origin_warns_and_drops() -> None:
@@ -899,7 +899,7 @@ def test_exposure_tri():
     x = x["paid"].to_frame(origin_as_datetime=False).T.unstack().reset_index()
     x.columns = ["LOB", "origin", "paid"]
     x.origin = x.origin.astype(str)
-    y = cl.Triangle(x, origin="origin", index="LOB", columns="paid")
+    y = cl.Triangle(x, origin="origin", index="LOB", columns="paid", cumulative=True)
     x = cl.load_sample("auto")["paid"]
     x = x[x.development == 12]
     assert x == y
@@ -922,7 +922,7 @@ def test_jagged_2_add(raa):
 def test_df_period_input(raa):
     d = raa.latest_diagonal
     df = d.to_frame(origin_as_datetime=False).reset_index()
-    assert cl.Triangle(df, origin="index", columns=df.columns[-1]) == d
+    assert cl.Triangle(df, origin="index", columns=df.columns[-1], cumulative=True) == d
 
 
 def test_trend_on_vector(raa):
@@ -948,7 +948,7 @@ def test_init_vector(raa):
         "AccYear": [item for item in range(1981, 1991)],
         "premium": [3000000] * 10,
     })
-    b = cl.Triangle(b, origin="AccYear", columns="premium")
+    b = cl.Triangle(b, origin="AccYear", columns="premium", cumulative=True)
     assert np.all(a.valuation == b.valuation)
     assert a.valuation_date == b.valuation_date
 
@@ -1443,6 +1443,7 @@ def test_partial_year(prism):
         development="valuation",
         columns="Paid",
         index=before.key_labels,
+        cumulative=True,
     )
 
     assert after.valuation_date == before.valuation_date
@@ -1738,6 +1739,7 @@ def test_create_full_triangle(raa):
         origin="origin",
         development="valuation",
         columns="values",
+        cumulative=True,
     )
     assert a == b
 
@@ -1816,6 +1818,7 @@ def test_correct_valutaion(raa):
         origin="origin",
         development="valuation",
         columns="values",
+        cumulative=True,
     )
     assert new.valuation_date == raa.valuation_date
 
@@ -1880,6 +1883,7 @@ def test_malformed_init():
             origin="Accident Date",
             development="Valuation Date",
             columns="Loss",
+            cumulative=True,
         ).origin_grain
         == "M"
     )
@@ -1931,10 +1935,21 @@ def test_trailing_valuation():
         .to_frame(keepdims=True, origin_as_datetime=True)
     )
     data.valuation = (data.valuation.dt.year + 1) * 100 + 3
-    tri = cl.Triangle(data, origin="origin", development="valuation", columns="values")
+    tri = cl.Triangle(
+        data,
+        origin="origin",
+        development="valuation",
+        columns="values",
+        cumulative=True,
+    )
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(
-        data, origin="origin", development="valuation", columns="values", trailing=True
+        data,
+        origin="origin",
+        development="valuation",
+        columns="values",
+        trailing=True,
+        cumulative=True,
     )
     assert tri == tri2
 
