@@ -320,7 +320,7 @@ class TailCurve(TailBase):
 
     def _predict_tail(self, extrapolate):
         """
-        Generate the fitted ldf in the tail to a distant future period (based on 
+        Generate the fitted ldf in the tail to a distant future period (based on
         extrap_periods, which defaults to 100) in order to calculate the cumulative
         tail in a later step.
 

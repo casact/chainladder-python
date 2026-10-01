@@ -3,11 +3,12 @@ from __future__ import annotations
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import chainladder as cl
 import pytest
 
-from typing import TYPE_CHECKING
+from typing import get_args, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -167,11 +168,9 @@ def test_fit_period_list_wrong_length_raises(raa: Triangle) -> None:
     """
     with pytest.raises(
         ValueError,
-        match=(
-            "Invalid fit_period specified. Accepted values are list of length"
-        ),
+        match=("Invalid fit_period specified. Accepted values are list of length"),
     ):
-        _ = cl.TailCurve(fit_period=[True,True]).fit(raa)
+        _ = cl.TailCurve(fit_period=[True, True]).fit(raa)
 
 
 def test_fit_period_list(raa: Triangle) -> None:
@@ -216,3 +215,76 @@ def test_reg_threshold_warnings(raa: Triangle) -> None:
         _ = cl.TailCurve(reg_threshold=[0.5, None]).fit(raa)
     with pytest.warns(match="Can't set upper threshold for ldfs below"):
         _ = cl.TailCurve(reg_threshold=[2, 1]).fit(raa)
+
+
+def test_upper_threshold_works(raa: Triangle) -> None:
+    """
+    Setting an upper reg threshold affects the fitting
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit_transform(raa)
+    lhs = cl.TailCurve(reg_threshold=(1.001, 1.2)).fit(dev)
+    rhs = cl.TailCurve().fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] != rhs.ldf_.values[0, 0, 0, -1]
+
+
+from chainladder.tails.curve import _ValidCurves as curves
+@pytest.mark.parametrize("curve", get_args(curves))
+def test_errors_raise_actually_raises_in_different_curves(
+    curve: str
+) -> None:
+    """
+    Setting ``errors`` to "raise" will raise errors
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    curve: str
+        The curve type to test
+
+    Returns
+    -------
+    None
+    """
+    # construct a Triangle with negative development
+    df = pd.DataFrame({
+        "origin": [2017, 2017, 2017, 2017, 2018, 2018, 2018, 2019, 2019, 2020],
+        "age": [12, 24, 36, 48, 12, 24, 36, 12, 24, 12],
+        "reported": [10, 9, 8, 7, 10, 9, 8, 10, 9, 10],
+        "paid": [1, 2, 5, 50, 1, 2, 5, 1, 2, 1],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="age",
+        columns="reported",
+        cumulative=True,
+    )
+    with pytest.raises(
+        ValueError,
+        match=("Tail fit requires all LDFs to be greater than 1.0"),
+    ):
+        _ = cl.TailCurve(errors="raise", curve=curve).fit(tri)
+
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="age",
+        columns="paid",
+        cumulative=True,
+    )
+    with pytest.raises(
+        ValueError,
+        match=("Tail fit resulted in non-decreasing tail"),
+    ):
+        _ = cl.TailCurve(errors="raise", curve=curve).fit(tri)
