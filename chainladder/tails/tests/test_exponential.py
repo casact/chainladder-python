@@ -7,6 +7,7 @@ import pandas as pd
 
 import chainladder as cl
 import pytest
+from chainladder.tails.curve import _ValidCurves as curves
 
 from typing import get_args, TYPE_CHECKING
 
@@ -236,21 +237,15 @@ def test_upper_threshold_works(raa: Triangle) -> None:
     assert lhs.ldf_.values[0, 0, 0, -1] != rhs.ldf_.values[0, 0, 0, -1]
 
 
-from chainladder.tails.curve import _ValidCurves as curves
 @pytest.mark.parametrize("curve", get_args(curves))
-def test_errors_raise_actually_raises_in_different_curves(
-    curve: str
-) -> None:
+def test_errors_raise_actually_raises_in_different_curves(curve: str) -> None:
     """
     Setting ``errors`` to "raise" will raise errors
 
     Parameters
     ----------
-    raa: Triangle
-        The raa sample data set fixture.
-
     curve: str
-        The curve type to test
+        The curve type for fitting
 
     Returns
     -------
@@ -288,3 +283,24 @@ def test_errors_raise_actually_raises_in_different_curves(
         match=("Tail fit resulted in non-decreasing tail"),
     ):
         _ = cl.TailCurve(errors="raise", curve=curve).fit(tri)
+
+
+def test_attachment_age(raa: Triangle) -> None:
+    """
+    Test that attachment_age works
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit_transform(raa)
+    default = cl.TailCurve().fit(dev)
+    attach = cl.TailCurve(attachment_age=96).fit(dev)
+    assert dev.ldf_.values[0, 0, 0, 8] == default.ldf_.values[0, 0, 0, 8]
+    assert dev.ldf_.values[0, 0, 0, 8] != attach.ldf_.values[0, 0, 0, 8]
+    assert default.ldf_.values[0, 0, 0, 9] != attach.ldf_.values[0, 0, 0, 9]
