@@ -31,13 +31,18 @@ class TailCurve(TailBase):
         (48, None) will use development factors for age 48 and beyond.
         Alternatively, passing a list of booleans [True, False, ...] will
         allow for excluding (False) any development patterns from fitting.
-    extrap_periods : int
+    extrap_periods : int (default=100)
         Then number of development periods from attachment point to extrapolate
         the fit.
     errors : Literal['raise', 'ignore']
         Whether to raise an error or ignore observations that violate the
-        distribution being fit.  The most common is ldfs < 1.0 will not work
-        in either the ``exponential`` or ``inverse_power`` fits.
+        distribution being fit.  The most common are
+
+        - ldfs < 1.0 will not work in either the ``exponential`` or
+        ``inverse_power`` fits. 
+
+        - ldfs that result in an increasing tail (ignore will set
+        ``extrap_periods`` to 1)
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
@@ -48,7 +53,7 @@ class TailCurve(TailBase):
         threshold set to 1.00001 to avoid distortion caused by ldfs close to 1.
         Upper threshold can be used as an alternative to the fit_period start,
         to make the selection value based rather then period based.
-    projection_period : int
+    projection_period : int (default=12)
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
 
@@ -141,7 +146,7 @@ class TailCurve(TailBase):
         curve: _ValidCurves = "exponential",
         fit_period: tuple[int | None, int | None] | list[bool] = (None, None),
         extrap_periods: int = 100,
-        errors: _ValidErrors | None = None,
+        errors: _ValidErrors = "ignore",
         attachment_age: int | None = None,
         reg_threshold: tuple[float | None, float | None] = (1.00001, None),
         projection_period: int = 12,
@@ -246,7 +251,7 @@ class TailCurve(TailBase):
                 _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
                 _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
         elif self.errors == "raise" and xp.any(_y < 1.0):
-            raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
+            raise ValueError("Tail fit requires all LDFs to be greater than 1.0")
         if self.curve == "weibull":
             _y = xp.log(xp.log(_y / (_y - 1)))
         else:
@@ -257,8 +262,18 @@ class TailCurve(TailBase):
         # Get LDFs
         coefs = WeightedRegression(axis=3, xp=xp).fit(_x, _y, _w)
         self._slope_, self._intercept_ = coefs.slope_, coefs.intercept_
+        extrap = self.extrap_periods
+        if (
+            self.curve in ["exponential", "inverse_power"] and xp.any(self._slope_ > 0)
+        ) or (
+            self.curve == "weibull" and xp.any(self._slope_ < 0)
+        ):
+            if self.errors == "raise":
+                raise ValueError("Tail fit resulted in increasing tail")
+            else:
+                extrap = 1
         extrapolate = xp.cumsum(
-            xp.ones(tuple(list(_y.shape)[:-1] + [self.extrap_periods + n_obs])), -1
+            xp.ones(tuple(list(_y.shape)[:-1] + [extrap + n_obs])), -1
         )
         tail = self._predict_tail(extrapolate)
         if self.attachment_age:
