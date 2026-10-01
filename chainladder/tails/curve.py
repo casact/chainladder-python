@@ -268,21 +268,38 @@ class TailCurve(TailBase):
         # Get LDFs
         coefs = WeightedRegression(axis=3, xp=xp).fit(_x, _y, _w)
         self._slope_, self._intercept_ = coefs.slope_, coefs.intercept_
-        extrap = self.extrap_periods
+        normal_ldf_ind = xp.ones(
+            tuple(list(_y.shape)[:-1] + [self.extrap_periods + n_obs])
+        )
+        extrapolate = xp.cumsum(normal_ldf_ind, -1)
+        tail_ldf = self._predict_tail(extrapolate)
         # for exponential and inverse_power curves, only a negative slope results in a
         # decreasing tail
         # for weibull, only a positive slope results in decreasing tail
-        if (
-            self.curve in ["exponential", "inverse_power"] and xp.any(self._slope_ >= 0)
-        ) or (self.curve == "weibull" and xp.any(self._slope_ <= 0)):
+        if self.curve in ["exponential", "inverse_power"]:
+            overflow = (self._slope_ >= 0)
+        else:
+            overflow = (self._slope_ <= 0)
+        # for any overflowing regression, set tail to 1
+        # (tail_ldf is 0-based; _get_tail_prediction turns it into 1-based)
+        if xp.any(overflow):
             if self.errors == "raise":
                 raise ValueError("Tail fit resulted in non-decreasing tail")
             else:
-                extrap = 1
-        extrapolate = xp.cumsum(
-            xp.ones(tuple(list(_y.shape)[:-1] + [extrap + n_obs])), -1
-        )
-        tail = self._predict_tail(extrapolate)
+                ldf_ind = xp.ones(
+                    tuple(list(_y.shape)[:-1] + [n_obs + 1])
+                )
+                tail_ind = xp.zeros(
+                    tuple(list(_y.shape)[:-1] + [self.extrap_periods - 1])
+                )
+                overflow_ldf_ind = xp.concatenate((ldf_ind, tail_ind), -1)
+                tail_guard = xp.where(
+                    overflow,
+                    overflow_ldf_ind,
+                    normal_ldf_ind,
+                )
+                tail_ldf = xp.where(tail_guard == 1, tail_ldf, 0)
+        tail = self._get_tail_prediction(tail_ldf)
         if self.attachment_age:
             attach_idx = xp.min(xp.where(X.ddims >= self.attachment_age))
         else:
@@ -304,6 +321,23 @@ class TailCurve(TailBase):
             return xp.log(reg.x)
 
     def _predict_tail(self, extrapolate):
+        """
+        Generate the fitted ldf in the tail to a distant future period (based on 
+        extrap_periods, which defaults to 100) in order to calculate the cumulative
+        tail in a later step.
+
+        Since self._slope_ is unguarded, it is possible that this method returns inf
+
+        Parameters
+        ----------
+        extrapolate : array-like
+            Array of integers representing the periods to which the tail ldf is fitted
+
+        Returns
+        -------
+        array-like
+            fitted ldfs
+        """
         xp = self.ldf_.get_array_module()
         if self.curve == "exponential":
             tail_ldf = xp.exp(self._slope_ * extrapolate + self._intercept_)
@@ -314,7 +348,7 @@ class TailCurve(TailBase):
                 1 / (1 - xp.exp(-xp.exp(self._intercept_) * extrapolate**self._slope_))
                 - 1
             )
-        return self._get_tail_prediction(tail_ldf)
+        return tail_ldf
 
     @property
     def slope_(self):
