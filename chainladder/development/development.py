@@ -291,7 +291,7 @@ class Development(DevelopmentBase):
     ..  testoutput::
 
                   12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
-        (All)  1.600000  1.105627  1.127842  1.119324  1.076968  1.053434  1.027623  1.000000  1.000000  1.000000
+    (All)           1.6  1.105627  1.127842  1.119324  1.076968  1.053434  1.027623     1.0         1.0       1.0
 
     Using other average methods, we can see that the loss development factors are different.
 
