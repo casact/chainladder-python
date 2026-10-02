@@ -16,6 +16,7 @@ class TailBase(DevelopmentBase):
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
+        obj.ldf_ = obj.ldf_.intersection(X)
         xp = obj.ldf_.get_array_module()
         m = int(self.projection_period / 12)
         self._ave_period = {
