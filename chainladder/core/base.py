@@ -26,6 +26,7 @@ from chainladder.core.slice import TriangleSlicer
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
+from chainladder.utils.utility_functions import _get_axis_name
 
 from chainladder.adjustments.disposal import DisposalMixin
 
@@ -821,10 +822,7 @@ class TriangleBase(
         return self
 
     def _get_axis_value(self, axis):
-        axis = self._get_axis(axis)
-        return {0: self.index, 1: self.columns, 2: self.origin, 3: self.development}[
-            axis
-        ]
+        return getattr(self, _get_axis_name(axis))
 
 
 def is_chainladder(estimator):
