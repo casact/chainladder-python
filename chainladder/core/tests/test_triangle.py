@@ -637,6 +637,116 @@ def test_set_axis(raa):
         tri._set_axis("invalid", [1])
 
 
+def test_centralized_axis_edge_cases(raa):
+    """Cover edge cases for TriangleAxis origin, development, and legacy pickles."""
+    # 1. origin on 1-origin pattern returns Series(["(All)"])
+    dev = cl.Development().fit(raa)
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+    assert len(dev.ldf_.origin) == 1
+
+    # 2. _set_origin and _set_development on mock without values
+    class MockTriangleNoValues:
+        origin_grain = "Y"
+        origin_close = "DEC"
+        development_grain = "Y"
+        values = None
+        is_pattern = False
+        is_val_tri = False
+        _axes = {
+            2: pd.period_range("2000", periods=3, freq="Y-DEC").to_timestamp().values,
+            3: np.array([12, 24, 36]),
+        }
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+        def _len_check(self, a, b):
+            if len(a) != len(b):
+                raise ValueError("Length mismatch")
+
+    mock = MockTriangleNoValues()
+    mock.origin = ["2001", "2002", "2003"]
+    assert len(mock._axes[2]) == 3
+    with pytest.raises(ValueError, match="Length mismatch"):
+        mock.origin = ["2001"]
+
+    mock.development = [12, 24, 36]
+    assert len(mock._axes[3]) == 3
+    with pytest.raises(ValueError, match="Length mismatch"):
+        mock.development = [12]
+
+    # 3. Development string assignment for single column
+    single_col_tri = raa.iloc[:, :, :, :1].copy()
+    single_col_tri.development = "1"
+    assert list(single_col_tri.development) == ["1"]
+
+    # 4. Valuation triangle development and non-cumulative pattern development
+    val_tri = raa.dev_to_val()
+    assert list(val_tri.development) == [str(y) for y in range(1981, 1991)]
+    assert list(raa.link_ratio.development)[0] == "12-24"
+    assert list(dev.cdf_.development)[0] == "12-Ult"
+
+    # 5. Pattern with is_ultimate True
+    class MockPatternUltimate:
+        is_pattern = True
+        is_ultimate = True
+        is_val_tri = False
+        is_cumulative = False
+        development_grain = "Y"
+        development = cl.Triangle.development
+        _axes = {3: np.array([12, 24, 999])}
+
+        def _dstep(self):
+            return {"M": {"Y": 12}}
+
+    mock_ult = MockPatternUltimate()
+    assert list(mock_ult.development) == ["12-24", "24-36", "36-48"]
+
+    # 6. Triangle._odims and Triangle._ddims setters on uninitialized instance
+    t_uninit = cl.Triangle.__new__(cl.Triangle)
+    t_uninit._odims = np.array(["2000-01-01"], dtype="datetime64[ns]")
+    assert 2 in t_uninit._axes
+
+    t2_uninit = cl.Triangle.__new__(cl.Triangle)
+    t2_uninit._ddims = np.array([12, 24])
+    assert 3 in t2_uninit._axes
+
+    # 7. Redundant legacy keys in __setstate__
+    state_redundant = raa.__dict__.copy()
+    raw_odims = raa._odims.copy()
+    raw_ddims = raa._ddims.copy()
+    state_redundant["_axes"] = {
+        0: raa.index.copy(),
+        1: raa.columns.copy(),
+        2: raw_odims.copy(),
+        3: raw_ddims.copy(),
+    }
+    state_redundant["_odims"] = raw_odims.copy()
+    state_redundant["odims"] = raw_odims.copy()
+    state_redundant["_ddims"] = raw_ddims.copy()
+    state_redundant["ddims"] = raw_ddims.copy()
+    restored_red = cl.Triangle.__new__(cl.Triangle)
+    restored_red.__setstate__(state_redundant)
+    assert "_odims" not in restored_red.__dict__
+    assert "odims" not in restored_red.__dict__
+    assert "_ddims" not in restored_red.__dict__
+    assert "ddims" not in restored_red.__dict__
+
+    # 8. Unprefixed origin/development legacy pickle and fallthrough
+    state_no_axes = raa.__dict__.copy()
+    state_no_axes["_axes"] = {}
+    restored_none = cl.Triangle.__new__(cl.Triangle)
+    restored_none.__setstate__(state_no_axes)
+    assert 2 not in restored_none._axes
+    assert 3 not in restored_none._axes
+
+    # 9. _get_axis_number and _get_axis edge cases
+    assert raa._get_axis_number(None) == 0
+    assert raa._get_axis(None) == 0
+    for neg, pos in [(-1, 3), (-2, 2), (-3, 1), (-4, 0)]:
+        assert raa._get_axis_number(neg) == pos
+        assert raa._get_axis(neg) == pos
+
+
 def test_triangle_index_property_and_alias(raa):
     """Verify Triangle.index descriptor, _index backward-compat alias, and slicer reset."""
     assert raa._index.equals(raa.index)
