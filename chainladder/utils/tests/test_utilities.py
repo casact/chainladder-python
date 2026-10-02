@@ -620,7 +620,12 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
 
 
 def test_concat_ignore_index_axes(raa: Triangle) -> None:
-    """Test concat with ignore_index=True along axes 1, 2, and 3."""
+    """Test concat with ignore_index=True along axes 0, 1, 2, and 3."""
+    res0 = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(res0.index) == 2
+    assert res0.key_labels == ["Index"]
+    assert list(res0.index["Index"]) == [0, 1]
+
     t1 = copy.deepcopy(raa).rename("columns", ["A"])
     t2 = copy.deepcopy(raa).rename("columns", ["B"])
     res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
