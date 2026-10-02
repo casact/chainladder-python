@@ -6,11 +6,10 @@ labels:
 body:
   - type: markdown
     attributes:
+      # One line per Markdown line: issue forms render every newline as a break.
       value: |
-        This issue tracks the deprecation as a whole and stays open until the
-        deprecated API is removed. A sub-issue for adding the warning is
-        created automatically; close it by linking it from the PR that adds
-        the warning. The removal release is set later with a milestone.
+        > [!NOTE]
+        > This issue tracks the deprecation as a whole and stays open until the deprecated API is removed. A sub-issue for adding the warning is created automatically; close it by linking it from the PR that adds the warning. The removal release is set later with a milestone.
   - type: dropdown
     attributes:
       label: What kind of deprecation is this?

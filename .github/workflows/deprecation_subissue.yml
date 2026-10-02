@@ -32,6 +32,8 @@ jobs:
           REPO: ${{ github.repository }}
           PARENT: ${{ github.event.issue.number }}
           PARENT_TITLE: ${{ github.event.issue.title }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           # `opened` and `labeled` both fire for a new issue from the form, so
           # skip a parent that already has a sub-issue.
@@ -42,11 +44,12 @@ jobs:
           fi
 
           subject="${PARENT_TITLE#\[DEPR\] }"
+          decorators="https://github.com/$REPO/blob/$DEFAULT_BRANCH/chainladder/_config/deprecation.py"
           body=$(cat <<EOF
-          Add the deprecation warning for #$PARENT.
+          Add the deprecation warning for #$PARENT (created by @$AUTHOR).
 
           - [ ] Add the new, alternative feature (unless doing a pure deprecation)
-          - [ ] Emit the warning, through one of the decorators in \`chainladder/_config/deprecation.py\` where one fits
+          - [ ] Emit the warning, through one of the decorators in [\`chainladder/_config/deprecation.py\`]($decorators) where one fits
           - [ ] Test that it warns (\`pytest.warns\`)
 
           EOF
