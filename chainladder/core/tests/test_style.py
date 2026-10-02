@@ -1103,3 +1103,52 @@ def test_concat_copy_preserves_concatenated(raa) -> None:
     assert len(s_copy.concatenated) == 1
     assert s_copy.concatenated is not s.concatenated
     assert len(s_copy.to_html()) > 0
+
+
+def test_concat_widening_preserves_highlights_on_self(raa) -> None:
+    """
+    Check that widening self when appending a longer styler preserves highlights
+    on self without shape mismatch errors during rendering.
+    """
+    short_styler = (
+        raa
+        .iloc[..., :5]
+        .style.highlight_diagonal(props="background-color: #AABBCC;")
+        .highlight_lower_triangle()
+    )
+    longer_styler = raa.link_ratio.style.format(precision=3, na_rep="")
+    combined = short_styler.concat(longer_styler)
+    html = combined.to_html()
+    assert "background-color: #AABBCC;" in html
+    assert len(combined.data.columns) == len(longer_styler.data.columns)
+
+
+def test_concat_identical_columns_does_not_mutate_other_on_later_widening(raa) -> None:
+    """
+    Check that concatenating with identical columns does not store other by reference,
+    so subsequent widening never mutates the caller's original other Styler.
+    """
+    orig_other = raa.iloc[..., :5].style
+    orig_cols = list(orig_other.data.columns)
+    base = raa.iloc[..., :5].style.concat(orig_other)
+    # Subsequent concatenation with a wider styler widens base and prior elements
+    wider = raa.style
+    base.concat(wider)
+    # Ensure caller's orig_other was not mutated
+    assert list(orig_other.data.columns) == orig_cols
+    assert len(orig_other.data.columns) == 5
+
+
+def test_concat_with_plain_pandas_styler(raa) -> None:
+    """
+    Check concatenation behavior with a plain pandas DataFrame Styler.
+    """
+    # Matching columns succeeds
+    matching_df_style = raa.to_frame().style
+    s = raa.style.concat(matching_df_style)
+    assert len(s.concatenated) == 1
+
+    # Mismatched columns raises ValueError from pandas
+    mismatched_df_style = pd.DataFrame({"different_col": [1, 2]}).style
+    with pytest.raises(ValueError, match="same columns"):
+        raa.style.concat(mismatched_df_style)

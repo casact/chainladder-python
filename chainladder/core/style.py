@@ -157,10 +157,8 @@ class Styler(_PandasStyler):
         """
         if getattr(self, "_concatenated_ctx", None) is not None:
             self.ctx = copy_module.deepcopy(self._concatenated_ctx)
-            if hasattr(self, "_concatenated_ctx_index"):
-                self.ctx_index = copy_module.deepcopy(self._concatenated_ctx_index)
-            if hasattr(self, "_concatenated_ctx_columns"):
-                self.ctx_columns = copy_module.deepcopy(self._concatenated_ctx_columns)
+            self.ctx_index = copy_module.deepcopy(self._concatenated_ctx_index)
+            self.ctx_columns = copy_module.deepcopy(self._concatenated_ctx_columns)
             return self
         return super()._compute()
 
@@ -222,16 +220,14 @@ class Styler(_PandasStyler):
                 "as in `Styler`. See documentation for suggestions."
             )
 
+        other_copy: Styler = other._copy(deepcopy=True)
+        other_copy.data = other.data.copy()
+
         if self.data.columns.equals(other.data.columns):
-            super().concat(other)
+            super().concat(other_copy)
             return self
 
-        other_copy: Styler = (
-            other._copy(deepcopy=True)
-            if hasattr(other, "_copy")
-            else copy_module.deepcopy(other)
-        )
-        if hasattr(self, "_triangle") and hasattr(other_copy, "_triangle"):
+        if hasattr(other_copy, "_triangle"):
             if self._triangle.is_val_tri != other_copy._triangle.is_val_tri:
                 raise ValueError(
                     "Cannot concatenate a valuation Triangle with a development Triangle."
@@ -274,6 +270,13 @@ class Styler(_PandasStyler):
                 if orig_len < len(target_cols):
                     other_copy.format(na_rep="", subset=list(target_cols[orig_len:]))
             else:
+                if getattr(self, "_concatenated_ctx", None) is None:
+                    self._compute()
+                    self._concatenated_ctx = copy_module.deepcopy(self.ctx)
+                    self._concatenated_ctx_index = copy_module.deepcopy(self.ctx_index)
+                    self._concatenated_ctx_columns = copy_module.deepcopy(
+                        self.ctx_columns
+                    )
                 new_cols = other_copy.data.columns[len(self.data.columns) :]
                 for c in new_cols:
                     self.data[c] = np.nan
@@ -290,7 +293,7 @@ class Styler(_PandasStyler):
             self.concatenated.append(other_copy)
             return self
         else:
-            super().concat(other)
+            super().concat(other_copy)
             return self
 
     @staticmethod
