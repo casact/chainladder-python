@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from pandas.core.indexing import check_bool_indexer
 
 from chainladder.core.typing import _AxisKey, _LabelKey, TriangleProtocol
 
@@ -798,7 +799,12 @@ class TriangleSlicer:
         # Case index.
         if isinstance(key, pd.Series):
             if pd.api.types.is_bool_dtype(key):
-                return self.iloc[np.where(key.to_numpy())[0]]
+                if len(key) != len(self.index):
+                    raise IndexError(
+                        f"Boolean index has wrong length: {len(key)} instead of {len(self.index)}"
+                    )
+                mask = check_bool_indexer(self.index.index, key)
+                return self.iloc[np.where(mask)[0]]
             return self.iloc[self.index[key].index]
         elif key in self.key_labels:
             return self.index[key]
