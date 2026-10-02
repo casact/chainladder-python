@@ -12,6 +12,7 @@ import pandas as pd
 
 from chainladder import (
     __dt64_dtype__,
+    _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
 from chainladder.utils.utility_functions import concat, num_to_nan
@@ -1058,16 +1059,31 @@ class TrianglePandas(_TrianglePandasBase):
                 )
         return cast("Triangle", cast(object, self))
 
+    @_deprecated_drop_argument(
+        "inplace",
+        "Copy the Triangle first and use the return value: "
+        "`tri = tri.copy()` then `tri = tri.astype(dtype)`.",
+    )
     def astype(self, dtype, inplace=True) -> Triangle:
         """
         Copy of the array, cast to a specified type.
+
+        .. warning::
+            The ``inplace`` parameter is deprecated and will be removed.
+            Copy first and use the return value:
+
+            .. code-block:: python
+
+                tri = tri.copy()
+                tri = tri.astype(new_dtype)
 
         Parameters
         ----------
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
-        copy : bool, optional
-            By default, astype always returns a newly allocated array.
+        inplace : bool, default True
+            Deprecated and scheduled for removal. When False, the cast is
+            applied to a copy and the original Triangle is left untouched.
 
         Returns
         -------
