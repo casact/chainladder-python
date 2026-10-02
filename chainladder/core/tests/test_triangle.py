@@ -512,7 +512,11 @@ def test_triangle_axis_descriptor():
     assert isinstance(cl.Triangle.index, TriangleAxis)
     assert cl.Triangle.index.__doc__ is not None
     assert isinstance(cl.Triangle.columns, TriangleAxis)
+    assert isinstance(cl.Triangle.origin, TriangleAxis)
+    assert isinstance(cl.Triangle.development, TriangleAxis)
     assert cl.Triangle.columns.__doc__ is not None
+    assert cl.Triangle.origin.__doc__ is not None
+    assert cl.Triangle.development.__doc__ is not None
 
     class MockTriangle:
         def __init__(self):
@@ -581,6 +585,41 @@ def test_triangle_axis_descriptor():
     m.columns = ["a"]
     with pytest.raises(ValueError, match="length mismatch"):
         m.columns = ["a", "b"]
+
+
+def test_set_axis(raa):
+    """Verify Triangle._set_axis sets index, columns, origin, and development."""
+    tri = raa.copy()
+    # Test setting index via int and str
+    new_idx = pd.DataFrame({"Company": ["Test"]})
+    tri._set_axis(0, new_idx)
+    pd.testing.assert_frame_equal(tri.index, new_idx)
+    tri._set_axis("index", new_idx)
+    pd.testing.assert_frame_equal(tri.index, new_idx)
+
+    # Test setting columns via int and str
+    tri._set_axis(1, ["ColA"])
+    assert list(tri.columns) == ["ColA"]
+    tri._set_axis("columns", ["ColB"])
+    assert list(tri.columns) == ["ColB"]
+
+    # Test setting origin via int and str
+    orig_years = [str(y) for y in range(1981, 1991)]
+    tri._set_axis(2, orig_years)
+    assert list(tri.origin.year) == list(range(1981, 1991))
+    tri._set_axis("origin", orig_years)
+    assert list(tri.origin.year) == list(range(1981, 1991))
+
+    # Test setting development via int and str
+    devs = list(range(1, 11))
+    tri._set_axis(3, devs)
+    assert list(tri.development) == devs
+    tri._set_axis("development", devs)
+    assert list(tri.development) == devs
+
+    # Invalid axis raises ValueError
+    with pytest.raises(ValueError):
+        tri._set_axis("invalid", [1])
 
 
 def test_triangle_index_property(raa):
@@ -700,12 +739,14 @@ class TestLegacyPickleCompatibility:
 
     def test_legacy_kdims_vdims_migration(self, raa):
         # 1. Simulate legacy serialized Triangle containing kdims, vdims, odims, and ddims
+        raw_odims = getattr(raa, "_odims", getattr(raa, "origin", None))
+        raw_ddims = getattr(raa, "_ddims", getattr(raa, "development", None))
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values
         state["vdims"] = raa.columns.values
-        state["odims"] = state.pop("_odims")
-        state["ddims"] = state.pop("_ddims")
+        state["odims"] = raw_odims
+        state["ddims"] = raw_ddims
 
         restored = cl.Triangle.__new__(cl.Triangle)
         with pytest.warns(
@@ -725,13 +766,19 @@ class TestLegacyPickleCompatibility:
         assert restored._axes[0].equals(raa.index)
         assert 1 in restored._axes
         assert restored._axes[1].equals(raa.columns)
+        assert 2 in restored._axes
+        assert 3 in restored._axes
 
     def test_legacy_pickle_fallback_without_keys(self, raa):
         # 2. Simulate fallback when no kdims/vdims keys are found (no warning)
+        raw_odims = getattr(raa, "_odims", getattr(raa, "origin", None))
+        raw_ddims = getattr(raa, "_ddims", getattr(raa, "development", None))
         state_empty = raa.__dict__.copy()
         state_empty.pop("_axes", None)
         state_empty.pop("kdims", None)
         state_empty.pop("vdims", None)
+        state_empty["_odims"] = raw_odims
+        state_empty["_ddims"] = raw_ddims
 
         restored_empty = cl.Triangle.__new__(cl.Triangle)
         with warnings.catch_warnings():
@@ -741,13 +788,19 @@ class TestLegacyPickleCompatibility:
         assert list(restored_empty.index.columns) == ["Total"]
         assert 0 in restored_empty._axes
         assert 1 in restored_empty._axes
+        assert 2 in restored_empty._axes
+        assert 3 in restored_empty._axes
 
     def test_migrated_pickle_roundtrip(self, raa):
         # 3. Verify re-pickling the migrated instance works without warnings
+        raw_odims = getattr(raa, "_odims", getattr(raa, "origin", None))
+        raw_ddims = getattr(raa, "_ddims", getattr(raa, "development", None))
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values
         state["vdims"] = raa.columns.values
+        state["odims"] = raw_odims
+        state["ddims"] = raw_ddims
 
         restored = cl.Triangle.__new__(cl.Triangle)
         with pytest.warns(
@@ -761,6 +814,8 @@ class TestLegacyPickleCompatibility:
         assert roundtripped == raa
         assert 0 in roundtripped._axes
         assert 1 in roundtripped._axes
+        assert 2 in roundtripped._axes
+        assert 3 in roundtripped._axes
 
 
 def test_sort_axis_columns_out_of_order(raa):
