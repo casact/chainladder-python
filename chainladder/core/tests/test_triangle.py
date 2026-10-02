@@ -576,6 +576,28 @@ def test_series_indexing(raa):
     s_label = pd.Series(["Total"])
     assert raa[s_label].shape == raa.shape
 
+    # Length mismatch raises IndexError
+    s_short = pd.Series([], dtype=bool)
+    with pytest.raises(IndexError, match="Boolean index has wrong length"):
+        _ = raa[s_short]
+
+    s_long = pd.Series([True, False])
+    with pytest.raises(IndexError, match="Boolean index has wrong length"):
+        _ = raa[s_long]
+
+    # Index misalignment raises IndexingError
+    s_misaligned = pd.Series([True], index=[99])
+    with pytest.raises(pd.errors.IndexingError):
+        _ = raa[s_misaligned]
+
+    # Permuted index aligns correctly to instance index
+    two_row = cl.concat([raa, raa], axis=0, ignore_index=True)
+    two_row.index = pd.DataFrame({"Company": ["A", "B"]})
+    s_perm = pd.Series([False, True], index=[1, 0])
+    sliced = two_row[s_perm]
+    assert len(sliced.index) == 1
+    assert sliced.index.iloc[0]["Company"] == "A"
+
 
 def test_legacy_pickle_compatibility(raa):
     """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
