@@ -11,7 +11,16 @@ import pandas as pd
 import numpy as np
 import warnings
 from chainladder.core.base import TriangleBase
-from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
+from chainladder.core.axis import (
+    TriangleAxis,
+    _get_development,
+    _get_origin,
+    _set_axis,
+    _set_columns,
+    _set_development,
+    _set_index,
+    _set_origin,
+)
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
@@ -481,6 +490,31 @@ class Triangle(TriangleBase):
         fset=_set_columns,
         doc="Represents the column axis of the triangle.",
     )
+    origin = TriangleAxis(
+        2,
+        fget=_get_origin,
+        fset=_set_origin,
+        doc="Origin periods of the Triangle as a PeriodIndex.",
+    )
+    development = TriangleAxis(
+        3,
+        fget=_get_development,
+        fset=_set_development,
+        doc="Development periods of the Triangle as a Series.",
+    )
+
+    def _set_axis(self, axis: int | str, value: Any) -> None:
+        """
+        Assign new labels to the specified axis.
+
+        Parameters
+        ----------
+        axis : int or str
+            The target axis (0..3 or 'index', 'columns', 'origin', 'development').
+        value : Any
+            The new labels/values for the axis.
+        """
+        _set_axis(self, axis, value)
 
     @_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
     @_deprecated_rename_argument(
@@ -833,65 +867,14 @@ class Triangle(TriangleBase):
         return self.columns.to_list()
 
     @property
-    def origin(self):
-        """
-        Origin periods of the Triangle as a ``PeriodIndex``.
+    def _odims(self):
+        return self._axes.get(2)
 
-        The frequency of the index reflects ``origin_grain`` (e.g. annual,
-        quarterly, monthly). When the Triangle holds aggregated patterns with a
-        single origin row, the property returns ``Series(['(All)'])`` instead.
-
-        Returns
-        -------
-        PeriodIndex or Series
-            One entry per origin period of the Triangle.
-
-        Examples
-        --------
-        Annual-origin Triangle.
-
-        .. testsetup::
-
-            import chainladder as cl
-
-        .. testcode::
-
-            tr = cl.load_sample('ukmotor')
-            print(tr.origin.year.tolist())
-
-        .. testoutput::
-
-            [2007, 2008, 2009, 2010, 2011, 2012, 2013]
-
-        The number of origin periods matches ``Triangle.shape[-2]``.
-
-        .. testcode::
-
-            print(len(tr.origin) == tr.shape[-2])
-
-        .. testoutput::
-
-            True
-        """
-        if self.is_pattern and len(self._odims) == 1:
-            return pd.Series(["(All)"])
-        else:
-            freq = {
-                "S": "2Q",
-                "H": "2Q",
-            }.get(self.origin_grain, self.origin_grain)
-            freq = freq if freq == "M" else freq + "-" + self.origin_close
-            return pd.DatetimeIndex(self._odims, name="origin").to_period(freq=freq)
-
-    @origin.setter
-    def origin(self, value) -> None:
-        self._len_check(self.origin, value)
-        freq = {
-            "S": "2Q",
-        }.get(self.origin_grain, self.origin_grain)
-        freq = freq if freq == "M" else freq + "-" + self.origin_close
-        value = pd.PeriodIndex(list(value), freq=freq)
-        self._odims = value.to_timestamp().values
+    @_odims.setter
+    def _odims(self, value):
+        if not hasattr(self, "_axes"):
+            self._axes = {}
+        self._axes[2] = value
 
     @property
     def odims(self):
@@ -914,82 +897,14 @@ class Triangle(TriangleBase):
         self._odims = value
 
     @property
-    def development(self):
-        """
-        Development periods of the Triangle as a Series.
+    def _ddims(self):
+        return self._axes.get(3)
 
-        For a development-lag Triangle (``is_val_tri=False``), values are
-        integer lags expressed in months from the start of the origin period.
-        For a valuation Triangle (``is_val_tri=True``), values are calendar
-        valuation labels formatted at ``development_grain``. For pattern
-        Triangles, labels carry their from/to development range (e.g.
-        ``"12-24"`` or ``"108-Ult"``).
-
-        Returns
-        -------
-        Series
-            One entry per development column of the Triangle.
-
-        Examples
-        --------
-        Annual-grain development on a loss Triangle is reported as month lags.
-
-        .. testsetup:
-
-            import chainladder as cl
-
-        .. testcode::
-
-            tr = cl.load_sample('ukmotor')
-            print(tr.development.tolist())
-
-        .. testoutput::
-
-            [12, 24, 36, 48, 60, 72, 84]
-
-        On a valuation Triangle the labels become calendar periods.
-
-        .. testcode::
-
-            print(tr.dev_to_val().development.tolist())
-
-        .. testoutput::
-
-            ['2007', '2008', '2009', '2010', '2011', '2012', '2013']
-
-        On a link-ratio (pattern) Triangle the labels span the from/to lags.
-
-        .. testcode::
-
-            print(tr.link_ratio.development.tolist())
-
-        .. testoutput::
-
-            ['12-24', '24-36', '36-48', '48-60', '60-72', '72-84']
-        """
-        ddims = self._ddims.copy()
-        if self.is_val_tri:
-            formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-            ddims = ddims.to_period(
-                freq=self.development_grain.replace("S", "2Q")
-            ).strftime(formats[self.development_grain])
-        elif self.is_pattern:
-            offset = self._dstep()["M"][self.development_grain]
-            if self.is_ultimate:
-                ddims[-1] = ddims[-2] + offset
-            if self.is_cumulative:
-                ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
-            else:
-                ddims = [
-                    "{}-{}".format(ddims[i], ddims[i] + offset)
-                    for i in range(len(ddims))
-                ]
-        return pd.Series(list(ddims), name="development")
-
-    @development.setter
-    def development(self, value):
-        self._len_check(self.development, value)
-        self._ddims = np.array([value] if type(value) is str else value)
+    @_ddims.setter
+    def _ddims(self, value):
+        if not hasattr(self, "_axes"):
+            self._axes = {}
+        self._axes[3] = value
 
     @property
     def ddims(self):
@@ -2238,12 +2153,26 @@ class Triangle(TriangleBase):
                     state["_axes"][1] = pd.Index(raw_cols, name="columns")
                 else:
                     state["_axes"][1] = pd.Index(["values"], name="columns")
-        for old_key, new_key in [
-            ("odims", "_odims"),
-            ("ddims", "_ddims"),
-        ]:
-            if old_key in state and new_key not in state:
-                state[new_key] = state.pop(old_key)
+        if 2 not in state["_axes"]:
+            if "_odims" in state:
+                state["_axes"][2] = state.pop("_odims")
+            elif "origin" in state["_axes"]:
+                state["_axes"][2] = state["_axes"].pop("origin")
+            elif "odims" in state:
+                state["_axes"][2] = state.pop("odims")
+        else:
+            state.pop("_odims", None)
+            state.pop("odims", None)
+        if 3 not in state["_axes"]:
+            if "_ddims" in state:
+                state["_axes"][3] = state.pop("_ddims")
+            elif "development" in state["_axes"]:
+                state["_axes"][3] = state["_axes"].pop("development")
+            elif "ddims" in state:
+                state["_axes"][3] = state.pop("ddims")
+        else:
+            state.pop("_ddims", None)
+            state.pop("ddims", None)
         self.__dict__.update(state)
 
     def development_correlation(self, p_critical=0.5):

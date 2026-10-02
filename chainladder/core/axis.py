@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
+import numpy as np
 import pandas as pd
 
 from chainladder.utils.utility_functions import _get_axis_name, _get_axis_number
@@ -162,3 +163,84 @@ def _set_index(obj: Triangle, value: Any) -> pd.DataFrame:
     elif hasattr(obj, "_axes") and (0 in obj._axes or "index" in obj._axes):
         obj._len_check(obj.index, value)
     return value.copy().reset_index(drop=True)
+
+
+def _get_origin(obj: Triangle, raw: Any) -> pd.PeriodIndex | pd.Series:
+    """
+    Transform raw origin timestamp array into public PeriodIndex or Series.
+    """
+    if obj.is_pattern and len(raw) == 1:
+        return pd.Series(["(All)"])
+    freq = {
+        "S": "2Q",
+        "H": "2Q",
+    }.get(obj.origin_grain, obj.origin_grain)
+    freq = freq if freq == "M" else freq + "-" + obj.origin_close
+    return pd.DatetimeIndex(raw, name="origin").to_period(freq=freq)
+
+
+def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
+    """
+    Validate and transform assigned origin periods into internal timestamps array.
+    """
+    if hasattr(obj, "values") and obj.values is not None:
+        obj._len_check(range(obj.values.shape[2]), value)
+    elif hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
+        obj._len_check(obj.origin, value)
+    freq = {
+        "S": "2Q",
+    }.get(obj.origin_grain, obj.origin_grain)
+    freq = freq if freq == "M" else freq + "-" + obj.origin_close
+    value = pd.PeriodIndex(list(value), freq=freq)
+    return value.to_timestamp().values
+
+
+def _get_development(obj: Triangle, raw: Any) -> pd.Series:
+    """
+    Transform raw development lags/timestamps into public Series.
+    """
+    ddims = raw.copy()
+    if obj.is_val_tri:
+        formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
+        ddims = ddims.to_period(freq=obj.development_grain.replace("S", "2Q")).strftime(
+            formats[obj.development_grain]
+        )
+    elif obj.is_pattern:
+        offset = obj._dstep()["M"][obj.development_grain]
+        if obj.is_ultimate:
+            ddims[-1] = ddims[-2] + offset
+        if obj.is_cumulative:
+            ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
+        else:
+            ddims = [
+                "{}-{}".format(ddims[i], ddims[i] + offset) for i in range(len(ddims))
+            ]
+    return pd.Series(list(ddims), name="development")
+
+
+def _set_development(obj: Triangle, value: Any) -> np.ndarray:
+    """
+    Validate and transform assigned development periods into internal lag/timestamp array.
+    """
+    if hasattr(obj, "values") and obj.values is not None:
+        obj._len_check(range(obj.values.shape[3]), value)
+    elif hasattr(obj, "_axes") and (3 in obj._axes or "development" in obj._axes):
+        obj._len_check(obj.development, value)
+    return np.array([value] if isinstance(value, str) else value)
+
+
+def _set_axis(obj: Triangle, axis: int | str, value: Any) -> None:
+    """
+    Set values on the specified axis of a Triangle instance.
+
+    Parameters
+    ----------
+    obj : Triangle
+        The Triangle instance to update.
+    axis : int or str
+        Axis identifier (0..3 or 'index', 'columns', 'origin', 'development').
+    value : Any
+        New axis values.
+    """
+    axis_name = _get_axis_name(axis)
+    setattr(obj, axis_name, value)

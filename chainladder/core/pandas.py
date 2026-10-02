@@ -15,7 +15,7 @@ from chainladder import (
     _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder.utils.utility_functions import _get_axis_number, concat, num_to_nan
 
 from typing import cast, TYPE_CHECKING
 
@@ -258,22 +258,15 @@ class TrianglePandas(_TrianglePandasBase):
             The integer representation of the requested axis
         """
 
-        ax = {
-            **{0: 0, 1: 1, 2: 2, 3: 3},
-            **{-1: 3, -2: 2, -3: 1, -4: 0},
-            **{"index": 0, "columns": 1, "origin": 2, "development": 3},
-        }
-
+        if axis is None:
+            return 0
         try:
-            return ax[axis]
-        except KeyError:
-            if axis is None:
-                return 0
-            else:
-                raise ValueError(
-                    "Invalid axis specified. Please specify the correct string or "
-                    "integer representation of the desired axis."
-                )
+            return _get_axis_number(axis)
+        except ValueError as err:
+            raise ValueError(
+                "Invalid axis specified. Please specify the correct string or "
+                "integer representation of the desired axis."
+            ) from err
 
     def dropna(self) -> Triangle:
         """
