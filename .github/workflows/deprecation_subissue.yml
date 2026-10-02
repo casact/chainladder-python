@@ -4,10 +4,14 @@ name: Deprecation Sub-issue
 # `deprecation` later), open a sub-issue for adding the warning and attach it
 # to the parent. The sub-issue closes when the PR adding the warning merges
 # with "Closes #<sub-issue>"; the parent stays open for a removal milestone.
+#
+# When the parent closes, close any of its sub-issues still open. The sub-issue
+# is opened by github-actions, so a parent author without triage access cannot
+# close it themselves, e.g. after withdrawing the request as not planned.
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened, labeled, closed]
 
 permissions:
   issues: write
@@ -52,6 +56,9 @@ jobs:
           - [ ] Emit the warning, through one of the decorators in [\`chainladder/_config/deprecation.py\`]($decorators) where one fits
           - [ ] Test that it warns (\`pytest.warns\`)
 
+          > [!NOTE]
+          > This issue can be closed manually by closing the parent issue.
+
           EOF
           )
 
@@ -74,3 +81,40 @@ jobs:
           gh issue edit "$PARENT" --repo "$REPO" --body "$parent_body
 
           $note"
+
+  close-subissues:
+    name: Close sub-issues with the parent
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.action == 'closed'
+      && contains(github.event.issue.labels.*.name, 'deprecation')
+    steps:
+      - name: Close open sub-issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PARENT: ${{ github.event.issue.number }}
+          PARENT_REASON: ${{ github.event.issue.state_reason }}
+        run: |
+          # Mirror a completed parent; anything else (not planned, duplicate)
+          # means the warning will not be added either.
+          if [ "$PARENT_REASON" = "completed" ]; then
+            reason=completed
+          else
+            reason=not_planned
+          fi
+
+          open_subs=$(gh api --paginate "repos/$REPO/issues/$PARENT/sub_issues" \
+            --jq '.[] | select(.state == "open") | .number')
+          if [ -z "$open_subs" ]; then
+            echo "#$PARENT has no open sub-issues; nothing to do."
+            exit 0
+          fi
+
+          for sub in $open_subs; do
+            gh api --method PATCH "repos/$REPO/issues/$sub" \
+              -f state=closed -f state_reason="$reason" --silent
+            gh issue comment "$sub" --repo "$REPO" \
+              --body "Closed as ${reason/_/ } along with parent #$PARENT."
+            echo "Closed #$sub as ${reason/_/ }."
+          done
