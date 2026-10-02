@@ -502,8 +502,11 @@ def test_axis_mappings():
 
 
 def test_triangle_axis_descriptor():
-    """Verify TriangleAxis descriptor correctly uses integer axis key."""
-    from chainladder.core.axis import TriangleAxis
+    """Verify TriangleAxis descriptor correctly uses integer axis key and handles edge cases."""
+    from chainladder.core.axis import TriangleAxis, _set_columns
+
+    assert isinstance(cl.Triangle.columns, TriangleAxis)
+    assert cl.Triangle.columns.__doc__ is not None
 
     class MockTriangle:
         col = TriangleAxis(1)
@@ -514,10 +517,41 @@ def test_triangle_axis_descriptor():
     ):
         _ = obj.col
 
+    # Setting when _axes is not yet present on instance initializes _axes
+    assert not hasattr(obj, "_axes")
     obj.col = pd.Index(["a", "b"], name="columns")
+    assert hasattr(obj, "_axes")
     assert 1 in obj._axes
     assert list(obj.col) == ["a", "b"]
     assert obj.col.name == "columns"
+
+    # Custom fget mapping
+    class CustomAxisTriangle:
+        col = TriangleAxis(1, fget=lambda o, raw: [x.upper() for x in raw])
+
+    c_obj = CustomAxisTriangle()
+    c_obj.col = pd.Index(["x", "y"], name="columns")
+    assert c_obj.col == ["X", "Y"]
+
+    # _set_columns with single string and len_check without values
+    class MockColumnsTriangle:
+        def __init__(self):
+            self.values = None
+            self._axes = {}
+
+        def _len_check(self, target, val):
+            if len(target) != len(val):
+                raise ValueError("length mismatch")
+
+        columns = TriangleAxis(1, fset=_set_columns)
+
+    m = MockColumnsTriangle()
+    m.columns = "single_col"
+    assert list(m.columns) == ["single_col"]
+
+    m.columns = ["a"]
+    with pytest.raises(ValueError, match="length mismatch"):
+        m.columns = ["a", "b"]
 
 
 def test_key_labels_setter(raa):
@@ -592,7 +626,31 @@ def test_legacy_pickle_compatibility(raa):
     assert 1 in restored_mid._axes
     assert restored_mid._axes[1].equals(raa.columns)
 
-    # 3. Simulate fallback when no kdims/vdims keys are found (no warning)
+    # 3. Simulate serialized Triangle containing _columns
+    state_col = raa.__dict__.copy()
+    state_col.pop("_axes", None)
+    state_col.pop("_index", None)
+    state_col.pop("_columns", None)
+    state_col["_kdims"] = raa.index.values
+    state_col["_columns"] = list(raa.columns)
+
+    restored_col = cl.Triangle.__new__(cl.Triangle)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored_col.__setstate__(state_col)
+    assert list(restored_col.columns) == list(raa.columns)
+    assert 1 in restored_col._axes
+
+    # 4. Simulate string-keyed "columns" in _axes
+    state_str = raa.__dict__.copy()
+    state_str["_axes"] = {"columns": pd.Index(list(raa.columns), name="columns")}
+    restored_str = cl.Triangle.__new__(cl.Triangle)
+    restored_str.__setstate__(state_str)
+    assert list(restored_str.columns) == list(raa.columns)
+    assert 1 in restored_str._axes
+
+    # 5. Simulate fallback when no kdims/vdims keys are found (no warning)
     state_empty = raa.__dict__.copy()
     state_empty.pop("_axes", None)
     state_empty.pop("_index", None)
@@ -610,12 +668,24 @@ def test_legacy_pickle_compatibility(raa):
     assert list(restored_empty.index.columns) == ["Total"]
     assert 1 in restored_empty._axes
 
-    # 4. Verify re-pickling the migrated instance works without warnings
+    # 6. Verify re-pickling the migrated instance works without warnings
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         roundtripped = pickle.loads(pickle.dumps(restored))
     assert roundtripped == raa
     assert 1 in roundtripped._axes
+
+
+def test_sort_axis_columns_out_of_order(raa):
+    """Verify sort_axis(1) reorders values when columns are unsorted."""
+    import copy
+
+    t1 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2 = copy.deepcopy(raa).rename("columns", ["A"])
+    combined = cl.concat([t1, t2], axis=1)
+    assert list(combined.columns) == ["B", "A"]
+    sorted_tri = combined.sort_axis(1)
+    assert list(sorted_tri.columns) == ["A", "B"]
 
 
 def test_valdev1(qtr):
