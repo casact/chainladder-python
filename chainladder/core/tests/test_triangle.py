@@ -12,6 +12,7 @@ import warnings
 from chainladder.core.common import Common
 from chainladder.utils.utility_functions import (
     _axis_orders,
+    _axis_to_axis_number,
     _get_axis_name,
     _get_axis_number,
     date_delta_adjustment,
@@ -482,8 +483,17 @@ def test_triangle_axes(raa):
     assert axes[3].equals(raa.development)
 
 
-def test_axis_mappings():
+def test_axis_mappings(raa):
     """Verify axis number and name resolutions in chainladder.core.typing."""
+    from chainladder.core.typing import (
+        _axis_orders as typing_axis_orders,
+        _axis_to_axis_number as typing_axis_to_axis_number,
+        _get_axis_name as typing_get_axis_name,
+        _get_axis_number as typing_get_axis_number,
+    )
+
+    assert typing_axis_orders == _axis_orders
+    assert typing_axis_to_axis_number == _axis_to_axis_number
     for idx, name in enumerate(_axis_orders):
         assert _get_axis_number(idx) == idx
         assert _get_axis_number(idx - 4) == idx
@@ -491,6 +501,12 @@ def test_axis_mappings():
         assert _get_axis_name(idx) == name
         assert _get_axis_name(idx - 4) == name
         assert _get_axis_name(name) == name
+        assert typing_get_axis_number(idx) == idx
+        assert typing_get_axis_name(idx) == name
+        assert raa._get_axis_number(idx) == idx
+        assert raa._get_axis_number(name) == idx
+        assert raa._get_axis(idx) == idx
+        assert raa._get_axis(name) == idx
 
     with pytest.raises(
         ValueError, match="No axis named invalid for object type Triangle"
@@ -499,6 +515,9 @@ def test_axis_mappings():
 
     with pytest.raises(ValueError, match=r"No axis named 5 for object type Triangle"):
         _get_axis_number(5)
+
+    with pytest.raises(ValueError, match="Invalid axis specified"):
+        raa._get_axis_number("invalid")
 
 
 def test_triangle_axis_descriptor():

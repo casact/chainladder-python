@@ -239,7 +239,7 @@ class TrianglePandas(_TrianglePandasBase):
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(
+    def _get_axis_number(
         axis: Literal["index", "columns", "origin", "development"] | int | None,
     ) -> int:
         """
@@ -250,14 +250,13 @@ class TrianglePandas(_TrianglePandasBase):
         axis: Literal['index', 'columns', 'origin', 'development'] | int | None
             String or integer representation of the requested axis. If
             supplied as a string, returns the integer representation. If
-            supplied as an integer, returns the same integer.
+            supplied as an integer, returns the canonical positive integer.
 
         Returns
         -------
         int
-            The integer representation of the requested axis
+            The integer representation of the requested axis (0..3).
         """
-
         if axis is None:
             return 0
         try:
@@ -267,6 +266,15 @@ class TrianglePandas(_TrianglePandasBase):
                 "Invalid axis specified. Please specify the correct string or "
                 "integer representation of the desired axis."
             ) from err
+
+    @staticmethod
+    def _get_axis(
+        axis: Literal["index", "columns", "origin", "development"] | int | None,
+    ) -> int:
+        """
+        Backward-compatible alias for _get_axis_number.
+        """
+        return TrianglePandas._get_axis_number(axis)
 
     def dropna(self) -> Triangle:
         """
