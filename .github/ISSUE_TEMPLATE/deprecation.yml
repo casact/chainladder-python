@@ -23,14 +23,12 @@ body:
     attributes:
       label: What is being deprecated?
       description: The current API, with a short example of the call that will warn.
-      render: python
     validations:
       required: true
   - type: textarea
     attributes:
       label: Replacement
       description: What users should use instead, or "None" if it is being removed outright.
-      render: python
     validations:
       required: true
   - type: textarea
