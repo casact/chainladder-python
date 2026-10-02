@@ -877,3 +877,229 @@ def test_apply_from_triangle_sparse_mask(raa) -> None:
     styler_bool._compute()
     styled_bool = {k for k, v in styler_bool.ctx.items() if v}
     assert styled_bool == {(0, 0)}
+
+
+def test_concat_identical_columns(raa) -> None:
+    """
+    Check that concatenating stylers with identical columns succeeds.
+    """
+    dev = cl.Development().fit(raa)
+    s1 = raa.link_ratio.style
+    s2 = dev.ldf_.style
+    res = s1.concat(s2)
+    assert res is s1
+    assert len(s1.concatenated) == 1
+    assert "foot0_row0" in s1.to_html()
+
+
+def test_concat_triangle_and_link_ratio(raa) -> None:
+    """
+    Check that concatenating a Triangle with its link ratios pads the missing
+    column on the link ratios with blanks and preserves caller immutability.
+    """
+    s1 = raa.style
+    lr_styler = raa.link_ratio.style
+    orig_cols = list(lr_styler.data.columns)
+
+    res = s1.concat(lr_styler)
+    assert res is s1
+    assert len(s1.concatenated) == 1
+
+    # Caller's other styler data was not mutated
+    assert list(lr_styler.data.columns) == orig_cols
+
+    # Rendered table has triangle columns
+    html = s1.to_html()
+    for col in s1.data.columns:
+        assert f">{col}<" in html
+
+
+def test_concat_link_ratio_and_cdf(raa) -> None:
+    """
+    Check that concatenating link ratios with CDF patterns (different column labels
+    like '12-24' vs '12-Ult') succeeds due to compatible development periods.
+    """
+    dev = cl.Development().fit(raa)
+    s1 = raa.link_ratio.style.format(precision=3, na_rep="")
+    s2 = dev.cdf_.style.format(precision=3, na_rep="")
+    res = s1.concat(s2)
+    assert res is s1
+    assert len(s1.concatenated) == 1
+    html = s1.to_html()
+    assert "foot0_row0" in html
+
+
+def test_concat_multiple_chaining(raa) -> None:
+    """
+    Check that chaining multiple concats (Triangle + link ratios + ldf + cdf) works.
+    """
+    dev = cl.Development().fit(raa)
+    s = (
+        raa.style
+        .concat(raa.link_ratio.style.format(precision=4, na_rep=""))
+        .concat(dev.ldf_.style.format(precision=4, na_rep=""))
+        .concat(dev.cdf_.style.format(precision=4, na_rep=""))
+    )
+    assert len(s.concatenated) == 3
+    html = s.to_html()
+    assert "foot0_row0" in html
+    assert "foot1_row0" in html
+    assert "foot2_row0" in html
+
+
+def test_concat_widens_self_with_tail(raa) -> None:
+    """
+    Check that concatenating an other styler with additional tail columns
+    widens self.data and pads prior rows with blanks.
+    """
+    pipe = cl.Pipeline([
+        ("dev", cl.Development()),
+        ("tail", cl.TailConstant(1.05)),
+    ]).fit(raa)
+    tail_step = pipe.named_steps.tail
+
+    s1 = raa.link_ratio.style.format(precision=4, na_rep="")
+    orig_len = len(s1.data.columns)
+    s2 = tail_step.ldf_.style.format(precision=4, na_rep="")
+    tail_len = len(s2.data.columns)
+    assert tail_len > orig_len
+
+    s1.concat(s2)
+    assert len(s1.data.columns) == tail_len
+    # Check that to_string and to_html render without error
+    text = s1.to_string()
+    assert len(text) > 0
+    html = s1.to_html()
+    assert "foot0_row0" in html
+
+
+def test_concat_widening_updates_prior_concatenated(raa) -> None:
+    """
+    Check that when a tail styler widens self, all previously concatenated
+    stylers are also widened to match the new column structure.
+    """
+    pipe = cl.Pipeline([
+        ("dev", cl.Development()),
+        ("tail", cl.TailConstant(1.05)),
+    ]).fit(raa)
+    tail_step = pipe.named_steps.tail
+
+    dev = cl.Development().fit(raa)
+    s1 = raa.link_ratio.style.format(precision=4, na_rep="")
+    s2 = dev.ldf_.style.format(precision=4, na_rep="")
+    s3 = tail_step.ldf_.style.format(precision=4, na_rep="")
+
+    s = s1.concat(s2).concat(s3)
+    assert len(s.concatenated) == 2
+    # Verify s2 copy in s.concatenated was widened to match s.data.columns
+    assert len(s.concatenated[0].data.columns) == len(s.data.columns)
+    assert len(s.concatenated[1].data.columns) == len(s.data.columns)
+    assert len(s.to_html()) > 0
+
+
+def test_concat_preserves_styles(raa) -> None:
+    """
+    Check that styles applied to self and other (e.g. highlight_diagonal)
+    are both preserved in the concatenated HTML output.
+    """
+    s1 = raa.style.highlight_diagonal(color="#FFF2CC")
+    s2 = raa.link_ratio.style.highlight_diagonal(color="#DDEBF7")
+    s = s1.concat(s2)
+    html = s.to_html()
+    assert "#FFF2CC" in html
+    assert "#DDEBF7" in html
+
+
+def test_concat_preserves_lower_triangle_styling(raa) -> None:
+    """
+    Check that lower triangle highlights are preserved when concatenated.
+    """
+    s1 = raa.style.highlight_lower_triangle(color="#BDD7EE")
+    s2 = raa.link_ratio.style.highlight_lower_triangle(color="#F8CBAD")
+    s = s1.concat(s2)
+    html = s.to_html()
+    assert "#BDD7EE" in html
+    assert "#F8CBAD" in html
+
+
+def test_concat_rejects_raw_triangle(raa) -> None:
+    """
+    Check that passing a raw Triangle raises TypeError with a helpful hint.
+    """
+    with pytest.raises(
+        TypeError, match="must be of type `Styler`. Use `Triangle.style`"
+    ):
+        raa.style.concat(raa.link_ratio)
+
+
+def test_concat_rejects_non_styler(raa) -> None:
+    """
+    Check that passing an invalid type raises TypeError.
+    """
+    with pytest.raises(TypeError, match="must be of type `Styler`"):
+        raa.style.concat([1, 2, 3])
+
+
+def test_concat_rejects_mismatched_index_levels(raa) -> None:
+    """
+    Check that mismatched index levels raises ValueError.
+    """
+    df_multi = pd.DataFrame(
+        [[1] * len(raa.style.data.columns)],
+        index=pd.MultiIndex.from_tuples([("A", "B")]),
+        columns=raa.style.data.columns,
+    )
+    with pytest.raises(ValueError, match="number of index levels"):
+        raa.style.concat(df_multi.style)
+
+
+def test_concat_rejects_incompatible_grain(raa) -> None:
+    """
+    Check that triangles with different development grains raise ValueError.
+    """
+    quarterly = cl.load_sample("quarterly")["paid"]
+    with pytest.raises(ValueError, match="Development grains must match"):
+        raa.style.concat(quarterly.style)
+
+
+def test_concat_rejects_incompatible_lags(raa) -> None:
+    """
+    Check that triangles with incompatible development lags raise ValueError.
+    """
+    t1 = raa.copy()
+    t2 = raa.copy()
+    t2.development = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    with pytest.raises(ValueError, match="Development periods must be compatible"):
+        t1.style.concat(t2.style)
+
+
+def test_concat_rejects_valuation_with_development(raa) -> None:
+    """
+    Check that mixing valuation and development mode triangles raises ValueError.
+    """
+    with pytest.raises(
+        ValueError, match="valuation Triangle with a development Triangle"
+    ):
+        raa.dev_to_val().style.concat(raa.style)
+
+
+def test_concat_output_formats(raa) -> None:
+    """
+    Check that concatenated Styler supports to_html, to_latex, and to_string.
+    """
+    s = raa.style.concat(raa.link_ratio.style.format(precision=3, na_rep=""))
+    assert len(s.to_html()) > 0
+    assert len(s.to_string()) > 0
+    assert len(s.to_latex()) > 0
+
+
+def test_concat_copy_preserves_concatenated(raa) -> None:
+    """
+    Check that _copy on a concatenated Styler deep-copies the concatenated list.
+    """
+    s = raa.style.concat(raa.link_ratio.style)
+    s_copy = s._copy(deepcopy=True)
+    assert isinstance(s_copy, Styler)
+    assert len(s_copy.concatenated) == 1
+    assert s_copy.concatenated is not s.concatenated
+    assert len(s_copy.to_html()) > 0

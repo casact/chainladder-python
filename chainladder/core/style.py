@@ -34,6 +34,15 @@ ValuationDateLike: TypeAlias = int | float | str | date | datetime | pd.Timestam
 del annotations
 
 
+def _get_starting_dev_lags(tri: Triangle) -> list[str]:
+    """
+    Extract starting development lag intervals for pattern and non-pattern triangles.
+    """
+    if tri.is_pattern:
+        return [str(x).split("-")[0] for x in tri.development]
+    return [str(x) for x in tri.development]
+
+
 class Styler(_PandasStyler):
     """
     Styles a Triangle according to the data with HTML and CSS.
@@ -140,6 +149,149 @@ class Styler(_PandasStyler):
                 copy_module.deepcopy(value) if deepcopy else value,
             )
         return styler
+
+    def _compute(self) -> Styler:
+        """
+        Execute the style functions built up in `self._todo`, or restore pre-computed
+        styles for concatenated stylers whose shapes were padded.
+        """
+        if getattr(self, "_concatenated_ctx", None) is not None:
+            self.ctx = copy_module.deepcopy(self._concatenated_ctx)
+            if hasattr(self, "_concatenated_ctx_index"):
+                self.ctx_index = copy_module.deepcopy(self._concatenated_ctx_index)
+            if hasattr(self, "_concatenated_ctx_columns"):
+                self.ctx_columns = copy_module.deepcopy(self._concatenated_ctx_columns)
+            return self
+        return super()._compute()
+
+    def concat(self, other: Any) -> Styler:
+        """
+        Append another Styler to combine the output into a single table.
+
+        Parameters
+        ----------
+        other : Styler
+            The other Styler object to concatenate. The Styler can wrap
+            another Triangle, link ratios, or development patterns. If the
+            columns differ, they must share compatible development periods.
+
+        Returns
+        -------
+        Styler
+            ``self``, with ``other`` appended to its concatenated list.
+
+        Raises
+        ------
+        TypeError
+            If ``other`` is not a Styler.
+        ValueError
+            If the number of index levels differ, or if the development periods
+            between Triangles are incompatible.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            import chainladder as cl
+
+            raa = cl.load_sample("raa")
+            dev = cl.Development().fit(raa)
+
+            # Concatenate loss triangle with link ratios and selected factors
+            exhibit = (
+                raa.style
+                .highlight_lower_triangle()
+                .concat(
+                    raa.link_ratio.style.format(
+                        precision=3, na_rep=""
+                    ).highlight_diagonal()
+                )
+                .concat(dev.ldf_.style.format(precision=3, na_rep=""))
+                .concat(dev.cdf_.style.format(precision=3, na_rep=""))
+            )
+        """
+        if isinstance(other, Triangle):
+            raise TypeError(
+                "`other` must be of type `Styler`. Use `Triangle.style` for a Triangle."
+            )
+        if not isinstance(other, _PandasStyler):
+            raise TypeError("`other` must be of type `Styler`")
+        if self.data.index.nlevels != other.data.index.nlevels:
+            raise ValueError(
+                "number of index levels must be same in `other` "
+                "as in `Styler`. See documentation for suggestions."
+            )
+
+        if self.data.columns.equals(other.data.columns):
+            super().concat(other)
+            return self
+
+        other_copy: Styler = (
+            other._copy(deepcopy=True)
+            if hasattr(other, "_copy")
+            else copy_module.deepcopy(other)
+        )
+        if hasattr(self, "_triangle") and hasattr(other_copy, "_triangle"):
+            if self._triangle.is_val_tri != other_copy._triangle.is_val_tri:
+                raise ValueError(
+                    "Cannot concatenate a valuation Triangle with a development Triangle."
+                )
+            if (
+                self._triangle.development_grain
+                != other_copy._triangle.development_grain
+            ):
+                raise ValueError(
+                    "Development grains must match to concatenate stylers: "
+                    f"'{self._triangle.development_grain}' != '{other_copy._triangle.development_grain}'."
+                )
+
+            dev1 = _get_starting_dev_lags(self._triangle)
+            dev2 = _get_starting_dev_lags(other_copy._triangle)
+            min_len = min(len(dev1), len(dev2))
+            if dev1[:min_len] != dev2[:min_len]:
+                raise ValueError(
+                    "Development periods must be compatible to concatenate stylers."
+                )
+
+            other_copy._compute()
+            other_copy._concatenated_ctx = copy_module.deepcopy(other_copy.ctx)
+            other_copy._concatenated_ctx_index = copy_module.deepcopy(
+                other_copy.ctx_index
+            )
+            other_copy._concatenated_ctx_columns = copy_module.deepcopy(
+                other_copy.ctx_columns
+            )
+
+            if len(self.data.columns) >= len(other_copy.data.columns):
+                target_cols = self.data.columns
+                padded_data = other_copy.data.copy()
+                orig_len = len(padded_data.columns)
+                for c in target_cols[orig_len:]:
+                    padded_data[c] = np.nan
+                padded_data.columns = target_cols
+                other_copy.data = padded_data
+                other_copy.columns = target_cols
+                if orig_len < len(target_cols):
+                    other_copy.format(na_rep="", subset=list(target_cols[orig_len:]))
+            else:
+                new_cols = other_copy.data.columns[len(self.data.columns) :]
+                for c in new_cols:
+                    self.data[c] = np.nan
+                self.columns = self.data.columns
+                self.format(na_rep="", subset=list(new_cols))
+                for prev in self.concatenated:
+                    for c in new_cols:
+                        prev.data[c] = np.nan
+                    prev.columns = self.data.columns
+                    prev.format(na_rep="", subset=list(new_cols))
+                other_copy.data.columns = self.data.columns
+                other_copy.columns = self.data.columns
+
+            self.concatenated.append(other_copy)
+            return self
+        else:
+            super().concat(other)
+            return self
 
     @staticmethod
     def _mask_style(
