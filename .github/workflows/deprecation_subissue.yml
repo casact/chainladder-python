@@ -65,3 +65,12 @@ jobs:
           gh api --method POST "repos/$REPO/issues/$PARENT/sub_issues" \
             -F sub_issue_id="$child_id"
           echo "Attached $child_url to #$PARENT."
+
+          # Append the note to the bottom of the parent's body. Each Markdown
+          # line is one shell line, as issues render every newline as a break.
+          parent_body=$(gh issue view "$PARENT" --repo "$REPO" --json body --jq .body)
+          note="> [!NOTE]
+          > This issue tracks the deprecation as a whole and stays open until the deprecated API is removed. The warning is tracked in sub-issue #${child_url##*/}; close it by linking it from the PR that adds the warning. The removal release is set later with a milestone."
+          gh issue edit "$PARENT" --repo "$REPO" --body "$parent_body
+
+          $note"
