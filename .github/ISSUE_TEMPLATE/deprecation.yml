@@ -1,0 +1,41 @@
+name: Deprecation
+description: Propose deprecating a function, method, argument, or behavior.
+title: "[DEPR] "
+labels:
+  - deprecation
+# The note explaining the parent/sub-issue split is appended to the issue body
+# by .github/workflows/deprecation_subissue.yml; markdown fields here are shown
+# only while filling in the form and never reach the issue.
+body:
+  - type: dropdown
+    attributes:
+      label: What kind of deprecation is this?
+      options:
+        - Rename a function, method, or class
+        - Rename an argument
+        - Remove an argument
+        - Remove a function, method, or class
+        - Change in behavior
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What is being deprecated?
+      description: The current API, with a short example of the call that will warn.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Replacement
+      description: What users should use instead, or "None" if it is being removed outright.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reason
+      description: Why the deprecation is needed, with links to any discussion.
+    validations:
+      required: true
