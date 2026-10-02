@@ -1062,22 +1062,15 @@ class TrianglePandas(_TrianglePandasBase):
     @_deprecated_drop_argument(
         "inplace",
         "Copy the Triangle first and use the return value: "
-        "`tri = tri.copy()` then `tri = tri.astype(dtype)`. "
-        "That behaves the same before and after the removal.",
-        version="2.0",
+        "`tri = tri.copy()` then `tri = tri.astype(dtype)`.",
     )
     def astype(self, dtype, inplace=True) -> Triangle:
         """
         Copy of the array, cast to a specified type.
 
-        .. deprecated:: 2.0
-            The ``inplace`` parameter is deprecated and will be removed in 2.0.
-            ``astype`` will then always return a new Triangle and never modify
-            the original, matching ``DataFrame.astype``, which has no
-            ``inplace`` parameter. Because ``inplace`` currently defaults to
-            ``True``, that is a change of behaviour for callers who rely on the
-            default. Copy first and use the return value, which behaves the
-            same before and after the removal:
+        .. warning::
+            The ``inplace`` parameter is deprecated and will be removed.
+            Copy first and use the return value:
 
             .. code-block:: python
 
@@ -1089,8 +1082,8 @@ class TrianglePandas(_TrianglePandasBase):
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
         inplace : bool, default True
-            Deprecated and scheduled for removal in 2.0. When False, the cast
-            is applied to a copy and the original Triangle is left untouched.
+            Deprecated and scheduled for removal. When False, the cast is
+            applied to a copy and the original Triangle is left untouched.
 
         Returns
         -------
