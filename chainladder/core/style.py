@@ -224,6 +224,14 @@ class Styler(_PandasStyler):
         other_copy.data = other.data.copy()
 
         if self.data.columns.equals(other.data.columns):
+            other_copy._compute()
+            other_copy._concatenated_ctx = copy_module.deepcopy(other_copy.ctx)
+            other_copy._concatenated_ctx_index = copy_module.deepcopy(
+                other_copy.ctx_index
+            )
+            other_copy._concatenated_ctx_columns = copy_module.deepcopy(
+                other_copy.ctx_columns
+            )
             super().concat(other_copy)
             return self
 
@@ -283,6 +291,15 @@ class Styler(_PandasStyler):
                 self.columns = self.data.columns
                 self.format(na_rep="", subset=list(new_cols))
                 for prev in self.concatenated:
+                    if getattr(prev, "_concatenated_ctx", None) is None:
+                        prev._compute()
+                        prev._concatenated_ctx = copy_module.deepcopy(prev.ctx)
+                        prev._concatenated_ctx_index = copy_module.deepcopy(
+                            prev.ctx_index
+                        )
+                        prev._concatenated_ctx_columns = copy_module.deepcopy(
+                            prev.ctx_columns
+                        )
                     for c in new_cols:
                         prev.data[c] = np.nan
                     prev.columns = self.data.columns

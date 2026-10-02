@@ -1152,3 +1152,23 @@ def test_concat_with_plain_pandas_styler(raa) -> None:
     mismatched_df_style = pd.DataFrame({"different_col": [1, 2]}).style
     with pytest.raises(ValueError, match="same columns"):
         raa.style.concat(mismatched_df_style)
+
+
+def test_concat_prior_identical_columns_styler_frozen_on_subsequent_widen(
+    raa,
+) -> None:
+    """
+    Check that stylers concatenated via identical columns have their styles
+    frozen so subsequent widening does not cause shape mismatch during rendering.
+    """
+    s1 = raa.iloc[..., :5].style
+    s2 = raa.iloc[..., :5].style.highlight_diagonal(props="background-color: #112233;")
+    s1.concat(s2)
+
+    # Now widen with s3 having 10 columns
+    s3 = raa.style
+    s1.concat(s3)
+
+    html = s1.to_html()
+    assert "background-color: #112233;" in html
+    assert len(s1.concatenated[0].data.columns) == 10
