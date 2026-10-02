@@ -49,6 +49,7 @@ _AxisKey: TypeAlias = slice | int | np.int64 | np.int32 | np.ndarray
 # before index_key/other_key resolve it to a positional _AxisKey.
 _LabelKey: TypeAlias = IndexExpression | str | pd.Series | pd.DataFrame
 
+
 class TriangleProtocol(Protocol):
     """
     Common interface expected for Triangle mixins.
