@@ -281,6 +281,8 @@ def test_dropabovebelow(raa):
     assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
     dev = cl.Development(drop_above=1.2)
+    # the first two columns of raa age-to-age are all above 1.2
+    # therefore a drop exclusion warning is expected
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         model = dev.fit(raa)
         future_model = _FutureDevelopment(dev).fit(raa)
@@ -300,6 +302,8 @@ def test_dropabovebelow(raa):
     assert model.ldf_ == future_model.ldf_
 
     dev = cl.Development(drop_above=1.2, drop_below=1.05)
+    # the first two columns of raa age-to-age are all above 1.2
+    # therefore a drop exclusion warning is expected
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         model = dev.fit(raa)
         future_model = _FutureDevelopment(dev).fit(raa)
@@ -319,6 +323,8 @@ def test_dropabovebelow(raa):
     assert model.ldf_ == future_model.ldf_
 
     dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
+    # the 4th columns of raa age-to-age are all below 1.7
+    # therefore a drop exclusion warning is expected
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         model = dev.fit(raa)
         future_model = _FutureDevelopment(dev).fit(raa)
@@ -569,6 +575,8 @@ def test_drop_warning_silent_on_the_triangle_weight_path(raa):
 def test_new_drop_6(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below without preserve
+    # many columns of clrd.age_to_age are all above 1.01
+    # therefore a drop exclusion warning is expected
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         compare_new_drop(
             cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd
@@ -577,6 +585,8 @@ def test_new_drop_6(clrd):
 
 def test_new_drop_7(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # many columns of clrd.age_to_age are all above 1.01
+    # therefore a drop exclusion warning is expected
     # drop_above/below with preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         dev = cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd)
@@ -643,6 +653,8 @@ def test_new_drop_10():
         cumulative=True,
     )
 
+    # tri is a partial triangle and no valid age-to-age beyond the first column
+    # therefore a drop exclusion warning is expected
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         assert np.round(
             cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
