@@ -61,7 +61,7 @@ class Development(DevelopmentBase):
         Drops all link ratio(s) above the given parameter from the LDF calculation.
         Protected by ``preserve``.
         See order of operations below when combined with multiple drop parameters.
-    drop_below: float or list of floats (default = 0.00)
+    drop_below: float or list of floats (default = 0.0)
         Drops all link ratio(s) below the given parameter from the LDF calculation.
         Protected by ``preserve``.
         See order of operations below when combined with multiple drop parameters.
@@ -71,6 +71,10 @@ class Development(DevelopmentBase):
     drop_valuation: str or list of str (default = None)
         Drops specific valuation periods. str must be date convertible.
         See order of operations below when combined with multiple drop parameters.
+    max_dev: float or list of float (default = np.inf)
+        Caps the LDFs at max_dev.
+    min_dev: float or list of float (default = -np.inf)
+        Caps the LDFs at min_dev.
     fillna: float, (default = None)
         Used to fill in zero or nan values of an triangle with some non-zero
         amount.  When an link-ratio has zero as its denominator, it is automatically
@@ -98,6 +102,7 @@ class Development(DevelopmentBase):
                (Protected by``preserve``, which may relax exclusions from this step if too few ratios would remain
                then this step is skipped).
             6. Calculate the loss development factors using ``average`` method.
+            7. ``min_dev`` / ``max_dev`` — restrict the final individual LDFs at the min_dev / max_dev.
 
     Attributes
     ----------
@@ -272,6 +277,22 @@ class Development(DevelopmentBase):
                   12-24     24-36     36-48     48-60     60-72     72-84     84-96    96-108   108-120   120-132
         (All)  1.675693  1.105627  1.127842  1.119324  1.076968  1.053434  1.027623  0.997636  0.992918  0.999179
 
+    Now, we can also restrict the final LDFs at the min_dev / max_dev.
+
+    ..  testcode::
+
+        ldf = (
+            cl.Development(drop_above=1.25, drop_below=1.0, preserve=3, max_dev=1.6, min_dev=1.0)
+            .fit(tri["Incurred"])
+            .ldf_
+        )
+        print(ldf)
+
+    ..  testoutput::
+
+               12-24     24-36     36-48     48-60     60-72     72-84     84-96  96-108  108-120  120-132
+        (All)    1.6  1.105627  1.127842  1.119324  1.076968  1.053434  1.027623     1.0      1.0      1.0
+
     Using other average methods, we can see that the loss development factors are different.
 
     ..  testcode::
@@ -338,7 +359,9 @@ class Development(DevelopmentBase):
         preserve: int = 1,
         drop_valuation: str | list[str] = None,
         drop_above: float = np.inf,
-        drop_below: float = 0.00,
+        drop_below: float = 0.0,
+        max_dev: float | list[float] = np.inf,
+        min_dev: float | list[float] = -np.inf,
         fillna: float | None = None,
         groupby: Callable | list | str | Series = None,
     ):
@@ -351,6 +374,8 @@ class Development(DevelopmentBase):
         self.drop_valuation = drop_valuation
         self.drop_above = drop_above
         self.drop_below = drop_below
+        self.max_dev = max_dev
+        self.min_dev = min_dev
         self.drop = drop
         self.fillna = fillna
         self.groupby = groupby
@@ -443,6 +468,19 @@ class Development(DevelopmentBase):
         params = params.swapaxes(2, 3)
 
         self.ldf_ = self._param_property(obj, params, 0)
+
+        # converts to arrays
+        import chainladder as cl
+
+        min_dev = xp.asarray(self.min_dev, dtype=float).reshape(-1)
+        max_dev = xp.asarray(self.max_dev, dtype=float).reshape(-1)
+
+        if xp.any(min_dev > max_dev):
+            raise ValueError("min_dev must be <= max_dev.")
+
+        self.ldf_ = cl.maximum(self.ldf_, min_dev)
+        self.ldf_ = cl.minimum(self.ldf_, max_dev)
+
         self.sigma_ = self._param_property(obj, params, 1)
         self.std_err_ = self._param_property(obj, params, 2)
 
