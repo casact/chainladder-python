@@ -1,13 +1,67 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 from chainladder.development import DevelopmentBase
 from chainladder.utils import TriangleWeight
 import numpy as np
+import copy
 import warnings
 
+from typing import TYPE_CHECKING
 
-class IncrementalAdditive(DevelopmentBase):
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
+
+
+class IncrementalMixin:
+    """
+    This class provides attributes for the IncrementalAdditive development method
+    and transformed `Triangle`
+    """
+
+    @property
+    def zeta_(self) -> Triangle:
+        """
+        Gets the estimated incremental additive factors
+        """
+        if not hasattr(self, "_zeta_"):
+            x = self.__class__.__name__
+            raise AttributeError("'" + x + "' object has no attribute 'zeta_'")
+        return self._zeta_
+
+    @zeta_.setter
+    def zeta_(self, value: Triangle) -> None:
+        """
+        Sets zeta_
+        """
+        obj = copy.deepcopy(value)
+        obj.is_pattern = True
+        obj.is_additive = True
+        obj.is_cumulative = False
+        self._zeta_ = obj
+
+    @property
+    def cum_zeta_(self) -> Triangle:
+        """
+        Gets the estimated cumulative additive factors
+        """
+        return self.zeta_.incr_to_cum()
+
+    @cum_zeta_.setter
+    def cum_zeta_(self, value: Triangle) -> None:
+        """
+        Sets cum_zeta_
+        """
+        obj = copy.deepcopy(value)
+        obj.is_pattern = True
+        obj.is_additive = True
+        obj.is_cumulative = True
+        self._zeta_ = obj.cum_to_incr()
+
+
+class IncrementalAdditive(DevelopmentBase, IncrementalMixin):
     """
     The Incremental Additive Method.
 
@@ -311,7 +365,7 @@ class IncrementalAdditive(DevelopmentBase):
         for item in [
             "ldf_",
             "w_",
-            "zeta_",
+            "_zeta_",
             "incremental_",
             "tri_zeta",
             "fit_zeta_",
@@ -319,3 +373,28 @@ class IncrementalAdditive(DevelopmentBase):
         ]:
             X_new.__dict__[item] = self.__dict__[item]
         return X_new
+
+    def _param_property(self, X, params):
+        """
+        Private method to wrap a numpy array into a Triangle
+
+        Uses and overrides DevelopmentBase._param_property.
+
+        Parameters
+        ----------
+        X : Triangle
+            The Triangle object that we want to place the parameter into
+
+        params : np.ndarray
+            The parammeter we want to turn into a Triangle
+
+        Returns
+        -------
+        Triangle
+            A Triangle that mimics X but has params values
+        """
+        obj = super()._param_property(X, params)
+        obj.values = params
+        obj.is_additive = True
+
+        return obj

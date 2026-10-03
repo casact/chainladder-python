@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import chainladder as cl
 import numpy as np
 import pytest
@@ -90,3 +92,16 @@ def test_pipeline():
     assert np.array_equal(
         dev1.zeta_.values, dev2.named_steps.drop_hilo.zeta_.values, True
     )
+
+
+def test_setting_cum(atol: float) -> None:
+    """
+    IncrementalMixin allows setting cumulative zeta. Validating that the setting function works properly.
+    """
+    tri = cl.load_sample("ia_sample")
+    ia = cl.IncrementalAdditive().fit(
+        tri.iloc[0, 0], sample_weight=tri.iloc[0, 1].latest_diagonal
+    )
+    orig_zeta_ = ia.zeta_
+    ia.cum_zeta_ = ia.cum_zeta_ * 2
+    assert np.allclose(ia.zeta_.values, (orig_zeta_ * 2).values, atol=atol)
