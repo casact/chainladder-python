@@ -3752,3 +3752,15 @@ def test_sort_index_inplace(clrd: Triangle) -> None:
     assert result is shuffled
     pd.testing.assert_frame_equal(shuffled.index, clrd.index)
     assert shuffled == clrd
+
+
+def test_duplicate_columns_assignment(raa) -> None:
+    """Assigning to duplicate column label updates first matching column without error."""
+    r1 = raa.copy()
+    r1.columns = ["a"]
+    r2 = raa.copy()
+    r2.columns = ["b"]
+    two = cl.concat([r1, r2], axis=1)
+    two.columns = ["col", "col"]
+    two["col"] = 42
+    assert two.values[0, 0, 0, 0] == 42
