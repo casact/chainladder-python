@@ -197,14 +197,14 @@ class TestDeprecatedRenameArgument:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", remove_in_version="0.11.0")
         def func(new_arg=None):
             return new_arg
 
         _, warning = _warn_once(func, old_arg=1)
         assert str(warning.message) == (
-            "'old_arg' is deprecated and will be renamed to 'new_arg' in "
-            "0.11.0. Use 'new_arg' instead."
+            "'old_arg' has been deprecated in favor of 'new_arg' and will be "
+            "removed in 0.11.0. Use 'new_arg' instead."
         )
 
     def test_message_without_version(self) -> None:
@@ -216,8 +216,8 @@ class TestDeprecatedRenameArgument:
 
         _, warning = _warn_once(func, old_arg=1)
         assert str(warning.message) == (
-            "'old_arg' is deprecated and will be renamed to 'new_arg'. "
-            "Use 'new_arg' instead."
+            "'old_arg' has been deprecated in favor of 'new_arg' and will be "
+            "removed soon. Use 'new_arg' instead."
         )
 
     def test_custom_category(self) -> None:

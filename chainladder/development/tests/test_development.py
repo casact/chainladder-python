@@ -629,7 +629,7 @@ def test_new_drop_10():
     tri = cl.Triangle(
         data,
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns=["values"],
         cumulative=True,
     )
