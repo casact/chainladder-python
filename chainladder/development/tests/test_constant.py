@@ -481,13 +481,14 @@ def test_constant_incr():
 def test_constant_series_pattern(raa):
     dev = cl.Development().fit(raa)
     # Series with integer index
-    s_int = pd.Series(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.ddims)
+    s_int = pd.Series(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.development)
     model_int = cl.DevelopmentConstant(patterns=s_int, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_int.ldf_.values)
 
     # Series with interval string index (e.g. '12-24')
     s_str = pd.Series(
-        dev.ldf_.values[0, 0, 0, :], index=[f"{d}-{d + 12}" for d in dev.ldf_.ddims]
+        dev.ldf_.values[0, 0, 0, :],
+        index=[f"{d}-{d + 12}" for d in dev.ldf_.development],
     )
     model_str = cl.DevelopmentConstant(patterns=s_str, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_str.ldf_.values)
@@ -501,12 +502,12 @@ def test_constant_series_pattern(raa):
 def test_constant_dataframe_pattern(raa):
     dev = cl.Development().fit(raa)
     # 1-row DataFrame
-    df_row = pd.DataFrame([dev.ldf_.values[0, 0, 0, :]], columns=dev.ldf_.ddims)
+    df_row = pd.DataFrame([dev.ldf_.values[0, 0, 0, :]], columns=dev.ldf_.development)
     model_row = cl.DevelopmentConstant(patterns=df_row, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_row.ldf_.values)
 
     # 1-column DataFrame
-    df_col = pd.DataFrame(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.ddims)
+    df_col = pd.DataFrame(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.development)
     model_col = cl.DevelopmentConstant(patterns=df_col, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_col.ldf_.values)
 
@@ -580,3 +581,28 @@ def test_constant_invalid_pattern_types(raa):
     # Unsupported pattern type
     with pytest.raises(TypeError, match="Unsupported pattern type"):
         cl.DevelopmentConstant(patterns=[1.2, 1.1]).fit(raa)
+
+
+def test_constant_incr_cumulative_none():
+    raa_incr = cl.load_sample("raa").cum_to_incr()
+    raa_incr.is_cumulative = None
+    reported_patterns = {
+        12: 4.0,
+        24: 2.9,
+        36: 1.8,
+        48: 1.4,
+        60: 1.2,
+        72: 1.1,
+        84: 1.03,
+        96: 1.02,
+        108: 1.005,
+    }
+
+    result = cl.DevelopmentConstant(
+        patterns=reported_patterns, style="cdf"
+    ).fit_transform(raa_incr)
+
+    assert np.all(
+        np.round(result.cdf_.to_frame().values.flatten(), 6)
+        == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02, 1.005])
+    )
