@@ -1,19 +1,26 @@
+"""
+Support triangle arithmetic. Define double underscore methods - a.k.a. dunders.
+"""
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import operator
-
 import numpy as np
+import operator
 import pandas as pd
 
-from chainladder.utils.utility_functions import num_to_nan, concat
+from chainladder import _warn_dask_parallel_deprecated
 
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
-from chainladder import _warn_dask_parallel_deprecated
+from chainladder.utils.utility_functions import (
+    concat,
+    num_to_nan,
+    set_common_backend,
+)
 
+# pragma: no cover
 try:
     import dask.bag as db
 except ImportError:
@@ -24,14 +31,61 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any
 
+    from chainladder.core.triangle import Triangle
+    from chainladder.core.typing import TriangleProtocol
 
-class TriangleDunders:
+    _TriangleDundersBase = TriangleProtocol
+else:
+    _TriangleDundersBase = object
+
+
+class TriangleDunders(_TriangleDundersBase):
     """
-    Class that implements the dunder (double underscore) methods for the Triangle class
+    Implement the dunder (double underscore) methods for the Triangle class.
     """
 
     def _validate_arithmetic(self, other: Any) -> tuple:
-        """Common functionality BEFORE arithmetic operations"""
+        """
+        Prepare the operands of an arithmetic operation.
+
+        Called by the arithmetic dunders before the operation. It aligns the
+        two operands so the operation can be applied directly to
+        ``obj.values`` and ``other``.
+
+        - Both take the later of the two valuation dates.
+        - Their columns, origins and developments, and index are aligned:
+          a dimension of length 1 is broadcast to match the other triangle,
+          and otherwise the labels are unioned (columns, origins and
+          developments) or grouped down to the shared index levels (index).
+
+        Otherwise ``other`` is treated as a scalar or array. A NumPy array
+        is converted to ``self``'s array backend, and a sparse ``COO`` array
+        moves ``self`` to the sparse backend.
+
+        Parameters
+        ----------
+        other : Triangle, scalar, numpy.ndarray or sparse.COO
+            The other operand.
+
+        Returns
+        -------
+        obj : Triangle
+            A copy of ``self``, aligned with ``other``. ``self`` is not
+            modified.
+        other : scalar or array
+            The value array of the aligned ``other`` if it is a triangle,
+            ``other`` converted to ``obj``'s backend if it is a NumPy array,
+            and ``other`` unchanged otherwise.
+
+        Raises
+        ------
+        ValueError
+            If the triangles have different grains (see
+            ``_compatibility_check``), or if their index levels cannot be
+            reconciled.
+        """
+
+        # Case when both operands are triangles.
         if isinstance(other, TriangleDunders):
             obj, other = self._compatibility_check(self, other)
             if obj.is_pattern != other.is_pattern:
@@ -52,19 +106,44 @@ class TriangleDunders:
                 obj = self.copy()
         return obj, other
 
-    def _arithmetic_cleanup(self, obj):
+    @staticmethod
+    def _arithmetic_cleanup(obj):
         """Common functionality AFTER arithmetic operations"""
         obj.values = obj.values * obj.get_array_module().nan_to_num(obj.nan_triangle)
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def _compatibility_check(self, x, y):
-        from chainladder.utils.utility_functions import set_common_backend
+    @staticmethod
+    def _compatibility_check(
+        x: TriangleProtocol, y: TriangleProtocol
+    ) -> tuple[Triangle, Triangle]:
+        """
+        Check that two triangles can be combined in an arithmetic operation.
 
+        Parameters
+        ----------
+        x : Triangle
+            The left operand.
+        y : Triangle
+            The right operand.
+
+        Returns
+        -------
+        tuple[Triangle, Triangle]
+            Copies of ``x`` and ``y`` on the common backend. The inputs are
+            not modified.
+
+        Raises
+        ------
+        ValueError
+            If the origin grains differ, or if the development grains differ
+            and both triangles have more than one development period.
+        """
         x, y = set_common_backend([x, y])
         if x.origin_grain != y.origin_grain or (
             x.development_grain != y.development_grain
-            and min(x.shape[-1], y.shape[-1]) > 1
+            and x.shape[-1] > 1
+            and y.shape[-1] > 1
         ):
             raise ValueError(
                 "Triangle arithmetic requires both triangles to be the same grain."
@@ -122,12 +201,33 @@ class TriangleDunders:
                 + str(y_labels)
             )
 
-    def _prep_columns(self, x, y):
+    @staticmethod
+    def _prep_columns(x: Triangle, y: Triangle) -> tuple[Triangle, Triangle]:
+        """
+        Align the columns of two triangles for an arithmetic operation.
+
+        Parameters
+        ----------
+        x : Triangle
+            The left operand.
+        y : Triangle
+            The right operand.
+
+        Returns
+        -------
+        x : Triangle
+            ``x`` with aligned columns.
+        y : Triangle
+            ``y`` with aligned columns.
+        """
         if len(x.columns) == 1 and len(y.columns) > 1:
+            x = x.copy()
             x.vdims = y.vdims
         elif len(y.columns) == 1 and len(x.columns) > 1:
+            y = y.copy()
             y.vdims = x.vdims
         elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
+            y = y.copy()
             y.vdims = x.vdims
         elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
             return x, y

@@ -82,6 +82,9 @@ class TriangleProtocol(Protocol):
     def development(self, value: Any) -> None: ...
 
     valuation_date: pd.Timestamp
+    origin_grain: str
+    development_grain: str
+    is_pattern: bool
 
     @property
     def nan_triangle(self) -> BackendArray: ...

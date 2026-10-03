@@ -54,7 +54,7 @@ class TriangleBase(
     """This class handles the initialization of a triangle"""
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, ...]:
         """
         The 4-D shape of the Triangle: ``(index, columns, origin, development)``.
 
