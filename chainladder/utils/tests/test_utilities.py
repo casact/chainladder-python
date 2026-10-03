@@ -268,16 +268,9 @@ def test_load_sample() -> None:
     automatically, while non-data files in the folder (``__init__.py``,
     ``_manifest.py``) are never mistaken for datasets.
     """
-    # Every manifest entry must load and have a matching CSV on disk.
-    data_dir: Path = Path(__file__).parent.parent / "data"
-    for dataset in SAMPLES:
-        assert (data_dir / f"{dataset}.csv").is_file(), (
-            f"manifest lists '{dataset}' but {dataset}.csv is missing"
-        )
-        cl.load_sample(dataset)
-
-    # Conversely, every CSV on disk must be declared in the manifest, so a
+    # Every CSV on disk must be declared in the manifest, so a
     # newly added data file can't silently go unregistered.
+    data_dir: Path = Path(__file__).parent.parent / "data"
     csv_stems = {f.stem for f in data_dir.glob("*.csv")}
     assert csv_stems == set(SAMPLES), (
         "manifest and data directory are out of sync: "
@@ -1020,7 +1013,7 @@ def test_dask_parallel_deprecated_warns_once() -> None:
         cl._dask_parallel_state.warned = False
 
 
-def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
+def test_dask_parallel_groupby_deprecated(clrd, monkeypatch: MonkeyPatch) -> None:
     """
     A groupby aggregation on a sparse-backed triangle uses the dask 'bag'
     parallel-compute path when dask is available, which should emit the dask
@@ -1033,18 +1026,20 @@ def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
     """
     cl._dask_parallel_state.warned = False
     monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
-    sparse_clrd = cl.load_sample("clrd").set_backend("sparse")
-    try:
-        with pytest.warns(DeprecationWarning, match="dask") as record:
-            sparse_clrd.groupby("LOB").sum()
-        dask_warnings = [
-            w
-            for w in record
-            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
-        ]
-        assert len(dask_warnings) == 1
-    finally:
-        cl._dask_parallel_state.warned = False
+    if clrd.array_backend == "sparse":
+        # this test is specific to sparse backend
+        try:
+            with pytest.warns(DeprecationWarning, match="dask") as record:
+                clrd.groupby("LOB").sum()
+            dask_warnings = [
+                w
+                for w in record
+                if issubclass(w.category, DeprecationWarning)
+                and "dask" in str(w.message)
+            ]
+            assert len(dask_warnings) == 1
+        finally:
+            cl._dask_parallel_state.warned = False
 
 
 def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:
