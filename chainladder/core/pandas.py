@@ -305,11 +305,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, np.nan, np.nan, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -339,11 +339,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, 500, 600, np.nan, 600, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -373,11 +373,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, np.nan, np.nan, np.nan, 600, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -406,11 +406,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [500, np.nan, 700, 500, np.nan, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -441,11 +441,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [500, 600, np.nan, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -477,12 +477,12 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987] * 2,
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
                     'lob': ['abc'] * 6 + ['xyz'] * 6,
                     'paid': [np.nan, np.nan, np.nan, 500, 600, 500] * 2,
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 index='lob',
                 columns=['paid'],
                 cumulative=True
@@ -623,11 +623,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
-                    'development': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+                    'valuation': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
                     'paid': [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -847,11 +847,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [300, 400, 500, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
