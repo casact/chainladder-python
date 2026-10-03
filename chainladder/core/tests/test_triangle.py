@@ -12,6 +12,7 @@ import warnings
 from chainladder.core.common import Common
 from chainladder.utils.utility_functions import (
     _axis_orders,
+    _axis_to_axis_number,
     _get_axis_name,
     _get_axis_number,
     date_delta_adjustment,
@@ -482,8 +483,17 @@ def test_triangle_axes(raa):
     assert axes[3].equals(raa.development)
 
 
-def test_axis_mappings():
+def test_axis_mappings(raa):
     """Verify axis number and name resolutions in chainladder.core.typing."""
+    from chainladder.core.typing import (
+        _axis_orders as typing_axis_orders,
+        _axis_to_axis_number as typing_axis_to_axis_number,
+        _get_axis_name as typing_get_axis_name,
+        _get_axis_number as typing_get_axis_number,
+    )
+
+    assert typing_axis_orders == _axis_orders
+    assert typing_axis_to_axis_number == _axis_to_axis_number
     for idx, name in enumerate(_axis_orders):
         assert _get_axis_number(idx) == idx
         assert _get_axis_number(idx - 4) == idx
@@ -491,6 +501,12 @@ def test_axis_mappings():
         assert _get_axis_name(idx) == name
         assert _get_axis_name(idx - 4) == name
         assert _get_axis_name(name) == name
+        assert typing_get_axis_number(idx) == idx
+        assert typing_get_axis_name(idx) == name
+        assert raa._get_axis_number(idx) == idx
+        assert raa._get_axis_number(name) == idx
+        assert raa._get_axis(idx) == idx
+        assert raa._get_axis(name) == idx
 
     with pytest.raises(
         ValueError, match="No axis named invalid for object type Triangle"
@@ -500,6 +516,9 @@ def test_axis_mappings():
     with pytest.raises(ValueError, match=r"No axis named 5 for object type Triangle"):
         _get_axis_number(5)
 
+    with pytest.raises(ValueError, match="Invalid axis specified"):
+        raa._get_axis_number("invalid")
+
 
 def test_triangle_axis_descriptor():
     """Verify TriangleAxis descriptor correctly uses integer axis keys for index and columns."""
@@ -508,7 +527,11 @@ def test_triangle_axis_descriptor():
     assert isinstance(cl.Triangle.index, TriangleAxis)
     assert cl.Triangle.index.__doc__ is not None
     assert isinstance(cl.Triangle.columns, TriangleAxis)
+    assert isinstance(cl.Triangle.origin, TriangleAxis)
+    assert isinstance(cl.Triangle.development, TriangleAxis)
     assert cl.Triangle.columns.__doc__ is not None
+    assert cl.Triangle.origin.__doc__ is not None
+    assert cl.Triangle.development.__doc__ is not None
 
     class MockTriangle:
         def __init__(self):
@@ -577,6 +600,151 @@ def test_triangle_axis_descriptor():
     m.columns = ["a"]
     with pytest.raises(ValueError, match="length mismatch"):
         m.columns = ["a", "b"]
+
+
+def test_set_axis(raa):
+    """Verify Triangle._set_axis sets index, columns, origin, and development."""
+    tri = raa.copy()
+    # Test setting index via int and str
+    new_idx = pd.DataFrame({"Company": ["Test"]})
+    tri._set_axis(0, new_idx)
+    pd.testing.assert_frame_equal(tri.index, new_idx)
+    tri._set_axis("index", new_idx)
+    pd.testing.assert_frame_equal(tri.index, new_idx)
+
+    # Test setting columns via int and str
+    tri._set_axis(1, ["ColA"])
+    assert list(tri.columns) == ["ColA"]
+    tri._set_axis("columns", ["ColB"])
+    assert list(tri.columns) == ["ColB"]
+
+    # Test setting origin via int and str
+    orig_years = [str(y) for y in range(1981, 1991)]
+    tri._set_axis(2, orig_years)
+    assert list(tri.origin.year) == list(range(1981, 1991))
+    tri._set_axis("origin", orig_years)
+    assert list(tri.origin.year) == list(range(1981, 1991))
+
+    # Test setting development via int and str
+    devs = list(range(1, 11))
+    tri._set_axis(3, devs)
+    assert list(tri.development) == devs
+    tri._set_axis("development", devs)
+    assert list(tri.development) == devs
+
+    # Invalid axis raises ValueError
+    with pytest.raises(ValueError):
+        tri._set_axis("invalid", [1])
+
+
+def test_centralized_axis_edge_cases(raa):
+    """Cover edge cases for TriangleAxis origin, development, and legacy pickles."""
+    # 1. origin on 1-origin pattern returns Series(["(All)"])
+    dev = cl.Development().fit(raa)
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+    assert len(dev.ldf_.origin) == 1
+
+    # 2. _set_origin and _set_development on mock without values
+    class MockTriangleNoValues:
+        origin_grain = "Y"
+        origin_close = "DEC"
+        development_grain = "Y"
+        values = None
+        is_pattern = False
+        is_val_tri = False
+        _axes = {
+            2: pd.period_range("2000", periods=3, freq="Y-DEC").to_timestamp().values,
+            3: np.array([12, 24, 36]),
+        }
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+        def _len_check(self, a, b):
+            if len(a) != len(b):
+                raise ValueError("Length mismatch")
+
+    mock = MockTriangleNoValues()
+    mock.origin = ["2001", "2002", "2003"]
+    assert len(mock._axes[2]) == 3
+    with pytest.raises(ValueError, match="Length mismatch"):
+        mock.origin = ["2001"]
+
+    mock.development = [12, 24, 36]
+    assert len(mock._axes[3]) == 3
+    with pytest.raises(ValueError, match="Length mismatch"):
+        mock.development = [12]
+
+    # 3. Development string assignment for single column
+    single_col_tri = raa.iloc[:, :, :, :1].copy()
+    single_col_tri.development = "1"
+    assert list(single_col_tri.development) == ["1"]
+
+    # 4. Valuation triangle development and non-cumulative pattern development
+    val_tri = raa.dev_to_val()
+    assert list(val_tri.development) == [str(y) for y in range(1981, 1991)]
+    assert list(raa.link_ratio.development)[0] == "12-24"
+    assert list(dev.cdf_.development)[0] == "12-Ult"
+
+    # 5. Pattern with is_ultimate True
+    class MockPatternUltimate:
+        is_pattern = True
+        is_ultimate = True
+        is_val_tri = False
+        is_cumulative = False
+        development_grain = "Y"
+        development = cl.Triangle.development
+        _axes = {3: np.array([12, 24, 999])}
+
+        def _dstep(self):
+            return {"M": {"Y": 12}}
+
+    mock_ult = MockPatternUltimate()
+    assert list(mock_ult.development) == ["12-24", "24-36", "36-48"]
+
+    # 6. Triangle._odims and Triangle._ddims setters on uninitialized instance
+    t_uninit = cl.Triangle.__new__(cl.Triangle)
+    t_uninit._odims = np.array(["2000-01-01"], dtype="datetime64[ns]")
+    assert 2 in t_uninit._axes
+
+    t2_uninit = cl.Triangle.__new__(cl.Triangle)
+    t2_uninit._ddims = np.array([12, 24])
+    assert 3 in t2_uninit._axes
+
+    # 7. Redundant legacy keys in __setstate__
+    state_redundant = raa.__dict__.copy()
+    raw_odims = raa._odims.copy()
+    raw_ddims = raa._ddims.copy()
+    state_redundant["_axes"] = {
+        0: raa.index.copy(),
+        1: raa.columns.copy(),
+        2: raw_odims.copy(),
+        3: raw_ddims.copy(),
+    }
+    state_redundant["_odims"] = raw_odims.copy()
+    state_redundant["odims"] = raw_odims.copy()
+    state_redundant["_ddims"] = raw_ddims.copy()
+    state_redundant["ddims"] = raw_ddims.copy()
+    restored_red = cl.Triangle.__new__(cl.Triangle)
+    restored_red.__setstate__(state_redundant)
+    assert "_odims" not in restored_red.__dict__
+    assert "odims" not in restored_red.__dict__
+    assert "_ddims" not in restored_red.__dict__
+    assert "ddims" not in restored_red.__dict__
+
+    # 8. Unprefixed origin/development legacy pickle and fallthrough
+    state_no_axes = raa.__dict__.copy()
+    state_no_axes["_axes"] = {}
+    restored_none = cl.Triangle.__new__(cl.Triangle)
+    restored_none.__setstate__(state_no_axes)
+    assert 2 not in restored_none._axes
+    assert 3 not in restored_none._axes
+
+    # 9. _get_axis_number and _get_axis edge cases
+    assert raa._get_axis_number(None) == 0
+    assert raa._get_axis(None) == 0
+    for neg, pos in [(-1, 3), (-2, 2), (-3, 1), (-4, 0)]:
+        assert raa._get_axis_number(neg) == pos
+        assert raa._get_axis(neg) == pos
 
 
 def test_triangle_index_property_and_alias(raa):
@@ -698,6 +866,9 @@ def test_legacy_pickle_compatibility(raa):
     """Pickles saved prior to kdims/vdims/odims/ddims migration should unpickle cleanly with warning."""
     import pickle
 
+    raw_odims = raa._odims.copy()
+    raw_ddims = raa._ddims.copy()
+
     # 1. Simulate oldest serialized Triangle containing kdims, vdims, odims, and ddims
     state = raa.__dict__.copy()
     state.pop("_axes", None)
@@ -705,8 +876,8 @@ def test_legacy_pickle_compatibility(raa):
     state.pop("_columns", None)
     state["kdims"] = raa.index.values
     state["vdims"] = raa.columns.values
-    state["odims"] = state.pop("_odims")
-    state["ddims"] = state.pop("_ddims")
+    state["odims"] = raw_odims
+    state["ddims"] = raw_ddims
 
     restored = cl.Triangle.__new__(cl.Triangle)
     with pytest.warns(
@@ -726,6 +897,8 @@ def test_legacy_pickle_compatibility(raa):
     assert restored._axes[0].equals(raa.index)
     assert 1 in restored._axes
     assert restored._axes[1].equals(raa.columns)
+    assert 2 in restored._axes
+    assert 3 in restored._axes
 
     # 2. Simulate intermediate serialized Triangle containing _kdims and _vdims
     state_mid = raa.__dict__.copy()
@@ -734,6 +907,8 @@ def test_legacy_pickle_compatibility(raa):
     state_mid.pop("_columns", None)
     state_mid["_kdims"] = raa.index.values
     state_mid["_vdims"] = raa.columns.values
+    state_mid["_odims"] = raw_odims
+    state_mid["_ddims"] = raw_ddims
 
     restored_mid = cl.Triangle.__new__(cl.Triangle)
     with pytest.warns(
@@ -750,6 +925,8 @@ def test_legacy_pickle_compatibility(raa):
     assert restored_mid._axes[0].equals(raa.index)
     assert 1 in restored_mid._axes
     assert restored_mid._axes[1].equals(raa.columns)
+    assert 2 in restored_mid._axes
+    assert 3 in restored_mid._axes
 
     # 3. Simulate unprefixed kdims/vdims legacy pickle
     state_unprefixed = raa.__dict__.copy()
@@ -760,6 +937,8 @@ def test_legacy_pickle_compatibility(raa):
     state_unprefixed.pop("_vdims", None)
     state_unprefixed["kdims"] = raa.index.values
     state_unprefixed["vdims"] = raa.columns.values
+    state_unprefixed["_odims"] = raw_odims
+    state_unprefixed["_ddims"] = raw_ddims
 
     restored_unprefixed = cl.Triangle.__new__(cl.Triangle)
     with pytest.warns(
@@ -768,6 +947,8 @@ def test_legacy_pickle_compatibility(raa):
         restored_unprefixed.__setstate__(state_unprefixed)
     assert 0 in restored_unprefixed._axes
     assert restored_unprefixed.index.equals(raa.index)
+    assert 2 in restored_unprefixed._axes
+    assert 3 in restored_unprefixed._axes
 
     # 4. Simulate serialized Triangle containing _columns
     state_col = raa.__dict__.copy()
@@ -776,6 +957,8 @@ def test_legacy_pickle_compatibility(raa):
     state_col.pop("_columns", None)
     state_col["_kdims"] = raa.index.values
     state_col["_columns"] = list(raa.columns)
+    state_col["_odims"] = raw_odims
+    state_col["_ddims"] = raw_ddims
 
     restored_col = cl.Triangle.__new__(cl.Triangle)
     with pytest.warns(
@@ -784,6 +967,8 @@ def test_legacy_pickle_compatibility(raa):
         restored_col.__setstate__(state_col)
     assert list(restored_col.columns) == list(raa.columns)
     assert 1 in restored_col._axes
+    assert 2 in restored_col._axes
+    assert 3 in restored_col._axes
 
     # 5. Simulate string-keyed _axes
     state_str_axes = raa.__dict__.copy()
@@ -792,16 +977,25 @@ def test_legacy_pickle_compatibility(raa):
     state_str_axes["_axes"] = {
         "index": raa.index.copy(),
         "columns": raa.columns.copy(),
+        "origin": raw_odims.copy(),
+        "development": raw_ddims.copy(),
     }
     restored_str = cl.Triangle.__new__(cl.Triangle)
     restored_str.__setstate__(state_str_axes)
     assert 0 in restored_str._axes
     assert 1 in restored_str._axes
+    assert 2 in restored_str._axes
+    assert 3 in restored_str._axes
     assert restored_str.index.equals(raa.index)
 
     # 6. Simulate redundant _index when 0 already in _axes
     state_redundant = raa.__dict__.copy()
-    state_redundant["_axes"] = {0: raa.index.copy(), 1: raa.columns.copy()}
+    state_redundant["_axes"] = {
+        0: raa.index.copy(),
+        1: raa.columns.copy(),
+        2: raw_odims.copy(),
+        3: raw_ddims.copy(),
+    }
     state_redundant["_index"] = raa.index.copy()
     restored_red = cl.Triangle.__new__(cl.Triangle)
     restored_red.__setstate__(state_redundant)
@@ -817,6 +1011,8 @@ def test_legacy_pickle_compatibility(raa):
     state_empty.pop("_kdims", None)
     state_empty.pop("vdims", None)
     state_empty.pop("_vdims", None)
+    state_empty["_odims"] = raw_odims
+    state_empty["_ddims"] = raw_ddims
 
     restored_empty = cl.Triangle.__new__(cl.Triangle)
     with warnings.catch_warnings():
@@ -826,6 +1022,8 @@ def test_legacy_pickle_compatibility(raa):
     assert list(restored_empty.index.columns) == ["Total"]
     assert 0 in restored_empty._axes
     assert 1 in restored_empty._axes
+    assert 2 in restored_empty._axes
+    assert 3 in restored_empty._axes
 
     # 8. Verify re-pickling the migrated instance works without warnings
     with warnings.catch_warnings():
@@ -834,6 +1032,8 @@ def test_legacy_pickle_compatibility(raa):
     assert roundtripped == raa
     assert 0 in roundtripped._axes
     assert 1 in roundtripped._axes
+    assert 2 in roundtripped._axes
+    assert 3 in roundtripped._axes
 
 
 def test_sort_axis_columns_out_of_order(raa):

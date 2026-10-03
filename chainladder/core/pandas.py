@@ -15,7 +15,7 @@ from chainladder import (
     _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder.utils.utility_functions import _get_axis_number, concat, num_to_nan
 
 from typing import cast, TYPE_CHECKING
 
@@ -239,7 +239,7 @@ class TrianglePandas(_TrianglePandasBase):
         return df.hvplot(*args, **kwargs)
 
     @staticmethod
-    def _get_axis(
+    def _get_axis_number(
         axis: Literal["index", "columns", "origin", "development"] | int | None,
     ) -> int:
         """
@@ -250,30 +250,31 @@ class TrianglePandas(_TrianglePandasBase):
         axis: Literal['index', 'columns', 'origin', 'development'] | int | None
             String or integer representation of the requested axis. If
             supplied as a string, returns the integer representation. If
-            supplied as an integer, returns the same integer.
+            supplied as an integer, returns the canonical positive integer.
 
         Returns
         -------
         int
-            The integer representation of the requested axis
+            The integer representation of the requested axis (0..3).
         """
-
-        ax = {
-            **{0: 0, 1: 1, 2: 2, 3: 3},
-            **{-1: 3, -2: 2, -3: 1, -4: 0},
-            **{"index": 0, "columns": 1, "origin": 2, "development": 3},
-        }
-
+        if axis is None:
+            return 0
         try:
-            return ax[axis]
-        except KeyError:
-            if axis is None:
-                return 0
-            else:
-                raise ValueError(
-                    "Invalid axis specified. Please specify the correct string or "
-                    "integer representation of the desired axis."
-                )
+            return _get_axis_number(axis)
+        except ValueError as err:
+            raise ValueError(
+                "Invalid axis specified. Please specify the correct string or "
+                "integer representation of the desired axis."
+            ) from err
+
+    @staticmethod
+    def _get_axis(
+        axis: Literal["index", "columns", "origin", "development"] | int | None,
+    ) -> int:
+        """
+        Backward-compatible alias for _get_axis_number.
+        """
+        return TrianglePandas._get_axis_number(axis)
 
     def dropna(self) -> Triangle:
         """
