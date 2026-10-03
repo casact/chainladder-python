@@ -10,7 +10,12 @@ import pytest
 import warnings
 
 from chainladder.core.common import Common
-from chainladder.utils.utility_functions import date_delta_adjustment
+from chainladder.utils.utility_functions import (
+    _axis_orders,
+    _get_axis_name,
+    _get_axis_number,
+    date_delta_adjustment,
+)
 from chainladder.utils.sparse import COO
 
 from io import StringIO
@@ -174,8 +179,7 @@ def test_sum_of_diff_eq_diff_of_sum(clrd):
 
 def test_append(raa):
     raa2 = raa.copy()
-    raa2.kdims = np.array([["P2"]])
-    raa.append(raa2).sum() == raa * 2
+    raa2.index = pd.DataFrame([["P2"]], columns=raa.key_labels)
     assert raa.append(raa2).sum() == 2 * raa
 
 
@@ -328,7 +332,7 @@ def test_origin_and_value_setters(raa):
         np.all(raa2.origin == raa.origin),
         np.all(raa2.development == raa.development),
         np.all(raa2.odims == raa.odims),
-        np.all(raa2.vdims == raa.vdims),
+        np.all(raa2.columns == raa.columns),
     ))
 
 
@@ -353,9 +357,9 @@ def test_index_setter_with_dataframe(clrd: Triangle) -> None:
     tri.index = new_index
 
     assert tri.key_labels == ["Company"]
-    np.testing.assert_array_equal(tri.kdims, new_index.values)
+    assert tri.index.equals(new_index)
     # _set_slicers() must have rebuilt .loc against the new key label.
-    assert tri.loc["A"].kdims.tolist() == [["A"]]
+    assert tri.loc["A"].index.values.tolist() == [["A"]]
     assert tri.loc["A"] == clrd.iloc[:1]
 
 
@@ -401,8 +405,8 @@ def test_index_setter_non_dataframe_raises(clrd: Triangle) -> None:
 
 def test_set_index_inplace(clrd: Triangle) -> None:
     """
-    Triangle.set_index(value, inplace=True) should mutate the calling
-    Triangle's index via the index setter and return that same object.
+    Triangle.set_index(value, inplace=True) should mutate the Triangle and
+    return self.
 
     Parameters
     ----------
@@ -420,14 +424,14 @@ def test_set_index_inplace(clrd: Triangle) -> None:
 
     assert result is tri
     assert tri.key_labels == ["Company"]
-    np.testing.assert_array_equal(tri.kdims, new_index.values)
+    assert tri.index.equals(new_index)
 
 
 def test_set_index_not_inplace(clrd: Triangle) -> None:
     """
     Triangle.set_index(value) with the default inplace=False should operate
     on a copy: it returns a distinct Triangle with the new index applied,
-    leaving the original Triangle's kdims/key_labels untouched.
+    leaving the original Triangle's index/key_labels untouched.
 
     Parameters
     ----------
@@ -439,7 +443,7 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
     None
     """
     tri = clrd.iloc[:3]
-    original_kdims = tri.kdims.copy()
+    original_index = tri.index.copy()
     original_key_labels = list(tri.key_labels)
     new_index = pd.DataFrame({"Company": ["A", "B", "C"]})
 
@@ -447,9 +451,373 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
 
     assert result is not tri
     assert result.key_labels == ["Company"]
-    np.testing.assert_array_equal(result.kdims, new_index.values)
+    assert result.index.equals(new_index)
     assert tri.key_labels == original_key_labels
-    np.testing.assert_array_equal(tri.kdims, original_kdims)
+    assert tri.index.equals(original_index)
+
+
+def test_triangle_columns_setter(raa):
+    """Setting Triangle.columns should update columns and slicers, and validate lengths."""
+    tri = raa.copy()
+    tri.columns = ["NewColumn"]
+    assert list(tri.columns) == ["NewColumn"]
+    assert tri["NewColumn"].shape == tri.shape
+
+    tri.columns = "SingleColumn"
+    assert list(tri.columns) == ["SingleColumn"]
+    assert tri["SingleColumn"].shape == tri.shape
+
+    with pytest.raises(ValueError, match="Length mismatch"):
+        tri.columns = ["Col1", "Col2"]
+
+
+def test_triangle_axes(raa):
+    """Triangle.axes should return a list of [index, columns, origin, development]."""
+    axes = raa.axes
+    assert isinstance(axes, list)
+    assert len(axes) == 4
+    assert axes[0].equals(raa.index)
+    assert axes[1].equals(raa.columns)
+    assert axes[2].equals(raa.origin)
+    assert axes[3].equals(raa.development)
+
+
+def test_axis_mappings():
+    """Verify axis number and name resolutions in chainladder.core.typing."""
+    for idx, name in enumerate(_axis_orders):
+        assert _get_axis_number(idx) == idx
+        assert _get_axis_number(idx - 4) == idx
+        assert _get_axis_number(name) == idx
+        assert _get_axis_name(idx) == name
+        assert _get_axis_name(idx - 4) == name
+        assert _get_axis_name(name) == name
+
+    with pytest.raises(
+        ValueError, match="No axis named invalid for object type Triangle"
+    ):
+        _get_axis_number("invalid")
+
+    with pytest.raises(ValueError, match=r"No axis named 5 for object type Triangle"):
+        _get_axis_number(5)
+
+
+def test_triangle_axis_descriptor():
+    """Verify TriangleAxis descriptor correctly uses integer axis keys for index and columns."""
+    from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
+
+    assert isinstance(cl.Triangle.index, TriangleAxis)
+    assert cl.Triangle.index.__doc__ is not None
+    assert isinstance(cl.Triangle.columns, TriangleAxis)
+    assert cl.Triangle.columns.__doc__ is not None
+
+    class MockTriangle:
+        def __init__(self):
+            self.values = None
+            self._axes = {}
+
+        def _len_check(self, target, obj):
+            if len(target) != len(obj):
+                raise ValueError("length mismatch")
+
+        index = TriangleAxis(0, fset=_set_index)
+        columns = TriangleAxis(1, fset=_set_columns)
+
+    obj = MockTriangle()
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        obj.index = "not_a_df"
+
+    df = pd.DataFrame({"Company": ["A", "B"]})
+    obj.index = df
+    assert 0 in obj._axes
+    pd.testing.assert_frame_equal(obj.index, df)
+
+    # When self.values is None and 0 in _axes, _set_index checks against obj.index
+    df_same_len = pd.DataFrame({"Company": ["C", "D"]})
+    obj.index = df_same_len
+    pd.testing.assert_frame_equal(obj.index, df_same_len)
+
+    with pytest.raises(ValueError, match="length mismatch"):
+        obj.index = pd.DataFrame({"Company": ["A", "B", "C"]})
+
+    # When self.values is not None, _set_index checks against range(self.values.shape[0])
+    obj.values = np.zeros((2, 3))
+    obj.index = df
+    with pytest.raises(ValueError, match="length mismatch"):
+        obj.index = pd.DataFrame({"Company": ["A"]})
+
+    obj.columns = ["a", "b", "c"]
+    assert 1 in obj._axes
+    assert list(obj.columns) == ["a", "b", "c"]
+    assert obj.columns.name == "columns"
+
+    # Custom fget mapping
+    class CustomAxisTriangle:
+        col = TriangleAxis(1, fget=lambda o, raw: [x.upper() for x in raw])
+
+    c_obj = CustomAxisTriangle()
+    c_obj.col = pd.Index(["x", "y"], name="columns")
+    assert c_obj.col == ["X", "Y"]
+
+    # _set_columns with single string and len_check without values
+    class MockColumnsTriangle:
+        def __init__(self):
+            self.values = None
+            self._axes = {}
+
+        def _len_check(self, target, val):
+            if len(target) != len(val):
+                raise ValueError("length mismatch")
+
+        columns = TriangleAxis(1, fset=_set_columns)
+
+    m = MockColumnsTriangle()
+    m.columns = "single_col"
+    assert list(m.columns) == ["single_col"]
+
+    m.columns = ["a"]
+    with pytest.raises(ValueError, match="length mismatch"):
+        m.columns = ["a", "b"]
+
+
+def test_triangle_index_property_and_alias(raa):
+    """Verify Triangle.index descriptor, _index backward-compat alias, and slicer reset."""
+    assert raa._index.equals(raa.index)
+    tri = raa.copy()
+    tri._index = tri.index.copy()
+    assert tri._index.equals(raa.index)
+    assert tri.index.equals(raa.index)
+
+    tri.index = pd.DataFrame({"Total": ["A"]})
+    assert list(tri.index["Total"]) == ["A"]
+    assert list(tri._index["Total"]) == ["A"]
+
+
+def test_prep_index_single_element_different_key_labels(raa):
+    """Verify arithmetic index broadcasting when both triangles have 1 row but differing key_labels."""
+    x = raa.copy()
+    x.key_labels = ["LabelA"]
+    y = raa.copy()
+    y.index = pd.DataFrame([["B", "C"]], columns=["LabelB", "LabelC"])
+
+    z1 = x + y
+    assert z1.key_labels == ["LabelB", "LabelC"]
+    assert 0 in z1._axes
+
+    z2 = y + x
+    assert z2.key_labels == ["LabelB", "LabelC"]
+    assert 0 in z2._axes
+
+
+def test_concat_axis0_index(raa):
+    """Verify cl.concat along axis 0 updates index and key_labels."""
+    out_ignore = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(out_ignore.index) == 2
+    assert out_ignore.key_labels == ["Index"]
+    assert 0 in out_ignore._axes
+
+    r1 = raa.copy()
+    r1.index = pd.DataFrame({"Item": ["A"]})
+    r2 = raa.copy()
+    r2.index = pd.DataFrame({"Item": ["B"]})
+    out_keep = cl.concat([r1, r2], axis=0, ignore_index=False)
+    assert len(out_keep.index) == 2
+    assert list(out_keep.index["Item"]) == ["A", "B"]
+    assert 0 in out_keep._axes
+
+
+def test_key_labels_setter(raa):
+    """Setting key_labels should update Triangle.index columns and slicers."""
+    tri = raa.copy()
+    tri.key_labels = ["NewCompany"]
+    assert tri.key_labels == ["NewCompany"]
+    assert list(tri.index.columns) == ["NewCompany"]
+    indexed = tri.index.set_index(tri.key_labels)
+    assert list(indexed.index.names) == ["NewCompany"]
+
+    tri.key_labels = "SingleCompany"
+    assert tri.key_labels == ["SingleCompany"]
+    assert list(tri.index.columns) == ["SingleCompany"]
+
+
+def test_series_indexing(raa):
+    """Indexing Triangle by boolean Series or label Series should work."""
+    s_bool = pd.Series([True], index=raa.index.index)
+    assert raa[s_bool].shape == raa.shape
+
+    s_label = pd.Series(["Total"])
+    assert raa[s_label].shape == raa.shape
+
+    # Length mismatch raises IndexError
+    s_short = pd.Series([], dtype=bool)
+    with pytest.raises(IndexError, match="Boolean index has wrong length"):
+        _ = raa[s_short]
+
+    s_long = pd.Series([True, False])
+    with pytest.raises(IndexError, match="Boolean index has wrong length"):
+        _ = raa[s_long]
+
+    # Index misalignment raises IndexingError
+    s_misaligned = pd.Series([True], index=[99])
+    with pytest.raises(pd.errors.IndexingError):
+        _ = raa[s_misaligned]
+
+    # Permuted index aligns correctly to instance index
+    two_row = cl.concat([raa, raa], axis=0, ignore_index=True)
+    two_row.index = pd.DataFrame({"Company": ["A", "B"]})
+    s_perm = pd.Series([False, True], index=[1, 0])
+    sliced = two_row[s_perm]
+    assert len(sliced.index) == 1
+    assert sliced.index.iloc[0]["Company"] == "A"
+
+
+def test_legacy_pickle_compatibility(raa):
+    """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
+    import pickle
+
+    # 1. Simulate oldest serialized Triangle containing kdims and vdims
+    state = raa.__dict__.copy()
+    state.pop("_axes", None)
+    state.pop("_index", None)
+    state.pop("_columns", None)
+    state["kdims"] = raa.index.values
+    state["vdims"] = raa.columns.values
+
+    restored = cl.Triangle.__new__(cl.Triangle)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored.__setstate__(state)
+
+    assert isinstance(restored.columns, pd.Index)
+    assert isinstance(restored.index, pd.DataFrame)
+    assert restored.index.equals(raa.index)
+    assert list(restored.columns) == list(raa.columns)
+    assert restored.loc["Total"].shape == raa.loc["Total"].shape
+    assert restored == raa
+    assert 0 in restored._axes
+    assert restored._axes[0].equals(raa.index)
+    assert 1 in restored._axes
+    assert restored._axes[1].equals(raa.columns)
+
+    # 2. Simulate intermediate serialized Triangle containing _kdims and _vdims
+    state_mid = raa.__dict__.copy()
+    state_mid.pop("_axes", None)
+    state_mid.pop("_index", None)
+    state_mid.pop("_columns", None)
+    state_mid["_kdims"] = raa.index.values
+    state_mid["_vdims"] = raa.columns.values
+
+    restored_mid = cl.Triangle.__new__(cl.Triangle)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored_mid.__setstate__(state_mid)
+
+    assert isinstance(restored_mid.columns, pd.Index)
+    assert isinstance(restored_mid.index, pd.DataFrame)
+    assert restored_mid.index.equals(raa.index)
+    assert list(restored_mid.columns) == list(raa.columns)
+    assert restored_mid == raa
+    assert 0 in restored_mid._axes
+    assert restored_mid._axes[0].equals(raa.index)
+    assert 1 in restored_mid._axes
+    assert restored_mid._axes[1].equals(raa.columns)
+
+    # 3. Simulate unprefixed kdims/vdims legacy pickle
+    state_unprefixed = raa.__dict__.copy()
+    state_unprefixed.pop("_axes", None)
+    state_unprefixed.pop("_index", None)
+    state_unprefixed.pop("_columns", None)
+    state_unprefixed.pop("_kdims", None)
+    state_unprefixed.pop("_vdims", None)
+    state_unprefixed["kdims"] = raa.index.values
+    state_unprefixed["vdims"] = raa.columns.values
+
+    restored_unprefixed = cl.Triangle.__new__(cl.Triangle)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored_unprefixed.__setstate__(state_unprefixed)
+    assert 0 in restored_unprefixed._axes
+    assert restored_unprefixed.index.equals(raa.index)
+
+    # 4. Simulate serialized Triangle containing _columns
+    state_col = raa.__dict__.copy()
+    state_col.pop("_axes", None)
+    state_col.pop("_index", None)
+    state_col.pop("_columns", None)
+    state_col["_kdims"] = raa.index.values
+    state_col["_columns"] = list(raa.columns)
+
+    restored_col = cl.Triangle.__new__(cl.Triangle)
+    with pytest.warns(
+        UserWarning, match="legacy pickled Triangle instance was detected"
+    ):
+        restored_col.__setstate__(state_col)
+    assert list(restored_col.columns) == list(raa.columns)
+    assert 1 in restored_col._axes
+
+    # 5. Simulate string-keyed _axes
+    state_str_axes = raa.__dict__.copy()
+    state_str_axes.pop("_index", None)
+    state_str_axes.pop("_columns", None)
+    state_str_axes["_axes"] = {
+        "index": raa.index.copy(),
+        "columns": raa.columns.copy(),
+    }
+    restored_str = cl.Triangle.__new__(cl.Triangle)
+    restored_str.__setstate__(state_str_axes)
+    assert 0 in restored_str._axes
+    assert 1 in restored_str._axes
+    assert restored_str.index.equals(raa.index)
+
+    # 6. Simulate redundant _index when 0 already in _axes
+    state_redundant = raa.__dict__.copy()
+    state_redundant["_axes"] = {0: raa.index.copy(), 1: raa.columns.copy()}
+    state_redundant["_index"] = raa.index.copy()
+    restored_red = cl.Triangle.__new__(cl.Triangle)
+    restored_red.__setstate__(state_redundant)
+    assert 0 in restored_red._axes
+    assert "_index" not in restored_red.__dict__
+
+    # 7. Simulate fallback when no kdims/vdims keys are found (no warning)
+    state_empty = raa.__dict__.copy()
+    state_empty.pop("_axes", None)
+    state_empty.pop("_index", None)
+    state_empty.pop("_columns", None)
+    state_empty.pop("kdims", None)
+    state_empty.pop("_kdims", None)
+    state_empty.pop("vdims", None)
+    state_empty.pop("_vdims", None)
+
+    restored_empty = cl.Triangle.__new__(cl.Triangle)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        restored_empty.__setstate__(state_empty)
+    assert list(restored_empty.columns) == ["values"]
+    assert list(restored_empty.index.columns) == ["Total"]
+    assert 0 in restored_empty._axes
+    assert 1 in restored_empty._axes
+
+    # 8. Verify re-pickling the migrated instance works without warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        roundtripped = pickle.loads(pickle.dumps(restored))
+    assert roundtripped == raa
+    assert 0 in roundtripped._axes
+    assert 1 in roundtripped._axes
+
+
+def test_sort_axis_columns_out_of_order(raa):
+    """Verify sort_axis(1) reorders values when columns are unsorted."""
+    import copy
+
+    t1 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2 = copy.deepcopy(raa).rename("columns", ["A"])
+    combined = cl.concat([t1, t2], axis=1)
+    assert list(combined.columns) == ["B", "A"]
+    sorted_tri = combined.sort_axis(1)
+    assert list(sorted_tri.columns) == ["A", "B"]
 
 
 def test_valdev1(qtr):
@@ -3450,3 +3818,59 @@ def test_full_fill(raa: Triangle) -> None:
     full_tri = cl.Chainladder().fit(raa).full_triangle_
     fill_full_tri = full_tri.fill(200)
     assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
+
+
+def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:
+    """JSON serialization roundtrip must preserve Triangle._index as a pd.DataFrame."""
+    r_single = cl.read_json(raa.to_json())
+    assert isinstance(r_single.index, pd.DataFrame)
+    assert isinstance(r_single._index, pd.DataFrame)
+    assert r_single.index.iloc[:, 0].tolist() == ["Total"]
+    assert r_single == raa
+
+    r_multi = cl.read_json(clrd.to_json())
+    assert isinstance(r_multi.index, pd.DataFrame)
+    assert isinstance(r_multi._index, pd.DataFrame)
+    pd.testing.assert_frame_equal(r_multi.index, clrd.index)
+    assert r_multi == clrd
+
+
+def test_triangle_copy_isolated_index(raa) -> None:
+    """Triangle.copy() must not share the mutable _index DataFrame."""
+    copied = raa.copy()
+    assert copied.index is not raa.index
+    copied.index.iloc[0, 0] = "Modified"
+    assert raa.index.iloc[0, 0] == "Total"
+
+
+def test_triangle_index_setter_resets_row_index(raa) -> None:
+    """Assigning a DataFrame with non-default index to Triangle.index resets row index."""
+    custom_df = pd.DataFrame({"Total": ["Total"]}, index=[42])
+    raa1 = raa.copy()
+    raa1.index = custom_df
+    assert list(raa1.index.index) == [0]
+    # Boolean Series slicing should work cleanly
+    mask = raa1.index["Total"] == "Total"
+    sliced = raa1[mask]
+    assert sliced == raa1
+
+
+def test_sort_index_inplace(clrd: Triangle) -> None:
+    """sort_index with inplace=True updates values and index in sync without crashing."""
+    shuffled = clrd.iloc[::-1].copy()
+    result = shuffled.sort_index(inplace=True)
+    assert result is shuffled
+    pd.testing.assert_frame_equal(shuffled.index, clrd.index)
+    assert shuffled == clrd
+
+
+def test_duplicate_columns_assignment(raa) -> None:
+    """Assigning to duplicate column label updates first matching column without error."""
+    r1 = raa.copy()
+    r1.columns = ["a"]
+    r2 = raa.copy()
+    r2.columns = ["b"]
+    two = cl.concat([r1, r2], axis=1)
+    two.columns = ["col", "col"]
+    two["col"] = 42
+    assert two.values[0, 0, 0, 0] == 42
