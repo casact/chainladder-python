@@ -891,13 +891,22 @@ class TriangleSlicer:
         # Otherwise, remove column from virtual columns if previously reserved for lazy evaluation.
         else:
             self.virtual_columns.pop(key)
+        if isinstance(value, (int, float, np.number)):
+            # Broadcast scalar across the Triangle's shape.
+            value = self.iloc[:, 0] * 0 + value
         if isinstance(value, TriangleSlicer):
             value = cast("TriangleProtocol", cast(object, value))
             if value.array_backend != self.array_backend:
                 value = value.set_backend(self.array_backend)
         # Key exists in columns, replace data.
         if key in self.columns:
-            i = self.columns.get_loc(key)
+            loc = self.columns.get_loc(key)
+            if isinstance(loc, slice):
+                i = loc.start or 0
+            elif isinstance(loc, np.ndarray):
+                i = int(np.where(loc)[0][0])
+            else:
+                i = int(loc)
             # Case sparse backend.
             if self.array_backend == "sparse":
                 # Unwrap a Triangle-valued assignment to its raw array. A raw
@@ -935,9 +944,6 @@ class TriangleSlicer:
                 cast(np.ndarray, self.values)[:, i : i + 1] = value
         # Key is new, create a column and update data.
         else:
-            if isinstance(value, (int, float, np.number)):
-                # Broadcast scalar across the Triangle's shape.
-                value = self.iloc[:, 0] * 0 + value
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
             except (ValueError, AttributeError, AssertionError):
