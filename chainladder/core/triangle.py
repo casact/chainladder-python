@@ -474,7 +474,7 @@ class Triangle(TriangleBase):
     columns = TriangleAxis(
         1,
         fset=_set_columns,
-        doc="Represents the value dimension of the triangle.",
+        doc="Represents the column axis of the triangle.",
     )
 
     @_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
