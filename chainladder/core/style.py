@@ -162,6 +162,48 @@ class Styler(_PandasStyler):
             return self
         return super()._compute()
 
+    def _snapshot_context(self) -> None:
+        """
+        Cache pre-computed style contexts before DataFrame shape modifications.
+        """
+        if getattr(self, "_concatenated_ctx", None) is None:
+            self._compute()
+            self._concatenated_ctx = copy_module.deepcopy(self.ctx)
+            self._concatenated_ctx_index = copy_module.deepcopy(self.ctx_index)
+            self._concatenated_ctx_columns = copy_module.deepcopy(self.ctx_columns)
+
+    def _pad_columns(self, other: Styler) -> None:
+        """
+        Pad column dimensions with NaNs so self and other share identical column labels.
+        """
+        if len(self.data.columns) >= len(other.data.columns):
+            target_cols = self.data.columns
+            padded_data = other.data.copy()
+            orig_len = len(padded_data.columns)
+            for c in target_cols[orig_len:]:
+                padded_data[c] = np.nan
+            padded_data.columns = target_cols
+            other.data = padded_data
+            other.columns = target_cols
+            if orig_len < len(target_cols):
+                other.format(na_rep="", subset=list(target_cols[orig_len:]))
+        else:
+            self._snapshot_context()
+            new_cols = other.data.columns[len(self.data.columns) :]
+            for c in new_cols:
+                self.data[c] = np.nan
+            self.columns = self.data.columns
+            self.format(na_rep="", subset=list(new_cols))
+            for prev in self.concatenated:
+                if isinstance(prev, Styler):
+                    prev._snapshot_context()
+                for c in new_cols:
+                    prev.data[c] = np.nan
+                prev.columns = self.data.columns
+                prev.format(na_rep="", subset=list(new_cols))
+            other.data.columns = self.data.columns
+            other.columns = self.data.columns
+
     def concat(self, other: Any) -> Styler:
         """
         Append another Styler to combine the output into a single table.
@@ -224,94 +266,37 @@ class Styler(_PandasStyler):
         other_copy.data = other.data.copy()
 
         if self.data.columns.equals(other.data.columns):
-            other_copy._compute()
-            other_copy._concatenated_ctx = copy_module.deepcopy(other_copy.ctx)
-            other_copy._concatenated_ctx_index = copy_module.deepcopy(
-                other_copy.ctx_index
-            )
-            other_copy._concatenated_ctx_columns = copy_module.deepcopy(
-                other_copy.ctx_columns
-            )
+            if isinstance(other_copy, Styler):
+                other_copy._snapshot_context()
             super().concat(other_copy)
             return self
 
-        if hasattr(other_copy, "_triangle"):
-            if self._triangle.is_val_tri != other_copy._triangle.is_val_tri:
-                raise ValueError(
-                    "Cannot concatenate a valuation Triangle with a development Triangle."
-                )
-            if (
-                self._triangle.development_grain
-                != other_copy._triangle.development_grain
-            ):
-                raise ValueError(
-                    "Development grains must match to concatenate stylers: "
-                    f"'{self._triangle.development_grain}' != '{other_copy._triangle.development_grain}'."
-                )
-
-            dev1 = _get_starting_dev_lags(self._triangle)
-            dev2 = _get_starting_dev_lags(other_copy._triangle)
-            min_len = min(len(dev1), len(dev2))
-            if dev1[:min_len] != dev2[:min_len]:
-                raise ValueError(
-                    "Development periods must be compatible to concatenate stylers."
-                )
-
-            other_copy._compute()
-            other_copy._concatenated_ctx = copy_module.deepcopy(other_copy.ctx)
-            other_copy._concatenated_ctx_index = copy_module.deepcopy(
-                other_copy.ctx_index
-            )
-            other_copy._concatenated_ctx_columns = copy_module.deepcopy(
-                other_copy.ctx_columns
-            )
-
-            if len(self.data.columns) >= len(other_copy.data.columns):
-                target_cols = self.data.columns
-                padded_data = other_copy.data.copy()
-                orig_len = len(padded_data.columns)
-                for c in target_cols[orig_len:]:
-                    padded_data[c] = np.nan
-                padded_data.columns = target_cols
-                other_copy.data = padded_data
-                other_copy.columns = target_cols
-                if orig_len < len(target_cols):
-                    other_copy.format(na_rep="", subset=list(target_cols[orig_len:]))
-            else:
-                if getattr(self, "_concatenated_ctx", None) is None:
-                    self._compute()
-                    self._concatenated_ctx = copy_module.deepcopy(self.ctx)
-                    self._concatenated_ctx_index = copy_module.deepcopy(self.ctx_index)
-                    self._concatenated_ctx_columns = copy_module.deepcopy(
-                        self.ctx_columns
-                    )
-                new_cols = other_copy.data.columns[len(self.data.columns) :]
-                for c in new_cols:
-                    self.data[c] = np.nan
-                self.columns = self.data.columns
-                self.format(na_rep="", subset=list(new_cols))
-                for prev in self.concatenated:
-                    if getattr(prev, "_concatenated_ctx", None) is None:
-                        prev._compute()
-                        prev._concatenated_ctx = copy_module.deepcopy(prev.ctx)
-                        prev._concatenated_ctx_index = copy_module.deepcopy(
-                            prev.ctx_index
-                        )
-                        prev._concatenated_ctx_columns = copy_module.deepcopy(
-                            prev.ctx_columns
-                        )
-                    for c in new_cols:
-                        prev.data[c] = np.nan
-                    prev.columns = self.data.columns
-                    prev.format(na_rep="", subset=list(new_cols))
-                other_copy.data.columns = self.data.columns
-                other_copy.columns = self.data.columns
-
-            self.concatenated.append(other_copy)
-            return self
-        else:
+        if not hasattr(other_copy, "_triangle"):
             super().concat(other_copy)
             return self
+
+        if self._triangle.is_val_tri != other_copy._triangle.is_val_tri:
+            raise ValueError(
+                "Cannot concatenate a valuation Triangle with a development Triangle."
+            )
+        if self._triangle.development_grain != other_copy._triangle.development_grain:
+            raise ValueError(
+                "Development grains must match to concatenate stylers: "
+                f"'{self._triangle.development_grain}' != '{other_copy._triangle.development_grain}'."
+            )
+
+        dev1 = _get_starting_dev_lags(self._triangle)
+        dev2 = _get_starting_dev_lags(other_copy._triangle)
+        min_len = min(len(dev1), len(dev2))
+        if dev1[:min_len] != dev2[:min_len]:
+            raise ValueError(
+                "Development periods must be compatible to concatenate stylers."
+            )
+
+        other_copy._snapshot_context()
+        self._pad_columns(other_copy)
+        self.concatenated.append(other_copy)
+        return self
 
     @staticmethod
     def _mask_style(
