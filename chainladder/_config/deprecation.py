@@ -380,9 +380,7 @@ def _deprecated_drop_argument(
         def wrapper(*args, **kwargs):
             sig = signature(func)
             param_names = list(sig.parameters.keys())
-            if "self" in param_names:
-                param_names.remove("self")
-            if name in kwargs or len(args) > param_names.index(name) + 1:
+            if name in kwargs or len(args) > param_names.index(name):
                 warnings.warn(message, category, stacklevel=2)  # noqa
             return func(*args, **kwargs)
 
