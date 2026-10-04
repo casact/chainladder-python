@@ -11,7 +11,7 @@ import functools
 import inspect
 import warnings
 
-from inspect import signature
+from inspect import signature, currentframe
 
 from typing import overload, TYPE_CHECKING, TypeVar
 
@@ -447,15 +447,16 @@ def _inplace_returns_none(
         def wrapper(*args, **kwargs):
             bound = sig.bind_partial(*args, **kwargs)
             inplace = bound.arguments.get("inplace", False)
-            if inplace:
+            caller = currentframe().f_back
+            if inplace and caller and caller.f_code.co_name != func.__name__:
                 warnings.warn(
                     "'inplace=True' will return None in 2.0",
                     FutureWarning,
                     stacklevel=2
                 )
-                _ = func(*args, **kwargs) 
+                _ = func(*args, **kwargs)
                 return args[0]
-            return func(*args, **kwargs) 
+            return func(*args, **kwargs)
 
         doc = str(func.__doc__)
 
