@@ -53,7 +53,6 @@ class TestJSON:
         x = raa.dev_to_val().to_json()
         assert cl.read_json(x) == raa.dev_to_val()
 
-
     def test_estimator_json_io(self) -> None:
         """
         test JSON round trip for Development estimator
@@ -67,7 +66,6 @@ class TestJSON:
             == cl.Development().get_params()
         )
 
-
     def test_pipeline_json_io(self) -> None:
         """
         test JSON round trip for an estimator pipeline
@@ -80,10 +78,9 @@ class TestJSON:
             steps=[("dev", cl.Development()), ("model", cl.BornhuetterFerguson())]
         )
         pipe2 = cl.read_json(pipe.to_json())
-        assert {item[0]: item[1].get_params() for item in pipe.get_params()["steps"]} == {
-            item[0]: item[1].get_params() for item in pipe2.get_params()["steps"]
-        }
-
+        assert {
+            item[0]: item[1].get_params() for item in pipe.get_params()["steps"]
+        } == {item[0]: item[1].get_params() for item in pipe2.get_params()["steps"]}
 
     def test_json_subtri(self, raa: Triangle, atol: float) -> None:
         """
@@ -108,7 +105,6 @@ class TestJSON:
         # warning when aggregating
         with pytest.warns(RuntimeWarning, match="All-NaN"):
             assert abs(a - b).max().max() < atol
-
 
     def test_json_df(self, atol: float) -> None:
         """
@@ -182,8 +178,9 @@ class TestPickle:
             dill.dump(raa, f)
         assert cl.read_pickle(str(pkl_path)) == raa
 
-
-    def test_triangle_to_pickle(self, raa: Triangle, clrd: Triangle, tmp_path: Path) -> None:
+    def test_triangle_to_pickle(
+        self, raa: Triangle, clrd: Triangle, tmp_path: Path
+    ) -> None:
         """
         Dump a pickle of a triangle and read it back in. The read-in triangle should
         equal the one that was dumped.
