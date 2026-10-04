@@ -11,6 +11,8 @@ import functools
 import inspect
 import warnings
 
+from inspect import signature
+
 from typing import overload, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -379,6 +381,114 @@ def _deprecated_drop_argument(
             if name in kwargs:
                 warnings.warn(message, category, stacklevel=2)  # noqa
             return func(*args, **kwargs)
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator
+
+
+def _inplace_returns_none(
+) -> Callable[[_F], _F]:
+    """
+    Decorator factory marking a function with an `inplace` argument that will
+    soon return None when `inplace=True`
+
+    `inplace` must default to False
+
+    Returns
+    -------
+    Callable
+        A decorator that wraps a function, preserving its name, docstring,
+        and signature via functools.wraps.
+
+    Examples
+    --------
+
+    .. testcode::
+        :options: +SKIP
+
+        from chainladder._config.deprecation import _deprecated_drop_argument
+
+        @_deprecated_drop_argument(
+            "verbose", "Drop the argument; output is unchanged.", version="2.0"
+        )
+        def func(x, verbose=False):
+            return x + 1
+
+        print(func(1, verbose=True))
+
+    .. testoutput::
+
+        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 2.0. Drop the argument; output is unchanged.
+          func(1, verbose=True)
+
+    """
+    import re
+
+
+    _NUMPY_SECTION_RE = re.compile(
+        r"^[ \t]*([A-Za-z][A-Za-z0-9 _]+)\n[ \t]*[-=]{3,}[ \t]*$",
+        re.MULTILINE,
+    )
+
+    def decorator(func: _F) -> _F:
+
+        sig = signature(func)
+        for name, arg in sig.parameters.items():
+            if name == "inplace":
+                if arg.default:
+                    raise ValueError("inplace must default to False")
+                break
+        else:
+            raise ValueError("inplace must be a keyword argument")
+
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            bound = sig.bind_partial(*args, **kwargs)
+            inplace = bound.arguments.get("inplace", False)
+            if inplace:
+                warnings.warn(
+                    "'inplace=True' will return None in 2.0",
+                    FutureWarning,
+                    stacklevel=2
+                )
+                _ = func(*args, **kwargs) 
+                return args[0]
+            return func(*args, **kwargs) 
+
+        doc = str(func.__doc__)
+
+        message = """
+        .. deprecated:: 0.11
+
+           The return value of ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
+        """
+
+        if message.strip() not in doc:
+
+            matches = list(_NUMPY_SECTION_RE.finditer(doc))
+
+            returns_idx = None
+            for i, match in enumerate(matches):
+                if match.group(1).strip() == "Returns":
+                    returns_idx = i
+                    break
+
+            if returns_idx is None or returns_idx > (len(matches) - 2):
+                doc = doc.rstrip() + "\n\n" + message
+            else:
+                insert_pos = matches[returns_idx + 1].start()
+                doc = (
+                    doc[:insert_pos].rstrip()
+                    + "\n\n"
+                    + message
+                    + "\n\n"
+                    + doc[insert_pos:]
+                )
+
+        wrapper.__doc__ = doc
 
         return wrapper  # type: ignore[return-value]
 

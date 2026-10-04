@@ -21,14 +21,17 @@ from chainladder.utils.utility_functions import (
     to_period,
 )
 from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
-from chainladder._config.deprecation import _deprecated_rename_argument
+from chainladder._config.deprecation import (
+    _deprecated_rename_argument,
+    _inplace_returns_none,
+)
 
 try:
     import dask.bag as db
 except ImportError:
     db = None
 
-from typing import cast, Optional, TYPE_CHECKING
+from typing import cast, Optional, TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -1371,7 +1374,10 @@ class Triangle(TriangleBase):
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def incr_to_cum(self, inplace=False):
+    @_inplace_returns_none()
+    def incr_to_cum(
+        self, inplace: bool=False
+    ) -> Self | None:
         """
         Method to convert an incremental triangle into a cumulative triangle.
 
@@ -1495,10 +1501,11 @@ class Triangle(TriangleBase):
                         self.values = xp.concatenate(out, axis=3)
                     self.values = num_to_nan(self.values)
                 self.is_cumulative = True
-            return self
+            return None
         else:
             new_obj = self.copy()
-            return new_obj.incr_to_cum(inplace=True)
+            new_obj.incr_to_cum(inplace=True)
+            return new_obj
 
     def cum_to_incr(self, inplace=False):
         """
