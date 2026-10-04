@@ -248,7 +248,7 @@ class TestPickle:
         -------
         None
         """
-        data_dir: Path = Path(__file__).parent.parent / "data"
+        data_dir: Path = Path(__file__).parent.parent.parent / "utils" / "data"
         raa_pickles = list(data_dir.glob("raa*.pkl"))
 
         for raa_pickle in raa_pickles:
