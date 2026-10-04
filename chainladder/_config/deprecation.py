@@ -377,7 +377,6 @@ def _deprecated_drop_argument(
         message += f" {guidance}"
 
         sig = signature(func)
-        param_names = list(sig.parameters.keys())
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
