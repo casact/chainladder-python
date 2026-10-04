@@ -376,11 +376,13 @@ def _deprecated_drop_argument(
         message += f" in {version}." if version else " in a future release."
         message += f" {guidance}"
 
+        sig = signature(func)
+        param_names = list(sig.parameters.keys())
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            sig = signature(func)
-            param_names = list(sig.parameters.keys())
-            if name in kwargs or len(args) > param_names.index(name):
+            bound = sig.bind_partial(*args, **kwargs)
+            if name in bound.arguments.keys():
                 warnings.warn(message, category, stacklevel=2)  # noqa
             return func(*args, **kwargs)
 
