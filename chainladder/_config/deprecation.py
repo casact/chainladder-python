@@ -387,8 +387,7 @@ def _deprecated_drop_argument(
     return decorator
 
 
-def _inplace_returns_none(
-) -> Callable[[_F], _F]:
+def _inplace_returns_none() -> Callable[[_F], _F]:
     """
     Decorator factory marking a function with an `inplace` argument that will
     soon return None when `inplace=True`
@@ -425,7 +424,6 @@ def _inplace_returns_none(
     """
     import re
 
-
     _NUMPY_SECTION_RE = re.compile(
         r"^[ \t]*([A-Za-z][A-Za-z0-9 _]+)\n[ \t]*[-=]{3,}[ \t]*$",
         re.MULTILINE,
@@ -442,7 +440,6 @@ def _inplace_returns_none(
         else:
             raise ValueError("inplace must be a keyword argument")
 
-
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             bound = sig.bind_partial(*args, **kwargs)
@@ -452,7 +449,7 @@ def _inplace_returns_none(
                 warnings.warn(
                     "'inplace=True' will return None in 2.0",
                     FutureWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
                 _ = func(*args, **kwargs)
                 return args[0]
@@ -468,7 +465,6 @@ def _inplace_returns_none(
         """
 
         if message.strip() not in doc:
-
             matches = list(_NUMPY_SECTION_RE.finditer(doc))
 
             returns_idx = None
