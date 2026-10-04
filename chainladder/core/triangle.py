@@ -1051,7 +1051,7 @@ class Triangle(TriangleBase):
         """
         Indicates whether the Triangle holds a normal additive ratio (which goes from tail to head)
         """
-        getattr(self, "_is_additive", False)
+        return getattr(self, "_is_additive", False)
 
     @is_additive.setter
     def is_additive(self, is_add: bool) -> None:
