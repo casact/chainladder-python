@@ -4,6 +4,11 @@ import chainladder as cl
 import numpy as np
 import pytest
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
+
 
 def test_schmidt():
     tri = cl.load_sample("ia_sample")
