@@ -11,8 +11,6 @@ import functools
 import inspect
 import warnings
 
-from inspect import signature, currentframe
-
 from typing import overload, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:

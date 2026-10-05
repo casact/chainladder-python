@@ -21,7 +21,7 @@ from chainladder.utils.utility_functions import (
     to_period,
 )
 from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
-from chainladder._config.deprecation import _inplace_returns_none
+from chainladder._config.deprecation import _deprecated_rename_argument
 
 try:
     import dask.bag as db
