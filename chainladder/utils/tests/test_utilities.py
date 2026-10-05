@@ -1325,5 +1325,5 @@ def test_html_io(raa: Triangle) -> None:
     # reads a URL by default, needs StringIO to directly read
     # raw html
     restored = cl.read_html(StringIO(html_str))
-    assert raa = restored
-    assert dev.ldf_ = restored.ldf_
+    assert raa == restored
+    assert dev.ldf_ == restored.ldf_
