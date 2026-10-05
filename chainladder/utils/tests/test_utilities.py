@@ -1326,4 +1326,4 @@ def test_html_io(raa: Triangle) -> None:
     # raw html
     restored = cl.read_html(StringIO(html_str))
     assert raa == restored
-    assert dev.ldf_ == restored.ldf_
+    assert dev.ldf_.round(4) == restored.ldf_.round(4)

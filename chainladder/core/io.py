@@ -149,7 +149,8 @@ class TriangleIO:
             lab = level + "." if level != "" else ""
             sub_dfs = [
                 v._to_standard_frame(rich, True, lab + k)
-                for k, v in vars(self).items() if isinstance(v, TriangleIO)
+                for k, v in vars(self).items()
+                if isinstance(v, TriangleIO)
             ]
             if sub_dfs:
                 out = pd.concat(
@@ -157,12 +158,13 @@ class TriangleIO:
                     sort=False,
                 )
                 indices = [
-                    x.columns[:x.columns.get_loc("origin")]
-                    for x in [out] + sub_dfs
+                    x.columns[:x.columns.get_loc("origin")] for x in [out] + sub_dfs
                 ]
                 indices = list(set([item for sublist in indices for item in sublist]))
                 final_order = indices + ["origin", "valuation"]
-                final_order = final_order + [x for x in out.columns if x not in final_order]
+                final_order = final_order + [
+                    x for x in out.columns if x not in final_order
+                ]
                 out = out[final_order]
         return out
 
