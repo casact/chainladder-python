@@ -1310,3 +1310,19 @@ def test_ptf_formula_deprecated_alias() -> None:
     with pytest.warns(FutureWarning, match="ptf_formula"):
         old = PTF_formula(**args)
     assert old == ptf_formula(**args)
+
+
+def test_html_io(raa: Triangle) -> None:
+    """
+    Tests that html IO works correctly
+    """
+    # keeping cl.read_html consistent with pd.read_html, i.e. reads a URL
+    # by default, needs StringIO to directly read raw html
+    from io import StringIO
+
+    dev = cl.Development().fit_transform(raa)
+    html_str = dev.to_html_new()
+    # I validated this html locally. Will think of a better approach
+    restored = cl.read_html(StringIO(html_str))
+    assert raa == restored
+    assert dev.ldf_.round(4) == restored.ldf_.round(4)
