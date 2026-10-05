@@ -2,6 +2,8 @@
 
 We will be implementing a number of breaking changes and deprecating others in the upcoming `chainladder-python` 1.0. This page walks you through each item with rationale for the change and guidance on how to address. 
 
+[BRK] denotes a breaking change in this release. [DEPR] is a notice of deprecation of a future removal.
+
 ---
 
 ## [BRK] Dask and Cupy are removed
@@ -12,7 +14,7 @@ We are removing the support for these backend because we have been unable to tes
 
 ---
 
-## `inplace` in `Triangle.astype` is removed
+## [BRK] `inplace` in `Triangle.astype` is removed
 
  `Triangle.astype` will always return a new copy in 1.0. The deprecation warning has been in place since 0.11.0. This is done to mirror Pandas behavior. To prepare for this removal, change your code to the following:
 
@@ -23,7 +25,7 @@ tri = tri.astype(new_dtype)
 
 ---
 
-## `tri == other` is renamed to `tri.equals(other)`
+## [BRK] `tri == other` is renamed to `tri.equals(other)`
 
 In `chainladder-python` 1.0, calling `tri == other` will return a Triangle of `bool`'s. The existing behavior is renamed to `Triangle.equals`. The deprecation warning has been in place since 0.11.0. This is done to mirror Pandas behavior.
 
