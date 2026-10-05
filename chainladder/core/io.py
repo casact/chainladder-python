@@ -112,7 +112,7 @@ class TriangleIO:
         })
         return json.dumps(json_dict)
 
-    def to_html(self):
+    def to_html_new(self):
         return self._to_standard_frame(True, True).to_html(index=False)
 
     def _to_standard_frame(
@@ -141,6 +141,7 @@ class TriangleIO:
                 "is_val_tri": self.is_val_tri,
                 "is_cumulative": self.is_cumulative,
                 "is_pattern": self.is_pattern,
+                "array_backend": self.array_backend,
             }
             for col, val in metadata.items():
                 out[col] = val

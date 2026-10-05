@@ -1238,6 +1238,7 @@ def _from_standard_frame(df: pd.DataFrame):
             "is_val_tri",
             "is_cumulative",
             "is_pattern",
+            "array_backend",
             "level",
         ]
         columns = [x for x in list(df.columns) if x not in index + meta_columns]
@@ -1249,6 +1250,7 @@ def _from_standard_frame(df: pd.DataFrame):
             columns=columns,
             pattern=df["is_pattern"].iloc[0],
             cumulative=False,
+            array_backend=df["array_backend"].iloc[0],
         )
         if df["is_val_tri"].iloc[0]:
             tri = tri.dev_to_val()
@@ -1257,13 +1259,8 @@ def _from_standard_frame(df: pd.DataFrame):
         return tri
 
 
-def read_html(html: str, array_backend: str | None = None) -> Triangle:
-    if array_backend is None:
-        from chainladder import options
-
-        array_backend = options.ARRAY_BACKEND
+def read_html(html: str) -> Triangle:
     df = pd.read_html(html)[0]
     df["level"] = df["level"].astype(str)
     df.loc[df["level"].isnull(), "level"] = ""
-    return _from_standard_frame(df).set_backend(array_backend)
-
+    return _from_standard_frame(df)

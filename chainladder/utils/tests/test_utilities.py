@@ -1316,14 +1316,13 @@ def test_html_io(raa: Triangle) -> None:
     """
     Tests that html IO works correctly
     """
+    # keeping cl.read_html consistent with pd.read_html, i.e. reads a URL
+    # by default, needs StringIO to directly read raw html
     from io import StringIO
 
     dev = cl.Development().fit_transform(raa)
-    html_str = dev.to_html()
+    html_str = dev.to_html_new()
     # I validated this html locally. Will think of a better approach
-    # keeping cl.read_html consistent with pd.read_html, i.e.
-    # reads a URL by default, needs StringIO to directly read
-    # raw html
-    restored = cl.read_html(StringIO(html_str), raa.array_backend)
+    restored = cl.read_html(StringIO(html_str))
     assert raa == restored
     assert dev.ldf_.round(4) == restored.ldf_.round(4)
