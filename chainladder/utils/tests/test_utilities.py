@@ -1324,6 +1324,6 @@ def test_html_io(raa: Triangle) -> None:
     # keeping cl.read_html consistent with pd.read_html, i.e.
     # reads a URL by default, needs StringIO to directly read
     # raw html
-    restored = cl.read_html(StringIO(html_str))
+    restored = cl.read_html(StringIO(html_str), raa.array_backend)
     assert raa == restored
     assert dev.ldf_.round(4) == restored.ldf_.round(4)

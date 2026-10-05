@@ -158,7 +158,7 @@ class TriangleIO:
                     sort=False,
                 )
                 indices = [
-                    x.columns[:x.columns.get_loc("origin")] for x in [out] + sub_dfs
+                    x.columns[: x.columns.get_loc("origin")] for x in [out] + sub_dfs
                 ]
                 indices = list(set([item for sublist in indices for item in sublist]))
                 final_order = indices + ["origin", "valuation"]

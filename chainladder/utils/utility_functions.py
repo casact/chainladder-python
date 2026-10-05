@@ -1257,8 +1257,13 @@ def _from_standard_frame(df: pd.DataFrame):
         return tri
 
 
-def read_html(html: str):
+def read_html(html: str, array_backend: str | None = None) -> Triangle:
+    if array_backend is None:
+        from chainladder import options
+
+        array_backend = options.ARRAY_BACKEND
     df = pd.read_html(html)[0]
     df["level"] = df["level"].astype(str)
     df.loc[df["level"].isnull(), "level"] = ""
-    return _from_standard_frame(df)
+    return _from_standard_frame(df).set_backend(array_backend)
+
