@@ -1375,7 +1375,7 @@ class Triangle(TriangleBase):
         return obj
 
     @_inplace_returns_none()
-    def incr_to_cum(self, inplace: bool = False) -> Self | None:
+    def incr_to_cum(self, inplace: bool = False) -> Self:
         """
         Method to convert an incremental triangle into a cumulative triangle.
 
@@ -1499,11 +1499,10 @@ class Triangle(TriangleBase):
                         self.values = xp.concatenate(out, axis=3)
                     self.values = num_to_nan(self.values)
                 self.is_cumulative = True
-            return None
+            return self
         else:
             new_obj = self.copy()
-            _ = new_obj.incr_to_cum(inplace=True)
-            return new_obj
+            return new_obj.incr_to_cum(inplace=True)
 
     def cum_to_incr(self, inplace=False):
         """

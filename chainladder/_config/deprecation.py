@@ -392,35 +392,10 @@ def _inplace_returns_none() -> Callable[[_F], _F]:
     Decorator factory marking a function with an `inplace` argument that will
     soon return None when `inplace=True`
 
-    `inplace` must default to False
-
     Returns
     -------
     Callable
-        A decorator that wraps a function, preserving its name, docstring,
-        and signature via functools.wraps.
-
-    Examples
-    --------
-
-    .. testcode::
-        :options: +SKIP
-
-        from chainladder._config.deprecation import _deprecated_drop_argument
-
-        @_deprecated_drop_argument(
-            "verbose", "Drop the argument; output is unchanged.", version="2.0"
-        )
-        def func(x, verbose=False):
-            return x + 1
-
-        print(func(1, verbose=True))
-
-    .. testoutput::
-
-        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 2.0. Drop the argument; output is unchanged.
-          func(1, verbose=True)
-
+        A decorator that wraps a function
     """
     import re
 
@@ -434,26 +409,12 @@ def _inplace_returns_none() -> Callable[[_F], _F]:
         sig = signature(func)
         for name, arg in sig.parameters.items():
             if name == "inplace":
-                if arg.default:
-                    raise ValueError("inplace must default to False")
                 break
         else:
             raise ValueError("inplace must be a keyword argument")
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            bound = sig.bind_partial(*args, **kwargs)
-            inplace = bound.arguments.get("inplace", False)
-            caller = currentframe().f_back
-            if inplace:
-                if caller and caller.f_code.co_name != func.__name__:
-                    warnings.warn(
-                        "'inplace=True' will return None in 2.0",
-                        FutureWarning,
-                        stacklevel=2,
-                    )
-                _ = func(*args, **kwargs)
-                return args[0]
             return func(*args, **kwargs)
 
         doc = str(func.__doc__)
