@@ -27,8 +27,7 @@ class IncrementalMixin:
         Gets the estimated incremental additive factors
         """
         if not hasattr(self, "_zeta_"):
-            x = self.__class__.__name__
-            raise AttributeError("'" + x + "' object has no attribute 'zeta_'")
+            raise AttributeError("`zeta_` has not been estimated.")
         return self._zeta_
 
     @zeta_.setter

@@ -97,6 +97,15 @@ def test_pipeline():
 def test_setting_cum(atol: float) -> None:
     """
     IncrementalMixin allows setting cumulative zeta. Validating that the setting function works properly.
+
+    Parameters
+    ----------
+    atol: float
+        the absolute tolerance for this test
+
+    Returns
+    -------
+    None
     """
     tri = cl.load_sample("ia_sample")
     ia = cl.IncrementalAdditive().fit(
@@ -105,3 +114,20 @@ def test_setting_cum(atol: float) -> None:
     orig_zeta_ = ia.zeta_
     ia.cum_zeta_ = ia.cum_zeta_ * 2
     assert np.allclose(ia.zeta_.values, (orig_zeta_ * 2).values, atol=atol)
+
+
+def test_no_zeta(raa: Triangle) -> None:
+    """
+    calling zeta_ on a Triangle without _zeta_ raises
+
+    Parameters
+    ----------
+    raa: Triangle
+        the RAA sample dataset
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(AttributeError, match="has not been estimated"):
+        _ = raa.zeta_
