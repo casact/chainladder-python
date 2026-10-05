@@ -43,6 +43,7 @@ from chainladder.utils import (  # noqa (API import)
     read_csv,
     read_pickle,
     read_json,
+    read_html,
     concat,
     load_sample,
     list_samples,

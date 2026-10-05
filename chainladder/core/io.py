@@ -112,6 +112,60 @@ class TriangleIO:
         })
         return json.dumps(json_dict)
 
+    def to_html(self):
+        return self._to_standard_frame(True, True).to_html(index=False)
+
+    def _to_standard_frame(
+        self,
+        rich: bool = False,
+        sub_tris: bool = False,
+        level: str = "",
+    ) -> pd.DataFrame:
+        """
+        Helper function to return a standard frame representation of a triangle.
+
+        Returns
+        -------
+            pd.DataFrame
+        """
+        out = (
+            self
+            .cum_to_incr()
+            .dev_to_val()
+            .to_frame(keepdims=True, origin_as_datetime=True)
+            .fillna(0)
+            .reset_index()
+        )
+        if rich:
+            metadata = {
+                "is_val_tri": self.is_val_tri,
+                "is_cumulative": self.is_cumulative,
+                "is_pattern": self.is_pattern,
+            }
+            for col, val in metadata.items():
+                out[col] = val
+        if sub_tris:
+            out["level"] = level
+            lab = level + "." if level != "" else ""
+            sub_dfs = [
+                v._to_standard_frame(rich, True, lab + k)
+                for k, v in vars(self).items() if isinstance(v, TriangleIO)
+            ]
+            if sub_dfs:
+                out = pd.concat(
+                    [out] + sub_dfs,
+                    sort=False,
+                )
+                indices = [
+                    x.columns[:x.columns.get_loc("origin")]
+                    for x in [out] + sub_dfs
+                ]
+                indices = list(set([item for sublist in indices for item in sublist]))
+                final_order = indices + ["origin", "valuation"]
+                final_order = final_order + [x for x in out.columns if x not in final_order]
+                out = out[final_order]
+        return out
+
 
 class EstimatorIO:
     """Class intended to allow persistence of estimator objects"""

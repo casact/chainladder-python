@@ -1212,3 +1212,53 @@ def warn_exclusions_ignored(preserve):
             + " link ratio(s) is required for development estimation."
         )
     warnings.warn(warning)
+
+
+def _from_standard_frame(df: pd.DataFrame):
+    from chainladder import Triangle
+
+    if any(df["level"] != ""):
+        root_df = df.loc[df["level"] == ""]
+        if len(root_df) > 0:
+            tri = _from_standard_frame(root_df)
+        else:
+            tri = Triangle()
+        subs = df.loc[df["level"] != ""]
+        subs_names = subs["level"].str.partition(".")[0]
+        for sub in subs_names:
+            sub_df = subs.loc[subs_names == sub]
+            sub_df["level"] = sub_df["level"].str.partition(".")[2]
+            setattr(tri, sub, _from_standard_frame(sub_df))
+        return tri
+    else:
+        index = list(df.columns[: list(df.columns).index("origin")])
+        meta_columns = [
+            "origin",
+            "valuation",
+            "is_val_tri",
+            "is_cumulative",
+            "is_pattern",
+            "level",
+        ]
+        columns = [x for x in list(df.columns) if x not in index + meta_columns]
+        tri = Triangle(
+            df,
+            origin="origin",
+            valuation="valuation",
+            index=index,
+            columns=columns,
+            pattern=df["is_pattern"].iloc[0],
+            cumulative=False,
+        )
+        if df["is_val_tri"].iloc[0]:
+            tri = tri.dev_to_val()
+        if df["is_cumulative"].iloc[0]:
+            tri = tri.incr_to_cum()
+        return tri
+
+
+def read_html(html: str):
+    df = pd.read_html(html)[0]
+    df["level"] = df["level"].astype(str)
+    df.loc[df["level"].isnull(), "level"] = ""
+    return _from_standard_frame(df)
