@@ -21,10 +21,7 @@ from chainladder.utils.utility_functions import (
     to_period,
 )
 from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
-from chainladder._config.deprecation import (
-    _deprecated_rename_argument,
-    _inplace_returns_none,
-)
+from chainladder._config.deprecation import _inplace_returns_none
 
 try:
     import dask.bag as db
@@ -1374,7 +1371,6 @@ class Triangle(TriangleBase):
         obj.values = num_to_nan(obj.values)
         return obj
 
-    @_inplace_returns_none()
     def incr_to_cum(self, inplace: bool = False) -> Self:
         """
         Method to convert an incremental triangle into a cumulative triangle.
@@ -1387,6 +1383,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Updated instance of triangle accumulated along the origin
+
+        .. deprecated:: 0.11
+
+           The return value of ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
@@ -1516,6 +1517,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Updated instance of triangle accumulated along the origin
+
+        .. deprecated:: 0.11
+
+           The return value of ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
