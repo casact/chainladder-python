@@ -1261,6 +1261,5 @@ def _from_standard_frame(df: pd.DataFrame):
 
 def read_html(html: str) -> Triangle:
     df = pd.read_html(html)[0]
-    df.loc[df["level"].isnull(), "level"] = ""
-    df["level"] = df["level"].astype(str)
+    df["level"] = df["level"].fillna("").astype(str)
     return _from_standard_frame(df)
