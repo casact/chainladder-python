@@ -142,11 +142,11 @@ class CaseOutstanding(DevelopmentBase):
 
         case_data = pd.DataFrame({
             "origin": [1998, 1999, 2000, 2001, 2002, 2003],
-            "development": [132, 120, 108, 96, 84, 72],
+            "valuation": 2008,
             "case": [500000, 650000, 800000, 850000, 975000, 1000000],
         })
         case_tri = cl.Triangle(
-            case_data, origin="origin", development="development", columns="case", cumulative=True
+            case_data, origin="origin", valuation="valuation", columns="case", cumulative=True
         ).val_to_dev()
 
         rep_cdfs = {132: 1.015, 120: 1.020, 108: 1.030, 96: 1.051, 84: 1.077, 72: 1.131}
@@ -306,6 +306,7 @@ class CaseOutstanding(DevelopmentBase):
         """Extract a pd.Series of CDF factors indexed by integer development ages."""
         if hasattr(pattern, "cdf_"):
             pattern = pattern.cdf_
+            style = "cdf"
         elif hasattr(pattern, "ldf_") and not hasattr(pattern, "cdf_"):
             pattern = pattern.ldf_
             style = "ldf"

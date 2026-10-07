@@ -4,7 +4,10 @@ from chainladder.development.munich import MunichAdjustment  # noqa (API import)
 from chainladder.development.incremental import IncrementalAdditive  # noqa (API import)
 from chainladder.development.constant import DevelopmentConstant  # noqa (API import)
 from chainladder.development.clark import ClarkLDF  # noqa (API import)
-from chainladder.development.outstanding import CaseOutstanding  # noqa (API import)
+from chainladder.development.outstanding import (
+    CaseOutstanding,
+    ImpliedCaseDevelopment,
+)  # noqa (API import)
 from chainladder.development.learning import DevelopmentML  # noqa (API import)
 from chainladder.development.glm import TweedieGLM  # noqa (API import)
 from chainladder.development.barnzehn import BarnettZehnwirth  # noqa (API import)
@@ -17,6 +20,7 @@ __all__ = [
     "DevelopmentConstant",
     "ClarkLDF",
     "CaseOutstanding",
+    "ImpliedCaseDevelopment",
     "DevelopmentML",
     "TweedieGLM",
     "BarnettZehnwirth",

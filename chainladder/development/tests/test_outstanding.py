@@ -186,5 +186,135 @@ def test_approach_2_validation_errors():
 
 def test_implied_case_development_alias():
     from chainladder.development.outstanding import ImpliedCaseDevelopment
+    from chainladder.development import ImpliedCaseDevelopment as DevImplied
+    import chainladder as cl_root
 
     assert ImpliedCaseDevelopment is cl.CaseOutstanding
+    assert DevImplied is cl.CaseOutstanding
+    assert cl_root.ImpliedCaseDevelopment is cl.CaseOutstanding
+
+
+def test_approach_2_pattern_input_types():
+    import pandas as pd
+    import pytest
+
+    tri = cl.load_sample("usauto")
+    case = tri["incurred"] - tri["paid"]
+
+    # pd.Series inputs
+    rep_s = pd.Series({12: 1.2, 24: 1.1, 36: 1.0})
+    paid_s = pd.Series({12: 1.5, 24: 1.25, 36: 1.05})
+    m_series = cl.CaseOutstanding(
+        reported_pattern=rep_s, paid_pattern=paid_s, style="ldf"
+    ).fit(case)
+    assert m_series.case_cdf_ is not None
+
+    # pd.DataFrame 1-row input
+    df_1row = pd.DataFrame([[1.2, 1.1, 1.0]], columns=[12, 24, 36])
+    m_df1 = cl.CaseOutstanding(
+        reported_pattern=df_1row, paid_pattern=paid_s, style="ldf"
+    ).fit(case)
+    assert m_df1.case_cdf_ is not None
+
+    # pd.DataFrame 1-column input
+    df_1col = pd.DataFrame([1.2, 1.1, 1.0], index=[12, 24, 36])
+    m_df2 = cl.CaseOutstanding(
+        reported_pattern=df_1col, paid_pattern=paid_s, style="ldf"
+    ).fit(case)
+    assert m_df2.case_cdf_ is not None
+
+    # Invalid DataFrame shape (>1 row and >1 col)
+    df_invalid = pd.DataFrame([[1.2, 1.1], [1.0, 1.0]], columns=[12, 24])
+    with pytest.raises(ValueError, match="must have 1 row or 1 column"):
+        cl.CaseOutstanding(reported_pattern=df_invalid, paid_pattern=paid_s).fit(case)
+
+    # Unsupported pattern type
+    with pytest.raises(TypeError, match="Unsupported pattern type"):
+        cl.CaseOutstanding(reported_pattern=[1.2, 1.1], paid_pattern=paid_s).fit(case)
+
+
+def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
+    """Verify BugBot fix: estimator with cdf_ is not reconverted/double-cumprodded when style='ldf'."""
+    import pandas as pd
+
+    tri = cl.load_sample("usauto")
+    case = tri["incurred"] - tri["paid"]
+
+    rep_dev = cl.Development().fit(tri["incurred"])
+    paid_dev = cl.Development().fit(tri["paid"])
+
+    # style='ldf' passed with Development estimator should use estimator.cdf_ directly
+    m = cl.CaseOutstanding(
+        reported_pattern=rep_dev,
+        paid_pattern=paid_dev,
+        style="ldf",
+    ).fit(case)
+    assert m.case_cdf_ is not None
+
+    # Mock object with only ldf_ and no cdf_
+    class MockLDFPattern:
+        def __init__(self, ldf_dict):
+            self.ldf_ = pd.Series(ldf_dict)
+
+    mock_rep = MockLDFPattern({12: 1.2, 24: 1.1, 36: 1.0})
+    mock_paid = MockLDFPattern({12: 1.5, 24: 1.25, 36: 1.05})
+    m_mock = cl.CaseOutstanding(
+        reported_pattern=mock_rep,
+        paid_pattern=mock_paid,
+        style="ldf",
+    ).fit(case)
+    assert m_mock.case_cdf_ is not None
+
+
+def test_approach_2_auto_column_inference_and_den_guard():
+    import pytest
+
+    tri = cl.load_sample("usauto")
+
+    # Incurred and paid auto-detection
+    tri_sub = tri[["incurred", "paid"]]
+    m = cl.CaseOutstanding(
+        reported_pattern={12: 1.1, 24: 1.05},
+        paid_pattern={12: 1.3, 24: 1.15},
+    ).fit(tri_sub)
+    assert m.case_cdf_ is not None
+
+    # Denominator <= 0 guard (CDF_paid <= CDF_rep fallback to 1.0)
+    m_guard = cl.CaseOutstanding(
+        reported_pattern={12: 1.5, 24: 1.2},
+        paid_pattern={12: 1.2, 24: 1.1},  # paid < rep
+    ).fit(tri_sub)
+    assert np.isclose(m_guard.case_cdf_.to_frame().loc["(All)", "12-Ult"], 1.0)
+
+    # Explicit paid_to_incurred in Approach 2
+    m_explicit = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        reported_pattern={12: 1.1, 24: 1.05},
+        paid_pattern={12: 1.3, 24: 1.15},
+    ).fit(tri)
+    assert m_explicit.case_cdf_ is not None
+
+    # Capitalized Incurred and Paid column names
+    tri_cap = tri.copy()
+    tri_cap.columns = [
+        "Incurred" if c == "incurred" else "Paid" if c == "paid" else c
+        for c in tri_cap.columns
+    ]
+    m_cap = cl.CaseOutstanding(
+        reported_pattern={12: 1.1, 24: 1.05},
+        paid_pattern={12: 1.3, 24: 1.15},
+    ).fit(tri_cap[["Incurred", "Paid"]])
+    assert m_cap.case_cdf_ is not None
+
+    # Groupby in Approach 1
+    tri_grouped = cl.load_sample("clrd")
+    m_grp = cl.CaseOutstanding(
+        paid_to_incurred=("CumPaidLoss", "IncurLoss"),
+        groupby="LOB",
+    ).fit(tri_grouped)
+    assert m_grp.case_to_prior_case_ is not None
+    assert m_grp.paid_to_prior_case_ is not None
+
+    # Invalid approach value
+    with pytest.raises(ValueError, match="Unknown approach"):
+        cl.CaseOutstanding(approach=99).fit(tri)

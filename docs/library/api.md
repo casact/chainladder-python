@@ -57,6 +57,7 @@ Classes
   IncrementalAdditive
   ClarkLDF
   CaseOutstanding
+  ImpliedCaseDevelopment
   TweedieGLM
   DevelopmentML
   BarnettZehnwirth

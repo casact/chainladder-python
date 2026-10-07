@@ -49,6 +49,7 @@ EXPECTED_PUBLIC_API = {
     "DevelopmentConstant",
     "ClarkLDF",
     "CaseOutstanding",
+    "ImpliedCaseDevelopment",
     "DevelopmentML",
     "TweedieGLM",
     "BarnettZehnwirth",
