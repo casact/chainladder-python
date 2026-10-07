@@ -795,17 +795,6 @@ class Triangle(TriangleBase):
         return data, ult
 
     @property
-    def _index(self) -> DataFrame:
-        """
-        Backward-compatibility alias for Triangle.index.
-        """
-        return self.index
-
-    @_index.setter
-    def _index(self, value: Any) -> None:
-        self.index = value
-
-    @property
     def key_labels(self) -> list:
         """
         Returns a list of the labels corresponding to the levels of the index.
