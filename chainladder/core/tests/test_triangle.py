@@ -579,17 +579,14 @@ def test_triangle_axis_descriptor():
         m.columns = ["a", "b"]
 
 
-def test_triangle_index_property_and_alias(raa):
-    """Verify Triangle.index descriptor, _index backward-compat alias, and slicer reset."""
-    assert raa._index.equals(raa.index)
+def test_triangle_index_property(raa):
+    """Verify Triangle.index descriptor and slicer reset."""
     tri = raa.copy()
-    tri._index = tri.index.copy()
-    assert tri._index.equals(raa.index)
+    tri.index = tri.index.copy()
     assert tri.index.equals(raa.index)
 
     tri.index = pd.DataFrame({"Total": ["A"]})
     assert list(tri.index["Total"]) == ["A"]
-    assert list(tri._index["Total"]) == ["A"]
 
 
 def test_prep_index_single_element_different_key_labels(raa):
@@ -3821,22 +3818,20 @@ def test_full_fill(raa: Triangle) -> None:
 
 
 def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:
-    """JSON serialization roundtrip must preserve Triangle._index as a pd.DataFrame."""
+    """JSON serialization roundtrip must preserve Triangle.index as a pd.DataFrame."""
     r_single = cl.read_json(raa.to_json())
     assert isinstance(r_single.index, pd.DataFrame)
-    assert isinstance(r_single._index, pd.DataFrame)
     assert r_single.index.iloc[:, 0].tolist() == ["Total"]
     assert r_single == raa
 
     r_multi = cl.read_json(clrd.to_json())
     assert isinstance(r_multi.index, pd.DataFrame)
-    assert isinstance(r_multi._index, pd.DataFrame)
     pd.testing.assert_frame_equal(r_multi.index, clrd.index)
     assert r_multi == clrd
 
 
 def test_triangle_copy_isolated_index(raa) -> None:
-    """Triangle.copy() must not share the mutable _index DataFrame."""
+    """Triangle.copy() must not share the mutable index DataFrame."""
     copied = raa.copy()
     assert copied.index is not raa.index
     copied.index.iloc[0, 0] = "Modified"

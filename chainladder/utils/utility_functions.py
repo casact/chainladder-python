@@ -434,8 +434,8 @@ def read_json(json_str, array_backend=None):
                 if len(df.columns) == 1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
-        if isinstance(tri._index, pd.Series):
-            tri._index = tri._index.to_frame()
+        if isinstance(tri.index, pd.Series):
+            tri.index = tri.index.to_frame()
         if array_backend:
             return tri.set_backend(array_backend)
         else:
