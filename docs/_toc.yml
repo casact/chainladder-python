@@ -53,7 +53,6 @@ parts:
       sections:
       - file: library/governance.md
       - file: library/usage.md
-      - file: library/team.md
       - file: library/references.md
       - file: library/sample_data.ipynb
       - file: library/glossary.md
