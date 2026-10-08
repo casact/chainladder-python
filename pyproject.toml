@@ -37,7 +37,7 @@ dependencies = [
     "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",
     "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
-    "numba>=0.68.0 ; python_version >= '3.15'",
+    "numba>=0.68.0 ; python_version >= '3.15'",  # numba is needed for sparse. however, sparse does not have a version that officially support python 3.15
 ]
 
 [project.urls]
@@ -49,7 +49,7 @@ Repository = "https://github.com/casact/chainladder-python"
 
 [project.optional-dependencies]
 dev = [
-    "lxml",
+    "lxml ; python_version < '3.15'",
     "lxml>=0.7.0 ; python_version >= '3.15'",
     "pytest",
     "pytest-cov",
@@ -77,7 +77,7 @@ docs = [
     "statsmodels>=0.14.6"  # For docs example; <0.14.6 fails to import under pandas 3
 ]
 test = [
-    "lxml",
+    "lxml ; python_version < '3.15'",
     "lxml>=0.7.0 ; python_version >= '3.15'",
     "nbmake",
     "pytest",
