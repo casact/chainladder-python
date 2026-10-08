@@ -6,8 +6,6 @@ The development team currently functions as part of the CAS Open-Source Projects
 
 ## Contact
 
-
-
 To reach us, please email us at [chainladder@casact.org](mailto:chainladder@casact.org).
 
 ## Current Maintainers
