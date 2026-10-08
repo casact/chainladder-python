@@ -1,4 +1,4 @@
-# {octicon}`heart` About
+# {octicon}`organization` About
 
 # chainladder-python Team Members
 
