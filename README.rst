@@ -40,7 +40,7 @@ Welcome! The chainladder package was built to be able to handle all of your actu
 This package strives to be minimalistic in needing its own API. The syntax mimics popular packages `pandas`_ for data manipulation and `scikit-learn`_ for model
 construction. An actuary that is already familiar with these tools will be able to pick up this package with ease. You will be able to save your mental energy for actual actuarial work.
 
-Chainladder is built by a group of volunteers, and we need ***YOUR*** help!
+Chainladder is built by a group of volunteers, and we need **YOUR** help!
 
 This package is written in Python, if you are looking for a similar package written in R, please visit `chainladder`_.
 
