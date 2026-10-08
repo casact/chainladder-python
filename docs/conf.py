@@ -11,12 +11,12 @@ if _p not in sys.path:
 # If you wish to continue using _config.yml, make edits to that file and
 # re-generate this one.
 ###############################################################################
-author = "John Bogaardt, Kenneth Hsu, et. al."
+author = "chainladder Development Team"
 autosummary_generate = True
 bibtex_bibfiles = ["library/references.bib"]
 bibtex_reference_style = "author_year"
 comments_config = {"hypothesis": False, "utterances": False}
-copyright = "2023"
+copyright = "2023 - 2026"
 exclude_patterns = ["**.ipynb_checkpoints", ".DS_Store", "Thumbs.db", "_build"]
 extensions = [
     "jupyter_book",
