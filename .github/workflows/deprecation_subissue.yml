@@ -39,49 +39,60 @@ jobs:
           AUTHOR: ${{ github.event.issue.user.login }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          # `opened` and `labeled` both fire for a new issue from the form, so
-          # skip a parent that already has a sub-issue.
-          existing=$(gh api "repos/$REPO/issues/$PARENT/sub_issues" --jq length)
-          if [ "$existing" -gt 0 ]; then
-            echo "#$PARENT already has $existing sub-issue(s); nothing to do."
-            exit 0
-          fi
-
-          subject="${PARENT_TITLE#\[DEPR\] }"
-          decorators="https://github.com/$REPO/blob/$DEFAULT_BRANCH/chainladder/_config/deprecation.py"
-          body=$(cat <<EOF
+          child=$(gh api "repos/$REPO/issues/$PARENT/sub_issues" --jq '.[0].number // empty')
+          if [ -n "$child" ]; then
+            echo "#$PARENT already has sub-issue #$child."
+          else
+            subject="${PARENT_TITLE#\[BRK\] }"
+            decorators="https://github.com/$REPO/blob/$DEFAULT_BRANCH/chainladder/_config/deprecation.py"
+            body=$(cat <<EOF
           Add the deprecation warning for #$PARENT (created by @$AUTHOR).
 
-          - [ ] Add the new, alternative feature (unless doing a pure deprecation)
+          - [ ] Add the new, replacement feature (unless doing a pure deprecation)
           - [ ] Emit the warning, through one of the decorators in [\`chainladder/_config/deprecation.py\`]($decorators) where one fits
           - [ ] Test that it warns (\`pytest.warns\`)
 
           > [!NOTE]
-          > This issue can be closed manually by closing the parent issue.
+          > This issue can be closed manually by closing the parent issue, or automatically by a PR using "Closes #", followed by this issue's number.
 
           EOF
-          )
+            )
 
-          child_url=$(gh issue create --repo "$REPO" \
-            --title "[DEPR] Add warning: $subject" \
-            --label deprecation \
-            --body "$body")
+            child_url=$(gh issue create --repo "$REPO" \
+              --title "[BRK] Add warning: $subject" \
+              --label deprecation \
+              --body "$body")
 
-          # The sub-issues API takes the issue's database id, not its number.
-          child_id=$(gh api "repos/$REPO/issues/${child_url##*/}" --jq .id)
-          gh api --method POST "repos/$REPO/issues/$PARENT/sub_issues" \
-            -F sub_issue_id="$child_id"
-          echo "Attached $child_url to #$PARENT."
+            # The sub-issues API takes the issue's database id, not its number.
+            child_id=$(gh api "repos/$REPO/issues/${child_url##*/}" --jq .id)
+            gh api --method POST "repos/$REPO/issues/$PARENT/sub_issues" \
+              -F sub_issue_id="$child_id"
+            child=${child_url##*/}
+            echo "Attached #$child to #$PARENT."
+          fi
 
-          # Label the parent and append the note to the bottom of its body. Each
-          # Markdown line is one shell line, as issues render every newline as a
-          # break.
+          # Append the note to the bottom of the parent's body, unless an earlier
+          # run already did. Each Markdown line is one shell line, as issues
+          # render every newline as a break.
           parent_body=$(gh issue view "$PARENT" --repo "$REPO" --json body --jq .body)
-          note="> [!NOTE]
-          > This issue tracks the deprecation as a whole and stays open until the deprecated API is removed. The warning is tracked in sub-issue #${child_url##*/}; close it by linking it from the PR that adds the warning. The removal release is set later with a milestone."
-          gh issue edit "$PARENT" --repo "$REPO" --add-label "parent issue" --body "$parent_body
+          marker="This issue tracks the deprecation as a whole"
+          if [[ "$parent_body" != *"$marker"* ]]; then
+            note="> [!NOTE]
+          > $marker and stays open until the deprecated API is removed. The warning is tracked in sub-issue #$child; close it by linking it from the PR that adds the warning. The removal release is set later with a milestone."
+            gh issue edit "$PARENT" --repo "$REPO" --body "$parent_body
 
           $note"
+          fi
+
+          # Label the parent in a separate step, creating the label first in a
+          # repository (e.g. a fork) that doesn't have it, so a missing label
+          # can't stop the note above.
+          if ! gh label list --repo "$REPO" --search "parent issue" --json name --jq '.[].name' | grep -qx "parent issue"; then
+            gh label create "parent issue" --repo "$REPO" --color bd34eb \
+              --description "Tracks work that is split into sub-issues" \
+              || echo "Could not create the 'parent issue' label; it may already exist."
+          fi
+          gh issue edit "$PARENT" --repo "$REPO" --add-label "parent issue"
 
   close-subissues:
     name: Close sub-issues with the parent

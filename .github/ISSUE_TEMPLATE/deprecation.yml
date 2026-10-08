@@ -1,11 +1,8 @@
 name: Deprecation
-description: Propose deprecating a function, method, argument, or behavior.
-title: "[DEPR] "
+description: Track deprecating a function, method, argument, or behavior.
+title: "[BRK] "
 labels:
   - deprecation
-# The note explaining the parent/sub-issue split is appended to the issue body
-# by .github/workflows/deprecation_subissue.yml; markdown fields here are shown
-# only while filling in the form and never reach the issue.
 body:
   - type: dropdown
     attributes:
@@ -23,12 +20,20 @@ body:
     attributes:
       label: What is being deprecated?
       description: The current API, with a short example of the call that will warn.
+      placeholder: |
+        ```python
+        Triangle.feature_to_deprecate(...)
+        ```
     validations:
       required: true
   - type: textarea
     attributes:
       label: Replacement
       description: What users should use instead, or "None" if it is being removed outright.
+      placeholder: |
+        ```python
+        Triangle.replacememt_feature(...)
+        ```
     validations:
       required: true
   - type: textarea
@@ -37,3 +42,12 @@ body:
       description: Why the deprecation is needed, with links to any discussion.
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: |
+        **What happens next**
+
+        When this issue is opened, a sub-issue for adding the deprecation warning is opened automatically and linked to it.
+
+        1. Close the sub-issue first, when the deprecation warning is merged, by linking it from that PR (`Closes #<sub-issue>`).
+        2. Close this (parent) issue when the deprecation process is complete, once the deprecated API has been removed.
