@@ -50,6 +50,7 @@ Repository = "https://github.com/casact/chainladder-python"
 [project.optional-dependencies]
 dev = [
     "lxml",
+    "lxml>=0.7.0 ; python_version >= '3.15'",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -77,6 +78,7 @@ docs = [
 ]
 test = [
     "lxml",
+    "lxml>=0.7.0 ; python_version >= '3.15'",
     "nbmake",
     "pytest",
     "jinja2",
