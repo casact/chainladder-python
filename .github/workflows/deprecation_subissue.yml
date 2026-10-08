@@ -53,7 +53,7 @@ jobs:
           - [ ] Test that it warns (\`pytest.warns\`)
 
           > [!NOTE]
-          > This issue can be closed manually by closing the parent issue, or automatically by a PR using (`Closes #<sub-issue>`).
+          > This issue can be closed manually by closing the parent issue, or automatically by a PR using (\`Closes #<sub-issue>\`).
 
           EOF
             )
