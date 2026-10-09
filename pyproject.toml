@@ -36,8 +36,8 @@ dependencies = [
     "sparse>=0.18",
     "numba>=0.68.0 ; python_version >= '3.15'",  # numba is needed for sparse. however, sparse does not have a version that officially support python 3.15
     "numpy>=2.0",
-    "matplotlib",  # Required for TriangleDisplay.heatmap()
-    "contourpy >= 1.4.0 ; python_version >= '3.15'",  # Required for matplotlib
+    "matplotlib>=3.11.2",  # Required for TriangleDisplay.heatmap()
+    "contourpy>=1.4.0 ; python_version >= '3.15'",  # Required for matplotlib
     "dill",
     "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
 
