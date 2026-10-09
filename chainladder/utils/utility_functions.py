@@ -709,9 +709,16 @@ def concat(
     objs = set_common_backend(objs)
     if axis != 0:
         for obj in objs[1:]:
-            assert list(obj.index.columns) == list(
-                objs[0].index.columns
-            ) and np.array_equal(obj.index.values, objs[0].index.values)
+            assert (
+                list(obj.index.columns) == list(objs[0].index.columns)
+                and obj.index.shape == objs[0].index.shape
+                and bool(
+                    (
+                        (obj.index.values == objs[0].index.values)
+                        | (pd.isna(obj.index.values) & pd.isna(objs[0].index.values))
+                    ).all()
+                )
+            )
     if axis != 2:
         a = np.array([obj.odims for obj in objs])
         assert np.all(a == a[0])

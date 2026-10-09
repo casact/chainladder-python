@@ -644,6 +644,17 @@ def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
     assert list(res.columns) == ["A", "B"]
 
 
+def test_concat_axis_1_index_nan_preserved(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index contains NaN entries."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t1.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    t2.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+    assert pd.isna(res.index.iloc[0, 1])
+
+
 def test_maximum_2(raa: Triangle) -> None:
     """
     Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.
