@@ -219,6 +219,11 @@ class BootstrapODPSample(DevelopmentBase):
             self.resampled_triangles_, self.scale_ = self._get_simulation(
                 X, exp_incr_triangle
             )
+            # n_obs = xp.nansum(self.w_)
+            # n_origin_params = X.shape[2]
+            # n_dev_params = X.shape[3] - 1
+            # deg_free = n_obs - n_origin_params - n_dev_params
+            # deg_free_adj_fctr = xp.sqrt(n_obs / deg_free)
         return self
 
     def _get_simulation(self, X, exp_incr_triangle):
