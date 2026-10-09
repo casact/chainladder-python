@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from pandas.core.indexing import check_bool_indexer
 
 from chainladder.core.typing import _AxisKey, _LabelKey, TriangleProtocol
 
@@ -63,8 +64,8 @@ class _LocBase:
         else:
             obj.values = obj.values[i_idx, :, o_idx, d_idx][:, c_idx, ...]
         # Set the new dimension values.
-        obj.kdims = obj.kdims[i_idx]
-        obj.vdims = obj.vdims[c_idx]
+        obj.index = obj.index.iloc[i_idx].reset_index(drop=True)
+        obj.columns = obj.columns[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
         obj.valuation_date = cast(
             pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date)
@@ -383,7 +384,7 @@ class Location(_LocBase):
             ).values.flatten()
         # Case scalar, locate position in first level of index.
         else:
-            idx = np.where(self.obj.kdims[:, 0] == key)[0]
+            idx = np.where(self.obj.index.iloc[:, 0].values == key)[0]
         return idx
 
     def other_key(
@@ -797,6 +798,13 @@ class TriangleSlicer:
             return self._slice(key, "odims")
         # Case index.
         if isinstance(key, pd.Series):
+            if pd.api.types.is_bool_dtype(key):
+                if len(key) != len(self.index):
+                    raise IndexError(
+                        f"Boolean index has wrong length: {len(key)} instead of {len(self.index)}"
+                    )
+                mask = check_bool_indexer(self.index.index, key)
+                return self.iloc[np.where(mask)[0]]
             return self.iloc[self.index[key].index]
         elif key in self.key_labels:
             return self.index[key]
@@ -811,7 +819,7 @@ class TriangleSlicer:
                 [key] if isinstance(key, (str, int, float, np.generic)) else key
             )
             # Identify the position of each requested element within the valuation dimension.
-            idx = [list(self.vdims).index(item) for item in keys]
+            idx = [list(self.columns).index(item) for item in keys]
             return self.iloc[:, idx]
 
     def __setitem__(
@@ -825,7 +833,7 @@ class TriangleSlicer:
         Parameters
         ----------
         key: str | int
-            The vdims label of the column to set.
+            The column label of the column to set.
         value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer]
             The value(s) to assign to the column. A callable defines a virtual
             (lazily-computed) column.
@@ -873,23 +881,32 @@ class TriangleSlicer:
         if callable(value):
             self.virtual_columns[key] = value
             if self.array_backend == "sparse":
-                if key not in self.vdims:
+                if key not in self.columns:
                     k, v, o, d = self.values.shape
                     self.values.shape = k, v + 1, o, d
-                    self.vdims = np.append(self.vdims, key)
+                    self.columns = self.columns.append(pd.Index([key]))
                 return
             # Create a placeholder column.
             value = (self.iloc[:, 0].copy() * xp.nan).set_backend(self.array_backend)
         # Otherwise, remove column from virtual columns if previously reserved for lazy evaluation.
         else:
             self.virtual_columns.pop(key)
+        if isinstance(value, (int, float, np.number)):
+            # Broadcast scalar across the Triangle's shape.
+            value = self.iloc[:, 0] * 0 + value
         if isinstance(value, TriangleSlicer):
             value = cast("TriangleProtocol", cast(object, value))
             if value.array_backend != self.array_backend:
                 value = value.set_backend(self.array_backend)
         # Key exists in columns, replace data.
-        if key in self.vdims:
-            i = np.where(self.vdims == key)[0][0]
+        if key in self.columns:
+            loc = self.columns.get_loc(key)
+            if isinstance(loc, slice):
+                i = loc.start or 0
+            elif isinstance(loc, np.ndarray):
+                i = int(np.where(loc)[0][0])
+            else:
+                i = int(loc)
             # Case sparse backend.
             if self.array_backend == "sparse":
                 # Unwrap a Triangle-valued assignment to its raw array. A raw
@@ -927,10 +944,6 @@ class TriangleSlicer:
                 cast(np.ndarray, self.values)[:, i : i + 1] = value
         # Key is new, create a column and update data.
         else:
-            self.vdims = np.append(self.vdims, key)
-            if isinstance(value, (int, float, np.number)):
-                # Broadcast scalar across the Triangle's shape.
-                value = self.iloc[:, 0] * 0 + value
             try:
                 self.values = xp.concatenate((self.values, value.values), axis=1)
             except (ValueError, AttributeError, AssertionError):
@@ -940,6 +953,7 @@ class TriangleSlicer:
                     (self.iloc[:, 0] * 0 + cast("Triangle", value)).values,
                 )
                 self.values = xp.concatenate(conc, axis=1)
+            self.columns = self.columns.append(pd.Index([key]))
 
     def _slice_valuation(self: TriangleProtocol, key: np.ndarray) -> Triangle:
         """

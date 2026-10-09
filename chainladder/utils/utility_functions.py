@@ -428,10 +428,14 @@ def read_json(json_str, array_backend=None):
                 setattr(getattr(tri, k), "development_grain", tri.development_grain)
         if "dfs" in json_dict.keys():
             for k, v in json_dict["dfs"].items():
+                if k == "_index":
+                    continue
                 df = pd.read_json(StringIO(v))
                 if len(df.columns) == 1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
+        if isinstance(tri.index, pd.Series):
+            tri.index = tri.index.to_frame()
         if array_backend:
             return tri.set_backend(array_backend)
         else:
@@ -703,31 +707,67 @@ def concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
-    mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
-    for k in mapper.keys():
-        if k != axis and k != 1:  # All non-concat axes must be identical
-            a = np.array([getattr(obj, mapper[k]) for obj in objs])
-            assert np.all(a == a[0])
-        else:  # All elements of concat axis must be unique
-            if ignore_index:
-                new_axis = np.arange(
-                    np.sum([len(getattr(obj, mapper[axis])) for obj in objs])
+    if axis != 0:
+        for obj in objs[1:]:
+            assert (
+                list(obj.index.columns) == list(objs[0].index.columns)
+                and obj.index.shape == objs[0].index.shape
+                and bool(
+                    (
+                        (obj.index.values == objs[0].index.values)
+                        | (pd.isna(obj.index.values) & pd.isna(objs[0].index.values))
+                    ).all()
                 )
-                new_axis = new_axis[:, None] if axis == 0 else new_axis
-            else:
-                new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
-            if axis == 0:
-                assert len(pd.DataFrame(new_axis).drop_duplicates()) == len(new_axis)
-            else:
-                assert len(new_axis) == len(set(new_axis))
+            )
+    if axis != 2:
+        a = np.array([obj.odims for obj in objs])
+        assert np.all(a == a[0])
+    if axis != 3:
+        a = np.array([obj.ddims for obj in objs])
+        assert np.all(a == a[0])
+
     out = copy.deepcopy(objs[0])
     out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
-    setattr(out, mapper[axis], new_axis)
-    if ignore_index and axis == 0:
-        out.key_labels = ["Index"]
+
+    if axis == 0:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.index) for obj in objs]))[:, None]
+            out.index = pd.DataFrame(new_axis, columns=["Index"])
+            out.key_labels = ["Index"]
+        else:
+            new_axis = pd.concat([obj.index for obj in objs], ignore_index=True)
+            assert len(new_axis.drop_duplicates()) == len(new_axis)
+            out.index = new_axis
+            out.key_labels = list(new_axis.columns)
+    elif axis == 1:
+        if ignore_index:
+            new_axis = pd.Index(
+                np.arange(sum([len(obj.columns) for obj in objs])), name="columns"
+            )
+        else:
+            new_axis = pd.Index(
+                np.concatenate([obj.columns for obj in objs]), name="columns"
+            )
+            assert len(new_axis) == len(set(new_axis))
+        out.columns = new_axis
+    elif axis == 2:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.odims) for obj in objs]))
+        else:
+            new_axis = np.concatenate([obj.odims for obj in objs])
+            assert len(new_axis) == len(set(new_axis))
+        out.odims = new_axis
+    elif axis == 3:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.ddims) for obj in objs]))
+        else:
+            new_axis = np.concatenate([obj.ddims for obj in objs])
+            assert len(new_axis) == len(set(new_axis))
+        out.ddims = new_axis
+        if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
+            out.ddims = pd.DatetimeIndex(out.ddims)
+
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
-        out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
         return out.sort_axis(axis)
@@ -1212,3 +1252,53 @@ def warn_exclusions_ignored(preserve):
             + " link ratio(s) is required for development estimation."
         )
     warnings.warn(warning)
+
+
+# Canonical ordering of Triangle dimensions.
+_axis_orders: tuple[str, ...] = ("index", "columns", "origin", "development")
+
+# Lookup mapping supporting integers (positive and negative) and string names.
+_axis_to_axis_number: dict[int | str, int] = {
+    **{i: i for i in range(4)},
+    **{i - 4: i for i in range(4)},
+    **{name: i for i, name in enumerate(_axis_orders)},
+}
+
+
+def _get_axis_number(axis: int | str) -> int:
+    """
+    Convert an axis name or integer (-4..3) to its canonical integer 0..3.
+
+    Parameters
+    ----------
+    axis : int or str
+        Axis name or integer representation.
+
+    Returns
+    -------
+    int
+        Canonical integer axis in 0..3.
+    """
+    if axis not in _axis_to_axis_number:
+        raise ValueError(
+            f"No axis named {axis} for object type Triangle. "
+            f"Valid axes are {_axis_orders} or integers 0..3."
+        )
+    return _axis_to_axis_number[axis]
+
+
+def _get_axis_name(axis: int | str) -> str:
+    """
+    Convert an axis name or integer to its canonical name.
+
+    Parameters
+    ----------
+    axis : int or str
+        Axis name or integer representation.
+
+    Returns
+    -------
+    str
+        Canonical axis name ('index', 'columns', 'origin', 'development').
+    """
+    return _axis_orders[_get_axis_number(axis)]

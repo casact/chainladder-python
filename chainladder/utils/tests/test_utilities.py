@@ -59,8 +59,8 @@ class _FakeDaskBag:
 def test_triangle_json_io(clrd):
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
     assert clrd == clrd2
-    assert np.all(clrd.kdims == clrd2.kdims)
-    assert np.all(clrd.vdims == clrd2.vdims)
+    assert clrd.index.equals(clrd2.index)
+    assert np.all(clrd.columns == clrd2.columns)
     assert np.all(clrd.odims == clrd2.odims)
     assert np.all(clrd.ddims == clrd2.ddims)
     assert np.all(clrd.valuation == clrd2.valuation)
@@ -370,7 +370,7 @@ def test_load_sample_uspp() -> None:
         "friedland_uspp_increasing_claim_case",
     ]:
         tri = cl.load_sample(key)
-        assert set(str(c) for c in tri.vdims) == {
+        assert set(str(c) for c in tri.columns) == {
             "Reported Claims",
             "Paid Claims",
             "Earned Premium",
@@ -396,7 +396,7 @@ def test_load_sample_clrd2025() -> None:
         "EarnedPremCeded",
         "EarnedPremNet",
     }
-    assert set(str(c) for c in tri.vdims) == expected_columns
+    assert set(str(c) for c in tri.columns) == expected_columns
 
     # Accident years span 1998-2007.
     assert str(tri.origin.min()) == "1998"
@@ -610,6 +610,49 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     """
     with pytest.raises(AssertionError):
         cl.concat([raa, raa], axis=1)
+
+
+def test_concat_ignore_index_axes(raa: Triangle) -> None:
+    """Test concat with ignore_index=True along axes 0, 1, 2, and 3."""
+    res0 = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(res0.index) == 2
+    assert res0.key_labels == ["Index"]
+    assert list(res0.index["Index"]) == [0, 1]
+
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
+    assert list(res1.columns) == [0, 1]
+
+    o1 = raa.iloc[:, :, :5, :]
+    o2 = raa.iloc[:, :, 5:, :]
+    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
+    assert len(res2.odims) == len(raa.odims)
+
+    d1 = raa.iloc[:, :, :, :5]
+    d2 = raa.iloc[:, :, :, 5:]
+    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
+    assert len(res3.ddims) == len(raa.ddims)
+
+
+def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index values match but row index labels differ."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2.index = pd.DataFrame(t2.index.values, columns=t2.index.columns, index=[10])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+
+
+def test_concat_axis_1_index_nan_preserved(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index contains NaN entries."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t1.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    t2.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+    assert pd.isna(res.index.iloc[0, 1])
 
 
 def test_maximum_2(raa: Triangle) -> None:
