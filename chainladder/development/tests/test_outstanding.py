@@ -226,11 +226,15 @@ def test_approach_2_pattern_input_types():
     # Invalid DataFrame shape (>1 row and >1 col)
     df_invalid = pd.DataFrame([[1.2, 1.1], [1.0, 1.0]], columns=[12, 24])
     with pytest.raises(ValueError, match="must have 1 row or 1 column"):
-        cl.ImpliedCaseDevelopment(reported_pattern=df_invalid, paid_pattern=paid_s).fit(case)
+        cl.ImpliedCaseDevelopment(reported_pattern=df_invalid, paid_pattern=paid_s).fit(
+            case
+        )
 
     # Unsupported pattern type
     with pytest.raises(TypeError, match="Unsupported pattern type"):
-        cl.ImpliedCaseDevelopment(reported_pattern=[1.2, 1.1], paid_pattern=paid_s).fit(case)
+        cl.ImpliedCaseDevelopment(reported_pattern=[1.2, 1.1], paid_pattern=paid_s).fit(
+            case
+        )
 
 
 def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
@@ -315,4 +319,3 @@ def test_approach_2_auto_column_inference_and_transform_bugbot_fix():
     ).fit(tri_grouped)
     assert m_grp.case_to_prior_case_ is not None
     assert m_grp.paid_to_prior_case_ is not None
-
