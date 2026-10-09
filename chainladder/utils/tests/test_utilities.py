@@ -635,6 +635,15 @@ def test_concat_ignore_index_axes(raa: Triangle) -> None:
     assert len(res3.ddims) == len(raa.ddims)
 
 
+def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index values match but row index labels differ."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2.index = pd.DataFrame(t2.index.values, columns=t2.index.columns, index=[10])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+
+
 def test_maximum_2(raa: Triangle) -> None:
     """
     Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.
