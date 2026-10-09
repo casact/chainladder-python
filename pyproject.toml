@@ -93,7 +93,6 @@ test = [
     "ipython",
     "pytest-cov",  # For coverage testing
     "polars",
-    "pyarrow",
     "dask",
     "scipy>=1.18.1 ; python_version >= '3.15'",
     "statsmodels>=0.14.6"
