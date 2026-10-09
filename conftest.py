@@ -15,27 +15,47 @@ if TYPE_CHECKING:
     )
 
 
+FIXTURES = {
+    "raa": {
+        "data": "raa",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
+    "qtr": {
+        "data": "quarterly",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
+    "clrd": {
+        "data": "clrd",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
+    "genins": {
+        "data": "genins",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
+    "monthly": {
+        "data": "prism",
+        "runs": ["normal_run", "sparse_only_run"],
+        "transform": (lambda t: t.sum()),
+    },
+    "prism": {
+        "data": "prism",
+        "runs": ["sparse_only_run"],
+    },
+    "tail_sample": {
+        "data": "tail_sample",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
+    "xyz": {
+        "data": "xyz",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
+}
+
+
 def pytest_generate_tests(metafunc):
-    if "raa" in metafunc.fixturenames:
-        metafunc.parametrize("raa", ["normal_run", "sparse_only_run"], indirect=True)
-    if "qtr" in metafunc.fixturenames:
-        metafunc.parametrize("qtr", ["normal_run", "sparse_only_run"], indirect=True)
-    if "clrd" in metafunc.fixturenames:
-        metafunc.parametrize("clrd", ["normal_run", "sparse_only_run"], indirect=True)
-    if "genins" in metafunc.fixturenames:
-        metafunc.parametrize("genins", ["normal_run", "sparse_only_run"], indirect=True)
-    if "monthly" in metafunc.fixturenames:
-        metafunc.parametrize(
-            "monthly", ["normal_run", "sparse_only_run"], indirect=True
-        )
-    if "prism" in metafunc.fixturenames:
-        metafunc.parametrize("prism", ["sparse_only_run"], indirect=True)
-    if "tail_sample" in metafunc.fixturenames:
-        metafunc.parametrize(
-            "tail_sample", ["normal_run", "sparse_only_run"], indirect=True
-        )
-    if "xyz" in metafunc.fixturenames:
-        metafunc.parametrize("xyz", ["normal_run", "sparse_only_run"], indirect=True)
+    for x in metafunc.fixturenames:
+        if x in FIXTURES.keys():
+            metafunc.parametrize(x, FIXTURES[x]["runs"], indirect=True)
 
 
 @functools.lru_cache(maxsize=None)
@@ -59,18 +79,15 @@ def _cached_load_sample(sample: str) -> Triangle:
     return cl.load_sample(sample)
 
 
-def _sample_fixture(
-    request: Any,
+def make_fixture(
     sample: str,
     transform: Callable[[Triangle], Triangle] | None = None,
-) -> Iterator[Triangle]:
+) -> Callable:
     """
     Common template fixture for using sample data in unit tests.
 
     Parameters
     ----------
-    request:Any
-        The pytest request built-in.
     sample: str
         The name of the sample data set to be loaded, e.g., raa, clrd, etc.
     transform: Callable[[Triangle], Triangle] | None
@@ -82,52 +99,22 @@ def _sample_fixture(
 
     """
 
-    # Load a copy of cached sample data.
-    tri = _cached_load_sample(sample).copy()
-    # Apply a transformation if supplied
-    tri = transform(tri) if transform else tri
-    # Set the backend to sparse for a sparse-only-run, then yield the triangle to the test.
-    yield tri.set_backend("sparse" if request.param == "sparse_only_run" else "numpy")
+    @pytest.fixture
+    def _sample_fixture(request: Any) -> Iterator[Triangle]:
+        # Load a copy of cached sample data.
+        tri = _cached_load_sample(sample).copy()
+        # Apply a transformation if supplied
+        tri = transform(tri) if transform else tri
+        # Set the backend to sparse for a sparse-only-run, then yield the triangle to the test.
+        yield tri.set_backend(
+            "sparse" if request.param == "sparse_only_run" else "numpy"
+        )
+
+    return _sample_fixture
 
 
-@pytest.fixture
-def raa(request):
-    yield from _sample_fixture(request, "raa")
-
-
-@pytest.fixture
-def qtr(request):
-    yield from _sample_fixture(request, "quarterly")
-
-
-@pytest.fixture
-def clrd(request):
-    yield from _sample_fixture(request, "clrd")
-
-
-@pytest.fixture
-def genins(request):
-    yield from _sample_fixture(request, "genins")
-
-
-@pytest.fixture
-def prism(request):
-    yield from _sample_fixture(request, "prism")
-
-
-@pytest.fixture
-def monthly(request):
-    yield from _sample_fixture(request, "prism", transform=lambda t: t.sum())
-
-
-@pytest.fixture
-def tail_sample(request):
-    yield from _sample_fixture(request, "tail_sample")
-
-
-@pytest.fixture
-def xyz(request):
-    yield from _sample_fixture(request, "xyz")
+for x, v in FIXTURES.items():
+    globals()[x] = make_fixture(v["data"], v.get("transform"))
 
 
 @pytest.fixture
