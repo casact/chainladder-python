@@ -282,7 +282,9 @@ class TriangleBase(
         return data_agg
 
     @staticmethod
-    def _set_kdims(data_agg: DataFrame, index: list) -> tuple[np.ndarray, np.ndarray]:
+    def _factorize_index(
+        data_agg: DataFrame, index: list
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Sets the key dimension of the triangle.
 
@@ -302,15 +304,18 @@ class TriangleBase(
         """
 
         # Get unique values of index and assign an integer value to each one.
-        kdims: DataFrame = (
+        unique_keys: DataFrame = (
             data_agg[index].drop_duplicates().reset_index(drop=True).reset_index()
         )
 
         # Map these integers back to the agg data to generate a key index.
-        key_idx: np.ndarray = (
-            data_agg[index].merge(kdims, how="left", on=index)["index"].values[None].T
+        index_idx: np.ndarray = (
+            data_agg[index]
+            .merge(unique_keys, how="left", on=index)["index"]
+            .values[None]
+            .T
         )
-        return kdims.drop(labels="index", axis=1).values, key_idx
+        return unique_keys.drop(labels="index", axis=1).values, index_idx
 
     @staticmethod
     def _set_odims(
@@ -353,7 +358,7 @@ class TriangleBase(
     @staticmethod
     def _set_values(
         data_agg: DataFrame,
-        key_idx: np.ndarray,
+        index_idx: np.ndarray,
         columns: list,
         orig_idx: np.ndarray,
         dev_idx: np.ndarray,
@@ -368,7 +373,7 @@ class TriangleBase(
             tuple([np.concatenate((orig_idx, dev_idx), 1)] * len(columns)), 0
         )
         coords: np.ndarray = np.concatenate(
-            (np.concatenate(tuple([key_idx] * len(columns)), 0), val_idx, coords), 1
+            (np.concatenate(tuple([index_idx] * len(columns)), 0), val_idx, coords), 1
         )
         amts: np.ndarray = np.concatenate([
             data_agg[col].fillna(0).values for col in data_agg[columns]

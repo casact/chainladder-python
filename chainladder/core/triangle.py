@@ -11,7 +11,9 @@ import pandas as pd
 import numpy as np
 import warnings
 from chainladder.core.base import TriangleBase
-from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
+from chainladder.core.axis import TriangleAxis
+from chainladder.core.axis import _set_columns
+from chainladder.core.axis import _set_index
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
@@ -474,7 +476,7 @@ class Triangle(TriangleBase):
     index = TriangleAxis(
         0,
         fset=_set_index,
-        doc="Represents the index dimension of the triangle.",
+        doc="Represents the index axis of the triangle.",
     )
     columns = TriangleAxis(
         1,
@@ -634,14 +636,14 @@ class Triangle(TriangleBase):
             self.index_label: list = index
             data_agg[index[0]] = "Total"
 
-        key_idx: np.ndarray
+        index_idx: np.ndarray
         self.odims: np.ndarray
         orig_idx: np.ndarray
         self.ddims: ArrayLike
         dev_idx: np.ndarray
 
-        kdims_arr, key_idx = self._set_kdims(data_agg, index)
-        self.index = pd.DataFrame(list(kdims_arr), columns=index)
+        index_values, index_idx = self._factorize_index(data_agg, index)
+        self.index = pd.DataFrame(list(index_values), columns=index)
         self.columns = columns
         self.odims, orig_idx = self._set_odims(data_agg, date_axes)
         self.ddims, dev_idx = self._set_ddims(data_agg, date_axes)
@@ -706,7 +708,7 @@ class Triangle(TriangleBase):
 
         coords, amts = self._set_values(
             data_agg=data_agg,
-            key_idx=key_idx,
+            index_idx=index_idx,
             columns=columns,
             orig_idx=orig_idx,
             dev_idx=dev_idx,
