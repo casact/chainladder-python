@@ -19,7 +19,7 @@ body:
   - type: textarea
     attributes:
       label: What is being deprecated?
-      description: The current API, with a short example of the call that will warn.
+      description: The current API to be deprecated.
       placeholder: |
         ```python
         Triangle.feature_to_deprecate(...)
@@ -28,7 +28,7 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: Replacement
+      label: Supersedent
       description: What users should use instead, or "None" if it is being removed outright.
       placeholder: |
         ```python
