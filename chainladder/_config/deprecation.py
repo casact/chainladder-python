@@ -11,6 +11,8 @@ import functools
 import inspect
 import warnings
 
+from inspect import signature
+
 from typing import overload, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -374,9 +376,12 @@ def _deprecated_drop_argument(
         message += f" in {version}." if version else " in a future release."
         message += f" {guidance}"
 
+        sig = signature(func)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if name in kwargs:
+            bound = sig.bind_partial(*args, **kwargs)
+            if name in bound.arguments.keys():
                 warnings.warn(message, category, stacklevel=2)  # noqa
             return func(*args, **kwargs)
 

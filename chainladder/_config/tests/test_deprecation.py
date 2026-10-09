@@ -338,6 +338,16 @@ class TestDeprecatedDropArgument:
         result, _ = _warn_once(func, 1, 2, verbose=True)
         assert result == (1, 2, True)
 
+    def test_positional_args_warns(self) -> None:
+        """Check that positional arguments pass through unaffected."""
+
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
+        def func(a, b, verbose: bool = False):
+            return a, b, verbose
+
+        result, _ = _warn_once(func, 1, 2, True)
+        assert result == (1, 2, True)
+
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
 
