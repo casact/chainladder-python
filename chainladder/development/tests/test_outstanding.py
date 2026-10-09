@@ -58,7 +58,6 @@ def test_outstanding_friedland_example():
 
 def test_approach_2_friedland_exhibit_iii():
     import pandas as pd
-    import pytest
 
     case_data = pd.DataFrame({
         "origin": [1998, 1999, 2000, 2001, 2002, 2003],
@@ -76,13 +75,12 @@ def test_approach_2_friedland_exhibit_iii():
     rep_cdfs = {132: 1.015, 120: 1.020, 108: 1.030, 96: 1.051, 84: 1.077, 72: 1.131}
     paid_cdfs = {132: 1.046, 120: 1.067, 108: 1.109, 96: 1.187, 84: 1.306, 72: 1.489}
 
-    model = cl.CaseOutstanding(
+    model = cl.ImpliedCaseDevelopment(
         reported_pattern=rep_cdfs,
         paid_pattern=paid_cdfs,
         style="cdf",
     ).fit(case_tri)
 
-    assert model.approach_ == 2
     # Verify individual case CDF factors match Friedland Exhibit III
     assert np.isclose(
         model.case_cdf_.to_frame().loc["(All)", "132-Ult"], 1.506, atol=1e-3
@@ -107,12 +105,6 @@ def test_approach_2_friedland_exhibit_iii():
     cl_model = cl.Chainladder().fit(model.transform(case_tri))
     assert np.isclose(cl_model.ultimate_.sum().sum(), 7011175, rtol=1e-3)
 
-    # Approach 1 properties should raise AttributeError in Approach 2
-    with pytest.raises(AttributeError):
-        _ = model.case_to_prior_case_
-    with pytest.raises(AttributeError):
-        _ = model.paid_to_prior_case_
-
 
 def test_approach_2_with_ldf_style():
     import pandas as pd
@@ -134,14 +126,12 @@ def test_approach_2_with_ldf_style():
     rep_ldfs = {12: 1.20, 24: 1.10, 36: 1.00}
     paid_ldfs = {12: 1.50, 24: 1.25, 36: 1.05}
 
-    model = cl.CaseOutstanding(
+    model = cl.ImpliedCase(
         reported_pattern=rep_ldfs,
         paid_pattern=paid_ldfs,
         style="ldf",
-        approach=2,
     ).fit(case_tri)
 
-    assert model.approach_ == 2
     assert hasattr(model, "case_cdf_")
     assert hasattr(model, "ldf_")
 
@@ -153,12 +143,11 @@ def test_approach_2_with_development_estimator():
     rep_dev = cl.Development().fit(tri["incurred"])
     paid_dev = cl.Development().fit(tri["paid"])
 
-    model = cl.CaseOutstanding(
+    model = cl.ImpliedCaseDevelopment(
         reported_pattern=rep_dev,
         paid_pattern=paid_dev,
     ).fit(case)
 
-    assert model.approach_ == 2
     cl_model = cl.Chainladder().fit(model.transform(case))
     assert cl_model.ultimate_ is not None
 
@@ -173,25 +162,36 @@ def test_approach_2_validation_errors():
     with pytest.raises(
         ValueError, match="requires both reported_pattern and paid_pattern"
     ):
-        cl.CaseOutstanding(approach=2, paid_pattern={12: 1.5}).fit(case)
+        cl.ImpliedCaseDevelopment(paid_pattern={12: 1.5}).fit(case)
 
     # No common development ages
     with pytest.raises(ValueError, match="share no common development ages"):
-        cl.CaseOutstanding(
+        cl.ImpliedCaseDevelopment(
             reported_pattern={12: 1.2},
             paid_pattern={24: 1.5},
-            approach=2,
         ).fit(case)
+
+    # Calling CaseOutstanding with Approach 2 arguments raises helpful ValueError
+    with pytest.raises(ValueError, match="Approach 2 has been decoupled"):
+        cl.CaseOutstanding(reported_pattern={12: 1.2}, paid_pattern={12: 1.5}).fit(tri)
+    with pytest.raises(ValueError, match="Approach 2 has been decoupled"):
+        cl.CaseOutstanding(approach=2).fit(tri)
 
 
 def test_implied_case_development_alias():
-    from chainladder.development.outstanding import ImpliedCaseDevelopment
-    from chainladder.development import ImpliedCaseDevelopment as DevImplied
+    from chainladder.development.outstanding import ImpliedCaseDevelopment, ImpliedCase
+    from chainladder.development import (
+        ImpliedCaseDevelopment as DevImplied,
+        ImpliedCase as DevImpliedShort,
+    )
     import chainladder as cl_root
 
-    assert ImpliedCaseDevelopment is cl.CaseOutstanding
-    assert DevImplied is cl.CaseOutstanding
-    assert cl_root.ImpliedCaseDevelopment is cl.CaseOutstanding
+    assert ImpliedCase is ImpliedCaseDevelopment
+    assert DevImpliedShort is ImpliedCaseDevelopment
+    assert cl_root.ImpliedCase is ImpliedCaseDevelopment
+    assert DevImplied is ImpliedCaseDevelopment
+    assert cl_root.ImpliedCaseDevelopment is ImpliedCaseDevelopment
+    assert ImpliedCaseDevelopment is not cl.CaseOutstanding
 
 
 def test_approach_2_pattern_input_types():
@@ -204,21 +204,21 @@ def test_approach_2_pattern_input_types():
     # pd.Series inputs
     rep_s = pd.Series({12: 1.2, 24: 1.1, 36: 1.0})
     paid_s = pd.Series({12: 1.5, 24: 1.25, 36: 1.05})
-    m_series = cl.CaseOutstanding(
+    m_series = cl.ImpliedCaseDevelopment(
         reported_pattern=rep_s, paid_pattern=paid_s, style="ldf"
     ).fit(case)
     assert m_series.case_cdf_ is not None
 
     # pd.DataFrame 1-row input
     df_1row = pd.DataFrame([[1.2, 1.1, 1.0]], columns=[12, 24, 36])
-    m_df1 = cl.CaseOutstanding(
+    m_df1 = cl.ImpliedCaseDevelopment(
         reported_pattern=df_1row, paid_pattern=paid_s, style="ldf"
     ).fit(case)
     assert m_df1.case_cdf_ is not None
 
     # pd.DataFrame 1-column input
     df_1col = pd.DataFrame([1.2, 1.1, 1.0], index=[12, 24, 36])
-    m_df2 = cl.CaseOutstanding(
+    m_df2 = cl.ImpliedCaseDevelopment(
         reported_pattern=df_1col, paid_pattern=paid_s, style="ldf"
     ).fit(case)
     assert m_df2.case_cdf_ is not None
@@ -226,11 +226,11 @@ def test_approach_2_pattern_input_types():
     # Invalid DataFrame shape (>1 row and >1 col)
     df_invalid = pd.DataFrame([[1.2, 1.1], [1.0, 1.0]], columns=[12, 24])
     with pytest.raises(ValueError, match="must have 1 row or 1 column"):
-        cl.CaseOutstanding(reported_pattern=df_invalid, paid_pattern=paid_s).fit(case)
+        cl.ImpliedCaseDevelopment(reported_pattern=df_invalid, paid_pattern=paid_s).fit(case)
 
     # Unsupported pattern type
     with pytest.raises(TypeError, match="Unsupported pattern type"):
-        cl.CaseOutstanding(reported_pattern=[1.2, 1.1], paid_pattern=paid_s).fit(case)
+        cl.ImpliedCaseDevelopment(reported_pattern=[1.2, 1.1], paid_pattern=paid_s).fit(case)
 
 
 def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
@@ -244,7 +244,7 @@ def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
     paid_dev = cl.Development().fit(tri["paid"])
 
     # style='ldf' passed with Development estimator should use estimator.cdf_ directly
-    m = cl.CaseOutstanding(
+    m = cl.ImpliedCaseDevelopment(
         reported_pattern=rep_dev,
         paid_pattern=paid_dev,
         style="ldf",
@@ -258,7 +258,7 @@ def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
 
     mock_rep = MockLDFPattern({12: 1.2, 24: 1.1, 36: 1.0})
     mock_paid = MockLDFPattern({12: 1.5, 24: 1.25, 36: 1.05})
-    m_mock = cl.CaseOutstanding(
+    m_mock = cl.ImpliedCaseDevelopment(
         reported_pattern=mock_rep,
         paid_pattern=mock_paid,
         style="ldf",
@@ -266,33 +266,34 @@ def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
     assert m_mock.case_cdf_ is not None
 
 
-def test_approach_2_auto_column_inference_and_den_guard():
-    import pytest
-
+def test_approach_2_auto_column_inference_and_transform_bugbot_fix():
     tri = cl.load_sample("usauto")
 
-    # Incurred and paid auto-detection
+    # Incurred and paid auto-detection from 2-channel triangle
     tri_sub = tri[["incurred", "paid"]]
-    m = cl.CaseOutstanding(
+    m = cl.ImpliedCaseDevelopment(
         reported_pattern={12: 1.1, 24: 1.05},
         paid_pattern={12: 1.3, 24: 1.15},
     ).fit(tri_sub)
     assert m.case_cdf_ is not None
 
+    # Verify transform on 2-channel triangle extracts 1-channel case triangle with ldf_
+    # This directly addresses and validates Bugbot's review concern
+    transformed = m.transform(tri_sub)
+    assert len(transformed.columns) == 1
+    assert transformed.columns[0] == "case"
+    assert hasattr(transformed, "ldf_")
+
+    # Verify downstream Chainladder model runs seamlessly on transformed triangle
+    cl_model = cl.Chainladder().fit(transformed)
+    assert cl_model.ultimate_ is not None
+
     # Denominator <= 0 guard (CDF_paid <= CDF_rep fallback to 1.0)
-    m_guard = cl.CaseOutstanding(
+    m_guard = cl.ImpliedCaseDevelopment(
         reported_pattern={12: 1.5, 24: 1.2},
         paid_pattern={12: 1.2, 24: 1.1},  # paid < rep
     ).fit(tri_sub)
     assert np.isclose(m_guard.case_cdf_.to_frame().loc["(All)", "12-Ult"], 1.0)
-
-    # Explicit paid_to_incurred in Approach 2
-    m_explicit = cl.CaseOutstanding(
-        paid_to_incurred=("paid", "incurred"),
-        reported_pattern={12: 1.1, 24: 1.05},
-        paid_pattern={12: 1.3, 24: 1.15},
-    ).fit(tri)
-    assert m_explicit.case_cdf_ is not None
 
     # Capitalized Incurred and Paid column names
     tri_cap = tri.copy()
@@ -300,13 +301,13 @@ def test_approach_2_auto_column_inference_and_den_guard():
         "Incurred" if c == "incurred" else "Paid" if c == "paid" else c
         for c in tri_cap.columns
     ]
-    m_cap = cl.CaseOutstanding(
+    m_cap = cl.ImpliedCaseDevelopment(
         reported_pattern={12: 1.1, 24: 1.05},
         paid_pattern={12: 1.3, 24: 1.15},
     ).fit(tri_cap[["Incurred", "Paid"]])
     assert m_cap.case_cdf_ is not None
 
-    # Groupby in Approach 1
+    # Groupby in Approach 1 CaseOutstanding
     tri_grouped = cl.load_sample("clrd")
     m_grp = cl.CaseOutstanding(
         paid_to_incurred=("CumPaidLoss", "IncurLoss"),
@@ -315,6 +316,3 @@ def test_approach_2_auto_column_inference_and_den_guard():
     assert m_grp.case_to_prior_case_ is not None
     assert m_grp.paid_to_prior_case_ is not None
 
-    # Invalid approach value
-    with pytest.raises(ValueError, match="Unknown approach"):
-        cl.CaseOutstanding(approach=99).fit(tri)

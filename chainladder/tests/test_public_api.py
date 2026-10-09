@@ -50,6 +50,7 @@ EXPECTED_PUBLIC_API = {
     "ClarkLDF",
     "CaseOutstanding",
     "ImpliedCaseDevelopment",
+    "ImpliedCase",
     "DevelopmentML",
     "TweedieGLM",
     "BarnettZehnwirth",

@@ -69,6 +69,7 @@ from chainladder.development import (  # noqa (API import)
     ClarkLDF,
     CaseOutstanding,
     ImpliedCaseDevelopment,
+    ImpliedCase,
     DevelopmentML,
     TweedieGLM,
     BarnettZehnwirth,

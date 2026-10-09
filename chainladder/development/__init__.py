@@ -7,6 +7,7 @@ from chainladder.development.clark import ClarkLDF  # noqa (API import)
 from chainladder.development.outstanding import (
     CaseOutstanding,
     ImpliedCaseDevelopment,
+    ImpliedCase,
 )  # noqa (API import)
 from chainladder.development.learning import DevelopmentML  # noqa (API import)
 from chainladder.development.glm import TweedieGLM  # noqa (API import)
@@ -21,6 +22,7 @@ __all__ = [
     "ClarkLDF",
     "CaseOutstanding",
     "ImpliedCaseDevelopment",
+    "ImpliedCase",
     "DevelopmentML",
     "TweedieGLM",
     "BarnettZehnwirth",

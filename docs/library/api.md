@@ -58,6 +58,7 @@ Classes
   ClarkLDF
   CaseOutstanding
   ImpliedCaseDevelopment
+  ImpliedCase
   TweedieGLM
   DevelopmentML
   BarnettZehnwirth
