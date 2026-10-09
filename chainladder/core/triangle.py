@@ -964,8 +964,25 @@ class Triangle(TriangleBase):
 
         return Styler(self)
 
-    def set_index(self, value, inplace=False):
-        """Sets the index of the Triangle"""
+    def set_index(self, value: pd.DataFrame, inplace: bool = False):
+        """
+        Sets the index of the Triangle
+
+        Parameters
+        ----------
+        value: pd.DataFrame
+            The new index
+
+        Returns
+        -------
+        Triangle
+            Triangle with newly set index
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
+        """
         if inplace:
             self.index = value
             return self
@@ -1386,7 +1403,7 @@ class Triangle(TriangleBase):
 
         .. deprecated:: 0.11
 
-           The return value of ``inplace=True`` is deprecated.
+           The return value of using ``inplace=True`` is deprecated.
            In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
@@ -1520,7 +1537,7 @@ class Triangle(TriangleBase):
 
         .. deprecated:: 0.11
 
-           The return value of ``inplace=True`` is deprecated.
+           The return value of using ``inplace=True`` is deprecated.
            In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
@@ -1785,6 +1802,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------

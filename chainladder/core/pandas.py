@@ -548,6 +548,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if value is None:
             raise TypeError("Must specify a fill value.")
@@ -578,6 +583,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if inplace:
             xp = self.get_array_module()
