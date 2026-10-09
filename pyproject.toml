@@ -80,7 +80,7 @@ docs = [
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels>=0.14.6 ; python_version < '3.15'"  # For docs example; <0.14.6 fails to import under pandas 3
+    "statsmodels>=0.14.6 ; python_version < '3.15'",  # For docs example; <0.14.6 fails to import under pandas 3
     "statsmodels>=0.15.0 ; python_version >= '3.15'"  # For docs example; <0.14.6 fails to import under pandas 3
 ]
 test = [
@@ -95,7 +95,7 @@ test = [
     "polars",
     "pyarrow",
     "dask",
-    "statsmodels>=0.14.6 ; python_version < '3.15'"
+    "statsmodels>=0.14.6 ; python_version < '3.15'".
     "statsmodels>=0.15.0 ; python_version >= '3.15'"
 ]
 performance = [
