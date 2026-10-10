@@ -32,17 +32,17 @@ keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
     "pandas >=2.3.3, !=3.0.4 ; python_version < '3.15'",
     "pandas >=3.0.6 ; python_version >= '3.15'",
-    "scikit-learn>1.4.2 ; python_version < '3.15'",
+    "scikit-learn>1.7.0 ; python_version < '3.15'",
     "scikit-learn>=1.9.1 ; python_version >= '3.15'",
     "sparse>=0.18",
     "numba>=0.68.0 ; python_version >= '3.15'",  # numba is needed for sparse. however, sparse does not have a version that officially support python 3.15
-    "numpy>=2.0 ; python_version < '3.15'",
+    "numpy>=2.3 ; python_version < '3.15'",
     "numpy>=2.5.2 ; python_version >= '3.15'",
-    "matplotlib>=3.11.2",  # Required for TriangleDisplay.heatmap()
+    "matplotlib ; python_version < '3.15'",  # Required for TriangleDisplay.heatmap()
+    "matplotlib>=3.11.2 ; python_version >= '3.15'",
     "contourpy>=1.4.0 ; python_version >= '3.15'",  # Required for matplotlib
     "dill",
     "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
-
 ]
 
 [project.urls]
@@ -81,7 +81,7 @@ docs = [
     "parso>=0.8",
     "polars",  # For docs examples
     "scipy>=1.18.1 ; python_version >= '3.15'",
-    "statsmodels>=0.14.6"  # For docs example; <0.14.6 fails to import under pandas 3
+    "statsmodels>=0.14.6",  # For docs example; <0.14.6 fails to import under pandas 3
 ]
 test = [
     "lxml ; python_version < '3.15'",
@@ -97,7 +97,7 @@ test = [
     "pyarrow>=26.0.0 ; python_version >= '3.15'",
     "dask",
     "scipy>=1.18.1 ; python_version >= '3.15'",
-    "statsmodels>=0.14.6"
+    "statsmodels>=0.14.6",
 ]
 performance = [
     "dask",  # For distributed computing
