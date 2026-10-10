@@ -1710,14 +1710,13 @@ class Triangle(TriangleBase):
             is_cumulative = self.is_cumulative
             is_full = self.is_full
             is_ultimate = self.is_ultimate
+            obj = self.copy()
             if is_full:
                 if is_cumulative:
-                    _ = self.cum_to_incr(inplace=True)
+                    _ = obj.cum_to_incr(inplace=True)
                 if is_ultimate:
                     ultimate = self.iloc[..., -1:]
                     obj = self.iloc[..., :-1]
-                else:
-                    obj = self.copy()
             obj._val_dev(1)
             ddims = obj.valuation[obj.valuation <= obj.valuation_date]
             obj.ddims = ddims.drop_duplicates().sort_values()
