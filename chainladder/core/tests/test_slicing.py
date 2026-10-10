@@ -308,9 +308,8 @@ def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
     """
     raa2 = raa * 2
     raa_new = raa.copy()
-    if raa_new.array_backend == "sparse":
-        pytest.skip("Test is specific to the numpy backend.")
-    else:
+    if raa_new.array_backend == "numpy":
+        # Test is specific to the numpy backend.
         raa_new.loc[:, :, :, :60] = raa2.loc[:, :, :, :60]
         raa_new.loc[:, :, :, 72:] = raa2.loc[:, :, :, 72:]
         assert raa_new == raa2
@@ -393,9 +392,8 @@ def test_set_fancy_origin_raises(raa: Triangle) -> None:
 
     """
     raa_copy = raa.copy()
-    if raa.array_backend == "sparse":
-        pytest.skip("Test is specific to the numpy backend.")
-    else:
+    if raa.array_backend == "numpy":
+        # Test is specific to the numpy backend.
         with pytest.raises(
             ValueError,
             match="Setting while fancy indexing on origin/development is not supported.",
@@ -445,9 +443,8 @@ def test_set_fancy_development_raises(raa: Triangle) -> None:
 
     """
     raa_copy = raa.copy()
-    if raa.array_backend == "sparse":
-        pytest.skip("Test is specific to the numpy backend.")
-    else:
+    if raa.array_backend == "numpy":
+        # Test is specific to the numpy backend.
         with pytest.raises(
             ValueError,
             match="Setting while fancy indexing on origin/development is not supported.",
@@ -500,9 +497,8 @@ def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     None
 
     """
-    if clrd.array_backend == "sparse":
-        pytest.skip("Test is specific to the numpy backend.")
-    else:
+    if clrd.array_backend == "numpy":
+        # Test is specific to the numpy backend.
         dest_index = [
             ["Adriatic Ins Co", "othliab"],
             ["Adriatic Ins Co", "ppauto"],
@@ -541,9 +537,8 @@ def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
     None
 
     """
-    if clrd.array_backend == "sparse":
-        pytest.skip("Test is specific to the numpy backend.")
-    else:
+    if clrd.array_backend == "numpy":
+        # Test is specific to the numpy backend.
         dest_index = [0, 1, 5]
         val_index = [1, 4, 6]
         dest_col = [2, 3, 5]
@@ -621,11 +616,11 @@ def test_setitem_virtual_column_numpy_backend(raa: Triangle) -> None:
     None
     """
     tri = raa.copy()
-    if tri.array_backend == "sparse":
-        pytest.skip("Test is specific to the numpy backend.")
-    tri["double"] = lambda x: x["values"] * 2
-    assert "double" in tri.columns
-    assert tri["double"] == tri["values"] * 2
+    if tri.array_backend == "numpy":
+        # Test is specific to the numpy backend.
+        tri["double"] = lambda x: x["values"] * 2
+        assert "double" in tri.columns
+        assert tri["double"] == tri["values"] * 2
 
 
 def test_setitem_value_backend_conversion(raa: Triangle) -> None:

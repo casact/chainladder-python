@@ -12,6 +12,7 @@ import pandas as pd
 
 from chainladder import (
     __dt64_dtype__,
+    _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
 from chainladder.utils.utility_functions import concat, num_to_nan
@@ -304,11 +305,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, np.nan, np.nan, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -338,11 +339,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, 500, 600, np.nan, 600, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -372,11 +373,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, np.nan, np.nan, np.nan, 600, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -405,11 +406,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [500, np.nan, 700, 500, np.nan, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -440,11 +441,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [500, 600, np.nan, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -476,12 +477,12 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987] * 2,
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
                     'lob': ['abc'] * 6 + ['xyz'] * 6,
                     'paid': [np.nan, np.nan, np.nan, 500, 600, 500] * 2,
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 index='lob',
                 columns=['paid'],
                 cumulative=True
@@ -547,6 +548,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if value is None:
             raise TypeError("Must specify a fill value.")
@@ -577,6 +583,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if inplace:
             xp = self.get_array_module()
@@ -622,11 +633,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
-                    'development': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+                    'valuation': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
                     'paid': [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -846,11 +857,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [300, 400, 500, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -1058,16 +1069,31 @@ class TrianglePandas(_TrianglePandasBase):
                 )
         return cast("Triangle", cast(object, self))
 
+    @_deprecated_drop_argument(
+        "inplace",
+        "Copy the Triangle first and use the return value: "
+        "`tri = tri.copy()` then `tri = tri.astype(dtype)`.",
+    )
     def astype(self, dtype, inplace=True) -> Triangle:
         """
         Copy of the array, cast to a specified type.
+
+        .. warning::
+            The ``inplace`` parameter is deprecated and will be removed.
+            Copy first and use the return value:
+
+            .. code-block:: python
+
+                tri = tri.copy()
+                tri = tri.astype(new_dtype)
 
         Parameters
         ----------
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
-        copy : bool, optional
-            By default, astype always returns a newly allocated array.
+        inplace : bool, default True
+            Deprecated and scheduled for removal. When False, the cast is
+            applied to a copy and the original Triangle is left untouched.
 
         Returns
         -------

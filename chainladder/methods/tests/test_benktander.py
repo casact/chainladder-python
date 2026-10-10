@@ -77,7 +77,7 @@ def test_odd_shaped_triangle():
     tr = cl.Triangle(
         df,
         origin=["claim_year", "claim_month"],
-        development=["dev_year", "dev_month"],
+        valuation=["dev_year", "dev_month"],
         columns="payment",
         cumulative=False,
     )

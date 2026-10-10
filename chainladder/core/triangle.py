@@ -21,13 +21,14 @@ from chainladder.utils.utility_functions import (
     to_period,
 )
 from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
+from chainladder._config.deprecation import _deprecated_rename_argument
 
 try:
     import dask.bag as db
 except ImportError:
     db = None
 
-from typing import cast, Optional, TYPE_CHECKING
+from typing import cast, Optional, TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -55,11 +56,16 @@ class Triangle(TriangleBase):
     origin: str
          Name of the column in ``data`` representing the accident, reporting,
          or more generally the origin period. Maps to the Origin dimension.
-    development: str
-        Name of the column in ``data`` representing the development or
-        valuation period. Maps to the Development dimension. If omitted, the
+    valuation: str
+        Name of the column in ``data`` representing the
+        valuation date. Maps to the Development dimension. If omitted, the
         Triangle is treated as having a single development period (e.g. a
-        latest-diagonal-only view).
+        latest-diagonal-only view). Cannot be used in conjunction with ``age``
+    age: str
+        Name of the column in ``data`` representing the development age
+        in months. Maps to the Development dimension. If omitted, the
+        Triangle is treated as having a single development period (e.g. a
+        latest-diagonal-only view). Cannot be used in conjunction with ''valuation``
     columns: str or list
         Name(s) of the column(s) in ``data`` holding the numeric values that
         will map to the columns dimension. If omitted, a single ``'Total'``
@@ -71,8 +77,8 @@ class Triangle(TriangleBase):
         A string representation of the date format of the origin column
         (e.g. ``'%Y-%m-%d'``). If omitted, the date format is inferred by
         pandas.
-    development_format: str
-        A string representation of the date format of the development column.
+    valuation_format: str
+        A string representation of the date format of the valuation column.
         If omitted, the date format is inferred by pandas.
     cumulative: bool
         Whether the triangle is cumulative or incremental.  This attribute is
@@ -157,14 +163,42 @@ class Triangle(TriangleBase):
         df = pd.DataFrame(
             data={
                 'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                'valuation': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
                 'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
             }
         )
         tr = cl.Triangle(
             data=df,
             origin='origin',
-            development='development',
+            valuation='valuation',
+            columns=['reported'],
+            cumulative=True,
+        )
+        print(tr)
+
+    .. testoutput::
+
+                  12      24       36       48
+        1981  5012.0  8269.0  10907.0  11805.0
+        1982   106.0  4285.0   5396.0      NaN
+        1983  3410.0  8992.0      NaN      NaN
+        1984  5655.0     NaN      NaN      NaN
+
+    A Triangle can also specified by development age.
+
+    .. testcode::
+
+        df = pd.DataFrame(
+            data={
+                'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
+                'age': [12, 24, 36, 48, 12, 24, 36, 12, 24, 12],
+                'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
+            }
+        )
+        tr = cl.Triangle(
+            data=df,
+            origin='origin',
+            age='age',
             columns=['reported'],
             cumulative=True,
         )
@@ -187,7 +221,7 @@ class Triangle(TriangleBase):
         df = pd.DataFrame(
             data={
                 'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                'valuation': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
                 'reported': [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
                 'paid': [2506, 4135, 5454, 5903, 53, 2143, 2698, 1705, 4496, 2828],
             }
@@ -195,7 +229,7 @@ class Triangle(TriangleBase):
         tr = cl.Triangle(
             data=df,
             origin='origin',
-            development='development',
+            valuation='valuation',
             columns=['reported', 'paid'],
             cumulative=True,
         )
@@ -217,16 +251,16 @@ class Triangle(TriangleBase):
 
         df = pd.DataFrame(
             data={
-                 'lob': ['auto', 'auto', 'auto', 'home', 'home', 'home'],
+                'lob': ['auto', 'auto', 'auto', 'home', 'home', 'home'],
                 'origin': [2020, 2020, 2021, 2020, 2020, 2021],
-                'development': [2020, 2021, 2021, 2020, 2021, 2021],
+                'valuation': [2020, 2021, 2021, 2020, 2021, 2021],
                 'reported': [100, 150, 80, 200, 280, 160],
             }
         )
         tr = cl.Triangle(
             data=df,
             origin='origin',
-            development='development',
+            valuation='valuation',
             columns=['reported'],
             index=['lob'],
             cumulative=True,
@@ -243,14 +277,14 @@ class Triangle(TriangleBase):
         Columns:         [reported]
 
     Non-standard date strings can be parsed by specifying ``origin_format`` and
-    ``development_format`` using Python ``strftime`` codes.
+    ``valuation_format`` using Python ``strftime`` codes.
 
     .. testcode::
 
         df = pd.DataFrame(
             data={
                 'origin': ['2020-01', '2020-01', '2020-02', '2020-02'],
-                'development': ['2020-01', '2020-02', '2020-02', '2020-03'],
+                'valuation': ['2020-01', '2020-02', '2020-02', '2020-03'],
                 'reported': [100, 150, 200, 280],
             }
         )
@@ -258,8 +292,8 @@ class Triangle(TriangleBase):
             data=df,
             origin='origin',
             origin_format='%Y-%m',
-            development='development',
-            development_format='%Y-%m',
+            valuation='valuation',
+            valuation_format='%Y-%m',
             columns=['reported'],
             cumulative=True,
         )
@@ -281,14 +315,14 @@ class Triangle(TriangleBase):
         df = pd.DataFrame(
             data={
                 'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                'valuation': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
                 'reported': [5012, 3257, 2638, 898, 106, 4179, 1111, 3410, 5582, 5655],
             }
         )
         tr = cl.Triangle(
             data=df,
             origin='origin',
-            development='development',
+            valuation='valuation',
             columns=['reported'],
             cumulative=False,
         )
@@ -312,7 +346,7 @@ class Triangle(TriangleBase):
         df = pd.DataFrame(
             data={
                 'origin': ['2023-05', '2023-08', '2023-11', '2024-02'],
-                'development': ['2024-04', '2024-04', '2024-04', '2024-04'],
+                'valuation': ['2024-04', '2024-04', '2024-04', '2024-04'],
                 'premium': [100, 130, 160, 140],
             }
         )
@@ -320,8 +354,8 @@ class Triangle(TriangleBase):
             data=df,
             origin='origin',
             origin_format='%Y-%m',
-            development='development',
-            development_format='%Y-%m',
+            valuation='valuation',
+            valuation_format='%Y-%m',
             columns=['premium'],
             cumulative=True,
             trailing=False,
@@ -343,8 +377,8 @@ class Triangle(TriangleBase):
             data=df,
             origin='origin',
             origin_format='%Y-%m',
-            development='development',
-            development_format='%Y-%m',
+            valuation='valuation',
+            valuation_format='%Y-%m',
             columns=['premium'],
             cumulative=True,
             trailing=True,
@@ -367,7 +401,7 @@ class Triangle(TriangleBase):
     Triangles produced by reserving methods carry ultimate projections at the
     sentinel valuation date ``options.ULT_VAL`` (default December 31, 2261).
     Export with ``to_frame(keepdims=True)`` and reconstruct by passing
-    ``development='valuation'``. Rows whose valuation equals
+    ``valuation='valuation'``. Rows whose valuation equals
     ``options.ULT_VAL`` are recognized as ultimates and stored in the ultimate
     development column (see also :attr:`is_ultimate`).
 
@@ -379,7 +413,7 @@ class Triangle(TriangleBase):
         tri = cl.Triangle(
             df,
             origin='origin',
-            development='valuation',
+            valuation='valuation',
             columns='values',
             cumulative=True,
         )
@@ -418,7 +452,7 @@ class Triangle(TriangleBase):
         tri = cl.Triangle(
             df,
             origin='origin',
-            development='valuation',
+            valuation='valuation',
             columns='ultimate',
             cumulative=True,
         )
@@ -431,19 +465,27 @@ class Triangle(TriangleBase):
         1982  12000.0
     """
 
+    @_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
+    @_deprecated_rename_argument(
+        "development_format",
+        "valuation_format",
+        remove_in_version="v2.0",
+        stacklevel=3,
+    )
     def __init__(
         self,
         data: Optional[DataFrame | DataFrameXchg | dict] = None,
         origin: Optional[str | list] = None,
-        development: Optional[str | list] = None,
+        valuation: Optional[str | list] = None,
         columns: Optional[str | list] = None,
         index: Optional[str | list] = None,
         origin_format: Optional[str] = None,
-        development_format: Optional[str] = None,
+        valuation_format: Optional[str] = None,
         cumulative: Optional[bool] = None,
         array_backend: str = None,
         pattern=False,
         trailing: bool = True,
+        age: Optional[str | list] = None,
         *args,
         **kwargs,
     ):
@@ -455,12 +497,15 @@ class Triangle(TriangleBase):
             data = pd.DataFrame(data)
         elif not isinstance(data, pd.DataFrame) and hasattr(data, "__dataframe__"):
             data = self._interchange_dataframe(data)
-        index, columns, origin, development = self._input_validation(
+        if valuation is not None and age is not None:
+            raise ValueError("Only one of `valuation` or `age` may be specified.")
+        index, columns, origin, development, age = self._input_validation(
             data=data,
             index=index,
             columns=columns,
             origin=origin,
-            development=development,
+            valuation=valuation,
+            age=age,
         )
 
         # Store dimension metadata.
@@ -472,7 +517,7 @@ class Triangle(TriangleBase):
             index=index,
             columns=columns,
             origin=origin,
-            development=development,
+            valuation=development,
             cumulative=cumulative,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
@@ -487,22 +532,33 @@ class Triangle(TriangleBase):
         development_date = self._set_development(
             data=data,
             development=development,
-            development_format=development_format,
+            valuation_format=valuation_format,
+            age=age,
             origin_date=origin_date,
             origin_grain=self.origin_grain,
         )
 
         if len(development_date.unique()) == 1:
-            # checks if development is not empty, and if ithas any non-yearly values
-            dev_has_no_month = not development or all(
-                pd
-                .to_numeric(data[col], errors="coerce")
-                .astype("Int64")
-                .astype(str)
-                .str.fullmatch(r"\d{4}")
-                .all()
-                for col in development
+            # checks that age is empty, in which case development month is implied
+            # and
+            # either development is empty or all development columns have years as value
+            # fmt: off
+            dev_has_no_month = (
+                not age
+                and (
+                    not development
+                    or all(
+                        pd
+                        .to_numeric(data[col], errors="coerce")
+                        .astype("Int64")
+                        .astype(str)
+                        .str.fullmatch(r"\d{4}")
+                        .all()
+                        for col in development
+                    )
+                )
             )
+            # fmt: on
 
             if len(data) == 1 or dev_has_no_month:
                 # if development has no monthly values, match origin
@@ -688,7 +744,7 @@ class Triangle(TriangleBase):
         index: list,
         columns: list,
         origin: list,
-        development: list,
+        valuation: list,
         cumulative: bool,
     ) -> tuple[DataFrame, Triangle]:
         """
@@ -697,7 +753,7 @@ class Triangle(TriangleBase):
         Ultimate rows are those where the development column equals
         ``options.ULT_VAL``. This supports round-tripping triangles exported
         via :meth:`~chainladder.Triangle.to_frame` with ``keepdims=True`` and
-        ``development='valuation'``. It also allows importing pre-existing
+        ``valuation='valuation'``. It also allows importing pre-existing
         ultimate estimates by marking the valuation column with
         ``options.ULT_VAL``.
 
@@ -707,23 +763,19 @@ class Triangle(TriangleBase):
         is constructed.
         """
         ult = None
-        if (
-            development
-            and len(development) == 1
-            and data[development[0]].dtype.kind == "M"
-        ):
-            u = data[data[development[0]] == options.ULT_VAL].copy()
+        if valuation and len(valuation) == 1 and data[valuation[0]].dtype.kind == "M":
+            u = data[data[valuation[0]] == options.ULT_VAL].copy()
             if len(u) > 0 and len(u) != len(data):
                 ult = Triangle(
                     u,
                     origin=origin,
-                    development=development,
+                    valuation=valuation,
                     columns=columns,
                     index=index,
                     cumulative=cumulative,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
-                data = data[data[development[0]] != options.ULT_VAL]
+                data = data[data[valuation[0]] != options.ULT_VAL]
         return data, ult
 
     @property
@@ -912,8 +964,25 @@ class Triangle(TriangleBase):
 
         return Styler(self)
 
-    def set_index(self, value, inplace=False):
-        """Sets the index of the Triangle"""
+    def set_index(self, value: pd.DataFrame, inplace: bool = False):
+        """
+        Sets the index of the Triangle
+
+        Parameters
+        ----------
+        value: pd.DataFrame
+            The new index
+
+        Returns
+        -------
+        Triangle
+            Triangle with newly set index
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
+        """
         if inplace:
             self.index = value
             return self
@@ -1319,7 +1388,7 @@ class Triangle(TriangleBase):
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def incr_to_cum(self, inplace=False):
+    def incr_to_cum(self, inplace: bool = False) -> Self:
         """
         Method to convert an incremental triangle into a cumulative triangle.
 
@@ -1331,6 +1400,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Updated instance of triangle accumulated along the origin
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
@@ -1345,14 +1419,14 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-                    'development': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+                    'valuation': [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
                     'reported': [5012, 3257, 2638, 898, 106, 4179, 1111, 3410, 5582, 5655],
                 }
             )
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=False,
             )
@@ -1460,6 +1534,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Updated instance of triangle accumulated along the origin
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
@@ -1724,6 +1803,11 @@ class Triangle(TriangleBase):
         -------
             Triangle
 
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
+
         Examples
         --------
         Build a quarterly origin / quarterly development Triangle (OQDQ).
@@ -1748,7 +1832,7 @@ class Triangle(TriangleBase):
                         '2023Q3', '2023Q3',
                         '2023Q4',
                     ],
-                    'development': [
+                    'valuation': [
                         '2022Q1', '2022Q2', '2022Q3', '2022Q4', '2023Q1', '2023Q2', '2023Q3', '2023Q4',
                         '2022Q2', '2022Q3', '2022Q4', '2023Q1', '2023Q2', '2023Q3', '2023Q4',
                         '2022Q3', '2022Q4', '2023Q1', '2023Q2', '2023Q3', '2023Q4',
@@ -1773,7 +1857,7 @@ class Triangle(TriangleBase):
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=True,
             )
@@ -1969,14 +2053,14 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [2020, 2020, 2020, 2021, 2021, 2022],
-                    'development': [2020, 2021, 2022, 2021, 2022, 2022],
+                    'valuation': [2020, 2021, 2022, 2021, 2022, 2022],
                     'reported': [100, 200, 300, 110, 220, 120],
                 }
             )
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=True,
             )
@@ -2184,14 +2268,14 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [2020, 2020, 2020, 2021, 2021, 2022],
-                    'development': [2020, 2021, 2022, 2021, 2022, 2022],
+                    'valuation': [2020, 2021, 2022, 2021, 2022, 2022],
                     'reported': [100, 200, 300, 110, 220, 120],
                 }
             )
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported'],
                 cumulative=True,
             )
@@ -2307,7 +2391,7 @@ class Triangle(TriangleBase):
             df = pd.DataFrame(
                 data={
                     'origin': [2020, 2020, 2021, 2021],
-                    'development': [2020, 2021, 2021, 2021],
+                    'valuation': [2020, 2021, 2021, 2021],
                     'reported': [100, 200, 110, 110],
                     'paid': [50, 100, 60, 60],
                 }
@@ -2315,7 +2399,7 @@ class Triangle(TriangleBase):
             tr = cl.Triangle(
                 data=df,
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['reported', 'paid'],
                 cumulative=True,
             )

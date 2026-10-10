@@ -127,6 +127,11 @@ class Development(DevelopmentBase):
     ..  testsetup::
 
         import chainladder as cl
+        import warnings
+        # part of the example intentionally trigger drop exclusion warning
+        warnings.filterwarnings("ignore", category=UserWarning)
+        # part of the example intentionally trigger various arithmetic warnings
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
     ..  testcode::
 
@@ -152,7 +157,8 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        print(cl.Development(drop=("2004", 12)).fit_transform(tri["Incurred"]).link_ratio)
+        dev = cl.Development(drop=("2004", 12)).fit_transform(tri["Incurred"])
+        print(dev.link_ratio)
 
     ..  testoutput::
 
@@ -172,8 +178,7 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        ldf = cl.Development(drop=("2004", 12)).fit(tri["Incurred"]).ldf_
-        print(ldf)
+        print(dev.ldf_)
 
     ..  testoutput::
 
@@ -186,11 +191,11 @@ class Development(DevelopmentBase):
     ..  testcode::
 
         tri = cl.load_sample("xyz")
-        print(
+        dev = (
             cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00])
             .fit_transform(tri["Incurred"])
-            .link_ratio
         )
+        print(dev.link_ratio)
 
     ..  testoutput::
 
@@ -210,13 +215,7 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        tri = cl.load_sample("xyz")
-        ldf = (
-            cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00])
-            .fit(tri["Incurred"])
-            .ldf_
-        )
-        print(ldf)
+        print(dev.ldf_)
 
     ..  testoutput::
 
@@ -229,7 +228,6 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        tri = cl.load_sample("xyz")
         print(
             cl.Development(drop_above=1.25, drop_below=1.0, preserve=3)
             .fit_transform(tri["Incurred"])
