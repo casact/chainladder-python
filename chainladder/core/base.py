@@ -28,6 +28,7 @@ from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
 from chainladder.adjustments.disposal import DisposalMixin
+from chainladder.development.incremental import IncrementalMixin
 
 from typing import Optional, TYPE_CHECKING
 
@@ -50,6 +51,7 @@ class TriangleBase(
     Common,
     ABC,
     DisposalMixin,
+    IncrementalMixin,
 ):
     """This class handles the initialization of a triangle"""
 
