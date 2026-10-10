@@ -28,7 +28,7 @@ try:
 except ImportError:
     db = None
 
-from typing import cast, Optional, TYPE_CHECKING
+from typing import cast, Optional, TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from pandas import DataFrame, Series
@@ -964,8 +964,25 @@ class Triangle(TriangleBase):
 
         return Styler(self)
 
-    def set_index(self, value, inplace=False):
-        """Sets the index of the Triangle"""
+    def set_index(self, value: pd.DataFrame, inplace: bool = False):
+        """
+        Sets the index of the Triangle
+
+        Parameters
+        ----------
+        value: pd.DataFrame
+            The new index
+
+        Returns
+        -------
+        Triangle
+            Triangle with newly set index
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
+        """
         if inplace:
             self.index = value
             return self
@@ -1371,7 +1388,7 @@ class Triangle(TriangleBase):
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def incr_to_cum(self, inplace=False):
+    def incr_to_cum(self, inplace: bool = False) -> Self:
         """
         Method to convert an incremental triangle into a cumulative triangle.
 
@@ -1383,6 +1400,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Updated instance of triangle accumulated along the origin
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
@@ -1512,6 +1534,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Updated instance of triangle accumulated along the origin
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
@@ -1775,6 +1802,11 @@ class Triangle(TriangleBase):
         Returns
         -------
             Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------
