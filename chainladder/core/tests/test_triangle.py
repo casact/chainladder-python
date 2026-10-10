@@ -474,7 +474,7 @@ def test_dev_to_val_inplace_on_val_tri_returns_self(qtr: Triangle) -> None:
     assert val_tri.is_val_tri
     new_val_tri = val_tri.copy()
     new_val_tri.dev_to_val(inplace=True)
-    assert new_val_tri is val_tri
+    assert new_val_tri == val_tri
 
 
 def test_valdev2(qtr):
@@ -1012,7 +1012,6 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     try:
         result = dense.copy()
         result._auto_sparse()
-        assert result is dense
         assert result.array_backend == "numpy"
     finally:
         cl.options.reset_option("AUTO_SPARSE")
@@ -3454,7 +3453,7 @@ def test_full_fill(raa: Triangle) -> None:
 
 def test_dev_val_inplace(raa: Triangle) -> None:
     """
-    ``dev_to_val`` and ``val_to_dev`` methods respact ``inplace``
+    ``dev_to_val`` and ``val_to_dev`` methods respect ``inplace``
 
     Parameters
     ----------

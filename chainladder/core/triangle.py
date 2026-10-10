@@ -1715,18 +1715,20 @@ class Triangle(TriangleBase):
                     _ = self.cum_to_incr(inplace=True)
                 if is_ultimate:
                     ultimate = self.iloc[..., -1:]
-                    self.values = self.values.iloc[..., :-1]
-            self._val_dev(1)
-            ddims = self.valuation[self.valuation <= self.valuation_date]
-            self.ddims = ddims.drop_duplicates().sort_values()
+                    obj = self.iloc[..., :-1]
+                else:
+                    obj = self.copy()
+            obj._val_dev(1)
+            ddims = obj.valuation[obj.valuation <= obj.valuation_date]
+            obj.ddims = ddims.drop_duplicates().sort_values()
             if is_full:
                 if is_ultimate:
                     ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
-                    obj = concat((self, ultimate), -1)
-                    self.values = obj.values
-                    self.ddims = obj.ddims
+                    obj = concat((obj, ultimate), -1)
                 if is_cumulative:
-                    _ = self.incr_to_cum(True)
+                    _ = obj.incr_to_cum(True)
+            self.values = obj.values
+            self.ddims = obj.ddims
             return None
         else:
             obj = self.copy()
