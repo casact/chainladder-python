@@ -32,7 +32,6 @@ from chainladder.adjustments.disposal import DisposalMixin
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
     from pandas import DataFrame, Series
     from numpy.typing import ArrayLike
     from pandas.core.indexes.datetimes import DatetimeIndex

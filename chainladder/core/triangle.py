@@ -1715,14 +1715,16 @@ class Triangle(TriangleBase):
                     _ = self.cum_to_incr(inplace=True)
                 if is_ultimate:
                     ultimate = self.iloc[..., -1:]
-                    self = self.iloc[..., :-1]
+                    self.values = self.values.iloc[..., :-1]
             self._val_dev(1)
             ddims = self.valuation[self.valuation <= self.valuation_date]
             self.ddims = ddims.drop_duplicates().sort_values()
             if is_full:
                 if is_ultimate:
                     ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
-                    self = concat((self, ultimate), -1)
+                    obj = concat((self, ultimate), -1)
+                    self.values = obj.values
+                    self.ddims = obj.ddims
                 if is_cumulative:
                     _ = self.incr_to_cum(True)
             return None
@@ -1786,9 +1788,10 @@ class Triangle(TriangleBase):
             if is_ultimate and val_cnt > 1:
                 ultimate = self.iloc[..., -1:]
                 ultimate.ddims = np.array([9999])
-                self.iloc[..., :-1]._val_dev(-1)
+                obj = self.iloc[..., :-1]
             else:
-                self._val_dev(-1)
+                obj = self.copy()
+            obj._val_dev(-1)
             val_0 = self.valuation[0]
             if self.ddims.shape[-1] == 1 and self.ddims[0] == valuation_date:
                 origin_0 = pd.to_datetime(self.odims[-1])
@@ -1796,12 +1799,13 @@ class Triangle(TriangleBase):
                 origin_0 = pd.to_datetime(self.odims[0])
             lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
             scale = self._dstep()["M"][self.development_grain]
-            self.ddims = np.arange(self.values.shape[-1]) * scale + lag_0
-            prune = self[self.origin == self.origin.max()]
+            obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
             if is_ultimate and val_cnt > 1:
-                prune = self[self.origin == self.origin.max()]
-                self = self.iloc[..., : (prune.valuation <= prune.valuation_date).sum()]
-                self = concat((self, ultimate), -1)
+                prune = obj[obj.origin == obj.origin.max()]
+                obj = obj.iloc[..., : (prune.valuation <= prune.valuation_date).sum()]
+                obj = concat((obj, ultimate), -1)
+            self.values = obj.values
+            self.ddims = obj.ddims
             return None
         else:
             obj = self.copy()

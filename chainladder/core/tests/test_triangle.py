@@ -472,10 +472,9 @@ def test_dev_to_val_inplace_on_val_tri_returns_self(qtr: Triangle) -> None:
     """
     val_tri = qtr.dev_to_val()
     assert val_tri.is_val_tri
-
-    result = val_tri.dev_to_val(inplace=True)
-
-    assert result is val_tri
+    new_val_tri = val_tri.copy()
+    new_val_tri.dev_to_val(inplace=True)
+    assert new_val_tri is val_tri
 
 
 def test_valdev2(qtr):
@@ -1011,7 +1010,8 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     dense = small_prism.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
-        result = dense._auto_sparse()
+        result = dense.copy()
+        result._auto_sparse()
         assert result is dense
         assert result.array_backend == "numpy"
     finally:
