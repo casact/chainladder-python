@@ -26,14 +26,21 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
-    "pandas >=2.3.3, !=3.0.4",
-    "scikit-learn>=1.7.0",
+    "pandas >=2.3.3, !=3.0.4 ; python_version < '3.15'",
+    "pandas >=3.0.6 ; python_version >= '3.15'",
+    "scikit-learn>=1.7.0 ; python_version < '3.15'",
+    "scikit-learn>=1.9.1 ; python_version >= '3.15'",
     "sparse>=0.18",
-    "numpy>=2.3",
-    "matplotlib",  # Required for TriangleDisplay.heatmap()
+    "numba>=0.68.0 ; python_version >= '3.15'",  # numba is needed for sparse. however, sparse does not have a version that officially support python 3.15
+    "numpy>=2.3 ; python_version < '3.15'",
+    "numpy>=2.5.2 ; python_version >= '3.15'",
+    "matplotlib ; python_version < '3.15'",  # Required for TriangleDisplay.heatmap()
+    "matplotlib>=3.11.2 ; python_version >= '3.15'",
+    "contourpy>=1.4.0 ; python_version >= '3.15'",  # Required for matplotlib
     "dill",
     "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
 ]
@@ -47,7 +54,8 @@ Repository = "https://github.com/casact/chainladder-python"
 
 [project.optional-dependencies]
 dev = [
-    "lxml",
+    "lxml ; python_version < '3.15'",
+    "lxml>=6.1.3 ; python_version >= '3.15'",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -65,25 +73,31 @@ docs = [
     "nbsphinx",
     "numpydoc",
     "jupyter-book<2.0",  # Pin to v1.x - v2 doesn't support autodoc/autosummary yet
+    "rpds-py>=2026.5.1 ; python_version >= '3.15'",  # needed by jupyter-book
     "sphinx-book-theme>=1.1.4,<1.2; python_version < '3.11'",
     "sphinx-book-theme>=1.2,<1.3; python_version >= '3.11'",
     "sphinx-togglebutton",
     "ipython",
     "parso>=0.8",
     "polars",  # For docs examples
-    "statsmodels>=0.14.6"  # For docs example; <0.14.6 fails to import under pandas 3
+    "scipy>=1.18.1 ; python_version >= '3.15'",
+    "statsmodels>=0.14.6",  # For docs example; <0.14.6 fails to import under pandas 3
 ]
 test = [
-    "lxml",
+    "lxml ; python_version < '3.15'",
+    "lxml>=6.1.3 ; python_version >= '3.15'",
     "nbmake",
+    "rpds-py>=2026.5.1 ; python_version >= '3.15'",  # needed by nbmake
     "pytest",
     "jinja2",
     "ipython",
     "pytest-cov",  # For coverage testing
     "polars",
-    "pyarrow",
+    "pyarrow ; python_version < '3.15'",
+    "pyarrow>=26.0.0 ; python_version >= '3.15'",
     "dask",
-    'statsmodels>=0.14.6'
+    "scipy>=1.18.1 ; python_version >= '3.15'",
+    "statsmodels>=0.14.6",
 ]
 performance = [
     "dask",  # For distributed computing

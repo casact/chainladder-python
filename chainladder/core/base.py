@@ -698,7 +698,9 @@ class TriangleBase(
         val_array = val_array[:, None]
         s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
         val_array = (
-            val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
+            val_array.astype("datetime64[M]")
+            + ddim_arr[s][None, :].astype("timedelta64[M]")
+            + np.timedelta64(1, "M")
         ).astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         if ddims[-1] == 9999:
             ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
