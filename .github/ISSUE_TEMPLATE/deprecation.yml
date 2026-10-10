@@ -1,0 +1,53 @@
+name: Deprecation
+description: Track deprecating a function, method, argument, or behavior.
+title: "[BRK] "
+labels:
+  - deprecation
+body:
+  - type: dropdown
+    attributes:
+      label: What kind of deprecation is this?
+      options:
+        - Rename a function, method, or class
+        - Rename an argument
+        - Remove an argument
+        - Remove a function, method, or class
+        - Change in behavior
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What is being deprecated?
+      description: The current API to be deprecated.
+      placeholder: |
+        ```python
+        Triangle.feature_to_deprecate(...)
+        ```
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Supersedent
+      description: What users should use instead, or "None" if it is being removed outright.
+      placeholder: |
+        ```python
+        Triangle.replacememt_feature(...)
+        ```
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reason
+      description: Why the deprecation is needed, with links to any discussion.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        **What happens next**
+
+        When this issue is opened, a sub-issue for adding the deprecation warning is opened automatically and linked to it.
+
+        1. Close the sub-issue first, when the deprecation warning is merged, by linking it from that PR (`Closes #<sub-issue>`).
+        2. Close this (parent) issue when the deprecation process is complete, once the deprecated API has been removed.
