@@ -3433,7 +3433,7 @@ def test_feed_age_into_valuation_raises() -> None:
 
 def test_fill(clrd: Triangle) -> None:
     """
-    ``Fill`` method works as intended
+    ``fill`` method works as intended
     """
     fill_tri = clrd.iloc[2:4, 4:6].fill(100)
     # (10 + 1) * 10 / 2 is the number of valid values in one single triangle
@@ -3445,8 +3445,33 @@ def test_fill(clrd: Triangle) -> None:
 
 def test_full_fill(raa: Triangle) -> None:
     """
-    ``Fill`` method works as intended on full triangle
+    ``fill`` method works as intended on full triangle
     """
     full_tri = cl.Chainladder().fit(raa).full_triangle_
     fill_full_tri = full_tri.fill(200)
     assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
+
+
+def test_dev_val_inplace(raa: Triangle) -> None:
+    """
+    ``dev_to_val`` and ``val_to_dev`` methods respact ``inplace``
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    raa_copy = raa.copy()
+    raa_copy2 = raa.copy()
+    assert raa_copy2.dev_to_val(True) is None
+    assert raa_copy == raa
+    assert raa_copy2 == raa_copy.dev_to_val()
+    raa_copy = raa.copy().dev_to_val()
+    raa_copy2 = raa_copy.copy()
+    assert raa_copy2.val_to_dev(True) is None
+    assert raa_copy2 == raa
+    assert raa_copy == raa_copy2.dev_to_val()

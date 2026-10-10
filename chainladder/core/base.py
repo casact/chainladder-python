@@ -666,12 +666,16 @@ class TriangleBase(
                 + ", ".join([*modules])
             ) from e
 
-    def _auto_sparse(self) -> Triangle:
+    def _auto_sparse(self) -> None:
         """
         Auto sparsifies at 30Mb or more and 20% density or less.
+
+        Returns
+        -------
+            None
         """
         if not options.AUTO_SPARSE:
-            return self
+            return None
         n = np.prod(list(self.shape) + [8 / 1e6])
         if (
             self.array_backend == "numpy"
@@ -683,7 +687,7 @@ class TriangleBase(
             self.values.density < 0.2 and n > 30
         ):
             self.set_backend("numpy", inplace=True)
-        return self
+        return None
 
     @property
     def valuation(self):
