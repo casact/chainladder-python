@@ -476,3 +476,68 @@ def test_constant_incr():
         np.round(result.cdf_.to_frame().values.flatten(), 6)
         == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02, 1.005])
     )
+
+
+def test_constant_series_pattern(raa):
+    dev = cl.Development().fit(raa)
+    # Series with integer index
+    s_int = pd.Series(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.ddims)
+    model_int = cl.DevelopmentConstant(patterns=s_int, style="ldf").fit(raa)
+    assert np.allclose(dev.ldf_.values, model_int.ldf_.values)
+
+    # Series with interval string index (e.g. '12-24')
+    s_str = pd.Series(
+        dev.ldf_.values[0, 0, 0, :], index=[f"{d}-{d + 12}" for d in dev.ldf_.ddims]
+    )
+    model_str = cl.DevelopmentConstant(patterns=s_str, style="ldf").fit(raa)
+    assert np.allclose(dev.ldf_.values, model_str.ldf_.values)
+
+
+def test_constant_dataframe_pattern(raa):
+    dev = cl.Development().fit(raa)
+    # 1-row DataFrame
+    df_row = pd.DataFrame([dev.ldf_.values[0, 0, 0, :]], columns=dev.ldf_.ddims)
+    model_row = cl.DevelopmentConstant(patterns=df_row, style="ldf").fit(raa)
+    assert np.allclose(dev.ldf_.values, model_row.ldf_.values)
+
+    # 1-column DataFrame
+    df_col = pd.DataFrame(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.ddims)
+    model_col = cl.DevelopmentConstant(patterns=df_col, style="ldf").fit(raa)
+    assert np.allclose(dev.ldf_.values, model_col.ldf_.values)
+
+
+def test_constant_triangle_pattern(raa):
+    dev = cl.Development().fit(raa)
+    # Triangle pattern directly from dev.ldf_
+    model_ldf = cl.DevelopmentConstant(patterns=dev.ldf_, style="ldf").fit(raa)
+    assert np.allclose(dev.ldf_.values, model_ldf.ldf_.values)
+
+    # Triangle pattern directly from dev.cdf_
+    model_cdf = cl.DevelopmentConstant(patterns=dev.cdf_, style="cdf").fit(raa)
+    assert np.allclose(dev.cdf_.values, model_cdf.cdf_.values)
+
+
+def test_constant_estimator_pattern(raa):
+    dev = cl.Development().fit(raa)
+    # Fitted Development estimator with style='ldf'
+    model_est_ldf = cl.DevelopmentConstant(patterns=dev, style="ldf").fit(raa)
+    assert np.allclose(dev.ldf_.values, model_est_ldf.ldf_.values)
+
+    # Fitted Development estimator with style='cdf'
+    model_est_cdf = cl.DevelopmentConstant(patterns=dev, style="cdf").fit(raa)
+    assert np.allclose(dev.cdf_.values, model_est_cdf.cdf_.values)
+
+
+def test_constant_invalid_pattern_types(raa):
+    # Invalid DataFrame shape (>1 row and >1 col)
+    df_invalid = pd.DataFrame([[1.2, 1.1], [1.0, 1.0]], columns=[12, 24])
+    with pytest.raises(ValueError, match="must have 1 row or 1 column"):
+        cl.DevelopmentConstant(patterns=df_invalid).fit(raa)
+
+    # Multi-origin Triangle pattern
+    with pytest.raises(ValueError, match="must have a single origin row"):
+        cl.DevelopmentConstant(patterns=raa).fit(raa)
+
+    # Unsupported pattern type
+    with pytest.raises(TypeError, match="Unsupported pattern type"):
+        cl.DevelopmentConstant(patterns=[1.2, 1.1]).fit(raa)
