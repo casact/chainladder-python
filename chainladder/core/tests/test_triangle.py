@@ -472,10 +472,9 @@ def test_dev_to_val_inplace_on_val_tri_returns_self(qtr: Triangle) -> None:
     """
     val_tri = qtr.dev_to_val()
     assert val_tri.is_val_tri
-
-    result = val_tri.dev_to_val(inplace=True)
-
-    assert result is val_tri
+    new_val_tri = val_tri.copy()
+    new_val_tri.dev_to_val(inplace=True)
+    assert new_val_tri == val_tri
 
 
 def test_valdev2(qtr):
@@ -491,8 +490,25 @@ def test_valdev3(qtr):
 
 
 def test_valdev4(raa: Triangle) -> None:
-    lhs = raa.dev_to_val()[raa.dev_to_val().development >= "1989"].values.flatten()
-    rhs = raa[raa.valuation >= "1989"].dev_to_val().values.flatten()
+    """
+    Tests slicing using the development axis of a valuation Triangle
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
+    lhs = (
+        raa
+        .dev_to_val()[raa.dev_to_val().development >= "1989"]
+        .to_frame()
+        .values.flatten()
+    )
+    rhs = raa[raa.valuation >= "1989"].dev_to_val().to_frame().values.flatten()
     np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
@@ -1011,8 +1027,8 @@ def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
     dense = small_prism.set_backend("numpy")
     cl.options.set_option("AUTO_SPARSE", False)
     try:
-        result = dense._auto_sparse()
-        assert result is dense
+        result = dense.copy()
+        result._auto_sparse()
         assert result.array_backend == "numpy"
     finally:
         cl.options.reset_option("AUTO_SPARSE")
@@ -1165,9 +1181,9 @@ def test_auto_sparse_converts_numpy_to_sparse(prism: Triangle) -> None:
     dense = small_prism.set_backend("numpy")
     assert dense.array_backend == "numpy"
 
-    result = dense._auto_sparse()
+    result = dense.copy()
+    result._auto_sparse()
 
-    assert result is dense
     assert result.array_backend == "sparse"
 
 
@@ -3433,7 +3449,7 @@ def test_feed_age_into_valuation_raises() -> None:
 
 def test_fill(clrd: Triangle) -> None:
     """
-    ``Fill`` method works as intended
+    ``fill`` method works as intended
     """
     fill_tri = clrd.iloc[2:4, 4:6].fill(100)
     # (10 + 1) * 10 / 2 is the number of valid values in one single triangle
@@ -3445,8 +3461,33 @@ def test_fill(clrd: Triangle) -> None:
 
 def test_full_fill(raa: Triangle) -> None:
     """
-    ``Fill`` method works as intended on full triangle
+    ``fill`` method works as intended on full triangle
     """
     full_tri = cl.Chainladder().fit(raa).full_triangle_
     fill_full_tri = full_tri.fill(200)
     assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
+
+
+def test_dev_val_inplace(raa: Triangle) -> None:
+    """
+    ``dev_to_val`` and ``val_to_dev`` methods respect ``inplace``
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+    raa_copy = raa.copy()
+    raa_copy2 = raa.copy()
+    assert raa_copy2.dev_to_val(True) is None
+    assert raa_copy == raa
+    assert raa_copy2 == raa_copy.dev_to_val()
+    raa_copy = raa.copy().dev_to_val()
+    raa_copy2 = raa_copy.copy()
+    assert raa_copy2.val_to_dev(True) is None
+    assert raa_copy2 == raa
+    assert raa_copy == raa_copy2.dev_to_val()

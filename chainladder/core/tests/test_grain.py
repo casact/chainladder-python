@@ -10,8 +10,19 @@ if TYPE_CHECKING:
     from chainladder import Triangle
 
 
-def test_grain(qtr):
-    # this test is dense only in practice, since grain() applies auto_sparse, which is True by default
+def test_grain(qtr: Triangle) -> None:
+    """
+    Tests quarterly to annual grain conversion
+
+    Parameters
+    ----------
+    qtr : Triangle
+        The qtr sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
     actual = qtr.iloc[0, 0].grain("OYDY")
     nan = np.nan
     expected = np.array([
@@ -28,7 +39,7 @@ def test_grain(qtr):
         [21, 422, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
         [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
     ])
-    np.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
+    np.testing.assert_array_equal(actual.to_frame().values, expected)
 
 
 def test_grain_returns_valid_tri(qtr):
