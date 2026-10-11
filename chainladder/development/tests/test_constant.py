@@ -492,6 +492,11 @@ def test_constant_series_pattern(raa):
     model_str = cl.DevelopmentConstant(patterns=s_str, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_str.ldf_.values)
 
+    # Series with non-numeric index labels (fallback to original keys)
+    s_non_numeric = pd.Series([1.5, 1.2], index=["dev_12", "dev_24"])
+    normalized = cl.DevelopmentConstant._normalize_patterns(s_non_numeric)
+    assert normalized == {"dev_12": 1.5, "dev_24": 1.2}
+
 
 def test_constant_dataframe_pattern(raa):
     dev = cl.Development().fit(raa)
@@ -526,6 +531,24 @@ def test_constant_estimator_pattern(raa):
     # Fitted Development estimator with style='cdf'
     model_est_cdf = cl.DevelopmentConstant(patterns=dev, style="cdf").fit(raa)
     assert np.allclose(dev.cdf_.values, model_est_cdf.cdf_.values)
+
+    # Object with only cdf_ (no ldf_) with default/ldf style fallback
+    class OnlyCDF:
+        def __init__(self, cdf):
+            self.cdf_ = cdf
+
+    model_only_cdf = cl.DevelopmentConstant(patterns=OnlyCDF(dev.cdf_)).fit(raa)
+    assert np.allclose(dev.cdf_.values, model_only_cdf.ldf_.values)
+
+    # Object with only ldf_ (no cdf_) with cdf style fallback
+    class OnlyLDF:
+        def __init__(self, ldf):
+            self.ldf_ = ldf
+
+    model_only_ldf = cl.DevelopmentConstant(
+        patterns=OnlyLDF(dev.ldf_), style="cdf"
+    ).fit(raa)
+    assert np.allclose(dev.ldf_.values, model_only_ldf.cdf_.values)
 
 
 def test_constant_invalid_pattern_types(raa):
