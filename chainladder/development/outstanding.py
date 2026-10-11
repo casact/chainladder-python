@@ -1,6 +1,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from chainladder.development import Development, DevelopmentBase
 from chainladder import options
 from chainladder.utils.utility_functions import concat
@@ -8,6 +12,9 @@ from chainladder.utils.utility_functions import num_to_nan
 
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
 
 
 class CaseOutstanding(DevelopmentBase):
@@ -33,7 +40,7 @@ class CaseOutstanding(DevelopmentBase):
 
     Parameters
     ----------
-    paid_to_incurred: tuple or list of tuples, optional
+    paid_to_incurred: tuple or list of tuples
         A tuple representing the paid and incurred ``columns`` of the triangles
         such as ``('paid', 'incurred')``.
     paid_n_periods: integer, optional (default=-1)
@@ -129,17 +136,7 @@ class CaseOutstanding(DevelopmentBase):
         paid_n_periods=-1,
         case_n_periods=-1,
         groupby=None,
-        **kwargs,
     ):
-        if (
-            "reported_pattern" in kwargs
-            or "paid_pattern" in kwargs
-            or kwargs.get("approach") == 2
-        ):
-            raise ValueError(
-                "Approach 2 has been decoupled into cl.ImpliedCaseDevelopment (or cl.ImpliedCase). "
-                "Use cl.ImpliedCaseDevelopment(reported_pattern=..., paid_pattern=...) instead."
-            )
         self.paid_to_incurred = paid_to_incurred
         self.paid_n_periods = paid_n_periods
         self.case_n_periods = case_n_periods
@@ -347,17 +344,16 @@ class ImpliedCaseDevelopment(DevelopmentBase):
     style : {'cdf', 'ldf'}, optional (default='cdf')
         Whether ``reported_pattern`` and ``paid_pattern`` are cumulative development
         factors ('cdf') or incremental link ratios ('ldf').
-    groupby : list, str, or callable, optional
-        Grouping option for the triangle index.
 
     Attributes
     ----------
-    ldf_ : Triangle
-        Estimated loss development patterns for case outstanding.
-    case_ldf_ : Triangle
-        Alias for ``ldf_``.
     case_cdf_ : Triangle
         Implied cumulative case development factors to ultimate.
+    case_ldf_ : Triangle
+        Incremental link ratios implied by ``case_cdf_``.
+    ldf_ : Triangle
+        Estimated loss development patterns for case outstanding (alias for ``case_ldf_``
+        for downstream compatibility with estimators like :class:`~chainladder.Chainladder`).
     case_ : Triangle
         The case triangle used during fitting.
 
@@ -401,26 +397,22 @@ class ImpliedCaseDevelopment(DevelopmentBase):
 
     def __init__(
         self,
-        reported_pattern=None,
-        paid_pattern=None,
-        style="cdf",
-        groupby=None,
+        reported_pattern: Any = None,
+        paid_pattern: Any = None,
+        style: str = "cdf",
     ):
         self.reported_pattern = reported_pattern
         self.paid_pattern = paid_pattern
         self.style = style
-        self.groupby = groupby
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X: Triangle, y: Any = None, sample_weight: Any = None):
         """
         Fit the model with X.
 
         Parameters
         ----------
         X : Triangle
-            Triangle to fit. Can be a 1-channel case outstanding triangle,
-            or a 2-channel triangle with paid and incurred columns (from which
-            case outstanding is computed as incurred - paid).
+            Triangle of case reserves to fit.
         y : Ignored
         sample_weight : Ignored
 
@@ -439,17 +431,15 @@ class ImpliedCaseDevelopment(DevelopmentBase):
                 "ImpliedCaseDevelopment requires both reported_pattern and paid_pattern."
             )
 
-        # 1. Determine case triangle
-        if len(X.columns) > 1 and "incurred" in X.columns and "paid" in X.columns:
-            case_tri = (X["incurred"] - X["paid"]).copy()
-            case_tri.columns = ["case"]
-        elif len(X.columns) > 1 and "Incurred" in X.columns and "Paid" in X.columns:
-            case_tri = (X["Incurred"] - X["Paid"]).copy()
-            case_tri.columns = ["case"]
-        else:
-            case_tri = X
+        if len(X.columns) > 1:
+            raise ValueError(
+                f"ImpliedCaseDevelopment expects a 1-channel Triangle representing case reserves, "
+                f"but received {len(X.columns)} columns ({list(X.columns)}). "
+                f"Compute case reserves (e.g. incurred - paid) before fitting."
+            )
 
-        obj = self._set_fit_groups(case_tri).val_to_dev().copy()
+        case_tri = X
+        obj = case_tri.val_to_dev().copy()
 
         # 2. Extract series of CDFs
         rep_s = self._extract_cdf_series(self.reported_pattern, self.style)
@@ -485,34 +475,27 @@ class ImpliedCaseDevelopment(DevelopmentBase):
         self.case_ = case_tri
         return self
 
-    def transform(self, X):
+    def transform(self, X: Triangle) -> Triangle:
         """
-        Transform the triangle by attaching implied case development factors.
+         Transform the triangle by attaching implied case development factors.
 
-        If X is a multi-channel triangle with paid and incurred columns, the
-        case triangle (incurred - paid) is extracted before attaching ldf_.
-
-        Parameters
-        ----------
-        X : Triangle
-            The triangle to be transformed.
+         Parameters
+         ----------
+         X : Triangle
+             The case triangle to be transformed.
 
         Returns
-        -------
-        X_new : Triangle
-            Transformed case triangle with ldf_, case_ldf_, and case_cdf_ attached.
+         -------
+         X_new : Triangle
+             Transformed case triangle with ldf_, case_ldf_, and case_cdf_ attached.
         """
-        if len(X.columns) > 1 and "incurred" in X.columns and "paid" in X.columns:
-            case_tri = (X["incurred"] - X["paid"]).copy()
-            case_tri.columns = ["case"]
-        elif len(X.columns) > 1 and "Incurred" in X.columns and "Paid" in X.columns:
-            case_tri = (X["Incurred"] - X["Paid"]).copy()
-            case_tri.columns = ["case"]
-        else:
-            case_tri = X
+        if len(X.columns) > 1:
+            raise ValueError(
+                f"ImpliedCaseDevelopment expects a 1-channel Triangle representing case reserves, "
+                f"but received {len(X.columns)} columns ({list(X.columns)})."
+            )
 
-        X_new = case_tri.copy()
-        X_new.group_index = self._set_transform_groups(X_new)
+        X_new = X.copy()
         X_new.ldf_ = self.ldf_
         X_new.case_ldf_ = self.case_ldf_
         X_new.case_cdf_ = self.case_cdf_
@@ -520,7 +503,7 @@ class ImpliedCaseDevelopment(DevelopmentBase):
         return X_new
 
     @staticmethod
-    def _extract_cdf_series(pattern, style="cdf"):
+    def _extract_cdf_series(pattern: Any, style: str = "cdf") -> pd.Series:
         """Extract a pd.Series of CDF factors indexed by integer development ages."""
         if hasattr(pattern, "cdf_"):
             pattern = pattern.cdf_

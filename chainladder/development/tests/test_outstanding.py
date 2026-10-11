@@ -82,23 +82,11 @@ def test_approach_2_friedland_exhibit_iii():
     ).fit(case_tri)
 
     # Verify individual case CDF factors match Friedland Exhibit III
-    assert np.isclose(
-        model.case_cdf_.to_frame().loc["(All)", "132-Ult"], 1.506, atol=1e-3
-    )
-    assert np.isclose(
-        model.case_cdf_.to_frame().loc["(All)", "120-Ult"], 1.454, atol=1e-3
-    )
-    assert np.isclose(
-        model.case_cdf_.to_frame().loc["(All)", "108-Ult"], 1.421, atol=1e-3
-    )
-    assert np.isclose(
-        model.case_cdf_.to_frame().loc["(All)", "96-Ult"], 1.445, atol=1e-3
-    )
-    assert np.isclose(
-        model.case_cdf_.to_frame().loc["(All)", "84-Ult"], 1.439, atol=1e-3
-    )
-    assert np.isclose(
-        model.case_cdf_.to_frame().loc["(All)", "72-Ult"], 1.545, atol=1e-3
+    expected_cdfs = np.array([1.545, 1.439, 1.445, 1.421, 1.454, 1.506])
+    assert np.allclose(
+        model.case_cdf_["case"].values[0, 0, 0, 5:],
+        expected_cdfs,
+        atol=1e-3,
     )
 
     # Chainladder projection
@@ -171,11 +159,11 @@ def test_approach_2_validation_errors():
             paid_pattern={24: 1.5},
         ).fit(case)
 
-    # Calling CaseOutstanding with Approach 2 arguments raises helpful ValueError
-    with pytest.raises(ValueError, match="Approach 2 has been decoupled"):
-        cl.CaseOutstanding(reported_pattern={12: 1.2}, paid_pattern={12: 1.5}).fit(tri)
-    with pytest.raises(ValueError, match="Approach 2 has been decoupled"):
-        cl.CaseOutstanding(approach=2).fit(tri)
+    # Calling CaseOutstanding with unexpected keyword arguments raises TypeError
+    with pytest.raises(TypeError):
+        cl.CaseOutstanding(reported_pattern={12: 1.2}, paid_pattern={12: 1.5})
+    with pytest.raises(TypeError):
+        cl.CaseOutstanding(approach=2)
 
 
 def test_implied_case_development_alias():
@@ -270,46 +258,42 @@ def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
     assert m_mock.case_cdf_ is not None
 
 
-def test_approach_2_auto_column_inference_and_transform_bugbot_fix():
-    tri = cl.load_sample("usauto")
+def test_approach_2_single_channel_case_triangle_and_transform():
+    import pytest
 
-    # Incurred and paid auto-detection from 2-channel triangle
-    tri_sub = tri[["incurred", "paid"]]
+    tri = cl.load_sample("usauto")
+    case = tri["incurred"] - tri["paid"]
+
+    # 1-channel case triangle fits cleanly
     m = cl.ImpliedCaseDevelopment(
         reported_pattern={12: 1.1, 24: 1.05},
         paid_pattern={12: 1.3, 24: 1.15},
-    ).fit(tri_sub)
+    ).fit(case)
     assert m.case_cdf_ is not None
 
-    # Verify transform on 2-channel triangle extracts 1-channel case triangle with ldf_
-    # This directly addresses and validates Bugbot's review concern
-    transformed = m.transform(tri_sub)
+    # Verify transform on 1-channel case triangle attaches ldf_ and case_cdf_
+    transformed = m.transform(case)
     assert len(transformed.columns) == 1
-    assert transformed.columns[0] == "case"
     assert hasattr(transformed, "ldf_")
+    assert hasattr(transformed, "case_cdf_")
 
     # Verify downstream Chainladder model runs seamlessly on transformed triangle
     cl_model = cl.Chainladder().fit(transformed)
     assert cl_model.ultimate_ is not None
 
+    # Multi-channel triangle raises ValueError per sklearn conventions
+    tri_multi = tri[["incurred", "paid"]]
+    with pytest.raises(ValueError, match="expects a 1-channel Triangle"):
+        m.fit(tri_multi)
+    with pytest.raises(ValueError, match="expects a 1-channel Triangle"):
+        m.transform(tri_multi)
+
     # Denominator <= 0 guard (CDF_paid <= CDF_rep fallback to 1.0)
     m_guard = cl.ImpliedCaseDevelopment(
         reported_pattern={12: 1.5, 24: 1.2},
         paid_pattern={12: 1.2, 24: 1.1},  # paid < rep
-    ).fit(tri_sub)
+    ).fit(case)
     assert np.isclose(m_guard.case_cdf_.to_frame().loc["(All)", "12-Ult"], 1.0)
-
-    # Capitalized Incurred and Paid column names
-    tri_cap = tri.copy()
-    tri_cap.columns = [
-        "Incurred" if c == "incurred" else "Paid" if c == "paid" else c
-        for c in tri_cap.columns
-    ]
-    m_cap = cl.ImpliedCaseDevelopment(
-        reported_pattern={12: 1.1, 24: 1.05},
-        paid_pattern={12: 1.3, 24: 1.15},
-    ).fit(tri_cap[["Incurred", "Paid"]])
-    assert m_cap.case_cdf_ is not None
 
     # Groupby in Approach 1 CaseOutstanding
     tri_grouped = cl.load_sample("clrd")
