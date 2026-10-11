@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 
 def test_grain(qtr):
-    # this test is dense only in practice, since grain() applies auto_sparse, which is True by default
     actual = qtr.iloc[0, 0].grain("OYDY")
     nan = np.nan
     expected = np.array([
@@ -28,7 +27,9 @@ def test_grain(qtr):
         [21, 422, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
         [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
     ])
-    np.testing.assert_array_equal(actual.values[0, 0, :, :], expected)
+    np.testing.assert_array_equal(
+        actual.loc[0,0].to_frame().values[0, 0, :, :], expected
+    )
 
 
 def test_grain_returns_valid_tri(qtr):

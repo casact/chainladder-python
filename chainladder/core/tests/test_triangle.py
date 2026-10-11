@@ -490,8 +490,22 @@ def test_valdev3(qtr):
 
 
 def test_valdev4(raa: Triangle) -> None:
-    lhs = raa.dev_to_val()[raa.dev_to_val().development >= "1989"].values.flatten()
-    rhs = raa[raa.valuation >= "1989"].dev_to_val().values.flatten()
+    """
+    Tests slicing using the development axis of a valuation Triangle
+
+    Parameters
+    ----------
+    raa : Triangle
+        The raa sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
+    lhs = raa.dev_to_val()[
+        raa.dev_to_val().development >= "1989"
+    ].to_frame().values.flatten()
+    rhs = raa[raa.valuation >= "1989"].dev_to_val().to_frame().values.flatten()
     np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
@@ -1164,9 +1178,9 @@ def test_auto_sparse_converts_numpy_to_sparse(prism: Triangle) -> None:
     dense = small_prism.set_backend("numpy")
     assert dense.array_backend == "numpy"
 
-    result = dense._auto_sparse()
+    result = dense.copy()
+    result._auto_sparse()
 
-    assert result is dense
     assert result.array_backend == "sparse"
 
 
