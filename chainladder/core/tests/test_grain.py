@@ -27,9 +27,7 @@ def test_grain(qtr):
         [21, 422, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
         [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
     ])
-    np.testing.assert_array_equal(
-        actual.loc[0, 0].to_frame().values, expected
-    )
+    np.testing.assert_array_equal(actual.loc[0, 0].to_frame().values, expected)
 
 
 def test_grain_returns_valid_tri(qtr):
