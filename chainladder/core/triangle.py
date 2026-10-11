@@ -1601,14 +1601,14 @@ class Triangle(TriangleBase):
 
     def _val_dev(self, sign: int) -> None:
         """
-        Helper function for mutating triangle from a development lag
-        triangle to a valuation triangle.
+        Helper function for mutating triangle between development lag
+        and valuation.
 
         Parameters
         ----------
         sign : int (1 or -1)
-            Whether to mutate the existing Triangle instance or return a new
-            one.
+            Whether to mutate the existing Triangle from development lag
+            to valuation (1) or from valuation to development lag (-1)
 
         Returns
         -------

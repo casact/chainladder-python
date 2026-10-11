@@ -10,7 +10,19 @@ if TYPE_CHECKING:
     from chainladder import Triangle
 
 
-def test_grain(qtr):
+def test_grain(qtr: Triangle) -> None:
+    """
+    Tests quarterly to annual grain conversion
+
+    Parameters
+    ----------
+    qtr : Triangle
+        The qtr sample dataset Triangle.
+
+    Returns
+    -------
+    None
+    """
     actual = qtr.iloc[0, 0].grain("OYDY")
     nan = np.nan
     expected = np.array([
