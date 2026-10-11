@@ -1707,25 +1707,19 @@ class Triangle(TriangleBase):
         if inplace:
             if self.is_val_tri:
                 return None
-            is_cumulative = self.is_cumulative
-            is_full = self.is_full
-            is_ultimate = self.is_ultimate
-            obj = self.copy()
-            if is_full:
-                if is_cumulative:
-                    _ = obj.cum_to_incr(inplace=True)
-                if is_ultimate:
-                    ultimate = self.iloc[..., -1:]
-                    obj = self.iloc[..., :-1]
+            obj = self.cum_to_incr()
+            if self.is_full and self.is_ultimate:
+                ultimate = obj.iloc[..., -1:]
+                obj = obj.iloc[..., :-1]
             obj._val_dev(1)
             ddims = obj.valuation[obj.valuation <= obj.valuation_date]
             obj.ddims = ddims.drop_duplicates().sort_values()
-            if is_full:
-                if is_ultimate:
+            if self.is_full:
+                if self.is_ultimate:
                     ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
                     obj = concat((obj, ultimate), -1)
-                if is_cumulative:
-                    _ = obj.incr_to_cum(True)
+                if self.is_cumulative:
+                    obj = obj.incr_to_cum()
             self.values = obj.values
             self.ddims = obj.ddims
             return None
@@ -1783,25 +1777,21 @@ class Triangle(TriangleBase):
         if inplace:
             if not self.is_val_tri:
                 return None
-            is_ultimate = self.is_ultimate
-            val_cnt = self.shape[-1]
-            valuation_date = self.valuation_date
-            if is_ultimate and val_cnt > 1:
-                ultimate = self.iloc[..., -1:]
+            obj = self.copy()            
+            if self.is_ultimate and self.shape[-1] > 1:
+                ultimate = obj.iloc[..., -1:]
                 ultimate.ddims = np.array([9999])
-                obj = self.iloc[..., :-1]
-            else:
-                obj = self.copy()
+                obj = obj.iloc[..., :-1]
             obj._val_dev(-1)
-            val_0 = self.valuation[0]
-            if self.ddims.shape[-1] == 1 and self.ddims[0] == valuation_date:
-                origin_0 = pd.to_datetime(self.odims[-1])
+            val_0 = obj.valuation[0]
+            if self.ddims.shape[-1] == 1 and self.ddims[0] == self.valuation_date:
+                origin_0 = pd.to_datetime(obj.odims[-1])
             else:
-                origin_0 = pd.to_datetime(self.odims[0])
+                origin_0 = pd.to_datetime(obj.odims[0])
             lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
-            scale = self._dstep()["M"][self.development_grain]
+            scale = self._dstep()["M"][obj.development_grain]
             obj.ddims = np.arange(obj.values.shape[-1]) * scale + lag_0
-            if is_ultimate and val_cnt > 1:
+            if self.is_ultimate and self.shape[-1] > 1:
                 prune = obj[obj.origin == obj.origin.max()]
                 obj = obj.iloc[..., : (prune.valuation <= prune.valuation_date).sum()]
                 obj = concat((obj, ultimate), -1)
