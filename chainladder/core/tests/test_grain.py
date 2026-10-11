@@ -28,7 +28,7 @@ def test_grain(qtr):
         [13, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan],
     ])
     np.testing.assert_array_equal(
-        actual.loc[0,0].to_frame().values[0, 0, :, :], expected
+        actual.loc[0, 0].to_frame().values, expected
     )
 
 
