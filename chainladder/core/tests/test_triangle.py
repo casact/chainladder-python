@@ -508,7 +508,7 @@ def test_valdev4(raa: Triangle) -> None:
         .to_frame()
         .values.flatten()
     )
-    rhs = (raa[raa.valuation >= "1989"].dev_to_val().to_frame().values.flatten()
+    rhs = raa[raa.valuation >= "1989"].dev_to_val().to_frame().values.flatten()
     np.testing.assert_array_equal(lhs[~np.isnan(lhs)], rhs[~np.isnan(rhs)])
 
 
