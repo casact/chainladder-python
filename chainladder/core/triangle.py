@@ -1714,12 +1714,11 @@ class Triangle(TriangleBase):
             obj._val_dev(1)
             ddims = obj.valuation[obj.valuation <= obj.valuation_date]
             obj.ddims = ddims.drop_duplicates().sort_values()
-            if self.is_full:
-                if self.is_ultimate:
-                    ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
-                    obj = concat((obj, ultimate), -1)
-                if self.is_cumulative:
-                    obj = obj.incr_to_cum()
+            if self.is_full and self.is_ultimate:
+                ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
+                obj = concat((obj, ultimate), -1)
+            if self.is_cumulative:
+                obj = obj.incr_to_cum()
             self.values = obj.values
             self.ddims = obj.ddims
             return None
@@ -1777,7 +1776,7 @@ class Triangle(TriangleBase):
         if inplace:
             if not self.is_val_tri:
                 return None
-            obj = self.copy()            
+            obj = self.copy()          
             if self.is_ultimate and self.shape[-1] > 1:
                 ultimate = obj.iloc[..., -1:]
                 ultimate.ddims = np.array([9999])
