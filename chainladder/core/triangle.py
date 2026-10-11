@@ -1635,10 +1635,7 @@ class Triangle(TriangleBase):
                 )
             ddims = np.max([np.max(self.values.coords[-1]) + 1, ddims])
         self.values.shape = tuple(list(self.shape[:-1]) + [ddims])
-        if not options.AUTO_SPARSE or backend == "cupy":
-            self.set_backend(backend, True)
-        else:
-            self._auto_sparse()
+        self.set_backend(backend, True)
         return None
 
     def dev_to_val(self, inplace: bool = False) -> Triangle | None:
@@ -1714,11 +1711,14 @@ class Triangle(TriangleBase):
             obj._val_dev(1)
             ddims = obj.valuation[obj.valuation <= obj.valuation_date]
             obj.ddims = ddims.drop_duplicates().sort_values()
+            print(type(obj.values))
             if self.is_full and self.is_ultimate:
                 ultimate.ddims = pd.DatetimeIndex(ultimate.valuation[0:1])
                 obj = concat((obj, ultimate), -1)
+            print(type(obj.values))
             if self.is_cumulative:
                 obj = obj.incr_to_cum()
+            print(type(obj.values))
             self.values = obj.values
             self.ddims = obj.ddims
             return None
