@@ -33,6 +33,17 @@ def _carrier(tri):
     return (carrier * 0 + 1).fillna(1)
 
 
+def _index(tri, **kwargs):
+    """
+    A cost level index built from a Trend, stated relative to the latest origin
+    period as the estimators take a Triangle. A Trend anchors its factors at its
+    own latest date, which is not the latest origin period of the rectangle it
+    is fitted on, so the index is divided through by that row.
+    """
+    index = 1 / cl.Trend(**kwargs).fit(_carrier(tri)).trend_
+    return index / index.iloc[..., -1:, :]
+
+
 @pytest.fixture
 def paper_trend(genins):
     """
@@ -198,7 +209,7 @@ def test_preserves_the_index_axis(clrd):
     instead of [..., ] would silently return one.
     """
     tri = clrd["CumPaidLoss"]
-    trend = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(tri)).trend_
+    trend = _index(tri, trends=0.04, axis="origin")
     means = dict(zip(tri.development, np.linspace(30000, 300000, 10)))
     model = cl.Sahasrabuddhe(
         means=means,
@@ -238,7 +249,7 @@ def test_triangle_trend_is_taken_to_be_at_the_latest_origin(genins, paper_trend)
 def test_rejects_a_trend_from_a_different_triangle(genins):
     """Matching shapes are not enough -- the periods have to match too."""
     other = cl.load_sample("clrd")["CumPaidLoss"]
-    trend = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(other)).trend_
+    trend = _index(other, trends=0.04, axis="origin")
     assert trend.shape[-2:] == genins.shape[-2:]  # would pass a shape-only check
     with pytest.raises(ValueError, match="does not share X's origin axis"):
         cl.Sahasrabuddhe(
@@ -597,7 +608,7 @@ def test_incomplete_diagonal_warns_but_keeps_the_rectangle(qtr):
     defined for every cell regardless, so it is kept and a warning is raised.
     """
     tri = qtr["paid"]
-    trend = 1 / cl.Trend(0.03, axis="origin").fit(_carrier(tri)).trend_
+    trend = _index(tri, trends=0.03, axis="origin")
     means = dict(zip(tri.development, np.linspace(20000, 200000, tri.shape[-1])))
     kwargs = dict(
         means=means,
@@ -737,7 +748,7 @@ def test_rejects_something_that_is_not_a_pattern(paper_layer):
 def test_lev_takes_an_unfitted_trend(genins):
     """An unfitted Trend is fitted on X and inverted into a cost level index."""
     means = dict(zip(genins.development, THETA_10))
-    index = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(genins)).trend_
+    index = _index(genins, trends=0.04, axis="origin")
     from_triangle = cl.LEV(means=means, trend=index).fit(genins)
     from_trend = cl.LEV(means=means, trend=cl.Trend(0.04, axis="origin")).fit(genins)
     assert np.allclose(
@@ -770,7 +781,7 @@ def test_sahasrabuddhe_takes_an_unfitted_trend(genins):
         basic_limit=500_000,
         target_layer=(0, 500_000),
     )
-    index = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(genins)).trend_
+    index = _index(genins, trends=0.04, axis="origin")
     from_triangle = cl.Sahasrabuddhe(trend=index, **kwargs).fit(genins)
     from_trend = cl.Sahasrabuddhe(trend=cl.Trend(0.04, axis="origin"), **kwargs).fit(
         genins
