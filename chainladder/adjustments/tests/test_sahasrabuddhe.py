@@ -23,14 +23,27 @@ THETA_10 = [
 ]
 
 
+def _carrier(tri):
+    """
+    A full origin x development rectangle of ones. A Trend fitted on a Triangle
+    only reaches the Triangle's own cells; fitted on this it covers every cell.
+    """
+    carrier = tri.copy().set_backend("numpy")
+    carrier.valuation_date = carrier.valuation.max()
+    return (carrier * 0 + 1).fillna(1)
+
+
 @pytest.fixture
 def paper_trend(genins):
-    """Exhibit B3: the combined exposure- and calendar-period cost level index."""
+    """
+    Exhibit B3: the combined exposure- and calendar-period cost level index,
+    restated relative to the latest origin period as the estimators take it.
+    """
 
     def index(**kwargs):
-        return 1 / cl.Trend(**kwargs, full_triangle=True).fit(genins).trend_
+        return 1 / cl.Trend(**kwargs).fit(_carrier(genins)).trend_
 
-    return index(
+    paper = index(
         trends=[0.02, 0.05, 0.02],
         dates=[
             ("2006-12-31", None),
@@ -38,7 +51,6 @@ def paper_trend(genins):
             ("2010-12-31", "2007-12-31"),
         ],
         axis="origin",
-        base_period=2001,
     ) * index(
         trends=[0.01, -0.05, 0.01],
         dates=[
@@ -47,8 +59,8 @@ def paper_trend(genins):
             (None, "2003-12-31"),
         ],
         axis="valuation",
-        base_period="2001-12",
     )
+    return paper / paper.iloc[..., -1:, :]
 
 
 @pytest.fixture
@@ -186,7 +198,7 @@ def test_preserves_the_index_axis(clrd):
     instead of [..., ] would silently return one.
     """
     tri = clrd["CumPaidLoss"]
-    trend = 1 / cl.Trend(0.04, axis="origin", full_triangle=True).fit(tri).trend_
+    trend = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(tri)).trend_
     means = dict(zip(tri.development, np.linspace(30000, 300000, 10)))
     model = cl.Sahasrabuddhe(
         means=means,
@@ -202,28 +214,31 @@ def test_preserves_the_index_axis(clrd):
     )
 
 
-def test_trend_rescaling_is_immaterial(genins, paper_trend, paper_model):
+def test_triangle_trend_is_taken_to_be_at_the_latest_origin(genins, paper_trend):
     """
-    Only ratios of the index are used, so its base period cancels. This is why
-    the estimator does not care how the caller anchored the trend.
+    A Triangle is applied as given, on the understanding that its latest origin
+    row is 1.0, so the means are unchanged there and scaled by the index
+    elsewhere. Nothing rebases it: an index based elsewhere moves the means.
     """
-    rescaled = cl.Sahasrabuddhe(
-        means=dict(zip(genins.development, THETA_10)),
-        trend=paper_trend * 7.3,
-        data_limit=1_000_000,
-        basic_limit=500_000,
-        target_layer=(0, 500_000),
-    ).fit(genins)
+    theta = np.array(THETA_10, dtype="float64")
+    means = dict(zip(genins.development, THETA_10))
+    lev = cl.LEV(means=means, trend=paper_trend).fit(genins)
+    fitted = np.asarray(lev.means_.set_backend("numpy").values)
+    index = np.asarray(paper_trend.set_backend("numpy").values)
+    assert np.allclose(index[..., -1, :], 1.0)
+    assert np.allclose(fitted[..., -1, :], theta)
+    assert np.allclose(fitted, theta * index)
+
+    doubled = cl.LEV(means=means, trend=paper_trend * 2).fit(genins)
     assert np.allclose(
-        np.nan_to_num(rescaled.triangle_.set_backend("numpy").values),
-        np.nan_to_num(paper_model.triangle_.set_backend("numpy").values),
+        np.asarray(doubled.means_.set_backend("numpy").values)[..., -1, :], 2 * theta
     )
 
 
 def test_rejects_a_trend_from_a_different_triangle(genins):
     """Matching shapes are not enough -- the periods have to match too."""
     other = cl.load_sample("clrd")["CumPaidLoss"]
-    trend = 1 / cl.Trend(0.04, axis="origin", full_triangle=True).fit(other).trend_
+    trend = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(other)).trend_
     assert trend.shape[-2:] == genins.shape[-2:]  # would pass a shape-only check
     with pytest.raises(ValueError, match="does not share X's origin axis"):
         cl.Sahasrabuddhe(
@@ -235,13 +250,14 @@ def test_rejects_a_trend_from_a_different_triangle(genins):
         ).fit(genins)
 
 
-def test_rejects_a_trend_with_gaps_in_the_base_period(genins):
+def test_rejects_a_trend_with_gaps_in_the_latest_period(genins):
     """
-    Without full_triangle=True the base period's row is mostly empty, and every
-    cell divides by it -- which would quietly turn most of the result to NaN.
+    Fitted on the Triangle itself, the latest period's row is mostly empty, and
+    every cell divides by it -- which would quietly turn most of the result to
+    NaN.
     """
     trend = 1 / cl.Trend(0.05, axis="origin").fit(genins).trend_
-    with pytest.raises(ValueError, match="full_triangle=True"):
+    with pytest.raises(ValueError, match="full rectangle of ones"):
         cl.Sahasrabuddhe(
             means=dict(zip(genins.development, THETA_10)),
             trend=trend,
@@ -581,7 +597,7 @@ def test_incomplete_diagonal_warns_but_keeps_the_rectangle(qtr):
     defined for every cell regardless, so it is kept and a warning is raised.
     """
     tri = qtr["paid"]
-    trend = 1 / cl.Trend(0.03, axis="origin", full_triangle=True).fit(tri).trend_
+    trend = 1 / cl.Trend(0.03, axis="origin").fit(_carrier(tri)).trend_
     means = dict(zip(tri.development, np.linspace(20000, 200000, tri.shape[-1])))
     kwargs = dict(
         means=means,
@@ -721,7 +737,7 @@ def test_rejects_something_that_is_not_a_pattern(paper_layer):
 def test_lev_takes_an_unfitted_trend(genins):
     """An unfitted Trend is fitted on X and inverted into a cost level index."""
     means = dict(zip(genins.development, THETA_10))
-    index = 1 / cl.Trend(0.04, axis="origin", full_triangle=True).fit(genins).trend_
+    index = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(genins)).trend_
     from_triangle = cl.LEV(means=means, trend=index).fit(genins)
     from_trend = cl.LEV(means=means, trend=cl.Trend(0.04, axis="origin")).fit(genins)
     assert np.allclose(
@@ -739,7 +755,7 @@ def test_trend_object_is_left_unfitted(genins):
     trend = cl.Trend(0.04, axis="origin")
     cl.LEV(means=dict(zip(genins.development, THETA_10)), trend=trend).fit(genins)
     assert not hasattr(trend, "trend_")
-    assert trend.full_triangle is False
+    assert trend.get_params() == cl.Trend(0.04, axis="origin").get_params()
 
 
 def test_trend_is_none_without_a_trend(genins):
@@ -754,7 +770,7 @@ def test_sahasrabuddhe_takes_an_unfitted_trend(genins):
         basic_limit=500_000,
         target_layer=(0, 500_000),
     )
-    index = 1 / cl.Trend(0.04, axis="origin", full_triangle=True).fit(genins).trend_
+    index = 1 / cl.Trend(0.04, axis="origin").fit(_carrier(genins)).trend_
     from_triangle = cl.Sahasrabuddhe(trend=index, **kwargs).fit(genins)
     from_trend = cl.Sahasrabuddhe(trend=cl.Trend(0.04, axis="origin"), **kwargs).fit(
         genins
@@ -792,3 +808,29 @@ def test_params_survive_sklearn_clone_with_a_trend_object():
     cloned = clone(estimator)
     assert cloned.trend is not estimator.trend
     assert cloned.trend.get_params() == estimator.trend.get_params()
+
+
+def test_unfitted_trend_is_rebased_to_the_latest_origin(genins):
+    """
+    A valuation trend is not constant across the latest origin's row, so the
+    index a Trend object yields is divided through by that row to match the
+    convention a Triangle is taken in.
+    """
+    means = dict(zip(genins.development, THETA_10))
+    trend = cl.Trend(0.01, axis="valuation")
+    index = 1 / trend.fit(_carrier(genins)).trend_
+    assert not np.allclose(
+        np.asarray(index.set_backend("numpy").values)[..., -1, :], 1.0
+    )
+    from_trend = cl.LEV(means=means, trend=trend).fit(genins)
+    from_triangle = cl.LEV(means=means, trend=index / index.iloc[..., -1:, :]).fit(
+        genins
+    )
+    assert np.allclose(
+        np.asarray(from_trend.means_.set_backend("numpy").values),
+        np.asarray(from_triangle.means_.set_backend("numpy").values),
+    )
+    assert np.allclose(
+        np.asarray(from_trend.means_.set_backend("numpy").values)[..., -1, :],
+        np.array(THETA_10, dtype="float64"),
+    )

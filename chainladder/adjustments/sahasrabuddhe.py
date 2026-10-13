@@ -49,29 +49,23 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
     means: Triangle or dict
         The output of the claim size analysis -- the mean claim size by
         development age, expressed at a single cost level. Either a Triangle
-        whose development axis matches the Triangle being fit, or a mapping of
-        development age to mean, e.g. ``{12: 28138, 24: 84242, ...}``.
+        whose development axis matches the Triangle being fit, or a dictionary
+        mapping of development age to mean, e.g. ``{12: 28138, 24: 84242, ...}``.
 
-        A mapping is expanded onto the latest origin period of ``X``, giving a
-        one-origin-row Triangle. A Triangle is taken as given, which is what
+        A dictionary mapping is assumed to be at the cost level of the latest origin
+        period in ``X``. A Triangle is taken as given, which is what
         lets a caller pass means that have already been restated to a cost
         level that varies by origin as well as by development age.
     trend: Triangle or Trend, optional
         Either a Triangle, or a :class:`Trend` to be fitted.
 
-        A Triangle is a cost level index over the origin x development
-        rectangle, stating each cell's cost level relative to a common base.
-        Build it from a fitted :class:`Trend` with ``full_triangle=True``, which
-        is required since the index has to cover cells the Triangle itself does
-        not reach. A cost level index runs the other way from ``trend_``, so it
-        is the reciprocal: ``1 / trend.trend_``.
+        A Triangle is a cost level index over the whole origin x development
+        rectangle, and is taken to be stated relative to the latest origin
+        period.
 
-        A Trend need not be fitted. ``fit`` fits a copy of it on ``X`` with
-        ``full_triangle=True`` and takes the reciprocal of its ``trend_``, so
-        the caller's object is left untouched. The result is available as
-        ``trend_``. A Trend carries one trend and one axis; a compound index,
-        such as an exposure period trend combined with a calendar period trend,
-        has to be built by hand and passed as a Triangle.
+        A compound index, such as an exposure period trend
+        combined with a calendar period trend, must be passed as a Triangle
+        as the result of multiplying its fitted component trends.
 
         ``means`` is taken to be stated at the cost level of the latest origin
         period. Given a trend, ``fit`` restates it onto every cell, which is
@@ -79,15 +73,13 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
         .. math::
 
-            \Phi_{i,j} = \theta_j \, \frac{T_{i,j}}{T_{n,j}}
+            \Phi_{i,j} = \theta_j \, T_{i,j}
 
         where :math:`\theta_j` is ``means`` at development age :math:`j`,
-        :math:`T` is the cost level index, :math:`n` is the latest origin
-        period, and :math:`\Phi_{i,j}` is the resulting ``means_``.
-
-        Only ratios of the index are used, so its own base period is
-        immaterial: rescaling it by any constant leaves the result unchanged.
-        Left as None, ``means`` is used as given and no restatement happens.
+        :math:`T` is the cost level index relative to the latest origin period
+        :math:`n`, so that :math:`T_{n,j} = 1`, and :math:`\Phi_{i,j}` is the
+        resulting ``means_``. Left as None, ``means`` is used as given and no
+        restatement happens.
     attachment: float (default=0.0)
         The limit at which the layer attaches.
     limit: float (default=np.inf)
@@ -102,9 +94,10 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         every cell's own cost level when a ``trend`` was given. These are the
         claim size model's parameters, ``Phi`` in the paper's notation.
     trend_: Triangle
-        The cost level index ``means`` was restated with: ``trend`` as given
-        when it was a Triangle, or the reciprocal of the fitted Trend's
-        ``trend_``. None when no ``trend`` was supplied.
+        The cost level index ``means`` was restated with, relative to the latest
+        origin period: ``trend`` as given when it was a Triangle, or the
+        reciprocal of the fitted Trend's ``trend_`` rebased to the latest origin
+        period. None when no ``trend`` was supplied.
     lev_: Triangle
         The expected loss in the layer, ``LEV(limit) - LEV(attachment)`` --
         equation 2.4. With the default layer this is the unlimited mean, which
@@ -148,6 +141,30 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
               12   24    36     48      60      72      84      96      108     120
         2010  0.0  1.0  77.0  757.0  1533.0  2820.0  4750.0  5954.0  7137.0  7651.0
+
+    The means are stated at the latest origin period's cost level. Passing a
+    ``trend`` restates them onto every other origin period. With a 2% annual
+    trend, each earlier origin period's means are 2% lower than the next:
+
+    .. testcode::
+
+        trended = cl.LEV(means=thetas, trend=cl.Trend(0.02, axis="origin"))
+        print(trended.fit(genins).means_.round(0))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+                  12       24        36        48        60        72        84        96        108       120
+        2001  23545.0  70490.0  112124.0  152674.0  171241.0  190985.0  211557.0  221793.0  230699.0  234291.0
+        2002  24016.0  71900.0  114366.0  155728.0  174666.0  194805.0  215788.0  226229.0  235313.0  238977.0
+        2003  24496.0  73338.0  116653.0  158842.0  178159.0  198701.0  220104.0  230753.0  240020.0  243757.0
+        2004  24986.0  74804.0  118986.0  162019.0  181722.0  202675.0  224506.0  235368.0  244820.0  248632.0
+        2005  25485.0  76301.0  121366.0  165260.0  185357.0  206729.0  228996.0  240076.0  249716.0  253605.0
+        2006  25995.0  77827.0  123793.0  168565.0  189064.0  210863.0  233576.0  244877.0  254711.0  258677.0
+        2007  26515.0  79383.0  126269.0  171936.0  192845.0  215080.0  238247.0  249775.0  259805.0  263850.0
+        2008  27045.0  80971.0  128795.0  175375.0  196702.0  219382.0  243012.0  254770.0  265001.0  269127.0
+        2009  27586.0  82590.0  131371.0  178882.0  200636.0  223770.0  247873.0  259866.0  270301.0  274510.0
+        2010  28138.0  84242.0  133998.0  182460.0  204649.0  228245.0  252830.0  265063.0  275707.0  280000.0
 
     """
 
@@ -289,13 +306,20 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         if not isinstance(self.trend, Trend):
             return self.trend
-        # The index has to cover cells past the valuation date, so the full
-        # rectangle is not optional. Fit a clone so that the caller's object is
-        # not changed, and so that fitting twice does not share state.
-        fitted = clone(self.trend).set_params(full_triangle=True).fit(X)
+        # The index has to cover cells past the valuation date, and a Trend
+        # fitted on X only reaches X's own cells. Fit it on a rectangle of ones
+        # that does instead. The clone leaves the caller's object unchanged, and
+        # means fitting twice does not share state.
+        carrier = X.copy().set_backend("numpy")
+        carrier.valuation_date = carrier.valuation.max()
+        carrier = (carrier * 0 + 1).fillna(1)
+        fitted = clone(self.trend).fit(carrier)
         # `trend_` is the multiplier TO the base period's cost level, which is
-        # the reciprocal of an index of cost levels.
-        return 1 / fitted.trend_
+        # the reciprocal of an index of cost levels. The Trend's own base period
+        # need not be the latest origin -- a valuation trend certainly is not
+        # constant across the latest row -- so rebase onto it.
+        index = 1 / fitted.trend_
+        return index / index.iloc[..., self._base_row(X), :]
 
     def fit(
         self,
@@ -339,12 +363,10 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         else:
             base_row = self._base_row(X)
             self._validate_trend(X, base_row)
-            # `means` describes the latest origin period. Spreading it over the
-            # rectangle is a ratio of the index, so the index's own base period
-            # cancels.
-            self.means_ = (
-                means_at_base * self.trend_ / self.trend_.iloc[..., base_row, :]
-            )
+            # `means` describes the latest origin period, which is the cost level
+            # the index is stated relative to, so spreading it over the rectangle
+            # is a plain product.
+            self.means_ = means_at_base * self.trend_
 
         self.lev_ = self._limited_expected_value(
             self.means_, self.limit
@@ -405,14 +427,14 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                 raise ValueError(
                     f"trend does not share X's {axis} axis: trend runs "
                     f"{mine[0]} through {mine[-1]}, X runs {theirs[0]} through "
-                    f"{theirs[-1]}. Build the trend against X, with "
-                    "full_triangle=True so it covers the whole rectangle."
+                    f"{theirs[-1]}. Build the trend against X, fitted on a "
+                    "full rectangle of ones so it covers the whole rectangle."
                 )
 
         # Everything is divided by the latest period's row of the index, so a gap
         # anywhere in it propagates NaN across the whole result. A trend fitted
-        # without full_triangle=True is shaped like the Triangle, which leaves
-        # that row almost entirely empty -- and the failure is silent, so it is
+        # on the Triangle itself is shaped like the Triangle, which leaves that
+        # row almost entirely empty -- and the failure is silent, so it is
         # worth catching here rather than letting it surface as missing data.
         base_factors = np.asarray(
             self.trend_.iloc[..., base_row, :].set_backend("numpy").values
@@ -421,7 +443,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
             raise ValueError(
                 f"trend is not defined across the whole {X.origin[base_row][0]} "
                 "origin period, which every cell is restated against. Refit the "
-                "trend with full_triangle=True so it covers cells past the "
+                "trend on a full rectangle of ones so it covers cells past the "
                 "valuation date."
             )
 
@@ -448,7 +470,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
 
 
 class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
-    """
+    r"""
     Restate claims data, or a development pattern, onto another claim size
     layer and a common cost level.
 
@@ -458,26 +480,35 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
     receives decides which conversion it does.
 
     **Given a Triangle of claims**, every observation is restated to the basic
-    limit at the latest origin period's cost level -- equation 3.2::
+    limit at the latest origin period's cost level -- equation 3.2:
 
-        triangle_(i,j) = X(i,j) * LEV(basic_limit; Phi(base,j))
-                                / LEV(data_limit;  Phi(i,j))
+    .. math::
 
-    The numerator is one row, the basis everything moves to; the denominator
-    varies cell by cell, which is what makes the ratio a combined trend and
-    limit adjustment. Ordinary development then follows in a Pipeline, with
+        C_{i,j} = X_{i,j} \, \frac{\mathrm{LEV}(B;\, \Phi_{n,j})}
+                                  {\mathrm{LEV}(d;\, \Phi_{i,j})}
+
+    where :math:`X` is the observed claims at ``data_limit`` :math:`d`,
+    :math:`B` is ``basic_limit``, :math:`n` is the latest origin period, and
+    :math:`C` is ``triangle_``. The numerator is one row, the basis everything
+    moves to; the denominator varies cell by cell, which is what makes the
+    ratio a combined trend and limit adjustment. Ordinary development then follows in a Pipeline, with
     nothing left in the data for the factors to be contaminated by.
 
     **Given a development pattern** fitted at ``basic_limit``, the pattern for
     the target layer follows from a ratio of layer expectations -- equations
-    3.8 and 3.9 -- with no refitting and no second triangle::
+    3.8 and 3.9 -- with no refitting and no second triangle:
 
-        factor(i,j) = cdf(j) * [ L(i,last) / A(last) ] / [ L(i,j) / A(j) ]
+    .. math::
 
-    where ``L`` is the target layer's expected loss and ``A`` is
-    ``basic_limit``'s. ``L(i,last) / L(i,j)`` is how much of exposure period
-    i's ultimate loss in the new layer has emerged by age j, and the ``A``
-    terms restate that onto the pattern's own basis.
+        F_{i,j} = F^{B}_{j} \,
+            \frac{L_{i,\infty} / A_{\infty}}{L_{i,j} / A_{j}}
+
+    where :math:`F^{B}_{j}` is the ``basic_limit`` pattern's cumulative factor
+    at age :math:`j`, :math:`L_{i,j}` is the target layer's expected loss
+    and :math:`A_j` is ``basic_limit``'s, at the latest origin period's cost
+    level. :math:`L_{i,j} / L_{i,\infty}` is how much of exposure period
+    :math:`i`'s ultimate loss in the new layer has emerged by age :math:`j`,
+    and the :math:`A` terms restate that onto the pattern's own basis.
 
     Parameters
     ----------
@@ -488,12 +519,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
     trend: Triangle or Trend
         Either a cost level index as a Triangle, or a :class:`Trend` to be
         fitted, as :class:`LEV` takes it. A Triangle index covers the origin x
-        development rectangle and states each cell's cost level relative to a
-        common base; build it from a fitted :class:`Trend` with
-        ``full_triangle=True`` and take the reciprocal of ``trend_``.
-
-        Only ratios of this index are used, so its own base period is
-        immaterial: rescaling it by any constant leaves the result unchanged.
+        development rectangle and is taken to be stated relative to the latest
+        origin period, as :class:`LEV` describes, along with how to build one
+        from a :class:`Trend` fitted on a full rectangle of ones.
 
         When a pattern is fitted rather than a Triangle, this is also what
         supplies the origin axis: a pattern has only one row, so the rectangle
@@ -619,8 +647,8 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         if pattern is not None and isinstance(self.trend, Trend):
             raise ValueError(
                 "a development pattern has a single origin row, so there is no "
-                "Triangle to fit trend on. Pass trend as a Triangle, e.g. "
-                "1 / cl.Trend(..., full_triangle=True).fit(triangle).trend_."
+                "Triangle to fit trend on. Pass trend as a Triangle: a Trend "
+                "fitted on a full rectangle of ones, then inverted."
             )
         # A pattern has a single origin row, so it cannot supply the rectangle
         # the claim size model is spread over. The trend can, and has to cover
