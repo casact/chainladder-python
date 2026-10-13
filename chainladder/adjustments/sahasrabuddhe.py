@@ -11,9 +11,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
 from chainladder.development import DevelopmentConstant
+from sklearn.base import (
+    BaseEstimator,
+    TransformerMixin,
+)
+
 
 from typing import TYPE_CHECKING
 
@@ -86,7 +90,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         because a model with more than one parameter would distinguish them.
 
     Examples
-    --------
+    -------- 
 
     .. testsetup::
 

@@ -131,6 +131,8 @@ Classes
  BerquistSherman
  Trend
  ParallelogramOLF
+ LEV
+ Sahasrabuddhe
 
 .. _workflow_ref:
 
