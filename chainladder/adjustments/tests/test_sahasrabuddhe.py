@@ -59,7 +59,6 @@ def paper_model(genins, paper_trend):
         data_limit=1_000_000,
         basic_limit=500_000,
         target_layer=(0, 500_000),
-        base_period=2010,
     ).fit(genins)
 
 
@@ -169,7 +168,6 @@ def test_pipeline_matches_a_manual_fit(genins, paper_trend, paper_model):
                 data_limit=1_000_000,
                 basic_limit=500_000,
                 target_layer=(0, 500_000),
-                base_period=2010,
             ),
         ),
         ("dev", cl.Development(average="volume")),
@@ -204,24 +202,6 @@ def test_preserves_the_index_axis(clrd):
     )
 
 
-def test_base_period_defaults_to_the_latest_origin(genins, paper_trend):
-    kwargs = dict(
-        means=dict(zip(genins.development, THETA_10)),
-        trend=paper_trend,
-        data_limit=1_000_000,
-        basic_limit=500_000,
-        target_layer=(0, 500_000),
-    )
-    implicit = cl.Sahasrabuddhe(**kwargs).fit(genins).triangle_.set_backend("numpy")
-    explicit = (
-        cl
-        .Sahasrabuddhe(**kwargs, base_period=2010)
-        .fit(genins)
-        .triangle_.set_backend("numpy")
-    )
-    assert np.allclose(np.nan_to_num(implicit.values), np.nan_to_num(explicit.values))
-
-
 def test_trend_rescaling_is_immaterial(genins, paper_trend, paper_model):
     """
     Only ratios of the index are used, so its base period cancels. This is why
@@ -233,7 +213,6 @@ def test_trend_rescaling_is_immaterial(genins, paper_trend, paper_model):
         data_limit=1_000_000,
         basic_limit=500_000,
         target_layer=(0, 500_000),
-        base_period=2010,
     ).fit(genins)
     assert np.allclose(
         np.nan_to_num(rescaled.triangle_.set_backend("numpy").values),
@@ -288,25 +267,12 @@ def test_required_arguments_raise(genins, paper_trend, missing):
         cl.Sahasrabuddhe(**kwargs).fit(genins)
 
 
-def test_base_period_outside_the_triangle_raises(genins, paper_trend):
-    with pytest.raises(ValueError, match="does not match any origin"):
-        cl.Sahasrabuddhe(
-            means=dict(zip(genins.development, THETA_10)),
-            trend=paper_trend,
-            data_limit=1_000_000,
-            basic_limit=500_000,
-            target_layer=(0, 500_000),
-            base_period=1800,
-        ).fit(genins)
-
-
 def test_params_survive_sklearn_clone():
     estimator = cl.Sahasrabuddhe(
         means={12: 1.0},
         data_limit=1e6,
         basic_limit=5e5,
         target_layer=(0, 5e5),
-        base_period=2010,
     )
     assert clone(estimator).get_params() == estimator.get_params()
 
@@ -341,35 +307,19 @@ def _means_row(genins, year, unmask=True):
     return (row * 0 + 1).fillna(1) * np.array(THETA_10, dtype="float64")
 
 
-@pytest.mark.parametrize("base_period", [None, 2005])
-def test_one_origin_triangle_matches_a_mapping(genins, paper_trend, base_period):
-    year = 2010 if base_period is None else base_period
-    from_triangle = cl.LEV(
-        means=_means_row(genins, year), trend=paper_trend, base_period=base_period
-    ).fit(genins)
+@pytest.mark.parametrize("year", [2005, 2010])
+def test_one_origin_triangle_matches_a_mapping(genins, paper_trend, year):
+    """The label is immaterial: means are taken to be at the latest origin."""
+    from_triangle = cl.LEV(means=_means_row(genins, year), trend=paper_trend).fit(
+        genins
+    )
     from_mapping = cl.LEV(
-        means=dict(zip(genins.development, THETA_10)),
-        trend=paper_trend,
-        base_period=base_period,
+        means=dict(zip(genins.development, THETA_10)), trend=paper_trend
     ).fit(genins)
     assert np.allclose(
         from_triangle.means_.set_backend("numpy").values,
         from_mapping.means_.set_backend("numpy").values,
     )
-
-
-def test_rejects_a_one_origin_triangle_off_the_base_period(genins, paper_trend):
-    """
-    A single row broadcasts over every origin whatever it is labelled, so means
-    stated at 2005 would be restated as though they were at 2010.
-    """
-    with pytest.raises(ValueError, match="Pass base_period=2005"):
-        cl.LEV(means=_means_row(genins, 2005), trend=paper_trend).fit(genins)
-
-
-def test_one_origin_triangle_label_is_immaterial_without_a_trend(genins):
-    lev = cl.LEV(means=_means_row(genins, 2005)).fit(genins)
-    assert lev.means_.shape == (1, 1, 1, 10)
 
 
 @pytest.mark.parametrize("with_trend", [True, False])
@@ -419,7 +369,6 @@ def paper_layer(paper_trend, genins):
             trend=paper_trend,
             data_limit=1_000_000,
             basic_limit=500_000,
-            base_period=2010,
             **kwargs,
         )
 
@@ -692,15 +641,6 @@ def test_full_cdf_keeps_ages_so_valuation_still_works(paper_layer, paper_develop
     assert model.full_cdf_.valuation is not None
 
 
-@pytest.mark.parametrize("base_period", ["NaT", ""])
-def test_rejects_an_invalid_base_period(genins, base_period):
-    """pandas parses these to NaT rather than raising, so it is checked for."""
-    with pytest.raises(ValueError, match="is not a valid period"):
-        cl.LEV(
-            means=dict(zip(genins.development, THETA_10)), base_period=base_period
-        ).fit(genins)
-
-
 def test_means_are_required(genins):
     with pytest.raises(ValueError, match="means is required"):
         cl.LEV().fit(genins)
@@ -776,3 +716,79 @@ def test_rejects_something_that_is_not_a_pattern(paper_layer):
     impostor = SimpleNamespace(cdf_=np.ones(10))
     with pytest.raises(ValueError, match="must be a fitted development estimator"):
         paper_layer(target_layer=(0, 500_000)).fit(impostor)
+
+
+def test_lev_takes_an_unfitted_trend(genins):
+    """An unfitted Trend is fitted on X and inverted into a cost level index."""
+    means = dict(zip(genins.development, THETA_10))
+    index = 1 / cl.Trend(0.04, axis="origin", full_triangle=True).fit(genins).trend_
+    from_triangle = cl.LEV(means=means, trend=index).fit(genins)
+    from_trend = cl.LEV(means=means, trend=cl.Trend(0.04, axis="origin")).fit(genins)
+    assert np.allclose(
+        from_trend.means_.set_backend("numpy").values,
+        from_triangle.means_.set_backend("numpy").values,
+    )
+    assert np.allclose(
+        from_trend.trend_.set_backend("numpy").values,
+        index.set_backend("numpy").values,
+    )
+
+
+def test_trend_object_is_left_unfitted(genins):
+    """fit works on a copy: the caller's Trend is neither fitted nor changed."""
+    trend = cl.Trend(0.04, axis="origin")
+    cl.LEV(means=dict(zip(genins.development, THETA_10)), trend=trend).fit(genins)
+    assert not hasattr(trend, "trend_")
+    assert trend.full_triangle is False
+
+
+def test_trend_is_none_without_a_trend(genins):
+    lev = cl.LEV(means=dict(zip(genins.development, THETA_10))).fit(genins)
+    assert lev.trend_ is None
+
+
+def test_sahasrabuddhe_takes_an_unfitted_trend(genins):
+    kwargs = dict(
+        means=dict(zip(genins.development, THETA_10)),
+        data_limit=1_000_000,
+        basic_limit=500_000,
+        target_layer=(0, 500_000),
+    )
+    index = 1 / cl.Trend(0.04, axis="origin", full_triangle=True).fit(genins).trend_
+    from_triangle = cl.Sahasrabuddhe(trend=index, **kwargs).fit(genins)
+    from_trend = cl.Sahasrabuddhe(trend=cl.Trend(0.04, axis="origin"), **kwargs).fit(
+        genins
+    )
+    assert np.allclose(
+        np.nan_to_num(from_trend.triangle_.set_backend("numpy").values),
+        np.nan_to_num(from_triangle.triangle_.set_backend("numpy").values),
+    )
+    # transform re-uses the fitted claim size model, with no trend to refit.
+    assert np.allclose(
+        np.nan_to_num(from_trend.transform(genins).set_backend("numpy").values),
+        np.nan_to_num(from_triangle.transform(genins).set_backend("numpy").values),
+    )
+
+
+def test_pattern_rejects_an_unfitted_trend(genins, paper_development):
+    """A pattern has one origin row, so there is no Triangle to fit a Trend on."""
+    with pytest.raises(ValueError, match="no Triangle to fit trend on"):
+        cl.Sahasrabuddhe(
+            means=dict(zip(genins.development, THETA_10)),
+            trend=cl.Trend(0.04, axis="origin"),
+            basic_limit=500_000,
+            target_layer=(0, 250_000),
+        ).fit(paper_development)
+
+
+def test_params_survive_sklearn_clone_with_a_trend_object():
+    estimator = cl.Sahasrabuddhe(
+        means={12: 1.0},
+        trend=cl.Trend(0.04, axis="origin"),
+        data_limit=1e6,
+        basic_limit=5e5,
+        target_layer=(0, 5e5),
+    )
+    cloned = clone(estimator)
+    assert cloned.trend is not estimator.trend
+    assert cloned.trend.get_params() == estimator.trend.get_params()
