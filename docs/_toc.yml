@@ -31,7 +31,7 @@ parts:
       - file: user_guide/workflow.ipynb
       - file: user_guide/utilities.ipynb
       - file: user_guide/style.ipynb
-      - file: user_guide/layers2.ipynb
+      - file: user_guide/sahasrabuddhe_verification.ipynb
   - chapters:
     - file: friedland/index.rst
       sections:
