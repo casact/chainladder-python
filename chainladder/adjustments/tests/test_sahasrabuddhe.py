@@ -79,7 +79,7 @@ def paper_model(genins, paper_trend):
     return cl.Sahasrabuddhe(
         means=dict(zip(genins.development, THETA_10)),
         trend=paper_trend,
-        data_limit=1_000_000,
+        observed_limit=1_000_000,
         basic_limit=500_000,
         target_layer=(0, 500_000),
     ).fit(genins)
@@ -188,7 +188,7 @@ def test_pipeline_matches_a_manual_fit(genins, paper_trend, paper_model):
             cl.Sahasrabuddhe(
                 means=dict(zip(genins.development, THETA_10)),
                 trend=paper_trend,
-                data_limit=1_000_000,
+                observed_limit=1_000_000,
                 basic_limit=500_000,
                 target_layer=(0, 500_000),
             ),
@@ -214,7 +214,7 @@ def test_preserves_the_index_axis(clrd):
     model = cl.Sahasrabuddhe(
         means=means,
         trend=trend,
-        data_limit=1_000_000,
+        observed_limit=1_000_000,
         basic_limit=500_000,
         target_layer=(0, 500_000),
     ).fit(tri)
@@ -255,7 +255,7 @@ def test_rejects_a_trend_from_a_different_triangle(genins):
         cl.Sahasrabuddhe(
             means=dict(zip(genins.development, THETA_10)),
             trend=trend,
-            data_limit=1_000_000,
+            observed_limit=1_000_000,
             basic_limit=500_000,
             target_layer=(0, 500_000),
         ).fit(genins)
@@ -272,20 +272,20 @@ def test_rejects_a_trend_with_gaps_in_the_latest_period(genins):
         cl.Sahasrabuddhe(
             means=dict(zip(genins.development, THETA_10)),
             trend=trend,
-            data_limit=1_000_000,
+            observed_limit=1_000_000,
             basic_limit=500_000,
             target_layer=(0, 500_000),
         ).fit(genins)
 
 
 @pytest.mark.parametrize(
-    "missing", ["trend", "data_limit", "basic_limit", "target_layer"]
+    "missing", ["trend", "observed_limit", "basic_limit", "target_layer"]
 )
 def test_required_arguments_raise(genins, paper_trend, missing):
     kwargs = dict(
         means=dict(zip(genins.development, THETA_10)),
         trend=paper_trend,
-        data_limit=1_000_000,
+        observed_limit=1_000_000,
         basic_limit=500_000,
         target_layer=(0, 500_000),
     )
@@ -297,7 +297,7 @@ def test_required_arguments_raise(genins, paper_trend, missing):
 def test_params_survive_sklearn_clone():
     estimator = cl.Sahasrabuddhe(
         means={12: 1.0},
-        data_limit=1e6,
+        observed_limit=1e6,
         basic_limit=5e5,
         target_layer=(0, 5e5),
     )
@@ -394,7 +394,7 @@ def paper_layer(paper_trend, genins):
         return cl.Sahasrabuddhe(
             means=dict(zip(genins.development, THETA_10)),
             trend=paper_trend,
-            data_limit=1_000_000,
+            observed_limit=1_000_000,
             basic_limit=500_000,
             **kwargs,
         )
@@ -588,7 +588,7 @@ def test_a_wider_layer_develops_faster(paper_layer, paper_development):
 
 
 def test_degenerate_layer_raises(paper_layer, paper_development):
-    with pytest.raises(ValueError, match="exhaustion must be the larger"):
+    with pytest.raises(ValueError, match="limit must be the larger"):
         paper_layer(target_layer=(500_000, 500_000)).fit(paper_development)
 
 
@@ -613,7 +613,7 @@ def test_incomplete_diagonal_warns_but_keeps_the_rectangle(qtr):
     kwargs = dict(
         means=means,
         trend=trend,
-        data_limit=1_000_000,
+        observed_limit=1_000_000,
         basic_limit=500_000,
     )
     restated = cl.Sahasrabuddhe(**kwargs, target_layer=(0, 500_000)).fit(tri).triangle_
@@ -685,7 +685,7 @@ def test_rejects_a_negative_limit(genins, paper_trend):
         cl.Sahasrabuddhe(
             means=dict(zip(genins.development, THETA_10)),
             trend=paper_trend,
-            data_limit=-1,
+            observed_limit=-1,
             basic_limit=500_000,
             target_layer=(0, 500_000),
         ).fit(genins)
@@ -710,7 +710,7 @@ def test_rejects_a_malformed_target_layer(genins, paper_trend, target_layer):
         cl.Sahasrabuddhe(
             means=dict(zip(genins.development, THETA_10)),
             trend=paper_trend,
-            data_limit=1_000_000,
+            observed_limit=1_000_000,
             basic_limit=500_000,
             target_layer=target_layer,
         ).fit(genins)
@@ -777,7 +777,7 @@ def test_trend_is_none_without_a_trend(genins):
 def test_sahasrabuddhe_takes_an_unfitted_trend(genins):
     kwargs = dict(
         means=dict(zip(genins.development, THETA_10)),
-        data_limit=1_000_000,
+        observed_limit=1_000_000,
         basic_limit=500_000,
         target_layer=(0, 500_000),
     )
@@ -812,7 +812,7 @@ def test_params_survive_sklearn_clone_with_a_trend_object():
     estimator = cl.Sahasrabuddhe(
         means={12: 1.0},
         trend=cl.Trend(0.04, axis="origin"),
-        data_limit=1e6,
+        observed_limit=1e6,
         basic_limit=5e5,
         target_layer=(0, 5e5),
     )

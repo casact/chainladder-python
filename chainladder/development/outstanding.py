@@ -1,6 +1,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Literal
+
 from chainladder.development import Development, DevelopmentBase
 from chainladder import options
 from chainladder.utils.utility_functions import concat
@@ -8,6 +12,9 @@ from chainladder.utils.utility_functions import num_to_nan
 
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    from chainladder.core import Triangle
 
 
 class CaseOutstanding(DevelopmentBase):
@@ -25,19 +32,25 @@ class CaseOutstanding(DevelopmentBase):
     the estimator also builds origin-specific implied multiplicative ``ldf_``
     so standard IBNR methods can be applied.
 
+    For Approach 2 (Friedland 2010, Chapter 12, Exhibit III) using benchmark
+    reported and paid development patterns, see
+    :class:`~chainladder.ImpliedCaseDevelopment`.
+
     .. versionadded:: 0.8.0
 
     Parameters
     ----------
     paid_to_incurred: tuple or list of tuples
         A tuple representing the paid and incurred ``columns`` of the triangles
-        such as ``('paid', 'incurred')``
+        such as ``('paid', 'incurred')``.
     paid_n_periods: integer, optional (default=-1)
         number of origin periods to be used in the paid pattern averages. For
         all origin periods, set paid_n_periods=-1
     case_n_periods: integer, optional (default=-1)
         number of origin periods to be used in the case pattern averages. For
         all origin periods, set case_n_periods=-1
+    groupby: optional
+        Grouping option.
 
     Attributes
     ----------
@@ -118,7 +131,11 @@ class CaseOutstanding(DevelopmentBase):
     """
 
     def __init__(
-        self, paid_to_incurred=None, paid_n_periods=-1, case_n_periods=-1, groupby=None
+        self,
+        paid_to_incurred=None,
+        paid_n_periods=-1,
+        case_n_periods=-1,
+        groupby=None,
     ):
         self.paid_to_incurred = paid_to_incurred
         self.paid_n_periods = paid_n_periods
@@ -302,3 +319,224 @@ class CaseOutstanding(DevelopmentBase):
         X_new.paid_ldf_ = self.paid_ldf_
         X_new.case_ldf_ = self.case_ldf_
         return X_new
+
+
+class ImpliedCaseDevelopment(DevelopmentBase):
+    """
+    Implied Case Development Estimator (Friedland Approach 2).
+
+    An Estimator that derives implied case development factors (LDFs/CDFs)
+    from benchmark reported and paid development patterns (Friedland 2010,
+    Chapter 12, Exhibit III).
+
+    This method is commonly used by self-insurers or for excess/reinsurance
+    layers where credible historical triangles are unavailable, but carried
+    case reserves and industry/benchmark development patterns are known.
+
+    Parameters
+    ----------
+    reported_pattern : dict, Series, DataFrame, Triangle, or Development
+        Benchmark reported loss development pattern. Can be cumulative (CDF)
+        or incremental (LDF), as specified by ``style``.
+    paid_pattern : dict, Series, DataFrame, Triangle, or Development
+        Benchmark paid loss development pattern. Can be cumulative (CDF)
+        or incremental (LDF), as specified by ``style``.
+    style : Literal['cdf', 'ldf'], optional (default='cdf')
+        Whether ``reported_pattern`` and ``paid_pattern`` are cumulative development
+        factors ('cdf') or incremental link ratios ('ldf').
+
+    Attributes
+    ----------
+    case_cdf_ : Triangle
+        Implied cumulative case development factors to ultimate.
+    case_ldf_ : Triangle
+        Incremental link ratios implied by ``case_cdf_``.
+    ldf_ : Triangle
+        Estimated loss development patterns for case outstanding (alias for ``case_ldf_``
+        for downstream compatibility with estimators like :class:`~chainladder.Chainladder`).
+    case_ : Triangle
+        The case triangle used during fitting.
+
+    Examples
+    --------
+    .. testsetup::
+
+        import chainladder as cl
+
+    .. testcode::
+
+        import pandas as pd
+        import numpy as np
+        import chainladder as cl
+
+        case_data = pd.DataFrame({
+            "origin": [1998, 1999, 2000, 2001, 2002, 2003],
+            "valuation": 2008,
+            "case": [500000, 650000, 800000, 850000, 975000, 1000000],
+        })
+        case_tri = cl.Triangle(
+            case_data, origin="origin", valuation="valuation", columns="case", cumulative=True
+        ).val_to_dev()
+
+        rep_cdfs = {132: 1.015, 120: 1.020, 108: 1.030, 96: 1.051, 84: 1.077, 72: 1.131}
+        paid_cdfs = {132: 1.046, 120: 1.067, 108: 1.109, 96: 1.187, 84: 1.306, 72: 1.489}
+
+        model = cl.ImpliedCaseDevelopment(
+            reported_pattern=rep_cdfs,
+            paid_pattern=paid_cdfs,
+            style="cdf",
+        ).fit(case_tri)
+
+        print(np.round(model.case_cdf_["case"].values[0, 0, 0, 5:], 3))
+
+    .. testoutput::
+
+        [1.545 1.439 1.445 1.421 1.454 1.506]
+
+    """
+
+    def __init__(
+        self,
+        reported_pattern: Any = None,
+        paid_pattern: Any = None,
+        style: Literal["cdf", "ldf"] = "cdf",
+    ):
+        self.reported_pattern = reported_pattern
+        self.paid_pattern = paid_pattern
+        self.style = style
+
+    def fit(self, X: Triangle, y: Any = None, sample_weight: Any = None):
+        """
+        Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle
+            Triangle of case reserves to fit.
+        y : Ignored
+        sample_weight : Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+        from chainladder.development.constant import DevelopmentConstant
+
+        backend = "cupy" if X.array_backend == "cupy" else "numpy"
+        self.X_ = X.copy()
+
+        if self.reported_pattern is None or self.paid_pattern is None:
+            raise ValueError(
+                "ImpliedCaseDevelopment requires both reported_pattern and paid_pattern."
+            )
+
+        if len(X.columns) > 1:
+            raise ValueError(
+                f"ImpliedCaseDevelopment expects a 1-channel Triangle representing case reserves, "
+                f"but received {len(X.columns)} columns ({list(X.columns)}). "
+                f"Compute case reserves (e.g. incurred - paid) before fitting."
+            )
+
+        case_tri = self.X_
+        obj = case_tri.val_to_dev().copy()
+
+        # 2. Extract series of CDFs
+        rep_s = self._extract_cdf_series(self.reported_pattern, self.style)
+        paid_s = self._extract_cdf_series(self.paid_pattern, self.style)
+
+        # 3. Determine common development ages
+        common_devs = sorted(set(rep_s.index).intersection(set(paid_s.index)))
+        if not common_devs:
+            raise ValueError(
+                "reported_pattern and paid_pattern share no common development ages."
+            )
+
+        # 4. Implied Case CDF formula (Friedland Exhibit III):
+        # Case_CDF = [((CDF_rep - 1.0) * CDF_paid) / (CDF_paid - CDF_rep)] + 1.0
+        case_cdf_dict = {}
+        for d in obj.ddims:
+            if d in rep_s and d in paid_s:
+                r = float(rep_s[d])
+                p = float(paid_s[d])
+                den = p - r
+                if np.isclose(den, 0.0) or den < 0:
+                    case_cdf_dict[d] = 1.0
+                else:
+                    case_cdf_dict[d] = ((r - 1.0) * p) / den + 1.0
+            else:
+                case_cdf_dict[d] = 1.0
+
+        dev_const = DevelopmentConstant(patterns=case_cdf_dict, style="cdf").fit(obj)
+
+        self.ldf_ = dev_const.ldf_.set_backend(backend)
+        self.case_ldf_ = dev_const.ldf_.set_backend(backend)
+        self.case_cdf_ = dev_const.cdf_.set_backend(backend)
+        self.case_ = case_tri.copy()
+        return self
+
+    def transform(self, X: Triangle) -> Triangle:
+        """
+         Transform the triangle by attaching implied case development factors.
+
+         Parameters
+         ----------
+         X : Triangle
+             The case triangle to be transformed.
+
+        Returns
+         -------
+         X_new : Triangle
+             Transformed case triangle with ldf_, case_ldf_, and case_cdf_ attached.
+        """
+        if len(X.columns) > 1:
+            raise ValueError(
+                f"ImpliedCaseDevelopment expects a 1-channel Triangle representing case reserves, "
+                f"but received {len(X.columns)} columns ({list(X.columns)})."
+            )
+
+        X_new = X.copy()
+        X_new.ldf_ = self.ldf_
+        X_new.case_ldf_ = self.case_ldf_
+        X_new.case_cdf_ = self.case_cdf_
+        X_new._set_slicers()
+        return X_new
+
+    @staticmethod
+    def _extract_cdf_series(pattern: Any, style: str = "cdf") -> pd.Series:
+        """Extract a pd.Series of CDF factors indexed by integer development ages."""
+        if hasattr(pattern, "cdf_"):
+            pattern = pattern.cdf_
+            style = "cdf"
+        elif hasattr(pattern, "ldf_") and not hasattr(pattern, "cdf_"):
+            pattern = pattern.ldf_
+            style = "ldf"
+
+        if isinstance(pattern, dict):
+            s = pd.Series(pattern, dtype=float)
+        elif isinstance(pattern, pd.Series):
+            s = pattern.astype(float).copy()
+        elif isinstance(pattern, pd.DataFrame):
+            if pattern.shape[0] == 1:
+                s = pattern.iloc[0].astype(float)
+            elif pattern.shape[1] == 1:
+                s = pattern.iloc[:, 0].astype(float)
+            else:
+                raise ValueError("DataFrame pattern must have 1 row or 1 column.")
+        elif hasattr(pattern, "values") and hasattr(pattern, "ddims"):
+            s = pd.Series(pattern.values[0, 0, 0, :], index=pattern.ddims, dtype=float)
+        else:
+            raise TypeError(f"Unsupported pattern type: {type(pattern)}")
+
+        try:
+            s.index = [int(str(x).split("-")[0]) for x in s.index]
+        except (ValueError, TypeError):
+            pass
+        s = s.sort_index()
+
+        if style == "ldf":
+            s = s.iloc[::-1].cumprod().iloc[::-1]
+        return s
+
+
+ImpliedCase = ImpliedCaseDevelopment
