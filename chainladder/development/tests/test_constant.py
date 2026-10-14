@@ -537,7 +537,8 @@ def test_constant_estimator_pattern(raa):
         def __init__(self, cdf):
             self.cdf_ = cdf
 
-    model_only_cdf = cl.DevelopmentConstant(patterns=OnlyCDF(dev.cdf_)).fit(raa)
+    with pytest.warns(UserWarning, match="Estimator provides only 'cdf_'"):
+        model_only_cdf = cl.DevelopmentConstant(patterns=OnlyCDF(dev.cdf_)).fit(raa)
     assert np.allclose(dev.cdf_.values, model_only_cdf.ldf_.values)
 
     # Object with only ldf_ (no cdf_) with cdf style fallback
@@ -545,9 +546,10 @@ def test_constant_estimator_pattern(raa):
         def __init__(self, ldf):
             self.ldf_ = ldf
 
-    model_only_ldf = cl.DevelopmentConstant(
-        patterns=OnlyLDF(dev.ldf_), style="cdf"
-    ).fit(raa)
+    with pytest.warns(UserWarning, match="Estimator provides only 'ldf_'"):
+        model_only_ldf = cl.DevelopmentConstant(
+            patterns=OnlyLDF(dev.ldf_), style="cdf"
+        ).fit(raa)
     assert np.allclose(dev.ldf_.values, model_only_ldf.cdf_.values)
 
 
@@ -560,6 +562,20 @@ def test_constant_invalid_pattern_types(raa):
     # Multi-origin Triangle pattern
     with pytest.raises(ValueError, match="must have a single origin row"):
         cl.DevelopmentConstant(patterns=raa).fit(raa)
+
+    # Transformed multi-origin Triangle pattern (has ldf_ attribute attached)
+    transformed_multi = cl.Development().fit_transform(raa)
+    with pytest.raises(ValueError, match="must have a single origin row"):
+        cl.DevelopmentConstant(patterns=transformed_multi).fit(raa)
+
+    # Transformed 1-origin Triangle pattern (uses triangle values directly)
+    transformed_1orig = transformed_multi.iloc[..., 0:1, :]
+    model_1orig = cl.DevelopmentConstant(patterns=transformed_1orig, style="ldf").fit(
+        raa
+    )
+    assert np.allclose(
+        transformed_1orig.to_frame().values, model_1orig.ldf_.to_frame().values
+    )
 
     # Unsupported pattern type
     with pytest.raises(TypeError, match="Unsupported pattern type"):

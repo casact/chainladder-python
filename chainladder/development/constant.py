@@ -8,6 +8,7 @@ from typing import Any, Literal
 from chainladder.development.base import DevelopmentBase
 import numpy as np
 import pandas as pd
+import warnings
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -22,8 +23,12 @@ class DevelopmentConstant(DevelopmentBase):
         A representation of development factors indexed by age (in months). Can be
         a dictionary of age:value, a pandas Series, a 1-row or 1-column DataFrame,
         a 1D Triangle pattern (such as another estimator's ``ldf_`` or ``cdf_``),
-        or a fitted estimator. If callable is supplied, callable must return a dict
-        for each element of the callable axis.
+        or a fitted estimator. When passing a fitted estimator, the pattern matching
+        ``style`` (``ldf_`` or ``cdf_``) is used. If the estimator only provides one
+        pattern attribute (e.g. only ``cdf_`` or only ``ldf_``), it is used as a
+        convenience fallback and a UserWarning is issued if ``style`` does not match.
+        If callable is supplied, callable must return a dict for each element of the
+        callable axis.
     style: Literal['cdf', 'ldf'], optional (default='ldf')
         Type of pattern given to the Estimator. `cdf` for cumulative development factors
         and `ldf` for (non-cumulative) loss development factors.
@@ -231,16 +236,30 @@ class DevelopmentConstant(DevelopmentBase):
     @staticmethod
     def _normalize_patterns(patterns, style="ldf"):
         """Normalize pattern input (dict, Series, DataFrame, Triangle, estimator) into a dict."""
-        if hasattr(patterns, "cdf_") and style == "cdf":
-            patterns = patterns.cdf_
-        elif hasattr(patterns, "ldf_") and style == "ldf":
-            patterns = patterns.ldf_
-        elif hasattr(patterns, "cdf_") and not hasattr(patterns, "ldf_"):
-            patterns = patterns.cdf_
-        elif hasattr(patterns, "ldf_") and not hasattr(patterns, "cdf_"):
-            patterns = patterns.ldf_
+        is_triangle = hasattr(patterns, "odims") and hasattr(patterns, "ddims")
+        if not is_triangle:
+            if hasattr(patterns, "cdf_") and style == "cdf":
+                patterns = patterns.cdf_
+            elif hasattr(patterns, "ldf_") and style == "ldf":
+                patterns = patterns.ldf_
+            elif hasattr(patterns, "cdf_") and not hasattr(patterns, "ldf_"):
+                warnings.warn(
+                    f"Estimator provides only 'cdf_', which does not match style='{style}'. "
+                    f"Using 'cdf_' as fallback pattern.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                patterns = patterns.cdf_
+            elif hasattr(patterns, "ldf_") and not hasattr(patterns, "cdf_"):
+                warnings.warn(
+                    f"Estimator provides only 'ldf_', which does not match style='{style}'. "
+                    f"Using 'ldf_' as fallback pattern.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                patterns = patterns.ldf_
 
-        if hasattr(patterns, "values") and hasattr(patterns, "ddims"):
+        if hasattr(patterns, "odims") and hasattr(patterns, "ddims"):
             if (
                 hasattr(patterns, "shape")
                 and len(patterns.shape) >= 3
@@ -250,6 +269,7 @@ class DevelopmentConstant(DevelopmentBase):
                     "Triangle pattern must have a single origin row (e.g. model.ldf_ or model.cdf_)."
                 )
             vals = patterns.values[0, 0, 0, :]
+            vals = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
             s = pd.Series(vals, index=patterns.ddims, dtype=float)
         elif isinstance(patterns, pd.DataFrame):
             if patterns.shape[0] == 1:
