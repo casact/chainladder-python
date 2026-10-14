@@ -92,6 +92,7 @@ def test_approach_2_friedland_exhibit_iii():
     # Chainladder projection
     cl_model = cl.Chainladder().fit(model.transform(case_tri))
     assert np.isclose(cl_model.ultimate_.sum().sum(), 7011175, rtol=1e-3)
+    assert model.case_ is not case_tri
 
 
 def test_approach_2_with_ldf_style():

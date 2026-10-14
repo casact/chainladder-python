@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from chainladder.development import Development, DevelopmentBase
 from chainladder import options
@@ -341,7 +341,7 @@ class ImpliedCaseDevelopment(DevelopmentBase):
     paid_pattern : dict, Series, DataFrame, Triangle, or Development
         Benchmark paid loss development pattern. Can be cumulative (CDF)
         or incremental (LDF), as specified by ``style``.
-    style : {'cdf', 'ldf'}, optional (default='cdf')
+    style : Literal['cdf', 'ldf'], optional (default='cdf')
         Whether ``reported_pattern`` and ``paid_pattern`` are cumulative development
         factors ('cdf') or incremental link ratios ('ldf').
 
@@ -399,7 +399,7 @@ class ImpliedCaseDevelopment(DevelopmentBase):
         self,
         reported_pattern: Any = None,
         paid_pattern: Any = None,
-        style: str = "cdf",
+        style: Literal["cdf", "ldf"] = "cdf",
     ):
         self.reported_pattern = reported_pattern
         self.paid_pattern = paid_pattern
@@ -438,7 +438,7 @@ class ImpliedCaseDevelopment(DevelopmentBase):
                 f"Compute case reserves (e.g. incurred - paid) before fitting."
             )
 
-        case_tri = X
+        case_tri = self.X_
         obj = case_tri.val_to_dev().copy()
 
         # 2. Extract series of CDFs
@@ -472,7 +472,7 @@ class ImpliedCaseDevelopment(DevelopmentBase):
         self.ldf_ = dev_const.ldf_.set_backend(backend)
         self.case_ldf_ = dev_const.ldf_.set_backend(backend)
         self.case_cdf_ = dev_const.cdf_.set_backend(backend)
-        self.case_ = case_tri
+        self.case_ = case_tri.copy()
         return self
 
     def transform(self, X: Triangle) -> Triangle:
