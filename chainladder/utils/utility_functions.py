@@ -374,7 +374,7 @@ def read_json(json_str, array_backend=None):
 
     .. testoutput::
 
-        {"params": {"average": "simple", "drop": null, "drop_above": Infinity, "drop_below": 0.0, "drop_high": null, "drop_low": null, "drop_valuation": null, "fillna": null, "groupby": null, "n_periods": 4, "preserve": 1, "sigma_interpolation": "log-linear"}, "__class__": "Development"}
+        {"params": {"average": "simple", "drop": null, "drop_above": Infinity, "drop_below": 0.0, "drop_high": null, "drop_low": null, "drop_valuation": null, "fillna": null, "groupby": null, "max_dev": Infinity, "min_dev": -Infinity, "n_periods": 4, "preserve": 1, "sigma_interpolation": "log-linear"}, "__class__": "Development"}
         simple
         4
 
