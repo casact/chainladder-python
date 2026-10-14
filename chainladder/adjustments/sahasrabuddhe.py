@@ -511,11 +511,13 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         The mean claim size by development age at a single cost level, as
         :class:`LEV` takes it. This is the output of the claim size analysis,
         stated at the latest origin period's cost level.
-    trend: Triangle or Trend
+    trend: Triangle or Trend, optional
         Either a cost level index as a Triangle, or a :class:`Trend` to be
         fitted, as :class:`LEV` takes it. A Triangle index is in the form of a full
         triangle and is taken to be stated relative to the latest
         origin period.
+
+        Leaving it out assumes no trend.
 
     observed_limit: float
         The claim size limit of the observed data.
@@ -554,6 +556,56 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         from age ``j`` to the next age, and the last column is 1.0. A layer
         with no expected loss at an age gives a non-finite cumulative factor
         there, and the ratio of two such factors is NaN.
+
+    Examples
+    --------
+
+    .. testsetup::
+
+        import chainladder as cl
+
+    Given a 2% origin trend and claim size model, restate the triangle limited to 500k, and calculate the factors.
+
+    .. testcode::
+
+        genins = cl.load_sample("genins")
+        thetas = {
+            12: 28138, 24: 84242, 36: 133998, 48: 182460, 60: 204649,
+            72: 228245, 84: 252830, 96: 265063, 108: 275707, 120: 280000,
+        }
+        restated = cl.Sahasrabuddhe(
+            means=thetas,
+            trend=cl.Trend(0.02, axis="origin"),
+            observed_limit=1000000,
+            target_layer=(0, 500000),
+        ).fit(genins)
+        development = cl.Development(average="volume").fit(restated.triangle_)
+        print(development.cdf_.round(3))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+               12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult
+        (All)  12.199   3.503   2.054   1.467   1.278   1.186   1.121   1.078    1.013
+
+    Restate a pattern from one layer to another by supplying it to ``fit()``. When no ``trend`` is given,
+    so every origin period is at the same cost level, and the pattern applies to
+    all of them. Pass a ``trend`` to give each origin period its own pattern:
+
+    .. testcode::
+
+        layer = cl.Sahasrabuddhe(
+            means=thetas,
+            basic_limit=500000,
+            target_layer=(0, 1000000),
+        ).fit(development)
+        print(layer.cdf_.round(3))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+               12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+        (All)  14.245   4.079   2.342   1.609   1.373   1.246    1.15   1.093    1.017      1.0
     """
 
     # Fitted attributes.
@@ -602,8 +654,6 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         self: Sahasrabuddhe
             Returns the instance itself.
         """
-        if self.trend is None:
-            raise ValueError("trend is required. Build one with cl.Trend(...).")
         if self.target_layer is None:
             raise ValueError("target_layer is required.")
         try:
@@ -633,8 +683,11 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                     "Triangle to fit trend on. Pass trend as a Triangle: a Trend "
                     "fitted on a full rectangle of ones, then inverted."
                 )
-            # Create full dummy triangle used to calculate LEV.
-            grid = self.trend
+            if self.trend is None:
+                grid = self._constant_cost_level(pattern)
+            else:
+                # Create full dummy triangle used to calculate LEV.
+                grid = self.trend
 
         # noinspection PyProtectedMember
         base_row = self._base_slice = LEV._base_row(grid)
@@ -651,6 +704,49 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         else:
             self._fit_pattern(pattern, base_row)
         return self
+
+    def _constant_cost_level(self, pattern: Triangle) -> Triangle:
+        """
+        The one origin row a pattern is spread over when there is no trend.
+
+        Without a ``trend`` every origin period sits at the same cost level.
+
+        Parameters
+        ----------
+        pattern: Triangle
+            The development pattern being restated.
+
+        Returns
+        -------
+        Triangle
+            One origin row of ones over the ages of ``means``.
+
+        Raises
+        ------
+        ValueError
+            If ``means`` does not say which ages it is stated at, or does not
+            cover every age of the pattern.
+        """
+        if isinstance(self.means, dict):
+            ages = sorted(self.means)
+        elif self.means is not None and hasattr(self.means, "ddims"):
+            ages = [int(age) for age in np.asarray(self.means.ddims)]
+        else:
+            raise ValueError("means is required.")
+        pattern_ages = [int(age) for age in np.asarray(pattern.ddims)]
+        missing = [age for age in pattern_ages if age not in ages]
+        if missing:
+            raise ValueError(
+                f"means is missing development age(s) {missing} of the pattern. "
+                f"It must be stated at every age the pattern has: {pattern_ages}."
+            )
+        origin_row = pattern.copy().set_backend("numpy")
+        origin_row.values = np.ones(pattern.shape[:3] + (len(ages),))
+        origin_row.ddims = np.array(ages)
+        origin_row.is_pattern = False
+        # noinspection PyProtectedMember
+        origin_row._set_slicers()
+        return origin_row
 
     @staticmethod
     def _as_cdf(
@@ -698,6 +794,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             means=self.means_,
             limit=self._target[0],
         )
+        if layer.shape[-2] == 1:
+            # No trend: the means are already a single origin row.
+            return layer
         return layer.iloc[..., base_row, :]
 
     def _fit_triangle(
@@ -747,9 +846,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         base_row: slice
             The latest origin period's row of the origin axis.
         """
-        if self.trend is None or isinstance(self.trend, Trend):
-            raise ValueError("a development pattern needs trend as a Triangle.")
-        shape = self.trend.set_backend("numpy").copy()
+        shape = self.means_.set_backend("numpy").copy()
         ages = list(shape.development)
 
         aligned = self._cdf_by_age(cdf, ages)
@@ -958,10 +1055,14 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         development grain on annual origins reaches only every fourth age. Those
         ages are left out of the pattern.
         """
-        valuation = pd.DatetimeIndex(np.array(shape.valuation))
-        on_diagonal = np.asarray(valuation == shape.valuation_date).reshape(
-            shape.shape[-2:], order="F"
-        )
+        if shape.shape[-2] == 1:
+            # A single origin period is its own diagonal.
+            on_diagonal = np.ones(shape.shape[-2:], dtype=bool)
+        else:
+            valuation = pd.DatetimeIndex(np.array(shape.valuation))
+            on_diagonal = np.asarray(valuation == shape.valuation_date).reshape(
+                shape.shape[-2:], order="F"
+            )
         reached = np.asarray(on_diagonal.any(axis=0))
         if not reached.all():
             missing = [age for age, hit in zip(ages, reached) if not hit]
