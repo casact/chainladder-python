@@ -677,7 +677,6 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         # Imported here because chainladder.core imports this module.
         from chainladder.core.triangle import Triangle
 
-        claims: Triangle | None = None
         pattern = self._as_cdf(X)
         if pattern is None:
             if not isinstance(X, Triangle):
@@ -685,8 +684,8 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                     "X must be a Triangle of claims, a Triangle of cumulative "
                     "development factors, or a fitted development estimator."
                 )
-            claims = X
-            grid = X
+            base_row = self._fit_claim_size_model(X)
+            self._fit_triangle(X, base_row)
         else:
             if self.basic_limit is None:
                 raise ValueError("basic_limit is required to restate a pattern.")
@@ -696,12 +695,30 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                     "Triangle to fit trend on. Pass trend as a Triangle: a Trend "
                     "fitted on a full triangle of ones, then inverted."
                 )
+            # A pattern has a single origin row, so the rectangle comes from the
+            # trend, or from the ages of the means when there is none.
             if self.trend is None:
                 grid = self._constant_cost_level(pattern)
             else:
-                # Create full dummy triangle used to calculate LEV.
                 grid = self.trend
+            base_row = self._fit_claim_size_model(grid)
+            self._fit_pattern(pattern, base_row)
+        return self
 
+    def _fit_claim_size_model(self, grid: Triangle) -> slice:
+        """
+        Restate ``means`` onto every cell of ``grid``.
+
+        Parameters
+        ----------
+        grid: Triangle
+            The origin by development rectangle the claim size model covers.
+
+        Returns
+        -------
+        slice
+            The latest origin period's row of the origin axis.
+        """
         # noinspection PyProtectedMember
         base_row = self._base_slice = LEV._base_row(grid)
 
@@ -711,12 +728,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             trend=self.trend,
         ).fit(grid)
         self.means_ = self.lev_.means_
-
-        if claims is not None:
-            self._fit_triangle(claims, base_row)
-        elif pattern is not None:
-            self._fit_pattern(pattern, base_row)
-        return self
+        return base_row
 
     def _constant_cost_level(self, pattern: Triangle) -> Triangle:
         """
@@ -985,17 +997,15 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         """
         full_cdf = triangle.copy()
         full_cdf.values = cdf_values
-        for candidate in labeled_by:
-            if candidate.shape[0] == cdf_values.shape[0]:
-                full_cdf.kdims, full_cdf.key_labels = (
-                    candidate.kdims,
-                    candidate.key_labels,
-                )
-                break
-        for candidate in labeled_by:
-            if candidate.shape[1] == cdf_values.shape[1]:
-                full_cdf.vdims = candidate.vdims
-                break
+        # A broadcast axis is as long as the longest input along it, so that input
+        # labels it. Ties go to the first, in order of preference.
+        index_from = max(labeled_by, key=lambda candidate: candidate.shape[0])
+        columns_from = max(labeled_by, key=lambda candidate: candidate.shape[1])
+        full_cdf.kdims, full_cdf.key_labels = (
+            index_from.kdims,
+            index_from.key_labels,
+        )
+        full_cdf.vdims = columns_from.vdims
         # noinspection PyProtectedMember
         full_cdf._set_slicers()
         return full_cdf
