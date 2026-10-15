@@ -1120,7 +1120,7 @@ class Triangle(TriangleBase):
 
             True
         """
-        return self._pattern
+        return getattr(self, "_pattern", False)
 
     @is_pattern.setter
     def is_pattern(self, pattern: bool):
