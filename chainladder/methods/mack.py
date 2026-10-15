@@ -290,10 +290,10 @@ class MackChainladder(Chainladder):
         xp = obj.get_array_module()
         lxp = X.ldf_.get_array_module()
         full = getattr(X, "_full_triangle_", self.full_triangle_)
-        avg = {"regression": 0, "volume": 1, "simple": 2}
+        avg = {"regression": 0.0, "volume": 1.0, "simple": 2.0}
         avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
-        weight = xp.sqrt(full.values[..., : len(X.ddims)] ** (2 - val))
+        weight = xp.sqrt(full.values[..., : len(X.ddims)] ** (2.0 - val))
         obj.values = X.sigma_.values / num_to_nan(weight)
         w = lxp.concatenate(
             (X.w_, lxp.ones((val.shape[0], val.shape[1], val.shape[2], 1))), 3

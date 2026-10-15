@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
+    from typing import Self
 
 
 class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
@@ -449,18 +450,22 @@ class TriangleSelector(
     EstimatorIO,
 ):
     """
-    A transformer to assist with creating VotingChainladder workflows that weights between Incured/Paid or Reported/Closed.
+    A transformer to assist with creating VotingChainladder workflows that weights between
+    Incured/Paid or Reported/Closed.
 
     .. versionadded:: 0.10.0
 
     Parameters
     ----------
-    col: str
-        which `column` to perform the subsequent estiamtion on
+    col: str | list[str]
+        which `column`(s) to perform the subsequent estiamtion on
 
     Examples
     --------
-    Actuaries commonly uses both incurred and paid losses, or both reported and closed counts for estimating ultimate loss or ultimate count. We can use this helper class to create a singular VotingChainladder pipeline that weighs between incurred/paid methods, or reported/closed methods.
+    Actuaries commonly uses both incurred and paid losses, or both reported and closed counts
+    for estimating ultimate loss or ultimate count. We can use this helper class to create a
+    singular VotingChainladder pipeline that weighs between incurred/paid methods, or
+    reported/closed methods.
 
     .. testsetup::
 
@@ -505,11 +510,46 @@ class TriangleSelector(
         1997  664061.404455
     """
 
-    def __init__(self, col: str):
+    def __init__(self, col: str | list[str]):
         self.col = col
 
-    def fit(self, X: Triangle, y: None = None):
+    def fit(
+        self,
+        X: Triangle | None = None,
+        y: None = None,
+        sample_weight: Triangle | None = None,
+    ) -> Self:
+        """
+        Fit the model with X.
+
+        Parameters
+        ----------
+        X : Triangle
+            Ignored
+        y : None
+            Ignored
+        sample_weight : None
+            Ignored
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
         return self
 
-    def transform(self, X: Triangle):
-        return X[[self.col]]
+    def transform(self, X: Triangle) -> Triangle:
+        """
+        Return a specific column in X
+
+        Parameters
+        ----------
+        X : Triangle
+            The triangle to be transformed
+
+        Returns
+        -------
+            X[col]
+        """
+        cols = [self.col] if isinstance(self.col, str) else self.col
+        return X[cols]
