@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from chainladder import Triangle
+    from chainladder.development.base import DevelopmentBase
     from collections.abc import Iterable
     from typing import Any
 
@@ -114,7 +115,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                   12       24        36        48        60        72        84        96        108       120
         2010  28138.0  84242.0  133998.0  182457.0  204637.0  228209.0  252737.0  264923.0  275512.0  279779.0
 
-    Attaching at the narrower limit of the data triangle gives the layer
+    Attaching at the lower limit, that of the data triangle, gives the layer
     between the two:
 
     .. testcode::
@@ -394,7 +395,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         base_row: slice,
     ) -> None:
         """
-        Check that ``trend`` can restate ``means`` across the whole rectangle.
+        Check that ``trend`` can restate ``means`` across the whole triangle.
 
         Parameters
         ----------
@@ -419,7 +420,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                     f"trend does not share X's {axis} axis: trend runs "
                     f"{trend_labels[0]} through {trend_labels[-1]}, X runs {triangle_labels[0]} through "
                     f"{triangle_labels[-1]}. Build the trend against X, fitted on a "
-                    "full rectangle of ones so it covers the whole rectangle."
+                    "full triangle of ones so it covers the whole triangle."
                 )
 
         # Check that trend is defined across the base row origin period.
@@ -430,15 +431,15 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
             raise ValueError(
                 f"trend is not defined across the whole {X.origin[base_row][0]} "
                 "origin period, which every cell is restated against. Refit the "
-                "trend on a full rectangle of ones so it covers cells past the "
+                "trend on a full triangle of ones so it covers cells past the "
                 "valuation date."
             )
 
     def transform(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            y=None,  # noqa - expected by sklearn API
-            sample_weight=None  # noqa - expected by sklearn API
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        y=None,  # noqa - expected by sklearn API
+        sample_weight=None,  # noqa - expected by sklearn API
     ) -> Triangle:
         """
         If X and self are of different shapes, align self to X, else
@@ -472,17 +473,22 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
     basis can be converted into another without refitting. What ``fit``
     receives decides which conversion it does.
 
-    **Given a Triangle of claims**, every observation is restated to the basic
-    limit at the latest origin period's cost level -- equation 3.2:
+    **Given a Triangle of claims**, every observation is restated to the target
+    layer at the latest origin period's cost level -- equation 3.2, which is
+    the case of a ground-up target layer :math:`(0, B)`:
 
     .. math::
 
-        C_{i,j} = X_{i,j} \, \frac{\mathrm{LEV}(B;\, \Phi_{n,j})}
+        C_{i,j} = X_{i,j} \, \frac{\mathrm{LEV}(p;\, \Phi_{n,j})
+                                   - \mathrm{LEV}(a;\, \Phi_{n,j})}
                                   {\mathrm{LEV}(d;\, \Phi_{i,j})}
 
     where :math:`X` is the observed claims at ``observed_limit`` :math:`d`,
-    :math:`B` is ``basic_limit``, :math:`n` is the latest origin period, and
-    :math:`C` is ``triangle_``.
+    :math:`a` and :math:`p` are the attachment and limit of ``target_layer``,
+    :math:`n` is the latest origin period, and :math:`C` is ``triangle_``.
+    An excess layer holds almost no loss at the youngest ages, so development
+    fitted directly on it is unstable. The paper restates to the basic limit
+    instead and converts the fitted pattern, as below.
 
     **Given a development pattern** fitted at ``basic_limit``, the pattern for
     the target layer follows from a ratio of layer expectations -- equations
@@ -506,53 +512,45 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         The mean claim size by development age at a single cost level, as
         :class:`LEV` takes it. This is the output of the claim size analysis,
         stated at the latest origin period's cost level.
-    trend: Triangle or Trend
+    trend: Triangle or Trend, optional
         Either a cost level index as a Triangle, or a :class:`Trend` to be
         fitted, as :class:`LEV` takes it. A Triangle index is in the form of a full
         triangle and is taken to be stated relative to the latest
         origin period.
 
+        Leaving it out assumes no trend.
+
     observed_limit: float
-        The claim size limit of the observed data. Used only when
-        fitting a Triangle, since a pattern carries no data to restate.
+        The claim size limit of the observed data.
     basic_limit: float
-        The claim size limit that forms the common basis -- ``B`` in the
-        paper. A Triangle is restated onto it, and a pattern is assumed to
-        have been fitted on it.
+        The claim size limit that a development pattern is assumed to have
+        been fitted on -- ``B`` in the paper. Required when fitting a pattern.
+        A Triangle is restated onto ``target_layer`` and does not use it.
     target_layer: tuple[float | int, float | int] | None
         The layer to restate to, as ``(attachment, limit)``. Use
         ``np.inf`` for an unlimited top layer, e.g.
         ``(2_000_000, np.inf)``. A ground-up layer attaches at zero:
         ``(0, 500_000)``.
 
-        When fitting a Triangle this must be ``(0, basic_limit)``: restating
-        claims is a move onto the basis, and any other layer would be a
-        silently different calculation.
-
     Attributes
     ----------
     means_: Triangle
         The claim size model parameters restated to every cell's own cost
-        level -- ``means`` spread over the rectangle by ``trend``.
+        level -- ``means`` spread over the full triangle by ``trend``.
     triangle_: Triangle
-        Set when a Triangle was fitted: the restated claims, shaped like the
-        Triangle that was fit.
+        Set when a Triangle was fitted: the restated claims at target layer.
     cdf_: Triangle
         Set when a pattern was fitted: cumulative development factors for the
-        target layer, taken along the latest diagonal so that each exposure
+        target layer, taken along the latest diagonal of ``full_cdf_`` so that each exposure
         period develops from its own age at its own cost level.
     ldf_: Triangle
         Set when a pattern was fitted: ``cdf_`` as age-to-age factors.
     full_cdf_: Triangle
-        Set when a pattern was fitted: cumulative factors over the whole origin
-        x development rectangle, before collapsing to a diagonal. Each row is
-        one exposure period's complete pattern at its own cost level, so a
-        column shows how the same factor varies with cost level. The cells past
-        the latest diagonal are the factors a future valuation would use.
-
-        The development axis keeps the Triangle's own ages rather than pattern
-        labels, so that valuation arithmetic still works on the rectangle.
-        Column ``j`` holds the factor from age ``j`` to ultimate.
+        Set when a pattern was fitted: cumulative factors over the full triangle,
+        before collapsing to a diagonal. Each row is one exposure period's complete
+        pattern at its own cost level, so a column shows how the same factor varies
+        with cost level. The cells past the latest diagonal are the factors a future
+        valuation would use.
     full_ldf_: Triangle
         Set when a pattern was fitted: ``full_cdf_`` as age-to-age factors,
         ``full_cdf_(i,j) / full_cdf_(i,j+1)``. Column ``j`` holds the factor
@@ -560,14 +558,55 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         with no expected loss at an age gives a non-finite cumulative factor
         there, and the ratio of two such factors is NaN.
 
-        Note that its diagonal is **not** ``ldf_``, and the two answer
-        different questions. Each row here divides within itself, so it is one
-        exposure period's own pattern, entirely at that period's cost level.
-        ``ldf_`` divides along the diagonal of ``full_cdf_``, which steps up a
-        row with every age, so consecutive factors come from different
-        exposure periods -- which is what makes it the pattern to apply to a
-        Triangle, where each period sits at a different age.
+    Examples
+    --------
 
+    .. testsetup::
+
+        import chainladder as cl
+
+    Given a 2% origin trend and claim size model, restate the triangle limited to 500k, and calculate the factors.
+
+    .. testcode::
+
+        genins = cl.load_sample("genins")
+        thetas = {
+            12: 28138, 24: 84242, 36: 133998, 48: 182460, 60: 204649,
+            72: 228245, 84: 252830, 96: 265063, 108: 275707, 120: 280000,
+        }
+        restated = cl.Sahasrabuddhe(
+            means=thetas,
+            trend=cl.Trend(0.02, axis="origin"),
+            observed_limit=1000000,
+            target_layer=(0, 500000),
+        ).fit(genins)
+        development = cl.Development(average="volume").fit(restated.triangle_)
+        print(development.cdf_.round(3))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+               12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult
+        (All)  12.199   3.503   2.054   1.467   1.278   1.186   1.121   1.078    1.013
+
+    Restate a pattern from one layer to another by supplying it to ``fit()``. When no ``trend`` is given,
+    so every origin period is at the same cost level, and the pattern applies to
+    all of them. Pass a ``trend`` to give each origin period its own pattern:
+
+    .. testcode::
+
+        layer = cl.Sahasrabuddhe(
+            means=thetas,
+            basic_limit=500000,
+            target_layer=(0, 1000000),
+        ).fit(development)
+        print(layer.cdf_.round(3))
+
+    .. testoutput::
+        :options: +NORMALIZE_WHITESPACE
+
+               12-Ult  24-Ult  36-Ult  48-Ult  60-Ult  72-Ult  84-Ult  96-Ult  108-Ult  120-Ult
+        (All)  14.245   4.079   2.342   1.609   1.373   1.246    1.15   1.093    1.017      1.0
     """
 
     # Fitted attributes.
@@ -597,7 +636,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     def fit(
         self,
-        X: Triangle,  # noqa - sklearn convention
+        X: Triangle | DevelopmentBase,  # noqa - sklearn convention
         y=None,  # noqa - expected by sklearn API
         sample_weight: Triangle | None = None,  # noqa - expected by sklearn API
     ) -> Sahasrabuddhe:
@@ -606,8 +645,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X: Triangle
-            Data to which the model will be applied.
+        X: Triangle or DevelopmentBase
+            A Triangle of claims to restate, or a development pattern to
+            restate: a Triangle of cumulative factors or a fitted development
+            estimator.
         y: Ignored
         sample_weight: Ignored
 
@@ -616,10 +657,6 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         self: Sahasrabuddhe
             Returns the instance itself.
         """
-        if self.trend is None:
-            raise ValueError("trend is required. Build one with cl.Trend(...).")
-        if self.basic_limit is None:
-            raise ValueError("basic_limit is required.")
         if self.target_layer is None:
             raise ValueError("target_layer is required.")
         try:
@@ -627,7 +664,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         except (TypeError, ValueError):
             raise ValueError(
                 "target_layer must be a pair of limits, (attachment, "
-                f"limit), e.g. (0, {self.basic_limit}). Got "
+                "limit), e.g. (0, 500_000). Got "
                 f"{self.target_layer!r}."
             ) from None
         if limit <= attachment:
@@ -637,38 +674,96 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             )
         self._target = (attachment, limit)
 
+        # Imported here because chainladder.core imports this module.
+        from chainladder.core.triangle import Triangle
+
+        claims: Triangle | None = None
         pattern = self._as_cdf(X)
         if pattern is None:
+            if not isinstance(X, Triangle):
+                raise ValueError(
+                    "X must be a Triangle of claims, a Triangle of cumulative "
+                    "development factors, or a fitted development estimator."
+                )
+            claims = X
             grid = X
         else:
+            if self.basic_limit is None:
+                raise ValueError("basic_limit is required to restate a pattern.")
             if isinstance(self.trend, Trend):
                 raise ValueError(
                     "a development pattern has a single origin row, so there is no "
                     "Triangle to fit trend on. Pass trend as a Triangle: a Trend "
-                    "fitted on a full rectangle of ones, then inverted."
+                    "fitted on a full triangle of ones, then inverted."
                 )
-            # Create full dummy triangle used to calculate LEV.
-            grid = self.trend
+            if self.trend is None:
+                grid = self._constant_cost_level(pattern)
+            else:
+                # Create full dummy triangle used to calculate LEV.
+                grid = self.trend
 
         # noinspection PyProtectedMember
         base_row = self._base_slice = LEV._base_row(grid)
 
         # Restate `means` from the latest origin period onto every cell's own cost level.
         self.lev_ = LEV(
-            means=self.means, 
-            trend=self.trend
+            means=self.means,
+            trend=self.trend,
         ).fit(grid)
         self.means_ = self.lev_.means_
 
-        if pattern is None:
-            self._fit_triangle(X, base_row)
-        else:
+        if claims is not None:
+            self._fit_triangle(claims, base_row)
+        elif pattern is not None:
             self._fit_pattern(pattern, base_row)
         return self
 
+    def _constant_cost_level(self, pattern: Triangle) -> Triangle:
+        """
+        The one origin row a pattern is spread over when there is no trend.
+
+        Without a ``trend`` every origin period sits at the same cost level.
+
+        Parameters
+        ----------
+        pattern: Triangle
+            The development pattern being restated.
+
+        Returns
+        -------
+        Triangle
+            One origin row of ones over the ages of ``means``.
+
+        Raises
+        ------
+        ValueError
+            If ``means`` does not say which ages it is stated at, or does not
+            cover every age of the pattern.
+        """
+        if isinstance(self.means, dict):
+            ages = sorted(self.means)
+        elif self.means is not None and hasattr(self.means, "ddims"):
+            ages = [int(age) for age in np.asarray(self.means.ddims)]
+        else:
+            raise ValueError("means is required.")
+        pattern_ages = [int(age) for age in np.asarray(pattern.ddims)]
+        missing = [age for age in pattern_ages if age not in ages]
+        if missing:
+            raise ValueError(
+                f"means is missing development age(s) {missing} of the pattern. "
+                f"It must be stated at every age the pattern has: {pattern_ages}."
+            )
+        origin_row = pattern.copy().set_backend("numpy")
+        origin_row.values = np.ones(pattern.shape[:3] + (len(ages),))
+        origin_row.ddims = np.array(ages)
+        origin_row.is_pattern = False
+        # noinspection PyProtectedMember
+        origin_row._set_slicers()
+        return origin_row
+
     @staticmethod
     def _as_cdf(
-            X: Triangle | Any  # noqa - sklearn convention
+        X: Triangle | Any,  # noqa - sklearn convention
     ) -> Triangle | None:
         """
         Extract the cumulative factors ``X`` carries, or return ``None`` if it carries claims.
@@ -690,13 +785,40 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         # Case fitted development estimator.
         return getattr(X, "cdf_", None)
 
+    def _target_at_latest(self, base_row: slice) -> Triangle:
+        """
+        The target layer's expected loss at the latest origin period's cost level.
+
+        Parameters
+        ----------
+        base_row: slice
+            The latest origin period's row of the origin axis.
+
+        Returns
+        -------
+        Triangle
+            One origin row, over every development age.
+        """
+        # noinspection PyProtectedMember
+        layer = LEV._limited_expected_value(
+            means=self.means_,
+            limit=self._target[1],
+        ) - LEV._limited_expected_value(
+            means=self.means_,
+            limit=self._target[0],
+        )
+        if layer.shape[-2] == 1:
+            # No trend: the means are already a single origin row.
+            return layer
+        return layer.iloc[..., base_row, :]
+
     def _fit_triangle(
-            self, 
-            X: Triangle,  # noqa - sklearn convention
-            base_row: slice,
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        base_row: slice,
     ) -> None:
         """
-        Restate claims onto ``basic_limit`` -- equation 3.2.
+        Restate claims onto ``target_layer`` -- equation 3.2.
 
         Parameters
         ----------
@@ -708,39 +830,24 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         Raises
         ------
         ValueError
-            If ``observed_limit`` is missing, or ``target_layer`` is a layer
-            other than ``(0, basic_limit)``.
+            If ``observed_limit`` is missing.
         """
         if self.observed_limit is None:
             raise ValueError("observed_limit is required to restate a Triangle.")
-        if self._target != (0.0, float(self.basic_limit)):
-            raise ValueError(
-                "restating a Triangle moves it onto basic_limit, so the target "
-                f"layer must be (0, {self.basic_limit}). Got "
-                f"{self._target}. Fit a development pattern instead to restate "
-                "onto another layer."
-            )
-        # Restate the means at basic limit and extract the most recent cost level.
-        # noinspection PyProtectedMember
-        target = LEV._limited_expected_value(
-            means=self.means_,
-            limit=self.basic_limit
-        ).iloc[..., base_row, :]
-
-        # Restate the claims to the basic limit.
+        # Restate the claims to the target layer at the most recent cost level.
         # noinspection PyProtectedMember
         self.triangle_ = (
-            X * target / LEV._limited_expected_value(
-            means=self.means_,
-            limit=self.observed_limit)
+            X
+            * self._target_at_latest(base_row)
+            / LEV._limited_expected_value(means=self.means_, limit=self.observed_limit)
         )
         # Restore the valuation date.
         self.triangle_.valuation_date = X.valuation_date
 
     def _fit_pattern(
-            self,
-            cdf: Triangle,
-            base_row: slice,
+        self,
+        cdf: Triangle,
+        base_row: slice,
     ) -> None:
         """
         Restate a pattern onto the target layer -- equations 3.8 and 3.9.
@@ -752,18 +859,16 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         base_row: slice
             The latest origin period's row of the origin axis.
         """
-        if self.trend is None or isinstance(self.trend, Trend):
-            raise ValueError("a development pattern needs trend as a Triangle.")
-        shape = self.trend.set_backend("numpy").copy()
+        shape = self.means_.set_backend("numpy").copy()
         ages = list(shape.development)
 
         aligned = self._cdf_by_age(cdf, ages)
         # noinspection PyProtectedMember
         layer = LEV._limited_expected_value(
-            means=self.means_, 
+            means=self.means_,
             limit=self._target[1],
         ) - LEV._limited_expected_value(
-            means=self.means_, 
+            means=self.means_,
             limit=self._target[0],
         )
         # noinspection PyProtectedMember
@@ -777,9 +882,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         emerged = layer_values / anchor_values
         factors = aligned * (layer_values[..., -1:] / anchor_values[..., -1:]) / emerged
 
-        full_cdf = shape.copy()
+        # The factors take their index and columns from whichever input carries
+        # them: the pattern, the trend, or the means.
+        full_cdf = self._labeled(shape, factors, (cdf, shape, self.means_))
         full_cdf.valuation_date = full_cdf.valuation.max()
-        full_cdf.values = factors
         self.full_cdf_ = full_cdf
 
         # Calculate the LDFs.
@@ -789,31 +895,32 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         full_ldf.values = ratios
         self.full_ldf_ = full_ldf
 
-        # Restore the valuation date.
-        shape.valuation_date = shape.valuation[shape.shape[-2] - 1]
+        # Take the diagonal at the newest origin period's first development age.
+        diagonal = full_cdf.copy()
+        diagonal.valuation_date = diagonal.valuation[diagonal.shape[-2] - 1]
 
         try:
             fitted = self._as_pattern(
-                shape=shape,
+                shape=diagonal,
                 factors=factors,
-                ages=ages
+                ages=ages,
             )
         except ValueError as error:
             # An incomplete diagonal makes no usable pattern, but it takes
-            # nothing away from the rectangle -- defined for every cell.
+            # nothing away from the triangle -- defined for every cell.
             # Warning rather than raising keeps full_cdf_/full_ldf_ reachable.
             warnings.warn(f"{error} cdf_ and ldf_ are not set.", UserWarning)
             return
         self.cdf_, self.ldf_ = fitted.cdf_, fitted.ldf_
 
     def transform(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            y=None,  # noqa - expected by sklearn API
-            sample_weight=None, # noqa - expected by sklearn API
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        y=None,  # noqa - expected by sklearn API
+        sample_weight=None,  # noqa - expected by sklearn API
     ) -> Triangle:
         """
-        Return X restated onto the common basis.
+        Return X restated onto the target layer.
 
         Parameters
         ----------
@@ -832,16 +939,14 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             X_new._set_slicers()
             return X_new
 
-        # Restate the Triangle to the basic limit at the cost level of the latest origin period.
+        # Restate the Triangle to the target layer at the cost level of the latest origin period.
         # noinspection PyProtectedMember
-        target = LEV._limited_expected_value(
-            means=self.means_, 
-            limit=self.basic_limit,
-        ).iloc[..., self._base_slice, :]
-        # noinspection PyProtectedMember
-        X_new = X * target / LEV._limited_expected_value(  # noqa - sklearn convention
-            means=self.means_, 
-            limit=self.observed_limit
+        X_new = (
+            X
+            * self._target_at_latest(self._base_slice)
+            / LEV._limited_expected_value(  # noqa - sklearn convention
+                means=self.means_, limit=self.observed_limit
+            )
         )
         X_new.valuation_date = X.valuation_date
         X_new.means_ = self.means_
@@ -850,9 +955,53 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         return X_new
 
     @staticmethod
+    def _labeled(
+        triangle: Triangle,
+        cdf_values: np.ndarray,
+        labeled_by: tuple,
+    ) -> Triangle:
+        """
+        Give ``cdf_values`` the axes of ``triangle``, labeled by the right source. Helper function used to
+        support multidimensionality.
+
+        Parameters
+        ----------
+        triangle: Triangle
+            Supplies the origin and development axes.
+        cdf_values: ndarray
+            The array to hold, shaped ``(index, columns, origin, development)``.
+        labeled_by: tuple of Triangle
+            Candidates to take the index and the columns from, in order of
+            preference. The first one whose length on an axis matches
+            ``cdf_values`` supplies that axis, so the index and the columns can
+            come from different places.
+
+        Returns
+        -------
+        Triangle
+            A copy of ``triangle`` holding ``cdf_values``.
+        """
+        full_cdf = triangle.copy()
+        full_cdf.values = cdf_values
+        for candidate in labeled_by:
+            if candidate.shape[0] == cdf_values.shape[0]:
+                full_cdf.kdims, full_cdf.key_labels = (
+                    candidate.kdims,
+                    candidate.key_labels,
+                )
+                break
+        for candidate in labeled_by:
+            if candidate.shape[1] == cdf_values.shape[1]:
+                full_cdf.vdims = candidate.vdims
+                break
+        # noinspection PyProtectedMember
+        full_cdf._set_slicers()
+        return full_cdf
+
+    @staticmethod
     def _cdf_by_age(
-            development: Triangle | Any,
-            ages: Iterable[int],
+        development: Triangle | Any,
+        ages: Iterable[int],
     ) -> np.ndarray:
         """
         Align a development pattern to ``ages``, by age rather than by position.
@@ -893,9 +1042,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _as_pattern(
-            shape: Triangle,
-            factors,
-            ages: list,
+        shape: Triangle,
+        factors,
+        ages: list,
     ) -> DevelopmentConstant:
         """
         Collapse an array of factors to its latest diagonal, as a pattern.
@@ -905,7 +1054,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         shape: Triangle
             The Triangle the factors are shaped like, numpy backed.
         factors: ndarray
-            The factor surface, over origin x development.
+            The factor array, over origin x development.
         ages: list
             The development ages of ``shape``.
 
@@ -922,10 +1071,14 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         development grain on annual origins reaches only every fourth age. Those
         ages are left out of the pattern.
         """
-        valuation = pd.DatetimeIndex(np.array(shape.valuation))
-        on_diagonal = np.asarray(valuation == shape.valuation_date).reshape(
-            shape.shape[-2:], order="F"
-        )
+        if shape.shape[-2] == 1:
+            # A single origin period is its own diagonal.
+            on_diagonal = np.ones(shape.shape[-2:], dtype=bool)
+        else:
+            valuation = pd.DatetimeIndex(np.array(shape.valuation))
+            on_diagonal = np.asarray(valuation == shape.valuation_date).reshape(
+                shape.shape[-2:], order="F"
+            )
         reached = np.asarray(on_diagonal.any(axis=0))
         if not reached.all():
             missing = [age for age, hit in zip(ages, reached) if not hit]
@@ -939,13 +1092,24 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                 "read `full_cdf_` instead."
             )
         rows = np.argmax(on_diagonal, axis=0)
-        pattern = {
-            age: float(factors[..., rows[position], position].flat[0])
-            for position, age in enumerate(ages)
-        }
+        # One diagonal per index and column: (index, columns, 1, development).
+        diagonal = np.stack(
+            [
+                factors[..., rows[position], position]
+                for position in range(factors.shape[-1])
+            ],
+            axis=-1,
+        )[..., None, :]
+        ldf = np.concatenate(
+            (diagonal[..., :-1] / diagonal[..., 1:], diagonal[..., -1:]), axis=-1
+        )
+        # DevelopmentConstant takes a single pattern, so it supplies the
+        # structure from the first slice and the values are set for every slice.
+        pattern = {age: float(diagonal[0, 0, 0, i]) for i, age in enumerate(ages)}
         development = DevelopmentConstant(
-            patterns=pattern, 
+            patterns=pattern,
             style="cdf",
         )
         development.fit(shape)
+        development.ldf_.values = ldf
         return development
