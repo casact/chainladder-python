@@ -436,10 +436,10 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
             )
 
     def transform(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            y=None,  # noqa - expected by sklearn API
-            sample_weight=None  # noqa - expected by sklearn API
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        y=None,  # noqa - expected by sklearn API
+        sample_weight=None,  # noqa - expected by sklearn API
     ) -> Triangle:
         """
         If X and self are of different shapes, align self to X, else
@@ -707,8 +707,8 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         # Restate `means` from the latest origin period onto every cell's own cost level.
         self.lev_ = LEV(
-            means=self.means, 
-            trend=self.trend
+            means=self.means,
+            trend=self.trend,
         ).fit(grid)
         self.means_ = self.lev_.means_
 
@@ -763,7 +763,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _as_cdf(
-            X: Triangle | Any  # noqa - sklearn convention
+        X: Triangle | Any,  # noqa - sklearn convention
     ) -> Triangle | None:
         """
         Extract the cumulative factors ``X`` carries, or return ``None`` if it carries claims.
@@ -813,9 +813,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         return layer.iloc[..., base_row, :]
 
     def _fit_triangle(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            base_row: slice,
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        base_row: slice,
     ) -> None:
         """
         Restate claims onto ``target_layer`` -- equation 3.2.
@@ -837,17 +837,17 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         # Restate the claims to the target layer at the most recent cost level.
         # noinspection PyProtectedMember
         self.triangle_ = (
-            X * self._target_at_latest(base_row) / LEV._limited_expected_value(
-            means=self.means_,
-            limit=self.observed_limit)
+            X
+            * self._target_at_latest(base_row)
+            / LEV._limited_expected_value(means=self.means_, limit=self.observed_limit)
         )
         # Restore the valuation date.
         self.triangle_.valuation_date = X.valuation_date
 
     def _fit_pattern(
-            self,
-            cdf: Triangle,
-            base_row: slice,
+        self,
+        cdf: Triangle,
+        base_row: slice,
     ) -> None:
         """
         Restate a pattern onto the target layer -- equations 3.8 and 3.9.
@@ -865,10 +865,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         aligned = self._cdf_by_age(cdf, ages)
         # noinspection PyProtectedMember
         layer = LEV._limited_expected_value(
-            means=self.means_, 
+            means=self.means_,
             limit=self._target[1],
         ) - LEV._limited_expected_value(
-            means=self.means_, 
+            means=self.means_,
             limit=self._target[0],
         )
         # noinspection PyProtectedMember
@@ -903,7 +903,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             fitted = self._as_pattern(
                 shape=diagonal,
                 factors=factors,
-                ages=ages
+                ages=ages,
             )
         except ValueError as error:
             # An incomplete diagonal makes no usable pattern, but it takes
@@ -914,10 +914,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         self.cdf_, self.ldf_ = fitted.cdf_, fitted.ldf_
 
     def transform(
-            self,
-            X: Triangle,  # noqa - sklearn convention
-            y=None,  # noqa - expected by sklearn API
-            sample_weight=None, # noqa - expected by sklearn API
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        y=None,  # noqa - expected by sklearn API
+        sample_weight=None,  # noqa - expected by sklearn API
     ) -> Triangle:
         """
         Return X restated onto the target layer.
@@ -941,9 +941,12 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         # Restate the Triangle to the target layer at the cost level of the latest origin period.
         # noinspection PyProtectedMember
-        X_new = X * self._target_at_latest(self._base_slice) / LEV._limited_expected_value(  # noqa - sklearn convention
-            means=self.means_, 
-            limit=self.observed_limit
+        X_new = (
+            X
+            * self._target_at_latest(self._base_slice)
+            / LEV._limited_expected_value(  # noqa - sklearn convention
+                means=self.means_, limit=self.observed_limit
+            )
         )
         X_new.valuation_date = X.valuation_date
         X_new.means_ = self.means_
@@ -953,9 +956,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _labeled(
-            triangle: Triangle,
-            cdf_values: np.ndarray,
-            labeled_by: tuple,
+        triangle: Triangle,
+        cdf_values: np.ndarray,
+        labeled_by: tuple,
     ) -> Triangle:
         """
         Give ``cdf_values`` the axes of ``triangle``, labeled by the right source. Helper function used to
@@ -997,8 +1000,8 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _cdf_by_age(
-            development: Triangle | Any,
-            ages: Iterable[int],
+        development: Triangle | Any,
+        ages: Iterable[int],
     ) -> np.ndarray:
         """
         Align a development pattern to ``ages``, by age rather than by position.
@@ -1039,9 +1042,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     @staticmethod
     def _as_pattern(
-            shape: Triangle,
-            factors,
-            ages: list,
+        shape: Triangle,
+        factors,
+        ages: list,
     ) -> DevelopmentConstant:
         """
         Collapse an array of factors to its latest diagonal, as a pattern.
@@ -1104,7 +1107,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         # structure from the first slice and the values are set for every slice.
         pattern = {age: float(diagonal[0, 0, 0, i]) for i, age in enumerate(ages)}
         development = DevelopmentConstant(
-            patterns=pattern, 
+            patterns=pattern,
             style="cdf",
         )
         development.fit(shape)
