@@ -32,6 +32,8 @@ parts:
       - file: user_guide/utilities.ipynb
       - file: user_guide/style.ipynb
   - chapters:
+    - file: library/migration_guide.md
+  - chapters:
     - file: friedland/index.rst
       sections:
       - file: friedland/chapter_6.rst
