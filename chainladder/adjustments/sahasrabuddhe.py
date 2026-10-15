@@ -737,8 +737,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         Raises
         ------
         ValueError
-            If ``means`` does not say which ages it is stated at, or does not
-            cover every age of the pattern.
+            If ``means`` does not say which ages it is stated at, or leaves a
+            gap among the pattern's ages up to its own last age. Pattern ages
+            beyond that, such as a tail, are ignored, as they are with a trend.
         """
         if isinstance(self.means, dict):
             ages = sorted(self.means)
@@ -747,11 +748,12 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         else:
             raise ValueError("means is required.")
         pattern_ages = [int(age) for age in np.asarray(pattern.ddims)]
-        missing = [age for age in pattern_ages if age not in ages]
+        last = max(ages)
+        missing = [age for age in pattern_ages if age not in ages and age < last]
         if missing:
             raise ValueError(
                 f"means is missing development age(s) {missing} of the pattern. "
-                f"It must be stated at every age the pattern has: {pattern_ages}."
+                f"It must be stated at every age the pattern has up to {last}."
             )
         origin_row = pattern.copy().set_backend("numpy")
         origin_row.values = np.ones(pattern.shape[:3] + (len(ages),))
@@ -941,7 +943,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         # Restate the Triangle to the target layer at the cost level of the latest origin period.
         # noinspection PyProtectedMember
-        X_new = (
+        X_new = (  # noqa sklearn convention
             X
             * self._target_at_latest(self._base_slice)
             / LEV._limited_expected_value(  # noqa - sklearn convention

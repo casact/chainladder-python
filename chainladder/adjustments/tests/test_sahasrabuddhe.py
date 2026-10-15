@@ -163,6 +163,64 @@ def _values(tri: Triangle, i: int, c: int) -> np.ndarray:
     return values[i if values.shape[0] > 1 else 0, c if values.shape[1] > 1 else 0]
 
 
+def _fit_without_and_with_constant_trend(
+    genins: Triangle, pattern: Any
+) -> tuple[cl.Sahasrabuddhe, cl.Sahasrabuddhe]:
+    """
+    Fit a pattern to the ground-up layer to $1,000,000, once with no trend and
+    once with a constant (all ones) trend, which means the same thing.
+
+    Parameters
+    ----------
+    genins: Triangle
+        The genins sample data set, which sets the ages the means are stated at.
+    pattern: Any
+        The development pattern to fit, a Triangle or a fitted estimator.
+
+    Returns
+    -------
+    tuple[cl.Sahasrabuddhe, cl.Sahasrabuddhe]
+        The fit with no trend, then the fit with a constant trend.
+
+    """
+    kwargs: dict[str, Any] = {
+        "means": dict(zip(genins.development, THETA_10)),
+        "basic_limit": 500_000,
+        "target_layer": (0, 1_000_000),
+    }
+    without = cl.Sahasrabuddhe(**kwargs).fit(pattern)
+    constant = cl.Sahasrabuddhe(trend=_ones(genins), **kwargs).fit(pattern)
+    return without, constant
+
+
+def _assert_same_pattern(
+    first: cl.Sahasrabuddhe, second: cl.Sahasrabuddhe, atol: float
+) -> None:
+    """
+    Assert that two fits give the same cdf_ and ldf_.
+
+    Parameters
+    ----------
+    first: cl.Sahasrabuddhe
+        The first fitted estimator.
+    second: cl.Sahasrabuddhe
+        The second fitted estimator.
+    atol: float
+        The absolute tolerance used for comparisons.
+
+    Returns
+    -------
+    None
+
+    """
+    for name in ("cdf_", "ldf_"):
+        assert np.allclose(
+            _values(getattr(first, name), 0, 0),
+            _values(getattr(second, name), 0, 0),
+            atol=atol,
+        ), name
+
+
 @pytest.fixture
 def paper_trend(genins: Triangle) -> Triangle:
     """
@@ -2074,20 +2132,8 @@ def test_pattern_without_a_trend_is_a_constant_cost_level(
     None
 
     """
-    kwargs: dict[str, Any] = {
-        "means": dict(zip(genins.development, THETA_10)),
-        "basic_limit": 500_000,
-        "target_layer": (0, 1_000_000),
-    }
-    bare = cl.Sahasrabuddhe(**kwargs).fit(paper_development)
-    constant = cl.Sahasrabuddhe(trend=_ones(genins), **kwargs).fit(paper_development)
-
-    for name in ("cdf_", "ldf_"):
-        assert np.allclose(
-            _values(getattr(bare, name), 0, 0),
-            _values(getattr(constant, name), 0, 0),
-            atol=atol,
-        ), name
+    bare, constant = _fit_without_and_with_constant_trend(genins, paper_development)
+    _assert_same_pattern(bare, constant, atol)
     assert bare.full_cdf_.shape[-2] == 1
     assert bare.full_ldf_.shape[-2] == 1
     for row in range(constant.full_cdf_.shape[-2]):
@@ -2098,14 +2144,18 @@ def test_pattern_without_a_trend_is_a_constant_cost_level(
         )
 
 
-def test_pattern_without_a_trend_needs_means_at_every_pattern_age(
+def test_pattern_without_a_trend_needs_means_without_gaps(
+    genins: Triangle,
     paper_development: cl.Development,
 ) -> None:
     """
-    Without a trend, means has to be stated at every age of the pattern.
+    Without a trend, means has to be stated at every age of the pattern up to
+    its own last age. A gap would silently drop that age from the rectangle.
 
     Parameters
     ----------
+    genins: Triangle
+        The genins sample data set.
     paper_development: cl.Development
         Volume-weighted development fitted on the paper's restated triangle.
 
@@ -2114,12 +2164,46 @@ def test_pattern_without_a_trend_needs_means_at_every_pattern_age(
     None
 
     """
-    with pytest.raises(ValueError, match="means is missing development age"):
+    means = dict(zip(genins.development, THETA_10))
+    del means[60]
+    with pytest.raises(ValueError, match=r"missing development age\(s\) \[60\]"):
         cl.Sahasrabuddhe(
-            means={12: 28138.0, 24: 84242.0},
+            means=means,
             basic_limit=500_000,
             target_layer=(0, 1_000_000),
         ).fit(paper_development)
+
+
+def test_pattern_without_a_trend_ignores_tail_ages_beyond_the_means(
+    genins: Triangle,
+    paper_model: cl.Sahasrabuddhe,
+    atol: float,
+) -> None:
+    """
+    A fitted tail adds ages beyond the triangle's own, such as 132 or 9999.
+    Means are not stated there, and the pattern is restated on the ages they
+    are stated at, as it is with a trend.
+
+    Parameters
+    ----------
+    genins: Triangle
+        The genins sample data set.
+    paper_model: cl.Sahasrabuddhe
+        Sahasrabuddhe fitted on genins as in the paper's Example 1.
+    atol: float
+        The absolute tolerance used for comparisons.
+
+    Returns
+    -------
+    None
+
+    """
+    transformed = cl.Development(average="volume").fit_transform(paper_model.triangle_)
+    tailed = cl.TailConstant(1.05).fit(transformed)
+    assert np.asarray(tailed.cdf_.ddims).max() > np.asarray(genins.development).max()
+
+    bare, constant = _fit_without_and_with_constant_trend(genins, tailed)
+    _assert_same_pattern(bare, constant, atol)
 
 
 def test_pattern_without_a_trend_takes_means_as_a_triangle(
