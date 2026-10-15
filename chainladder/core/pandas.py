@@ -1313,7 +1313,7 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
             )
         obj._set_slicers()
         if auto_sparse:
-            obj = obj._auto_sparse()
+            obj._auto_sparse()
         obj.values = cast("BackendArray", num_to_nan(obj.values))
         if not keepdims and obj.shape == (1, 1, 1, 1):
             return obj.values[0, 0, 0, 0]
@@ -1380,7 +1380,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
             obj.odims = odims.values
         obj._set_slicers()
         if auto_sparse:
-            obj = obj._auto_sparse()
+            obj._auto_sparse()
         return obj
 
     set_method(cls=cls, func=agg_func, k=k)
