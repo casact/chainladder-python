@@ -2174,6 +2174,30 @@ def test_pattern_without_a_trend_needs_means_without_gaps(
         ).fit(paper_development)
 
 
+def test_pattern_without_a_trend_requires_means(
+    paper_development: cl.Development,
+) -> None:
+    """
+    Without a trend, the ages of the triangle come from the means, so a
+    pattern cannot be restated without them.
+
+    Parameters
+    ----------
+    paper_development: cl.Development
+        Volume-weighted development fitted on the paper's restated triangle.
+
+    Returns
+    -------
+    None
+
+    """
+    with pytest.raises(ValueError, match="means is required"):
+        cl.Sahasrabuddhe(
+            basic_limit=500_000,
+            target_layer=(0, 1_000_000),
+        ).fit(paper_development)
+
+
 def test_pattern_without_a_trend_ignores_tail_ages_beyond_the_means(
     genins: Triangle,
     paper_model: cl.Sahasrabuddhe,
