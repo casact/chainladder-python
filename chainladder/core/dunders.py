@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any
+    from chainladder import Triangle
 
 
 class TriangleDunders:
@@ -415,7 +416,7 @@ class TriangleDunders:
         obj.values = abs(obj.values)
         return obj
 
-    def __mul__(self, other):
+    def __mul__(self, other: Any) -> Triangle:
         """
         Element-wise multiplication.
 
@@ -461,7 +462,7 @@ class TriangleDunders:
             obj.values = obj.values * other
         return obj
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Any) -> Triangle:
         return self if other == 1 else self.__mul__(other)
 
     def __pow__(self, other):
