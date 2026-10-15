@@ -1,11 +1,23 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
 from chainladder.development import Development
+from chainladder import options
 import pandas as pd
 import warnings
+
+from typing import get_args, Literal, Self, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
+
+
+_ValidCurves = Literal["exponential", "inverse_power", "weibull"]
+_ValidErrors = Literal["raise", "ignore"]
 
 
 class TailCurve(TailBase):
@@ -14,7 +26,7 @@ class TailCurve(TailBase):
 
     Parameters
     ----------
-    curve : str ('exponential', 'inverse_power')
+    curve : Literal['exponential', 'inverse_power', 'weibull']
         The type of curve extrapolation you'd like to use
     fit_period : tuple (start, stop) or list(bool)
         A tuple representing the range of ldfs to use in the curve fit.
@@ -22,13 +34,19 @@ class TailCurve(TailBase):
         (48, None) will use development factors for age 48 and beyond.
         Alternatively, passing a list of booleans [True, False, ...] will
         allow for excluding (False) any development patterns from fitting.
-    extrap_periods : int
+    extrap_periods : int (default=100)
         Then number of development periods from attachment point to extrapolate
-        the fit.
-    errors : str ('raise' or 'ignore')
+        the fit. A fallback value of 1 period will be used if regression coeffs
+        do not result in converging tail factors
+    errors : Literal['raise', 'ignore']
         Whether to raise an error or ignore observations that violate the
-        distribution being fit.  The most common is ldfs < 1.0 will not work
-        in either the ``exponential`` or ``inverse_power`` fits.
+        distribution being fit.  The most common are
+
+        - ldfs < 1.0 will not work in either the ``exponential`` or
+        ``inverse_power`` fits.
+
+        - ldfs that result in an increasing tail (ignore will set
+        ``extrap_periods`` to 1)
     attachment_age: int (default=None)
         The age at which to attach the fitted curve.  If None, then the latest
         age is used. Measures of variability from original ``ldf_`` are retained
@@ -36,13 +54,12 @@ class TailCurve(TailBase):
     reg_threshold : tuple (lower, upper)
         A tuple representing the lower and upper thresholds for the ldfs to be
         considered in the log regression of the tail fitting. Default lower
-        threshold set to 1.00001 to avoid distortion caused by ldfs close to 1.
-        Upper threshold can be used as an alternative to the fit_period start,
-        to make the selection value based rather then period based.
-    projection_period : int
+        threshold set to the default NOMINAL_TAIL to avoid distortion caused
+        by ldfs close to 1. Upper threshold can be used as an alternative to the
+        fit_period start, to make the selection value based rather then period based.
+    projection_period : int (default=12)
         The number of months beyond the latest available development age the
         `ldf_` and `cdf_` vectors should extend.
-
 
     Attributes
     ----------
@@ -54,7 +71,7 @@ class TailCurve(TailBase):
         Point estimate of tail at latest maturity available in the Triangle.
     slope_ : DataFrame
         Slope parameter of the curve fit.
-    intercept : DataFrame
+    intercept_ : DataFrame
         Intercept parameter of the curve fit.
 
     Examples
@@ -130,26 +147,14 @@ class TailCurve(TailBase):
 
     def __init__(
         self,
-        curve="exponential",
-        fit_period=(None, None),
-        extrap_periods=100,
-        errors="ignore",
-        attachment_age=None,
-        reg_threshold=(1.00001, None),
-        projection_period=12,
+        curve: _ValidCurves = "exponential",
+        fit_period: tuple[int | None, int | None] | list[bool] = (None, None),
+        extrap_periods: int = 100,
+        errors: _ValidErrors = "ignore",
+        attachment_age: int | None = None,
+        reg_threshold: tuple[float | None, float | None] = (options.NOMINAL_TAIL, None),
+        projection_period: int = 12,
     ):
-        # validate arguments
-
-        if curve not in ["exponential", "inverse_power", "weibull"]:
-            raise ValueError(
-                "Invalid curve type specified. Accepted values are 'exponential', 'inverse_power' and 'weibull'."
-            )
-
-        if errors not in ["ignore", "raise"]:
-            raise ValueError(
-                "Invalid value argument supplied to the errors parameter. Accepted values are 'raise' "
-                "and 'ignore'."
-            )
         self.curve = curve
         self.fit_period = fit_period
         self.extrap_periods = extrap_periods
@@ -158,33 +163,49 @@ class TailCurve(TailBase):
         self.reg_threshold = reg_threshold
         self.projection_period = projection_period
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X: Triangle, y=None, sample_weight=None) -> Self:
         """
         Fit the model with X.
 
         Parameters
         ----------
-        X : Triangle-like
+        X : Triangle
             Set of LDFs to which the tail will be applied.
         y : Ignored
         sample_weight : Ignored
 
         Returns
         -------
-        self : object
+        self
             Returns the instance itself.
         """
 
         X = X.copy()
-        xp = X.get_array_module()
-        if type(self.fit_period) is slice:
-            warnings.warn(
-                "Slicing for fit_period is deprecated and will be removed. Please use a tuple (start_age, end_age)."
+        super().fit(X, y, sample_weight)
+        xp = self.ldf_.get_array_module()
+        _y = self.ldf_.values[..., : X.shape[-1] - 1].copy()
+        _w = xp.zeros(_y.shape)
+
+        # validate arguments
+        if self.curve not in get_args(_ValidCurves):
+            raise ValueError(
+                f"Invalid curve type specified. Accepted values are {get_args(_ValidCurves)}."
             )
-            fit_period = self.fit_period
-        elif type(self.fit_period) is list:
+
+        if self.errors not in get_args(_ValidErrors):
+            raise ValueError(
+                f"Invalid error handling specified. Accepted values are {get_args(_ValidErrors)}."
+            )
+
+        if isinstance(self.fit_period, list):
             fit_period = xp.array(self.fit_period)[None, None, None, :]
-        else:
+            if _w.shape[-1] != fit_period.shape[-1]:
+                raise ValueError(
+                    "Invalid fit_period specified. "
+                    f"Accepted values are list of length {_w.shape[-1]}."
+                )
+            _w = (_w + 1) * fit_period
+        elif isinstance(self.fit_period, tuple):
             grain = {"Y": 12, "S": 6, "Q": 3, "M": 1}[X.development_grain]
             start = (
                 None
@@ -197,26 +218,23 @@ class TailCurve(TailBase):
                 else int(self.fit_period[1] / grain - 1)
             )
             fit_period = slice(start, end, None)
-        super().fit(X, y, sample_weight)
-        xp = self.ldf_.get_array_module()
-        _y = self.ldf_.values[..., : X.shape[-1] - 1].copy()
-        _w = xp.zeros(_y.shape)
-        if type(fit_period) is slice:
             _w[..., fit_period] = 1.0
         else:
-            _w = (_w + 1) * fit_period
+            raise ValueError(
+                "Invalid fit_period specified. Accepted values are tuple or list."
+            )
         if self.reg_threshold[0] is None:
             warnings.warn(
-                "Lower threshold for ldfs not set. Lower threshold will be set to 1.0 to ensure"
-                "valid inputs for regression."
+                "Lower threshold for ldfs not set. Lower threshold will be set to the"
+                "default NOMINAL_TAIL to ensure valid inputs for regression."
             )
-            lower_threshold = 1
+            lower_threshold = options.NOMINAL_TAIL
         elif self.reg_threshold[0] < 1:
             warnings.warn(
-                "Lower threshold for ldfs set too low (<1). Lower threshold will be set to 1.0 to ensure "
-                "valid inputs for regression."
+                "Lower threshold for ldfs set too low (<1). Lower threshold will be set to the"
+                "default NOMINAL_TAIL to ensure valid inputs for regression."
             )
-            lower_threshold = 1
+            lower_threshold = options.NOMINAL_TAIL
         else:
             lower_threshold = self.reg_threshold[0]
         if self.reg_threshold[1] is not None:
@@ -232,12 +250,14 @@ class TailCurve(TailBase):
         if self.errors == "ignore":
             if upper_threshold is None:
                 _w[_y <= lower_threshold] = 0
-                _y[_y <= lower_threshold] = 1.01
+                _y[_y <= lower_threshold] = options.NOMINAL_TAIL
             else:
                 _w[(_y <= lower_threshold) | (_y > upper_threshold)] = 0
-                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = 1.01
+                _y[(_y <= lower_threshold) | (_y > upper_threshold)] = (
+                    options.NOMINAL_TAIL
+                )
         elif self.errors == "raise" and xp.any(_y < 1.0):
-            raise ZeroDivisionError("Tail fit requires all LDFs to be greater than 1.0")
+            raise ValueError("Tail fit requires all LDFs to be greater than 1.0")
         if self.curve == "weibull":
             _y = xp.log(xp.log(_y / (_y - 1)))
         else:
@@ -248,10 +268,36 @@ class TailCurve(TailBase):
         # Get LDFs
         coefs = WeightedRegression(axis=3, xp=xp).fit(_x, _y, _w)
         self._slope_, self._intercept_ = coefs.slope_, coefs.intercept_
-        extrapolate = xp.cumsum(
-            xp.ones(tuple(list(_y.shape)[:-1] + [self.extrap_periods + n_obs])), -1
+        normal_ldf_ind = xp.ones(
+            tuple(list(_y.shape)[:-1] + [self.extrap_periods + n_obs])
         )
-        tail = self._predict_tail(extrapolate)
+        extrapolate = xp.cumsum(normal_ldf_ind, -1)
+        tail_ldf = self._predict_tail(extrapolate)
+        # for exponential and inverse_power curves, only a negative slope results in a
+        # decreasing tail
+        # for weibull, only a positive slope results in decreasing tail
+        if self.curve in ["exponential", "inverse_power"]:
+            overflow = self._slope_ >= 0
+        else:
+            overflow = self._slope_ <= 0
+        # for any overflowing regression, set tail to 1
+        # (tail_ldf is 0-based; _get_tail_prediction turns it into 1-based)
+        if xp.any(overflow):
+            if self.errors == "raise":
+                raise ValueError("Tail fit resulted in non-decreasing tail")
+            else:
+                ldf_ind = xp.ones(tuple(list(_y.shape)[:-1] + [n_obs + 1]))
+                tail_ind = xp.zeros(
+                    tuple(list(_y.shape)[:-1] + [self.extrap_periods - 1])
+                )
+                overflow_ldf_ind = xp.concatenate((ldf_ind, tail_ind), -1)
+                tail_guard = xp.where(
+                    overflow,
+                    overflow_ldf_ind,
+                    normal_ldf_ind,
+                )
+                tail_ldf = xp.where(tail_guard == 1, tail_ldf, 0)
+        tail = self._get_tail_prediction(tail_ldf)
         if self.attachment_age:
             attach_idx = xp.min(xp.where(X.ddims >= self.attachment_age))
         else:
@@ -273,6 +319,23 @@ class TailCurve(TailBase):
             return xp.log(reg.x)
 
     def _predict_tail(self, extrapolate):
+        """
+        Generate the fitted ldf in the tail to a distant future period (based on
+        extrap_periods, which defaults to 100) in order to calculate the cumulative
+        tail in a later step.
+
+        Since self._slope_ is unguarded, it is possible that this method returns inf
+
+        Parameters
+        ----------
+        extrapolate : array-like
+            Array of integers representing the periods to which the tail ldf is fitted
+
+        Returns
+        -------
+        array-like
+            fitted ldfs
+        """
         xp = self.ldf_.get_array_module()
         if self.curve == "exponential":
             tail_ldf = xp.exp(self._slope_ * extrapolate + self._intercept_)
@@ -283,7 +346,7 @@ class TailCurve(TailBase):
                 1 / (1 - xp.exp(-xp.exp(self._intercept_) * extrapolate**self._slope_))
                 - 1
             )
-        return self._get_tail_prediction(tail_ldf)
+        return tail_ldf
 
     @property
     def slope_(self):
