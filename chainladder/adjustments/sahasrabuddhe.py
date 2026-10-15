@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from chainladder import Triangle
+    from chainladder.development.base import DevelopmentBase
     from collections.abc import Iterable
     from typing import Any
 
@@ -114,7 +115,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                   12       24        36        48        60        72        84        96        108       120
         2010  28138.0  84242.0  133998.0  182457.0  204637.0  228209.0  252737.0  264923.0  275512.0  279779.0
 
-    Attaching at the narrower limit of the data triangle gives the layer
+    Attaching at the lower limit, that of the data triangle, gives the layer
     between the two:
 
     .. testcode::
@@ -394,7 +395,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
         base_row: slice,
     ) -> None:
         """
-        Check that ``trend`` can restate ``means`` across the whole rectangle.
+        Check that ``trend`` can restate ``means`` across the whole triangle.
 
         Parameters
         ----------
@@ -419,7 +420,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
                     f"trend does not share X's {axis} axis: trend runs "
                     f"{trend_labels[0]} through {trend_labels[-1]}, X runs {triangle_labels[0]} through "
                     f"{triangle_labels[-1]}. Build the trend against X, fitted on a "
-                    "full rectangle of ones so it covers the whole rectangle."
+                    "full triangle of ones so it covers the whole triangle."
                 )
 
         # Check that trend is defined across the base row origin period.
@@ -430,7 +431,7 @@ class LEV(BaseEstimator, TransformerMixin, EstimatorIO):
             raise ValueError(
                 f"trend is not defined across the whole {X.origin[base_row][0]} "
                 "origin period, which every cell is restated against. Refit the "
-                "trend on a full rectangle of ones so it covers cells past the "
+                "trend on a full triangle of ones so it covers cells past the "
                 "valuation date."
             )
 
@@ -635,7 +636,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
     def fit(
         self,
-        X: Triangle,  # noqa - sklearn convention
+        X: Triangle | DevelopmentBase,  # noqa - sklearn convention
         y=None,  # noqa - expected by sklearn API
         sample_weight: Triangle | None = None,  # noqa - expected by sklearn API
     ) -> Sahasrabuddhe:
@@ -644,8 +645,10 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Parameters
         ----------
-        X: Triangle
-            Data to which the model will be applied.
+        X: Triangle or DevelopmentBase
+            A Triangle of claims to restate, or a development pattern to
+            restate: a Triangle of cumulative factors or a fitted development
+            estimator.
         y: Ignored
         sample_weight: Ignored
 
@@ -671,8 +674,18 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             )
         self._target = (attachment, limit)
 
+        # Imported here because chainladder.core imports this module.
+        from chainladder.core.triangle import Triangle
+
+        claims: Triangle | None = None
         pattern = self._as_cdf(X)
         if pattern is None:
+            if not isinstance(X, Triangle):
+                raise ValueError(
+                    "X must be a Triangle of claims, a Triangle of cumulative "
+                    "development factors, or a fitted development estimator."
+                )
+            claims = X
             grid = X
         else:
             if self.basic_limit is None:
@@ -681,7 +694,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
                 raise ValueError(
                     "a development pattern has a single origin row, so there is no "
                     "Triangle to fit trend on. Pass trend as a Triangle: a Trend "
-                    "fitted on a full rectangle of ones, then inverted."
+                    "fitted on a full triangle of ones, then inverted."
                 )
             if self.trend is None:
                 grid = self._constant_cost_level(pattern)
@@ -699,9 +712,9 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
         ).fit(grid)
         self.means_ = self.lev_.means_
 
-        if pattern is None:
-            self._fit_triangle(X, base_row)
-        else:
+        if claims is not None:
+            self._fit_triangle(claims, base_row)
+        elif pattern is not None:
             self._fit_pattern(pattern, base_row)
         return self
 
@@ -894,7 +907,7 @@ class Sahasrabuddhe(BaseEstimator, TransformerMixin, EstimatorIO):
             )
         except ValueError as error:
             # An incomplete diagonal makes no usable pattern, but it takes
-            # nothing away from the rectangle -- defined for every cell.
+            # nothing away from the triangle -- defined for every cell.
             # Warning rather than raising keeps full_cdf_/full_ldf_ reachable.
             warnings.warn(f"{error} cdf_ and ldf_ are not set.", UserWarning)
             return
