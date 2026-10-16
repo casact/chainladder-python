@@ -530,12 +530,13 @@ def parallelogram_olf(
             level.values[np.clip(pos, 0, None)], index=date_idx
         )
     else:
-        rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
-            date_idx, fill_value=0
-        )
-        cum_rate_changes = pd.Series(
-            np.cumprod(1 + rate_changes.values), rate_changes.index
-        )
+        rate_changes = pd.Series(np.array(values), np.array(dates)).sort_index()
+        levels = np.cumprod(1 + rate_changes.values)
+        # Honor effective dates between grid points, as in cumulative mode.
+        # Before the first change the rate level is 1; after it, use all
+        # changes effective on or before the current grid point.
+        pos = np.searchsorted(rate_changes.index.values, date_idx.values, side="right")
+        cum_rate_changes = pd.Series(np.r_[1.0, levels][pos], index=date_idx)
     crl = cum_rate_changes.iloc[-1]
 
     rolling_num_base = {
