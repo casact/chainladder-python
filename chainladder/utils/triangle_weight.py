@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 import warnings
 
-from chainladder.utils.utility_functions import num_to_nan, warn_exclusions_ignored
+from chainladder.utils.utility_functions import num_to_nan
 from pandas.api.types import is_string_dtype
 
 from typing import TYPE_CHECKING
@@ -341,7 +341,6 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         # preserve even when fully populated is expected to lose its exclusion.
         expected = max_available - drop_high_array - drop_low_array < preserve_array
         dev_warning_flags = preserve_trigger & ~expected
-        warning_flag = np.any(preserve_trigger & ~expected)
 
         # getting ranks of values that correspond to the max and min after preserve
         max_rank = np.where(preserve_trigger, valid_count, max_rank_unpreserve)
@@ -352,12 +351,8 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
             X_ranks > min_rank[:, :, None, :] - 1
         )
 
-        if warning_flag:
-            warn_exclusions_ignored(
-                self.preserve,
-                X.development[list(set(np.where(dev_warning_flags)[2]))].to_list(),
-                stacklevel=3,
-            )
+        # emitting a warning when some drop parameters are ignored
+        _warn_exclusions_ignored(self.preserve, X, dev_warning_flags, stacklevel=3)
 
         return w.astype(float)
 
@@ -478,18 +473,59 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         # worth a warning.
         dropped = w.sum(axis=2) - valid_count
         dev_warning_flags = (valid_count < preserve_array) & (dropped > 0)
-        warning_flag = np.any((valid_count < preserve_array) & (dropped > 0))
         w = np.where(
             valid_count[:, :, None, :] < preserve_array[:, :, None, :],
             w,
             index_array_weights,
         )
 
-        if warning_flag:
-            warn_exclusions_ignored(
-                self.preserve,
-                X.development[list(set(np.where(dev_warning_flags)[2]))].to_list(),
-                stacklevel=3,
-            )
+        # emitting a warning when some drop parameters are ignored
+        _warn_exclusions_ignored(self.preserve, X, dev_warning_flags, stacklevel=3)
 
         return w.astype(float)
+
+
+def _warn_exclusions_ignored(
+    preserve: int,
+    factor_tri: Triangle,
+    warning_flags: np.ndarray,
+    stacklevel: int = 2,
+) -> None:
+    """
+    Warn that an exclusion was not applied because ``preserve`` blocked it.
+
+    The four drop routines in ``DevelopmentBase`` and ``TriangleWeight`` all
+    reach the same dead end and said so in four copies of this text. The
+    wording is asserted by the test suite, so it is kept as it was.
+
+    Parameters
+    ----------
+    preserve: int
+        The ``preserve`` argument from a development estimator
+
+    factor_tri: Triangle
+        Triangle of factors where the drop parameter is being applied
+
+    warning_flags: numpy array
+        indicator of development periods where drop parameter is being ignored
+
+    stacklevel: int
+        The stack level to report the warning at. Default is 2, which is the
+        default for the ``warn`` function.
+
+    Returns
+    -------
+    None
+    """
+    if np.any(warning_flags):
+        #getting the list of distinct development periods where a drop parameter is ignored
+        ages = factor_tri.development[list(set(np.where(warning_flags)[2]))].to_list()
+        preserve_default = "(use preserve=...) " if preserve == 1 else ""
+        warnings.warn(
+            (
+                f"Some exclusions have been ignored at {str(ages)}. "
+                f"At least {preserve} {preserve_default}link ratio(s) "
+                "is required for development estimation."
+            ),
+            stacklevel=stacklevel,
+        )

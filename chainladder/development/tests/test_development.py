@@ -1,8 +1,14 @@
-import warnings
+from __future__ import annotations
 
+import warnings
 import numpy as np
 import chainladder as cl
 import pytest
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 class _FutureDevelopment(cl.TriangleWeight):
@@ -261,104 +267,170 @@ def test_drophighlow_inequal(prism, atol):
     ).all()
 
 
-def test_dropabovebelow(raa):
+class TestDropAboveBelow:
+    """Test drop_above and drop_below"""
 
-    dev = cl.Development(drop_above=40.0)
-    model = dev.fit(raa)
-    lhs = np.round(dev.cdf_.values, 4).flatten()
-    rhs = np.array([
-        8.3771,
-        2.9740,
-        1.8318,
-        1.4414,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    def test_dropabove_hardcode1(raa: Triangle) -> None:
+        """
+        Pins drop_above with hardcoded cdf_ results
 
-    dev = cl.Development(drop_above=1.2)
-    # the first two columns of raa age-to-age are all above 1.2
-    # therefore a drop exclusion warning is expected
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=40.0)
         model = dev.fit(raa)
-        future_model = _FutureDevelopment(dev).fit(raa)
-    lhs = np.round(model.cdf_.values, 4).flatten()
-    rhs = np.array([
-        7.6859,
-        2.5625,
-        1.5784,
-        1.4072,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert model.ldf_ == future_model.ldf_
+        lhs = np.round(dev.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.3771,
+            2.9740,
+            1.8318,
+            1.4414,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
-    dev = cl.Development(drop_above=1.2, drop_below=1.05)
-    # the first two columns of raa age-to-age are all above 1.2
-    # therefore a drop exclusion warning is expected
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+    def test_dropabove_hardcode2(raa: Triangle) -> None:
+        """
+        Pins drop_above with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=1.2)
+        # the first two columns of raa age-to-age are all above 1.2
+        # therefore a drop exclusion warning is expected
+        with pytest.warns(UserWarning, match="exclusions have been ignored"):
+            model = dev.fit(raa)
+            future_model = _FutureDevelopment(dev).fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            7.6859,
+            2.5625,
+            1.5784,
+            1.4072,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_ == future_model.ldf_
+
+    def test_dropabovebelow_hardcode1(raa: Triangle) -> None:
+        """
+        Pins drop_above and drop_below with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=1.2, drop_below=1.05)
+        # the first two columns of raa age-to-age are all above 1.2
+        # therefore a drop exclusion warning is expected
+        with pytest.warns(UserWarning, match="exclusions have been ignored"):
+            model = dev.fit(raa)
+            future_model = _FutureDevelopment(dev).fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.4983,
+            2.8334,
+            1.7452,
+            1.5560,
+            1.3602,
+            1.1802,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_ == future_model.ldf_
+
+    def test_dropbelow_hardcode_multiple1(raa: Triangle) -> None:
+        """
+        Pins supplying list to drop_below with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
+        # the 4th columns of raa age-to-age are all below 1.7
+        # therefore a drop exclusion warning is expected
+        with pytest.warns(UserWarning, match="exclusions have been ignored"):
+            model = dev.fit(raa)
+            future_model = _FutureDevelopment(dev).fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.3771,
+            2.9740,
+            1.8318,
+            1.4414,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_ == future_model.ldf_
+
+    def test_dropbelow_hardcode_multiple2(raa: Triangle) -> None:
+        """
+        Pins supplying list to drop_below with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
         model = dev.fit(raa)
-        future_model = _FutureDevelopment(dev).fit(raa)
-    lhs = np.round(model.cdf_.values, 4).flatten()
-    rhs = np.array([
-        8.4983,
-        2.8334,
-        1.7452,
-        1.5560,
-        1.3602,
-        1.1802,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert model.ldf_ == future_model.ldf_
-
-    dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
-    # the 4th columns of raa age-to-age are all below 1.7
-    # therefore a drop exclusion warning is expected
-    with pytest.warns(UserWarning, match="exclusions have been ignored"):
-        model = dev.fit(raa)
-        future_model = _FutureDevelopment(dev).fit(raa)
-    lhs = np.round(model.cdf_.values, 4).flatten()
-    rhs = np.array([
-        8.3771,
-        2.9740,
-        1.8318,
-        1.4414,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert model.ldf_ == future_model.ldf_
-
-    dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
-    model = dev.fit(raa)
-    lhs = np.round(model.cdf_.values, 4).flatten()
-    rhs = np.array([
-        8.9773,
-        3.1871,
-        1.9631,
-        1.5447,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.9773,
+            3.1871,
+            1.9631,
+            1.5447,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
 
 def test_drop_valuation_1(raa):
