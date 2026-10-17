@@ -356,6 +356,18 @@ def test_overlapping_columns_and_origins_union_both_axes(clrd: Triangle) -> None
         b_only = result[result.origin >= "1994"]
         assert b_only["IncurLoss"] == c[c.origin >= "1994"]["IncurLoss"]
 
+        assert (
+            result["CumPaidLoss"][result.origin <= "1993"]
+            == c["CumPaidLoss"][c.origin <= "1993"]
+        )
+        assert np.isnan(result["CumPaidLoss"][result.origin >= "1994"].values).all()
+
+        assert (
+            result["EarnedPremDIR"][result.origin >= "1990"]
+            == c["EarnedPremDIR"][c.origin >= "1990"]
+        )
+        assert np.isnan(result["EarnedPremDIR"][result.origin <= "1989"].values).all()
+
 
 def test_comparison_dunders_against_scalar(raa: Triangle) -> None:
     """
