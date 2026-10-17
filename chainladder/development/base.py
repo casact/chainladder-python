@@ -9,9 +9,11 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from chainladder.utils import WeightedRegression
-from chainladder.utils.utility_functions import num_to_nan, warn_exclusions_ignored
+from chainladder.utils.utility_functions import num_to_nan
+from chainladder.utils.triangle_weight import _warn_exclusions_ignored
 from chainladder.core.io import EstimatorIO
 from chainladder.core.common import Common
+
 
 from typing import TYPE_CHECKING
 
@@ -232,7 +234,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # applying preserve
         blocked = max_rank_unpreserve - min_rank_unpreserve < preserve
         expected = max_available - drop_high_array - drop_low_array < preserve
-        warning_flag = np.any(blocked & ~expected)
+        dev_warning_flags = blocked & ~expected
         max_rank = np.where(
             max_rank_unpreserve - min_rank_unpreserve < preserve,
             ldf_count_n_period,
@@ -257,8 +259,8 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
 
         weights = index_array_weights
 
-        if warning_flag:
-            warn_exclusions_ignored(preserve)
+        # emitting a warning when some drop parameters are ignored
+        _warn_exclusions_ignored(preserve, X.age_to_age, dev_warning_flags)
 
         return weights.transpose((0, 1, 3, 2))
 
@@ -322,15 +324,15 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # factors is not having an exclusion ignored, it simply has that few, so
         # only a threshold that actually removed something is worth a warning.
         dropped = weights.sum(axis=3) - ldf_count
-        warning_flag = np.any((ldf_count < preserve_array) & (dropped > 0))
+        dev_warning_flags = (ldf_count < preserve_array) & (dropped > 0)
         weights = np.where(
             ldf_count[..., None] < preserve_array[..., None],
             weights,
             index_array_weights,
         )
 
-        if warning_flag:
-            warn_exclusions_ignored(preserve)
+        # emitting a warning when some drop parameters are ignored
+        _warn_exclusions_ignored(preserve, X.age_to_age, dev_warning_flags)
 
         return weights.transpose((0, 1, 3, 2))
 
