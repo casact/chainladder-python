@@ -11,6 +11,8 @@ import functools
 import inspect
 import warnings
 
+from inspect import signature
+
 from typing import overload, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -235,15 +237,16 @@ def _deprecated_rename_argument(
     old_name: str,
     new_name: str,
     *,
-    version: str | None = None,
+    remove_in_version: str | None = None,
     category: type[Warning] = FutureWarning,
+    stacklevel: int = 2,
 ) -> Callable[[_F], _F]:
     """
-    Decorator factory that marks a keyword argument as scheduled to be
-    renamed.
+    Decorator factory that marks a keyword argument that has been renamed
+    and scheduled to be removed.
 
     Apply this to a function while it still accepts the argument under its
-    *current* name, to warn callers ahead of the actual rename.
+    *current* name, to warn callers ahead of the actual deprecation.
 
     This decorator allows you to replace the old argument with the new argument
     in the function signature. Once you are ready to deprecate, simply remove the
@@ -255,11 +258,13 @@ def _deprecated_rename_argument(
         The keyword argument name the function currently accepts.
     new_name: str
         The keyword argument name it will be renamed to.
-    version: str | None
-        The release the rename is expected to land in, e.g. "0.11.0".
-        Included in the warning message when given. Optional.
+    remove_in_version: str | None
+        The future release version (e.g. "0.11.0") in which the old argument name
+        will be removed. Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
+    stacklevel: int
+        The stack level at which to emit the warning. Defaults to 2.
 
     Returns
     -------
@@ -275,7 +280,7 @@ def _deprecated_rename_argument(
 
         from chainladder._config.deprecation import _deprecated_rename_argument
 
-        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", remove_in_version="0.11.0")
         def func(new_arg):
             return new_arg + 1
 
@@ -283,15 +288,17 @@ def _deprecated_rename_argument(
 
     .. testoutput::
 
-        example.py:8: FutureWarning: 'old_arg' is deprecated and will be renamed to 'new_arg' in 0.11.0. Use 'new_arg' instead.
+        example.py:8: FutureWarning: 'old_arg' has been deprecated in favor of 'new_arg' and will be removed in 0.11.0. Use 'new_arg' instead.
           func(old_arg=1)
 
     """
 
     def decorator(func: _F) -> _F:
-        message = f"'{old_name}' is deprecated and will be renamed to '{new_name}'"
-        if version:
-            message += f" in {version}"
+        message = f"'{old_name}' has been deprecated in favor of '{new_name}' and will be removed"
+        if remove_in_version:
+            message += f" in {remove_in_version}"
+        else:
+            message += " soon"
         message += f". Use '{new_name}' instead."
 
         @functools.wraps(func)
@@ -301,7 +308,7 @@ def _deprecated_rename_argument(
                     raise TypeError(
                         f"Cannot specify both '{old_name}' and '{new_name}'."
                     )
-                warnings.warn(message, category, stacklevel=2)  # noqa
+                warnings.warn(message, category, stacklevel=stacklevel)  # noqa
                 kwargs[new_name] = kwargs.pop(old_name)
             return func(*args, **kwargs)
 
@@ -312,6 +319,7 @@ def _deprecated_rename_argument(
 
 def _deprecated_drop_argument(
     name: str,
+    guidance: str,
     *,
     version: str | None = None,
     category: type[Warning] = FutureWarning,
@@ -324,8 +332,12 @@ def _deprecated_drop_argument(
     ----------
     name: str
         The keyword argument scheduled for removal.
+    guidance: str
+        What the caller should do instead, appended to the warning. Required,
+        because dropping an argument is only safe for a caller who can rewrite
+        the call so it behaves the same before and after the removal. Say how.
     version: str | None
-        The release the removal is expected to land in, e.g. "0.11.0".
+        The release the removal is expected to land in, e.g. "2.0".
         Included in the warning message when given. Optional.
     category: type[Warning]
         The warning category to emit. Defaults to FutureWarning.
@@ -344,7 +356,9 @@ def _deprecated_drop_argument(
 
         from chainladder._config.deprecation import _deprecated_drop_argument
 
-        @_deprecated_drop_argument("verbose", version="0.11.0")
+        @_deprecated_drop_argument(
+            "verbose", "Drop the argument; output is unchanged.", version="2.0"
+        )
         def func(x, verbose=False):
             return x + 1
 
@@ -352,7 +366,7 @@ def _deprecated_drop_argument(
 
     .. testoutput::
 
-        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 0.11.0.
+        example.py:8: FutureWarning: 'verbose' is deprecated and will be removed in 2.0. Drop the argument; output is unchanged.
           func(1, verbose=True)
 
     """
@@ -360,10 +374,14 @@ def _deprecated_drop_argument(
     def decorator(func: _F) -> _F:
         message = f"'{name}' is deprecated and will be removed"
         message += f" in {version}." if version else " in a future release."
+        message += f" {guidance}"
+
+        sig = signature(func)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if name in kwargs:
+            bound = sig.bind_partial(*args, **kwargs)
+            if name in bound.arguments.keys():
                 warnings.warn(message, category, stacklevel=2)  # noqa
             return func(*args, **kwargs)
 

@@ -197,14 +197,14 @@ class TestDeprecatedRenameArgument:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @_deprecated_rename_argument("old_arg", "new_arg", version="0.11.0")
+        @_deprecated_rename_argument("old_arg", "new_arg", remove_in_version="0.11.0")
         def func(new_arg=None):
             return new_arg
 
         _, warning = _warn_once(func, old_arg=1)
         assert str(warning.message) == (
-            "'old_arg' is deprecated and will be renamed to 'new_arg' in "
-            "0.11.0. Use 'new_arg' instead."
+            "'old_arg' has been deprecated in favor of 'new_arg' and will be "
+            "removed in 0.11.0. Use 'new_arg' instead."
         )
 
     def test_message_without_version(self) -> None:
@@ -216,8 +216,8 @@ class TestDeprecatedRenameArgument:
 
         _, warning = _warn_once(func, old_arg=1)
         assert str(warning.message) == (
-            "'old_arg' is deprecated and will be renamed to 'new_arg'. "
-            "Use 'new_arg' instead."
+            "'old_arg' has been deprecated in favor of 'new_arg' and will be "
+            "removed soon. Use 'new_arg' instead."
         )
 
     def test_custom_category(self) -> None:
@@ -274,7 +274,7 @@ class TestDeprecatedDropArgument:
     def test_warns_and_forwards_value_unchanged(self) -> None:
         """Check that the deprecated argument still reaches the function unchanged."""
 
-        @_deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
         def func(x, verbose: bool = False):
             return x, verbose
 
@@ -285,7 +285,7 @@ class TestDeprecatedDropArgument:
     def test_not_passed_no_warning(self) -> None:
         """Check that omitting the deprecated argument doesn't warn."""
 
-        @_deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
         def func(x, verbose: bool = False):
             return x, verbose
 
@@ -294,31 +294,34 @@ class TestDeprecatedDropArgument:
     def test_message_with_version(self) -> None:
         """Check the warning message when a version is given."""
 
-        @_deprecated_drop_argument("verbose", version="0.11.0")
+        @_deprecated_drop_argument("verbose", "Drop the argument.", version="0.11.0")
         def func(verbose: bool = False):  # noqa
             pass
 
         _, warning = _warn_once(func, verbose=True)
         assert str(warning.message) == (
-            "'verbose' is deprecated and will be removed in 0.11.0."
+            "'verbose' is deprecated and will be removed in 0.11.0. Drop the argument."
         )
 
     def test_message_without_version(self) -> None:
         """Check the warning message when no version is given."""
 
-        @_deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
         def func(verbose: bool = False):  # noqa
             pass
 
         _, warning = _warn_once(func, verbose=True)
         assert str(warning.message) == (
-            "'verbose' is deprecated and will be removed in a future release."
+            "'verbose' is deprecated and will be removed in a future release. "
+            "Drop the argument."
         )
 
     def test_custom_category(self) -> None:
         """Check that a custom warning category is honored."""
 
-        @_deprecated_drop_argument("verbose", category=DeprecationWarning)
+        @_deprecated_drop_argument(
+            "verbose", "Drop the argument.", category=DeprecationWarning
+        )
         def func(verbose: bool = False):  # noqa
             pass
 
@@ -328,17 +331,27 @@ class TestDeprecatedDropArgument:
     def test_positional_args_unaffected(self) -> None:
         """Check that positional arguments pass through unaffected."""
 
-        @_deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
         def func(a, b, verbose: bool = False):
             return a, b, verbose
 
         result, _ = _warn_once(func, 1, 2, verbose=True)
         assert result == (1, 2, True)
 
+    def test_positional_args_warns(self) -> None:
+        """Check that positional arguments pass through unaffected."""
+
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
+        def func(a, b, verbose: bool = False):
+            return a, b, verbose
+
+        result, _ = _warn_once(func, 1, 2, True)
+        assert result == (1, 2, True)
+
     def test_preserves_metadata(self) -> None:
         """Check that functools.wraps preserves the function's name and docstring."""
 
-        @_deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
         def func(verbose: bool = False):  # noqa
             """Original docstring."""
 
@@ -348,7 +361,7 @@ class TestDeprecatedDropArgument:
     def test_warns_every_call(self) -> None:
         """Check that the warning fires on every call, not just the first."""
 
-        @_deprecated_drop_argument("verbose")
+        @_deprecated_drop_argument("verbose", "Drop the argument.")
         def func(verbose: bool = False):  # noqa
             pass
 

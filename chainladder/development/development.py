@@ -33,7 +33,10 @@ class Development(DevelopmentBase):
     ----------
     n_periods: integer, optional (default = -1)
         number of origin periods to be used in the ldf average calculation. For
-        all origin periods, set n_periods = -1
+        all origin periods, set n_periods = -1.
+
+        Setting n_periods to 1 does not allow enough degrees of freedom to support
+        calculation of all regression statistics; only LDFs would be calculated.
     average: literal (or list of literals), or float, optional (default = 'volume')
         type of averaging to use for ldf average calculation.
         Options include 'volume', 'simple',  'regression', and 'geometric'. If numeric values are supplied,
@@ -124,6 +127,11 @@ class Development(DevelopmentBase):
     ..  testsetup::
 
         import chainladder as cl
+        import warnings
+        # part of the example intentionally trigger drop exclusion warning
+        warnings.filterwarnings("ignore", category=UserWarning)
+        # part of the example intentionally trigger various arithmetic warnings
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
     ..  testcode::
 
@@ -149,7 +157,8 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        print(cl.Development(drop=("2004", 12)).fit_transform(tri["Incurred"]).link_ratio)
+        dev = cl.Development(drop=("2004", 12)).fit_transform(tri["Incurred"])
+        print(dev.link_ratio)
 
     ..  testoutput::
 
@@ -169,8 +178,7 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        ldf = cl.Development(drop=("2004", 12)).fit(tri["Incurred"]).ldf_
-        print(ldf)
+        print(dev.ldf_)
 
     ..  testoutput::
 
@@ -183,11 +191,11 @@ class Development(DevelopmentBase):
     ..  testcode::
 
         tri = cl.load_sample("xyz")
-        print(
+        dev = (
             cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00])
             .fit_transform(tri["Incurred"])
-            .link_ratio
         )
+        print(dev.link_ratio)
 
     ..  testoutput::
 
@@ -207,13 +215,7 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        tri = cl.load_sample("xyz")
-        ldf = (
-            cl.Development(drop_above=[2.0, 1.5, 1.3, 1.2, 1.1, 1.07, 1.05, 1.03, 1.01, 1.00])
-            .fit(tri["Incurred"])
-            .ldf_
-        )
-        print(ldf)
+        print(dev.ldf_)
 
     ..  testoutput::
 
@@ -226,7 +228,6 @@ class Development(DevelopmentBase):
 
     ..  testcode::
 
-        tri = cl.load_sample("xyz")
         print(
             cl.Development(drop_above=1.25, drop_below=1.0, preserve=3)
             .fit_transform(tri["Incurred"])
@@ -434,11 +435,6 @@ class Development(DevelopmentBase):
             params.sigma_fill(self.sigma_interpolation).std_err_fill()
             w_reg = params._w_reg
         else:
-            warnings.warn(
-                "Setting n_periods=1 does not allow enough degrees "
-                "of freedom to support calculation of all regression "
-                "statistics. Only LDFs have been calculated."
-            )
             w_reg = params._w_reg
 
         params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)

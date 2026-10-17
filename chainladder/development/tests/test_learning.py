@@ -58,7 +58,7 @@ def test_grain():
         tri = cl.Triangle(
             tframe,
             origin="origin",
-            development="development",
+            valuation="development",
             columns="loss",
             cumulative=False,
         )

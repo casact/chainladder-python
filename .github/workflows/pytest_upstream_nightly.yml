@@ -1,4 +1,8 @@
 name: CI Upstream
+
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: "0 0 * * *" # Daily “At 00:00” UTC

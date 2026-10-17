@@ -140,8 +140,9 @@ class TriangleBase(
         index: str | list | None,
         columns: str | list,
         origin: str | list,
-        development: str | list,
-    ) -> tuple[None | list, None | list, None | list, None | list]:
+        valuation: str | list,
+        age: str,
+    ) -> tuple[None | list, None | list, None | list, None | list, None | list]:
         """Validate/sanitize inputs"""
 
         def str_to_list(arg: str | list) -> None | list:
@@ -155,18 +156,20 @@ class TriangleBase(
         index = str_to_list(index)
         columns = str_to_list(columns)
         origin = str_to_list(origin)
-        development = str_to_list(development)
+        development = str_to_list(valuation)
+        age = str_to_list(age)
         if not all(pd.api.types.is_numeric_dtype(dt) for dt in data[columns].dtypes):
             raise TypeError("column attribute must be numeric.")
         if data[columns].shape[1] != len(columns):
             raise AttributeError("Columns are required to have unique names")
-        return index, columns, origin, development
+        return index, columns, origin, development, age
 
     @staticmethod
     def _set_development(
         data: DataFrame,
-        development: list,
-        development_format: None | str,
+        development: None | list,
+        valuation_format: None | str,
+        age: None | list,
         origin_date: Series,
         origin_grain: str,
     ) -> Series:
@@ -176,31 +179,30 @@ class TriangleBase(
                 data=data,
                 fields=development,
                 period_end=True,
-                date_format=development_format,
-                allow_age=True,
+                date_format=valuation_format,
             )
-            if development_date is None:
-                # age in months relative to origin's period start, using the
-                # constructor's own origin_grain so fiscal-year anchors match
-                age: Series = pd.to_numeric(data[development[0]]).round().astype(int)
-                grain_base = origin_grain.split("-")[0]
-                if grain_base == "2Q":
-                    # no native pandas semiannual period; only calendar Jan/Jul anchors supported
-                    if origin_grain not in ("2Q", "2Q-DEC"):
-                        raise ValueError(
-                            "Development expressed as an age is not yet supported for a "
-                            f"non-calendar semiannual origin grain ({origin_grain})."
-                        )
-                    origin_period_start: Series = origin_date.apply(
-                        lambda d: d.replace(month=((d.month - 1) // 6) * 6 + 1, day=1)
+        elif age:
+            # age in months relative to origin's period start, using the
+            # constructor's own origin_grain so fiscal-year anchors match
+            age_series: Series = pd.to_numeric(data[age[0]]).round().astype(int)
+            grain_base = origin_grain.split("-")[0]
+            if grain_base == "2Q":
+                # no native pandas semiannual period; only calendar Jan/Jul anchors supported
+                if origin_grain not in ("2Q", "2Q-DEC"):
+                    raise ValueError(
+                        "Development expressed as an age is not yet supported for a "
+                        f"non-calendar semiannual origin grain ({origin_grain})."
                     )
-                else:
-                    origin_period_start = origin_date.dt.to_period(
-                        origin_grain
-                    ).dt.to_timestamp(how="s")
-                development_date = (
-                    origin_period_start.dt.to_period("M") + (age - 1)
-                ).dt.to_timestamp(how="e")
+                origin_period_start: Series = origin_date.apply(
+                    lambda d: d.replace(month=((d.month - 1) // 6) * 6 + 1, day=1)
+                )
+            else:
+                origin_period_start = origin_date.dt.to_period(
+                    origin_grain
+                ).dt.to_timestamp(how="s")
+            development_date = (
+                origin_period_start.dt.to_period("M") + (age_series - 1)
+            ).dt.to_timestamp(how="e")
         else:
             o_max: Timestamp = pd.Period(
                 value=origin_date.max(), freq=TriangleBase._get_grain(origin_date)
@@ -236,7 +238,7 @@ class TriangleBase(
                 warnings.warn(
                     _deprecated_backend_message("dask"),
                     DeprecationWarning,
-                    stacklevel=3,
+                    stacklevel=5,  # set to 5 to bypass the newly added deprecation decorators
                 )
             # Dask dataframes are mutated.
             data["__origin__"] = origin_date
@@ -472,7 +474,6 @@ class TriangleBase(
         fields: list,
         period_end: bool = False,
         date_format: Optional[str] = None,
-        allow_age: bool = False,
     ) -> Series | None:
         """
         For tabular form, this will take a set of data
@@ -530,10 +531,8 @@ class TriangleBase(
             if not matched_a_format and pd.api.types.is_numeric_dtype(datetime_arg):
                 # unformatted numeric input falls through to pandas treating it
                 # as nanoseconds since epoch, not an actual date
-                if allow_age:
-                    return None
                 raise ValueError(
-                    "Development lags could not be determined. This may be because development "
+                    "Development lags could not be determined. This may be because `valuation` "
                     "is expressed as an age where a date-like vector is required"
                 )
             target: Series = target_field.map(datetime_mapping)

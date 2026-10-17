@@ -58,6 +58,7 @@ from chainladder.core import (  # noqa (API import)
     Triangle,
     DevelopmentCorrelation,
     ValuationCorrelation,
+    Styler,
 )
 from chainladder.development import (  # noqa (API import)
     DevelopmentBase,
@@ -67,6 +68,8 @@ from chainladder.development import (  # noqa (API import)
     DevelopmentConstant,
     ClarkLDF,
     CaseOutstanding,
+    ImpliedCaseDevelopment,
+    ImpliedCase,
     DevelopmentML,
     TweedieGLM,
     BarnettZehnwirth,
@@ -76,7 +79,6 @@ from chainladder.adjustments import (  # noqa (API import)
     BerquistSherman,
     ParallelogramOLF,
     Trend,
-    TrendConstant,
     DisposalRate,
 )
 from chainladder.tails import (  # noqa (API import)

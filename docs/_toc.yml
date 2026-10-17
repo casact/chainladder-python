@@ -30,6 +30,7 @@ parts:
       - file: user_guide/adjustments.ipynb
       - file: user_guide/workflow.ipynb
       - file: user_guide/utilities.ipynb
+      - file: user_guide/style.ipynb
   - chapters:
     - file: friedland/index.rst
       sections:
@@ -42,6 +43,7 @@ parts:
       - file: friedland/chapter_9.ipynb
       - file: friedland/chapter_10.ipynb
       - file: friedland/chapter_11.ipynb
+      - file: friedland/chapter_15_monitoring.ipynb
   - chapters:
     - file: gallery/index.md
   - chapters:
@@ -54,6 +56,7 @@ parts:
       - file: library/references.md
       - file: library/sample_data.ipynb
       - file: library/glossary.md
+      - file: library/source_code.md
       - file: library/questions_issues.md
       - file: library/contributing.md
       - file: library/roadmap.md

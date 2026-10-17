@@ -2,7 +2,7 @@
 
 .. currentmodule:: {{ module }}
 
-{% set documented_attrs = ['loc', 'iloc', 'at', 'iat', 'shape', 'empty', 'dimensionality', 'nan_triangle'] %}
+{% set documented_attrs = ['loc', 'iloc', 'at', 'iat', 'shape', 'empty', 'dimensionality', 'nan_triangle', 'style'] %}
 {% set hidden_attrs = attributes | reject('in', documented_attrs) | list %}
 
 .. autoclass:: {{ objname }}

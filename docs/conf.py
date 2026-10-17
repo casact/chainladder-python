@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-
 _DOCS_EXT_DIR = Path(__file__).resolve().parent / "_ext"
 _p = str(_DOCS_EXT_DIR)
 if _p not in sys.path:
@@ -44,9 +43,11 @@ extensions = [
 external_toc_exclude_missing = False
 external_toc_path = "_toc.yml"
 html_baseurl = ""
+html_css_files = ["sidebar-toggle.css"]
 html_favicon = ""
 html_logo = "images/logo.png"
 html_sourcelink_suffix = ""
+html_static_path = ["_static"]
 html_theme = "sphinx_book_theme"
 html_theme_options = {
     "analytics": {
@@ -89,7 +90,7 @@ nb_execution_cache_path = ""
 nb_execution_excludepatterns = []
 nb_execution_in_temp = False
 nb_execution_mode = "force"
-nb_execution_timeout = 30
+nb_execution_timeout = 180
 nb_output_stderr = "show"
 numfig = True
 numpydoc_show_class_members = False

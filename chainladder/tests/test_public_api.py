@@ -23,6 +23,7 @@ EXPECTED_PUBLIC_API = {
     "Triangle",
     "DevelopmentCorrelation",
     "ValuationCorrelation",
+    "Styler",
     # utils
     "WeightedRegression",
     "TriangleWeight",
@@ -48,6 +49,8 @@ EXPECTED_PUBLIC_API = {
     "DevelopmentConstant",
     "ClarkLDF",
     "CaseOutstanding",
+    "ImpliedCaseDevelopment",
+    "ImpliedCase",
     "DevelopmentML",
     "TweedieGLM",
     "BarnettZehnwirth",
@@ -56,7 +59,6 @@ EXPECTED_PUBLIC_API = {
     "BerquistSherman",
     "ParallelogramOLF",
     "Trend",
-    "TrendConstant",
     "DisposalRate",
     # tails
     "TailBase",

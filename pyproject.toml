@@ -30,9 +30,9 @@ classifiers = [
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
     "pandas >=2.3.3, !=3.0.4",
-    "scikit-learn>1.4.2",
+    "scikit-learn>=1.7.0",
     "sparse>=0.18",
-    "numpy>=2.0",
+    "numpy>=2.3",
     "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",
     "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
@@ -59,6 +59,7 @@ dev = [
     "pre-commit",
 ]
 docs = [
+    "babel", # For localization examples.
     "sphinx",
     "sphinx-rtd-theme",
     "nbsphinx",
@@ -116,15 +117,6 @@ select = [
     "N802",
     "UP034",
 ]
-
-# Grandfathered violations that predate enabling this rule set. New and
-# newly-touched code is still held to the full ruleset above; these files
-# are exempted only from the specific codes they already violated so the
-# check can be required without blocking unrelated PRs. Remove entries as
-# files are cleaned up.
-[tool.ruff.lint.per-file-ignores]
-"docs/friedland/chapter_10.ipynb" = ["E731", "F841"]
-"docs/friedland/chapter_7_part_2.ipynb" = ["N802"]
 
 [tool.ruff.format]
 docstring-code-format = true

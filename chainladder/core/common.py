@@ -309,6 +309,11 @@ class Common:
         -------
             Triangle with updated array_backend
 
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
+
         Examples
         --------
         ``set_backend`` returns a new Triangle unless ``inplace=True``.
