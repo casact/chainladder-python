@@ -8,7 +8,6 @@ import dill
 import json
 import os
 import numpy as np
-import warnings
 import pandas as pd
 
 from chainladder import __dt64_unit__, __dt64_dtype__

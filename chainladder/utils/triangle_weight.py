@@ -516,9 +516,28 @@ def _warn_exclusions_ignored(
     Returns
     -------
     None
+
+    Examples
+    --------
+
+    .. testcode::
+        :options: +SKIP
+
+        import numpy as np
+        import chainladder as cl
+        from chainladder.utils.triangle_weight import _warn_exclusions_ignored
+
+        raa = cl.load_sample("raa")
+        warning_flags = np.all(raa.age_to_age.values > 1.5, axis = 2)
+        _warn_exclusions_ignored(1, raa.age_to_age, warning_flags)
+
+    .. testoutput::
+
+        example.py:7: UserWarning: Some exclusions have been ignored at ['12-24']. At least 1 (use preserve=...) link ratio(s) is required for development estimation.
+            _warn_exclusions_ignored(preserve, raa.age_to_age, warning_flags)
     """
     if np.any(warning_flags):
-        #getting the list of distinct development periods where a drop parameter is ignored
+        # getting the list of distinct development periods where a drop parameter is ignored
         ages = factor_tri.development[list(set(np.where(warning_flags)[2]))].to_list()
         preserve_default = "(use preserve=...) " if preserve == 1 else ""
         warnings.warn(

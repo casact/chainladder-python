@@ -270,7 +270,7 @@ def test_drophighlow_inequal(prism, atol):
 class TestDropAboveBelow:
     """Test drop_above and drop_below"""
 
-    def test_dropabove_hardcode1(raa: Triangle) -> None:
+    def test_dropabove_hardcode1(self, raa: Triangle) -> None:
         """
         Pins drop_above with hardcoded cdf_ results
 
@@ -300,7 +300,7 @@ class TestDropAboveBelow:
         assert np.all(lhs == rhs)
         assert model.ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
-    def test_dropabove_hardcode2(raa: Triangle) -> None:
+    def test_dropabove_hardcode2(self, raa: Triangle) -> None:
         """
         Pins drop_above with hardcoded cdf_ results
 
@@ -334,7 +334,7 @@ class TestDropAboveBelow:
         assert np.all(lhs == rhs)
         assert model.ldf_ == future_model.ldf_
 
-    def test_dropabovebelow_hardcode1(raa: Triangle) -> None:
+    def test_dropabovebelow_hardcode1(self, raa: Triangle) -> None:
         """
         Pins drop_above and drop_below with hardcoded cdf_ results
 
@@ -368,7 +368,7 @@ class TestDropAboveBelow:
         assert np.all(lhs == rhs)
         assert model.ldf_ == future_model.ldf_
 
-    def test_dropbelow_hardcode_multiple1(raa: Triangle) -> None:
+    def test_dropbelow_hardcode_multiple1(self, raa: Triangle) -> None:
         """
         Pins supplying list to drop_below with hardcoded cdf_ results
 
@@ -402,7 +402,7 @@ class TestDropAboveBelow:
         assert np.all(lhs == rhs)
         assert model.ldf_ == future_model.ldf_
 
-    def test_dropbelow_hardcode_multiple2(raa: Triangle) -> None:
+    def test_dropbelow_hardcode_multiple2(self, raa: Triangle) -> None:
         """
         Pins supplying list to drop_below with hardcoded cdf_ results
 

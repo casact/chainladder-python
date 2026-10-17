@@ -325,6 +325,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
         # only a threshold that actually removed something is worth a warning.
         dropped = weights.sum(axis=3) - ldf_count
         dev_warning_flags = (ldf_count < preserve_array) & (dropped > 0)
+        print(dev_warning_flags)
         weights = np.where(
             ldf_count[..., None] < preserve_array[..., None],
             weights,
