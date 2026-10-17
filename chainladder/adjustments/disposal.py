@@ -360,7 +360,6 @@ class DisposalRate(DevelopmentBase, DisposalMixin):
             A Triangle that mimics X but has params values
         """
         obj = super()._param_property(X, params)
-        obj.values = params
         obj.is_disposal_rate = True
 
         return obj

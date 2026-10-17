@@ -393,7 +393,6 @@ class IncrementalAdditive(DevelopmentBase, IncrementalMixin):
             A Triangle that mimics X but has params values
         """
         obj = super()._param_property(X, params)
-        obj.values = params
         obj.is_additive = True
 
         return obj
