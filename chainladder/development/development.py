@@ -433,12 +433,9 @@ class Development(DevelopmentBase):
             )
             w_reg = params._w_reg
 
-        params = xp.concatenate((params.slope_, params.sigma_, params.std_err_), 3)
-        params = params.swapaxes(2, 3)
-
-        self.ldf_ = self._param_property(obj, params, 0)
-        self.sigma_ = self._param_property(obj, params, 1)
-        self.std_err_ = self._param_property(obj, params, 2)
+        self.ldf_ = self._param_property(obj, params.slope_.swapaxes(2, 3))
+        self.sigma_ = self._param_property(obj, params.sigma_.swapaxes(2, 3))
+        self.std_err_ = self._param_property(obj, params.std_err_.swapaxes(2, 3))
 
         resid = -obj.iloc[..., :-1] * self.ldf_.values + obj.iloc[..., 1:].values
         std = xp.sqrt((1 / num_to_nan(w_reg)) * (self.sigma_**2).values)
@@ -500,8 +497,6 @@ class Development(DevelopmentBase):
             A Triangle that mimics X but has params values
         """
         obj = super()._param_property(X, params)
-        xp = X.get_array_module()
-        obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
         obj.ddims = X.link_ratio.ddims
         obj.is_cumulative = False
 
