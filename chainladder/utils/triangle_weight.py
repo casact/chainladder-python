@@ -492,11 +492,12 @@ def _warn_exclusions_ignored(
     stacklevel: int = 2,
 ) -> None:
     """
-    Warn that an exclusion was not applied because ``preserve`` blocked it.
+    Warns that a drop parameter (drop_above, drop_below, drop_high, drop_low) was not applied
+    because ``preserve`` blocked it.
 
-    The four drop routines in ``DevelopmentBase`` and ``TriangleWeight`` all
-    reach the same dead end and said so in four copies of this text. The
-    wording is asserted by the test suite, so it is kept as it was.
+    This warning is emitted by the pair of drop_aboe/drop_below and drop_high/drop_low methods,
+    each occurring once inside ``DevelopmentBase`` and another time inside ``TriangleWeight``
+    (consolidation coming in a future release).
 
     Parameters
     ----------
@@ -528,12 +529,13 @@ def _warn_exclusions_ignored(
         from chainladder.utils.triangle_weight import _warn_exclusions_ignored
 
         raa = cl.load_sample("raa")
+        # this is equivalent to checking if drop_above=1.5 warns
         warning_flags = np.all(raa.age_to_age.values > 1.5, axis = 2)
         _warn_exclusions_ignored(1, raa.age_to_age, warning_flags)
 
     .. testoutput::
 
-        example.py:7: UserWarning: Some exclusions have been ignored at ['12-24']. At least 1 (use preserve=...) link ratio(s) is required for development estimation.
+        example.py:8: UserWarning: Some exclusions have been ignored at ['12-24']. At least 1 (use preserve=...) link ratio(s) is required for development estimation.
             _warn_exclusions_ignored(preserve, raa.age_to_age, warning_flags)
     """
     if np.any(warning_flags):
