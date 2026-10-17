@@ -477,7 +477,7 @@ class Development(DevelopmentBase):
 
         return X_new
 
-    def _param_property(self, X, params, idx):
+    def _param_property(self, X, params):
         """
         Private method to wrap a numpy array into a Triangle
 
