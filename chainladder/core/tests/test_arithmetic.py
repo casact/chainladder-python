@@ -319,6 +319,44 @@ def test_prep_columns_reindexes_superset(clrd: Triangle) -> None:
         assert result["EarnedPremNet"] == clrd["EarnedPremNet"]
 
 
+def test_overlapping_columns_and_origins_union_both_axes(clrd: Triangle) -> None:
+    """
+    When two triangles share only some of their columns and only some of their
+    origin periods, the result unions both axes. The shared column is the sum
+    where both sides contribute and is unchanged where only one does. See #1461.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    c = clrd.groupby("LOB").sum()
+    a = c[["CumPaidLoss", "IncurLoss"]]
+    a = a[a.origin <= "1993"]
+    b = c[["IncurLoss", "EarnedPremDIR"]]
+    b = b[b.origin >= "1990"]
+
+    for result in [a + b, b + a]:
+        assert set(result.columns) == {"CumPaidLoss", "IncurLoss", "EarnedPremDIR"}
+        assert len(result.origin) == len(c.origin)
+
+        both = result[result.origin >= "1990"]
+        both = both[both.origin <= "1993"]
+        expected = c[c.origin >= "1990"]
+        expected = expected[expected.origin <= "1993"]
+        assert both["IncurLoss"] == expected["IncurLoss"] * 2
+
+        a_only = result[result.origin <= "1989"]
+        assert a_only["IncurLoss"] == c[c.origin <= "1989"]["IncurLoss"]
+
+        b_only = result[result.origin >= "1994"]
+        assert b_only["IncurLoss"] == c[c.origin >= "1994"]["IncurLoss"]
+
+
 def test_comparison_dunders_against_scalar(raa: Triangle) -> None:
     """
     All four ordering comparisons against a scalar return a Triangle and agree
