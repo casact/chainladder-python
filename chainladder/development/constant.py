@@ -236,7 +236,7 @@ class DevelopmentConstant(DevelopmentBase):
     @staticmethod
     def _normalize_patterns(patterns, style="ldf"):
         """Normalize pattern input (dict, Series, DataFrame, Triangle, estimator) into a dict."""
-        is_triangle = hasattr(patterns, "odims") and hasattr(patterns, "ddims")
+        is_triangle = hasattr(patterns, "origin") and hasattr(patterns, "development")
         if not is_triangle:
             if hasattr(patterns, "cdf_") and style == "cdf":
                 patterns = patterns.cdf_
@@ -259,7 +259,7 @@ class DevelopmentConstant(DevelopmentBase):
                 )
                 patterns = patterns.ldf_
 
-        if hasattr(patterns, "odims") and hasattr(patterns, "ddims"):
+        if hasattr(patterns, "origin") and hasattr(patterns, "development"):
             if (
                 hasattr(patterns, "shape")
                 and len(patterns.shape) >= 3
@@ -270,7 +270,7 @@ class DevelopmentConstant(DevelopmentBase):
                 )
             vals = patterns.values[0, 0, 0, :]
             vals = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
-            s = pd.Series(vals, index=patterns.ddims, dtype=float)
+            s = pd.Series(vals, index=patterns._ddims, dtype=float)
         elif isinstance(patterns, pd.DataFrame):
             if patterns.shape[0] == 1:
                 s = patterns.iloc[0].astype(float)

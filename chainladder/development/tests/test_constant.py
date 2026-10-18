@@ -481,14 +481,14 @@ def test_constant_incr():
 def test_constant_series_pattern(raa):
     dev = cl.Development().fit(raa)
     # Series with integer index
-    s_int = pd.Series(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.development)
+    s_int = pd.Series(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_._ddims)
     model_int = cl.DevelopmentConstant(patterns=s_int, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_int.ldf_.values)
 
     # Series with interval string index (e.g. '12-24')
     s_str = pd.Series(
         dev.ldf_.values[0, 0, 0, :],
-        index=[f"{d}-{d + 12}" for d in dev.ldf_.development],
+        index=dev.ldf_.development,
     )
     model_str = cl.DevelopmentConstant(patterns=s_str, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_str.ldf_.values)
@@ -502,12 +502,12 @@ def test_constant_series_pattern(raa):
 def test_constant_dataframe_pattern(raa):
     dev = cl.Development().fit(raa)
     # 1-row DataFrame
-    df_row = pd.DataFrame([dev.ldf_.values[0, 0, 0, :]], columns=dev.ldf_.development)
+    df_row = pd.DataFrame([dev.ldf_.values[0, 0, 0, :]], columns=dev.ldf_._ddims)
     model_row = cl.DevelopmentConstant(patterns=df_row, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_row.ldf_.values)
 
     # 1-column DataFrame
-    df_col = pd.DataFrame(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_.development)
+    df_col = pd.DataFrame(dev.ldf_.values[0, 0, 0, :], index=dev.ldf_._ddims)
     model_col = cl.DevelopmentConstant(patterns=df_col, style="ldf").fit(raa)
     assert np.allclose(dev.ldf_.values, model_col.ldf_.values)
 
