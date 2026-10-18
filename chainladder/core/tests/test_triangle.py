@@ -1,26 +1,28 @@
 from __future__ import annotations
 
-import chainladder as cl
+import copy
 import io
+import pickle
+import warnings
+from io import StringIO
+from typing import TYPE_CHECKING
+
+import chainladder as cl
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
 
+from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
 from chainladder.core.common import Common
+from chainladder.utils.sparse import COO
 from chainladder.utils.utility_functions import (
     _axis_orders,
     _get_axis_name,
     _get_axis_number,
     date_delta_adjustment,
 )
-from chainladder.utils.sparse import COO
-
-from io import StringIO
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -503,8 +505,6 @@ def test_axis_mappings():
 
 def test_triangle_axis_descriptor():
     """Verify TriangleAxis descriptor correctly uses integer axis keys for index and columns."""
-    from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
-
     assert isinstance(cl.Triangle.index, TriangleAxis)
     assert cl.Triangle.index.__doc__ is not None
     assert isinstance(cl.Triangle.columns, TriangleAxis)
@@ -667,148 +667,72 @@ def test_series_indexing(raa):
     assert sliced.index.iloc[0]["Company"] == "A"
 
 
-def test_legacy_pickle_compatibility(raa):
+class TestLegacyPickleCompatibility:
     """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
-    import pickle
 
-    # 1. Simulate oldest serialized Triangle containing kdims and vdims
-    state = raa.__dict__.copy()
-    state.pop("_axes", None)
-    state.pop("_index", None)
-    state.pop("_columns", None)
-    state["kdims"] = raa.index.values
-    state["vdims"] = raa.columns.values
+    def test_legacy_kdims_vdims_migration(self, raa):
+        # 1. Simulate legacy serialized Triangle containing kdims and vdims
+        state = raa.__dict__.copy()
+        state.pop("_axes", None)
+        state["kdims"] = raa.index.values
+        state["vdims"] = raa.columns.values
 
-    restored = cl.Triangle.__new__(cl.Triangle)
-    with pytest.warns(
-        UserWarning, match="legacy pickled Triangle instance was detected"
-    ):
-        restored.__setstate__(state)
+        restored = cl.Triangle.__new__(cl.Triangle)
+        with pytest.warns(
+            UserWarning, match="legacy pickled Triangle instance was detected"
+        ):
+            restored.__setstate__(state)
 
-    assert isinstance(restored.columns, pd.Index)
-    assert isinstance(restored.index, pd.DataFrame)
-    assert restored.index.equals(raa.index)
-    assert list(restored.columns) == list(raa.columns)
-    assert restored.loc["Total"].shape == raa.loc["Total"].shape
-    assert restored == raa
-    assert 0 in restored._axes
-    assert restored._axes[0].equals(raa.index)
-    assert 1 in restored._axes
-    assert restored._axes[1].equals(raa.columns)
+        assert isinstance(restored.columns, pd.Index)
+        assert isinstance(restored.index, pd.DataFrame)
+        assert restored.index.equals(raa.index)
+        assert list(restored.columns) == list(raa.columns)
+        assert restored.loc["Total"].shape == raa.loc["Total"].shape
+        assert restored == raa
+        assert 0 in restored._axes
+        assert restored._axes[0].equals(raa.index)
+        assert 1 in restored._axes
+        assert restored._axes[1].equals(raa.columns)
 
-    # 2. Simulate intermediate serialized Triangle containing _kdims and _vdims
-    state_mid = raa.__dict__.copy()
-    state_mid.pop("_axes", None)
-    state_mid.pop("_index", None)
-    state_mid.pop("_columns", None)
-    state_mid["_kdims"] = raa.index.values
-    state_mid["_vdims"] = raa.columns.values
+    def test_legacy_pickle_fallback_without_keys(self, raa):
+        # 2. Simulate fallback when no kdims/vdims keys are found (no warning)
+        state_empty = raa.__dict__.copy()
+        state_empty.pop("_axes", None)
+        state_empty.pop("kdims", None)
+        state_empty.pop("vdims", None)
 
-    restored_mid = cl.Triangle.__new__(cl.Triangle)
-    with pytest.warns(
-        UserWarning, match="legacy pickled Triangle instance was detected"
-    ):
-        restored_mid.__setstate__(state_mid)
+        restored_empty = cl.Triangle.__new__(cl.Triangle)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            restored_empty.__setstate__(state_empty)
+        assert list(restored_empty.columns) == ["values"]
+        assert list(restored_empty.index.columns) == ["Total"]
+        assert 0 in restored_empty._axes
+        assert 1 in restored_empty._axes
 
-    assert isinstance(restored_mid.columns, pd.Index)
-    assert isinstance(restored_mid.index, pd.DataFrame)
-    assert restored_mid.index.equals(raa.index)
-    assert list(restored_mid.columns) == list(raa.columns)
-    assert restored_mid == raa
-    assert 0 in restored_mid._axes
-    assert restored_mid._axes[0].equals(raa.index)
-    assert 1 in restored_mid._axes
-    assert restored_mid._axes[1].equals(raa.columns)
+    def test_migrated_pickle_roundtrip(self, raa):
+        # 3. Verify re-pickling the migrated instance works without warnings
+        state = raa.__dict__.copy()
+        state.pop("_axes", None)
+        state["kdims"] = raa.index.values
+        state["vdims"] = raa.columns.values
 
-    # 3. Simulate unprefixed kdims/vdims legacy pickle
-    state_unprefixed = raa.__dict__.copy()
-    state_unprefixed.pop("_axes", None)
-    state_unprefixed.pop("_index", None)
-    state_unprefixed.pop("_columns", None)
-    state_unprefixed.pop("_kdims", None)
-    state_unprefixed.pop("_vdims", None)
-    state_unprefixed["kdims"] = raa.index.values
-    state_unprefixed["vdims"] = raa.columns.values
+        restored = cl.Triangle.__new__(cl.Triangle)
+        with pytest.warns(
+            UserWarning, match="legacy pickled Triangle instance was detected"
+        ):
+            restored.__setstate__(state)
 
-    restored_unprefixed = cl.Triangle.__new__(cl.Triangle)
-    with pytest.warns(
-        UserWarning, match="legacy pickled Triangle instance was detected"
-    ):
-        restored_unprefixed.__setstate__(state_unprefixed)
-    assert 0 in restored_unprefixed._axes
-    assert restored_unprefixed.index.equals(raa.index)
-
-    # 4. Simulate serialized Triangle containing _columns
-    state_col = raa.__dict__.copy()
-    state_col.pop("_axes", None)
-    state_col.pop("_index", None)
-    state_col.pop("_columns", None)
-    state_col["_kdims"] = raa.index.values
-    state_col["_columns"] = list(raa.columns)
-
-    restored_col = cl.Triangle.__new__(cl.Triangle)
-    with pytest.warns(
-        UserWarning, match="legacy pickled Triangle instance was detected"
-    ):
-        restored_col.__setstate__(state_col)
-    assert list(restored_col.columns) == list(raa.columns)
-    assert 1 in restored_col._axes
-
-    # 5. Simulate string-keyed _axes
-    state_str_axes = raa.__dict__.copy()
-    state_str_axes.pop("_index", None)
-    state_str_axes.pop("_columns", None)
-    state_str_axes["_axes"] = {
-        "index": raa.index.copy(),
-        "columns": raa.columns.copy(),
-    }
-    restored_str = cl.Triangle.__new__(cl.Triangle)
-    restored_str.__setstate__(state_str_axes)
-    assert 0 in restored_str._axes
-    assert 1 in restored_str._axes
-    assert restored_str.index.equals(raa.index)
-
-    # 6. Simulate redundant _index when 0 already in _axes
-    state_redundant = raa.__dict__.copy()
-    state_redundant["_axes"] = {0: raa.index.copy(), 1: raa.columns.copy()}
-    state_redundant["_index"] = raa.index.copy()
-    restored_red = cl.Triangle.__new__(cl.Triangle)
-    restored_red.__setstate__(state_redundant)
-    assert 0 in restored_red._axes
-    assert "_index" not in restored_red.__dict__
-
-    # 7. Simulate fallback when no kdims/vdims keys are found (no warning)
-    state_empty = raa.__dict__.copy()
-    state_empty.pop("_axes", None)
-    state_empty.pop("_index", None)
-    state_empty.pop("_columns", None)
-    state_empty.pop("kdims", None)
-    state_empty.pop("_kdims", None)
-    state_empty.pop("vdims", None)
-    state_empty.pop("_vdims", None)
-
-    restored_empty = cl.Triangle.__new__(cl.Triangle)
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        restored_empty.__setstate__(state_empty)
-    assert list(restored_empty.columns) == ["values"]
-    assert list(restored_empty.index.columns) == ["Total"]
-    assert 0 in restored_empty._axes
-    assert 1 in restored_empty._axes
-
-    # 8. Verify re-pickling the migrated instance works without warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        roundtripped = pickle.loads(pickle.dumps(restored))
-    assert roundtripped == raa
-    assert 0 in roundtripped._axes
-    assert 1 in roundtripped._axes
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            roundtripped = pickle.loads(pickle.dumps(restored))
+        assert roundtripped == raa
+        assert 0 in roundtripped._axes
+        assert 1 in roundtripped._axes
 
 
 def test_sort_axis_columns_out_of_order(raa):
     """Verify sort_axis(1) reorders values when columns are unsorted."""
-    import copy
-
     t1 = copy.deepcopy(raa).rename("columns", ["B"])
     t2 = copy.deepcopy(raa).rename("columns", ["A"])
     combined = cl.concat([t1, t2], axis=1)
