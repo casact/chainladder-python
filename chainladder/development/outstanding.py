@@ -523,12 +523,12 @@ class ImpliedCaseDevelopment(DevelopmentBase):
                 s = pattern.iloc[:, 0].astype(float)
             else:
                 raise ValueError("DataFrame pattern must have 1 row or 1 column.")
+        elif hasattr(pattern, "values") and hasattr(pattern, "_ddims"):
+            s = pd.Series(pattern.values[0, 0, 0, :], index=pattern._ddims, dtype=float)
         elif hasattr(pattern, "values") and hasattr(pattern, "development"):
             s = pd.Series(
                 pattern.values[0, 0, 0, :], index=pattern.development, dtype=float
             )
-        elif hasattr(pattern, "values") and hasattr(pattern, "_ddims"):
-            s = pd.Series(pattern.values[0, 0, 0, :], index=pattern._ddims, dtype=float)
         else:
             raise TypeError(f"Unsupported pattern type: {type(pattern)}")
 
