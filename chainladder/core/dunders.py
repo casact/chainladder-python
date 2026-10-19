@@ -220,8 +220,8 @@ class TriangleDunders:
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
                 obj_arr = xp.zeros((
-                    self.shape[0],
-                    self.shape[1],
+                    obj.shape[0],
+                    obj.shape[1],
                     len(odims),
                     len(ddims),
                 ))
@@ -239,7 +239,7 @@ class TriangleDunders:
                     len(odims),
                     len(ddims),
                 )
-                obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
+                obj_arr.shape = (obj.shape[0], obj.shape[1], len(odims), len(ddims))
             obj._odims = np.array(odims.index)
             if isinstance(obj._ddims, pd.DatetimeIndex):
                 obj._ddims = pd.DatetimeIndex(ddims.index)
