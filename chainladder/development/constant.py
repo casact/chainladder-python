@@ -236,7 +236,12 @@ class DevelopmentConstant(DevelopmentBase):
     @staticmethod
     def _normalize_patterns(patterns, style="ldf"):
         """Normalize pattern input (dict, Series, DataFrame, Triangle, estimator) into a dict."""
-        is_triangle = hasattr(patterns, "origin") and hasattr(patterns, "development")
+        is_triangle = (
+            not isinstance(patterns, (pd.DataFrame, pd.Series, dict))
+            and hasattr(patterns, "shape")
+            and len(patterns.shape) == 4
+            and (hasattr(patterns, "development") or hasattr(patterns, "_ddims"))
+        )
         if not is_triangle:
             if hasattr(patterns, "cdf_") and style == "cdf":
                 patterns = patterns.cdf_
@@ -259,18 +264,20 @@ class DevelopmentConstant(DevelopmentBase):
                 )
                 patterns = patterns.ldf_
 
-        if hasattr(patterns, "origin") and hasattr(patterns, "development"):
-            if (
-                hasattr(patterns, "shape")
-                and len(patterns.shape) >= 3
-                and patterns.shape[2] > 1
-            ):
+        if (
+            not isinstance(patterns, (pd.DataFrame, pd.Series, dict))
+            and hasattr(patterns, "shape")
+            and len(patterns.shape) == 4
+            and (hasattr(patterns, "development") or hasattr(patterns, "_ddims"))
+        ):
+            if patterns.shape[2] > 1:
                 raise ValueError(
                     "Triangle pattern must have a single origin row (e.g. model.ldf_ or model.cdf_)."
                 )
             vals = patterns.values[0, 0, 0, :]
             vals = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
-            s = pd.Series(vals, index=patterns._ddims, dtype=float)
+            ddims = getattr(patterns, "_ddims", getattr(patterns, "development", None))
+            s = pd.Series(vals, index=ddims, dtype=float)
         elif isinstance(patterns, pd.DataFrame):
             if patterns.shape[0] == 1:
                 s = patterns.iloc[0].astype(float)
