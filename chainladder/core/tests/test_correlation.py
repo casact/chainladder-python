@@ -33,5 +33,5 @@ def test_val_corr_incomplete_triangle(xyz: Triangle) -> None:
     z_critical = (
         xyz["Paid"].valuation_correlation(p_critical=0.1, total=False).z_critical
     )
-    assert z_critical.values.shape[-1] == len(z_critical.ddims)
+    assert z_critical.values.shape[-1] == len(z_critical.development)
     assert repr(z_critical)
