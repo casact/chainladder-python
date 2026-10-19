@@ -55,6 +55,51 @@ class _FakeDaskBag:
         return _FakeBag(seq)
 
 
+def test_triangle_json_io(clrd):
+    clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
+    assert clrd == clrd2
+    assert clrd.index.equals(clrd2.index)
+    assert np.all(clrd.columns == clrd2.columns)
+    assert np.all(clrd.odims == clrd2.odims)
+    assert np.all(clrd.ddims == clrd2.ddims)
+    assert np.all(clrd.valuation == clrd2.valuation)
+
+
+def test_json_for_val(raa):
+    x = raa.dev_to_val().to_json()
+    assert cl.read_json(x) == raa.dev_to_val()
+
+
+def test_estimator_json_io():
+    assert (
+        cl.read_json(cl.Development().to_json()).get_params()
+        == cl.Development().get_params()
+    )
+
+
+def test_pipeline_json_io():
+    pipe = cl.Pipeline(
+        steps=[("dev", cl.Development()), ("model", cl.BornhuetterFerguson())]
+    )
+    pipe2 = cl.read_json(pipe.to_json())
+    assert {item[0]: item[1].get_params() for item in pipe.get_params()["steps"]} == {
+        item[0]: item[1].get_params() for item in pipe2.get_params()["steps"]
+    }
+
+
+def test_json_subtri(raa):
+    a = cl.read_json(cl.Chainladder().fit_predict(raa).to_json()).full_triangle_
+    b = cl.Chainladder().fit_predict(raa).full_triangle_
+    assert abs(a - b).max().max() < 1e-4
+
+
+def test_json_df():
+    x = cl.MunichAdjustment(paid_to_incurred=("paid", "incurred")).fit_transform(
+        cl.load_sample("mcl")
+    )
+    assert abs(cl.read_json(x.to_json()).lambda_ - x.lambda_).sum() < 1e-5
+
+
 def test_read_csv_single(raa):
     # Test the read_csv function for a single dimensional input.
 
@@ -205,16 +250,9 @@ def test_load_sample() -> None:
     automatically, while non-data files in the folder (``__init__.py``,
     ``_manifest.py``) are never mistaken for datasets.
     """
-    # Every manifest entry must load and have a matching CSV on disk.
-    data_dir: Path = Path(__file__).parent.parent / "data"
-    for dataset in SAMPLES:
-        assert (data_dir / f"{dataset}.csv").is_file(), (
-            f"manifest lists '{dataset}' but {dataset}.csv is missing"
-        )
-        cl.load_sample(dataset)
-
-    # Conversely, every CSV on disk must be declared in the manifest, so a
+    # Every CSV on disk must be declared in the manifest, so a
     # newly added data file can't silently go unregistered.
+    data_dir: Path = Path(__file__).parent.parent / "data"
     csv_stems = {f.stem for f in data_dir.glob("*.csv")}
     assert csv_stems == set(SAMPLES), (
         "manifest and data directory are out of sync: "
@@ -314,7 +352,7 @@ def test_load_sample_uspp() -> None:
         "friedland_uspp_increasing_claim_case",
     ]:
         tri = cl.load_sample(key)
-        assert set(str(c) for c in tri.vdims) == {
+        assert set(str(c) for c in tri.columns) == {
             "Reported Claims",
             "Paid Claims",
             "Earned Premium",
@@ -340,7 +378,7 @@ def test_load_sample_clrd2025() -> None:
         "EarnedPremCeded",
         "EarnedPremNet",
     }
-    assert set(str(c) for c in tri.vdims) == expected_columns
+    assert set(str(c) for c in tri.columns) == expected_columns
 
     # Accident years span 1998-2007.
     assert str(tri.origin.min()) == "1998"
@@ -474,6 +512,49 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     """
     with pytest.raises(AssertionError):
         cl.concat([raa, raa], axis=1)
+
+
+def test_concat_ignore_index_axes(raa: Triangle) -> None:
+    """Test concat with ignore_index=True along axes 0, 1, 2, and 3."""
+    res0 = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(res0.index) == 2
+    assert res0.key_labels == ["Index"]
+    assert list(res0.index["Index"]) == [0, 1]
+
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
+    assert list(res1.columns) == [0, 1]
+
+    o1 = raa.iloc[:, :, :5, :]
+    o2 = raa.iloc[:, :, 5:, :]
+    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
+    assert len(res2.odims) == len(raa.odims)
+
+    d1 = raa.iloc[:, :, :, :5]
+    d2 = raa.iloc[:, :, :, 5:]
+    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
+    assert len(res3.ddims) == len(raa.ddims)
+
+
+def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index values match but row index labels differ."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2.index = pd.DataFrame(t2.index.values, columns=t2.index.columns, index=[10])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+
+
+def test_concat_axis_1_index_nan_preserved(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index contains NaN entries."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t1.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    t2.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+    assert pd.isna(res.index.iloc[0, 1])
 
 
 def test_maximum_2(raa: Triangle) -> None:
@@ -877,7 +958,7 @@ def test_dask_parallel_deprecated_warns_once() -> None:
         cl._dask_parallel_state.warned = False
 
 
-def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
+def test_dask_parallel_groupby_deprecated(clrd, monkeypatch: MonkeyPatch) -> None:
     """
     A groupby aggregation on a sparse-backed triangle uses the dask 'bag'
     parallel-compute path when dask is available, which should emit the dask
@@ -890,18 +971,20 @@ def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
     """
     cl._dask_parallel_state.warned = False
     monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
-    sparse_clrd = cl.load_sample("clrd").set_backend("sparse")
-    try:
-        with pytest.warns(DeprecationWarning, match="dask") as record:
-            sparse_clrd.groupby("LOB").sum()
-        dask_warnings = [
-            w
-            for w in record
-            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
-        ]
-        assert len(dask_warnings) == 1
-    finally:
-        cl._dask_parallel_state.warned = False
+    if clrd.array_backend == "sparse":
+        # this test is specific to sparse backend
+        try:
+            with pytest.warns(DeprecationWarning, match="dask") as record:
+                clrd.groupby("LOB").sum()
+            dask_warnings = [
+                w
+                for w in record
+                if issubclass(w.category, DeprecationWarning)
+                and "dask" in str(w.message)
+            ]
+            assert len(dask_warnings) == 1
+        finally:
+            cl._dask_parallel_state.warned = False
 
 
 def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:

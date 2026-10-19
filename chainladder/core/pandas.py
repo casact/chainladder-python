@@ -170,8 +170,8 @@ class TrianglePandas(_TrianglePandasBase):
             elif len(axes) in [1, 2]:
                 tri: ndarray = np.squeeze(self.set_backend("numpy").values)
                 axes_lookup: dict = {
-                    0: self.kdims,
-                    1: self.vdims,
+                    0: self.index.values,
+                    1: self.columns.values,
                     2: self.origin,
                     3: self.development,
                 }
@@ -548,6 +548,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if value is None:
             raise TypeError("Must specify a fill value.")
@@ -578,6 +583,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if inplace:
             xp = self.get_array_module()
@@ -1131,10 +1141,17 @@ class TrianglePandas(_TrianglePandasBase):
         -------
         Triangle
         """
+        inplace = kwargs.pop("inplace", False)
         sorted_index: DataFrame = cast(
-            "DataFrame", self.index.sort_values(self.key_labels, *args, **kwargs)
+            "DataFrame",
+            self.index.copy().sort_values(self.key_labels, *args, **kwargs),
         )
-        return self.iloc[sorted_index.index]
+        result = self.iloc[sorted_index.index]
+        if inplace:
+            self.values = result.values
+            self.index = result.index
+            return self
+        return result
 
     def exp(self) -> Triangle:
         """
@@ -1290,10 +1307,12 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
 
         # Aggregation function will collapse a dimension, so
         # adjust the dimensions of the original object to match that of the aggregation.
-        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.kdims) > 1:
-            obj.kdims = np.array([["(All)"] * len(obj.key_labels)])
-        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.vdims) > 1:
-            obj.vdims = np.array([0])
+        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.index) > 1:
+            obj.index = pd.DataFrame(
+                [["(All)"] * len(obj.key_labels)], columns=obj.key_labels
+            )
+        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
+            obj.columns = pd.Index([0], name="columns")
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
         # If axis is development, set the ddims to be the valuation date.
@@ -1356,10 +1375,9 @@ def add_groupby_agg_func(cls, k: str, v: str):
                 obj.index = index
             else:
                 index = pd.DataFrame(group_index)
-                obj.key_labels = index.columns.tolist()
-                obj.kdims = index.values
+                obj.index = index
         if self.axis == 1:
-            obj.vdims = pd.DataFrame(group_index).values[:, 0]
+            obj.columns = group_index
         if self.axis == 2:
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]

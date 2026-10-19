@@ -30,9 +30,9 @@ classifiers = [
 keywords = ["actuarial", "reserving", "insurance", "chainladder", "IBNR"]
 dependencies = [
     "pandas >=2.3.3, !=3.0.4",
-    "scikit-learn>1.4.2",
+    "scikit-learn>=1.7.0",
     "sparse>=0.18",
-    "numpy>=2.0",
+    "numpy>=2.3",
     "matplotlib",  # Required for TriangleDisplay.heatmap()
     "dill",
     "patsy>=1.0.2",  # 1.0.1 breaks on pandas 3 default str dtype (np.issubdtype on StringDtype)
