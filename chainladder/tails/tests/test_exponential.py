@@ -48,6 +48,11 @@ def test_errors_validation(tail_sample: Triangle) -> None:
         cl.TailCurve(errors="Ignore").fit_transform(tail_sample)
 
 
+def test_tail_curve_attachment_age(tail_sample: Triangle) -> None:
+    tail = cl.TailCurve(attachment_age=48).fit(tail_sample)
+    assert tail.ldf_ is not None
+
+
 def test_no_log_warning_when_only_some_tails_exceed_one(clrd: Triangle) -> None:
     """
     A tail at or below 1.0 must not reach ``log(tail - 1)``.
