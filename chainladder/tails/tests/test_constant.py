@@ -18,3 +18,9 @@ def test_constant_balances(qtr):
         )
         == 1.050
     )
+
+
+def test_constant_attachment_age():
+    tri = cl.load_sample("genins")
+    tail = cl.TailConstant(tail=1.05, attachment_age=48).fit(tri)
+    assert tail.ldf_ is not None
