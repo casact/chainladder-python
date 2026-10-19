@@ -225,6 +225,22 @@ def test_approach_2_pattern_input_types():
             case
         )
 
+    # Pattern with string index that cannot be cast to int (hits except branch in _extract_cdf_series)
+    s_str_rep = pd.Series([1.2, 1.1], index=["dev_a", "dev_b"])
+    s_str_paid = pd.Series([1.5, 1.25], index=["dev_a", "dev_b"])
+    m_str = cl.ImpliedCaseDevelopment(
+        reported_pattern=s_str_rep, paid_pattern=s_str_paid
+    )
+    assert m_str._extract_cdf_series(s_str_rep).index.tolist() == ["dev_a", "dev_b"]
+
+    # Triangle with development ages not present in benchmark patterns (hits case_cdf_dict[d] = 1.0 fallback)
+    rep_partial = {12: 1.1}
+    paid_partial = {12: 1.3}
+    m_partial = cl.ImpliedCaseDevelopment(
+        reported_pattern=rep_partial, paid_pattern=paid_partial
+    ).fit(case)
+    assert np.isclose(m_partial.case_cdf_.to_frame().loc["(All)", "24-Ult"], 1.0)
+
 
 def test_approach_2_estimator_with_style_ldf_and_no_double_cumprod():
     """Verify BugBot fix: estimator with cdf_ is not reconverted/double-cumprodded when style='ldf'."""
