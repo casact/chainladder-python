@@ -606,3 +606,32 @@ def test_constant_incr_cumulative_none():
         np.round(result.cdf_.to_frame().values.flatten(), 6)
         == np.array([4.0, 2.9, 1.8, 1.4, 1.2, 1.1, 1.03, 1.02, 1.005])
     )
+
+
+def test_constant_dataframe_with_origin_development_columns(raa):
+    # A 1-row DataFrame containing 'origin' and 'development' as columns
+    # should be treated as a DataFrame pattern, not misdetected as a Triangle
+    df_pattern = pd.DataFrame([{"origin": 1.5, "development": 1.2, "36": 1.1}])
+    norm = cl.DevelopmentConstant._normalize_patterns(df_pattern)
+    assert isinstance(norm, dict)
+    assert norm["origin"] == 1.5
+    assert norm["development"] == 1.2
+
+    # Multi-row DataFrame with 'origin' and 'development' columns raises ValueError
+    # for invalid DataFrame shape rather than IndexError/AttributeError from triangle branch
+    df_multi = pd.DataFrame([
+        {"origin": 1.5, "development": 1.2},
+        {"origin": 1.3, "development": 1.1},
+    ])
+    with pytest.raises(
+        ValueError, match="DataFrame pattern must have 1 row or 1 column"
+    ):
+        cl.DevelopmentConstant._normalize_patterns(df_multi)
+
+    # to_frame(keepdims=True) produces columns ['origin', 'development', 'values']
+    dev = cl.Development().fit(raa)
+    df_keepdims = dev.ldf_.to_frame(keepdims=True)
+    with pytest.raises(
+        ValueError, match="DataFrame pattern must have 1 row or 1 column"
+    ):
+        cl.DevelopmentConstant._normalize_patterns(df_keepdims)
