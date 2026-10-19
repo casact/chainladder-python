@@ -52,7 +52,7 @@ class TriangleDisplay:
                 "O" + self.origin_grain + "D" + self.development_grain,
                 self.shape,
                 self.key_labels,
-                list(self.vdims),
+                list(self.columns),
             ],
             index=["Valuation:", "Grain:", "Shape:", "Index:", "Columns:"],
             name="Triangle Summary",
