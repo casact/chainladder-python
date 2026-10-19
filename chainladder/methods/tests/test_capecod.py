@@ -186,7 +186,10 @@ def test_capecod_onlevel_friedland_exhibit_ii():
 
     floored_cdf = xyz_reported_dev.cdf_.maximum(1.0)
     floored_patterns = dict(
-        zip([int(age) for age in floored_cdf.ddims], floored_cdf.values.flatten())
+        zip(
+            [int(str(age).split("-")[0]) for age in floored_cdf.development],
+            floored_cdf.values.flatten(),
+        )
     )
 
     sample_weight = onlevel.fit_transform(xyz_premium)

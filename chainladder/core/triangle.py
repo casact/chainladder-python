@@ -1323,7 +1323,7 @@ class Triangle(TriangleBase):
         # already one column wide, so the development age would survive; the
         # column is the latest valuation either way, so say so here rather
         # than widening the shared rule for every development aggregation.
-        obj.ddims = pd.DatetimeIndex(
+        obj._ddims = pd.DatetimeIndex(
             [self.valuation_date], dtype=__dt64_dtype__, freq=None
         )
         return obj
