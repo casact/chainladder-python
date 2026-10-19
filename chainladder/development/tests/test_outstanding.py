@@ -233,6 +233,23 @@ def test_approach_2_pattern_input_types():
     )
     assert m_str._extract_cdf_series(s_str_rep).index.tolist() == ["dev_a", "dev_b"]
 
+    # Pattern with .development and .values (without ._ddims)
+    class MockDevPattern:
+        def __init__(self, vals, devs):
+            self.values = vals
+            self.development = devs
+
+    vals_rep = np.array([[[[1.1, 1.05]]]])
+    vals_paid = np.array([[[[1.3, 1.15]]]])
+    mock_dev_rep = MockDevPattern(vals_rep, [12, 24])
+    mock_dev_paid = MockDevPattern(vals_paid, [12, 24])
+    m_mock_dev = cl.ImpliedCaseDevelopment(
+        reported_pattern=mock_dev_rep,
+        paid_pattern=mock_dev_paid,
+        style="cdf",
+    ).fit(case)
+    assert m_mock_dev.case_cdf_ is not None
+
     # Triangle with development ages not present in benchmark patterns (hits case_cdf_dict[d] = 1.0 fallback)
     rep_partial = {12: 1.1}
     paid_partial = {12: 1.3}

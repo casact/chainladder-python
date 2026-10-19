@@ -90,3 +90,13 @@ def test_pipeline():
     assert np.array_equal(
         dev1.zeta_.values, dev2.named_steps.drop_hilo.zeta_.values, True
     )
+
+
+def test_incremental_additive_val_triangle_error():
+    tri = cl.load_sample("ia_sample")
+    with pytest.raises(
+        ValueError, match="Triangle must be expressed with development lags"
+    ):
+        cl.IncrementalAdditive().fit(
+            tri["loss"].dev_to_val(), sample_weight=tri["exposure"].latest_diagonal
+        )
