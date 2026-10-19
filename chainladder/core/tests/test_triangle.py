@@ -14,9 +14,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from chainladder.core.axis import TriangleAxis
-from chainladder.core.axis import _set_columns
-from chainladder.core.axis import _set_index
+from chainladder.core.axis import (
+    TriangleAxis,
+    _set_columns,
+    _set_index,
+)
 from chainladder.core.common import Common
 from chainladder.utils.sparse import COO
 from chainladder.utils.utility_functions import (
