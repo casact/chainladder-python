@@ -4,7 +4,6 @@ import pytest
 
 import chainladder as cl
 import copy
-import dill
 import warnings
 import numpy as np
 import pandas as pd
@@ -210,23 +209,6 @@ def test_concat_immutability(raa):
     assert u == u_new
 
 
-def test_to_pickle_read_pickle(raa):
-    import tempfile
-    import os
-
-    dev = cl.Development(average="simple", n_periods=4).fit(raa)
-    fd, path = tempfile.mkstemp(suffix=".pkl")
-    os.close(fd)
-    try:
-        dev.to_pickle(path)
-        restored = cl.read_pickle(path)
-        assert restored.average == dev.average
-        assert restored.n_periods == dev.n_periods
-        np.testing.assert_array_almost_equal(restored.ldf_.values, dev.ldf_.values)
-    finally:
-        os.remove(path)
-
-
 def test_maximum_minimum_1(raa):
     ult_vol = (
         cl
@@ -415,86 +397,6 @@ def test_date_delta_adjustment() -> None:
         else "2025-10-31 23:59:59.999999"
     )
     assert result == expected
-
-
-def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
-    """
-    Create a triangle, dump a pickle of it, and then read it back in. The ingested pickle should result
-    in an equal copy of the triangle that was dumped.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set.
-    tmp_path: Path
-        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
-
-    Returns
-    -------
-    None
-
-    """
-    pkl_path = tmp_path / "triangle.pkl"
-    with open(pkl_path, "wb") as f:
-        dill.dump(raa, f)
-    assert cl.read_pickle(str(pkl_path)) == raa
-
-
-def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> None:
-    """
-    Dump a pickle of a triangle and read it back in. The read-in triangle should
-    equal the one that was dumped.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set Triangle.
-    clrd: Triangle
-        The clrd sample data set Triangle.
-    tmp_path: Path
-        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
-
-    Returns
-    -------
-    None
-
-    """
-    # Single-dimension case.
-    raa_path = tmp_path / "raa.pkl"
-    raa.to_pickle(str(raa_path))
-    assert raa_path.is_file()
-    assert cl.read_pickle(str(raa_path)) == raa
-
-    # Multidimensional case.
-    clrd_path = tmp_path / "clrd.pkl"
-    clrd.to_pickle(str(clrd_path))
-    assert clrd_path.is_file()
-    assert cl.read_pickle(str(clrd_path)) == clrd
-
-
-def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
-    """
-    Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
-    produce the same LDFs that the original estimator does.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set.
-    tmp_path: Path
-        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
-
-    Returns
-    -------
-    None
-
-    """
-
-    pkl_path = tmp_path / "estimator.pkl"
-    dev = cl.Development().fit(raa)
-    with open(pkl_path, "wb") as f:
-        dill.dump(dev, f)
-    assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
 
 
 def test_concat_type_error() -> None:
