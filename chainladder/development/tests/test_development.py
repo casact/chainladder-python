@@ -46,7 +46,7 @@ class _FutureDevelopment(cl.TriangleWeight):
         return self
 
 
-def test_full_slice(genins):
+def test_full_slice(genins) -> None:
     dev1 = cl.Development()
     dev2 = cl.Development(n_periods=1000)
     assert dev1.fit_transform(genins).ldf_ == dev2.fit_transform(genins).ldf_
@@ -57,7 +57,7 @@ def test_full_slice(genins):
     )
 
 
-def test_full_slice2(genins):
+def test_full_slice2(genins) -> None:
     dev1 = cl.Development()
     dev2 = cl.Development(n_periods=[1000] * (genins.shape[3] - 1))
     assert dev1.fit_transform(genins).ldf_ == dev2.fit_transform(genins).ldf_
@@ -68,7 +68,7 @@ def test_full_slice2(genins):
     )
 
 
-def test_drop1(raa):
+def test_drop1(raa) -> None:
     dev1 = cl.Development(drop=("1982", 12))
     dev2 = cl.Development(drop_high=[True] + [False] * 8)
     assert (
@@ -84,7 +84,7 @@ def test_drop1(raa):
     )
 
 
-def test_drop2(raa):
+def test_drop2(raa) -> None:
     dev1 = cl.Development(drop_valuation="1981")
     dev2 = cl.Development(drop_low=[True] + [False] * 8)
     assert (
@@ -100,7 +100,7 @@ def test_drop2(raa):
     )
 
 
-def test_n_periods():
+def test_n_periods() -> None:
     d = cl.load_sample("usauto")["incurred"]
     xp = np if d.array_backend == "sparse" else d.get_array_module()
     dev = cl.Development(n_periods=3, average="volume")
@@ -117,7 +117,7 @@ def test_n_periods():
     assert dev.fit_transform(d).ldf_ == _FutureDevelopment(dev).fit(d).ldf_
 
 
-def test_drophighlow(raa):
+def test_drophighlow(raa) -> None:
     dev = cl.Development(drop_high=0)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
     rhs = np.array([
@@ -241,7 +241,7 @@ def test_drophighlow(raa):
     assert tr.ldf_ == tw.ldf_
 
 
-def test_drophighlow_inequal(prism, atol):
+def test_drophighlow_inequal(prism, atol) -> None:
     tri = prism["Paid"].sum().grain("OYDQ")
     dev0 = cl.Development()
     dev1 = cl.Development(drop_high=True)
@@ -261,7 +261,7 @@ def test_drophighlow_inequal(prism, atol):
     ).all()
 
 
-def test_dropabovebelow(raa):
+def test_dropabovebelow(raa) -> None:
     dev = cl.Development(drop_above=40.0)
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
     rhs = np.array([
@@ -349,7 +349,68 @@ def test_dropabovebelow(raa):
     assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
 
 
-def test_drop_valuation_1(raa):
+def test_ldf_max_min(raa) -> None:
+    lhs = np.round(cl.Development(min_dev=1.1).fit(raa).ldf_.values, 4).flatten()
+    rhs = np.array([
+        2.9994,
+        1.6235,
+        1.2709,
+        1.1717,
+        1.1134,
+        1.1,
+        1.1,
+        1.1,
+        1.1,
+    ])
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(cl.Development(max_dev=1.3).fit(raa).ldf_.values, 4).flatten()
+    rhs = np.array([1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.0419, 1.0333, 1.0169, 1.0092])
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl.Development(min_dev=1.1, max_dev=1.3).fit(raa).ldf_.values, 4
+    ).flatten()
+    rhs = np.array([1.3, 1.3, 1.2709, 1.1717, 1.1134, 1.1, 1.1, 1.1, 1.1])
+    assert np.all(lhs == rhs)
+
+    with pytest.raises(ValueError, match="min_dev must be <= max_dev."):
+        cl.Development(min_dev=1.3, max_dev=1.1).fit(raa)
+
+
+def test_ldf_max_min_multilength(raa) -> None:
+    lhs = np.round(
+        cl
+        .Development(min_dev=[2, 1.5, 1.5, 1.5, 1.1, 1.1, 1.1, 1.1, 1.1])
+        .fit(raa)
+        .ldf_.values,
+        4,
+    ).flatten()
+    rhs = np.array([
+        2.9994,
+        1.6235,
+        1.5000,
+        1.5000,
+        1.1134,
+        1.1000,
+        1.1000,
+        1.1000,
+        1.1000,
+    ])
+    assert np.all(lhs == rhs)
+
+    lhs = np.round(
+        cl
+        .Development(max_dev=[1.5, 1.2, 1.2, 1.2, 1.2, 1, 1, 1, 1])
+        .fit(raa)
+        .ldf_.values,
+        4,
+    ).flatten()
+    rhs = np.array([1.5, 1.2, 1.2, 1.1717, 1.1134, 1, 1, 1, 1])
+    assert np.all(lhs == rhs)
+
+
+def test_drop_valuation_1(raa) -> None:
     dev1 = cl.Development(drop_valuation="1981-12-31")
     dev2 = cl.Development(drop_valuation="1982-12-31")
     dev3 = cl.Development(drop_valuation="1983-12-31")
@@ -367,7 +428,7 @@ def test_drop_valuation_1(raa):
     )
 
 
-def test_drop_valuation_2(qtr):
+def test_drop_valuation_2(qtr) -> None:
     dev1 = cl.Development()
     dev2 = cl.Development(drop_valuation="1995-03-31")
     dev3 = cl.Development(drop_valuation="1995-06-30")
@@ -406,7 +467,7 @@ def test_drop_valuation_2(qtr):
     )
 
 
-def test_assymetric_development(qtr, atol):
+def test_assymetric_development(qtr, atol) -> None:
     quarterly = qtr["paid"]
     xp = np if quarterly.array_backend == "sparse" else quarterly.get_array_module()
     dev1 = cl.Development(n_periods=1, average="simple")
@@ -421,7 +482,7 @@ def test_assymetric_development(qtr, atol):
     )
 
 
-def test_hilo_multiple_indices(clrd):
+def test_hilo_multiple_indices(clrd) -> None:
     tri = clrd.groupby("LOB")["CumPaidLoss"].sum()
     assert (
         cl.Development(n_periods=5).fit(tri).ldf_.loc["wkcomp"]
@@ -433,13 +494,13 @@ def test_hilo_multiple_indices(clrd):
     )
 
 
-def test_new_drop_1(clrd):
+def test_new_drop_1(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # n_periods
     compare_new_drop(cl.Development(n_periods=4).fit(clrd), clrd)
 
 
-def test_new_drop_2(clrd):
+def test_new_drop_2(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # single drop and drop_valuation
     compare_new_drop(
@@ -447,7 +508,7 @@ def test_new_drop_2(clrd):
     )
 
 
-def test_new_drop_3(clrd):
+def test_new_drop_3(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # multiple drop and drop_valuation
     compare_new_drop(
@@ -458,20 +519,20 @@ def test_new_drop_3(clrd):
     )
 
 
-def test_new_drop_4(clrd):
+def test_new_drop_4(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
     compare_new_drop(cl.Development(drop_high=1, drop_low=1).fit(clrd), clrd)
 
 
-def test_new_drop_5(clrd):
+def test_new_drop_5(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
     dev = cl.Development(drop_high=1, drop_low=1, preserve=3).fit(clrd)
     compare_new_drop(dev, clrd)
 
 
-def test_new_drop_5a(clrd):
+def test_new_drop_5a(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_hi/low without preserve
     lhs = (
@@ -505,7 +566,7 @@ def _holed(raa, n_origins):
     return holed.set_backend(backend)
 
 
-def test_drop_warning_is_silent_on_a_full_triangle(raa):
+def test_drop_warning_is_silent_on_a_full_triangle(raa) -> None:
     """
     A triangle with no holes cannot satisfy preserve in its last periods no
     matter what the caller does, so dropping there is expected, not a surprise.
@@ -516,7 +577,7 @@ def test_drop_warning_is_silent_on_a_full_triangle(raa):
             cl.Development(drop_high=True, drop_low=True, preserve=preserve).fit(raa)
 
 
-def test_drop_warning_fires_when_the_triangle_has_holes(raa):
+def test_drop_warning_fires_when_the_triangle_has_holes(raa) -> None:
     """
     Blank enough origins that the first age-to-age period holds two factors.
     The shape says nine were possible, so dropping one high and one low is a
@@ -528,7 +589,7 @@ def test_drop_warning_fires_when_the_triangle_has_holes(raa):
         cl.Development(drop_high=True, drop_low=True).fit(holed)
 
 
-def test_drop_warning_fires_once_per_fit(raa):
+def test_drop_warning_fires_once_per_fit(raa) -> None:
     """
     Development computes the same drops twice, for w_ and for w_v2_. Only
     one of them should reach the caller."""
@@ -539,7 +600,7 @@ def test_drop_warning_fires_once_per_fit(raa):
     assert len(hits) == 1, f"expected one warning, got {len(hits)}"
 
 
-def test_drop_x_warning_needs_something_dropped(raa):
+def test_drop_x_warning_needs_something_dropped(raa) -> None:
     """
     Thresholds that exclude nothing are not exclusions being ignored."""
     with warnings.catch_warnings():
@@ -547,7 +608,7 @@ def test_drop_x_warning_needs_something_dropped(raa):
         cl.Development(drop_above=10.0, drop_below=0.0, preserve=3).fit(raa)
 
 
-def test_drop_warning_silent_on_the_triangle_weight_path(raa):
+def test_drop_warning_silent_on_the_triangle_weight_path(raa) -> None:
     """
     TriangleWeight is built directly by Disposal, IncrementalAdditive and
     Learning, none of which go through Development, so it needs the same gate.
@@ -560,13 +621,13 @@ def test_drop_warning_silent_on_the_triangle_weight_path(raa):
         )
 
 
-def test_new_drop_6(clrd):
+def test_new_drop_6(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below without preserve
     compare_new_drop(cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd)
 
 
-def test_new_drop_7(clrd):
+def test_new_drop_7(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below with preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
@@ -574,13 +635,13 @@ def test_new_drop_7(clrd):
     compare_new_drop(dev, clrd)
 
 
-def test_new_drop_8(prism):
+def test_new_drop_8(prism) -> None:
     tri = prism["Paid"].sum().grain("OYDQ")
     # Should not raise; pytest reports the real error if it does.
     cl.Development(drop_high=False).fit_transform(tri)
 
 
-def test_new_drop_9(prism):
+def test_new_drop_9(prism) -> None:
     tri = prism["Paid"].sum().grain("OYDQ")
 
     lhs = cl.Development(drop_high=True).fit(tri).cdf_.to_frame().fillna(0).values
@@ -589,7 +650,7 @@ def test_new_drop_9(prism):
 
 
 # @pytest.mark.xfail
-def test_new_drop_10():
+def test_new_drop_10() -> None:
     data = {
         "valuation": [
             1981,
@@ -646,7 +707,7 @@ def test_new_drop_10():
     )
 
 
-def test_geometric_avg():
+def test_geometric_avg() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     df = tri.link_ratio.to_frame()
 
@@ -669,7 +730,7 @@ def test_geometric_avg():
     assert np.all(lhs == rhs)
 
 
-def test_simple_avg():
+def test_simple_avg() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     df = tri.link_ratio.to_frame()
 
@@ -692,7 +753,7 @@ def test_simple_avg():
     assert np.all(lhs == rhs)
 
 
-def test_simple_geometric_avg():
+def test_simple_geometric_avg() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     df = tri.link_ratio.to_frame()
 
@@ -748,7 +809,7 @@ def test_simple_geometric_avg():
     assert np.all(lhs == rhs)
 
 
-def test_simple_geometric_avg2():
+def test_simple_geometric_avg2() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     df = tri.link_ratio.to_frame()
 
@@ -804,7 +865,7 @@ def test_simple_geometric_avg2():
     assert np.all(lhs == rhs)
 
 
-def test_sigma():
+def test_sigma() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     sigma = np.round(
         cl
@@ -832,7 +893,7 @@ def test_sigma():
     assert np.all(sigma == sigma_expected)
 
 
-def test_stderror():
+def test_stderror() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     std_error = np.round(
         cl
@@ -859,7 +920,7 @@ def test_stderror():
     assert np.all(std_error == std_error_expected)
 
 
-def test_std_residuals():
+def test_std_residuals() -> None:
     tri = cl.load_sample("friedland_us_industry_auto")["Reported Claims"]
     std_residuals = np.round(
         cl
@@ -907,7 +968,7 @@ def test_std_residuals():
     assert np.array_equal(std_residuals, std_residuals_expected, equal_nan=True)
 
 
-def compare_new_drop(dev, tri):
+def compare_new_drop(dev, tri) -> None:
     assert np.array_equal(
         _FutureDevelopment(dev).fit(tri).ldf_.values,
         dev.transform(tri).ldf_.values,
@@ -915,7 +976,7 @@ def compare_new_drop(dev, tri):
     )
 
 
-def test_4d_drop(clrd):
+def test_4d_drop(clrd) -> None:
     clrd = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
     assert (
         cl.Development(n_periods=4).fit_transform(clrd.iloc[0, 0]).link_ratio
@@ -923,7 +984,7 @@ def test_4d_drop(clrd):
     )
 
 
-def test_pipeline(clrd):
+def test_pipeline(clrd) -> None:
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         dev1 = cl.Development(
@@ -951,7 +1012,7 @@ def test_pipeline(clrd):
     )
 
 
-def test_pct_reported_and_unreported(raa):
+def test_pct_reported_and_unreported(raa) -> None:
     dev = cl.Development().fit(raa)
     np.testing.assert_array_equal(dev.pct_reported_.values, (1 / dev.cdf_).values)
     np.testing.assert_array_equal(dev.pct_unreported_.values, (1 - 1 / dev.cdf_).values)
@@ -960,7 +1021,7 @@ def test_pct_reported_and_unreported(raa):
     assert np.allclose(np.nan_to_num(total), np.nan_to_num(dev.cdf_.values * 0 + 1))
 
 
-def test_pct_reported_requires_ldf(raa):
+def test_pct_reported_requires_ldf(raa) -> None:
     # An unfitted triangle has no ldf_, so both properties raise AttributeError.
     assert not raa.has_ldf
     with pytest.raises(AttributeError):
