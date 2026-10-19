@@ -17,3 +17,12 @@ def test_mcl_rollforward():
     munich = cl.MunichAdjustment(paid_to_incurred=[("paid", "incurred")]).fit(mcl_prior)
     new = munich.transform(mcl)
     _ = cl.Chainladder().fit(new).ultimate_
+
+
+def test_munich_properties():
+    mcl = cl.load_sample("mcl")
+    munich = cl.MunichAdjustment(paid_to_incurred=[("paid", "incurred")]).fit(mcl)
+    assert munich.lambda_ is not None
+    assert munich.resids_ is not None
+    assert munich.q_ is not None
+    assert munich.q_resids_ is not None
