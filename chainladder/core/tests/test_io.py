@@ -31,8 +31,8 @@ class TestJSON:
         """
         clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
         assert clrd == clrd2
-        assert np.all(clrd.kdims == clrd2.kdims)
-        assert np.all(clrd.vdims == clrd2.vdims)
+        assert clrd.index.equals(clrd2.index)
+        assert np.all(clrd.columns == clrd2.columns)
         assert np.all(clrd.odims == clrd2.odims)
         assert np.all(clrd.ddims == clrd2.ddims)
         assert np.all(clrd.valuation == clrd2.valuation)
