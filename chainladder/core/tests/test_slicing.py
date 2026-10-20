@@ -754,3 +754,14 @@ def test_slice_triangle_still_clamps_valuation_date(raa: Triangle) -> None:
     """
 
     assert raa.iloc[:, :, :5, :5].valuation_date < raa.valuation_date
+
+
+def test_slice_triangle_without_pattern_attribute(raa: Triangle) -> None:
+    """
+    A Triangle unpickled from an older release has no ``_pattern`` and must still slice.
+    """
+
+    old = raa.copy()
+    del old.__dict__["_pattern"]
+    assert old.iloc[:, :, :5, :5].shape == (1, 1, 5, 5)
+    assert old[old.valuation < "1989"].shape == (1, 1, 8, 8)
