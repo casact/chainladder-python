@@ -17,7 +17,6 @@ To reach us, please email us at [chainladder@casact.org](mailto:chainladder@casa
 - Gene Dan, FCAS, MAAA, CSPA ([@genedan](https://github.com/genedan)) - March 2022 - Present
 - Henry Liu, FCAS ([@henrydingliu](https://github.com/henrydingliu)) - October 2022 - Present
 
-
 ## Current Project Maintainer(s)
 
 - Priyam Alok ([@priyam0k](https://github.com/priyam0k)) - April 2026 - Present
