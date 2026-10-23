@@ -345,10 +345,7 @@ class DevelopmentBase(BaseEstimator, TransformerMixin, EstimatorIO, Common):
             drop_valuation = self.drop_valuation
 
         # Pandas deprecated passing integer to Period
-        drop_valuation = [
-            str(x) if isinstance(x, int) else x
-            for x in drop_valuation
-        ]
+        drop_valuation = [str(x) if isinstance(x, int) else x for x in drop_valuation]
 
         drop_valuation_vector = pd.PeriodIndex(
             drop_valuation, freq=X.development_grain
