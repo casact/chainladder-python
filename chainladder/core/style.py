@@ -465,9 +465,12 @@ class Styler(_PandasStyler):
                     target_period = pd.Period(pd.Timestamp(valuation), freq=dev_freq)
                 except (ValueError, TypeError) as e:
                     raise ValueError(f"Invalid valuation date: '{valuation}'") from e
-            val_periods = self._triangle.valuation.to_period(
-                freq=dev_freq
-            ).to_numpy().reshape(self._triangle.shape[-2:], order="F")
+            val_periods = (
+                self._triangle.valuation
+                .to_period(freq=dev_freq)
+                .to_numpy()
+                .reshape(self._triangle.shape[-2:], order="F")
+            )
             mask = val_periods == target_period
 
         if not mask.any():

@@ -411,6 +411,13 @@ class TriangleWeight(BaseEstimator, TransformerMixin):
         else:
             drop_valuation_list = [self.drop_valuation]
         # turn drop_valuation to same valuation freq as X
+
+        # Pandas deprecated passing integer to Period
+        drop_valuation_list = [
+            str(x) if isinstance(x, int) else x
+            for x in drop_valuation_list
+        ]
+
         v = pd.PeriodIndex(drop_valuation_list, freq=X.development_grain).to_timestamp(
             how="e"
         )

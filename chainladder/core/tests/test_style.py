@@ -582,8 +582,11 @@ def test_highlight_diagonal_explicit_dates(raa, val_arg) -> None:
     styled = {k for k, v in styler.ctx.items() if v}
 
     target_period = pd.Period("1988", freq=raa.origin.freq)
-    val_periods = raa.valuation.to_period(raa.origin.freq).to_numpy().reshape(
-        raa.shape[-2:], order="F"
+    val_periods = (
+        raa.valuation
+        .to_period(raa.origin.freq)
+        .to_numpy()
+        .reshape(raa.shape[-2:], order="F")
     )
     expected = {
         (r, c)
