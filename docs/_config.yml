@@ -3,7 +3,7 @@
 
 title: Chainladder - Python
 author: chainladder Development Team
-copyright: "2023 - 2026"
+copyright: "2017 - 2026"
 logo: images/logo.png
 
 # Force re-execution of notebooks on each build.
@@ -32,6 +32,8 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+  extra_footer: |
+    <p><a href="https://chainladder-python.readthedocs.io/en/stable/library/about.html">chainladder Development Team</a></p>
 
 sphinx:
   extra_extensions:
