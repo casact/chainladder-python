@@ -3,6 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+import chainladder as cl
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -724,3 +726,41 @@ def test_setitem_new_column_misaligned_triangle(raa: Triangle) -> None:
     assert np.allclose(
         new_col.values[0, 0, 5:, :], misaligned.values[0, 0, :, :], equal_nan=True
     )
+
+
+@pytest.mark.parametrize(
+    "select",
+    [
+        lambda tri: tri.iloc[:],
+        lambda tri: tri.iloc[0],
+        lambda tri: tri.loc[tri.index.iloc[0, 0]],
+        lambda tri: tri[tri.valuation < "1995"],
+    ],
+    ids=["iloc_all", "iloc_first", "loc", "valuation_filter"],
+)
+def test_slice_pattern_keeps_valuation_date(clrd: Triangle, select) -> None:
+    """
+    Slicing a pattern must not clamp its valuation date to the cells it keeps.
+    """
+
+    ldf = cl.Development().fit(clrd.groupby("LOB").sum()).ldf_
+    assert ldf.is_pattern
+    assert select(ldf).valuation_date == ldf.valuation_date
+
+
+def test_slice_triangle_still_clamps_valuation_date(raa: Triangle) -> None:
+    """
+    Slicing an ordinary Triangle still limits the valuation date to the data.
+    """
+
+    assert raa.iloc[:, :, :5, :5].valuation_date < raa.valuation_date
+
+
+def test_slice_pattern_with_data_valuation_date_still_clamps(raa: Triangle) -> None:
+    """
+    A pattern whose valuation date is a data date, such as link ratios, is still limited to the data it keeps.
+    """
+
+    link_ratio = raa.link_ratio
+    assert link_ratio.is_pattern
+    assert link_ratio.iloc[:, :, :2, :2].valuation_date < link_ratio.valuation_date
