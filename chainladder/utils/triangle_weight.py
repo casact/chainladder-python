@@ -495,7 +495,7 @@ def _warn_exclusions_ignored(
     Warns that a drop parameter (drop_above, drop_below, drop_high, drop_low) was not applied
     because ``preserve`` blocked it.
 
-    This warning is emitted by the pair of drop_aboe/drop_below and drop_high/drop_low methods,
+    This warning is emitted by the pair of drop_above/drop_below and drop_high/drop_low methods,
     each occurring once inside ``DevelopmentBase`` and another time inside ``TriangleWeight``
     (consolidation coming in a future release).
 
