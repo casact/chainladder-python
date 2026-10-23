@@ -22,28 +22,37 @@ The Working Group consists of an elected or appointed Chair and Vice Chair.
 
 Following standard CAS volunteer governance, the Chair shall serve a three-year term, after which the Vice Chair rotates into the Chair position. As the Vice Chair rotates into the Chair position, the new Chairperson shall search and appoint a new Vice Chair or hold an election within the working group to appoint a new Vice Chair.
 
-#### Project Maintainers (Codeowners)
+#### Community Contributors ("Contributors")
 
-Project Maintainers are trusted contributors with deep knowledge of the project.
+Community contributors include anyone submitting issues, bug reports, feature proposals, or PRs. Everyone is welcome to join us and participate and collaborate as as Community Contributor.
 
-Responsibilities include:
-
-- Reviewing and approving pull requests (PRs)
-- Triaging issues
-- Managing the development backlog
-- Maintaining code quality and project direction
-- Participating in technical decision-making
-- Working with the working group Chair and Vice Chair to coordinate outside communication among the CAS Research pillar, CAS Leadership Team, and with the CAS Executive Council
-
-#### CAS GitHub Repo Members (Collaborators)
+#### CAS GitHub Repo Members ("Collaborators")
 
 Membership in the CAS GitHub repo is open to community members who wish to publicly participate in project development.
 
 Organization membership does not grant repository write on protected branches or administrative permissions. However, one will be able to create a branch on the repo instead of working off your own fork. You will also have elevated write privileges such as managing tickets and becoming a reviewer, and is the required pathway to become a Codeowner. For those who are interested in making consistent contributions, you are encouraged to join as a member.
 
-#### Community Contributors
+#### Project Maintainers ("Maintainers")
 
-Community contributors include anyone submitting issues, documentation improvements, bug reports, PRs, or feature proposals. Everyone is welcome to join us and participate and collaborate.
+Project maintainers are members that had made significant contributions to the project and have rights to approve a PR, but does not have admin rights or rights to perform protected actions.
+
+Responsbilities include: 
+- Reviewing and approving pull requests (PRs)
+- Triaging issues
+- Maintaining code quality and project direction
+- Participating in technical decision-making, but without voting rights
+
+#### Project Owners ("Codeowners")
+
+Project Owners are trusted contributors with deep knowledge of the project.
+
+Responsibilities include:
+
+- All responsbilities listed under "Maintainers"
+- Participating in technical decision-making, with voting rights
+- Working with the working group Chair and Vice Chair to coordinate outside communication among the CAS Research pillar, CAS Leadership Team, and with the CAS Executive Council
+- Protect the project from bad actors
+- Perform admin work as needed, such as promoting "Collaborators" to "Maintainers"
 
 ---
 
@@ -209,11 +218,11 @@ When overriding a failed check, the approving maintainer should document the rea
 
 ### Emergency Hotfixes
 
-In the event of a critical production bug, security issue, or broken release requiring immediate action, a Project Maintainer may bypass the standard review and CI requirements to merge an emergency hotfix.
+In the event of a critical production bug, security issue, or broken release requiring immediate action, a code owner may bypass the standard review and CI requirements to merge an emergency hotfix.
 
 - This emergency bypass may only be used once for a given hotfix. Any subsequent changes must follow the standard contribution and review process.
-- A post-merge review by at least one other Project Maintainer shall be completed as soon as reasonably possible. Any deficiencies identified during the review shall be addressed in a follow-up PR.
-- Only Project Maintainers may approve or perform an emergency bypass.
+- A post-merge review by at least one other code owner shall be completed as soon as reasonably possible. Any deficiencies identified during the review shall be addressed in a follow-up PR.
+- Only code owners may approve or perform an emergency bypass.
 
 ### Review Requirements & Checklist
 
