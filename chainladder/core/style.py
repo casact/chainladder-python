@@ -432,6 +432,9 @@ class Styler(_PandasStyler):
         """
         if "valuation_date" in kwargs:
             valuation = kwargs.pop("valuation_date")
+        # Pandas deprecated passing integer to Period
+        if isinstance(valuation, int):
+            valuation = str(valuation)
         if kwargs:
             unexpected = next(iter(kwargs))
             raise TypeError(
@@ -464,7 +467,7 @@ class Styler(_PandasStyler):
                     raise ValueError(f"Invalid valuation date: '{valuation}'") from e
             val_periods = self._triangle.valuation.to_period(
                 freq=dev_freq
-            ).values.reshape(self._triangle.shape[-2:], order="F")
+            ).to_numpy().reshape(self._triangle.shape[-2:], order="F")
             mask = val_periods == target_period
 
         if not mask.any():
