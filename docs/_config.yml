@@ -3,6 +3,7 @@
 
 title: Chainladder - Python
 author: chainladder Development Team
+copyright: "2023 - 2026"
 logo: images/logo.png
 
 # Force re-execution of notebooks on each build.
