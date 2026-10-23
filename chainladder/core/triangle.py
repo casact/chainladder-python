@@ -1962,7 +1962,7 @@ class Triangle(TriangleBase):
 
             groups = pd.concat(
                 [pd.Series([k] * len(v), index=v) for k, v in indices.items()], axis=0
-            ).values
+            ).to_numpy()
 
             obj = obj.groupby(groups, axis=2).sum()
             obj.origin_close = origin_period_end
