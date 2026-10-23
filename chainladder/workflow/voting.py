@@ -450,8 +450,8 @@ class TriangleSelector(
     EstimatorIO,
 ):
     """
-    A transformer to assist with creating VotingChainladder workflows that weights between
-    Incured/Paid or Reported/Closed.
+    A transformer to assist with creating VotingChainladder workflows that weighs between
+    Incurred/Paid or Reported/Closed.
 
     .. versionadded:: 0.10.0
 
@@ -540,7 +540,7 @@ class TriangleSelector(
 
     def transform(self, X: Triangle) -> Triangle:
         """
-        Return a specific column in X
+        Return (a) specific column(s) in X
 
         Parameters
         ----------
@@ -549,7 +549,7 @@ class TriangleSelector(
 
         Returns
         -------
-            X[col]
+        Triangle
         """
         cols = [self.col] if isinstance(self.col, str) else self.col
         return X[cols]
