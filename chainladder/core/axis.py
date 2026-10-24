@@ -187,11 +187,13 @@ def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
         obj._len_check(range(obj.values.shape[2]), value)
     elif hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
         obj._len_check(obj.origin, value)
+    origin_grain = getattr(obj, "origin_grain", "Y")
+    origin_close = getattr(obj, "origin_close", "DEC")
     freq = {
         "S": "2Q",
-    }.get(obj.origin_grain, obj.origin_grain)
-    freq = freq if freq == "M" else freq + "-" + obj.origin_close
-    value = pd.PeriodIndex(list(value), freq=freq)
+    }.get(origin_grain, origin_grain)
+    freq = freq if freq == "M" else freq + "-" + origin_close
+    value = pd.PeriodIndex(value, freq=freq)
     return value.to_timestamp().values
 
 
@@ -218,7 +220,7 @@ def _get_development(obj: Triangle, raw: Any) -> pd.Series:
     return pd.Series(list(ddims), name="development")
 
 
-def _set_development(obj: Triangle, value: Any) -> np.ndarray:
+def _set_development(obj: Triangle, value: Any) -> Any:
     """
     Validate and transform assigned development periods into internal lag/timestamp array.
     """
@@ -226,6 +228,8 @@ def _set_development(obj: Triangle, value: Any) -> np.ndarray:
         obj._len_check(range(obj.values.shape[3]), value)
     elif hasattr(obj, "_axes") and (3 in obj._axes or "development" in obj._axes):
         obj._len_check(obj.development, value)
+    if isinstance(value, pd.DatetimeIndex):
+        return value
     return np.array([value] if isinstance(value, str) else value)
 
 

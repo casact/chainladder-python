@@ -298,5 +298,5 @@ class Benktander(MethodBase):
         b = cdf[-1, ...] * xp.nan_to_num(expectation.set_backend(backend).values)
         ultimate.values = num_to_nan(a + b)
         ultimate.array_backend = backend
-        ultimate._ddims = self.cdf_._ddims[: ultimate.shape[-1]]
+        ultimate.development = self.cdf_.development[: ultimate.shape[-1]]
         return self._set_ult_attr(ultimate)

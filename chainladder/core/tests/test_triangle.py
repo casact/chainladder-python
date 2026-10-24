@@ -338,7 +338,7 @@ def test_origin_and_value_setters(raa):
     assert np.all((
         np.all(raa2.origin == raa.origin),
         np.all(raa2.development == raa.development),
-        np.all(raa2._odims == raa._odims),
+        np.all(raa2._axes[2] == raa._axes[2]),
         np.all(raa2.columns == raa.columns),
     ))
 
@@ -705,19 +705,19 @@ def test_centralized_axis_edge_cases(raa):
     mock_ult = MockPatternUltimate()
     assert list(mock_ult.development) == ["12-24", "24-36", "36-48"]
 
-    # 6. Triangle._odims and Triangle._ddims setters on uninitialized instance
+    # 6. Triangle.origin and Triangle.development setters on uninitialized instance
     t_uninit = cl.Triangle.__new__(cl.Triangle)
-    t_uninit._odims = np.array(["2000-01-01"], dtype="datetime64[ns]")
+    t_uninit.origin = np.array(["2000-01-01"], dtype="datetime64[ns]")
     assert 2 in t_uninit._axes
 
     t2_uninit = cl.Triangle.__new__(cl.Triangle)
-    t2_uninit._ddims = np.array([12, 24])
+    t2_uninit.development = np.array([12, 24])
     assert 3 in t2_uninit._axes
 
     # 7. Redundant legacy keys in __setstate__
     state_redundant = raa.__dict__.copy()
-    raw_odims = raa._odims.copy()
-    raw_ddims = raa._ddims.copy()
+    raw_odims = raa._axes[2].copy()
+    raw_ddims = raa._axes[3].copy()
     state_redundant["_axes"] = {
         0: raa.index.copy(),
         1: raa.columns.copy(),
@@ -843,24 +843,24 @@ def test_odims_deprecation_warning(raa):
     """Accessing or setting odims should emit a FutureWarning."""
     with pytest.warns(FutureWarning, match="'odims' attribute is deprecated"):
         o = raa.odims
-    assert np.all(o == raa._odims)
+    assert np.all(o == raa.origin)
 
     raa2 = raa.copy()
     with pytest.warns(FutureWarning, match="'odims' attribute is deprecated"):
-        raa2.odims = raa._odims
-    assert np.all(raa2._odims == raa._odims)
+        raa2.odims = raa.origin
+    assert np.all(raa2.origin == raa.origin)
 
 
 def test_ddims_deprecation_warning(raa):
     """Accessing or setting ddims should emit a FutureWarning."""
     with pytest.warns(FutureWarning, match="'ddims' attribute is deprecated"):
         d = raa.ddims
-    assert np.all(d == raa._ddims)
+    assert np.all(d == raa.development)
 
     raa2 = raa.copy()
     with pytest.warns(FutureWarning, match="'ddims' attribute is deprecated"):
-        raa2.ddims = raa._ddims
-    assert np.all(raa2._ddims == raa._ddims)
+        raa2.ddims = raa.development
+    assert np.all(raa2.development == raa.development)
 
 
 class TestLegacyPickleCompatibility:
@@ -868,8 +868,8 @@ class TestLegacyPickleCompatibility:
 
     def test_legacy_kdims_vdims_migration(self, raa):
         # 1. Simulate legacy serialized Triangle containing kdims, vdims, odims, and ddims
-        raw_odims = getattr(raa, "_odims", getattr(raa, "origin", None))
-        raw_ddims = getattr(raa, "_ddims", getattr(raa, "development", None))
+        raw_odims = raa._axes[2]
+        raw_ddims = raa._axes[3]
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values
@@ -900,8 +900,8 @@ class TestLegacyPickleCompatibility:
 
     def test_legacy_pickle_fallback_without_keys(self, raa):
         # 2. Simulate fallback when no kdims/vdims keys are found (no warning)
-        raw_odims = getattr(raa, "_odims", getattr(raa, "origin", None))
-        raw_ddims = getattr(raa, "_ddims", getattr(raa, "development", None))
+        raw_odims = raa._axes[2]
+        raw_ddims = raa._axes[3]
         state_empty = raa.__dict__.copy()
         state_empty.pop("_axes", None)
         state_empty.pop("kdims", None)
@@ -922,8 +922,8 @@ class TestLegacyPickleCompatibility:
 
     def test_migrated_pickle_roundtrip(self, raa):
         # 3. Verify re-pickling the migrated instance works without warnings
-        raw_odims = getattr(raa, "_odims", getattr(raa, "origin", None))
-        raw_ddims = getattr(raa, "_ddims", getattr(raa, "development", None))
+        raw_odims = raa._axes[2]
+        raw_ddims = raa._axes[3]
         state = raa.__dict__.copy()
         state.pop("_axes", None)
         state["kdims"] = raa.index.values

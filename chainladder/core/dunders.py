@@ -165,42 +165,51 @@ class TriangleDunders:
             (m == n) or (m == 1) or (n == 1)
             for m, n in zip(obj.shape[-2:][::-1], other.shape[-2:][::-1])
         )
-        if (len(obj._odims), len(obj._ddims)) == (len(other._odims), len(other._ddims)):
-            if np.all(obj._ddims != other._ddims) and len(obj._ddims) > 1:
+        if (len(obj._axes[2]), len(obj._axes[3])) == (
+            len(other._axes[2]),
+            len(other._axes[3]),
+        ):
+            if np.all(obj._axes[3] != other._axes[3]) and len(obj._axes[3]) > 1:
                 is_broadcastable = False
-            if np.all(obj._odims != other._odims) and len(obj._odims) > 1:
+            if np.all(obj._axes[2] != other._axes[2]) and len(obj._axes[2]) > 1:
                 is_broadcastable = False
-        if len(other._odims) == 1 and len(obj._odims) > 1:
-            other._odims = obj._odims
+        if len(other._axes[2]) == 1 and len(obj._axes[2]) > 1:
+            other._axes[2] = obj._axes[2]
             other.origin_grain = obj.origin_grain
-        elif len(obj._odims) == 1 and len(other._odims) > 1:
-            obj._odims = other._odims
+        elif len(obj._axes[2]) == 1 and len(other._axes[2]) > 1:
+            obj._axes[2] = other._axes[2]
             obj.origin_grain = other.origin_grain
-        if len(other._ddims) == 1 and len(obj._ddims) > 1:
-            other._ddims = obj._ddims
+        if len(other._axes[3]) == 1 and len(obj._axes[3]) > 1:
+            other._axes[3] = obj._axes[3]
             other.development_grain = obj.development_grain
-        elif len(obj._ddims) == 1 and len(other._ddims) > 1:
-            obj._ddims = other._ddims
+        elif len(obj._axes[3]) == 1 and len(other._axes[3]) > 1:
+            obj._axes[3] = other._axes[3]
             obj.development_grain = other.development_grain
         if not is_broadcastable:
             # If broadcasting doesn't work, union axes similar to pandas
             ddims = pd.concat(
                 (
-                    pd.Series(obj._ddims, index=obj._ddims),
-                    pd.Series(other._ddims, index=other._ddims),
+                    pd.Series(obj._axes[3], index=obj._axes[3]),
+                    pd.Series(other._axes[3], index=other._axes[3]),
                 ),
                 axis=1,
             ).sort_index()
             odims = pd.concat(
                 (
-                    pd.Series(obj._odims, index=obj._odims),
-                    pd.Series(other._odims, index=other._odims),
+                    pd.Series(obj._axes[2], index=obj._axes[2]),
+                    pd.Series(other._axes[2], index=other._axes[2]),
                 ),
                 axis=1,
                 sort=False,
             ).sort_index()
-            o_arr0, o_arr1 = odims[0].isna().values, odims[1].isna().values
-            d_arr0, d_arr1 = ddims[0].isna().values, ddims[1].isna().values
+            o_arr0, o_arr1 = (
+                odims.iloc[:, 0].isna().values,
+                odims.iloc[:, 1].isna().values,
+            )
+            d_arr0, d_arr1 = (
+                ddims.iloc[:, 0].isna().values,
+                ddims.iloc[:, 1].isna().values,
+            )
             # rol = right hand side, origin, lower
             rol = int(np.where(~o_arr1 == 1)[0].min())
             roh = int(np.where(~o_arr1 == 1)[0].max() + 1)
@@ -240,13 +249,13 @@ class TriangleDunders:
                     len(ddims),
                 )
                 obj_arr.shape = (obj.shape[0], obj.shape[1], len(odims), len(ddims))
-            obj._odims = np.array(odims.index)
-            if isinstance(obj._ddims, pd.DatetimeIndex):
-                obj._ddims = pd.DatetimeIndex(ddims.index)
-            else:
-                obj._ddims = np.array(ddims.index)
             obj.values = obj_arr
             other.values = other_arr
+            obj._axes[2] = np.array(odims.index)
+            if isinstance(obj._axes.get(3), pd.DatetimeIndex):
+                obj._axes[3] = pd.DatetimeIndex(ddims.index)
+            else:
+                obj._axes[3] = np.array(ddims.index)
         return obj, other
 
     @staticmethod

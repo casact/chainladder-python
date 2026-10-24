@@ -24,26 +24,28 @@ class TailBase(DevelopmentBase):
             "M": (12 * m, 1),
             "S": (2 * m, 6),
         }[obj.development_grain]
-        t_ddims = [
-            (item + 1) * self._ave_period[1] + obj.ldf_._ddims[-1]
+        t_dev = [
+            (item + 1) * self._ave_period[1] + obj.ldf_._axes[3][-1]
             for item in range(self._ave_period[0] + 1)
         ]
-        ddims = np.concatenate(
-            (obj.ldf_._ddims, t_ddims),
+        dev = np.concatenate(
+            (obj.ldf_._axes[3], t_dev),
             0,
         )
         self.ldf_ = obj.ldf_.copy()
         tail = xp.ones(self.ldf_.shape)[..., -1:]
         tail = xp.repeat(tail, self._ave_period[0] + 1, -1)
         self.ldf_.values = xp.concatenate((self.ldf_.values, tail), -1)
-        self.ldf_._ddims = ddims
+        self.ldf_._axes[3] = dev
         if hasattr(obj, "sigma_"):
             zeros = (obj.sigma_.iloc[..., -1:] * 0).values
             self.sigma_ = getattr(obj, "sigma_").copy()
             self.sigma_.values = xp.concatenate((self.sigma_.values, zeros), -1)
             self.std_err_ = getattr(obj, "std_err_").copy()
             self.std_err_.values = xp.concatenate((self.std_err_.values, zeros), -1)
-            self.sigma_._ddims = self.std_err_._ddims = self.ldf_._ddims[: obj.shape[2]]
+            self.sigma_._axes[3] = self.std_err_._axes[3] = self.ldf_._axes[3][
+                : obj.shape[2]
+            ]
             self.sigma_._set_slicers()
             self.std_err_._set_slicers()
         if hasattr(obj, "average_"):
