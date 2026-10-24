@@ -131,7 +131,7 @@ class TriangleProtocol(Protocol):
     def _slice(
         self,
         key: pd.Series | np.ndarray,
-        axis: Literal["ddims", "odims", "_ddims", "_odims"],
+        axis: Literal["development", "origin", "ddims", "odims"],
     ) -> Triangle: ...
     def _slice_valuation(self, key: np.ndarray) -> Triangle: ...
     def to_frame(
