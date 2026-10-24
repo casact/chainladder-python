@@ -422,3 +422,12 @@ def test_odd_shaped_triangle():
         .sum()
     )
     assert abs(ult1 - ult2) < 1e-5
+
+
+def test_predict_age_exceeds_model():
+    tri = cl.load_sample("genins")
+    model = cl.Chainladder().fit(tri.iloc[..., :-2])
+    with pytest.raises(
+        ValueError, match="X has ages that exceed those available in model"
+    ):
+        model.predict(tri)

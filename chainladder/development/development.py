@@ -490,7 +490,7 @@ class Development(DevelopmentBase):
         obj = X[X.origin == X.origin.min()]
         xp = X.get_array_module()
         obj.values = xp.ones(obj.shape)[..., :-1] * params[..., idx : idx + 1, :]
-        obj.ddims = X.link_ratio.ddims
+        obj._axes[3] = X.link_ratio._axes[3]
         obj.valuation_date = pd.to_datetime(options.ULT_VAL)
         obj.is_pattern = True
         obj.is_cumulative = False

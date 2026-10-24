@@ -18,7 +18,9 @@ def test_fit_period(tail_sample: Triangle) -> None:
     assert (
         round(
             cl
-            .TailCurve(fit_period=(tail_sample.ddims[-7], None), extrap_periods=10)
+            .TailCurve(
+                fit_period=(tail_sample.development.iloc[-7], None), extrap_periods=10
+            )
             .fit(dev)
             .cdf_["paid"]
             .set_backend("numpy", inplace=True)
@@ -44,6 +46,11 @@ def test_errors_validation(tail_sample: Triangle) -> None:
     """
     with pytest.raises(ValueError):
         cl.TailCurve(errors="Ignore").fit_transform(tail_sample)
+
+
+def test_tail_curve_attachment_age(tail_sample: Triangle) -> None:
+    tail = cl.TailCurve(attachment_age=48).fit(tail_sample)
+    assert tail.ldf_ is not None
 
 
 def test_no_log_warning_when_only_some_tails_exceed_one(clrd: Triangle) -> None:

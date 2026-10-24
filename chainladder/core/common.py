@@ -53,11 +53,12 @@ def _get_full_triangle(X, ultimate, is_cumulative=True):
     emergence.valuation_date = pd.to_datetime(options.ULT_VAL)
     emergence.values = emergence.values.cumprod(axis=3) - 1
 
-    # Shifting the CDFs by development age, and renaming the last column as 9999
-    emergence.ddims = (
-        emergence.ddims + {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
-    )
-    emergence.ddims[-1] = 9999
+    new_dev = (
+        emergence.development
+        + {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
+    ).to_numpy()
+    new_dev[-1] = 9999
+    emergence.development = new_dev
     emergence.values = emergence.values / num_to_nan(emergence.values[..., -1:])
     ld = X.incr_to_cum().latest_diagonal
     cum_run_off = ld + emergence * (ultimate - ld)

@@ -61,8 +61,8 @@ def test_triangle_json_io(clrd):
     assert clrd == clrd2
     assert clrd.index.equals(clrd2.index)
     assert np.all(clrd.columns == clrd2.columns)
-    assert np.all(clrd.odims == clrd2.odims)
-    assert np.all(clrd.ddims == clrd2.ddims)
+    assert np.all(clrd.origin == clrd2.origin)
+    assert np.all(clrd.development == clrd2.development)
     assert np.all(clrd.valuation == clrd2.valuation)
 
 
@@ -627,12 +627,12 @@ def test_concat_ignore_index_axes(raa: Triangle) -> None:
     o1 = raa.iloc[:, :, :5, :]
     o2 = raa.iloc[:, :, 5:, :]
     res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
-    assert len(res2.odims) == len(raa.odims)
+    assert len(res2.origin) == len(raa.origin)
 
     d1 = raa.iloc[:, :, :, :5]
     d2 = raa.iloc[:, :, :, 5:]
     res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
-    assert len(res3.ddims) == len(raa.ddims)
+    assert len(res3.development) == len(raa.development)
 
 
 def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
