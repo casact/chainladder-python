@@ -24,7 +24,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         obj = X.copy()
         if "ldf_" not in obj:
             obj = Development().fit_transform(obj)
-        if len(obj._ddims) - len(obj.ldf_._ddims) == 1:
+        if len(obj.development) - len(obj.ldf_.development) == 1:
             obj = TailConstant().fit_transform(obj)
         return obj.val_to_dev()
 
@@ -39,7 +39,7 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
         xp = ultimate.get_array_module()
         if ultimate.array_backend != "sparse":
             ultimate.values[~xp.isfinite(ultimate.values)] = xp.nan
-        ultimate._ddims = pd.DatetimeIndex([options.ULT_VAL])
+        ultimate.development = pd.DatetimeIndex([options.ULT_VAL])
         ultimate.virtual_columns.columns = {}
         ultimate.is_cumulative = True
         ultimate._set_slicers()
@@ -102,7 +102,8 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         X_new = X.val_to_dev()
-        if sum(X_new._ddims > self.ldf_._ddims.max()) > 0:
+        ldf_max_age = max(int(str(x).split("-")[0]) for x in self.ldf_.development)
+        if sum(X_new.development > ldf_max_age) > 0:
             raise ValueError("X has ages that exceed those available in model.")
         # Before the line below, which borrows self.X_'s index when both sides
         # are a single row and so would erase what the caller actually passed.

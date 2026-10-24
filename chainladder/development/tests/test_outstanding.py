@@ -233,7 +233,7 @@ def test_approach_2_pattern_input_types():
     )
     assert m_str._extract_cdf_series(s_str_rep).index.tolist() == ["dev_a", "dev_b"]
 
-    # Pattern with .development and .values (without ._ddims)
+    # Pattern with .development and .values
     class MockDevPattern:
         def __init__(self, vals, devs):
             self.values = vals
