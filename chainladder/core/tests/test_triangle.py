@@ -697,13 +697,16 @@ def test_centralized_axis_edge_cases(raa):
         is_cumulative = False
         development_grain = "Y"
         development = cl.Triangle.development
-        _axes = {3: np.array([12, 24, 999])}
+        _axes = {3: np.array([12, 24, 9999])}
 
         def _dstep(self):
             return {"M": {"Y": 12}}
 
     mock_ult = MockPatternUltimate()
     assert list(mock_ult.development) == ["12-24", "24-36", "36-48"]
+    mock_ult.development = mock_ult.development
+    assert mock_ult._axes[3][-1] == 9999
+    assert list(mock_ult._axes[3]) == [12, 24, 9999]
 
     # 6. Triangle.origin and Triangle.development setters on uninitialized instance
     t_uninit = cl.Triangle.__new__(cl.Triangle)
@@ -775,6 +778,24 @@ def test_centralized_axis_edge_cases(raa):
     with pytest.deprecated_call():
         pattern_tri.ddims = pattern_tri.ddims
     assert pattern_tri._axes[3].dtype.kind == "i"
+
+    # Ultimate pattern preserves 9999 sentinel lag across development and ddims round-trips
+    pattern_ult = raa.link_ratio
+    pattern_ult._axes[3][-1] = 9999
+    assert pattern_ult.is_ultimate
+    pattern_ult.development = pattern_ult.development
+    assert pattern_ult.is_ultimate
+    assert pattern_ult._axes[3][-1] == 9999
+
+    with pytest.deprecated_call():
+        pattern_ult.ddims = pattern_ult.ddims
+    assert pattern_ult.is_ultimate
+    assert pattern_ult._axes[3][-1] == 9999
+
+    pattern_ult.is_cumulative = True
+    pattern_ult.development = pattern_ult.development
+    assert pattern_ult.is_ultimate
+    assert pattern_ult._axes[3][-1] == 9999
 
     tri_lags = raa.copy()
     tri_lags._axes[3] = np.array([12, 120, 24, 36, 48, 60, 72, 84, 96, 108])
