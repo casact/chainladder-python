@@ -230,7 +230,47 @@ def _set_development(obj: Triangle, value: Any) -> Any:
         obj._len_check(obj.development, value)
     if isinstance(value, pd.DatetimeIndex):
         return value
-    return np.array([value] if isinstance(value, str) else value)
+    if isinstance(value, pd.PeriodIndex):
+        return value.to_timestamp()
+
+    val_arr = np.array(
+        [value] if isinstance(value, (str, int, float, np.number)) else value
+    )
+    if val_arr.dtype.kind in ("i", "u", "f"):
+        return val_arr
+
+    if hasattr(obj, "_axes") and isinstance(obj._axes.get(3), pd.DatetimeIndex):
+        current_dt = obj._axes[3]
+        current_labels = list(_get_development(obj, current_dt))
+        val_list_str = [str(v) for v in val_arr]
+        if all(v in current_labels for v in val_list_str):
+            indices = [current_labels.index(v) for v in val_list_str]
+            return current_dt[indices]
+        try:
+            freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
+            return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
+        except (ValueError, TypeError):
+            try:
+                return pd.DatetimeIndex(val_arr)
+            except (ValueError, TypeError):
+                pass
+
+    if getattr(obj, "is_pattern", False):
+        val_list = [str(v) for v in val_arr]
+        if any("-" in v for v in val_list):
+            try:
+                lags = []
+                for item in val_list:
+                    s = item.strip()
+                    if "-" in s:
+                        lags.append(int(s.split("-")[0]))
+                    else:
+                        lags.append(int(s))
+                return np.array(lags, dtype=int)
+            except (ValueError, TypeError):
+                pass
+
+    return val_arr
 
 
 def _set_axis(obj: Triangle, axis: int | str, value: Any) -> None:
