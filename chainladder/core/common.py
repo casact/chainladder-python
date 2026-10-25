@@ -54,9 +54,13 @@ def _get_full_triangle(X, ultimate, is_cumulative=True):
     emergence.values = emergence.values.cumprod(axis=3) - 1
 
     new_dev = (
-        emergence.development
-        + {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
-    ).to_numpy()
+        (
+            emergence.development
+            + {"Y": 12, "Q": 3, "S": 6, "M": 1}[emergence.development_grain]
+        )
+        .to_numpy()
+        .copy()
+    )
     new_dev[-1] = 9999
     emergence.development = new_dev
     emergence.values = emergence.values / num_to_nan(emergence.values[..., -1:])

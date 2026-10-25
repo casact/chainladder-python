@@ -133,10 +133,11 @@ def _set_columns(obj: Triangle, value: Any) -> pd.Index:
     """
     if isinstance(value, str):
         value = [value]
-    if hasattr(obj, "values") and obj.values is not None:
-        obj._len_check(range(obj.values.shape[1]), value)
-    elif hasattr(obj, "_axes") and (1 in obj._axes or "columns" in obj._axes):
-        obj._len_check(obj.columns, value)
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[1]), value)
+        elif hasattr(obj, "_axes") and (1 in obj._axes or "columns" in obj._axes):
+            obj._len_check(obj.columns, value)
     return pd.Index(value, name="columns")
 
 
@@ -158,10 +159,11 @@ def _set_index(obj: Triangle, value: Any) -> pd.DataFrame:
     """
     if not isinstance(value, pd.DataFrame):
         raise TypeError("index must be a pandas DataFrame")
-    if hasattr(obj, "values") and obj.values is not None:
-        obj._len_check(range(obj.values.shape[0]), value)
-    elif hasattr(obj, "_axes") and (0 in obj._axes or "index" in obj._axes):
-        obj._len_check(obj.index, value)
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[0]), value)
+        elif hasattr(obj, "_axes") and (0 in obj._axes or "index" in obj._axes):
+            obj._len_check(obj.index, value)
     return value.copy().reset_index(drop=True)
 
 
@@ -183,10 +185,11 @@ def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
     """
     Validate and transform assigned origin periods into internal timestamps array.
     """
-    if hasattr(obj, "values") and obj.values is not None:
-        obj._len_check(range(obj.values.shape[2]), value)
-    elif hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
-        obj._len_check(obj.origin, value)
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[2]), value)
+        elif hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
+            obj._len_check(obj.origin, value)
     origin_grain = getattr(obj, "origin_grain", "Y")
     origin_close = getattr(obj, "origin_close", "DEC")
     freq = {
@@ -224,10 +227,11 @@ def _set_development(obj: Triangle, value: Any) -> Any:
     """
     Validate and transform assigned development periods into internal lag/timestamp array.
     """
-    if hasattr(obj, "values") and obj.values is not None:
-        obj._len_check(range(obj.values.shape[3]), value)
-    elif hasattr(obj, "_axes") and (3 in obj._axes or "development" in obj._axes):
-        obj._len_check(obj.development, value)
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[3]), value)
+        elif hasattr(obj, "_axes") and (3 in obj._axes or "development" in obj._axes):
+            obj._len_check(obj.development, value)
     if isinstance(value, pd.DatetimeIndex):
         return value
     if isinstance(value, pd.PeriodIndex):
@@ -262,10 +266,27 @@ def _set_development(obj: Triangle, value: Any) -> Any:
                 lags = []
                 for item in val_list:
                     s = item.strip()
-                    if "-" in s:
+                    if s.lower() == "ult":
+                        lags.append(9999)
+                    elif "-" in s:
                         lags.append(int(s.split("-")[0]))
                     else:
                         lags.append(int(s))
+                raw_dev = getattr(obj, "_axes", {}).get(3)
+                if (
+                    raw_dev is None
+                    and hasattr(obj, "_axes")
+                    and isinstance(obj._axes, dict)
+                ):
+                    raw_dev = obj._axes.get("development")
+                is_ult = getattr(obj, "is_ultimate", False) or (
+                    raw_dev is not None
+                    and len(raw_dev) == len(lags)
+                    and len(raw_dev) > 0
+                    and raw_dev[-1] == 9999
+                )
+                if is_ult and len(lags) > 0:
+                    lags[-1] = 9999
                 return np.array(lags, dtype=int)
             except (ValueError, TypeError):
                 pass
