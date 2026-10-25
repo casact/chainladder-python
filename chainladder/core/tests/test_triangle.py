@@ -750,6 +750,37 @@ def test_centralized_axis_edge_cases(raa):
         assert raa._get_axis_number(neg) == pos
         assert raa._get_axis(neg) == pos
 
+    # 10. Development roundtrip and sort_axis preservation of valuation and pattern types
+    val_tri = raa.dev_to_val()
+    val_tri.development = val_tri.development
+    assert val_tri.is_val_tri
+    assert isinstance(val_tri._axes[3], pd.DatetimeIndex)
+    assert val_tri.valuation is not None
+
+    with pytest.deprecated_call():
+        val_tri.ddims = val_tri.ddims
+    assert val_tri.is_val_tri
+
+    shuffled_val = val_tri.iloc[..., [2, 1, 0]].sort_axis(3)
+    assert shuffled_val.is_val_tri
+    assert isinstance(shuffled_val._axes[3], pd.DatetimeIndex)
+    assert list(shuffled_val.development) == list(val_tri.development[:3])
+
+    pattern_tri = raa.link_ratio
+    pattern_tri.development = pattern_tri.development
+    assert pattern_tri.is_pattern
+    assert pattern_tri._axes[3].dtype.kind == "i"
+    assert pattern_tri.valuation is not None
+
+    with pytest.deprecated_call():
+        pattern_tri.ddims = pattern_tri.ddims
+    assert pattern_tri._axes[3].dtype.kind == "i"
+
+    tri_lags = raa.copy()
+    tri_lags._axes[3] = np.array([12, 120, 24, 36, 48, 60, 72, 84, 96, 108])
+    sorted_lags = tri_lags.sort_axis(3)
+    assert list(sorted_lags.development) == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+
 
 def test_triangle_index_property(raa):
     """Verify Triangle.index descriptor and slicer reset."""

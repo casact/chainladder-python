@@ -2433,15 +2433,18 @@ class Triangle(TriangleBase):
                 obj.values = obj.values[:, list(sort), ...]
                 obj.columns = self.columns[list(sort)]
         if axis == 2:
-            sort = pd.Series(self.origin).sort_values().index
-            if np.any(sort != pd.Series(self.origin).index):
+            raw_origin = self._axes[2]
+            sort = pd.Series(raw_origin).sort_values().index
+            if np.any(sort != pd.Series(raw_origin).index):
                 obj.values = obj.values[..., list(sort), :]
-                obj.origin = self.origin[list(sort)]
+                obj._axes[2] = raw_origin[list(sort)]
         if axis == 3:
-            sort = self.development.sort_values().index
-            if np.any(sort != self.development.index):
+            raw_dev = self._axes[3]
+            sort = pd.Series(raw_dev).sort_values().index
+            if np.any(sort != pd.Series(raw_dev).index):
                 obj.values = obj.values[..., list(sort)]
-                obj.development = self.development.iloc[list(sort)]
+                obj._axes[3] = raw_dev[list(sort)]
+        obj._set_slicers()
         return obj
 
     def reindex(self, columns=None, fill_value=np.nan):
