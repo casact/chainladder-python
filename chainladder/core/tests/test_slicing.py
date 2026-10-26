@@ -764,3 +764,22 @@ def test_slice_pattern_with_data_valuation_date_still_clamps(raa: Triangle) -> N
     link_ratio = raa.link_ratio
     assert link_ratio.is_pattern
     assert link_ratio.iloc[:, :, :2, :2].valuation_date < link_ratio.valuation_date
+
+
+@pytest.mark.parametrize(
+    "select",
+    [
+        lambda tri: tri.iloc[:, :, :, :5],
+        lambda tri: tri.iloc[:, :, :, :3],
+        lambda tri: tri.iloc[:, :, :3, :3],
+    ],
+    ids=["dev_head_5", "dev_head_3", "origin_and_dev"],
+)
+def test_slice_full_triangle_still_clamps_valuation_date(raa: Triangle, select) -> None:
+    """
+    A full triangle sits at the ULT_VAL date but is not a pattern, so slicing away its ultimate column still moves the date to the data.
+    """
+
+    full = cl.Chainladder().fit(raa).full_triangle_
+    assert not full.is_pattern
+    assert select(full).valuation_date < full.valuation_date
