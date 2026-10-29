@@ -252,11 +252,13 @@ def test_predict_rejects_a_pattern_finer_than_the_triangle(clrd):
 
     The reverse direction: a pattern fit per company cannot be applied to a
     triangle that has aggregated companies away. intersection() leaves the ldf_
-    at the fitted grain, which used to surface as a 775 row ultimate_ from a
-    6 row input.
+    at the fitted grain, which used to surface as a 4 row ultimate_ from a
+    2 row input.
     """
-    tri = clrd["CumPaidLoss"]
-    sample_weight = clrd["EarnedPremDIR"].latest_diagonal
+    # 11, 12, 680, 681 are a pair of companies with fully valid comauto
+    # and othliab Triangles
+    tri = clrd.iloc[[11, 12, 680, 681]]["CumPaidLoss"]
+    sample_weight = clrd.iloc[[11, 12, 680, 681]]["EarnedPremDIR"].latest_diagonal
     coarse = tri.groupby("LOB").sum()
     coarse_weight = sample_weight.groupby("LOB").sum()
 
