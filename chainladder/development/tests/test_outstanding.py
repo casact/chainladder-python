@@ -320,3 +320,53 @@ def test_approach_2_single_channel_case_triangle_and_transform():
     ).fit(tri_grouped)
     assert m_grp.case_to_prior_case_ is not None
     assert m_grp.paid_to_prior_case_ is not None
+
+
+def test_case_outstanding_interval_labels():
+    """Regression test for #1510.
+
+    Each CaseOutstanding ratio describes the transition out of the prior
+    lag, so pattern intervals must be labeled from the first development
+    lag (12-24 for annual grain), not shifted forward by one step.
+    """
+    tri = cl.load_sample("usauto")
+    model = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri)
+
+    # The assert from issue #1510, verbatim:
+    assert model.paid_ldf_.to_frame().columns[0] == "12-24"
+
+    expected_columns = [
+        "12-24",
+        "24-36",
+        "36-48",
+        "48-60",
+        "60-72",
+        "72-84",
+        "84-96",
+        "96-108",
+        "108-120",
+    ]
+    assert list(model.paid_ldf_.to_frame().columns) == expected_columns
+    assert list(model.case_ldf_.to_frame().columns) == expected_columns
+
+    # ddims follow the same convention as link ratios / Development.ldf_,
+    # for the selected patterns and the origin-level review attributes.
+    expected_ddims = list(tri.link_ratio.ddims)
+    assert list(model.paid_ldf_.ddims) == expected_ddims
+    assert list(model.case_ldf_.ddims) == expected_ddims
+    assert list(model.paid_to_prior_case_.ddims) == expected_ddims
+    assert list(model.case_to_prior_case_.ddims) == expected_ddims
+
+
+def test_case_outstanding_interval_labels_groupby():
+    tri_grouped = cl.load_sample("clrd")
+    m_grp = cl.CaseOutstanding(
+        paid_to_incurred=("CumPaidLoss", "IncurLoss"),
+        groupby="LOB",
+    ).fit(tri_grouped)
+
+    expected_ddims = list(tri_grouped.link_ratio.ddims)
+    assert list(m_grp.paid_ldf_.ddims) == expected_ddims
+    assert list(m_grp.case_ldf_.ddims) == expected_ddims
+    first_interval = f"{expected_ddims[0]}-{expected_ddims[1]}"
+    assert m_grp.paid_ldf_.to_frame().columns[0] == first_interval
