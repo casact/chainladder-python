@@ -71,7 +71,7 @@ class CaseOutstanding(DevelopmentBase):
     Examples
     --------
     On ``usauto``, incremental paid in 12–24 is about 84% of case outstanding
-    at lag 12 (first entry in ``paid_ldf_`` at development 24–36):
+    at lag 12 (first entry in ``paid_ldf_`` at development 12–24):
 
     .. testsetup::
 
@@ -271,11 +271,16 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
+        case_tri = incurred_tri - paid_tri
         out = (
-            (incurred_tri - paid_tri).iloc[..., 1:]
+            case_tri.iloc[..., 1:]
             * self.case_w_
-            / (incurred_tri - paid_tri).iloc[..., :-1].values
+            / case_tri.iloc[..., :-1].values
         )
+        # Each ratio describes the transition out of the prior lag, so it
+        # takes the prior lag's development age, matching the link_ratio
+        # ddims convention used by the other development estimators.
+        out.ddims = case_tri.ddims[:-1]
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -290,11 +295,14 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
+        case_tri = incurred_tri - paid_tri
         out = (
             paid_tri.cum_to_incr().iloc[..., 1:]
             * self.paid_w_
-            / (incurred_tri - paid_tri).iloc[..., :-1].values
+            / case_tri.iloc[..., :-1].values
         )
+        # See case_to_prior_case_: label each ratio with the prior lag.
+        out.ddims = case_tri.ddims[:-1]
         out.is_pattern = True
 
         return out
