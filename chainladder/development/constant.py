@@ -169,31 +169,31 @@ class DevelopmentConstant(DevelopmentBase):
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
             pattern_length = len(sample_pattern)
-            pattern_ddims = sorted(sample_pattern.keys())
+            pattern_dev = sorted(sample_pattern.keys())
             patterns_dict = None
         else:
             patterns_dict = self._normalize_patterns(self.patterns, self.style)
             pattern_length = len(patterns_dict)
-            pattern_ddims = sorted(patterns_dict.keys())
+            pattern_dev = sorted(patterns_dict.keys())
 
         # pattern supplied is much shorter than the triangle
-        if pattern_length < len(obj.ddims) - 1:
+        if pattern_length < len(obj.development) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
         # pattern supplied is exactly one short of the triangle
-        elif pattern_length == len(obj.ddims) - 1:
+        elif pattern_length == len(obj.development) - 1:
             obj = obj.iloc[..., 0, :-1] * 0 + 1
         # pattern supplied is exactly the same length as the triangle
-        elif pattern_length == len(obj.ddims):
+        elif pattern_length == len(obj.development):
             obj = obj.iloc[..., 0, :] * 0 + 1
         # pattern supplied is longer than the triangle
         else:
             obj = obj.iloc[..., 0, :] * 0 + 1
-            extra = len(pattern_ddims) - len(obj.ddims)
+            extra = len(pattern_dev) - len(obj.development)
             if extra > 0:
                 tail = xp.ones(obj.shape)[..., -1:]
                 tail = xp.repeat(tail, extra, -1)
                 obj.values = xp.concatenate((obj.values, tail), -1)
-                obj.ddims = np.array(pattern_ddims)
+                obj.development = np.array(pattern_dev)
                 obj._set_slicers()
 
         if callable(self.patterns):
@@ -202,7 +202,7 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = (
                     pd
                     .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
+                    .fillna(1)[obj.development]
                     .values
                 )
                 ldf = xp.array(ldf[:, None, None, :])
@@ -211,14 +211,14 @@ class DevelopmentConstant(DevelopmentBase):
                 ldf = (
                     pd
                     .concat(ldf.apply(pd.DataFrame, index=[0]).values, axis=0)
-                    .fillna(1)[obj.ddims]
+                    .fillna(1)[obj.development]
                     .values
                 )
                 ldf = xp.array(ldf[None, :, None, :])
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:
-            ldf = xp.array([patterns_dict.get(item, 1.0) for item in obj.ddims])
+            ldf = xp.array([patterns_dict.get(item, 1.0) for item in obj.development])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":
@@ -236,7 +236,12 @@ class DevelopmentConstant(DevelopmentBase):
     @staticmethod
     def _normalize_patterns(patterns, style="ldf"):
         """Normalize pattern input (dict, Series, DataFrame, Triangle, estimator) into a dict."""
-        is_triangle = hasattr(patterns, "odims") and hasattr(patterns, "ddims")
+        is_triangle = (
+            not isinstance(patterns, (pd.DataFrame, pd.Series, dict))
+            and hasattr(patterns, "shape")
+            and len(patterns.shape) == 4
+            and hasattr(patterns, "development")
+        )
         if not is_triangle:
             if hasattr(patterns, "cdf_") and style == "cdf":
                 patterns = patterns.cdf_
@@ -259,18 +264,20 @@ class DevelopmentConstant(DevelopmentBase):
                 )
                 patterns = patterns.ldf_
 
-        if hasattr(patterns, "odims") and hasattr(patterns, "ddims"):
-            if (
-                hasattr(patterns, "shape")
-                and len(patterns.shape) >= 3
-                and patterns.shape[2] > 1
-            ):
+        if (
+            not isinstance(patterns, (pd.DataFrame, pd.Series, dict))
+            and hasattr(patterns, "shape")
+            and len(patterns.shape) == 4
+            and hasattr(patterns, "development")
+        ):
+            if patterns.shape[2] > 1:
                 raise ValueError(
                     "Triangle pattern must have a single origin row (e.g. model.ldf_ or model.cdf_)."
                 )
             vals = patterns.values[0, 0, 0, :]
             vals = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
-            s = pd.Series(vals, index=patterns.ddims, dtype=float)
+            dev = patterns.development
+            s = pd.Series(vals, index=dev, dtype=float)
         elif isinstance(patterns, pd.DataFrame):
             if patterns.shape[0] == 1:
                 s = patterns.iloc[0].astype(float)

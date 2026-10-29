@@ -26,6 +26,7 @@ from chainladder.core.slice import TriangleSlicer
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
+from chainladder.utils.utility_functions import _get_axis_name
 
 from chainladder.adjustments.disposal import DisposalMixin
 
@@ -318,19 +319,19 @@ class TriangleBase(
         return unique_keys.drop(labels="index", axis=1).values, index_idx
 
     @staticmethod
-    def _set_odims(
+    def _set_origin_axis(
         data_agg: DataFrame, date_axes: DataFrame
     ) -> tuple[np.ndarray, np.ndarray]:
 
-        odims: np.ndarray = np.sort(date_axes["__origin__"].unique())
+        origin: np.ndarray = np.sort(date_axes["__origin__"].unique())
         orig_idx: np.ndarray = TriangleBase._set_index(
-            col=data_agg["__origin__"], unique=odims
+            col=data_agg["__origin__"], unique=origin
         )
 
-        return odims, orig_idx
+        return origin, orig_idx
 
     @staticmethod
-    def _set_ddims(
+    def _set_development_axis(
         data_agg: DataFrame, date_axes: DataFrame
     ) -> tuple[ArrayLike, np.ndarray]:
 
@@ -339,21 +340,21 @@ class TriangleBase(
                 data_agg["__origin__"], data_agg["__development__"]
             )
 
-            ddims: ArrayLike = np.sort(
+            development: ArrayLike = np.sort(
                 TriangleBase._development_lag(
                     date_axes["__origin__"], date_axes["__development__"]
                 ).unique()
             )
 
-            dev_idx: np.ndarray = TriangleBase._set_index(dev_lag, ddims)
+            dev_idx: np.ndarray = TriangleBase._set_index(dev_lag, development)
 
         else:
-            ddims: ArrayLike = pd.DatetimeIndex(
+            development: ArrayLike = pd.DatetimeIndex(
                 [data_agg["__development__"].max()], name="valuation"
             )
             dev_idx = np.zeros((len(data_agg), 1))
 
-        return ddims, dev_idx
+        return development, dev_idx
 
     @staticmethod
     def _set_values(
@@ -692,20 +693,20 @@ class TriangleBase(
 
     @property
     def valuation(self):
-        ddims = self.ddims
+        dev = self._axes[3]
         if self.is_val_tri:
-            out = pd.DataFrame(np.repeat(self.ddims.values[None], len(self.odims), 0))
+            out = pd.DataFrame(np.repeat(dev.values[None], len(self._axes[2]), 0))
             return pd.DatetimeIndex(out.unstack().values)
-        ddim_arr = ddims - ddims[0]
-        origin = np.minimum(self.odims, np.datetime64(self.valuation_date))
-        val_array = origin.astype("datetime64[M]") + np.timedelta64(ddims[0], "M")
+        dev_arr = dev - dev[0]
+        origin = np.minimum(self._axes[2], np.datetime64(self.valuation_date))
+        val_array = origin.astype("datetime64[M]") + np.timedelta64(dev[0], "M")
         val_array = val_array.astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         val_array = val_array[:, None]
-        s = slice(None, -1) if ddims[-1] == 9999 else slice(None, None)
+        s = slice(None, -1) if dev[-1] == 9999 else slice(None, None)
         val_array = (
-            val_array.astype("datetime64[M]") + ddim_arr[s][None, :] + 1
+            val_array.astype("datetime64[M]") + dev_arr[s][None, :] + 1
         ).astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
-        if ddims[-1] == 9999:
+        if dev[-1] == 9999:
             ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate(
                 (
@@ -821,10 +822,7 @@ class TriangleBase(
         return self
 
     def _get_axis_value(self, axis):
-        axis = self._get_axis(axis)
-        return {0: self.index, 1: self.columns, 2: self.origin, 3: self.development}[
-            axis
-        ]
+        return getattr(self, _get_axis_name(axis))
 
 
 def is_chainladder(estimator):
