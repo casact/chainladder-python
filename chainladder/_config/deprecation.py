@@ -12,8 +12,7 @@ import inspect
 import warnings
 
 from inspect import signature
-
-from typing import overload, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, overload
 
 if TYPE_CHECKING:
     from types import FrameType

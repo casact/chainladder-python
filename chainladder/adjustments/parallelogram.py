@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from sklearn.base import BaseEstimator, TransformerMixin
+
 from chainladder.core.io import EstimatorIO
 
 
@@ -277,7 +278,7 @@ class ParallelogramOLF(BaseEstimator, TransformerMixin, EstimatorIO):
         self: object
             Returns the instance itself.
         """
-        from chainladder.utils.utility_functions import parallelogram_olf, concat
+        from chainladder.utils.utility_functions import concat, parallelogram_olf
 
         if X.array_backend == "sparse":
             obj = X.set_backend("numpy")

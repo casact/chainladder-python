@@ -5,13 +5,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
-from chainladder.development import Development, DevelopmentBase
-from chainladder import options
-from chainladder.utils.utility_functions import concat
-from chainladder.utils.utility_functions import num_to_nan
-
 import numpy as np
 import pandas as pd
+
+from chainladder import options
+from chainladder.development import Development, DevelopmentBase
+from chainladder.utils.utility_functions import concat, num_to_nan
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle

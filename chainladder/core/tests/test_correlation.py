@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import pytest
-
 from typing import TYPE_CHECKING
+
+import pytest
 
 if TYPE_CHECKING:
     from chainladder import Triangle

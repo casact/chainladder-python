@@ -4,33 +4,38 @@
 from __future__ import annotations
 
 import copy
-import dill
 import json
 import os
 import warnings
+
+from io import StringIO
+from typing import TYPE_CHECKING, Optional, Union
+
+import dill
 import numpy as np
 import pandas as pd
 
-from chainladder import __dt64_unit__, __dt64_dtype__
-from chainladder._config.deprecation import _deprecated_rename
-from chainladder.utils.sparse import sp
-from chainladder.utils.data._manifest import SAMPLES
-from chainladder._config.deprecation import _deprecated_rename_argument
-
-from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from typing import Union, Optional, TYPE_CHECKING
+from chainladder import __dt64_dtype__, __dt64_unit__
+from chainladder._config.deprecation import (
+    _deprecated_rename,
+    _deprecated_rename_argument,
+)
+from chainladder.utils.data._manifest import SAMPLES
+from chainladder.utils.sparse import sp
 
 if TYPE_CHECKING:
-    from chainladder import Triangle, MethodBase, Pipeline
-    from numpy.typing import ArrayLike
-    from pandas import DataFrame
-    from sparse import COO
     from types import ModuleType
     from typing import AnyStr
+
+    from numpy.typing import ArrayLike
+    from pandas import DataFrame
     from pandas._typing import FilePath, ReadCsvBuffer
+    from sparse import COO
+
+    from chainladder import MethodBase, Pipeline, Triangle
 
 
 def load_sample(key: str, *args, **kwargs) -> Triangle:

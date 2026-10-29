@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from chainladder.utils.sparse import sp
 from chainladder.utils.weighted_regression import WeightedRegression
 

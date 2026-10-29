@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from sklearn.compose import ColumnTransformer
+
+from chainladder import TriangleWeight, options
 from chainladder.development.base import DevelopmentBase
-from chainladder import options
-from chainladder import TriangleWeight
 
 
 class DevelopmentML(DevelopmentBase):

@@ -4,25 +4,25 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
-from chainladder.methods.base import MethodBase
+
 from joblib import Parallel, delayed
 from sklearn.base import (
     BaseEstimator,
-    clone,
     TransformerMixin,
+    clone,
 )
-from sklearn.ensemble._base import _fit_single_estimator, _BaseHeterogeneousEnsemble
+from sklearn.ensemble._base import _BaseHeterogeneousEnsemble, _fit_single_estimator
 from sklearn.ensemble._voting import _BaseVoting
 from sklearn.utils import Bunch
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from chainladder.core.io import EstimatorIO
+from chainladder.methods.base import MethodBase
 
 from ..core.base import is_chainladder
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle

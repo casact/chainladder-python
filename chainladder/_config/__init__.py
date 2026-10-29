@@ -4,17 +4,17 @@ Governs configuration, options, and deprecations.
 
 from chainladder._config.deprecation import (
     _DEPRECATED_BACKENDS,
-    _deprecated_backend_message,
     _dask_parallel_state,
-    _warn_dask_parallel_deprecated,
+    _deprecated_backend_message,
+    _deprecated_drop_argument,  # noqa (API import)
     _deprecated_rename,
     _deprecated_rename_argument,
-    _deprecated_drop_argument,  # noqa (API import)
+    _warn_dask_parallel_deprecated,
 )
 from chainladder._config.options import (
+    Options,
     __dt64_dtype__,
     __dt64_unit__,
-    Options,
     options,
 )
 

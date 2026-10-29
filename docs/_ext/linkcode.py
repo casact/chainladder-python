@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import chainladder as cl
-import inspect
 import importlib
+import inspect
 import os
 
 from typing import TYPE_CHECKING
+
+import chainladder as cl
 
 if TYPE_CHECKING:
     from types import ModuleType

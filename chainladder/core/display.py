@@ -3,15 +3,17 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
 import re
 
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+import pandas as pd
+
 try:
-    from IPython.core.display import HTML
     import IPython.display
+
+    from IPython.core.display import HTML
 except ImportError:
     HTML = None
     IPython = None

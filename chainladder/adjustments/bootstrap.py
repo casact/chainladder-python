@@ -2,12 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from chainladder.methods.chainladder import Chainladder
-from chainladder.development import DevelopmentBase, Development
+import types
+
+from warnings import warn
+
 import numpy as np
 import pandas as pd
-from warnings import warn
-import types
+
+from chainladder.development import Development, DevelopmentBase
+from chainladder.methods.chainladder import Chainladder
 
 
 class BootstrapODPSample(DevelopmentBase):

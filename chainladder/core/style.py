@@ -9,24 +9,24 @@ from __future__ import annotations
 
 import copy as copy_module
 
-from functools import partial
-
-import numpy as np
-import pandas as pd
-from pandas.io.formats.style import Styler as _PandasStyler
-
-from chainladder import options
-from chainladder.core.triangle import Triangle
-
 from datetime import (
     date,
     datetime,
 )
+from functools import partial
 from typing import (
     Any,
     Literal,
     TypeAlias,
 )
+
+import numpy as np
+import pandas as pd
+
+from pandas.io.formats.style import Styler as _PandasStyler
+
+from chainladder import options
+from chainladder.core.triangle import Triangle
 
 # A value accepted by pandas.Timestamp's constructor.
 ValuationDateLike: TypeAlias = int | float | str | date | datetime | pd.Timestamp

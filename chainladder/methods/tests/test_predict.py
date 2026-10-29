@@ -1,7 +1,8 @@
-import chainladder as cl
 import numpy as np
 import pandas as pd
 import pytest
+
+import chainladder as cl
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]

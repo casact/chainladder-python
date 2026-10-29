@@ -8,6 +8,9 @@ Mirror pandas API onto the Triangle class.
 from __future__ import annotations
 
 import warnings
+
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
 import pandas as pd
 
@@ -18,24 +21,23 @@ from chainladder import (
 )
 from chainladder.utils.utility_functions import concat, num_to_nan
 
-from typing import cast, TYPE_CHECKING
-
-
 try:
     import dask.bag as db
 except ImportError:
     db = None
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
-    from chainladder.utils.sparse import COO
-    from chainladder.core.typing import BackendArray, TriangleProtocol
     from collections.abc import Callable
+    from types import ModuleType
+    from typing import Any, Literal, Type
+
     from numpy import ndarray
     from pandas import DataFrame, Series
-    from types import ModuleType
     from pandas._typing import IndexLabel
-    from typing import Any, Literal, Type
+
+    from chainladder import Triangle
+    from chainladder.core.typing import BackendArray, TriangleProtocol
+    from chainladder.utils.sparse import COO
 
     _TrianglePandasBase = TriangleProtocol
 else:

@@ -1,5 +1,6 @@
-import chainladder as cl
 import numpy as np
+
+import chainladder as cl
 
 
 def test_struhuss():
@@ -142,6 +143,7 @@ def test_capecod_onlevel_friedland_exhibit_ii():
     and exposure (rate changes) against Friedland Chapter 10 Exhibit II.
     """
     import os
+
     import pandas as pd
 
     xyz = cl.load_sample("friedland_xyz_auto_bi")

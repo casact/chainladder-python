@@ -1,7 +1,8 @@
-import chainladder as cl
 import numpy as np
 import pandas as pd
 import pytest
+
+import chainladder as cl
 
 
 def test_constant_cdf(raa):

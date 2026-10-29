@@ -1,5 +1,6 @@
-import chainladder as cl
 import numpy as np
+
+import chainladder as cl
 
 
 def test_basic_case_outstanding():
@@ -168,12 +169,15 @@ def test_approach_2_validation_errors():
 
 
 def test_implied_case_development_alias():
-    from chainladder.development.outstanding import ImpliedCaseDevelopment, ImpliedCase
+    import chainladder as cl_root
+
     from chainladder.development import (
-        ImpliedCaseDevelopment as DevImplied,
         ImpliedCase as DevImpliedShort,
     )
-    import chainladder as cl_root
+    from chainladder.development import (
+        ImpliedCaseDevelopment as DevImplied,
+    )
+    from chainladder.development.outstanding import ImpliedCase, ImpliedCaseDevelopment
 
     assert ImpliedCase is ImpliedCaseDevelopment
     assert DevImpliedShort is ImpliedCaseDevelopment

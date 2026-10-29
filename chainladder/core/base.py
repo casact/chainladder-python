@@ -3,42 +3,41 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import pandas as pd
-import numpy as np
 import warnings
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Optional
+
+import numpy as np
+import pandas as pd
 
 from chainladder import (
-    __dt64_unit__,
     __dt64_dtype__,
-    options,
+    __dt64_unit__,
     _deprecated_backend_message,
+    options,
 )
-
+from chainladder.adjustments.disposal import DisposalMixin
 from chainladder.core.common import Common
 from chainladder.core.display import TriangleDisplay
 from chainladder.core.dunders import TriangleDunders
 from chainladder.core.io import TriangleIO
 from chainladder.core.pandas import TrianglePandas
 from chainladder.core.slice import TriangleSlicer
-
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 
-from chainladder.adjustments.disposal import DisposalMixin
-
-from typing import Optional, TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from chainladder import Triangle
-    from pandas import DataFrame, Series
+    from types import ModuleType
+
     from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
+    from pandas._libs.tslibs.timestamps import Timestamp
     from pandas.core.indexes.datetimes import DatetimeIndex
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
-    from pandas._libs.tslibs.timestamps import Timestamp
-    from types import ModuleType
+
+    from chainladder import Triangle
 
 
 class TriangleBase(

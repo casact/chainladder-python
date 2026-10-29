@@ -1,8 +1,11 @@
-import chainladder as cl
+import pandas as pd
+
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
+
+import chainladder as cl
+
 from chainladder.utils.utility_functions import PatsyFormula
-import pandas as pd
 
 
 def test_incremental(genins):

@@ -15,12 +15,14 @@ import json
 import os
 import re
 import subprocess
-import tomllib
 import urllib.request
+
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
+
+import tomllib
 
 CORE_PACKAGES = ["numpy", "pandas", "scikit-learn", "matplotlib"]
 

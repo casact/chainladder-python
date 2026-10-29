@@ -2,12 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from chainladder.methods.chainladder import Chainladder
-from sklearn.base import BaseEstimator, TransformerMixin
-import numpy as np
 import copy
 import warnings
+
+import numpy as np
+
+from sklearn.base import BaseEstimator, TransformerMixin
+
 from chainladder.core.io import EstimatorIO
+from chainladder.methods.chainladder import Chainladder
 
 
 class BerquistSherman(BaseEstimator, TransformerMixin, EstimatorIO):

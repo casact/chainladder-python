@@ -5,17 +5,16 @@ from __future__ import annotations
 
 import warnings
 
+from typing import TYPE_CHECKING, Callable, Literal
+
 import numpy as np
 import pandas as pd
 
-from chainladder import options
-from chainladder import _DEPRECATED_BACKENDS, _deprecated_backend_message
+from chainladder import _DEPRECATED_BACKENDS, _deprecated_backend_message, options
 from chainladder.utils.cupy import cp
 from chainladder.utils.dask import dp
 from chainladder.utils.sparse import sp
 from chainladder.utils.utility_functions import concat
-
-from typing import Callable, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleLike

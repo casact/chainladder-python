@@ -1,6 +1,7 @@
-import chainladder as cl
 import numpy as np
 import pandas as pd
+
+import chainladder as cl
 
 
 def test_bs_sample(raa):

@@ -4,15 +4,17 @@ import copy
 import io
 import pickle
 import warnings
+
 from io import StringIO
 from typing import TYPE_CHECKING
 
-import chainladder as cl
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+
+import chainladder as cl
 
 from chainladder.core.axis import (
     TriangleAxis,

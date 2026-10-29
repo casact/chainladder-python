@@ -7,24 +7,24 @@ Define the Triangle class, the core data structure representing actuarial triang
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import pandas as pd
-import numpy as np
 import warnings
+
+import numpy as np
+import pandas as pd
+
+from chainladder import __dt64_dtype__, _warn_dask_parallel_deprecated, options
+from chainladder._config.deprecation import _deprecated_rename_argument
+from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
 from chainladder.core.base import TriangleBase
-from chainladder.core.axis import TriangleAxis
-from chainladder.core.axis import _set_columns
-from chainladder.core.axis import _set_index
-from chainladder.utils.sparse import sp
-from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
+from chainladder.core.slice import VirtualColumns
+from chainladder.utils.sparse import sp
 from chainladder.utils.utility_functions import (
     concat,
     num_to_nan,
     num_to_value,
     to_period,
 )
-from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
-from chainladder._config.deprecation import _deprecated_rename_argument
 
 try:
     import dask.bag as db
@@ -32,20 +32,21 @@ except ImportError:
     db = None
 
 from typing import (
-    Any,
-    cast,
-    Optional,
     TYPE_CHECKING,
+    Any,
+    Optional,
     Self,
+    cast,
 )
 
 if TYPE_CHECKING:
-    from pandas import DataFrame, Series
-    from chainladder.core.style import Styler
-    from chainladder.core.typing import BackendArray
     from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
     from pandas._libs.tslibs.timestamps import Timestamp  # noqa
     from pandas.core.interchange.dataframe_protocol import DataFrame as DataFrameXchg
+
+    from chainladder.core.style import Styler
+    from chainladder.core.typing import BackendArray
 
 
 class Triangle(TriangleBase):

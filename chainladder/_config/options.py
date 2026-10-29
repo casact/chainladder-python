@@ -10,11 +10,12 @@ from __future__ import annotations
 import copy
 import inspect
 import re
-import numpy as np
-import pandas as pd
 import warnings
 
 from typing import TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
 
 from chainladder._config.deprecation import (
     _DEPRECATED_BACKENDS,
