@@ -1,6 +1,5 @@
-import pytest
-
 import chainladder as cl
+import pytest
 
 
 def test_grid(clrd):

@@ -3,29 +3,26 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import warnings
-
-from typing import (
-    # Self,  # Make use of this once Python 3.10 is deprecated.
-    TYPE_CHECKING,
-    Callable,
-    Literal,
-)
-
 import numpy as np
 import pandas as pd
+import warnings
 
 from chainladder.development.base import DevelopmentBase
-from chainladder.utils import TriangleWeight, WeightedRegression
+from chainladder.utils import WeightedRegression, TriangleWeight
 from chainladder.utils.utility_functions import num_to_nan
 
-if TYPE_CHECKING:
-    from types import ModuleType
+from typing import (
+    Callable,
+    Literal,
+    # Self,  # Make use of this once Python 3.10 is deprecated.
+    TYPE_CHECKING,
+)
 
+if TYPE_CHECKING:
+    from chainladder.core.typing import TriangleLike
     from numpy.typing import ArrayLike
     from pandas import Series
-
-    from chainladder.core.typing import TriangleLike
+    from types import ModuleType
 
 
 class Development(DevelopmentBase):

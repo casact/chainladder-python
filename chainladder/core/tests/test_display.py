@@ -1,22 +1,18 @@
 from __future__ import annotations
 
+import chainladder as cl
 import importlib
-import sys
-
-from collections.abc import Iterable
-from typing import TYPE_CHECKING
-from unittest import mock
-
 import numpy as np
 import pandas as pd
 import pytest
+import sys
 
-from lxml import etree
-from lxml import html as lxml_html
 
-import chainladder as cl
-
+from collections.abc import Iterable
 from chainladder.core.display import TriangleDisplay
+from lxml import etree, html as lxml_html
+from unittest import mock
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle

@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import copy
-import warnings
-
-from pathlib import Path
-from typing import TYPE_CHECKING
-
-import dill
-import numpy as np
-import pandas as pd
 import pytest
 
 import chainladder as cl
+import copy
+import dill
+import warnings
+import numpy as np
+import pandas as pd
 
 from chainladder import __dt64_unit__
 from chainladder.utils.data._manifest import SAMPLES
@@ -21,9 +17,12 @@ from chainladder.utils.utility_functions import (
     minimum,
 )
 
-if TYPE_CHECKING:
-    from pytest import CaptureFixture, MonkeyPatch
+from pathlib import Path
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from pytest import CaptureFixture
+    from pytest import MonkeyPatch
     from chainladder import Triangle
 
 
@@ -212,8 +211,8 @@ def test_concat_immutability(raa):
 
 
 def test_to_pickle_read_pickle(raa):
-    import os
     import tempfile
+    import os
 
     dev = cl.Development(average="simple", n_periods=4).fit(raa)
     fd, path = tempfile.mkstemp(suffix=".pkl")

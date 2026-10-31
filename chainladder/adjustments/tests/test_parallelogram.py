@@ -1,8 +1,7 @@
-import numpy as np
-import pandas as pd
 import pytest
-
 import chainladder as cl
+import pandas as pd
+import numpy as np
 
 
 def test_parallelogram(clrd):

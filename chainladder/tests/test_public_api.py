@@ -14,6 +14,7 @@ import types
 
 import chainladder as cl
 
+
 # The intended public API of the top-level ``chainladder`` package. This is the
 # union of every submodule ``__all__`` plus the package-level objects defined
 # directly in ``chainladder/__init__.py``.

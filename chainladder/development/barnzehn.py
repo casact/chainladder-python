@@ -4,13 +4,11 @@
 
 import numpy as np
 import pandas as pd
-
+from chainladder import options
+from chainladder.development.learning import DevelopmentML
+from chainladder.development.glm import TweedieGLM
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
-
-from chainladder import options
-from chainladder.development.glm import TweedieGLM
-from chainladder.development.learning import DevelopmentML
 from chainladder.utils.utility_functions import PatsyFormula, ptf_formula
 
 

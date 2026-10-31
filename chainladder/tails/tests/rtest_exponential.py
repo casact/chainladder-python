@@ -1,11 +1,10 @@
 import numpy as np
 import pytest
-
 import chainladder as cl
 
 try:
-    from rpy2.robjects import r
     from rpy2.robjects.packages import importr
+    from rpy2.robjects import r
 
     CL = importr("ChainLadder")
 except ImportError:

@@ -1,21 +1,18 @@
 from __future__ import annotations
 
+import chainladder as cl
 import functools
+import pytest
 
 from typing import TYPE_CHECKING
 
-import pytest
-
-import chainladder as cl
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from chainladder import Triangle
     from typing import (
         Any,
         Callable,
     )
-
-    from chainladder import Triangle
 
 
 FIXTURES = {

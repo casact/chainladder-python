@@ -2,20 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
+from chainladder.development.base import DevelopmentBase
+import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
 
 from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
-
-from scipy.optimize import minimize
-
-from chainladder.development.base import DevelopmentBase
-
 if TYPE_CHECKING:  # pragma: no cover
-    from types import ModuleType
-
     from numpy import ndarray
+    from types import ModuleType
 
 
 class ClarkLDF(DevelopmentBase):

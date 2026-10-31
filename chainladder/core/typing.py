@@ -1,28 +1,23 @@
 from __future__ import annotations
 
-from types import EllipsisType
-from typing import (
-    # Self,  # Make use of this once Python 3.10 is deprecated.
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Protocol,
-    TypeAlias,
-    overload,
-)
-
 import numpy as np
 import pandas as pd
 
+from types import EllipsisType
+from typing import (
+    Any,
+    Literal,
+    overload,
+    Protocol,
+    # Self,  # Make use of this once Python 3.10 is deprecated.
+    TYPE_CHECKING,
+    TypeAlias,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from types import ModuleType
-
     from numpy import ndarray
-    from numpy.typing import ArrayLike
-    from pandas import DataFrame, Series
-    from sparse import COO
-
+    from types import ModuleType
     from chainladder import Triangle
     from chainladder.core.slice import (
         At,
@@ -32,6 +27,9 @@ if TYPE_CHECKING:
         TriangleSlicer,
         VirtualColumns,
     )
+    from numpy.typing import ArrayLike
+    from pandas import DataFrame, Series
+    from sparse import COO
 
 # Alias for a Triangle or any object that behaves like one.
 TriangleLike: TypeAlias = "Triangle"

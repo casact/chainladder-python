@@ -3,18 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import pandas as pd
 import warnings
+from sklearn.base import BaseEstimator
+from chainladder.tails import TailConstant
+from chainladder.development import Development
+from chainladder.core.io import EstimatorIO
+from chainladder.core.common import Common
 
 from typing import TYPE_CHECKING
-
-import pandas as pd
-
-from sklearn.base import BaseEstimator
-
-from chainladder.core.common import Common
-from chainladder.core.io import EstimatorIO
-from chainladder.development import Development
-from chainladder.tails import TailConstant
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle

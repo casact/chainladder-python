@@ -3,20 +3,16 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import numpy as np
+from chainladder.utils.sparse import sp
+from sklearn.base import BaseEstimator
 import warnings
 
 from typing import TYPE_CHECKING
 
-import numpy as np
-
-from sklearn.base import BaseEstimator
-
-from chainladder.utils.sparse import sp
-
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
     from typing import Literal
-
     from chainladder.core.typing import BackendArray
 
 

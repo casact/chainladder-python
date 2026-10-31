@@ -1,14 +1,14 @@
 import numpy as np
 
-from sparse import all as sparse_all
-
 from chainladder.utils.sparse import (
-    COO,
     array,
     floor,
-    nanquantile,
+    COO,
     where,
+    nanquantile,
 )
+
+from sparse import all as sparse_all
 
 
 def test_array_from_list_default_fill_value() -> None:

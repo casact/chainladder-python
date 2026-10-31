@@ -1,13 +1,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import warnings
-
-import pandas as pd
-
-from chainladder.development import Development
 from chainladder.tails import TailBase
 from chainladder.utils import WeightedRegression
+from chainladder.development import Development
+import pandas as pd
+import warnings
 
 
 class TailCurve(TailBase):

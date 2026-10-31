@@ -8,11 +8,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pytest
-
 from pandas.io.formats.style import Styler as PandasStyler
 
 import chainladder as cl
-
 from chainladder.core.style import Styler
 
 

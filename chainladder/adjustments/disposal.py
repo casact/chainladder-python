@@ -3,15 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from chainladder.methods import MethodBase
+from chainladder.development import DevelopmentBase
+import numpy as np
 import copy
+from chainladder.utils import TriangleWeight, concat
 
 from typing import TYPE_CHECKING
-
-import numpy as np
-
-from chainladder.development import DevelopmentBase
-from chainladder.methods import MethodBase
-from chainladder.utils import TriangleWeight, concat
 
 if TYPE_CHECKING:
     from chainladder.core import Triangle

@@ -1,5 +1,4 @@
 import sys
-
 from pathlib import Path
 
 _DOCS_EXT_DIR = Path(__file__).resolve().parent / "_ext"

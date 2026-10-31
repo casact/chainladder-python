@@ -1,6 +1,5 @@
-import numpy as np
-
 import chainladder as cl
+import numpy as np
 
 
 def test_pattern_cum_to_incr_zero_cells_stay_finite(raa):

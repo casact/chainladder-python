@@ -3,17 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-import warnings
-
-from typing import TYPE_CHECKING
-
 import numpy as np
 import pandas as pd
-
-from pandas.api.types import is_string_dtype
 from sklearn.base import BaseEstimator, TransformerMixin
+import warnings
 
 from chainladder.utils.utility_functions import num_to_nan
+from pandas.api.types import is_string_dtype
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle

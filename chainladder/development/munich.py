@@ -1,13 +1,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import warnings
-
+from chainladder.utils.weighted_regression import WeightedRegression
+from chainladder.development import Development, DevelopmentBase
 import numpy as np
 import pandas as pd
-
-from chainladder.development import Development, DevelopmentBase
-from chainladder.utils.weighted_regression import WeightedRegression
+import warnings
 
 
 class MunichAdjustment(DevelopmentBase):

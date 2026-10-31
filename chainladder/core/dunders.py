@@ -8,10 +8,11 @@ import operator
 import numpy as np
 import pandas as pd
 
-from chainladder import _warn_dask_parallel_deprecated
+from chainladder.utils.utility_functions import num_to_nan, concat
+
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
-from chainladder.utils.utility_functions import concat, num_to_nan
+from chainladder import _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db

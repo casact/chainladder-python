@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import sparse as sp
-
 from sparse import COO as COO
 from sparse import elemwise
 

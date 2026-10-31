@@ -1,7 +1,6 @@
+import chainladder as cl
 import numpy as np
 import pytest
-
-import chainladder as cl
 
 
 def test_schmidt():

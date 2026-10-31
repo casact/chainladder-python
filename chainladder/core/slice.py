@@ -7,25 +7,23 @@ Support pandas-style slicing to the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast, overload
-
 import numpy as np
 import pandas as pd
-
 from pandas.core.indexing import check_bool_indexer
 
-from chainladder.core.typing import TriangleProtocol, _AxisKey, _LabelKey
+from chainladder.core.typing import _AxisKey, _LabelKey, TriangleProtocol
+
 from chainladder.utils.utility_functions import num_to_nan
 
+from typing import cast, overload, TYPE_CHECKING
+
 if TYPE_CHECKING:
+    from chainladder import Triangle
     from collections.abc import Callable, Sequence
+    from chainladder.core.typing import BackendArray, IndexExpression
+    from sparse import COO
     from types import ModuleType
     from typing import Literal
-
-    from sparse import COO
-
-    from chainladder import Triangle
-    from chainladder.core.typing import BackendArray, IndexExpression
 
 from sparse import _slicing  # noqa
 

@@ -3,11 +3,9 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
-
 from scipy.optimize import least_squares
-
-from chainladder.development import Development
 from chainladder.tails import TailBase
+from chainladder.development import Development
 
 
 class TailBondy(TailBase):

@@ -1,6 +1,5 @@
-import numpy as np
-
 import chainladder as cl
+import numpy as np
 
 
 def test_preserve_diagonal():

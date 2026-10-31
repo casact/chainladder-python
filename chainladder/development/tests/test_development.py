@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import warnings
-
-from typing import TYPE_CHECKING
-
 import numpy as np
+import chainladder as cl
 import pytest
 
-import chainladder as cl
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle

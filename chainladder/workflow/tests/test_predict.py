@@ -1,5 +1,4 @@
 import numpy as np
-
 import chainladder as cl
 
 raa = cl.load_sample("RAA")

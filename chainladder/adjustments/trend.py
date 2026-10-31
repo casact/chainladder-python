@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from sklearn.base import BaseEstimator, TransformerMixin
-
 from chainladder.core.io import EstimatorIO
 
 

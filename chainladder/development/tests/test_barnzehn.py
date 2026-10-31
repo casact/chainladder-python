@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
-
 import chainladder as cl
+import pytest
 
 abc = cl.load_sample("abc")
 
