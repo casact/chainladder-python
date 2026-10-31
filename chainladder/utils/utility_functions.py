@@ -718,10 +718,10 @@ def concat(
                 )
             )
     if axis != 2:
-        a = np.array([obj.odims for obj in objs])
+        a = np.array([obj._axes[2] for obj in objs])
         assert np.all(a == a[0])
     if axis != 3:
-        a = np.array([obj.ddims for obj in objs])
+        a = np.array([obj._axes[3] for obj in objs])
         assert np.all(a == a[0])
 
     out = copy.deepcopy(objs[0])
@@ -750,20 +750,20 @@ def concat(
         out.columns = new_axis
     elif axis == 2:
         if ignore_index:
-            new_axis = np.arange(sum([len(obj.odims) for obj in objs]))
+            new_axis = np.arange(sum([len(obj.origin) for obj in objs]))
         else:
-            new_axis = np.concatenate([obj.odims for obj in objs])
+            new_axis = np.concatenate([obj._axes[2] for obj in objs])
             assert len(new_axis) == len(set(new_axis))
-        out.odims = new_axis
+        out._axes[2] = new_axis
     elif axis == 3:
         if ignore_index:
-            new_axis = np.arange(sum([len(obj.ddims) for obj in objs]))
+            new_axis = np.arange(sum([len(obj.development) for obj in objs]))
         else:
-            new_axis = np.concatenate([obj.ddims for obj in objs])
+            new_axis = np.concatenate([obj._axes[3] for obj in objs])
             assert len(new_axis) == len(set(new_axis))
-        out.ddims = new_axis
-        if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
-            out.ddims = pd.DatetimeIndex(out.ddims)
+        out._axes[3] = new_axis
+        if out._axes[3].dtype == __dt64_dtype__ and type(out._axes[3]) is np.ndarray:
+            out._axes[3] = pd.DatetimeIndex(out._axes[3])
 
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
     out._set_slicers()

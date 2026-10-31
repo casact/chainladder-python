@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
+import numpy as np
 import pandas as pd
 
 from chainladder.utils.utility_functions import _get_axis_name, _get_axis_number
@@ -132,10 +133,11 @@ def _set_columns(obj: Triangle, value: Any) -> pd.Index:
     """
     if isinstance(value, str):
         value = [value]
-    if hasattr(obj, "values") and obj.values is not None:
-        obj._len_check(range(obj.values.shape[1]), value)
-    elif hasattr(obj, "_axes") and (1 in obj._axes or "columns" in obj._axes):
-        obj._len_check(obj.columns, value)
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[1]), value)
+        elif hasattr(obj, "_axes") and (1 in obj._axes or "columns" in obj._axes):
+            obj._len_check(obj.columns, value)
     return pd.Index(value, name="columns")
 
 
@@ -157,8 +159,153 @@ def _set_index(obj: Triangle, value: Any) -> pd.DataFrame:
     """
     if not isinstance(value, pd.DataFrame):
         raise TypeError("index must be a pandas DataFrame")
-    if hasattr(obj, "values") and obj.values is not None:
-        obj._len_check(range(obj.values.shape[0]), value)
-    elif hasattr(obj, "_axes") and (0 in obj._axes or "index" in obj._axes):
-        obj._len_check(obj.index, value)
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[0]), value)
+        elif hasattr(obj, "_axes") and (0 in obj._axes or "index" in obj._axes):
+            obj._len_check(obj.index, value)
     return value.copy().reset_index(drop=True)
+
+
+def _get_origin(obj: Triangle, raw: Any) -> pd.PeriodIndex | pd.Series:
+    """
+    Transform raw origin timestamp array into public PeriodIndex or Series.
+    """
+    if obj.is_pattern and len(raw) == 1:
+        return pd.Series(["(All)"])
+    freq = {
+        "S": "2Q",
+        "H": "2Q",
+    }.get(obj.origin_grain, obj.origin_grain)
+    freq = freq if freq == "M" else freq + "-" + obj.origin_close
+    return pd.DatetimeIndex(raw, name="origin").to_period(freq=freq)
+
+
+def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
+    """
+    Validate and transform assigned origin periods into internal timestamps array.
+    """
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[2]), value)
+        elif hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
+            obj._len_check(obj.origin, value)
+    origin_grain = getattr(obj, "origin_grain", "Y")
+    origin_close = getattr(obj, "origin_close", "DEC")
+    freq = {
+        "S": "2Q",
+    }.get(origin_grain, origin_grain)
+    freq = freq if freq == "M" else freq + "-" + origin_close
+    value = pd.PeriodIndex(value, freq=freq)
+    return value.to_timestamp().values
+
+
+def _get_development(obj: Triangle, raw: Any) -> pd.Series:
+    """
+    Transform raw development lags/timestamps into public Series.
+    """
+    ddims = raw.copy()
+    if obj.is_val_tri:
+        formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
+        ddims = ddims.to_period(freq=obj.development_grain.replace("S", "2Q")).strftime(
+            formats[obj.development_grain]
+        )
+    elif obj.is_pattern:
+        offset = obj._dstep()["M"][obj.development_grain]
+        if obj.is_ultimate:
+            ddims[-1] = ddims[-2] + offset
+        if obj.is_cumulative:
+            ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
+        else:
+            ddims = [
+                "{}-{}".format(ddims[i], ddims[i] + offset) for i in range(len(ddims))
+            ]
+    return pd.Series(list(ddims), name="development")
+
+
+def _set_development(obj: Triangle, value: Any) -> Any:
+    """
+    Validate and transform assigned development periods into internal lag/timestamp array.
+    """
+    if hasattr(obj, "_len_check"):
+        if hasattr(obj, "values") and obj.values is not None:
+            obj._len_check(range(obj.values.shape[3]), value)
+        elif hasattr(obj, "_axes") and (3 in obj._axes or "development" in obj._axes):
+            obj._len_check(obj.development, value)
+    if isinstance(value, pd.DatetimeIndex):
+        return value
+    if isinstance(value, pd.PeriodIndex):
+        return value.to_timestamp()
+
+    val_arr = np.array(
+        [value] if isinstance(value, (str, int, float, np.number)) else value
+    )
+    if val_arr.dtype.kind in ("i", "u", "f"):
+        return val_arr
+
+    if hasattr(obj, "_axes") and isinstance(obj._axes.get(3), pd.DatetimeIndex):
+        current_dt = obj._axes[3]
+        current_labels = list(_get_development(obj, current_dt))
+        val_list_str = [str(v) for v in val_arr]
+        if all(v in current_labels for v in val_list_str):
+            indices = [current_labels.index(v) for v in val_list_str]
+            return current_dt[indices]
+        try:
+            freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
+            return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
+        except (ValueError, TypeError):
+            try:
+                return pd.DatetimeIndex(val_arr)
+            except (ValueError, TypeError):
+                pass
+
+    if getattr(obj, "is_pattern", False):
+        val_list = [str(v) for v in val_arr]
+        if any("-" in v for v in val_list):
+            try:
+                lags = []
+                for item in val_list:
+                    s = item.strip()
+                    if s.lower() == "ult":
+                        lags.append(9999)
+                    elif "-" in s:
+                        lags.append(int(s.split("-")[0]))
+                    else:
+                        lags.append(int(s))
+                raw_dev = getattr(obj, "_axes", {}).get(3)
+                if (
+                    raw_dev is None
+                    and hasattr(obj, "_axes")
+                    and isinstance(obj._axes, dict)
+                ):
+                    raw_dev = obj._axes.get("development")
+                is_ult = getattr(obj, "is_ultimate", False) or (
+                    raw_dev is not None
+                    and len(raw_dev) == len(lags)
+                    and len(raw_dev) > 0
+                    and raw_dev[-1] == 9999
+                )
+                if is_ult and len(lags) > 0:
+                    lags[-1] = 9999
+                return np.array(lags, dtype=int)
+            except (ValueError, TypeError):
+                pass
+
+    return val_arr
+
+
+def _set_axis(obj: Triangle, axis: int | str, value: Any) -> None:
+    """
+    Set values on the specified axis of a Triangle instance.
+
+    Parameters
+    ----------
+    obj : Triangle
+        The Triangle instance to update.
+    axis : int or str
+        Axis identifier (0..3 or 'index', 'columns', 'origin', 'development').
+    value : Any
+        New axis values.
+    """
+    axis_name = _get_axis_name(axis)
+    setattr(obj, axis_name, value)
