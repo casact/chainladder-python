@@ -118,6 +118,15 @@ select = [
     "UP034",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["chainladder"]
+force-sort-within-sections = false
+order-by-type = true
+combine-as-imports = false
+lines-after-imports = -1
+lines-between-types = 1
+split-on-trailing-comma = true
+
 [tool.ruff.format]
 docstring-code-format = true
 
