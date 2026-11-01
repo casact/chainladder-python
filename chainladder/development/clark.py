@@ -339,9 +339,18 @@ class ClarkLDF(DevelopmentBase):
             self.elr_ = pd.DataFrame(
                 params[..., 0, 2], index=rows, columns=X.columns.to_list()
             )
-        ultimate_ = (
-            self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2) * ld.values
-        )
+        if sample_weight:
+            # Cape Cod: the expected ultimate is premium * ELR, not the
+            # LDF-implied ultimate from the latest diagonal.
+            sw = sample_weight
+            if sw.array_backend != "numpy":
+                sw = sw.set_backend("numpy")
+            ultimate_ = sw.values * params[..., 0:1, 2:3]
+        else:
+            ultimate_ = (
+                self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2)
+                * ld.values
+            )
         self.incremental_fits_ = X.copy()
         self.incremental_fits_.array_backend = "numpy"
         self.incremental_fits_.values = (
