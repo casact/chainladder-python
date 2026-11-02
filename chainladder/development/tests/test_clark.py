@@ -4,6 +4,14 @@ import numpy as np
 import chainladder as cl
 import pytest
 
+# ClarkLDF fits omega and theta numerically, and the optimizer stops at
+# slightly different points across Python versions and numpy/scipy/pandas
+# builds. That moves the scale parameter by a few units and the ELR in the
+# fifth decimal, so fitted values are compared with the paper's rounded
+# figures at a relative tolerance of 0.1%. A Cape Cod scale computed from
+# the LDF-implied ultimate (53,822) is about 13% away and fails the check.
+PAPER_RTOL = 1e-3
+
 
 @pytest.fixture
 def clark_genins():
@@ -26,9 +34,9 @@ def clark_premium(clark_genins):
 
 
 def test_clark_ldf_scale(clark_genins):
-    """LDF method scale parameter matches Clark (2003), p. 65."""
+    """LDF method scale parameter matches Clark (2003), p. 61."""
     model = cl.ClarkLDF().fit(clark_genins)
-    assert model.scale_.iloc[0, 0] == pytest.approx(65_029, abs=1)
+    assert model.scale_.iloc[0, 0] == pytest.approx(65_029, rel=PAPER_RTOL)
 
 
 def test_clark_cape_cod_scale(clark_genins, clark_premium):
@@ -38,8 +46,8 @@ def test_clark_cape_cod_scale(clark_genins, clark_premium):
     than the LDF-implied ultimate (GH #1501).
     """
     model = cl.ClarkLDF().fit(clark_genins, sample_weight=clark_premium)
-    assert model.elr_.iloc[0, 0] == pytest.approx(0.5978, abs=1e-4)
-    assert model.scale_.iloc[0, 0] == pytest.approx(61_577, abs=1)
+    assert model.elr_.iloc[0, 0] == pytest.approx(0.5978, rel=PAPER_RTOL)
+    assert model.scale_.iloc[0, 0] == pytest.approx(61_577, rel=PAPER_RTOL)
 
 
 def test_clark_cape_cod_incremental_fits(clark_genins, clark_premium):
