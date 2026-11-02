@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from chainladder.core.io import EstimatorIO
@@ -162,7 +163,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
         self.dates = dates
         self.axis = axis
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None, sample_weight=None) -> Trend:
         """
         Fit the model with X.
 
@@ -175,7 +176,7 @@ class Trend(BaseEstimator, TransformerMixin, EstimatorIO):
 
         Returns
         -------
-        self: object
+        self: Trend
             Returns the instance itself.
         """
         trends = self.trends if type(self.trends) is list else [self.trends]

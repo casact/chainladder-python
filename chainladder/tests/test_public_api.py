@@ -60,6 +60,8 @@ EXPECTED_PUBLIC_API = {
     "ParallelogramOLF",
     "Trend",
     "DisposalRate",
+    "LEV",
+    "Sahasrabuddhe",
     # tails
     "TailBase",
     "TailConstant",

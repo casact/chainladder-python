@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
 from chainladder.tails import TailBase
 from chainladder.development import Development
 
@@ -129,7 +131,7 @@ class TailConstant(TailBase):
         self.attachment_age = attachment_age
         self.projection_period = projection_period
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(self, X, y=None, sample_weight=None) -> TailConstant:
         """
         Fit the model with X.
 
@@ -142,7 +144,7 @@ class TailConstant(TailBase):
 
         Returns
         -------
-        self : object
+        self : TailConstant
             Returns the instance itself.
         """
         super().fit(X, y, sample_weight)

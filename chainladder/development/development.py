@@ -356,7 +356,9 @@ class Development(DevelopmentBase):
         # Undeclared until fitted attributes - scikit-learn convention.
         self.average_: np.ndarray
 
-    def fit(self, X: TriangleLike, y: None = None, sample_weight: None = None):
+    def fit(
+        self, X: TriangleLike, y: None = None, sample_weight: None = None
+    ) -> Development:
         """
         Fit the model with X.
 
@@ -371,7 +373,7 @@ class Development(DevelopmentBase):
 
         Returns
         -------
-        self : object
+        self : Development
             Returns the instance itself.
         """
 
