@@ -65,7 +65,7 @@ class TriangleGroupBy:
         )
 
 
-class TrianglePandas(Common, _TrianglePandasBase):
+class TrianglePandas(_TrianglePandasBase):
     def to_frame(
         self,
         origin_as_datetime: bool = True,
