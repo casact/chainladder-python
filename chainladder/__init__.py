@@ -36,7 +36,7 @@ from chainladder._config import (  # noqa (API import)
     _deprecated_rename_argument,
     _deprecated_drop_argument,
 )
-from chainladder.utils import (
+from chainladder.utils import (  # ruff: noqa: E402
     WeightedRegression as WeightedRegression,
     TriangleWeight as TriangleWeight,
     parallelogram_olf as parallelogram_olf,
@@ -54,13 +54,13 @@ from chainladder.utils import (
     sp as sp,
     dp as dp,
 )
-from chainladder.core import (
+from chainladder.core import (  # ruff: noqa: E402
     Triangle as Triangle,
     DevelopmentCorrelation as DevelopmentCorrelation,
     ValuationCorrelation as ValuationCorrelation,
     Styler as Styler,
 )
-from chainladder.development import (
+from chainladder.development import (  # ruff: noqa: E402
     DevelopmentBase as DevelopmentBase,
     Development as Development,
     MunichAdjustment as MunichAdjustment,
@@ -74,21 +74,21 @@ from chainladder.development import (
     TweedieGLM as TweedieGLM,
     BarnettZehnwirth as BarnettZehnwirth,
 )
-from chainladder.adjustments import (
+from chainladder.adjustments import (  # ruff: noqa: E402
     BootstrapODPSample as BootstrapODPSample,
     BerquistSherman as BerquistSherman,
     ParallelogramOLF as ParallelogramOLF,
     Trend as Trend,
     DisposalRate as DisposalRate,
 )
-from chainladder.tails import (
+from chainladder.tails import (  # ruff: noqa: E402
     TailBase as TailBase,
     TailConstant as TailConstant,
     TailCurve as TailCurve,
     TailBondy as TailBondy,
     TailClark as TailClark,
 )
-from chainladder.methods import (
+from chainladder.methods import (  # ruff: noqa: E402
     MethodBase as MethodBase,
     Chainladder as Chainladder,
     MackChainladder as MackChainladder,
@@ -97,7 +97,7 @@ from chainladder.methods import (
     CapeCod as CapeCod,
     ExpectedLoss as ExpectedLoss,
 )
-from chainladder.workflow import (
+from chainladder.workflow import (  # ruff: noqa: E402
     GridSearch as GridSearch,
     Pipeline as Pipeline,
     VotingChainladder as VotingChainladder,
