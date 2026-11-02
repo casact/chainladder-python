@@ -36,7 +36,7 @@ from chainladder._config import (  # noqa (API import)
     _deprecated_rename_argument,
     _deprecated_drop_argument,
 )
-from chainladder.utils import (  # noqa (API import)
+from chainladder.utils import (
     WeightedRegression as WeightedRegression,
     TriangleWeight as TriangleWeight,
     parallelogram_olf as parallelogram_olf,
@@ -54,13 +54,13 @@ from chainladder.utils import (  # noqa (API import)
     sp as sp,
     dp as dp,
 )
-from chainladder.core import (  # noqa (API import)
+from chainladder.core import (
     Triangle as Triangle,
     DevelopmentCorrelation as DevelopmentCorrelation,
     ValuationCorrelation as ValuationCorrelation,
     Styler as Styler,
 )
-from chainladder.development import (  # noqa (API import)
+from chainladder.development import (
     DevelopmentBase as DevelopmentBase,
     Development as Development,
     MunichAdjustment as MunichAdjustment,
@@ -74,21 +74,21 @@ from chainladder.development import (  # noqa (API import)
     TweedieGLM as TweedieGLM,
     BarnettZehnwirth as BarnettZehnwirth,
 )
-from chainladder.adjustments import (  # noqa (API import)
+from chainladder.adjustments import (
     BootstrapODPSample as BootstrapODPSample,
     BerquistSherman as BerquistSherman,
     ParallelogramOLF as ParallelogramOLF,
     Trend as Trend,
     DisposalRate as DisposalRate,
 )
-from chainladder.tails import (  # noqa (API import)
+from chainladder.tails import (
     TailBase as TailBase,
     TailConstant as TailConstant,
     TailCurve as TailCurve,
     TailBondy as TailBondy,
     TailClark as TailClark,
 )
-from chainladder.methods import (  # noqa (API import)
+from chainladder.methods import (
     MethodBase as MethodBase,
     Chainladder as Chainladder,
     MackChainladder as MackChainladder,
@@ -97,7 +97,7 @@ from chainladder.methods import (  # noqa (API import)
     CapeCod as CapeCod,
     ExpectedLoss as ExpectedLoss,
 )
-from chainladder.workflow import (  # noqa (API import)
+from chainladder.workflow import (
     GridSearch as GridSearch,
     Pipeline as Pipeline,
     VotingChainladder as VotingChainladder,
