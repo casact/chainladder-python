@@ -16,7 +16,6 @@ from chainladder import (
     _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
-from chainladder.core.common import Common
 from chainladder.utils.utility_functions import concat, num_to_nan
 
 from typing import cast, TYPE_CHECKING
@@ -66,13 +65,7 @@ class TriangleGroupBy:
         )
 
 
-class TrianglePandas(Common, _TrianglePandasBase):
-    if TYPE_CHECKING:
-        # Installed by add_triangle_agg_func at runtime.
-        def sum(
-            self, axis: str | int | None = None, *args, **kwargs
-        ) -> TriangleProtocol: ...
-
+class TrianglePandas(_TrianglePandasBase):
     def to_frame(
         self,
         origin_as_datetime: bool = True,
