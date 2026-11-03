@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
-import chainladder as cl
 import pytest
+
+import chainladder as cl
 
 # ClarkLDF fits omega and theta numerically, and the optimizer stops at
 # slightly different points across Python versions and numpy/scipy/pandas
