@@ -58,3 +58,17 @@ def test_clark_cape_cod_incremental_fits(clark_genins, clark_premium):
     # Expected loss at age 12 for every origin is ultimate * G(6)
     g6 = model.G_(6.0).values[0, 0, 0, 0]
     assert np.allclose(fits[..., 0:1], ultimate * g6)
+
+
+def test_clark_cape_cod_sparse_premium(clark_genins, clark_premium):
+    """A premium triangle on the sparse backend gives the same Cape Cod fit."""
+    dense = cl.ClarkLDF().fit(clark_genins, sample_weight=clark_premium)
+    sparse = cl.ClarkLDF().fit(
+        clark_genins, sample_weight=clark_premium.set_backend("sparse")
+    )
+    assert sparse.scale_.iloc[0, 0] == pytest.approx(dense.scale_.iloc[0, 0])
+    assert np.allclose(
+        sparse.incremental_fits_.values,
+        dense.incremental_fits_.values,
+        equal_nan=True,
+    )
