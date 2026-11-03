@@ -41,23 +41,40 @@ def test_clark_ldf_scale(clark_genins):
 
 def test_clark_cape_cod_scale(clark_genins, clark_premium):
     """
-    Cape Cod scale parameter matches Clark (2003), p. 68. The fitted
-    incrementals must use premium * ELR as the expected ultimate rather
-    than the LDF-implied ultimate (GH #1501).
+    Cape Cod ELR matches Clark (2003), p. 67, and the scale parameter
+    matches p. 68. The fitted incrementals must use premium * ELR as the
+    expected ultimate rather than the LDF-implied ultimate (GH #1501).
     """
     model = cl.ClarkLDF().fit(clark_genins, sample_weight=clark_premium)
     assert model.elr_.iloc[0, 0] == pytest.approx(0.5978, rel=PAPER_RTOL)
     assert model.scale_.iloc[0, 0] == pytest.approx(61_577, rel=PAPER_RTOL)
 
 
+# Fitted incrementals for the Cape Cod method, Clark (2003), Table 2.1, p. 80.
+# One row per origin (1991 to 2000), one column per 12-month development step.
+CAPE_COD_FITTED = [
+    [280569, 882582, 845554, 691227, 542171, 422833, 332202, 264171, 212900, 173860],
+    [291792, 917885, 879376, 718876, 563858, 439746, 345490, 274738, 221416],
+    [303015, 953188, 913198, 746525, 585545, 456660, 358778, 285305],
+    [314238, 988491, 947020, 774174, 607232, 473573, 372066],
+    [325460, 1023795, 980842, 801823, 628919, 490486],
+    [336683, 1059098, 1014664, 829472, 650606],
+    [347906, 1094401, 1048487, 857121],
+    [359129, 1129704, 1082309],
+    [370351, 1165008],
+    [381574],
+]
+
+
 def test_clark_cape_cod_incremental_fits(clark_genins, clark_premium):
-    """Cape Cod fitted incrementals are premium * ELR * (G(y) - G(x))."""
+    """Cape Cod fitted incrementals match Clark (2003), Table 2.1, p. 80."""
     model = cl.ClarkLDF().fit(clark_genins, sample_weight=clark_premium)
-    fits = model.incremental_fits_.values
-    ultimate = clark_premium.values * model.elr_.iloc[0, 0]
-    # Expected loss at age 12 for every origin is ultimate * G(6)
-    g6 = model.G_(6.0).values[0, 0, 0, 0]
-    assert np.allclose(fits[..., 0:1], ultimate * g6)
+    expected = np.full((10, 10), np.nan)
+    for i, row in enumerate(CAPE_COD_FITTED):
+        expected[i, : len(row)] = row
+    assert model.incremental_fits_.values[0, 0] == pytest.approx(
+        expected, rel=PAPER_RTOL, nan_ok=True
+    )
 
 
 def test_clark_cape_cod_sparse_premium(clark_genins, clark_premium):

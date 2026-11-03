@@ -342,8 +342,7 @@ class ClarkLDF(DevelopmentBase):
         if sample_weight:
             # Cape Cod: the expected ultimate is premium * ELR, not the
             # LDF-implied ultimate from the latest diagonal.
-            premium = sample_weight.set_backend("numpy").values
-            ultimate_ = premium * params[..., 0:1, 2:3]
+            ultimate_ = sample_weight.values * params[..., 0:1, 2:3]
         else:
             ultimate_ = (
                 self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2)
