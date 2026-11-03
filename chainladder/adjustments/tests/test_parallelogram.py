@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pytest
 import chainladder as cl
 import pandas as pd
@@ -594,3 +596,174 @@ def test_daily_grain_after_leap_year():
     ).fit(triangle)
     assert len(olf.olf_.origin) == len(triangle.origin)
     assert not olf.olf_.to_frame(origin_as_datetime=False).isna().any().any()
+
+
+def test_off_grid_incremental_change_is_not_dropped():
+    """A rate change dated mid-month must not vanish in monthly mode."""
+    kw = dict(start_date="2000-01-01", end_date="2003-12-31", grain="Y")
+    off = cl.parallelogram_olf(values=[0.20], dates=["2001-07-15"], **kw)
+    # In monthly mode the change takes effect at the next grid point.
+    on = cl.parallelogram_olf(values=[0.20], dates=["2001-08-01"], **kw)
+    assert np.isclose(off.loc["2000", "OLF"], 1.2)
+    assert np.allclose(off["OLF"].values, on["OLF"].values)
+
+
+def test_off_grid_incremental_matches_cumulative():
+    """Incremental and cumulative inputs agree for off-grid effective dates."""
+    data = pd.DataFrame({"Year": list(range(2006, 2016)), "EarnedPremium": [1e4] * 10})
+    prem_tri = cl.Triangle(
+        data, origin="Year", columns="EarnedPremium", cumulative=True
+    )
+    dates = ["2006-01-01", "2010-07-15", "2011-02-14", "2012-06-30", "2013-04-10"]
+    changes = [0.0, 0.035, 0.05, 0.10, -0.01]
+    levels = np.cumprod(np.array(changes) + 1)
+    factors = levels[-1] / levels
+    for grain in ["M", "D"]:
+        for vertical_line in [True, False]:
+            kw = dict(
+                date_col="EffDate",
+                approximation_grain=grain,
+                vertical_line=vertical_line,
+            )
+            incremental = cl.ParallelogramOLF(
+                pd.DataFrame({"EffDate": dates, "RateChange": changes}),
+                change_col="RateChange",
+                **kw,
+            ).fit_transform(prem_tri)
+            cumulative = cl.ParallelogramOLF(
+                pd.DataFrame({"EffDate": dates, "Factor": factors}),
+                change_col="Factor",
+                cumulative=True,
+                **kw,
+            ).fit_transform(prem_tri)
+            assert np.allclose(incremental.olf_.values, cumulative.olf_.values), (
+                grain,
+                vertical_line,
+            )
+
+
+# Rate levels of the documented rate-history example below: +2% on 2016-07-15,
+# +5% on 2017-03-01, -3% on 2018-01-01 and +10% on 2019-10-31.
+L0 = 1.0
+L1 = L0 * 1.02
+L2 = L1 * 1.05
+L3 = L2 * 0.97
+L4 = L3 * 1.10  # current rate level, 1.142757
+
+
+def _tri(n, term):
+    """
+    Earned-exposure share of a corner triangle with legs n / term.
+
+    Policies written uniformly over the year and earned uniformly over a
+    policy term of ``term`` periods: the part of a calendar year's earned
+    exposure that comes from policies written during the first (or last)
+    ``n`` periods is the triangle (n / term) ** 2 / 2.
+    """
+    return (n / term) ** 2 / 2
+
+
+@pytest.mark.parametrize(
+    "approximation_grain, expected",
+    [
+        (
+            # Monthly convention: 12 equal months, policy term 12 months. An
+            # off-grid date changes the rate from the next month start, so
+            # 2016-07-15 acts from Aug 1, 2016 and 2019-10-31 from Nov 1, 2019.
+            "M",
+            [
+                # 2016: policies written Aug-Dec 2016 (5 months) are at L1.
+                # = 10284813 / 9015625
+                L4 / (L0 * (1 - _tri(5, 12)) + L1 * _tri(5, 12)),
+                # 2017: L0 policies written Jan-Jul 2016 still earn during
+                # Jan-Jul 2017 (7 months); policies written Mar-Dec 2017
+                # (10 months) are at L2.
+                # = 934983 / 846250
+                L4
+                / (
+                    L0 * _tri(7, 12)
+                    + L1 * (1 - _tri(7, 12) - _tri(10, 12))
+                    + L2 * _tri(10, 12)
+                ),
+                # 2018: L1 policies written Jan-Feb 2017 still earn during
+                # Jan-Feb 2018 (2 months); policies written in 2018 are at L3
+                # and earn half of the year's exposure.
+                # = 201663 / 186040
+                L4 / (L1 * _tri(2, 12) + L2 * (1 / 2 - _tri(2, 12)) + L3 / 2),
+                # 2019: policies written Nov-Dec 2019 (2 months) are at L4,
+                # i.e. 1.1 / (1 + 0.1 * 1 / 72).
+                # = 792 / 721
+                L4 / (L3 * (1 - _tri(2, 12)) + L4 * _tri(2, 12)),
+                # 2020: L3 policies written Jan-Oct 2019 still earn during
+                # Jan-Oct 2020 (10 months), i.e. 1.1 / (1 + 0.1 * 47 / 72).
+                # = 792 / 767
+                L4 / (L3 * _tri(10, 12) + L4 * (1 - _tri(10, 12))),
+            ],
+        ),
+        (
+            # Daily convention: actual days, effective dates honored exactly,
+            # policy term of 365 days for non-leap origins and 366 days for
+            # leap origins (2016, 2020), as in the current algorithm.
+            "D",
+            [
+                # 2016: 170 days from 2016-07-15 to 2016-12-31 are at L1.
+                # = 38269789173 / 33561250000
+                L4 / (L0 * (1 - _tri(170, 366)) + L1 * _tri(170, 366)),
+                # 2017: L0 policies still earn from 2017-01-01 to 2017-07-14
+                # (195 days); policies written from 2017-03-01 to 2017-12-31
+                # (306 days) are at L2.
+                # = 184537941 / 167147840
+                L4
+                / (
+                    L0 * _tri(195, 365)
+                    + L1 * (1 - _tri(195, 365) - _tri(306, 365))
+                    + L2 * _tri(306, 365)
+                ),
+                # 2018: L1 policies written in Jan-Feb 2017 still earn from
+                # 2018-01-01 to 2018-02-28 (59 days); 2018 writings are at L3.
+                # = 119406903 / 110160745
+                L4 / (L1 * _tri(59, 365) + L2 * (1 / 2 - _tri(59, 365)) + L3 / 2),
+                # 2019: 62 days from 2019-10-31 to 2019-12-31 are at L4.
+                # = 1465475 / 1334172
+                L4 / (L3 * (1 - _tri(62, 365)) + L4 * _tri(62, 365)),
+                # 2020: L3 policies still earn from 2020-01-01 to 2020-10-30
+                # (304 days).
+                # = 368379 / 356827
+                L4 / (L3 * _tri(304, 366) + L4 * (1 - _tri(304, 366))),
+            ],
+        ),
+    ],
+)
+def test_documented_rate_history_independent_geometry(
+    approximation_grain: Literal["M", "D"], expected: list[float]
+) -> None:
+    """
+    Pin the documented rate-history example to independent geometry.
+
+    Uniform issuance of equal exposure, uniform earning during the policy term;
+    OLF = current rate level / average earned rate level, not the average of
+    individual OLFs. The expected values are the elementary parallelogram
+    areas written out above; the exact fractions in the comments were derived
+    separately with rational arithmetic by integrating each policy cohort's
+    earned overlap with the origin year. This does not assert exact
+    calendar-anniversary earning across leap years.
+    """
+    rate_history = pd.DataFrame({
+        "EffDate": ["2016-07-15", "2017-03-01", "2018-01-01", "2019-10-31"],
+        "RateChange": [0.02, 0.05, -0.03, 0.1],
+    })
+    data = pd.DataFrame({"Year": range(2016, 2021), "EarnedPremium": [10000] * 5})
+    premium = cl.Triangle(data, origin="Year", columns="EarnedPremium", cumulative=True)
+    result = (
+        cl
+        .ParallelogramOLF(
+            rate_history,
+            change_col="RateChange",
+            date_col="EffDate",
+            approximation_grain=approximation_grain,
+            policy_length=12,
+        )
+        .fit_transform(premium)
+        .olf_.values.flatten()
+    )
+    np.testing.assert_allclose(result, expected, rtol=1e-13, atol=1e-14)

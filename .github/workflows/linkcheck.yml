@@ -1,0 +1,40 @@
+name: Link Check
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/linkcheck.yml
+      - .github/lychee.toml
+
+permissions:
+  contents: read
+
+jobs:
+  linkcheck:
+    if: github.repository_owner == 'casact'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Check links
+        id: lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8
+        with:
+          args: >-
+            --config .github/lychee.toml --no-progress
+            --root-dir "${{ github.workspace }}" .
+          fail: false
+          jobSummary: true
+
+      - name: Fail on lychee errors
+        if: steps.lychee.outputs.exit_code != 0 && steps.lychee.outputs.exit_code != 2
+        run: |
+          echo "::error::lychee exited with code $EXIT_CODE"
+          exit 1
+        env:
+          EXIT_CODE: ${{ steps.lychee.outputs.exit_code }}

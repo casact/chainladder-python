@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
@@ -33,3 +35,13 @@ jobs:
       - name: Run ruff format
         run: |
           uvx ruff@0.16.1 format --check --diff --force-exclude .
+
+      - name: Suggest import sorting for changed files
+        if: github.event_name == 'pull_request'
+        run: |
+          files=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}"...HEAD -- "*.py" "*.ipynb")
+          if [ -z "$files" ]; then
+            echo "No changed Python files or notebooks to check"
+          else
+            uvx ruff@0.16.1 check --force-exclude --select I --diff --exit-zero $files
+          fi
