@@ -822,6 +822,150 @@ def test_centralized_axis_edge_cases(raa):
     sorted_lags = tri_lags.sort_axis(3)
     assert list(sorted_lags.development) == [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
 
+    # 13. Additional axis branch coverage for edge cases
+    # TriangleAxis descriptor on class vs instance without _axes
+    assert isinstance(cl.Triangle.origin, cl.core.axis.TriangleAxis)
+
+    class EmptyObj:
+        pass
+
+    empty = EmptyObj()
+    with pytest.raises(AttributeError, match="has no attribute 'origin'"):
+        _ = cl.Triangle.origin.__get__(empty, EmptyObj)
+
+    # _get_origin and _get_development when raw is None
+    class MockNoneAxes:
+        is_pattern = False
+        is_val_tri = False
+        origin_grain = "S"
+        origin_close = "DEC"
+        development_grain = "S"
+        _axes = {2: None, 3: None}
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+    none_mock = MockNoneAxes()
+    assert none_mock.origin is None
+    assert none_mock.development is None
+
+    # origin_grain variations (S, H) and development_grain (Q, M)
+    class MockGrainAxes:
+        is_pattern = False
+        is_val_tri = True
+        origin_grain = "H"
+        origin_close = "DEC"
+        development_grain = "Q"
+        _axes = {
+            2: pd.to_datetime(["2000-06-30"]).values,
+            3: pd.DatetimeIndex(["2000-06-30"]),
+        }
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+    grain_mock = MockGrainAxes()
+    assert grain_mock.origin is not None
+    assert "2000" in grain_mock.development.iloc[0]
+    grain_mock.development_grain = "M"
+    assert "2000-06" in grain_mock.development.iloc[0]
+
+    # _set_origin with PeriodIndex, DatetimeIndex, and datetime64 ndarray
+    t_orig = raa.copy()
+    t_orig.origin = pd.period_range("2000", periods=10, freq="Y-DEC")
+    assert len(t_orig._axes[2]) == 10
+    t_orig.origin = pd.date_range("2000", periods=10, freq="YS")
+    assert len(t_orig._axes[2]) == 10
+    t_orig.origin = pd.date_range("2000", periods=10, freq="YS").values
+    assert len(t_orig._axes[2]) == 10
+
+    # (All) origin fallback when _axes does not have 2
+    class MockAllNoAxes:
+        origin_grain = "Y"
+        origin_close = "DEC"
+        _axes = {}
+        origin = cl.Triangle.origin
+
+    all_mock = MockAllNoAxes()
+    all_mock.origin = "(All)"
+    assert len(all_mock._axes[2]) == 1
+
+    # _set_development with PeriodIndex, DatetimeIndex, and datetime64 ndarray
+    val_tri_cov = raa.dev_to_val()
+    val_tri_cov.development = pd.date_range("2000", periods=10, freq="YS")
+    assert len(val_tri_cov._axes[3]) == 10
+    val_tri_cov.development = pd.period_range("2000", periods=10, freq="Y")
+    assert len(val_tri_cov._axes[3]) == 10
+    val_tri_cov.development = pd.date_range("2000", periods=10, freq="YS").values
+    assert len(val_tri_cov._axes[3]) == 10
+
+    # non-val tri development with PeriodIndex and datetime64
+    non_val = raa.copy()
+    non_val.development = pd.period_range("2000", periods=10, freq="Y")
+    assert len(non_val._axes[3]) == 10
+    non_val.development = pd.date_range("2000", periods=10, freq="YS").values
+    assert len(non_val._axes[3]) == 10
+
+    # _set_development valuation string parsing
+    val_single = val_tri_cov.iloc[:, :, :1, :1].copy()
+    val_single.development = "2005"
+    assert val_single.is_val_tri
+
+    # _set_development parse error fallback
+    non_val_single = raa.iloc[:, :, :1, :1].copy()
+    non_val_single.development = "unparseable_string"
+    assert non_val_single._axes[3][0] == "unparseable_string"
+
+    # _set_columns and _set_index non-TriangleBase mock
+    class MockFullAxes:
+        _axes = {
+            0: pd.DataFrame({"a": [1]}),
+            1: pd.Index(["v"]),
+            2: np.array([1]),
+            3: np.array([12]),
+        }
+        index = cl.Triangle.index
+        columns = cl.Triangle.columns
+        origin = cl.Triangle.origin
+        development = cl.Triangle.development
+
+        def _len_check(self, a, b):
+            if len(a) != len(b):
+                raise ValueError("Len mismatch")
+
+    full_mock = MockFullAxes()
+    full_mock.index = pd.DataFrame({"a": [2]})
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        full_mock.index = "not a df"
+    full_mock.columns = "new_col"
+    assert list(full_mock.columns) == ["new_col"]
+
+    # _set_axis helper
+    cl.core.axis._set_axis(raa, 0, raa.index)
+    cl.core.axis._set_axis(raa, "columns", raa.columns)
+    cl.core.axis._set_axis(raa, 2, raa.origin)
+    cl.core.axis._set_axis(raa, "development", raa.development)
+
+    # Legacy pickle state key variations (odims/ddims string keys)
+    state_named_axes = raa.__dict__.copy()
+    state_named_axes["_axes"] = {
+        "index": raa.index.copy(),
+        "columns": raa.columns.copy(),
+        "origin": raa._axes[2].copy(),
+        "development": raa._axes[3].copy(),
+    }
+    restored_named = cl.Triangle.__new__(cl.Triangle)
+    restored_named.__setstate__(state_named_axes)
+    assert 2 in restored_named._axes
+    assert 3 in restored_named._axes
+
+    state_legacy_bare = raa.__dict__.copy()
+    state_legacy_bare["_axes"] = {}
+    state_legacy_bare["odims"] = raa._axes[2].copy()
+    state_legacy_bare["ddims"] = raa._axes[3].copy()
+    restored_bare = cl.Triangle.__new__(cl.Triangle)
+    restored_bare.__setstate__(state_legacy_bare)
+    assert 2 in restored_bare._axes
+    assert 3 in restored_bare._axes
+
 
 def test_triangle_index_property(raa):
     """Verify Triangle.index descriptor and slicer reset."""

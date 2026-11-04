@@ -290,12 +290,6 @@ def _set_development(obj: Triangle, value: Any) -> Any:
 
     val_arr = np.array(value)
     if val_arr.dtype.kind in ("i", "u", "f"):
-        if len(val_arr) > 0 and np.all((val_arr >= 1000) & (val_arr != 9999)):
-            try:
-                freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
-                return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
-            except (ValueError, TypeError):
-                pass
         return val_arr.astype(int)
 
     if getattr(obj, "is_val_tri", False):
@@ -310,7 +304,9 @@ def _set_development(obj: Triangle, value: Any) -> Any:
 
         try:
             freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
-            return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
+            return pd.PeriodIndex(val_arr.astype(str), freq=freq).to_timestamp(
+                how="end"
+            )
         except (ValueError, TypeError):
             try:
                 return pd.DatetimeIndex(val_arr)
@@ -363,7 +359,7 @@ def _set_development(obj: Triangle, value: Any) -> Any:
     # If not parseable as numeric lags / patterns, try parsing as valuation periods / dates
     try:
         freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
-        return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
+        return pd.PeriodIndex(val_arr.astype(str), freq=freq).to_timestamp(how="end")
     except (ValueError, TypeError):
         try:
             return pd.DatetimeIndex(val_arr)
