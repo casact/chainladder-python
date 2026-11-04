@@ -167,10 +167,58 @@ def test_eq_non_triangle(raa: Triangle) -> None:
     -------
     None
     """
-    assert (raa == 42) is False
-    assert (raa == "foo") is False
+    with pytest.warns(FutureWarning):
+        assert (raa == 42) is False
+    with pytest.warns(FutureWarning):
+        assert (raa == "foo") is False
     # Ruff will flag "raa == None", so we call the dunder directly.
-    assert raa.__eq__(None) is False
+    with pytest.warns(FutureWarning):
+        assert raa.__eq__(None) is False
+    assert raa.equals(42) is False
+    assert raa.equals("foo") is False
+    assert raa.equals(None) is False
+
+
+def test_equals_compares_values(raa: Triangle) -> None:
+    """
+    ``equals`` compares the values of two triangles and returns a bool. See #1395.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    assert raa.equals(raa.copy()) is True
+    assert raa.equals(raa * 2) is False
+    assert raa.set_backend("numpy").equals(raa.set_backend("sparse")) is True
+
+
+@pytest.mark.parametrize("op", [operator.eq, operator.ne])
+def test_eq_and_ne_warn_and_match_equals(raa: Triangle, op) -> None:
+    """
+    ``==`` and ``!=`` warn that their behavior will change, and still give the
+    whole-triangle answer that ``equals`` gives. See #1395.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+    op: Callable
+        ``operator.eq`` or ``operator.ne``.
+
+    Returns
+    -------
+    None
+    """
+    for other in (raa.copy(), raa * 2):
+        expected = raa.equals(other) if op is operator.eq else not raa.equals(other)
+        with pytest.warns(FutureWarning, match=r"Use Triangle\.equals\(\)"):
+            result = op(raa, other)
+        assert result is expected
 
 
 def test_pow_groupby(clrd: Triangle) -> None:
