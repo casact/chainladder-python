@@ -215,10 +215,10 @@ class ClarkLDF(DevelopmentBase):
         if isinstance(age, (int, float, xp.int64, xp.float64)):
             age = xp.array([age]).astype("float64")
         if isinstance(age, list):
-            age = xp.array([age]).astype("float64")
+            age = xp.array(age).astype("float64")
         obj = self.incremental_act_.copy()
         obj.values = 1 / self._G(age)
-        obj._axes[2] = self.incremental_act_._axes[2][0:1]
+        obj.origin = self.incremental_act_.origin[0:1]
         obj.development = age
         return obj
 
@@ -265,10 +265,10 @@ class ClarkLDF(DevelopmentBase):
         )
         age_end = age - age_offset
         age_start = xp.maximum(age_end - age_interval, 0).astype("float64")
-        origin = np.repeat(X._axes[2], len(X.development))[~xp.isnan(nans)]
+        origin = np.repeat(X.origin, len(X.development))[~xp.isnan(nans)]
         latest_diagonal = obj[X.valuation == X.valuation_date].sum("origin")
         latest_age = latest_diagonal.development.values.astype("float64")
-        latest_origin = X._axes[2]
+        latest_origin = X.origin
         latest_diagonal = latest_diagonal.values[..., 0, :]
 
         index = xp.argsort(latest_origin)
@@ -327,8 +327,8 @@ class ClarkLDF(DevelopmentBase):
             latest_age - age_offset, theta=params[..., 1:2], omega=params[..., 0:1]
         )
         obj.values = cdf[..., :-1] / cdf[..., 1:]
-        obj._axes[3] = X.link_ratio._axes[3]
-        obj._axes[2] = obj._axes[2][0:1]
+        obj.development = X.link_ratio.development
+        obj.origin = obj.origin[0:1]
         obj.is_pattern = True
         obj.is_cumulative = False
         obj._set_slicers()

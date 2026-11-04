@@ -11,14 +11,16 @@ import pandas as pd
 import numpy as np
 import warnings
 from chainladder.core.base import TriangleBase
-from chainladder.core.axis import TriangleAxis
-from chainladder.core.axis import _get_development
-from chainladder.core.axis import _get_origin
-from chainladder.core.axis import _set_axis
-from chainladder.core.axis import _set_columns
-from chainladder.core.axis import _set_development
-from chainladder.core.axis import _set_index
-from chainladder.core.axis import _set_origin
+from chainladder.core.axis import (
+    TriangleAxis,
+    _get_development,
+    _get_origin,
+    _set_axis,
+    _set_columns,
+    _set_development,
+    _set_index,
+    _set_origin,
+)
 from chainladder.utils.sparse import sp
 from chainladder.core.slice import VirtualColumns
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
@@ -492,13 +494,13 @@ class Triangle(TriangleBase):
         2,
         fget=_get_origin,
         fset=_set_origin,
-        doc="Origin periods of the Triangle as a PeriodIndex.",
+        doc="Represents the origin axis of the triangle.",
     )
     development = TriangleAxis(
         3,
         fget=_get_development,
         fset=_set_development,
-        doc="Development periods of the Triangle as a Series.",
+        doc="Represents the development axis of the triangle.",
     )
 
     def _set_axis(self, axis: int | str, value: Any) -> None:
@@ -673,8 +675,8 @@ class Triangle(TriangleBase):
         index_values, index_idx = self._factorize_index(data_agg, index)
         self.index = pd.DataFrame(list(index_values), columns=index)
         self.columns = columns
-        self._axes[2], orig_idx = self._set_origin_axis(data_agg, date_axes)
-        self._axes[3], dev_idx = self._set_development_axis(data_agg, date_axes)
+        self.origin, orig_idx = self._factorize_origin(data_agg, date_axes)
+        self.development, dev_idx = self._factorize_development(data_agg, date_axes)
 
         # Set remaining triangle properties.
         val_date: Timestamp = data_agg["__development__"].max()
@@ -714,7 +716,7 @@ class Triangle(TriangleBase):
         check_origin: np.ndarray = (
             pd
             .period_range(
-                start=self._axes[2].min(),
+                start=self.origin.to_timestamp().min(),
                 end=self.valuation_date,
                 freq=self.origin_grain.replace("S", "2Q")
                 + ("" if self.origin_grain == "M" else "-" + self.origin_close),
@@ -728,7 +730,7 @@ class Triangle(TriangleBase):
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date
             and not self.is_pattern
         ):
-            self._axes[2] = check_origin
+            self.origin = check_origin
 
         # Set the Triangle values.
         coords: np.ndarray
@@ -773,15 +775,15 @@ class Triangle(TriangleBase):
         # Deal with special properties
         if self.is_pattern:
             obj = self.dropna()
-            self._axes[2] = obj._axes[2]
-            self._axes[3] = obj._axes[3]
             self.values = obj.values
+            self.origin = obj.origin
+            self.development = obj.development
         if ult:
             obj = concat((self.dev_to_val().iloc[..., : len(ult.origin), :], ult), -1)
             obj = obj.val_to_dev()
-            self._axes[2] = obj._axes[2]
-            self._axes[3] = obj._axes[3]
             self.values = obj.values
+            self.origin = obj.origin
+            self.development = obj.development
             self.valuation_date = pd.Timestamp(options.ULT_VAL)
 
     @staticmethod
@@ -820,7 +822,7 @@ class Triangle(TriangleBase):
                     index=index,
                     cumulative=cumulative,
                 )
-                ult._axes[3] = pd.DatetimeIndex([options.ULT_VAL])
+                ult.development = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[valuation[0]] != options.ULT_VAL]
         return data, ult
 
@@ -850,46 +852,6 @@ class Triangle(TriangleBase):
     @property
     def columns_label(self) -> list:
         return self.columns.to_list()
-
-    @property
-    def odims(self):
-        warnings.warn(
-            "The 'odims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.origin' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.origin
-
-    @odims.setter
-    def odims(self, value):
-        warnings.warn(
-            "The 'odims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.origin' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        self.origin = value
-
-    @property
-    def ddims(self):
-        warnings.warn(
-            "The 'ddims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.development' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.development
-
-    @ddims.setter
-    def ddims(self, value):
-        warnings.warn(
-            "The 'ddims' attribute is deprecated and will be removed in a future release. "
-            "Use 'Triangle.development' instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        self.development = value
 
     @property
     def style(self) -> Styler:
@@ -1211,7 +1173,7 @@ class Triangle(TriangleBase):
         # already one column wide, so the development age would survive; the
         # column is the latest valuation either way, so say so here rather
         # than widening the shared rule for every development aggregation.
-        obj._axes[3] = pd.DatetimeIndex(
+        obj.development = pd.DatetimeIndex(
             [self.valuation_date], dtype=__dt64_dtype__, freq=None
         )
         return obj
@@ -1647,10 +1609,10 @@ class Triangle(TriangleBase):
             obj = self
         obj = obj._val_dev(1, inplace)
         ddims = obj.valuation[obj.valuation <= obj.valuation_date]
-        obj._axes[3] = ddims.drop_duplicates().sort_values()
+        obj.development = ddims.drop_duplicates().sort_values()
         if self.is_full:
             if self.is_ultimate:
-                ultimate._axes[3] = pd.DatetimeIndex(ultimate.valuation[0:1])
+                ultimate.development = pd.DatetimeIndex(ultimate.valuation[0:1])
                 obj = concat((obj, ultimate), -1)
             if is_cumulative:
                 obj = obj.incr_to_cum(inplace=inplace)
@@ -1704,18 +1666,18 @@ class Triangle(TriangleBase):
                 return self.copy()
         if self.is_ultimate and self.shape[-1] > 1:
             ultimate = self.iloc[..., -1:]
-            ultimate._axes[3] = np.array([9999])
+            ultimate.development = np.array([9999])
             obj = self.iloc[..., :-1]._val_dev(-1, inplace)
         else:
             obj = self.copy()._val_dev(-1, inplace)
         val_0 = obj.valuation[0]
-        if self._axes[3].shape[-1] == 1 and self._axes[3][0] == self.valuation_date:
-            origin_0 = pd.to_datetime(obj._axes[2][-1])
+        if len(self.development) == 1 and self.valuation[0] == self.valuation_date:
+            origin_0 = pd.to_datetime(obj.origin.to_timestamp()[-1])
         else:
-            origin_0 = pd.to_datetime(obj._axes[2][0])
+            origin_0 = pd.to_datetime(obj.origin.to_timestamp()[0])
         lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
         scale = self._dstep()["M"][obj.development_grain]
-        obj._axes[3] = np.arange(obj.values.shape[-1]) * scale + lag_0
+        obj.development = np.arange(obj.values.shape[-1]) * scale + lag_0
         prune = obj[obj.origin == obj.origin.max()]
         if self.is_ultimate and self.shape[-1] > 1:
             obj = obj.iloc[..., : (prune.valuation <= prune.valuation_date).sum()]
@@ -1911,7 +1873,7 @@ class Triangle(TriangleBase):
                 addl_ts = (
                     pd
                     .period_range(
-                        obj._axes[2][0],
+                        obj.origin.to_timestamp()[0],
                         obj.valuation[0],
                         freq=dgrain_old.replace("S", "2Q"),
                     )[:-1]
@@ -1919,7 +1881,7 @@ class Triangle(TriangleBase):
                     .values
                 )
                 addl = obj.iloc[..., -len(addl_ts) :] * 0
-                addl._axes[3] = addl_ts
+                addl.development = addl_ts
                 obj = concat((addl, obj), axis=-1)
                 obj.values = num_to_nan(obj.values)
 
@@ -1932,10 +1894,10 @@ class Triangle(TriangleBase):
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
-                ddims = obj._axes[3][d]
+                ddims = obj.development[d]
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
                 obj = obj.groupby(d2, axis=3).sum()
-                obj._axes[3] = ddims
+                obj.development = ddims
 
             obj.development_grain = dgrain_new
 
@@ -2433,17 +2395,15 @@ class Triangle(TriangleBase):
                 obj.values = obj.values[:, list(sort), ...]
                 obj.columns = self.columns[list(sort)]
         if axis == 2:
-            raw_origin = self._axes[2]
-            sort = pd.Series(raw_origin).sort_values().index
-            if np.any(sort != pd.Series(raw_origin).index):
+            sort = pd.Series(self.origin).sort_values().index
+            if np.any(sort != pd.Series(self.origin).index):
                 obj.values = obj.values[..., list(sort), :]
-                obj._axes[2] = raw_origin[list(sort)]
+                obj.origin = self.origin[list(sort)]
         if axis == 3:
-            raw_dev = self._axes[3]
-            sort = pd.Series(raw_dev).sort_values().index
-            if np.any(sort != pd.Series(raw_dev).index):
+            sort = pd.Series(self.development).sort_values().index
+            if np.any(sort != pd.Series(self.development).index):
                 obj.values = obj.values[..., list(sort)]
-                obj._axes[3] = raw_dev[list(sort)]
+                obj.development = self.development[list(sort)]
         obj._set_slicers()
         return obj
 

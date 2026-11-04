@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+import numpy as np
 from chainladder.tails import TailBase
 from chainladder.development.clark import ClarkLDF
 
@@ -152,7 +153,11 @@ class TailClark(TailBase):
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
         age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
-        fitted = 1 / model.G_(self.ldf_._axes[3] - age_offset)
+        ldf_ages = np.array([
+            int(str(d).split("-")[0]) if "-" in str(d) else int(d)
+            for d in self.ldf_.development
+        ])
+        fitted = 1 / model.G_(ldf_ages - age_offset)
         fitted = xp.concatenate(
             (
                 fitted.values[..., :-1] / fitted.values[..., 1:],
@@ -166,8 +171,8 @@ class TailClark(TailBase):
         )
         self.ldf_.values = xp.concatenate(
             (
-                self.ldf_.values[..., : sum(self.ldf_._axes[3] < attachment_age)],
-                fitted[..., -sum(self.ldf_._axes[3] >= attachment_age) :],
+                self.ldf_.values[..., : sum(ldf_ages < attachment_age)],
+                fitted[..., -sum(ldf_ages >= attachment_age) :],
             ),
             axis=-1,
         )

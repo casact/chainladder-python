@@ -653,7 +653,6 @@ def test_centralized_axis_edge_cases(raa):
         origin_grain = "Y"
         origin_close = "DEC"
         development_grain = "Y"
-        values = None
         is_pattern = False
         is_val_tri = False
         _axes = {
@@ -760,10 +759,6 @@ def test_centralized_axis_edge_cases(raa):
     assert isinstance(val_tri._axes[3], pd.DatetimeIndex)
     assert val_tri.valuation is not None
 
-    with pytest.deprecated_call():
-        val_tri.ddims = val_tri.ddims
-    assert val_tri.is_val_tri
-
     shuffled_val = val_tri.iloc[..., [2, 1, 0]].sort_axis(3)
     assert shuffled_val.is_val_tri
     assert isinstance(shuffled_val._axes[3], pd.DatetimeIndex)
@@ -775,20 +770,11 @@ def test_centralized_axis_edge_cases(raa):
     assert pattern_tri._axes[3].dtype.kind == "i"
     assert pattern_tri.valuation is not None
 
-    with pytest.deprecated_call():
-        pattern_tri.ddims = pattern_tri.ddims
-    assert pattern_tri._axes[3].dtype.kind == "i"
-
-    # Ultimate pattern preserves 9999 sentinel lag across development and ddims round-trips
+    # Ultimate pattern preserves 9999 sentinel lag across development round-trips
     pattern_ult = raa.link_ratio
     pattern_ult._axes[3][-1] = 9999
     assert pattern_ult.is_ultimate
     pattern_ult.development = pattern_ult.development
-    assert pattern_ult.is_ultimate
-    assert pattern_ult._axes[3][-1] == 9999
-
-    with pytest.deprecated_call():
-        pattern_ult.ddims = pattern_ult.ddims
     assert pattern_ult.is_ultimate
     assert pattern_ult._axes[3][-1] == 9999
 
@@ -889,30 +875,6 @@ def test_series_indexing(raa):
     sliced = two_row[s_perm]
     assert len(sliced.index) == 1
     assert sliced.index.iloc[0]["Company"] == "A"
-
-
-def test_odims_deprecation_warning(raa):
-    """Accessing or setting odims should emit a FutureWarning."""
-    with pytest.warns(FutureWarning, match="'odims' attribute is deprecated"):
-        o = raa.odims
-    assert np.all(o == raa.origin)
-
-    raa2 = raa.copy()
-    with pytest.warns(FutureWarning, match="'odims' attribute is deprecated"):
-        raa2.odims = raa.origin
-    assert np.all(raa2.origin == raa.origin)
-
-
-def test_ddims_deprecation_warning(raa):
-    """Accessing or setting ddims should emit a FutureWarning."""
-    with pytest.warns(FutureWarning, match="'ddims' attribute is deprecated"):
-        d = raa.ddims
-    assert np.all(d == raa.development)
-
-    raa2 = raa.copy()
-    with pytest.warns(FutureWarning, match="'ddims' attribute is deprecated"):
-        raa2.ddims = raa.development
-    assert np.all(raa2.development == raa.development)
 
 
 class TestLegacyPickleCompatibility:

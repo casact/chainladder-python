@@ -354,7 +354,7 @@ class MackChainladder(Chainladder):
             t1_t = xp.nan_to_num(
                 future_std_err.sum("origin").set_backend(backend).values
             )
-            obj._axes[2] = obj._axes[2][0:1]
+            obj.origin = obj.origin[0:1]
         else:
             nans = xp.nan_to_num(X.nan_triangle[None, None])
             nans = 1 - xp.concatenate((nans, xp.zeros((1, 1, X.shape[2], 1))), 3)
@@ -379,7 +379,9 @@ class MackChainladder(Chainladder):
                 t_tot = t_tot * nans[..., i + 1 : i + 2]
             risk_arr = xp.concatenate((risk_arr, xp.nan_to_num(t_tot)), 3)
         obj.values = risk_arr
-        obj._axes[3] = X._full_triangle_._axes[3][list(range(X.shape[-1])) + [-1]]
+        obj.development = X._full_triangle_.development.iloc[
+            list(range(X.shape[-1])) + [-1]
+        ].values
         obj.valuation_date = X._full_triangle_.valuation_date
         obj._set_slicers()
         return obj

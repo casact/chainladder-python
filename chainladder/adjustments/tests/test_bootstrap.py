@@ -1,3 +1,4 @@
+import pytest
 import chainladder as cl
 import numpy as np
 import pandas as pd
@@ -30,8 +31,6 @@ def test_multi_index(clrd):
 
 
 def test_bootstrap_odp_val_triangle_error(raa):
-    import pytest
-
     with pytest.raises(
         ValueError, match="Triangle must be expressed with development lags"
     ):

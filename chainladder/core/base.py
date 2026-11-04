@@ -319,7 +319,7 @@ class TriangleBase(
         return unique_keys.drop(labels="index", axis=1).values, index_idx
 
     @staticmethod
-    def _set_origin_axis(
+    def _factorize_origin(
         data_agg: DataFrame, date_axes: DataFrame
     ) -> tuple[np.ndarray, np.ndarray]:
 
@@ -331,7 +331,7 @@ class TriangleBase(
         return origin, orig_idx
 
     @staticmethod
-    def _set_development_axis(
+    def _factorize_development(
         data_agg: DataFrame, date_axes: DataFrame
     ) -> tuple[ArrayLike, np.ndarray]:
 
