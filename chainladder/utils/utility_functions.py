@@ -599,6 +599,56 @@ def set_common_backend(objs):
     return [i.set_backend(backend) for i in objs]
 
 
+def _labels_match(labels: list) -> bool:
+    """Return whether every array of axis labels in ``labels`` equals the first."""
+    first = labels[0]
+    return all(
+        len(other) == len(first) and bool(np.all(other == first))
+        for other in labels[1:]
+    )
+
+
+def _repeated(labels) -> list:
+    """Return each label that occurs more than once in ``labels``, once."""
+    labels = pd.Index(labels)
+    repeated = labels[labels.duplicated()].unique()
+    if isinstance(repeated, pd.DatetimeIndex):
+        return repeated.strftime("%Y-%m-%d").tolist()
+    return repeated.tolist()
+
+
+def _check_unique_labels(objs: list, axis: int) -> None:
+    """Raise a ValueError naming any label that repeats along ``axis``."""
+    if axis == 0:
+        index = pd.concat([obj.index for obj in objs], ignore_index=True)
+        if len(index.drop_duplicates()) != len(index):
+            repeated = index[index.duplicated()].drop_duplicates()
+            raise ValueError(
+                "Index labels repeat across the triangles: "
+                f"{repeated.to_dict('records')}. Pass ignore_index=True to "
+                "number the index 0, …, n - 1."
+            )
+        return
+    attribute = {1: "columns", 2: "odims", 3: "ddims"}[axis]
+    labels = np.concatenate([getattr(obj, attribute) for obj in objs])
+    if len(labels) == len(set(labels)):
+        return
+    if axis == 1:
+        raise ValueError(
+            f"Column labels repeat across the triangles: {_repeated(labels)}. "
+            "Rename the columns or pass ignore_index=True."
+        )
+    if axis == 2:
+        raise ValueError(
+            f"Origin periods repeat across the triangles: {_repeated(labels)}. "
+            "To combine amounts for the same origin periods, add the triangles "
+            "with + instead."
+        )
+    raise ValueError(
+        f"Development periods repeat across the triangles: {_repeated(labels)}."
+    )
+
+
 def concat(
     objs: list | tuple,
     axis: Union[int, str],
@@ -635,8 +685,9 @@ def concat(
     TypeError
         If ``objs`` is not a list or tuple.
     ValueError
-        If ``objs`` is empty, or if ``ignore_index=True`` is passed with the
-        origin or development axis.
+        If ``objs`` is empty, if ``ignore_index=True`` is passed with the
+        origin or development axis, if the triangles differ along an axis other
+        than ``axis``, or if a label repeats along ``axis``.
 
     Examples
     --------
@@ -737,9 +788,11 @@ def _concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
+    if not ignore_index:
+        _check_unique_labels(objs, axis)
     if axis != 0:
         for obj in objs[1:]:
-            assert (
+            if not (
                 list(obj.index.columns) == list(objs[0].index.columns)
                 and obj.index.shape == objs[0].index.shape
                 and bool(
@@ -748,13 +801,21 @@ def _concat(
                         | (pd.isna(obj.index.values) & pd.isna(objs[0].index.values))
                     ).all()
                 )
-            )
-    if axis != 2:
-        a = np.array([obj.odims for obj in objs])
-        assert np.all(a == a[0])
-    if axis != 3:
-        a = np.array([obj.ddims for obj in objs])
-        assert np.all(a == a[0])
+            ):
+                raise ValueError(
+                    "All triangles must have the same index to be concatenated "
+                    "along columns, origin or development."
+                )
+    if axis != 2 and not _labels_match([obj.odims for obj in objs]):
+        raise ValueError(
+            "All triangles must have the same origin periods to be concatenated "
+            "along index, columns or development."
+        )
+    if axis != 3 and not _labels_match([obj.ddims for obj in objs]):
+        raise ValueError(
+            "All triangles must have the same development periods to be "
+            "concatenated along index, columns or origin."
+        )
 
     out = copy.deepcopy(objs[0])
     out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
@@ -766,7 +827,6 @@ def _concat(
             out.key_labels = ["Index"]
         else:
             new_axis = pd.concat([obj.index for obj in objs], ignore_index=True)
-            assert len(new_axis.drop_duplicates()) == len(new_axis)
             out.index = new_axis
             out.key_labels = list(new_axis.columns)
     elif axis == 1:
@@ -778,21 +838,18 @@ def _concat(
             new_axis = pd.Index(
                 np.concatenate([obj.columns for obj in objs]), name="columns"
             )
-            assert len(new_axis) == len(set(new_axis))
         out.columns = new_axis
     elif axis == 2:
         if ignore_index:
             new_axis = np.arange(sum([len(obj.odims) for obj in objs]))
         else:
             new_axis = np.concatenate([obj.odims for obj in objs])
-            assert len(new_axis) == len(set(new_axis))
         out.odims = new_axis
     elif axis == 3:
         if ignore_index:
             new_axis = np.arange(sum([len(obj.ddims) for obj in objs]))
         else:
             new_axis = np.concatenate([obj.ddims for obj in objs])
-            assert len(new_axis) == len(set(new_axis))
         out.ddims = new_axis
         if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
             out.ddims = pd.DatetimeIndex(out.ddims)
