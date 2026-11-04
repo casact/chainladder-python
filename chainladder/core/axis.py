@@ -132,7 +132,7 @@ def _set_columns(obj: Triangle, value: Any) -> pd.Index:
     pd.Index
         A pandas Index named ``"columns"``.
     """
-    if not isinstance(value, (list, tuple, np.ndarray, pd.Series, pd.Index)):
+    if isinstance(value, (str, bytes)) or not hasattr(value, "__len__"):
         value = [value]
     if hasattr(obj, "_len_check"):
         if hasattr(obj, "values") and obj.values is not None:
@@ -196,7 +196,7 @@ def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
     """
     Validate and transform assigned origin periods into internal timestamps array.
     """
-    if not isinstance(value, (list, tuple, np.ndarray, pd.Series, pd.Index)):
+    if isinstance(value, (str, bytes)) or not hasattr(value, "__len__"):
         value = [value]
     if hasattr(obj, "_len_check"):
         if hasattr(obj, "values") and obj.values is not None:
@@ -215,13 +215,9 @@ def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
         return value.values
     if isinstance(value, np.ndarray) and value.dtype.kind == "M":
         return value
-    if (
-        isinstance(value, (list, tuple, np.ndarray, pd.Series, pd.Index))
-        and len(value) == 1
-        and (
-            (isinstance(value[0], str) and value[0] == "(All)")
-            or (hasattr(value, "iloc") and str(value.iloc[0]) == "(All)")
-        )
+    if len(value) == 1 and (
+        (isinstance(value[0], str) and value[0] == "(All)")
+        or (hasattr(value, "iloc") and str(value.iloc[0]) == "(All)")
     ):
         if hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
             raw_orig = obj._axes.get(2, obj._axes.get("origin"))
@@ -268,7 +264,7 @@ def _set_development(obj: Triangle, value: Any) -> Any:
     """
     Validate and transform assigned development periods into internal lag/timestamp array.
     """
-    if not isinstance(value, (list, tuple, np.ndarray, pd.Series, pd.Index)):
+    if isinstance(value, (str, bytes)) or not hasattr(value, "__len__"):
         value = [value]
     if hasattr(obj, "_len_check"):
         if hasattr(obj, "values") and obj.values is not None:
