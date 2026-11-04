@@ -677,10 +677,28 @@ def test_centralized_axis_edge_cases(raa):
     with pytest.raises(ValueError, match="Length mismatch"):
         mock.development = [12]
 
-    # 3. Development string assignment for single column
+    # 3. Development scalar/string assignment for single column and pattern
     single_col_tri = raa.iloc[:, :, :, :1].copy()
+    single_col_tri.development = 12
+    assert list(single_col_tri.development) == [12]
+    assert not single_col_tri.is_val_tri
+
+    single_col_tri.development = "12"
+    assert list(single_col_tri.development) == [12]
+    assert not single_col_tri.is_val_tri
+
     single_col_tri.development = "1"
-    assert list(single_col_tri.development) == ["1"]
+    assert list(single_col_tri.development) == [1]
+    assert not single_col_tri.is_val_tri
+
+    pattern_tri = dev.ldf_.iloc[:, :, :, :1].copy()
+    pattern_tri.development = "1-2"
+    assert list(pattern_tri._axes[3]) == [1]
+    assert not pattern_tri.is_val_tri
+
+    single_row_tri = raa.iloc[:, :, :1, :].copy()
+    single_row_tri.origin = 2000
+    assert len(single_row_tri.origin) == 1
 
     # 4. Valuation triangle development and non-cumulative pattern development
     val_tri = raa.dev_to_val()
