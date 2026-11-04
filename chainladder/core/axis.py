@@ -294,6 +294,12 @@ def _set_development(obj: Triangle, value: Any) -> Any:
 
     val_arr = np.array(value)
     if val_arr.dtype.kind in ("i", "u", "f"):
+        if len(val_arr) > 0 and np.all((val_arr >= 1000) & (val_arr != 9999)):
+            try:
+                freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
+                return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
+            except (ValueError, TypeError):
+                pass
         return val_arr.astype(int)
 
     if getattr(obj, "is_val_tri", False):
@@ -317,21 +323,32 @@ def _set_development(obj: Triangle, value: Any) -> Any:
         return val_arr
 
     # Non-valuation triangle: development axis represents numeric lags or pattern intervals
-    val_list = [str(v) for v in val_arr]
+    val_list = [str(v).strip() for v in val_arr]
     try:
         lags = []
-        for item in val_list:
-            s = item.strip()
+        for s in val_list:
             if s.lower() == "ult":
                 lags.append(9999)
             elif "-" in s:
-                part = s.split("-")[0].strip()
-                if part.lower() == "ult":
-                    lags.append(9999)
+                parts = s.split("-")
+                if len(parts) == 2 and (
+                    parts[1].strip().lower() == "ult"
+                    or (
+                        parts[0].strip().isdigit()
+                        and parts[1].strip().isdigit()
+                        and int(parts[0]) < 1000
+                        and int(parts[1]) < 1000
+                    )
+                ):
+                    lags.append(int(parts[0]))
                 else:
-                    lags.append(int(part))
+                    raise ValueError(f"Not a development lag pattern: {s}")
             else:
-                lags.append(int(s))
+                val_int = int(s)
+                if val_int >= 1000 and val_int != 9999:
+                    raise ValueError(f"Year passed to development lag: {s}")
+                lags.append(val_int)
+
         raw_dev = getattr(obj, "_axes", {}).get(3)
         if raw_dev is None and hasattr(obj, "_axes") and isinstance(obj._axes, dict):
             raw_dev = obj._axes.get("development")
@@ -346,6 +363,16 @@ def _set_development(obj: Triangle, value: Any) -> Any:
         return np.array(lags, dtype=int)
     except (ValueError, TypeError):
         pass
+
+    # If not parseable as numeric lags / patterns, try parsing as valuation periods / dates
+    try:
+        freq = getattr(obj, "development_grain", "Y").replace("S", "2Q")
+        return pd.PeriodIndex(val_arr, freq=freq).to_timestamp(how="end")
+    except (ValueError, TypeError):
+        try:
+            return pd.DatetimeIndex(val_arr)
+        except (ValueError, TypeError):
+            pass
 
     return val_arr
 
