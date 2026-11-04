@@ -620,13 +620,23 @@ def concat(
         resulting axis will be labeled 0, …, n - 1. This is useful if you are
         concatenating objects where the concatenation axis does not have
         meaningful indexing information. Note the index values on the other
-        axes are still respected in the join.
+        axes are still respected in the join. Only the index and columns axes
+        accept ``ignore_index=True``: origin and development labels carry the
+        triangle's grain, so they cannot be renumbered.
     sort: bool
         If True, sort the result along the desired axis.
 
     Returns
     -------
     Updated triangle
+
+    Raises
+    ------
+    TypeError
+        If ``objs`` is not a list or tuple.
+    ValueError
+        If ``objs`` is empty, or if ``ignore_index=True`` is passed with the
+        origin or development axis.
 
     Examples
     --------
@@ -687,6 +697,27 @@ def concat(
         objs = list(objs)
     if len(objs) == 0:
         raise ValueError("objs must contain at least one element")
+    if ignore_index and objs[0]._get_axis(axis) in (2, 3):
+        raise ValueError(
+            "ignore_index=True is not supported along the origin or development "
+            "axis, because their labels carry the triangle's grain."
+        )
+    return _concat(objs, axis, ignore_index=ignore_index, sort=sort)
+
+
+def _concat(
+    objs: list,
+    axis: Union[int, str],
+    ignore_index: bool = False,
+    sort: bool = False,
+):
+    """
+    Concatenate Triangle objects, allowing ``ignore_index=True`` on any axis.
+
+    Groupby aggregations stack one slice per group with ``ignore_index=True``
+    along the grouped axis, which can be origin or development. ``concat``
+    rejects that combination, so they call this instead.
+    """
     xp = objs[0].get_array_module()
     axis = objs[0]._get_axis(axis)
 

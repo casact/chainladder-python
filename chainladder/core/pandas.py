@@ -1355,7 +1355,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
     """Aggregate Overrides in GroupBy"""
 
     def agg_func(self, *args, **kwargs):
-        from chainladder.utils import concat
+        from chainladder.utils.utility_functions import _concat
 
         obj = self.obj.copy()
         auto_sparse = kwargs.pop("auto_sparse", True)
@@ -1377,7 +1377,7 @@ def add_groupby_agg_func(cls, k: str, v: str):
                 )(self.axis, auto_sparse=False, keepdims=True)
                 for i in self.groups.indices.values()
             ]
-        obj = concat(values, axis=self.axis, ignore_index=True)
+        obj = _concat(values, axis=self.axis, ignore_index=True)
         group_index = self.groups.first().index
         if self.axis == 0:
             if isinstance(group_index, pd.MultiIndex):

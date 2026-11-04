@@ -613,7 +613,7 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
 
 
 def test_concat_ignore_index_axes(raa: Triangle) -> None:
-    """Test concat with ignore_index=True along axes 0, 1, 2, and 3."""
+    """Test concat with ignore_index=True along axes 0 and 1."""
     res0 = cl.concat([raa, raa], axis=0, ignore_index=True)
     assert len(res0.index) == 2
     assert res0.key_labels == ["Index"]
@@ -624,15 +624,18 @@ def test_concat_ignore_index_axes(raa: Triangle) -> None:
     res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
     assert list(res1.columns) == [0, 1]
 
-    o1 = raa.iloc[:, :, :5, :]
-    o2 = raa.iloc[:, :, 5:, :]
-    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
-    assert len(res2.odims) == len(raa.odims)
 
-    d1 = raa.iloc[:, :, :, :5]
-    d2 = raa.iloc[:, :, :, 5:]
-    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
-    assert len(res3.ddims) == len(raa.ddims)
+@pytest.mark.parametrize("axis", [2, 3, "origin", "development", -2, -1])
+def test_concat_ignore_index_origin_development_raises(
+    raa: Triangle, axis: int | str
+) -> None:
+    """Concat rejects ignore_index=True along origin and development (#1489, #1490)."""
+    if raa._get_axis(axis) == 2:
+        pieces = [raa.iloc[:, :, :5, :], raa.iloc[:, :, 5:, :]]
+    else:
+        pieces = [raa.iloc[:, :, :, :5], raa.iloc[:, :, :, 5:]]
+    with pytest.raises(ValueError, match="ignore_index=True is not supported"):
+        cl.concat(pieces, axis=axis, ignore_index=True)
 
 
 def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
