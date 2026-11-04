@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import operator
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -563,7 +564,33 @@ class TriangleDunders:
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def __eq__(self, other):
+    def equals(self, other: object) -> bool:
+        """
+        Test whether ``other`` is a Triangle that holds the same values.
+
+        Use ``equals`` to compare whole triangles. ``==`` between two triangles
+        returns the same answer for now, with a ``FutureWarning``, and will
+        compare element by element in a future release, as it does for pandas
+        objects. See #1395.
+
+        Parameters
+        ----------
+        other: object
+            The object to compare with.
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a Triangle and both triangles hold the same
+            values, False otherwise.
+
+        Notes
+        -----
+        Only the values are compared, and missing values are read as zero, so a
+        missing cell equals a zero cell. Index, column, origin and development
+        labels are not compared. Triangles on different array backends are
+        moved to a common backend first.
+        """
         if not isinstance(other, TriangleDunders):
             return False
         from chainladder import options
@@ -576,7 +603,18 @@ class TriangleDunders:
         ]
         x, y = self.set_backend(backend), other.set_backend(backend)
         xp = x.get_array_module()
-        return xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values))
+        return bool(xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values)))
+
+    def __eq__(self, other):
+        warnings.warn(
+            "The behavior of == and != on triangles is deprecated. In a future "
+            "release they will compare element by element, as they do for "
+            "pandas objects. Use Triangle.equals() to test whether two "
+            "triangles hold the same values.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.equals(other)
 
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None
