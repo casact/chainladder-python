@@ -340,13 +340,12 @@ class MackChainladder(Chainladder):
         return (self.process_risk_**2).sum(axis="origin").sqrt()
 
     def _mack_recursion(self, est, X=None):
-        obj = X.copy()
         backend = X.array_backend
-        xp = obj.get_array_module()
-        risk_arr = xp.zeros((*X.shape[:3], 1))
         if est == "total_parameter_risk_":
+            obj = X.iloc[:, :, 0:1, :].copy()
+            xp = obj.get_array_module()
+            risk_arr = xp.zeros((*obj.shape[:3], 1))
             nans = None
-            risk_arr = risk_arr[..., 0:1, :]
             future_std_err = (
                 X._full_triangle_ - X[X.valuation < X.valuation_date]
             ).iloc[:, :, :, : X.shape[3]] * X.std_err_.values
@@ -354,8 +353,10 @@ class MackChainladder(Chainladder):
             t1_t = xp.nan_to_num(
                 future_std_err.sum("origin").set_backend(backend).values
             )
-            obj.origin = obj.origin[0:1]
         else:
+            obj = X.copy()
+            xp = obj.get_array_module()
+            risk_arr = xp.zeros((*X.shape[:3], 1))
             nans = xp.nan_to_num(X.nan_triangle[None, None])
             nans = 1 - xp.concatenate((nans, xp.zeros((1, 1, X.shape[2], 1))), 3)
             full_tri = X._full_triangle_.values[..., : len(X.development)]

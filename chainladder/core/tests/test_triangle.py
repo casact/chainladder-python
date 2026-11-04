@@ -778,6 +778,22 @@ def test_centralized_axis_edge_cases(raa):
     assert pattern_ult.is_ultimate
     assert pattern_ult._axes[3][-1] == 9999
 
+    # 11. Pattern origin round-trip and "(All)" assignment
+    orig_label = dev.ldf_.origin
+    dev.ldf_.origin = orig_label
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+    dev.ldf_.origin = "(All)"
+    assert dev.ldf_.origin.iloc[0] == "(All)"
+
+    # 12. Pattern development sort orders numerically (12-24 before 108-120)
+    dev_10yr = cl.load_sample("ABC")
+    ldf_10yr = cl.Development().fit(dev_10yr).ldf_
+    shuffled_ldf = ldf_10yr.iloc[..., [8, 0]].sort_axis(3)
+    assert list(shuffled_ldf.development) == [
+        list(ldf_10yr.development)[0],
+        list(ldf_10yr.development)[8],
+    ]
+
     pattern_ult.is_cumulative = True
     pattern_ult.development = pattern_ult.development
     assert pattern_ult.is_ultimate

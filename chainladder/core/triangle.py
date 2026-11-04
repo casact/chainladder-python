@@ -713,24 +713,23 @@ class Triangle(TriangleBase):
         ]
 
         # Coerce malformed triangles to something more predictable.
-        check_origin: np.ndarray = (
-            pd
-            .period_range(
-                start=self.origin.to_timestamp().min(),
-                end=self.valuation_date,
-                freq=self.origin_grain.replace("S", "2Q")
-                + ("" if self.origin_grain == "M" else "-" + self.origin_close),
-            )
-            .to_timestamp()
-            .values
-        )
-
         if (
-            len(check_origin) != len(self.origin)
+            not self.is_pattern
             and pd.to_datetime(options.ULT_VAL) != self.valuation_date
-            and not self.is_pattern
         ):
-            self.origin = check_origin
+            check_origin: np.ndarray = (
+                pd
+                .period_range(
+                    start=self.origin.to_timestamp().min(),
+                    end=self.valuation_date,
+                    freq=self.origin_grain.replace("S", "2Q")
+                    + ("" if self.origin_grain == "M" else "-" + self.origin_close),
+                )
+                .to_timestamp()
+                .values
+            )
+            if len(check_origin) != len(self.origin):
+                self.origin = check_origin
 
         # Set the Triangle values.
         coords: np.ndarray
@@ -1671,10 +1670,21 @@ class Triangle(TriangleBase):
         else:
             obj = self.copy()._val_dev(-1, inplace)
         val_0 = obj.valuation[0]
-        if len(self.development) == 1 and self.valuation[0] == self.valuation_date:
-            origin_0 = pd.to_datetime(obj.origin.to_timestamp()[-1])
+        if isinstance(obj.origin, pd.PeriodIndex):
+            origin_ts = obj.origin.to_timestamp()
+            if len(self.development) == 1 and self.valuation[0] == self.valuation_date:
+                origin_0 = pd.to_datetime(origin_ts[-1])
+            else:
+                origin_0 = pd.to_datetime(origin_ts[0])
         else:
-            origin_0 = pd.to_datetime(obj.origin.to_timestamp()[0])
+            origin_0 = pd.to_datetime(
+                obj._axes[2][-1]
+                if (
+                    len(self.development) == 1
+                    and self.valuation[0] == self.valuation_date
+                )
+                else obj._axes[2][0]
+            )
         lag_0 = (val_0.year - origin_0.year) * 12 + val_0.month - origin_0.month + 1
         scale = self._dstep()["M"][obj.development_grain]
         obj.development = np.arange(obj.values.shape[-1]) * scale + lag_0
@@ -2400,10 +2410,18 @@ class Triangle(TriangleBase):
                 obj.values = obj.values[..., list(sort), :]
                 obj.origin = self.origin[list(sort)]
         if axis == 3:
-            sort = pd.Series(self.development).sort_values().index
+            if self.is_pattern:
+                sort = (
+                    self.development
+                    .map(lambda x: int(str(x).split("-")[0]))
+                    .sort_values()
+                    .index
+                )
+            else:
+                sort = pd.Series(self.development).sort_values().index
             if np.any(sort != pd.Series(self.development).index):
                 obj.values = obj.values[..., list(sort)]
-                obj.development = self.development[list(sort)]
+                obj.development = self.development.iloc[list(sort)].values
         obj._set_slicers()
         return obj
 

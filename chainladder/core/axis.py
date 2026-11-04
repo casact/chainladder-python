@@ -196,6 +196,8 @@ def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
     """
     Validate and transform assigned origin periods into internal timestamps array.
     """
+    if isinstance(value, str):
+        value = [value]
     if hasattr(obj, "_len_check"):
         if hasattr(obj, "values") and obj.values is not None:
             obj._len_check(range(obj.values.shape[2]), value)
@@ -213,6 +215,19 @@ def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
         return value.values
     if isinstance(value, np.ndarray) and value.dtype.kind == "M":
         return value
+    if (
+        isinstance(value, (list, tuple, np.ndarray, pd.Series, pd.Index))
+        and len(value) == 1
+        and (
+            (isinstance(value[0], str) and value[0] == "(All)")
+            or (hasattr(value, "iloc") and str(value.iloc[0]) == "(All)")
+        )
+    ):
+        if hasattr(obj, "_axes") and (2 in obj._axes or "origin" in obj._axes):
+            raw_orig = obj._axes.get(2, obj._axes.get("origin"))
+            if raw_orig is not None and len(raw_orig) == 1:
+                return raw_orig
+        return pd.date_range("2000", periods=1).values
     origin_grain = getattr(obj, "origin_grain", "Y")
     origin_close = getattr(obj, "origin_close", "DEC")
     freq = {
