@@ -829,17 +829,9 @@ def concat(
             )
         out.columns = new_axis
     elif axis == 2:
-        if ignore_index:
-            new_axis = np.arange(sum([len(obj.odims) for obj in objs]))
-        else:
-            new_axis = np.concatenate([obj.odims for obj in objs])
-        out.odims = new_axis
+        out.odims = np.concatenate([obj.odims for obj in objs])
     elif axis == 3:
-        if ignore_index:
-            new_axis = np.arange(sum([len(obj.ddims) for obj in objs]))
-        else:
-            new_axis = np.concatenate([obj.ddims for obj in objs])
-        out.ddims = new_axis
+        out.ddims = np.concatenate([obj.ddims for obj in objs])
         if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
             out.ddims = pd.DatetimeIndex(out.ddims)
 
