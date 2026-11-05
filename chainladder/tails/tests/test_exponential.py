@@ -89,9 +89,9 @@ def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
     """
     ``NOMINAL_TAIL`` sets the tail substituted for a tail at or below 1.0.
 
-    The full ``clrd`` sample has one index entry whose tail is exactly 1.0 while
-    its regression coefficients are finite, so the substituted value reaches
-    ``sigma_``. See #1414.
+    A theoretical Triangle is constructed from ``clrd`` total, such that the
+    fitted tail is negative while its regression coefficients are finite, so
+    the substituted value reaches ``sigma_``. See #1414.
 
     Parameters
     ----------
@@ -102,16 +102,31 @@ def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
     -------
     None
     """
-    development = cl.Development().fit_transform(clrd["CumPaidLoss"])
+    # construct a Triangle with small positive development at earlier ages
+    # and small negative development at later ages
+    # clrd total incurred exhibits consistent small negative development
+    tri = clrd.sum()["IncurLoss"]
+    tri = tri.cum_to_incr()
+    tri.iloc[..., 1:5] = -tri.iloc[..., 1:5]
+    tri = tri.incr_to_cum()
+    development = cl.Development().fit_transform(tri)
 
     assert cl.options.NOMINAL_TAIL == 1.001
-    baseline = cl.TailCurve().fit(development).sigma_.values.copy()
+    baseline = cl.TailBondy().fit(development).sigma_.values.copy()
 
     try:
         cl.options.set_option("NOMINAL_TAIL", 1.5)
-        widened = cl.TailCurve().fit(development).sigma_.values
+        widened = cl.TailBondy().fit(development).sigma_.values
     finally:
         cl.options.set_option("NOMINAL_TAIL", 1.001)
 
-    assert not np.allclose(np.nan_to_num(baseline), np.nan_to_num(widened))
+    assert np.allclose(
+        np.nan_to_num(baseline)[..., :-1],
+        np.nan_to_num(widened)[..., :-1],
+    )
+    assert not np.allclose(
+        np.nan_to_num(baseline)[..., -1:],
+        np.nan_to_num(widened)[..., -1:],
+        atol=1,
+    )
     assert cl.options.NOMINAL_TAIL == 1.001
