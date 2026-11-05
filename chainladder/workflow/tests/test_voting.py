@@ -206,7 +206,9 @@ def test_tri_sel(clrd: Triangle) -> None:
     starter test for the TriangleSelector class
     """
     tri = clrd.sum()
-    assert tri["CumPaidLoss"] == cl.TriangleSelector("CumPaidLoss").fit_transform(tri)
+    assert tri["CumPaidLoss"].equals(
+        cl.TriangleSelector("CumPaidLoss").fit_transform(tri)
+    )
 
 
 def test_mismatching_tri_sel(clrd: Triangle) -> None:

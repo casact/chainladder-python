@@ -16,7 +16,7 @@ def test_preserve_diagonal():
         xp.nansum((berq_triangle.latest_diagonal - triangle.latest_diagonal).values)
         == 0
     )
-    assert berq_triangle != triangle
+    assert not berq_triangle.equals(triangle)
 
 
 def test_adjusted_values():

@@ -13,8 +13,9 @@ if TYPE_CHECKING:
 
 def test_slice_by_boolean(clrd: Triangle) -> None:
     assert (
-        clrd[clrd["LOB"] == "ppauto"].loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
-        == clrd.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"]
+        clrd[clrd["LOB"] == "ppauto"]
+        .loc["Wolverine Mut Ins Co"]["CumPaidLoss"]
+        .equals(clrd.loc["Wolverine Mut Ins Co"].loc["ppauto"]["CumPaidLoss"])
     )
 
 
@@ -64,57 +65,55 @@ def test_slice_by_loc_iloc(clrd):
 
 def test_slicers_honor_order(clrd):
     clrd = clrd.groupby("LOB").sum()
-    assert clrd.iloc[[1, 0], :].iloc[0, 1] == clrd.iloc[1, 1]  # row
-    assert clrd.iloc[[1, 0], [1, 0]].iloc[0, 0] == clrd.iloc[1, 1]  # col
-    assert clrd.loc[:, ["CumPaidLoss", "IncurLoss"]].iloc[0, 0] == clrd.iloc[0, 1]
+    assert clrd.iloc[[1, 0], :].iloc[0, 1].equals(clrd.iloc[1, 1])  # row
+    assert clrd.iloc[[1, 0], [1, 0]].iloc[0, 0].equals(clrd.iloc[1, 1])  # col
+    assert clrd.loc[:, ["CumPaidLoss", "IncurLoss"]].iloc[0, 0].equals(clrd.iloc[0, 1])
     assert (
-        clrd.loc[["ppauto", "medmal"], ["CumPaidLoss", "IncurLoss"]].iloc[0, 0]
-        == clrd.iloc[3]["CumPaidLoss"]
+        clrd
+        .loc[["ppauto", "medmal"], ["CumPaidLoss", "IncurLoss"]]
+        .iloc[0, 0]
+        .equals(clrd.iloc[3]["CumPaidLoss"])
     )
-    assert (
-        clrd.loc[clrd["LOB"] == "comauto", ["CumPaidLoss", "IncurLoss"]]
-        == clrd[clrd["LOB"] == "comauto"].iloc[:, [1, 0]]
+    assert clrd.loc[clrd["LOB"] == "comauto", ["CumPaidLoss", "IncurLoss"]].equals(
+        clrd[clrd["LOB"] == "comauto"].iloc[:, [1, 0]]
     )
-    assert clrd.groupby("LOB").sum() == clrd
+    assert clrd.groupby("LOB").sum().equals(clrd)
 
 
 def test_backends(clrd):
     clrd = clrd[["CumPaidLoss", "EarnedPremDIR"]]
     a = clrd.iloc[1, 0].set_backend("sparse").dropna()
     b = clrd.iloc[1, 0].dropna()
-    assert a == b
+    assert a.equals(b)
 
 
 def test_union_columns(clrd):
-    assert clrd.iloc[:, :3] + clrd.iloc[:, 3:] == clrd
+    assert (clrd.iloc[:, :3] + clrd.iloc[:, 3:]).equals(clrd)
 
 
 def test_4loc(clrd):
     clrd = clrd.groupby("LOB").sum()
-    assert (
-        clrd.iloc[:3, :2, 0, 0]
-        == clrd[clrd.origin == clrd.origin.min()][
+    assert clrd.iloc[:3, :2, 0, 0].equals(
+        clrd[clrd.origin == clrd.origin.min()][
             clrd.development == clrd.development.min()
         ].loc["comauto":"othliab", :"CumPaidLoss", :, :]
     )
-    assert (
-        clrd.iloc[:3, :2, 0:1, -1]
-        == clrd[clrd.development == clrd.development.max()].loc[
+    assert clrd.iloc[:3, :2, 0:1, -1].equals(
+        clrd[clrd.development == clrd.development.max()].loc[
             "comauto":"othliab", :"CumPaidLoss", "1988", :
         ]
     )
 
 
 def test_loc_ellipsis(clrd):
-    assert (
-        clrd.loc["Aegis Grp"]
-        == clrd.loc["Adriatic Ins Co":"Aegis Grp"].loc["Aegis Grp"]
+    assert clrd.loc["Aegis Grp"].equals(
+        clrd.loc["Adriatic Ins Co":"Aegis Grp"].loc["Aegis Grp"]
     )
-    assert clrd.loc["Aegis Grp", ..., :] == clrd.loc["Aegis Grp"]
-    assert clrd.loc[..., 24:] == clrd.loc[..., :, 24:]
-    assert clrd.loc[:, ..., 24:] == clrd.loc[..., :, 24:]
-    assert clrd.loc[:, "CumPaidLoss"] == clrd.loc[:, "CumPaidLoss", ...]
-    assert clrd.loc[..., "CumPaidLoss", :, :] == clrd.loc[:, "CumPaidLoss", :, :]
+    assert clrd.loc["Aegis Grp", ..., :].equals(clrd.loc["Aegis Grp"])
+    assert clrd.loc[..., 24:].equals(clrd.loc[..., :, 24:])
+    assert clrd.loc[:, ..., 24:].equals(clrd.loc[..., :, 24:])
+    assert clrd.loc[:, "CumPaidLoss"].equals(clrd.loc[:, "CumPaidLoss", ...])
+    assert clrd.loc[..., "CumPaidLoss", :, :].equals(clrd.loc[:, "CumPaidLoss", :, :])
 
 
 def test_missing_first_lag(raa):
@@ -139,12 +138,12 @@ def test_missing_first_lag(raa):
 def test_reverse_slice_integrity(clrd):
     assert clrd.iloc[::-1, ::-1].shape == clrd.shape
     assert np.all(clrd.iloc[:, ::-1].columns.values == clrd.columns[::-1])
-    assert clrd.iloc[clrd.index.index[::-1]] + clrd == 2 * clrd
+    assert (clrd.iloc[clrd.index.index[::-1]] + clrd).equals(2 * clrd)
 
 
 def test_loc_tuple(clrd):
     assert len(clrd.loc[("Adriatic Ins Co", "othliab")]) == 1
-    assert clrd.loc[clrd.index] == clrd
+    assert clrd.loc[clrd.index].equals(clrd)
 
 
 def test_at_iat(raa):
@@ -156,7 +155,7 @@ def test_at_iat(raa):
     raa2.iat[0, 0, 4, -1] = 5
     assert raa2.iat[0, 0, 4, -1] == 5
     raa2.iat[-1, -1, 4, 0] = 5
-    assert raa1 == raa2
+    assert raa1.equals(raa2)
 
 
 def test_at_iat_exceptions(raa):
@@ -291,7 +290,7 @@ def test_loc_setitem_triangle_value(clrd: Triangle) -> None:
             tri.loc["Aegis Grp", "comauto"] = sub * 2
     else:
         tri.loc["Aegis Grp", "comauto"] = sub * 2
-        assert tri.loc["Aegis Grp", "comauto"] == sub * 2
+        assert tri.loc["Aegis Grp", "comauto"].equals(sub * 2)
 
 
 def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
@@ -314,11 +313,11 @@ def test_loc_setitem_partial_triangles(raa: Triangle) -> None:
         # Test is specific to the numpy backend.
         raa_new.loc[:, :, :, :60] = raa2.loc[:, :, :, :60]
         raa_new.loc[:, :, :, 72:] = raa2.loc[:, :, :, 72:]
-        assert raa_new == raa2
+        assert raa_new.equals(raa2)
         raa_new = raa.copy()
         raa_new.loc[:, :, :"1984", :] = raa2.loc[:, :, :"1984", :]
         raa_new.loc[:, :, "1985":, :] = raa2.loc[:, :, "1985":, :]
-        assert raa_new == raa2
+        assert raa_new.equals(raa2)
 
 
 def test_invalid_iloc_sparse_assignment(prism) -> None:
@@ -515,13 +514,13 @@ def test_loc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
         val_col = ["IncurLoss", "CumPaidLoss", "EarnedPremNet"]
         clrd_copy = clrd.copy()
         clrd_copy.loc[dest_index] = clrd.loc[val_index]
-        assert clrd_copy.loc[dest_index] == clrd.loc[val_index]
+        assert clrd_copy.loc[dest_index].equals(clrd.loc[val_index])
         clrd_copy = clrd.copy()
         clrd_copy.loc[:, dest_col] = clrd.loc[:, val_col]
-        assert clrd_copy.loc[:, dest_col] == clrd.loc[:, val_col]
+        assert clrd_copy.loc[:, dest_col].equals(clrd.loc[:, val_col])
         clrd_copy = clrd.copy()
         clrd_copy.loc[dest_index, dest_col] = clrd.loc[val_index, val_col]
-        assert clrd_copy.loc[dest_index, dest_col] == clrd.loc[val_index, val_col]
+        assert clrd_copy.loc[dest_index, dest_col].equals(clrd.loc[val_index, val_col])
 
 
 def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
@@ -547,20 +546,22 @@ def test_iloc_setting_non_contiguous_index_and_columns(clrd: Triangle) -> None:
         val_col = [1, 2, 4]
         clrd_copy = clrd.copy()
         clrd_copy.iloc[dest_index] = clrd.iloc[val_index]
-        assert clrd_copy.iloc[dest_index] == clrd.iloc[val_index]
+        assert clrd_copy.iloc[dest_index].equals(clrd.iloc[val_index])
         clrd_copy = clrd.copy()
         clrd_copy.iloc[:, dest_col] = clrd.iloc[:, val_col]
-        assert clrd_copy.iloc[:, dest_col] == clrd.iloc[:, val_col]
+        assert clrd_copy.iloc[:, dest_col].equals(clrd.iloc[:, val_col])
         clrd_copy = clrd.copy()
         clrd_copy.iloc[dest_index, dest_col] = clrd.iloc[val_index, val_col]
-        assert clrd_copy.iloc[dest_index, dest_col] == clrd.iloc[val_index, val_col]
+        assert clrd_copy.iloc[dest_index, dest_col].equals(
+            clrd.iloc[val_index, val_col]
+        )
 
 
 def test_sparse_at_iat1(prism):
     t = prism.copy()
     t.iat[0, 0, 0, 0] = 5.0
     t.at[12138, "reportedCount", "2008-01", 1] = 0
-    assert t == prism
+    assert t.equals(prism)
 
 
 def test_sparse_iat_setitem_triangleslicer_value(prism: Triangle) -> None:
@@ -622,7 +623,7 @@ def test_setitem_virtual_column_numpy_backend(raa: Triangle) -> None:
         # Test is specific to the numpy backend.
         tri["double"] = lambda x: x["values"] * 2
         assert "double" in tri.columns
-        assert tri["double"] == tri["values"] * 2
+        assert tri["double"].equals(tri["values"] * 2)
 
 
 def test_setitem_value_backend_conversion(raa: Triangle) -> None:
@@ -644,7 +645,7 @@ def test_setitem_value_backend_conversion(raa: Triangle) -> None:
     assert tri.array_backend != value.array_backend
     tri["values"] = value
     assert tri.array_backend == raa.array_backend
-    assert tri["values"] == raa["values"] * 2
+    assert tri["values"].equals(raa["values"] * 2)
 
 
 def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
@@ -663,7 +664,7 @@ def test_setitem_existing_column_triangle_value(raa: Triangle) -> None:
     tri = raa.copy()
     value = tri["values"] * 2
     tri["values"] = value
-    assert tri["values"] == raa["values"] * 2
+    assert tri["values"].equals(raa["values"] * 2)
 
 
 def test_setitem_existing_column_array_value(raa: Triangle) -> None:
@@ -683,7 +684,7 @@ def test_setitem_existing_column_array_value(raa: Triangle) -> None:
     value = (tri["values"] * 3).values
     assert not isinstance(value, type(tri))
     tri["values"] = value
-    assert tri["values"] == raa["values"] * 3
+    assert tri["values"].equals(raa["values"] * 3)
 
 
 def test_sparse_column_assignment(prism):
@@ -693,7 +694,7 @@ def test_sparse_column_assignment(prism):
     t["Paid2"] = lambda x: x["Paid"]  # Existing from virtual
     t["Paid"] = t["Paid2"]  # Existing from physical
     t["Paid3"] = lambda x: x["Paid"]  # New from virtual
-    assert out == t["Paid"]
+    assert out.equals(t["Paid"])
     assert t.shape == (34244, 6, 120, 120)
 
 

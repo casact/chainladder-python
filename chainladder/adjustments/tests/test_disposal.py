@@ -141,4 +141,4 @@ def test_setting_incr(raa: Triangle) -> None:
     dr = cl.DisposalRate(n_periods=4).fit(raa, sample_weight=ult)
     orig_disposal_rate_ = dr.disposal_rate_
     dr.incr_disposal_rate_ = dr.incr_disposal_rate_ * 2
-    assert dr.disposal_rate_ == orig_disposal_rate_ * 2
+    assert dr.disposal_rate_.equals(orig_disposal_rate_ * 2)
