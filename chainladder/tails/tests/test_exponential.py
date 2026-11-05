@@ -3,11 +3,13 @@ from __future__ import annotations
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import chainladder as cl
 import pytest
+from chainladder.tails.curve import _ValidCurves as curves
 
-from typing import TYPE_CHECKING
+from typing import get_args, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -89,9 +91,9 @@ def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
     """
     ``NOMINAL_TAIL`` sets the tail substituted for a tail at or below 1.0.
 
-    The full ``clrd`` sample has one index entry whose tail is exactly 1.0 while
-    its regression coefficients are finite, so the substituted value reaches
-    ``sigma_``. See #1414.
+    A theoretical Triangle is constructed from ``clrd`` total, such that the
+    fitted tail is negative while its regression coefficients are finite, so
+    the substituted value reaches ``sigma_``. See #1414.
 
     Parameters
     ----------
@@ -102,16 +104,203 @@ def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
     -------
     None
     """
-    development = cl.Development().fit_transform(clrd["CumPaidLoss"])
+    # construct a Triangle with small positive development at earlier ages
+    # and small negative development at later ages
+    # clrd total incurred exhibits consistent small negative development
+    tri = clrd.sum()["IncurLoss"]
+    tri = tri.cum_to_incr()
+    tri.iloc[..., 1:5] = -tri.iloc[..., 1:5]
+    tri = tri.incr_to_cum()
+    development = cl.Development().fit_transform(tri)
 
     assert cl.options.NOMINAL_TAIL == 1.001
-    baseline = cl.TailCurve().fit(development).sigma_.values.copy()
+    baseline = cl.TailBondy().fit(development).sigma_.values.copy()
 
     try:
         cl.options.set_option("NOMINAL_TAIL", 1.5)
-        widened = cl.TailCurve().fit(development).sigma_.values
+        widened = cl.TailBondy().fit(development).sigma_.values
     finally:
         cl.options.set_option("NOMINAL_TAIL", 1.001)
 
-    assert not np.allclose(np.nan_to_num(baseline), np.nan_to_num(widened))
+    assert np.allclose(
+        np.nan_to_num(baseline)[..., :-1],
+        np.nan_to_num(widened)[..., :-1],
+    )
+    assert not np.allclose(
+        np.nan_to_num(baseline)[..., -1:],
+        np.nan_to_num(widened)[..., -1:],
+        atol=1,
+    )
     assert cl.options.NOMINAL_TAIL == 1.001
+
+
+def test_fit_period_slice_raises(raa: Triangle) -> None:
+    """
+    fit_period no longer accepts slice
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(
+        ValueError,
+        match="Invalid fit_period specified. Accepted values are tuple or list.",
+    ):
+        _ = cl.TailCurve(fit_period=slice(None, None)).fit(raa)
+
+
+def test_fit_period_list_wrong_length_raises(raa: Triangle) -> None:
+    """
+    fit_period as a list needs to be the right length
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.raises(
+        ValueError,
+        match=("Invalid fit_period specified. Accepted values are list of length"),
+    ):
+        _ = cl.TailCurve(fit_period=[True, True]).fit(raa)
+
+
+def test_fit_period_list(raa: Triangle) -> None:
+    """
+    fit_period as a list returns the correct result
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit_transform(raa)
+    lhs = cl.TailCurve(fit_period=[True] * 9).fit(dev)
+    rhs = cl.TailCurve().fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] == rhs.ldf_.values[0, 0, 0, -1]
+    lhs = cl.TailCurve(fit_period=[False] * 2 + [True] * 7).fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] != rhs.ldf_.values[0, 0, 0, -1]
+    rhs = cl.TailCurve(fit_period=(36, None)).fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] == rhs.ldf_.values[0, 0, 0, -1]
+
+
+def test_reg_threshold_warnings(raa: Triangle) -> None:
+    """
+    feeding various irregular values to reg_threshold will emit warnings
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    with pytest.warns(match="Lower threshold for ldfs not set"):
+        _ = cl.TailCurve(reg_threshold=[None, None]).fit(raa)
+    with pytest.warns(match="Lower threshold for ldfs set too low"):
+        _ = cl.TailCurve(reg_threshold=[0.5, None]).fit(raa)
+    with pytest.warns(match="Can't set upper threshold for ldfs below"):
+        _ = cl.TailCurve(reg_threshold=[2, 1]).fit(raa)
+
+
+def test_upper_threshold_works(raa: Triangle) -> None:
+    """
+    Setting an upper reg threshold affects the fitting
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit_transform(raa)
+    lhs = cl.TailCurve(reg_threshold=(1.001, 1.2)).fit(dev)
+    rhs = cl.TailCurve().fit(dev)
+    assert lhs.ldf_.values[0, 0, 0, -1] != rhs.ldf_.values[0, 0, 0, -1]
+
+
+@pytest.mark.parametrize("curve", get_args(curves))
+def test_errors_raise_actually_raises_in_different_curves(curve: str) -> None:
+    """
+    Setting ``errors`` to "raise" will raise errors
+
+    Parameters
+    ----------
+    curve: str
+        The curve type for fitting
+
+    Returns
+    -------
+    None
+    """
+    # construct a Triangle with negative development
+    df = pd.DataFrame({
+        "origin": [2017, 2017, 2017, 2017, 2018, 2018, 2018, 2019, 2019, 2020],
+        "age": [12, 24, 36, 48, 12, 24, 36, 12, 24, 12],
+        "reported": [10, 9, 8, 7, 10, 9, 8, 10, 9, 10],
+        "paid": [1, 2, 5, 50, 1, 2, 5, 1, 2, 1],
+    })
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="age",
+        columns="reported",
+        cumulative=True,
+    )
+    with pytest.raises(
+        ValueError,
+        match=("Tail fit requires all LDFs to be greater than 1.0"),
+    ):
+        _ = cl.TailCurve(errors="raise", curve=curve).fit(tri)
+
+    tri = cl.Triangle(
+        data=df,
+        origin="origin",
+        development="age",
+        columns="paid",
+        cumulative=True,
+    )
+    with pytest.raises(
+        ValueError,
+        match=("Tail fit resulted in non-decreasing tail"),
+    ):
+        _ = cl.TailCurve(errors="raise", curve=curve).fit(tri)
+
+
+def test_attachment_age(raa: Triangle) -> None:
+    """
+    Test that attachment_age works
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+
+    Returns
+    -------
+    None
+    """
+    dev = cl.Development().fit_transform(raa)
+    default = cl.TailCurve().fit(dev)
+    attach = cl.TailCurve(attachment_age=96).fit(dev)
+    assert dev.ldf_.values[0, 0, 0, 8] == default.ldf_.values[0, 0, 0, 8]
+    assert dev.ldf_.values[0, 0, 0, 8] != attach.ldf_.values[0, 0, 0, 8]
+    assert default.ldf_.values[0, 0, 0, 9] == attach.ldf_.values[0, 0, 0, 9]
