@@ -255,4 +255,6 @@ class TestPickle:
             test = cl.read_pickle(raa_pickle)
             assert test.equals(raa)
             assert repr(test) == repr(raa)
-            assert cl.Development().fit(test).ldf_.equals(cl.Development().fit(raa).ldf_)
+            assert (
+                cl.Development().fit(test).ldf_.equals(cl.Development().fit(raa).ldf_)
+            )
