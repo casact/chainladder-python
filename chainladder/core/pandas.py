@@ -1394,7 +1394,9 @@ def add_groupby_agg_func(cls, k: str, v: str):
                 )(self.axis, auto_sparse=False, keepdims=True)
                 for i in self.groups.indices.values()
             ]
-        obj = concat(values, axis=self.axis, ignore_index=True)
+        # Aggregated index and column slices share placeholder labels, which are
+        # replaced below, so only those axes are concatenated with ignore_index.
+        obj = concat(values, axis=self.axis, ignore_index=self.axis in (0, 1))
         group_index = self.groups.first().index
         if self.axis == 0:
             if isinstance(group_index, pd.MultiIndex):
