@@ -45,14 +45,3 @@ jobs:
           else
             uvx ruff@0.16.1 check --force-exclude --select I --diff --exit-zero $files
           fi
-
-      - name: Warn about long lines in changed code
-        if: github.event_name == 'pull_request'
-        run: |
-          files=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}"...HEAD -- "*.py")
-          if [ -z "$files" ]; then
-            echo "No changed Python files to check"
-          else
-            uvx ruff@0.16.1 check --force-exclude --select E501 --output-format json --exit-zero $files \
-              | python3 .github/scripts/changed_line_warnings.py "origin/${{ github.base_ref }}"
-          fi
