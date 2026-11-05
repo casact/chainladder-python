@@ -66,6 +66,23 @@ class TriangleGroupBy:
 
 
 class TrianglePandas(_TrianglePandasBase):
+    if TYPE_CHECKING:
+        # Implemented by Common.set_backend; declared here so it takes precedence
+        # over the unimplemented TriangleProtocol stub in the type-checking MRO.
+        def set_backend(
+            self,
+            backend: str,
+            inplace: bool = False,
+            deep: bool = False,
+            _warn: bool = True,
+            **kwargs: Any,
+        ) -> Triangle: ...
+
+        # Installed by add_triangle_agg_func at runtime.
+        def sum(
+            self, axis: str | int | None = None, *args: Any, **kwargs: Any
+        ) -> TriangleProtocol: ...
+
     def to_frame(
         self,
         origin_as_datetime: bool = True,
