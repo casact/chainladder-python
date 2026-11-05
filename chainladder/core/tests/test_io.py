@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import numpy as np
-import chainladder as cl
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 import dill
+import numpy as np
 import pytest
 
-from pathlib import Path
-
-from typing import TYPE_CHECKING
+import chainladder as cl
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -30,7 +30,7 @@ class TestJSON:
         None
         """
         clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
-        assert clrd == clrd2
+        assert clrd.equals clrd2
         assert clrd.index.equals(clrd2.index)
         assert np.all(clrd.columns == clrd2.columns)
         assert np.all(clrd.odims == clrd2.odims)
@@ -51,7 +51,7 @@ class TestJSON:
         None
         """
         x = raa.dev_to_val().to_json()
-        assert cl.read_json(x) == raa.dev_to_val()
+        assert cl.read_json(x).equals(raa.dev_to_val())
 
     def test_estimator_json_io(self) -> None:
         """
@@ -141,8 +141,8 @@ class TestPickle:
         -------
         None
         """
-        import tempfile
         import os
+        import tempfile
 
         dev = cl.Development(average="simple", n_periods=4).fit(raa)
         fd, path = tempfile.mkstemp(suffix=".pkl")
@@ -176,7 +176,7 @@ class TestPickle:
         pkl_path = tmp_path / "triangle.pkl"
         with open(pkl_path, "wb") as f:
             dill.dump(raa, f)
-        assert cl.read_pickle(str(pkl_path)) == raa
+        assert cl.read_pickle(str(pkl_path)).equals(raa)
 
     def test_triangle_to_pickle(
         self, raa: Triangle, clrd: Triangle, tmp_path: Path
@@ -203,13 +203,13 @@ class TestPickle:
         raa_path = tmp_path / "raa.pkl"
         raa.to_pickle(str(raa_path))
         assert raa_path.is_file()
-        assert cl.read_pickle(str(raa_path)) == raa
+        assert cl.read_pickle(str(raa_path)).equals(raa)
 
         # Multidimensional case.
         clrd_path = tmp_path / "clrd.pkl"
         clrd.to_pickle(str(clrd_path))
         assert clrd_path.is_file()
-        assert cl.read_pickle(str(clrd_path)) == clrd
+        assert cl.read_pickle(str(clrd_path)).equals(clrd)
 
     def test_read_pickle_estimator(self, raa: Triangle, tmp_path: Path) -> None:
         """
@@ -233,7 +233,7 @@ class TestPickle:
         dev = cl.Development().fit(raa)
         with open(pkl_path, "wb") as f:
             dill.dump(dev, f)
-        assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
+        assert dev.ldf_.equals(cl.read_pickle(str(pkl_path)).ldf_)
 
     def test_pickle_backward_compatibility(self, raa: Triangle) -> None:
         """
@@ -253,6 +253,6 @@ class TestPickle:
 
         for raa_pickle in raa_pickles:
             test = cl.read_pickle(raa_pickle)
-            assert test == raa
+            assert test.equals(raa)
             assert repr(test) == repr(raa)
-            assert cl.Development().fit(test).ldf_ == cl.Development().fit(raa).ldf_
+            assert cl.Development().fit(test).ldf_.equals(cl.Development().fit(raa).ldf_)

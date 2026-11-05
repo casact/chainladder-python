@@ -6,7 +6,6 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import dill
 import numpy as np
 import pandas as pd
 import pytest
