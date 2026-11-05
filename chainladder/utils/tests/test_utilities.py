@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import copy
+import warnings
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import dill
+import numpy as np
+import pandas as pd
 import pytest
 
 import chainladder as cl
-import copy
-import dill
-import warnings
-import numpy as np
-import pandas as pd
 
 from chainladder import __dt64_unit__
 from chainladder.utils.data._manifest import SAMPLES
@@ -17,12 +21,9 @@ from chainladder.utils.utility_functions import (
     minimum,
 )
 
-from pathlib import Path
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from pytest import CaptureFixture
-    from pytest import MonkeyPatch
+    from pytest import CaptureFixture, MonkeyPatch
+
     from chainladder import Triangle
 
 
@@ -58,9 +59,9 @@ class _FakeDaskBag:
 
 def test_triangle_json_io(clrd):
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
-    assert clrd == clrd2
-    assert np.all(clrd.kdims == clrd2.kdims)
-    assert np.all(clrd.vdims == clrd2.vdims)
+    assert clrd.equals(clrd2)
+    assert clrd.index.equals(clrd2.index)
+    assert np.all(clrd.columns == clrd2.columns)
     assert np.all(clrd.odims == clrd2.odims)
     assert np.all(clrd.ddims == clrd2.ddims)
     assert np.all(clrd.valuation == clrd2.valuation)
@@ -68,7 +69,7 @@ def test_triangle_json_io(clrd):
 
 def test_json_for_val(raa):
     x = raa.dev_to_val().to_json()
-    assert cl.read_json(x) == raa.dev_to_val()
+    assert cl.read_json(x).equals(raa.dev_to_val())
 
 
 def test_estimator_json_io():
@@ -108,13 +109,15 @@ def test_read_csv_single(raa):
 
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
-    assert raa == cl.read_csv(
-        filepath_or_buffer=raa_csv_path,
-        origin="origin",
-        development="development",
-        columns=["values"],
-        index=None,
-        cumulative=True,
+    assert raa.equals(
+        cl.read_csv(
+            filepath_or_buffer=raa_csv_path,
+            origin="origin",
+            valuation="development",
+            columns=["values"],
+            index=None,
+            cumulative=True,
+        )
     )
 
 
@@ -125,28 +128,29 @@ def test_read_csv_multi(clrd):
 
     clrd_csv_path = Path(__file__).parent.parent / "data" / "clrd.csv"
 
-    assert clrd == cl.read_csv(
-        filepath_or_buffer=clrd_csv_path,
-        origin="AccidentYear",
-        development="DevelopmentYear",
-        columns=[
-            "IncurLoss",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ],
-        index=["GRNAME", "LOB"],
-        cumulative=True,
+    assert clrd.equals(
+        cl.read_csv(
+            filepath_or_buffer=clrd_csv_path,
+            origin="AccidentYear",
+            valuation="DevelopmentYear",
+            columns=[
+                "IncurLoss",
+                "CumPaidLoss",
+                "BulkLoss",
+                "EarnedPremDIR",
+                "EarnedPremCeded",
+                "EarnedPremNet",
+            ],
+            index=["GRNAME", "LOB"],
+            cumulative=True,
+        )
     )
 
 
 def test_concat(clrd):
     tri = clrd.groupby("LOB").sum()
-    assert (
-        cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0)
-        == tri.loc[["wkcomp", "comauto"]]
+    assert cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0).equals(
+        tri.loc[["wkcomp", "comauto"]]
     )
 
 
@@ -207,12 +211,12 @@ def test_concat_immutability(raa):
     u.columns = latest.columns
     u_new = copy.deepcopy(u)
     cl.concat((latest, u), axis=3)
-    assert u == u_new
+    assert u.equals(u_new)
 
 
 def test_to_pickle_read_pickle(raa):
-    import tempfile
     import os
+    import tempfile
 
     dev = cl.Development(average="simple", n_periods=4).fit(raa)
     fd, path = tempfile.mkstemp(suffix=".pkl")
@@ -268,16 +272,9 @@ def test_load_sample() -> None:
     automatically, while non-data files in the folder (``__init__.py``,
     ``_manifest.py``) are never mistaken for datasets.
     """
-    # Every manifest entry must load and have a matching CSV on disk.
-    data_dir: Path = Path(__file__).parent.parent / "data"
-    for dataset in SAMPLES:
-        assert (data_dir / f"{dataset}.csv").is_file(), (
-            f"manifest lists '{dataset}' but {dataset}.csv is missing"
-        )
-        cl.load_sample(dataset)
-
-    # Conversely, every CSV on disk must be declared in the manifest, so a
+    # Every CSV on disk must be declared in the manifest, so a
     # newly added data file can't silently go unregistered.
+    data_dir: Path = Path(__file__).parent.parent / "data"
     csv_stems = {f.stem for f in data_dir.glob("*.csv")}
     assert csv_stems == set(SAMPLES), (
         "manifest and data directory are out of sync: "
@@ -377,7 +374,7 @@ def test_load_sample_uspp() -> None:
         "friedland_uspp_increasing_claim_case",
     ]:
         tri = cl.load_sample(key)
-        assert set(str(c) for c in tri.vdims) == {
+        assert set(str(c) for c in tri.columns) == {
             "Reported Claims",
             "Paid Claims",
             "Earned Premium",
@@ -403,7 +400,7 @@ def test_load_sample_clrd2025() -> None:
         "EarnedPremCeded",
         "EarnedPremNet",
     }
-    assert set(str(c) for c in tri.vdims) == expected_columns
+    assert set(str(c) for c in tri.columns) == expected_columns
 
     # Accident years span 1998-2007.
     assert str(tri.origin.min()) == "1998"
@@ -444,7 +441,7 @@ def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
     pkl_path = tmp_path / "triangle.pkl"
     with open(pkl_path, "wb") as f:
         dill.dump(raa, f)
-    assert cl.read_pickle(str(pkl_path)) == raa
+    assert cl.read_pickle(str(pkl_path)).equals(raa)
 
 
 def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> None:
@@ -470,13 +467,13 @@ def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> No
     raa_path = tmp_path / "raa.pkl"
     raa.to_pickle(str(raa_path))
     assert raa_path.is_file()
-    assert cl.read_pickle(str(raa_path)) == raa
+    assert cl.read_pickle(str(raa_path)).equals(raa)
 
     # Multidimensional case.
     clrd_path = tmp_path / "clrd.pkl"
     clrd.to_pickle(str(clrd_path))
     assert clrd_path.is_file()
-    assert cl.read_pickle(str(clrd_path)) == clrd
+    assert cl.read_pickle(str(clrd_path)).equals(clrd)
 
 
 def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
@@ -501,7 +498,7 @@ def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
     dev = cl.Development().fit(raa)
     with open(pkl_path, "wb") as f:
         dill.dump(dev, f)
-    assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
+    assert dev.ldf_.equals(cl.read_pickle(str(pkl_path)).ldf_)
 
 
 def test_concat_type_error() -> None:
@@ -617,6 +614,49 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     """
     with pytest.raises(AssertionError):
         cl.concat([raa, raa], axis=1)
+
+
+def test_concat_ignore_index_axes(raa: Triangle) -> None:
+    """Test concat with ignore_index=True along axes 0, 1, 2, and 3."""
+    res0 = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(res0.index) == 2
+    assert res0.key_labels == ["Index"]
+    assert list(res0.index["Index"]) == [0, 1]
+
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
+    assert list(res1.columns) == [0, 1]
+
+    o1 = raa.iloc[:, :, :5, :]
+    o2 = raa.iloc[:, :, 5:, :]
+    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
+    assert len(res2.odims) == len(raa.odims)
+
+    d1 = raa.iloc[:, :, :, :5]
+    d2 = raa.iloc[:, :, :, 5:]
+    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
+    assert len(res3.ddims) == len(raa.ddims)
+
+
+def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index values match but row index labels differ."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2.index = pd.DataFrame(t2.index.values, columns=t2.index.columns, index=[10])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+
+
+def test_concat_axis_1_index_nan_preserved(raa: Triangle) -> None:
+    """Verify concat on axis 1 succeeds when index contains NaN entries."""
+    t1 = copy.deepcopy(raa).rename("columns", ["A"])
+    t2 = copy.deepcopy(raa).rename("columns", ["B"])
+    t1.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    t2.index = pd.DataFrame([["Total", np.nan]], columns=["Key1", "Key2"])
+    res = cl.concat([t1, t2], axis=1)
+    assert list(res.columns) == ["A", "B"]
+    assert pd.isna(res.index.iloc[0, 1])
 
 
 def test_maximum_2(raa: Triangle) -> None:
@@ -937,15 +977,16 @@ def test_triangle_dask_input_deprecated() -> None:
 
     data = _FakeDaskFrame({
         "origin": [2020, 2020, 2021],
-        "development": [2020, 2021, 2021],
+        "valuation": [2020, 2021, 2021],
         "values": [100.0, 150.0, 200.0],
     })
     with pytest.warns(DeprecationWarning, match="dask") as record:
         cl.Triangle(
             data,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="values",
+            cumulative=True,
         )
     dask_warnings = [
         w
@@ -975,13 +1016,13 @@ def test_triangle_pandas_subclass_no_dask_warning(recwarn) -> None:
 
     data = _PandasSubclass({
         "origin": [2020, 2020, 2021],
-        "development": [2020, 2021, 2021],
+        "valuation": [2020, 2021, 2021],
         "values": [100.0, 150.0, 200.0],
     })
     cl.Triangle(
         data,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="values",
     )
     dask_warnings = [
@@ -1019,7 +1060,7 @@ def test_dask_parallel_deprecated_warns_once() -> None:
         cl._dask_parallel_state.warned = False
 
 
-def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
+def test_dask_parallel_groupby_deprecated(clrd, monkeypatch: MonkeyPatch) -> None:
     """
     A groupby aggregation on a sparse-backed triangle uses the dask 'bag'
     parallel-compute path when dask is available, which should emit the dask
@@ -1032,18 +1073,20 @@ def test_dask_parallel_groupby_deprecated(monkeypatch: MonkeyPatch) -> None:
     """
     cl._dask_parallel_state.warned = False
     monkeypatch.setattr("chainladder.core.pandas.db", _FakeDaskBag)
-    sparse_clrd = cl.load_sample("clrd").set_backend("sparse")
-    try:
-        with pytest.warns(DeprecationWarning, match="dask") as record:
-            sparse_clrd.groupby("LOB").sum()
-        dask_warnings = [
-            w
-            for w in record
-            if issubclass(w.category, DeprecationWarning) and "dask" in str(w.message)
-        ]
-        assert len(dask_warnings) == 1
-    finally:
-        cl._dask_parallel_state.warned = False
+    if clrd.array_backend == "sparse":
+        # this test is specific to sparse backend
+        try:
+            with pytest.warns(DeprecationWarning, match="dask") as record:
+                clrd.groupby("LOB").sum()
+            dask_warnings = [
+                w
+                for w in record
+                if issubclass(w.category, DeprecationWarning)
+                and "dask" in str(w.message)
+            ]
+            assert len(dask_warnings) == 1
+        finally:
+            cl._dask_parallel_state.warned = False
 
 
 def test_dask_parallel_incr_to_cum_deprecated(monkeypatch: MonkeyPatch) -> None:

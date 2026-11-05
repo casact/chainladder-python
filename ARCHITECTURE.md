@@ -23,6 +23,7 @@ chainladder-python/
 │   │   ├── slice.py                # TriangleSlicer, Location, Ilocation, At, Iat, VirtualColumns
 │   │   ├── display.py              # TriangleDisplay (__repr__, _repr_html_)
 │   │   ├── io.py                   # TriangleIO, EstimatorIO (pickle, JSON, spreadsheet I/O)
+│   │   ├── style.py                # Styler (adapts pandas.io.formats.style.Styler)
 │   │   ├── typing.py               # TriangleProtocol, type aliases (BackendArray, etc.)
 │   │   ├── README.md               # Per-file summary of this subpackage
 │   │   └── tests/
@@ -63,7 +64,7 @@ chainladder-python/
 │   │   ├── bootstrap.py            # BootstrapODPSample (extends DevelopmentBase)
 │   │   ├── disposal.py             # DisposalRate, DisposalMixin
 │   │   ├── parallelogram.py        # ParallelogramOLF
-│   │   ├── trend.py                # Trend, TrendConstant
+│   │   ├── trend.py                # Trend
 │   │   └── tests/
 │   │
 │   ├── workflow/                   # Pipeline and ensemble utilities
@@ -165,11 +166,14 @@ Each mixin that needs `TriangleProtocol` for type-checking purposes declares its
 ```python
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from chainladder.core.typing import TriangleProtocol
+
     _MixinBase = TriangleProtocol
 else:
     _MixinBase = object
+
 
 class TriangleMixin(_MixinBase):
     # Pyright sees TriangleProtocol as the base — self has .shape, .values, .sum, etc.
@@ -192,7 +196,9 @@ if TYPE_CHECKING:
     from chainladder import Triangle
     from chainladder.core.typing import TriangleProtocol
 
+
 def transform(X: TriangleProtocol) -> Triangle:
+    # transformer that conforms to scikit-learn requirements
     ...
 ```
 
@@ -250,8 +256,7 @@ sklearn.BaseEstimator
 sklearn.BaseEstimator + TransformerMixin + EstimatorIO   (standalone transformers)
   ├── BerquistSherman     adjustments/berqsherm.py
   ├── ParallelogramOLF    adjustments/parallelogram.py
-  ├── Trend               adjustments/trend.py
-  └── TrendConstant       adjustments/trend.py
+  └── Trend               adjustments/trend.py
 
 
 sklearn.BaseEstimator

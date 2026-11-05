@@ -1,20 +1,34 @@
 from __future__ import annotations
 
-import chainladder as cl
+import copy
 import io
+import pickle
+import warnings
+
+from io import StringIO
+from typing import TYPE_CHECKING
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 
+import chainladder as cl
+
+from chainladder.core.axis import (
+    TriangleAxis,
+    _set_columns,
+    _set_index,
+)
 from chainladder.core.common import Common
-from chainladder.utils.utility_functions import date_delta_adjustment
 from chainladder.utils.sparse import COO
-
-from io import StringIO
-
-from typing import TYPE_CHECKING
+from chainladder.utils.utility_functions import (
+    _axis_orders,
+    _get_axis_name,
+    _get_axis_number,
+    date_delta_adjustment,
+)
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -129,7 +143,7 @@ def test_align_pattern(raa, atol):
 
 
 def test_incr_to_cum(clrd):
-    clrd.cum_to_incr().incr_to_cum() == clrd
+    clrd.cum_to_incr().incr_to_cum().equals(clrd)
 
 
 def test_create_new_value(clrd):
@@ -144,38 +158,39 @@ def test_create_new_value(clrd):
 
 
 def test_multilevel_index_groupby_sum1(clrd):
-    assert clrd.groupby("LOB").sum().sum() == clrd.sum()
+    assert clrd.groupby("LOB").sum().sum().equals(clrd.sum())
 
 
 def test_multilevel_index_groupby_sum2(clrd):
     a = clrd.groupby("GRNAME").sum().sum()
     b = clrd.groupby("LOB").sum().sum()
-    assert a == b
+    assert a.equals(b)
 
 
 def test_boolean_groupby_eq_groupby_loc(clrd):
     assert (
-        clrd[clrd["LOB"] == "ppauto"].sum() == clrd.groupby("LOB").sum().loc["ppauto"]
+        clrd[clrd["LOB"] == "ppauto"]
+        .sum()
+        .equals(clrd.groupby("LOB").sum().loc["ppauto"])
     )
 
 
 def test_latest_diagonal_two_routes(clrd):
-    assert (
-        clrd.latest_diagonal.sum()["BulkLoss"] == clrd.sum().latest_diagonal["BulkLoss"]
+    assert clrd.latest_diagonal.sum()["BulkLoss"].equals(
+        clrd.sum().latest_diagonal["BulkLoss"]
     )
 
 
 def test_sum_of_diff_eq_diff_of_sum(clrd):
-    assert (clrd["BulkLoss"] - clrd["CumPaidLoss"]).latest_diagonal == (
+    assert (clrd["BulkLoss"] - clrd["CumPaidLoss"]).latest_diagonal.equals(
         clrd.latest_diagonal["BulkLoss"] - clrd.latest_diagonal["CumPaidLoss"]
     )
 
 
 def test_append(raa):
     raa2 = raa.copy()
-    raa2.kdims = np.array([["P2"]])
-    raa.append(raa2).sum() == raa * 2
-    assert raa.append(raa2).sum() == 2 * raa
+    raa2.index = pd.DataFrame([["P2"]], columns=raa.key_labels)
+    assert raa.append(raa2).sum().equals(2 * raa)
 
 
 def test_rename_columns(genins, clrd) -> None:
@@ -245,7 +260,7 @@ def test_printer(raa):
 def test_value_order(clrd):
     a = clrd[["CumPaidLoss", "BulkLoss"]]
     b = clrd[["BulkLoss", "CumPaidLoss"]]
-    assert a.iloc[:, -1] == b.iloc[:, 0]
+    assert a.iloc[:, -1].equals(b.iloc[:, 0])
 
 
 def test_trend(raa, atol):
@@ -276,11 +291,11 @@ def test_trend_invalid_axis_raises(raa: Triangle) -> None:
 
 def test_valuation_shift(qtr):
     x = qtr.iloc[0, 0]
-    assert x[x.valuation <= x.valuation_date] == x
+    assert x[x.valuation <= x.valuation_date].equals(x)
 
 
 def test_quantile_vs_median(clrd):
-    assert clrd.quantile(q=0.5)["CumPaidLoss"] == clrd.median()["CumPaidLoss"]
+    assert clrd.quantile(q=0.5)["CumPaidLoss"].equals(clrd.median()["CumPaidLoss"])
 
 
 def test_base_minimum_exposure_triangle(raa):
@@ -290,7 +305,7 @@ def test_base_minimum_exposure_triangle(raa):
         .reset_index()
     )
     d["index"] = d["index"].astype(str)
-    cl.Triangle(d, origin="index", columns=d.columns[-1])
+    cl.Triangle(d, origin="index", columns=d.columns[-1], cumulative=True)
 
 
 def test_development_before_origin_warns_and_drops() -> None:
@@ -304,14 +319,14 @@ def test_development_before_origin_warns_and_drops() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
+        "valuation": [2001, 2002, 2000, 2002],  # 2001/2000 row is invalid
         "value": [100, 200, 999, 300],
     })
     with pytest.warns(UserWarning, match="development before"):
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -327,7 +342,7 @@ def test_origin_and_value_setters(raa):
         np.all(raa2.origin == raa.origin),
         np.all(raa2.development == raa.development),
         np.all(raa2.odims == raa.odims),
-        np.all(raa2.vdims == raa.vdims),
+        np.all(raa2.columns == raa.columns),
     ))
 
 
@@ -352,10 +367,10 @@ def test_index_setter_with_dataframe(clrd: Triangle) -> None:
     tri.index = new_index
 
     assert tri.key_labels == ["Company"]
-    np.testing.assert_array_equal(tri.kdims, new_index.values)
+    assert tri.index.equals(new_index)
     # _set_slicers() must have rebuilt .loc against the new key label.
-    assert tri.loc["A"].kdims.tolist() == [["A"]]
-    assert tri.loc["A"] == clrd.iloc[:1]
+    assert tri.loc["A"].index.values.tolist() == [["A"]]
+    assert tri.loc["A"].equals(clrd.iloc[:1])
 
 
 def test_index_setter_length_mismatch_raises(clrd: Triangle) -> None:
@@ -400,8 +415,8 @@ def test_index_setter_non_dataframe_raises(clrd: Triangle) -> None:
 
 def test_set_index_inplace(clrd: Triangle) -> None:
     """
-    Triangle.set_index(value, inplace=True) should mutate the calling
-    Triangle's index via the index setter and return that same object.
+    Triangle.set_index(value, inplace=True) should mutate the Triangle and
+    return self.
 
     Parameters
     ----------
@@ -419,14 +434,14 @@ def test_set_index_inplace(clrd: Triangle) -> None:
 
     assert result is tri
     assert tri.key_labels == ["Company"]
-    np.testing.assert_array_equal(tri.kdims, new_index.values)
+    assert tri.index.equals(new_index)
 
 
 def test_set_index_not_inplace(clrd: Triangle) -> None:
     """
     Triangle.set_index(value) with the default inplace=False should operate
     on a copy: it returns a distinct Triangle with the new index applied,
-    leaving the original Triangle's kdims/key_labels untouched.
+    leaving the original Triangle's index/key_labels untouched.
 
     Parameters
     ----------
@@ -438,7 +453,7 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
     None
     """
     tri = clrd.iloc[:3]
-    original_kdims = tri.kdims.copy()
+    original_index = tri.index.copy()
     original_key_labels = list(tri.key_labels)
     new_index = pd.DataFrame({"Company": ["A", "B", "C"]})
 
@@ -446,13 +461,296 @@ def test_set_index_not_inplace(clrd: Triangle) -> None:
 
     assert result is not tri
     assert result.key_labels == ["Company"]
-    np.testing.assert_array_equal(result.kdims, new_index.values)
+    assert result.index.equals(new_index)
     assert tri.key_labels == original_key_labels
-    np.testing.assert_array_equal(tri.kdims, original_kdims)
+    assert tri.index.equals(original_index)
+
+
+def test_triangle_columns_setter(raa):
+    """Setting Triangle.columns should update columns and slicers, and validate lengths."""
+    tri = raa.copy()
+    tri.columns = ["NewColumn"]
+    assert list(tri.columns) == ["NewColumn"]
+    assert tri["NewColumn"].shape == tri.shape
+
+    tri.columns = "SingleColumn"
+    assert list(tri.columns) == ["SingleColumn"]
+    assert tri["SingleColumn"].shape == tri.shape
+
+    with pytest.raises(ValueError, match="Length mismatch"):
+        tri.columns = ["Col1", "Col2"]
+
+
+def test_triangle_axes(raa):
+    """Triangle.axes should return a list of [index, columns, origin, development]."""
+    axes = raa.axes
+    assert isinstance(axes, list)
+    assert len(axes) == 4
+    assert axes[0].equals(raa.index)
+    assert axes[1].equals(raa.columns)
+    assert axes[2].equals(raa.origin)
+    assert axes[3].equals(raa.development)
+
+
+def test_axis_mappings():
+    """Verify axis number and name resolutions in chainladder.core.typing."""
+    for idx, name in enumerate(_axis_orders):
+        assert _get_axis_number(idx) == idx
+        assert _get_axis_number(idx - 4) == idx
+        assert _get_axis_number(name) == idx
+        assert _get_axis_name(idx) == name
+        assert _get_axis_name(idx - 4) == name
+        assert _get_axis_name(name) == name
+
+    with pytest.raises(
+        ValueError, match="No axis named invalid for object type Triangle"
+    ):
+        _get_axis_number("invalid")
+
+    with pytest.raises(ValueError, match=r"No axis named 5 for object type Triangle"):
+        _get_axis_number(5)
+
+
+def test_triangle_axis_descriptor():
+    """Verify TriangleAxis descriptor correctly uses integer axis keys for index and columns."""
+    assert isinstance(cl.Triangle.index, TriangleAxis)
+    assert cl.Triangle.index.__doc__ is not None
+    assert isinstance(cl.Triangle.columns, TriangleAxis)
+    assert cl.Triangle.columns.__doc__ is not None
+
+    class MockTriangle:
+        def __init__(self):
+            self.values = None
+            self._axes = {}
+
+        def _len_check(self, target, obj):
+            if len(target) != len(obj):
+                raise ValueError("length mismatch")
+
+        index = TriangleAxis(0, fset=_set_index)
+        columns = TriangleAxis(1, fset=_set_columns)
+
+    obj = MockTriangle()
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        obj.index = "not_a_df"
+
+    df = pd.DataFrame({"Company": ["A", "B"]})
+    obj.index = df
+    assert 0 in obj._axes
+    pd.testing.assert_frame_equal(obj.index, df)
+
+    # When self.values is None and 0 in _axes, _set_index checks against obj.index
+    df_same_len = pd.DataFrame({"Company": ["C", "D"]})
+    obj.index = df_same_len
+    pd.testing.assert_frame_equal(obj.index, df_same_len)
+
+    with pytest.raises(ValueError, match="length mismatch"):
+        obj.index = pd.DataFrame({"Company": ["A", "B", "C"]})
+
+    # When self.values is not None, _set_index checks against range(self.values.shape[0])
+    obj.values = np.zeros((2, 3))
+    obj.index = df
+    with pytest.raises(ValueError, match="length mismatch"):
+        obj.index = pd.DataFrame({"Company": ["A"]})
+
+    obj.columns = ["a", "b", "c"]
+    assert 1 in obj._axes
+    assert list(obj.columns) == ["a", "b", "c"]
+    assert obj.columns.name == "columns"
+
+    # Custom fget mapping
+    class CustomAxisTriangle:
+        col = TriangleAxis(1, fget=lambda o, raw: [x.upper() for x in raw])
+
+    c_obj = CustomAxisTriangle()
+    c_obj.col = pd.Index(["x", "y"], name="columns")
+    assert c_obj.col == ["X", "Y"]
+
+    # _set_columns with single string and len_check without values
+    class MockColumnsTriangle:
+        def __init__(self):
+            self.values = None
+            self._axes = {}
+
+        def _len_check(self, target, val):
+            if len(target) != len(val):
+                raise ValueError("length mismatch")
+
+        columns = TriangleAxis(1, fset=_set_columns)
+
+    m = MockColumnsTriangle()
+    m.columns = "single_col"
+    assert list(m.columns) == ["single_col"]
+
+    m.columns = ["a"]
+    with pytest.raises(ValueError, match="length mismatch"):
+        m.columns = ["a", "b"]
+
+
+def test_triangle_index_property(raa):
+    """Verify Triangle.index descriptor and slicer reset."""
+    tri = raa.copy()
+    tri.index = tri.index.copy()
+    assert tri.index.equals(raa.index)
+
+    tri.index = pd.DataFrame({"Total": ["A"]})
+    assert list(tri.index["Total"]) == ["A"]
+
+
+def test_prep_index_single_element_different_key_labels(raa):
+    """Verify arithmetic index broadcasting when both triangles have 1 row but differing key_labels."""
+    x = raa.copy()
+    x.key_labels = ["LabelA"]
+    y = raa.copy()
+    y.index = pd.DataFrame([["B", "C"]], columns=["LabelB", "LabelC"])
+
+    z1 = x + y
+    assert z1.key_labels == ["LabelB", "LabelC"]
+    assert 0 in z1._axes
+
+    z2 = y + x
+    assert z2.key_labels == ["LabelB", "LabelC"]
+    assert 0 in z2._axes
+
+
+def test_concat_axis0_index(raa):
+    """Verify cl.concat along axis 0 updates index and key_labels."""
+    out_ignore = cl.concat([raa, raa], axis=0, ignore_index=True)
+    assert len(out_ignore.index) == 2
+    assert out_ignore.key_labels == ["Index"]
+    assert 0 in out_ignore._axes
+
+    r1 = raa.copy()
+    r1.index = pd.DataFrame({"Item": ["A"]})
+    r2 = raa.copy()
+    r2.index = pd.DataFrame({"Item": ["B"]})
+    out_keep = cl.concat([r1, r2], axis=0, ignore_index=False)
+    assert len(out_keep.index) == 2
+    assert list(out_keep.index["Item"]) == ["A", "B"]
+    assert 0 in out_keep._axes
+
+
+def test_key_labels_setter(raa):
+    """Setting key_labels should update Triangle.index columns and slicers."""
+    tri = raa.copy()
+    tri.key_labels = ["NewCompany"]
+    assert tri.key_labels == ["NewCompany"]
+    assert list(tri.index.columns) == ["NewCompany"]
+    indexed = tri.index.set_index(tri.key_labels)
+    assert list(indexed.index.names) == ["NewCompany"]
+
+    tri.key_labels = "SingleCompany"
+    assert tri.key_labels == ["SingleCompany"]
+    assert list(tri.index.columns) == ["SingleCompany"]
+
+
+def test_series_indexing(raa):
+    """Indexing Triangle by boolean Series or label Series should work."""
+    s_bool = pd.Series([True], index=raa.index.index)
+    assert raa[s_bool].shape == raa.shape
+
+    s_label = pd.Series(["Total"])
+    assert raa[s_label].shape == raa.shape
+
+    # Length mismatch raises IndexError
+    s_short = pd.Series([], dtype=bool)
+    with pytest.raises(IndexError, match="Boolean index has wrong length"):
+        _ = raa[s_short]
+
+    s_long = pd.Series([True, False])
+    with pytest.raises(IndexError, match="Boolean index has wrong length"):
+        _ = raa[s_long]
+
+    # Index misalignment raises IndexingError
+    s_misaligned = pd.Series([True], index=[99])
+    with pytest.raises(pd.errors.IndexingError):
+        _ = raa[s_misaligned]
+
+    # Permuted index aligns correctly to instance index
+    two_row = cl.concat([raa, raa], axis=0, ignore_index=True)
+    two_row.index = pd.DataFrame({"Company": ["A", "B"]})
+    s_perm = pd.Series([False, True], index=[1, 0])
+    sliced = two_row[s_perm]
+    assert len(sliced.index) == 1
+    assert sliced.index.iloc[0]["Company"] == "A"
+
+
+class TestLegacyPickleCompatibility:
+    """Pickles saved prior to kdims/vdims migration should unpickle cleanly with warning."""
+
+    def test_legacy_kdims_vdims_migration(self, raa):
+        # 1. Simulate legacy serialized Triangle containing kdims and vdims
+        state = raa.__dict__.copy()
+        state.pop("_axes", None)
+        state["kdims"] = raa.index.values
+        state["vdims"] = raa.columns.values
+
+        restored = cl.Triangle.__new__(cl.Triangle)
+        with pytest.warns(
+            UserWarning, match="legacy pickled Triangle instance was detected"
+        ):
+            restored.__setstate__(state)
+
+        assert isinstance(restored.columns, pd.Index)
+        assert isinstance(restored.index, pd.DataFrame)
+        assert restored.index.equals(raa.index)
+        assert list(restored.columns) == list(raa.columns)
+        assert restored.loc["Total"].shape == raa.loc["Total"].shape
+        assert restored.equals(raa)
+        assert 0 in restored._axes
+        assert restored._axes[0].equals(raa.index)
+        assert 1 in restored._axes
+        assert restored._axes[1].equals(raa.columns)
+
+    def test_legacy_pickle_fallback_without_keys(self, raa):
+        # 2. Simulate fallback when no kdims/vdims keys are found (no warning)
+        state_empty = raa.__dict__.copy()
+        state_empty.pop("_axes", None)
+        state_empty.pop("kdims", None)
+        state_empty.pop("vdims", None)
+
+        restored_empty = cl.Triangle.__new__(cl.Triangle)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            restored_empty.__setstate__(state_empty)
+        assert list(restored_empty.columns) == ["values"]
+        assert list(restored_empty.index.columns) == ["Total"]
+        assert 0 in restored_empty._axes
+        assert 1 in restored_empty._axes
+
+    def test_migrated_pickle_roundtrip(self, raa):
+        # 3. Verify re-pickling the migrated instance works without warnings
+        state = raa.__dict__.copy()
+        state.pop("_axes", None)
+        state["kdims"] = raa.index.values
+        state["vdims"] = raa.columns.values
+
+        restored = cl.Triangle.__new__(cl.Triangle)
+        with pytest.warns(
+            UserWarning, match="legacy pickled Triangle instance was detected"
+        ):
+            restored.__setstate__(state)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            roundtripped = pickle.loads(pickle.dumps(restored))
+        assert roundtripped.equals(raa)
+        assert 0 in roundtripped._axes
+        assert 1 in roundtripped._axes
+
+
+def test_sort_axis_columns_out_of_order(raa):
+    """Verify sort_axis(1) reorders values when columns are unsorted."""
+    t1 = copy.deepcopy(raa).rename("columns", ["B"])
+    t2 = copy.deepcopy(raa).rename("columns", ["A"])
+    combined = cl.concat([t1, t2], axis=1)
+    assert list(combined.columns) == ["B", "A"]
+    sorted_tri = combined.sort_axis(1)
+    assert list(sorted_tri.columns) == ["A", "B"]
 
 
 def test_valdev1(qtr):
-    assert qtr.dev_to_val().val_to_dev() == qtr
+    assert qtr.dev_to_val().val_to_dev().equals(qtr)
 
 
 def test_dev_to_val_inplace_on_val_tri_returns_self(qtr: Triangle) -> None:
@@ -480,13 +778,13 @@ def test_dev_to_val_inplace_on_val_tri_returns_self(qtr: Triangle) -> None:
 def test_valdev2(qtr):
     a = qtr.dev_to_val().grain("OYDY").val_to_dev()
     b = qtr.grain("OYDY")
-    assert a == b
+    assert a.equals(b)
 
 
 def test_valdev3(qtr):
     a = qtr.grain("OYDY").dev_to_val().val_to_dev()
     b = qtr.grain("OYDY")
-    assert a == b
+    assert a.equals(b)
 
 
 def test_valdev4(raa: Triangle) -> None:
@@ -565,8 +863,8 @@ def test_drop_column_string_axis(clrd):
     """drop() should accept 'columns' as a string alias for axis 1."""
     result = clrd.drop(labels="CumPaidLoss", axis="columns")
     assert "CumPaidLoss" not in result.columns
-    assert clrd.drop(labels="CumPaidLoss", axis="columns") == clrd.drop(
-        labels="CumPaidLoss", axis=1
+    assert clrd.drop(labels="CumPaidLoss", axis="columns").equals(
+        clrd.drop(labels="CumPaidLoss", axis=1)
     )
 
 
@@ -594,7 +892,7 @@ def test_drop_columns_alternative(clrd):
     """columns= should be equivalent to labels=..., axis=1."""
     result = clrd.drop(columns="CumPaidLoss")
     assert "CumPaidLoss" not in result.columns
-    assert result == clrd.drop(labels="CumPaidLoss", axis=1)
+    assert result.equals(clrd.drop(labels="CumPaidLoss", axis=1))
 
 
 def test_drop_columns_alternative_list(clrd):
@@ -602,7 +900,7 @@ def test_drop_columns_alternative_list(clrd):
     result = clrd.drop(columns=["CumPaidLoss", "IncurLoss"])
     assert "CumPaidLoss" not in result.columns
     assert "IncurLoss" not in result.columns
-    assert result == clrd.drop(labels=["CumPaidLoss", "IncurLoss"], axis=1)
+    assert result.equals(clrd.drop(labels=["CumPaidLoss", "IncurLoss"], axis=1))
 
 
 def test_drop_labels_and_alternative_raises(clrd):
@@ -628,8 +926,8 @@ def test_drop_columns_alternative_index_like(clrd):
     labels = clrd.columns[:2]
     result = clrd.drop(columns=labels)
     assert all(label not in result.columns for label in labels)
-    assert result == clrd.drop(columns=list(labels))
-    assert result == clrd.drop(columns=labels.values)
+    assert result.equals(clrd.drop(columns=list(labels)))
+    assert result.equals(clrd.drop(columns=labels.values))
 
 
 @pytest.fixture
@@ -637,11 +935,11 @@ def origin_tri():
     return cl.Triangle(
         data={
             "origin": [1985, 1985, 1985, 1986, 1986, 1987],
-            "development": [1985, 1986, 1987, 1986, 1987, 1987],
+            "valuation": [1985, 1986, 1987, 1986, 1987, 1987],
             "paid": [300, 400, 500, 500, 600, 500],
         },
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["paid"],
         cumulative=True,
     )
@@ -682,8 +980,8 @@ def test_drop_origin_keeps_populated_development(origin_tri):
 def test_drop_origin_axis_equivalents(origin_tri):
     """labels + axis=2/'origin' should equal the origin= alternative."""
     expected = origin_tri.drop(origin="1987")
-    assert expected == origin_tri.drop(labels="1987", axis=2)
-    assert expected == origin_tri.drop(labels="1987", axis="origin")
+    assert expected.equals(origin_tri.drop(labels="1987", axis=2))
+    assert expected.equals(origin_tri.drop(labels="1987", axis="origin"))
 
 
 def test_drop_origin_interior_raises(origin_tri):
@@ -731,8 +1029,8 @@ def test_drop_development_first(raa):
 def test_drop_development_axis_equivalents(raa):
     """labels + axis=3/'development' should equal the development= alternative."""
     expected = raa.drop(development=120)
-    assert expected == raa.drop(labels=120, axis=3)
-    assert expected == raa.drop(labels=120, axis="development")
+    assert expected.equals(raa.drop(labels=120, axis=3))
+    assert expected.equals(raa.drop(labels=120, axis="development"))
 
 
 def test_drop_development_interior_raises(raa):
@@ -762,11 +1060,11 @@ def test_drop_both_labels_and_alternative_raises(raa):
 def test_drop_errors_ignore(raa):
     """errors='ignore' should suppress KeyError for missing labels."""
     res_col = raa.drop(columns="nonexistent_col", errors="ignore")
-    assert res_col == raa
+    assert res_col.equals(raa)
     res_orig = raa.drop(origin="1800", errors="ignore")
-    assert res_orig == raa
+    assert res_orig.equals(raa)
     res_dev = raa.drop(development=999, errors="ignore")
-    assert res_dev == raa
+    assert res_dev.equals(raa)
     with pytest.raises(ValueError, match="errors must be"):
         raa.drop(columns="CumPaidLoss", errors="invalid")
 
@@ -899,30 +1197,32 @@ def test_exposure_tri():
     x = x["paid"].to_frame(origin_as_datetime=False).T.unstack().reset_index()
     x.columns = ["LOB", "origin", "paid"]
     x.origin = x.origin.astype(str)
-    y = cl.Triangle(x, origin="origin", index="LOB", columns="paid")
+    y = cl.Triangle(x, origin="origin", index="LOB", columns="paid", cumulative=True)
     x = cl.load_sample("auto")["paid"]
     x = x[x.development == 12]
-    assert x == y
+    assert x.equals(y)
 
 
 def test_jagged_1_add(raa):
     raa1 = raa[raa.origin <= "1984"]
     raa2 = raa[raa.origin > "1984"]
-    assert raa2 + raa1 == raa
-    assert raa2.dropna() + raa1.dropna() == raa
+    assert (raa2 + raa1).equals(raa)
+    assert (raa2.dropna() + raa1.dropna()).equals(raa)
 
 
 def test_jagged_2_add(raa):
     raa1 = raa[raa.development <= 48]
     raa2 = raa[raa.development > 48]
-    assert raa2 + raa1 == raa
-    assert raa2.dropna() + raa1.dropna() == raa
+    assert (raa2 + raa1).equals(raa)
+    assert (raa2.dropna() + raa1.dropna()).equals(raa)
 
 
 def test_df_period_input(raa):
     d = raa.latest_diagonal
     df = d.to_frame(origin_as_datetime=False).reset_index()
-    assert cl.Triangle(df, origin="index", columns=df.columns[-1]) == d
+    assert cl.Triangle(
+        df, origin="index", columns=df.columns[-1], cumulative=True
+    ).equals(d)
 
 
 def test_trend_on_vector(raa):
@@ -934,12 +1234,14 @@ def test_trend_on_vector(raa):
 
 
 def test_latest_diagonal_val_to_dev(raa):
-    assert raa.latest_diagonal.val_to_dev() == raa[raa.valuation == raa.valuation_date]
+    assert raa.latest_diagonal.val_to_dev().equals(
+        raa[raa.valuation == raa.valuation_date]
+    )
 
 
 def test_sumdiff_to_diffsum(clrd):
     out = clrd["CumPaidLoss"]
-    assert out.cum_to_incr().incr_to_cum().sum() == out.sum()
+    assert out.cum_to_incr().incr_to_cum().sum().equals(out.sum())
 
 
 def test_init_vector(raa):
@@ -948,7 +1250,7 @@ def test_init_vector(raa):
         "AccYear": [item for item in range(1981, 1991)],
         "premium": [3000000] * 10,
     })
-    b = cl.Triangle(b, origin="AccYear", columns="premium")
+    b = cl.Triangle(b, origin="AccYear", columns="premium", cumulative=True)
     assert np.all(a.valuation == b.valuation)
     assert a.valuation_date == b.valuation_date
 
@@ -989,7 +1291,7 @@ def test_groupby_agg_auto_sparse(prism: Triangle) -> None:
 
     assert result_default.array_backend == "numpy"
     assert result_no_sparse.array_backend == "sparse"
-    assert result_default == result_no_sparse
+    assert result_default.equals(result_no_sparse)
 
 
 def test_auto_sparse_disabled_returns_self(prism: Triangle) -> None:
@@ -1029,7 +1331,7 @@ def test_init_defaults_array_backend_to_option() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", False)
@@ -1038,7 +1340,7 @@ def test_init_defaults_array_backend_to_option() -> None:
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -1060,7 +1362,7 @@ def test_init_calls_set_backend_when_auto_sparse_disabled() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", False)
@@ -1068,7 +1370,7 @@ def test_init_calls_set_backend_when_auto_sparse_disabled() -> None:
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
             array_backend="numpy",
@@ -1090,7 +1392,7 @@ def test_init_array_backend_overridden_by_auto_sparse_when_enabled() -> None:
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", True)
@@ -1098,7 +1400,7 @@ def test_init_array_backend_overridden_by_auto_sparse_when_enabled() -> None:
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
             array_backend="sparse",
@@ -1123,7 +1425,7 @@ def test_init_array_backend_option_overridden_by_auto_sparse_when_param_omitted(
     """
     df = pd.DataFrame({
         "origin": [2000, 2000, 2001, 2001],
-        "development": [2000, 2001, 2001, 2002],
+        "valuation": [2000, 2001, 2001, 2002],
         "value": [100, 200, 300, 400],
     })
     cl.options.set_option("AUTO_SPARSE", True)
@@ -1132,7 +1434,7 @@ def test_init_array_backend_option_overridden_by_auto_sparse_when_param_omitted(
         tri = cl.Triangle(
             df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -1237,7 +1539,7 @@ def test_triangle_from_dataframe_interchange_protocol() -> None:
 
     df = pd.DataFrame({
         "origin": ["2020-01-01", "2020-01-01", "2021-01-01", "2021-01-01"],
-        "development": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
+        "valuation": ["2020-12-31", "2021-12-31", "2021-12-31", "2022-12-31"],
         "values": [100, 150, 120, 180],
     })
     pl_df = polars.from_pandas(df)
@@ -1247,19 +1549,19 @@ def test_triangle_from_dataframe_interchange_protocol() -> None:
     tri = cl.Triangle(
         pl_df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
     expected = cl.Triangle(
         df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
 
-    assert tri == expected
+    assert tri.equals(expected)
 
 
 def test_array_function_unhandled_raises(raa: Triangle) -> None:
@@ -1322,7 +1624,9 @@ def test_get_axis_none(clrd: Triangle) -> None:
     -------
     None
     """
-    assert clrd.groupby("LOB", axis=None).sum() == clrd.groupby("LOB", axis=0).sum()
+    assert (
+        clrd.groupby("LOB", axis=None).sum().equals(clrd.groupby("LOB", axis=0).sum())
+    )
 
 
 def test_astype(raa: Triangle) -> None:
@@ -1339,6 +1643,43 @@ def test_astype(raa: Triangle) -> None:
     None
     """
     assert raa.astype("float32").values.dtype == np.float32
+
+
+def test_astype_documented_migration_is_drop_safe(raa: Triangle) -> None:
+    """
+    The migration shown in the astype deprecation note gives the same result
+    before and after ``inplace`` is removed.
+
+    Copying first and using the return value leaves the original untouched
+    either way, which is what makes the advice safe to follow now. See #1063.
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set.
+
+    Returns
+    -------
+    None
+    """
+
+    def migrate(triangle, **kwargs):
+        out = triangle.copy()
+        return out.astype("float32", **kwargs)
+
+    today_src = raa.copy()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        today = migrate(today_src)
+
+    future_src = raa.copy()
+    with pytest.warns(FutureWarning, match="inplace"):
+        future = migrate(future_src, inplace=False)
+
+    assert today.values.dtype == np.float32
+    assert future.values.dtype == np.float32
+    assert today_src.values.dtype == np.float64
+    assert future_src.values.dtype == np.float64
 
 
 def test_head(clrd: Triangle) -> None:
@@ -1440,31 +1781,38 @@ def test_partial_year(prism):
     after = cl.Triangle(
         before.to_frame(keepdims=True, origin_as_datetime=True).reset_index(),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="Paid",
         index=before.key_labels,
+        cumulative=True,
     )
 
     assert after.valuation_date == before.valuation_date
 
 
 def test_array_protocol(raa, clrd):
-    assert np.sqrt(raa) == raa.sqrt()
-    assert np.concatenate((clrd.iloc[:200], clrd.iloc[200:]), 0) == cl.concat(
-        (clrd.iloc[:200], clrd.iloc[200:]), 0
+    assert np.sqrt(raa).equals(raa.sqrt())
+    assert np.concatenate((clrd.iloc[:200], clrd.iloc[200:]), 0).equals(
+        cl.concat((clrd.iloc[:200], clrd.iloc[200:]), 0)
     )
 
 
 def test_partial_val_dev(raa):
     raa = raa.latest_diagonal
     raa.iloc[..., -3:, :] = np.nan
-    raa.val_to_dev().iloc[0, 0, 0, -1] == raa.iloc[0, 0, 0, -1]
+    raa.val_to_dev().iloc[0, 0, 0, -1].equals(raa.iloc[0, 0, 0, -1])
 
 
 def test_sort_axis(clrd):
-    assert clrd.iloc[::-1, ::-1, ::-1, ::-1].sort_axis(0).sort_axis(1).sort_axis(
-        2
-    ).sort_axis(3) == clrd.sort_axis(1)
+    assert (
+        clrd
+        .iloc[::-1, ::-1, ::-1, ::-1]
+        .sort_axis(0)
+        .sort_axis(1)
+        .sort_axis(2)
+        .sort_axis(3)
+        .equals(clrd.sort_axis(1))
+    )
 
 
 def test_sort_axis_columns_reorders_values() -> None:
@@ -1480,7 +1828,7 @@ def test_sort_axis_columns_reorders_values() -> None:
     df = pd.DataFrame(
         data={
             "origin": [2020, 2020, 2021, 2021],
-            "development": [2020, 2021, 2021, 2021],
+            "valuation": [2020, 2021, 2021, 2021],
             "reported": [100, 200, 110, 110],
             "paid": [50, 100, 60, 60],
         }
@@ -1488,7 +1836,7 @@ def test_sort_axis_columns_reorders_values() -> None:
     tr = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported", "paid"],
         cumulative=True,
     )
@@ -1637,13 +1985,13 @@ def _ffill_source_triangle():
     """Triangle from #1030 - a mix of leading, interior, and not-yet-valued NaNs."""
     df = pd.DataFrame({
         "origin": [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
-        "development": [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+        "valuation": [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
         "paid": [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
     })
     return cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="paid",
         cumulative=True,
     )
@@ -1694,13 +2042,13 @@ def test_ffill_zero_input_is_missing_and_fills() -> None:
     """
     df = pd.DataFrame({
         "origin": [1985, 1985, 1985, 1986, 1986],
-        "development": [1985, 1986, 1987, 1986, 1987],
+        "valuation": [1985, 1986, 1987, 1986, 1987],
         "paid": [500.0, 0.0, 700.0, 300.0, 400.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="paid",
         cumulative=True,
     )
@@ -1728,7 +2076,7 @@ def test_ffill_invalid_axis_raises(raa: Triangle) -> None:
 def test_array_protocol2(raa):
     import numpy as np
 
-    assert raa.log().exp() == np.exp(np.log(raa))
+    assert raa.log().exp().equals(np.exp(np.log(raa)))
 
 
 def test_create_full_triangle(raa):
@@ -1736,10 +2084,11 @@ def test_create_full_triangle(raa):
     b = cl.Triangle(
         a.to_frame(keepdims=True, implicit_axis=True, origin_as_datetime=True),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
+        cumulative=True,
     )
-    assert a == b
+    assert a.equals(b)
 
 
 def test_create_triangle_with_ultimates(raa):
@@ -1748,12 +2097,12 @@ def test_create_triangle_with_ultimates(raa):
     round_tripped = cl.Triangle(
         ult.to_frame(keepdims=True, origin_as_datetime=True),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
     assert round_tripped.is_ultimate
-    assert round_tripped == ult
+    assert round_tripped.equals(ult)
 
     direct = cl.Triangle(
         pd.DataFrame({
@@ -1762,7 +2111,7 @@ def test_create_triangle_with_ultimates(raa):
             "ultimate": [10000.0, 12000.0],
         }),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="ultimate",
         cumulative=True,
     )
@@ -1771,15 +2120,17 @@ def test_create_triangle_with_ultimates(raa):
 
 def test_groupby_getitem(clrd):
     assert (
-        clrd.groupby("LOB")["CumPaidLoss"].sum()
-        == clrd["CumPaidLoss"].groupby("LOB").sum()
+        clrd
+        .groupby("LOB")["CumPaidLoss"]
+        .sum()
+        .equals(clrd["CumPaidLoss"].groupby("LOB").sum())
     )
 
 
 def test_virtual_column(prism):
     prism["P"] = prism["Paid"]
     prism["Paid"] = lambda x: x["P"]
-    assert prism["Paid"] == prism["P"]
+    assert prism["Paid"].equals(prism["P"])
 
 
 def test_to_frame_keepdims_virtual_column(clrd: Triangle) -> None:
@@ -1814,8 +2165,9 @@ def test_correct_valutaion(raa):
             keepdims=True, implicit_axis=True, origin_as_datetime=True
         ),
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns="values",
+        cumulative=True,
     )
     assert new.valuation_date == raa.valuation_date
 
@@ -1832,7 +2184,7 @@ def test_pipe(raa):
     def f(x):
         return x.loc[..., 48:]
 
-    assert raa.loc[..., 48:] == raa.pipe(f)
+    assert raa.loc[..., 48:].equals(raa.pipe(f))
 
 
 def test_repr_html(raa, clrd):
@@ -1878,8 +2230,9 @@ def test_malformed_init():
                 "Loss": [10000, 10000, 10000, 10000, 0, 0, 0],
             }),
             origin="Accident Date",
-            development="Valuation Date",
+            valuation="Valuation Date",
             columns="Loss",
+            cumulative=True,
         ).origin_grain
         == "M"
     )
@@ -1893,7 +2246,7 @@ def test_sparse_reassignment_no_mutate(prism):
     x["Capped 100k Paid"] = cl.minimum(x["Paid"], 100000)
     x["Excess 100k Paid"] = x["Paid"] - x["Capped 100k Paid"]
     b = x["Excess 100k Paid"].sum().grain("OYDY")
-    assert a == b
+    assert a.equals(b)
 
 
 def test_trailing_origin():
@@ -1907,7 +2260,7 @@ def test_trailing_origin():
     # adjust valuations to mid-year
     raa["valuation"] = raa["valuation"] - pd.DateOffset(months=6)
     tri = cl.Triangle(
-        raa, origin="origin", development="valuation", columns="values", cumulative=True
+        raa, origin="origin", valuation="valuation", columns="values", cumulative=True
     )
     assert tri.development.to_list() == [6, 18, 30, 42, 54, 66, 78, 90, 102, 114]
     assert tri.origin_close == "DEC"
@@ -1915,7 +2268,7 @@ def test_trailing_origin():
     tri = cl.Triangle(
         raa,
         origin="origin2",
-        development="valuation",
+        valuation="valuation",
         columns="values",
         cumulative=True,
     )
@@ -1931,12 +2284,23 @@ def test_trailing_valuation():
         .to_frame(keepdims=True, origin_as_datetime=True)
     )
     data.valuation = (data.valuation.dt.year + 1) * 100 + 3
-    tri = cl.Triangle(data, origin="origin", development="valuation", columns="values")
+    tri = cl.Triangle(
+        data,
+        origin="origin",
+        valuation="valuation",
+        columns="values",
+        cumulative=True,
+    )
     assert tri.development.to_list() == [3, 15, 27, 39, 51, 63, 75, 87, 99, 111, 123]
     tri2 = cl.Triangle(
-        data, origin="origin", development="valuation", columns="values", trailing=True
+        data,
+        origin="origin",
+        valuation="valuation",
+        columns="values",
+        trailing=True,
+        cumulative=True,
     )
-    assert tri == tri2
+    assert tri.equals(tri2)
 
 
 def test_edgecase_236():
@@ -1945,11 +2309,11 @@ def test_edgecase_236():
         .Triangle(
             pd.DataFrame({
                 "origin": [201906, 201907],
-                "development": [201911, 201911],
+                "valuation": [201911, 201911],
                 "amount": [1, 0],
             }),
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns=["amount"],
             cumulative=True,
         )
@@ -1974,7 +2338,7 @@ def test_valuation_vector():
     tri = cl.Triangle(
         df,
         origin="Accident Date",
-        development="Valuation Date",
+        valuation="Valuation Date",
         columns="Loss",
         cumulative=True,
         trailing=True,
@@ -1991,7 +2355,7 @@ def test_single_entry():
     cl_tri = cl.Triangle(
         data,
         origin="origin",
-        development="valuation_date",
+        valuation="valuation_date",
         columns="amount",
         cumulative=True,
     )
@@ -2024,7 +2388,7 @@ def test_full_triangle_and_full_expectation(raa, atol):
     raa_incr = raa_cum.cum_to_incr()
     assert not raa_incr.is_cumulative
     assert raa_incr.incr_to_cum().is_cumulative
-    assert raa_incr.incr_to_cum() == raa_cum
+    assert raa_incr.incr_to_cum().equals(raa_cum)
 
     cl_fit_incr = cl.Chainladder().fit(X=raa_incr)
     cl_predict_incr = cl.Chainladder().fit_predict(X=raa_incr)
@@ -2034,8 +2398,8 @@ def test_full_triangle_and_full_expectation(raa, atol):
     cl_predict_cum = cl.Chainladder().fit_predict(X=raa_cum)
     assert cl_fit_cum.X_.is_cumulative
 
-    assert cl_fit_incr.cdf_ == cl_fit_cum.cdf_
-    assert cl_fit_incr.ultimate_ == cl_fit_cum.ultimate_
+    assert cl_fit_incr.cdf_.equals(cl_fit_cum.cdf_)
+    assert cl_fit_incr.ultimate_.equals(cl_fit_cum.ultimate_)
 
     assert np.allclose(
         cl_fit_cum.full_expectation_.values,
@@ -2066,8 +2430,8 @@ def test_full_triangle_and_full_expectation(raa, atol):
     )
     assert bf_fit_cum.X_.is_cumulative
 
-    assert bf_fit_incr.cdf_ == bf_fit_cum.cdf_
-    assert bf_fit_incr.ultimate_ == bf_fit_cum.ultimate_
+    assert bf_fit_incr.cdf_.equals(bf_fit_cum.cdf_)
+    assert bf_fit_incr.ultimate_.equals(bf_fit_cum.ultimate_)
 
     assert (
         bf_fit_cum.full_expectation_ - bf_fit_incr.full_expectation_.incr_to_cum()
@@ -2107,7 +2471,7 @@ def test_halfyear_grain():
         "value": [100] * 3,
     })
     assert cl.Triangle(
-        data=data, origin="AccMo", development="ValMo", columns="value", cumulative=True
+        data=data, origin="AccMo", valuation="ValMo", columns="value", cumulative=True
     ).shape == (1, 1, 16, 1)
 
 
@@ -2156,16 +2520,16 @@ def test_halfyear_development():
         2011-01-01, 2013-01-01, 908.77
         """
         ),
-        names=["origin", "development", "paid"],
-        parse_dates=["origin", "development"],
+        names=["origin", "valuation", "paid"],
+        parse_dates=["origin", "valuation"],
     )
     assert isinstance(
         cl.Triangle(
             data=df_sub,
             origin="origin",
             origin_format="%Y-%m-%d",
-            development="development",
-            development_format="%Y-%m-%d",
+            valuation="valuation",
+            valuation_format="%Y-%m-%d",
             columns="paid",
             cumulative=True,
         ),
@@ -2192,7 +2556,7 @@ def test_halfyear_development():
             index="idx",
             columns="value",
             origin="origin",
-            development="val_date",
+            valuation="val_date",
             cumulative=True,
         ),
         cl.Triangle,
@@ -2212,15 +2576,17 @@ def test_latest_diagonal_single_origin_ddim_label(raa):
 
 def test_latest_diagonal_vs_full_tri_raa(raa):
     model = cl.Chainladder().fit(raa)
-    assert model.ultimate_.latest_diagonal == model.full_triangle_.latest_diagonal
+    assert model.ultimate_.latest_diagonal.equals(model.full_triangle_.latest_diagonal)
 
 
 def test_latest_diagonal_vs_full_tri_clrd(clrd):
-    model = cl.Chainladder().fit(clrd)
+    model = cl.Chainladder().fit(clrd.groupby("LOB").sum())
     ult = model.ultimate_
     full_tri = model.full_triangle_
 
-    assert np.round(full_tri.latest_diagonal, 0) == np.round(ult.latest_diagonal, 0)
+    assert np.round(full_tri.latest_diagonal, 0).equals(
+        np.round(ult.latest_diagonal, 0)
+    )
 
 
 def test_semi_annual_grain():
@@ -2255,7 +2621,7 @@ def test_semi_annual_grain():
             "2009-07-01",
             "2010-01-01",
         ],
-        "development": [
+        "valuation": [
             "2007-01-01",
             "2007-07-01",
             "2008-01-01",
@@ -2320,7 +2686,7 @@ def test_semi_annual_grain():
     Stri = cl.Triangle(
         pd.DataFrame(Sdata),
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="loss",
         cumulative=True,
     )
@@ -2338,7 +2704,7 @@ def test_semi_annual_grain():
             "2009-01-01",
             "2010-01-01",
         ],
-        "development": [
+        "valuation": [
             "2007-01-01",
             "2008-01-01",
             "2009-01-01",
@@ -2356,11 +2722,11 @@ def test_semi_annual_grain():
     Atri = cl.Triangle(
         pd.DataFrame(Adata),
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="loss",
         cumulative=True,
     )
-    assert Atri == Stri.grain("OYDY")
+    assert Atri.equals(Stri.grain("OYDY"))
 
 
 def test_odd_quarter_end():
@@ -2377,7 +2743,7 @@ def test_odd_quarter_end():
         data,
         origin="origin",
         origin_format="%Y-%m-%d",
-        development="valuation",
+        valuation="valuation",
         columns="EarnedPremium",
         trailing=True,
         cumulative=True,
@@ -2404,10 +2770,10 @@ def test_single_valuation_date_preserves_exact_date():
     triangle = cl.Triangle(
         data=data,
         origin="Accident Year Month",
-        development="Calendar Year Month",
+        valuation="Calendar Year Month",
         columns="Loss",
         cumulative=True,
-        development_format="%Y%m",
+        valuation_format="%Y%m",
         origin_format="%Y%m",
     )
 
@@ -2418,7 +2784,7 @@ def test_single_valuation_date_preserves_exact_date():
     assert int(triangle.valuation_date.strftime("%Y%m")) == 202510
 
 
-def test_1d_annual_valuation_date() -> None:
+def test_1d_annual_valuation_date1() -> None:
     year_data = [
         [1998, 2008, 900000, 890000],
         [1999, 2008, 1200000, 1170000],
@@ -2432,9 +2798,9 @@ def test_1d_annual_valuation_date() -> None:
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
-        development="dev",
+        valuation="dev",
         columns="expense",
-        development_format="%Y",
+        valuation_format="%Y",
         cumulative=True,
     )
     assert (
@@ -2443,7 +2809,7 @@ def test_1d_annual_valuation_date() -> None:
     assert tri.development_grain == "Y"
 
 
-def test_1d_monthly_valuation_date() -> None:
+def test_1d_monthly_valuation_date2() -> None:
     year_data = [
         [1998, "2008-01", 900000, 890000],
         [1999, "2008-01", 1200000, 1170000],
@@ -2457,9 +2823,9 @@ def test_1d_monthly_valuation_date() -> None:
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
-        development="dev",
+        valuation="dev",
         columns="expense",
-        development_format="%Y-%m",
+        valuation_format="%Y-%m",
         cumulative=True,
     )
     assert (
@@ -2477,9 +2843,9 @@ def test_1d_monthly_valuation_date_expanded_dev_date() -> None:
     tri = cl.Triangle(
         data=year_df,
         origin="origin",
-        development="dev",
+        valuation="dev",
         columns="expense",
-        development_format="%Y",
+        valuation_format="%Y",
         cumulative=True,
     )
     assert (
@@ -2526,7 +2892,7 @@ def test_oxdx_triangle():
                     tri = cl.Triangle(
                         test_data,
                         origin="origin_date",
-                        development="development_date",
+                        valuation="development_date",
                         columns="value",
                         cumulative=True,
                     )
@@ -2558,14 +2924,14 @@ def test_2x2_triangle():
     df = pd.DataFrame(
         data={
             "origin": [2022, 2022, 2023],
-            "development": [2022, 2023, 2023],
+            "valuation": [2022, 2023, 2023],
             "reported": [78000, 222000, 78000],
         }
     )
     tri_from_df = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported"],
         cumulative=True,
     )
@@ -2585,7 +2951,7 @@ def test_triangle_init_from_dict() -> None:
     # Common data.
     data_dict = {
         "origin": [1981, 1981, 1981, 1981, 1982, 1982, 1982, 1983, 1983, 1984],
-        "development": [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
+        "valuation": [1981, 1982, 1983, 1984, 1982, 1983, 1984, 1983, 1984, 1984],
         "reported": [5012, 8269, 10907, 11805, 106, 4285, 5396, 3410, 8992, 5655],
     }
 
@@ -2594,7 +2960,7 @@ def test_triangle_init_from_dict() -> None:
     tri_from_df = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported"],
         cumulative=True,
     )
@@ -2603,12 +2969,12 @@ def test_triangle_init_from_dict() -> None:
     tri_from_dict = cl.Triangle(
         data=data_dict,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns=["reported"],
         cumulative=True,
     )
 
-    assert tri_from_df == tri_from_dict
+    assert tri_from_df.equals(tri_from_dict)
 
 
 def test_validate_assumption(raa: Triangle) -> None:
@@ -2751,12 +3117,11 @@ def test_validate_assumption_axis2(raa: Triangle) -> None:
 
 def test_xs(clrd):
     # when slicing with .loc on the first term in the index, Triangle will drop the term
-    assert clrd.xs("Adriatic Ins Co") == clrd.loc["Adriatic Ins Co"]
+    assert clrd.xs("Adriatic Ins Co").equals(clrd.loc["Adriatic Ins Co"])
     assert clrd.xs("Adriatic Ins Co").index.equals(clrd.loc["Adriatic Ins Co"].index)
     # when slicing with .loc on the all term in the index, Triangle will not drop any term
-    assert (
-        clrd.xs(("Agway Ins Co", "comauto"), drop_level=False)
-        == clrd.loc["Agway Ins Co", "comauto"]
+    assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=False).equals(
+        clrd.loc["Agway Ins Co", "comauto"]
     )
     assert clrd.xs(("Agway Ins Co", "comauto"), drop_level=False).index.equals(
         clrd.loc["Agway Ins Co", "comauto"].index
@@ -2766,15 +3131,14 @@ def test_xs(clrd):
         cl.load_sample("genins").index
     )
     # when slicing with .loc on the second or subsequent terms in the index, Triangle will not drop the term
-    assert (
-        clrd.xs("comauto", level=1, drop_level=False)
-        == clrd.loc[clrd["LOB"] == "comauto"]
+    assert clrd.xs("comauto", level=1, drop_level=False).equals(
+        clrd.loc[clrd["LOB"] == "comauto"]
     )
     assert clrd.xs("comauto", level=1, drop_level=False).index.equals(
         clrd.loc[clrd["LOB"] == "comauto"].index
     )
     # level works with either integer index or name of the index column
-    assert clrd.xs("comauto", level=1) == clrd.xs("comauto", level="LOB")
+    assert clrd.xs("comauto", level=1).equals(clrd.xs("comauto", level="LOB"))
     assert clrd.xs("comauto", level=1).index.equals(
         clrd.xs("comauto", level="LOB").index
     )
@@ -2840,13 +3204,13 @@ def test_set_development_age_in_months() -> None:
     """
     df = pd.DataFrame({
         "origin": [1995, 1996],
-        "development": [12, 24],
+        "age": [12, 24],
         "reported": [1.0, 2.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        age="age",
         columns="reported",
         cumulative=True,
     )
@@ -2863,13 +3227,13 @@ def test_set_development_age_respects_mid_period_origin() -> None:
     """
     df = pd.DataFrame({
         "origin": ["2018-06-15", "2018-06-15"],
-        "development": [12, 24],
+        "age": [12, 24],
         "reported": [100.0, 150.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        age="age",
         columns="reported",
         cumulative=True,
     )
@@ -2883,13 +3247,13 @@ def test_set_development_age_semiannual_origin() -> None:
     """
     df = pd.DataFrame({
         "origin": ["2017-01-01", "2017-01-01", "2017-07-01", "2018-01-01"],
-        "development": [6, 12, 6, 6],
+        "age": [6, 12, 6, 6],
         "reported": [1.0, 2.0, 3.0, 5.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        age="age",
         columns="reported",
         cumulative=True,
     )
@@ -2907,17 +3271,49 @@ def test_set_development_age_non_calendar_semiannual_raises() -> None:
     """
     df = pd.DataFrame({
         "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
-        "development": [6, 12, 6],
+        "age": [6, 12, 6],
         "reported": [1.0, 2.0, 3.0],
     })
     with pytest.raises(ValueError, match="non-calendar semiannual"):
         cl.Triangle(
             data=df,
             origin="origin",
-            development="development",
+            age="age",
             columns="reported",
             cumulative=True,
         )
+
+
+def test_set_age_respects_non_yearend_valuation() -> None:
+    """
+    Development given as an age in months (not a date) resolves to the
+    valuation date that many months after the origin's period start.
+    """
+    val_df = pd.DataFrame({
+        "origin": ["2018-01-01", "2019-01-01"],
+        "development": ["2019-08-31", "2019-08-31"],
+        "reported": [100.0, 150.0],
+    })
+    val_tri = cl.Triangle(
+        data=val_df,
+        origin="origin",
+        valuation="development",
+        columns="reported",
+        cumulative=True,
+    )
+    age_df = pd.DataFrame({
+        "origin": ["2018-01-01", "2019-01-01"],
+        "age": [20, 8],
+        "reported": [100.0, 150.0],
+    })
+    age_tri = cl.Triangle(
+        data=age_df,
+        origin="origin",
+        age="age",
+        columns="reported",
+        cumulative=True,
+    )
+    assert np.all(age_tri.valuation == val_tri.valuation)
 
 
 def test_set_development_bare_years_unaffected_by_age_support() -> None:
@@ -2928,13 +3324,13 @@ def test_set_development_bare_years_unaffected_by_age_support() -> None:
     """
     df = pd.DataFrame({
         "origin": [1969, 1970],
-        "development": [1970, 1970],
+        "valuation": [1970, 1970],
         "reported": [1.0, 2.0],
     })
     tri = cl.Triangle(
         data=df,
         origin="origin",
-        development="development",
+        valuation="valuation",
         columns="reported",
         cumulative=True,
     )
@@ -2952,14 +3348,14 @@ def test_input_validation_non_numeric_columns_raises() -> None:
     """
     df = pd.DataFrame({
         "origin": [1995, 1996],
-        "development": [1995, 1996],
+        "valuation": [1995, 1996],
         "reported": ["1000", "2000"],
     })
     with pytest.raises(TypeError, match="column attribute must be numeric"):
         cl.Triangle(
             data=df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="reported",
             cumulative=True,
         )
@@ -2976,7 +3372,7 @@ def test_input_validation_duplicate_columns_raises() -> None:
     """
     df = pd.DataFrame(
         [[1995, 1995, 1.0, 2.0], [1996, 1996, 3.0, 4.0]],
-        columns=pd.Index(["origin", "development", "reported", "reported"]),
+        columns=pd.Index(["origin", "valuation", "reported", "reported"]),
     )
     with pytest.raises(
         AttributeError, match="Columns are required to have unique names"
@@ -2984,7 +3380,7 @@ def test_input_validation_duplicate_columns_raises() -> None:
         cl.Triangle(
             data=df,
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="reported",
             cumulative=True,
         )
@@ -3032,11 +3428,11 @@ def test_to_datetime_uninferrable_format_raises() -> None:
         cl.Triangle(
             data={
                 "origin": ["1995/Q1", "1996/Q1"],
-                "development": ["1995Q1", "1996Q1"],
+                "valuation": ["1995Q1", "1996Q1"],
                 "value": [1.0, 2.0],
             },
             origin="origin",
-            development="development",
+            valuation="valuation",
             columns="value",
             cumulative=True,
         )
@@ -3183,7 +3579,7 @@ def test_set_backend_roundtrip(raa: Triangle) -> None:
     assert sparse_raa.array_backend == "sparse"
     restored = sparse_raa.set_backend("numpy")
     assert restored.array_backend == "numpy"
-    assert restored == raa
+    assert restored.equals(raa)
 
 
 def test_has_zeta_true(raa: Triangle) -> None:
@@ -3306,6 +3702,46 @@ def test_fit_and_predict_on_single_origin(raa: Triangle, atol) -> None:
     )
 
 
+def test_declare_w_both_valuation_age_raises() -> None:
+    """
+    Specifying both valuation and age will error out
+    """
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "age": [6, 12, 6],
+        "valuation": [2018, 2018, 2018],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="Only one"):
+        cl.Triangle(
+            data=df,
+            origin="origin",
+            valuation="valuation",
+            age="age",
+            columns="reported",
+            cumulative=True,
+        )
+
+
+def test_feed_age_into_valuation_raises() -> None:
+    """
+    With age added, valuation no longer takes age-like values
+    """
+    df = pd.DataFrame({
+        "origin": ["2017-02-01", "2017-02-01", "2017-08-01"],
+        "age": [6, 12, 6],
+        "reported": [1.0, 2.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="Development lags could not be determined"):
+        cl.Triangle(
+            data=df,
+            origin="origin",
+            valuation="age",
+            columns="reported",
+            cumulative=True,
+        )
+
+
 def test_fill(clrd: Triangle) -> None:
     """
     ``Fill`` method works as intended
@@ -3325,3 +3761,57 @@ def test_full_fill(raa: Triangle) -> None:
     full_tri = cl.Chainladder().fit(raa).full_triangle_
     fill_full_tri = full_tri.fill(200)
     assert np.all(fill_full_tri.values == np.broadcast_to([200], (1, 1, 10, 12)))
+
+
+def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:
+    """JSON serialization roundtrip must preserve Triangle.index as a pd.DataFrame."""
+    r_single = cl.read_json(raa.to_json())
+    assert isinstance(r_single.index, pd.DataFrame)
+    assert r_single.index.iloc[:, 0].tolist() == ["Total"]
+    assert r_single.equals(raa)
+
+    r_multi = cl.read_json(clrd.to_json())
+    assert isinstance(r_multi.index, pd.DataFrame)
+    pd.testing.assert_frame_equal(r_multi.index, clrd.index)
+    assert r_multi.equals(clrd)
+
+
+def test_triangle_copy_isolated_index(raa) -> None:
+    """Triangle.copy() must not share the mutable index DataFrame."""
+    copied = raa.copy()
+    assert copied.index is not raa.index
+    copied.index.iloc[0, 0] = "Modified"
+    assert raa.index.iloc[0, 0] == "Total"
+
+
+def test_triangle_index_setter_resets_row_index(raa) -> None:
+    """Assigning a DataFrame with non-default index to Triangle.index resets row index."""
+    custom_df = pd.DataFrame({"Total": ["Total"]}, index=[42])
+    raa1 = raa.copy()
+    raa1.index = custom_df
+    assert list(raa1.index.index) == [0]
+    # Boolean Series slicing should work cleanly
+    mask = raa1.index["Total"] == "Total"
+    sliced = raa1[mask]
+    assert sliced.equals(raa1)
+
+
+def test_sort_index_inplace(clrd: Triangle) -> None:
+    """sort_index with inplace=True updates values and index in sync without crashing."""
+    shuffled = clrd.iloc[::-1].copy()
+    result = shuffled.sort_index(inplace=True)
+    assert result is shuffled
+    pd.testing.assert_frame_equal(shuffled.index, clrd.index)
+    assert shuffled.equals(clrd)
+
+
+def test_duplicate_columns_assignment(raa) -> None:
+    """Assigning to duplicate column label updates first matching column without error."""
+    r1 = raa.copy()
+    r1.columns = ["a"]
+    r2 = raa.copy()
+    r2.columns = ["b"]
+    two = cl.concat([r1, r2], axis=1)
+    two.columns = ["col", "col"]
+    two["col"] = 42
+    assert two.values[0, 0, 0, 0] == 42

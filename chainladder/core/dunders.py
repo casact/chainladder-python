@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import operator
+
 import numpy as np
 import pandas as pd
 
@@ -10,7 +12,7 @@ from chainladder.utils.utility_functions import num_to_nan, concat
 
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
-from chainladder import _warn_dask_parallel_deprecated
+from chainladder import _deprecated_rename, _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db
@@ -70,21 +72,28 @@ class TriangleDunders:
         return x, y
 
     def _prep_index(self, x, y):
-        if x.kdims.shape[0] == 1 and y.kdims.shape[0] > 1:
-            x.kdims = y.kdims
-            x.key_labels = y.key_labels
+        if len(x.index) == 1 and len(y.index) > 1:
+            x._axes[0] = y.index.copy()
+            x.key_labels = list(y.key_labels)
+            x._set_slicers()
             return x, y
-        if x.kdims.shape[0] > 1 and y.kdims.shape[0] == 1:
-            y.kdims = x.kdims
-            y.key_labels = x.key_labels
+        if len(x.index) > 1 and len(y.index) == 1:
+            y._axes[0] = x.index.copy()
+            y.key_labels = list(x.key_labels)
+            y._set_slicers()
             return x, y
-        if x.kdims.shape[0] == y.kdims.shape[0] == 1 and x.key_labels != y.key_labels:
-            kdims = x.kdims if len(x.key_labels) > len(y.key_labels) else y.kdims
-            key_labels = (
-                x.key_labels if len(x.key_labels) > len(y.key_labels) else y.key_labels
+        if len(x.index) == len(y.index) == 1 and x.key_labels != y.key_labels:
+            index = (
+                x.index.copy()
+                if len(x.key_labels) > len(y.key_labels)
+                else y.index.copy()
             )
-            x.kdims = y.kdims = kdims
-            x.key_labels = y.key_labels = key_labels
+            x._axes[0] = index.copy()
+            x.key_labels = list(index.columns)
+            x._set_slicers()
+            y._axes[0] = index.copy()
+            y.key_labels = list(index.columns)
+            y._set_slicers()
             return x, y
 
         # Use sets for faster operations
@@ -93,14 +102,10 @@ class TriangleDunders:
         common = x_labels.intersection(y_labels)
 
         if common == x_labels or common == y_labels:
-            if x_labels != y_labels or x.kdims.shape[0] != y.kdims.shape[0]:
+            if x_labels != y_labels or len(x.index) != len(y.index):
                 x = x.groupby(list(common))
                 y = y.groupby(list(common))
-            elif (
-                x.kdims.shape[0] > 1
-                and not np.array_equal(x.kdims, y.kdims)
-                and not x.index.equals(y.index)
-            ):
+            elif len(x.index) > 1 and not x.index.equals(y.index):
                 x = x.sort_index()
                 try:
                     y = y.loc[x.index]
@@ -122,12 +127,14 @@ class TriangleDunders:
 
     def _prep_columns(self, x, y):
         if len(x.columns) == 1 and len(y.columns) > 1:
-            x.vdims = y.vdims
+            x._axes[1] = y.columns
+            x._set_slicers()
         elif len(y.columns) == 1 and len(x.columns) > 1:
-            y.vdims = x.vdims
-        elif len(y.columns) == len(x.columns) == 1 and x.columns != y.columns:
-            y.vdims = x.vdims
-        elif x.shape[1] == y.shape[1] and np.array_equal(x.columns, y.columns):
+            y._axes[1] = x.columns
+            y._set_slicers()
+        elif len(y.columns) == len(x.columns) == 1 and not x.columns.equals(y.columns):
+            y.columns = x.columns
+        elif x.shape[1] == y.shape[1] and x.columns.equals(y.columns):
             return x, y
         else:
             # Find columns to add to each triangle
@@ -190,6 +197,7 @@ class TriangleDunders:
                     pd.Series(other.odims, index=other.odims),
                 ),
                 axis=1,
+                sort=False,
             ).sort_index()
             o_arr0, o_arr1 = odims[0].isna().values, odims[1].isna().values
             d_arr0, d_arr1 = ddims[0].isna().values, ddims[1].isna().values
@@ -212,8 +220,8 @@ class TriangleDunders:
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
                 obj_arr = xp.zeros((
-                    self.shape[0],
-                    self.shape[1],
+                    obj.shape[0],
+                    obj.shape[1],
                     len(odims),
                     len(ddims),
                 ))
@@ -231,7 +239,7 @@ class TriangleDunders:
                     len(odims),
                     len(ddims),
                 )
-                obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
+                obj_arr.shape = (obj.shape[0], obj.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
             if isinstance(obj.ddims, pd.DatetimeIndex):
                 obj.ddims = pd.DatetimeIndex(ddims.index)
@@ -257,8 +265,7 @@ class TriangleDunders:
                 .reset_index()
             )
             new_idx = new_idx[new_obj.key_labels].iloc[-1:]
-            new_obj.kdims = new_idx.values
-            new_obj.key_labels = list(new_idx.columns)
+            new_obj.index = new_idx
             return new_obj
 
     @staticmethod
@@ -298,11 +305,11 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -348,11 +355,11 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -427,11 +434,11 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -507,12 +514,12 @@ class TriangleDunders:
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1986],
-                    'development': [1985, 1986, 1986],
+                    'valuation': [1985, 1986, 1986],
                     'paid': [100, 150, 80],
                     'incurred': [120, 160, 100],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid', 'incurred'],
                 cumulative=True,
             )
@@ -556,7 +563,33 @@ class TriangleDunders:
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def __eq__(self, other):
+    def equals(self, other: object) -> bool:
+        """
+        Test whether ``other`` is a Triangle that holds the same values.
+
+        Use ``equals`` to compare whole triangles. ``==`` between two triangles
+        returns the same answer for now, with a ``FutureWarning``, and will
+        compare element by element in a future release, as it does for pandas
+        objects. See #1395.
+
+        Parameters
+        ----------
+        other: object
+            The object to compare with.
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a Triangle and both triangles hold the same
+            values, False otherwise.
+
+        Notes
+        -----
+        Only the values are compared, and missing values are read as zero, so a
+        missing cell equals a zero cell. Index, column, origin and development
+        labels are not compared. Triangles on different array backends are
+        moved to a common backend first.
+        """
         if not isinstance(other, TriangleDunders):
             return False
         from chainladder import options
@@ -569,19 +602,58 @@ class TriangleDunders:
         ]
         x, y = self.set_backend(backend), other.set_backend(backend)
         xp = x.get_array_module()
-        return xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values))
+        return bool(xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values)))
+
+    @_deprecated_rename("equals", version="1.0.0")
+    def __eq__(self, other):
+        return self.equals(other)
 
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None
 
-    def __lt__(self, value):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
+    def _compare(self, value, op):
+        """
+        Compare the Triangle elementwise against a scalar, array or Triangle.
+
+        Missing values propagate, so any comparison involving one is
+        ``False``. That follows IEEE 754, and matches numpy and pandas.
+
+        Parameters
+        ----------
+        value:
+            The right-hand operand. A Triangle is reduced to its values,
+            after moving both operands onto a common array backend.
+        op: Callable
+            A binary operator from the ``operator`` module.
+
+        Returns
+        -------
+        Triangle of bool
+        """
+        left = self
+        if isinstance(value, TriangleDunders):
+            from chainladder import options
+
+            backend = options.ARRAY_PRIORITY[
+                min([
+                    options.ARRAY_PRIORITY.index(x)
+                    for x in [self.array_backend, value.array_backend]
+                ])
+            ]
+            left = self.set_backend(backend)
+            value = value.set_backend(backend).values
+        obj = left.copy()
+        obj.values = op(obj.values, value)
         return obj
 
+    def __lt__(self, value):
+        return self._compare(value, operator.lt)
+
     def __le__(self, value):
-        obj = self.copy()
-        xp = self.get_array_module()
-        obj.values = xp.nan_to_num(obj.values) < xp.nan_to_num(value)
-        return obj
+        return self._compare(value, operator.le)
+
+    def __gt__(self, value):
+        return self._compare(value, operator.gt)
+
+    def __ge__(self, value):
+        return self._compare(value, operator.ge)

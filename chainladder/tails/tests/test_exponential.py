@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import warnings
+
+import numpy as np
+
 import chainladder as cl
 import pytest
 
@@ -40,3 +44,74 @@ def test_errors_validation(tail_sample: Triangle) -> None:
     """
     with pytest.raises(ValueError):
         cl.TailCurve(errors="Ignore").fit_transform(tail_sample)
+
+
+def test_no_log_warning_when_only_some_tails_exceed_one(clrd: Triangle) -> None:
+    """
+    A tail at or below 1.0 must not reach ``log(tail - 1)``.
+
+    The nominal 1.001 used to be substituted only when the *largest* tail was
+    at or below 1, so an estimator producing a mix of tails skipped the
+    substitution entirely and evaluated the logarithm of a negative number.
+    ``TailBondy`` on the grouped ``clrd`` sample gives 6 tails below 1 out of
+    12, with a maximum of 1.018. See #1414.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    triangle = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
+    triangle["CaseIncurredLoss"] = triangle["IncurLoss"] - triangle["CumPaidLoss"]
+    development = cl.Development().fit_transform(
+        triangle[["CumPaidLoss", "CaseIncurredLoss"]]
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        cl.TailBondy().fit(development)
+
+    offending = [
+        w
+        for w in caught
+        if issubclass(w.category, RuntimeWarning)
+        and "log" in str(w.message)
+        and "tails/base.py" in str(w.filename).replace("\\", "/")
+    ]
+    assert not offending, [str(w.message) for w in offending]
+
+
+def test_nominal_tail_option_is_honoured(clrd: Triangle) -> None:
+    """
+    ``NOMINAL_TAIL`` sets the tail substituted for a tail at or below 1.0.
+
+    The full ``clrd`` sample has one index entry whose tail is exactly 1.0 while
+    its regression coefficients are finite, so the substituted value reaches
+    ``sigma_``. See #1414.
+
+    Parameters
+    ----------
+    clrd: Triangle
+        The clrd sample data set.
+
+    Returns
+    -------
+    None
+    """
+    development = cl.Development().fit_transform(clrd["CumPaidLoss"])
+
+    assert cl.options.NOMINAL_TAIL == 1.001
+    baseline = cl.TailCurve().fit(development).sigma_.values.copy()
+
+    try:
+        cl.options.set_option("NOMINAL_TAIL", 1.5)
+        widened = cl.TailCurve().fit(development).sigma_.values
+    finally:
+        cl.options.set_option("NOMINAL_TAIL", 1.001)
+
+    assert not np.allclose(np.nan_to_num(baseline), np.nan_to_num(widened))
+    assert cl.options.NOMINAL_TAIL == 1.001

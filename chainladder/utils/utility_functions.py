@@ -15,6 +15,8 @@ from chainladder import __dt64_unit__, __dt64_dtype__
 from chainladder._config.deprecation import _deprecated_rename
 from chainladder.utils.sparse import sp
 from chainladder.utils.data._manifest import SAMPLES
+from chainladder._config.deprecation import _deprecated_rename_argument
+
 from io import StringIO
 from patsy import dmatrix  # noqa
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -110,23 +112,23 @@ def load_sample(key: str, *args, **kwargs) -> Triangle:
     # column names already present in the tests and the sample-data docs.
     config: dict = SAMPLES[key.lower()]
     origin = config["origin"]
-    development = config["development"]
+    valuation = config["valuation"]
     index = config["index"]
     columns = config["columns"]
     cumulative = config["cumulative"]
 
-    development_format = config.get("development_format", None)
+    valuation_format = config.get("valuation_format", None)
 
     df = pd.read_csv(filepath_or_buffer=dataset_path)
 
     return Triangle(
         data=df,
         origin=origin,
-        development=development,
+        valuation=valuation,
         index=index,
         columns=columns,
         cumulative=cumulative,
-        development_format=development_format,
+        valuation_format=valuation_format,
         *args,
         **kwargs,
     )
@@ -254,18 +256,23 @@ def read_pickle(path):
         return dill.load(pkl)
 
 
+@_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
+@_deprecated_rename_argument(
+    "development_format", "valuation_format", remove_in_version="v2.0", stacklevel=3
+)
 def read_csv(
     filepath_or_buffer: FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str],
     origin: Optional[str | list] = None,
-    development: Optional[str | list] = None,
+    valuation: Optional[str | list] = None,
     columns: Optional[str | list] = None,
     index: Optional[str | list] = None,
     origin_format: Optional[str] = None,
-    development_format: Optional[str] = None,
+    valuation_format: Optional[str] = None,
     cumulative: Optional[bool] = None,
-    array_backend: str = None,
+    array_backend: Optional[str] = None,
     pattern=False,
     trailing: bool = True,
+    age: Optional[str] = None,
     *args,
     **kwargs,
 ) -> Triangle:
@@ -285,8 +292,11 @@ def read_csv(
     origin: str or list
          A representation of the accident, reporting or more generally the
          origin period of the triangle that will map to the Origin dimension
-    development: str or list
-        A representation of the development/valuation periods of the triangle
+    valuation: str or list
+        A representation of the valuation dates of the triangle
+        that will map to the Development dimension
+    age: str
+        A representation of the development ages (in months) of the triangle
         that will map to the Development dimension
     columns: str or list
         A representation of the numeric data of the triangle that will map to
@@ -298,7 +308,7 @@ def read_csv(
     origin_format: optional str
         A string representation of the date format of the origin arg. If
         omitted then date format will be inferred by pandas.
-    development_format: optional str
+    valuation_format: optional str
         A string representation of the date format of the development arg. If
         omitted then date format will be inferred by pandas.
     cumulative: bool
@@ -324,11 +334,12 @@ def read_csv(
     local_triangle = Triangle(
         data=local_dataframe,
         origin=origin,
-        development=development,
+        valuation=valuation,
+        age=age,
         columns=columns,
         index=index,
         origin_format=origin_format,
-        development_format=development_format,
+        valuation_format=valuation_format,
         cumulative=cumulative,
         array_backend=array_backend,
         pattern=pattern,
@@ -399,7 +410,7 @@ def read_json(json_str, array_backend=None):
         tri = Triangle(
             y,
             origin="origin",
-            development="development",
+            valuation="development",
             index=index,
             columns=columns,
             pattern=json.loads(j["metadata"])["is_pattern"],
@@ -421,6 +432,8 @@ def read_json(json_str, array_backend=None):
                 if len(df.columns) == 1:
                     df = df.iloc[:, 0]
                 setattr(tri, k, df)
+        if isinstance(tri.index, pd.Series):
+            tri.index = tri.index.to_frame()
         if array_backend:
             return tri.set_backend(array_backend)
         else:
@@ -519,12 +532,13 @@ def parallelogram_olf(
             level.values[np.clip(pos, 0, None)], index=date_idx
         )
     else:
-        rate_changes = pd.Series(np.array(values), np.array(dates)).reindex(
-            date_idx, fill_value=0
-        )
-        cum_rate_changes = pd.Series(
-            np.cumprod(1 + rate_changes.values), rate_changes.index
-        )
+        rate_changes = pd.Series(np.array(values), np.array(dates)).sort_index()
+        levels = np.cumprod(1 + rate_changes.values)
+        # Honor effective dates between grid points, as in cumulative mode.
+        # Before the first change the rate level is 1; after it, use all
+        # changes effective on or before the current grid point.
+        pos = np.searchsorted(rate_changes.index.values, date_idx.values, side="right")
+        cum_rate_changes = pd.Series(np.r_[1.0, levels][pos], index=date_idx)
     crl = cum_rate_changes.iloc[-1]
 
     rolling_num_base = {
@@ -692,31 +706,67 @@ def concat(
             if list(objs[num].columns) != all_columns:
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
-    mapper = {0: "kdims", 1: "vdims", 2: "odims", 3: "ddims"}
-    for k in mapper.keys():
-        if k != axis and k != 1:  # All non-concat axes must be identical
-            a = np.array([getattr(obj, mapper[k]) for obj in objs])
-            assert np.all(a == a[0])
-        else:  # All elements of concat axis must be unique
-            if ignore_index:
-                new_axis = np.arange(
-                    np.sum([len(getattr(obj, mapper[axis])) for obj in objs])
+    if axis != 0:
+        for obj in objs[1:]:
+            assert (
+                list(obj.index.columns) == list(objs[0].index.columns)
+                and obj.index.shape == objs[0].index.shape
+                and bool(
+                    (
+                        (obj.index.values == objs[0].index.values)
+                        | (pd.isna(obj.index.values) & pd.isna(objs[0].index.values))
+                    ).all()
                 )
-                new_axis = new_axis[:, None] if axis == 0 else new_axis
-            else:
-                new_axis = np.concatenate([getattr(obj, mapper[axis]) for obj in objs])
-            if axis == 0:
-                assert len(pd.DataFrame(new_axis).drop_duplicates()) == len(new_axis)
-            else:
-                assert len(new_axis) == len(set(new_axis))
+            )
+    if axis != 2:
+        a = np.array([obj.odims for obj in objs])
+        assert np.all(a == a[0])
+    if axis != 3:
+        a = np.array([obj.ddims for obj in objs])
+        assert np.all(a == a[0])
+
     out = copy.deepcopy(objs[0])
     out.values = xp.concatenate([obj.values for obj in objs], axis=axis)
-    setattr(out, mapper[axis], new_axis)
-    if ignore_index and axis == 0:
-        out.key_labels = ["Index"]
+
+    if axis == 0:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.index) for obj in objs]))[:, None]
+            out.index = pd.DataFrame(new_axis, columns=["Index"])
+            out.key_labels = ["Index"]
+        else:
+            new_axis = pd.concat([obj.index for obj in objs], ignore_index=True)
+            assert len(new_axis.drop_duplicates()) == len(new_axis)
+            out.index = new_axis
+            out.key_labels = list(new_axis.columns)
+    elif axis == 1:
+        if ignore_index:
+            new_axis = pd.Index(
+                np.arange(sum([len(obj.columns) for obj in objs])), name="columns"
+            )
+        else:
+            new_axis = pd.Index(
+                np.concatenate([obj.columns for obj in objs]), name="columns"
+            )
+            assert len(new_axis) == len(set(new_axis))
+        out.columns = new_axis
+    elif axis == 2:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.odims) for obj in objs]))
+        else:
+            new_axis = np.concatenate([obj.odims for obj in objs])
+            assert len(new_axis) == len(set(new_axis))
+        out.odims = new_axis
+    elif axis == 3:
+        if ignore_index:
+            new_axis = np.arange(sum([len(obj.ddims) for obj in objs]))
+        else:
+            new_axis = np.concatenate([obj.ddims for obj in objs])
+            assert len(new_axis) == len(set(new_axis))
+        out.ddims = new_axis
+        if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
+            out.ddims = pd.DatetimeIndex(out.ddims)
+
     out.valuation_date = pd.Series([obj.valuation_date for obj in objs]).max()
-    if out.ddims.dtype == __dt64_dtype__ and type(out.ddims) is np.ndarray:
-        out.ddims = pd.DatetimeIndex(out.ddims)
     out._set_slicers()
     if sort:
         return out.sort_axis(axis)
@@ -1201,3 +1251,53 @@ def warn_exclusions_ignored(preserve):
             + " link ratio(s) is required for development estimation."
         )
     warnings.warn(warning)
+
+
+# Canonical ordering of Triangle dimensions.
+_axis_orders: tuple[str, ...] = ("index", "columns", "origin", "development")
+
+# Lookup mapping supporting integers (positive and negative) and string names.
+_axis_to_axis_number: dict[int | str, int] = {
+    **{i: i for i in range(4)},
+    **{i - 4: i for i in range(4)},
+    **{name: i for i, name in enumerate(_axis_orders)},
+}
+
+
+def _get_axis_number(axis: int | str) -> int:
+    """
+    Convert an axis name or integer (-4..3) to its canonical integer 0..3.
+
+    Parameters
+    ----------
+    axis : int or str
+        Axis name or integer representation.
+
+    Returns
+    -------
+    int
+        Canonical integer axis in 0..3.
+    """
+    if axis not in _axis_to_axis_number:
+        raise ValueError(
+            f"No axis named {axis} for object type Triangle. "
+            f"Valid axes are {_axis_orders} or integers 0..3."
+        )
+    return _axis_to_axis_number[axis]
+
+
+def _get_axis_name(axis: int | str) -> str:
+    """
+    Convert an axis name or integer to its canonical name.
+
+    Parameters
+    ----------
+    axis : int or str
+        Axis name or integer representation.
+
+    Returns
+    -------
+    str
+        Canonical axis name ('index', 'columns', 'origin', 'development').
+    """
+    return _axis_orders[_get_axis_number(axis)]

@@ -26,6 +26,12 @@ Classes
   DevelopmentCorrelation
   ValuationCorrelation
 
+.. autosummary::
+  :toctree: generated/
+  :template: class
+
+  Styler
+
 
 .. _development_ref:
 
@@ -51,6 +57,8 @@ Classes
   IncrementalAdditive
   ClarkLDF
   CaseOutstanding
+  ImpliedCaseDevelopment
+  ImpliedCase
   TweedieGLM
   DevelopmentML
   BarnettZehnwirth

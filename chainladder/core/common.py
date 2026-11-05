@@ -198,7 +198,7 @@ class Common:
         else:
             ld = self.latest_diagonal if self.is_cumulative else self.sum(axis=3)
         ibnr = self.ultimate_ - ld
-        ibnr.vdims = self.ultimate_.vdims
+        ibnr.columns = self.ultimate_.columns
         return ibnr
 
     @property
@@ -308,6 +308,11 @@ class Common:
         Returns
         -------
             Triangle with updated array_backend
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
 
         Examples
         --------

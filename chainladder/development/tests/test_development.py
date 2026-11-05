@@ -1,8 +1,16 @@
+from __future__ import annotations
+
 import warnings
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-import chainladder as cl
 import pytest
+
+import chainladder as cl
+
+if TYPE_CHECKING:
+    from chainladder import Triangle
 
 
 class _FutureDevelopment(cl.TriangleWeight):
@@ -49,22 +57,28 @@ class _FutureDevelopment(cl.TriangleWeight):
 def test_full_slice(genins):
     dev1 = cl.Development()
     dev2 = cl.Development(n_periods=1000)
-    assert dev1.fit_transform(genins).ldf_ == dev2.fit_transform(genins).ldf_
-    assert dev1.fit_transform(genins).ldf_ == _FutureDevelopment(dev1).fit(genins).ldf_
-    assert (
+    assert dev1.fit_transform(genins).ldf_.equals(dev2.fit_transform(genins).ldf_)
+    assert dev1.fit_transform(genins).ldf_.equals(
         _FutureDevelopment(dev1).fit(genins).ldf_
-        == _FutureDevelopment(dev2).fit(genins).ldf_
+    )
+    assert (
+        _FutureDevelopment(dev1)
+        .fit(genins)
+        .ldf_.equals(_FutureDevelopment(dev2).fit(genins).ldf_)
     )
 
 
 def test_full_slice2(genins):
     dev1 = cl.Development()
     dev2 = cl.Development(n_periods=[1000] * (genins.shape[3] - 1))
-    assert dev1.fit_transform(genins).ldf_ == dev2.fit_transform(genins).ldf_
-    assert dev1.fit_transform(genins).ldf_ == _FutureDevelopment(dev1).fit(genins).ldf_
-    assert (
+    assert dev1.fit_transform(genins).ldf_.equals(dev2.fit_transform(genins).ldf_)
+    assert dev1.fit_transform(genins).ldf_.equals(
         _FutureDevelopment(dev1).fit(genins).ldf_
-        == _FutureDevelopment(dev2).fit(genins).ldf_
+    )
+    assert (
+        _FutureDevelopment(dev1)
+        .fit(genins)
+        .ldf_.equals(_FutureDevelopment(dev2).fit(genins).ldf_)
     )
 
 
@@ -114,7 +128,7 @@ def test_n_periods():
         ).flatten()
         == xp.array([1.164, 1.056, 1.027, 1.012, 1.005, 1.003, 1.002, 1.001, 1.0])
     )
-    assert dev.fit_transform(d).ldf_ == _FutureDevelopment(dev).fit(d).ldf_
+    assert dev.fit_transform(d).ldf_.equals(_FutureDevelopment(dev).fit(d).ldf_)
 
 
 def test_drophighlow(raa):
@@ -132,7 +146,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit_transform(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert dev.fit_transform(raa).ldf_.equals(_FutureDevelopment(dev).fit(raa).ldf_)
 
     dev = cl.Development(drop_high=[True, False, True, False])
     lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
@@ -148,7 +162,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert dev.fit_transform(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    assert dev.fit_transform(raa).ldf_.equals(_FutureDevelopment(dev).fit(raa).ldf_)
 
     dev = cl.Development(drop_high=[2, 3, 3, 3], drop_low=[0, 1, 0], preserve=2)
     tr = dev.fit_transform(raa)
@@ -166,7 +180,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert tr.ldf_ == tw.ldf_
+    assert tr.ldf_.equals(tw.ldf_)
 
     dev = cl.Development(drop_high=1)
     tr = dev.fit_transform(raa)
@@ -184,7 +198,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert tr.ldf_ == tw.ldf_
+    assert tr.ldf_.equals(tw.ldf_)
 
     dev = cl.Development(drop_high=1, drop_low=1)
     tr = dev.fit_transform(raa)
@@ -202,7 +216,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert tr.ldf_ == tw.ldf_
+    assert tr.ldf_.equals(tw.ldf_)
 
     dev = cl.Development(drop_high=[2, 1, 1], drop_low=1)
     tr = dev.fit_transform(raa)
@@ -220,7 +234,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert tr.ldf_ == tw.ldf_
+    assert tr.ldf_.equals(tw.ldf_)
 
     dev = cl.Development(drop_high=1, drop_low=1, n_periods=5)
     tr = dev.fit_transform(raa)
@@ -238,7 +252,7 @@ def test_drophighlow(raa):
         1.0092,
     ])
     assert np.all(lhs == rhs)
-    assert tr.ldf_ == tw.ldf_
+    assert tr.ldf_.equals(tw.ldf_)
 
 
 def test_drophighlow_inequal(prism, atol):
@@ -261,109 +275,193 @@ def test_drophighlow_inequal(prism, atol):
     ).all()
 
 
-def test_dropabovebelow(raa):
-    dev = cl.Development(drop_above=40.0)
-    lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array([
-        8.3771,
-        2.9740,
-        1.8318,
-        1.4414,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+class TestDropAboveBelow:
+    """Test drop_above and drop_below"""
 
-    dev = cl.Development(drop_above=1.2)
-    lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array([
-        7.6859,
-        2.5625,
-        1.5784,
-        1.4072,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    def test_dropabove_hardcode1(self, raa: Triangle) -> None:
+        """
+        Pins drop_above with hardcoded cdf_ results
 
-    dev = cl.Development(drop_above=1.2, drop_below=1.05)
-    lhs = np.round(dev.fit(raa).cdf_.values, 4).flatten()
-    rhs = np.array([
-        8.4983,
-        2.8334,
-        1.7452,
-        1.5560,
-        1.3602,
-        1.1802,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
 
-    dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
-    lhs = np.round(
-        dev.fit(raa).cdf_.values,
-        4,
-    ).flatten()
-    rhs = np.array([
-        8.3771,
-        2.9740,
-        1.8318,
-        1.4414,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=40.0)
+        model = dev.fit(raa)
+        lhs = np.round(dev.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.3771,
+            2.9740,
+            1.8318,
+            1.4414,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_.equals(_FutureDevelopment(dev).fit(raa).ldf_)
 
-    dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
-    lhs = np.round(
-        dev.fit(raa).cdf_.values,
-        4,
-    ).flatten()
-    rhs = np.array([
-        8.9773,
-        3.1871,
-        1.9631,
-        1.5447,
-        1.2302,
-        1.1049,
-        1.0604,
-        1.0263,
-        1.0092,
-    ])
-    assert np.all(lhs == rhs)
-    assert dev.fit(raa).ldf_ == _FutureDevelopment(dev).fit(raa).ldf_
+    def test_dropabove_hardcode2(self, raa: Triangle) -> None:
+        """
+        Pins drop_above with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=1.2)
+        # the first two columns of raa age-to-age are all above 1.2
+        # therefore a drop exclusion warning is expected
+        with pytest.warns(UserWarning, match="exclusions have been ignored"):
+            model = dev.fit(raa)
+            future_model = _FutureDevelopment(dev).fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            7.6859,
+            2.5625,
+            1.5784,
+            1.4072,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_.equals(future_model.ldf_)
+
+    def test_dropabovebelow_hardcode1(self, raa: Triangle) -> None:
+        """
+        Pins drop_above and drop_below with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=1.2, drop_below=1.05)
+        # the first two columns of raa age-to-age are all above 1.2
+        # therefore a drop exclusion warning is expected
+        with pytest.warns(UserWarning, match="exclusions have been ignored"):
+            model = dev.fit(raa)
+            future_model = _FutureDevelopment(dev).fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.4983,
+            2.8334,
+            1.7452,
+            1.5560,
+            1.3602,
+            1.1802,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_.equals(future_model.ldf_)
+
+    def test_dropbelow_hardcode_multiple1(self, raa: Triangle) -> None:
+        """
+        Pins supplying list to drop_below with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.7])
+        # the 4th columns of raa age-to-age are all below 1.7
+        # therefore a drop exclusion warning is expected
+        with pytest.warns(UserWarning, match="exclusions have been ignored"):
+            model = dev.fit(raa)
+            future_model = _FutureDevelopment(dev).fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.3771,
+            2.9740,
+            1.8318,
+            1.4414,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_.equals(future_model.ldf_)
+
+    def test_dropbelow_hardcode_multiple2(self, raa: Triangle) -> None:
+        """
+        Pins supplying list to drop_below with hardcoded cdf_ results
+
+        Parameters
+        ----------
+        raa: Triangle
+            The raa sample data set fixture
+
+        Returns
+        -------
+        None
+        """
+        dev = cl.Development(drop_above=[40.0], drop_below=[0.0, 0.0, 1.05, 1.2])
+        model = dev.fit(raa)
+        lhs = np.round(model.cdf_.values, 4).flatten()
+        rhs = np.array([
+            8.9773,
+            3.1871,
+            1.9631,
+            1.5447,
+            1.2302,
+            1.1049,
+            1.0604,
+            1.0263,
+            1.0092,
+        ])
+        assert np.all(lhs == rhs)
+        assert model.ldf_.equals(_FutureDevelopment(dev).fit(raa).ldf_)
 
 
 def test_drop_valuation_1(raa):
     dev1 = cl.Development(drop_valuation="1981-12-31")
     dev2 = cl.Development(drop_valuation="1982-12-31")
     dev3 = cl.Development(drop_valuation="1983-12-31")
-    assert dev1.fit_transform(raa).cdf_ != dev2.fit_transform(raa).cdf_
-    assert dev2.fit_transform(raa).cdf_ != dev3.fit_transform(raa).cdf_
-    assert dev1.fit_transform(raa).cdf_ != dev3.fit_transform(raa).cdf_
+    assert not dev1.fit_transform(raa).cdf_.equals(dev2.fit_transform(raa).cdf_)
+    assert not dev2.fit_transform(raa).cdf_.equals(dev3.fit_transform(raa).cdf_)
+    assert not dev1.fit_transform(raa).cdf_.equals(dev3.fit_transform(raa).cdf_)
     assert (
-        _FutureDevelopment(dev1).fit(raa).ldf_ != _FutureDevelopment(dev2).fit(raa).ldf_
+        not _FutureDevelopment(dev1)
+        .fit(raa)
+        .ldf_.equals(_FutureDevelopment(dev2).fit(raa).ldf_)
     )
     assert (
-        _FutureDevelopment(dev2).fit(raa).ldf_ != _FutureDevelopment(dev3).fit(raa).ldf_
+        not _FutureDevelopment(dev2)
+        .fit(raa)
+        .ldf_.equals(_FutureDevelopment(dev3).fit(raa).ldf_)
     )
     assert (
-        _FutureDevelopment(dev1).fit(raa).ldf_ != _FutureDevelopment(dev3).fit(raa).ldf_
+        not _FutureDevelopment(dev1)
+        .fit(raa)
+        .ldf_.equals(_FutureDevelopment(dev3).fit(raa).ldf_)
     )
 
 
@@ -372,37 +470,37 @@ def test_drop_valuation_2(qtr):
     dev2 = cl.Development(drop_valuation="1995-03-31")
     dev3 = cl.Development(drop_valuation="1995-06-30")
     dev4 = cl.Development(drop_valuation="1995-09-30")
-    assert (
-        dev1.fit_transform(qtr["incurred"]).cdf_
-        != dev2.fit_transform(qtr["incurred"]).cdf_
-    )
-    assert (
-        dev1.fit_transform(qtr["incurred"]).cdf_
-        != dev3.fit_transform(qtr["incurred"]).cdf_
-    )
-    assert (
+    assert not dev1.fit_transform(qtr["incurred"]).cdf_.equals(
         dev2.fit_transform(qtr["incurred"]).cdf_
-        != dev3.fit_transform(qtr["incurred"]).cdf_
     )
-    assert (
+    assert not dev1.fit_transform(qtr["incurred"]).cdf_.equals(
         dev3.fit_transform(qtr["incurred"]).cdf_
-        != dev4.fit_transform(qtr["incurred"]).cdf_
+    )
+    assert not dev2.fit_transform(qtr["incurred"]).cdf_.equals(
+        dev3.fit_transform(qtr["incurred"]).cdf_
+    )
+    assert not dev3.fit_transform(qtr["incurred"]).cdf_.equals(
+        dev4.fit_transform(qtr["incurred"]).cdf_
     )
     assert (
-        _FutureDevelopment(dev1).fit(qtr["incurred"]).ldf_
-        != _FutureDevelopment(dev2).fit(qtr["incurred"]).ldf_
+        not _FutureDevelopment(dev1)
+        .fit(qtr["incurred"])
+        .ldf_.equals(_FutureDevelopment(dev2).fit(qtr["incurred"]).ldf_)
     )
     assert (
-        _FutureDevelopment(dev1).fit(qtr["incurred"]).ldf_
-        != _FutureDevelopment(dev3).fit(qtr["incurred"]).ldf_
+        not _FutureDevelopment(dev1)
+        .fit(qtr["incurred"])
+        .ldf_.equals(_FutureDevelopment(dev3).fit(qtr["incurred"]).ldf_)
     )
     assert (
-        _FutureDevelopment(dev2).fit(qtr["incurred"]).ldf_
-        != _FutureDevelopment(dev3).fit(qtr["incurred"]).ldf_
+        not _FutureDevelopment(dev2)
+        .fit(qtr["incurred"])
+        .ldf_.equals(_FutureDevelopment(dev3).fit(qtr["incurred"]).ldf_)
     )
     assert (
-        _FutureDevelopment(dev3).fit(qtr["incurred"]).ldf_
-        != _FutureDevelopment(dev4).fit(qtr["incurred"]).ldf_
+        not _FutureDevelopment(dev3)
+        .fit(qtr["incurred"])
+        .ldf_.equals(_FutureDevelopment(dev4).fit(qtr["incurred"]).ldf_)
     )
 
 
@@ -424,12 +522,18 @@ def test_assymetric_development(qtr, atol):
 def test_hilo_multiple_indices(clrd):
     tri = clrd.groupby("LOB")["CumPaidLoss"].sum()
     assert (
-        cl.Development(n_periods=5).fit(tri).ldf_.loc["wkcomp"]
-        == cl.Development(n_periods=5).fit(tri.loc["wkcomp"]).ldf_
+        cl
+        .Development(n_periods=5)
+        .fit(tri)
+        .ldf_.loc["wkcomp"]
+        .equals(cl.Development(n_periods=5).fit(tri.loc["wkcomp"]).ldf_)
     )
     assert (
-        cl.Development(drop_low=2).fit(tri).ldf_.loc["wkcomp"]
-        == cl.Development(drop_low=2).fit(tri.loc["wkcomp"]).ldf_
+        cl
+        .Development(drop_low=2)
+        .fit(tri)
+        .ldf_.loc["wkcomp"]
+        .equals(cl.Development(drop_low=2).fit(tri.loc["wkcomp"]).ldf_)
     )
 
 
@@ -563,15 +667,22 @@ def test_drop_warning_silent_on_the_triangle_weight_path(raa):
 def test_new_drop_6(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
     # drop_above/below without preserve
-    compare_new_drop(cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd)
+    # many columns of clrd.age_to_age are all above 1.01
+    # therefore a drop exclusion warning is expected
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        compare_new_drop(
+            cl.Development(drop_above=1.01, drop_below=0.95).fit(clrd), clrd
+        )
 
 
 def test_new_drop_7(clrd):
     clrd = clrd.groupby("LOB")[["IncurLoss", "CumPaidLoss"]].sum()
+    # many columns of clrd.age_to_age are all above 1.01
+    # therefore a drop exclusion warning is expected
     # drop_above/below with preserve
     with pytest.warns(UserWarning, match="exclusions have been ignored"):
         dev = cl.Development(drop_above=1.01, drop_below=0.95, preserve=3).fit(clrd)
-    compare_new_drop(dev, clrd)
+        compare_new_drop(dev, clrd)
 
 
 def test_new_drop_8(prism):
@@ -629,21 +740,29 @@ def test_new_drop_10():
     tri = cl.Triangle(
         data,
         origin="origin",
-        development="valuation",
+        valuation="valuation",
         columns=["values"],
         cumulative=True,
     )
 
-    assert np.round(
-        cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
-    ) == np.round((200 + 200 + 300) / (100 + 200 + 300), 4)
+    # tri is a partial triangle and no valid age-to-age beyond the first column
+    # therefore a drop exclusion warning is expected
+    with pytest.warns(UserWarning, match="exclusions have been ignored"):
+        assert np.round(
+            cl.Development(drop_high=1).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+        ) == np.round((200 + 200 + 300) / (100 + 200 + 300), 4)
 
-    assert (
-        np.round(
-            cl.Development(drop_high=2).fit(tri).cdf_.to_frame().values.flatten()[0], 4
+        assert (
+            np.round(
+                cl
+                .Development(drop_high=2)
+                .fit(tri)
+                .cdf_.to_frame()
+                .values.flatten()[0],
+                4,
+            )
+            == 1.0000
         )
-        == 1.0000
-    )
 
 
 def test_geometric_avg():
@@ -918,8 +1037,12 @@ def compare_new_drop(dev, tri):
 def test_4d_drop(clrd):
     clrd = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
     assert (
-        cl.Development(n_periods=4).fit_transform(clrd.iloc[0, 0]).link_ratio
-        == cl.Development(n_periods=4).fit_transform(clrd).link_ratio.iloc[0, 0]
+        cl
+        .Development(n_periods=4)
+        .fit_transform(clrd.iloc[0, 0])
+        .link_ratio.equals(
+            cl.Development(n_periods=4).fit_transform(clrd).link_ratio.iloc[0, 0]
+        )
     )
 
 

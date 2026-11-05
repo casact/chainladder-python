@@ -22,8 +22,8 @@ del annotations
 from chainladder._config import (  # noqa (API import)
     __dt64_dtype__,
     __dt64_unit__,
-    Options,
-    options,
+    Options as Options,
+    options as options,
 )
 
 # noinspection PyProtectedMember
@@ -36,70 +36,72 @@ from chainladder._config import (  # noqa (API import)
     _deprecated_rename_argument,
     _deprecated_drop_argument,
 )
-from chainladder.utils import (  # noqa (API import)
-    WeightedRegression,
-    TriangleWeight,
-    parallelogram_olf,
-    read_csv,
-    read_pickle,
-    read_json,
-    concat,
-    load_sample,
-    list_samples,
-    minimum,
-    maximum,
-    PatsyFormula,
-    model_diagnostics,
-    cp,
-    sp,
-    dp,
+from chainladder.utils import (  # noqa: E402
+    WeightedRegression as WeightedRegression,
+    TriangleWeight as TriangleWeight,
+    parallelogram_olf as parallelogram_olf,
+    read_csv as read_csv,
+    read_pickle as read_pickle,
+    read_json as read_json,
+    concat as concat,
+    load_sample as load_sample,
+    list_samples as list_samples,
+    minimum as minimum,
+    maximum as maximum,
+    PatsyFormula as PatsyFormula,
+    model_diagnostics as model_diagnostics,
+    cp as cp,
+    sp as sp,
+    dp as dp,
 )
-from chainladder.core import (  # noqa (API import)
-    Triangle,
-    DevelopmentCorrelation,
-    ValuationCorrelation,
+from chainladder.core import (  # noqa: E402
+    Triangle as Triangle,
+    DevelopmentCorrelation as DevelopmentCorrelation,
+    ValuationCorrelation as ValuationCorrelation,
+    Styler as Styler,
 )
-from chainladder.development import (  # noqa (API import)
-    DevelopmentBase,
-    Development,
-    MunichAdjustment,
-    IncrementalAdditive,
-    DevelopmentConstant,
-    ClarkLDF,
-    CaseOutstanding,
-    DevelopmentML,
-    TweedieGLM,
-    BarnettZehnwirth,
+from chainladder.development import (  # noqa: E402
+    DevelopmentBase as DevelopmentBase,
+    Development as Development,
+    MunichAdjustment as MunichAdjustment,
+    IncrementalAdditive as IncrementalAdditive,
+    DevelopmentConstant as DevelopmentConstant,
+    ClarkLDF as ClarkLDF,
+    CaseOutstanding as CaseOutstanding,
+    ImpliedCaseDevelopment as ImpliedCaseDevelopment,
+    ImpliedCase as ImpliedCase,
+    DevelopmentML as DevelopmentML,
+    TweedieGLM as TweedieGLM,
+    BarnettZehnwirth as BarnettZehnwirth,
 )
-from chainladder.adjustments import (  # noqa (API import)
-    BootstrapODPSample,
-    BerquistSherman,
-    ParallelogramOLF,
-    Trend,
-    TrendConstant,
-    DisposalRate,
+from chainladder.adjustments import (  # noqa: E402
+    BootstrapODPSample as BootstrapODPSample,
+    BerquistSherman as BerquistSherman,
+    ParallelogramOLF as ParallelogramOLF,
+    Trend as Trend,
+    DisposalRate as DisposalRate,
 )
-from chainladder.tails import (  # noqa (API import)
-    TailBase,
-    TailConstant,
-    TailCurve,
-    TailBondy,
-    TailClark,
+from chainladder.tails import (  # noqa: E402
+    TailBase as TailBase,
+    TailConstant as TailConstant,
+    TailCurve as TailCurve,
+    TailBondy as TailBondy,
+    TailClark as TailClark,
 )
-from chainladder.methods import (  # noqa (API import)
-    MethodBase,
-    Chainladder,
-    MackChainladder,
-    Benktander,
-    BornhuetterFerguson,
-    CapeCod,
-    ExpectedLoss,
+from chainladder.methods import (  # noqa: E402
+    MethodBase as MethodBase,
+    Chainladder as Chainladder,
+    MackChainladder as MackChainladder,
+    Benktander as Benktander,
+    BornhuetterFerguson as BornhuetterFerguson,
+    CapeCod as CapeCod,
+    ExpectedLoss as ExpectedLoss,
 )
-from chainladder.workflow import (  # noqa (API import)
-    GridSearch,
-    Pipeline,
-    VotingChainladder,
-    TriangleSelector,
+from chainladder.workflow import (  # noqa: E402
+    GridSearch as GridSearch,
+    Pipeline as Pipeline,
+    VotingChainladder as VotingChainladder,
+    TriangleSelector as TriangleSelector,
 )
 
 __version__ = version("chainladder")

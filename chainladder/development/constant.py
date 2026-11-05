@@ -1,9 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from __future__ import annotations
+
+from typing import Any, Literal
+
 from chainladder.development.base import DevelopmentBase
 import numpy as np
 import pandas as pd
+import warnings
 
 
 class DevelopmentConstant(DevelopmentBase):
@@ -14,9 +19,16 @@ class DevelopmentConstant(DevelopmentBase):
 
     Parameters
     ----------
-    patterns: dict or callable
-        A dictionary key:value representation of age(in months):value. If callable
-        is supplied, callable must return a dict for each element of the callable axis
+    patterns: dict, Series, DataFrame, Triangle, estimator, or callable
+        A representation of development factors indexed by age (in months). Can be
+        a dictionary of age:value, a pandas Series, a 1-row or 1-column DataFrame,
+        a 1D Triangle pattern (such as another estimator's ``ldf_`` or ``cdf_``),
+        or a fitted estimator. When passing a fitted estimator, the pattern matching
+        ``style`` (``ldf_`` or ``cdf_``) is used. If the estimator only provides one
+        pattern attribute (e.g. only ``cdf_`` or only ``ldf_``), it is used as a
+        convenience fallback and a UserWarning is issued if ``style`` does not match.
+        If callable is supplied, callable must return a dict for each element of the
+        callable axis.
     style: Literal['cdf', 'ldf'], optional (default='ldf')
         Type of pattern given to the Estimator. `cdf` for cumulative development factors
         and `ldf` for (non-cumulative) loss development factors.
@@ -107,7 +119,13 @@ class DevelopmentConstant(DevelopmentBase):
 
     """
 
-    def __init__(self, patterns=None, style="ldf", callable_axis=0, groupby=None):
+    def __init__(
+        self,
+        patterns: Any = None,
+        style: Literal["cdf", "ldf"] = "ldf",
+        callable_axis: int = 0,
+        groupby: Any = None,
+    ):
         self.patterns = patterns
         self.style = style
         self.callable_axis = callable_axis
@@ -152,9 +170,11 @@ class DevelopmentConstant(DevelopmentBase):
                 raise ValueError("callable axis needs to be 0 or 1")
             pattern_length = len(sample_pattern)
             pattern_ddims = sorted(sample_pattern.keys())
+            patterns_dict = None
         else:
-            pattern_length = len(self.patterns)
-            pattern_ddims = sorted(self.patterns.keys())
+            patterns_dict = self._normalize_patterns(self.patterns, self.style)
+            pattern_length = len(patterns_dict)
+            pattern_ddims = sorted(patterns_dict.keys())
 
         # pattern supplied is much shorter than the triangle
         if pattern_length < len(obj.ddims) - 1:
@@ -198,7 +218,7 @@ class DevelopmentConstant(DevelopmentBase):
             else:
                 raise ValueError("callable axis needs to be 0 or 1")
         else:
-            ldf = xp.array([self.patterns.get(item, 1.0) for item in obj.ddims])
+            ldf = xp.array([patterns_dict.get(item, 1.0) for item in obj.ddims])
             ldf = ldf[None, None, None, :]
 
         if self.style == "cdf":
@@ -212,6 +232,70 @@ class DevelopmentConstant(DevelopmentBase):
         self.ldf_.is_cumulative = False
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         return self
+
+    @staticmethod
+    def _normalize_patterns(patterns, style="ldf"):
+        """Normalize pattern input (dict, Series, DataFrame, Triangle, estimator) into a dict."""
+        is_triangle = hasattr(patterns, "odims") and hasattr(patterns, "ddims")
+        if not is_triangle:
+            if hasattr(patterns, "cdf_") and style == "cdf":
+                patterns = patterns.cdf_
+            elif hasattr(patterns, "ldf_") and style == "ldf":
+                patterns = patterns.ldf_
+            elif hasattr(patterns, "cdf_") and not hasattr(patterns, "ldf_"):
+                warnings.warn(
+                    f"Estimator provides only 'cdf_', which does not match style='{style}'. "
+                    f"Using 'cdf_' as fallback pattern.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                patterns = patterns.cdf_
+            elif hasattr(patterns, "ldf_") and not hasattr(patterns, "cdf_"):
+                warnings.warn(
+                    f"Estimator provides only 'ldf_', which does not match style='{style}'. "
+                    f"Using 'ldf_' as fallback pattern.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                patterns = patterns.ldf_
+
+        if hasattr(patterns, "odims") and hasattr(patterns, "ddims"):
+            if (
+                hasattr(patterns, "shape")
+                and len(patterns.shape) >= 3
+                and patterns.shape[2] > 1
+            ):
+                raise ValueError(
+                    "Triangle pattern must have a single origin row (e.g. model.ldf_ or model.cdf_)."
+                )
+            vals = patterns.values[0, 0, 0, :]
+            vals = vals.todense() if hasattr(vals, "todense") else np.asarray(vals)
+            s = pd.Series(vals, index=patterns.ddims, dtype=float)
+        elif isinstance(patterns, pd.DataFrame):
+            if patterns.shape[0] == 1:
+                s = patterns.iloc[0].astype(float)
+            elif patterns.shape[1] == 1:
+                s = patterns.iloc[:, 0].astype(float)
+            else:
+                raise ValueError("DataFrame pattern must have 1 row or 1 column.")
+        elif isinstance(patterns, pd.Series):
+            s = patterns.astype(float).copy()
+        elif isinstance(patterns, dict):
+            s = pd.Series(patterns, dtype=float)
+        else:
+            raise TypeError(
+                f"Unsupported pattern type: {type(patterns)}. "
+                f"Expected dict, Series, DataFrame, Triangle, estimator, or callable."
+            )
+
+        parsed_index = []
+        for x in s.index:
+            try:
+                parsed_index.append(int(str(x).split("-")[0]))
+            except (ValueError, TypeError):
+                parsed_index.append(x)
+        s.index = parsed_index
+        return s.to_dict()
 
     def transform(self, X):
         """

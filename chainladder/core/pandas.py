@@ -7,11 +7,13 @@ Mirror pandas API onto the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import warnings
 import numpy as np
 import pandas as pd
 
 from chainladder import (
     __dt64_dtype__,
+    _deprecated_drop_argument,
     _warn_dask_parallel_deprecated,
 )
 from chainladder.utils.utility_functions import concat, num_to_nan
@@ -64,6 +66,23 @@ class TriangleGroupBy:
 
 
 class TrianglePandas(_TrianglePandasBase):
+    if TYPE_CHECKING:
+        # Implemented by Common.set_backend; declared here so it takes precedence
+        # over the unimplemented TriangleProtocol stub in the type-checking MRO.
+        def set_backend(
+            self,
+            backend: str,
+            inplace: bool = False,
+            deep: bool = False,
+            _warn: bool = True,
+            **kwargs: Any,
+        ) -> Triangle: ...
+
+        # Installed by add_triangle_agg_func at runtime.
+        def sum(
+            self, axis: str | int | None = None, *args: Any, **kwargs: Any
+        ) -> TriangleProtocol: ...
+
     def to_frame(
         self,
         origin_as_datetime: bool = True,
@@ -169,8 +188,8 @@ class TrianglePandas(_TrianglePandasBase):
             elif len(axes) in [1, 2]:
                 tri: ndarray = np.squeeze(self.set_backend("numpy").values)
                 axes_lookup: dict = {
-                    0: self.kdims,
-                    1: self.vdims,
+                    0: self.index.values,
+                    1: self.columns.values,
                     2: self.origin,
                     3: self.development,
                 }
@@ -304,11 +323,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, np.nan, np.nan, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -338,11 +357,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, 500, 600, np.nan, 600, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -372,11 +391,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [np.nan, np.nan, np.nan, np.nan, 600, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -405,11 +424,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [500, np.nan, 700, 500, np.nan, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -440,11 +459,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [500, 600, np.nan, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -476,12 +495,12 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987] * 2,
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987] * 2,
                     'lob': ['abc'] * 6 + ['xyz'] * 6,
                     'paid': [np.nan, np.nan, np.nan, 500, 600, 500] * 2,
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 index='lob',
                 columns=['paid'],
                 cumulative=True
@@ -547,6 +566,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if value is None:
             raise TypeError("Must specify a fill value.")
@@ -577,6 +601,11 @@ class TrianglePandas(_TrianglePandasBase):
         Returns
         -------
         Triangle
+
+        .. deprecated:: 0.11
+
+           The return value of using ``inplace=True`` is deprecated.
+           In version 2.0, ``None`` will be returned instead of ``self``.
         """
         if inplace:
             xp = self.get_array_module()
@@ -622,11 +651,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1985, 1986, 1986, 1986, 1987, 1987, 1988],
-                    'development': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
+                    'valuation': [1985, 1986, 1987, 1988, 1986, 1987, 1988, 1987, 1988, 1988],
                     'paid': [500, np.nan, 700, np.nan, np.nan, 1000, 1100, 1200, 1300, np.nan],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True,
             )
@@ -846,11 +875,11 @@ class TrianglePandas(_TrianglePandasBase):
             tri = cl.Triangle(
                 data={
                     'origin': [1985, 1985, 1985, 1986, 1986, 1987],
-                    'development': [1985, 1986, 1987, 1986, 1987, 1987],
+                    'valuation': [1985, 1986, 1987, 1986, 1987, 1987],
                     'paid': [300, 400, 500, 500, 600, 500],
                 },
                 origin='origin',
-                development='development',
+                valuation='valuation',
                 columns=['paid'],
                 cumulative=True
             )
@@ -1058,16 +1087,31 @@ class TrianglePandas(_TrianglePandasBase):
                 )
         return cast("Triangle", cast(object, self))
 
+    @_deprecated_drop_argument(
+        "inplace",
+        "Copy the Triangle first and use the return value: "
+        "`tri = tri.copy()` then `tri = tri.astype(dtype)`.",
+    )
     def astype(self, dtype, inplace=True) -> Triangle:
         """
         Copy of the array, cast to a specified type.
+
+        .. warning::
+            The ``inplace`` parameter is deprecated and will be removed.
+            Copy first and use the return value:
+
+            .. code-block:: python
+
+                tri = tri.copy()
+                tri = tri.astype(new_dtype)
 
         Parameters
         ----------
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
-        copy : bool, optional
-            By default, astype always returns a newly allocated array.
+        inplace : bool, default True
+            Deprecated and scheduled for removal. When False, the cast is
+            applied to a copy and the original Triangle is left untouched.
 
         Returns
         -------
@@ -1115,10 +1159,17 @@ class TrianglePandas(_TrianglePandasBase):
         -------
         Triangle
         """
+        inplace = kwargs.pop("inplace", False)
         sorted_index: DataFrame = cast(
-            "DataFrame", self.index.sort_values(self.key_labels, *args, **kwargs)
+            "DataFrame",
+            self.index.copy().sort_values(self.key_labels, *args, **kwargs),
         )
-        return self.iloc[sorted_index.index]
+        result = self.iloc[sorted_index.index]
+        if inplace:
+            self.values = result.values
+            self.index = result.index
+            return self
+        return result
 
     def exp(self) -> Triangle:
         """
@@ -1270,14 +1321,34 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         func: Callable = getattr(xp, v)
         kwargs.update({"keepdims": True})
         # Apply the function on the requested axis.
-        obj.values = func(obj.values, axis=axis, *args, **kwargs)
+        if axis in [0, 1] and not obj.is_full:
+            with warnings.catch_warnings():
+                # the lower right half of an undeveloped triangle will always emit an
+                # empty or All-NaN slice warning when aggregating by index or column
+                # (depending on `func`; e.g. nanmean warns "empty slice",
+                # nanmax warns All-NaN slice
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message=".*empty slice.*",
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message=".*All-NaN slice.*",
+                )
+                obj.values = func(obj.values, axis=axis, *args, **kwargs)
+        else:
+            obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
         # Aggregation function will collapse a dimension, so
         # adjust the dimensions of the original object to match that of the aggregation.
-        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.kdims) > 1:
-            obj.kdims = np.array([["(All)"] * len(obj.key_labels)])
-        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.vdims) > 1:
-            obj.vdims = np.array([0])
+        if axis == 0 and obj.values.shape[axis] == 1 and len(obj.index) > 1:
+            obj.index = pd.DataFrame(
+                [["(All)"] * len(obj.key_labels)], columns=obj.key_labels
+            )
+        if axis == 1 and obj.values.shape[axis] == 1 and len(obj.columns) > 1:
+            obj.columns = pd.Index([0], name="columns")
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.odims) > 1:
             obj.odims = obj.odims[0:1]
         # If axis is development, set the ddims to be the valuation date.
@@ -1340,10 +1411,9 @@ def add_groupby_agg_func(cls, k: str, v: str):
                 obj.index = index
             else:
                 index = pd.DataFrame(group_index)
-                obj.key_labels = index.columns.tolist()
-                obj.kdims = index.values
+                obj.index = index
         if self.axis == 1:
-            obj.vdims = pd.DataFrame(group_index).values[:, 0]
+            obj.columns = group_index
         if self.axis == 2:
             odims = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]

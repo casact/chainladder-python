@@ -4,3 +4,15 @@ coverage:
       default:
         target: auto
         threshold: 0.1%
+    patch:
+      default:
+        target: auto
+        threshold: 0.1%
+        # Merge commits compare against the wrong parent, so a patch status
+        # posted outside a pull request scores an unrelated diff.
+        only_pulls: true
+
+# The rtest_ modules are not collected by pytest, so they report no coverage
+# at all and drag both statuses down without saying anything useful.
+ignore:
+  - "**/rtest_*.py"

@@ -5,8 +5,9 @@ Support Triangle I/O capabilities.
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-import dill
 import json
+
+import dill
 import pandas as pd
 
 from sklearn.base import BaseEstimator
@@ -44,7 +45,7 @@ class TriangleIO:
             restored = cl.read_pickle(path)
             os.remove(path)
             print(restored.shape)
-            print(restored == raa)
+            print(restored.equals(raa))
 
         .. testoutput::
 
@@ -78,7 +79,7 @@ class TriangleIO:
             raa = cl.load_sample('raa')
             payload = json.loads(raa.to_json())
             print(sorted(payload.keys()))
-            print(cl.read_json(raa.to_json()) == raa)
+            print(cl.read_json(raa.to_json()).equals(raa))
 
         .. testoutput::
 
