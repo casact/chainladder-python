@@ -3802,6 +3802,8 @@ def test_dev_val_inplace(raa: Triangle) -> None:
     assert raa_copy2.val_to_dev(True) is None
     assert raa_copy2 == raa
     assert raa_copy == raa_copy2.dev_to_val()
+
+
 def test_json_roundtrip_preserves_dataframe_index(raa, clrd) -> None:
     """JSON serialization roundtrip must preserve Triangle.index as a pd.DataFrame."""
     r_single = cl.read_json(raa.to_json())
