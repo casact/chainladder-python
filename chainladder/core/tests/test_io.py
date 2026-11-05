@@ -158,15 +158,16 @@ class TestPickle:
 
     def test_read_pickle_triangle(self, raa: Triangle, tmp_path: Path) -> None:
         """
-        Create a triangle, dump a pickle of it, and then read it back in. The ingested pickle should result
-        in an equal copy of the triangle that was dumped.
+        Create a triangle, dump a pickle of it, and then read it back in. The ingested
+        pickle should result in an equal copy of the triangle that was dumped.
 
         Parameters
         ----------
         raa: Triangle
             The raa sample data set.
         tmp_path: Path
-            The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+            The builtin pytest tmp_path fixture, provides a temporary path to dump the
+            pickle to.
 
         Returns
         -------
@@ -192,7 +193,8 @@ class TestPickle:
         clrd: Triangle
             The clrd sample data set Triangle.
         tmp_path: Path
-            The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+            The builtin pytest tmp_path fixture, provides a temporary path to dump the
+            pickle to.
 
         Returns
         -------
@@ -213,15 +215,16 @@ class TestPickle:
 
     def test_read_pickle_estimator(self, raa: Triangle, tmp_path: Path) -> None:
         """
-        Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
-        produce the same LDFs that the original estimator does.
+        Create an estimator, dump a pickle of it, and then read it back in. The ingested
+        pickle should result produce the same LDFs that the original estimator does.
 
         Parameters
         ----------
         raa: Triangle
             The raa sample data set.
         tmp_path: Path
-            The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
+            The builtin pytest tmp_path fixture, provides a temporary path to dump the
+            pickle to.
 
         Returns
         -------
