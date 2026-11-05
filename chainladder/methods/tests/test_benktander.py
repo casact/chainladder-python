@@ -41,9 +41,6 @@ def test_bk_fit_mishaped_weight_raises(clrd: Triangle) -> None:
         )
 
 
-def test_bk_fit_mishaped_weight_warns(clrd: Triangle)
-
-
 @pytest.mark.parametrize("data", data)
 def test_benktander_to_chainladder(data, atol):
     tri = cl.load_sample(data)
