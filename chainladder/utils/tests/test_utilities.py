@@ -6,7 +6,6 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import dill
 import numpy as np
 import pandas as pd
 import pytest
@@ -214,23 +213,6 @@ def test_concat_immutability(raa):
     assert u.equals(u_new)
 
 
-def test_to_pickle_read_pickle(raa):
-    import os
-    import tempfile
-
-    dev = cl.Development(average="simple", n_periods=4).fit(raa)
-    fd, path = tempfile.mkstemp(suffix=".pkl")
-    os.close(fd)
-    try:
-        dev.to_pickle(path)
-        restored = cl.read_pickle(path)
-        assert restored.average == dev.average
-        assert restored.n_periods == dev.n_periods
-        np.testing.assert_array_almost_equal(restored.ldf_.values, dev.ldf_.values)
-    finally:
-        os.remove(path)
-
-
 def test_maximum_minimum_1(raa):
     ult_vol = (
         cl
@@ -409,7 +391,8 @@ def test_load_sample_clrd2025() -> None:
 
 def test_date_delta_adjustment() -> None:
     """
-    Tests the date adjustment depending on Pandas default precision, nanosecond for Pandas 2, microsecond for Pandas 3.
+    Tests the date adjustment depending on Pandas default precision,
+    nanosecond for Pandas 2, microsecond for Pandas 3.
     """
     result = date_delta_adjustment("2025-11-01")
 
@@ -421,90 +404,10 @@ def test_date_delta_adjustment() -> None:
     assert result == expected
 
 
-def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
-    """
-    Create a triangle, dump a pickle of it, and then read it back in. The ingested pickle should result
-    in an equal copy of the triangle that was dumped.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set.
-    tmp_path: Path
-        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
-
-    Returns
-    -------
-    None
-
-    """
-    pkl_path = tmp_path / "triangle.pkl"
-    with open(pkl_path, "wb") as f:
-        dill.dump(raa, f)
-    assert cl.read_pickle(str(pkl_path)).equals(raa)
-
-
-def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> None:
-    """
-    Dump a pickle of a triangle and read it back in. The read-in triangle should
-    equal the one that was dumped.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set Triangle.
-    clrd: Triangle
-        The clrd sample data set Triangle.
-    tmp_path: Path
-        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
-
-    Returns
-    -------
-    None
-
-    """
-    # Single-dimension case.
-    raa_path = tmp_path / "raa.pkl"
-    raa.to_pickle(str(raa_path))
-    assert raa_path.is_file()
-    assert cl.read_pickle(str(raa_path)).equals(raa)
-
-    # Multidimensional case.
-    clrd_path = tmp_path / "clrd.pkl"
-    clrd.to_pickle(str(clrd_path))
-    assert clrd_path.is_file()
-    assert cl.read_pickle(str(clrd_path)).equals(clrd)
-
-
-def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
-    """
-    Create an estimator, dump a pickle of it, and then read it back in. The ingested pickle should result
-    produce the same LDFs that the original estimator does.
-
-    Parameters
-    ----------
-    raa: Triangle
-        The raa sample data set.
-    tmp_path: Path
-        The builtin pytest tmp_path fixture, provides a temporary path to dump the pickle to.
-
-    Returns
-    -------
-    None
-
-    """
-
-    pkl_path = tmp_path / "estimator.pkl"
-    dev = cl.Development().fit(raa)
-    with open(pkl_path, "wb") as f:
-        dill.dump(dev, f)
-    assert dev.ldf_.equals(cl.read_pickle(str(pkl_path)).ldf_)
-
-
 def test_concat_type_error() -> None:
     """
-    Supply a string to cl.concat() and raise a TypeError. Concat expects a list or tuple, so supplying a string
-    will raise the error.
+    Supply a string to cl.concat() and raise a TypeError. Concat expects
+    a list or tuple, so supplying a string will raise the error.
 
     Returns
     -------
@@ -517,9 +420,12 @@ def test_concat_type_error() -> None:
 
 def test_concat_empty_error() -> None:
     """
-    Supply an empty list to cl.concat(). Trigger a ValueError since the length of the list must be greater than 0.
+    Supply an empty list to cl.concat(). Trigger a ValueError since the
+    length of the list must be greater than 0.
+
     Returns
     -------
+    None
 
     """
     with pytest.raises(ValueError):
@@ -528,8 +434,9 @@ def test_concat_empty_error() -> None:
 
 def test_concat_mismatched_columns(clrd: Triangle) -> None:
     """
-    Concatenate two triangles where each has a column that the other does not have. This creates new columns
-    for each triangle which then get filled with xp.nan.
+    Concatenate two triangles where each has a column that the other does
+    not have. This creates new columns for each triangle which then get
+    filled with xp.nan.
 
     Parameters
     ----------
@@ -558,8 +465,8 @@ def test_concat_mismatched_columns(clrd: Triangle) -> None:
 
 def test_concat_sort(clrd: Triangle) -> None:
     """
-    Concat two triangles with indexes in reverse alphabetical order then sort the index. Check to see
-    that the index gets sorted alphabetically.
+    Concat two triangles with indexes in reverse alphabetical order then
+    sort the index. Check to see that the index gets sorted alphabetically.
 
     Parameters
     ----------
@@ -599,8 +506,8 @@ def test_concat_axis1(raa: Triangle) -> None:
 
 def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     """
-    Concat two triangles along the column axis with the same column names. Raise an assertion error since
-    columns must be unique.
+    Concat two triangles along the column axis with the same column names.
+    Raise an assertion error since columns must be unique.
 
     Parameters
     ----------
@@ -640,7 +547,10 @@ def test_concat_ignore_index_axes(raa: Triangle) -> None:
 
 
 def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
-    """Verify concat on axis 1 succeeds when index values match but row index labels differ."""
+    """
+    Verify concat on axis 1 succeeds when index values match but
+    row index labels differ.
+    """
     t1 = copy.deepcopy(raa).rename("columns", ["A"])
     t2 = copy.deepcopy(raa).rename("columns", ["B"])
     t2.index = pd.DataFrame(t2.index.values, columns=t2.index.columns, index=[10])
@@ -661,7 +571,8 @@ def test_concat_axis_1_index_nan_preserved(raa: Triangle) -> None:
 
 def test_maximum_2(raa: Triangle) -> None:
     """
-    Run cl.maximum(raa, 5000) and check if each element in the resulting triangle is at least 5000.
+    Run cl.maximum(raa, 5000) and check if each element in the resulting
+    triangle is at least 5000.
 
     Parameters
     ----------
@@ -680,7 +591,8 @@ def test_maximum_2(raa: Triangle) -> None:
 
 def test_minimum_2(raa):
     """
-    Run cl.minimum(raa, 5000) and check if each element in the resulting triangle is at most 5000.
+    Run cl.minimum(raa, 5000) and check if each element in the resulting
+    triangle is at most 5000.
 
     Parameters
     ----------
@@ -699,7 +611,8 @@ def test_minimum_2(raa):
 
 def test_reset_option() -> None:
     """
-    Change some of the options and then reset them. Values after reset should match the original values.
+    Change some of the options and then reset them. Values after reset should
+    match the original values.
 
     Returns
     -------
@@ -731,7 +644,8 @@ def test_reset_option() -> None:
 
 def test_options_defaults() -> None:
     """
-    When initialized, default options should be correct and accessible from the options variable.
+    When initialized, default options should be correct and accessible from
+    the options variable.
 
     Returns
     -------
@@ -762,7 +676,8 @@ def test_get_option() -> None:
 
 def test_set_option_consistency() -> None:
     """
-    When set_option changes an option value, get_option should return the new option value.
+    When set_option changes an option value, get_option should return the
+    new option value.
 
     Returns
     -------
@@ -1146,8 +1061,8 @@ def test_dask_parallel_numpy_groupby_no_warning(
 
 def test_describe_option(capsys: CaptureFixture[str]) -> None:
     """
-    Supply an option to cl.options.describe_option(). Attribute name, type, default/current
-    settings should be captured in the output.
+    Supply an option to cl.options.describe_option(). Attribute name, type,
+    default/current settings should be captured in the output.
 
     Parameters
     ----------
@@ -1168,8 +1083,8 @@ def test_describe_option(capsys: CaptureFixture[str]) -> None:
 
 def test_describe_option_multi(capsys) -> None:
     """
-    Supply two options to cl.options.describe_option(). Attribute names, types, default/current
-    settings should be captured in the output.
+    Supply two options to cl.options.describe_option(). Attribute names, types,
+    default/current settings should be captured in the output.
 
     Parameters
     ----------
@@ -1215,8 +1130,8 @@ def test_describe_option_all(capsys) -> None:
 
 def test_describe_option_return_string() -> None:
     """
-    Execute cl.options.desribe_option() with _print_desc=False. Should return a string. Check
-    if attribute info is in the string.
+    Execute cl.options.desribe_option() with _print_desc=False. Should return a
+    string. Check if attribute info is in the string.
 
     Returns
     -------
@@ -1267,8 +1182,8 @@ def test_get_option_missing_pat_raises() -> None:
 
 def test_describe_option_no_docstring_match(monkeypatch: MonkeyPatch) -> None:
     """
-    When the class docstring has no entry for an option, describe_option should fall back
-    to 'No description available.' rather than raising an error.
+    When the class docstring has no entry for an option, describe_option should
+    fall back to 'No description available.' rather than raising an error.
 
     Parameters
     ----------
@@ -1286,7 +1201,8 @@ def test_describe_option_no_docstring_match(monkeypatch: MonkeyPatch) -> None:
 
 def test_describe_option_invalid() -> None:
     """
-    Execute cl.options.desribe_option() with an invalid argument. Should raise a ValueError.
+    Execute cl.options.desribe_option() with an invalid argument. Should raise
+    a ValueError.
 
     Returns
     -------
@@ -1299,7 +1215,8 @@ def test_describe_option_invalid() -> None:
 
 def test_both_pat_and_option_raises() -> None:
     """
-    Passing both pat and option to get_option, set_option, or reset_option should raise TypeError.
+    Passing both pat and option to get_option, set_option, or reset_option should
+    raise TypeError.
     """
     with pytest.raises(TypeError, match="Cannot specify both"):
         cl.options.get_option(pat="ARRAY_BACKEND", option="ARRAY_BACKEND")

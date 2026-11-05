@@ -117,6 +117,8 @@ settings.json
 
 *.pkl
 
+!chainladder/utils/data/*.pkl
+
 # macOS related files
 *.DS_Store
 *Icon?
