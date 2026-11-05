@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import operator
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -13,7 +12,7 @@ from chainladder.utils.utility_functions import num_to_nan, concat
 
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
-from chainladder import _warn_dask_parallel_deprecated
+from chainladder import _deprecated_rename, _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db
@@ -605,15 +604,8 @@ class TriangleDunders:
         xp = x.get_array_module()
         return bool(xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values)))
 
+    @_deprecated_rename("equals", version="1.0.0")
     def __eq__(self, other):
-        warnings.warn(
-            "The behavior of == and != on triangles is deprecated. In a future "
-            "release they will compare element by element, as they do for "
-            "pandas objects. Use Triangle.equals() to test whether two "
-            "triangles hold the same values.",
-            FutureWarning,
-            stacklevel=2,
-        )
         return self.equals(other)
 
     def __contains__(self, value):

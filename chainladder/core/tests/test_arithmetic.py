@@ -217,7 +217,7 @@ def test_eq_and_ne_warn_and_match_equals(raa: Triangle, op) -> None:
     """
     for other in (raa.copy(), raa * 2):
         expected = raa.equals(other) if op is operator.eq else not raa.equals(other)
-        with pytest.warns(FutureWarning, match=r"Use Triangle\.equals\(\)"):
+        with pytest.warns(FutureWarning, match=r"renamed to 'equals' in 1\.0\.0"):
             result = op(raa, other)
         assert result is expected
 
