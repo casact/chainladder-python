@@ -7,6 +7,7 @@ Mirror pandas API onto the Triangle class.
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -65,6 +66,23 @@ class TriangleGroupBy:
 
 
 class TrianglePandas(_TrianglePandasBase):
+    if TYPE_CHECKING:
+        # Implemented by Common.set_backend; declared here so it takes precedence
+        # over the unimplemented TriangleProtocol stub in the type-checking MRO.
+        def set_backend(
+            self,
+            backend: str,
+            inplace: bool = False,
+            deep: bool = False,
+            _warn: bool = True,
+            **kwargs: Any,
+        ) -> Triangle: ...
+
+        # Installed by add_triangle_agg_func at runtime.
+        def sum(
+            self, axis: str | int | None = None, *args: Any, **kwargs: Any
+        ) -> TriangleProtocol: ...
+
     def to_frame(
         self,
         origin_as_datetime: bool = True,
@@ -1303,7 +1321,25 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
         func: Callable = getattr(xp, v)
         kwargs.update({"keepdims": True})
         # Apply the function on the requested axis.
-        obj.values = func(obj.values, axis=axis, *args, **kwargs)
+        if axis in [0, 1] and not obj.is_full:
+            with warnings.catch_warnings():
+                # the lower right half of an undeveloped triangle will always emit an
+                # empty or All-NaN slice warning when aggregating by index or column
+                # (depending on `func`; e.g. nanmean warns "empty slice",
+                # nanmax warns All-NaN slice
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message=".*empty slice.*",
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    category=RuntimeWarning,
+                    message=".*All-NaN slice.*",
+                )
+                obj.values = func(obj.values, axis=axis, *args, **kwargs)
+        else:
+            obj.values = func(obj.values, axis=axis, *args, **kwargs)
 
         # Aggregation function will collapse a dimension, so
         # adjust the dimensions of the original object to match that of the aggregation.

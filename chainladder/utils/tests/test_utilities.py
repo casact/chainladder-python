@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import copy
+import warnings
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import dill
+import numpy as np
+import pandas as pd
 import pytest
 
 import chainladder as cl
-import copy
-import warnings
-import numpy as np
-import pandas as pd
 
 from chainladder import __dt64_unit__
 from chainladder.utils.data._manifest import SAMPLES
@@ -16,12 +21,9 @@ from chainladder.utils.utility_functions import (
     minimum,
 )
 
-from pathlib import Path
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from pytest import CaptureFixture
-    from pytest import MonkeyPatch
+    from pytest import CaptureFixture, MonkeyPatch
+
     from chainladder import Triangle
 
 
@@ -57,7 +59,7 @@ class _FakeDaskBag:
 
 def test_triangle_json_io(clrd):
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
-    assert clrd == clrd2
+    assert clrd.equals(clrd2)
     assert clrd.index.equals(clrd2.index)
     assert np.all(clrd.columns == clrd2.columns)
     assert np.all(clrd.odims == clrd2.odims)
@@ -67,7 +69,7 @@ def test_triangle_json_io(clrd):
 
 def test_json_for_val(raa):
     x = raa.dev_to_val().to_json()
-    assert cl.read_json(x) == raa.dev_to_val()
+    assert cl.read_json(x).equals(raa.dev_to_val())
 
 
 def test_estimator_json_io():
@@ -107,13 +109,15 @@ def test_read_csv_single(raa):
 
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
-    assert raa == cl.read_csv(
-        filepath_or_buffer=raa_csv_path,
-        origin="origin",
-        valuation="development",
-        columns=["values"],
-        index=None,
-        cumulative=True,
+    assert raa.equals(
+        cl.read_csv(
+            filepath_or_buffer=raa_csv_path,
+            origin="origin",
+            valuation="development",
+            columns=["values"],
+            index=None,
+            cumulative=True,
+        )
     )
 
 
@@ -124,28 +128,29 @@ def test_read_csv_multi(clrd):
 
     clrd_csv_path = Path(__file__).parent.parent / "data" / "clrd.csv"
 
-    assert clrd == cl.read_csv(
-        filepath_or_buffer=clrd_csv_path,
-        origin="AccidentYear",
-        valuation="DevelopmentYear",
-        columns=[
-            "IncurLoss",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ],
-        index=["GRNAME", "LOB"],
-        cumulative=True,
+    assert clrd.equals(
+        cl.read_csv(
+            filepath_or_buffer=clrd_csv_path,
+            origin="AccidentYear",
+            valuation="DevelopmentYear",
+            columns=[
+                "IncurLoss",
+                "CumPaidLoss",
+                "BulkLoss",
+                "EarnedPremDIR",
+                "EarnedPremCeded",
+                "EarnedPremNet",
+            ],
+            index=["GRNAME", "LOB"],
+            cumulative=True,
+        )
     )
 
 
 def test_concat(clrd):
     tri = clrd.groupby("LOB").sum()
-    assert (
-        cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0)
-        == tri.loc[["wkcomp", "comauto"]]
+    assert cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0).equals(
+        tri.loc[["wkcomp", "comauto"]]
     )
 
 
@@ -206,7 +211,7 @@ def test_concat_immutability(raa):
     u.columns = latest.columns
     u_new = copy.deepcopy(u)
     cl.concat((latest, u), axis=3)
-    assert u == u_new
+    assert u.equals(u_new)
 
 
 def test_maximum_minimum_1(raa):

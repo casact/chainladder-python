@@ -12,7 +12,7 @@ from chainladder.utils.utility_functions import num_to_nan, concat
 
 from chainladder.core.pandas import TriangleGroupBy
 from chainladder.utils.sparse import sp
-from chainladder import _warn_dask_parallel_deprecated
+from chainladder import _deprecated_rename, _warn_dask_parallel_deprecated
 
 try:
     import dask.bag as db
@@ -220,8 +220,8 @@ class TriangleDunders:
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
                 obj_arr = xp.zeros((
-                    self.shape[0],
-                    self.shape[1],
+                    obj.shape[0],
+                    obj.shape[1],
                     len(odims),
                     len(ddims),
                 ))
@@ -239,7 +239,7 @@ class TriangleDunders:
                     len(odims),
                     len(ddims),
                 )
-                obj_arr.shape = (self.shape[0], self.shape[1], len(odims), len(ddims))
+                obj_arr.shape = (obj.shape[0], obj.shape[1], len(odims), len(ddims))
             obj.odims = np.array(odims.index)
             if isinstance(obj.ddims, pd.DatetimeIndex):
                 obj.ddims = pd.DatetimeIndex(ddims.index)
@@ -563,7 +563,33 @@ class TriangleDunders:
         obj.values = num_to_nan(obj.values)
         return obj
 
-    def __eq__(self, other):
+    def equals(self, other: object) -> bool:
+        """
+        Test whether ``other`` is a Triangle that holds the same values.
+
+        Use ``equals`` to compare whole triangles. ``==`` between two triangles
+        returns the same answer for now, with a ``FutureWarning``, and will
+        compare element by element in a future release, as it does for pandas
+        objects. See #1395.
+
+        Parameters
+        ----------
+        other: object
+            The object to compare with.
+
+        Returns
+        -------
+        bool
+            True if ``other`` is a Triangle and both triangles hold the same
+            values, False otherwise.
+
+        Notes
+        -----
+        Only the values are compared, and missing values are read as zero, so a
+        missing cell equals a zero cell. Index, column, origin and development
+        labels are not compared. Triangles on different array backends are
+        moved to a common backend first.
+        """
         if not isinstance(other, TriangleDunders):
             return False
         from chainladder import options
@@ -576,7 +602,11 @@ class TriangleDunders:
         ]
         x, y = self.set_backend(backend), other.set_backend(backend)
         xp = x.get_array_module()
-        return xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values))
+        return bool(xp.all(xp.nan_to_num(x.values) == xp.nan_to_num(y.values)))
+
+    @_deprecated_rename("equals", version="1.0.0")
+    def __eq__(self, other):
+        return self.equals(other)
 
     def __contains__(self, value):
         return self.__dict__.get(value, None) is not None

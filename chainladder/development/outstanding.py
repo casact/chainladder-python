@@ -477,17 +477,17 @@ class ImpliedCaseDevelopment(DevelopmentBase):
 
     def transform(self, X: Triangle) -> Triangle:
         """
-         Transform the triangle by attaching implied case development factors.
+        Transform the triangle by attaching implied case development factors.
 
-         Parameters
-         ----------
-         X : Triangle
-             The case triangle to be transformed.
+        Parameters
+        ----------
+        X : Triangle
+            The case triangle to be transformed.
 
         Returns
-         -------
-         X_new : Triangle
-             Transformed case triangle with ldf_, case_ldf_, and case_cdf_ attached.
+        -------
+        X_new : Triangle
+            Transformed case triangle with ``ldf_``, ``case_ldf_``, and ``case_cdf_`` attached.
         """
         if len(X.columns) > 1:
             raise ValueError(

@@ -67,9 +67,14 @@ class _LocBase:
         obj.index = obj.index.iloc[i_idx].reset_index(drop=True)
         obj.columns = obj.columns[c_idx]
         obj.odims, obj.ddims = obj.odims[o_idx], obj.ddims[d_idx]
-        obj.valuation_date = cast(
-            pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date)
-        )
+        from chainladder import options
+
+        if obj.valuation_date < pd.to_datetime(options.ULT_VAL) or not getattr(
+            obj, "is_pattern", False
+        ):
+            obj.valuation_date = cast(
+                pd.Timestamp, np.minimum(obj.valuation.max(), obj.valuation_date)
+            )
         return obj
 
     @staticmethod
@@ -969,11 +974,16 @@ class TriangleSlicer:
         -------
         Triangle
         """
+        from chainladder import options
+
         obj = self.copy()
         # Update the triangle's valuation date by computing the max valuation on the remaining cells,
         # limited by the current valuation date in case the valuation periods extend beyond it, i.e.,
         # in the case of tails.
-        obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
+        if obj.valuation_date < pd.to_datetime(options.ULT_VAL) or not getattr(
+            obj, "is_pattern", False
+        ):
+            obj.valuation_date = min(obj.valuation[key].max(), obj.valuation_date)
         # Filter out values by converting them to nan.
         key = key.reshape(self.shape[-2:], order="F")
         obj.values = cast(
