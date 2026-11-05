@@ -82,7 +82,7 @@ class Common:
 
     @property
     def has_zeta(self):
-        if hasattr(self, "zeta_"):
+        if hasattr(self, "_zeta_"):
             return True
         else:
             return False
@@ -158,13 +158,6 @@ class Common:
                 "'" + x + "' object has no attribute 'pct_unreported_'"
             )
         return 1 - 1 / self.cdf_
-
-    @property
-    def cum_zeta_(self):
-        if not self.has_zeta:
-            x = self.__class__.__name__
-            raise AttributeError("'" + x + "' object has no attribute 'cum_zeta_'")
-        return self.zeta_.incr_to_cum()
 
     @property
     def ibnr_(self):
