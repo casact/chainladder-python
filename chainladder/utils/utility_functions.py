@@ -758,22 +758,6 @@ def concat(
             "ignore_index=True is not supported along the origin or development "
             "axis, because their labels carry the triangle's grain."
         )
-    return _concat(objs, axis, ignore_index=ignore_index, sort=sort)
-
-
-def _concat(
-    objs: list,
-    axis: Union[int, str],
-    ignore_index: bool = False,
-    sort: bool = False,
-):
-    """
-    Concatenate Triangle objects, allowing ``ignore_index=True`` on any axis.
-
-    Groupby aggregations stack one slice per group with ``ignore_index=True``
-    along the grouped axis, which can be origin or development. ``concat``
-    rejects that combination, so they call this instead.
-    """
     xp = objs[0].get_array_module()
     axis = objs[0]._get_axis(axis)
 
