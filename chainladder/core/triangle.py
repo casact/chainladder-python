@@ -12,9 +12,9 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from chainladder import options, _warn_dask_parallel_deprecated, __dt64_dtype__
+from chainladder import __dt64_dtype__, _warn_dask_parallel_deprecated, options
 from chainladder._config.deprecation import _deprecated_rename_argument
-from chainladder.core.axis import _set_columns, _set_index, TriangleAxis
+from chainladder.core.axis import TriangleAxis, _set_columns, _set_index
 from chainladder.core.base import TriangleBase
 from chainladder.core.correlation import DevelopmentCorrelation, ValuationCorrelation
 from chainladder.core.slice import VirtualColumns
@@ -32,10 +32,10 @@ except ImportError:
     db = None
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Optional,
     Self,
-    TYPE_CHECKING,
     cast,
 )
 
