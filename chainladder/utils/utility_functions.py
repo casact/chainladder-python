@@ -604,56 +604,6 @@ def set_common_backend(objs):
     return [i.set_backend(backend) for i in objs]
 
 
-def _labels_match(labels: list) -> bool:
-    """Return whether every array of axis labels in ``labels`` equals the first."""
-    first = labels[0]
-    return all(
-        len(other) == len(first) and bool(np.all(other == first))
-        for other in labels[1:]
-    )
-
-
-def _repeated(labels) -> list:
-    """Return each label that occurs more than once in ``labels``, once."""
-    labels = pd.Index(labels)
-    repeated = labels[labels.duplicated()].unique()
-    if isinstance(repeated, pd.DatetimeIndex):
-        return repeated.strftime("%Y-%m-%d").tolist()
-    return repeated.tolist()
-
-
-def _check_unique_labels(objs: list, axis: int) -> None:
-    """Raise a ValueError naming any label that repeats along ``axis``."""
-    if axis == 0:
-        index = pd.concat([obj.index for obj in objs], ignore_index=True)
-        if len(index.drop_duplicates()) != len(index):
-            repeated = index[index.duplicated()].drop_duplicates()
-            raise ValueError(
-                "Index labels repeat across the triangles: "
-                f"{repeated.to_dict('records')}. Pass ignore_index=True to "
-                "number the index 0, …, n - 1."
-            )
-        return
-    attribute = {1: "columns", 2: "odims", 3: "ddims"}[axis]
-    labels = np.concatenate([getattr(obj, attribute) for obj in objs])
-    if len(labels) == len(set(labels)):
-        return
-    if axis == 1:
-        raise ValueError(
-            f"Column labels repeat across the triangles: {_repeated(labels)}. "
-            "Rename the columns or pass ignore_index=True."
-        )
-    if axis == 2:
-        raise ValueError(
-            f"Origin periods repeat across the triangles: {_repeated(labels)}. "
-            "To combine amounts for the same origin periods, add the triangles "
-            "with + instead."
-        )
-    raise ValueError(
-        f"Development periods repeat across the triangles: {_repeated(labels)}."
-    )
-
-
 def concat(
     objs: list | tuple,
     axis: Union[int, str],
@@ -747,6 +697,56 @@ def concat(
         1996  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
         1997  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
     """
+
+    def labels_match(labels: list) -> bool:
+        """Return whether every array of axis labels in ``labels`` equals the first."""
+        first = labels[0]
+        return all(
+            len(other) == len(first) and bool(np.all(other == first))
+            for other in labels[1:]
+        )
+
+    def repeated_labels(labels) -> list:
+        """Return each label that occurs more than once in ``labels``, once."""
+        labels = pd.Index(labels)
+        repeated = labels[labels.duplicated()].unique()
+        if isinstance(repeated, pd.DatetimeIndex):
+            return repeated.strftime("%Y-%m-%d").tolist()
+        return repeated.tolist()
+
+    def check_unique_labels(objs: list, axis: int) -> None:
+        """Raise a ValueError naming any label that repeats along ``axis``."""
+        if axis == 0:
+            index = pd.concat([obj.index for obj in objs], ignore_index=True)
+            if len(index.drop_duplicates()) != len(index):
+                repeated = index[index.duplicated()].drop_duplicates()
+                raise ValueError(
+                    "Index labels repeat across the triangles: "
+                    f"{repeated.to_dict('records')}. Pass ignore_index=True to "
+                    "number the index 0, …, n - 1."
+                )
+            return
+        attribute = {1: "columns", 2: "odims", 3: "ddims"}[axis]
+        labels = np.concatenate([getattr(obj, attribute) for obj in objs])
+        if len(labels) == len(set(labels)):
+            return
+        if axis == 1:
+            raise ValueError(
+                "Column labels repeat across the triangles: "
+                f"{repeated_labels(labels)}. Rename the columns or pass "
+                "ignore_index=True."
+            )
+        if axis == 2:
+            raise ValueError(
+                "Origin periods repeat across the triangles: "
+                f"{repeated_labels(labels)}. To combine amounts for the same "
+                "origin periods, add the triangles with + instead."
+            )
+        raise ValueError(
+            "Development periods repeat across the triangles: "
+            f"{repeated_labels(labels)}."
+        )
+
     if type(objs) not in (list, tuple):
         raise TypeError("objects to be concatenated must be in a list or tuple")
     if type(objs) is tuple:
@@ -778,7 +778,7 @@ def concat(
                 objs[num] = objs[num][all_columns]
     objs = set_common_backend(objs)
     if not ignore_index:
-        _check_unique_labels(objs, axis)
+        check_unique_labels(objs, axis)
     if axis != 0:
         for obj in objs[1:]:
             if not (
@@ -795,12 +795,12 @@ def concat(
                     "All triangles must have the same index to be concatenated "
                     "along columns, origin or development."
                 )
-    if axis != 2 and not _labels_match([obj.odims for obj in objs]):
+    if axis != 2 and not labels_match([obj.odims for obj in objs]):
         raise ValueError(
             "All triangles must have the same origin periods to be concatenated "
             "along index, columns or development."
         )
-    if axis != 3 and not _labels_match([obj.ddims for obj in objs]):
+    if axis != 3 and not labels_match([obj.ddims for obj in objs]):
         raise ValueError(
             "All triangles must have the same development periods to be "
             "concatenated along index, columns or origin."
