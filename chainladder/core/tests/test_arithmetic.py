@@ -32,7 +32,7 @@ def test_arithmetic_ndarray_other_backend(raa: Triangle) -> None:
     other = np.ones(sparse_raa.shape)
     result = sparse_raa + other
     assert result.array_backend == "sparse"
-    assert result.set_backend("numpy") == raa + 1
+    assert result.set_backend("numpy").equals(raa + 1)
 
 
 def test_arithmetic_coo_other_backend(raa: Triangle) -> None:
@@ -53,7 +53,7 @@ def test_arithmetic_coo_other_backend(raa: Triangle) -> None:
     other = COO.from_numpy(np.ones(numpy_raa.shape))
     result = numpy_raa + other
     assert result.array_backend == "sparse"
-    assert result.set_backend("numpy") == raa + 1
+    assert result.set_backend("numpy").equals(raa + 1)
 
 
 def test_arithmetic_grain_mismatch_raises(raa: Triangle, qtr: Triangle) -> None:
@@ -95,7 +95,7 @@ def test_non_overlapping_odims(raa: Triangle) -> None:
     a = raa.iloc[..., :5, :]
     b = raa.iloc[..., 5:, :]
     result = a + b
-    assert result == raa
+    assert result.equals(raa)
 
 
 def test_arithmetic_union_val_tri(raa: Triangle) -> None:
@@ -117,7 +117,7 @@ def test_arithmetic_union_val_tri(raa: Triangle) -> None:
     result = a + b
     assert isinstance(result.ddims, pd.DatetimeIndex)
     assert result.shape == val_raa.shape
-    assert result == val_raa
+    assert result.equals(val_raa)
 
 
 def test_origin_broadcasting(raa: Triangle) -> None:
@@ -137,22 +137,22 @@ def test_origin_broadcasting(raa: Triangle) -> None:
     single_origin["values"] = 500
     result = raa + single_origin
     assert result.shape == raa.shape
-    assert result == raa + 500
+    assert result.equals(raa + 500)
 
 
 def test_arithmetic_union(raa):
     assert raa.shape == (raa - raa[raa.valuation < "1987"]).shape
-    assert raa[raa.valuation < "1986"] + raa[raa.valuation >= "1986"] == raa
+    assert (raa[raa.valuation < "1986"] + raa[raa.valuation >= "1986"]).equals(raa)
 
 
 def test_arithmetic_across_keys(qtr):
-    assert (qtr.sum(1) - qtr.iloc[:, 0]) == qtr.iloc[:, 1]
+    assert (qtr.sum(1) - qtr.iloc[:, 0]).equals(qtr.iloc[:, 1])
 
 
 def test_arithmetic_1(raa):
     x = raa
-    assert -(((x / x) + 0) * x) == -(+x)
-    assert 1 - (x / x) == 0 * x * 0
+    assert (-(((x / x) + 0) * x)).equals(-(+x))
+    assert (1 - (x / x)).equals(0 * x * 0)
 
 
 def test_eq_non_triangle(raa: Triangle) -> None:
@@ -258,7 +258,7 @@ def test_vector_division(raa: Triangle) -> None:
     for i in range(raa.shape[2]):
         orig = raa.iloc[..., i : i + 1, :]
         ld = raa.latest_diagonal.iloc[..., i : i + 1, :]
-        assert result.iloc[..., i : i + 1, :] == ld / orig
+        assert result.iloc[..., i : i + 1, :].equals(ld / orig)
 
 
 def test_multiindex_broadcast(clrd):
@@ -312,7 +312,7 @@ def test_index_broadcasting5(clrd):
     a = clrd["CumPaidLoss"].iloc[:300]
     b = clrd["CumPaidLoss"].iloc[300:]
     c = a + b
-    assert c.sort_index() == clrd["CumPaidLoss"].sort_index()
+    assert c.sort_index().equals(clrd["CumPaidLoss"].sort_index())
 
 
 def test_index_broadacsting6(clrd):
@@ -320,7 +320,7 @@ def test_index_broadacsting6(clrd):
     b = clrd["CumPaidLoss"].iloc[50:150]
     c = clrd["CumPaidLoss"].iloc[50:100]
     d = a + b - c
-    assert d.sort_index() == clrd["CumPaidLoss"].iloc[:150].sort_index()
+    assert d.sort_index().equals(clrd["CumPaidLoss"].iloc[:150].sort_index())
 
 
 def test_index_broadcasting_ambiguous(clrd: Triangle) -> None:
@@ -361,11 +361,10 @@ def test_prep_columns_reindexes_superset(clrd: Triangle) -> None:
     y = clrd[["CumPaidLoss", "IncurLoss"]]
     for result in [x + y, y + x]:
         assert set(result.columns) == {"CumPaidLoss", "EarnedPremNet", "IncurLoss"}
-        assert (
-            result[["CumPaidLoss", "IncurLoss"]]
-            == clrd[["CumPaidLoss", "IncurLoss"]] * 2
+        assert result[["CumPaidLoss", "IncurLoss"]].equals(
+            clrd[["CumPaidLoss", "IncurLoss"]] * 2
         )
-        assert result["EarnedPremNet"] == clrd["EarnedPremNet"]
+        assert result["EarnedPremNet"].equals(clrd["EarnedPremNet"])
 
 
 def test_overlapping_columns_and_origins_union_both_axes(clrd: Triangle) -> None:
@@ -397,23 +396,21 @@ def test_overlapping_columns_and_origins_union_both_axes(clrd: Triangle) -> None
         both = both[both.origin <= "1993"]
         expected = c[c.origin >= "1990"]
         expected = expected[expected.origin <= "1993"]
-        assert both["IncurLoss"] == expected["IncurLoss"] * 2
+        assert both["IncurLoss"].equals(expected["IncurLoss"] * 2)
 
         a_only = result[result.origin <= "1989"]
-        assert a_only["IncurLoss"] == c[c.origin <= "1989"]["IncurLoss"]
+        assert a_only["IncurLoss"].equals(c[c.origin <= "1989"]["IncurLoss"])
 
         b_only = result[result.origin >= "1994"]
-        assert b_only["IncurLoss"] == c[c.origin >= "1994"]["IncurLoss"]
+        assert b_only["IncurLoss"].equals(c[c.origin >= "1994"]["IncurLoss"])
 
-        assert (
-            result["CumPaidLoss"][result.origin <= "1993"]
-            == c["CumPaidLoss"][c.origin <= "1993"]
+        assert result["CumPaidLoss"][result.origin <= "1993"].equals(
+            c["CumPaidLoss"][c.origin <= "1993"]
         )
         assert np.isnan(result["CumPaidLoss"][result.origin >= "1994"].values).all()
 
-        assert (
-            result["EarnedPremDIR"][result.origin >= "1990"]
-            == c["EarnedPremDIR"][c.origin >= "1990"]
+        assert result["EarnedPremDIR"][result.origin >= "1990"].equals(
+            c["EarnedPremDIR"][c.origin >= "1990"]
         )
         assert np.isnan(result["EarnedPremDIR"][result.origin <= "1989"].values).all()
 

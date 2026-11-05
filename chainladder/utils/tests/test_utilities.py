@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import copy
+import warnings
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import dill
+import numpy as np
+import pandas as pd
 import pytest
 
 import chainladder as cl
-import copy
-import dill
-import warnings
-import numpy as np
-import pandas as pd
 
 from chainladder import __dt64_unit__
 from chainladder.utils.data._manifest import SAMPLES
@@ -17,12 +21,9 @@ from chainladder.utils.utility_functions import (
     minimum,
 )
 
-from pathlib import Path
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from pytest import CaptureFixture
-    from pytest import MonkeyPatch
+    from pytest import CaptureFixture, MonkeyPatch
+
     from chainladder import Triangle
 
 
@@ -58,7 +59,7 @@ class _FakeDaskBag:
 
 def test_triangle_json_io(clrd):
     clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
-    assert clrd == clrd2
+    assert clrd.equals(clrd2)
     assert clrd.index.equals(clrd2.index)
     assert np.all(clrd.columns == clrd2.columns)
     assert np.all(clrd.odims == clrd2.odims)
@@ -68,7 +69,7 @@ def test_triangle_json_io(clrd):
 
 def test_json_for_val(raa):
     x = raa.dev_to_val().to_json()
-    assert cl.read_json(x) == raa.dev_to_val()
+    assert cl.read_json(x).equals(raa.dev_to_val())
 
 
 def test_estimator_json_io():
@@ -108,13 +109,15 @@ def test_read_csv_single(raa):
 
     raa_csv_path = Path(__file__).parent.parent / "data" / "raa.csv"
 
-    assert raa == cl.read_csv(
-        filepath_or_buffer=raa_csv_path,
-        origin="origin",
-        valuation="development",
-        columns=["values"],
-        index=None,
-        cumulative=True,
+    assert raa.equals(
+        cl.read_csv(
+            filepath_or_buffer=raa_csv_path,
+            origin="origin",
+            valuation="development",
+            columns=["values"],
+            index=None,
+            cumulative=True,
+        )
     )
 
 
@@ -125,28 +128,29 @@ def test_read_csv_multi(clrd):
 
     clrd_csv_path = Path(__file__).parent.parent / "data" / "clrd.csv"
 
-    assert clrd == cl.read_csv(
-        filepath_or_buffer=clrd_csv_path,
-        origin="AccidentYear",
-        valuation="DevelopmentYear",
-        columns=[
-            "IncurLoss",
-            "CumPaidLoss",
-            "BulkLoss",
-            "EarnedPremDIR",
-            "EarnedPremCeded",
-            "EarnedPremNet",
-        ],
-        index=["GRNAME", "LOB"],
-        cumulative=True,
+    assert clrd.equals(
+        cl.read_csv(
+            filepath_or_buffer=clrd_csv_path,
+            origin="AccidentYear",
+            valuation="DevelopmentYear",
+            columns=[
+                "IncurLoss",
+                "CumPaidLoss",
+                "BulkLoss",
+                "EarnedPremDIR",
+                "EarnedPremCeded",
+                "EarnedPremNet",
+            ],
+            index=["GRNAME", "LOB"],
+            cumulative=True,
+        )
     )
 
 
 def test_concat(clrd):
     tri = clrd.groupby("LOB").sum()
-    assert (
-        cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0)
-        == tri.loc[["wkcomp", "comauto"]]
+    assert cl.concat([tri.loc["wkcomp"], tri.loc["comauto"]], axis=0).equals(
+        tri.loc[["wkcomp", "comauto"]]
     )
 
 
@@ -207,12 +211,12 @@ def test_concat_immutability(raa):
     u.columns = latest.columns
     u_new = copy.deepcopy(u)
     cl.concat((latest, u), axis=3)
-    assert u == u_new
+    assert u.equals(u_new)
 
 
 def test_to_pickle_read_pickle(raa):
-    import tempfile
     import os
+    import tempfile
 
     dev = cl.Development(average="simple", n_periods=4).fit(raa)
     fd, path = tempfile.mkstemp(suffix=".pkl")
@@ -437,7 +441,7 @@ def test_read_pickle_triangle(raa: Triangle, tmp_path: Path) -> None:
     pkl_path = tmp_path / "triangle.pkl"
     with open(pkl_path, "wb") as f:
         dill.dump(raa, f)
-    assert cl.read_pickle(str(pkl_path)) == raa
+    assert cl.read_pickle(str(pkl_path)).equals(raa)
 
 
 def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> None:
@@ -463,13 +467,13 @@ def test_triangle_to_pickle(raa: Triangle, clrd: Triangle, tmp_path: Path) -> No
     raa_path = tmp_path / "raa.pkl"
     raa.to_pickle(str(raa_path))
     assert raa_path.is_file()
-    assert cl.read_pickle(str(raa_path)) == raa
+    assert cl.read_pickle(str(raa_path)).equals(raa)
 
     # Multidimensional case.
     clrd_path = tmp_path / "clrd.pkl"
     clrd.to_pickle(str(clrd_path))
     assert clrd_path.is_file()
-    assert cl.read_pickle(str(clrd_path)) == clrd
+    assert cl.read_pickle(str(clrd_path)).equals(clrd)
 
 
 def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
@@ -494,7 +498,7 @@ def test_read_pickle_estimator(raa: Triangle, tmp_path: Path) -> None:
     dev = cl.Development().fit(raa)
     with open(pkl_path, "wb") as f:
         dill.dump(dev, f)
-    assert dev.ldf_ == cl.read_pickle(str(pkl_path)).ldf_
+    assert dev.ldf_.equals(cl.read_pickle(str(pkl_path)).ldf_)
 
 
 def test_concat_type_error() -> None:

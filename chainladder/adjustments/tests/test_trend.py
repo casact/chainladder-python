@@ -1,5 +1,6 @@
-import chainladder as cl
 import numpy as np
+
+import chainladder as cl
 
 
 def test_trend1(clrd):
@@ -19,7 +20,7 @@ def test_trend1(clrd):
         )
         .ibnr_
     )
-    assert np.round(lhs, 0) == np.round(rhs, 0)
+    assert np.round(lhs, 0).equals(np.round(rhs, 0))
 
 
 def test_trend2(raa):
