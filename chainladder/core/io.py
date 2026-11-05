@@ -44,7 +44,7 @@ class TriangleIO:
             restored = cl.read_pickle(path)
             os.remove(path)
             print(restored.shape)
-            print(restored == raa)
+            print(restored.equals(raa))
 
         .. testoutput::
 
@@ -78,7 +78,7 @@ class TriangleIO:
             raa = cl.load_sample('raa')
             payload = json.loads(raa.to_json())
             print(sorted(payload.keys()))
-            print(cl.read_json(raa.to_json()) == raa)
+            print(cl.read_json(raa.to_json()).equals(raa))
 
         .. testoutput::
 
