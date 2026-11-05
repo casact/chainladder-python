@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import pytest
-import numpy as np
-import chainladder as cl
-import pandas as pd
-
 from typing import TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
+import pytest
+
+import chainladder as cl
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -25,6 +26,19 @@ def test_bk_fit_weight(raa: Triangle) -> None:
     """
     with pytest.raises(ValueError):
         cl.Benktander().fit(raa)
+
+
+def test_bk_fit_mishaped_weight_raises(clrd: Triangle) -> None:
+    """
+    Test validation of sample_weight shape requirement. Should raise a value error if weights are
+    not the same shape as X
+    """
+    clrd_sum = clrd.sum()
+    with pytest.raises(ValueError):
+        cl.Benktander().fit(
+            clrd_sum["IncurLoss", "CumPaidLoss"],
+            sample_weight=clrd_sum["EarnedPremDIR", "EarnedPremCeded", "EarnedPremNet"],
+        )
 
 
 @pytest.mark.parametrize("data", data)
