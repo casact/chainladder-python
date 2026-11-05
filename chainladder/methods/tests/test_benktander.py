@@ -37,7 +37,7 @@ def test_bk_fit_mishaped_weight_raises(clrd: Triangle) -> None:
     with pytest.raises(ValueError):
         cl.Benktander().fit(
             clrd_sum["IncurLoss", "CumPaidLoss"],
-            sample_weights=clrd_sum["EarnedPremDIR", "EarnedPremCeded", "EarnedPremNet"],
+            sample_weight=clrd_sum["EarnedPremDIR", "EarnedPremCeded", "EarnedPremNet"],
         )
 
 
