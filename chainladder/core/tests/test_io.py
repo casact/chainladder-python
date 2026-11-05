@@ -30,7 +30,7 @@ class TestJSON:
         None
         """
         clrd2 = cl.read_json(clrd.to_json(), array_backend=clrd.array_backend)
-        assert clrd.equals clrd2
+        assert clrd.equals(clrd2)
         assert clrd.index.equals(clrd2.index)
         assert np.all(clrd.columns == clrd2.columns)
         assert np.all(clrd.odims == clrd2.odims)
