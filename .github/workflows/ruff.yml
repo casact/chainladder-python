@@ -36,12 +36,12 @@ jobs:
         run: |
           uvx ruff@0.16.1 format --check --diff --force-exclude .
 
-      - name: Suggest import sorting for changed files
+      - name: Suggest import sorting and flag long lines in changed files
         if: github.event_name == 'pull_request'
         run: |
           files=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}"...HEAD -- "*.py" "*.ipynb")
           if [ -z "$files" ]; then
             echo "No changed Python files or notebooks to check"
           else
-            uvx ruff@0.16.1 check --force-exclude --select I --diff --exit-zero $files
+            uvx ruff@0.16.1 check --force-exclude --select I,E501 --exit-zero $files
           fi
