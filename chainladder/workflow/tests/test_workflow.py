@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import chainladder as cl
-import pytest
 from functools import partial
-
 from typing import TYPE_CHECKING
+
+import pytest
+
+import chainladder as cl
 
 if TYPE_CHECKING:
     from chainladder import Triangle
-    from typing import Callable, Any
+    from typing import Any, Callable
 
 
 def test_grid(clrd: Triangle) -> None:
