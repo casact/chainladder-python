@@ -354,8 +354,8 @@ class MunichAdjustment(DevelopmentBase):
         """
         xp = X.get_array_module()
         obj = X.cdf_.copy()
-        obj.values = xp.repeat(obj.values, len(X.odims), 2)
-        obj.odims = X.odims
+        obj.values = xp.repeat(obj.values, len(X.origin), 2)
+        obj.origin = X.origin
         if type(self.paid_to_incurred) is tuple:
             p_to_i = [self.paid_to_incurred]
         else:
@@ -380,7 +380,7 @@ class MunichAdjustment(DevelopmentBase):
         ldf_tri = ldf_tri[..., :-1] / ldf_tri[..., 1:]
         obj = cdf.copy()
         obj.values = ldf_tri
-        obj.ddims = X.link_ratio.ddims
+        obj.development = X.link_ratio.development
         obj.is_pattern = True
         obj.is_cumulative = False
         obj._set_slicers()
@@ -400,9 +400,9 @@ class MunichAdjustment(DevelopmentBase):
     @property
     def lambda_(self):
         obj = self.ldf_.copy()
-        obj.odims = obj.odims[0:1]
-        obj.ddims = obj.ddims[0:1]
         obj.values = self._reshape("lambda_coef_")
+        obj.origin = obj.origin[0:1]
+        obj.development = obj.development[0:1]
         return obj.to_frame(origin_as_datetime=False)
 
     @property
@@ -421,14 +421,14 @@ class MunichAdjustment(DevelopmentBase):
     def resids_(self):
         obj = self.ldf_.copy()
         obj.values = self._reshape("residual_")
-        obj.odims = self.cdf_.odims[: obj.values.shape[2]]
+        obj.origin = self.cdf_.origin[: obj.values.shape[2]]
         return obj
 
     @property
     def q_(self):
         obj = self.rho_.copy()
-        obj.odims = self.cdf_.odims
         obj.values = self._reshape("q_f_")
+        obj.origin = self.cdf_.origin[: obj.values.shape[2]]
         return obj
 
     @property
@@ -437,6 +437,6 @@ class MunichAdjustment(DevelopmentBase):
         obj.values = self._reshape("q_resid_")[
             ..., : self.residual_.shape[-2], : self.residual_.shape[-1]
         ]
-        obj.odims = obj.odims[: obj.values.shape[2]]
-        obj.ddims = obj.ddims[: obj.values.shape[3]]
+        obj.origin = obj.origin[: obj.values.shape[2]]
+        obj.development = obj.development[: obj.values.shape[3]]
         return obj

@@ -14,6 +14,13 @@ from typing import (
     TypeAlias,
 )
 
+from chainladder.utils.utility_functions import (
+    _axis_orders as _axis_orders,
+    _axis_to_axis_number as _axis_to_axis_number,
+    _get_axis_name as _get_axis_name,
+    _get_axis_number as _get_axis_number,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from numpy import ndarray
@@ -122,7 +129,9 @@ class TriangleProtocol(Protocol):
     def val_to_dev(self) -> Triangle: ...
     def _repr_format(self, origin_as_datetime: bool = False) -> pd.DataFrame: ...
     def _slice(
-        self, key: pd.Series | np.ndarray, axis: Literal["ddims", "odims"]
+        self,
+        key: pd.Series | np.ndarray,
+        axis: Literal["development", "origin", "ddims", "odims"],
     ) -> Triangle: ...
     def _slice_valuation(self, key: np.ndarray) -> Triangle: ...
     def to_frame(
@@ -164,3 +173,5 @@ class TriangleProtocol(Protocol):
         key: str | int,
         value: int | float | TriangleSlicer | Callable[[Triangle], TriangleSlicer],
     ) -> None: ...
+    def _get_axis_number(self, axis: int | str | None) -> int: ...
+    def _get_axis(self, axis: int | str | None) -> int: ...

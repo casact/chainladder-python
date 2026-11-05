@@ -1,3 +1,4 @@
+import pytest
 import chainladder as cl
 import numpy as np
 import pandas as pd
@@ -27,3 +28,10 @@ def test_multi_index(clrd):
     expected = pd.concat([tri.index] * 1000, ignore_index=True)
     expected["Simulation_#"] = np.arange(1000)
     pd.testing.assert_frame_equal(resampled_triangles.index, expected)
+
+
+def test_bootstrap_odp_val_triangle_error(raa):
+    with pytest.raises(
+        ValueError, match="Triangle must be expressed with development lags"
+    ):
+        cl.BootstrapODPSample().fit(raa.dev_to_val())

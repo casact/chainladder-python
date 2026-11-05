@@ -215,11 +215,11 @@ class ClarkLDF(DevelopmentBase):
         if isinstance(age, (int, float, xp.int64, xp.float64)):
             age = xp.array([age]).astype("float64")
         if isinstance(age, list):
-            age = xp.array([age]).astype("float64")
+            age = xp.array(age).astype("float64")
         obj = self.incremental_act_.copy()
-        obj.odims = obj.odims[0:1]
         obj.values = 1 / self._G(age)
-        obj.ddims = age
+        obj.origin = self.incremental_act_.origin[0:1]
+        obj.development = age
         return obj
 
     def fit(self, X, y=None, sample_weight=None):
@@ -260,13 +260,15 @@ class ClarkLDF(DevelopmentBase):
         age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
         age_interval = {"Y": 12.0, "S": 6.0, "Q": 3.0, "M": 1.0}[X.development_grain]
         nans = nan_triangle.reshape(1, -1)[0]
-        age = xp.tile(X.ddims, len(X.odims))[~xp.isnan(nans)].astype("float64")
+        age = xp.tile(X.development.values, len(X.origin))[~xp.isnan(nans)].astype(
+            "float64"
+        )
         age_end = age - age_offset
         age_start = xp.maximum(age_end - age_interval, 0).astype("float64")
-        origin = np.repeat(X.odims, len(X.ddims))[~xp.isnan(nans)]
+        origin = np.repeat(X.origin, len(X.development))[~xp.isnan(nans)]
         latest_diagonal = obj[X.valuation == X.valuation_date].sum("origin")
-        latest_age = latest_diagonal.ddims.astype("float64")
-        latest_origin = X.odims
+        latest_age = latest_diagonal.development.values.astype("float64")
+        latest_origin = X.origin
         latest_diagonal = latest_diagonal.values[..., 0, :]
 
         index = xp.argsort(latest_origin)
@@ -325,8 +327,8 @@ class ClarkLDF(DevelopmentBase):
             latest_age - age_offset, theta=params[..., 1:2], omega=params[..., 0:1]
         )
         obj.values = cdf[..., :-1] / cdf[..., 1:]
-        obj.ddims = X.link_ratio.ddims
-        obj.odims = obj.odims[0:1]
+        obj.development = X.link_ratio.development
+        obj.origin = obj.origin[0:1]
         obj.is_pattern = True
         obj.is_cumulative = False
         obj._set_slicers()
@@ -356,8 +358,11 @@ class ClarkLDF(DevelopmentBase):
         self.incremental_fits_.array_backend = "numpy"
         self.incremental_fits_.values = (
             (
-                1 / self._G(X.ddims - age_offset)
-                - 1 / self._G(xp.maximum(X.ddims - age_offset - age_interval, 0))
+                1 / self._G(X.development.values - age_offset)
+                - 1
+                / self._G(
+                    xp.maximum(X.development.values - age_offset - age_interval, 0)
+                )
             )
             * ultimate_[..., ::-1]
             * nan_triangle
@@ -413,7 +418,7 @@ class ClarkLDF(DevelopmentBase):
         )
         df = xp.nansum(self.incremental_fits_.nan_triangle) - 2
         if self.method_ == "ldf":
-            df = df - len(self.incremental_fits_.odims)
+            df = df - len(self.incremental_fits_.origin)
         else:
             df = df - 1
         if scale.shape != ():
