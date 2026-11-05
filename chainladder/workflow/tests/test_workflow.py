@@ -8,8 +8,9 @@ import pytest
 import chainladder as cl
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
     from typing import Any, Callable
+
+    from chainladder import Triangle
 
 
 def test_grid(clrd: Triangle) -> None:

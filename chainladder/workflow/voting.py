@@ -25,8 +25,9 @@ from chainladder.methods.base import MethodBase
 from ..core.base import is_chainladder
 
 if TYPE_CHECKING:
-    from chainladder import Triangle
     from typing import Self
+
+    from chainladder import Triangle
 
 
 class _BaseTriangleEnsemble(_BaseHeterogeneousEnsemble):
