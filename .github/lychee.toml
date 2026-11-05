@@ -1,0 +1,31 @@
+scheme = ["http", "https"]
+include_fragments = "anchor-only"
+exclude_all_private = true
+max_retries = 3
+timeout = 30
+host_concurrency = 4
+accept = ["200..=299", "403", "429"]
+
+extensions = ["cff", "html", "ipynb", "md", "py", "rst", "toml", "yaml", "yml"]
+hidden = true
+
+exclude_path = [
+    "(^|/)\\.git/",
+    "(^|/)docs/_build/",
+    "(^|/)\\.github/lychee\\.toml$",
+    "(^|/)docs/conf\\.py$",
+]
+
+remap = [
+    '^(https://github\.com/[^#]*)#.*$ $1',
+]
+
+exclude = [
+    '^https?://(www\.)?example\.(com|org)',
+    '^https://api\.github\.com/',
+    '/n$',
+    '\\n$',
+    '%7B',
+    '/%s$',
+    '^https://(www\.)?linkedin\.com/',
+]

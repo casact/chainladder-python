@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-import chainladder as cl
 import pytest
 
-from typing import TYPE_CHECKING
+import chainladder as cl
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -206,7 +207,9 @@ def test_tri_sel(clrd: Triangle) -> None:
     starter test for the TriangleSelector class
     """
     tri = clrd.sum()
-    assert tri["CumPaidLoss"] == cl.TriangleSelector("CumPaidLoss").fit_transform(tri)
+    assert tri["CumPaidLoss"].equals(
+        cl.TriangleSelector("CumPaidLoss").fit_transform(tri)
+    )
 
 
 def test_mismatching_tri_sel(clrd: Triangle) -> None:

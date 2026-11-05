@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import chainladder as cl
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 
-from typing import TYPE_CHECKING
+import chainladder as cl
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -43,28 +44,41 @@ def test_grain(qtr: Triangle) -> None:
 
 
 def test_grain_returns_valid_tri(qtr):
-    assert qtr.grain("OYDY").latest_diagonal == qtr.latest_diagonal
+    assert qtr.grain("OYDY").latest_diagonal.equals(qtr.latest_diagonal)
 
 
 def test_grain_increm_arg(qtr):
     clrd_i = qtr["incurred"].cum_to_incr()
     a = clrd_i.grain("OYDY").incr_to_cum()
-    assert a == qtr["incurred"].grain("OYDY")
+    assert a.equals(qtr["incurred"].grain("OYDY"))
 
 
 def test_commutative(qtr, atol):
     full = cl.Chainladder().fit(qtr).full_expectation_
-    assert qtr.grain("OYDY").val_to_dev() == qtr.val_to_dev().grain("OYDY")
-    assert qtr.cum_to_incr().grain(
-        "OYDY"
-    ).val_to_dev() == qtr.val_to_dev().cum_to_incr().grain("OYDY")
-    assert qtr.grain(
-        "OYDY"
-    ).cum_to_incr().val_to_dev().incr_to_cum() == qtr.val_to_dev().grain("OYDY")
-    assert full.grain("OYDY").val_to_dev() == full.val_to_dev().grain("OYDY")
-    assert full.cum_to_incr().grain(
-        "OYDY"
-    ).val_to_dev() == full.val_to_dev().cum_to_incr().grain("OYDY")
+    assert qtr.grain("OYDY").val_to_dev().equals(qtr.val_to_dev().grain("OYDY"))
+    assert (
+        qtr
+        .cum_to_incr()
+        .grain("OYDY")
+        .val_to_dev()
+        .equals(qtr.val_to_dev().cum_to_incr().grain("OYDY"))
+    )
+    assert (
+        qtr
+        .grain("OYDY")
+        .cum_to_incr()
+        .val_to_dev()
+        .incr_to_cum()
+        .equals(qtr.val_to_dev().grain("OYDY"))
+    )
+    assert full.grain("OYDY").val_to_dev().equals(full.val_to_dev().grain("OYDY"))
+    assert (
+        full
+        .cum_to_incr()
+        .grain("OYDY")
+        .val_to_dev()
+        .equals(full.val_to_dev().cum_to_incr().grain("OYDY"))
+    )
     a = full.grain("OYDY").cum_to_incr().val_to_dev().incr_to_cum()
     b = full.val_to_dev().grain("OYDY")
     assert abs(a - b).max().max().max() < atol

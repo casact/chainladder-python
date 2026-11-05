@@ -2,16 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
-from chainladder.development.base import DevelopmentBase
-import numpy as np
-import pandas as pd
-from scipy.optimize import minimize
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+import pandas as pd
+
+from scipy.optimize import minimize
+
+from chainladder.development.base import DevelopmentBase
+
 if TYPE_CHECKING:  # pragma: no cover
-    from numpy import ndarray
     from types import ModuleType
+
+    from numpy import ndarray
 
 
 class ClarkLDF(DevelopmentBase):
@@ -329,13 +333,25 @@ class ClarkLDF(DevelopmentBase):
         self.ldf_ = obj
         self.ldf_.valuation_date = pd.to_datetime(options.ULT_VAL)
         rows = X.index.set_index(X.key_labels).index
-        self.omega_ = pd.DataFrame(params[..., 0, 0], index=rows, columns=X.vdims)
-        self.theta_ = pd.DataFrame(params[..., 0, 1], index=rows, columns=X.vdims)
-        if sample_weight:
-            self.elr_ = pd.DataFrame(params[..., 0, 2], index=rows, columns=X.vdims)
-        ultimate_ = (
-            self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2) * ld.values
+        self.omega_ = pd.DataFrame(
+            params[..., 0, 0], index=rows, columns=X.columns.to_list()
         )
+        self.theta_ = pd.DataFrame(
+            params[..., 0, 1], index=rows, columns=X.columns.to_list()
+        )
+        if sample_weight:
+            self.elr_ = pd.DataFrame(
+                params[..., 0, 2], index=rows, columns=X.columns.to_list()
+            )
+        if sample_weight:
+            # Cape Cod: the expected ultimate is premium * ELR, not the
+            # LDF-implied ultimate from the latest diagonal.
+            ultimate_ = sample_weight.values * params[..., 0:1, 2:3]
+        else:
+            ultimate_ = (
+                self._G(age=(latest_age - age_offset)[::-1]).swapaxes(-1, -2)
+                * ld.values
+            )
         self.incremental_fits_ = X.copy()
         self.incremental_fits_.array_backend = "numpy"
         self.incremental_fits_.values = (

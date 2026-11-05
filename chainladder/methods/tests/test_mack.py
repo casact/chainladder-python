@@ -1,5 +1,6 @@
-import chainladder as cl
 import numpy as np
+
+import chainladder as cl
 
 
 def test_mack_to_triangle():
@@ -11,11 +12,12 @@ def test_mack_to_triangle():
                 cl.Development().fit_transform(cl.load_sample("ABC"))
             )
         )
-        .summary_
-        == cl
-        .MackChainladder()
-        .fit(cl.Development().fit_transform(cl.load_sample("ABC")))
-        .summary_
+        .summary_.equals(
+            cl
+            .MackChainladder()
+            .fit(cl.Development().fit_transform(cl.load_sample("ABC")))
+            .summary_
+        )
     )
 
 
@@ -23,7 +25,7 @@ def test_mack_malformed(raa):
     raa_alt = raa.copy().iloc[:, :, :-1]
     x = cl.MackChainladder().fit(raa)
     y = cl.MackChainladder().fit(raa_alt)
-    assert x.process_risk_.iloc[:, :, :-1] == y.process_risk_
+    assert x.process_risk_.iloc[:, :, :-1].equals(y.process_risk_)
 
 
 def test_multi_triangle_mack(clrd, atol):
