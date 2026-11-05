@@ -1,5 +1,6 @@
-import chainladder as cl
 import numpy as np
+
+import chainladder as cl
 
 
 def test_mack_to_triangle():
