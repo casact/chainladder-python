@@ -2949,7 +2949,7 @@ def test_oxdx_triangle():
                     # assert np.all(
                     #    tri.origin.strftime('%Y')
                     #    == pd.to_datetime(tri.odims).strftime('%Y')
-                    #)
+                    # )
                     # assert np.all(
                     #    tri.origin.strftime('%q').values.astype(float)
                     #    == np.ceil(
@@ -2959,7 +2959,7 @@ def test_oxdx_triangle():
                     #             - 0.5
                     #        ) / 3
                     #    )
-                    #)
+                    # )
 
 
 def test_fillzero():
