@@ -227,6 +227,10 @@ class ValuationCorrelation:
         The expected value of Z.
     z_variance : Triangle or DataFrame
         The variance value of Z.
+    range : tuple of arrays
+        Lower and upper bounds of the no-effect band, E(Z) plus or minus
+        ``norm.ppf(1 - p_critical / 2)`` standard deviations of Z. Only set
+        when ``total=True``.
 
     Examples
     --------
@@ -342,14 +346,17 @@ class ValuationCorrelation:
             self.z_variance = self.z_critical.copy()
             self.z_variance.values = VarZ
         else:
+            # Appendix H of Mack, "Measuring the Variability of Chain Ladder
+            # Reserve Estimates" (CAS Forum, 1994): Z is approximately normal, so
+            # the test rejects "no calendar year effect" when Z falls outside
+            # E(Z) +/- norm.ppf(1 - p_critical / 2) * sqrt(Var(Z)). ci2 is that
+            # half-width with a negative sign, so range is (lower, upper).
             ci2 = norm.ppf(0.5 - (1 - p_critical) / 2) * xp.sqrt(xp.sum(VarZ, axis=-1))
-            self.range = (xp.sum(VarZ, axis=-1) + ci2, xp.sum(VarZ, axis=-1) - ci2)
+            self.range = (xp.sum(EZ, axis=-1) + ci2, xp.sum(EZ, axis=-1) - ci2)
             idx = triangle.index.set_index(triangle.key_labels).index
+            z_total = z.sum(axis=-1)
             self.z_critical = pd.DataFrame(
-                (
-                    (self.range[0] > VarZ.sum(axis=-1))
-                    | (VarZ.sum(axis=-1) > self.range[1])
-                )[..., 0],
+                ((self.range[0] > z_total) | (z_total > self.range[1]))[..., 0],
                 columns=triangle.columns,
                 index=idx,
             )
