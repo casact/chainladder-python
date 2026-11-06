@@ -3,14 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 
 from scipy.special import comb
-
 from scipy.stats import binom, norm, rankdata
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder.core.triangle import Triangle
@@ -30,9 +29,9 @@ class DevelopmentCorrelation:
     p_critical: float (default=0.5)
         Value between 0 and 1 representing the confidence level for the test. A
         value of 0.5 implies a 50% confidence. The default value is based on the example
-        provided in the Mack 97 paper, the selection of which is justified on the basis of the
-        test being only an approximate measure of correlations and the desire to detect
-        correlations already in a substantial part of the triangle.
+        provided in the Mack 97 paper, the selection of which is justified on the basis
+        of the test being only an approximate measure of correlations and the desire to
+        detect correlations already in a substantial part of the triangle.
 
     Attributes
     ----------
@@ -140,7 +139,8 @@ class DevelopmentCorrelation:
         numerator.values = numerator.values[..., :-1]
         numerator.ddims = numerator.ddims[:-1]
 
-        # n_dev_periods is the number of development periods in the triangle ("I" in the Mack 97).
+        # n_dev_periods is the number of development periods in the triangle
+        # ("I" in the Mack 97).
         n_dev_periods = len(triangle.development)
 
         # k values are the column indexes for which we are calculating T_k
@@ -176,7 +176,8 @@ class DevelopmentCorrelation:
             t_expectation[..., 0, 0], columns=triangle.columns, index=idx
         )
 
-        # table of Spearman's rank coefficients Tk, can be used to verify consistency with paper
+        # table of Spearman's rank coefficients Tk, can be used to verify consistency
+        # with paper
         self.corr = pd.concat([self.t, self.weights])
 
         self.corr.columns.names = ["k"]
@@ -373,8 +374,8 @@ class ValuationCorrelation:
 
 def validate_critical(p_critical: float) -> None:
     """
-    Checks whether value passed to the p_critical parameter in ValuationCorrelation or DevelopmentCorrelation
-    classes is a percentage, that is, between 0 and 1.
+    Checks whether value passed to the p_critical parameter in ValuationCorrelation or
+    DevelopmentCorrelation classes is a percentage, that is, between 0 and 1.
 
     Parameters
     ----------
