@@ -3,14 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 
 from scipy.special import comb
-
 from scipy.stats import binom, norm, rankdata
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder.core.triangle import Triangle
@@ -30,9 +29,9 @@ class DevelopmentCorrelation:
     p_critical: float (default=0.5)
         Value between 0 and 1 representing the confidence level for the test. A
         value of 0.5 implies a 50% confidence. The default value is based on the example
-        provided in the Mack 97 paper, the selection of which is justified on the basis of the
-        test being only an approximate measure of correlations and the desire to detect
-        correlations already in a substantial part of the triangle.
+        provided in the Mack 97 paper, the selection of which is justified on the basis
+        of the test being only an approximate measure of correlations and the desire to
+        detect correlations already in a substantial part of the triangle.
 
     Attributes
     ----------
@@ -140,7 +139,8 @@ class DevelopmentCorrelation:
         numerator.values = numerator.values[..., :-1]
         numerator.ddims = numerator.ddims[:-1]
 
-        # n_dev_periods is the number of development periods in the triangle ("I" in the Mack 97).
+        # n_dev_periods is the number of development periods in the triangle
+        # ("I" in the Mack 97).
         n_dev_periods = len(triangle.development)
 
         # k values are the column indexes for which we are calculating T_k
@@ -176,7 +176,8 @@ class DevelopmentCorrelation:
             t_expectation[..., 0, 0], columns=triangle.columns, index=idx
         )
 
-        # table of Spearman's rank coefficients Tk, can be used to verify consistency with paper
+        # table of Spearman's rank coefficients Tk, can be used to verify consistency
+        # with paper
         self.corr = pd.concat([self.t, self.weights])
 
         self.corr.columns.names = ["k"]
@@ -227,6 +228,10 @@ class ValuationCorrelation:
         The expected value of Z.
     z_variance : Triangle or DataFrame
         The variance value of Z.
+    range : tuple of arrays
+        Lower and upper bounds of the no-effect band, E(Z) plus or minus
+        ``norm.ppf(1 - p_critical / 2)`` standard deviations of Z. Only set
+        when ``total=True``.
 
     Examples
     --------
@@ -342,14 +347,17 @@ class ValuationCorrelation:
             self.z_variance = self.z_critical.copy()
             self.z_variance.values = VarZ
         else:
+            # Appendix H of Mack, "Measuring the Variability of Chain Ladder
+            # Reserve Estimates" (CAS Forum, 1994): Z is approximately normal, so
+            # the test rejects "no calendar year effect" when Z falls outside
+            # E(Z) +/- norm.ppf(1 - p_critical / 2) * sqrt(Var(Z)). ci2 is that
+            # half-width with a negative sign, so range is (lower, upper).
             ci2 = norm.ppf(0.5 - (1 - p_critical) / 2) * xp.sqrt(xp.sum(VarZ, axis=-1))
-            self.range = (xp.sum(VarZ, axis=-1) + ci2, xp.sum(VarZ, axis=-1) - ci2)
+            self.range = (xp.sum(EZ, axis=-1) + ci2, xp.sum(EZ, axis=-1) - ci2)
             idx = triangle.index.set_index(triangle.key_labels).index
+            z_total = z.sum(axis=-1)
             self.z_critical = pd.DataFrame(
-                (
-                    (self.range[0] > VarZ.sum(axis=-1))
-                    | (VarZ.sum(axis=-1) > self.range[1])
-                )[..., 0],
+                ((self.range[0] > z_total) | (z_total > self.range[1]))[..., 0],
                 columns=triangle.columns,
                 index=idx,
             )
@@ -366,8 +374,8 @@ class ValuationCorrelation:
 
 def validate_critical(p_critical: float) -> None:
     """
-    Checks whether value passed to the p_critical parameter in ValuationCorrelation or DevelopmentCorrelation
-    classes is a percentage, that is, between 0 and 1.
+    Checks whether value passed to the p_critical parameter in ValuationCorrelation or
+    DevelopmentCorrelation classes is a percentage, that is, between 0 and 1.
 
     Parameters
     ----------
