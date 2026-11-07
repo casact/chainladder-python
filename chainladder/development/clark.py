@@ -14,6 +14,7 @@ from chainladder.development.base import DevelopmentBase
 
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
+    from typing import Any
 
     from numpy import ndarray
 
@@ -200,11 +201,11 @@ class ClarkLDF(DevelopmentBase):
         self,
         growth: str = "loglogistic",
         groupby=None,
-        minimizer_kwargs: dict | None = None,
+        minimizer_kwargs: dict[str, Any] | None = None,
     ):
         self.growth: str = growth
         self.groupby = groupby
-        self.minimizer_kwargs = minimizer_kwargs
+        self.minimizer_kwargs: dict[str, Any] | None = minimizer_kwargs
 
     def _G(self, age, theta: float = None, omega: float = None):  # noqa: N802
         """
