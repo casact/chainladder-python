@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from scipy.stats import norm
+
 import chainladder as cl
 
 if TYPE_CHECKING:
@@ -15,25 +17,57 @@ def test_val_corr_total_true(raa: Triangle) -> None:
 
 
 def test_val_corr_total_matches_mack(raa: Triangle) -> None:
-    # Mack (1994), "Measuring the Variability of Chain Ladder Reserve
-    # Estimates", works the test on RAA: Z = 14, E(Z) = 12.875 and
-    # Var(Z) = 3.9785. R's ChainLadder cyEffTest(RAA) at ci = 0.95 prints the
-    # band (8.965613, 16.784387), which is E(Z) +/- 1.96 * sqrt(Var(Z)).
-    vc = raa.valuation_correlation(p_critical=0.05, total=True)
+    # Appendix H of Mack, "Measuring the Variability of Chain Ladder Reserve
+    # Estimates" (CAS Forum, Spring 1994), applies the test to this triangle,
+    # the example of the paper's Chapter 6: Z = 14, E(Z) = 12.875 and
+    # Var(Z) = 3.9785, inside the 95% range E(Z) +/- 2 * sqrt(Var(Z)) =
+    # (8.886, 16.864), so the test does not reject. A band of two standard
+    # deviations corresponds to p_critical = 2 * norm.sf(2).
+    vc = raa.valuation_correlation(p_critical=2 * norm.sf(2), total=True)
     assert vc.z.iloc[0, 0] == 14
     assert vc.z_expectation.iloc[0, 0] == pytest.approx(12.875)
-    assert vc.z_variance.iloc[0, 0] == pytest.approx(3.978516, abs=1e-6)
-    assert vc.range[0].item() == pytest.approx(8.965613, abs=1e-6)
-    assert vc.range[1].item() == pytest.approx(16.784387, abs=1e-6)
+    assert vc.z_variance.iloc[0, 0] == pytest.approx(3.9785, abs=5e-5)
+    assert vc.range[0].item() == pytest.approx(8.886, abs=5e-4)
+    assert vc.range[1].item() == pytest.approx(16.864, abs=5e-4)
     assert not vc.z_critical.iloc[0, 0]
 
 
 def test_val_corr_total_flags_calendar_effect() -> None:
-    # On the abc sample Z = 8, far below E(Z) = 16.30, so at
-    # p_critical = 0.1 (band about 12.88 to 19.72) the test rejects.
-    abc = cl.load_sample("abc")
-    vc = abc.valuation_correlation(p_critical=0.1, total=True)
-    assert vc.z.iloc[0, 0] == 8
+    # Question 4 of the CAS Spring 2015 Exam 7 gives these paid age-to-age
+    # factors. Sample Answer 1, published with the examiners' report, finds
+    # Z = 2, E(Z) = 4.625 and Var(Z) = 1.117, outside the 95% range
+    # (2.554, 6.696), so it rejects the hypothesis of no calendar year
+    # effects: https://www.casact.org/sites/default/files/2021-03/15-7.pdf
+    # Only the factors matter to the test, so each accident year starts at 1.
+    factors = [
+        [7.00, 2.55, 1.60, 1.30, 1.20, 1.05],
+        [6.00, 2.60, 1.40, 1.50, 1.10],
+        [5.00, 2.50, 1.80, 1.20],
+        [5.50, 2.80, 1.50],
+        [8.00, 2.40],
+        [7.00],
+    ]
+    origin, valuation, paid = [], [], []
+    for i, row in enumerate(factors):
+        amount = 1.0
+        for k, factor in enumerate([1.0, *row]):
+            amount *= factor
+            origin.append(2008 + i)
+            valuation.append(2008 + i + k)
+            paid.append(amount)
+    triangle = cl.Triangle(
+        data={"origin": origin, "valuation": valuation, "paid": paid},
+        origin="origin",
+        valuation="valuation",
+        columns=["paid"],
+        cumulative=True,
+    )
+    vc = triangle.valuation_correlation(p_critical=0.05, total=True)
+    assert vc.z.iloc[0, 0] == 2
+    assert vc.z_expectation.iloc[0, 0] == pytest.approx(4.625)
+    assert vc.z_variance.iloc[0, 0] == pytest.approx(1.117, abs=5e-4)
+    assert vc.range[0].item() == pytest.approx(2.554, abs=1e-3)
+    assert vc.range[1].item() == pytest.approx(6.696, abs=1e-3)
     assert vc.z_critical.iloc[0, 0]
 
 
