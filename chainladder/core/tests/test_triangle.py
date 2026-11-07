@@ -3815,3 +3815,14 @@ def test_duplicate_columns_assignment(raa) -> None:
     two.columns = ["col", "col"]
     two["col"] = 42
     assert two.values[0, 0, 0, 0] == 42
+
+
+def test_triangle_pct_change(raa) -> None:
+    """pct_change passes through to pandas.DataFrame.pct_change (#1528)."""
+    expected = raa.to_frame().pct_change(fill_method=None)
+    result = raa.pct_change(fill_method=None)
+    pd.testing.assert_frame_equal(result, expected)
+
+    with pytest.deprecated_call():
+        legacy_result = raa.pct_chg(fill_method=None)
+    pd.testing.assert_frame_equal(legacy_result, expected)
