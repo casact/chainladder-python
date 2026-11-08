@@ -79,6 +79,26 @@ def test_dev_corr(raa: Triangle) -> None:
     assert raa.development_correlation(p_critical=0.5)
 
 
+def test_dev_corr_matches_mack(raa: Triangle) -> None:
+    # Appendix G of Mack, "Measuring the Variability of Chain Ladder Reserve
+    # Estimates" (CAS Forum, Spring 1994), applies the test to this triangle,
+    # the example of the paper's Chapter 6. Spearman's coefficients
+    # T_k = 4/21, -9/28, 3/7, -1/5, 2/5, -1/2 and 1 for k = 2, ..., 8, weighted
+    # by I - k - 1 = 7, ..., 1, average to T = .070 with Var(T) = 1/28. T lies
+    # inside the 50% limits +/- .67 / sqrt(28) = +/- .127, so the test does
+    # not reject. The library uses norm.ppf(0.75) = 0.6745 for Mack's .67, and
+    # its limits also round to +/- .127.
+    dc = raa.development_correlation(p_critical=0.5)
+    t_k = [4 / 21, -9 / 28, 3 / 7, -1 / 5, 2 / 5, -1 / 2, 1]
+    assert dc.t.iloc[0].tolist() == pytest.approx(t_k)
+    assert dc.weights.iloc[0].tolist() == [7, 6, 5, 4, 3, 2, 1]
+    assert dc.t_expectation.iloc[0, 0] == pytest.approx(0.070, abs=5e-4)
+    assert dc.t_variance == 1 / 28
+    assert dc.confidence_interval[0] == pytest.approx(-0.127, abs=5e-4)
+    assert dc.confidence_interval[1] == pytest.approx(0.127, abs=5e-4)
+    assert not dc.t_critical.iloc[0, 0]
+
+
 def test_validate_critical(raa: Triangle) -> None:
     with pytest.raises(ValueError):
         raa.valuation_correlation(p_critical=1.5, total=True)
