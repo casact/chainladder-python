@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class DevelopmentCorrelation:
     """
-    Mack (1997) test for correlations between subsequent development
+    Mack (1994) test for correlations between subsequent development
     factors. Results should be within confidence interval range
     otherwise too much correlation
 
@@ -30,10 +30,9 @@ class DevelopmentCorrelation:
         Value between 0 and 1 giving the significance level of the test. The
         confidence level is ``1 - p_critical``, so a value of 0.5 implies 50%
         confidence and a value of 0.1 implies 90% confidence. The default value
-        is based on the example provided in the Mack 97 paper, the selection of
-        which is justified on the basis of the test being only an approximate
-        measure of correlations and the desire to detect correlations already in
-        a substantial part of the triangle.
+        follows Appendix G of Mack (1994), which proposes a 50% confidence
+        interval because the test is only approximate and because the aim is
+        to detect correlations already in a substantial part of the triangle.
 
     Attributes
     ----------
@@ -49,13 +48,19 @@ class DevelopmentCorrelation:
         about ``1 - p_critical`` when the development factors are uncorrelated.
         ``t_critical`` is True when ``t_expectation`` falls outside it.
 
+    References
+    ----------
+    Mack, T. (1994). Measuring the Variability of Chain Ladder Reserve
+    Estimates. Casualty Actuarial Society Forum, Spring 1994, Appendix G.
+    https://www.casact.org/sites/default/files/2021-02/pubs_forum_94spforum_94spf101.pdf
+
     Examples
     --------
 
-    Mack (1997) lists "successive development factors are uncorrelated" as
-    one of the assumptions underpinning the chain-ladder method. Before
-    relying on a ``Chainladder`` or ``MackChainladder`` ultimate it is good
-    practice to test that assumption on the triangle at hand.
+    Mack (1994) shows that the chain-ladder assumptions imply that
+    subsequent development factors are uncorrelated. Before relying on a
+    ``Chainladder`` or ``MackChainladder`` ultimate it is good practice to
+    test this on the triangle at hand.
     ``DevelopmentCorrelation`` performs Mack's weighted Spearman rank test
     across consecutive development columns and exposes both the test
     statistic ``t_expectation`` and the no-correlation
@@ -135,7 +140,8 @@ class DevelopmentCorrelation:
         m1.values = m1_val[..., : m2.shape[2], 1:]
 
         # Apply Spearman Rank Correlation formula
-        # numerator is the one in formula G4 of the Mack 97 paper
+        # numerator is the one in formula G4 of Mack (1994), "Measuring the
+        # Variability of Chain Ladder Reserve Estimates"
         numerator = ((m1 - m2) ** 2).sum("origin")
 
         # remove last column because it was not part of the comparison with m2
@@ -143,13 +149,13 @@ class DevelopmentCorrelation:
         numerator.ddims = numerator.ddims[:-1]
 
         # n_dev_periods is the number of development periods in the triangle
-        # ("I" in the Mack 97).
+        # ("I" in Mack (1994)).
         n_dev_periods = len(triangle.development)
 
         # k values are the column indexes for which we are calculating T_k
         k = xp.array(range(2, 2 + numerator.shape[3]))
 
-        # denominator is the one in formula G4 of the Mack 97 paper
+        # denominator is the one in formula G4 of Mack (1994)
         denominator = ((n_dev_periods - k) ** 3 - n_dev_periods + k)[None, None, None]
 
         # complete formula G4, results in array of each T_k value
@@ -202,7 +208,7 @@ class DevelopmentCorrelation:
 
 class ValuationCorrelation:
     """
-    Mack (1997) test for calendar year effect.A calendar period has impact
+    Mack (1994) test for calendar year effect. A calendar period has impact
     across developments if the probability of the number of small (or large)
     development factors, Z, in that period occurring randomly is less than
     ``p_critical``
@@ -217,8 +223,8 @@ class ValuationCorrelation:
         implies 90% confidence.
     total: boolean
         Whether to calculate valuation correlation in total across all
-        years (True) consistent with Mack 1993 or for each year separately
-        (False) consistent with Mack 1997.
+        years (True), as in Appendix H of Mack (1994), or for each year
+        separately (False).
 
     Attributes
     ----------
@@ -235,6 +241,12 @@ class ValuationCorrelation:
         Lower and upper bounds of the no-effect band, E(Z) plus or minus
         ``norm.ppf(1 - p_critical / 2)`` standard deviations of Z. Only set
         when ``total=True``.
+
+    References
+    ----------
+    Mack, T. (1994). Measuring the Variability of Chain Ladder Reserve
+    Estimates. Casualty Actuarial Society Forum, Spring 1994, Appendix H.
+    https://www.casact.org/sites/default/files/2021-02/pubs_forum_94spforum_94spf101.pdf
 
     Examples
     --------
@@ -266,9 +278,9 @@ class ValuationCorrelation:
     before relying on Mack or chain-ladder ultimates.
 
     The same test can be aggregated to a whole-triangle form
-    (``total=True``, Mack 1993) instead of the per-diagonal form
-    (``total=False``, Mack 1997) shown above. In total form the ``z`` and
-    ``z_critical`` attributes are returned as DataFrames rather than
+    (``total=True``, as in Appendix H of Mack (1994)) instead of the
+    per-diagonal form (``total=False``) shown above. In total form the ``z``
+    and ``z_critical`` attributes are returned as DataFrames rather than
     Triangles:
 
     .. testcode::
