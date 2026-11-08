@@ -2203,13 +2203,14 @@ class Triangle(TriangleBase):
 
         Parameters
         ----------
-        p_critical: float (default=0.10)
-            Value between 0 and 1 representing the confidence level for the test. A
-            value of 0.1 implies 90% confidence.
+        p_critical: float (default=0.5)
+            Value between 0 and 1 giving the significance level of the test. The
+            confidence level is ``1 - p_critical``, so a value of 0.5 implies 50%
+            confidence and a value of 0.1 implies 90% confidence.
         Returns
         -------
             DevelopmentCorrelation object with t, t_critical, t_expectation,
-            t_variance, and range attributes.
+            t_variance, and confidence_interval attributes.
 
         Examples
         --------
@@ -2244,7 +2245,8 @@ class Triangle(TriangleBase):
         Parameters
         ----------
         p_critical: float (default=0.10)
-            Value between 0 and 1 representing the confidence level for the test
+            Value between 0 and 1 giving the significance level of the test. 0.1
+            implies 90% confidence.
         total:
             Whether to calculate valuation correlation in total across all
             years (True) consistent with Mack 1993 or for each year separately

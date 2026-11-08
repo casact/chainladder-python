@@ -27,24 +27,27 @@ class DevelopmentCorrelation:
         Triangle on which to estimate correlation between subsequent development
         factors.
     p_critical: float (default=0.5)
-        Value between 0 and 1 representing the confidence level for the test. A
-        value of 0.5 implies a 50% confidence. The default value is based on the example
-        provided in the Mack 97 paper, the selection of which is justified on the basis
-        of the test being only an approximate measure of correlations and the desire to
-        detect correlations already in a substantial part of the triangle.
+        Value between 0 and 1 giving the significance level of the test. The
+        confidence level is ``1 - p_critical``, so a value of 0.5 implies 50%
+        confidence and a value of 0.1 implies 90% confidence. The default value
+        is based on the example provided in the Mack 97 paper, the selection of
+        which is justified on the basis of the test being only an approximate
+        measure of correlations and the desire to detect correlations already in
+        a substantial part of the triangle.
 
     Attributes
     ----------
     t_critical: DataFrame
-        Boolean value for whether correlation is too high based on ``p_critical``
-        confidence level.
+        Boolean value for whether correlation is too high at significance level
+        ``p_critical``.
     t_expectation: DataFrame
         Values representing the Spearman rank correlation
     t_variance: float
         Variance measure of Spearman rank correlation
     confidence_interval: tuple
-        Range within which ``t_expectation`` must fall for independence assumption
-        to be significant.
+        Range around zero that contains ``t_expectation`` with probability of
+        about ``1 - p_critical`` when the development factors are uncorrelated.
+        ``t_critical`` is True when ``t_expectation`` falls outside it.
 
     Examples
     --------
@@ -210,7 +213,7 @@ class ValuationCorrelation:
         Triangle on which to test whether the calendar effects violate independence
         requirements of the chainladder method.
     p_critical: float (default=0.10)
-        Value between 0 and 1 representing the confidence level for the test. 0.1
+        Value between 0 and 1 giving the significance level of the test. 0.1
         implies 90% confidence.
     total: boolean
         Whether to calculate valuation correlation in total across all
@@ -222,8 +225,8 @@ class ValuationCorrelation:
     z : Triangle or DataFrame
         Z values for each Valuation Period
     z_critical : Triangle or DataFrame
-        Boolean value for whether correlation is too high based on ``p_critical``
-        confidence level.
+        Boolean value for whether correlation is too high at significance level
+        ``p_critical``.
     z_expectation : Triangle or DataFrame
         The expected value of Z.
     z_variance : Triangle or DataFrame
@@ -380,7 +383,8 @@ def validate_critical(p_critical: float) -> None:
     Parameters
     ----------
     p_critical: float
-        Critical value used to test null hypothesis in Mack correlation tests.
+        Significance level used to test the null hypothesis in Mack correlation
+        tests.
     """
     if 0 <= p_critical <= 1:
         pass
