@@ -1491,19 +1491,6 @@ for method in df_passthru:
     add_df_passthru(TrianglePandas, method)
 
 
-def _pct_chg(self, *args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "Triangle.pct_chg is deprecated and will be removed in a future version. Use Triangle.pct_change instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-    return self.pct_change(*args, **kwargs)
-
-
-set_method(TrianglePandas, _pct_chg, "pct_chg")
-
 agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var"]
 agg_funcs = agg_funcs + ["std", "cumsum", "quantile"]
 for func in agg_funcs:
