@@ -36,8 +36,7 @@ dependencies = [
     "scikit-learn>=1.9.1 ; python_version >= '3.15'",
     "sparse>=0.18",
     "numba>=0.68.0 ; python_version >= '3.15'",  # numba is needed for sparse. however, sparse does not have a version that officially support python 3.15
-    "numpy>=2.3 ; python_version < '3.15'",
-    "numpy>=2.5.2 ; python_version >= '3.15'",
+    "numpy>=2.3",
     "matplotlib ; python_version < '3.15'",  # Required for TriangleDisplay.heatmap()
     "matplotlib>=3.11.2 ; python_version >= '3.15'",
     "contourpy>=1.4.0 ; python_version >= '3.15'",  # Required for matplotlib
