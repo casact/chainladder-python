@@ -117,7 +117,11 @@ EXAMPLES = {
 def incremental_triangle(rows) -> Triangle:
     """The paper's incremental triangle, with periods 1 to 6 labelled 2001 to 2006."""
     long = pd.DataFrame(
-        [(2001 + i, 2001 + i + k, v) for i, r in enumerate(rows) for k, v in enumerate(r)],
+        [
+            (2001 + i, 2001 + i + k, v)
+            for i, r in enumerate(rows)
+            for k, v in enumerate(r)
+        ],
         columns=["origin", "valuation", "paid"],
     )
     return cl.Triangle(
@@ -237,8 +241,15 @@ def test_origin_mismatch(example):
 def test_attributes_are_triangles(example, fits):
     _, X, _ = example
     fit = fits["optimal"]
-    for name in ("p_", "credibility_", "r_individual_", "r_collective_", "mse_",
-                 "ultimate_", "ibnr_"):
+    for name in (
+        "p_",
+        "credibility_",
+        "r_individual_",
+        "r_collective_",
+        "mse_",
+        "ultimate_",
+        "ibnr_",
+    ):
         tri = getattr(fit, name)
         assert isinstance(tri, cl.Triangle), name
         assert tri.shape == (1, 1, 6, 1), name
@@ -253,7 +264,8 @@ def test_incremental_equals_cumulative(example, fits):
     _, X, w = example
     fit = cl.HurlimannCLR().fit(X.incr_to_cum(), sample_weight=w)
     assert np.allclose(
-        np.nan_to_num(fit.ultimate_.values), np.nan_to_num(fits["optimal"].ultimate_.values)
+        np.nan_to_num(fit.ultimate_.values),
+        np.nan_to_num(fits["optimal"].ultimate_.values),
     )
 
 
@@ -294,7 +306,9 @@ def test_fully_developed_origin(fits):
         assert np.isclose(values(fit.ultimate_)[0], values(fit.X_.latest_diagonal)[0])
 
 
-@pytest.mark.parametrize("method", ["collective", "individual", "benktander", "optimal"])
+@pytest.mark.parametrize(
+    "method", ["collective", "individual", "benktander", "optimal"]
+)
 def test_exposure_scale(example, method):
     """
     Rescaling the exposure rescales the burning cost loss ratio but not the reserves.
@@ -322,7 +336,9 @@ def test_backends(raa: Triangle) -> None:
     """The result does not depend on the array backend."""
     w = raa.latest_diagonal * 0 + 10_000
     fit = cl.HurlimannCLR().fit(raa, sample_weight=w)
-    expected = cl.HurlimannCLR().fit(raa.set_backend("numpy"), sample_weight=w.set_backend("numpy"))
+    expected = cl.HurlimannCLR().fit(
+        raa.set_backend("numpy"), sample_weight=w.set_backend("numpy")
+    )
     assert fit.ultimate_.array_backend == raa.array_backend
     assert np.allclose(
         np.nan_to_num(fit.ultimate_.set_backend("numpy").values),

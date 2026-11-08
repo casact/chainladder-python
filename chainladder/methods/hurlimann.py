@@ -225,30 +225,32 @@ class HurlimannCLR(MethodBase):
         backend = X.array_backend
         X_np = X.set_backend("numpy")
         inc_tri = X_np.cum_to_incr()
-        inc = inc_tri.values                                       # (index, column, origin, development)
+        inc = inc_tri.values  # (index, column, origin, development)
         # Exposure of each origin, broadcast to the shape of X.
         V = self.sample_weight_.set_backend("numpy").latest_diagonal.values
         V = np.broadcast_to(V, inc.shape[:3] + (1,))
 
         seen = ~np.isnan(inc)
         ages = np.arange(inc.shape[3])
-        last = np.max(np.where(seen, ages, -1), axis=3, keepdims=True)  # latest development index
+        last = np.max(
+            np.where(seen, ages, -1), axis=3, keepdims=True
+        )  # latest development index
         with np.errstate(divide="ignore", invalid="ignore"):
             m = np.nansum(inc, axis=2, keepdims=True) / np.sum(
                 np.where(seen, V, 0.0), axis=2, keepdims=True
-            )                                                        # eq. 2.1
-            elr = np.sum(m, axis=3, keepdims=True)                   # burning cost loss ratio
+            )  # eq. 2.1
+            elr = np.sum(m, axis=3, keepdims=True)  # burning cost loss ratio
             cum_m = np.cumsum(m, axis=3)
             to_date = np.take_along_axis(
                 np.broadcast_to(cum_m, inc.shape), np.maximum(last, 0), axis=3
             )
-            p = to_date / elr                                        # eq. 2.3
+            p = to_date / elr  # eq. 2.3
             q = 1 - p
             C = np.take_along_axis(
                 np.cumsum(np.nan_to_num(inc), axis=3), np.maximum(last, 0), axis=3
             )
-            r_ind = q / p * C                                        # eq. 2.6
-            r_coll = q * elr * V                                     # eq. 2.7
+            r_ind = q / p * C  # eq. 2.6
+            r_coll = q * elr * V  # eq. 2.7
             z = {
                 "individual": np.ones_like(p),
                 "collective": np.zeros_like(p),
@@ -256,7 +258,7 @@ class HurlimannCLR(MethodBase):
                 "neuhaus": to_date,
                 "optimal": p / (p + np.sqrt(p)),
             }[self.method]
-            ibnr = z * r_ind + (1 - z) * r_coll                      # eq. 3.1
+            ibnr = z * r_ind + (1 - z) * r_coll  # eq. 3.1
             # eq. 4.11 with t = sqrt(p), written to stay finite when q = 0.
             mse = q**2 * z**2 / p + q + q**2 * (1 - z) ** 2 / np.sqrt(p)
 
@@ -269,8 +271,16 @@ class HurlimannCLR(MethodBase):
         self.r_collective_ = self._like(latest, r_coll)
         self.mse_ = self._like(latest, mse)
         self.ultimate_ = self._set_ult_attr(self._like(latest, C + ibnr))
-        for name in ("m_", "elr_", "p_", "credibility_", "r_individual_",
-                     "r_collective_", "mse_", "ultimate_"):
+        for name in (
+            "m_",
+            "elr_",
+            "p_",
+            "credibility_",
+            "r_individual_",
+            "r_collective_",
+            "mse_",
+            "ultimate_",
+        ):
             setattr(self, name, getattr(self, name).set_backend(backend))
         return self
 
