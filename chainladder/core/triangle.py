@@ -2197,7 +2197,7 @@ class Triangle(TriangleBase):
 
     def development_correlation(self, p_critical=0.5):
         """
-        Mack (1997) test for correlations between subsequent development
+        Mack (1994) test for correlations between subsequent development
         factors. Results should be within confidence interval range
         otherwise too much correlation
 
@@ -2249,8 +2249,8 @@ class Triangle(TriangleBase):
             implies 90% confidence.
         total:
             Whether to calculate valuation correlation in total across all
-            years (True) consistent with Mack 1993 or for each year separately
-            (False) consistent with Mack 1997.
+            years (True), as in Appendix H of Mack (1994), or for each year
+            separately (False).
         Returns
         -------
             ValuationCorrelation object with z, z_critical, z_expectation and
