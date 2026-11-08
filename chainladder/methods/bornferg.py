@@ -14,7 +14,7 @@ class BornhuetterFerguson(Benktander):
         Multiplier for the `sample_weight` used in the Bornhuetter Ferguson
         method. If `sample_weight` is already an apriori measure of ultimate,
         then use 1.0.
-        The recommended pratice is to seperate the model parameter assumption
+        The recommended practice is to separate the model parameter assumption
         and data apart.
         For example, if the apriori s 80% of premium, it is recommended to set
         the aprior as 0.8 and leave the premium data in `sample_weight` argument
@@ -78,7 +78,7 @@ class BornhuetterFerguson(Benktander):
         1989  18585.219714
         1990  24861.068855
 
-    One might be tempted to set never set the aprior and modify the sample_weight directly, and they will result in the same answer, but this is not the recommended practice. It not only add confusion, but it alos mixes the model parameter assumption and data together.
+    One might be tempted to set never set the aprior and modify the sample_weight directly, and they will result in the same answer, but this is not the recommended practice. It not only add confusion, but it also mixes the model parameter assumption and data together.
 
     .. testcode::
 

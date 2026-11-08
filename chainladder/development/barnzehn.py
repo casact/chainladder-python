@@ -34,7 +34,7 @@ class BarnettZehnwirth(TweedieGLM):
     formula: formula-like
         A patsy formula describing the independent variables, X of the GLM
     response:  str
-        Column name for the reponse variable of the GLM.  If ommitted, then the
+        Column name for the response variable of the GLM.  If ommitted, then the
         first column of the Triangle will be used.
     alpha: list of int
         List of origin periods denoting the first indices of each group
