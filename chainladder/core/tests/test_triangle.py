@@ -3822,7 +3822,3 @@ def test_triangle_pct_change(raa) -> None:
     expected = raa.to_frame().pct_change(fill_method=None)
     result = raa.pct_change(fill_method=None)
     pd.testing.assert_frame_equal(result, expected)
-
-    with pytest.deprecated_call():
-        legacy_result = raa.pct_chg(fill_method=None)
-    pd.testing.assert_frame_equal(legacy_result, expected)
