@@ -120,9 +120,7 @@ class TrianglePandas(_TrianglePandasBase):
             **kwargs: Any,
         ) -> Triangle: ...
 
-    def sum(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
-    ) -> Triangle:
+    def sum(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
         """Refer to pandas for ``sum`` functionality."""
         return _triangle_aggregate(self, "nansum", axis, *args, **kwargs)
 
@@ -138,15 +136,11 @@ class TrianglePandas(_TrianglePandasBase):
         """Refer to pandas for ``median`` functionality."""
         return _triangle_aggregate(self, "nanmedian", axis, *args, **kwargs)
 
-    def max(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
-    ) -> Triangle:
+    def max(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
         """Refer to pandas for ``max`` functionality."""
         return _triangle_aggregate(self, "nanmax", axis, *args, **kwargs)
 
-    def min(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
-    ) -> Triangle:
+    def min(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
         """Refer to pandas for ``min`` functionality."""
         return _triangle_aggregate(self, "nanmin", axis, *args, **kwargs)
 
@@ -156,15 +150,11 @@ class TrianglePandas(_TrianglePandasBase):
         """Refer to pandas for ``prod`` functionality."""
         return _triangle_aggregate(self, "nanprod", axis, *args, **kwargs)
 
-    def var(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
-    ) -> Triangle:
+    def var(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
         """Refer to pandas for ``var`` functionality."""
         return _triangle_aggregate(self, "nanvar", axis, *args, **kwargs)
 
-    def std(
-        self, axis: str | int | None = None, *args: Any, **kwargs: Any
-    ) -> Triangle:
+    def std(self, axis: str | int | None = None, *args: Any, **kwargs: Any) -> Triangle:
         """Refer to pandas for ``std`` functionality."""
         return _triangle_aggregate(self, "nanstd", axis, *args, **kwargs)
 
@@ -1519,9 +1509,9 @@ def _groupby_aggregate(
         _warn_dask_parallel_deprecated()
 
         def aggregate(i, obj, axis, v):
-            return getattr(
-                obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v
-            )(axis, auto_sparse=False, keepdims=True)
+            return getattr(obj.iloc.__getitem__(tuple([slice(None)] * axis + [i])), v)(
+                axis, auto_sparse=False, keepdims=True
+            )
 
         bag = db.from_sequence(self.groups.indices.values())
         bag = bag.map(aggregate, obj, self.axis, method)
