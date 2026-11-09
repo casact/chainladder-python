@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+import numpy as np
 import pandas as pd
 from chainladder.methods import Chainladder
 
@@ -39,6 +40,12 @@ class MackChainladder(Chainladder):
         The total prediction error by origin period
     total_mack_std_err_:
         The total prediction error across all origin periods
+    cdr_std_err_:
+        The one-year standard error of the claims development result by
+        origin period (Merz and Wüthrich 2008, ``merz2008``)
+    total_cdr_std_err_:
+        The one-year standard error of the claims development result across
+        all origin periods
 
     See Also
     --------
@@ -464,6 +471,207 @@ class MackChainladder(Chainladder):
         else:
             out = obj.sqrt().values[..., 0, -1]
         return pd.DataFrame(out, index=obj.index, columns=obj.columns)
+
+    @property
+    def cdr_std_err_(self):
+        """
+        One-year standard error of the claims development result by origin
+        period.
+
+        The claims development result (CDR) of an origin period is the change
+        in its estimated ultimate from this valuation to the next, once the
+        next diagonal is observed and the chainladder factors are estimated
+        again. The CDR is predicted by zero, and ``cdr_std_err_`` is the square
+        root of the conditional mean squared error of that prediction, Result
+        3.1 (eq. 3.9) of Merz and Wüthrich (2008, ``merz2008``). Where
+        ``mack_std_err_`` measures the error to ultimate, this attribute
+        measures the next year only, the horizon of a one-year solvency view.
+
+        The estimator assumes the paper's setting: a square triangle,
+        development factors volume-weighted over all periods with no link
+        ratios excluded, and no tail beyond the default ``TailConstant(1.0)``.
+        Reading the attribute raises ``ValueError`` for any other development
+        pattern, and ``fit`` is unaffected. A triangle with missing cells
+        above the latest diagonal gets NaN. The figures follow the
+        ``sigma_interpolation`` chosen in :class:`Development`; ``"mack"``
+        matches ``est.sigma="Mack"`` in the ``CDR()`` function of R's
+        ChainLadder package (``gesmann2026``). The attribute describes the
+        fitted triangle, and :meth:`predict` does not attach it.
+
+        Returns
+        -------
+        Triangle
+            One value per origin, shaped like ``ultimate_``. The oldest
+            origin is fully developed and is NaN, as in ``mack_std_err_``.
+
+        Raises
+        ------
+        ValueError
+            If the triangle is not square, has a tail, or its development
+            factors are not volume-weighted over every link ratio of the
+            triangle itself.
+
+        Examples
+        --------
+        The triangle of Merz and Wüthrich (2008), with Mack's extrapolation
+        for the last sigma.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('mw2008')
+            dev = cl.Development(sigma_interpolation='mack').fit_transform(tr)
+            model = cl.MackChainladder().fit(dev)
+            print(model.cdr_std_err_)
+
+        .. testoutput::
+
+                          2261
+            2001           NaN
+            2002    566.174395
+            2003   1486.560344
+            2004   3923.098608
+            2005   9722.859763
+            2006  28442.621556
+            2007  20954.286973
+            2008  28119.317963
+            2009  53320.821049
+        """
+        obj = self.ultimate_.set_backend("numpy")
+        obj.values = np.sqrt(self._get_cdr_msep()[0])[..., None]
+        return obj.set_backend(self.X_.array_backend)
+
+    @property
+    def total_cdr_std_err_(self):
+        """
+        One-year standard error of the claims development result summed over
+        all origin periods, Result 3.3 (eq. 3.15) of Merz and Wüthrich (2008,
+        ``merz2008``).
+
+        The total exceeds the quadrature sum of ``cdr_std_err_`` because all
+        origins share the estimated age-to-age factors. The supported setting
+        and the ``ValueError`` cases are those of ``cdr_std_err_``.
+
+        Returns
+        -------
+        DataFrame
+            One value per (index, column) combination of the fitted Triangle.
+
+        Examples
+        --------
+        On the paper's triangle the one-year error is about three quarters of
+        Mack's error to ultimate.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            tr = cl.load_sample('mw2008')
+            dev = cl.Development(sigma_interpolation='mack').fit_transform(tr)
+            model = cl.MackChainladder().fit(dev)
+            print(model.total_cdr_std_err_)
+            print(model.total_mack_std_err_)
+
+        .. testoutput::
+
+            columns         values
+            (Total,)  81080.546787
+            columns          values
+            (Total,)  108401.387451
+        """
+        obj = self.X_
+        out = np.sqrt(self._get_cdr_msep()[1])
+        return pd.DataFrame(out, index=obj.index, columns=obj.columns)
+
+    def _get_cdr_msep(self):
+        """
+        Mean squared errors of the one-year claims development result.
+
+        Returns the per-origin values, shape (index, columns, origin), and
+        the totals over origins, shape (index, columns), following Results 3.1
+        and 3.3 of ``merz2008`` with I = J = n - 1 and 0-based origins.
+        """
+        X = self.X_.set_backend("numpy")
+        C = (X if X.is_cumulative else X.incr_to_cum()).values
+        a, b, n, m = C.shape
+        msg = "cdr_std_err_ and total_cdr_std_err_ need "
+        upper = np.add.outer(np.arange(n), np.arange(m)) <= n - 1
+        if n != m or not np.array_equal(~np.isnan(X.nan_triangle), upper):
+            raise ValueError(
+                msg + "a square triangle valued at its latest diagonal; this "
+                f"one has {n} origins and {m} development periods."
+            )
+        J = m - 1
+        ldf = X.ldf_.set_backend("numpy").values[..., 0, :]
+        sigma = X.sigma_.set_backend("numpy").values[..., 0, :]
+        if not (
+            np.all(np.nan_to_num(ldf[..., J:], nan=1.0) == 1)
+            and np.all(np.nan_to_num(sigma[..., J:]) == 0)
+        ):
+            raise ValueError(
+                msg + "a pattern without a tail, as Merz and Wüthrich (2008) "
+                "assume; fit without a tail estimator or with TailConstant(1.0)."
+            )
+        average = set(np.asarray(X.average_).ravel())
+        if average != {"volume"}:
+            raise ValueError(
+                msg + "volume-weighted development factors; this pattern uses "
+                f"{sorted(str(v) for v in average)}."
+            )
+        # A link ratio enters f_j when origin i has C[i, j] and C[i, j + 1].
+        link = upper[:, 1:]
+        x, y = C[..., :J], C[..., 1:]
+        pair = link & ~np.isnan(x) & ~np.isnan(y)
+        w = np.nan_to_num(np.broadcast_to(np.asarray(X.w_), pair.shape), nan=1.0)
+        if np.any(w[pair] == 0):
+            raise ValueError(
+                msg + "every link ratio of the triangle; this pattern excludes "
+                "some (drop, drop_high, drop_low, drop_valuation, n_periods)."
+            )
+        with np.errstate(divide="ignore", invalid="ignore"):
+            S = np.where(pair, x, 0).sum(2)  # S_j^I
+            f_own = np.where(pair, y, 0).sum(2) / S
+            f = np.broadcast_to(ldf[..., :J], S.shape)
+            known = np.isfinite(f_own) & np.isfinite(f)
+            if not np.allclose(f[known], f_own[known], rtol=1e-8, atol=0):
+                raise ValueError(
+                    msg + "development factors estimated from this triangle's "
+                    "own link ratios; ldf_ differs from them, as after "
+                    "Development(fillna=...)."
+                )
+            q = np.broadcast_to(sigma[..., :J], S.shape) ** 2 / f**2
+            latest = C[..., np.arange(n), J - np.arange(n)]  # C_{i, I-i}
+            diag = latest[..., ::-1][..., :J]  # C_{I-j, j}
+            S1 = S + diag  # S_j^{I+1}
+            ult = self.ultimate_.set_backend("numpy").values[..., 0]
+            # Sums over the later periods j = d+1 .. J-1 for each d = 0 .. J-1.
+            A = diag * q / S1**2
+            B = (diag / S1) ** 2 * q / S
+            zero = np.zeros((a, b, 1))
+            TA = np.concatenate((np.cumsum(A[..., ::-1], -1)[..., -2::-1], zero), -1)
+            TB = np.concatenate((np.cumsum(B[..., ::-1], -1)[..., -2::-1], zero), -1)
+            i = np.arange(1, n)
+            d = J - i  # next development period of origin i
+            qd, Sd, S1d = q[..., d], S[..., d], S1[..., d]
+            Phi = TA[..., d]
+            Delta = qd / Sd + TB[..., d]
+            Lam = latest[..., i] / S1d * qd / Sd + TB[..., d]
+            Xi = Phi + qd / S1d
+            msep = np.full((a, b, n), np.nan)
+            msep[..., 1:] = ult[..., i] ** 2 * (qd / latest[..., i] + Phi + Delta)
+            later = np.cumsum(ult[..., :0:-1], -1)[..., ::-1]  # sum of ult_k, k >= i
+            later = np.concatenate((later[..., 1:], zero), -1)  # k > i
+            cross = 2 * (ult[..., i] * later * (Xi + Lam)).sum(-1)
+            total = msep[..., 1:].sum(-1) + cross
+        complete = ~np.isnan(C[..., upper]).any(-1)
+        msep[~complete] = np.nan
+        total[~complete] = np.nan
+        return msep, total
 
     @property
     def summary_(self):
