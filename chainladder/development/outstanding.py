@@ -271,10 +271,9 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        out = (
-            (incurred_tri - paid_tri).iloc[..., 1:]
-            / (incurred_tri - paid_tri).iloc[..., :-1].values
-        )
+        out = (incurred_tri - paid_tri).iloc[..., 1:] / (incurred_tri - paid_tri).iloc[
+            ..., :-1
+        ].values
         out.is_pattern = True
         out.is_cumulative = False
 
