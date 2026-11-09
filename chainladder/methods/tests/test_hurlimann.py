@@ -169,7 +169,7 @@ def test_parameters(example, fits):
         "p": p,
         "q": 1 - p,
         "t": np.sqrt(p),
-        "Z*": values(fit.credibility_),
+        "Z*": values(fit.Z_),
     }
     for name, (printed, atol) in ex["parameters"].items():
         assert np.allclose(actual[name], printed, rtol=0, atol=atol), name
@@ -243,7 +243,7 @@ def test_attributes_are_triangles(example, fits):
     fit = fits["optimal"]
     for name in (
         "p_",
-        "credibility_",
+        "Z_",
         "r_individual_",
         "r_collective_",
         "mse_",
@@ -273,20 +273,20 @@ def test_credibility_weights(example, fits):
     _, X, _ = example
     p = values(fits["optimal"].p_)
     elr = values(fits["optimal"].elr_)[0]
-    assert np.allclose(values(fits["collective"].credibility_), 0)
-    assert np.allclose(values(fits["individual"].credibility_), 1)
-    assert np.allclose(values(fits["benktander"].credibility_), p)
-    assert np.allclose(values(fits["neuhaus"].credibility_), p * elr)
-    assert np.allclose(values(fits["optimal"].credibility_), p / (p + np.sqrt(p)))
+    assert np.allclose(values(fits["collective"].Z_), 0)
+    assert np.allclose(values(fits["individual"].Z_), 1)
+    assert np.allclose(values(fits["benktander"].Z_), p)
+    assert np.allclose(values(fits["neuhaus"].Z_), p * elr)
+    assert np.allclose(values(fits["optimal"].Z_), p / (p + np.sqrt(p)))
     # The optimal weight never exceeds 1/2 (eq. 6.4).
-    assert (values(fits["optimal"].credibility_) <= 0.5).all()
+    assert (values(fits["optimal"].Z_) <= 0.5).all()
 
 
 @pytest.mark.parametrize("method", METHODS)
 def test_credibility_mixture(fits, method):
     """The IBNR is the credibility mixture of the individual and collective reserves (eq. 3.1)."""
     fit = fits[method]
-    z = values(fit.credibility_)
+    z = values(fit.Z_)
     expected = z * values(fit.r_individual_) + (1 - z) * values(fit.r_collective_)
     ibnr = np.nan_to_num(values(fit.ibnr_))
     assert np.allclose(ibnr[1:], expected[1:])

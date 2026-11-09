@@ -1,28 +1,37 @@
+"""
+The Hürlimann credible loss ratio reserving model
+"""
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Literal
+
 import numpy as np
 
 from chainladder.methods import MethodBase
+
+if TYPE_CHECKING:
+    from chainladder.core.triangle import Triangle
 
 
 class HurlimannCLR(MethodBase):
     """
     The Hürlimann credible loss ratio reserving model
 
-    Implements the credible loss ratio claims reserves of Hürlimann
+    Implement the credible loss ratio claims reserves of Hürlimann
     :cite:`hurlimann2009`. The reserve for each origin period is a credibility
-    mixture of an individual reserve, which grosses up the latest paid claims
+    mixture of an individual reserve, which grosses up the latest claims
     by a loss ratio payout factor, and a collective reserve, which applies
     that payout factor to a burning cost ultimate (the loss ratio method of
     Mack). The Benktander and Neuhaus methods and the optimal credible reserve
     are special cases that differ only in the credibility weight.
 
     Unlike the chain-ladder based methods, the payout pattern is estimated
-    from incremental claims and exposure rather than from link ratios, so it
-    depends on ``sample_weight``.
+    from incremental claims and exposure (supplied as ``sample_weight``) rather
+    than from link ratios.
 
     Parameters
     ----------
@@ -49,8 +58,8 @@ class HurlimannCLR(MethodBase):
         The burning cost loss ratio :math:`\\sum_k \\hat m_k`.
     p_: Triangle
         The loss ratio payout factor of each origin period, the proportion of
-        its ultimate expected to be paid to date (eq. 2.3).
-    credibility_: Triangle
+        its ultimate expected to have emerged to date (eq. 2.3).
+    Z_: Triangle
         The credibility weight ``Z`` on the individual reserve.
     r_individual_: Triangle
         The individual reserve :math:`q C / p` (eq. 2.6).
@@ -64,7 +73,10 @@ class HurlimannCLR(MethodBase):
     ultimate_: Triangle
         The ultimate losses per the method
     ibnr_: Triangle
-        The IBNR per the method
+        The credible reserve, which is ``ultimate_`` minus the latest claims.
+        What it represents depends on the claims in ``X``: for a reported or
+        incurred triangle it is the IBNR, and for a paid triangle it is the
+        unpaid claims reserve, which includes case reserves.
 
     See Also
     --------
@@ -74,7 +86,10 @@ class HurlimannCLR(MethodBase):
     Notes
     -----
     The paper assumes no development beyond the last development period of
-    the triangle, so there is no tail.
+    the triangle, so there is no tail. This is a strong assumption for paid
+    claims. Negative incremental claims, such as released case reserves, are
+    included in the loss ratio pattern as they are, so they can push the payout
+    factors above one.
 
     References
     ----------
@@ -114,15 +129,13 @@ class HurlimannCLR(MethodBase):
         2007  47769.672234
         2008  42569.157521
 
-    ``p_`` is the proportion of each origin's ultimate expected to be paid to
-    date, estimated from the loss ratio pattern rather than from link ratios.
-    The optimal weight on the individual reserve, ``credibility_``, is a
-    function of ``p_`` alone and never exceeds one half.
+    ``p_`` is the proportion of each origin's ultimate expected to have emerged
+    to date, estimated from the loss ratio pattern rather than from link
+    ratios.
 
     .. testcode::
 
         print(model.p_.iloc[..., -3:, :])
-        print(model.credibility_.iloc[..., -3:, :])
 
     .. testoutput::
 
@@ -130,16 +143,28 @@ class HurlimannCLR(MethodBase):
         2006  0.315457
         2007  0.154676
         2008  0.042753
+
+    The optimal weight on the individual reserve, ``Z_``, is a function of
+    ``p_`` alone and never exceeds one half.
+
+    .. testcode::
+
+        print(model.Z_.iloc[..., -3:, :])
+
+    .. testoutput::
+
                   2008
         2006  0.359654
         2007  0.282274
         2008  0.171341
 
     The ``method`` parameter chooses the credibility weight. The
-    ``"collective"`` and ``"individual"`` methods are the two extremes. For
-    each origin period the others fall between the two, though a total need
-    not, since the individual reserve is below the collective one for some
-    origins and above it for others.
+    ``"collective"`` and ``"individual"`` methods are the two extremes. The other
+    methods result in a reserve estimate between these two extremes per origin period.
+
+    The total reserve however, may not fall between that of the collective and
+    individual reserves, since the individual reserve is below the collective reserve
+    for some origin periods and above it for others.
 
     .. testcode::
 
@@ -158,14 +183,48 @@ class HurlimannCLR(MethodBase):
         optimal       241,485
     """
 
-    _METHODS = ("optimal", "benktander", "neuhaus", "collective", "individual")
+    # Fitted attributes, declared for type checkers and IDEs only. These bare
+    # annotations create no attributes, so none exist until ``fit`` is called.
+    # ``ibnr_`` is inherited as a property.
+    X_: Triangle
+    sample_weight_: Triangle
+    m_: Triangle
+    elr_: Triangle
+    p_: Triangle
+    Z_: Triangle
+    r_individual_: Triangle
+    r_collective_: Triangle
+    mse_: Triangle
+    ultimate_: Triangle
 
-    def __init__(self, method="optimal"):
+    _METHODS = (
+        "optimal",
+        "benktander",
+        "neuhaus",
+        "collective",
+        "individual",
+    )
+
+    def __init__(
+        self,
+        method: Literal[
+            "optimal",
+            "benktander",
+            "neuhaus",
+            "collective",
+            "individual",
+        ] = "optimal",
+    ):
         self.method = method
 
-    def fit(self, X, y=None, sample_weight=None):
+    def fit(
+        self,
+        X: Triangle,  # noqa - sklearn convention
+        y: None = None,
+        sample_weight: Triangle | None = None,
+    ):
         """
-        Applies the Hürlimann credible loss ratio technique to triangle **X**
+        Apply the Hürlimann credible loss ratio technique to triangle **X**
 
         Parameters
         ----------
@@ -208,13 +267,16 @@ class HurlimannCLR(MethodBase):
             2008  40739.685328
         """
         if sample_weight is None:
-            raise ValueError("sample_weight is required.")
+            raise ValueError(
+                f"sample_weight is required. For {self.__class__.__name__}, "
+                "this is the exposure of each origin period."
+            )
         if self.method not in self._METHODS:
             raise ValueError(
                 f"method must be one of {self._METHODS}, got {self.method!r}."
             )
         # Skip MethodBase.fit: it fits a Development, which this method does not use.
-        X = X.incr_to_cum().val_to_dev() if not X.is_cumulative else X.val_to_dev()
+        X = X.incr_to_cum().val_to_dev() if not X.is_cumulative else X.val_to_dev()  # noqa - sklearn convention
         self.X_ = X
         self.validate_weight(X, sample_weight)
         self.sample_weight_ = sample_weight.set_backend(X.array_backend)
@@ -223,24 +285,27 @@ class HurlimannCLR(MethodBase):
 
         # Computed in numpy whatever the backend of X, and converted back at the end.
         backend = X.array_backend
-        X_np = X.set_backend("numpy")
+        X_np = X.set_backend("numpy")  # noqa - sklearn convention
         inc_tri = X_np.cum_to_incr()
         inc = inc_tri.values  # (index, column, origin, development)
         # Exposure of each origin, broadcast to the shape of X.
-        V = self.sample_weight_.set_backend("numpy").latest_diagonal.values
-        V = np.broadcast_to(V, inc.shape[:3] + (1,))
+        V = self.sample_weight_.set_backend("numpy").latest_diagonal.values  # noqa: N806
+        V = np.broadcast_to(V, inc.shape[:3] + (1,))  # noqa: N806
 
         seen = ~np.isnan(inc)
         ages = np.arange(inc.shape[3])
         last = np.max(
-            np.where(seen, ages, -1), axis=3, keepdims=True
+            np.where(seen, ages, -1),
+            axis=3,
+            keepdims=True,
         )  # latest development index
         with np.errstate(divide="ignore", invalid="ignore"):
             m = np.nansum(inc, axis=2, keepdims=True) / np.sum(
                 np.where(seen, V, 0.0), axis=2, keepdims=True
             )  # eq. 2.1
-            elr = np.sum(m, axis=3, keepdims=True)  # burning cost loss ratio
-            cum_m = np.cumsum(m, axis=3)
+            m_filled = np.nan_to_num(m)
+            elr = np.sum(m_filled, axis=3, keepdims=True)  # burning cost loss ratio
+            cum_m = np.cumsum(m_filled, axis=3)
             to_date = np.take_along_axis(
                 np.broadcast_to(cum_m, inc.shape), np.maximum(last, 0), axis=3
             )
@@ -266,7 +331,7 @@ class HurlimannCLR(MethodBase):
         self.m_ = self._like(inc_tri.sum("origin"), m)
         self.elr_ = self._like(self.m_.iloc[..., :1], elr)
         self.p_ = self._like(latest, p)
-        self.credibility_ = self._like(latest, z)
+        self.Z_ = self._like(latest, z)
         self.r_individual_ = self._like(latest, r_ind)
         self.r_collective_ = self._like(latest, r_coll)
         self.mse_ = self._like(latest, mse)
@@ -275,7 +340,7 @@ class HurlimannCLR(MethodBase):
             "m_",
             "elr_",
             "p_",
-            "credibility_",
+            "Z_",
             "r_individual_",
             "r_collective_",
             "mse_",
@@ -289,7 +354,7 @@ class HurlimannCLR(MethodBase):
 
     @staticmethod
     def _like(template, values):
-        """A copy of ``template`` holding ``values``, which has the same shape."""
+        """Return a copy of ``template`` holding ``values``, which has the same shape."""
         obj = template.copy()
         obj.values = values
         return obj
