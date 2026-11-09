@@ -309,6 +309,78 @@ def test_zero_payout_mse(nothing_paid_yet):
     assert np.isfinite(mse[:-1]).all()
 
 
+@pytest.fixture
+def segments():
+    """Three workers' compensation insurers, with their paid claims and premium."""
+    clrd = cl.load_sample("clrd")
+    clrd = clrd[clrd["LOB"] == "wkcomp"].iloc[:3]
+    return clrd["CumPaidLoss"], clrd["EarnedPremDIR"].latest_diagonal
+
+
+def by_segment(tri):
+    return tri.values.reshape(tri.shape[0], -1)
+
+
+def test_predict_matches_segments_by_label(segments):
+    X, w = segments
+    fit = cl.HurlimannCLR().fit(X, sample_weight=w)
+    order = [2, 0, 1]
+    predicted = fit.predict(X.iloc[order], sample_weight=w.iloc[order])
+    for name in ("ultimate_", "p_", "Z_", "mse_", "ldf_"):
+        assert np.allclose(
+            by_segment(getattr(predicted, name)),
+            by_segment(getattr(fit, name))[order],
+            equal_nan=True,
+        ), name
+    assert predicted.ldf_.index.equals(X.iloc[order].index)
+
+
+def test_exposure_is_matched_to_segments_by_label(segments):
+    X, w = segments
+    shuffled = w.iloc[[1, 2, 0]]
+    fit = cl.HurlimannCLR().fit(X, sample_weight=w)
+    refit = cl.HurlimannCLR().fit(X, sample_weight=shuffled)
+    assert np.allclose(
+        by_segment(refit.ultimate_), by_segment(fit.ultimate_), equal_nan=True
+    )
+
+
+def test_predict_segment_not_in_the_fit(segments):
+    X, w = segments
+    fit = cl.HurlimannCLR().fit(X.iloc[:2], sample_weight=w.iloc[:2])
+    with pytest.raises(ValueError, match="not in the model"):
+        fit.predict(X.iloc[1:], sample_weight=w.iloc[1:])
+
+
+def test_predict_development_ages_must_match(example, fits):
+    _, X, w = example
+    cumulative = X.incr_to_cum()
+    with pytest.raises(ValueError, match="development ages"):
+        fits["optimal"].predict(cumulative.iloc[..., 1:], sample_weight=w)
+
+
+@pytest.mark.parametrize("predict", [False, True])
+def test_origin_labels_must_match(example, fits, predict):
+    _, X, w = example
+    n = X.shape[2]
+    shifted = cl.Triangle(
+        pd.DataFrame({
+            "origin": range(2002, 2002 + n),
+            "valuation": 2007,
+            "premium": 1,
+        }),
+        origin="origin",
+        valuation="valuation",
+        columns="premium",
+        cumulative=True,
+    )
+    with pytest.raises(ValueError, match="origin"):
+        if predict:
+            fits["optimal"].predict(X, sample_weight=shifted)
+        else:
+            cl.HurlimannCLR().fit(X, sample_weight=shifted)
+
+
 def test_origin_mismatch(example):
     _, X, w = example
     with pytest.raises(ValueError, match="origin"):

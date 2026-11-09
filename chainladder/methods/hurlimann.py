@@ -361,14 +361,75 @@ class HurlimannCLR(MethodBase):
         X_new, X_np, _, inc, V = self._prepare(X, sample_weight)  # noqa N806
         if X_new.shape[3] > self.m_.shape[3]:
             raise ValueError("X has ages that exceed those available in model.")
+        ages, fitted_ages = np.asarray(X_new.ddims), np.asarray(self.m_.ddims)
+        if not np.array_equal(ages, fitted_ages[: len(ages)]):
+            raise ValueError(
+                "The development ages of X do not match those of the model, "
+                f"{ages.tolist()} versus {fitted_ages.tolist()}."
+            )
 
-        m = np.asarray(self.m_.set_backend("numpy").values)
-        elr = np.asarray(self.elr_.set_backend("numpy").values)
+        # The fitted arrays, taken in the order of the segments and columns of X.
+        rows = self._positions(X_new.index, self.m_.index, "The index of X")
+        cols = self._positions(
+            self._labels(X_new.columns),
+            self._labels(self.m_.columns),
+            "The columns of X",
+        )
+        grid = np.ix_(rows, cols)
+        m = np.asarray(self.m_.set_backend("numpy").values)[grid]
+        elr = np.asarray(self.elr_.set_backend("numpy").values)[grid]
+        ldf = np.asarray(self.ldf_.set_backend("numpy").values)[grid]
         r = self._credible_reserve(inc, V, m, elr=elr)
 
-        setattr(X_new, "ldf_", self.ldf_)  # noqa B010
+        setattr(  # noqa B010
+            X_new,
+            "ldf_",
+            self._ldf_like(X_np, ldf, self.ldf_.ddims).set_backend(X_new.array_backend),
+        )
         self._set_results(X_new, X_np.latest_diagonal, r, X_new.array_backend)
         return X_new
+
+    @staticmethod
+    def _labels(labels: Any) -> pd.DataFrame:
+        """Wrap the labels of an axis, such as the columns, as a one-column frame."""
+        return pd.DataFrame({"label": list(labels)})
+
+    @staticmethod
+    def _positions(target: pd.DataFrame, source: pd.DataFrame, what: str) -> np.ndarray:
+        """
+        The position in ``source`` of each label in ``target``.
+
+        A ``source`` with one label is broadcast: it applies to every label of
+        ``target``.
+
+        Parameters
+        ----------
+        target: pd.DataFrame
+            The labels to look up, one row per label.
+        source: pd.DataFrame
+            The labels to look in, with the same columns.
+        what: str
+            What ``target`` is, for the error message.
+
+        Returns
+        -------
+        np.ndarray
+            The position in ``source`` of each row of ``target``.
+        """
+        if len(source) == 1:
+            return np.zeros(len(target), dtype=int)
+        if list(target.columns) != list(source.columns):
+            raise ValueError(
+                f"{what} is labelled by {list(target.columns)}, not "
+                f"{list(source.columns)} as in the model."
+            )
+        lookup = {tuple(k): i for i, k in enumerate(source.itertuples(index=False))}
+        missing = [
+            tuple(k) for k in target.itertuples(index=False) if tuple(k) not in lookup
+        ]
+        if missing:
+            raise ValueError(f"{what} has labels not in the model: {missing}.")
+        return np.array([lookup[tuple(k)] for k in target.itertuples(index=False)])
 
     def _require_sample_weight(self, sample_weight: Triangle | None) -> Triangle:
         """The exposure, which ``fit`` and ``predict`` need, or an error if missing."""
@@ -400,13 +461,17 @@ class HurlimannCLR(MethodBase):
         """
         X = X.incr_to_cum().val_to_dev() if not X.is_cumulative else X.val_to_dev()  # noqa N806
         self.validate_weight(X, sample_weight)
-        if sample_weight.shape[2] != X.shape[2]:
+        if sample_weight.shape[2] != X.shape[2] or not X.origin.equals(
+            sample_weight.origin
+        ):
             raise ValueError("X and sample_weight must have the same origin periods.")
 
         X_np = X.set_backend("numpy")  # noqa N806
         inc_tri = X_np.cum_to_incr()
         inc = np.asarray(inc_tri.values)
-        V = sample_weight.set_backend("numpy").latest_diagonal.values  # noqa N806
+        V = np.asarray(sample_weight.set_backend("numpy").latest_diagonal.values)  # noqa N806
+        # The exposure of each segment of X, matched by label rather than position.
+        V = V[self._positions(X.index, sample_weight.index, "The index of X"), ...]  # noqa N806
         V = np.broadcast_to(V, inc.shape[:3] + (1,))  # noqa N806
         return X, X_np, inc_tri, inc, V
 
@@ -535,6 +600,7 @@ class HurlimannCLR(MethodBase):
     def _ldf_like(
         X: Triangle,  # noqa N803
         values: np.ndarray,
+        ddims: np.ndarray | None = None,
     ) -> Triangle:
         """Wrap age to age factors in a pattern Triangle, as ``Development`` does."""
         from chainladder import options
@@ -543,7 +609,7 @@ class HurlimannCLR(MethodBase):
         obj.values = values
         # Not X.link_ratio.ddims, which drops trailing development periods that
         # no origin has observed, while the pattern keeps them.
-        obj.ddims = np.asarray(X.ddims)[:-1]
+        obj.ddims = np.asarray(X.ddims)[:-1] if ddims is None else ddims
         obj.valuation_date = pd.to_datetime(options.ULT_VAL)
         obj.is_pattern = True
         obj.is_cumulative = False
