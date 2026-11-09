@@ -320,3 +320,30 @@ def test_approach_2_single_channel_case_triangle_and_transform():
     ).fit(tri_grouped)
     assert m_grp.case_to_prior_case_ is not None
     assert m_grp.paid_to_prior_case_ is not None
+
+
+def test_case_outstanding_zero_case_reserve_warning():
+    import warnings
+
+    xyz = cl.load_sample("friedland_xyz_auto_bi")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        model = cl.CaseOutstanding(
+            paid_to_incurred=("Paid Claims", "Reported Claims")
+        ).fit(xyz)
+    assert model.paid_ldf_ is not None
+    assert not model.case_ldf_.to_frame().isna().any().any()
+
+    # Synthetic triangle with zero prior case
+    p = cl.load_sample("genins")
+    p.columns = ["paid"]
+    i = p.copy()
+    i.columns = ["incurred"]
+    i.values = p.values + 100
+    # Force case to zero at earlier development maturity
+    i.values[..., 2] = p.values[..., 2]
+    tri = cl.concat((p, i), 1)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        m_zero = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri)
+    assert not m_zero.case_ldf_.to_frame().isna().any().any()
