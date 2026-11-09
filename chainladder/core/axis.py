@@ -271,9 +271,7 @@ def _get_development(obj: Triangle, raw: Any) -> pd.Series:
         if obj.is_cumulative:
             dev = ["{}-Ult".format(dev[i]) for i in range(len(dev))]
         else:
-            dev = [
-                "{}-{}".format(dev[i], dev[i] + offset) for i in range(len(dev))
-            ]
+            dev = ["{}-{}".format(dev[i], dev[i] + offset) for i in range(len(dev))]
     return pd.Series(list(dev), name="development")
 
 
@@ -386,9 +384,7 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
     return val_arr
 
 
-def _set_axis(
-    obj: Triangle, axis: int | str, value: Any, check: bool = True
-) -> None:
+def _set_axis(obj: Triangle, axis: int | str, value: Any, check: bool = True) -> None:
     """
     Set values on the specified axis of a Triangle instance.
 
