@@ -115,6 +115,23 @@ class TriangleAxis:
         if hasattr(obj, "virtual_columns"):
             obj._set_slicers()
 
+    def set_unchecked(self, obj: Triangle, value: Any) -> None:
+        """
+        Set the axis from a value, skipping the length check.
+
+        Used when an axis is widened ahead of ``values`` (arithmetic broadcast)
+        or when slicing/reindexing internal coordinates.
+        """
+        if self.fset is _set_origin or self.fset is _set_development:
+            raw = self.fset(obj, value, check=False)
+        else:
+            raw = self.fset(obj, value) if self.fset else value
+        if not hasattr(obj, "_axes"):
+            obj._axes = {}
+        obj._axes[self.axis] = raw
+        if hasattr(obj, "virtual_columns"):
+            obj._set_slicers()
+
 
 def _set_columns(obj: Triangle, value: Any) -> pd.Index:
     """
@@ -192,13 +209,13 @@ def _get_origin(obj: Triangle, raw: Any) -> pd.PeriodIndex | pd.Series:
     return pd.DatetimeIndex(raw, name="origin").to_period(freq=freq)
 
 
-def _set_origin(obj: Triangle, value: Any) -> np.ndarray:
+def _set_origin(obj: Triangle, value: Any, check: bool = True) -> np.ndarray:
     """
     Validate and transform assigned origin periods into internal timestamps array.
     """
     if isinstance(value, (str, bytes)) or not hasattr(value, "__len__"):
         value = [value]
-    if hasattr(obj, "_len_check"):
+    if check and hasattr(obj, "_len_check"):
         if hasattr(obj, "values") and obj.values is not None:
             obj._len_check(range(obj.values.shape[2]), value)
         elif (
@@ -241,32 +258,32 @@ def _get_development(obj: Triangle, raw: Any) -> pd.Series:
     """
     if raw is None:
         return None
-    ddims = raw.copy()
+    dev = raw.copy()
     if obj.is_val_tri:
         formats = {"Y": "%Y", "S": "%YQ%q", "Q": "%YQ%q", "M": "%Y-%m"}
-        ddims = ddims.to_period(freq=obj.development_grain.replace("S", "2Q")).strftime(
+        dev = dev.to_period(freq=obj.development_grain.replace("S", "2Q")).strftime(
             formats[obj.development_grain]
         )
     elif obj.is_pattern:
         offset = obj._dstep()["M"][obj.development_grain]
         if obj.is_ultimate:
-            ddims[-1] = ddims[-2] + offset
+            dev[-1] = dev[-2] + offset
         if obj.is_cumulative:
-            ddims = ["{}-Ult".format(ddims[i]) for i in range(len(ddims))]
+            dev = ["{}-Ult".format(dev[i]) for i in range(len(dev))]
         else:
-            ddims = [
-                "{}-{}".format(ddims[i], ddims[i] + offset) for i in range(len(ddims))
+            dev = [
+                "{}-{}".format(dev[i], dev[i] + offset) for i in range(len(dev))
             ]
-    return pd.Series(list(ddims), name="development")
+    return pd.Series(list(dev), name="development")
 
 
-def _set_development(obj: Triangle, value: Any) -> Any:
+def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
     """
     Validate and transform assigned development periods into internal lag/timestamp array.
     """
     if isinstance(value, (str, bytes)) or not hasattr(value, "__len__"):
         value = [value]
-    if hasattr(obj, "_len_check"):
+    if check and hasattr(obj, "_len_check"):
         if hasattr(obj, "values") and obj.values is not None:
             obj._len_check(range(obj.values.shape[3]), value)
         elif (
@@ -369,7 +386,9 @@ def _set_development(obj: Triangle, value: Any) -> Any:
     return val_arr
 
 
-def _set_axis(obj: Triangle, axis: int | str, value: Any) -> None:
+def _set_axis(
+    obj: Triangle, axis: int | str, value: Any, check: bool = True
+) -> None:
     """
     Set values on the specified axis of a Triangle instance.
 
@@ -381,6 +400,13 @@ def _set_axis(obj: Triangle, axis: int | str, value: Any) -> None:
         Axis identifier (0..3 or 'index', 'columns', 'origin', 'development').
     value : Any
         New axis values.
+    check : bool, default True
+        Whether to perform length and consistency validation.
     """
     axis_name = _get_axis_name(axis)
+    if not check:
+        descriptor = getattr(type(obj), axis_name, None)
+        if isinstance(descriptor, TriangleAxis):
+            descriptor.set_unchecked(obj, value)
+            return
     setattr(obj, axis_name, value)

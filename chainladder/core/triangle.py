@@ -503,7 +503,7 @@ class Triangle(TriangleBase):
         doc="Represents the development axis of the triangle.",
     )
 
-    def _set_axis(self, axis: int | str, value: Any) -> None:
+    def _set_axis(self, axis: int | str, value: Any, check: bool = True) -> None:
         """
         Assign new labels to the specified axis.
 
@@ -513,8 +513,10 @@ class Triangle(TriangleBase):
             The target axis (0..3 or 'index', 'columns', 'origin', 'development').
         value : Any
             The new labels/values for the axis.
+        check : bool, default True
+            If False, store value without length validation.
         """
-        _set_axis(self, axis, value)
+        _set_axis(self, axis, value, check)
 
     @_deprecated_rename_argument("development", "valuation", remove_in_version="v2.0")
     @_deprecated_rename_argument(
@@ -1514,17 +1516,17 @@ class Triangle(TriangleBase):
             offset = offset[-1:] * sign
         offset = offset[obj.values.coords[-2]] * sign  # [0]
         obj.values.coords[-1] = obj.values.coords[-1] + offset
-        ddims = obj.valuation[obj.valuation <= obj.valuation_date]
-        ddims = len(ddims.drop_duplicates())
-        if ddims == 1 and sign == -1:
-            ddims = len(obj.origin)
+        dev_len = obj.valuation[obj.valuation <= obj.valuation_date]
+        dev_len = len(dev_len.drop_duplicates())
+        if dev_len == 1 and sign == -1:
+            dev_len = len(obj.origin)
         if obj.values.density > 0:
             if obj.values.coords[-1].min() < 0:
                 obj.values.coords[-1] = obj.values.coords[-1] - min(
                     obj.values.coords[-1].min(), min_slide
                 )
-            ddims = np.max([np.max(obj.values.coords[-1]) + 1, ddims])
-        obj.values.shape = tuple(list(obj.shape[:-1]) + [ddims])
+            dev_len = np.max([np.max(obj.values.coords[-1]) + 1, dev_len])
+        obj.values.shape = tuple(list(obj.shape[:-1]) + [dev_len])
         if not options.AUTO_SPARSE or backend == "cupy":
             obj = obj.set_backend(backend)
         else:
@@ -1607,8 +1609,8 @@ class Triangle(TriangleBase):
         else:
             obj = self
         obj = obj._val_dev(1, inplace)
-        ddims = obj.valuation[obj.valuation <= obj.valuation_date]
-        obj.development = ddims.drop_duplicates().sort_values()
+        val_dev = obj.valuation[obj.valuation <= obj.valuation_date]
+        obj.development = val_dev.drop_duplicates().sort_values()
         if self.is_full:
             if self.is_ultimate:
                 ultimate.development = pd.DatetimeIndex(ultimate.valuation[0:1])
@@ -1904,10 +1906,10 @@ class Triangle(TriangleBase):
             if obj.is_cumulative:
                 obj = obj.iloc[..., d]
             else:
-                ddims = obj.development[d]
+                dev = obj.development[d]
                 d2 = [d[0]] * (d[0] + 1) + list(np.repeat(np.array(d[1:]), step))
                 obj = obj.groupby(d2, axis=3).sum()
-                obj.development = ddims
+                obj.development = dev
 
             obj.development_grain = dgrain_new
 

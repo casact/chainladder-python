@@ -1352,7 +1352,7 @@ def add_triangle_agg_func(cls: Type[TrianglePandas], k: str, v: str):
             obj.columns = pd.Index([0], name="columns")
         if axis == 2 and obj.values.shape[axis] == 1 and len(obj.origin) > 1:
             obj.origin = obj.origin[0:1]
-        # If axis is development, set the ddims to be the valuation date.
+        # If axis is development, set the development axis to be the valuation date.
         if axis == 3 and obj.values.shape[axis] == 1 and len(obj.development) > 1:
             obj._axes[3] = pd.DatetimeIndex(
                 [self.valuation_date], dtype=__dt64_dtype__, freq=None
@@ -1416,13 +1416,13 @@ def add_groupby_agg_func(cls, k: str, v: str):
         if self.axis == 1:
             obj.columns = group_index
         if self.axis == 2:
-            odims = self.obj._to_datetime(
+            orig_dt = self.obj._to_datetime(
                 pd.Series(self.groups.indices.keys()).to_frame(), [0]
             )
-            obj.origin_grain = self.obj._get_grain(odims)
+            obj.origin_grain = self.obj._get_grain(orig_dt)
             split = obj.origin_grain.split("-")
             obj.origin_grain = {"2Q": "S"}.get(split[0], split[0])
-            obj._axes[2] = odims.values
+            obj._axes[2] = orig_dt.values
         obj._set_slicers()
         if auto_sparse:
             obj = obj._auto_sparse()

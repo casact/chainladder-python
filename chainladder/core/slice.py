@@ -66,7 +66,8 @@ class _LocBase:
         # Set the new dimension values.
         obj.index = obj.index.iloc[i_idx].reset_index(drop=True)
         obj.columns = obj.columns[c_idx]
-        obj._axes[2], obj._axes[3] = obj._axes[2][o_idx], obj._axes[3][d_idx]
+        obj._set_axis("origin", obj._axes[2][o_idx], check=False)
+        obj._set_axis("development", obj._axes[3][d_idx], check=False)
         from chainladder import options
 
         if obj.valuation_date < pd.to_datetime(options.ULT_VAL) or not getattr(
@@ -1016,12 +1017,15 @@ class TriangleSlicer:
         # Update the axis, then the values.
         obj = self.copy()
         if axis in ("origin", "odims"):
-            obj._axes[2] = obj._axes[2][key]
+            new_axis = obj._axes[2][key]
             slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key]), slice(None)
+            obj.values = obj.values[slicer]
+            obj._set_axis("origin", new_axis, check=False)
         else:
-            obj._axes[3] = obj._axes[3][key]
+            new_axis = obj._axes[3][key]
             slicer = ..., _LocBase._contig_slice(np.arange(len(key))[key])
-        obj.values = obj.values[slicer]
+            obj.values = obj.values[slicer]
+            obj._set_axis("development", new_axis, check=False)
         return obj
 
     def _set_slicers(self: TriangleProtocol) -> None:

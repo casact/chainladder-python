@@ -187,14 +187,14 @@ class TriangleDunders:
             obj.development_grain = other.development_grain
         if not is_broadcastable:
             # If broadcasting doesn't work, union axes similar to pandas
-            ddims = pd.concat(
+            dev = pd.concat(
                 (
                     pd.Series(obj._axes[3], index=obj._axes[3]),
                     pd.Series(other._axes[3], index=other._axes[3]),
                 ),
                 axis=1,
             ).sort_index()
-            odims = pd.concat(
+            orig = pd.concat(
                 (
                     pd.Series(obj._axes[2], index=obj._axes[2]),
                     pd.Series(other._axes[2], index=other._axes[2]),
@@ -203,12 +203,12 @@ class TriangleDunders:
                 sort=False,
             ).sort_index()
             o_arr0, o_arr1 = (
-                odims.iloc[:, 0].isna().values,
-                odims.iloc[:, 1].isna().values,
+                orig.iloc[:, 0].isna().values,
+                orig.iloc[:, 1].isna().values,
             )
             d_arr0, d_arr1 = (
-                ddims.iloc[:, 0].isna().values,
-                ddims.iloc[:, 1].isna().values,
+                dev.iloc[:, 0].isna().values,
+                dev.iloc[:, 1].isna().values,
             )
             # rol = right hand side, origin, lower
             rol = int(np.where(~o_arr1 == 1)[0].min())
@@ -223,16 +223,16 @@ class TriangleDunders:
                 other_arr = xp.zeros((
                     other.shape[0],
                     other.shape[1],
-                    len(odims),
-                    len(ddims),
+                    len(orig),
+                    len(dev),
                 ))
                 other_arr[:] = xp.nan
                 other_arr[:, :, rol:roh, rdl:rdh] = other.values
                 obj_arr = xp.zeros((
                     obj.shape[0],
                     obj.shape[1],
-                    len(odims),
-                    len(ddims),
+                    len(orig),
+                    len(dev),
                 ))
                 obj_arr[:] = xp.nan
                 obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
@@ -245,17 +245,17 @@ class TriangleDunders:
                 other_arr.shape = (
                     other.shape[0],
                     other.shape[1],
-                    len(odims),
-                    len(ddims),
+                    len(orig),
+                    len(dev),
                 )
-                obj_arr.shape = (obj.shape[0], obj.shape[1], len(odims), len(ddims))
+                obj_arr.shape = (obj.shape[0], obj.shape[1], len(orig), len(dev))
             obj.values = obj_arr
             other.values = other_arr
-            obj._axes[2] = np.array(odims.index)
+            obj._set_axis("origin", np.array(orig.index), check=False)
             if isinstance(obj._axes.get(3), pd.DatetimeIndex):
-                obj._axes[3] = pd.DatetimeIndex(ddims.index)
+                obj._set_axis("development", pd.DatetimeIndex(dev.index), check=False)
             else:
-                obj._axes[3] = np.array(ddims.index)
+                obj._set_axis("development", np.array(dev.index), check=False)
         return obj, other
 
     @staticmethod
