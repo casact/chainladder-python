@@ -339,5 +339,9 @@ def test_unweighted_ratios_preserved_when_n_periods_set():
 
     m_full = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri)
 
-    assert np.allclose(m.paid_to_prior_case_.values, m_full.paid_to_prior_case_.values, equal_nan=True)
-    assert np.allclose(m.case_to_prior_case_.values, m_full.case_to_prior_case_.values, equal_nan=True)
+    assert np.allclose(
+        m.paid_to_prior_case_.values, m_full.paid_to_prior_case_.values, equal_nan=True
+    )
+    assert np.allclose(
+        m.case_to_prior_case_.values, m_full.case_to_prior_case_.values, equal_nan=True
+    )
