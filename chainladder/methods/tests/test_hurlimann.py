@@ -289,7 +289,9 @@ def test_zero_payout_uses_the_collective_reserve(nothing_paid_yet, method):
     ultimate = fit.ultimate_.values.flatten()
     assert not np.isnan(ultimate).any()
     # Nothing has been paid, so the ultimate is the collective reserve alone.
-    assert np.isclose(ultimate[-1], fit.elr_.values.flatten()[0] * w.values.flatten()[-1])
+    assert np.isclose(
+        ultimate[-1], fit.elr_.values.flatten()[0] * w.values.flatten()[-1]
+    )
 
 
 def test_zero_payout_leaves_the_individual_method_undefined(nothing_paid_yet):

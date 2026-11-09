@@ -380,7 +380,9 @@ class HurlimannCLR(MethodBase):
         return sample_weight
 
     def _prepare(
-        self, X: Triangle, sample_weight: Triangle  # noqa N803
+        self,
+        X: Triangle,
+        sample_weight: Triangle,  # noqa N803
     ) -> tuple[Triangle, Triangle, Triangle, np.ndarray, np.ndarray]:
         """
         Validate the inputs of ``fit`` and ``predict`` and put them in numpy.
@@ -531,8 +533,8 @@ class HurlimannCLR(MethodBase):
 
     @staticmethod
     def _ldf_like(
-            X: Triangle,  # noqa N803
-            values: np.ndarray
+        X: Triangle,  # noqa N803
+        values: np.ndarray,
     ) -> Triangle:
         """Wrap age to age factors in a pattern Triangle, as ``Development`` does."""
         from chainladder import options
@@ -551,8 +553,8 @@ class HurlimannCLR(MethodBase):
 
     @staticmethod
     def _like(
-            template: TriangleProtocol,
-            values: np.ndarray,
+        template: TriangleProtocol,
+        values: np.ndarray,
     ) -> Triangle:
         """
         Return a copy of a triangle with its values replaced.
