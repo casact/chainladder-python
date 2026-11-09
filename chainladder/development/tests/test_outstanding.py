@@ -320,3 +320,121 @@ def test_approach_2_single_channel_case_triangle_and_transform():
     ).fit(tri_grouped)
     assert m_grp.case_to_prior_case_ is not None
     assert m_grp.paid_to_prior_case_ is not None
+
+
+def test_case_outstanding_medial_averages():
+    """Verify medial averages (5x1) in CaseOutstanding match Friedland Ch 12 Exhibit I."""
+    tri = cl.load_sample("usauto")
+    model = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=5,
+        paid_drop_high=1,
+        paid_drop_low=1,
+        case_n_periods=5,
+        case_drop_high=1,
+        case_drop_low=1,
+    ).fit(tri)
+
+    expected_paid_medial = np.array([
+        [0.835, 0.712, 0.714, 0.692, 0.641, 0.624, 0.546, 0.437, 0.524]
+    ])
+    assert np.allclose(
+        model.paid_ldf_.to_frame(origin_as_datetime=False).values,
+        expected_paid_medial,
+        atol=1e-3,
+    )
+
+    expected_case_medial = np.array([
+        [0.527, 0.562, 0.530, 0.488, 0.515, 0.542, 0.642, 0.674, 0.580]
+    ])
+    assert np.allclose(
+        model.case_ldf_.to_frame(origin_as_datetime=False).values,
+        expected_case_medial,
+        atol=1e-3,
+    )
+
+    # Shorthand parameter equivalence
+    model_short = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        n_periods=5,
+        drop_high=1,
+        drop_low=1,
+    ).fit(tri)
+    assert np.allclose(model.paid_ldf_.values, model_short.paid_ldf_.values)
+    assert np.allclose(model.case_ldf_.values, model_short.case_ldf_.values)
+
+    # Asymmetric selection: paid 5x1 medial and case 3-year latest
+    m_asym = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=5,
+        paid_drop_high=1,
+        paid_drop_low=1,
+        case_n_periods=3,
+    ).fit(tri)
+    assert np.allclose(m_asym.paid_ldf_.values, model.paid_ldf_.values)
+    m_3 = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=3,
+        case_n_periods=3,
+    ).fit(tri)
+    assert np.allclose(m_asym.case_ldf_.values, m_3.case_ldf_.values)
+
+
+def test_case_outstanding_unweighted_ratios_preserved():
+    """Verify diagnostic ratios remain unweighted across historical origin periods."""
+    tri = cl.load_sample("usauto")
+    m = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        n_periods=3,
+        drop_high=1,
+        drop_low=1,
+    ).fit(tri)
+
+    paid_ratios = m.paid_to_prior_case_.to_frame()
+    case_ratios = m.case_to_prior_case_.to_frame()
+
+    assert (paid_ratios.iloc[:-3] != 0).any().any()
+    assert (case_ratios.iloc[:-3] != 0).any().any()
+
+    m_full = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri)
+    assert np.allclose(
+        m.paid_to_prior_case_.values, m_full.paid_to_prior_case_.values, equal_nan=True
+    )
+    assert np.allclose(
+        m.case_to_prior_case_.values, m_full.case_to_prior_case_.values, equal_nan=True
+    )
+
+
+def test_case_outstanding_clone_and_sklearn_compatibility():
+    """Verify scikit-learn clone compatibility."""
+    from sklearn.base import clone
+
+    m = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=5,
+        paid_drop_high=1,
+        paid_drop_low=1,
+        case_n_periods=3,
+    )
+    m_clone = clone(m)
+    assert m_clone.paid_n_periods == 5
+    assert m_clone.paid_drop_high == 1
+    assert m_clone.paid_drop_low == 1
+    assert m_clone.case_n_periods == 3
+
+
+def test_case_outstanding_zero_case_reserve_warning():
+    """Verify tail runoff with zero case reserve executes cleanly without warnings."""
+    import warnings
+
+    xyz = cl.load_sample("friedland_xyz_auto_bi")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        model = cl.CaseOutstanding(
+            paid_to_incurred=("Paid Claims", "Reported Claims"),
+            n_periods=5,
+            drop_high=1,
+            drop_low=1,
+        ).fit(xyz)
+    assert model.paid_ldf_ is not None
+    assert not model.case_ldf_.to_frame().isna().any().any()
