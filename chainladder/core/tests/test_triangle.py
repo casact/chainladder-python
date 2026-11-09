@@ -3751,6 +3751,27 @@ def test_set_development_fractional_ages(raa: Triangle) -> None:
     assert np.allclose(tri.development.values, fractional_ages)
 
 
+def test_set_development_fractional_pattern_round_trip(raa: Triangle) -> None:
+    """
+    Hyphenated pattern labels with fractional ages round-trip through the development setter.
+    """
+    tri = raa.copy()
+    tri.development = [
+        "12.5-24.5",
+        "24.5-36.5",
+        "36.5-48.5",
+        "48.5-60.5",
+        "60.5-72.5",
+        "72.5-84.5",
+        "84.5-96.5",
+        "96.5-108.5",
+        "108.5-120.5",
+        "120.5-Ult",
+    ]
+    assert tri._axes[3][0] == 12.5
+    assert tri._axes[3][-1] == 120.5
+
+
 def test_input_validation_non_numeric_columns_raises() -> None:
     """
     Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.

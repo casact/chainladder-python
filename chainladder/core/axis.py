@@ -342,16 +342,24 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
                 lags.append(9999)
             elif "-" in s:
                 parts = s.split("-")
-                if len(parts) == 2 and (
-                    parts[1].strip().lower() == "ult"
-                    or (
-                        parts[0].strip().isdigit()
-                        and parts[1].strip().isdigit()
-                        and int(parts[0]) < 1000
-                        and int(parts[1]) < 1000
-                    )
-                ):
-                    lags.append(int(parts[0]))
+                if len(parts) == 2:
+                    p0 = parts[0].strip()
+                    p1 = parts[1].strip()
+                    try:
+                        n0 = int(p0) if p0.isdigit() else float(p0)
+                    except ValueError:
+                        n0 = None
+                    if p1.lower() == "ult":
+                        n1 = 9999
+                    else:
+                        try:
+                            n1 = int(p1) if p1.isdigit() else float(p1)
+                        except ValueError:
+                            n1 = None
+                    if n0 is not None and n1 is not None and n0 < 1000 and n1 <= 9999:
+                        lags.append(n0)
+                    else:
+                        raise ValueError(f"Not a development lag pattern: {s}")
                 else:
                     raise ValueError(f"Not a development lag pattern: {s}")
             else:
