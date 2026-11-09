@@ -1485,11 +1485,12 @@ df_passthru = (
         "melt",
     ]
     + [
-        "pct_chg",
+        "pct_change",
     ]
 )
 for method in df_passthru:
     add_df_passthru(TrianglePandas, method)
+
 
 agg_funcs = ["sum", "mean", "median", "max", "min", "prod", "var"]
 agg_funcs = agg_funcs + ["std", "cumsum", "quantile"]

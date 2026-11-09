@@ -1,7 +1,8 @@
-import chainladder as cl
 import numpy as np
 import pandas as pd
 import pytest
+
+import chainladder as cl
 
 raa = cl.load_sample("RAA")
 raa_1989 = raa[raa.valuation < raa.valuation_date]
@@ -378,19 +379,19 @@ def test_align_cdfs(raa):
         raa.dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :],
     ).ultimate_
-    assert a == b
+    assert a.equals(b)
     model = cl.Chainladder().fit(raa, sample_weight=ld)
     a = model.ultimate_.iloc[..., :4, :]
     b = model.predict(
         raa.dev_to_val().iloc[..., :4, -1].val_to_dev(),
         sample_weight=ld.iloc[..., :4, :],
     ).ultimate_
-    assert a == b
+    assert a.equals(b)
 
 
 def test_check_val_tri_cl(raa):
     model = cl.Chainladder().fit(raa.dev_to_val())
-    assert model.predict(raa.latest_diagonal).ultimate_ == model.ultimate_
+    assert model.predict(raa.latest_diagonal).ultimate_.equals(model.ultimate_)
 
 
 def test_odd_shaped_triangle():
