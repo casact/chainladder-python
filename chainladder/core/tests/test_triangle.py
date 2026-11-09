@@ -3741,6 +3741,16 @@ def test_set_development_bare_years_unaffected_by_age_support() -> None:
     assert list(tri.development) == ["1970"]
 
 
+def test_set_development_fractional_ages(raa: Triangle) -> None:
+    """
+    Assigning fractional ages to development preserves float values without integer truncation.
+    """
+    tri = raa.copy()
+    fractional_ages = [12.5, 24.5, 36.5, 48.5, 60.5, 72.5, 84.5, 96.5, 108.5, 120.5]
+    tri.development = fractional_ages
+    assert np.allclose(tri.development.values, fractional_ages)
+
+
 def test_input_validation_non_numeric_columns_raises() -> None:
     """
     Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.

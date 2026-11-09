@@ -304,8 +304,12 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
         return pd.DatetimeIndex(value) if getattr(obj, "is_val_tri", False) else value
 
     val_arr = np.array(value)
-    if val_arr.dtype.kind in ("i", "u", "f"):
+    if val_arr.dtype.kind in ("i", "u"):
         return val_arr.astype(int)
+    if val_arr.dtype.kind == "f":
+        if np.all(np.equal(np.mod(val_arr, 1), 0)):
+            return val_arr.astype(int)
+        return val_arr
 
     if getattr(obj, "is_val_tri", False):
         # Try matching existing DatetimeIndex labels or parsing as PeriodIndex/DatetimeIndex
@@ -351,10 +355,13 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
                 else:
                     raise ValueError(f"Not a development lag pattern: {s}")
             else:
-                val_int = int(s)
-                if val_int >= 1000 and val_int != 9999:
+                try:
+                    val_num = int(s)
+                except ValueError:
+                    val_num = float(s)
+                if val_num >= 1000 and val_num != 9999:
                     raise ValueError(f"Year passed to development lag: {s}")
-                lags.append(val_int)
+                lags.append(val_num)
 
         raw_dev = getattr(obj, "_axes", {}).get(3)
         if raw_dev is None and hasattr(obj, "_axes") and isinstance(obj._axes, dict):
@@ -367,7 +374,10 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
         )
         if is_ult and len(lags) > 0:
             lags[-1] = 9999
-        return np.array(lags, dtype=int)
+        lag_arr = np.array(lags)
+        if lag_arr.dtype.kind == "f" and np.all(np.equal(np.mod(lag_arr, 1), 0)):
+            lag_arr = lag_arr.astype(int)
+        return lag_arr
     except (ValueError, TypeError):
         pass
 
