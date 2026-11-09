@@ -7,14 +7,16 @@ The Hürlimann credible loss ratio reserving model
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy as np
+import pandas as pd
 
 from chainladder.methods import MethodBase
 
 if TYPE_CHECKING:
     from chainladder.core.triangle import Triangle
+    from chainladder.core.typing import TriangleProtocol
 
 
 class HurlimannCLR(MethodBase):
@@ -70,6 +72,15 @@ class HurlimannCLR(MethodBase):
         :math:`E[a_i^2(U_i)]` (eq. 4.11 with :math:`f = 1` and
         :math:`t = \\sqrt{p}`). It is only meaningful as a ratio between
         methods, such as to the ``"optimal"`` method's, which is minimal.
+    ldf_: Triangle
+        The age to age factors implied by the loss ratio pattern,
+        :math:`\\sum_{j \\le k+1} \\hat m_j / \\sum_{j \\le k} \\hat m_j`. They do
+        not depend on ``method``.
+    cdf_: Triangle
+        The cumulative development factors, the inverse of the payout pattern
+        :math:`\\sum_{j \\le k} \\hat m_j / ELR`. The ``"individual"`` method is
+        the chainladder method with these factors, so its ``ultimate_`` equals the
+        latest claims times ``cdf_`` at each origin's age.
     ultimate_: Triangle
         The ultimate losses per the method
     ibnr_: Triangle
@@ -196,6 +207,7 @@ class HurlimannCLR(MethodBase):
     r_collective_: Triangle
     mse_: Triangle
     ultimate_: Triangle
+    ibnr_: Triangle
 
     _METHODS = (
         "optimal",
@@ -214,7 +226,7 @@ class HurlimannCLR(MethodBase):
             "collective",
             "individual",
         ] = "optimal",
-    ):
+    ) -> None:
         self.method = method
 
     def fit(
@@ -222,7 +234,7 @@ class HurlimannCLR(MethodBase):
         X: Triangle,  # noqa - sklearn convention
         y: None = None,
         sample_weight: Triangle | None = None,
-    ):
+    ) -> HurlimannCLR:
         """
         Apply the Hürlimann credible loss ratio technique to triangle **X**
 
@@ -266,32 +278,199 @@ class HurlimannCLR(MethodBase):
             2007  56599.277036
             2008  40739.685328
         """
-        if sample_weight is None:
-            raise ValueError(
-                f"sample_weight is required. For {self.__class__.__name__}, "
-                "this is the exposure of each origin period."
-            )
+        sample_weight = self._require_sample_weight(sample_weight)
         if self.method not in self._METHODS:
             raise ValueError(
                 f"method must be one of {self._METHODS}, got {self.method!r}."
             )
         # Skip MethodBase.fit: it fits a Development, which this method does not use.
-        X = X.incr_to_cum().val_to_dev() if not X.is_cumulative else X.val_to_dev()  # noqa - sklearn convention
+        X, X_np, inc_tri, inc, V = self._prepare(X, sample_weight)  # noqa N806
+        backend = X.array_backend
         self.X_ = X
+        self.sample_weight_ = sample_weight.set_backend(backend)
+
+        seen = ~np.isnan(inc)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            m = np.nansum(inc, axis=2, keepdims=True) / np.sum(
+                np.where(seen, V, 0.0), axis=2, keepdims=True
+            )  # eq. 2.1
+        r = self._credible_reserve(inc, V, m)
+
+        # MethodBase.ldf_ reads X_.ldf_, which is also what cdf_ is built from.
+        setattr(self.X_, "ldf_", self._ldf_like(X_np, r["ldf"]).set_backend(backend))  # noqa B010
+        self.m_ = self._like(inc_tri.sum("origin"), m).set_backend(backend)
+        self.elr_ = self._like(self.m_.iloc[..., :1], r["elr"]).set_backend(backend)
+        self._set_results(self, X_np.latest_diagonal, r, backend)
+        return self
+
+    def predict(
+        self,
+        X: Triangle,  # noqa N803 - sklearn convention
+        sample_weight: Triangle | None = None,
+    ) -> Triangle:
+        """
+        Predicts the credible loss ratio ultimate on a new triangle **X**
+
+        The loss ratio pattern and burning cost loss ratio are the fitted
+        ``m_`` and ``elr_``, not re-estimated from **X**. They are applied to the
+        claims and the exposure of **X** to obtain its payout factors, reserves
+        and ultimates, so ``method`` has the same meaning as in ``fit``.
+
+        Parameters
+        ----------
+        X: Triangle
+            Loss data to which the model will be applied. It may not have more
+            development periods than the triangle that was fitted.
+        sample_weight: Triangle
+            Required exposure, such as premium, of each origin period of **X**.
+
+        Returns
+        -------
+        X_new: Triangle
+            Loss data with ``ultimate_``, ``ldf_`` and the payout factors
+            ``p_``, the credibility weights ``Z_``, the reserves
+            ``r_individual_`` and ``r_collective_`` and ``mse_`` applied.
+
+        Examples
+        --------
+        Fit on all the origin periods, then apply the model to the three most
+        recent. The pattern is the fitted one, so the ultimates are those of
+        the fit.
+
+        .. testsetup::
+
+            import chainladder as cl
+
+        .. testcode::
+
+            xyz = cl.load_sample("xyz")
+            X, V = xyz["Paid"], xyz["Premium"].latest_diagonal
+            model = cl.HurlimannCLR().fit(X, sample_weight=V)
+            recent = X.origin >= X.origin[-3]
+            predicted = model.predict(X[recent], sample_weight=V[V.origin >= V.origin[-3]])
+            print(predicted.ultimate_)
+
+        .. testoutput::
+
+                          2261
+            2006  77308.165192
+            2007  59634.672234
+            2008  45978.157521
+        """
+        sample_weight = self._require_sample_weight(sample_weight)
+        X_new, X_np, _, inc, V = self._prepare(X, sample_weight)  # noqa N806
+        if X_new.shape[3] > self.m_.shape[3]:
+            raise ValueError("X has ages that exceed those available in model.")
+
+        m = np.asarray(self.m_.set_backend("numpy").values)
+        elr = np.asarray(self.elr_.set_backend("numpy").values)
+        r = self._credible_reserve(inc, V, m, elr=elr)
+
+        setattr(X_new, "ldf_", self.ldf_)  # noqa B010
+        self._set_results(X_new, X_np.latest_diagonal, r, X_new.array_backend)
+        return X_new
+
+    def _require_sample_weight(self, sample_weight: Triangle | None) -> Triangle:
+        """The exposure, which ``fit`` and ``predict`` need, or an error if missing."""
+        if sample_weight is None:
+            raise ValueError(
+                f"sample_weight is required. For {self.__class__.__name__}, "
+                "this is the exposure of each origin period."
+            )
+        return sample_weight
+
+    def _prepare(
+        self, X: Triangle, sample_weight: Triangle  # noqa N803
+    ) -> tuple[Triangle, Triangle, Triangle, np.ndarray, np.ndarray]:
+        """
+        Validate the inputs of ``fit`` and ``predict`` and put them in numpy.
+
+        The arithmetic is done in numpy whatever the backend of **X**, and the
+        results are converted back at the end.
+
+        Returns
+        -------
+        tuple
+            ``X`` as a cumulative triangle by development period, that in numpy,
+            the incremental triangle in numpy, its values shaped (index, column,
+            origin, development), and the exposure of each origin shaped
+            (index, column, origin, 1).
+        """
+        X = X.incr_to_cum().val_to_dev() if not X.is_cumulative else X.val_to_dev()  # noqa N806
         self.validate_weight(X, sample_weight)
-        self.sample_weight_ = sample_weight.set_backend(X.array_backend)
         if sample_weight.shape[2] != X.shape[2]:
             raise ValueError("X and sample_weight must have the same origin periods.")
 
-        # Computed in numpy whatever the backend of X, and converted back at the end.
-        backend = X.array_backend
-        X_np = X.set_backend("numpy")  # noqa - sklearn convention
+        X_np = X.set_backend("numpy")  # noqa N806
         inc_tri = X_np.cum_to_incr()
-        inc = inc_tri.values  # (index, column, origin, development)
-        # Exposure of each origin, broadcast to the shape of X.
-        V = self.sample_weight_.set_backend("numpy").latest_diagonal.values  # noqa: N806
-        V = np.broadcast_to(V, inc.shape[:3] + (1,))  # noqa: N806
+        inc = np.asarray(inc_tri.values)
+        V = sample_weight.set_backend("numpy").latest_diagonal.values  # noqa N806
+        V = np.broadcast_to(V, inc.shape[:3] + (1,))  # noqa N806
+        return X, X_np, inc_tri, inc, V
 
+    def _set_results(
+        self,
+        target: Any,
+        latest: Triangle,
+        r: dict[str, Any],
+        backend: str,
+    ) -> None:
+        """
+        Set the reserve attributes on ``target``, the estimator or a predicted triangle.
+
+        Parameters
+        ----------
+        target: object
+            Receives ``p_``, ``Z_``, ``r_individual_``, ``r_collective_``, ``mse_``
+            and ``ultimate_``.
+        latest: Triangle
+            The latest diagonal in numpy, whose labels the attributes copy.
+        r: dict
+            The result of ``_credible_reserve``.
+        backend: str
+            The array backend to convert the attributes to.
+        """
+        for name, key in (
+            ("p_", "p"),
+            ("Z_", "Z"),
+            ("r_individual_", "r_ind"),
+            ("r_collective_", "r_coll"),
+            ("mse_", "mse"),
+        ):
+            setattr(target, name, self._like(latest, r[key]).set_backend(backend))
+        ultimate = self._like(latest, r["C"] + r["ibnr"]).set_backend(backend)
+        target.ultimate_ = self._set_ult_attr(ultimate)
+
+    def _credible_reserve(
+        self,
+        inc: np.ndarray,
+        V: np.ndarray,  # noqa N803
+        m: np.ndarray,
+        elr: np.ndarray | None = None,
+    ) -> dict[str, Any]:
+        """
+        The credible reserve of each origin period for a given loss ratio pattern.
+
+        Parameters
+        ----------
+        inc: np.ndarray
+            Incremental claims, shaped (index, column, origin, development), with
+            nan for the development periods not yet observed.
+        V: np.ndarray
+            The exposure of each origin period, shaped (index, column, origin, 1).
+        m: np.ndarray
+            The loss ratio pattern, shaped (index, column, 1, development), where
+            development may exceed that of ``inc``. Periods with nan, observed for
+            no origin, contribute nothing.
+        elr: np.ndarray, optional
+            The burning cost loss ratio. By default, the sum of ``m``.
+
+        Returns
+        -------
+        dict
+            The arrays ``elr``, ``p``, ``Z``, ``C``, ``r_ind``, ``r_coll``,
+            ``ibnr``, ``mse`` and ``ldf``.
+        """
         seen = ~np.isnan(inc)
         ages = np.arange(inc.shape[3])
         last = np.max(
@@ -299,62 +478,130 @@ class HurlimannCLR(MethodBase):
             axis=3,
             keepdims=True,
         )  # latest development index
+        # The burning cost loss ratio.
+        elr_ = np.sum(np.nan_to_num(m), axis=3, keepdims=True) if elr is None else elr
         with np.errstate(divide="ignore", invalid="ignore"):
-            m = np.nansum(inc, axis=2, keepdims=True) / np.sum(
-                np.where(seen, V, 0.0), axis=2, keepdims=True
-            )  # eq. 2.1
+            # Development periods observed for no origin (e.g. the last column after
+            # dropping the oldest origin) have m = 0/0 = NaN. They carry no data, so
+            # they add nothing to the pattern rather than poisoning it.
             m_filled = np.nan_to_num(m)
-            elr = np.sum(m_filled, axis=3, keepdims=True)  # burning cost loss ratio
             cum_m = np.cumsum(m_filled, axis=3)
             to_date = np.take_along_axis(
-                np.broadcast_to(cum_m, inc.shape), np.maximum(last, 0), axis=3
+                np.broadcast_to(cum_m, inc.shape[:3] + cum_m.shape[3:]),
+                np.maximum(last, 0),
+                axis=3,
             )
-            p = to_date / elr  # eq. 2.3
+            p = to_date / elr_  # eq. 2.3
             q = 1 - p
-            C = np.take_along_axis(
+            C = np.take_along_axis(  # noqa N806
                 np.cumsum(np.nan_to_num(inc), axis=3), np.maximum(last, 0), axis=3
             )
             r_ind = q / p * C  # eq. 2.6
-            r_coll = q * elr * V  # eq. 2.7
-            z = {
+            r_coll = q * elr_ * V  # eq. 2.7
+            Z = {  # noqa N806
                 "individual": np.ones_like(p),
                 "collective": np.zeros_like(p),
                 "benktander": p,
                 "neuhaus": to_date,
-                "optimal": p / (p + np.sqrt(p)),
+                # The limit as p -> 0 is 0, where 0/0 would be nan.
+                "optimal": np.where(p > 0, p / (p + np.sqrt(np.where(p > 0, p, 1))), 0),
             }[self.method]
-            ibnr = z * r_ind + (1 - z) * r_coll  # eq. 3.1
-            # eq. 4.11 with t = sqrt(p), written to stay finite when q = 0.
-            mse = q**2 * z**2 / p + q + q**2 * (1 - z) ** 2 / np.sqrt(p)
-
-        latest = X_np.latest_diagonal
-        self.m_ = self._like(inc_tri.sum("origin"), m)
-        self.elr_ = self._like(self.m_.iloc[..., :1], elr)
-        self.p_ = self._like(latest, p)
-        self.Z_ = self._like(latest, z)
-        self.r_individual_ = self._like(latest, r_ind)
-        self.r_collective_ = self._like(latest, r_coll)
-        self.mse_ = self._like(latest, mse)
-        self.ultimate_ = self._set_ult_attr(self._like(latest, C + ibnr))
-        for name in (
-            "m_",
-            "elr_",
-            "p_",
-            "Z_",
-            "r_individual_",
-            "r_collective_",
-            "mse_",
-            "ultimate_",
-        ):
-            setattr(self, name, getattr(self, name).set_backend(backend))
-        return self
-
-    def predict(self, X, sample_weight=None):
-        raise NotImplementedError("HurlimannCLR does not support predict.")
+            ibnr = np.where(Z == 0, 0.0, Z * r_ind) + (1 - Z) * r_coll  # eq. 3.1
+            # eq. 4.11 with t = sqrt(p), written to stay finite when q = 0. As p -> 0
+            # the collective term diverges, so a zero weight leaves an infinite mse.
+            mse = (
+                np.where(Z == 0, 0.0, q**2 * Z**2 / p)
+                + q
+                + q**2 * (1 - Z) ** 2 / np.sqrt(p)
+            )
+            # The payout pattern cum_m / elr is the inverse of the cdf, so the age to
+            # age factors are the ratios of successive cumulative loss ratios.
+            ldf = cum_m[..., 1:] / cum_m[..., :-1]
+        return {
+            "elr": elr_,
+            "p": p,
+            "Z": Z,
+            "C": C,
+            "r_ind": r_ind,
+            "r_coll": r_coll,
+            "ibnr": ibnr,
+            "mse": mse,
+            "ldf": ldf,
+        }
 
     @staticmethod
-    def _like(template, values):
-        """Return a copy of ``template`` holding ``values``, which has the same shape."""
+    def _ldf_like(
+            X: Triangle,  # noqa N803
+            values: np.ndarray
+    ) -> Triangle:
+        """Wrap age to age factors in a pattern Triangle, as ``Development`` does."""
+        from chainladder import options
+
+        obj = X[X.origin == X.origin.min()]
+        obj.values = values
+        # Not X.link_ratio.ddims, which drops trailing development periods that
+        # no origin has observed, while the pattern keeps them.
+        obj.ddims = np.asarray(X.ddims)[:-1]
+        obj.valuation_date = pd.to_datetime(options.ULT_VAL)
+        obj.is_pattern = True
+        obj.is_cumulative = False
+        obj.virtual_columns.columns = {}
+        obj._set_slicers()  # noqa
+        return obj
+
+    @staticmethod
+    def _like(
+            template: TriangleProtocol,
+            values: np.ndarray,
+    ) -> Triangle:
+        """
+        Return a copy of a triangle with its values replaced.
+
+        ``fit`` does its arithmetic on bare numpy arrays. This helper wraps those
+        arrays back into Triangles by reusing the labels, axes and metadata of an
+        existing triangle, so the fitted attributes look like the input.
+
+        Parameters
+        ----------
+        template: TriangleProtocol
+            The triangle whose index, columns, origin and development axes are
+            reused. It is not modified.
+        values: np.ndarray
+            The new values. They must have the same shape as ``template.values``.
+
+        Returns
+        -------
+        Triangle
+            A copy of ``template`` holding ``values``.
+
+        Examples
+        --------
+        The result has the shape and labels of the template but the new values,
+        and the template itself is left unchanged.
+
+        .. testsetup::
+
+            import chainladder as cl
+            from chainladder.methods import HurlimannCLR
+
+        .. testcode::
+
+            latest = cl.load_sample("raa").latest_diagonal
+            doubled = HurlimannCLR._like(latest, latest.values * 2)
+            print(doubled.iloc[..., -3:, :])
+            print(latest.iloc[..., -3:, :])
+
+        .. testoutput::
+
+                     1990
+            1988  26224.0
+            1989  10790.0
+            1990   4126.0
+                     1990
+            1988  13112.0
+            1989   5395.0
+            1990   2063.0
+        """
         obj = template.copy()
         obj.values = values
         return obj

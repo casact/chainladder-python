@@ -226,10 +226,85 @@ def test_default_method_is_optimal(example):
     )
 
 
-def test_predict_not_supported(example):
+def test_predict_requires_sample_weight(fits):
+    with pytest.raises(ValueError, match="sample_weight"):
+        fits["optimal"].predict(fits["optimal"].X_)
+
+
+@pytest.mark.parametrize("method", METHODS)
+def test_predict_on_fitted_data_equals_fit(example, fits, method):
     _, X, w = example
-    with pytest.raises(NotImplementedError):
-        cl.HurlimannCLR().fit(X, sample_weight=w).predict(X, sample_weight=w)
+    predicted = fits[method].predict(X, sample_weight=w)
+    for name in ("ultimate_", "p_", "Z_", "r_individual_", "r_collective_", "mse_"):
+        assert np.allclose(
+            np.nan_to_num(getattr(predicted, name).values),
+            np.nan_to_num(getattr(fits[method], name).values),
+        ), name
+    assert np.allclose(predicted.ldf_.values, fits[method].ldf_.values)
+    assert np.allclose(
+        np.nan_to_num(predicted.ibnr_.values),
+        np.nan_to_num(fits[method].ibnr_.values),
+    )
+
+
+@pytest.mark.parametrize("method", METHODS)
+def test_predict_uses_the_fitted_pattern(example, fits, method):
+    """A subset of the origins gets the fitted pattern, not one estimated from it."""
+    _, X, w = example
+    recent = X.origin >= X.origin[-3]
+    predicted = fits[method].predict(
+        X[recent], sample_weight=w[w.origin >= w.origin[-3]]
+    )
+    assert predicted.ultimate_.shape == (1, 1, 3, 1)
+    assert np.allclose(
+        predicted.ultimate_.values.flatten(),
+        fits[method].ultimate_.values.flatten()[-3:],
+    )
+
+
+def test_predict_ages_exceed_model(example):
+    _, X, w = example
+    # Dropping the latest diagonal leaves one development period fewer.
+    prior = X[X.valuation < X.valuation_date]
+    model = cl.HurlimannCLR().fit(prior, sample_weight=w[w.origin < w.origin[-1]])
+    with pytest.raises(ValueError, match="ages"):
+        model.predict(X, sample_weight=w)
+
+
+@pytest.fixture
+def nothing_paid_yet():
+    """The paper's first example with nothing paid in the first development period."""
+    rows = [[0, *r[1:]] for r in ROWS_7_1]
+    return incremental_triangle(rows), exposure(EXAMPLES["mack"]["V"])
+
+
+@pytest.mark.parametrize("method", ["collective", "benktander", "neuhaus", "optimal"])
+def test_zero_payout_uses_the_collective_reserve(nothing_paid_yet, method):
+    """With p = 0 the individual reserve is undefined, but it has zero weight."""
+    X, w = nothing_paid_yet
+    fit = cl.HurlimannCLR(method=method).fit(X, sample_weight=w)
+    p = fit.p_.values.flatten()
+    assert p[-1] == 0
+    assert fit.Z_.values.flatten()[-1] == 0
+    ultimate = fit.ultimate_.values.flatten()
+    assert not np.isnan(ultimate).any()
+    # Nothing has been paid, so the ultimate is the collective reserve alone.
+    assert np.isclose(ultimate[-1], fit.elr_.values.flatten()[0] * w.values.flatten()[-1])
+
+
+def test_zero_payout_leaves_the_individual_method_undefined(nothing_paid_yet):
+    X, w = nothing_paid_yet
+    fit = cl.HurlimannCLR(method="individual").fit(X, sample_weight=w)
+    ultimate = fit.ultimate_.values.flatten()
+    assert np.isnan(ultimate[-1])
+    assert not np.isnan(ultimate[:-1]).any()
+
+
+def test_zero_payout_mse(nothing_paid_yet):
+    X, w = nothing_paid_yet
+    mse = cl.HurlimannCLR().fit(X, sample_weight=w).mse_.values.flatten()
+    assert np.isposinf(mse[-1])
+    assert np.isfinite(mse[:-1]).all()
 
 
 def test_origin_mismatch(example):
