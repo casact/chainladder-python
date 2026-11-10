@@ -153,10 +153,13 @@ class TailClark(TailBase):
         model = ClarkLDF(growth=self.growth).fit(X, sample_weight=sample_weight)
         xp = X.get_array_module()
         age_offset = {"Y": 6.0, "S": 3, "Q": 1.5, "M": 0.5}[X.development_grain]
-        ldf_ages = np.array([
-            int(str(d).split("-")[0]) if "-" in str(d) else int(d)
-            for d in self.ldf_.development
-        ])
+
+        def _parse_age(d):
+            s = str(d).split("-")[0].strip()
+            f = float(s)
+            return int(f) if f.is_integer() else f
+
+        ldf_ages = np.array([_parse_age(d) for d in self.ldf_.development])
         fitted = 1 / model.G_(ldf_ages - age_offset)
         fitted = xp.concatenate(
             (

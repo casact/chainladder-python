@@ -102,7 +102,12 @@ class MethodBase(BaseEstimator, EstimatorIO, Common):
 
         """
         X_new = X.val_to_dev()
-        ldf_max_age = max(int(str(x).split("-")[0]) for x in self.ldf_.development)
+
+        def _parse_age(x):
+            s = str(x).split("-")[0].strip()
+            return float(s)
+
+        ldf_max_age = max(_parse_age(x) for x in self.ldf_.development)
         if sum(X_new.development > ldf_max_age) > 0:
             raise ValueError("X has ages that exceed those available in model.")
         # Before the line below, which borrows self.X_'s index when both sides

@@ -3772,6 +3772,60 @@ def test_set_development_fractional_pattern_round_trip(raa: Triangle) -> None:
     assert tri._axes[3][-1] == 120.5
 
 
+def test_set_development_period_index_preserves_val_mode(raa: Triangle) -> None:
+    """Assigning a PeriodIndex to development on a lag triangle must not flip is_val_tri."""
+    tri = raa.copy()
+    assert not tri.is_val_tri
+    p = pd.period_range("2000", periods=10, freq="Y")
+    tri.development = p
+    assert not tri.is_val_tri
+
+    tri_val = raa.dev_to_val()
+    assert tri_val.is_val_tri
+    tri_val.development = pd.period_range(
+        "2000", periods=len(tri_val.development), freq="Y"
+    )
+    assert tri_val.is_val_tri
+
+
+def test_sort_axis_fractional_pattern(raa: Triangle) -> None:
+    """sort_axis(3) on a pattern triangle with fractional development ages sorts correctly."""
+    tri = raa.copy()
+    tri.is_pattern = True
+    tri.development = [
+        "24.5-36.5",
+        "12.5-24.5",
+        "48.5-60.5",
+        "36.5-48.5",
+        "72.5-84.5",
+        "60.5-72.5",
+        "96.5-108.5",
+        "84.5-96.5",
+        "120.5-Ult",
+        "108.5-120.5",
+    ]
+    sorted_tri = tri.sort_axis(3)
+    assert sorted_tri._axes[3][0] == 12.5
+    assert sorted_tri._axes[3][-1] == 120.5
+
+
+def test_fractional_ages_predict_and_tails(raa: Triangle) -> None:
+    """Predict and tail fitting handle fractional development ages without integer conversion errors."""
+    import chainladder as cl
+
+    tri = raa.copy()
+    tri.development = [12.5, 24.5, 36.5, 48.5, 60.5, 72.5, 84.5, 96.5, 108.5, 120.5]
+    model = cl.Chainladder().fit(tri)
+    pred = model.predict(tri)
+    assert pred is not None
+
+    dev_tri = cl.Development().fit_transform(tri)
+    tail = cl.TailConstant(1.05).fit(dev_tri)
+    assert tail.ldf_ is not None
+    assert tail.ldf_._axes[3][0] == 12.5
+    assert tail.ldf_._axes[3][-1] == 132.5
+
+
 def test_input_validation_non_numeric_columns_raises() -> None:
     """
     Initialize a triangle with reported losses as an invalid string data type. Should raise a TypeError.

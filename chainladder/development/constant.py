@@ -298,7 +298,9 @@ class DevelopmentConstant(DevelopmentBase):
         parsed_index = []
         for x in s.index:
             try:
-                parsed_index.append(int(str(x).split("-")[0]))
+                part = str(x).split("-")[0].strip()
+                val = float(part)
+                parsed_index.append(int(val) if val.is_integer() else val)
             except (ValueError, TypeError):
                 parsed_index.append(x)
         s.index = parsed_index

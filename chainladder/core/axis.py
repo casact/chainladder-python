@@ -298,7 +298,7 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
         return (
             value.to_timestamp(how="end")
             if getattr(obj, "is_val_tri", False)
-            else value.to_timestamp()
+            else value.to_timestamp().values
         )
     if isinstance(value, np.ndarray) and value.dtype.kind == "M":
         return pd.DatetimeIndex(value) if getattr(obj, "is_val_tri", False) else value

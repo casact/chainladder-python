@@ -24,19 +24,18 @@ class TailBase(DevelopmentBase):
             "M": (12 * m, 1),
             "S": (2 * m, 6),
         }[obj.development_grain]
-        ldf_last_lag = (
-            int(str(obj.ldf_.development.iloc[-1]).split("-")[0])
-            if "-" in str(obj.ldf_.development.iloc[-1])
-            else int(obj.ldf_.development.iloc[-1])
-        )
+
+        def _parse_age(val):
+            s = str(val).split("-")[0].strip()
+            f = float(s)
+            return int(f) if f.is_integer() else f
+
+        ldf_last_lag = _parse_age(obj.ldf_.development.iloc[-1])
         t_dev = [
             (item + 1) * self._ave_period[1] + ldf_last_lag
             for item in range(self._ave_period[0] + 1)
         ]
-        ldf_ages = [
-            int(str(d).split("-")[0]) if "-" in str(d) else int(d)
-            for d in obj.ldf_.development
-        ]
+        ldf_ages = [_parse_age(d) for d in obj.ldf_.development]
         dev = np.concatenate(
             (ldf_ages, t_dev),
             0,

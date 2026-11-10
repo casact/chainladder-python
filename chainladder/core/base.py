@@ -698,14 +698,24 @@ class TriangleBase(
             out = pd.DataFrame(np.repeat(dev.values[None], len(self._axes[2]), 0))
             return pd.DatetimeIndex(out.unstack().values)
         dev_arr = dev - dev[0]
+        dev_0 = (
+            int(np.round(dev[0]))
+            if isinstance(dev[0], (int, float, np.number))
+            else dev[0]
+        )
         origin = np.minimum(self._axes[2], np.datetime64(self.valuation_date))
-        val_array = origin.astype("datetime64[M]") + np.timedelta64(dev[0], "M")
+        val_array = origin.astype("datetime64[M]") + np.timedelta64(dev_0, "M")
         val_array = val_array.astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
         val_array = val_array[:, None]
         s = slice(None, -1) if dev[-1] == 9999 else slice(None, None)
-        val_array = (
-            val_array.astype("datetime64[M]") + dev_arr[s][None, :] + 1
-        ).astype(__dt64_dtype__) - np.timedelta64(1, __dt64_unit__)
+        dev_delta = (
+            np.round(dev_arr[s]).astype(int)
+            if np.asarray(dev_arr).dtype.kind == "f"
+            else dev_arr[s]
+        )
+        val_array = (val_array.astype("datetime64[M]") + dev_delta[None, :] + 1).astype(
+            __dt64_dtype__
+        ) - np.timedelta64(1, __dt64_unit__)
         if dev[-1] == 9999:
             ult = np.repeat(np.datetime64(options.ULT_VAL), val_array.shape[0])[:, None]
             val_array = np.concatenate(

@@ -2415,12 +2415,17 @@ class Triangle(TriangleBase):
                 obj.origin = self.origin[list(sort)]
         if axis == 3:
             if self.is_pattern:
-                sort = (
-                    self.development
-                    .map(lambda x: int(str(x).split("-")[0]))
-                    .sort_values()
-                    .index
-                )
+
+                def _parse_dev_sort(x):
+                    s = str(x).split("-")[0].strip()
+                    if s.lower() == "ult":
+                        return float("inf")
+                    try:
+                        return float(s)
+                    except ValueError:
+                        return 0.0
+
+                sort = self.development.map(_parse_dev_sort).sort_values().index
             else:
                 sort = pd.Series(self.development).sort_values().index
             if np.any(sort != pd.Series(self.development).index):

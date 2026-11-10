@@ -527,8 +527,13 @@ class ImpliedCaseDevelopment(DevelopmentBase):
         else:
             raise TypeError(f"Unsupported pattern type: {type(pattern)}")
 
+        def _parse_age(x):
+            part = str(x).split("-")[0].strip()
+            val = float(part)
+            return int(val) if val.is_integer() else val
+
         try:
-            s.index = [int(str(x).split("-")[0]) for x in s.index]
+            s.index = [_parse_age(x) for x in s.index]
         except (ValueError, TypeError):
             pass
         s = s.sort_index()
