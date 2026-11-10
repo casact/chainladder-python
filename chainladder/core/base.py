@@ -217,12 +217,45 @@ class TriangleBase(
         return col.map(dict(zip(unique, range(len(unique))))).values[None].T
 
     @staticmethod
+    def _check_duplicates(sizes: Series, duplicates: str) -> None:
+        """
+        Raise or warn when more than one input row falls in a triangle cell.
+
+        ``sizes`` holds the row count of each cell, keyed by origin date,
+        valuation date and then the index levels.
+        """
+        repeated = sizes[sizes > 1]
+        repeated = repeated.compute() if hasattr(repeated, "compute") else repeated
+        if len(repeated) == 0:
+            return
+        examples = []
+        for (origin, valuation, *index), rows in repeated.head(3).items():
+            key = index[0] if len(index) == 1 else tuple(index)
+            where = f"index {key!r}, " if index else ""
+            examples.append(
+                f"{where}origin {origin:%Y-%m-%d}, valuation {valuation:%Y-%m-%d} "
+                f"({rows} rows)"
+            )
+        n = len(repeated)
+        message = (
+            f"Found more than one input row in {n} triangle cell{'s' if n > 1 else ''}"
+            f"{', including ' if n > len(examples) else ': '}{'; '.join(examples)}."
+        )
+        if duplicates == "raise":
+            raise ValueError(message + " Use duplicates='sum' to add them together.")
+        # stacklevel=6 points the warning at the user's Triangle(...) call
+        # (warn -> this method -> _aggregate_data -> Triangle.__init__ -> the
+        # two argument-rename decorators -> user).
+        warnings.warn(message + " Their values were summed.", stacklevel=6)
+
+    @staticmethod
     def _aggregate_data(
         data,
         origin_date: Series,
         development_date: Series,
         index: list | None,
         columns: list,
+        duplicates: str = "sum",
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:  # noqa: E721
@@ -246,6 +279,8 @@ class TriangleBase(
             key_gr = ["__origin__", "__development__"] + [
                 data[item] for item in ([] if not index else index)
             ]
+            if duplicates != "sum":
+                TriangleBase._check_duplicates(data.groupby(key_gr).size(), duplicates)
             data_agg = (
                 data
                 .groupby(key_gr)[columns]
@@ -259,6 +294,10 @@ class TriangleBase(
             key_gr: list = [origin_date, development_date] + [
                 data[item] for item in ([] if not index else index)
             ]
+            if duplicates != "sum":
+                TriangleBase._check_duplicates(
+                    data[columns].groupby(key_gr).size(), duplicates
+                )
             data_agg: DataFrame = (
                 data[columns]
                 .groupby(key_gr)[columns]

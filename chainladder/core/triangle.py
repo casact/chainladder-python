@@ -106,6 +106,12 @@ class Triangle(TriangleBase):
         ``cl.options.AUTO_SPARSE`` is ``True``, the backend is instead
         chosen automatically based on array size and density, regardless
         of this argument's value.
+    duplicates: str, default 'sum'
+        What to do when more than one row of ``data`` falls in the same
+        index, origin and development cell. ``'sum'`` adds the rows together,
+        as transaction data needs. ``'raise'`` raises a ``ValueError`` naming
+        the first repeated cells, and ``'warn'`` gives the same message as a
+        warning, then sums.
 
     Attributes
     ----------
@@ -506,10 +512,16 @@ class Triangle(TriangleBase):
         pattern=False,
         trailing: bool = True,
         age: Optional[str | list] = None,
+        duplicates: str = "sum",
         *args,
         **kwargs,
     ):
         self._axes: dict[int, Any] = {}
+
+        if duplicates not in ("sum", "raise", "warn"):
+            raise ValueError(
+                f"duplicates must be 'sum', 'raise' or 'warn', not {duplicates!r}."
+            )
 
         # If data are present, validate the dimensions.
         if data is None:
@@ -540,6 +552,7 @@ class Triangle(TriangleBase):
             origin=origin,
             valuation=development,
             cumulative=cumulative,
+            duplicates=duplicates,
         )
         # Conform origins and developments to datetimes and determine the lowest grains.
         origin_date: Series = self._to_datetime(
@@ -621,6 +634,7 @@ class Triangle(TriangleBase):
             development_date=development_date,
             index=index,
             columns=columns,
+            duplicates=duplicates,
         )
 
         # Fill in missing periods with zeros.
@@ -765,6 +779,7 @@ class Triangle(TriangleBase):
         origin: list,
         valuation: list,
         cumulative: bool,
+        duplicates: str = "sum",
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
@@ -792,6 +807,7 @@ class Triangle(TriangleBase):
                     columns=columns,
                     index=index,
                     cumulative=cumulative,
+                    duplicates=duplicates,
                 )
                 ult.ddims = pd.DatetimeIndex([options.ULT_VAL])
                 data = data[data[valuation[0]] != options.ULT_VAL]
