@@ -112,6 +112,7 @@ Classes
    ExpectedLoss
    Benktander
    CapeCod
+   HurlimannCLR
 
 .. _adjustments_ref:
 

@@ -96,6 +96,7 @@ from chainladder.methods import (  # noqa: E402
     BornhuetterFerguson as BornhuetterFerguson,
     CapeCod as CapeCod,
     ExpectedLoss as ExpectedLoss,
+    HurlimannCLR as HurlimannCLR,
 )
 from chainladder.workflow import (  # noqa: E402
     GridSearch as GridSearch,

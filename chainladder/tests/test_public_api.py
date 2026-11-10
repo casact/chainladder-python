@@ -74,6 +74,7 @@ EXPECTED_PUBLIC_API = {
     "BornhuetterFerguson",
     "CapeCod",
     "ExpectedLoss",
+    "HurlimannCLR",
     # workflow
     "GridSearch",
     "Pipeline",
