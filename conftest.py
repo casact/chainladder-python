@@ -53,6 +53,10 @@ FIXTURES = {
         "data": "mw2008",
         "runs": ["normal_run", "sparse_only_run"],
     },
+    "mw2014": {
+        "data": "mw2014",
+        "runs": ["normal_run", "sparse_only_run"],
+    },
 }
 
 
