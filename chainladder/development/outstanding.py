@@ -320,9 +320,22 @@ class CaseOutstanding(DevelopmentBase):
             preserve=case_preserve,
         ).fit(case_ratio)
         self.case_w_ = tw_case.w_
+
+        xp = case_ratio.get_array_module()
+        vals_c = case_ratio.values
+        w_c = xp.nan_to_num(self.case_w_.values, nan=0.0)
+        has_usable_c = xp.any((w_c > 0) & ~xp.isnan(vals_c), axis=2, keepdims=True)
+        sum_c = xp.sum(
+            xp.where((w_c > 0) & ~xp.isnan(vals_c), vals_c * w_c, 0.0),
+            axis=2,
+            keepdims=True,
+        )
+        is_zero_runoff = has_usable_c & (sum_c == 0.0)
+
         self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
         xp = self.case_ldf_.get_array_module()
         self.case_ldf_.values[xp.isnan(self.case_ldf_.values)] = 1.0
+        self.case_ldf_.values[is_zero_runoff] = 0.0
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -415,8 +428,20 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        prior_case = num_to_nan((incurred_tri - paid_tri).iloc[..., :-1].values)
-        out = (incurred_tri - paid_tri).iloc[..., 1:] / prior_case
+        case_raw = incurred_tri.values - paid_tri.values
+        obj = incurred_tri.iloc[..., :-1].copy()
+        if not obj.is_full:
+            out = obj[obj.valuation < obj.valuation_date]
+        else:
+            out = obj
+
+        num_origins = out.shape[2]
+        case_sliced = case_raw[..., :num_origins, :]
+        num = case_sliced[..., 1:].copy()
+        xp = out.get_array_module()
+        den = xp.copy(case_sliced[..., :-1])
+        den[den == 0] = xp.nan
+        out.values = num / den
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -431,9 +456,25 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        prior_case = num_to_nan((incurred_tri - paid_tri).iloc[..., :-1].values)
-        out = paid_tri.cum_to_incr().iloc[..., 1:] / prior_case
+        case_raw = incurred_tri.values - paid_tri.values
+        paid_incr = paid_tri.cum_to_incr().values
+
+        obj = incurred_tri.iloc[..., :-1].copy()
+        if not obj.is_full:
+            out = obj[obj.valuation < obj.valuation_date]
+        else:
+            out = obj
+
+        num_origins = out.shape[2]
+        case_sliced = case_raw[..., :num_origins, :]
+        paid_sliced = paid_incr[..., :num_origins, :]
+        num = paid_sliced[..., 1:].copy()
+        xp = out.get_array_module()
+        den = xp.copy(case_sliced[..., :-1])
+        den[den == 0] = xp.nan
+        out.values = num / den
         out.is_pattern = True
+        out.is_cumulative = False
 
         return out
 

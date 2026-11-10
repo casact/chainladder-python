@@ -1,12 +1,12 @@
 # Book settings
-# Learn more at https://jupyterbook.org/customize/config.html
+# Learn more at https://jupyterbook.org/v1/customize/config.html
 
 title: Chainladder - Python
 author: John Bogaardt, Kenneth Hsu, et. al.
 logo: images/logo.png
 
 # Force re-execution of notebooks on each build.
-# See https://jupyterbook.org/content/execute.html
+# See https://jupyterbook.org/v1/content/execute.html
 execute:
   execute_notebooks: force
   timeout: 180
@@ -27,7 +27,7 @@ repository:
   branch: master  # Which branch of the repository should be used when creating links (optional)
 
 # Add GitHub buttons to your book
-# See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
+# See https://jupyterbook.org/v1/basics/repository.html#add-a-link-to-your-repository
 html:
   use_issues_button: true
   use_repository_button: true
