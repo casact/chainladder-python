@@ -359,7 +359,10 @@ def test_case_outstanding_zero_case_reserve_warning():
     assert model.paid_ldf_ is not None
     assert not model.case_ldf_.to_frame().isna().any().any()
 
-    # Synthetic triangle with zero prior case
+
+def test_case_outstanding_synthetic_zero_prior_case_warning():
+    import warnings
+
     p = cl.load_sample("genins")
     p.columns = ["paid"]
     i = p.copy()
