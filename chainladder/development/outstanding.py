@@ -168,14 +168,14 @@ class CaseOutstanding(DevelopmentBase):
             Development(n_periods=self.case_n_periods).fit(self.X_.sum(0).sum(1)).w_
         )
 
-        case_to_prior_case_naned = self.case_to_prior_case_
-        case_to_prior_case_naned.values = num_to_nan(self.case_to_prior_case_.values)
+        case_to_prior_case_naned = self.case_to_prior_case_ * self.case_w_
+        case_to_prior_case_naned.values = num_to_nan(case_to_prior_case_naned.values)
 
         self.case_ldf_ = self.case_to_prior_case_.mean(2)  # this has the wrong value
         self.case_ldf_.values = case_to_prior_case_naned.mean(axis=2).values
 
-        paid_to_prior_case_naned = self.paid_to_prior_case_
-        paid_to_prior_case_naned.values = num_to_nan(self.paid_to_prior_case_.values)
+        paid_to_prior_case_naned = self.paid_to_prior_case_ * self.paid_w_
+        paid_to_prior_case_naned.values = num_to_nan(paid_to_prior_case_naned.values)
 
         self.paid_ldf_ = self.paid_to_prior_case_.mean(2)  # this has the wrong value
         self.paid_ldf_.values = paid_to_prior_case_naned.mean(axis=2).values
@@ -271,11 +271,9 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        out = (
-            (incurred_tri - paid_tri).iloc[..., 1:]
-            * self.case_w_
-            / (incurred_tri - paid_tri).iloc[..., :-1].values
-        )
+        out = (incurred_tri - paid_tri).iloc[..., 1:] / (incurred_tri - paid_tri).iloc[
+            ..., :-1
+        ].values
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -292,7 +290,6 @@ class CaseOutstanding(DevelopmentBase):
 
         out = (
             paid_tri.cum_to_incr().iloc[..., 1:]
-            * self.paid_w_
             / (incurred_tri - paid_tri).iloc[..., :-1].values
         )
         out.is_pattern = True
