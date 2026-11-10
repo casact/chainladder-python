@@ -40,6 +40,7 @@
    plot_value_at_risk
    plot_voting_chainladder
    plot_loss_development
+   plot_valuation_correlation
 
 ```
 
@@ -536,5 +537,19 @@ alt: Loss Development Patterns
 ```
 +++
 {bdg-success}`easy`
+:::
+
+:::{grid-item-card} 
+:columns: 4
+:link: plot_valuation_correlation
+:link-type: doc
+**Calendar Year Tests**
+```{image} ../images/plot_valuation_correlation.png
+---
+alt: Share of simulated triangles flagged by the per-diagonal and total tests
+---
+```
++++
+{bdg-warning}`medium`
 :::
 ::::
