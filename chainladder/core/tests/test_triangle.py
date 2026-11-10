@@ -3772,13 +3772,16 @@ def test_set_development_fractional_pattern_round_trip(raa: Triangle) -> None:
     assert tri._axes[3][-1] == 120.5
 
 
-def test_set_development_period_index_preserves_val_mode(raa: Triangle) -> None:
-    """Assigning a PeriodIndex to development on a lag triangle must not flip is_val_tri."""
+def test_set_development_period_index_valuation_and_valuation_property(
+    raa: Triangle,
+) -> None:
+    """Assigning a PeriodIndex to development expresses the axis in valuation periods and valuation works."""
     tri = raa.copy()
     assert not tri.is_val_tri
     p = pd.period_range("2000", periods=10, freq="Y")
     tri.development = p
-    assert not tri.is_val_tri
+    assert tri.is_val_tri
+    assert isinstance(tri.valuation, pd.DatetimeIndex)
 
     tri_val = raa.dev_to_val()
     assert tri_val.is_val_tri
@@ -3786,6 +3789,7 @@ def test_set_development_period_index_preserves_val_mode(raa: Triangle) -> None:
         "2000", periods=len(tri_val.development), freq="Y"
     )
     assert tri_val.is_val_tri
+    assert isinstance(tri_val.valuation, pd.DatetimeIndex)
 
 
 def test_sort_axis_fractional_pattern(raa: Triangle) -> None:
@@ -3807,6 +3811,74 @@ def test_sort_axis_fractional_pattern(raa: Triangle) -> None:
     sorted_tri = tri.sort_axis(3)
     assert sorted_tri._axes[3][0] == 12.5
     assert sorted_tri._axes[3][-1] == 120.5
+
+
+def test_axis_descriptor_set_unchecked(raa: Triangle) -> None:
+    """Test TriangleAxis.set_unchecked descriptor for index and columns."""
+    from chainladder.core.axis import TriangleAxis
+
+    tri = raa.copy()
+    TriangleAxis(1).set_unchecked(tri, ["Losses"])
+    assert tri.columns[0] == "Losses"
+    TriangleAxis(0).set_unchecked(tri, tri.index)
+    assert tri.index.equals(raa.index)
+
+
+def test_set_index_non_dataframe_raises(raa: Triangle) -> None:
+    """Assigning a non-DataFrame to index raises TypeError."""
+    tri = raa.copy()
+    with pytest.raises(TypeError, match="index must be a pandas DataFrame"):
+        tri.index = "invalid"
+
+
+def test_set_origin_all_pattern(raa: Triangle) -> None:
+    """Assigning '(All)' to a pattern triangle origin sets and returns '(All)' label."""
+    tri_sum = raa.sum()
+    tri_sum.is_pattern = True
+    tri_sum.origin = ["(All)"]
+    assert str(tri_sum.origin.iloc[0]) == "(All)"
+
+
+def test_set_development_ultimate_token(raa: Triangle) -> None:
+    """Assigning a pattern ending with 'Ult' maps to the 9999 ultimate sentinel."""
+    tri_pat = raa.copy()
+    tri_pat.development = ["12-24"] * 9 + ["Ult"]
+    assert tri_pat._axes[3][-1] == 9999
+
+
+def test_set_development_year_strings_fallback_valuation(raa: Triangle) -> None:
+    """Passing calendar year strings to development falls back to valuation periods."""
+    tri_yr = raa.copy()
+    tri_yr.development = [str(y) for y in range(2000, 2010)]
+    assert tri_yr.is_val_tri
+    assert isinstance(tri_yr.valuation, pd.DatetimeIndex)
+
+
+def test_set_development_non_numeric_pattern_fallback(raa: Triangle) -> None:
+    """Non-numeric and multi-segment pattern strings fall through without crashing."""
+    tri = raa.copy()
+    tri.development = ["abc-def"] * 10
+    assert tri._axes[3][0] == "abc-def"
+
+    tri.development = ["1-2-3-4"] * 10
+    assert tri._axes[3][0] == "1-2-3-4"
+
+
+def test_set_development_whole_floats_convert_to_int(raa: Triangle) -> None:
+    """Float development lags that are whole numbers normalize to integers."""
+    tri = raa.copy()
+    tri.development = [12.0, 24.0, 36.0, 48.0, 60.0, 72.0, 84.0, 96.0, 108.0, 120.0]
+    assert np.issubdtype(tri._axes[3].dtype, np.integer)
+
+
+def test_set_development_valuation_string_labels(raa: Triangle) -> None:
+    """Re-assigning matching valuation labels or ISO date strings preserves valuation mode."""
+    tri_val = raa.dev_to_val()
+    tri_val.development = list(tri_val.development)
+    assert tri_val.is_val_tri
+
+    tri_val.development = [f"{y}-12-31" for y in range(1981, 1991)]
+    assert tri_val.is_val_tri
 
 
 def test_fractional_ages_predict_and_tails(raa: Triangle) -> None:

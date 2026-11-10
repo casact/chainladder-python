@@ -295,13 +295,9 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
     if isinstance(value, pd.DatetimeIndex):
         return value
     if isinstance(value, pd.PeriodIndex):
-        return (
-            value.to_timestamp(how="end")
-            if getattr(obj, "is_val_tri", False)
-            else value.to_timestamp().values
-        )
+        return value.to_timestamp(how="end")
     if isinstance(value, np.ndarray) and value.dtype.kind == "M":
-        return pd.DatetimeIndex(value) if getattr(obj, "is_val_tri", False) else value
+        return pd.DatetimeIndex(value)
 
     val_arr = np.array(value)
     if val_arr.dtype.kind in ("i", "u"):
@@ -356,7 +352,12 @@ def _set_development(obj: Triangle, value: Any, check: bool = True) -> Any:
                             n1 = int(p1) if p1.isdigit() else float(p1)
                         except ValueError:
                             n1 = None
-                    if n0 is not None and n1 is not None and n0 < 1000 and n1 <= 9999:
+                    if (
+                        n0 is not None
+                        and n1 is not None
+                        and (n0 < 1000 or n0 == 9999)
+                        and n1 <= 9999
+                    ):
                         lags.append(n0)
                     else:
                         raise ValueError(f"Not a development lag pattern: {s}")

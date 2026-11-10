@@ -2417,13 +2417,10 @@ class Triangle(TriangleBase):
             if self.is_pattern:
 
                 def _parse_dev_sort(x):
-                    s = str(x).split("-")[0].strip()
-                    if s.lower() == "ult":
-                        return float("inf")
                     try:
-                        return float(s)
+                        return float(str(x).split("-")[0].strip())
                     except ValueError:
-                        return 0.0
+                        return float("inf")
 
                 sort = self.development.map(_parse_dev_sort).sort_values().index
             else:
