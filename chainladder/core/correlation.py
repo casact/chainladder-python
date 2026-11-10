@@ -38,12 +38,13 @@ class DevelopmentCorrelation:
     ----------
     t_critical: DataFrame
         Boolean value for whether correlation is too high at significance level
-        ``p_critical``.
+        ``p_critical``. False where ``t_expectation`` is NaN.
     t_expectation: DataFrame
-        Values representing the Spearman rank correlation
-    t_variance: float
-        Variance measure of Spearman rank correlation
-    confidence_interval: tuple
+        Values representing the Spearman rank correlation. NaN for a triangle
+        with no column of at least two factor pairs.
+    t_variance: DataFrame
+        Variance measure of Spearman rank correlation, one value per triangle.
+    confidence_interval: tuple of DataFrame
         Range around zero that contains ``t_expectation`` with probability of
         about ``1 - p_critical`` when the development factors are uncorrelated.
         ``t_critical`` is True when ``t_expectation`` falls outside it.
@@ -76,8 +77,8 @@ class DevelopmentCorrelation:
         raa = cl.load_sample('raa')
         dc = cl.DevelopmentCorrelation(raa, p_critical=0.5)
         print(round(float(dc.t_expectation.iloc[0, 0]), 4))
-        print(round(float(dc.confidence_interval[0]), 4))
-        print(round(float(dc.confidence_interval[1]), 4))
+        print(round(float(dc.confidence_interval[0].iloc[0, 0]), 4))
+        print(round(float(dc.confidence_interval[1].iloc[0, 0]), 4))
         print(bool(dc.t_critical.iloc[0, 0]))
 
     .. testoutput::
@@ -100,8 +101,8 @@ class DevelopmentCorrelation:
     .. testcode::
 
         tight = cl.DevelopmentCorrelation(raa, p_critical=0.99)
-        print(round(float(tight.confidence_interval[0]), 4))
-        print(round(float(tight.confidence_interval[1]), 4))
+        print(round(float(tight.confidence_interval[0].iloc[0, 0]), 4))
+        print(round(float(tight.confidence_interval[1].iloc[0, 0]), 4))
         print(bool(tight.t_critical.iloc[0, 0]))
 
     .. testoutput::
@@ -121,69 +122,78 @@ class DevelopmentCorrelation:
             triangle = triangle.set_backend("numpy")
         xp = triangle.get_array_module()
 
-        m1 = triangle.link_ratio
+        link_ratio = triangle.link_ratio.values
 
-        # Rank link ratios by development period, assigning a score of 1 for the lowest
-        m1_val = xp.apply_along_axis(
-            func1d=rankdata, axis=2, arr=m1.values, nan_policy="omit"
-        ) * (m1.values * 0 + 1)
+        # T_k compares each factor F_ik of column k with F_i,k-1 of the same
+        # origin. A complete triangle has I - k such pairs in column k. The
+        # pairs present are counted per triangle, so a missing factor or an
+        # origin without data lowers the count.
+        current = link_ratio[..., 1:]
+        previous = link_ratio[..., :-1]
+        paired = ~xp.isnan(current) & ~xp.isnan(previous)
+        n_pairs = paired.sum(axis=2)
 
-        # Remove the last element from each column, and then rank again
-        m2 = triangle[triangle.valuation < triangle.valuation_date].link_ratio
-        m2.values = xp.apply_along_axis(
-            func1d=rankdata, axis=2, arr=m2.values, nan_policy="omit"
-        ) * (m2.values * 0 + 1)
+        # Rank both columns among the paired factors only, 1 for the lowest,
+        # and sum the squared rank differences (numerator of formula G4)
+        squared_diff = xp.zeros(n_pairs.shape)
+        if paired.size:
+            ranks = [
+                xp.apply_along_axis(
+                    func1d=rankdata,
+                    axis=2,
+                    arr=xp.where(paired, column, xp.nan),
+                    nan_policy="omit",
+                )
+                for column in (current, previous)
+            ]
+            ranks = [xp.where(paired, rank, xp.nan) for rank in ranks]
+            squared_diff = xp.nansum((ranks[0] - ranks[1]) ** 2, axis=2)
 
-        m1 = m2.copy()
+        # Formula G4 for each column with at least two pairs, weighted by one
+        # less than its number of pairs, as Mack proposes
+        usable = n_pairs >= 2
+        weight = xp.where(usable, n_pairs - 1, 0)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t_k = xp.where(
+                usable, 1 - 6 * squared_diff / (n_pairs**3 - n_pairs), xp.nan
+            )
 
-        # remove the first column from m1 since it is not used in the comparison to m2
-        m1.values = m1_val[..., : m2.shape[2], 1:]
-
-        # Apply Spearman Rank Correlation formula
-        # numerator is the one in formula G4 of Mack (1994), "Measuring the
-        # Variability of Chain Ladder Reserve Estimates"
-        numerator = ((m1 - m2) ** 2).sum("origin")
-
-        # remove last column because it was not part of the comparison with m2
-        numerator.values = numerator.values[..., :-1]
-        numerator.ddims = numerator.ddims[:-1]
-
-        # n_dev_periods is the number of development periods in the triangle
-        # ("I" in Mack (1994)).
-        n_dev_periods = len(triangle.development)
+        # Drop trailing columns that are unusable in every triangle, such as
+        # the last column of a complete triangle, which has one pair
+        has_weight = xp.any(weight > 0, axis=(0, 1))
+        n_columns = int(xp.flatnonzero(has_weight)[-1]) + 1 if has_weight.any() else 0
+        t_k, weight = t_k[..., :n_columns], weight[..., :n_columns]
 
         # k values are the column indexes for which we are calculating T_k
-        k = xp.array(range(2, 2 + numerator.shape[3]))
+        k = xp.array(range(2, 2 + n_columns))
 
-        # denominator is the one in formula G4 of Mack (1994)
-        denominator = ((n_dev_periods - k) ** 3 - n_dev_periods + k)[None, None, None]
-
-        # complete formula G4, results in array of each T_k value
-        self.t = 1 - 6 * xp.nan_to_num(numerator.values) / denominator
-
-        # per Mack, weight is one less than the number of pairs for each T_k
-        weight = (n_dev_periods - k - 1)[None, None, None]
-
-        # Calculate big T, the weighted average of the T_k values
-        t_expectation = (
-            xp.sum(xp.nan_to_num(weight * self.t), axis=3) / xp.sum(weight, axis=3)
-        )[..., None]
+        # Big T is the weighted average of the T_k values. Its variance is one
+        # over the total weight, which on a complete triangle is formula G6,
+        # 2 / ((I - 2)(I - 3)). A triangle without a usable column gets NaN
+        # for both.
+        total_weight = xp.sum(weight, axis=2)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            t_expectation = xp.where(
+                total_weight > 0,
+                xp.sum(xp.nan_to_num(weight * t_k), axis=2) / total_weight,
+                xp.nan,
+            )
+            t_variance = xp.where(total_weight > 0, 1 / total_weight, xp.nan)
 
         idx = triangle.index.set_index(triangle.key_labels).index
 
-        # variance is result of formula G6
-        self.t_variance = 2 / ((n_dev_periods - 2) * (n_dev_periods - 3))
+        # array of t values for the first triangle
+        self.t = pd.DataFrame(t_k[0, 0][None], columns=k, index=["T_k"])
 
-        # array of t values
-        self.t = pd.DataFrame(self.t[0, 0, ...], columns=k, index=["T_k"])
-
-        # array of weights
-        self.weights = pd.DataFrame(weight[0, 0, ...], columns=k, index=["I-k-1"])
+        # array of weights for the first triangle
+        self.weights = pd.DataFrame(weight[0, 0][None], columns=k, index=["I-k-1"])
 
         # final big T
         self.t_expectation = pd.DataFrame(
-            t_expectation[..., 0, 0], columns=triangle.columns, index=idx
+            t_expectation, columns=triangle.columns, index=idx
         )
+
+        self.t_variance = pd.DataFrame(t_variance, columns=triangle.columns, index=idx)
 
         # table of Spearman's rank coefficients Tk, can be used to verify consistency
         # with paper
@@ -197,7 +207,8 @@ class DevelopmentCorrelation:
             norm.ppf(0.5 + (1 - p_critical) / 2) * xp.sqrt(self.t_variance),
         )
 
-        # if T lies outside this range, we reject the null hypothesis
+        # if T lies outside this range, we reject the null hypothesis; a NaN T
+        # compares False, so a triangle without a usable column is not flagged
         self.t_critical = (self.t_expectation < self.confidence_interval[0]) | (
             self.t_expectation > self.confidence_interval[1]
         )
