@@ -599,7 +599,7 @@ def test_concat_axis1(raa: Triangle) -> None:
 
 def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     """
-    Concat two triangles along the column axis with the same column names. Raise an assertion error since
+    Concat two triangles along the column axis with the same column names. Raise a ValueError since
     columns must be unique.
 
     Parameters
@@ -612,12 +612,52 @@ def test_concat_axis1_duplicate_columns(raa: Triangle) -> None:
     None
 
     """
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="Column labels repeat"):
         cl.concat([raa, raa], axis=1)
 
 
+@pytest.mark.parametrize(
+    "axis, message",
+    [
+        (0, r"Index labels repeat across the triangles: \[\{'Total': 'Total'\}\]"),
+        (2, r"Origin periods repeat across the triangles: \['1986-01-01'\]"),
+        (3, r"Development periods repeat across the triangles: \[72\]"),
+    ],
+)
+def test_concat_repeated_labels_raise(raa: Triangle, axis: int, message: str) -> None:
+    """Concat names the labels that repeat along the concatenation axis."""
+    if axis == 0:
+        pieces = [raa, raa]
+    elif axis == 2:
+        pieces = [raa.iloc[:, :, :6, :], raa.iloc[:, :, 5:, :]]
+    else:
+        pieces = [raa.iloc[:, :, :, :6], raa.iloc[:, :, :, 5:]]
+    with pytest.raises(ValueError, match=message):
+        cl.concat(pieces, axis=axis)
+
+
+def test_concat_reports_repeated_origins_first(raa: Triangle) -> None:
+    """Repeated origins are reported before a development mismatch (#1489)."""
+    older = raa.iloc[:, :, :6, :]
+    newer = raa.iloc[:, :, 5:, :5]
+    with pytest.raises(ValueError, match=r"Origin periods repeat.*triangles with \+"):
+        cl.concat([older, newer], axis=2)
+
+
+def test_concat_misaligned_axes_raise(clrd: Triangle) -> None:
+    """Concat explains which axis differs when the non-concatenation axes disagree."""
+    tri = clrd.groupby("LOB").sum()["CumPaidLoss"]
+    wkcomp, comauto = tri.loc["wkcomp"], tri.loc["comauto"]
+    with pytest.raises(ValueError, match="same index"):
+        cl.concat([wkcomp, comauto.rename("columns", ["Other"])], axis=1)
+    with pytest.raises(ValueError, match="same origin periods"):
+        cl.concat([wkcomp, comauto.iloc[:, :, 1:, :]], axis=0)
+    with pytest.raises(ValueError, match="same development periods"):
+        cl.concat([wkcomp, comauto.iloc[:, :, :, 1:]], axis=0)
+
+
 def test_concat_ignore_index_axes(raa: Triangle) -> None:
-    """Test concat with ignore_index=True along axes 0, 1, 2, and 3."""
+    """Test concat with ignore_index=True along axes 0 and 1."""
     res0 = cl.concat([raa, raa], axis=0, ignore_index=True)
     assert len(res0.index) == 2
     assert res0.key_labels == ["Index"]
@@ -628,15 +668,18 @@ def test_concat_ignore_index_axes(raa: Triangle) -> None:
     res1 = cl.concat([t1, t2], axis=1, ignore_index=True)
     assert list(res1.columns) == [0, 1]
 
-    o1 = raa.iloc[:, :, :5, :]
-    o2 = raa.iloc[:, :, 5:, :]
-    res2 = cl.concat([o1, o2], axis=2, ignore_index=True)
-    assert len(res2.odims) == len(raa.odims)
 
-    d1 = raa.iloc[:, :, :, :5]
-    d2 = raa.iloc[:, :, :, 5:]
-    res3 = cl.concat([d1, d2], axis=3, ignore_index=True)
-    assert len(res3.ddims) == len(raa.ddims)
+@pytest.mark.parametrize("axis", [2, 3, "origin", "development", -2, -1])
+def test_concat_ignore_index_origin_development_raises(
+    raa: Triangle, axis: int | str
+) -> None:
+    """Concat rejects ignore_index=True along origin and development (#1489, #1490)."""
+    if raa._get_axis(axis) == 2:
+        pieces = [raa.iloc[:, :, :5, :], raa.iloc[:, :, 5:, :]]
+    else:
+        pieces = [raa.iloc[:, :, :, :5], raa.iloc[:, :, :, 5:]]
+    with pytest.raises(ValueError, match="ignore_index=True is not supported"):
+        cl.concat(pieces, axis=axis, ignore_index=True)
 
 
 def test_concat_axis_1_index_dtype_relaxed(raa: Triangle) -> None:
