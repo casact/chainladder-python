@@ -294,9 +294,9 @@ def test_reserves(
 
 @pytest.mark.parametrize("method", METHODS)
 def test_ultimates(
-        example: Example,
-        fits: Fits,
-        method: Method,
+    example: Example,
+    fits: Fits,
+    method: Method,
 ) -> None:
     """Tables 7.4 and 7.9"""
     ex, _, _ = example
@@ -307,10 +307,7 @@ def test_ultimates(
 
 @pytest.mark.parametrize("method", METHODS)
 def test_mse_ratio_to_optimal(
-    example: Example,
-        fits: Fits,
-        method: Method,
-        atol: float | int
+    example: Example, fits: Fits, method: Method, atol: float | int
 ) -> None:
     """Tables 7.5 and 7.10"""
     ex, _, _ = example
