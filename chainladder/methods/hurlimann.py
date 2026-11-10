@@ -196,7 +196,6 @@ class HurlimannCLR(MethodBase):
 
     # Fitted attributes, declared for type checkers and IDEs only. These bare
     # annotations create no attributes, so none exist until ``fit`` is called.
-    # ``ibnr_`` is inherited as a property.
     X_: Triangle
     sample_weight_: Triangle
     m_: Triangle
@@ -208,6 +207,8 @@ class HurlimannCLR(MethodBase):
     mse_: Triangle
     ultimate_: Triangle
     ibnr_: Triangle
+    ldf_: Triangle  # pyright: ignore[reportIncompatibleMethodOverride]
+    cdf_: Triangle  # pyright: ignore[reportIncompatibleMethodOverride]
 
     _METHODS = (
         "optimal",
@@ -369,7 +370,9 @@ class HurlimannCLR(MethodBase):
             )
 
         # The fitted arrays, taken in the order of the segments and columns of X.
-        rows = self._positions(X_new.index, self.m_.index, "The index of X")
+        rows = self._positions(
+            pd.DataFrame(X_new.index), pd.DataFrame(self.m_.index), "The index of X"
+        )
         cols = self._positions(
             self._labels(X_new.columns),
             self._labels(self.m_.columns),
@@ -384,7 +387,9 @@ class HurlimannCLR(MethodBase):
         setattr(  # noqa B010
             X_new,
             "ldf_",
-            self._ldf_like(X_np, ldf, self.ldf_.ddims).set_backend(X_new.array_backend),
+            self._ldf_like(X_np, ldf, np.asarray(self.ldf_.ddims)).set_backend(
+                X_new.array_backend
+            ),
         )
         self._set_results(X_new, X_np.latest_diagonal, r, X_new.array_backend)
         return X_new
@@ -442,8 +447,8 @@ class HurlimannCLR(MethodBase):
 
     def _prepare(
         self,
-        X: Triangle,
-        sample_weight: Triangle,  # noqa N803
+        X: Triangle,  # noqa N803
+        sample_weight: Triangle,
     ) -> tuple[Triangle, Triangle, Triangle, np.ndarray, np.ndarray]:
         """
         Validate the inputs of ``fit`` and ``predict`` and put them in numpy.
