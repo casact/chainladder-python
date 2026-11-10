@@ -1,5 +1,5 @@
 # Table of contents
-# Learn more at https://jupyterbook.org/customize/toc.html
+# Learn more at https://jupyterbook.org/v1/customize/toc.html
 
 format: jb-book
 root: intro.md

@@ -22,6 +22,9 @@ remap = [
 
 exclude = [
     '^https?://(www\.)?example\.(com|org)',
+    '\.(csv|dtd)/$',
+    'creativecommons\.org/ns#\\$',
+    '\$REPO',
     '^https://api\.github\.com/',
     '/n$',
     '\\n$',
