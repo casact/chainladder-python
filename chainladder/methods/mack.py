@@ -157,17 +157,22 @@ class MackChainladder(Chainladder):
             2012   7162.2         693.2
             2013  14396.9         901.4
         """
+        from chainladder.core.common import _get_full_triangle
+
         super().fit(X, y, sample_weight)
         if "sigma_" not in self.X_:
             raise ValueError("Triangle not compatible with MackChainladder")
+        # The Mack recursion multiplies cumulative amounts, so the risk
+        # estimates use the cumulative form of an incremental triangle.
+        X_cum = self.X_ if self.X_.is_cumulative else self.X_.incr_to_cum()
         # Caching full_triangle_ for fit as it is called a lot
-        self.X_._full_triangle_ = self.full_triangle_
-        self.parameter_risk_ = self._mack_recursion("parameter_risk_", self.X_)
-        self.process_risk_ = self._mack_recursion("process_risk_", self.X_)
+        X_cum._full_triangle_ = _get_full_triangle(X_cum, self.ultimate_)
+        self.parameter_risk_ = self._mack_recursion("parameter_risk_", X_cum)
+        self.process_risk_ = self._mack_recursion("process_risk_", X_cum)
         self.total_parameter_risk_ = self._mack_recursion(
-            "total_parameter_risk_", self.X_
+            "total_parameter_risk_", X_cum
         )
-        del self.X_._full_triangle_
+        del X_cum._full_triangle_
         self.process_variance_ = self._include_process_variance()
         return self
 
@@ -231,17 +236,20 @@ class MackChainladder(Chainladder):
         X_new.std_err_ = getattr(X_new, "std_err_", self.X_.std_err_)
         X_new.average_ = getattr(X_new, "average_", self.X_.average_)
         X_new.w_ = getattr(X_new, "w_", self.X_.w_)
-        X_new._full_triangle_ = X_new.full_triangle_
-        X_new.parameter_risk_ = self._mack_recursion("parameter_risk_", X_new)
-        X_new.process_risk_ = self._mack_recursion("process_risk_", X_new)
+        # The Mack recursion multiplies cumulative amounts, so the risk
+        # estimates use the cumulative form of an incremental triangle.
+        X_cum = X_new if X_new.is_cumulative else X_new.incr_to_cum()
+        X_cum._full_triangle_ = X_cum.full_triangle_
+        X_new.parameter_risk_ = self._mack_recursion("parameter_risk_", X_cum)
+        X_new.process_risk_ = self._mack_recursion("process_risk_", X_cum)
         X_new.total_process_risk_ = (X_new.process_risk_**2).sum(axis="origin").sqrt()
         X_new.total_parameter_risk_ = self._mack_recursion(
-            "total_parameter_risk_", X_new
+            "total_parameter_risk_", X_cum
         )
-        X_new.full_std_err_ = self._get_full_std_err_(X_new)
+        X_new.full_std_err_ = self._get_full_std_err_(X_cum)
         X_new.total_mack_std_err_ = self._get_total_mack_std_err_(X_new)
         X_new.mack_std_err_ = (X_new.parameter_risk_**2 + X_new.process_risk_**2).sqrt()
-        del X_new._full_triangle_
+        del X_cum._full_triangle_
         return X_new
 
     @property
@@ -281,7 +289,14 @@ class MackChainladder(Chainladder):
             2012  0.039675  0.034017  0.026776  0.008976  0.001243  0.001324  0.0
             2013  0.035752  0.030671  0.024143  0.008094  0.001121  0.001193  0.0
         """
-        return self._get_full_std_err_(self.X_)
+        X = self.X_
+        if not X.is_cumulative:
+            # The weights use cumulative amounts.
+            from chainladder.core.common import _get_full_triangle
+
+            X = X.incr_to_cum()
+            X._full_triangle_ = _get_full_triangle(X, self.ultimate_)
+        return self._get_full_std_err_(X)
 
     def _get_full_std_err_(self, X=None):
         from chainladder.utils.utility_functions import num_to_nan
@@ -506,7 +521,7 @@ class MackChainladder(Chainladder):
         backend = obj.array_backend
         # forcing these four triangles to the same backend
         cols = (
-            self.X_.latest_diagonal.set_backend(backend).values,
+            self.latest_diagonal.set_backend(backend).values,
             self.ibnr_.set_backend(backend).values,
             self.ultimate_.set_backend(backend).values,
             self.mack_std_err_.set_backend(backend).values[..., -1:],
