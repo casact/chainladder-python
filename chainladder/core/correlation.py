@@ -224,7 +224,9 @@ class ValuationCorrelation:
     total: boolean
         Whether to calculate valuation correlation in total across all
         years (True), as in Appendix H of Mack (1994), or for each year
-        separately (False).
+        separately (False). A :doc:`gallery example
+        </gallery/plot_valuation_correlation>` compares how often the two
+        forms flag triangles that have no calendar-year effect.
 
     Attributes
     ----------
@@ -273,15 +275,16 @@ class ValuationCorrelation:
                1982   1983   1984   1985   1986   1987   1988   1989   1990
         1981  False  False  False  False  False  False  False  False  False
 
-    No diagonal crosses the 90% threshold, so the calendar-effect assumption
-    is supported. If any cell read ``True`` you would inspect that diagonal
-    before relying on Mack or chain-ladder ultimates.
+    No diagonal is flagged at the 10% significance level, so the test finds
+    no calendar-year effect, though a pass does not prove there is none. A
+    ``True`` cell points to a diagonal worth inspecting before relying on
+    Mack or chain-ladder ultimates.
 
     The same test can be aggregated to a whole-triangle form
-    (``total=True``, as in Appendix H of Mack (1994)) instead of the
-    per-diagonal form (``total=False``) shown above. In total form the ``z``
-    and ``z_critical`` attributes are returned as DataFrames rather than
-    Triangles:
+    (``total=True``, the default, as in Appendix H of Mack (1994)) instead
+    of the per-diagonal form (``total=False``) shown above. In total form the
+    ``z`` and ``z_critical`` attributes are returned as DataFrames rather
+    than Triangles:
 
     .. testcode::
 
@@ -294,8 +297,9 @@ class ValuationCorrelation:
         14.0
         False
 
-    The whole-triangle ``z`` statistic also falls inside the no-effect band,
-    confirming the per-diagonal result.
+    The whole-triangle ``z`` of 14 falls inside the no-effect band, so the
+    test does not reject the hypothesis of no calendar-year effect. Mack
+    (1994) reaches the same conclusion for this triangle.
     """
 
     def __init__(self, triangle: Triangle, p_critical: float = 0.1, total: bool = True):
