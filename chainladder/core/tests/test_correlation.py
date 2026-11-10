@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from scipy.stats import norm
@@ -93,10 +94,108 @@ def test_dev_corr_matches_mack(raa: Triangle) -> None:
     assert dc.t.iloc[0].tolist() == pytest.approx(t_k)
     assert dc.weights.iloc[0].tolist() == [7, 6, 5, 4, 3, 2, 1]
     assert dc.t_expectation.iloc[0, 0] == pytest.approx(0.070, abs=5e-4)
-    assert dc.t_variance == 1 / 28
-    assert dc.confidence_interval[0] == pytest.approx(-0.127, abs=5e-4)
-    assert dc.confidence_interval[1] == pytest.approx(0.127, abs=5e-4)
+    assert dc.t_variance.iloc[0, 0] == 1 / 28
+    assert dc.confidence_interval[0].iloc[0, 0] == pytest.approx(-0.127, abs=5e-4)
+    assert dc.confidence_interval[1].iloc[0, 0] == pytest.approx(0.127, abs=5e-4)
     assert not dc.t_critical.iloc[0, 0]
+
+
+def test_dev_corr_complete_triangle_counts(genins: Triangle) -> None:
+    """
+    On a complete triangle the pair counts are Mack's I - k.
+
+    genins has ten origins and ten development periods, so the weights are
+    I - k - 1 = 7, ..., 1 and Var(T) = 2 / ((I - 2)(I - 3)) = 1/28, as in
+    formula G6 of Mack (1994).
+    """
+    dc = genins.development_correlation(p_critical=0.5)
+    assert dc.weights.iloc[0].tolist() == [7, 6, 5, 4, 3, 2, 1]
+    assert dc.t_variance.iloc[0, 0] == 1 / 28
+
+
+def test_dev_corr_no_data(raa: Triangle) -> None:
+    """
+    A triangle without link ratios gets NaN and is not flagged.
+
+    GH #1577: with no pairs to rank there is no T_k to average, so T and its
+    variance are NaN, and t_critical is False, as ValuationCorrelation does
+    for empty diagonals.
+    """
+    dc = (raa * np.nan).development_correlation(p_critical=0.5)
+    assert np.isnan(dc.t_expectation.iloc[0, 0])
+    assert np.isnan(dc.t_variance.iloc[0, 0])
+    assert not dc.t_critical.iloc[0, 0]
+
+
+def test_dev_corr_empty_member(auto: Triangle) -> None:
+    """
+    An empty triangle among several leaves the others unchanged.
+
+    GH #1577: the auto sample has no incurred losses for CommercialAuto. That
+    triangle gets NaN and is not flagged, and each of the other three gets
+    the result it gets on its own.
+    """
+    dc = auto.development_correlation(p_critical=0.5)
+    assert np.isnan(dc.t_expectation.loc["CommercialAuto", "incurred"])
+    assert not dc.t_critical.loc["CommercialAuto", "incurred"]
+    others = [
+        ("CommercialAuto", "paid"),
+        ("PersonalAuto", "incurred"),
+        ("PersonalAuto", "paid"),
+    ]
+    for lob, column in others:
+        alone = auto.loc[lob][column].development_correlation(p_critical=0.5)
+        expected = alone.t_expectation.iloc[0, 0]
+        assert dc.t_expectation.loc[lob, column] == pytest.approx(expected)
+        assert dc.t_variance.loc[lob, column] == alone.t_variance.iloc[0, 0]
+
+
+def test_dev_corr_counts_origins_with_data(raa: Triangle) -> None:
+    """
+    I is the number of origins with data, not of development columns.
+
+    GH #1577: the last six origins of raa, kept on the full ten-column grid,
+    give the same T and variance as the same data cut to a 6 x 6 triangle,
+    where Var(T) = 2 / ((6 - 2)(6 - 3)) = 1/6.
+    """
+    recent = raa[raa.origin >= "1985"]
+    square = recent[recent.development <= 72]
+    on_grid = recent.development_correlation(p_critical=0.5)
+    cut = square.development_correlation(p_critical=0.5)
+    expected = cut.t_expectation.iloc[0, 0]
+    assert on_grid.t_expectation.iloc[0, 0] == pytest.approx(expected)
+    assert on_grid.t_variance.iloc[0, 0] == pytest.approx(1 / 6)
+    assert cut.t_variance.iloc[0, 0] == pytest.approx(1 / 6)
+
+
+@pytest.mark.parametrize("size", [2, 3])
+def test_dev_corr_too_small(raa: Triangle, size: int) -> None:
+    """
+    Triangles with fewer than four origins give NaN instead of raising.
+
+    GH #1577: T_k needs at least two pairs, which a triangle first has at
+    I = 4. A 3 x 3 triangle raised AttributeError and a 2 x 2 triangle
+    IndexError.
+    """
+    small = raa[raa.origin >= str(1991 - size)]
+    small = small[small.development <= 12 * size]
+    dc = small.development_correlation(p_critical=0.5)
+    assert np.isnan(dc.t_expectation.iloc[0, 0])
+    assert not dc.t_critical.iloc[0, 0]
+
+
+def test_dev_corr_smallest_triangle(raa: Triangle) -> None:
+    """
+    A 4 x 4 triangle has one T_k, from two pairs, with Var(T) = 1.
+
+    Formula G6 gives 2 / ((4 - 2)(4 - 3)) = 1, and k = 2 is the only column
+    with two pairs.
+    """
+    small = raa[raa.origin >= "1987"]
+    small = small[small.development <= 48]
+    dc = small.development_correlation(p_critical=0.5)
+    assert dc.weights.iloc[0].tolist() == [1]
+    assert dc.t_variance.iloc[0, 0] == 1
 
 
 def test_validate_critical(raa: Triangle) -> None:
