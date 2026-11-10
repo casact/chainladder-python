@@ -476,40 +476,25 @@ class MackChainladder(Chainladder):
     def cdr_std_err_(self):
         """
         One-year standard error of the claims development result by origin
-        period.
+        period, Result 3.1 (eq. 3.9) of Merz and Wüthrich (2008, ``merz2008``).
 
-        The claims development result (CDR) of an origin period is the change
-        in its estimated ultimate from this valuation to the next, once the
-        next diagonal is observed and the chainladder factors are estimated
-        again. The CDR is predicted by zero, and ``cdr_std_err_`` is the square
-        root of the conditional mean squared error of that prediction, Result
-        3.1 (eq. 3.9) of Merz and Wüthrich (2008, ``merz2008``). Where
-        ``mack_std_err_`` measures the error to ultimate, this attribute
-        measures the next year only, the horizon of a one-year solvency view.
-
-        The estimator assumes the paper's setting: a square triangle,
-        development factors volume-weighted over all periods with no link
-        ratios excluded, and no tail beyond the default ``TailConstant(1.0)``.
-        Reading the attribute raises ``ValueError`` for any other development
-        pattern, and ``fit`` is unaffected. A triangle with missing cells
-        above the latest diagonal gets NaN. The figures follow the
-        ``sigma_interpolation`` chosen in :class:`Development`; ``"mack"``
-        matches ``est.sigma="Mack"`` in the ``CDR()`` function of R's
-        ChainLadder package (``gesmann2026``). The attribute describes the
-        fitted triangle, and :meth:`predict` does not attach it.
+        The claims development result is the change in an origin's estimated
+        ultimate once the next diagonal is observed. ``mack_std_err_`` is the
+        counterpart to ultimate. The values follow the ``sigma_interpolation``
+        of :class:`Development`, and missing cells above the latest diagonal
+        give NaN.
 
         Returns
         -------
         Triangle
-            One value per origin, shaped like ``ultimate_``. The oldest
-            origin is fully developed and is NaN, as in ``mack_std_err_``.
+            One value per origin, shaped like ``ultimate_``, NaN for the
+            fully developed oldest origin.
 
         Raises
         ------
         ValueError
             If the triangle is not square, has a tail, or its development
-            factors are not volume-weighted over every link ratio of the
-            triangle itself.
+            factors are not volume-weighted over every link ratio.
 
         Examples
         --------
@@ -549,11 +534,9 @@ class MackChainladder(Chainladder):
         """
         One-year standard error of the claims development result summed over
         all origin periods, Result 3.3 (eq. 3.15) of Merz and Wüthrich (2008,
-        ``merz2008``).
-
-        The total exceeds the quadrature sum of ``cdr_std_err_`` because all
-        origins share the estimated age-to-age factors. The supported setting
-        and the ``ValueError`` cases are those of ``cdr_std_err_``.
+        ``merz2008``). It exceeds the quadrature sum of ``cdr_std_err_``
+        because all origins share the estimated factors, and it raises
+        ``ValueError`` where ``cdr_std_err_`` does.
 
         Returns
         -------
@@ -593,11 +576,15 @@ class MackChainladder(Chainladder):
         Mean squared errors of the one-year claims development result.
 
         Returns the per-origin values, shape (index, columns, origin), and
-        the totals over origins, shape (index, columns), following Results 3.1
-        and 3.3 of ``merz2008`` with I = J = n - 1 and 0-based origins.
+        the totals over origins, shape (index, columns), from Results 3.1 and
+        3.3 of ``merz2008`` with I = J = n - 1. Origins i and development
+        periods j are 0-based, as in the paper, and the equation numbers in
+        the comments are the paper's.
         """
+        from chainladder.development import Development
+
         X = self.X_.set_backend("numpy")
-        C = (X if X.is_cumulative else X.incr_to_cum()).values
+        C = X if X.is_cumulative else X.incr_to_cum()
         a, b, n, m = C.shape
         msg = "cdr_std_err_ and total_cdr_std_err_ need "
         upper = np.add.outer(np.arange(n), np.arange(m)) <= n - 1
@@ -623,52 +610,55 @@ class MackChainladder(Chainladder):
                 msg + "volume-weighted development factors; this pattern uses "
                 f"{sorted(str(v) for v in average)}."
             )
-        # A link ratio enters f_j when origin i has C[i, j] and C[i, j + 1].
-        link = upper[:, 1:]
-        x, y = C[..., :J], C[..., 1:]
-        pair = link & ~np.isnan(x) & ~np.isnan(y)
-        w = np.nan_to_num(np.broadcast_to(np.asarray(X.w_), pair.shape), nan=1.0)
-        if np.any(w[pair] == 0):
+        # A default Development on C gives the paper's factors (2.9), and the
+        # fitted w_ and ldf_ must match it.
+        fresh = Development().fit(C)
+        w, w_fresh = np.broadcast_arrays(np.asarray(X.w_), np.asarray(fresh.w_))
+        if not np.array_equal(w, w_fresh, equal_nan=True):
             raise ValueError(
                 msg + "every link ratio of the triangle; this pattern excludes "
                 "some (drop, drop_high, drop_low, drop_valuation, n_periods)."
             )
+        f = ldf[..., :J]  # f_j^I, (2.9)
+        if not np.allclose(
+            f, fresh.ldf_.values[..., 0, :], rtol=1e-8, atol=0, equal_nan=True
+        ):
+            raise ValueError(
+                msg + "development factors estimated from this triangle's "
+                "own link ratios; ldf_ differs from them, as after "
+                "Development(fillna=...)."
+            )
+        latest = C.latest_diagonal.values[..., 0]  # C_{i, I-i}
+        diag = latest[..., ::-1][..., :J]  # C_{I-j, j}
+        S1 = C.sum(axis="origin").values[..., 0, :J]  # S_j^{I+1}, (2.10)
+        S = S1 - diag  # S_j^I, (2.9)
+        ult = self.ultimate_.set_backend("numpy").values[..., 0]  # C_{i,J}^I, (2.11)
+        zero = np.zeros((a, b, 1))
+
+        def later(t):
+            """Sum of t over the positions after each position, last axis."""
+            return np.concatenate((np.cumsum(t[..., ::-1], -1)[..., -2::-1], zero), -1)
+
         with np.errstate(divide="ignore", invalid="ignore"):
-            S = np.where(pair, x, 0).sum(2)  # S_j^I
-            f_own = np.where(pair, y, 0).sum(2) / S
-            f = np.broadcast_to(ldf[..., :J], S.shape)
-            known = np.isfinite(f_own) & np.isfinite(f)
-            if not np.allclose(f[known], f_own[known], rtol=1e-8, atol=0):
-                raise ValueError(
-                    msg + "development factors estimated from this triangle's "
-                    "own link ratios; ldf_ differs from them, as after "
-                    "Development(fillna=...)."
-                )
-            q = np.broadcast_to(sigma[..., :J], S.shape) ** 2 / f**2
-            latest = C[..., np.arange(n), J - np.arange(n)]  # C_{i, I-i}
-            diag = latest[..., ::-1][..., :J]  # C_{I-j, j}
-            S1 = S + diag  # S_j^{I+1}
-            ult = self.ultimate_.set_backend("numpy").values[..., 0]
-            # Sums over the later periods j = d+1 .. J-1 for each d = 0 .. J-1.
-            A = diag * q / S1**2
-            B = (diag / S1) ** 2 * q / S
-            zero = np.zeros((a, b, 1))
-            TA = np.concatenate((np.cumsum(A[..., ::-1], -1)[..., -2::-1], zero), -1)
-            TB = np.concatenate((np.cumsum(B[..., ::-1], -1)[..., -2::-1], zero), -1)
-            i = np.arange(1, n)
-            d = J - i  # next development period of origin i
-            qd, Sd, S1d = q[..., d], S[..., d], S1[..., d]
-            Phi = TA[..., d]
-            Delta = qd / Sd + TB[..., d]
-            Lam = latest[..., i] / S1d * qd / Sd + TB[..., d]
-            Xi = Phi + qd / S1d
+            q = sigma[..., :J] ** 2 / f**2  # sigma_j^2 (3.3) over (f_j^I)^2
+            i = np.arange(1, n)  # origins with a next diagonal
+            d = J - i  # their next development period, I - i
+            qd, Sd, S1d, Ci = q[..., d], S[..., d], S1[..., d], latest[..., i]
+            # Sums over j = I-i+1 .. J-1: the summands of Phi (3.5), and those
+            # of the sum that Delta (3.4) and Lambda (3.13) share.
+            Phi = later(diag * q / S1**2)[..., d]
+            shared = later((diag / S1) ** 2 * q / S)[..., d]
+            Psi = qd / Ci  # (3.6)
+            Delta = qd / Sd + shared  # (3.4)
+            Lam = Ci / S1d * qd / Sd + shared  # Lambda, (3.13)
+            Xi = Phi + qd / S1d  # (3.14)
             msep = np.full((a, b, n), np.nan)
-            msep[..., 1:] = ult[..., i] ** 2 * (qd / latest[..., i] + Phi + Delta)
-            later = np.cumsum(ult[..., :0:-1], -1)[..., ::-1]  # sum of ult_k, k >= i
-            later = np.concatenate((later[..., 1:], zero), -1)  # k > i
-            cross = 2 * (ult[..., i] * later * (Xi + Lam)).sum(-1)
-            total = msep[..., 1:].sum(-1) + cross
-        complete = ~np.isnan(C[..., upper]).any(-1)
+            # (3.9), with Gamma = Phi + Psi (3.7)
+            msep[..., 1:] = ult[..., i] ** 2 * (Phi + Psi + Delta)
+            # (3.15): 2 * sum over k > i > 0 of C_{i,J} C_{k,J} (Xi + Lambda)
+            cross = ult[..., i] * later(ult[..., 1:]) * (Xi + Lam)
+            total = msep[..., 1:].sum(-1) + 2 * cross.sum(-1)
+        complete = ~np.isnan(C.values[..., upper]).any(-1)
         msep[~complete] = np.nan
         total[~complete] = np.nan
         return msep, total

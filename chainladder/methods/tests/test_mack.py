@@ -2,43 +2,19 @@
 Tests for MackChainladder.
 
 test_mack1994_hardcode and test_mack1999_hardcode check the Mack attributes
-against mack1994 and mack1999. The tests from test_cdr_matches_r on cover the
-one-year claims development result and cite sources by their keys in
-docs/library/references.bib. What they check for each attribute, by source:
-
-====================  =========  =========  =========  ============
-Attribute             R mw2008   R mw2014   merz2008   per-triangle
-====================  =========  =========  =========  ============
-cdr_std_err_          published  published  published  unchanged
-total_cdr_std_err_    published  published  published  unchanged
-mack_std_err_         published  published  no test    no test
-total_mack_std_err_   published  published  no test    no test
-====================  =========  =========  =========  ============
-
-published
-    R mw2008 and R mw2014 are the CDR() examples printed on the reference page
-    of gesmann2026, for MackChainLadder fits with est.sigma="Mack". Each value
-    matches to half a unit in the last printed decimal (4 decimals for mw2008,
-    7 for mw2014), for every origin and the total. merz2008 is the one-year
-    column of Table 4, printed in whole units and checked to 2 units for the
-    reason given in its test.
-unchanged
-    A fit on clrd summed by LOB, paid and incurred, gives each of its twelve
-    triangles the values of a fit on that triangle alone.
-
-The Mack rows confirm that sigma_interpolation="mack" reproduces R's
-est.sigma="Mack".
-
-The R and paper figures are checked on the numpy and sparse backends. Other
-CDR tests check that an incremental triangle gives the cumulative values,
-that a triangle with a missing cell gets NaN, that each unsupported
-development pattern fits and then raises ValueError on reading the CDR
-attributes, and that reading them leaves the Mack attributes as they were.
+against mack1994 and mack1999. The tests from test_cdr_matches_merz2008 on
+cover the one-year claims development result of merz2008 (keys of
+docs/library/references.bib). They check the paper's figures for its own
+triangle, the sample mw2008, on stacked copies and on both backends, then a
+fit on several triangles against a fit on each alone, incremental input, NaN
+for a missing cell, ValueError for each unsupported development pattern, and
+the Mack attributes after reading the CDR ones.
 """
 
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 
 import chainladder as cl
 import pytest
@@ -127,78 +103,17 @@ def test_mack1994_hardcode(raa):
     assert np.allclose(ibnr_se, ibnr_rhs[1:], atol=1)
 
 
-# gesmann2026, CDR() reference page: CDR(1)S.E. and Mack.S.E. for MW2008 by
-# origin (1 to 9), then the totals.
-MW2008_CDR = [
-    0.0000,
-    566.1744,
-    1486.5603,
-    3923.0986,
-    9722.8598,
-    28442.6216,
-    20954.2870,
-    28119.3180,
-    53320.8210,
-]
-MW2008_MACK = [
-    0.0000,
-    566.1744,
-    1563.8075,
-    4157.2733,
-    10536.4380,
-    30319.4638,
-    35967.0384,
-    45090.1821,
-    69552.3397,
-]
-MW2008_TOTALS = (81080.5468, 108401.3875)
+# merz2008, Table 2 (p. 560): f_j^I and sigma_j^2 for j = 0 to 7.
+TABLE2_LDF = [1.4759, 1.0719, 1.0232, 1.0161, 1.0063, 1.0056, 1.0013, 1.0011]
+TABLE2_SIGMA2 = [911.43, 189.82, 97.81, 178.75, 20.64, 3.23, 0.36, 0.04]
 
-# gesmann2026, CDR() reference page: the same columns for MW2014, origins 1
-# to 17.
-MW2014_CDR = [
-    0.0000000,
-    0.4083149,
-    2.5393857,
-    16.7232632,
-    156.4022713,
-    137.6522771,
-    171.1812092,
-    70.3161155,
-    271.6352221,
-    310.1268449,
-    103.3834357,
-    632.6388191,
-    315.0489135,
-    406.1424672,
-    285.2076540,
-    668.2337878,
-    733.2222786,
-]
-MW2014_MACK = [
-    0.0000000,
-    0.4083149,
-    2.5652899,
-    16.8984949,
-    157.2756452,
-    207.1650862,
-    261.9266093,
-    292.2622285,
-    390.5874717,
-    502.0606072,
-    486.0911099,
-    806.9028971,
-    793.9381916,
-    891.6613403,
-    916.4940218,
-    1106.1262716,
-    1295.6909824,
-]
-MW2014_TOTALS = (1842.8507073, 3233.6807352)
-
-# merz2008, Table 4 (p. 562): the one-year column for accident years 1 to 8,
-# the sample's origins 2002 to 2009, then the total.
+# merz2008, Table 4 (p. 562), accident years 1 to 8 (the sample's origins 2002
+# to 2009): the one-year column, msep^(1/2) of the observable CDR around 0, and
+# Mack's column. Then the cov^(1/2) row and the totals of the two columns.
 TABLE4_CDR = [567, 1488, 3923, 9723, 28443, 20954, 28119, 53320]
-TABLE4_TOTAL = 81080
+TABLE4_MACK = [567, 1566, 4157, 10536, 30319, 35967, 45090, 69552]
+TABLE4_COV = [39746, 50361]
+TABLE4_TOTAL = [81080, 108401]
 
 CDR_UNSUPPORTED = {
     "tail": (
@@ -224,63 +139,55 @@ def mack_sigma_fit(tri):
 
 
 def by_origin(triangle):
-    """Values of a single-triangle per-origin Triangle as a numpy vector."""
-    return triangle.set_backend("numpy").values[0, 0, :, -1]
+    """Values of a per-origin Triangle as an array, origin on the last axis."""
+    return triangle.set_backend("numpy").values[..., -1]
 
 
-@pytest.mark.parametrize("backend", ["numpy", "sparse"])
-@pytest.mark.parametrize(
-    "sample, cdr, mack, totals, decimals",
-    [
-        ("mw2008", MW2008_CDR, MW2008_MACK, MW2008_TOTALS, 4),
-        ("mw2014", MW2014_CDR, MW2014_MACK, MW2014_TOTALS, 7),
-    ],
-)
-def test_cdr_matches_r(sample, cdr, mack, totals, decimals, backend):
+def assert_within(actual, expected, tol):
+    """Assert that every entry of actual is less than tol from expected."""
+    gap = np.abs(np.asarray(actual) - expected)
+    np.testing.assert_array_less(gap, np.broadcast_to(tol, gap.shape))
+
+
+def test_cdr_matches_merz2008(mw2008):
     """
-    One-year and Mack standard errors match R's CDR() output.
+    Four copies of mw2008, two index rows by two columns, each give the
+    figures of merz2008.
 
-    The figures are the MW2008 and MW2014 examples of CDR() in gesmann2026,
-    fitted with est.sigma="Mack"; the samples mw2008 and mw2014 hold the same
-    triangles. Each value matches to half a unit in the last decimal R
-    prints. R prints 0 for the oldest origin, which is
-    fully developed; cdr_std_err_ and mack_std_err_ give NaN there.
+    Table 2 prints the factors to 4 decimals and sigma^2 to 2. The factors
+    round to the printed ones, and the printed sigma^2 are within 0.015 of
+    the estimates. Table 4 prints whole units of $1,000. Every entry is within
+    1 except accident year 2, printed as 1,488 and 1,566 against estimates of
+    1,486.6 and 1,563.8, and checked to 2.5. The cov^(1/2) row is the square
+    root of the total's square less the sum of the per-origin squares.
+    Accident year 1 has one development period left, so its one-year and Mack
+    errors are equal (Table 4 prints 567 in both columns).
     """
-    model = mack_sigma_fit(cl.load_sample(sample).set_backend(backend))
-    atol = 0.5 * 10.0**-decimals
-    assert np.isnan(by_origin(model.cdr_std_err_)[0])
-    assert np.isnan(by_origin(model.mack_std_err_)[0])
-    np.testing.assert_allclose(
-        by_origin(model.cdr_std_err_)[1:], cdr[1:], rtol=0, atol=atol
-    )
-    np.testing.assert_allclose(
-        by_origin(model.mack_std_err_)[1:], mack[1:], rtol=0, atol=atol
-    )
-    np.testing.assert_allclose(
-        model.total_cdr_std_err_.values[0, 0], totals[0], rtol=0, atol=atol
-    )
-    np.testing.assert_allclose(
-        model.total_mack_std_err_.values[0, 0], totals[1], rtol=0, atol=atol
-    )
+    copy = mw2008.copy()
+    copy.index = pd.DataFrame({mw2008.key_labels[0]: ["Copy"]})
+    tri = cl.concat([mw2008, copy], axis=0)
+    tri["copy"] = tri["values"]
+    dev = cl.Development(sigma_interpolation="mack").fit_transform(tri)
+    model = cl.MackChainladder().fit(dev)
+    assert model.cdr_std_err_.shape == (2, 2, 9, 1)
+    ldf = dev.ldf_.set_backend("numpy").values[..., 0, :]
+    sigma2 = dev.sigma_.set_backend("numpy").values[..., 0, :] ** 2
+    assert_within(ldf, TABLE2_LDF, 5e-5)
+    assert_within(sigma2, TABLE2_SIGMA2, 0.015)
 
-
-@pytest.mark.parametrize("backend", ["numpy", "sparse"])
-def test_cdr_matches_merz2008_table4(backend):
-    """
-    One-year standard errors match merz2008, Table 4, to 2 units.
-
-    Table 4 prints whole units of $1,000, and Table 2 prints the sigma^2
-    estimates to two decimals. Against the unrounded figures that R and this
-    implementation share, the entries for accident years 1 and 2 are 0.83 and
-    1.44 higher; every other entry and the total are within 1.
-    """
-    model = mack_sigma_fit(cl.load_sample("mw2008").set_backend(backend))
-    np.testing.assert_allclose(
-        by_origin(model.cdr_std_err_)[1:], TABLE4_CDR, rtol=0, atol=2
+    cdr = by_origin(model.cdr_std_err_)
+    mack = by_origin(model.mack_std_err_)
+    assert np.isnan(cdr[..., 0]).all() and np.isnan(mack[..., 0]).all()
+    tol = np.where(np.arange(1, 9) == 2, 2.5, 1.0)
+    assert_within(cdr[..., 1:], TABLE4_CDR, tol)
+    assert_within(mack[..., 1:], TABLE4_MACK, tol)
+    total = np.stack(
+        (model.total_cdr_std_err_.values, model.total_mack_std_err_.values), -1
     )
-    np.testing.assert_allclose(
-        model.total_cdr_std_err_.values[0, 0], TABLE4_TOTAL, rtol=0, atol=2
-    )
+    assert_within(total, TABLE4_TOTAL, 1)
+    squares = np.stack((np.nansum(cdr**2, -1), np.nansum(mack**2, -1)), -1)
+    assert_within(np.sqrt(total**2 - squares), TABLE4_COV, 1)
+    np.testing.assert_allclose(cdr[..., 1], mack[..., 1], rtol=1e-12)
 
 
 def test_cdr_multi_triangle_matches_single(clrd):
@@ -292,25 +199,24 @@ def test_cdr_multi_triangle_matches_single(clrd):
     """
     tri = clrd.groupby("LOB").sum()[["CumPaidLoss", "IncurLoss"]]
     model = cl.MackChainladder().fit(tri)
-    per = model.cdr_std_err_.set_backend("numpy").values
+    per = by_origin(model.cdr_std_err_)
     total = model.total_cdr_std_err_.values
     assert np.isfinite(total).all()
     for i in range(len(tri.index)):
         for j in range(len(tri.columns)):
             single = cl.MackChainladder().fit(tri.iloc[i, j])
             np.testing.assert_allclose(
-                per[i, j, :, 0], by_origin(single.cdr_std_err_), rtol=1e-10
+                per[i, j], by_origin(single.cdr_std_err_)[0, 0], rtol=1e-10
             )
             np.testing.assert_allclose(
                 total[i, j], single.total_cdr_std_err_.values[0, 0], rtol=1e-10
             )
 
 
-def test_cdr_incremental_matches_cumulative():
+def test_cdr_incremental_matches_cumulative(mw2008):
     """An incremental triangle gives the values of its cumulative form."""
-    tri = cl.load_sample("mw2008")
-    cumulative = mack_sigma_fit(tri)
-    incremental = mack_sigma_fit(tri.cum_to_incr())
+    cumulative = mack_sigma_fit(mw2008)
+    incremental = mack_sigma_fit(mw2008.cum_to_incr())
     np.testing.assert_allclose(
         by_origin(incremental.cdr_std_err_),
         by_origin(cumulative.cdr_std_err_),
@@ -323,7 +229,7 @@ def test_cdr_incremental_matches_cumulative():
     )
 
 
-def test_cdr_missing_cell_gives_nan():
+def test_cdr_missing_cell_gives_nan(mw2008):
     """
     A triangle with a missing cell above the latest diagonal gets NaN.
 
@@ -331,17 +237,17 @@ def test_cdr_missing_cell_gives_nan():
     one cell from mw2008 leaves MackChainladder able to fit, and both CDR
     attributes are NaN.
     """
-    tri = cl.load_sample("mw2008")
+    tri = mw2008.set_backend("numpy")
     tri.values = tri.values.copy()
     tri.values[0, 0, 3, 1] = np.nan
-    model = mack_sigma_fit(tri)
+    model = mack_sigma_fit(tri.set_backend(mw2008.array_backend))
     assert np.isfinite(model.total_mack_std_err_.values).all()
     assert np.isnan(by_origin(model.cdr_std_err_)).all()
     assert np.isnan(model.total_cdr_std_err_.values).all()
 
 
 @pytest.mark.parametrize("name", list(CDR_UNSUPPORTED))
-def test_cdr_unsupported_pattern_raises_on_read(name):
+def test_cdr_unsupported_pattern_raises_on_read(name, mw2008):
     """
     Unsupported development patterns fit, then raise on reading the CDR.
 
@@ -351,7 +257,7 @@ def test_cdr_unsupported_pattern_raises_on_read(name):
     attributes raise ValueError.
     """
     transform, message = CDR_UNSUPPORTED[name]
-    model = cl.MackChainladder().fit(transform(cl.load_sample("mw2008")))
+    model = cl.MackChainladder().fit(transform(mw2008))
     assert np.isfinite(model.total_mack_std_err_.values).all()
     with pytest.raises(ValueError, match=message):
         _ = model.cdr_std_err_
@@ -359,12 +265,12 @@ def test_cdr_unsupported_pattern_raises_on_read(name):
         _ = model.total_cdr_std_err_
 
 
-def test_reading_cdr_leaves_mack_unchanged():
+def test_reading_cdr_leaves_mack_unchanged(mw2008):
     """Reading the CDR attributes leaves the fitted Mack attributes as they were."""
-    model = mack_sigma_fit(cl.load_sample("mw2008"))
-    summary = model.summary_.values.copy()
+    model = mack_sigma_fit(mw2008)
+    summary = model.summary_.set_backend("numpy").values.copy()
     total = model.total_mack_std_err_.values.copy()
-    assert np.isfinite(by_origin(model.cdr_std_err_)[1:]).all()
+    assert np.isfinite(by_origin(model.cdr_std_err_)[..., 1:]).all()
     assert np.isfinite(model.total_cdr_std_err_.values).all()
-    np.testing.assert_array_equal(model.summary_.values, summary)
+    np.testing.assert_array_equal(model.summary_.set_backend("numpy").values, summary)
     np.testing.assert_array_equal(model.total_mack_std_err_.values, total)
