@@ -273,6 +273,7 @@ def read_csv(
     pattern=False,
     trailing: bool = True,
     age: Optional[str] = None,
+    duplicates: str = "sum",
     *args,
     **kwargs,
 ) -> Triangle:
@@ -320,6 +321,9 @@ def read_csv(
         ensure the most recent origin period is a full period and the oldest
         origin is partial. If full origin periods are present in the data, then
         trailing has no effect.
+    duplicates: str, default 'sum'
+        What to do when more than one row falls in the same triangle cell:
+        ``'sum'``, ``'raise'`` or ``'warn'``. See :class:`~chainladder.Triangle`.
     """
 
     from chainladder import Triangle
@@ -344,6 +348,7 @@ def read_csv(
         array_backend=array_backend,
         pattern=pattern,
         trailing=trailing,
+        duplicates=duplicates,
     )
 
     return local_triangle
