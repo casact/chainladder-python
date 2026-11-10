@@ -320,3 +320,28 @@ def test_approach_2_single_channel_case_triangle_and_transform():
     ).fit(tri_grouped)
     assert m_grp.case_to_prior_case_ is not None
     assert m_grp.paid_to_prior_case_ is not None
+
+
+def test_unweighted_ratios_preserved_when_n_periods_set():
+    """Verify that case_to_prior_case_ and paid_to_prior_case_ retain unweighted historical ratios (#1511)."""
+    tri = cl.load_sample("usauto")
+    m = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=3,
+        case_n_periods=3,
+    ).fit(tri)
+
+    paid_ratios = m.paid_to_prior_case_.to_frame()
+    case_ratios = m.case_to_prior_case_.to_frame()
+
+    assert (paid_ratios.iloc[:-3] != 0).any().any()
+    assert (case_ratios.iloc[:-3] != 0).any().any()
+
+    m_full = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri)
+
+    assert np.allclose(
+        m.paid_to_prior_case_.values, m_full.paid_to_prior_case_.values, equal_nan=True
+    )
+    assert np.allclose(
+        m.case_to_prior_case_.values, m_full.case_to_prior_case_.values, equal_nan=True
+    )
