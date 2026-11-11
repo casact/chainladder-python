@@ -140,6 +140,42 @@ def test_origin_broadcasting(raa: Triangle) -> None:
     assert result.equals(raa + 500)
 
 
+@pytest.mark.parametrize(
+    "op", [operator.add, operator.sub, operator.mul, operator.truediv]
+)
+def test_one_axis_broadcasting_with_union(raa: Triangle, op) -> None:
+    """
+    A one-origin operand with fewer development periods, or a one-development
+    operand with fewer origins, spans the other operand's axis on both
+    backends (#1574).
+
+    Parameters
+    ----------
+    raa: Triangle
+        The raa sample data set fixture.
+    op: Callable
+        The arithmetic operator under test.
+
+    Returns
+    -------
+    None
+    """
+    dense = raa.set_backend("numpy")
+    for one_axis in (
+        raa.iloc[..., :-1].sum("origin"),
+        raa.iloc[..., :-1, :].sum("development"),
+    ):
+        one_axis_dense = one_axis.set_backend("numpy")
+        for result, expected in (
+            (op(raa, one_axis), op(dense, one_axis_dense)),
+            (op(one_axis, raa), op(one_axis_dense, dense)),
+        ):
+            assert result.shape == raa.shape
+            np.testing.assert_allclose(
+                result.set_backend("numpy").values, expected.values
+            )
+
+
 def test_arithmetic_union(raa):
     assert raa.shape == (raa - raa[raa.valuation < "1987"]).shape
     assert (raa[raa.valuation < "1986"] + raa[raa.valuation >= "1986"]).equals(raa)

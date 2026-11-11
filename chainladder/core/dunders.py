@@ -228,7 +228,8 @@ class TriangleDunders:
                 obj_arr[:] = xp.nan
                 obj_arr[:, :, lol:loh, ldl:ldh] = obj.values
             else:
-                obj_arr, other_arr = obj.values.copy(), other.values.copy()
+                obj_arr = self._spread_sparse(obj.values, loh - lol, ldh - ldl)
+                other_arr = self._spread_sparse(other.values, roh - rol, rdh - rdl)
                 other_arr.coords[2] = other_arr.coords[2] + rol
                 other_arr.coords[3] = other_arr.coords[3] + rdl
                 obj_arr.coords[2] = obj_arr.coords[2] + lol
@@ -248,6 +249,22 @@ class TriangleDunders:
             obj.values = obj_arr
             other.values = other_arr
         return obj, other
+
+    @staticmethod
+    def _spread_sparse(arr, n_origin, n_development):
+        """
+        Return a copy of a COO array with a length-1 origin or development
+        axis repeated ``n_origin`` or ``n_development`` times, as the numpy
+        slice assignment in ``_prep_origin_development`` broadcasts it.
+        """
+        shape = (
+            *arr.shape[:2],
+            n_origin if arr.shape[2] == 1 else arr.shape[2],
+            n_development if arr.shape[3] == 1 else arr.shape[3],
+        )
+        if shape == arr.shape:
+            return arr.copy()
+        return sp.broadcast_to(arr, shape)
 
     @staticmethod
     def _slice_or_nan(obj, other, k):
