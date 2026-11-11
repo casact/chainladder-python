@@ -122,6 +122,51 @@ def test_mack1999_hardcode():
     assert np.allclose(ibnr_se, np.nan_to_num(ibnr_rhs, nan=0), atol=1, equal_nan=True)
 
 
+def _assert_incremental_matches_cumulative(cum):
+    """An incremental triangle gives the same Mack estimates as its cumulative form."""
+    attrs = [
+        "parameter_risk_",
+        "process_risk_",
+        "total_parameter_risk_",
+        "total_process_risk_",
+        "mack_std_err_",
+        "full_std_err_",
+    ]
+    incr = cum.cum_to_incr()
+    model_cum = cl.MackChainladder().fit(cum)
+    model_incr = cl.MackChainladder().fit(incr)
+    assert not model_incr.X_.is_cumulative
+    pairs = [
+        (model_cum, model_incr),
+        (model_cum.predict(cum), model_cum.predict(incr)),
+    ]
+    for a, b in pairs:
+        for attr in attrs:
+            assert np.allclose(
+                getattr(a, attr).set_backend("numpy").values,
+                getattr(b, attr).set_backend("numpy").values,
+                equal_nan=True,
+            ), attr
+        assert np.allclose(a.total_mack_std_err_.values, b.total_mack_std_err_.values)
+    assert np.allclose(
+        model_cum.summary_.set_backend("numpy").values,
+        model_incr.summary_.set_backend("numpy").values,
+        equal_nan=True,
+    )
+
+
+def test_mack_incremental_matches_cumulative_raa(raa):
+    _assert_incremental_matches_cumulative(raa)
+
+
+def test_mack_incremental_matches_cumulative_mw2008(mw2008):
+    _assert_incremental_matches_cumulative(mw2008)
+
+
+def test_mack_incremental_matches_cumulative_genins(genins):
+    _assert_incremental_matches_cumulative(genins)
+
+
 def test_mack1994_hardcode(raa):
     """
     Reconciles key MackChainladder statistics to values provided in the paper
