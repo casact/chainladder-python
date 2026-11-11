@@ -3882,11 +3882,11 @@ def test_duplicates_invalid_value() -> None:
         cl.Triangle(DUPLICATE_ROWS, duplicates="first", **DUPLICATE_KWARGS)
 
 
-def test_duplicates_transactions(monthly: Triangle) -> None:
+def test_duplicates_claim_level(monthly: Triangle) -> None:
     """
-    Transaction data put many rows in each cell. Built from prism.csv with no
-    index, the default and ``"sum"`` give the prism sample summed over its
-    index, while ``"raise"`` rejects the same rows.
+    prism.csv holds one row per claim, so built with no index it puts many
+    claims in each cell. The default and ``"sum"`` give the prism sample
+    summed over its index, while ``"raise"`` rejects the same rows.
     """
     raw = pd.read_csv(SAMPLE_DATA / "prism.csv")
     kwargs = {
