@@ -226,7 +226,8 @@ class ValuationCorrelation:
         years (True), as in Appendix H of Mack (1994), or for each year
         separately (False). A :doc:`gallery example
         </gallery/plot_valuation_correlation>` compares how often the two
-        forms flag triangles that have no calendar-year effect.
+        forms flag samples of claims at annual, semiannual and quarterly
+        grain.
 
     Attributes
     ----------

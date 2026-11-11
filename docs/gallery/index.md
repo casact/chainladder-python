@@ -546,7 +546,7 @@ alt: Loss Development Patterns
 **Calendar Year Tests**
 ```{image} ../images/plot_valuation_correlation.png
 ---
-alt: Share of simulated triangles flagged by the per-diagonal and total tests
+alt: Share of prism claim samples flagged by the per-diagonal and total tests at three grains
 ---
 ```
 +++
