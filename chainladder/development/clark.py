@@ -127,7 +127,7 @@ class ClarkLDF(DevelopmentBase):
         prodliab        0.671
         wkcomp          0.698
 
-    The ``clrd`` sample holds 775 company-level triangles, and most
+    The ``clrd`` sample holds 779 company-level triangles, and most
     individual companies are too small to support their own curve fit.
     Rather than running a separate optimization on each thin triangle, the
     actuary can pass ``groupby`` to pool the companies into one fit per
@@ -145,7 +145,7 @@ class ClarkLDF(DevelopmentBase):
     .. testoutput::
         :options: +NORMALIZE_WHITESPACE
 
-        775
+        779
                   CumPaidLoss
         LOB
         comauto         1.08

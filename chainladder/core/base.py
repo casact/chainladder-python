@@ -74,7 +74,7 @@ class TriangleBase(
         .. testoutput::
 
             (1, 1, 10, 10)
-            (775, 6, 10, 10)
+            (779, 6, 10, 10)
         """
         return self.values.shape
 

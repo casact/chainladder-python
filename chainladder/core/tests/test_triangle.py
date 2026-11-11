@@ -3909,26 +3909,29 @@ def test_duplicates_transactions(monthly: Triangle) -> None:
 def test_duplicates_multi_index() -> None:
     """
     With a two-level index the check counts rows per index key, origin and
-    valuation. clrd.csv keyed by GRNAME and LOB has four name-and-line pairs
-    that cover two GRCODEs each, 220 repeated cells in all; adding GRCODE to
-    the index leaves one row per cell.
+    valuation. Company A reports its auto line under two codes, so keyed by
+    company and line its two auto rows share a cell; adding the code to the
+    index leaves one row per cell.
     """
-    raw = pd.read_csv(SAMPLE_DATA / "clrd.csv")
-    kwargs = {
-        "origin": "AccidentYear",
-        "valuation": "DevelopmentYear",
-        "columns": "CumPaidLoss",
-        "cumulative": True,
-    }
+    data = pd.DataFrame({
+        "company": ["A", "A", "A", "B"],
+        "code": [1, 2, 1, 3],
+        "lob": ["auto", "auto", "home", "auto"],
+        "origin": ["2020", "2020", "2020", "2020"],
+        "valuation": ["2020", "2020", "2020", "2020"],
+        "paid": [100, 50, 30, 20],
+    })
     with pytest.raises(
         ValueError,
-        match=r"in 220 triangle cells, including index \('Farmers Mut Ins Co', 'othliab'\)",
+        match=r"in 1 triangle cell: index \('A', 'auto'\), origin 2020-01-01",
     ):
-        cl.Triangle(raw, index=["GRNAME", "LOB"], duplicates="raise", **kwargs)
+        cl.Triangle(
+            data, index=["company", "lob"], duplicates="raise", **DUPLICATE_KWARGS
+        )
     keyed = cl.Triangle(
-        raw, index=["GRNAME", "LOB", "GRCODE"], duplicates="raise", **kwargs
+        data, index=["company", "lob", "code"], duplicates="raise", **DUPLICATE_KWARGS
     )
-    assert keyed.shape[0] == 779
+    assert keyed.shape[0] == 4
 
 
 def test_duplicates_ultimate_rows() -> None:
@@ -3975,3 +3978,14 @@ def test_read_csv_duplicates() -> None:
     csv = DUPLICATE_ROWS.to_csv(index=False)
     with pytest.raises(ValueError, match="more than one input row"):
         cl.read_csv(StringIO(csv), duplicates="raise", **DUPLICATE_KWARGS)
+
+
+def test_clrd_samples_one_row_per_cell() -> None:
+    """
+    In clrd and clrd2025 each GRCODE has its own GRNAME, so keyed by GRNAME
+    and LOB every input row has a cell of its own: the four name-and-line
+    pairs that used to span two GRCODEs load as separate triangles instead
+    of being summed (#1567).
+    """
+    assert cl.load_sample("clrd", duplicates="raise").shape[0] == 779
+    assert cl.load_sample("clrd2025", duplicates="raise").shape[0] == 772
