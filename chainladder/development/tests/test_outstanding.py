@@ -322,6 +322,64 @@ def test_approach_2_single_channel_case_triangle_and_transform():
     assert m_grp.paid_to_prior_case_ is not None
 
 
+def test_case_outstanding_medial_averages():
+    """Verify medial averages (5x1) in CaseOutstanding match Friedland Ch 12 Exhibit I."""
+    tri = cl.load_sample("usauto")
+    model = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=5,
+        paid_drop_high=1,
+        paid_drop_low=1,
+        case_n_periods=5,
+        case_drop_high=1,
+        case_drop_low=1,
+    ).fit(tri)
+
+    expected_paid_medial = np.array([
+        [0.835, 0.712, 0.714, 0.692, 0.641, 0.624, 0.546, 0.437, 0.524]
+    ])
+    assert np.allclose(
+        model.paid_ldf_.to_frame(origin_as_datetime=False).values,
+        expected_paid_medial,
+        atol=1e-3,
+    )
+
+    expected_case_medial = np.array([
+        [0.527, 0.562, 0.530, 0.488, 0.515, 0.542, 0.642, 0.674, 0.580]
+    ])
+    assert np.allclose(
+        model.case_ldf_.to_frame(origin_as_datetime=False).values,
+        expected_case_medial,
+        atol=1e-3,
+    )
+
+    # Shorthand parameter equivalence
+    model_short = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        n_periods=5,
+        drop_high=1,
+        drop_low=1,
+    ).fit(tri)
+    assert np.allclose(model.paid_ldf_.values, model_short.paid_ldf_.values)
+    assert np.allclose(model.case_ldf_.values, model_short.case_ldf_.values)
+
+    # Asymmetric selection: paid 5x1 medial and case 3-year latest
+    m_asym = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=5,
+        paid_drop_high=1,
+        paid_drop_low=1,
+        case_n_periods=3,
+    ).fit(tri)
+    assert np.allclose(m_asym.paid_ldf_.values, model.paid_ldf_.values)
+    m_3 = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=3,
+        case_n_periods=3,
+    ).fit(tri)
+    assert np.allclose(m_asym.case_ldf_.values, m_3.case_ldf_.values)
+
+
 def test_unweighted_ratios_preserved_when_n_periods_set():
     """Verify that case_to_prior_case_ and paid_to_prior_case_ retain unweighted historical ratios (#1511)."""
     tri = cl.load_sample("usauto")
@@ -345,3 +403,74 @@ def test_unweighted_ratios_preserved_when_n_periods_set():
     assert np.allclose(
         m.case_to_prior_case_.values, m_full.case_to_prior_case_.values, equal_nan=True
     )
+
+
+def test_case_outstanding_clone_and_sklearn_compatibility():
+    """Verify scikit-learn clone compatibility."""
+    from sklearn.base import clone
+
+    m = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        paid_n_periods=5,
+        paid_drop_high=1,
+        paid_drop_low=1,
+        case_n_periods=3,
+    )
+    m_clone = clone(m)
+    assert m_clone.paid_n_periods == 5
+    assert m_clone.paid_drop_high == 1
+    assert m_clone.paid_drop_low == 1
+    assert m_clone.case_n_periods == 3
+
+
+def test_case_outstanding_zero_case_reserve_warning():
+    """Verify tail runoff with zero case reserve executes cleanly without warnings."""
+    import warnings
+
+    xyz = cl.load_sample("friedland_xyz_auto_bi")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        model = cl.CaseOutstanding(
+            paid_to_incurred=("Paid Claims", "Reported Claims"),
+            n_periods=5,
+            drop_high=1,
+            drop_low=1,
+        ).fit(xyz)
+    assert model.paid_ldf_ is not None
+    assert not model.case_ldf_.to_frame().isna().any().any()
+
+
+def test_case_outstanding_drop_and_valuation_convention():
+    """Verify drop and drop_valuation conventions align with Development convention."""
+    tri = cl.load_sample("usauto")
+    # Drop first link ratio (12-24, development 12) for accident year 1998
+    m_drop = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        drop=("1998", 12),
+    ).fit(tri)
+    assert np.isnan(m_drop.case_w_.values[0, 0, 0, 0])
+    assert np.isnan(m_drop.paid_w_.values[0, 0, 0, 0])
+
+    # Drop valuation diagonal 2000
+    m_val = cl.CaseOutstanding(
+        paid_to_incurred=("paid", "incurred"),
+        drop_valuation="2000",
+    ).fit(tri)
+    dev_val = cl.Development(drop_valuation="2000").fit(tri["paid"])
+    assert np.allclose(m_val.paid_w_.values, dev_val.w_v2_.values, equal_nan=True)
+    assert np.allclose(m_val.case_w_.values, dev_val.w_v2_.values, equal_nan=True)
+
+
+def test_case_outstanding_zero_runoff_preserved():
+    """Verify that complete case runoff (zero ratio) is preserved as 0.0, not converted to 1.0."""
+    tri = cl.load_sample("usauto")
+    inc = tri["incurred"].copy()
+    paid = tri["paid"].copy()
+    # At age 48 (development index 3), carried case reserve runs off completely (incurred == paid)
+    valid_mask = ~np.isnan(paid.values[..., 3])
+    inc.values[..., 3] = np.where(valid_mask, paid.values[..., 3], inc.values[..., 3])
+    tri_zero = cl.concat((paid, inc), 1)
+
+    m = cl.CaseOutstanding(paid_to_incurred=("paid", "incurred")).fit(tri_zero)
+    # The 36-48 ratio (development column index 2) should be 0.0, not 1.0
+    assert m.case_ldf_.values[0, 0, 0, 2] == 0.0

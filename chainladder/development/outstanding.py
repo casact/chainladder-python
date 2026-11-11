@@ -5,8 +5,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
-from chainladder.development import Development, DevelopmentBase
+from chainladder.development import DevelopmentBase
 from chainladder import options
+from chainladder.utils import TriangleWeight
 from chainladder.utils.utility_functions import concat
 from chainladder.utils.utility_functions import num_to_nan
 
@@ -49,8 +50,48 @@ class CaseOutstanding(DevelopmentBase):
     case_n_periods: integer, optional (default=-1)
         number of origin periods to be used in the case pattern averages. For
         all origin periods, set case_n_periods=-1
+    paid_drop_high: bool, int, list of bools, or list of ints (default=None)
+        Drops highest link ratio(s) from paid pattern average calculation.
+    paid_drop_low: bool, int, list of bools, or list of ints (default=None)
+        Drops lowest link ratio(s) from paid pattern average calculation.
+    case_drop_high: bool, int, list of bools, or list of ints (default=None)
+        Drops highest link ratio(s) from case pattern average calculation.
+    case_drop_low: bool, int, list of bools, or list of ints (default=None)
+        Drops lowest link ratio(s) from case pattern average calculation.
+    paid_drop: tuple or list of tuples (default=None)
+        Drops specific origin/development combination(s) from paid pattern.
+    case_drop: tuple or list of tuples (default=None)
+        Drops specific origin/development combination(s) from case pattern.
+    paid_drop_valuation: str or list of str (default=None)
+        Drops specific valuation periods from paid pattern.
+    case_drop_valuation: str or list of str (default=None)
+        Drops specific valuation periods from case pattern.
+    paid_drop_above: float (default=np.inf)
+        Drops paid ratios above given parameter.
+    case_drop_above: float (default=np.inf)
+        Drops case ratios above given parameter.
+    paid_drop_below: float (default=0.00)
+        Drops paid ratios below given parameter.
+    case_drop_below: float (default=0.00)
+        Drops case ratios below given parameter.
+    paid_preserve: int (default=1)
+        Minimum number of ratios required for paid pattern calculation.
+    case_preserve: int (default=1)
+        Minimum number of ratios required for case pattern calculation.
     groupby: optional
         Grouping option.
+    n_periods: integer, optional (default=None)
+        Shorthand setting both paid_n_periods and case_n_periods if not explicitly specified.
+    drop_high: bool, int, or list (default=None)
+        Shorthand setting both paid_drop_high and case_drop_high if not explicitly specified.
+    drop_low: bool, int, or list (default=None)
+        Shorthand setting both paid_drop_low and case_drop_low if not explicitly specified.
+    drop: tuple or list of tuples (default=None)
+        Shorthand setting both paid_drop and case_drop if not explicitly specified.
+    drop_valuation: str or list of str (default=None)
+        Shorthand setting both paid_drop_valuation and case_drop_valuation if not explicitly specified.
+    preserve: int, optional (default=None)
+        Shorthand setting both paid_preserve and case_preserve if not explicitly specified.
 
     Attributes
     ----------
@@ -135,12 +176,52 @@ class CaseOutstanding(DevelopmentBase):
         paid_to_incurred=None,
         paid_n_periods=-1,
         case_n_periods=-1,
+        paid_drop_high=None,
+        paid_drop_low=None,
+        case_drop_high=None,
+        case_drop_low=None,
+        paid_drop=None,
+        case_drop=None,
+        paid_drop_valuation=None,
+        case_drop_valuation=None,
+        paid_drop_above=np.inf,
+        case_drop_above=np.inf,
+        paid_drop_below=0.00,
+        case_drop_below=0.00,
+        paid_preserve=1,
+        case_preserve=1,
         groupby=None,
+        n_periods=None,
+        drop_high=None,
+        drop_low=None,
+        drop=None,
+        drop_valuation=None,
+        preserve=None,
     ):
         self.paid_to_incurred = paid_to_incurred
         self.paid_n_periods = paid_n_periods
         self.case_n_periods = case_n_periods
+        self.paid_drop_high = paid_drop_high
+        self.paid_drop_low = paid_drop_low
+        self.case_drop_high = case_drop_high
+        self.case_drop_low = case_drop_low
+        self.paid_drop = paid_drop
+        self.case_drop = case_drop
+        self.paid_drop_valuation = paid_drop_valuation
+        self.case_drop_valuation = case_drop_valuation
+        self.paid_drop_above = paid_drop_above
+        self.case_drop_above = case_drop_above
+        self.paid_drop_below = paid_drop_below
+        self.case_drop_below = case_drop_below
+        self.paid_preserve = paid_preserve
+        self.case_preserve = case_preserve
         self.groupby = groupby
+        self.n_periods = n_periods
+        self.drop_high = drop_high
+        self.drop_low = drop_low
+        self.drop = drop
+        self.drop_valuation = drop_valuation
+        self.preserve = preserve
 
     def fit(self, X, y=None, sample_weight=None):
         """
@@ -161,24 +242,100 @@ class CaseOutstanding(DevelopmentBase):
         backend = "cupy" if X.array_backend == "cupy" else "numpy"
         self.X_ = X.copy()
 
-        self.paid_w_ = (
-            Development(n_periods=self.paid_n_periods).fit(self.X_.sum(0).sum(1)).w_
+        paid_n_periods = (
+            self.paid_n_periods
+            if self.paid_n_periods != -1 or self.n_periods is None
+            else self.n_periods
         )
-        self.case_w_ = (
-            Development(n_periods=self.case_n_periods).fit(self.X_.sum(0).sum(1)).w_
+        paid_drop_high = (
+            self.paid_drop_high if self.paid_drop_high is not None else self.drop_high
+        )
+        paid_drop_low = (
+            self.paid_drop_low if self.paid_drop_low is not None else self.drop_low
+        )
+        paid_drop = self.paid_drop if self.paid_drop is not None else self.drop
+        paid_drop_valuation = (
+            self.paid_drop_valuation
+            if self.paid_drop_valuation is not None
+            else self.drop_valuation
+        )
+        paid_drop_above = self.paid_drop_above
+        paid_drop_below = self.paid_drop_below
+        paid_preserve = (
+            self.paid_preserve
+            if self.paid_preserve != 1 or self.preserve is None
+            else self.preserve
         )
 
-        case_to_prior_case_naned = self.case_to_prior_case_ * self.case_w_
-        case_to_prior_case_naned.values = num_to_nan(case_to_prior_case_naned.values)
+        case_n_periods = (
+            self.case_n_periods
+            if self.case_n_periods != -1 or self.n_periods is None
+            else self.n_periods
+        )
+        case_drop_high = (
+            self.case_drop_high if self.case_drop_high is not None else self.drop_high
+        )
+        case_drop_low = (
+            self.case_drop_low if self.case_drop_low is not None else self.drop_low
+        )
+        case_drop = self.case_drop if self.case_drop is not None else self.drop
+        case_drop_valuation = (
+            self.case_drop_valuation
+            if self.case_drop_valuation is not None
+            else self.drop_valuation
+        )
+        case_drop_above = self.case_drop_above
+        case_drop_below = self.case_drop_below
+        case_preserve = (
+            self.case_preserve
+            if self.case_preserve != 1 or self.preserve is None
+            else self.preserve
+        )
 
-        self.case_ldf_ = self.case_to_prior_case_.mean(2)  # this has the wrong value
-        self.case_ldf_.values = case_to_prior_case_naned.mean(axis=2).values
+        paid_ratio = self.paid_to_prior_case_
+        tw_paid = TriangleWeight(
+            n_periods=paid_n_periods,
+            drop=paid_drop,
+            drop_high=paid_drop_high,
+            drop_low=paid_drop_low,
+            drop_valuation=paid_drop_valuation,
+            drop_above=paid_drop_above,
+            drop_below=paid_drop_below,
+            preserve=paid_preserve,
+        ).fit(paid_ratio)
+        self.paid_w_ = tw_paid.w_
+        self.paid_ldf_ = (paid_ratio * self.paid_w_).mean(axis=2)
+        xp = self.paid_ldf_.get_array_module()
+        self.paid_ldf_.values[xp.isnan(self.paid_ldf_.values)] = 0.0
 
-        paid_to_prior_case_naned = self.paid_to_prior_case_ * self.paid_w_
-        paid_to_prior_case_naned.values = num_to_nan(paid_to_prior_case_naned.values)
+        case_ratio = self.case_to_prior_case_
+        tw_case = TriangleWeight(
+            n_periods=case_n_periods,
+            drop=case_drop,
+            drop_high=case_drop_high,
+            drop_low=case_drop_low,
+            drop_valuation=case_drop_valuation,
+            drop_above=case_drop_above,
+            drop_below=case_drop_below,
+            preserve=case_preserve,
+        ).fit(case_ratio)
+        self.case_w_ = tw_case.w_
 
-        self.paid_ldf_ = self.paid_to_prior_case_.mean(2)  # this has the wrong value
-        self.paid_ldf_.values = paid_to_prior_case_naned.mean(axis=2).values
+        xp = case_ratio.get_array_module()
+        vals_c = case_ratio.values
+        w_c = xp.nan_to_num(self.case_w_.values, nan=0.0)
+        has_usable_c = xp.any((w_c > 0) & ~xp.isnan(vals_c), axis=2, keepdims=True)
+        sum_c = xp.sum(
+            xp.where((w_c > 0) & ~xp.isnan(vals_c), vals_c * w_c, 0.0),
+            axis=2,
+            keepdims=True,
+        )
+        is_zero_runoff = has_usable_c & (sum_c == 0.0)
+
+        self.case_ldf_ = (case_ratio * self.case_w_).mean(axis=2)
+        xp = self.case_ldf_.get_array_module()
+        self.case_ldf_.values[xp.isnan(self.case_ldf_.values)] = 1.0
+        self.case_ldf_.values[is_zero_runoff] = 0.0
 
         self.ldf_ = self._set_ldf(self.X_).set_backend(backend)
 
@@ -271,9 +428,20 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        out = (incurred_tri - paid_tri).iloc[..., 1:] / (incurred_tri - paid_tri).iloc[
-            ..., :-1
-        ].values
+        case_raw = incurred_tri.values - paid_tri.values
+        obj = incurred_tri.iloc[..., :-1].copy()
+        if not obj.is_full:
+            out = obj[obj.valuation < obj.valuation_date]
+        else:
+            out = obj
+
+        num_origins = out.shape[2]
+        case_sliced = case_raw[..., :num_origins, :]
+        num = case_sliced[..., 1:].copy()
+        xp = out.get_array_module()
+        den = xp.copy(case_sliced[..., :-1])
+        den[den == 0] = xp.nan
+        out.values = num / den
         out.is_pattern = True
         out.is_cumulative = False
 
@@ -288,11 +456,25 @@ class CaseOutstanding(DevelopmentBase):
             paid_tri = paid_tri.groupby(self.groupby).sum()
             incurred_tri = incurred_tri.groupby(self.groupby).sum()
 
-        out = (
-            paid_tri.cum_to_incr().iloc[..., 1:]
-            / (incurred_tri - paid_tri).iloc[..., :-1].values
-        )
+        case_raw = incurred_tri.values - paid_tri.values
+        paid_incr = paid_tri.cum_to_incr().values
+
+        obj = incurred_tri.iloc[..., :-1].copy()
+        if not obj.is_full:
+            out = obj[obj.valuation < obj.valuation_date]
+        else:
+            out = obj
+
+        num_origins = out.shape[2]
+        case_sliced = case_raw[..., :num_origins, :]
+        paid_sliced = paid_incr[..., :num_origins, :]
+        num = paid_sliced[..., 1:].copy()
+        xp = out.get_array_module()
+        den = xp.copy(case_sliced[..., :-1])
+        den[den == 0] = xp.nan
+        out.values = num / den
         out.is_pattern = True
+        out.is_cumulative = False
 
         return out
 
