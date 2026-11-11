@@ -300,10 +300,8 @@ class MackChainladder(Chainladder):
         obj = X.copy()
         xp = obj.get_array_module()
         lxp = X.ldf_.get_array_module()
-        # The fallback is built only when X carries no cached full triangle.
-        full = getattr(X, "_full_triangle_", None)
-        if full is None:
-            full = self.full_triangle_
+        # fit, predict and full_std_err_ cache the full triangle on X first.
+        full = X._full_triangle_
         avg = {"regression": 0, "volume": 1, "simple": 2}
         avg = [avg.get(item, item) for item in X.average_]
         val = xp.broadcast_to(xp.array(avg + [avg[-1]]), X.shape)
