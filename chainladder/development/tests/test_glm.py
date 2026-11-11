@@ -98,3 +98,26 @@ def test_incremental_triangle_with_empty_cells(monthly):
     # Dropping 2017Q2 must change the fit. Without this check, the comparison
     # above would also pass if both fits ignored drop_valuation (#1619).
     assert not np.allclose(coef["incremental", None], coef["incremental", "2017Q2"])
+
+
+def test_alpha_reaches_regressor():
+    """
+    TweedieGLM must pass alpha to its TweedieRegressor. Without the penalty,
+    the over-dispersed Poisson GLM reproduces chain ladder, so
+    TweedieGLM(alpha=0) on ukmotor must give the chain ladder ultimates.
+
+    https://github.com/casact/chainladder-python/issues/1584
+    """
+    ukmotor = cl.load_sample("ukmotor")
+    glm = cl.TweedieGLM(alpha=0).fit(ukmotor)
+    assert glm.model_.estimator_ml.named_steps["model"].alpha == 0
+    assert (
+        abs(
+            (
+                cl.Chainladder().fit(ukmotor).ultimate_
+                - cl.Chainladder().fit(glm.transform(ukmotor)).ultimate_
+            )
+            / ukmotor.latest_diagonal
+        ).max()
+        < 1e-3
+    )
