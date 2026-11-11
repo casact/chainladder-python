@@ -29,7 +29,7 @@ from chainladder.utils.sparse import sp
 
 from chainladder.adjustments.disposal import DisposalMixin
 
-from typing import Optional, TYPE_CHECKING
+from typing import Literal, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from chainladder import Triangle
@@ -217,7 +217,9 @@ class TriangleBase(
         return col.map(dict(zip(unique, range(len(unique))))).values[None].T
 
     @staticmethod
-    def _check_duplicates(sizes: Series, duplicates: str) -> None:
+    def _check_duplicates(
+        sizes: Series, duplicates: Literal["sum", "raise", "warn"]
+    ) -> None:
         """
         Raise or warn when more than one input row falls in a triangle cell.
 
@@ -255,7 +257,7 @@ class TriangleBase(
         development_date: Series,
         index: list | None,
         columns: list,
-        duplicates: str = "sum",
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
     ):
         """Summarize dataframe to the level specified in axes"""
         if type(data) != pd.DataFrame:  # noqa: E721

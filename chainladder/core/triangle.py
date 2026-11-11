@@ -34,6 +34,7 @@ except ImportError:
 from typing import (
     Any,
     cast,
+    Literal,
     Optional,
     TYPE_CHECKING,
     Self,
@@ -106,7 +107,7 @@ class Triangle(TriangleBase):
         ``cl.options.AUTO_SPARSE`` is ``True``, the backend is instead
         chosen automatically based on array size and density, regardless
         of this argument's value.
-    duplicates: str, default 'sum'
+    duplicates: {'sum', 'raise', 'warn'}, default 'sum'
         What to do when more than one row of ``data`` falls in the same
         index, origin and development cell. ``'sum'`` adds the rows together,
         as transaction data needs. ``'raise'`` raises a ``ValueError`` naming
@@ -512,7 +513,7 @@ class Triangle(TriangleBase):
         pattern=False,
         trailing: bool = True,
         age: Optional[str | list] = None,
-        duplicates: str = "sum",
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
         *args,
         **kwargs,
     ):
@@ -779,7 +780,7 @@ class Triangle(TriangleBase):
         origin: list,
         valuation: list,
         cumulative: bool,
-        duplicates: str = "sum",
+        duplicates: Literal["sum", "raise", "warn"] = "sum",
     ) -> tuple[DataFrame, Triangle]:
         """
         Split ultimate valuation rows from long-format triangle data.
