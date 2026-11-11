@@ -137,7 +137,7 @@ def test_triangle_aggregation_values(clrd, method, axis):
     """
     if clrd.array_backend == "sparse" and method in {"var", "std"}:
         pytest.skip("The sparse backend does not implement nanvar or nanstd")
-    triangle = clrd.iloc[11:13, :2, :5, :5]
+    triangle = clrd.iloc[13:15, :2, :5, :5]
     before = triangle.copy()
     axis_number = triangle._get_axis(axis)
     kwargs = {"q": 0.5} if method == "quantile" else {}
